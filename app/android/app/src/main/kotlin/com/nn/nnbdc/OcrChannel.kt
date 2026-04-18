@@ -43,14 +43,22 @@ class OcrChannel(private val context: Context) {
                 return
             }
 
-            val image = InputImage.fromFilePath(context, Uri.fromFile(file))
-            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            // 1. 先通过系统解码成 Bitmap，确保图片格式 100% 被识别
+            val bitmap = android.graphics.BitmapFactory.decodeFile(imagePath)
+            if (bitmap == null) {
+                result.error("DECODE_ERROR", "图片解码失败", null)
+                return
+            }
+            
+            // 2. 从 Bitmap 创建 InputImage
+            val image = InputImage.fromBitmap(bitmap, 0)
+            val options = TextRecognizerOptions.Builder()
+                .build() // 默认拉丁文识别器
+            val recognizer = TextRecognition.getClient(options)
 
             recognizer.process(image)
                 .addOnSuccessListener { visionText ->
-                    // 提取所有识别到的文字，用换行符连接
-                    val recognizedText = visionText.text
-                    result.success(recognizedText)
+                    result.success(visionText.text)
                 }
                 .addOnFailureListener { e ->
                     result.error("OCR_ERROR", "文字识别失败: ${e.message}", null)

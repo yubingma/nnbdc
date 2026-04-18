@@ -34,6 +34,7 @@ class HandwritingBoard extends StatefulWidget {
 class _HandwritingBoardState extends State<HandwritingBoard> {
   List<List<Offset>> _lines = [];
   bool _isRecognizing = false;
+  Uint8List? _lastOcrImageBytes; // 用于调试：显示最后一次发送给 OCR 的图片
 
   void _clear() {
     setState(() {
@@ -52,33 +53,91 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
     });
 
     try {
-      // 1. 将画布转换为图片
+      // 1. 计算内容的精确边界，实现“动态紧凑裁剪”
+      double minX = double.infinity, minY = double.infinity;
+      double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+      bool hasValidStroke = false;
+
+      for (var line in _lines) {
+        if (line.length < 3) continue; // 更加激进地忽略孤立点（如无意的点或笔尖抖动）
+        hasValidStroke = true;
+        for (var point in line) {
+          if (point.dx < minX) minX = point.dx;
+          if (point.dx > maxX) maxX = point.dx;
+          if (point.dy < minY) minY = point.dy;
+          if (point.dy > maxY) maxY = point.dy;
+        }
+      }
+
+      if (!hasValidStroke) {
+        ToastUtil.info('请先写点什么');
+        setState(() => _isRecognizing = false);
+        return;
+      }
+
+      const double margin = 50.0; // 紧凑边距，让字符在图中占比更大
+      double contentWidth = maxX - minX;
+      double contentHeight = maxY - minY;
+      
+      // 设定目标宽度为 1000px (大多数移动端 OCR 模型的最佳识别尺寸)
+      const double targetWidth = 1000.0;
+      double scale = (targetWidth - 2 * margin) / contentWidth;
+      
+      // 动态计算高度，保持比例
+      double targetHeight = contentHeight * scale + 2 * margin;
+      // 极端情况限制：防止高度过小
+      if (targetHeight < 200) targetHeight = 200;
+
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
       final paint = Paint()
         ..color = Colors.black
+        ..style = PaintingStyle.stroke // 关键修复：必须设置为描边，否则带圈字母（a,e,o）会变成黑团
         ..strokeCap = StrokeCap.round
-        ..strokeWidth = 8.0;
+        ..strokeJoin = StrokeJoin.round
+        ..isAntiAlias = true
+        ..strokeWidth = 25.0 / scale; // 大幅加粗笔触 (25px)，模拟粗体印刷效果，极大提升 OCR 稳定性
 
-      // 背景白色
+      // 背景白色 (按需分配尺寸)
       canvas.drawRect(
-        const Rect.fromLTWH(0, 0, 1000, 1000),
+        Rect.fromLTWH(0, 0, targetWidth, targetHeight),
         Paint()..color = Colors.white,
       );
 
-      // 计算边界以进行缩放/平移优化（可选）
-      // 绘制逻辑已整合到 _drawOnCanvas 中，此处不再重复循环
-      _drawOnCanvas(canvas, paint, 1000, 1000);
+      // 将内容绘制在动态区域中心
+      canvas.save();
+      canvas.translate(margin - minX * scale, margin - minY * scale);
+      canvas.scale(scale);
+
+      // 绘制逻辑
+      for (final line in _lines) {
+        if (line.length < 2) continue;
+        final path = Path();
+        path.moveTo(line[0].dx, line[0].dy);
+        for (int i = 1; i < line.length - 1; i++) {
+          final p0 = line[i];
+          final p1 = line[i + 1];
+          path.quadraticBezierTo(p0.dx, p0.dy, (p0.dx + p1.dx) / 2.0, (p0.dy + p1.dy) / 2.0);
+        }
+        path.lineTo(line.last.dx, line.last.dy);
+        canvas.drawPath(path, paint);
+      }
+      canvas.restore();
 
       final picture = recorder.endRecording();
-      final img = await picture.toImage(1000, 1000);
+      final img = await picture.toImage(targetWidth.toInt(), targetHeight.toInt());
       final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) throw Exception('无法生成图片数据');
+
+      final bytes = byteData.buffer.asUint8List();
+      setState(() {
+        _lastOcrImageBytes = bytes;
+      });
 
       // 2. 保存到临时文件
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/handwriting_${AppClock.now().millisecondsSinceEpoch}.png');
-      await file.writeAsBytes(byteData.buffer.asUint8List());
+      await file.writeAsBytes(bytes);
 
       // 3. 调用 OCR 识别
       final text = await OcrService.recognizeText(file.path);
@@ -86,12 +145,27 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       // 清理临时文件
       if (await file.exists()) await file.delete();
 
+      // 4. 后处理识别结果
+      // 调试：记录原始结果
+      debugPrint('OCR Raw Text: "$text"');
+
+      // 针对手写识别的常见错误进行“视觉近形词”替换 (如 1 -> l, 0 -> o)
+      String processedText = text
+          .replaceAll('1', 'l')
+          .replaceAll('0', 'o')
+          .replaceAll('5', 's')
+          .replaceAll('2', 'z')
+          .replaceAll('8', 'b')
+          .replaceAll('9', 'g');
+          
       // 提取有效的英文单词或短语（保留字母和空格）
-      String result = text.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+      String result = processedText.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
 
       if (result.isEmpty) {
-        ToastUtil.info('未能识别到单词');
+        ToastUtil.info('未能从图片中识别到字母');
       } else {
+        // 重要：显示识别结果，方便用户确认 OCR 是否成功
+        ToastUtil.info('识别结果: $result');
         widget.onRecognized(result);
       }
     } catch (e) {
@@ -105,60 +179,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
     } 
   }
 
-  void _drawOnCanvas(Canvas canvas, Paint paint, double width, double height) {
-    if (_lines.isEmpty) return;
-
-    // 寻找内容的边界，以便进行居中和缩放
-    double minX = double.infinity, minY = double.infinity;
-    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
-
-    for (var line in _lines) {
-      for (var point in line) {
-        if (point.dx < minX) minX = point.dx;
-        if (point.dx > maxX) maxX = point.dx;
-        if (point.dy < minY) minY = point.dy;
-        if (point.dy > maxY) maxY = point.dy;
-      }
-    }
-
-    // 留出边距
-    const margin = 50.0;
-    double contentWidth = maxX - minX;
-    double contentHeight = maxY - minY;
-    if (contentWidth < 10) contentWidth = 10;
-    if (contentHeight < 10) contentHeight = 10;
-
-    double scaleX = (width - 2 * margin) / contentWidth;
-    double scaleY = (height - 2 * margin) / contentHeight;
-    double scale = scaleX < scaleY ? scaleX : scaleY;
-    if (scale > 2.0) scale = 2.0;
-
-    canvas.save();
-    canvas.translate(
-      (width - contentWidth * scale) / 2 - minX * scale,
-      (height - contentHeight * scale) / 2 - minY * scale,
-    );
-    canvas.scale(scale);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeJoin = StrokeJoin.round;
-
-    for (final line in _lines) {
-      if (line.isEmpty) continue;
-      final path = Path();
-      path.moveTo(line[0].dx, line[0].dy);
-      for (int i = 1; i < line.length - 1; i++) {
-        final p0 = line[i];
-        final p1 = line[i + 1];
-        path.quadraticBezierTo(p0.dx, p0.dy, (p0.dx + p1.dx) / 2.0, (p0.dy + p1.dy) / 2.0);
-      }
-      if (line.length > 1) {
-        path.lineTo(line.last.dx, line.last.dy);
-      }
-      canvas.drawPath(path, paint);
-    }
-    canvas.restore();
-  }
+  // _drawOnCanvas 的逻辑已整合进 _recognize 以支持动态高度
 
   @override
   Widget build(BuildContext context) {
@@ -207,12 +228,44 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
 
           // 画布区域 (独占所有垂直空间，最大化书写面积)
           Expanded(
-            child: _HandwritingCanvas(
-              lines: _lines,
-              isRecognizing: _isRecognizing,
-              onRewrite: _clear,
-              onRecognize: _recognize,
-              onStartWriting: widget.onStartWriting,
+            child: Stack(
+              children: [
+                _HandwritingCanvas(
+                  lines: _lines,
+                  isRecognizing: _isRecognizing,
+                  onRewrite: _clear,
+                  onRecognize: _recognize,
+                  onStartWriting: widget.onStartWriting,
+                ),
+                
+                // OCR 图像预览调试区 (仅在有图片时显示在左下角)
+                if (_lastOcrImageBytes != null)
+                  Positioned(
+                    left: 10,
+                    bottom: 100,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('OCR 调试预览:', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        const SizedBox(height: 4),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.memory(
+                              _lastOcrImageBytes!,
+                              width: 150,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -598,7 +651,8 @@ class _HandwritingController extends ChangeNotifier {
     final smoothedPoint = lastSmoothPoint! * 0.45 + p * 0.55;
 
     // 3. 数据隔离存储：
-    rawLines.last.add(p); 
+    // 关键修正：存储平滑后的点而非原始抖动点，确保导出的识别图像与用户看到的同样平滑，减少 OCR 干扰
+    rawLines.last.add(smoothedPoint); 
     lastDelta = delta; // 仅存储位移量，由绘制器动态应用预测，不破坏路径几何结构
 
     // 4. 构建稳定二阶贝塞尔路径
@@ -618,16 +672,9 @@ class _HandwritingController extends ChangeNotifier {
     if (activePath != null && lastRenderPoint != null) {
       activePath!.lineTo(lastRenderPoint!.dx, lastRenderPoint!.dy);
       
-      // 智能手势识别：反向移动(从右到左)则删除一笔，正向(从左到右)大行程则全清
-      final swipeStatus = _detectSwipe(rawLines.last);
-      if (swipeStatus == 1) { // Left to Right
-        clear();
-      } else if (swipeStatus == 2) { // Right to Left
-        rawLines.removeLast(); // 先把当前这根触发手势的线去掉
-        removeLast(); // 再去掉前一笔也就是目标字母
-      } else {
-        finishedPath.addPath(activePath!, Offset.zero);
-      }
+      // 智能手势识别已在全屏模式下由于误触发率高而被暂时禁用
+      // 用户现在应使用底部明确的“重写”和“识别”按钮，或继续在屏幕书写
+      finishedPath.addPath(activePath!, Offset.zero);
 
       activePath = null;
       lastRenderPoint = null;
@@ -655,11 +702,13 @@ class _HandwritingController extends ChangeNotifier {
     double height = maxY - minY;
 
     // 判定条件：长横扫动作
-    if (width > 120 && width > height * 2.5) {
+    // 在全屏模式下，阈值需进一步调高（从 180 提升到 280），
+    // 彻底避免写长单词（如 internationalization）或连笔横线时误触发清除手势。
+    if (width > 280 && width > height * 2.8) {
       // 检查方向：起点在终点右侧一定距离即为反向划动
-      if (stroke.first.dx - stroke.last.dx > 60) {
+      if (stroke.first.dx - stroke.last.dx > 80) {
         return 2; // Right to Left
-      } else if (stroke.last.dx - stroke.first.dx > 60) {
+      } else if (stroke.last.dx - stroke.first.dx > 80) {
         return 1; // Left to Right
       }
     }

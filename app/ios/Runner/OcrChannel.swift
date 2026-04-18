@@ -79,7 +79,7 @@ class OcrChannel {
         // 配置识别参数
         request.recognitionLevel = .accurate
         request.recognitionLanguages = ["en-US", "en-GB"]  // 只识别英文
-        request.usesLanguageCorrection = true
+        request.usesLanguageCorrection = false
         
         // 执行识别
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
