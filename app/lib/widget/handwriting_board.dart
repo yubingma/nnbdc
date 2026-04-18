@@ -12,12 +12,14 @@ import '../theme/app_theme.dart';
 class HandwritingBoard extends StatefulWidget {
   final Function(String) onRecognized;
   final VoidCallback onCancel;
+  final VoidCallback? onStartWriting;
   final bool showCloseButton;
-
+  
   const HandwritingBoard({
     super.key,
     required this.onRecognized,
     required this.onCancel,
+    this.onStartWriting,
     this.showCloseButton = true,
   });
 
@@ -205,6 +207,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
               isRecognizing: _isRecognizing,
               onRewrite: _clear,
               onRecognize: _recognize,
+              onStartWriting: widget.onStartWriting,
             ),
           ),
         ],
@@ -218,12 +221,14 @@ class _HandwritingCanvas extends StatefulWidget {
   final bool isRecognizing;
   final VoidCallback onRewrite;
   final VoidCallback onRecognize;
+  final VoidCallback? onStartWriting;
 
   const _HandwritingCanvas({
     required this.lines,
     required this.isRecognizing,
     required this.onRewrite,
     required this.onRecognize,
+    this.onStartWriting,
   });
 
   @override
@@ -306,6 +311,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _recognizeTriggered = false;
 
             final p = event.localPosition;
+            
+            // 触发开始书写回调
+            widget.onStartWriting?.call();
+
             // 窄屏下，如果在感应区内按下，先给予视觉反馈且不立即开始绘画
             if (isNarrow) {
               if (rewriteZone.contains(p)) {

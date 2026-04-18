@@ -2657,7 +2657,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 自动获取焦点，提升输入效率 (仅在用户偏好键盘模式时自动触发)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !_hasFinishedAnswering) {
-        if (StudyConfig.fromCurrentUser().preferKeyboardInSpelling) {
+        final preferKeyboard = StudyConfig.fromCurrentUser().preferKeyboardInSpelling;
+        Global.logger.d('BDC: handleWord postFrameCallback, preferKeyboard=$preferKeyboard');
+        if (preferKeyboard) {
           _meaningFocusNode.requestFocus();
         }
       }
@@ -3502,6 +3504,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   Expanded(
                     child: HandwritingBoard(
                       showCloseButton: false,
+                      onStartWriting: () {
+                        // 一旦用户开始手写，立即收起键盘
+                        if (_meaningFocusNode.hasFocus) {
+                          _meaningFocusNode.unfocus();
+                          // 同时记录偏好：既然开始了手写，下次默认就不弹出键盘了
+                          final config = StudyConfig.fromCurrentUser();
+                          if (config.preferKeyboardInSpelling) {
+                            config.preferKeyboardInSpelling = false;
+                            config.saveToCurrentUser();
+                          }
+                        }
+                      },
                       onRecognized: (text) {
                         _isUpdatingByHint = false;
 
