@@ -139,22 +139,25 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       final file = File('${tempDir.path}/handwriting_${AppClock.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes);
 
-      // 3. 调用识别引擎
-      String text = "";
-      String nativeInfo = "";
-
-      if (Platform.isAndroid) {
-        // --- Android: 使用 Digital Ink Recognition (高精度坐标识别) ---
+        // 3. 调用识别引擎 (增加 5 秒超时保护，防止原生层卡死导致 UI 永久冻结)
         final strokes = _lines.map((line) => line.map((p) => {'x': p.dx, 'y': p.dy}).toList()).toList();
-        text = await OcrService.recognizeHandwriting(strokes);
-        nativeInfo = "[Digital Ink Android]";
-      } else {
-        // --- iOS: 保持原有的图片 OCR 识别 ---
-        final rawResponse = await OcrService.recognizeText(file.path);
-        List<String> parts = rawResponse.split(" ||| ");
-        text = parts[0];
-        nativeInfo = parts.length > 1 ? parts[1] : "";
-      }
+        final recognitionFuture = Platform.isAndroid 
+          ? OcrService.recognizeHandwriting(strokes)
+          : OcrService.recognizeText(file.path);
+        
+        final response = await recognitionFuture.timeout(const Duration(seconds: 5));
+        
+        String text = "";
+        String nativeInfo = "";
+        
+        if (Platform.isAndroid) {
+          text = response;
+          nativeInfo = "[Ink Android]";
+        } else {
+          List<String> parts = response.split(" ||| ");
+          text = parts[0];
+          nativeInfo = parts.length > 1 ? parts[1] : "";
+        }
 
       // 清理临时文件
       if (await file.exists()) await file.delete();
@@ -177,21 +180,25 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       String result = processedText.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
 
       if (result.isEmpty) {
-        ToastUtil.info('[Ink-Mode] 未能识别到字迹 (Raw: "$rawOcrText", $nativeInfo)');
+        // 如果是自动触发且结果为空，不弹提示以免干扰用户书写
+        debugPrint('识别结果为空: "$rawOcrText"');
       } else {
         // 重要：显示识别结果
-        ToastUtil.info('[Ink-Mode] 识别结果: $result');
+        ToastUtil.info('[Ink] 结果: $result');
         widget.onRecognized(result);
       }
+    } on TimeoutException {
+      debugPrint('识别超时 (5s)');
     } catch (e) {
-      ToastUtil.error('识别失败: $e');
+      debugPrint('识别异常: $e');
     } finally {
       if (mounted) {
         setState(() {
           _isRecognizing = false;
         });
       }
-    } 
+    }
+ 
   }
 
   // _drawOnCanvas 的逻辑已整合进 _recognize 以支持动态高度
@@ -379,7 +386,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _controller.start(p);
           },
           onPointerMove: (event) {
-            if (widget.isRecognizing || event.pointer != _activePointerId) return;
+            if (event.pointer != _activePointerId) return;
             
             final p = event.localPosition;
             
