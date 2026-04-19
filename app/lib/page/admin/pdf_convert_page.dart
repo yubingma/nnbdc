@@ -32,8 +32,15 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   final List<ExtractedWord> _extractedWordsList = [];
   bool _isProcessing = false;
   bool _includeMeaning = false;
+  List<dynamic> _availableTasks = [];
   CancelToken? _cancelToken;
   final TextEditingController _resultController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
 
   @override
   void dispose() {
@@ -106,6 +113,19 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
     );
   }
 
+  Future<void> _loadTasks() async {
+    try {
+      final response = await Api.dio.get("/admin/pdf/tasks.do");
+      if (response.data['success'] == true) {
+        setState(() {
+          _availableTasks = response.data['data'];
+        });
+      }
+    } catch (e) {
+      Global.logger.e("获取任务列表失败", error: e);
+    }
+  }
+
   Future<void> _startConversion() async {
     if (_selectedFileContent == null) {
       ToastUtil.info("请先选择 PDF 文件");
@@ -147,61 +167,8 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
       );
 
       final responseBody = response.data as ResponseBody;
-      final stream = responseBody.stream.cast<List<int>>();
-      String buffer = "";
-      int currentPageIndex = 1;
-      await for (final chunk in stream.transform(utf8.decoder)) {
-        buffer += chunk;
-        
-        // 解析 SSE 格式 (简单的 event/data 解析)
-        while (buffer.contains("\n\n")) {
-          int index = buffer.indexOf("\n\n");
-          String eventString = buffer.substring(0, index);
-          buffer = buffer.substring(index + 2);
-
-          String? eventName;
-          String? eventData;
-
-          for (String line in eventString.split("\n")) {
-            if (line.startsWith("event:")) {
-              eventName = line.substring(6).trim();
-            } else if (line.startsWith("data:")) {
-              eventData = line.substring(5).trim();
-            }
-          }
-
-          Global.logger.d("收到 SSE 事件: event=$eventName, data=$eventData");
-
-          if (eventName == "page_start" && eventData != null) {
-            currentPageIndex = int.tryParse(eventData) ?? currentPageIndex;
-          } else if (eventName == "page" && eventData != null) {
-            final data = eventData;
-            setState(() {
-              final lines = data.split('\n');
-              for (var line in lines) {
-                if (line.trim().isEmpty) continue;
-                final parts = line.split('\t');
-                final word = parts[0];
-                final meaning = parts.length > 1 ? parts[1] : "";
-                
-                _extractedWordsList.add(ExtractedWord(
-                  _extractedWordsList.length + 1,
-                  word,
-                  meaning,
-                  currentPageIndex,
-                ));
-              }
-              
-              // 同步更新 resultController 用于复制
-              _resultController.text = _extractedWordsList.map((e) => e.word).join("\n");
-            });
-          } else if (eventName == "error" && eventData != null) {
-            ToastUtil.error(eventData);
-          }
-        }
-      }
-
-      ToastUtil.success("提取完成！共计 ${_extractedWordsList.length} 个单词");
+      await _processStream(responseBody.stream.cast<List<int>>());
+      _loadTasks(); // 刷新任务列表
     } catch (e) {
       if (CancelToken.isCancel(e as DioException)) {
         Global.logger.i("用户取消了 PDF 转换");
@@ -215,6 +182,113 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         _isProcessing = false;
         _cancelToken = null;
       });
+    }
+  }
+
+  Future<void> _syncTask(String taskId) async {
+    setState(() {
+      _isProcessing = true;
+      _extractedWordsList.clear();
+      _resultController.text = "";
+      _cancelToken = CancelToken();
+    });
+
+    try {
+      final response = await Api.dio.get(
+        "/admin/pdf/syncTask.do",
+        queryParameters: {"taskId": taskId},
+        options: Options(responseType: ResponseType.stream),
+        cancelToken: _cancelToken,
+      );
+
+      final responseBody = response.data as ResponseBody;
+      await _processStream(responseBody.stream.cast<List<int>>());
+    } catch (e) {
+      if (!CancelToken.isCancel(e as DioException)) {
+        Global.logger.e("同步任务异常", error: e);
+        ToastUtil.error("同步失败: $e");
+      }
+    } finally {
+      setState(() {
+        _isProcessing = false;
+        _cancelToken = null;
+      });
+      _loadTasks();
+    }
+  }
+
+  Future<void> _processStream(Stream<List<int>> stream) async {
+    String buffer = "";
+    int currentPageIndex = 1;
+    await for (final chunk in stream.transform(utf8.decoder)) {
+      buffer += chunk;
+      
+      // 解析 SSE 格式 (简单的 event/data 解析)
+      while (buffer.contains("\n\n")) {
+        int index = buffer.indexOf("\n\n");
+        String eventString = buffer.substring(0, index);
+        buffer = buffer.substring(index + 2);
+
+        String? eventName;
+        String? eventData;
+
+        for (String line in eventString.split("\n")) {
+          if (line.startsWith("event:")) {
+            eventName = line.substring(6).trim();
+          } else if (line.startsWith("data:")) {
+            eventData = line.substring(5).trim();
+          }
+        }
+
+        Global.logger.d("收到 SSE 事件: event=$eventName, data=$eventData");
+
+        if (eventName == "page_start" && eventData != null) {
+          currentPageIndex = int.tryParse(eventData) ?? currentPageIndex;
+        } else if (eventName == "page" && eventData != null) {
+          final data = eventData;
+          setState(() {
+            final lines = data.split('\n');
+            for (var line in lines) {
+              if (line.trim().isEmpty) continue;
+              final parts = line.split('\t');
+              final word = parts[0];
+              final meaning = parts.length > 1 ? parts[1] : "";
+              
+              _extractedWordsList.add(ExtractedWord(
+                _extractedWordsList.length + 1,
+                word,
+                meaning,
+                currentPageIndex,
+              ));
+            }
+            _resultController.text = _extractedWordsList.map((e) => e.word).join("\n");
+          });
+        } else if (eventName == "error" && eventData != null) {
+          ToastUtil.error(eventData);
+        } else if (eventName == "complete") {
+          ToastUtil.success("提取完成！共计 ${_extractedWordsList.length} 个单词");
+        }
+      }
+    }
+  }
+
+  Future<void> _stopTask(String taskId) async {
+    try {
+      await Api.dio.post("/admin/pdf/stopTask.do", queryParameters: {"taskId": taskId});
+      _loadTasks();
+      ToastUtil.success("已请求停止任务");
+    } catch (e) {
+      ToastUtil.error("停止失败: $e");
+    }
+  }
+
+  Future<void> _removeTask(String taskId) async {
+    try {
+      await Api.dio.post("/admin/pdf/removeTask.do", queryParameters: {"taskId": taskId});
+      _loadTasks();
+      ToastUtil.success("任务已从内存移除");
+    } catch (e) {
+      ToastUtil.error("移除失败: $e");
     }
   }
 
@@ -253,6 +327,11 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // 0. 活跃任务监控 (如果在内存中有任务)
+            if (_availableTasks.isNotEmpty) _buildTasksSection(),
+
+            if (_availableTasks.isNotEmpty) const SizedBox(height: 20),
+
             // 第一步：上传区域
             _buildSectionCard(
               title: "第一步：选择 PDF 文件",
@@ -490,6 +569,113 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTasksSection() {
+    return _buildSectionCard(
+      title: "正在进行/最近的任务",
+      icon: Icons.running_with_errors,
+      color: Colors.orange,
+      child: Column(
+        children: _availableTasks.map((task) {
+          final taskId = task['taskId'] as String;
+          final fileName = task['fileName'] as String? ?? "Unknown";
+          final processed = task['processedPages'] as int? ?? 0;
+          final total = task['totalPages'] as int? ?? 0;
+          final isFinished = task['finished'] as bool? ?? false;
+          final isStopped = task['stopped'] as bool? ?? false;
+          final error = task['error'] as String?;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        fileName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isFinished)
+                      const Icon(Icons.check_circle, color: Colors.green, size: 16)
+                    else if (isStopped)
+                      const Icon(Icons.pause_circle_filled, color: Colors.orange, size: 16)
+                    else
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (total > 0) ...[
+                  LinearProgressIndicator(
+                    value: processed / total,
+                    backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+                    minHeight: 4,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "进度: $processed / $total 页",
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ] else
+                  const Text("正在准备...", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                
+                if (error != null) 
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(error, style: const TextStyle(fontSize: 11, color: Colors.red)),
+                  ),
+                
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (!isFinished && !isStopped)
+                      TextButton.icon(
+                        onPressed: () => _stopTask(taskId),
+                        icon: const Icon(Icons.stop, size: 14, color: Colors.orange),
+                        label: const Text("停止", style: TextStyle(fontSize: 11, color: Colors.orange)),
+                      ),
+                    if (isStopped && !isFinished)
+                      TextButton.icon(
+                        onPressed: () => _syncTask(taskId), // 实际上就是 Resume 并同步
+                        icon: const Icon(Icons.play_arrow, size: 14, color: Colors.green),
+                        label: const Text("继续/重试", style: TextStyle(fontSize: 11, color: Colors.green)),
+                      ),
+                    if (!isFinished)
+                      TextButton.icon(
+                        onPressed: () => _syncTask(taskId),
+                        icon: const Icon(Icons.sync, size: 14, color: Colors.blue),
+                        label: const Text("同步结果", style: TextStyle(fontSize: 11, color: Colors.blue)),
+                      ),
+                    TextButton.icon(
+                      onPressed: () => _removeTask(taskId),
+                      icon: const Icon(Icons.delete_outline, size: 14, color: Colors.grey),
+                      label: const Text("移除", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }

@@ -446,8 +446,24 @@ public class AdminController {
             }
         }
         
-        final beidanci.service.bo.AiBo.ExtractionTask finalTask = task;
+        return attachToTask(task);
+    }
 
+    @GetMapping(value = "/admin/pdf/syncTask.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter syncTask(@RequestParam("taskId") String taskId) {
+        beidanci.service.bo.AiBo.ExtractionTask task = aiBo.getExtractionTask(taskId);
+        if (task == null) {
+            org.springframework.web.servlet.mvc.method.annotation.SseEmitter errorEmitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(60000L);
+            try {
+                errorEmitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("任务不存在或已过期"));
+                errorEmitter.complete();
+            } catch (IOException ignore) {}
+            return errorEmitter;
+        }
+        return attachToTask(task);
+    }
+
+    private org.springframework.web.servlet.mvc.method.annotation.SseEmitter attachToTask(final beidanci.service.bo.AiBo.ExtractionTask finalTask) {
         final org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = 
                 new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(3600000L * 12); // 12 hours timeout
         
@@ -512,7 +528,7 @@ public class AdminController {
                 return emitter;
             }
         } catch (Exception e) {
-            logger.error("Failed to send existing results for taskId: " + taskId, e);
+            logger.error("Failed to send existing results for taskId: " + finalTask.taskId, e);
         }
 
         // 4. 挂载新监听器
