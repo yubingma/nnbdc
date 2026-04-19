@@ -39,7 +39,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    _loadTasks(autoSync: true);
   }
 
   @override
@@ -113,13 +113,32 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
     );
   }
 
-  Future<void> _loadTasks() async {
+  Future<void> _loadTasks({bool autoSync = false}) async {
     try {
       final response = await Api.dio.get("/admin/pdf/tasks.do");
       if (response.data['success'] == true) {
+        final tasks = response.data['data'] as List<dynamic>;
         setState(() {
-          _availableTasks = response.data['data'];
+          _availableTasks = tasks;
         });
+
+        // 如果预览区是空的，自动同步最相关的任务结果
+        if (autoSync && _extractedWordsList.isEmpty && tasks.isNotEmpty) {
+          // 优先选取：正在运行 > 已停止但有进度 > 已完成
+          dynamic taskToSync = tasks.firstWhere(
+            (t) => t['finished'] != true && t['stopped'] != true,
+            orElse: () => tasks.firstWhere(
+              (t) => t['stopped'] == true && (t['processedPages'] as int? ?? 0) > 0,
+              orElse: () => tasks.firstWhere(
+                (t) => t['finished'] == true,
+                orElse: () => null,
+              ),
+            ),
+          );
+          if (taskToSync != null) {
+            _syncTask(taskToSync['taskId'] as String);
+          }
+        }
       }
     } catch (e) {
       Global.logger.e("获取任务列表失败", error: e);
