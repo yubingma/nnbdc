@@ -540,13 +540,16 @@ public class AiBo {
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(submitUrl, HttpMethod.POST, requestEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new RuntimeException("提交文档解析任务失败: " + response.getStatusCode());
+            Map<String, Object> responseBody = response.getBody();
+            if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
+                throw new RuntimeException("提交解析任务失败: " + response.getStatusCode());
             }
 
             @SuppressWarnings("unchecked")
-            Map<String, Object> output = (Map<String, Object>) response.getBody().get("output");
-            if (output == null) throw new RuntimeException("提交任务后未获得有效输出");
+            Map<String, Object> output = (Map<String, Object>) responseBody.get("output");
+            if (output == null) {
+                throw new RuntimeException("解析任务响应中缺少 output 字段");
+            }
             String taskId = (String) output.get("task_id");
             logger.info("文档解析任务已提交, taskId: {}", taskId);
 
@@ -561,11 +564,17 @@ public class AiBo {
                 Thread.sleep(1000);
                 ResponseEntity<Map<String, Object>> statusResponse = restTemplate.exchange(statusUrl, HttpMethod.GET, statusEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
                 Map<String, Object> statusBody = statusResponse.getBody();
-                if (statusBody == null) continue;
+                if (statusBody == null) {
+                    logger.warn("任务状态响应体为空, taskId: {}", taskId);
+                    continue;
+                }
 
                 @SuppressWarnings("unchecked")
                 Map<String, Object> taskOutput = (Map<String, Object>) statusBody.get("output");
-                if (taskOutput == null) continue;
+                if (taskOutput == null) {
+                    logger.warn("任务输出为空, taskId: {}", taskId);
+                    continue;
+                }
                 String taskStatus = (String) taskOutput.get("task_status");
 
                 if ("SUCCEEDED".equals(taskStatus)) {

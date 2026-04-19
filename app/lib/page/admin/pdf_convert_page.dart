@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
@@ -8,9 +9,6 @@ import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:flutter/services.dart';
-
-// 移除直接导入 dart:html 以免原生平台编译失败
-// import 'dart:html' as html;
 
 class PdfConvertPage extends StatefulWidget {
   const PdfConvertPage({super.key});
@@ -32,23 +30,34 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
     super.dispose();
   }
 
-  void _pickFile() {
-    // 由于项目中未集成 file_picker 插件，原生平台无法直接调起系统选择器。
-    // 如果您是在 Web 环境且需要此功能，请在项目中引入 file_picker 或使用 HTML5 Input。
-    // 目前为管理员提供手动输入路径的方案。
-    ToastUtil.info("建议集成 file_picker 插件以获得更好的体验。");
-    _showPathInputDialog();
-    
-    /* 
-    // Web 环境下的参考实现：
-    if (kIsWeb) {
-       // 需要导入 'dart:html'
-       // ... 
+  Future<void> _pickFile() async {
+    try {
+      // 尝试直接调用静态方法（部分版本支持）
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: kIsWeb,
+      );
+
+      if (result != null) {
+        setState(() {
+          if (kIsWeb) {
+            _selectedFileName = result.files.first.name;
+            _selectedFileContent = result.files.first.bytes;
+          } else {
+            _selectedFileName = result.files.first.name;
+            _selectedFileContent = result.files.first.path;
+          }
+        });
+      }
+    } catch (e) {
+      Global.logger.e("选择文件失败", error: e);
+      ToastUtil.error("选择文件失败: $e");
     }
-    */
   }
 
   void _showPathInputDialog() {
+    // 保留手动输入路径作为备选方案
     String path = "";
     showDialog(
       context: context,
@@ -107,7 +116,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
             filename: _selectedFileName,
           ),
         });
-      } else {
+      } else if (_selectedFileContent is String) {
         // Native 路径模式
         formData = FormData.fromMap({
           "file": await MultipartFile.fromFile(
@@ -115,6 +124,8 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
             filename: _selectedFileName,
           ),
         });
+      } else {
+        throw Exception("不支持的文件选择模式");
       }
 
       // 直接使用 dio 调用接口，绕过 retrofit 的 File 类型限制
@@ -192,17 +203,36 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                         borderRadius: BorderRadius.circular(12),
                         color: Colors.blue.withValues(alpha: 0.05),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
                         children: [
-                          Icon(Icons.add_circle_outline, color: Colors.blue.shade600),
-                          const SizedBox(width: 8),
+                          const Icon(Icons.picture_as_pdf, size: 48, color: Colors.blue),
+                          const SizedBox(height: 16),
                           Text(
                             _selectedFileName ?? "点击选择 PDF 文件",
                             style: TextStyle(
-                              color: _selectedFileName == null ? Colors.blue.shade600 : Colors.green.shade600,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: _selectedFileName == null ? Colors.grey : Colors.blue,
+                              fontWeight: _selectedFileName == null ? FontWeight.normal : FontWeight.bold,
                             ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "支持提取炭炭背单词导出的 PDF 表格",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          if (_selectedFileName != null) ...[
+                            const SizedBox(height: 16),
+                            TextButton.icon(
+                              onPressed: _pickFile,
+                              icon: const Icon(Icons.refresh, size: 16),
+                              label: const Text("重新选择"),
+                            ),
+                          ],
+                          // 添加手动输入入口，解决警告并提供备选方案
+                          TextButton(
+                            onPressed: _showPathInputDialog,
+                            child: const Text("手动输入路径", style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
                           ),
                         ],
                       ),
