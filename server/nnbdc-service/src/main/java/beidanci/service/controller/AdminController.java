@@ -422,7 +422,8 @@ public class AdminController {
     @SuppressWarnings("null")
     @PostMapping(value = "/admin/pdf/extractWords.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
     public org.springframework.web.servlet.mvc.method.annotation.SseEmitter extractWordsFromPdf(
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "startPage", required = false) Integer startPage
     ) {
         // 使用文件名和大小作为唯一标识（简单且能区分不同文件）
         String fileName = file.getOriginalFilename();
@@ -435,6 +436,9 @@ public class AdminController {
                 File localTempFile = File.createTempFile("tantan_extract_", ".pdf");
                 file.transferTo(localTempFile);
                 task = aiBo.getOrCreateExtractionTask(taskId, fileName, file.getSize(), localTempFile);
+                if (startPage != null && startPage > 0) {
+                    task.processedPages = startPage - 1;
+                }
             } catch (IOException e) {
                 logger.error("Failed to create temp file", e);
                 org.springframework.web.servlet.mvc.method.annotation.SseEmitter errorEmitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(60000L);
@@ -480,6 +484,12 @@ public class AdminController {
             } catch (Exception ignore) {}
         };
 
+        final java.util.function.BiConsumer<Integer, String> pageErrorListener = (pageIndex, errorMsg) -> {
+            try {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page_error").data(pageIndex + "|" + errorMsg));
+            } catch (Exception ignore) {}
+        };
+
         final java.util.function.Consumer<String> errorListener = error -> {
             try {
                 emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + error));
@@ -505,25 +515,34 @@ public class AdminController {
             finalTask.listeners.remove(pageListener);
             finalTask.errorListeners.remove(errorListener);
             finalTask.warningListeners.remove(warningListener);
+            finalTask.pageErrorListeners.remove(pageErrorListener);
             finalTask.completionListeners.remove(completionListener);
         });
         emitter.onTimeout(() -> {
             finalTask.listeners.remove(pageListener);
             finalTask.errorListeners.remove(errorListener);
             finalTask.warningListeners.remove(warningListener);
+            finalTask.pageErrorListeners.remove(pageErrorListener);
             finalTask.completionListeners.remove(completionListener);
         });
         emitter.onError(e -> {
             finalTask.listeners.remove(pageListener);
             finalTask.errorListeners.remove(errorListener);
             finalTask.warningListeners.remove(warningListener);
+            finalTask.pageErrorListeners.remove(pageErrorListener);
             finalTask.completionListeners.remove(completionListener);
         });
 
         // 3. 推送已有结果
         try {
+            // 推送成功结果
             for (int i = 0; i < finalTask.pageResults.size(); i++) {
                 pageListener.accept(i + 1, finalTask.pageResults.get(i));
+            }
+
+            // 推送失败结果
+            for (java.util.Map.Entry<Integer, String> entry : finalTask.failedPages.entrySet()) {
+                pageErrorListener.accept(entry.getKey(), entry.getValue());
             }
 
             if (finalTask.isFinished) {
@@ -544,6 +563,8 @@ public class AdminController {
         // 4. 挂载新监听器
         finalTask.listeners.add(pageListener);
         finalTask.errorListeners.add(errorListener);
+        finalTask.warningListeners.add(warningListener);
+        finalTask.pageErrorListeners.add(pageErrorListener);
         finalTask.completionListeners.add(completionListener);
 
         // 5. 如果任务未启动，则异步启动
@@ -599,9 +620,10 @@ public class AdminController {
     }
 
     @PostMapping("/admin/pdf/resumeTask.do")
-    public Result<String> resumePdfExtractionTask(@RequestParam("taskId") String taskId) {
-        aiBo.resumeExtractionTask(taskId);
-        return Result.success("任务已尝试恢复运行");
+    public Result<String> resumePdfExtractionTask(@RequestParam("taskId") String taskId, 
+                                                @RequestParam(value = "startPage", required = false) Integer startPage) {
+        aiBo.resumeExtractionTask(taskId, startPage);
+        return Result.success("任务已尝试从第 " + (startPage != null ? startPage : "上次失败处") + " 页恢复运行");
     }
 
     private void saveOrUpdateParam(String name, String value, String comment) throws IllegalAccessException {

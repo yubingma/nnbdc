@@ -83,6 +83,7 @@ public class AiBo {
         public final java.util.Set<java.util.function.BiConsumer<Integer, String>> listeners = ConcurrentHashMap.newKeySet();
         public final java.util.Set<Consumer<String>> errorListeners = ConcurrentHashMap.newKeySet();
         public final java.util.Set<Consumer<String>> warningListeners = ConcurrentHashMap.newKeySet();
+        public final java.util.Set<java.util.function.BiConsumer<Integer, String>> pageErrorListeners = ConcurrentHashMap.newKeySet();
         public final java.util.Set<Runnable> completionListeners = ConcurrentHashMap.newKeySet();
         public volatile int totalPages = 0;
         public volatile int processedPages = 0;
@@ -139,6 +140,15 @@ public class AiBo {
                 } catch (Exception ignore) {}
             }
         }
+
+        public void notifyPageError(int pageIndex, String errorMsg) {
+            lastAccessTime = System.currentTimeMillis();
+            for (java.util.function.BiConsumer<Integer, String> listener : pageErrorListeners) {
+                try {
+                    listener.accept(pageIndex, errorMsg);
+                } catch (Exception ignore) {}
+            }
+        }
     }
 
     private final Map<String, ExtractionTask> extractionTaskStore = new ConcurrentHashMap<>();
@@ -177,11 +187,14 @@ public class AiBo {
         return false;
     }
 
-    public void resumeExtractionTask(String taskId) {
+    public void resumeExtractionTask(String taskId, Integer startPage) {
         ExtractionTask task = extractionTaskStore.get(taskId);
         if (task != null && task.isStopped && !task.isFinished) {
             task.isStopped = false;
             task.error = null;
+            if (startPage != null && startPage > 0) {
+                task.processedPages = startPage - 1; // 转换为 0-based 索引
+            }
             new Thread(() -> parsePdfToWordsTask(task.pdfFile, task)).start();
         }
     }
@@ -709,7 +722,10 @@ public class AiBo {
                     String errorMsg = "第 " + (i + 1) + " 页解析失败: " + e.getMessage();
                     logger.error(errorMsg + " (TaskID: " + task.taskId + ")", e);
                     task.failedPages.put(i + 1, e.getMessage()); // 记录失败页
-                    task.notifyWarning(errorMsg); // 通知前端有警告，但不停止任务
+                    task.notifyPageError(i + 1, e.getMessage()); // 立即通知监听器该页失败
+                    task.setError(errorMsg);
+                    task.isStopped = true;
+                    return;
                 }
                 
                 long duration = System.currentTimeMillis() - startTime;

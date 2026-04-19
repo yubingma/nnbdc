@@ -40,6 +40,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   Timer? _refreshTimer;
   CancelToken? _cancelToken;
   final TextEditingController _resultController = TextEditingController();
+  final TextEditingController _startPageController = TextEditingController(text: "1");
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   void dispose() {
     _refreshTimer?.cancel();
     _resultController.dispose();
+    _startPageController.dispose();
     super.dispose();
   }
 
@@ -175,6 +177,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
             _selectedFileContent as List<int>,
             filename: _selectedFileName,
           ),
+          "startPage": int.tryParse(_startPageController.text) ?? 1,
         });
       } else if (_selectedFileContent is String) {
         formData = FormData.fromMap({
@@ -182,6 +185,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
             _selectedFileContent as String,
             filename: _selectedFileName,
           ),
+          "startPage": int.tryParse(_startPageController.text) ?? 1,
         });
       } else {
         throw Exception("不支持的文件选择模式");
@@ -344,15 +348,56 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   }
 
   /// 恢复一个因错误停止的任务：先重启后台 OCR，再同步接入结果流
-  Future<void> _resumeAndSync(String taskId) async {
+  Future<void> _resumeAndSync(String taskId, {int? startPage}) async {
     try {
-      await Api.dio.post("/admin/pdf/resumeTask.do", queryParameters: {"taskId": taskId});
-      ToastUtil.info("任务已从断点重启，正在同步结果...");
+      await Api.dio.post("/admin/pdf/resumeTask.do", queryParameters: {
+        "taskId": taskId,
+        if (startPage != null) "startPage": startPage,
+      });
+      ToastUtil.info("任务已尝试重启，正在同步结果...");
     } catch (e) {
       ToastUtil.error("恢复失败: $e");
       return;
     }
     await _syncTask(taskId);
+  }
+
+  void _showResumeDialog(String taskId, int currentProgress) {
+    final controller = TextEditingController(text: (currentProgress + 1).toString());
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("恢复任务"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("请指定起始页码（默认为上次失败位置）：", style: TextStyle(fontSize: 13)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: "起始页码",
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("取消")),
+          ElevatedButton(
+            onPressed: () {
+              final page = int.tryParse(controller.text);
+              Navigator.pop(ctx);
+              _resumeAndSync(taskId, startPage: page);
+            },
+            child: const Text("确定恢复"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _removeTask(String taskId) async {
@@ -471,6 +516,30 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  // 起始页码输入
+                  Row(
+                    children: [
+                      const Text("从第", style: TextStyle(fontSize: 13)),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 60,
+                        child: TextField(
+                          controller: _startPageController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text("页开始解析 (默认 1)", style: TextStyle(fontSize: 13, color: Colors.grey)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   // 创建任务按钮
                   Row(
                     children: [
@@ -762,7 +831,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                       ),
                     if (isStopped && !isFinished)
                       TextButton.icon(
-                        onPressed: () => _resumeAndSync(taskId),
+                        onPressed: () => _showResumeDialog(taskId, processed),
                         icon: const Icon(Icons.play_arrow, size: 14, color: Colors.green),
                         label: const Text("继续/重试", style: TextStyle(fontSize: 11, color: Colors.green)),
                       ),
