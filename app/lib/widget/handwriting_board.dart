@@ -430,76 +430,80 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
           onPointerUp: (event) {
             if (event.pointer != _activePointerId) return;
 
-            final p = event.localPosition;
-            
-            // 先检查是否有全屏/回退手势
-            final swipeStatus = _controller._detectSwipe(_controller.rawLines.last);
-            if (swipeStatus != 0) {
-              // 如果是手势，取消所有感应区的任务
-              _pendingRewardTask?.cancel();
-              _pendingUndoTask?.cancel();
-              setState(() => _activeZone = 0);
+            try {
+              final p = event.localPosition;
               
-              // 标记为已触发，防止下方点击检测再次触发
-              _rewriteTriggered = true; 
-              _undoTriggered = true;
+              // 先检查是否有全屏/回退手势 (增加空判断，修复 Bad state: No element)
+              if (_controller.rawLines.isNotEmpty) {
+                final swipeStatus = _controller._detectSwipe(_controller.rawLines.last);
+                if (swipeStatus != 0) {
+                  // 如果是手势，取消所有感应区的任务
+                  _pendingRewardTask?.cancel();
+                  _pendingUndoTask?.cancel();
+                  setState(() => _activeZone = 0);
+                  
+                  // 标记为已触发，防止下方点击检测再次触发
+                  _rewriteTriggered = true; 
+                  _undoTriggered = true;
 
-              // 执行手势动作
-              if (swipeStatus == 2) {
-                // 向左滑：删除最后一笔 (撤销)
-                _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
-                _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
-                HapticFeedback.mediumImpact();
-              }
-              // 向右滑 (swipeStatus == 1) 已禁用，防止书写长单词时误触
-            }
-
-            // 点击检测：重写
-            if (!_rewriteTriggered && rewriteZone.contains(p)) {
-              _rewriteTriggered = true;
-              setState(() => _activeZone = 1);
-              HapticFeedback.lightImpact();
-              
-              _autoRecognizeTimer?.cancel();
-              _pendingRewardTask?.cancel();
-              
-              _controller.clear();
-              widget.onRewrite();
-              
-              Timer(const Duration(milliseconds: 200), () {
-                if (mounted) setState(() => _activeZone = 0);
-              });
-            } else if (!_undoTriggered && undoZone.contains(p)) {
-              _undoTriggered = true;
-              setState(() => _activeZone = 2);
-              HapticFeedback.lightImpact();
-              
-              _autoRecognizeTimer?.cancel();
-              _pendingUndoTask?.cancel();
-              
-              _controller.removeLast();
-              
-              Timer(const Duration(milliseconds: 200), () {
-                if (mounted) setState(() => _activeZone = 0);
-              });
-            }
-
-            _activePointerId = null;
-            _controller.end();
-            
-            // 启动自动识别定时器 (停笔 0.5 秒后自动触发)
-            if (widget.lines.isNotEmpty && !widget.isRecognizing) {
-              _autoRecognizeTimer?.cancel();
-              _autoRecognizeTimer = Timer(const Duration(milliseconds: 500), () {
-                if (mounted && widget.lines.isNotEmpty && !widget.isRecognizing) {
-                  widget.onRecognize();
+                  // 执行手势动作
+                  if (swipeStatus == 2) {
+                    // 向左滑：删除最后一笔 (撤销)
+                    _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
+                    _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
+                    HapticFeedback.mediumImpact();
+                  }
                 }
-              });
-            }
-            
-            // 如果最终没有触发任何动作，确保重置激活区状态
-            if (!_rewriteTriggered && !_undoTriggered) {
-              setState(() => _activeZone = 0);
+              }
+
+              // 点击检测：重写
+              if (!_rewriteTriggered && rewriteZone.contains(p)) {
+                _rewriteTriggered = true;
+                setState(() => _activeZone = 1);
+                HapticFeedback.lightImpact();
+                
+                _autoRecognizeTimer?.cancel();
+                _pendingRewardTask?.cancel();
+                
+                _controller.clear();
+                widget.onRewrite();
+                
+                Timer(const Duration(milliseconds: 200), () {
+                  if (mounted) setState(() => _activeZone = 0);
+                });
+              } else if (!_undoTriggered && undoZone.contains(p)) {
+                _undoTriggered = true;
+                setState(() => _activeZone = 2);
+                HapticFeedback.lightImpact();
+                
+                _autoRecognizeTimer?.cancel();
+                _pendingUndoTask?.cancel();
+                
+                _controller.removeLast();
+                
+                Timer(const Duration(milliseconds: 200), () {
+                  if (mounted) setState(() => _activeZone = 0);
+                });
+              }
+            } finally {
+              // 关键修复：无论发生什么，必须释放指针锁，防止画板永久失效
+              _activePointerId = null;
+              _controller.end();
+              
+              // 启动自动识别定时器 (停笔 0.5 秒后自动触发)
+              if (widget.lines.isNotEmpty && !widget.isRecognizing) {
+                _autoRecognizeTimer?.cancel();
+                _autoRecognizeTimer = Timer(const Duration(milliseconds: 500), () {
+                  if (mounted && widget.lines.isNotEmpty && !widget.isRecognizing) {
+                    widget.onRecognize();
+                  }
+                });
+              }
+              
+              // 如果最终没有触发任何动作，确保重置激活区状态
+              if (!_rewriteTriggered && !_undoTriggered) {
+                setState(() => _activeZone = 0);
+              }
             }
           },
           onPointerCancel: (event) {
