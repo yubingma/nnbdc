@@ -854,4 +854,8 @@ abstract class RestClient {
 
   @DELETE("/admin/deleteDictGroup.do")
   Future<Result<String>> deleteDictGroup(@Query("groupId") String groupId);
+
+  @POST("/admin/pdf/extractWords.do")
+  @MultiPart()
+  Future<Result<String>> extractWordsFromPdf(@Part(name: "file") File file);
 }

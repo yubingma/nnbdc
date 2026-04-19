@@ -21,10 +21,18 @@ import com.alibaba.dashscope.audio.tts.SpeechSynthesisParam;
 import io.reactivex.Flowable;
 import com.alibaba.dashscope.audio.tts.SpeechSynthesizer;
 import java.nio.ByteBuffer;
-import java.lang.reflect.Method;
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.core.io.FileSystemResource;
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.lang.reflect.Method;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import beidanci.service.config.AliyunAiProperties;
@@ -503,5 +511,117 @@ public class AiBo {
         } finally {
             activeAiStoryRequests.decrementAndGet();
         }
+    }
+    /**
+     * 调用阿里云文档解析 API 将 PDF 转换为单词列表
+     * @param pdfFile PDF 文件对象
+     * @return 单词列表文本 (每行一个)
+     */
+    public String parsePdfToWords(File pdfFile) {
+        String apiKey = aiProperties.getApiKey();
+        if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
+            throw new RuntimeException("AI 调用失败: API Key 未设置");
+        }
+
+        try {
+            logger.info("开始请求阿里云文档解析 (HTTP API): {}", pdfFile.getName());
+            RestTemplate restTemplate = new RestTemplate();
+
+            // 1. 提交解析任务
+            String submitUrl = "https://dashscope.aliyuncs.com/api/v1/services/aigc/document-parse/generation";
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + apiKey);
+            headers.set("X-DashScope-Async", "enable");
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", new FileSystemResource(pdfFile));
+
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(submitUrl, HttpMethod.POST, requestEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new RuntimeException("提交文档解析任务失败: " + response.getStatusCode());
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> output = (Map<String, Object>) response.getBody().get("output");
+            if (output == null) throw new RuntimeException("提交任务后未获得有效输出");
+            String taskId = (String) output.get("task_id");
+            logger.info("文档解析任务已提交, taskId: {}", taskId);
+
+            // 2. 轮询任务状态
+            String statusUrl = "https://dashscope.aliyuncs.com/api/v1/tasks/" + taskId;
+            HttpHeaders statusHeaders = new HttpHeaders();
+            statusHeaders.set("Authorization", "Bearer " + apiKey);
+            HttpEntity<Void> statusEntity = new HttpEntity<>(statusHeaders);
+
+            String markdown = null;
+            for (int i = 0; i < 60; i++) { // 最多等待 60 秒
+                Thread.sleep(1000);
+                ResponseEntity<Map<String, Object>> statusResponse = restTemplate.exchange(statusUrl, HttpMethod.GET, statusEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+                Map<String, Object> statusBody = statusResponse.getBody();
+                if (statusBody == null) continue;
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> taskOutput = (Map<String, Object>) statusBody.get("output");
+                if (taskOutput == null) continue;
+                String taskStatus = (String) taskOutput.get("task_status");
+
+                if ("SUCCEEDED".equals(taskStatus)) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> results = (List<Map<String, Object>>) taskOutput.get("results");
+                    if (results != null && !results.isEmpty()) {
+                        markdown = (String) results.get(0).get("content");
+                    }
+                    break;
+                } else if ("FAILED".equals(taskStatus)) {
+                    throw new RuntimeException("文档解析任务失败: " + taskOutput.get("message"));
+                }
+                logger.debug("等待解析结果, 当前状态: {}", taskStatus);
+            }
+
+            if (markdown == null || markdown.isEmpty()) {
+                throw new RuntimeException("文档解析超时或未返回内容");
+            }
+
+            // 解析 Markdown 表格，提取第二列单词
+            return extractWordsFromMarkdown(markdown);
+        } catch (Exception e) {
+            logger.error("阿里云文档解析异常", e);
+            throw new RuntimeException("文档解析失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 从 Markdown 中提取表格的第二列单词
+     */
+    private String extractWordsFromMarkdown(String markdown) {
+        StringBuilder sb = new StringBuilder();
+        Set<String> words = new LinkedHashSet<>();
+        
+        // 匹配 Markdown 表格行的正则: | col1 | col2 | col3 |
+        // 允许单元格内有空格或特殊字符
+        Pattern rowPattern = Pattern.compile("\\|([^|]*)\\|([^|]+)\\|([^|]*)");
+        
+        String[] lines = markdown.split("\n");
+        for (String line : lines) {
+            Matcher m = rowPattern.matcher(line);
+            if (m.find()) {
+                String word = m.group(2).trim();
+                // 排除表头和分隔符行
+                if (word.equalsIgnoreCase("Word") || word.matches("-+")) {
+                    continue;
+                }
+                if (!word.isEmpty()) {
+                    words.add(word);
+                }
+            }
+        }
+        
+        for (String w : words) {
+            sb.append(w).append("\n");
+        }
+        return sb.toString();
     }
 }

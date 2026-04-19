@@ -2,6 +2,7 @@ package beidanci.service.controller;
 
 import java.util.List;
 import java.io.IOException;
+import java.io.File;
 import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,6 +56,9 @@ public class AdminController {
 
     @Autowired
     private AliyunResourceUtil aliyunResourceUtil;
+
+    @Autowired
+    private AiBo aiBo;
 
     @Autowired
     private SysParamUtil sysParamUtil;
@@ -405,6 +409,39 @@ public class AdminController {
                 new String[] { "invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users",
                         "StudyGroupVo.managers", "studyGroupPosts", "userGames" });
         return Result.success(userVo);
+    }
+
+    // ============================================
+    // PDF 单词提取相关 API (管理员接口)
+    // ============================================
+
+    @PostMapping("/admin/pdf/extractWords.do")
+    public Result<String> extractWordsFromPdf(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+    ) {
+        if (file.isEmpty()) {
+            return Result.fail("上传文件不能为空");
+        }
+
+        File tempFile = null;
+        try {
+            // 创建临时文件
+            tempFile = File.createTempFile("tantan_extract_", ".pdf");
+            if (tempFile == null) {
+                return Result.fail("无法创建临时文件");
+            }
+            file.transferTo(tempFile);
+
+            // 调用 AI 解析
+            String result = aiBo.parsePdfToWords(tempFile);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.fail("PDF 解析失败: " + e.getMessage());
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
     }
 
     private void saveOrUpdateParam(String name, String value, String comment) throws IllegalAccessException {

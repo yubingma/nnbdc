@@ -16,6 +16,7 @@ import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:nnbdc/page/admin/admin_cigen_optimize_page.dart';
 import 'package:nnbdc/page/admin/system_settings_page.dart';
 import 'package:nnbdc/page/admin/dict_group_management.dart';
+import 'package:nnbdc/page/admin/pdf_convert_page.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -137,6 +138,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.auto_fix_high,
         color: Colors.redAccent,
         onTap: () => Navigator.pushNamed(context, '/golden_master'),
+      ),
+      _buildManagementCard(
+        title: 'PDF 词书转换',
+        icon: Icons.picture_as_pdf,
+        color: Colors.orange,
+        onTap: () => _navigateToPdfConvert(),
       ),
     ];
   }
@@ -501,6 +508,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const DictGroupManagementPage(),
+      ),
+    );
+  }
+
+  void _navigateToPdfConvert() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PdfConvertPage(),
       ),
     );
   }
