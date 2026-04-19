@@ -725,7 +725,7 @@ public class AiBo {
                                       BooleanSupplier isDisconnected) {
         String taskId = "legacy_" + System.currentTimeMillis();
         ExtractionTask task = new ExtractionTask(taskId, pdfFile.getName(), pdfFile.length(), pdfFile);
-        task.listeners.add(onPageExtracted);
+        task.listeners.add((pageIndex, pageWords) -> onPageExtracted.accept(pageWords));
         parsePdfToWordsTask(pdfFile, task);
     }
 

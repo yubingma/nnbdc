@@ -31,6 +31,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   dynamic _selectedFileContent; // Web 下是 Uint8List, Native 下是 String (path)
   final List<ExtractedWord> _extractedWordsList = [];
   bool _isProcessing = false;
+  bool _includeMeaning = false;
   CancelToken? _cancelToken;
   final TextEditingController _resultController = TextEditingController();
 
@@ -171,9 +172,10 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
 
           Global.logger.d("收到 SSE 事件: event=$eventName, data=$eventData");
 
-          if (eventName == "page_start" && data != null) {
-            currentPageIndex = int.tryParse(data) ?? currentPageIndex;
-          } else if (eventName == "page" && data != null) {
+          if (eventName == "page_start" && eventData != null) {
+            currentPageIndex = int.tryParse(eventData) ?? currentPageIndex;
+          } else if (eventName == "page" && eventData != null) {
+            final data = eventData;
             setState(() {
               final lines = data.split('\n');
               for (var line in lines) {
@@ -222,9 +224,14 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
 
   void _copyToClipboard() {
     if (_extractedWordsList.isEmpty) return;
-    final text = _extractedWordsList.map((e) => e.word).join("\n");
+    final text = _extractedWordsList.map((e) {
+      if (_includeMeaning && e.meaning.isNotEmpty) {
+        return "${e.word}|${e.meaning}";
+      }
+      return e.word;
+    }).join("\n");
     Clipboard.setData(ClipboardData(text: text));
-    ToastUtil.success("已复制到剪贴板");
+    ToastUtil.success("已复制到剪贴板${_includeMeaning ? '(含释义)' : ''}");
   }
 
   @override
@@ -374,10 +381,29 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                         "共计 ${_extractedWordsList.length} 个单词",
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
-                      TextButton.icon(
-                        onPressed: _extractedWordsList.isEmpty ? null : _copyToClipboard,
-                        icon: const Icon(Icons.copy, size: 16),
-                        label: const Text("复制全部单词", style: TextStyle(fontSize: 12)),
+                      Row(
+                        children: [
+                          const Text("含释义", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          const SizedBox(width: 4),
+                          SizedBox(
+                            height: 24,
+                            width: 36,
+                            child: FittedBox(
+                              fit: BoxFit.fill,
+                              child: Switch(
+                                value: _includeMeaning,
+                                onChanged: (val) => setState(() => _includeMeaning = val),
+                                activeThumbColor: Colors.green,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          TextButton.icon(
+                            onPressed: _extractedWordsList.isEmpty ? null : _copyToClipboard,
+                            icon: const Icon(Icons.copy, size: 16),
+                            label: const Text("复制全部", style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
                       ),
                     ],
                   ),
