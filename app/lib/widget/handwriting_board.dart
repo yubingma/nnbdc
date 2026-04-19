@@ -34,7 +34,6 @@ class HandwritingBoard extends StatefulWidget {
 class _HandwritingBoardState extends State<HandwritingBoard> {
   List<List<Offset>> _lines = [];
   bool _isRecognizing = false;
-  Uint8List? _lastOcrImageBytes; // 用于调试：显示最后一次发送给 OCR 的图片
 
   void _clear() {
     setState(() {
@@ -134,9 +133,6 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       if (byteData == null) throw Exception('无法生成图片数据');
 
       final bytes = byteData.buffer.asUint8List();
-      setState(() {
-        _lastOcrImageBytes = bytes;
-      });
 
       // 2. 保存到临时文件
       final tempDir = await getTemporaryDirectory();
@@ -256,34 +252,6 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
                   onRecognize: _recognize,
                   onStartWriting: widget.onStartWriting,
                 ),
-                
-                // OCR 图像预览调试区 (仅在有图片时显示在左下角)
-                if (_lastOcrImageBytes != null)
-                  Positioned(
-                    left: 10,
-                    bottom: 100,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('OCR 调试预览:', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                        const SizedBox(height: 4),
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: Image.memory(
-                              _lastOcrImageBytes!,
-                              width: 150,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
               ],
             ),
           ),
@@ -326,11 +294,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   // 用于取消延时任务，防止划过手势与感应区动作冲突
   Timer? _pendingRewardTask; 
   Timer? _pendingRecognizeTask;
+  Timer? _autoRecognizeTimer; // 自动识别定时器
 
   @override
   void dispose() {
     _pendingRewardTask?.cancel();
     _pendingRecognizeTask?.cancel();
+    _autoRecognizeTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -382,15 +352,17 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         return Listener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: (event) {
-            if (widget.isRecognizing || _activePointerId != null) return;
+            // 注意：重写按钮现在不被 isRecognizing 锁定，确保随时可重置
+            if (_activePointerId != null) return;
             _activePointerId = event.pointer;
             _rewriteTriggered = false;
             _recognizeTriggered = false;
 
             final p = event.localPosition;
             
-            // 触发开始书写回调
+            // 触发开始书写回调并取消自动识别计时
             widget.onStartWriting?.call();
+            _autoRecognizeTimer?.cancel();
 
             // 窄屏下，如果在感应区内按下，先给予视觉反馈且不立即开始绘画
             if (isNarrow) {
@@ -411,24 +383,25 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             
             final p = event.localPosition;
             
-            // 碰撞检测：扫过即触发，但允许笔迹流继续维持 (窄屏下改为点击触发，此处不再自动触发)
+            // 碰撞检测：扫过即触发
             if (!isNarrow && rewriteZone.contains(p) && !_rewriteTriggered) {
               _rewriteTriggered = true;
               setState(() => _activeZone = 1);
               HapticFeedback.lightImpact();
               
+              _autoRecognizeTimer?.cancel(); // 取消自动识别
               _pendingRewardTask?.cancel();
-              _pendingRewardTask = Timer(const Duration(milliseconds: 250), () {
-                if (mounted) {
-                  _controller.clear(); 
-                  widget.onRewrite();
-                  Future.delayed(const Duration(milliseconds: 100), () {
-                    if (mounted) setState(() => _activeZone = 0);
-                  });
-                }
+              
+              // 立即执行清空，不再等待 250ms
+              _controller.clear(); 
+              widget.onRewrite();
+              
+              // 延时恢复视觉状态即可
+              Timer(const Duration(milliseconds: 200), () {
+                if (mounted) setState(() => _activeZone = 0);
               });
             }
-            if (!isNarrow && recognizeZone.contains(p) && !_recognizeTriggered) {
+            if (!isNarrow && recognizeZone.contains(p) && !_recognizeTriggered && !widget.isRecognizing) {
               _recognizeTriggered = true;
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
@@ -473,22 +446,22 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               // 向右滑 (swipeStatus == 1) 已禁用，防止书写长单词时误触
             }
 
-            // 点击检测：如果还没因为划过而触发，且抬起位置在感应区内，则视为点击触发
+            // 点击检测：重写
             if (!_rewriteTriggered && rewriteZone.contains(p)) {
               _rewriteTriggered = true;
               setState(() => _activeZone = 1);
               HapticFeedback.lightImpact();
+              
+              _autoRecognizeTimer?.cancel();
               _pendingRewardTask?.cancel();
-              _pendingRewardTask = Timer(const Duration(milliseconds: 250), () {
-                if (mounted) {
-                  _controller.clear();
-                  widget.onRewrite();
-                  Future.delayed(const Duration(milliseconds: 100), () {
-                    if (mounted) setState(() => _activeZone = 0);
-                  });
-                }
+              
+              _controller.clear();
+              widget.onRewrite();
+              
+              Timer(const Duration(milliseconds: 200), () {
+                if (mounted) setState(() => _activeZone = 0);
               });
-            } else if (!_recognizeTriggered && recognizeZone.contains(p)) {
+            } else if (!_recognizeTriggered && recognizeZone.contains(p) && !widget.isRecognizing) {
               _recognizeTriggered = true;
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
@@ -505,6 +478,16 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
 
             _activePointerId = null;
             _controller.end();
+            
+            // 启动自动识别定时器 (停笔 1 秒后自动触发)
+            if (widget.lines.isNotEmpty && !widget.isRecognizing) {
+              _autoRecognizeTimer?.cancel();
+              _autoRecognizeTimer = Timer(const Duration(milliseconds: 1000), () {
+                if (mounted && widget.lines.isNotEmpty && !widget.isRecognizing) {
+                  widget.onRecognize();
+                }
+              });
+            }
             
             // 如果最终没有触发任何动作，确保重置激活区状态
             if (!_rewriteTriggered && !_recognizeTriggered) {
