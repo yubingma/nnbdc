@@ -665,6 +665,7 @@ public class AiBo {
             return;
         }
 
+        try {
             // 1. PDF 转图片 (如果是恢复任务，且图片已生成过，理论上可以缓存，这里为了简单每次重新生成图片列表，开销较小)
             List<String> pageImagesBase64 = convertPdfToImagesBase64(pdfFile);
             task.totalPages = pageImagesBase64.size();
@@ -716,7 +717,6 @@ public class AiBo {
             task.isStopped = true;
         }
     }
-    }
 
     /**
      * 兼容旧版本的流式解析方法
@@ -724,7 +724,7 @@ public class AiBo {
     public void parsePdfToWordsStream(File pdfFile, Consumer<String> onPageExtracted,
                                       BooleanSupplier isDisconnected) {
         String taskId = "legacy_" + System.currentTimeMillis();
-        ExtractionTask task = new ExtractionTask(taskId, pdfFile.getName(), pdfFile.length());
+        ExtractionTask task = new ExtractionTask(taskId, pdfFile.getName(), pdfFile.length(), pdfFile);
         task.listeners.add(onPageExtracted);
         parsePdfToWordsTask(pdfFile, task);
     }

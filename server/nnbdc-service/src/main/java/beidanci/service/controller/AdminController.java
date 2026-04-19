@@ -428,7 +428,25 @@ public class AdminController {
         String fileName = file.getOriginalFilename();
         if (fileName == null) fileName = "unknown_" + System.currentTimeMillis();
         String taskId = fileName + "_" + file.getSize();
-        final beidanci.service.bo.AiBo.ExtractionTask task = aiBo.getOrCreateExtractionTask(taskId, fileName, file.getSize());
+        
+        beidanci.service.bo.AiBo.ExtractionTask task = aiBo.getExtractionTask(taskId);
+        if (task == null) {
+            try {
+                File localTempFile = File.createTempFile("tantan_extract_", ".pdf");
+                file.transferTo(localTempFile);
+                task = aiBo.getOrCreateExtractionTask(taskId, fileName, file.getSize(), localTempFile);
+            } catch (IOException e) {
+                logger.error("Failed to create temp file", e);
+                org.springframework.web.servlet.mvc.method.annotation.SseEmitter errorEmitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(60000L);
+                try {
+                    errorEmitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("服务器内部错误: 无法保存上传文件"));
+                    errorEmitter.complete();
+                } catch (IOException ignore) {}
+                return errorEmitter;
+            }
+        }
+        
+        final beidanci.service.bo.AiBo.ExtractionTask finalTask = task;
 
         final org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = 
                 new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(3600000L * 12); // 12 hours timeout
@@ -460,24 +478,24 @@ public class AdminController {
 
         // 2. 注册清理逻辑
         emitter.onCompletion(() -> {
-            task.listeners.remove(pageListener);
-            task.errorListeners.remove(errorListener);
-            task.completionListeners.remove(completionListener);
+            finalTask.listeners.remove(pageListener);
+            finalTask.errorListeners.remove(errorListener);
+            finalTask.completionListeners.remove(completionListener);
         });
         emitter.onTimeout(() -> {
-            task.listeners.remove(pageListener);
-            task.errorListeners.remove(errorListener);
-            task.completionListeners.remove(completionListener);
+            finalTask.listeners.remove(pageListener);
+            finalTask.errorListeners.remove(errorListener);
+            finalTask.completionListeners.remove(completionListener);
         });
         emitter.onError(e -> {
-            task.listeners.remove(pageListener);
-            task.errorListeners.remove(errorListener);
-            task.completionListeners.remove(completionListener);
+            finalTask.listeners.remove(pageListener);
+            finalTask.errorListeners.remove(errorListener);
+            finalTask.completionListeners.remove(completionListener);
         });
 
         // 3. 推送已有结果
         try {
-            for (String pageResults : task.pageResults) {
+            for (String pageResults : finalTask.pageResults) {
                 for (String line : pageResults.split("\n")) {
                     if (!line.trim().isEmpty()) {
                         emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(line));
@@ -485,14 +503,14 @@ public class AdminController {
                 }
             }
 
-            if (task.isFinished) {
+            if (finalTask.isFinished) {
                 emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("complete").data("解析完成"));
                 emitter.complete();
                 return emitter;
             }
 
-            if (task.error != null) {
-                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + task.error));
+            if (finalTask.error != null) {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + finalTask.error));
                 emitter.complete();
                 return emitter;
             }
@@ -501,22 +519,15 @@ public class AdminController {
         }
 
         // 4. 挂载新监听器
-        task.listeners.add(pageListener);
-        task.errorListeners.add(errorListener);
-        task.completionListeners.add(completionListener);
+        finalTask.listeners.add(pageListener);
+        finalTask.errorListeners.add(errorListener);
+        finalTask.completionListeners.add(completionListener);
 
         // 5. 如果任务未启动，则异步启动
-        if (!task.isStarted) {
-            task.isStarted = true;
+        if (!finalTask.isStarted) {
+            finalTask.isStarted = true;
             new Thread(() -> {
-                try {
-                    File localTempFile = File.createTempFile("tantan_extract_", ".pdf");
-                    file.transferTo(localTempFile);
-                    aiBo.parsePdfToWordsTask(localTempFile, task);
-                } catch (Exception e) {
-                    logger.error("Failed to start extraction task", e);
-                    task.setError("任务启动失败: " + e.getMessage());
-                }
+                aiBo.parsePdfToWordsTask(finalTask.pdfFile, finalTask);
             }).start();
         }
 
@@ -561,6 +572,12 @@ public class AdminController {
         } else {
             return Result.fail("找不到指定的任务");
         }
+    }
+
+    @PostMapping("/admin/pdf/resumeTask.do")
+    public Result<String> resumePdfExtractionTask(@RequestParam("taskId") String taskId) {
+        aiBo.resumeExtractionTask(taskId);
+        return Result.success("任务已尝试恢复运行");
     }
 
     private void saveOrUpdateParam(String name, String value, String comment) throws IllegalAccessException {
