@@ -1504,7 +1504,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           _currentScore = null;
         });
       }
-      return;
+      // 不再直接返回，允许空字符串更新 _handlingChinese 以刷新 UI
     }
     // 如果 ASR 未启动，且键盘也未弹出，且没有焦点，说明可能是 ASR 停止后的残留结果，跳过处理并清空
     // 如果是在手写模式下，或者是键盘弹出的情况下，允许通过检查

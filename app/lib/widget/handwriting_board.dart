@@ -33,14 +33,20 @@ class HandwritingBoard extends StatefulWidget {
 class _HandwritingBoardState extends State<HandwritingBoard> {
   List<List<Offset>> _lines = [];
   bool _isRecognizing = false;
+  int _recognitionVersion = 0;
 
   void _clear() {
     setState(() {
       _lines = [];
       _isRecognizing = false;
+      _recognitionVersion++;
     });
     // 内容清空时，同步清空外部输入框
     widget.onRecognized("");
+  }
+
+  void _incrementVersion() {
+    _recognitionVersion++;
   }
 
   Future<void> _recognize() async {
@@ -48,6 +54,8 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       widget.onRecognized("");
       return;
     }
+
+    final int currentVersion = ++_recognitionVersion;
 
     setState(() {
       _isRecognizing = true;
@@ -60,7 +68,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       bool hasValidStroke = false;
 
       for (var line in _lines) {
-        if (line.length < 3) continue; // 更加激进地忽略孤立点（如无意的点或笔尖抖动）
+        if (line.isEmpty) continue; 
         hasValidStroke = true;
         for (var point in line) {
           if (point.dx < minX) minX = point.dx;
@@ -75,18 +83,27 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
         return;
       }
 
-      const double margin = 100.0; // 增加垂直空间，适配手写体的长柄字母
+      const double margin = 80.0; 
       double contentWidth = maxX - minX;
       double contentHeight = maxY - minY;
       
-      // 设定目标宽度为 800px (极致采样，适合单词识别)
-      const double targetWidth = 800.0;
-      double scale = (targetWidth - 2 * margin) / contentWidth;
+      // 核心修复：基于高度进行适度缩放。
+      // iOS 的 Vision 框架对过大或过小的图片都不够友好。
+      // 将理想字符高度提升到 240px，总图高度约 400px，这通常是 Vision 识别的最佳“甜蜜点”。
+      const double idealLetterHeight = 240.0; 
+      double scale = idealLetterHeight / (contentHeight > 0 ? contentHeight : 1);
       
-      // 动态计算高度，保持比例
+      // 限制缩放范围
+      if (scale > 5.0) scale = 5.0;
+      if (scale < 0.2) scale = 0.2;
+      
+      // 如果缩放后宽度过大（长单词），则进一步缩小以适配
+      if (contentWidth * scale > 1200) {
+        scale = 1200 / contentWidth;
+      }
+      
+      double targetWidth = contentWidth * scale + 2 * margin;
       double targetHeight = contentHeight * scale + 2 * margin;
-      // 极端情况限制：防止高度过小
-      if (targetHeight < 200) targetHeight = 200;
 
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder);
@@ -102,7 +119,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       canvas.drawRect(
         Rect.fromLTWH(0, 0, targetWidth, targetHeight),
         Paint()
-          ..color = const Color(0xFFFAFAFA)
+          ..color = Colors.white
           ..style = PaintingStyle.fill,
       );
       
@@ -123,8 +140,13 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
           final p1 = line[i + 1];
           path.quadraticBezierTo(p0.dx, p0.dy, (p0.dx + p1.dx) / 2.0, (p0.dy + p1.dy) / 2.0);
         }
-        path.lineTo(line.last.dx, line.last.dy);
-        canvas.drawPath(path, paint);
+        if (line.length > 1) {
+          path.lineTo(line.last.dx, line.last.dy);
+          canvas.drawPath(path, paint);
+        } else if (line.length == 1) {
+          // 关键修复：单点也需要绘制，否则 i, j 的点或标点符号无法识别
+          canvas.drawCircle(line[0], 8.0 / scale, Paint()..color = Colors.black..style = PaintingStyle.fill);
+        }
       }
       canvas.restore();
 
@@ -160,6 +182,12 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
           nativeInfo = parts.length > 1 ? parts[1] : "";
         }
 
+      // 关键：如果版本已改变（说明期间有新的书写或撤销），则丢弃当前陈旧的结果
+      if (currentVersion != _recognitionVersion) {
+        debugPrint('丢弃陈旧的识别结果: version $currentVersion < $_recognitionVersion');
+        return;
+      }
+
       // 清理临时文件
       if (await file.exists()) await file.delete();
 
@@ -175,24 +203,32 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
           .replaceAll('5', 's')
           .replaceAll('2', 'z')
           .replaceAll('8', 'b')
-          .replaceAll('9', 'g');
+          .replaceAll('9', 'g')
+          .replaceAll('6', 'g')
+          .replaceAll('4', 'a')
+          .replaceAll('7', 't');
           
-      // 提取有效的英文单词或短语（保留字母和空格）
-      String result = processedText.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+      String result = processedText
+          .replaceAll('|', 'l')
+          .replaceAll('/', 'l')
+          .replaceAll('\\', 'l')
+          .replaceAll(RegExp(r'[^a-zA-Z\s]'), '')
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .trim();
 
       if (result.isEmpty) {
         // 如果是自动触发且结果为空，不弹提示以免干扰用户书写
         debugPrint('识别结果为空: "$rawOcrText"');
-      } else {
-        // 重要：显示识别结果
-        widget.onRecognized(result);
-      }
+      } 
+      
+      // 重要：无论结果是否为空都通知外部更新 UI，防止空结果时界面“卡住”不刷新
+      widget.onRecognized(result);
     } on TimeoutException {
       debugPrint('识别超时 (5s)');
     } catch (e) {
       debugPrint('识别异常: $e');
     } finally {
-      if (mounted) {
+      if (mounted && currentVersion == _recognitionVersion) {
         setState(() {
           _isRecognizing = false;
         });
@@ -256,6 +292,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
                   lines: _lines,
                   isRecognizing: _isRecognizing,
                   onRewrite: _clear,
+                  onUndo: _incrementVersion,
                   onRecognize: _recognize,
                   onStartWriting: widget.onStartWriting,
                 ),
@@ -272,6 +309,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final List<List<Offset>> lines;
   final bool isRecognizing;
   final VoidCallback onRewrite;
+  final VoidCallback onUndo;
   final VoidCallback onRecognize;
   final VoidCallback? onStartWriting;
 
@@ -279,6 +317,7 @@ class _HandwritingCanvas extends StatefulWidget {
     required this.lines,
     required this.isRecognizing,
     required this.onRewrite,
+    required this.onUndo,
     required this.onRecognize,
     this.onStartWriting,
   });
@@ -416,9 +455,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               _autoRecognizeTimer?.cancel(); // 撤销时重置识别计时
               _pendingUndoTask?.cancel();
               _pendingUndoTask = Timer(const Duration(milliseconds: 200), () {
-                if (mounted) {
-                  _controller.removeLast();
-                  Future.delayed(const Duration(milliseconds: 100), () {
+                 if (mounted) {
+                   _controller.removeLast();
+                   widget.onUndo();
+                   Future.delayed(const Duration(milliseconds: 100), () {
                     if (mounted) setState(() => _activeZone = 0);
                   });
                 }
@@ -449,9 +489,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   // 执行手势动作
                   if (swipeStatus == 2) {
                     // 向左滑：删除最后一笔 (撤销)
-                    _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
-                    _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
-                    HapticFeedback.mediumImpact();
+                     _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
+                     _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
+                     widget.onUndo();
+                     HapticFeedback.mediumImpact();
                     
                     // 如果删完后画板空了，同步清空外部输入框
                     if (widget.lines.isEmpty) {
@@ -482,11 +523,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 HapticFeedback.lightImpact();
                 
                 _autoRecognizeTimer?.cancel();
-                _pendingUndoTask?.cancel();
-                
-                _controller.removeLast();
-                
-                // 如果删完后画板空了，同步清空外部输入框
+                 _pendingUndoTask?.cancel();
+                 
+                 _controller.removeLast();
+                 widget.onUndo();
+                 
+                 // 如果删完后画板空了，同步清空外部输入框
                 if (widget.lines.isNotEmpty) {
                   Timer(const Duration(milliseconds: 200), () {
                     if (mounted) setState(() => _activeZone = 0);
@@ -501,10 +543,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               _controller.end();
               
               // 启动自动识别定时器 (停笔 0.5 秒后自动触发)
-              if (widget.lines.isNotEmpty && !widget.isRecognizing) {
+              // 关键修复：即使正在识别中，也允许重新启动定时器，以确保撤销等操作能触发新一轮识别
+              if (widget.lines.isNotEmpty) {
                 _autoRecognizeTimer?.cancel();
                 _autoRecognizeTimer = Timer(const Duration(milliseconds: 500), () {
-                  if (mounted && widget.lines.isNotEmpty && !widget.isRecognizing) {
+                  if (mounted && widget.lines.isNotEmpty) {
                     widget.onRecognize();
                   }
                 });

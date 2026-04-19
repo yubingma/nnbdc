@@ -54,7 +54,17 @@ class OcrChannel {
                 return
             }
             
-            guard let observations = request.results as? [VNRecognizedTextObservation] else {
+            guard let observations = request.results as? [VNRecognizedTextObservation], !observations.isEmpty else {
+                // 关键修复：准确模式对孤立字符有时过于挑剔。如果没结果，尝试用快速模式回退。
+                if request.recognitionLevel == .accurate {
+                    let fastRequest = VNRecognizeTextRequest(completionHandler: request.completionHandler as! VNRequestCompletionHandler)
+                    fastRequest.recognitionLevel = .fast
+                    fastRequest.recognitionLanguages = request.recognitionLanguages
+                    let fastHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+                    try? fastHandler.perform([fastRequest])
+                    return
+                }
+                
                 DispatchQueue.main.async {
                     result("")
                 }
@@ -78,8 +88,8 @@ class OcrChannel {
         
         // 配置识别参数
         request.recognitionLevel = .accurate
-        request.recognitionLanguages = ["en-US", "en-GB"]  // 只识别英文
-        request.usesLanguageCorrection = false
+        request.recognitionLanguages = ["en-US"]
+        request.usesLanguageCorrection = true
         
         // 执行识别
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
