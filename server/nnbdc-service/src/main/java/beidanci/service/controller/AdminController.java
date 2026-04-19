@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +31,8 @@ import beidanci.service.util.SysParamUtil;
 
 @RestController
 public class AdminController {
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+
 
     @Autowired
     private AiController aiController;
@@ -415,33 +419,52 @@ public class AdminController {
     // PDF 单词提取相关 API (管理员接口)
     // ============================================
 
-    @PostMapping("/admin/pdf/extractWords.do")
-    public Result<String> extractWordsFromPdf(
+    @PostMapping(value = "/admin/pdf/extractWords.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter extractWordsFromPdf(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file
     ) {
+        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(600000L); // 10 minutes timeout
+        
         if (file.isEmpty()) {
-            return Result.fail("上传文件不能为空");
+            try {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("上传文件不能为空"));
+                emitter.complete();
+            } catch (IOException e) {
+                logger.error("SSE error", e);
+            }
+            return emitter;
         }
 
-        File tempFile = null;
-        try {
-            // 创建临时文件
-            tempFile = File.createTempFile("tantan_extract_", ".pdf");
-            if (tempFile == null) {
-                return Result.fail("无法创建临时文件");
-            }
-            file.transferTo(tempFile);
+        new Thread(() -> {
+            File tempFile = null;
+            try {
+                tempFile = File.createTempFile("tantan_extract_", ".pdf");
+                file.transferTo(tempFile);
 
-            // 调用 AI 解析
-            String result = aiBo.parsePdfToWords(tempFile);
-            return Result.success(result);
-        } catch (Exception e) {
-            return Result.fail("PDF 解析失败: " + e.getMessage());
-        } finally {
-            if (tempFile != null && tempFile.exists()) {
-                tempFile.delete();
+                File finalTempFile = tempFile;
+                aiBo.parsePdfToWordsStream(tempFile, pageWords -> {
+                    try {
+                        emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(pageWords));
+                    } catch (IOException e) {
+                        logger.error("Failed to send page words via SSE", e);
+                    }
+                });
+                emitter.complete();
+            } catch (Exception e) {
+                try {
+                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + e.getMessage()));
+                    emitter.completeWithError(e);
+                } catch (IOException ex) {
+                    logger.error("SSE error during exception handling", ex);
+                }
+            } finally {
+                if (tempFile != null && tempFile.exists()) {
+                    tempFile.delete();
+                }
             }
-        }
+        }).start();
+
+        return emitter;
     }
 
     private void saveOrUpdateParam(String name, String value, String comment) throws IllegalAccessException {

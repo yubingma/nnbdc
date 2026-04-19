@@ -861,7 +861,6 @@ public class UserBo extends BaseBo<User> {
             }
         }
         userVo.setUserGames(gameVos);
-        logger.info(String.format("📖 [USER_LOAD] 加载完成, 游戏记录数: %d", gameVos.size()));
 
         return userVo;
     }

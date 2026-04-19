@@ -1,11 +1,41 @@
 package beidanci.service.bo;
 
-import beidanci.api.Result;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.dashscope.aigc.generation.Generation;
 import com.alibaba.dashscope.aigc.generation.GenerationParam;
@@ -13,31 +43,17 @@ import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesis;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisParam;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisResult;
+import com.alibaba.dashscope.audio.tts.SpeechSynthesisParam;
+import com.alibaba.dashscope.audio.tts.SpeechSynthesizer;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
-import com.alibaba.dashscope.audio.tts.SpeechSynthesisParam;
-import io.reactivex.Flowable;
-import com.alibaba.dashscope.audio.tts.SpeechSynthesizer;
-import java.nio.ByteBuffer;
-import org.springframework.http.*;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
-import org.springframework.core.io.FileSystemResource;
-import java.io.File;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.lang.reflect.Method;
 
-import org.springframework.scheduling.annotation.Scheduled;
+import beidanci.api.Result;
 import beidanci.service.config.AliyunAiProperties;
 import beidanci.service.util.SysParamUtil;
+import io.reactivex.Flowable;
 
 /**
  * 阿里云 AI 业务类
@@ -514,139 +530,35 @@ public class AiBo {
         }
     }
     /**
-     * 调用阿里云文档解析 API 将 PDF 转换为单词列表
+     * 调用阿里云AI OCR 将 PDF 转换为单词列表 (流式解析)
      * @param pdfFile PDF 文件对象
-     * @return 单词列表文本 (每行一个)
+     * @param onPageExtracted 每解析出一页单词时的回调
      */
-    public String parsePdfToWords(File pdfFile) {
+    public void parsePdfToWordsStream(File pdfFile, java.util.function.Consumer<String> onPageExtracted) {
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
             throw new RuntimeException("AI 调用失败: API Key 未设置");
         }
 
         try {
-            logger.info("开始请求阿里云文档解析 (HTTP API): {}", pdfFile.getName());
-            // 使用 OkHttp3 以支持更广泛的 SSL/TLS 协议，解决 No appropriate protocol 异常
-            RestTemplate restTemplate = new RestTemplate(new OkHttp3ClientHttpRequestFactory());
-
-            // 1. 上传文件到 DashScope
-            String uploadUrl = "https://dashscope.aliyuncs.com/api/v1/files";
-            HttpHeaders uploadHeaders = new HttpHeaders();
-            uploadHeaders.set("Authorization", "Bearer " + apiKey);
-            uploadHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-            MultiValueMap<String, Object> uploadBody = new LinkedMultiValueMap<>();
-            uploadBody.add("file", new FileSystemResource(pdfFile));
-            uploadBody.add("purpose", "file-extract");
-
-            HttpEntity<MultiValueMap<String, Object>> uploadRequest = new HttpEntity<>(uploadBody, uploadHeaders);
-            ResponseEntity<Map<String, Object>> uploadResponse = restTemplate.exchange(uploadUrl, HttpMethod.POST, uploadRequest, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
-
-            if (!uploadResponse.getStatusCode().is2xxSuccessful() || uploadResponse.getBody() == null) {
-                throw new RuntimeException("文件上传失败: " + uploadResponse.getStatusCode());
-            }
-
-            Map<String, Object> uploadBodyMap = uploadResponse.getBody();
-            String fileId = null;
-            try {
-                if (uploadBodyMap.get("data") instanceof Map) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> data = (Map<String, Object>) uploadBodyMap.get("data");
-                    List<?> uploadedFiles = (List<?>) data.get("uploaded_files");
-                    if (uploadedFiles != null && !uploadedFiles.isEmpty()) {
-                        fileId = (String) ((Map<?, ?>) uploadedFiles.get(0)).get("file_id");
-                    }
-                }
-                if (fileId == null) {
-                    fileId = (String) uploadBodyMap.get("id");
-                }
-            } catch (Exception e) {
-                logger.warn("解析文件上传响应异常: {}", e.getMessage());
-            }
-
-            if (fileId == null) {
-                throw new RuntimeException("文件上传成功但无法获取 fileId, 响应内容: " + uploadBodyMap);
-            }
-            logger.info("文件上传成功, fileId: {}", fileId);
-
-            // 2. 提交解析任务 (使用 OpenAI 兼容接口)
-            String submitUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // 构建 Qwen-Doc-Turbo 请求 (兼容接口格式)
-            Map<String, Object> body = new HashMap<>();
-            body.put("model", "qwen-doc-turbo");
+            logger.info("开始 PDF -> 图片 -> OCR 解析: {}", pdfFile.getName());
             
-            List<Map<String, Object>> messages = new ArrayList<>();
+            // 1. PDF 转图片
+            List<String> pageImagesBase64 = convertPdfToImagesBase64(pdfFile);
+            logger.info("PDF 转换为 {} 张图片", pageImagesBase64.size());
             
-            // 1. 添加角色设定系统消息
-            Map<String, Object> systemMsg = new HashMap<>();
-            systemMsg.put("role", "system");
-            systemMsg.put("content", "You are a helpful assistant.");
-            messages.add(systemMsg);
-            
-            // 2. 添加文件引用系统消息 (官方协议: fileid://)
-            Map<String, Object> fileMessage = new HashMap<>();
-            fileMessage.put("role", "system");
-            fileMessage.put("content", "fileid://" + fileId);
-            messages.add(fileMessage);
-
-            // 3. 添加用户指令消息
-            Map<String, Object> userMessage = new HashMap<>();
-            userMessage.put("role", "user");
-            userMessage.put("content", "请解析该文档，将其中的所有表格以 Markdown 格式完整输出，不要遗漏任何单词。");
-            messages.add(userMessage);
-            
-            body.put("messages", messages);
-
-            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(submitUrl, HttpMethod.POST, requestEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
-
-            Map<String, Object> responseBody = response.getBody();
-            if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
-                throw new RuntimeException("提交解析任务失败: " + response.getStatusCode() + ", 响应: " + responseBody);
-            }
-
-            String markdown = null;
-            // 1. 尝试从顶层 choices 获取 (OpenAI 兼容格式)
-            if (responseBody.get("choices") instanceof List) {
-                List<?> choices = (List<?>) responseBody.get("choices");
-                if (!choices.isEmpty() && choices.get(0) instanceof Map) {
-                    Map<?, ?> choice = (Map<?, ?>) choices.get(0);
-                    if (choice.get("message") instanceof Map) {
-                        markdown = (String) ((Map<?, ?>) choice.get("message")).get("content");
+            // 2. 逐页 OCR 识别
+            for (int i = 0; i < pageImagesBase64.size(); i++) {
+                logger.info("OCR 处理第 {}/{} 页", i + 1, pageImagesBase64.size());
+                String pageResult = ocrImageWithQwenVL(pageImagesBase64.get(i));
+                if (pageResult != null && !pageResult.isEmpty()) {
+                    String pageWords = extractWordsFromMarkdown(pageResult);
+                    if (!pageWords.isEmpty()) {
+                        onPageExtracted.accept(pageWords);
                     }
                 }
             }
-            
-            // 2. 尝试从 output.choices 或 output.results 获取 (DashScope 原生格式)
-            if (markdown == null && responseBody.get("output") instanceof Map) {
-                Map<?, ?> output = (Map<?, ?>) responseBody.get("output");
-                if (output.get("choices") instanceof List) {
-                    List<?> choices = (List<?>) output.get("choices");
-                    if (!choices.isEmpty() && choices.get(0) instanceof Map) {
-                        Map<?, ?> choice = (Map<?, ?>) choices.get(0);
-                        if (choice.get("message") instanceof Map) {
-                            markdown = (String) ((Map<?, ?>) choice.get("message")).get("content");
-                        }
-                    }
-                }
-                if (markdown == null && output.get("results") instanceof List) {
-                    List<?> results = (List<?>) output.get("results");
-                    if (!results.isEmpty() && results.get(0) instanceof Map) {
-                        markdown = (String) ((Map<?, ?>) results.get(0)).get("content");
-                    }
-                }
-            }
-
-            if (markdown == null || markdown.isEmpty()) {
-                throw new RuntimeException("文档解析未返回内容, 响应内容: " + responseBody);
-            }
-
-            // 解析 Markdown 表格，提取第二列单词
-            return extractWordsFromMarkdown(markdown);
+            logger.info("OCR 全部完成");
         } catch (Exception e) {
             logger.error("阿里云文档解析异常", e);
             throw new RuntimeException("文档解析失败: " + e.getMessage());
@@ -654,34 +566,155 @@ public class AiBo {
     }
 
     /**
-     * 从 Markdown 中提取表格的第二列单词
+     * 调用阿里云AI OCR 将 PDF 转换为单词列表
+     * 流程: PDF -> 图片 -> Qwen-VL OCR -> Markdown -> 单词列表
+     * @param pdfFile PDF 文件对象
+     * @return 单词列表文本 (每行一个)
+     */
+    public String parsePdfToWords(File pdfFile) {
+        StringBuilder allWords = new StringBuilder();
+        parsePdfToWordsStream(pdfFile, pageWords -> {
+            allWords.append(pageWords);
+        });
+        
+        if (allWords.length() == 0) {
+            throw new RuntimeException("OCR 未返回任何内容");
+        }
+        
+        return allWords.toString();
+    }
+    
+    /**
+     * 将 PDF 每一页转换为 Base64 编码的图片
+     */
+    private List<String> convertPdfToImagesBase64(File pdfFile) throws IOException {
+        List<String> images = new ArrayList<>();
+        
+        try (PDDocument document = PDDocument.load(pdfFile)) {
+            PDFRenderer renderer = new PDFRenderer(document);
+            int pageCount = document.getNumberOfPages();
+            
+            for (int i = 0; i < pageCount; i++) {
+                BufferedImage image = renderer.renderImageWithDPI(i, 150);
+                
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(image, "PNG", baos);
+                byte[] imageBytes = baos.toByteArray();
+                
+                String base64 = Base64.getEncoder().encodeToString(imageBytes);
+                images.add(base64);
+                
+                logger.debug("转换第 {}/{} 页", i + 1, pageCount);
+            }
+        }
+        
+        return images;
+    }
+    
+    /**
+     * 使用 Qwen-VL 对图片进行 OCR 识别
+     */
+    private String ocrImageWithQwenVL(String imageBase64) throws Exception {
+        String apiKey = aiProperties.getApiKey();
+        OkHttp3ClientHttpRequestFactory factory = new OkHttp3ClientHttpRequestFactory();
+        factory.setConnectTimeout(120000);
+        factory.setReadTimeout(120000);
+        factory.setWriteTimeout(120000);
+        RestTemplate restTemplate = new RestTemplate(factory);
+        
+        String url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", "qwen-vl-max");
+        
+        List<Map<String, Object>> messages = new ArrayList<>();
+        Map<String, Object> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
+        
+        List<Map<String, Object>> content = new ArrayList<>();
+        
+        Map<String, Object> imageBlock = new HashMap<>();
+        imageBlock.put("type", "image_url");
+        Map<String, Object> imageUrl = new HashMap<>();
+        imageUrl.put("url", "data:image/png;base64," + imageBase64);
+        imageBlock.put("image_url", imageUrl);
+        content.add(imageBlock);
+        
+        Map<String, Object> textBlock = new HashMap<>();
+        textBlock.put("type", "text");
+        textBlock.put("text", "请识别图片中的所有单词及其中文释义，按Markdown表格格式输出。不要遗漏任何单词。");
+        content.add(textBlock);
+        
+        userMessage.put("content", content);
+        messages.add(userMessage);
+        
+        body.put("messages", messages);
+        
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, 
+            new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+        
+        Map<String, Object> responseBody = response.getBody();
+        if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
+            logger.warn("OCR 调用失败: {}", responseBody);
+            return null;
+        }
+        
+        List<?> choices = (List<?>) responseBody.get("choices");
+        if (choices == null || choices.isEmpty()) {
+            return null;
+        }
+        
+        Map<?, ?> choice = (Map<?, ?>) choices.get(0);
+        if (choice == null || choice.get("message") == null) {
+            return null;
+        }
+        
+        Map<?, ?> message = (Map<?, ?>) choice.get("message");
+        return (String) message.get("content");
+    }
+
+    /**
+     * 从 Markdown 中提取表格的单词和释义
+     * 返回格式：每行一个 "单词\t释义"
      */
     private String extractWordsFromMarkdown(String markdown) {
         StringBuilder sb = new StringBuilder();
-        Set<String> words = new LinkedHashSet<>();
         
-        // 匹配 Markdown 表格行的正则: | col1 | col2 | col3 |
-        // 允许单元格内有空格或特殊字符
-        Pattern rowPattern = Pattern.compile("\\|([^|]*)\\|([^|]+)\\|([^|]*)");
+        // 匹配 Markdown 表格行的正则: | col1 | col2 | col3 | ...
+        // Qwen-VL 输出的表格通常是 | 序号 | 单词 | 释义 |
+        Pattern rowPattern = Pattern.compile("\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|");
         
         String[] lines = markdown.split("\n");
         for (String line : lines) {
             Matcher m = rowPattern.matcher(line);
             if (m.find()) {
-                String word = m.group(2).trim();
+                String col1 = m.group(1).trim();
+                String col2 = m.group(2).trim();
+                String col3 = m.group(3).trim();
+                
                 // 排除表头和分隔符行
-                if (word.equalsIgnoreCase("Word") || word.matches("-+")) {
+                if (col2.equalsIgnoreCase("Word") || col2.equalsIgnoreCase("单词") || col2.matches("-+")) {
                     continue;
                 }
+                
+                // 如果第二列看起来像序号，而第三列是单词，则顺延
+                String word = col2;
+                String meaning = col3;
+                if (col1.matches("\\d+") && !col2.isEmpty()) {
+                    word = col2;
+                    meaning = col3;
+                }
+                
                 if (!word.isEmpty()) {
-                    words.add(word);
+                    sb.append(word).append("\t").append(meaning).append("\n");
                 }
             }
         }
         
-        for (String w : words) {
-            sb.append(w).append("\n");
-        }
         return sb.toString();
     }
 }

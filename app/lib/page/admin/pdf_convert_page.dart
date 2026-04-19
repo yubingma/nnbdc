@@ -9,6 +9,8 @@ import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class PdfConvertPage extends StatefulWidget {
   const PdfConvertPage({super.key});
@@ -17,10 +19,17 @@ class PdfConvertPage extends StatefulWidget {
   State<PdfConvertPage> createState() => _PdfConvertPageState();
 }
 
+class ExtractedWord {
+  final int index;
+  final String word;
+  final String meaning;
+  ExtractedWord(this.index, this.word, this.meaning);
+}
+
 class _PdfConvertPageState extends State<PdfConvertPage> {
   String? _selectedFileName;
   dynamic _selectedFileContent; // Web 下是 Uint8List, Native 下是 String (path)
-  String _extractedWords = "";
+  final List<ExtractedWord> _extractedWordsList = [];
   bool _isProcessing = false;
   final TextEditingController _resultController = TextEditingController();
 
@@ -103,7 +112,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
 
     setState(() {
       _isProcessing = true;
-      _extractedWords = "";
+      _extractedWordsList.clear();
       _resultController.text = "";
     });
 
@@ -117,7 +126,6 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
           ),
         });
       } else if (_selectedFileContent is String) {
-        // Native 路径模式
         formData = FormData.fromMap({
           "file": await MultipartFile.fromFile(
             _selectedFileContent as String,
@@ -128,21 +136,60 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         throw Exception("不支持的文件选择模式");
       }
 
-      // 直接使用 dio 调用接口，绕过 retrofit 的 File 类型限制
       final response = await Api.dio.post(
         "/admin/pdf/extractWords.do",
         data: formData,
+        options: Options(responseType: ResponseType.stream),
       );
 
-      if (response.data != null && response.data['success'] == true) {
-        setState(() {
-          _extractedWords = response.data['data'] ?? "";
-          _resultController.text = _extractedWords;
-        });
-        ToastUtil.success("提取完成！共计 ${(_extractedWords.trim().split('\n').length)} 个单词");
-      } else {
-        ToastUtil.error("转换失败: ${response.data['msg']}");
+      final stream = response.data.stream as Stream<Uint8List>;
+      String buffer = "";
+      await for (final chunk in stream.transform(utf8.decoder)) {
+        buffer += chunk;
+        
+        // 解析 SSE 格式 (简单的 event/data 解析)
+        while (buffer.contains("\n\n")) {
+          int index = buffer.indexOf("\n\n");
+          String eventString = buffer.substring(0, index);
+          buffer = buffer.substring(index + 2);
+
+          String? eventName;
+          String? eventData;
+
+          for (String line in eventString.split("\n")) {
+            if (line.startsWith("event:")) {
+              eventName = line.substring(6).trim();
+            } else if (line.startsWith("data:")) {
+              eventData = line.substring(5).trim();
+            }
+          }
+
+          if (eventName == "page" && eventData != null) {
+            setState(() {
+              final lines = eventData.split('\n');
+              for (var line in lines) {
+                if (line.trim().isEmpty) continue;
+                final parts = line.split('\t');
+                final word = parts[0];
+                final meaning = parts.length > 1 ? parts[1] : "";
+                
+                _extractedWordsList.add(ExtractedWord(
+                  _extractedWordsList.length + 1,
+                  word,
+                  meaning,
+                ));
+              }
+              
+              // 同步更新 resultController 用于复制
+              _resultController.text = _extractedWordsList.map((e) => e.word).join("\n");
+            });
+          } else if (eventName == "error" && eventData != null) {
+            ToastUtil.error(eventData);
+          }
+        }
       }
+
+      ToastUtil.success("提取完成！共计 ${_extractedWordsList.length} 个单词");
     } catch (e) {
       Global.logger.e("PDF 转换异常", error: e);
       ToastUtil.error("转换异常: $e");
@@ -154,8 +201,9 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   }
 
   void _copyToClipboard() {
-    if (_extractedWords.isEmpty) return;
-    Clipboard.setData(ClipboardData(text: _extractedWords));
+    if (_extractedWordsList.isEmpty) return;
+    final text = _extractedWordsList.map((e) => e.word).join("\n");
+    Clipboard.setData(ClipboardData(text: text));
     ToastUtil.success("已复制到剪贴板");
   }
 
@@ -282,34 +330,75 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "共计 ${_extractedWords.trim().split('\n').where((s) => s.isNotEmpty).length} 个单词",
+                        "共计 ${_extractedWordsList.length} 个单词",
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       TextButton.icon(
-                        onPressed: _extractedWords.isEmpty ? null : _copyToClipboard,
+                        onPressed: _extractedWordsList.isEmpty ? null : _copyToClipboard,
                         icon: const Icon(Icons.copy, size: 16),
-                        label: const Text("复制全部", style: TextStyle(fontSize: 12)),
+                        label: const Text("复制全部单词", style: TextStyle(fontSize: 12)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    height: 300,
+                    height: 400,
                     decoration: BoxDecoration(
                       color: isDarkMode ? Colors.black26 : Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                     ),
-                    child: TextField(
-                      controller: _resultController,
-                      maxLines: null,
-                      readOnly: true,
-                      style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.all(12),
-                        border: InputBorder.none,
-                        hintText: "转换后的结果将显示在这里...",
-                      ),
+                    child: Column(
+                      children: [
+                        // 表头
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.white10 : Colors.grey.shade200,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                          ),
+                          child: const Row(
+                            children: [
+                              SizedBox(width: 40, child: Text("序号", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                              SizedBox(width: 120, child: Text("单词拼写", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                              Expanded(child: Text("中文释义", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                            ],
+                          ),
+                        ),
+                        // 列表内容
+                        Expanded(
+                          child: _extractedWordsList.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    "转换后的结果将显示在这里...",
+                                    style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  itemCount: _extractedWordsList.length,
+                                  padding: EdgeInsets.zero,
+                                  itemBuilder: (context, index) {
+                                    final item = _extractedWordsList[index];
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          SizedBox(width: 40, child: Text("${item.index}", style: const TextStyle(fontSize: 12, color: Colors.grey))),
+                                          SizedBox(width: 120, child: Text(item.word, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+                                          Expanded(child: Text(item.meaning, style: const TextStyle(fontSize: 13))),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
