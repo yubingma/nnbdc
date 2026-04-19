@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 
 class PdfConvertPage extends StatefulWidget {
   const PdfConvertPage({super.key});
@@ -142,9 +141,9 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         options: Options(responseType: ResponseType.stream),
       );
 
-      final stream = response.data.stream as Stream<Uint8List>;
+      final stream = response.data.stream as Stream<List<int>>;
       String buffer = "";
-      await for (final chunk in stream.transform(utf8.decoder)) {
+      await for (final chunk in stream.transform(const Utf8Decoder())) {
         buffer += chunk;
         
         // 解析 SSE 格式 (简单的 event/data 解析)
@@ -164,9 +163,10 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
             }
           }
 
-          if (eventName == "page" && eventData != null) {
+          final data = eventData;
+          if (eventName == "page" && data != null) {
             setState(() {
-              final lines = eventData.split('\n');
+              final lines = data.split('\n');
               for (var line in lines) {
                 if (line.trim().isEmpty) continue;
                 final parts = line.split('\t');

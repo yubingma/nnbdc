@@ -441,10 +441,11 @@ public class AdminController {
                 tempFile = File.createTempFile("tantan_extract_", ".pdf");
                 file.transferTo(tempFile);
 
-                File finalTempFile = tempFile;
                 aiBo.parsePdfToWordsStream(tempFile, pageWords -> {
                     try {
-                        emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(pageWords));
+                        if (pageWords != null) {
+                            emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(pageWords));
+                        }
                     } catch (IOException e) {
                         logger.error("Failed to send page words via SSE", e);
                     }
