@@ -73,6 +73,123 @@ public class AiBo {
     private final ConcurrentHashMap<String, AtomicInteger> userAiChatRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicInteger> userDailyAiChatRequests = new ConcurrentHashMap<>();
 
+    public static class ExtractionTask {
+        public final String taskId;
+        public final String fileName;
+        public final long fileSize;
+        public final long startTime = System.currentTimeMillis();
+        public final List<String> pageResults = new java.util.concurrent.CopyOnWriteArrayList<>();
+        public final java.util.Set<Consumer<String>> listeners = ConcurrentHashMap.newKeySet();
+        public final java.util.Set<Consumer<String>> errorListeners = ConcurrentHashMap.newKeySet();
+        public final java.util.Set<Runnable> completionListeners = ConcurrentHashMap.newKeySet();
+        public volatile int totalPages = 0;
+        public volatile int processedPages = 0;
+        public volatile boolean isFinished = false;
+        public volatile boolean isStarted = false;
+        public volatile boolean isStopped = false;
+        public volatile String error = null;
+        public File pdfFile;
+        public long lastAccessTime = System.currentTimeMillis();
+
+        public ExtractionTask(String taskId, String fileName, long fileSize, File pdfFile) {
+            this.taskId = taskId;
+            this.fileName = fileName;
+            this.fileSize = fileSize;
+            this.pdfFile = pdfFile;
+        }
+
+        public void addPageWords(String words) {
+            pageResults.add(words);
+            lastAccessTime = System.currentTimeMillis();
+            for (Consumer<String> listener : listeners) {
+                try {
+                    listener.accept(words);
+                } catch (Exception ignore) {}
+            }
+        }
+
+        public void finish() {
+            isFinished = true;
+            lastAccessTime = System.currentTimeMillis();
+            for (Runnable listener : completionListeners) {
+                try {
+                    listener.run();
+                } catch (Exception ignore) {}
+            }
+        }
+
+        public void setError(String error) {
+            this.error = error;
+            lastAccessTime = System.currentTimeMillis();
+            for (Consumer<String> listener : errorListeners) {
+                try {
+                    listener.accept(error);
+                } catch (Exception ignore) {}
+            }
+        }
+    }
+
+    private final Map<String, ExtractionTask> extractionTaskStore = new ConcurrentHashMap<>();
+
+    public ExtractionTask getOrCreateExtractionTask(String taskId, String fileName, long fileSize, File pdfFile) {
+        return extractionTaskStore.computeIfAbsent(taskId, k -> new ExtractionTask(taskId, fileName, fileSize, pdfFile));
+    }
+
+    public ExtractionTask getExtractionTask(String taskId) {
+        return extractionTaskStore.get(taskId);
+    }
+
+    public List<ExtractionTask> getAllExtractionTasks() {
+        return new ArrayList<>(extractionTaskStore.values());
+    }
+
+    public boolean stopExtractionTask(String taskId) {
+        ExtractionTask task = extractionTaskStore.get(taskId);
+        if (task != null) {
+            task.isStopped = true;
+            task.setError("任务已被管理员停止");
+            return true;
+        }
+        return false;
+    }
+
+    public boolean removeExtractionTask(String taskId) {
+        ExtractionTask task = extractionTaskStore.remove(taskId);
+        if (task != null) {
+            task.isStopped = true;
+            if (task.pdfFile != null && task.pdfFile.exists()) {
+                task.pdfFile.delete();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void resumeExtractionTask(String taskId) {
+        ExtractionTask task = extractionTaskStore.get(taskId);
+        if (task != null && task.isStopped && !task.isFinished) {
+            task.isStopped = false;
+            task.error = null;
+            new Thread(() -> parsePdfToWordsTask(task.pdfFile, task)).start();
+        }
+    }
+
+    @Scheduled(fixedRate = 3600000) // 每小时清理一次
+    public void cleanupOldExtractionTasks() {
+        long twelveHoursAgo = System.currentTimeMillis() - 12 * 3600 * 1000;
+        int initialSize = extractionTaskStore.size();
+        extractionTaskStore.entrySet().removeIf(entry -> {
+            boolean isExpired = entry.getValue().lastAccessTime < twelveHoursAgo;
+            if (isExpired && entry.getValue().pdfFile != null && entry.getValue().pdfFile.exists()) {
+                entry.getValue().pdfFile.delete();
+            }
+            return isExpired;
+        });
+        if (extractionTaskStore.size() < initialSize) {
+            logger.info("已清理过期的 PDF 解析任务，当前剩余任务数: {}", extractionTaskStore.size());
+        }
+    }
+
     /**
      * 调用通义千问产生文本结果
      *
@@ -535,58 +652,81 @@ public class AiBo {
     public void parsePdfToWordsStream(File pdfFile, Consumer<String> onPageExtracted) {
         parsePdfToWordsStream(pdfFile, onPageExtracted, () -> false);
     }
-    
+
     /**
-     * 调用阿里云AI OCR 将 PDF 转换为单词列表 (流式解析，支持客户端断开检测)
+     * 调用阿里云AI OCR 将 PDF 转换为单词列表 (流式解析，支持后台任务)
      * @param pdfFile PDF 文件对象
-     * @param onPageExtracted 每解析出一页单词时的回调
-     * @param sseEmitter SSE emitter，用于检测客户端是否已断开
+     * @param task 内存任务对象
      */
-    public void parsePdfToWordsStream(File pdfFile, Consumer<String> onPageExtracted, 
-            BooleanSupplier isDisconnected) {
+    public void parsePdfToWordsTask(File pdfFile, ExtractionTask task) {
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
-            throw new RuntimeException("AI 调用失败: API Key 未设置");
+            task.setError("AI 调用失败: API Key 未设置");
+            return;
         }
 
-        try {
-            logger.info("开始 PDF -> 图片 -> OCR 解析: {}", pdfFile.getName());
-            
-            // 1. PDF 转图片
+            // 1. PDF 转图片 (如果是恢复任务，且图片已生成过，理论上可以缓存，这里为了简单每次重新生成图片列表，开销较小)
             List<String> pageImagesBase64 = convertPdfToImagesBase64(pdfFile);
-            logger.info("PDF 转换为 {} 张图片", pageImagesBase64.size());
+            task.totalPages = pageImagesBase64.size();
+            logger.info("PDF 转换为 {} 张图片 (TaskID: {})", task.totalPages, task.taskId);
             
             // 2. 逐页 OCR 识别
-            for (int i = 0; i < pageImagesBase64.size(); i++) {
-                long startTime = System.currentTimeMillis();
-                // 检测客户端是否已断开
-                if (isDisconnected != null && isDisconnected.getAsBoolean()) {
-                    logger.info("客户端已断开，停止 OCR 处理");
-                    break;
+            for (int i = task.processedPages; i < pageImagesBase64.size(); i++) {
+                if (task.isStopped) {
+                    logger.info("任务已停止，中断 OCR 处理 (TaskID: {})", task.taskId);
+                    return;
                 }
                 
-                logger.info("OCR 处理第 {}/{} 页", i + 1, pageImagesBase64.size());
-                String pageResult = ocrImageWithQwenVL(pageImagesBase64.get(i));
-                if (pageResult != null && !pageResult.isEmpty()) {
-                    logger.info("第 {} 页 OCR 原始结果:\n{}", i + 1, pageResult);
-                    String pageWords = extractWordsFromMarkdown(pageResult);
-                    if (!pageWords.isEmpty()) {
-                        logger.info("第 {} 页成功提取 {} 个单词", i + 1, pageWords.split("\n").length);
-                        onPageExtracted.accept(pageWords);
+                long startTime = System.currentTimeMillis();
+                logger.info("OCR 处理第 {}/{} 页 (TaskID: {})", i + 1, task.totalPages, task.taskId);
+                try {
+                    String pageResult = ocrImageWithQwenVL(pageImagesBase64.get(i));
+                    if (pageResult != null && !pageResult.isEmpty()) {
+                        String pageWords = extractWordsFromMarkdown(pageResult);
+                        if (!pageWords.isEmpty()) {
+                            logger.info("第 {} 页成功提取 {} 个单词 (TaskID: {})", i + 1, pageWords.split("\n").length, task.taskId);
+                            task.addPageWords(pageWords);
+                        } else {
+                            logger.warn("第 {} 页未提取到任何有效单词 (TaskID: {})", i + 1, task.taskId);
+                        }
                     } else {
-                        logger.warn("第 {} 页未提取到任何有效单词", i + 1);
+                        throw new RuntimeException("OCR 返回结果为空");
                     }
-                } else {
-                    logger.warn("第 {} 页 OCR 返回结果为空", i + 1);
+                } catch (Exception e) {
+                    String errorMsg = "第 " + (i + 1) + " 页解析失败: " + e.getMessage();
+                    logger.error(errorMsg + " (TaskID: " + task.taskId + ")", e);
+                    task.setError(errorMsg);
+                    task.isStopped = true;
+                    return;
                 }
+                
                 long duration = System.currentTimeMillis() - startTime;
-                logger.info("第 {}/{} 页处理完成，耗时 {} ms", i + 1, pageImagesBase64.size(), duration);
+                logger.info("第 {}/{} 页处理完成，耗时 {} ms (TaskID: {})", i + 1, task.totalPages, duration, task.taskId);
+                task.processedPages++;
             }
-            logger.info("OCR 全部完成");
+            logger.info("OCR 全部完成 (TaskID: {})", task.taskId);
+            task.finish();
+            // 只有全部完成后才删除文件
+            if (pdfFile != null && pdfFile.exists()) {
+                pdfFile.delete();
+            }
         } catch (Exception e) {
-            logger.error("阿里云文档解析异常", e);
-            throw new RuntimeException("文档解析失败: " + e.getMessage());
+            logger.error("阿里云文档解析异常 (TaskID: " + task.taskId + ")", e);
+            task.setError("文档解析出现致命错误: " + e.getMessage());
+            task.isStopped = true;
         }
+    }
+    }
+
+    /**
+     * 兼容旧版本的流式解析方法
+     */
+    public void parsePdfToWordsStream(File pdfFile, Consumer<String> onPageExtracted,
+                                      BooleanSupplier isDisconnected) {
+        String taskId = "legacy_" + System.currentTimeMillis();
+        ExtractionTask task = new ExtractionTask(taskId, pdfFile.getName(), pdfFile.length());
+        task.listeners.add(onPageExtracted);
+        parsePdfToWordsTask(pdfFile, task);
     }
 
     /**
@@ -596,15 +736,18 @@ public class AiBo {
      * @return 单词列表文本 (每行一个)
      */
     public String parsePdfToWords(File pdfFile) {
-        StringBuilder allWords = new StringBuilder();
-        parsePdfToWordsStream(pdfFile, pageWords -> {
-            allWords.append(pageWords);
-        }, () -> false);
+        String taskId = "sync_" + System.currentTimeMillis();
+        ExtractionTask task = new ExtractionTask(taskId, pdfFile.getName(), pdfFile.length(), pdfFile);
+        parsePdfToWordsTask(pdfFile, task);
         
-        if (allWords.length() == 0) {
-            throw new RuntimeException("OCR 未返回任何内容");
+        if (task.error != null) {
+            throw new RuntimeException(task.error);
         }
         
+        StringBuilder allWords = new StringBuilder();
+        for (String pageWords : task.pageResults) {
+            allWords.append(pageWords);
+        }
         return allWords.toString();
     }
     

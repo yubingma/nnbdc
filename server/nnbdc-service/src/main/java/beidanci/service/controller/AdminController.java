@@ -424,67 +424,143 @@ public class AdminController {
     public org.springframework.web.servlet.mvc.method.annotation.SseEmitter extractWordsFromPdf(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file
     ) {
-        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(3600000L); // 1 hour timeout
+        // 使用文件名和大小作为唯一标识（简单且能区分不同文件）
+        String fileName = file.getOriginalFilename();
+        if (fileName == null) fileName = "unknown_" + System.currentTimeMillis();
+        String taskId = fileName + "_" + file.getSize();
+        final beidanci.service.bo.AiBo.ExtractionTask task = aiBo.getOrCreateExtractionTask(taskId, fileName, file.getSize());
+
+        final org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = 
+                new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(3600000L * 12); // 12 hours timeout
         
-        if (file.isEmpty()) {
+        // 1. 定义监听器
+        final java.util.function.Consumer<String> pageListener = pageWords -> {
             try {
-                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("上传文件不能为空"));
+                for (String wordLine : pageWords.split("\n")) {
+                    if (!wordLine.trim().isEmpty()) {
+                        emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(wordLine));
+                    }
+                }
+            } catch (Exception ignore) {}
+        };
+
+        final java.util.function.Consumer<String> errorListener = error -> {
+            try {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + error));
                 emitter.complete();
-            } catch (Exception e) {
-                logger.error("SSE error", e);
+            } catch (Exception ignore) {}
+        };
+
+        final Runnable completionListener = () -> {
+            try {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("complete").data("解析完成"));
+                emitter.complete();
+            } catch (Exception ignore) {}
+        };
+
+        // 2. 注册清理逻辑
+        emitter.onCompletion(() -> {
+            task.listeners.remove(pageListener);
+            task.errorListeners.remove(errorListener);
+            task.completionListeners.remove(completionListener);
+        });
+        emitter.onTimeout(() -> {
+            task.listeners.remove(pageListener);
+            task.errorListeners.remove(errorListener);
+            task.completionListeners.remove(completionListener);
+        });
+        emitter.onError(e -> {
+            task.listeners.remove(pageListener);
+            task.errorListeners.remove(errorListener);
+            task.completionListeners.remove(completionListener);
+        });
+
+        // 3. 推送已有结果
+        try {
+            for (String pageResults : task.pageResults) {
+                for (String line : pageResults.split("\n")) {
+                    if (!line.trim().isEmpty()) {
+                        emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(line));
+                    }
+                }
             }
-            return emitter;
+
+            if (task.isFinished) {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("complete").data("解析完成"));
+                emitter.complete();
+                return emitter;
+            }
+
+            if (task.error != null) {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + task.error));
+                emitter.complete();
+                return emitter;
+            }
+        } catch (Exception e) {
+            logger.error("Failed to send existing results for taskId: " + taskId, e);
         }
 
-        new Thread(() -> {
-            File tempFile = null;
-            final java.util.concurrent.atomic.AtomicBoolean isDisconnected = new java.util.concurrent.atomic.AtomicBoolean(false);
-            try {
-                emitter.onCompletion(() -> isDisconnected.set(true));
-                emitter.onTimeout(() -> isDisconnected.set(true));
-                emitter.onError(e -> isDisconnected.set(true));
+        // 4. 挂载新监听器
+        task.listeners.add(pageListener);
+        task.errorListeners.add(errorListener);
+        task.completionListeners.add(completionListener);
 
-                File localTempFile = File.createTempFile("tantan_extract_", ".pdf");
-                tempFile = localTempFile;
-                file.transferTo(localTempFile);
-
-                aiBo.parsePdfToWordsStream(tempFile, pageWords -> {
-                    try {
-                        if (pageWords != null && !isDisconnected.get()) {
-                            for (String wordLine : pageWords.split("\n")) {
-                                if (!wordLine.trim().isEmpty()) {
-                                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(wordLine));
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        logger.error("Failed to send page words via SSE (possibly disconnected)", e);
-                        isDisconnected.set(true);
-                    }
-                }, isDisconnected::get);
-
-                if (!isDisconnected.get()) {
-                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("complete").data("解析完成"));
-                    emitter.complete();
+        // 5. 如果任务未启动，则异步启动
+        if (!task.isStarted) {
+            task.isStarted = true;
+            new Thread(() -> {
+                try {
+                    File localTempFile = File.createTempFile("tantan_extract_", ".pdf");
+                    file.transferTo(localTempFile);
+                    aiBo.parsePdfToWordsTask(localTempFile, task);
+                } catch (Exception e) {
+                    logger.error("Failed to start extraction task", e);
+                    task.setError("任务启动失败: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                logger.error("PDF extraction thread failed", e);
-                if (!isDisconnected.get()) {
-                    try {
-                        emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + e.getMessage()));
-                        emitter.completeWithError(e);
-                    } catch (Exception ex) {
-                        logger.error("Failed to send error event", ex);
-                    }
-                }
-            } finally {
-                if (tempFile != null && tempFile.exists()) {
-                    tempFile.delete();
-                }
-            }
-        }).start();
+            }).start();
+        }
 
         return emitter;
+    }
+
+    @GetMapping("/admin/pdf/tasks.do")
+    public Result<List<Map<String, Object>>> getPdfExtractionTasks() {
+        List<AiBo.ExtractionTask> tasks = aiBo.getAllExtractionTasks();
+        List<Map<String, Object>> result = tasks.stream().map(task -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("taskId", task.taskId);
+            map.put("fileName", task.fileName);
+            map.put("fileSize", task.fileSize);
+            map.put("processedPages", task.processedPages);
+            map.put("totalPages", task.totalPages);
+            map.put("isFinished", task.isFinished);
+            map.put("isStopped", task.isStopped);
+            map.put("isStarted", task.isStarted);
+            map.put("error", task.error);
+            map.put("startTime", task.startTime);
+            map.put("lastAccessTime", task.lastAccessTime);
+            map.put("resultCount", task.pageResults.size());
+            return map;
+        }).collect(Collectors.toList());
+        return Result.success(result);
+    }
+
+    @PostMapping("/admin/pdf/stopTask.do")
+    public Result<String> stopPdfExtractionTask(@RequestParam("taskId") String taskId) {
+        if (aiBo.stopExtractionTask(taskId)) {
+            return Result.success("任务已成功停止");
+        } else {
+            return Result.fail("找不到指定的任务");
+        }
+    }
+
+    @PostMapping("/admin/pdf/removeTask.do")
+    public Result<String> removePdfExtractionTask(@RequestParam("taskId") String taskId) {
+        if (aiBo.removeExtractionTask(taskId)) {
+            return Result.success("任务已成功从内存中移除");
+        } else {
+            return Result.fail("找不到指定的任务");
+        }
     }
 
     private void saveOrUpdateParam(String name, String value, String comment) throws IllegalAccessException {
