@@ -141,9 +141,10 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         options: Options(responseType: ResponseType.stream),
       );
 
-      final stream = response.data.stream as Stream<List<int>>;
+      final responseBody = response.data as ResponseBody;
+      final stream = responseBody.stream.cast<List<int>>();
       String buffer = "";
-      await for (final chunk in stream.transform(const Utf8Decoder())) {
+      await for (final chunk in stream.transform(utf8.decoder)) {
         buffer += chunk;
         
         // 解析 SSE 格式 (简单的 event/data 解析)
