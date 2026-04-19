@@ -286,20 +286,20 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   
   // 用于防止在一次划动中重复触发区域动作
   bool _rewriteTriggered = false;
-  bool _recognizeTriggered = false;
+  bool _undoTriggered = false;
   
-  // 视觉反馈：当前激活的感应区 (0:无, 1:重写, 2:识别)
+  // 视觉反馈：当前激活的感应区 (0:无, 1:重写, 2:撤销)
   int _activeZone = 0;
   
   // 用于取消延时任务，防止划过手势与感应区动作冲突
   Timer? _pendingRewardTask; 
-  Timer? _pendingRecognizeTask;
+  Timer? _pendingUndoTask;
   Timer? _autoRecognizeTimer; // 自动识别定时器
 
   @override
   void dispose() {
     _pendingRewardTask?.cancel();
-    _pendingRecognizeTask?.cancel();
+    _pendingUndoTask?.cancel();
     _autoRecognizeTimer?.cancel();
     _controller.dispose();
     super.dispose();
@@ -342,7 +342,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
           zoneWidth, 
           zoneHeight
         );
-        final recognizeZone = Rect.fromLTWH(
+        final undoZone = Rect.fromLTWH(
           width / 2 + (width / 2 - zoneWidth) / 2, 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
@@ -356,7 +356,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             if (_activePointerId != null) return;
             _activePointerId = event.pointer;
             _rewriteTriggered = false;
-            _recognizeTriggered = false;
+            _undoTriggered = false;
 
             final p = event.localPosition;
             
@@ -370,7 +370,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 setState(() => _activeZone = 1);
                 return;
               }
-              if (recognizeZone.contains(p)) {
+              if (undoZone.contains(p)) {
                 setState(() => _activeZone = 2);
                 return;
               }
@@ -401,16 +401,17 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 if (mounted) setState(() => _activeZone = 0);
               });
             }
-            if (!isNarrow && recognizeZone.contains(p) && !_recognizeTriggered && !widget.isRecognizing) {
-              _recognizeTriggered = true;
+            if (!isNarrow && undoZone.contains(p) && !_undoTriggered) {
+              _undoTriggered = true;
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
               
-              _pendingRecognizeTask?.cancel();
-              _pendingRecognizeTask = Timer(const Duration(milliseconds: 250), () {
+              _autoRecognizeTimer?.cancel(); // 撤销时重置识别计时
+              _pendingUndoTask?.cancel();
+              _pendingUndoTask = Timer(const Duration(milliseconds: 200), () {
                 if (mounted) {
-                  widget.onRecognize();
-                  Future.delayed(const Duration(milliseconds: 400), () {
+                  _controller.removeLast();
+                  Future.delayed(const Duration(milliseconds: 100), () {
                     if (mounted) setState(() => _activeZone = 0);
                   });
                 }
@@ -429,12 +430,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             if (swipeStatus != 0) {
               // 如果是手势，取消所有感应区的任务
               _pendingRewardTask?.cancel();
-              _pendingRecognizeTask?.cancel();
+              _pendingUndoTask?.cancel();
               setState(() => _activeZone = 0);
               
               // 标记为已触发，防止下方点击检测再次触发
               _rewriteTriggered = true; 
-              _recognizeTriggered = true;
+              _undoTriggered = true;
 
               // 执行手势动作
               if (swipeStatus == 2) {
@@ -461,18 +462,18 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               Timer(const Duration(milliseconds: 200), () {
                 if (mounted) setState(() => _activeZone = 0);
               });
-            } else if (!_recognizeTriggered && recognizeZone.contains(p) && !widget.isRecognizing) {
-              _recognizeTriggered = true;
+            } else if (!_undoTriggered && undoZone.contains(p)) {
+              _undoTriggered = true;
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
-              _pendingRecognizeTask?.cancel();
-              _pendingRecognizeTask = Timer(const Duration(milliseconds: 250), () {
-                if (mounted) {
-                  widget.onRecognize();
-                  Future.delayed(const Duration(milliseconds: 400), () {
-                    if (mounted) setState(() => _activeZone = 0);
-                  });
-                }
+              
+              _autoRecognizeTimer?.cancel();
+              _pendingUndoTask?.cancel();
+              
+              _controller.removeLast();
+              
+              Timer(const Duration(milliseconds: 200), () {
+                if (mounted) setState(() => _activeZone = 0);
               });
             }
 
@@ -490,7 +491,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             }
             
             // 如果最终没有触发任何动作，确保重置激活区状态
-            if (!_rewriteTriggered && !_recognizeTriggered) {
+            if (!_rewriteTriggered && !_undoTriggered) {
               setState(() => _activeZone = 0);
             }
           },
@@ -547,8 +548,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 ),
               ),
               Positioned(
-                left: recognizeZone.left,
-                top: recognizeZone.top,
+                left: undoZone.left,
+                top: undoZone.top,
                 child: Container(
                   width: zoneWidth,
                   height: zoneHeight,
@@ -566,12 +567,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.check_circle_outline, 
+                        Icons.undo_outlined, 
                         color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
                         size: 22
                       ),
                       Text(
-                        isNarrow ? '识别' : '划过识别', 
+                        isNarrow ? '撤销' : '划过撤销', 
                         style: TextStyle(
                           color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
                           fontSize: isNarrow ? 12 : 11,
