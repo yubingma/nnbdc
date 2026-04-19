@@ -341,6 +341,18 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
     }
   }
 
+  /// 恢复一个因错误停止的任务：先重启后台 OCR，再同步接入结果流
+  Future<void> _resumeAndSync(String taskId) async {
+    try {
+      await Api.dio.post("/admin/pdf/resumeTask.do", queryParameters: {"taskId": taskId});
+      ToastUtil.info("任务已从断点重启，正在同步结果...");
+    } catch (e) {
+      ToastUtil.error("恢复失败: $e");
+      return;
+    }
+    await _syncTask(taskId);
+  }
+
   Future<void> _removeTask(String taskId) async {
     try {
       await Api.dio.post("/admin/pdf/removeTask.do", queryParameters: {"taskId": taskId});
@@ -386,125 +398,125 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 0. 活跃任务监控 (如果在内存中有任务)
-            if (_availableTasks.isNotEmpty) _buildTasksSection(),
-
-            if (_availableTasks.isNotEmpty) const SizedBox(height: 20),
-
-            // 第一步：上传区域
+            // 1. 创建新的解析任务
             _buildSectionCard(
-              title: "第一步：选择 PDF 文件",
-              icon: Icons.upload_file,
-              color: Colors.blue,
+              title: "创建新的解析任务",
+              icon: Icons.add_task,
+              color: Colors.deepPurple,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    "支持提取炭炭背单词导出的 PDF 表格，AI 将自动识别并提取单词列。",
+                    "选择一个 PDF 词表，AI 将在后台自动识别并提取单词，过程中可以离开页面。",
                     style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  // 文件选择区
                   InkWell(
                     onTap: _isProcessing ? null : _pickFile,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: Colors.blue.withValues(alpha: 0.3),
+                          color: Colors.deepPurple.withValues(alpha: 0.3),
                           style: BorderStyle.solid,
                         ),
                         borderRadius: BorderRadius.circular(12),
-                        color: Colors.blue.withValues(alpha: 0.05),
+                        color: Colors.deepPurple.withValues(alpha: 0.04),
                       ),
-                      child: Column(
+                      child: Row(
                         children: [
-                          const Icon(Icons.picture_as_pdf, size: 48, color: Colors.blue),
-                          const SizedBox(height: 16),
-                          Text(
-                            _selectedFileName ?? "点击选择 PDF 文件",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: _selectedFileName == null ? Colors.grey : Colors.blue,
-                              fontWeight: _selectedFileName == null ? FontWeight.normal : FontWeight.bold,
+                          Icon(
+                            _selectedFileName != null ? Icons.picture_as_pdf : Icons.upload_file,
+                            size: 36,
+                            color: _selectedFileName != null ? Colors.deepPurple : Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _selectedFileName ?? "点击选择 PDF 文件",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: _selectedFileName == null ? Colors.grey : Colors.deepPurple,
+                                    fontWeight: _selectedFileName == null ? FontWeight.normal : FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (_selectedFileName == null)
+                                  const Text(
+                                    "支持炭炭背单词导出的 PDF 词表",
+                                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                                  ),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "支持提取炭炭背单词导出的 PDF 表格",
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                          if (_selectedFileName != null) ...[
-                            const SizedBox(height: 16),
-                            TextButton.icon(
+                          if (_selectedFileName != null)
+                            TextButton(
                               onPressed: _pickFile,
-                              icon: const Icon(Icons.refresh, size: 16),
-                              label: const Text("重新选择"),
+                              child: const Text("重新选择", style: TextStyle(fontSize: 12)),
+                            )
+                          else
+                            TextButton(
+                              onPressed: _showPathInputDialog,
+                              child: const Text("手动输入路径", style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
                             ),
-                          ],
-                          // 添加手动输入入口，解决警告并提供备选方案
-                          TextButton(
-                            onPressed: _showPathInputDialog,
-                            child: const Text("手动输入路径", style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
-                          ),
                         ],
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 第二步：开始/停止转换按钮
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 180,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: (_selectedFileContent == null || _isProcessing) ? null : _startConversion,
-                      icon: _isProcessing
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.auto_awesome),
-                      label: Text(_isProcessing ? "提取中..." : "开始提取单词"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                      ),
-                    ),
-                  ),
-                  if (_isProcessing) ...[
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 120,
-                      height: 50,
-                      child: OutlinedButton.icon(
-                        onPressed: _stopConversion,
-                        icon: const Icon(Icons.stop_circle_outlined, color: Colors.red),
-                        label: const Text("停止", style: TextStyle(color: Colors.red)),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.red),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                  const SizedBox(height: 12),
+                  // 创建任务按钮
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: (_selectedFileContent == null || _isProcessing) ? null : _startConversion,
+                          icon: _isProcessing
+                              ? const SizedBox(
+                                  width: 18, height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.rocket_launch, size: 18),
+                          label: Text(_isProcessing ? "正在创建..." : "创建解析任务"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      if (_isProcessing) ...[
+                        const SizedBox(width: 10),
+                        OutlinedButton.icon(
+                          onPressed: _stopConversion,
+                          icon: const Icon(Icons.cancel_outlined, color: Colors.red, size: 18),
+                          label: const Text("取消", style: TextStyle(color: Colors.red)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // 第三步：结果预览
+            // 2. 解析任务列表
+            if (_availableTasks.isNotEmpty) _buildTasksSection(),
+
+            if (_availableTasks.isNotEmpty) const SizedBox(height: 20),
+
+            // 3. 结果预览
             _buildSectionCard(
               title: "提取结果预览",
               icon: Icons.list_alt,
@@ -727,7 +739,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                       ),
                     if (isStopped && !isFinished)
                       TextButton.icon(
-                        onPressed: () => _syncTask(taskId), // 实际上就是 Resume 并同步
+                        onPressed: () => _resumeAndSync(taskId),
                         icon: const Icon(Icons.play_arrow, size: 14, color: Colors.green),
                         label: const Text("继续/重试", style: TextStyle(fontSize: 11, color: Colors.green)),
                       ),
