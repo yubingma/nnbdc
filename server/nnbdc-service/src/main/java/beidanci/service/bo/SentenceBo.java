@@ -185,6 +185,7 @@ public class SentenceBo extends BaseBo<Sentence> {
         sentence.setNeedTts(true);
         sentence.setTheType(Sentence.WAITTING_TTS);
         sentence.setHandCount(payCowdung);
+        sentence.setOwner(user);
         createEntity(sentence);
 
         // 记录系统数据日志（新增例句）

@@ -944,6 +944,7 @@ public class SystemHealthCheckBo {
                                     User owner = new User();
                                     owner.setId(Constants.SYS_USER_SYS_ID);
                                     sentence.setAuthor(owner);
+                                    sentence.setOwner(owner);
                                     
                                     sentenceBo.createEntity(sentence);
                                     
