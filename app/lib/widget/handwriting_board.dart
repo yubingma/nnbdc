@@ -46,7 +46,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
 
   Future<void> _recognize() async {
     if (_lines.isEmpty) {
-      ToastUtil.info('请先写点什么');
+      widget.onRecognized("");
       return;
     }
 
@@ -455,6 +455,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
                     _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
                     HapticFeedback.mediumImpact();
+                    
+                    // 如果删完后画板空了，同步清空外部输入框
+                    if (widget.lines.isEmpty) {
+                      widget.onRewrite();
+                    }
                   }
                 }
               }
@@ -484,9 +489,14 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 
                 _controller.removeLast();
                 
-                Timer(const Duration(milliseconds: 200), () {
-                  if (mounted) setState(() => _activeZone = 0);
-                });
+                // 如果删完后画板空了，同步清空外部输入框
+                if (widget.lines.isNotEmpty) {
+                  Timer(const Duration(milliseconds: 200), () {
+                    if (mounted) setState(() => _activeZone = 0);
+                  });
+                } else {
+                  widget.onRewrite(); // 这会触发 _clear() 并重置视觉状态
+                }
               }
             } finally {
               // 关键修复：无论发生什么，必须释放指针锁，防止画板永久失效
