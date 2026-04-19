@@ -458,9 +458,23 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               _pendingRewardTask?.cancel();
               _pendingRecognizeTask?.cancel();
               setState(() => _activeZone = 0);
+              
               // 标记为已触发，防止下方点击检测再次触发
               _rewriteTriggered = true; 
               _recognizeTriggered = true;
+
+              // 执行手势动作
+              if (swipeStatus == 2) {
+                // 向左滑：删除最后一笔 (撤销)
+                _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
+                _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
+                HapticFeedback.mediumImpact();
+              } else if (swipeStatus == 1) {
+                // 向右滑：清空全部 (重写)
+                _controller.clear();
+                widget.onRewrite();
+                HapticFeedback.heavyImpact();
+              }
             }
 
             // 点击检测：如果还没因为划过而触发，且抬起位置在感应区内，则视为点击触发
@@ -721,14 +735,14 @@ class _HandwritingController extends ChangeNotifier {
     double height = maxY - minY;
 
     // 判定条件：长横扫动作
-    // 在全屏模式下，阈值需进一步调高（从 180 提升到 280），
-    // 彻底避免写长单词（如 internationalization）或连笔横线时误触发清除手势。
-    if (width > 280 && width > height * 2.8) {
-      // 检查方向：起点在终点右侧一定距离即为反向划动
-      if (stroke.first.dx - stroke.last.dx > 80) {
-        return 2; // Right to Left
-      } else if (stroke.last.dx - stroke.first.dx > 80) {
-        return 1; // Left to Right
+    // 阈值调低 (从 280 降到 160)，增加灵敏度。
+    // 只要划过大约 1/5 屏幕宽度即可触发。
+    if (width > 160 && width > height * 2.0) {
+      // 检查方向：位移超过 50 像素即认定方向有效
+      if (stroke.first.dx - stroke.last.dx > 50) {
+        return 2; // Right to Left (向左滑)
+      } else if (stroke.last.dx - stroke.first.dx > 50) {
+        return 1; // Left to Right (向右滑)
       }
     }
     return 0;
