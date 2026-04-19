@@ -752,9 +752,8 @@ public class DictImportBo {
                     sentence.setTtsVoice(preferredVoices);
                 }
                 sentence.setEnglishDigest(beidanci.service.util.Util.makeSentenceDigest(am.sentenceEn));
-                if (ownerId != null) {
-                    sentence.setAuthor(owner);
-                }
+                sentence.setAuthor(owner);
+                sentence.setOwner(owner);
                 sentenceBo.createEntity(sentence);
                 stats.addedSentenceCount++;
                 stats.addedAudioCount++; // 统计例句音频资源

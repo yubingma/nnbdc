@@ -148,6 +148,11 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+
         <!-- OkHttp - 用于微信登录API调用 -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>

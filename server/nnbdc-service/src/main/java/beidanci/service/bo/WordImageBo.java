@@ -138,6 +138,8 @@ public class WordImageBo extends BaseBo<WordImage> {
             wordImage.setStatus(STATUS_APPROVED); // 管理员上传直接通过
         }
 
+        wordImage.setOwner(user);
+        
         // 入库
         createEntity(wordImage);
 
