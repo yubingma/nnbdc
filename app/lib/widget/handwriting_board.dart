@@ -479,10 +479,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _activePointerId = null;
             _controller.end();
             
-            // 启动自动识别定时器 (停笔 1 秒后自动触发)
+            // 启动自动识别定时器 (停笔 0.5 秒后自动触发)
             if (widget.lines.isNotEmpty && !widget.isRecognizing) {
               _autoRecognizeTimer?.cancel();
-              _autoRecognizeTimer = Timer(const Duration(milliseconds: 1000), () {
+              _autoRecognizeTimer = Timer(const Duration(milliseconds: 500), () {
                 if (mounted && widget.lines.isNotEmpty && !widget.isRecognizing) {
                   widget.onRecognize();
                 }
