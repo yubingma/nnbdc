@@ -569,33 +569,37 @@ public class AiBo {
             }
             logger.info("文件上传成功, fileId: {}", fileId);
 
-            // 2. 提交解析任务 (使用原生 DashScope API 端点)
-            String submitUrl = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation";
+            // 2. 提交解析任务 (使用 OpenAI 兼容接口)
+            String submitUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // 构建 Qwen-Doc-Turbo 请求 (使用原生 API 格式，input 包装 messages)
+            // 构建 Qwen-Doc-Turbo 请求 (兼容接口格式)
             Map<String, Object> body = new HashMap<>();
             body.put("model", "qwen-doc-turbo");
             
-            Map<String, Object> input = new HashMap<>();
             List<Map<String, Object>> messages = new ArrayList<>();
             
-            // 1. 添加文件引用消息 (使用系统角色，遵循官方 fileid:// 协议)
+            // 1. 添加角色设定系统消息
+            Map<String, Object> systemMsg = new HashMap<>();
+            systemMsg.put("role", "system");
+            systemMsg.put("content", "You are a helpful assistant.");
+            messages.add(systemMsg);
+            
+            // 2. 添加文件引用系统消息 (官方协议: fileid://)
             Map<String, Object> fileMessage = new HashMap<>();
             fileMessage.put("role", "system");
             fileMessage.put("content", "fileid://" + fileId);
             messages.add(fileMessage);
 
-            // 2. 添加用户指令消息
+            // 3. 添加用户指令消息
             Map<String, Object> userMessage = new HashMap<>();
             userMessage.put("role", "user");
             userMessage.put("content", "请解析该文档，将其中的所有表格以 Markdown 格式完整输出，不要遗漏任何单词。");
             messages.add(userMessage);
             
-            input.put("messages", messages);
-            body.put("input", input);
+            body.put("messages", messages);
 
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(submitUrl, HttpMethod.POST, requestEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
