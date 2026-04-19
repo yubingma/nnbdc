@@ -33,6 +33,9 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   bool _isProcessing = false;
   bool _includeMeaning = false;
   List<dynamic> _availableTasks = [];
+  int _currentPageIndex = 0;
+  int _totalPages = 0;
+  Timer? _refreshTimer;
   CancelToken? _cancelToken;
   final TextEditingController _resultController = TextEditingController();
 
@@ -44,6 +47,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _resultController.dispose();
     super.dispose();
   }
@@ -155,8 +159,11 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
       _isProcessing = true;
       _extractedWordsList.clear();
       _resultController.text = "";
+      _currentPageIndex = 0;
+      _totalPages = 0;
       _cancelToken = CancelToken();
     });
+    _startRefreshTimer();
 
     try {
       FormData formData;
@@ -201,6 +208,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         _isProcessing = false;
         _cancelToken = null;
       });
+      _stopRefreshTimer();
     }
   }
 
@@ -209,8 +217,11 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
       _isProcessing = true;
       _extractedWordsList.clear();
       _resultController.text = "";
+      _currentPageIndex = 0;
+      _totalPages = 0;
       _cancelToken = CancelToken();
     });
+    _startRefreshTimer();
 
     try {
       final response = await Api.dio.get(
@@ -232,8 +243,33 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         _isProcessing = false;
         _cancelToken = null;
       });
+      _stopRefreshTimer();
       _loadTasks();
     }
+  }
+
+  void _startRefreshTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!_isProcessing) {
+        _stopRefreshTimer();
+        return;
+      }
+      _loadTasks(); // 刷新任务面板进度
+      // 从任务列表中同步总页数
+      for (final task in _availableTasks) {
+        final total = task['totalPages'] as int? ?? 0;
+        if (total > 0 && _totalPages != total) {
+          setState(() => _totalPages = total);
+          break;
+        }
+      }
+    });
+  }
+
+  void _stopRefreshTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
   }
 
   Future<void> _processStream(Stream<List<int>> stream) async {
@@ -242,7 +278,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
     await for (final chunk in stream.transform(utf8.decoder)) {
       buffer += chunk;
       
-      // 解析 SSE 格式 (简单的 event/data 解析)
+      // 解析 SSE 格式
       while (buffer.contains("\n\n")) {
         int index = buffer.indexOf("\n\n");
         String eventString = buffer.substring(0, index);
@@ -262,7 +298,9 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         Global.logger.d("收到 SSE 事件: event=$eventName, data=$eventData");
 
         if (eventName == "page_start" && eventData != null) {
-          currentPageIndex = int.tryParse(eventData) ?? currentPageIndex;
+          final pageIdx = int.tryParse(eventData) ?? currentPageIndex;
+          currentPageIndex = pageIdx;
+          setState(() => _currentPageIndex = pageIdx);
         } else if (eventName == "page" && eventData != null) {
           final data = eventData;
           setState(() {
