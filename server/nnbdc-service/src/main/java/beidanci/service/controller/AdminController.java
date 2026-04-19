@@ -451,9 +451,10 @@ public class AdminController {
         final org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = 
                 new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(3600000L * 12); // 12 hours timeout
         
-        // 1. 定义监听器
-        final java.util.function.Consumer<String> pageListener = pageWords -> {
+        // 1. 定义监听器 (增加页码支持)
+        final java.util.function.BiConsumer<Integer, String> pageListener = (pageIndex, pageWords) -> {
             try {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page_start").data(pageIndex.toString()));
                 for (String wordLine : pageWords.split("\n")) {
                     if (!wordLine.trim().isEmpty()) {
                         emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(wordLine));
@@ -495,12 +496,8 @@ public class AdminController {
 
         // 3. 推送已有结果
         try {
-            for (String pageResults : finalTask.pageResults) {
-                for (String line : pageResults.split("\n")) {
-                    if (!line.trim().isEmpty()) {
-                        emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(line));
-                    }
-                }
+            for (int i = 0; i < finalTask.pageResults.size(); i++) {
+                pageListener.accept(i + 1, finalTask.pageResults.get(i));
             }
 
             if (finalTask.isFinished) {

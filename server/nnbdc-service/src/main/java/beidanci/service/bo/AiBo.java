@@ -79,7 +79,7 @@ public class AiBo {
         public final long fileSize;
         public final long startTime = System.currentTimeMillis();
         public final List<String> pageResults = new java.util.concurrent.CopyOnWriteArrayList<>();
-        public final java.util.Set<Consumer<String>> listeners = ConcurrentHashMap.newKeySet();
+        public final java.util.Set<java.util.function.BiConsumer<Integer, String>> listeners = ConcurrentHashMap.newKeySet();
         public final java.util.Set<Consumer<String>> errorListeners = ConcurrentHashMap.newKeySet();
         public final java.util.Set<Runnable> completionListeners = ConcurrentHashMap.newKeySet();
         public volatile int totalPages = 0;
@@ -98,12 +98,12 @@ public class AiBo {
             this.pdfFile = pdfFile;
         }
 
-        public void addPageWords(String words) {
+        public void addPageWords(int pageIndex, String words) {
             pageResults.add(words);
             lastAccessTime = System.currentTimeMillis();
-            for (Consumer<String> listener : listeners) {
+            for (java.util.function.BiConsumer<Integer, String> listener : listeners) {
                 try {
-                    listener.accept(words);
+                    listener.accept(pageIndex, words);
                 } catch (Exception ignore) {}
             }
         }
@@ -686,7 +686,7 @@ public class AiBo {
                         String pageWords = extractWordsFromMarkdown(pageResult);
                         if (!pageWords.isEmpty()) {
                             logger.info("第 {} 页成功提取 {} 个单词 (TaskID: {})", i + 1, pageWords.split("\n").length, task.taskId);
-                            task.addPageWords(pageWords);
+                            task.addPageWords(i + 1, pageWords);
                         } else {
                             logger.warn("第 {} 页未提取到任何有效单词 (TaskID: {})", i + 1, task.taskId);
                         }

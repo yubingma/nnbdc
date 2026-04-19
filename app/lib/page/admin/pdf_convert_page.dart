@@ -22,7 +22,8 @@ class ExtractedWord {
   final int index;
   final String word;
   final String meaning;
-  ExtractedWord(this.index, this.word, this.meaning);
+  final int pageIndex;
+  ExtractedWord(this.index, this.word, this.meaning, this.pageIndex);
 }
 
 class _PdfConvertPageState extends State<PdfConvertPage> {
@@ -147,6 +148,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
       final responseBody = response.data as ResponseBody;
       final stream = responseBody.stream.cast<List<int>>();
       String buffer = "";
+      int currentPageIndex = 1;
       await for (final chunk in stream.transform(utf8.decoder)) {
         buffer += chunk;
         
@@ -169,8 +171,9 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
 
           Global.logger.d("收到 SSE 事件: event=$eventName, data=$eventData");
 
-          final data = eventData;
-          if (eventName == "page" && data != null) {
+          if (eventName == "page_start" && data != null) {
+            currentPageIndex = int.tryParse(data) ?? currentPageIndex;
+          } else if (eventName == "page" && data != null) {
             setState(() {
               final lines = data.split('\n');
               for (var line in lines) {
@@ -183,6 +186,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                   _extractedWordsList.length + 1,
                   word,
                   meaning,
+                  currentPageIndex,
                 ));
               }
               
@@ -420,13 +424,25 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                                   itemBuilder: (context, index) {
                                     final item = _extractedWordsList[index];
                                     return Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       decoration: BoxDecoration(
+                                        color: item.pageIndex % 2 == 0 
+                                            ? (isDarkMode ? Colors.white.withValues(alpha: 0.03) : Colors.white)
+                                            : (isDarkMode ? Colors.blue.withValues(alpha: 0.06) : Colors.blue.shade50.withValues(alpha: 0.5)),
                                         border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
                                       ),
                                       child: Row(
                                         children: [
-                                          SizedBox(width: 40, child: Text("${item.index}", style: const TextStyle(fontSize: 12, color: Colors.grey))),
+                                          SizedBox(
+                                            width: 40, 
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text("${item.index}", style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                                Text("P${item.pageIndex}", style: TextStyle(fontSize: 9, color: Colors.blue.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
+                                              ],
+                                            )
+                                          ),
                                           SizedBox(width: 120, child: Text(item.word, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
                                           Expanded(child: Text(item.meaning, style: const TextStyle(fontSize: 13))),
                                         ],
