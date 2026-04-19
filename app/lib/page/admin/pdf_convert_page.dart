@@ -31,7 +31,8 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   String? _selectedFileName;
   dynamic _selectedFileContent; // Web 下是 Uint8List, Native 下是 String (path)
   final List<ExtractedWord> _extractedWordsList = [];
-  bool _isProcessing = false;
+  bool _isProcessing = false; // true: 正在上传新文件
+  bool _isSyncing = false;    // true: 正在查看已有任务结果
   bool _includeMeaning = false;
   List<dynamic> _availableTasks = [];
   int _currentPageIndex = 0;
@@ -215,7 +216,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
 
   Future<void> _syncTask(String taskId) async {
     setState(() {
-      _isProcessing = true;
+      _isSyncing = true;
       _extractedWordsList.clear();
       _resultController.text = "";
       _currentPageIndex = 0;
@@ -241,7 +242,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
       }
     } finally {
       setState(() {
-        _isProcessing = false;
+        _isSyncing = false;
         _cancelToken = null;
       });
       _stopRefreshTimer();
@@ -252,7 +253,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   void _startRefreshTimer() {
     _refreshTimer?.cancel();
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (!_isProcessing) {
+      if (!_isProcessing && !_isSyncing) {
         _stopRefreshTimer();
         return;
       }
@@ -514,11 +515,22 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _totalPages > 0
-                            ? "共 ${_extractedWordsList.length} 个单词  ·  第 $_currentPageIndex / $_totalPages 页"
-                            : "共计 ${_extractedWordsList.length} 个单词",
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      Row(
+                        children: [
+                          if (_isSyncing) ...[ 
+                            const SizedBox(
+                              width: 12, height: 12,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          Text(
+                            _totalPages > 0
+                                ? "共 ${_extractedWordsList.length} 个单词  ·  第 $_currentPageIndex / $_totalPages 页"
+                                : "共计 ${_extractedWordsList.length} 个单词",
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
                       ),
                       Row(
                         children: [
