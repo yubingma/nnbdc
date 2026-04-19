@@ -35,6 +35,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   bool _isSyncing = false;    // true: 正在查看已有任务结果
   bool _includeMeaning = false;
   List<dynamic> _availableTasks = [];
+  final Map<int, String> _pageErrors = {}; // 存储当前查看任务的页码错误
   int _currentPageIndex = 0;
   int _totalPages = 0;
   Timer? _refreshTimer;
@@ -162,6 +163,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
     setState(() {
       _isProcessing = true;
       _extractedWordsList.clear();
+      _pageErrors.clear();
       _resultController.text = "";
       _currentPageIndex = 0;
       _totalPages = 0;
@@ -325,6 +327,13 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
               ));
             }
             _resultController.text = _extractedWordsList.map((e) => e.word).join("\n");
+          });
+        } else if (eventName == "page_error" && eventData != null) {
+          final parts = eventData.split('|');
+          final pageIdx = int.tryParse(parts[0]) ?? currentPageIndex;
+          final errorMsg = parts.length > 1 ? parts[1] : "未知错误";
+          setState(() {
+            _pageErrors[pageIdx] = errorMsg;
           });
         } else if (eventName == "error" && eventData != null) {
           ToastUtil.error(eventData);
@@ -642,6 +651,29 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  if (_pageErrors.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          const Text("⚠️ 失败页:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red)),
+                          ..._pageErrors.entries.map((e) => Tooltip(
+                            message: e.value,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                              ),
+                              child: Text("P${e.key}", style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
+                            ),
+                          )),
+                        ],
+                      ),
+                    ),
                   Container(
                     height: 400,
                     decoration: BoxDecoration(
