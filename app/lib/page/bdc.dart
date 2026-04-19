@@ -777,7 +777,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   int? _currentScore;
 
   /// 答对后是否自动跳转到下一个单词 (极速模式)
-  bool _autoJumpAfterCorrectCh2En = true;
+  bool _autoJumpAfterCorrectCh2En = false;
   bool _autoJumpAfterCorrectEn2Ch = false;
 
   bool get _autoJumpAfterCorrect {
