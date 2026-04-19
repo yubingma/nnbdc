@@ -38,7 +38,10 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
   void _clear() {
     setState(() {
       _lines = [];
+      _isRecognizing = false;
     });
+    // 内容清空时，同步清空外部输入框
+    widget.onRecognized("");
   }
 
   Future<void> _recognize() async {
