@@ -469,12 +469,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
                 _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
                 HapticFeedback.mediumImpact();
-              } else if (swipeStatus == 1) {
-                // 向右滑：清空全部 (重写)
-                _controller.clear();
-                widget.onRewrite();
-                HapticFeedback.heavyImpact();
               }
+              // 向右滑 (swipeStatus == 1) 已禁用，防止书写长单词时误触
             }
 
             // 点击检测：如果还没因为划过而触发，且抬起位置在感应区内，则视为点击触发
