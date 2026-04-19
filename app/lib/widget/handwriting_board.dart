@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/ocr_service.dart';
-import 'package:nnbdc/util/toast_util.dart';
 import 'package:path_provider/path_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -72,7 +71,6 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       }
 
       if (!hasValidStroke) {
-        ToastUtil.info('请先写点什么');
         setState(() => _isRecognizing = false);
         return;
       }
@@ -187,7 +185,6 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
         debugPrint('识别结果为空: "$rawOcrText"');
       } else {
         // 重要：显示识别结果
-        ToastUtil.info('[Ink] 结果: $result');
         widget.onRecognized(result);
       }
     } on TimeoutException {
