@@ -162,25 +162,17 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       final file = File('${tempDir.path}/handwriting_${AppClock.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes);
 
-        // 3. 调用识别引擎 (增加 5 秒超时保护，防止原生层卡死导致 UI 永久冻结)
+        // 3. 调用识别引擎 (统一使用 Google ML Kit Digital Ink Recognition 以获得最佳体验)
         final strokes = _lines.map((line) => line.map((p) => {'x': p.dx, 'y': p.dy}).toList()).toList();
-        final recognitionFuture = Platform.isAndroid 
-          ? OcrService.recognizeHandwriting(strokes)
-          : OcrService.recognizeText(file.path);
+        final recognitionFuture = OcrService.recognizeHandwriting(strokes);
         
         final response = await recognitionFuture.timeout(const Duration(seconds: 5));
         
         String text = "";
         String nativeInfo = "";
         
-        if (Platform.isAndroid) {
-          text = response;
-          nativeInfo = "[Ink Android]";
-        } else {
-          List<String> parts = response.split(" ||| ");
-          text = parts[0];
-          nativeInfo = parts.length > 1 ? parts[1] : "";
-        }
+        text = response;
+        nativeInfo = Platform.isAndroid ? "[Ink Android]" : "[Ink iOS]";
 
       // 关键：如果版本已改变（说明期间有新的书写或撤销），则丢弃当前陈旧的结果
       if (currentVersion != _recognitionVersion) {

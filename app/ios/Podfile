@@ -1,3 +1,5 @@
+source 'https://cdn.cocoapods.org/'
+
 # Uncomment this line to define a global platform for your project
 platform :ios, '13.0'
 
@@ -41,6 +43,16 @@ target 'Runner' do
   if !ENV['WECHAT_OPENSDK_ZIP_URL'].nil? && !ENV['WECHAT_OPENSDK_ZIP_URL'].strip.empty?
     pod 'WechatOpenSDK-XCFramework', :podspec => wechat_podspec
   end
+  # 自动检测本地包，解决国内网络无法下载 dl.google.com 资源的问题
+  local_pkg = File.join(__dir__, 'local_pods', 'GoogleMLKit-5.0.0.tar.gz')
+  if File.exist?(local_pkg)
+    puts "✅ 检测到本地 GoogleMLKit 包: #{local_pkg}，将从本地安装。"
+    pod 'GoogleMLKit', :http => "file://#{local_pkg}"
+    pod 'GoogleMLKit/DigitalInkRecognition'
+  else
+    puts "⚠️ 未发现本地 GoogleMLKit 包，尝试从 Google 服务器下载..."
+    pod 'GoogleMLKit/DigitalInkRecognition'
+  end
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
@@ -49,6 +61,12 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
+    # 核心修复：解决 M1/M2 Mac 下 GoogleMLKit 的 arm64 架构冲突问题
+    target.build_configurations.each do |config|
+      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+    end
+
     # 为 fluwx 添加微信 SDK 头文件搜索路径
     if target.name == 'fluwx'
       target.build_configurations.each do |config|
@@ -57,7 +75,5 @@ post_install do |installer|
         config.build_settings['HEADER_SEARCH_PATHS'] << '${PODS_ROOT}/WechatOpenSDK-XCFramework/WechatOpenSDK.xcframework/ios-arm64_x86_64-simulator/WechatOpenSDK.framework/Headers'
       end
     end
-    
-    # 配置 llama.cpp 静态库链接
   end
 end
