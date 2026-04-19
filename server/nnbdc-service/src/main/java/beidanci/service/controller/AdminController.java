@@ -487,6 +487,12 @@ public class AdminController {
             } catch (Exception ignore) {}
         };
 
+        final java.util.function.Consumer<String> warningListener = warning -> {
+            try {
+                emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("warning").data(warning));
+            } catch (Exception ignore) {}
+        };
+
         final Runnable completionListener = () -> {
             try {
                 emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("complete").data("解析完成"));
@@ -498,16 +504,19 @@ public class AdminController {
         emitter.onCompletion(() -> {
             finalTask.listeners.remove(pageListener);
             finalTask.errorListeners.remove(errorListener);
+            finalTask.warningListeners.remove(warningListener);
             finalTask.completionListeners.remove(completionListener);
         });
         emitter.onTimeout(() -> {
             finalTask.listeners.remove(pageListener);
             finalTask.errorListeners.remove(errorListener);
+            finalTask.warningListeners.remove(warningListener);
             finalTask.completionListeners.remove(completionListener);
         });
         emitter.onError(e -> {
             finalTask.listeners.remove(pageListener);
             finalTask.errorListeners.remove(errorListener);
+            finalTask.warningListeners.remove(warningListener);
             finalTask.completionListeners.remove(completionListener);
         });
 
@@ -565,6 +574,7 @@ public class AdminController {
             map.put("startTime", task.startTime);
             map.put("lastAccessTime", task.lastAccessTime);
             map.put("resultCount", task.pageResults.size());
+            map.put("failedPages", task.failedPages);
             return map;
         }).collect(Collectors.toList());
         return Result.success(result);

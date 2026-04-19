@@ -324,6 +324,8 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
           });
         } else if (eventName == "error" && eventData != null) {
           ToastUtil.error(eventData);
+        } else if (eventName == "warning" && eventData != null) {
+          ToastUtil.info(eventData); // 非致命错误，显示为提示
         } else if (eventName == "complete") {
           ToastUtil.success("提取完成！共计 ${_extractedWordsList.length} 个单词");
         }
@@ -668,8 +670,8 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
           final fileName = task['fileName'] as String? ?? "Unknown";
           final processed = task['processedPages'] as int? ?? 0;
           final total = task['totalPages'] as int? ?? 0;
-          final isFinished = task['finished'] as bool? ?? false;
-          final isStopped = task['stopped'] as bool? ?? false;
+          final isFinished = task['isFinished'] as bool? ?? false;
+          final isStopped = task['isStopped'] as bool? ?? false;
           final error = task['error'] as String?;
 
           return Container(
@@ -725,6 +727,27 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(error, style: const TextStyle(fontSize: 11, color: Colors.red)),
+                  ),
+
+                // 显示具体失败的页码
+                if (task['failedPages'] != null && (task['failedPages'] as Map).isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        const Text("失败页码:", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                        ...(task['failedPages'] as Map).keys.map((p) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text("P$p", style: const TextStyle(fontSize: 10, color: Colors.red)),
+                        )),
+                      ],
+                    ),
                   ),
                 
                 const SizedBox(height: 12),

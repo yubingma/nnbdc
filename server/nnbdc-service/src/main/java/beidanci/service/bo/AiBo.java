@@ -79,8 +79,10 @@ public class AiBo {
         public final long fileSize;
         public final long startTime = System.currentTimeMillis();
         public final List<String> pageResults = new java.util.concurrent.CopyOnWriteArrayList<>();
+        public final Map<Integer, String> failedPages = new java.util.concurrent.ConcurrentHashMap<>(); // 记录失败的页码及其错误
         public final java.util.Set<java.util.function.BiConsumer<Integer, String>> listeners = ConcurrentHashMap.newKeySet();
         public final java.util.Set<Consumer<String>> errorListeners = ConcurrentHashMap.newKeySet();
+        public final java.util.Set<Consumer<String>> warningListeners = ConcurrentHashMap.newKeySet();
         public final java.util.Set<Runnable> completionListeners = ConcurrentHashMap.newKeySet();
         public volatile int totalPages = 0;
         public volatile int processedPages = 0;
@@ -124,6 +126,16 @@ public class AiBo {
             for (Consumer<String> listener : errorListeners) {
                 try {
                     listener.accept(error);
+                } catch (Exception ignore) {}
+            }
+        }
+
+        public void notifyWarning(String warning) {
+            this.error = warning; // 记录最近的一个警告信息
+            lastAccessTime = System.currentTimeMillis();
+            for (Consumer<String> listener : warningListeners) {
+                try {
+                    listener.accept(warning);
                 } catch (Exception ignore) {}
             }
         }
@@ -696,13 +708,12 @@ public class AiBo {
                 } catch (Exception e) {
                     String errorMsg = "第 " + (i + 1) + " 页解析失败: " + e.getMessage();
                     logger.error(errorMsg + " (TaskID: " + task.taskId + ")", e);
-                    task.setError(errorMsg);
-                    task.isStopped = true;
-                    return;
+                    task.failedPages.put(i + 1, e.getMessage()); // 记录失败页
+                    task.notifyWarning(errorMsg); // 通知前端有警告，但不停止任务
                 }
                 
                 long duration = System.currentTimeMillis() - startTime;
-                logger.info("第 {}/{} 页处理完成，耗时 {} ms (TaskID: {})", i + 1, task.totalPages, duration, task.taskId);
+                logger.info("第 {}/{} 页处理完成 (含可能的失败)，耗时 {} ms (TaskID: {})", i + 1, task.totalPages, duration, task.taskId);
                 task.processedPages++;
             }
             logger.info("OCR 全部完成 (TaskID: {})", task.taskId);
