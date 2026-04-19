@@ -143,17 +143,28 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       final file = File('${tempDir.path}/handwriting_${AppClock.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes);
 
-      // 3. 调用 OCR 识别
-      final text = await OcrService.recognizeText(file.path);
+      // 3. 调用识别引擎
+      String text = "";
+      String nativeInfo = "";
+
+      if (Platform.isAndroid) {
+        // --- Android: 使用 Digital Ink Recognition (高精度坐标识别) ---
+        final strokes = _lines.map((line) => line.map((p) => {'x': p.dx, 'y': p.dy}).toList()).toList();
+        text = await OcrService.recognizeHandwriting(strokes);
+        nativeInfo = "[Digital Ink Android]";
+      } else {
+        // --- iOS: 保持原有的图片 OCR 识别 ---
+        final rawResponse = await OcrService.recognizeText(file.path);
+        List<String> parts = rawResponse.split(" ||| ");
+        text = parts[0];
+        nativeInfo = parts.length > 1 ? parts[1] : "";
+      }
 
       // 清理临时文件
       if (await file.exists()) await file.delete();
 
       // 4. 后处理识别结果
-      // 分离原生层传回的诊断信息 (格式: "Text ||| [Native...]")
-      List<String> parts = text.split(" ||| ");
-      String rawOcrText = parts[0];
-      String nativeInfo = parts.length > 1 ? parts[1] : "";
+      String rawOcrText = text;
 
       debugPrint('OCR Raw Text: "$rawOcrText", Info: "$nativeInfo"');
 
@@ -170,10 +181,10 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
       String result = processedText.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
 
       if (result.isEmpty) {
-        ToastUtil.info('[V-STABLE-800] 未能识别到字母 (Raw: "$rawOcrText", $nativeInfo)');
+        ToastUtil.info('[Ink-Mode] 未能识别到字迹 (Raw: "$rawOcrText", $nativeInfo)');
       } else {
-        // 重要：显示识别结果，并带上原生层传回的诊断信息
-        ToastUtil.info('[V-STABLE-800] 结果: $result (Raw: "$rawOcrText", $nativeInfo)');
+        // 重要：显示识别结果
+        ToastUtil.info('[Ink-Mode] 识别结果: $result');
         widget.onRecognized(result);
       }
     } catch (e) {

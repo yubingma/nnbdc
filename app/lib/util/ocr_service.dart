@@ -17,4 +17,17 @@ class OcrService {
       throw Exception('OCR识别失败: ${e.message}');
     }
   }
+
+  /// 识别手写轨迹中的文字 (Digital Ink Recognition)
+  /// [strokes] 笔画列表，每个笔画是点的列表 [{'x': ..., 'y': ...}]
+  static Future<String> recognizeHandwriting(List<List<Map<String, double>>> strokes) async {
+    try {
+      final result = await _channel.invokeMethod<String>('recognizeHandwriting', {
+        'strokes': strokes,
+      });
+      return result ?? '';
+    } on PlatformException catch (e) {
+      throw Exception('手写识别失败: ${e.message}');
+    }
+  }
 }

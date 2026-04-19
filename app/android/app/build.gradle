@@ -150,6 +150,8 @@ dependencies {
 
     // Google ML Kit Text Recognition
     implementation 'com.google.mlkit:text-recognition:16.0.0'
+    // Google ML Kit Digital Ink Recognition (专门用于手写识别)
+    implementation 'com.google.mlkit:digital-ink-recognition:18.1.0'
 
     // 友盟安全组件 (ASMS) - 解决 "SDK 初始化失败，请检查是否集成 umeng-asms-1.2.X.aar库" 错误
     implementation 'com.umeng.umsdk:common:9.5.4'
