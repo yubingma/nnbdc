@@ -174,6 +174,7 @@ class Api {
     final baseUrl = Api.useProdUrl
         ? Config.profiles["prod"]["service_url"]
         : Config.serviceUrl;
+    dio.options.baseUrl = baseUrl;
 
     final client = RestClient(dio, baseUrl: baseUrl);
     _dio = dio;

@@ -25,6 +25,7 @@ import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.core.io.FileSystemResource;
 import java.io.File;
 import java.util.*;
@@ -525,7 +526,8 @@ public class AiBo {
 
         try {
             logger.info("开始请求阿里云文档解析 (HTTP API): {}", pdfFile.getName());
-            RestTemplate restTemplate = new RestTemplate();
+            // 使用 OkHttp3 以支持更广泛的 SSL/TLS 协议，解决 No appropriate protocol 异常
+            RestTemplate restTemplate = new RestTemplate(new OkHttp3ClientHttpRequestFactory());
 
             // 1. 提交解析任务
             String submitUrl = "https://dashscope.aliyuncs.com/api/v1/services/aigc/document-parse/generation";
@@ -536,6 +538,7 @@ public class AiBo {
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", new FileSystemResource(pdfFile));
+            body.add("model", "qwen-doc-v1");
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(submitUrl, HttpMethod.POST, requestEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
