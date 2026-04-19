@@ -529,72 +529,117 @@ public class AiBo {
             // 使用 OkHttp3 以支持更广泛的 SSL/TLS 协议，解决 No appropriate protocol 异常
             RestTemplate restTemplate = new RestTemplate(new OkHttp3ClientHttpRequestFactory());
 
-            // 1. 提交解析任务
-            String submitUrl = "https://dashscope.aliyuncs.com/api/v1/services/aigc/document-parse/generation";
+            // 1. 上传文件到 DashScope
+            String uploadUrl = "https://dashscope.aliyuncs.com/api/v1/files";
+            HttpHeaders uploadHeaders = new HttpHeaders();
+            uploadHeaders.set("Authorization", "Bearer " + apiKey);
+            uploadHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            MultiValueMap<String, Object> uploadBody = new LinkedMultiValueMap<>();
+            uploadBody.add("file", new FileSystemResource(pdfFile));
+            uploadBody.add("purpose", "file-extract");
+
+            HttpEntity<MultiValueMap<String, Object>> uploadRequest = new HttpEntity<>(uploadBody, uploadHeaders);
+            ResponseEntity<Map<String, Object>> uploadResponse = restTemplate.exchange(uploadUrl, HttpMethod.POST, uploadRequest, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+
+            if (!uploadResponse.getStatusCode().is2xxSuccessful() || uploadResponse.getBody() == null) {
+                throw new RuntimeException("文件上传失败: " + uploadResponse.getStatusCode());
+            }
+
+            Map<String, Object> uploadBodyMap = uploadResponse.getBody();
+            String fileId = null;
+            try {
+                if (uploadBodyMap.get("data") instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> data = (Map<String, Object>) uploadBodyMap.get("data");
+                    List<?> uploadedFiles = (List<?>) data.get("uploaded_files");
+                    if (uploadedFiles != null && !uploadedFiles.isEmpty()) {
+                        fileId = (String) ((Map<?, ?>) uploadedFiles.get(0)).get("file_id");
+                    }
+                }
+                if (fileId == null) {
+                    fileId = (String) uploadBodyMap.get("id");
+                }
+            } catch (Exception e) {
+                logger.warn("解析文件上传响应异常: {}", e.getMessage());
+            }
+
+            if (fileId == null) {
+                throw new RuntimeException("文件上传成功但无法获取 fileId, 响应内容: " + uploadBodyMap);
+            }
+            logger.info("文件上传成功, fileId: {}", fileId);
+
+            // 2. 提交解析任务 (使用 OpenAI 兼容接口以获得更好的 file_id 支持)
+            String submitUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + apiKey);
-            headers.set("X-DashScope-Async", "enable");
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", new FileSystemResource(pdfFile));
-            body.add("model", "qwen-doc-turbo");
+            // 构建 Qwen-Doc-Turbo 的多模态输入格式
+            Map<String, Object> body = new HashMap<>();
+            List<Map<String, Object>> messages = new ArrayList<>();
+            Map<String, Object> userMessage = new HashMap<>();
+            userMessage.put("role", "user");
 
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            List<Map<String, Object>> contentArr = new ArrayList<>();
+            Map<String, Object> textPart = new HashMap<>();
+            textPart.put("type", "text");
+            textPart.put("text", "请解析该文档，将其中的所有表格以 Markdown 格式完整输出，不要遗漏任何单词。");
+            contentArr.add(textPart);
+
+            Map<String, Object> docPart = new HashMap<>();
+            docPart.put("type", "file_id");
+            docPart.put("file_id", fileId);
+            contentArr.add(docPart);
+
+            userMessage.put("content", contentArr);
+            messages.add(userMessage);
+            
+            body.put("messages", messages);
+            body.put("model", "qwen-doc-turbo");
+
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(submitUrl, HttpMethod.POST, requestEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
 
             Map<String, Object> responseBody = response.getBody();
             if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
-                throw new RuntimeException("提交解析任务失败: " + response.getStatusCode());
+                throw new RuntimeException("提交解析任务失败: " + response.getStatusCode() + ", 响应: " + responseBody);
             }
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> output = (Map<String, Object>) responseBody.get("output");
-            if (output == null) {
-                throw new RuntimeException("解析任务响应中缺少 output 字段");
-            }
-            String taskId = (String) output.get("task_id");
-            logger.info("文档解析任务已提交, taskId: {}", taskId);
-
-            // 2. 轮询任务状态
-            String statusUrl = "https://dashscope.aliyuncs.com/api/v1/tasks/" + taskId;
-            HttpHeaders statusHeaders = new HttpHeaders();
-            statusHeaders.set("Authorization", "Bearer " + apiKey);
-            HttpEntity<Void> statusEntity = new HttpEntity<>(statusHeaders);
 
             String markdown = null;
-            for (int i = 0; i < 60; i++) { // 最多等待 60 秒
-                Thread.sleep(1000);
-                ResponseEntity<Map<String, Object>> statusResponse = restTemplate.exchange(statusUrl, HttpMethod.GET, statusEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
-                Map<String, Object> statusBody = statusResponse.getBody();
-                if (statusBody == null) {
-                    logger.warn("任务状态响应体为空, taskId: {}", taskId);
-                    continue;
-                }
-
-                @SuppressWarnings("unchecked")
-                Map<String, Object> taskOutput = (Map<String, Object>) statusBody.get("output");
-                if (taskOutput == null) {
-                    logger.warn("任务输出为空, taskId: {}", taskId);
-                    continue;
-                }
-                String taskStatus = (String) taskOutput.get("task_status");
-
-                if ("SUCCEEDED".equals(taskStatus)) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> results = (List<Map<String, Object>>) taskOutput.get("results");
-                    if (results != null && !results.isEmpty()) {
-                        markdown = (String) results.get(0).get("content");
+            // 1. 尝试从顶层 choices 获取 (OpenAI 兼容格式)
+            if (responseBody.get("choices") instanceof List) {
+                List<?> choices = (List<?>) responseBody.get("choices");
+                if (!choices.isEmpty() && choices.get(0) instanceof Map) {
+                    Map<?, ?> choice = (Map<?, ?>) choices.get(0);
+                    if (choice.get("message") instanceof Map) {
+                        markdown = (String) ((Map<?, ?>) choice.get("message")).get("content");
                     }
-                    break;
-                } else if ("FAILED".equals(taskStatus)) {
-                    throw new RuntimeException("文档解析任务失败: " + taskOutput.get("message"));
                 }
-                logger.debug("等待解析结果, 当前状态: {}", taskStatus);
+            }
+            
+            // 2. 尝试从 output.choices 或 output.results 获取 (DashScope 原生格式)
+            if (markdown == null && responseBody.get("output") instanceof Map) {
+                Map<?, ?> output = (Map<?, ?>) responseBody.get("output");
+                if (output.get("choices") instanceof List) {
+                    List<?> choices = (List<?>) output.get("choices");
+                    if (!choices.isEmpty() && choices.get(0) instanceof Map) {
+                        Map<?, ?> choice = (Map<?, ?>) choices.get(0);
+                        if (choice.get("message") instanceof Map) {
+                            markdown = (String) ((Map<?, ?>) choice.get("message")).get("content");
+                        }
+                    }
+                }
+                if (markdown == null && output.get("results") instanceof List) {
+                    List<?> results = (List<?>) output.get("results");
+                    if (!results.isEmpty() && results.get(0) instanceof Map) {
+                        markdown = (String) ((Map<?, ?>) results.get(0)).get("content");
+                    }
+                }
             }
 
             if (markdown == null || markdown.isEmpty()) {
-                throw new RuntimeException("文档解析超时或未返回内容");
+                throw new RuntimeException("文档解析未返回内容, 响应内容: " + responseBody);
             }
 
             // 解析 Markdown 表格，提取第二列单词
