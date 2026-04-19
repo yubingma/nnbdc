@@ -463,6 +463,7 @@ public class AdminController {
         return attachToTask(task);
     }
 
+    @SuppressWarnings("null")
     private org.springframework.web.servlet.mvc.method.annotation.SseEmitter attachToTask(final beidanci.service.bo.AiBo.ExtractionTask finalTask) {
         final org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = 
                 new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(3600000L * 12); // 12 hours timeout

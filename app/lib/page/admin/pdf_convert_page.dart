@@ -9,6 +9,7 @@ import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'dart:convert';
 
 class PdfConvertPage extends StatefulWidget {
@@ -514,7 +515,9 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "共计 ${_extractedWordsList.length} 个单词",
+                        _totalPages > 0
+                            ? "共 ${_extractedWordsList.length} 个单词  ·  第 $_currentPageIndex / $_totalPages 页"
+                            : "共计 ${_extractedWordsList.length} 个单词",
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       Row(
