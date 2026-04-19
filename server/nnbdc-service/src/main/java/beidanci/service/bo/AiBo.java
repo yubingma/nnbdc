@@ -558,6 +558,7 @@ public class AiBo {
             
             // 2. 逐页 OCR 识别
             for (int i = 0; i < pageImagesBase64.size(); i++) {
+                long startTime = System.currentTimeMillis();
                 // 检测客户端是否已断开
                 if (isDisconnected != null && isDisconnected.getAsBoolean()) {
                     logger.info("客户端已断开，停止 OCR 处理");
@@ -578,6 +579,8 @@ public class AiBo {
                 } else {
                     logger.warn("第 {} 页 OCR 返回结果为空", i + 1);
                 }
+                long duration = System.currentTimeMillis() - startTime;
+                logger.info("第 {}/{} 页处理完成，耗时 {} ms", i + 1, pageImagesBase64.size(), duration);
             }
             logger.info("OCR 全部完成");
         } catch (Exception e) {

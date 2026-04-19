@@ -424,13 +424,13 @@ public class AdminController {
     public org.springframework.web.servlet.mvc.method.annotation.SseEmitter extractWordsFromPdf(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file
     ) {
-        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(600000L); // 10 minutes timeout
+        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(3600000L); // 1 hour timeout
         
         if (file.isEmpty()) {
             try {
                 emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("上传文件不能为空"));
                 emitter.complete();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error("SSE error", e);
             }
             return emitter;
@@ -438,8 +438,8 @@ public class AdminController {
 
         new Thread(() -> {
             File tempFile = null;
+            final java.util.concurrent.atomic.AtomicBoolean isDisconnected = new java.util.concurrent.atomic.AtomicBoolean(false);
             try {
-                final java.util.concurrent.atomic.AtomicBoolean isDisconnected = new java.util.concurrent.atomic.AtomicBoolean(false);
                 emitter.onCompletion(() -> isDisconnected.set(true));
                 emitter.onTimeout(() -> isDisconnected.set(true));
                 emitter.onError(e -> isDisconnected.set(true));
@@ -450,25 +450,32 @@ public class AdminController {
 
                 aiBo.parsePdfToWordsStream(tempFile, pageWords -> {
                     try {
-                        if (pageWords != null) {
+                        if (pageWords != null && !isDisconnected.get()) {
                             for (String wordLine : pageWords.split("\n")) {
                                 if (!wordLine.trim().isEmpty()) {
                                     emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(wordLine));
                                 }
                             }
                         }
-                    } catch (IOException e) {
-                        logger.error("Failed to send page words via SSE", e);
+                    } catch (Exception e) {
+                        logger.error("Failed to send page words via SSE (possibly disconnected)", e);
                         isDisconnected.set(true);
                     }
                 }, isDisconnected::get);
-                emitter.complete();
+
+                if (!isDisconnected.get()) {
+                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("complete").data("解析完成"));
+                    emitter.complete();
+                }
             } catch (Exception e) {
-                try {
-                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + e.getMessage()));
-                    emitter.completeWithError(e);
-                } catch (IOException ex) {
-                    logger.error("SSE error during exception handling", ex);
+                logger.error("PDF extraction thread failed", e);
+                if (!isDisconnected.get()) {
+                    try {
+                        emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("error").data("PDF 解析失败: " + e.getMessage()));
+                        emitter.completeWithError(e);
+                    } catch (Exception ex) {
+                        logger.error("Failed to send error event", ex);
+                    }
                 }
             } finally {
                 if (tempFile != null && tempFile.exists()) {
