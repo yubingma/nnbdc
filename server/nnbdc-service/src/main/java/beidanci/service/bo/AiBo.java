@@ -538,7 +538,7 @@ public class AiBo {
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", new FileSystemResource(pdfFile));
-            body.add("model", "qwen-doc-v1");
+            body.add("model", "qwen-doc-turbo");
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(submitUrl, HttpMethod.POST, requestEntity, new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
