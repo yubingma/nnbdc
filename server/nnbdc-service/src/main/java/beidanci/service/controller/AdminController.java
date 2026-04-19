@@ -419,6 +419,7 @@ public class AdminController {
     // PDF 单词提取相关 API (管理员接口)
     // ============================================
 
+    @SuppressWarnings("null")
     @PostMapping(value = "/admin/pdf/extractWords.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
     public org.springframework.web.servlet.mvc.method.annotation.SseEmitter extractWordsFromPdf(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file
@@ -438,18 +439,29 @@ public class AdminController {
         new Thread(() -> {
             File tempFile = null;
             try {
-                tempFile = File.createTempFile("tantan_extract_", ".pdf");
-                file.transferTo(tempFile);
+                final java.util.concurrent.atomic.AtomicBoolean isDisconnected = new java.util.concurrent.atomic.AtomicBoolean(false);
+                emitter.onCompletion(() -> isDisconnected.set(true));
+                emitter.onTimeout(() -> isDisconnected.set(true));
+                emitter.onError(e -> isDisconnected.set(true));
+
+                File localTempFile = File.createTempFile("tantan_extract_", ".pdf");
+                tempFile = localTempFile;
+                file.transferTo(localTempFile);
 
                 aiBo.parsePdfToWordsStream(tempFile, pageWords -> {
                     try {
                         if (pageWords != null) {
-                            emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(pageWords));
+                            for (String wordLine : pageWords.split("\n")) {
+                                if (!wordLine.trim().isEmpty()) {
+                                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().name("page").data(wordLine));
+                                }
+                            }
                         }
                     } catch (IOException e) {
                         logger.error("Failed to send page words via SSE", e);
+                        isDisconnected.set(true);
                     }
-                });
+                }, isDisconnected::get);
                 emitter.complete();
             } catch (Exception e) {
                 try {

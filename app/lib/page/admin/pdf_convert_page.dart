@@ -30,6 +30,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
   dynamic _selectedFileContent; // Web 下是 Uint8List, Native 下是 String (path)
   final List<ExtractedWord> _extractedWordsList = [];
   bool _isProcessing = false;
+  CancelToken? _cancelToken;
   final TextEditingController _resultController = TextEditingController();
 
   @override
@@ -113,6 +114,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
       _isProcessing = true;
       _extractedWordsList.clear();
       _resultController.text = "";
+      _cancelToken = CancelToken();
     });
 
     try {
@@ -139,6 +141,7 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
         "/admin/pdf/extractWords.do",
         data: formData,
         options: Options(responseType: ResponseType.stream),
+        cancelToken: _cancelToken,
       );
 
       final responseBody = response.data as ResponseBody;
@@ -163,6 +166,8 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
               eventData = line.substring(5).trim();
             }
           }
+
+          Global.logger.d("收到 SSE 事件: event=$eventName, data=$eventData");
 
           final data = eventData;
           if (eventName == "page" && data != null) {
@@ -192,13 +197,23 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
 
       ToastUtil.success("提取完成！共计 ${_extractedWordsList.length} 个单词");
     } catch (e) {
-      Global.logger.e("PDF 转换异常", error: e);
-      ToastUtil.error("转换异常: $e");
+      if (CancelToken.isCancel(e as DioException)) {
+        Global.logger.i("用户取消了 PDF 转换");
+        ToastUtil.info("已停止提取");
+      } else {
+        Global.logger.e("PDF 转换异常", error: e);
+        ToastUtil.error("转换异常: $e");
+      }
     } finally {
       setState(() {
         _isProcessing = false;
+        _cancelToken = null;
       });
     }
+  }
+
+  void _stopConversion() {
+    _cancelToken?.cancel("用户主动停止");
   }
 
   void _copyToClipboard() {
@@ -293,27 +308,48 @@ class _PdfConvertPageState extends State<PdfConvertPage> {
 
             const SizedBox(height: 16),
 
-            // 第二步：开始转换按钮
+            // 第二步：开始/停止转换按钮
             Center(
-              child: SizedBox(
-                width: 200,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: (_selectedFileContent == null || _isProcessing) ? null : _startConversion,
-                  icon: _isProcessing
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.auto_awesome),
-                  label: Text(_isProcessing ? "转换中..." : "开始提取单词"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 180,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: (_selectedFileContent == null || _isProcessing) ? null : _startConversion,
+                      icon: _isProcessing
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.auto_awesome),
+                      label: Text(_isProcessing ? "提取中..." : "开始提取单词"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                      ),
+                    ),
                   ),
-                ),
+                  if (_isProcessing) ...[
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 120,
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: _stopConversion,
+                        icon: const Icon(Icons.stop_circle_outlined, color: Colors.red),
+                        label: const Text("停止", style: TextStyle(color: Colors.red)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
 

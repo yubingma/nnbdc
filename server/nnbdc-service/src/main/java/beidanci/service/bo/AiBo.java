@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
 
@@ -532,7 +532,18 @@ public class AiBo {
      * @param pdfFile PDF 文件对象
      * @param onPageExtracted 每解析出一页单词时的回调
      */
-    public void parsePdfToWordsStream(File pdfFile, java.util.function.Consumer<String> onPageExtracted) {
+    public void parsePdfToWordsStream(File pdfFile, Consumer<String> onPageExtracted) {
+        parsePdfToWordsStream(pdfFile, onPageExtracted, () -> false);
+    }
+    
+    /**
+     * 调用阿里云AI OCR 将 PDF 转换为单词列表 (流式解析，支持客户端断开检测)
+     * @param pdfFile PDF 文件对象
+     * @param onPageExtracted 每解析出一页单词时的回调
+     * @param sseEmitter SSE emitter，用于检测客户端是否已断开
+     */
+    public void parsePdfToWordsStream(File pdfFile, Consumer<String> onPageExtracted, 
+            BooleanSupplier isDisconnected) {
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
             throw new RuntimeException("AI 调用失败: API Key 未设置");
@@ -547,13 +558,25 @@ public class AiBo {
             
             // 2. 逐页 OCR 识别
             for (int i = 0; i < pageImagesBase64.size(); i++) {
+                // 检测客户端是否已断开
+                if (isDisconnected != null && isDisconnected.getAsBoolean()) {
+                    logger.info("客户端已断开，停止 OCR 处理");
+                    break;
+                }
+                
                 logger.info("OCR 处理第 {}/{} 页", i + 1, pageImagesBase64.size());
                 String pageResult = ocrImageWithQwenVL(pageImagesBase64.get(i));
                 if (pageResult != null && !pageResult.isEmpty()) {
+                    logger.info("第 {} 页 OCR 原始结果:\n{}", i + 1, pageResult);
                     String pageWords = extractWordsFromMarkdown(pageResult);
                     if (!pageWords.isEmpty()) {
+                        logger.info("第 {} 页成功提取 {} 个单词", i + 1, pageWords.split("\n").length);
                         onPageExtracted.accept(pageWords);
+                    } else {
+                        logger.warn("第 {} 页未提取到任何有效单词", i + 1);
                     }
+                } else {
+                    logger.warn("第 {} 页 OCR 返回结果为空", i + 1);
                 }
             }
             logger.info("OCR 全部完成");
@@ -573,7 +596,7 @@ public class AiBo {
         StringBuilder allWords = new StringBuilder();
         parsePdfToWordsStream(pdfFile, pageWords -> {
             allWords.append(pageWords);
-        });
+        }, () -> false);
         
         if (allWords.length() == 0) {
             throw new RuntimeException("OCR 未返回任何内容");
@@ -593,7 +616,7 @@ public class AiBo {
             int pageCount = document.getNumberOfPages();
             
             for (int i = 0; i < pageCount; i++) {
-                BufferedImage image = renderer.renderImageWithDPI(i, 150);
+                BufferedImage image = renderer.renderImageWithDPI(i, 200);
                 
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ImageIO.write(image, "PNG", baos);
@@ -643,7 +666,7 @@ public class AiBo {
         
         Map<String, Object> textBlock = new HashMap<>();
         textBlock.put("type", "text");
-        textBlock.put("text", "请识别图片中的所有单词及其中文释义，按Markdown表格格式输出。不要遗漏任何单词。");
+        textBlock.put("text", "请识别图片中的所有单词及其对应的所有中文释义。请按Markdown表格格式输出（包含：序号、单词、释义）。务必识别并列出图片中的【每一个】单词，不要有任何遗漏。");
         content.add(textBlock);
         
         userMessage.put("content", content);
@@ -681,38 +704,67 @@ public class AiBo {
      */
     private String extractWordsFromMarkdown(String markdown) {
         StringBuilder sb = new StringBuilder();
-        
-        // 匹配 Markdown 表格行的正则: | col1 | col2 | col3 | ...
-        // Qwen-VL 输出的表格通常是 | 序号 | 单词 | 释义 |
-        Pattern rowPattern = Pattern.compile("\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|");
-        
-        String[] lines = markdown.split("\n");
+        String[] lines = markdown.split("\\R");
         for (String line : lines) {
-            Matcher m = rowPattern.matcher(line);
-            if (m.find()) {
-                String col1 = m.group(1).trim();
-                String col2 = m.group(2).trim();
-                String col3 = m.group(3).trim();
-                
-                // 排除表头和分隔符行
-                if (col2.equalsIgnoreCase("Word") || col2.equalsIgnoreCase("单词") || col2.matches("-+")) {
-                    continue;
-                }
-                
-                // 如果第二列看起来像序号，而第三列是单词，则顺延
-                String word = col2;
-                String meaning = col3;
-                if (col1.matches("\\d+") && !col2.isEmpty()) {
+            line = line.trim();
+            if (!line.contains("|")) continue;
+            
+            // 将行按 | 分割，并清理空白
+            String[] rawParts = line.split("\\|");
+            List<String> columns = new ArrayList<>();
+            for (String part : rawParts) {
+                String trimmed = part.trim();
+                // 忽略首尾因 | 产生的空元素，但保留中间可能的空列
+                columns.add(trimmed);
+            }
+            
+            // 移除首尾空列（通常由首尾的 | 产生）
+            if (!columns.isEmpty() && columns.get(0).isEmpty()) columns.remove(0);
+            if (!columns.isEmpty() && columns.get(columns.size() - 1).isEmpty()) columns.remove(columns.size() - 1);
+
+            if (columns.size() < 2) continue;
+
+            // 提取关键内容
+            String col1 = columns.get(0);
+            String col2 = columns.get(1);
+            
+            // 排除表头和分隔符行
+            if (col2.equalsIgnoreCase("Word") || col2.equalsIgnoreCase("单词") || 
+                col2.contains("---") || col1.contains("---") || col1.equalsIgnoreCase("序号")) {
+                continue;
+            }
+            
+            String word = "";
+            String meaning = "";
+            
+            // 根据列数启发式识别单词和释义
+            if (columns.size() == 2) {
+                word = col1;
+                meaning = col2;
+            } else if (columns.size() == 3) {
+                // 可能是 | 序号 | 单词 | 释义 |
+                if (col1.matches("\\d+")) {
                     word = col2;
-                    meaning = col3;
+                    meaning = columns.get(2);
+                } else {
+                    // 可能是 | 单词 | 属性 | 释义 |
+                    word = col1;
+                    meaning = columns.get(2);
                 }
-                
-                if (!word.isEmpty()) {
-                    sb.append(word).append("\t").append(meaning).append("\n");
+            } else {
+                // 更多列的情况，通常单词在较前位置，释义在较后位置
+                if (col1.matches("\\d+")) {
+                    word = col2;
+                } else {
+                    word = col1;
                 }
+                meaning = columns.get(columns.size() - 1);
+            }
+            
+            if (!word.isEmpty() && !word.contains("--")) {
+                sb.append(word).append("\t").append(meaning).append("\n");
             }
         }
-        
         return sb.toString();
     }
 }
