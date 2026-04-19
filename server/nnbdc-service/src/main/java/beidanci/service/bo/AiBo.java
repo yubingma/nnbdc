@@ -575,24 +575,20 @@ public class AiBo {
             headers.set("Authorization", "Bearer " + apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // 构建 Qwen-Doc-Turbo 的多模态输入格式
+            // 构建 Qwen-Doc-Turbo 的多模态输入格式 (使用 fileid:// 协议)
             Map<String, Object> body = new HashMap<>();
             List<Map<String, Object>> messages = new ArrayList<>();
+            
+            // 1. 添加文件引用消息 (使用系统角色或用户角色均可，这里遵循官方推荐的 fileid:// 协议)
+            Map<String, Object> fileMessage = new HashMap<>();
+            fileMessage.put("role", "system");
+            fileMessage.put("content", "fileid://" + fileId);
+            messages.add(fileMessage);
+
+            // 2. 添加用户指令消息
             Map<String, Object> userMessage = new HashMap<>();
             userMessage.put("role", "user");
-
-            List<Map<String, Object>> contentArr = new ArrayList<>();
-            Map<String, Object> textPart = new HashMap<>();
-            textPart.put("type", "text");
-            textPart.put("text", "请解析该文档，将其中的所有表格以 Markdown 格式完整输出，不要遗漏任何单词。");
-            contentArr.add(textPart);
-
-            Map<String, Object> docPart = new HashMap<>();
-            docPart.put("type", "file_id");
-            docPart.put("file_id", fileId);
-            contentArr.add(docPart);
-
-            userMessage.put("content", contentArr);
+            userMessage.put("content", "请解析该文档，将其中的所有表格以 Markdown 格式完整输出，不要遗漏任何单词。");
             messages.add(userMessage);
             
             body.put("messages", messages);
