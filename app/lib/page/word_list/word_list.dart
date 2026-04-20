@@ -1208,6 +1208,7 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget renderPage() {
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
     return Stack(
       children: [
         NotificationListener<ScrollUpdateNotification>(
@@ -1261,8 +1262,8 @@ class WordListPageState extends State<WordListPage>
             // 控制"回到顶部"按钮的显示与隐藏
             if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ < 500 &&
                 showToTopBtn) {
-              // 使用 microtask 减少 UI 阻塞
-              Future.microtask(() {
+              // 使用 addPostFrameCallback 确保在当前帧结束后再更新状态，避免 MouseTracker 冲突
+              SchedulerBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   setState(() {
                     showToTopBtn = false;
@@ -1272,7 +1273,7 @@ class WordListPageState extends State<WordListPage>
             } else if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ >
                     500 &&
                 !showToTopBtn) {
-              Future.microtask(() {
+              SchedulerBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
                   setState(() {
                     showToTopBtn = true;
@@ -1286,6 +1287,7 @@ class WordListPageState extends State<WordListPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _buildLegend(isDarkMode),
               Expanded(
                 child: ScrollablePositionedList.builder(
                   itemCount: words.length,
@@ -2278,52 +2280,9 @@ class WordListPageState extends State<WordListPage>
 
   Widget _buildWordHeader(WordWrapper word, bool isBookmarked, bool isDarkMode,
       {bool? learningStatus}) {
-    // 状态标签
-    Widget? statusTag;
-    if (learningStatus == true) {
-      statusTag = Container(
-        margin: const EdgeInsets.only(left: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
-            width: 0.5,
-          ),
-        ),
-        child: const Text(
-          '已掌握',
-          style: TextStyle(
-            color: Color(0xFF4CAF50),
-            fontSize: 9,
-          ),
-        ),
-      );
-    } else if (learningStatus == false) {
-      statusTag = Container(
-        margin: const EdgeInsets.only(left: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2196F3).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: const Color(0xFF2196F3).withValues(alpha: 0.3),
-            width: 0.5,
-          ),
-        ),
-        child: const Text(
-          '学习中',
-          style: TextStyle(
-            color: Color(0xFF2196F3),
-            fontSize: 9,
-          ),
-        ),
-      );
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
+
         // 估算单词和音标所需的宽度
         final spellWidth = word.word.spell.length * 14.0; // 估算单词宽度
         final pronounceWidth = word.word.mergedPronounce.isNotEmpty
@@ -2388,7 +2347,6 @@ class WordListPageState extends State<WordListPage>
                       ),
                     ),
                   ),
-                  if (statusTag != null) statusTag,
                 ],
               ),
             ],
@@ -2436,12 +2394,10 @@ class WordListPageState extends State<WordListPage>
                         height: 1.3,
                       ),
                       overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
                     ),
                   ),
                 ),
               ],
-              if (statusTag != null) statusTag,
             ],
           );
         }
@@ -2484,9 +2440,61 @@ class WordListPageState extends State<WordListPage>
     return Container();
   }
 
-  Widget _buildWordProgressContainer(WordWrapper word, bool isDarkMode) {
+  Widget _buildLegend(bool isDarkMode) {
     return Container(
-      width: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.02),
+        border: Border(
+          bottom: BorderSide(
+            color: isDarkMode ? Colors.white10 : Colors.black12,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          _buildLegendItem(
+              const Color(0xFF2196F3).withValues(alpha: 0.6), '学习中', isDarkMode),
+          const SizedBox(width: 16),
+          _buildLegendItem(const Color(0xFF4CAF50), '已掌握', isDarkMode),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String label, bool isDarkMode) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: isDarkMode ? Colors.white60 : Colors.black54,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWordProgressContainer(WordWrapper word, bool isDarkMode,
+      {double width = 32}) {
+    return Container(
+      width: width,
       height: 4,
       margin: const EdgeInsets.only(top: 4),
       child: ClipRRect(
@@ -2503,44 +2511,6 @@ class WordListPageState extends State<WordListPage>
               isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
           progressColor: progressColor(word),
           animatedDuration: const Duration(milliseconds: 200),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWordIndexContainer(int i, bool isBookmarked) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isBookmarked
-              ? [const Color(0xFF0097A7), const Color(0xFF00ACC1)]
-              : [const Color(0xFF9CA3AF), const Color(0xFF6B7280)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: (isBookmarked ? const Color(0xFF0097A7) : Colors.grey)
-                .withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
-          textScaler: TextScaler.linear(1.0),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            height: 1.3,
-            letterSpacing: 0.2,
-          ),
         ),
       ),
     );
@@ -2634,97 +2604,187 @@ class WordListPageState extends State<WordListPage>
 
   Widget _renderWordContent(WordWrapper word, int i, bool isBookmarked,
       bool isDarkMode, bool? learningStatus) {
-    final actions =
-        _getSlidableActions(word, i, isBookmarked, learningStatus: learningStatus);
+    final actions = _getSlidableActions(word, i, isBookmarked,
+        learningStatus: learningStatus);
 
-    Widget itemContent = InkWell(
-      focusColor: Colors.transparent,
+    // 获取状态颜色
+    Color? statusColor;
+    if (learningStatus == true) {
+      statusColor = const Color(0xFF4CAF50); // 已掌握 - 绿色
+    } else if (learningStatus == false) {
+      statusColor = const Color(0xFF2196F3).withValues(alpha: 0.6); // 学习中 - 淡淡蓝色
+    }
+
+    Widget itemContent = GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => _handleWordTap(word, i),
       onLongPress: () => _handleWordLongPress(word, i),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// 序号和进度条区域
-            SizedBox(
-              width: 48,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  /// 单词序号
-                  _buildWordIndexContainer(i, isBookmarked),
-
-                  /// 掌握度进度条（横条）
-                  if (args.showWordProgress)
-                    _buildWordProgressContainer(word, isDarkMode),
-                  // 紧凑波形或评分：放在掌握度条正下方
-                  if (studyMode == WordListStudyMode.speakChinese ||
-                      studyMode == WordListStudyMode.speakEnglish)
-                    _buildAudioIndicator(word, isBookmarked, isDarkMode),
-                ],
-              ),
+      child: Stack(
+        children: [
+          /// 1. 左侧高长条背景 (通过 Positioned.fill 自动伸缩至全高)
+          Positioned.fill(
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.03),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                  ),
+                ),
+                const Expanded(child: SizedBox.shrink()),
+              ],
             ),
-            const SizedBox(width: 12),
+          ),
 
-            /// 单词内容 - 拼写和释义排成一行
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+          /// 2. 实际内容层
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// 左侧指示器区域 (固定宽度 36)
+              SizedBox(
+                width: 36,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 10),
+
+                    /// 单词序号 (圆形容器)
+                    Container(
+                      width: 24,
+                      height: 24,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isBookmarked
+                            ? const Color(0xFF0097A7)
+                            : (isDarkMode ? Colors.white10 : Colors.black12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isBookmarked
+                              ? Colors.white
+                              : (isDarkMode ? Colors.white38 : Colors.black38),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    /// 状态色块 (正方形小色块)
+                    if (statusColor != null)
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: statusColor.withValues(alpha: 0.3),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    /// 掌握度进度条（横条）
+                    if (args.showWordProgress)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: _buildWordProgressContainer(word, isDarkMode,
+                            width: 24),
+                      ),
+
+                    // 紧凑波形或评分
+                    if (studyMode == WordListStudyMode.speakChinese ||
+                        studyMode == WordListStudyMode.speakEnglish)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: _buildAudioIndicator(
+                            word, isBookmarked, isDarkMode),
+                      ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+
+              /// 单词内容 - 拼写和释义排成一行
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      /// 单词英文和音标
-                      if (!(studyMode == WordListStudyMode.dictation ||
-                          studyMode == WordListStudyMode.speakEnglish))
-                        SizedBox(
-                          width: 120, // 单词区域固定宽度，保证释义对齐
-                          child: _buildWordHeader(word, isBookmarked, isDarkMode,
-                              learningStatus: learningStatus),
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          /// 单词英文和音标
+                          if (!(studyMode == WordListStudyMode.dictation ||
+                              studyMode == WordListStudyMode.speakEnglish))
+                            SizedBox(
+                              width: 120, // 单词区域固定宽度，保证释义对齐
+                              child: _buildWordHeader(word, isBookmarked,
+                                  isDarkMode,
+                                  learningStatus: learningStatus),
+                            ),
 
-                      if (!(studyMode == WordListStudyMode.dictation ||
-                          studyMode == WordListStudyMode.speakEnglish))
-                        const SizedBox(width: 16),
+                          if (!(studyMode == WordListStudyMode.dictation ||
+                              studyMode == WordListStudyMode.speakEnglish))
+                            const SizedBox(width: 16),
 
-                      /// 单词释义
-                      if (studyMode == WordListStudyMode.list ||
-                          studyMode == WordListStudyMode.dictation ||
-                          studyMode == WordListStudyMode.speakEnglish)
-                        Expanded(
-                          child: _buildWordMeaning(word, isDarkMode,
-                              topPadding: (studyMode == WordListStudyMode.list) ? 0 : 8),
-                        ),
+                          /// 单词释义
+                          if (studyMode == WordListStudyMode.list ||
+                              studyMode == WordListStudyMode.dictation ||
+                              studyMode == WordListStudyMode.speakEnglish)
+                            Expanded(
+                              child: _buildWordMeaning(word, isDarkMode,
+                                  topPadding:
+                                      (studyMode == WordListStudyMode.list)
+                                          ? 0
+                                          : 8),
+                            ),
+                        ],
+                      ),
+
+                      /// 给点提示 (如果是默写模式)
+                      studyMode == WordListStudyMode.dictation &&
+                              getBookMarkUiPosition() == i
+                          ? _buildDictationHint(word)
+                          : Container(),
+
+                      /// 单词拼写输入框
+                      studyMode == WordListStudyMode.dictation
+                          ? _buildDictationTextField(word, i)
+                          : Container(),
+
+                      /// 默写中文输入区
+                      studyMode == WordListStudyMode.speakChinese
+                          ? _buildSpeakChineseArea(word)
+                          : Container(),
+
+                      /// 背英文输入区（释义下方：未通过仅一条下划线；通过后显示英文与音标）
+                      studyMode == WordListStudyMode.speakEnglish
+                          ? _buildSpeakEnglishArea(word, isBookmarked,
+                              isDarkMode)
+                          : Container(),
                     ],
                   ),
-
-                  /// 给点提示 (如果是默写模式)
-                  studyMode == WordListStudyMode.dictation &&
-                          getBookMarkUiPosition() == i
-                      ? _buildDictationHint(word)
-                      : Container(),
-
-                  /// 单词拼写输入框
-                  studyMode == WordListStudyMode.dictation
-                      ? _buildDictationTextField(word, i)
-                      : Container(),
-
-                  /// 默写中文输入区
-                  studyMode == WordListStudyMode.speakChinese
-                      ? _buildSpeakChineseArea(word)
-                      : Container(),
-
-                  /// 背英文输入区（释义下方：未通过仅一条下划线；通过后显示英文与音标）
-                  studyMode == WordListStudyMode.speakEnglish
-                      ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
-                      : Container(),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
 

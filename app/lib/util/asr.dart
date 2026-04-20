@@ -280,6 +280,9 @@ class Asr {
   /// 获取音量计数据流，使用单例模式避免重复订阅
   /// 每次调用都会返回同一个流订阅，避免 iOS 端出现 "No active stream to cancel" 错误
   Stream<double> meterStream() {
+    if (!PlatformUtils.isAsrSupported()) {
+      return const Stream<double>.empty();
+    }
     // 如果已经有订阅，直接返回现有的流（通过检查订阅是否存在）
     // 注意：这里无法直接返回已存在的 Stream，所以采用延迟初始化的方式
     // 调用方应该只调用一次 meterStream() 并保存订阅
