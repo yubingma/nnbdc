@@ -1134,11 +1134,47 @@ class _WordManagementTabState extends State<_WordManagementTab> {
 
   List<DictWordVo> get _filteredWords {
     if (_searchQuery.isEmpty) {
-      return _words;
+      final sorted = List<DictWordVo>.from(_words);
+      sorted.sort((a, b) {
+        if (a.unit != b.unit) return a.unit.compareTo(b.unit);
+        return a.seq.compareTo(b.seq);
+      });
+      return sorted;
     }
     return _words.where((word) {
       return word.word.spell.toLowerCase().contains(_searchQuery);
     }).toList();
+  }
+
+  /// 构建混合列表（包含 Header 和 Word）
+  List<dynamic> get _groupedItems {
+    final filtered = _filteredWords;
+    if (filtered.isEmpty) return [];
+    
+    // 如果正在搜索，不显示分组 Header，直接平铺显示结果
+    if (_searchQuery.isNotEmpty) return filtered;
+
+    final List<dynamic> items = [];
+    int? currentUnit;
+    int currentUnitCount = 0;
+    int? lastHeaderIndex;
+
+    for (var word in filtered) {
+      if (word.unit != currentUnit) {
+        currentUnit = word.unit;
+        lastHeaderIndex = items.length;
+        items.add("UNIT_HEADER_${word.unit}"); // 占位符
+        currentUnitCount = 0;
+      }
+      items.add(word);
+      currentUnitCount++;
+      
+      // 更新标题栏的计数
+      if (lastHeaderIndex != null) {
+        items[lastHeaderIndex] = "第 ${currentUnit == 0 ? '默认' : currentUnit} 单元 ($currentUnitCount 个单词)";
+      }
+    }
+    return items;
   }
 
   @override
@@ -1213,15 +1249,41 @@ class _WordManagementTabState extends State<_WordManagementTab> {
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _filteredWords.length,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: _groupedItems.length,
                         itemBuilder: (context, index) {
-                          final dictWord = _filteredWords[index];
-                          return _buildWordCard(dictWord);
+                          final item = _groupedItems[index];
+                          if (item is String) {
+                            return _buildUnitHeader(item);
+                          }
+                          return _buildWordCard(item as DictWordVo);
                         },
                       ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildUnitHeader(String title) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      margin: const EdgeInsets.only(top: 16, bottom: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(left: BorderSide(color: AppTheme.primaryColor, width: 4)),
+      ),
+      child: Text(
+        title,
+        textScaler: const TextScaler.linear(1.0),
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: isDarkMode ? Colors.white : Colors.black87,
+          fontFamily: 'NotoSansSC',
+        ),
       ),
     );
   }

@@ -823,7 +823,7 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV36ToV37AddUnitToDictWords(Migrator m) async {
     await transaction(() async {
       try {
-        await m.addColumn(dictWords, dictWords.unit);
+        await customStatement('ALTER TABLE dict_words ADD COLUMN unit INTEGER NOT NULL DEFAULT 0');
         Global.logger.i('✅ 升级从 V36 到 V37 完成，添加 DictWords 的 unit 字段');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V36 到 V37 失败: $e', error: e, stackTrace: stackTrace);
