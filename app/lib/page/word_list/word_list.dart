@@ -2634,7 +2634,7 @@ class WordListPageState extends State<WordListPage>
 
           /// 2. 实际内容层
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               /// 左侧指示器区域 (固定宽度 36)
               SizedBox(
@@ -2642,7 +2642,6 @@ class WordListPageState extends State<WordListPage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 10),
 
                     /// 单词序号 (圆形容器)
                     Container(
@@ -2703,7 +2702,6 @@ class WordListPageState extends State<WordListPage>
                         child: _buildAudioIndicator(
                             word, isBookmarked, isDarkMode),
                       ),
-                    const SizedBox(height: 10),
                   ],
                 ),
               ),
