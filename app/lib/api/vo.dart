@@ -367,10 +367,12 @@ class DictWordVo {
 
   int seq;
 
+  int unit;
+
   DateTime? createTime;
   DateTime? updateTime;
 
-  DictWordVo(this.dict, this.word, this.seq);
+  DictWordVo(this.dict, this.word, this.seq, {this.unit = 0});
 
   factory DictWordVo.fromJson(Map<String, dynamic> json) => _$DictWordVoFromJson(json);
 

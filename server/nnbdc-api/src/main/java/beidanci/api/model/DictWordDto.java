@@ -15,6 +15,11 @@ public class DictWordDto {
     Date createTime;
     Date updateTime;
 
+    /**
+     * 单词所属单元序号，0 表示无单元
+     */
+    private Integer unit;
+
     public String getDictId() {
         return dictId;
     }
@@ -37,6 +42,14 @@ public class DictWordDto {
 
     public void setSeq(Integer seq) {
         this.seq = seq;
+    }
+
+    public Integer getUnit() {
+        return unit;
+    }
+
+    public void setUnit(Integer unit) {
+        this.unit = unit;
     }
 
     public Date getCreateTime() {

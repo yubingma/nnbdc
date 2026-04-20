@@ -571,8 +571,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           });
                         },
                         decoration: InputDecoration(
-                          labelText: '单词列表 (每行一个，支持"单|义") - 当前输入 ${_wordsCtrl.text.split('\n').where((e) => e.trim().isNotEmpty).length} 行',
-                          hintText: "", 
+                          labelText: '单词列表 (每行一个) - 当前输入 ${_wordsCtrl.text.split('\n').where((e) => e.trim().isNotEmpty).length} 行',
+                          hintText: "格式: [单元序号|]单词[|人工指定释义]\n例如: 1|apple|一种苹果\n如果是扁平导入，单元序号填 0 或省略", 
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           alignLabelWithHint: true,
                           contentPadding: const EdgeInsets.all(16),

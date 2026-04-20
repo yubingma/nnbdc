@@ -34,12 +34,26 @@ public class DictWord extends Po  {
     @Column(name = "seq", nullable = true)
     private Integer seq;
 
+    /**
+     * 单词所属单元序号，0 表示无单元
+     */
+    @Column(name = "unit", nullable = false)
+    private Integer unit = 0;
+
     public Integer getSeq() {
         return seq;
     }
 
     public void setSeq(Integer seq) {
         this.seq = seq;
+    }
+
+    public Integer getUnit() {
+        return unit;
+    }
+
+    public void setUnit(Integer unit) {
+        this.unit = unit;
     }
 
     public DictWordId getId() {
@@ -79,6 +93,7 @@ public class DictWord extends Po  {
 
         // 设置其他属性
         dictWord.setSeq(dto.getSeq());
+        dictWord.setUnit(dto.getUnit() != null ? dto.getUnit() : 0);
         dictWord.setCreateTime(dto.getCreateTime());
         dictWord.setUpdateTime(dto.getUpdateTime());
 

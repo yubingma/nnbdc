@@ -43,10 +43,11 @@ class DictWordDto {
   final String dictId;
   final String wordId;
   final int seq;
+  final int unit;
   final DateTime createTime;
   final DateTime? updateTime;
 
-  DictWordDto(this.dictId, this.wordId, this.seq, this.createTime, this.updateTime);
+  DictWordDto(this.dictId, this.wordId, this.seq, this.createTime, this.updateTime, [this.unit = 0]);
 
   factory DictWordDto.fromJson(Map<String, dynamic> json) => _$DictWordDtoFromJson(json);
 

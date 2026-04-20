@@ -344,14 +344,25 @@ public class DictImportBo {
             if (line.isEmpty()) continue;
             String spell = line;
             String manualMeaning = null;
+            Integer unit = 0;
             if (line.contains("|")) {
-                String[] parts = line.split("\\|", 2);
-                spell = parts[0].trim();
-                manualMeaning = parts[1].trim();
-                if (manualMeaning.isEmpty()) manualMeaning = null;
+                String[] parts = line.split("\\|");
+                if (parts.length >= 3) { // 格式: unit|spell|meaning
+                    try {
+                        unit = Integer.parseInt(parts[0].trim());
+                    } catch (NumberFormatException e) {
+                        unit = 0;
+                    }
+                    spell = parts[1].trim();
+                    manualMeaning = parts[2].trim();
+                } else if (parts.length == 2) { // 格式: spell|meaning
+                    spell = parts[0].trim();
+                    manualMeaning = parts[1].trim();
+                }
+                if (manualMeaning != null && manualMeaning.isEmpty()) manualMeaning = null;
             }
             try {
-                processSingleWord(spell, manualMeaning, true, systemUser, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                processSingleWord(spell, manualMeaning, unit, true, systemUser, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -372,7 +383,7 @@ public class DictImportBo {
             }
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                processSingleWord(spell, null, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -395,7 +406,7 @@ public class DictImportBo {
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(spell, manualMeaning, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                processSingleWord(spell, manualMeaning, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
@@ -406,7 +417,7 @@ public class DictImportBo {
         }
     }
 
-    private void processSingleWord(String spell, String manualMeaning, boolean isSystemDict, User user, String dictId, String dictName, String domain,
+    private void processSingleWord(String spell, String manualMeaning, Integer unit, boolean isSystemDict, User user, String dictId, String dictName, String domain,
                                    boolean generateWordImage, String preferredVoices, String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) throws Exception {
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
@@ -620,6 +631,7 @@ public class DictImportBo {
                 dw.setId(new DictWordId(dictId, word.getId()));
                 dw.setDict(dict);
                 dw.setWord(word);
+                dw.setUnit(unit);
                 dw.setSeq(dictWordBo.getMaxSeqNo(dict) + 1);
                 dw.setCreateTime(new Date());
                 dictWordBo.createEntity(dw);

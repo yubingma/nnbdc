@@ -308,6 +308,9 @@ class DictWords extends Table {
   /// 单词在单词书中的顺序号，从1开始
   IntColumn get seq => integer()();
 
+  /// 单词所属单元序号，0 表示无单元
+  IntColumn get unit => integer().withDefault(const Constant(0))();
+
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().nullable()();
