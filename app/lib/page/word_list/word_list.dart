@@ -1838,19 +1838,18 @@ class WordListPageState extends State<WordListPage>
       ));
     }
 
-    // 3. 掌握/删除按钮
     if (args.appBarTitle != '已掌握' &&
         !['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
             .contains(args.appBarTitle)) {
-      if (learningStatus != true) {
-        actions.add(SlidableAction(
-          onPressed: (_) => onMasterBtnPressed(word, i),
-          backgroundColor: const Color(0xFF4CAF50),
-          foregroundColor: Colors.white,
-          icon: Icons.check_circle_outline,
-          label: '掌握',
-        ));
-      }
+      final isMastered = learningStatus == true;
+      actions.add(SlidableAction(
+        onPressed: isMastered ? null : (_) => onMasterBtnPressed(word, i),
+        backgroundColor:
+            isMastered ? Colors.grey[400]! : const Color(0xFF4CAF50),
+        foregroundColor: Colors.white,
+        icon: isMastered ? Icons.check_circle : Icons.check_circle_outline,
+        label: isMastered ? '已掌握' : '掌握',
+      ));
     }
 
     if (args.showDelBtn ||
@@ -1868,7 +1867,15 @@ class WordListPageState extends State<WordListPage>
         '今日单词'
       ].contains(args.appBarTitle);
 
-      if (!(isMastered && showMasterButton)) {
+      if (isMastered && showMasterButton) {
+        actions.add(SlidableAction(
+          onPressed: null,
+          backgroundColor: Colors.grey[400]!,
+          foregroundColor: Colors.white,
+          icon: Icons.check_circle,
+          label: '已熟知',
+        ));
+      } else {
         switch (args.appBarTitle) {
           case '已掌握':
             buttonText = '重学';
