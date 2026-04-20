@@ -2571,8 +2571,8 @@ class WordListPageState extends State<WordListPage>
                   Container(
                     width: 36,
                     color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : Colors.black.withValues(alpha: 0.03),
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : const Color(0xFFE2E8F0),
                   ),
                   const Expanded(child: SizedBox.shrink()),
                 ],
