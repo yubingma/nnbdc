@@ -176,8 +176,6 @@ class WordListPageState extends State<WordListPage>
   /// 加载到界面的单词列表（其中第一个单词在所有单词中的序号为 baseIndex)
   List<WordWrapper> words = [];
 
-  /// 单词的学习状态：wordId -> null(未学习), true(已掌握), false(学习中)
-  Map<String, bool?> learningStatusMap = {};
 
   /// 是否显示返回到顶部按钮
 
@@ -403,18 +401,21 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
-  /// 异步加载单词的学习状态
   Future<void> _loadLearningStatusForWords(List<WordWrapper> newWords) async {
+    bool hasUpdates = false;
     for (var wordWrapper in newWords) {
       final wordId = wordWrapper.word.id;
-      if (wordId != null && !learningStatusMap.containsKey(wordId)) {
+      if (wordId != null && wordWrapper.initialLearningStatus == null) {
         final status = await args.wordsProvider.getWordLearningStatus(wordId);
-        if (mounted && status != null) {
-          setState(() {
-            learningStatusMap[wordId] = status;
-          });
+        if (status != null) {
+          wordWrapper.initialLearningStatus = status;
+          wordWrapper.currentLearningStatus = status;
+          hasUpdates = true;
         }
       }
+    }
+    if (mounted && hasUpdates) {
+      setState(() {});
     }
   }
 
@@ -1603,9 +1604,19 @@ class WordListPageState extends State<WordListPage>
   }
 
   onDelBtnPressed(WordWrapper word, int index) {
-    // 删除或掌握单词
-    args.wordsProvider.deleteWord(word).then((value) {
-      if (value) {
+    final start = DateTime.now().millisecondsSinceEpoch;
+    Global.logger.d('[Perf] onDelBtnPressed START: word=${word.word.spell}, index=$index');
+    
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      final apiStart = DateTime.now().millisecondsSinceEpoch;
+      Global.logger.d('[Perf] onDelBtnPressed API_START: delay=${apiStart - start}ms');
+
+      args.wordsProvider.deleteWord(word).then((value) {
+        final apiEnd = DateTime.now().millisecondsSinceEpoch;
+        Global.logger.d('[Perf] onDelBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
+        
+        if (value) {
         // 判断是否应该从UI上移除单词
         // 如果是今日学习相关的列表（包括分批次学习的阶段列表），并且今日学习已经正式开始，则不从UI移除记录，只更新状态
         // 这样可以保持今日学习单词表的记录总数不变，符合已经开始后的预期
@@ -1619,14 +1630,13 @@ class WordListPageState extends State<WordListPage>
         if (todayStudyStarted && isTodayTask) {
           // 仅更新状态，不从UI移除
           setState(() {
-            if (word.word.id != null) {
-              learningStatusMap[word.word.id!] = true;
-            }
+            word.currentLearningStatus = true;
             // 同时更新进度条显示逻辑所依赖的 tag 数据
             if (word.tag is LearningWordVo) {
               (word.tag as LearningWordVo).stability = 180.0;
             }
           });
+          Global.logger.d('[Perf] onDelBtnPressed STATE_UPDATED (todayTask)');
           return;
         }
 
@@ -1635,6 +1645,7 @@ class WordListPageState extends State<WordListPage>
           words.remove(word);
           totalWordCount--;
         });
+        Global.logger.d('[Perf] onDelBtnPressed STATE_UPDATED (removed)');
 
         // 更新书签
         if (isBookMarkValid(bookMark)) {
@@ -1646,81 +1657,111 @@ class WordListPageState extends State<WordListPage>
               bookMark = BookMarkVo(bookMarkPosition - 1, word.word.spell);
             });
 
-            args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
-              if (!success) {
-                Global.logger.e(
-                    '删除单词后更新书签失败: spell=${bookMark!.spell}, position=${bookMarkPosition - 1}');
-              }
-            });
+              args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
+                Global.logger.d('[Perf] onDelBtnPressed BOOKMARK_UPDATED: success=$success');
+              });
+            }
+          }
+
+          if (words.length < minWordCount) {
+            doQuery(false, baseIndex! + words.length, _pageSize, false);
           }
         }
-
-        // 如果剩余单词小于一定数量，主动加载更多数据
-        if (words.length < minWordCount) {
-          doQuery(false, baseIndex! + words.length, _pageSize, false);
-        }
-      }
+      });
     });
   }
 
   onMasterBtnPressed(WordWrapper word, int index) {
-    args.wordsProvider.masterWord(word).then((value) {
-      if (value) {
-        // 判断是否应该从UI上移除单词
-        // 如果是今日学习相关的列表（包括分批次学习的阶段列表），并且今日学习已经正式开始，则不从UI移除记录，只更新状态
-        // 这样可以保持今日学习单词表的记录总数不变，符合已经开始后的预期
-        final String providerType = args.wordsProvider.runtimeType.toString();
-        final bool isTodayTask = providerType == 'StageWordsProvider' ||
-            ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表']
-                .contains(args.appBarTitle);
-        final bool todayStudyStarted =
-            Global.getLoggedInUser()?.todayStudyStarted ?? false;
+    final start = DateTime.now().millisecondsSinceEpoch;
+    Global.logger.d('[Perf] onMasterBtnPressed START: word=${word.word.spell}');
 
-        if ((todayStudyStarted && isTodayTask) ||
-            args.wordsProvider.keepWordsOnMaster) {
-          // 仅更新状态，不从UI移除
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      final apiStart = DateTime.now().millisecondsSinceEpoch;
+
+      args.wordsProvider.masterWord(word).then((value) {
+        final apiEnd = DateTime.now().millisecondsSinceEpoch;
+        Global.logger.d('[Perf] onMasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
+
+        if (value) {
+          final String providerType = args.wordsProvider.runtimeType.toString();
+          final bool isTodayTask = providerType == 'StageWordsProvider' ||
+              ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表']
+                  .contains(args.appBarTitle);
+          final bool todayStudyStarted =
+              Global.getLoggedInUser()?.todayStudyStarted ?? false;
+
+          if ((todayStudyStarted && isTodayTask) ||
+              args.wordsProvider.keepWordsOnMaster) {
+            setState(() {
+              word.currentLearningStatus = true;
+              if (word.tag is LearningWordVo) {
+                (word.tag as LearningWordVo).stability = 180.0;
+              }
+            });
+            Global.logger.d('[Perf] onMasterBtnPressed STATE_UPDATED (keep)');
+            return;
+          }
+
           setState(() {
-            if (word.word.id != null) {
-              learningStatusMap[word.word.id!] = true;
-            }
+            word.currentLearningStatus = true;
             if (word.tag is LearningWordVo) {
               (word.tag as LearningWordVo).stability = 180.0;
             }
+            words.remove(word);
+            totalWordCount--;
           });
-          return;
+          Global.logger.d('[Perf] onMasterBtnPressed STATE_UPDATED (removed)');
+
+          if (isBookMarkValid(bookMark)) {
+            final bookMarkPosition = getBookMarkRawPosition(bookMark);
+            if (index + baseIndex! < bookMarkPosition &&
+                bookMarkPosition <= words.length + baseIndex!) {
+              var word = words[bookMarkPosition - baseIndex! - 1];
+              setState(() {
+                bookMark = BookMarkVo(bookMarkPosition - 1, word.word.spell);
+              });
+              args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
+                Global.logger.d('[Perf] onMasterBtnPressed BOOKMARK_UPDATED: success=$success');
+              });
+            }
+          }
+
+          if (words.length < minWordCount) {
+            doQuery(false, baseIndex! + words.length, _pageSize, false);
+          }
         }
+      });
+    });
+  }
 
-        setState(() {
-          if (word.word.id != null) {
-            learningStatusMap[word.word.id!] = true;
-          }
-          if (word.tag is LearningWordVo) {
-            (word.tag as LearningWordVo).stability = 180.0;
-          }
-          words.remove(word);
-          totalWordCount--;
-        });
+  onUnmasterBtnPressed(WordWrapper word, int index) {
+    final start = DateTime.now().millisecondsSinceEpoch;
+    Global.logger.d('[Perf] onUnmasterBtnPressed START: word=${word.word.spell}');
 
-        if (isBookMarkValid(bookMark)) {
-          final bookMarkPosition = getBookMarkRawPosition(bookMark);
-          if (index + baseIndex! < bookMarkPosition &&
-              bookMarkPosition <= words.length + baseIndex!) {
-            var word = words[bookMarkPosition - baseIndex! - 1];
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      final initialStatus = word.initialLearningStatus;
+      final apiStart = DateTime.now().millisecondsSinceEpoch;
+      Global.logger.d('[Perf] onUnmasterBtnPressed PATH: initialStatus=$initialStatus');
+
+      if (initialStatus == true) {
+        Global.logger.d('[Perf] onUnmasterBtnPressed -> redirecting to onDelBtnPressed');
+        onDelBtnPressed(word, index);
+      } else {
+        args.wordsProvider.deleteWord(word).then((value) {
+          final apiEnd = DateTime.now().millisecondsSinceEpoch;
+          Global.logger.d('[Perf] onUnmasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
+          if (value) {
             setState(() {
-              bookMark = BookMarkVo(bookMarkPosition - 1, word.word.spell);
-            });
-            args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
-              if (!success) {
-                Global.logger.e(
-                    '掌握单词后更新书签失败: spell=${bookMark!.spell}, position=${bookMarkPosition - 1}');
+              word.currentLearningStatus = initialStatus;
+              if (word.tag is LearningWordVo) {
+                (word.tag as LearningWordVo).stability = 0.0;
               }
             });
+            Global.logger.d('[Perf] onUnmasterBtnPressed STATE_UPDATED');
           }
-        }
-
-        if (words.length < minWordCount) {
-          doQuery(false, baseIndex! + words.length, _pageSize, false);
-        }
+        });
       }
     });
   }
@@ -1802,11 +1843,11 @@ class WordListPageState extends State<WordListPage>
   List<Widget> _getSlidableActions(WordWrapper word, int i, bool isBookmarked,
       {bool? learningStatus}) {
     final List<Widget> actions = [];
+    final String title = args.appBarTitle;
+    final bool isMastered = learningStatus == true;
 
     // 1. 编辑按钮
-    if (args.canEditWord &&
-        args.wordsProvider is WordModifier &&
-        args.appBarTitle != '已掌握') {
+    if (args.canEditWord && args.wordsProvider is WordModifier && title != '已掌握') {
       actions.add(SlidableAction(
         onPressed: (_) => _showEditMeaningDialog(word),
         backgroundColor: const Color(0xFF4CAF50),
@@ -1816,11 +1857,10 @@ class WordListPageState extends State<WordListPage>
       ));
     }
 
-    // 2. 提示按钮
-    if ((studyMode == WordListStudyMode.dictation ||
-            studyMode == WordListStudyMode.speakChinese ||
-            studyMode == WordListStudyMode.speakEnglish) &&
-        isBookmarked) {
+    // 2. 提示按钮 (仅对书签单词有效)
+    if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+        studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish)) {
       actions.add(SlidableAction(
         onPressed: (_) => giveALittleHint(word),
         backgroundColor: const Color(0xFF4A90E2),
@@ -1838,79 +1878,57 @@ class WordListPageState extends State<WordListPage>
       ));
     }
 
-    if (args.appBarTitle != '已掌握' &&
-        !['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
-            .contains(args.appBarTitle)) {
-      final isMastered = learningStatus == true;
+    // 3. 掌握/删除/重学 逻辑
+    const specialLists = ['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词'];
+    final bool isSpecialList = specialLists.contains(title);
+
+    if (title != '已掌握' && !isSpecialList) {
       actions.add(SlidableAction(
-        onPressed: isMastered ? null : (_) => onMasterBtnPressed(word, i),
-        backgroundColor:
-            isMastered ? Colors.grey[400]! : const Color(0xFF4CAF50),
+        onPressed: (_) => isMastered
+            ? onUnmasterBtnPressed(word, i)
+            : onMasterBtnPressed(word, i),
+        backgroundColor: isMastered ? Colors.grey[400]! : const Color(0xFF4CAF50),
         foregroundColor: Colors.white,
         icon: isMastered ? Icons.check_circle : Icons.check_circle_outline,
         label: isMastered ? '已掌握' : '掌握',
       ));
     }
 
-    if (args.showDelBtn ||
-        ['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
-            .contains(args.appBarTitle)) {
-      String buttonText;
-      Color color;
-      final bool isMastered = learningStatus == true;
-      final bool showMasterButton = [
-        '学习中',
-        '单词列表',
-        '今日错词',
-        '今日新词',
-        '今日旧词',
-        '今日单词'
-      ].contains(args.appBarTitle);
-
-      if (isMastered && showMasterButton) {
+    if (args.showDelBtn || isSpecialList) {
+      if (isMastered && isSpecialList) {
         actions.add(SlidableAction(
-          onPressed: null,
+          onPressed: (_) => onUnmasterBtnPressed(word, i),
           backgroundColor: Colors.grey[400]!,
           foregroundColor: Colors.white,
           icon: Icons.check_circle,
           label: '已熟知',
         ));
       } else {
-        switch (args.appBarTitle) {
-          case '已掌握':
-            buttonText = '重学';
-            color = const Color(0xFF2196F3);
-            break;
-          case '学习中':
-          case '单词列表':
-          case '今日错词':
-          case '今日新词':
-          case '今日旧词':
-          case '今日单词':
-            buttonText = '熟知';
-            color = const Color(0xFF26A69A); // 类似截屏中的青色
-            break;
-          case '生词本':
-          default:
-            buttonText = '删除';
-            color = const Color(0xFFEF5350);
+        String buttonText;
+        Color color;
+        IconData icon;
+        
+        if (title == '已掌握') {
+          buttonText = '重学';
+          color = const Color(0xFF2196F3);
+          icon = Icons.replay;
+        } else if (isSpecialList) {
+          buttonText = '熟知';
+          color = const Color(0xFF26A69A);
+          icon = Icons.check_circle;
+        } else {
+          buttonText = '删除';
+          color = const Color(0xFFEF5350);
+          icon = Icons.delete;
         }
 
         actions.add(SlidableAction(
-          onPressed: (_) {
-            if (buttonText == '掌握' || buttonText == '熟知') {
-              onMasterBtnPressed(word, i);
-            } else if (buttonText == '重学') {
-              onDelBtnPressed(word, i);
-            } else {
-              onDelBtnPressed(word, i);
-            }
-          },
+          onPressed: (_) => (buttonText == '掌握' || buttonText == '熟知') 
+              ? onMasterBtnPressed(word, i) 
+              : onDelBtnPressed(word, i),
           backgroundColor: color,
           foregroundColor: Colors.white,
-          icon: (buttonText == '掌握' || buttonText == '熟知')
-              ? Icons.check_circle
-              : (buttonText == '重学' ? Icons.replay : Icons.delete),
+          icon: icon,
           label: buttonText,
         ));
       }
@@ -2062,27 +2080,18 @@ class WordListPageState extends State<WordListPage>
               // 音标行
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
-                        ?.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(6),
+                child: Text(
+                  '[${word.word.mergedPronounce}]',
+                  textScaler: TextScaler.linear(1.0),
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    fontSize: 12,
+                    fontFamily: 'NotoSans',
+                    fontWeight: FontWeight.w500,
+                    height: 1.3,
                   ),
-                  child: Text(
-                    '[${word.word.mergedPronounce}]',
-                    textScaler: TextScaler.linear(1.0),
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
-                      fontSize: 12,
-                      fontFamily: 'NotoSans',
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -2110,27 +2119,18 @@ class WordListPageState extends State<WordListPage>
               if (word.word.mergedPronounce.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Flexible(
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
-                          ?.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(6),
+                  child: Text(
+                    '[${word.word.mergedPronounce}]',
+                    textScaler: TextScaler.linear(1.0),
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      fontSize: 12,
+                      fontFamily: 'NotoSans',
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
                     ),
-                    child: Text(
-                      '[${word.word.mergedPronounce}]',
-                      textScaler: TextScaler.linear(1.0),
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
-                        fontSize: 12,
-                        fontFamily: 'NotoSans',
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ],
@@ -2385,8 +2385,7 @@ class WordListPageState extends State<WordListPage>
     final isBookmarked = getBookMarkUiPosition() == i;
 
     // 获取学习状态
-    final learningStatus =
-        word.word.id != null ? learningStatusMap[word.word.id] : null;
+    final learningStatus = word.currentLearningStatus;
 
     // 基础单词内容
     Widget content = _buildWordDecoration(
@@ -2632,8 +2631,8 @@ class WordListPageState extends State<WordListPage>
     return Slidable(
       key: ValueKey('slidable_${word.word.id}'),
       endActionPane: ActionPane(
-        motion: const DrawerMotion(),
-        extentRatio: 0.25 * actions.length,
+        motion: const ScrollMotion(),
+        extentRatio: (0.25 * actions.length).clamp(0.0, 0.75),
         children: actions,
       ),
       child: itemContent,

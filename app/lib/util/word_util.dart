@@ -79,6 +79,12 @@ class WordWrapper {
   /// 是否在“背英文”模式下已经答对（用于揭示英文拼写）
   bool speakEnglishPassed = false;
 
+  /// 初始学习状态（进入词表时的状态）
+  bool? initialLearningStatus;
+
+  /// 当前学习状态（UI 展现的状态）
+  bool? currentLearningStatus;
+
   /// 发音评分（背英文模式）
   int? pronunciationScore;
 
