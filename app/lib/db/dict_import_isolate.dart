@@ -220,7 +220,7 @@ Future<void> _runImport({
         final List<DictWord> dictWords = <DictWord>[];
         for (int i = 0; i < srcDictWords.length; i++) {
           final dw = srcDictWords[i];
-          dictWords.add(DictWord(dictId: dw.dictId.toString(), wordId: dw.wordId, seq: dw.seq, createTime: dw.createTime, updateTime: dw.updateTime));
+          dictWords.add(DictWord(dictId: dw.dictId.toString(), wordId: dw.wordId, seq: dw.seq, unit: dw.unit, createTime: dw.createTime, updateTime: dw.updateTime));
 
           // 每处理100个词书-单词关系，yield一次，避免阻塞
           if (i % 100 == 0) {

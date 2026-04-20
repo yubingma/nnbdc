@@ -1615,6 +1615,7 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
       dictId: dictId,
       wordId: wordId,
       seq: maxSeq + 1,
+      unit: 0,
       createTime: now,
       updateTime: now,
     );

@@ -108,6 +108,7 @@ void main() {
         dictId: dictId,
         wordId: wordId,
         seq: i,
+        unit: 0,
         createTime: now,
         updateTime: now,
       ));

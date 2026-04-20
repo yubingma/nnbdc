@@ -55,6 +55,7 @@ class WordBo {
           dictId: shuffledDictId,
           wordId: list[i]['wordId'] as String,
           seq: i + 1,
+          unit: 0,
           createTime: createTime,
         ));
       }
@@ -516,6 +517,7 @@ class WordBo {
       dictId: rawWordDict.id,
       wordId: word.id,
       seq: 0,
+      unit: 0,
       createTime: now,
       updateTime: now,
     );
@@ -1072,6 +1074,7 @@ class WordBo {
         dictId: dictId,
         wordId: wordId,
         seq: maxSeq + 1,
+        unit: 0,
         createTime: now,
         updateTime: now,
       );

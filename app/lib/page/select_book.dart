@@ -1221,6 +1221,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             dictId: dictWord.dictId.toString(), // 确保 dictId 是字符串
             wordId: dictWord.wordId,
             seq: dictWord.seq,
+            unit: dictWord.unit,
             createTime: dictWord.createTime,
             updateTime: dictWord.updateTime));
         await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
