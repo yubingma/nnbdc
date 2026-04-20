@@ -37,6 +37,7 @@ import 'edit_meaning_dialog.dart';
 import 'import_from_book_page.dart';
 import 'import_from_scan_page.dart';
 import 'dict_words.dart';
+import '../word_detail.dart';
 
 const String menuWordList = '浏览词表';
 const String menuWalkman = '随身听';
@@ -1843,16 +1844,8 @@ class WordListPageState extends State<WordListPage>
   }
 
   void _handleWordLongPress(WordWrapper word, int i) {
-    if (studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish) {
-      var currentUser = Global.getLoggedInUser();
-      if (currentUser != null) {
-        // 旧字段已废弃：不再切换，直接刷新
-        setState(() {
-          onWordPressed(word, i, true, null);
-        });
-      }
-    }
+    Get.to(() => const WordDetailPage(),
+        arguments: WordDetailPageArgs(word.word, true, null, false));
   }
 
   List<Widget> _getSlidableActions(WordWrapper word, int i, bool isBookmarked,
@@ -2643,30 +2636,20 @@ class WordListPageState extends State<WordListPage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
 
-                    /// 单词序号 (圆形容器)
-                    Container(
-                      width: 16,
-                      height: 16,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: isBookmarked
-                            ? const Color(0xFF0097A7)
-                            : (isDarkMode ? Colors.white10 : Colors.black12),
-                        shape: BoxShape.circle,
-                      ),
+                    /// 单词序号 (纯文本)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
                         textScaler: const TextScaler.linear(1.0),
                         style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                          color: isBookmarked
-                              ? Colors.white
-                              : (isDarkMode ? Colors.white38 : Colors.black38),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w500,
+                          color: isDarkMode ? Colors.white38 : Colors.black38,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
                     /// 状态色块 (正方形小色块)
                     if (statusColor != null)
