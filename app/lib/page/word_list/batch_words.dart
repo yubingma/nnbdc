@@ -1,19 +1,18 @@
+import 'package:drift/drift.dart' hide Value;
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-import 'package:drift/drift.dart' hide Value;
+import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
-import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
-import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 
+import '../../constants.dart';
 import '../../global.dart';
 import '../../util/word_util.dart';
-import '../../constants.dart';
 
 class StageWordsProvider with WordsProvider {
   @override

@@ -1,11 +1,10 @@
 import 'package:get/get.dart';
-import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/bo/bookmark_bo.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
-import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 
 import '../../util/word_util.dart';

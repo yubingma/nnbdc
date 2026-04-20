@@ -856,7 +856,7 @@ class WordListPageState extends State<WordListPage>
           // 标记通过以揭示英文
           words[currWordIndex].speakEnglishPassed = true;
           // 播放正确提示音，等待播放完成后再播放单词发音，避免重叠
-          await SoundUtil.playAssetSound('correct.mp3', 1.5, 0.2, 2000, 0);
+          await SoundUtil.playAssetSound('correct.mp3', 1.5, 1.0, 2000, 0);
           // 识别正确后，先关闭语音识别，避免录到系统发音
           // 先停止ASR（但使用超时，避免长时间等待）
           try {
@@ -909,7 +909,7 @@ class WordListPageState extends State<WordListPage>
           int sleepAfterPlay =
               answeredAllMeanings ? 0 : 500; // 稍微等一会, 给用户说其他释义的机会, 提升爽快感
           await SoundUtil.playAssetSound('correct.mp3',
-              mustAnswerAll ? 2.0 : 1.5, 0.2, 2000, sleepAfterPlay);
+              mustAnswerAll ? 2.0 : 1.5, 1.0, 2000, sleepAfterPlay);
         }
       }
 
@@ -1680,7 +1680,6 @@ class WordListPageState extends State<WordListPage>
   }
 
   onMasterBtnPressed(WordWrapper word, int index) {
-    final start = DateTime.now().millisecondsSinceEpoch;
     Global.logger.d('[Perf] onMasterBtnPressed START: word=${word.word.spell}');
 
     Future.delayed(const Duration(milliseconds: 200), () {
@@ -1880,18 +1879,11 @@ class WordListPageState extends State<WordListPage>
       ));
     }
 
-    // 2. 提示按钮 (仅对书签单词有效)
+    // 2. 提示相关按钮 (仅对书签单词有效)
     if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
         studyMode == WordListStudyMode.speakChinese ||
         studyMode == WordListStudyMode.speakEnglish)) {
-      actions.add(SlidableAction(
-        onPressed: (_) => giveALittleHint(word),
-        backgroundColor: const Color(0xFF4A90E2),
-        foregroundColor: Colors.white,
-        icon: Icons.emoji_objects_rounded,
-        label: '提示',
-      ));
-
+      // 提示按钮已移至右侧点击区域
       actions.add(SlidableAction(
         onPressed: (_) => clearHint(word),
         backgroundColor: const Color(0xFF9E9E9E),
@@ -2195,7 +2187,12 @@ class WordListPageState extends State<WordListPage>
             contentPadding: EdgeInsets.zero,
           ),
           onTap: () {
+            bool isAlreadyActive = getBookMarkUiPosition() == i;
             onWordPressed(word, i, false, null);
+            // 如果该行已经是当前做题行，点击输入框也给提示，做到“点击整个右侧区域”都能提示
+            if (isAlreadyActive) {
+              giveALittleHint(word);
+            }
           },
           onChanged: (value) async {
             // 先刷新UI，使颜色立即变绿
@@ -2617,15 +2614,32 @@ class WordListPageState extends State<WordListPage>
                           /// 右侧区域 (flex 3)
                           Expanded(
                             flex: 3,
-                            child: (studyMode == WordListStudyMode.speakChinese)
-                                ? _buildSpeakChineseArea(word)
-                                : (studyMode == WordListStudyMode.speakEnglish)
-                                    ? _buildSpeakEnglishArea(
-                                        word, isBookmarked, isDarkMode)
-                                    : (studyMode == WordListStudyMode.dictation)
-                                        ? _buildDictationTextField(word, i)
-                                        : _buildWordMeaning(word, isDarkMode,
-                                            topPadding: 0),
+                            child: (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+                                    studyMode == WordListStudyMode.speakChinese ||
+                                    studyMode == WordListStudyMode.speakEnglish))
+                                ? GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      // 如果是默写模式且点击了输入框之外的区域，或者是语音模式
+                                      giveALittleHint(word);
+                                    },
+                                    child: IgnorePointer(
+                                      // 默写模式下需要点击输入框，不能 ignore
+                                      ignoring: studyMode != WordListStudyMode.dictation,
+                                      child: (studyMode == WordListStudyMode.speakChinese)
+                                          ? _buildSpeakChineseArea(word)
+                                          : (studyMode == WordListStudyMode.speakEnglish)
+                                              ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
+                                              : _buildDictationTextField(word, i),
+                                    ),
+                                  )
+                                : (studyMode == WordListStudyMode.speakChinese)
+                                    ? _buildSpeakChineseArea(word)
+                                    : (studyMode == WordListStudyMode.speakEnglish)
+                                        ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
+                                        : (studyMode == WordListStudyMode.dictation)
+                                            ? _buildDictationTextField(word, i)
+                                            : _buildWordMeaning(word, isDarkMode, topPadding: 0),
                           ),
                         ],
                       ),

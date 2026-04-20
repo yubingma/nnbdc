@@ -1,19 +1,18 @@
+import 'package:drift/drift.dart' as drift;
 import 'package:get/get.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
-import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:drift/drift.dart' as drift;
 import 'package:nnbdc/util/utils.dart';
 
-import '../../util/word_util.dart';
-import '../../util/app_clock.dart';
 import '../../constants.dart';
+import '../../util/app_clock.dart';
+import '../../util/word_util.dart';
 
 class LearningWordsProvider with WordsProvider {
   @override
