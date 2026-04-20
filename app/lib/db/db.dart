@@ -824,7 +824,8 @@ class MyDatabase extends _$MyDatabase {
     await transaction(() async {
       try {
         await customStatement('ALTER TABLE dict_words ADD COLUMN unit INTEGER NOT NULL DEFAULT 0');
-        Global.logger.i('✅ 升级从 V36 到 V37 完成，添加 DictWords 的 unit 字段');
+        await customStatement('CREATE INDEX IF NOT EXISTS idx_dict_words_dict_unit_seq ON dict_words (dict_id, unit, seq)');
+        Global.logger.i('✅ 升级从 V36 到 V37 完成，添加 DictWords 的 unit 字段及索引');
       } catch (e, stackTrace) {
         Global.logger.e('升级从 V36 到 V37 失败: $e', error: e, stackTrace: stackTrace);
       }
@@ -1174,8 +1175,8 @@ class MyDatabase extends _$MyDatabase {
 
     // 为dict_words表添加索引
     await customStatement('''
-      CREATE INDEX IF NOT EXISTS idx_dict_words_dict_seq 
-      ON dict_words (dict_id, seq)
+      CREATE INDEX IF NOT EXISTS idx_dict_words_dict_unit_seq 
+      ON dict_words (dict_id, unit, seq)
     ''');
 
     // 为learning_dicts表添加索引

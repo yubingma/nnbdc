@@ -847,7 +847,7 @@ class WordBo {
       final dictWordQuery = db.select(db.dictWords)
         ..where((dw) => dw.dictId.equals(dictId))
         // 所有词书都按seq排序
-        ..orderBy([(t) => OrderingTerm(expression: t.seq)])
+        ..orderBy([(t) => OrderingTerm(expression: t.unit), (t) => OrderingTerm(expression: t.seq)])
         ..limit(pageSize, offset: fromIndex);
       final dictWordEntries = await dictWordQuery.get();
       if (dictWordEntries.isEmpty) {

@@ -34,6 +34,7 @@ import '../../api/bo/word_bo.dart';
 import 'edit_meaning_dialog.dart';
 import 'import_from_book_page.dart';
 import 'import_from_scan_page.dart';
+import 'dict_words.dart';
 
 const String menuWordList = '浏览词表';
 const String menuWalkman = '随身听';
@@ -2521,13 +2522,86 @@ class WordListPageState extends State<WordListPage>
     final learningStatus =
         word.word.id != null ? learningStatusMap[word.word.id] : null;
 
-    /// 一个单词
-    var row = _buildWordDecoration(
+    // 基础单词内容
+    Widget content = _buildWordDecoration(
       isBookmarked: isBookmarked,
       isDarkMode: isDarkMode,
       learningStatus: learningStatus,
+      child: _renderWordContent(word, i, isBookmarked, isDarkMode, learningStatus),
+    );
+
+    // 检查是否需要显示单元标题（仅当Provider是DictWordsProvider时）
+    if (args.wordsProvider is DictWordsProvider) {
+      final dictWord = word.tag;
+      if (dictWord is DictWordVo) {
+        bool showHeader = false;
+        if (i == 0) {
+          showHeader = true;
+        } else {
+          final prevWord = words[i - 1];
+          final prevDictWord = prevWord.tag;
+          if (prevDictWord is DictWordVo) {
+            if (prevDictWord.unit != dictWord.unit) {
+              showHeader = true;
+            }
+          } else {
+            // 如果上一个不是 DictWordVo（虽然不太可能），也显示标题
+            showHeader = true;
+          }
+        }
+
+        if (showHeader) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildUnitHeader(dictWord.unit, isDarkMode),
+              content,
+            ],
+          );
+        }
+      }
+    }
+
+    return content;
+  }
+
+  Widget _buildUnitHeader(int unit, bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      margin: const EdgeInsets.only(top: 24, bottom: 8, left: 12, right: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border(
+          left: BorderSide(color: AppTheme.primaryColor, width: 4),
+        ),
+      ),
       child: Row(
         children: [
+          Icon(
+            Icons.bookmark,
+            size: 18,
+            color: AppTheme.primaryColor,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '第 ${unit == 0 ? '默认' : unit} 单元',
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : Colors.black87,
+              fontFamily: 'NotoSansSC',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _renderWordContent(WordWrapper word, int i, bool isBookmarked, bool isDarkMode, bool? learningStatus) {
+    return Row(
+      children: [
           /// 单词内容
           Expanded(
             child: InkWell(
@@ -2618,9 +2692,7 @@ class WordListPageState extends State<WordListPage>
             _buildWordActionButtons(word, i, isBookmarked,
                 learningStatus: learningStatus),
         ],
-      ),
-    );
-    return row;
+      );
   }
 
   void jumpToNextWord(final int currWordIndex, bool playPronounce,
