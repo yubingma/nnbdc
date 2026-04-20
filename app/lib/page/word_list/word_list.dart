@@ -139,8 +139,8 @@ class WordListPageState extends State<WordListPage>
         WidgetsBindingObserver,
         SingleTickerProviderStateMixin,
         AutomaticKeepAliveClientMixin {
-  static const double leftPadding = 12;
-  static const double rightPadding = 16;
+  static const double leftPadding = 6;
+  static const double rightPadding = 8;
   static const double delBtnSize = 24;
   static const int _pageSize = 30;
   static const double bookMarkBorderWidth = 2;
@@ -1781,7 +1781,7 @@ class WordListPageState extends State<WordListPage>
       required bool isDarkMode,
       bool? learningStatus}) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
@@ -2639,7 +2639,7 @@ class WordListPageState extends State<WordListPage>
               /// 单词内容 - 拼写和释义排成一行
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
