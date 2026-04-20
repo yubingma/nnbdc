@@ -1476,7 +1476,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 播放正确提示音
     final currentWordId = _word?.id;
     final soundFuture =
-        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
     soundFuture.whenComplete(() async {
       if (!mounted) return;
       // 播放一遍单词的标准发音
@@ -1571,7 +1571,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         setState(() {
           _showHandwritingBoard = false;
         });
-        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
         return;
       }
 
@@ -1736,7 +1736,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
 
         final soundFuture =
-            SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+            SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
         _playingCorrectSounds.add(soundFuture);
         debugPrint(
             'checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
@@ -1796,7 +1796,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               _showHandwritingBoard = false;
             });
           }
-          SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 0.2);
+          SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
           return;
         }
 
@@ -4578,7 +4578,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _onAnswerCorrect(rating);
     } else {
       //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
-      SoundUtil.playAssetSoundConcurrent('failed.mp3', 1.5, 0.2);
+      SoundUtil.playAssetSoundConcurrent('failed.mp3', 1.5, 1.0);
       showWordDetail(_word!, true,
           fsrsRating: FsrsRating.again, reason: "选错了答案，评分: 忘记"); // 传递true表示本次回答错误
     }
