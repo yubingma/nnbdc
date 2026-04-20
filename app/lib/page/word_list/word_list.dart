@@ -2555,28 +2555,24 @@ class WordListPageState extends State<WordListPage>
       behavior: HitTestBehavior.opaque,
       onTap: () => _handleWordTap(word, i),
       onLongPress: () => _handleWordLongPress(word, i),
-      child: Stack(
-        children: [
-          /// 1. 左侧高长条背景 (通过 Positioned.fill 自动伸缩至全高)
-          Positioned.fill(
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  decoration: BoxDecoration(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Stack(
+          children: [
+            /// 1. 左侧高长条背景 (通过 Positioned.fill 自动伸缩至全高)
+            Positioned.fill(
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
                     color: isDarkMode
                         ? Colors.white.withValues(alpha: 0.05)
                         : Colors.black.withValues(alpha: 0.03),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
-                    ),
                   ),
-                ),
-                const Expanded(child: SizedBox.shrink()),
-              ],
+                  const Expanded(child: SizedBox.shrink()),
+                ],
+              ),
             ),
-          ),
 
           /// 2. 实际内容层
           Row(
