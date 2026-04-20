@@ -2042,17 +2042,21 @@ class WordListPageState extends State<WordListPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               // 单词行
-              Text(
-                word.word.spell,
-                softWrap: false,
-                textScaler: TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: isBookmarked
-                      ? const Color(0xFF0097A7)
-                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.6,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  word.word.spell,
+                  softWrap: false,
+                  textScaler: TextScaler.linear(1.0),
+                  style: TextStyle(
+                    color: isBookmarked
+                        ? const Color(0xFF0097A7)
+                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6,
+                  ),
                 ),
               ),
               // 音标行
@@ -2251,18 +2255,22 @@ class WordListPageState extends State<WordListPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 单词行
-              Text(
-                word.word.spell,
-                softWrap: false,
-                textScaler: TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: isBookmarked
-                      ? const Color(0xFF0097A7)
-                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  height: 1.3,
-                  letterSpacing: 0.3,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  word.word.spell,
+                  softWrap: false,
+                  textScaler: TextScaler.linear(1.0),
+                  style: TextStyle(
+                    color: isBookmarked
+                        ? const Color(0xFF0097A7)
+                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    height: 1.3,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
@@ -2294,18 +2302,26 @@ class WordListPageState extends State<WordListPage>
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                word.word.spell,
-                softWrap: false,
-                textScaler: TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: isBookmarked
-                      ? const Color(0xFF0097A7)
-                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  height: 1.3,
-                  letterSpacing: 0.3,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    word.word.spell,
+                    softWrap: false,
+                    textScaler: TextScaler.linear(1.0),
+                    style: TextStyle(
+                      color: isBookmarked
+                          ? const Color(0xFF0097A7)
+                          : (isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF1F2937)),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
                 ),
               ),
               if (word.word.mergedPronounce.isNotEmpty) ...[
