@@ -2569,7 +2569,7 @@ class WordListPageState extends State<WordListPage>
               child: Row(
                 children: [
                   Container(
-                    width: 36,
+                    width: 24,
                     color: isDarkMode
                         ? Colors.white.withValues(alpha: 0.15)
                         : const Color(0xFFE2E8F0),
@@ -2583,9 +2583,9 @@ class WordListPageState extends State<WordListPage>
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              /// 左侧指示器区域 (固定宽度 36)
+              /// 左侧指示器区域 (固定宽度 24)
               SizedBox(
-                width: 36,
+                width: 24,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -2621,7 +2621,7 @@ class WordListPageState extends State<WordListPage>
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: _buildWordProgressContainer(word, isDarkMode,
-                            width: 24),
+                            width: 18),
                       ),
 
                     // 紧凑波形或评分
