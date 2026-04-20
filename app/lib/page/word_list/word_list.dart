@@ -180,7 +180,6 @@ class WordListPageState extends State<WordListPage>
   Map<String, bool?> learningStatusMap = {};
 
   /// 是否显示返回到顶部按钮
-  bool showToTopBtn = false;
 
   DateTime? lastQueryTime;
 
@@ -1260,28 +1259,6 @@ class WordListPageState extends State<WordListPage>
               }
             }
 
-            // 控制"回到顶部"按钮的显示与隐藏
-            if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ < 500 &&
-                showToTopBtn) {
-              // 使用 addPostFrameCallback 确保在当前帧结束后再更新状态，避免 MouseTracker 冲突
-              SchedulerBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    showToTopBtn = false;
-                  });
-                }
-              });
-            } else if (notification.metrics.extentBefore /*视口上方未展示的内容长度*/ >
-                    500 &&
-                !showToTopBtn) {
-              SchedulerBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    showToTopBtn = true;
-                  });
-                }
-              });
-            }
 
             return false;
           },
@@ -3416,66 +3393,7 @@ class WordListPageState extends State<WordListPage>
                             _showSettingsDialog();
                           },
                         ),
-                        // 回到顶部按钮（仅在需要时显示）
-                        if (showToTopBtn) ...[
-                          const SizedBox(height: 4), // 减少按钮间距
-                          FloatingActionButton(
-                            mini: true,
-                            heroTag: "toTop",
-                            child: const Icon(Icons.arrow_upward),
-                            onPressed: () {
-                              // 置"请勿查询"标志，避免返回顶部时触发查询
-                              doNotQueryPlease = true;
-
-                              // 返回到顶部
-                              itemScrollController.scrollTo(
-                                  index: 0,
-                                  duration: const Duration(milliseconds: 300),
-                                  alignment: 0.5); // 显示在屏幕中部
-                              setState(() {
-                                showToTopBtn = false;
-                              });
-
-                              // 一段时间后，清除 "请勿查询"标志
-                              Future.delayed(const Duration(milliseconds: 500),
-                                  () {
-                                doNotQueryPlease = false;
-                              });
-                            },
-                          ),
-                        ],
                       ],
-                    ),
-                  ),
-                // 回到顶部按钮（非语音模式时单独显示，语音模式下与设置按钮一起显示）
-                if (studyMode != WordListStudyMode.speakChinese &&
-                    studyMode != WordListStudyMode.speakEnglish &&
-                    showToTopBtn)
-                  Positioned(
-                    right: 16,
-                    bottom: 16,
-                    child: FloatingActionButton(
-                      mini: true,
-                      heroTag: "toTop",
-                      child: const Icon(Icons.arrow_upward),
-                      onPressed: () {
-                        // 置"请勿查询"标志，避免返回顶部时触发查询
-                        doNotQueryPlease = true;
-
-                        // 返回到顶部
-                        itemScrollController.scrollTo(
-                            index: 0,
-                            duration: const Duration(milliseconds: 300),
-                            alignment: 0.5); // 0.5表示中央对齐
-                        setState(() {
-                          showToTopBtn = false;
-                        });
-
-                        // 一段时间后，清除 "请勿查询"标志
-                        Future.delayed(const Duration(milliseconds: 500), () {
-                          doNotQueryPlease = false;
-                        });
-                      },
                     ),
                   ),
               ],
