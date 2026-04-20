@@ -36,7 +36,6 @@ class BucketWordsProvider with WordsProvider {
 
     final result = await WordBo().setLearningWordAsMastered(user.id, wordWrapper.word.id!, true);
     if (result.success) {
-      SoundUtil.playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.5);
     } else {
       ToastUtil.error(result.msg!);
     }

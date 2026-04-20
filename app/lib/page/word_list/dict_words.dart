@@ -92,7 +92,6 @@ class DictWordsProvider with WordsProvider implements WordModifier {
       await WordBo().setLearningWordAsMastered(userId, wordWrapper.word.id!, true);
       
       ThrottledDbSyncService().requestSync();
-      SoundUtil.playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.5);
       return true;
     } catch (e) {
       ToastUtil.error("操作失败: $e");
