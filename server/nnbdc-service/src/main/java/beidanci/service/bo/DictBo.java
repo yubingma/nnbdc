@@ -842,7 +842,8 @@ public class DictBo extends BaseBo<Dict> {
                 dict.getUpdateTime(),
                 dict.getDomain(),
                 dict.getBaseDictId(),
-                dict.getSortAlg());
+                dict.getSortAlg(),
+                dict.getDescription());
     }
 
     @Transactional
