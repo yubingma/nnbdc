@@ -1783,40 +1783,16 @@ class WordListPageState extends State<WordListPage>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
-        gradient: isBookmarked
-            ? LinearGradient(
-                colors: [
-                  const Color(0xFF0097A7).withValues(alpha: 0.08),
-                  const Color(0xFF00ACC1).withValues(alpha: 0.08),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+        color: isDarkMode
+            ? (isBookmarked ? const Color(0xFF2A2A2A) : const Color(0xFF1E1E1E))
+            : (isBookmarked ? const Color(0xFFF5F5F5) : Colors.white),
+        borderRadius: BorderRadius.circular(8),
+        border: isBookmarked
+            ? Border.all(
+                width: 1.2,
+                color: isDarkMode ? Colors.white24 : Colors.black12,
               )
             : null,
-        color: isBookmarked
-            ? null
-            : (isDarkMode
-                ? const Color(0xFF1E1E1E).withValues(alpha: 0.6)
-                : Colors.white.withValues(alpha: 0.8)),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          width: 1,
-          color: isBookmarked
-              ? const Color(0xFF0097A7).withValues(alpha: 0.3)
-              : isDarkMode
-                  ? const Color(0xFF333333)
-                  : const Color(0xFFE0E0E0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isBookmarked
-                ? const Color(0xFF0097A7).withValues(alpha: 0.2)
-                : (isDarkMode ? Colors.black : Colors.grey)
-                    .withValues(alpha: 0.1),
-            blurRadius: isBookmarked ? 8 : 4,
-            offset: Offset(0, isBookmarked ? 4 : 2),
-          ),
-        ],
       ),
       child: child,
     );
@@ -2636,13 +2612,6 @@ class WordListPageState extends State<WordListPage>
                         decoration: BoxDecoration(
                           color: statusColor,
                           borderRadius: BorderRadius.circular(2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: statusColor.withValues(alpha: 0.3),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
                         ),
                       ),
 
