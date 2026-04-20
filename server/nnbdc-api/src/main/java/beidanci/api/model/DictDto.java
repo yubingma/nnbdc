@@ -27,6 +27,7 @@ public class DictDto implements Dto, Ownerable {
     private String domain;
     private String baseDictId;
     private String sortAlg;
+    private String description;
 
     public DictDto() {
     }
@@ -54,10 +55,9 @@ public class DictDto implements Dto, Ownerable {
     }
 
     public DictDto(String id, String name, String ownerId, Boolean isShared, Boolean isReady, Boolean visible,
-            Integer wordCount, Integer popularityLimit, Boolean editable, Boolean deletable, Date createTime, Date updateTime, String domain, String baseDictId, String sortAlg) {
-        this(id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, editable, deletable, createTime, updateTime, domain);
-        this.baseDictId = baseDictId;
-        this.sortAlg = sortAlg;
+            Integer wordCount, Integer popularityLimit, Boolean editable, Boolean deletable, Date createTime, Date updateTime, String domain, String baseDictId, String sortAlg, String description) {
+        this(id, name, ownerId, isShared, isReady, visible, wordCount, popularityLimit, editable, deletable, createTime, updateTime, domain, baseDictId, sortAlg);
+        this.description = description;
     }
 
     public Boolean getDeletable() {
@@ -178,6 +178,14 @@ public class DictDto implements Dto, Ownerable {
 
     public void setSortAlg(String sortAlg) {
         this.sortAlg = sortAlg;
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
 }

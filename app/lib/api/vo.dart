@@ -114,6 +114,7 @@ class DictVo extends Equatable {
 
   String? domain;
   String? baseDictId;
+  String? description;
 
   /// 该单词书是否可删除（生词本不可删除）
   bool? canDelete;
@@ -143,6 +144,7 @@ class DictVo extends Equatable {
     this.domain,
     this.baseDictId,
     this.coverUrl,
+    this.description,
     this.createTime,
   });
 

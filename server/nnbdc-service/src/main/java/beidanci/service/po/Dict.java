@@ -102,6 +102,9 @@ public class Dict extends UuidPo implements Ownerable {
     @Column(name = "sort_alg", nullable = true, length = 50)
     private String sortAlg;
 
+    @Column(name = "description", nullable = true, length = 1000)
+    private String description;
+
     public Integer getPopularityLimit() {
         return popularityLimit;
     }
@@ -139,6 +142,14 @@ public class Dict extends UuidPo implements Ownerable {
 
     public void setSortAlg(String sortAlg) {
         this.sortAlg = sortAlg;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Boolean getDeletable() {

@@ -229,6 +229,8 @@ class Dicts extends Table {
 
   TextColumn get sortAlg => text().nullable()();
 
+  TextColumn get description => text().nullable()();
+
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().nullable()();
