@@ -1162,16 +1162,20 @@ class _WordManagementTabState extends State<_WordManagementTab> {
     for (var word in filtered) {
       if (word.unit != currentUnit) {
         currentUnit = word.unit;
-        lastHeaderIndex = items.length;
-        items.add("UNIT_HEADER_${word.unit}"); // 占位符
         currentUnitCount = 0;
+        if (currentUnit != 0) {
+          lastHeaderIndex = items.length;
+          items.add("UNIT_HEADER_${word.unit}"); // 占位符
+        } else {
+          lastHeaderIndex = null;
+        }
       }
       items.add(word);
       currentUnitCount++;
       
       // 更新标题栏的计数
       if (lastHeaderIndex != null) {
-        items[lastHeaderIndex] = "第 ${currentUnit == 0 ? '默认' : currentUnit} 单元 ($currentUnitCount 个单词)";
+        items[lastHeaderIndex] = "第 $currentUnit 单元 ($currentUnitCount 个单词)";
       }
     }
     return items;

@@ -2550,7 +2550,7 @@ class WordListPageState extends State<WordListPage>
           }
         }
 
-        if (showHeader) {
+        if (showHeader && dictWord.unit != 0) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -2585,7 +2585,7 @@ class WordListPageState extends State<WordListPage>
           ),
           const SizedBox(width: 8),
           Text(
-            '第 ${unit == 0 ? '默认' : unit} 单元',
+            '第 $unit 单元',
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 16,
