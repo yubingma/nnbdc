@@ -2634,8 +2634,8 @@ class WordListPageState extends State<WordListPage>
                           /// 单词英文和音标
                           if (!(studyMode == WordListStudyMode.dictation ||
                               studyMode == WordListStudyMode.speakEnglish))
-                            SizedBox(
-                              width: 120, // 单词区域固定宽度，保证释义对齐
+                            Expanded(
+                              flex: 2,
                               child: _buildWordHeader(word, isBookmarked,
                                   isDarkMode,
                                   learningStatus: learningStatus),
@@ -2643,13 +2643,14 @@ class WordListPageState extends State<WordListPage>
 
                           if (!(studyMode == WordListStudyMode.dictation ||
                               studyMode == WordListStudyMode.speakEnglish))
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12),
 
                           /// 单词释义
                           if (studyMode == WordListStudyMode.list ||
                               studyMode == WordListStudyMode.dictation ||
                               studyMode == WordListStudyMode.speakEnglish)
                             Expanded(
+                              flex: 3,
                               child: _buildWordMeaning(word, isDarkMode,
                                   topPadding:
                                       (studyMode == WordListStudyMode.list)
