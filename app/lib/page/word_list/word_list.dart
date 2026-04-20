@@ -1787,12 +1787,12 @@ class WordListPageState extends State<WordListPage>
             ? (isBookmarked ? const Color(0xFF2A2A2A) : const Color(0xFF1E1E1E))
             : (isBookmarked ? const Color(0xFFF5F5F5) : Colors.white),
         borderRadius: BorderRadius.circular(8),
-        border: isBookmarked
-            ? Border.all(
-                width: 1.2,
-                color: isDarkMode ? Colors.white24 : Colors.black12,
-              )
-            : null,
+        border: Border.all(
+          width: 1.2,
+          color: isBookmarked
+              ? (isDarkMode ? Colors.white24 : Colors.black12)
+              : Colors.transparent,
+        ),
       ),
       child: child,
     );
