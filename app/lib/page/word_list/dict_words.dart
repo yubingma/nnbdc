@@ -100,6 +100,24 @@ class DictWordsProvider with WordsProvider implements WordModifier {
     }
   }
 
+  @override
+  Future<bool> unmasterWord(WordWrapper wordWrapper) async {
+    try {
+      final userId = Global.getLoggedInUser()?.id;
+      if (userId == null) return false;
+
+      final result = await WordBo().deleteMasteredWord(userId, wordWrapper.word.id!);
+      if (result.success) {
+        ThrottledDbSyncService().requestSync();
+        return true;
+      }
+      ToastUtil.error(result.msg ?? "操作失败");
+      return false;
+    } catch (e) {
+      ToastUtil.error("操作失败: $e");
+      return false;
+    }
+  }
 
   @override
   Future<bool> deleteWord(WordWrapper wordWrapper) async {

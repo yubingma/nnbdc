@@ -57,6 +57,14 @@ mixin WordsProvider {
 
   Future<bool> masterWord(WordWrapper wordWrapper) async => false;
 
+  /// 取消掌握单词
+  Future<bool> unmasterWord(WordWrapper wordWrapper) async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return false;
+    final result = await WordBo().deleteMasteredWord(userId, wordWrapper.word.id!);
+    return result.success;
+  }
+
   /// 获取指定单词在所有单词中的位置, 如果指定单词不存在，返回-1
   Future<int> getWordIndex(String spell);
 
@@ -1736,7 +1744,6 @@ class WordListPageState extends State<WordListPage>
   }
 
   onUnmasterBtnPressed(WordWrapper word, int index) {
-    final start = DateTime.now().millisecondsSinceEpoch;
     Global.logger.d('[Perf] onUnmasterBtnPressed START: word=${word.word.spell}');
 
     Future.delayed(const Duration(milliseconds: 200), () {
@@ -1745,14 +1752,30 @@ class WordListPageState extends State<WordListPage>
       final apiStart = DateTime.now().millisecondsSinceEpoch;
       Global.logger.d('[Perf] onUnmasterBtnPressed PATH: initialStatus=$initialStatus');
 
-      if (initialStatus == true) {
-        Global.logger.d('[Perf] onUnmasterBtnPressed -> redirecting to onDelBtnPressed');
-        onDelBtnPressed(word, index);
-      } else {
-        args.wordsProvider.deleteWord(word).then((value) {
-          final apiEnd = DateTime.now().millisecondsSinceEpoch;
-          Global.logger.d('[Perf] onUnmasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
-          if (value) {
+      args.wordsProvider.unmasterWord(word).then((value) {
+        final apiEnd = DateTime.now().millisecondsSinceEpoch;
+        Global.logger.d('[Perf] onUnmasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
+        if (value) {
+          if (initialStatus == true && !args.wordsProvider.keepWordsOnMaster) {
+            setState(() {
+              words.remove(word);
+              totalWordCount--;
+            });
+            if (isBookMarkValid(bookMark)) {
+              final bookMarkPosition = getBookMarkRawPosition(bookMark);
+              if (index + baseIndex! < bookMarkPosition &&
+                  bookMarkPosition <= words.length + baseIndex!) {
+                var prevWord = words[bookMarkPosition - baseIndex! - 1];
+                setState(() {
+                  bookMark = BookMarkVo(bookMarkPosition - 1, prevWord.word.spell);
+                });
+                args.bookMarkProvider.saveBookMark(bookMark!).then((success) {});
+              }
+            }
+            if (words.length < minWordCount) {
+              doQuery(false, baseIndex! + words.length, _pageSize, false);
+            }
+          } else {
             setState(() {
               word.currentLearningStatus = initialStatus;
               if (word.tag is LearningWordVo) {
@@ -1761,8 +1784,8 @@ class WordListPageState extends State<WordListPage>
             });
             Global.logger.d('[Perf] onUnmasterBtnPressed STATE_UPDATED');
           }
-        });
-      }
+        }
+      });
     });
   }
 

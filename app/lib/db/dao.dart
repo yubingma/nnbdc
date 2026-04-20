@@ -611,24 +611,6 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     // 删除记录
     await delete(dictWords).delete(dictWord);
 
-    // 更新后续单词的序号
-    final laterWords = await (select(dictWords)..where((dw) => dw.dictId.equals(dictId) & dw.seq.isBiggerThanValue(seqNo))).get();
-
-    for (final laterWord in laterWords) {
-      final newWord = laterWord.copyWith(
-        seq: laterWord.seq - 1,
-        updateTime: Value(AppClock.now()),
-      );
-      await (update(dictWords)..where((dw) => dw.dictId.equals(laterWord.dictId) & dw.wordId.equals(laterWord.wordId))).write(DictWordsCompanion(
-        seq: Value(newWord.seq),
-        updateTime: Value(newWord.updateTime),
-      ));
-      if (genLog) {
-        var dict = await MyDatabase.instance.dictsDao.findById(dictId);
-        var owner = dict?.ownerId;
-        await DbLogUtil.logOperation(owner!, 'UPDATE', 'dictWords', '$dictId-${newWord.wordId}', newWord);
-      }
-    }
 
     // 更新词书的wordCount
     await MyDatabase.instance.dictsDao.updateWordCount(dictId, genLog);

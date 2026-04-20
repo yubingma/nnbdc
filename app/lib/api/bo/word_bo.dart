@@ -969,7 +969,12 @@ class WordBo {
         Global.logger.d('单词 $spell 不在词典 $dictId 中');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final order = dictWord.seq;
+      final countQuery = db.selectOnly(db.dictWords)
+        ..addColumns([countAll()])
+        ..where(db.dictWords.dictId.equals(dictId))
+        ..where(db.dictWords.unit.isSmallerThanValue(dictWord.unit) | (db.dictWords.unit.equals(dictWord.unit) & db.dictWords.seq.isSmallerOrEqualValue(dictWord.seq)));
+      final countResult = await countQuery.getSingle();
+      final order = countResult.read(countAll()) ?? 0;
       Global.logger.d('找到单词 $spell 在词典 $dictId 中的位置: $order');
       return Result("SUCCESS", "获取成功", true)..data = order;
     } catch (e, stackTrace) {
