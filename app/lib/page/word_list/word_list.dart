@@ -1783,12 +1783,10 @@ class WordListPageState extends State<WordListPage>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
-        color: isDarkMode
-            ? (isBookmarked ? const Color(0xFF2A2A2A) : const Color(0xFF1E1E1E))
-            : (isBookmarked ? const Color(0xFFF5F5F5) : Colors.white),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           width: 1.2,
+          strokeAlign: BorderSide.strokeAlignInside,
           color: isBookmarked
               ? (isDarkMode ? Colors.white24 : Colors.black12)
               : Colors.transparent,
@@ -2551,14 +2549,21 @@ class WordListPageState extends State<WordListPage>
       statusColor = const Color(0xFF2196F3).withValues(alpha: 0.6); // 学习中 - 淡淡蓝色
     }
 
+    // 确定背景色
+    final bgColor = isDarkMode
+        ? (isBookmarked ? const Color(0xFF2A2A2A) : const Color(0xFF1E1E1E))
+        : (isBookmarked ? const Color(0xFFF5F5F5) : Colors.white);
+
     Widget itemContent = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _handleWordTap(word, i),
       onLongPress: () => _handleWordLongPress(word, i),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Stack(
-          children: [
+        child: Container(
+          color: bgColor,
+          child: Stack(
+            children: [
             /// 1. 左侧高长条背景 (通过 Positioned.fill 自动伸缩至全高)
             Positioned.fill(
               child: Row(
@@ -2697,9 +2702,10 @@ class WordListPageState extends State<WordListPage>
               ),
             ],
           ),
-          ],
-        ),
+        ],
       ),
+    ),
+    ),
     );
 
     if (actions.isEmpty) return itemContent;
