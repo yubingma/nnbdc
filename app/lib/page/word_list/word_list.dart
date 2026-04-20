@@ -2279,8 +2279,7 @@ class WordListPageState extends State<WordListPage>
         // 估算单词和音标所需的宽度
         final spellWidth = word.word.spell.length * 14.0; // 估算单词宽度
         final pronounceWidth = word.word.mergedPronounce.isNotEmpty
-            ? (word.word.mergedPronounce.length * 7.0 +
-                24.0) // 估算音标宽度（包括容器padding）
+            ? (word.word.mergedPronounce.length * 7.0 + 8.0) // 估算音标宽度
             : 0.0;
         final totalWidth = spellWidth + pronounceWidth + 16.0; // 包括间距
 
@@ -2314,30 +2313,18 @@ class WordListPageState extends State<WordListPage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color:
-                            (isDarkMode ? Colors.grey[700] : Colors.grey[200])
-                                ?.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(6),
+                    child: Text(
+                      '[${word.word.mergedPronounce}]',
+                      textScaler: const TextScaler.linear(1.0),
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white38 : Colors.black38,
+                        fontSize: 12,
+                        fontFamily: 'NotoSans',
+                        fontWeight: FontWeight.w400,
+                        height: 1.3,
                       ),
-                      child: Text(
-                        '[${word.word.mergedPronounce}]',
-                        textScaler: TextScaler.linear(1.0),
-                        style: TextStyle(
-                          color: isDarkMode
-                              ? const Color(0xFFE5E7EB)
-                              : const Color(0xFF4B5563),
-                          fontSize: 12,
-                          fontFamily: 'NotoSans',
-                          fontWeight: FontWeight.w500,
-                          height: 1.3,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                 ],
@@ -2366,28 +2353,18 @@ class WordListPageState extends State<WordListPage>
               if (word.word.mergedPronounce.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 Flexible(
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: (isDarkMode ? Colors.grey[700] : Colors.grey[200])
-                          ?.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(6),
+                  child: Text(
+                    '[${word.word.mergedPronounce}]',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white38 : Colors.black38,
+                      fontSize: 12,
+                      fontFamily: 'NotoSans',
+                      fontWeight: FontWeight.w400,
+                      height: 1.3,
                     ),
-                    child: Text(
-                      '[${word.word.mergedPronounce}]',
-                      textScaler: TextScaler.linear(1.0),
-                      style: TextStyle(
-                        color: isDarkMode
-                            ? const Color(0xFFE5E7EB)
-                            : const Color(0xFF4B5563),
-                        fontSize: 12,
-                        fontFamily: 'NotoSans',
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ],
