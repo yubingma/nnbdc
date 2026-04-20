@@ -46,6 +46,7 @@ const String menuWriteSpell = '拼写练习';
 const String menuImportFromBook = '从词书导入';
 const String menuImportFromScan = '扫描导入';
 const String menuAiStory = 'AI短文';
+const String menuLegend = '学习状态图例';
 
 mixin WordsProvider {
   Future<PagedResults<WordWrapper>> getAPageOfWords(
@@ -1208,7 +1209,6 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget renderPage() {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
     return Stack(
       children: [
         NotificationListener<ScrollUpdateNotification>(
@@ -1287,7 +1287,7 @@ class WordListPageState extends State<WordListPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildLegend(isDarkMode),
+              // _buildLegend(isDarkMode), // 已移动到更多菜单中
               Expanded(
                 child: ScrollablePositionedList.builder(
                   itemCount: words.length,
@@ -2440,22 +2440,12 @@ class WordListPageState extends State<WordListPage>
     return Container();
   }
 
-  Widget _buildLegend(bool isDarkMode) {
+
+  Widget _buildLegendForMenu(bool isDarkMode) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDarkMode
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.02),
-        border: Border(
-          bottom: BorderSide(
-            color: isDarkMode ? Colors.white10 : Colors.black12,
-            width: 0.5,
-          ),
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           _buildLegendItem(
               const Color(0xFF2196F3).withValues(alpha: 0.6), '学习中', isDarkMode),
@@ -2656,8 +2646,8 @@ class WordListPageState extends State<WordListPage>
 
                     /// 单词序号 (圆形容器)
                     Container(
-                      width: 24,
-                      height: 24,
+                      width: 16,
+                      height: 16,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: isBookmarked
@@ -2669,7 +2659,7 @@ class WordListPageState extends State<WordListPage>
                         '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
                         textScaler: const TextScaler.linear(1.0),
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 8,
                           fontWeight: FontWeight.bold,
                           color: isBookmarked
                               ? Colors.white
@@ -3206,7 +3196,14 @@ class WordListPageState extends State<WordListPage>
                             context: capturedContext,
                             position: position,
                             useRootNavigator: true,
-                            items: menuItems.map((String choice) {
+                            items: [
+                              PopupMenuItem<String>(
+                                enabled: false,
+                                height: 32,
+                                child: _buildLegendForMenu(isDarkMode),
+                              ),
+                              const PopupMenuDivider(height: 1),
+                              ...menuItems.map((String choice) {
                               IconData icon;
                               switch (choice) {
                                 case menuWordList:
@@ -3308,8 +3305,9 @@ class WordListPageState extends State<WordListPage>
                                   ),
                                 ),
                               );
-                            }).toList(),
-                          );
+                            }),
+                          ],
+                        );
 
                           // 6. 处理选择
                           if (selectedValue != null) {
