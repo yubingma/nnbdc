@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
@@ -1851,92 +1853,122 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
-  Widget _buildWordActionButtons(WordWrapper word, int i, bool isBookmarked,
+  List<Widget> _getSlidableActions(WordWrapper word, int i, bool isBookmarked,
       {bool? learningStatus}) {
-    return Container(
-      padding: const EdgeInsets.only(left: 4, right: 8),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 编辑单词释义
-          if (args.canEditWord &&
-              args.wordsProvider is WordModifier &&
-              args.appBarTitle != '已掌握')
-            _buildHintButton(Icons.edit, const Color(0xFF4CAF50),
-                () => _showEditMeaningDialog(word)),
+    final List<Widget> actions = [];
 
-          // 给点提示
-          if ((studyMode == WordListStudyMode.dictation ||
-                  studyMode == WordListStudyMode.speakChinese ||
-                  studyMode == WordListStudyMode.speakEnglish) &&
-              isBookmarked)
-            _buildHintButton(
-              Icons.emoji_objects_rounded,
-              const Color(0xFF4A90E2),
-              () => giveALittleHint(word),
-              onLongPress: () => giveFullHint(word),
-            ),
+    // 1. 编辑按钮
+    if (args.canEditWord &&
+        args.wordsProvider is WordModifier &&
+        args.appBarTitle != '已掌握') {
+      actions.add(SlidableAction(
+        onPressed: (_) => _showEditMeaningDialog(word),
+        backgroundColor: const Color(0xFF4CAF50),
+        foregroundColor: Colors.white,
+        icon: Icons.edit,
+        label: '编辑',
+      ));
+    }
 
-          // 清除提示
-          if ((studyMode == WordListStudyMode.dictation ||
-                  studyMode == WordListStudyMode.speakChinese ||
-                  studyMode == WordListStudyMode.speakEnglish) &&
-              isBookmarked)
-            _buildHintButton(
-                Icons.refresh, const Color(0xFF9E9E9E), () => clearHint(word)),
+    // 2. 提示按钮
+    if ((studyMode == WordListStudyMode.dictation ||
+            studyMode == WordListStudyMode.speakChinese ||
+            studyMode == WordListStudyMode.speakEnglish) &&
+        isBookmarked) {
+      actions.add(SlidableAction(
+        onPressed: (_) => giveALittleHint(word),
+        backgroundColor: const Color(0xFF4A90E2),
+        foregroundColor: Colors.white,
+        icon: Icons.emoji_objects_rounded,
+        label: '提示',
+      ));
 
-          // 掌握按钮 (针对所有词表, 除了 已掌握 和 系统学习列表, 系统学习列表已用 ActionButton 显示掌握)
-          if (args.appBarTitle != '已掌握' &&
-              !['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
-                  .contains(args.appBarTitle))
-            _buildMasterButton(word, i, learningStatus: learningStatus),
+      actions.add(SlidableAction(
+        onPressed: (_) => clearHint(word),
+        backgroundColor: const Color(0xFF9E9E9E),
+        foregroundColor: Colors.white,
+        icon: Icons.refresh,
+        label: '重置',
+      ));
+    }
 
-          // 删除按钮 或 核心学习列表的“掌握”按钮
-          if (args.showDelBtn ||
-              ['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
-                  .contains(args.appBarTitle))
-            _buildActionButton(word, i, learningStatus: learningStatus),
-        ],
-      ),
-    );
-  }
+    // 3. 掌握/删除按钮
+    if (args.appBarTitle != '已掌握' &&
+        !['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
+            .contains(args.appBarTitle)) {
+      if (learningStatus != true) {
+        actions.add(SlidableAction(
+          onPressed: (_) => onMasterBtnPressed(word, i),
+          backgroundColor: const Color(0xFF4CAF50),
+          foregroundColor: Colors.white,
+          icon: Icons.check_circle_outline,
+          label: '掌握',
+        ));
+      }
+    }
 
-  Widget _buildHintButton(IconData icon, Color color, VoidCallback onTap,
-      {VoidCallback? onLongPress}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: Container(
-            width: 48,
-            height: 32,
-            alignment: Alignment.center,
-            child: Icon(
-              icon, // Use the passed icon
-              size: 20,
-              color: color, // Use the passed color
-            ),
-          ),
-        ),
-      ),
-    );
+    if (args.showDelBtn ||
+        ['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
+            .contains(args.appBarTitle)) {
+      String buttonText;
+      Color color;
+      final bool isMastered = learningStatus == true;
+      final bool showMasterButton = [
+        '学习中',
+        '单词列表',
+        '今日错词',
+        '今日新词',
+        '今日旧词',
+        '今日单词'
+      ].contains(args.appBarTitle);
+
+      if (!(isMastered && showMasterButton)) {
+        switch (args.appBarTitle) {
+          case '已掌握':
+            buttonText = '重学';
+            color = const Color(0xFF2196F3);
+            break;
+          case '学习中':
+          case '单词列表':
+          case '今日错词':
+          case '今日新词':
+          case '今日旧词':
+          case '今日单词':
+            buttonText = '熟知';
+            color = const Color(0xFF26A69A); // 类似截屏中的青色
+            break;
+          case '生词本':
+          default:
+            buttonText = '删除';
+            color = const Color(0xFFEF5350);
+        }
+
+        actions.add(SlidableAction(
+          onPressed: (_) {
+            if (buttonText == '掌握' || buttonText == '熟知') {
+              onMasterBtnPressed(word, i);
+            } else if (buttonText == '重学') {
+              onDelBtnPressed(word, i);
+            } else {
+              onDelBtnPressed(word, i);
+            }
+          },
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          icon: (buttonText == '掌握' || buttonText == '熟知')
+              ? Icons.check_circle
+              : (buttonText == '重学' ? Icons.replay : Icons.delete),
+          label: buttonText,
+        ));
+      }
+    }
+
+    return actions;
   }
 
   Widget _buildSpeakEnglishArea(
       WordWrapper word, bool isBookmarked, bool isDarkMode) {
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2226,9 +2258,10 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
-  Widget _buildWordMeaning(WordWrapper word, bool isDarkMode) {
+  Widget _buildWordMeaning(WordWrapper word, bool isDarkMode, {double topPadding = 8}) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: EdgeInsets.only(top: topPadding),
+
       child: Text(
         word.word.getMeaningStr(),
         textScaler: TextScaler.linear(1.0),
@@ -2599,100 +2632,113 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
-  Widget _renderWordContent(WordWrapper word, int i, bool isBookmarked, bool isDarkMode, bool? learningStatus) {
-    return Row(
-      children: [
-          /// 单词内容
-          Expanded(
-            child: InkWell(
-              focusColor: Colors.transparent,
-              onTap: () => _handleWordTap(word, i),
-              onLongPress: () => _handleWordLongPress(word, i),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    /// 序号和进度条区域
-                    Column(
-                      children: [
-                        /// 单词序号
-                        _buildWordIndexContainer(i, isBookmarked),
+  Widget _renderWordContent(WordWrapper word, int i, bool isBookmarked,
+      bool isDarkMode, bool? learningStatus) {
+    final actions =
+        _getSlidableActions(word, i, isBookmarked, learningStatus: learningStatus);
 
-                        /// 掌握度进度条（横条）
-                        if (args.showWordProgress)
-                          _buildWordProgressContainer(word, isDarkMode),
-                        // 紧凑波形或评分：放在掌握度条正下方
-                        if (studyMode == WordListStudyMode.speakChinese ||
-                            studyMode == WordListStudyMode.speakEnglish)
-                          _buildAudioIndicator(word, isBookmarked, isDarkMode),
-                      ],
-                    ),
-                    const SizedBox(width: 12),
+    Widget itemContent = InkWell(
+      focusColor: Colors.transparent,
+      onTap: () => _handleWordTap(word, i),
+      onLongPress: () => _handleWordLongPress(word, i),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// 序号和进度条区域
+            SizedBox(
+              width: 48,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /// 单词序号
+                  _buildWordIndexContainer(i, isBookmarked),
 
-                    /// 单词内容
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          /// 单词英文（背英文模式统一在释义下方展示，这里不显示）
-                          (studyMode == WordListStudyMode.dictation ||
-                                  studyMode == WordListStudyMode.speakEnglish)
-                              ? Container()
-                              : _buildWordHeader(word, isBookmarked, isDarkMode,
-                                  learningStatus: learningStatus),
-
-                          /// 单词释义
-                          if (studyMode == WordListStudyMode.list ||
-                              studyMode == WordListStudyMode.dictation ||
-                              studyMode == WordListStudyMode.speakEnglish)
-                            _buildWordMeaning(word, isDarkMode),
-
-                          /// 给点提示
-                          studyMode == WordListStudyMode.dictation &&
-                                  getBookMarkUiPosition() == i
-                              ? _buildDictationHint(word)
-                              : Container(),
-
-                          // 移除在内容区域的大波形展示（改为紧凑放置在掌握度条下方）
-
-                          /// 单词拼写输入框
-                          studyMode == WordListStudyMode.dictation
-                              ? _buildDictationTextField(word, i)
-                              : Container(),
-
-                          /// 默写中文输入区
-                          studyMode == WordListStudyMode.speakChinese
-                              ? _buildSpeakChineseArea(word)
-                              : Container(),
-
-                          /// 背英文输入区（释义下方：未通过仅一条下划线；通过后显示英文与音标）
-                          studyMode == WordListStudyMode.speakEnglish
-                              ? _buildSpeakEnglishArea(
-                                  word, isBookmarked, isDarkMode)
-                              : Container(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  /// 掌握度进度条（横条）
+                  if (args.showWordProgress)
+                    _buildWordProgressContainer(word, isDarkMode),
+                  // 紧凑波形或评分：放在掌握度条正下方
+                  if (studyMode == WordListStudyMode.speakChinese ||
+                      studyMode == WordListStudyMode.speakEnglish)
+                    _buildAudioIndicator(word, isBookmarked, isDarkMode),
+                ],
               ),
             ),
-          ),
+            const SizedBox(width: 12),
 
-          /// 按钮区
-          if (args.showDelBtn ||
-              (args.appBarTitle != '已掌握' &&
-                  !['学习中', '单词列表', '今日错词', '今日新词', '今日旧词', '今日单词']
-                      .contains(args.appBarTitle)) ||
-              ((studyMode == WordListStudyMode.dictation ||
-                      studyMode == WordListStudyMode.speakChinese ||
-                      studyMode == WordListStudyMode.speakEnglish) &&
-                  isBookmarked) ||
-              (args.canEditWord && args.wordsProvider is WordModifier))
-            _buildWordActionButtons(word, i, isBookmarked,
-                learningStatus: learningStatus),
-        ],
-      );
+            /// 单词内容 - 拼写和释义排成一行
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// 单词英文和音标
+                      if (!(studyMode == WordListStudyMode.dictation ||
+                          studyMode == WordListStudyMode.speakEnglish))
+                        SizedBox(
+                          width: 120, // 单词区域固定宽度，保证释义对齐
+                          child: _buildWordHeader(word, isBookmarked, isDarkMode,
+                              learningStatus: learningStatus),
+                        ),
+
+                      if (!(studyMode == WordListStudyMode.dictation ||
+                          studyMode == WordListStudyMode.speakEnglish))
+                        const SizedBox(width: 16),
+
+                      /// 单词释义
+                      if (studyMode == WordListStudyMode.list ||
+                          studyMode == WordListStudyMode.dictation ||
+                          studyMode == WordListStudyMode.speakEnglish)
+                        Expanded(
+                          child: _buildWordMeaning(word, isDarkMode,
+                              topPadding: (studyMode == WordListStudyMode.list) ? 0 : 8),
+                        ),
+                    ],
+                  ),
+
+                  /// 给点提示 (如果是默写模式)
+                  studyMode == WordListStudyMode.dictation &&
+                          getBookMarkUiPosition() == i
+                      ? _buildDictationHint(word)
+                      : Container(),
+
+                  /// 单词拼写输入框
+                  studyMode == WordListStudyMode.dictation
+                      ? _buildDictationTextField(word, i)
+                      : Container(),
+
+                  /// 默写中文输入区
+                  studyMode == WordListStudyMode.speakChinese
+                      ? _buildSpeakChineseArea(word)
+                      : Container(),
+
+                  /// 背英文输入区（释义下方：未通过仅一条下划线；通过后显示英文与音标）
+                  studyMode == WordListStudyMode.speakEnglish
+                      ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
+                      : Container(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (actions.isEmpty) return itemContent;
+
+    return Slidable(
+      key: ValueKey('slidable_${word.word.id}'),
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.25 * actions.length,
+        children: actions,
+      ),
+      child: itemContent,
+    );
   }
 
   void jumpToNextWord(final int currWordIndex, bool playPronounce,
@@ -2766,152 +2812,9 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
-  Widget _buildMasterButton(WordWrapper word, int index,
-      {bool? learningStatus}) {
-    final bool isMastered = learningStatus == true;
-    if (isMastered) return const SizedBox.shrink();
-
-    Color color = const Color(0xFF4CAF50); // 绿色
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(6),
-          onTap: isMastered
-              ? null
-              : () {
-                  onMasterBtnPressed(word, index);
-                },
-          child: Container(
-            width: 48,
-            height: 32,
-            alignment: Alignment.center,
-            child: Text(
-              '掌握',
-              textScaler: TextScaler.linear(1.0),
-              style: TextStyle(
-                color: isMastered ? color.withValues(alpha: 0.5) : color,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 1.2,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton(WordWrapper word, int index,
-      {bool? learningStatus}) {
-    // 根据不同的单词列表类型，显示不同的文字和颜色
-    String buttonText;
-    Color color;
-
-    // 如果单词已掌握，禁用按钮
-    final bool isMastered = learningStatus == true;
-
-    // 判断是否应该显示"掌握"按钮的场景
-    final bool showMasterButton = [
-      '学习中',
-      '单词列表',
-      '今日错词',
-      '今日新词',
-      '今日旧词',
-      '今日单词'
-    ].contains(args.appBarTitle);
-
-    // 如果单词已掌握且是"掌握"按钮场景，直接不显示按钮
-    if (isMastered && showMasterButton) {
-      return const SizedBox.shrink();
-    } else {
-      switch (args.appBarTitle) {
-        case '已掌握':
-          buttonText = '重学';
-          color = const Color(0xFF2196F3); // 蓝色，表示重学
-          break;
-        case '学习中':
-          buttonText = '掌握';
-          color = const Color(0xFF4CAF50); // 绿色，表示完成/掌握
-          break;
-        case '生词本':
-          buttonText = '删除';
-          color = const Color(0xFFEF5350); // 红色，表示删除
-          break;
-        case '单词列表':
-          buttonText = '掌握';
-          color = const Color(0xFF4CAF50); // 绿色，表示掌握
-          break;
-        case '今日错词':
-        case '今日新词':
-        case '今日旧词':
-        case '今日单词':
-          buttonText = '掌握';
-          color = const Color(0xFF4CAF50); // 绿色，表示掌握
-          break;
-        default:
-          buttonText = '删除';
-          color = const Color(0xFFEF5350);
-      }
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(6),
-          onTap: isMastered && showMasterButton
-              ? null
-              : () {
-                  if (buttonText == '掌握') {
-                    onMasterBtnPressed(word, index);
-                  } else {
-                    onDelBtnPressed(word, index);
-                  }
-                },
-          child: Container(
-            width: 48,
-            height: 32,
-            alignment: Alignment.center,
-            child: Text(
-              buttonText,
-              textScaler: TextScaler.linear(1.0),
-              style: TextStyle(
-                color: isMastered && showMasterButton
-                    ? color.withValues(alpha: 0.5)
-                    : color,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 1.2,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+
     super.build(context); // 必须调用，因为使用了 AutomaticKeepAliveClientMixin
     final isDarkMode = context.read<DarkMode>().isDarkMode;
 
