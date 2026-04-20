@@ -2235,117 +2235,46 @@ class WordListPageState extends State<WordListPage>
 
   Widget _buildWordHeader(WordWrapper word, bool isBookmarked, bool isDarkMode,
       {bool? learningStatus}) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-
-        // 估算单词和音标所需的宽度
-        final spellWidth = word.word.spell.length * 14.0; // 估算单词宽度
-        final pronounceWidth = word.word.mergedPronounce.isNotEmpty
-            ? (word.word.mergedPronounce.length * 7.0 + 8.0) // 估算音标宽度
-            : 0.0;
-        final totalWidth = spellWidth + pronounceWidth + 16.0; // 包括间距
-
-        // 如果总宽度超过可用宽度，或者音标很长，则换行显示
-        final shouldWrap = totalWidth > constraints.maxWidth ||
-            word.word.mergedPronounce.length > 25;
-
-        if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
-          // 换行显示：单词一行，音标一行，其后紧跟状态标签
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 单词行
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  word.word.spell,
-                  softWrap: false,
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: isBookmarked
-                        ? const Color(0xFF0097A7)
-                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              // 音标+标签行
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      '[${word.word.mergedPronounce}]',
-                      textScaler: const TextScaler.linear(1.0),
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.white38 : Colors.black38,
-                        fontSize: 12,
-                        fontFamily: 'NotoSans',
-                        fontWeight: FontWeight.w400,
-                        height: 1.3,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        } else {
-          // 同行显示：单词、音标和状态标签依次排列
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    word.word.spell,
-                    softWrap: false,
-                    textScaler: TextScaler.linear(1.0),
-                    style: TextStyle(
-                      color: isBookmarked
-                          ? const Color(0xFF0097A7)
-                          : (isDarkMode
-                              ? Colors.white
-                              : const Color(0xFF1F2937)),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-              ),
-              if (word.word.mergedPronounce.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    '[${word.word.mergedPronounce}]',
-                    textScaler: const TextScaler.linear(1.0),
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white38 : Colors.black38,
-                      fontSize: 12,
-                      fontFamily: 'NotoSans',
-                      fontWeight: FontWeight.w400,
-                      height: 1.3,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-              ],
-            ],
-          );
-        }
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 单词行
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            word.word.spell,
+            softWrap: false,
+            textScaler: TextScaler.linear(1.0),
+            style: TextStyle(
+              color: isBookmarked
+                  ? const Color(0xFF0097A7)
+                  : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              height: 1.3,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+        if (word.word.mergedPronounce.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            '[${word.word.mergedPronounce}]',
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              color: isDarkMode ? Colors.white38 : Colors.black38,
+              fontSize: 12,
+              fontFamily: 'NotoSans',
+              fontWeight: FontWeight.w400,
+              height: 1.3,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ],
+      ],
     );
   }
 
@@ -2645,7 +2574,7 @@ class WordListPageState extends State<WordListPage>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           /// 单词英文和音标
                           if (!(studyMode == WordListStudyMode.dictation ||
