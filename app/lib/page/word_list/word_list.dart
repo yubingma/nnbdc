@@ -2697,7 +2697,8 @@ class WordListPageState extends State<WordListPage>
               ),
             ],
           ),
-        ],
+          ],
+        ),
       ),
     );
 
