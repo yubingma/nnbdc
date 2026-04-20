@@ -2809,7 +2809,7 @@ class WordListPageState extends State<WordListPage>
         Scaffold(
           resizeToAvoidBottomInset: false, // 禁止分屏或键盘变化导致的布局挤压，提升 iPad 稳定性
           backgroundColor:
-              isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
+              isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9FAFB),
           appBar: !dataLoaded
               ? null
               : AppBar(
@@ -3357,9 +3357,9 @@ class WordListPageState extends State<WordListPage>
                               const Color(0xFF121212),
                             ]
                           : [
+                              const Color(0xFFF9FAFB),
                               const Color(0xFFF5F7FA),
-                              const Color(0xFFE8ECF1),
-                              const Color(0xFFF5F7FA),
+                              const Color(0xFFF9FAFB),
                             ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
