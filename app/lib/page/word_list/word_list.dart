@@ -1924,8 +1924,8 @@ class WordListPageState extends State<WordListPage>
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(height: 8),
         if (!word.speakEnglishPassed)
           _buildSpeakEnglishNotPassed(word, isBookmarked, isDarkMode)
         else
@@ -2576,56 +2576,45 @@ class WordListPageState extends State<WordListPage>
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          /// 单词英文和音标
-                          if (!(studyMode == WordListStudyMode.dictation ||
-                              studyMode == WordListStudyMode.speakEnglish))
-                            Expanded(
-                              flex: 2,
-                              child: _buildWordHeader(word, isBookmarked,
-                                  isDarkMode,
-                                  learningStatus: learningStatus),
-                            ),
+                          /// 左侧区域 (flex 2)
+                          Expanded(
+                            flex: 2,
+                            child: (studyMode == WordListStudyMode.speakEnglish)
+                                ? _buildWordMeaning(word, isDarkMode,
+                                    topPadding: 0)
+                                : (studyMode == WordListStudyMode.dictation)
+                                    ? const SizedBox.shrink()
+                                    : _buildWordHeader(word, isBookmarked,
+                                        isDarkMode,
+                                        learningStatus: learningStatus),
+                          ),
 
-                          if (!(studyMode == WordListStudyMode.dictation ||
-                              studyMode == WordListStudyMode.speakEnglish))
+                          if (studyMode != WordListStudyMode.dictation)
                             const SizedBox(width: 12),
 
-                          /// 单词释义
-                          if (studyMode == WordListStudyMode.list ||
-                              studyMode == WordListStudyMode.dictation ||
-                              studyMode == WordListStudyMode.speakEnglish)
-                            Expanded(
-                              flex: 3,
-                              child: _buildWordMeaning(word, isDarkMode,
-                                  topPadding:
-                                      (studyMode == WordListStudyMode.list)
-                                          ? 0
-                                          : 8),
-                            ),
+                          /// 右侧区域 (flex 3)
+                          Expanded(
+                            flex: 3,
+                            child: (studyMode == WordListStudyMode.speakChinese)
+                                ? _buildSpeakChineseArea(word)
+                                : (studyMode == WordListStudyMode.speakEnglish)
+                                    ? _buildSpeakEnglishArea(
+                                        word, isBookmarked, isDarkMode)
+                                    : (studyMode == WordListStudyMode.dictation)
+                                        ? _buildDictationTextField(word, i)
+                                        : _buildWordMeaning(word, isDarkMode,
+                                            topPadding: 0),
+                          ),
                         ],
                       ),
 
-                      /// 给点提示 (如果是默写模式)
-                      studyMode == WordListStudyMode.dictation &&
-                              getBookMarkUiPosition() == i
-                          ? _buildDictationHint(word)
-                          : Container(),
-
-                      /// 单词拼写输入框
-                      studyMode == WordListStudyMode.dictation
-                          ? _buildDictationTextField(word, i)
-                          : Container(),
-
-                      /// 默写中文输入区
-                      studyMode == WordListStudyMode.speakChinese
-                          ? _buildSpeakChineseArea(word)
-                          : Container(),
-
-                      /// 背英文输入区（释义下方：未通过仅一条下划线；通过后显示英文与音标）
-                      studyMode == WordListStudyMode.speakEnglish
-                          ? _buildSpeakEnglishArea(word, isBookmarked,
-                              isDarkMode)
-                          : Container(),
+                      /// 给点提示 (如果是默写模式，位置在输入框下方)
+                      if (studyMode == WordListStudyMode.dictation &&
+                          getBookMarkUiPosition() == i)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: _buildDictationHint(word),
+                        ),
                     ],
                   ),
                 ),
