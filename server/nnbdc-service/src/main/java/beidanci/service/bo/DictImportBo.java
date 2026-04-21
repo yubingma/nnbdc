@@ -209,12 +209,28 @@ public class DictImportBo {
                     int finalCount = (currentWords != null) ? currentWords.size() : 0;
                     mainDict.setWordCount(finalCount);
                     dictBo.updateEntity(mainDict);
+
+                    // 即使是系统导入，在任务结束时也记一条 UPDATE 日志，确保客户端能看到正确的单词总数
                     if (isSystemImport) {
                         try {
                             sysDbSyncBo.logOperation(mainDict, "UPDATE", "dict", dictId, JsonUtils.toJson(dictBo.toDto(mainDict)));
                         } catch (Exception e) {
                             logger.warn("生成更新词典同步日志失败", e);
                         }
+                    }
+                }
+            }
+
+            // 额外维护通用词库 ("0") 的同步：由于在 processSingleWord 中移除了每词一记的冗余日志，
+            // 此处必须在任务结束前汇总记一次，确保客户端本地 dict 表的 wordCount 等元数据一致。
+            // 注意：如果 dictId 就是 "0"，则上面的逻辑已经处理过了，此处无需重复。
+            if (!Constants.COMMON_DICT_ID.equals(dictId)) {
+                Dict commonDictPo = dictBo.findById(Constants.COMMON_DICT_ID);
+                if (commonDictPo != null) {
+                    try {
+                        sysDbSyncBo.logOperation(commonDictPo, "UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(commonDictPo)));
+                    } catch (Exception e) {
+                        logger.warn("生成通用词典汇总同步日志失败", e);
                     }
                 }
             }
@@ -510,7 +526,8 @@ public class DictImportBo {
             if (dict0.getName() == null) {
                 dict0.setName("通用词典.dict");
             }
-            sysDbSyncBo.logOperation(dict0, "UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(dict0)));
+            // 已移除：sysDbSyncBo.logOperation(dict0, "UPDATE", "dict", Constants.COMMON_DICT_ID, ...)
+            // 为了减少日志量，通用词库的 UPDATE 日志已移至 executeImportTask 任务结束时统一记录一次
             stats.addSyncLog("UPDATE", "dict");
         }
 
@@ -752,10 +769,14 @@ public class DictImportBo {
             meaningItemBo.createEntity(meaning);
             stats.addedMeaningCount++;
 
-            // 记录同步日志
+            // 记录同步日志 (仅当为通用词库资源，或非系统资源时才记录)
+            // 系统词典的特定资源（非通用词库）通过全量资源包同步，无需在此产生大量增量日志
+            boolean isCommonDict = Constants.COMMON_DICT_ID.equals(dictId);
             if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
-                sysDbSyncBo.logOperation(meaning, "INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
-                stats.addSyncLog("INSERT", "meaning_item");
+                if (isCommonDict) {
+                    sysDbSyncBo.logOperation(meaning, "INSERT", "meaning_item", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
+                    stats.addSyncLog("INSERT", "meaning_item");
+                }
             } else {
                 userDbSyncBo.logUserOperation(meaning, ownerId, "meaning_item", "INSERT", meaning.getId(), JsonUtils.toJson(meaningItemBo.toDto(meaning)));
             }
@@ -783,9 +804,9 @@ public class DictImportBo {
                 stats.addedSentenceCount++;
                 stats.addedAudioCount++; // 统计例句音频资源
 
-                // 记录同步日志（句子为公共资源，使用sysDbSyncBo）
-                sysDbSyncBo.logOperation(sentence, "INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
-                if (Constants.SYS_USER_SYS_ID.equals(ownerId)) {
+                // 记录同步日志（仅当为系统通用资源且关联通用词库时记录，专门系统词书资源通过包拉取）
+                if (Constants.SYS_USER_SYS_ID.equals(ownerId) && Constants.COMMON_DICT_ID.equals(dictId)) {
+                    sysDbSyncBo.logOperation(sentence, "INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
                     stats.addSyncLog("INSERT", "sentence");
                 }
             }

@@ -53,10 +53,12 @@ class WordWrapper {
   /// tag中的Word对象
   WordVo word;
 
-  FocusNode focusNode = FocusNode();
+  FocusNode? _focusNode;
+  FocusNode get focusNode => _focusNode ??= FocusNode();
 
   /// 默写英文输入框
-  late TextEditingController spellController = SpellingTextEditingController(
+  TextEditingController? _spellController;
+  TextEditingController get spellController => _spellController ??= SpellingTextEditingController(
     getTargetSpell: () => word.spell,
     baseColor: const Color(0xFF0097A7),
   );
@@ -89,6 +91,12 @@ class WordWrapper {
   int? pronunciationScore;
 
   WordWrapper(this.word, this.tag);
+  
+  /// 释放资源
+  void dispose() {
+    _focusNode?.dispose();
+    _spellController?.dispose();
+  }
 
   @override
   bool operator ==(Object other) =>

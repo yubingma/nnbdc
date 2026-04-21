@@ -129,7 +129,9 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         try {
           // 注意：此处不再使用 requestSyncAndWait，而是直接使用 requestSync 并在后台等待，
           // 或者如果确实需要等待，我们也已经在上面提前展示了本地 UI。
-          await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+          // 注意：此处不再使用 requestSyncAndWait，以避免阻塞 UI 线程。
+          // 我们使用 background sync，并在后台静默更新。
+          ThrottledDbSyncService().requestSync(immediate: true);
         } catch (e) {
           Global.logger.e('进入页面同步失败: $e');
         } finally {
@@ -627,11 +629,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       child: GestureDetector(
         onTap: () {
           if (label == '今日总词') {
-            toTodayWordsListPage(true)?.then((_) => loadData());
+            toTodayWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
           } else if (label == '新词') {
-            toTodayNewWordsListPage(true)?.then((_) => loadData());
+            toTodayNewWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
           } else if (label == '复习') {
-            toTodayOldWordsListPage(true)?.then((_) => loadData());
+            toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
           }
         },
         child: Container(

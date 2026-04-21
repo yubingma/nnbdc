@@ -165,8 +165,9 @@ class WordListPageState extends State<WordListPage>
   /// 旧字段已移除，这里默认不强制全部答对（后续由 asrPassRule 控制）
   bool get mustAnswerAll => false;
 
-  late WordListPageArgs args;
+   late WordListPageArgs args;
   bool dataLoaded = false;
+  bool _showList = false; // 用于延迟渲染列表，提升进入动画流畅度
   bool isQuerying = false;
   int totalWordCount = -1;
   BookMarkVo? bookMark;
@@ -246,6 +247,7 @@ class WordListPageState extends State<WordListPage>
   }
 
   Future<void> loadData() async {
+    final sw = Stopwatch()..start();
     if (!await checkArgs()) {
       return;
     }
@@ -295,6 +297,7 @@ class WordListPageState extends State<WordListPage>
         }
       });
     }
+    Global.logger.d('WordListPage: loadData completed in ${sw.elapsedMilliseconds}ms (baseIndex=$baseIndex)');
   }
 
   doQuery(bool clearCurrent, int fromIndex, final int pageSize,
@@ -594,6 +597,7 @@ class WordListPageState extends State<WordListPage>
 
   @override
   void initState() {
+    final sw = Stopwatch()..start();
     super.initState();
     // 异步预加载音素字典，避免用户说话时才开始解析导致的延迟
     unawaited(PhonemeUtil.load());
@@ -605,13 +609,20 @@ class WordListPageState extends State<WordListPage>
     WidgetsBinding.instance.addObserver(this);
 
     doInit();
-    // 延迟加载数据，避免初始化时阻塞 UI
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 立即开始异步加载数据，不再等待首帧完成，减少白屏/加载态感知时间
+    loadData();
+    
+    // 延迟显示列表内容，给路由过渡动画留出呼吸空间
+    // 从 150ms 缩减到 20ms，提升进入速度的感知，同时仍保留一帧缓冲
+    Future.delayed(const Duration(milliseconds: 20), () {
       if (mounted) {
-        loadData();
+        setState(() {
+          _showList = true;
+        });
       }
     });
     _checkAndShowGuide();
+    Global.logger.d('WordListPage: initState completed in ${sw.elapsedMilliseconds}ms');
   }
 
   /// 检查并显示新手引导
@@ -1031,6 +1042,7 @@ class WordListPageState extends State<WordListPage>
 
   @override
   void dispose() {
+    final sw = Stopwatch()..start();
     WidgetsBinding.instance.removeObserver(this);
 
     // 停止 ASR：仅当当前页面处于语音学习模式时才停止，
@@ -1053,15 +1065,19 @@ class WordListPageState extends State<WordListPage>
     _meterLevelNotifier.dispose();
     _asrModelLoadingController.dispose();
 
-    // 释放所有 WordWrapper 中的资源，防止内存泄漏
-    for (var word in words) {
-      try {
-        word.focusNode.dispose();
-        word.spellController.dispose();
-      } catch (e) {
-        Global.logger.d("dispose: 释放 WordWrapper 资源失败: $e");
+    // 释放所有 WordWrapper 中的资源，移至下一个 Event Loop 执行，避免阻塞 Pop 动画和主页面
+    final wordsToDispose = List<WordWrapper>.from(words);
+    Timer.run(() {
+      final swTotal = Stopwatch()..start();
+      for (var word in wordsToDispose) {
+        try {
+          word.dispose();
+        } catch (e) {
+          // 忽略已释放资源的错误
+        }
       }
-    }
+      Global.logger.d('WordListPage: Deferred resource disposal of ${wordsToDispose.length} words completed in ${swTotal.elapsedMilliseconds}ms');
+    });
 
     // 清空单词列表，帮助 GC
     words.clear();
@@ -1076,6 +1092,7 @@ class WordListPageState extends State<WordListPage>
     });
 
     super.dispose();
+    Global.logger.d('WordListPage: dispose synchronous part completed in ${sw.elapsedMilliseconds}ms');
   }
 
   @override
@@ -2765,72 +2782,71 @@ class WordListPageState extends State<WordListPage>
           resizeToAvoidBottomInset: false, // 禁止分屏或键盘变化导致的布局挤压，提升 iPad 稳定性
           backgroundColor:
               isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9FAFB),
-          appBar: !dataLoaded
-              ? null
-              : AppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  flexibleSpace: Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          AppTheme.gradientStartColor,
-                          AppTheme.gradientEndColor,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    AppTheme.gradientStartColor,
+                    AppTheme.gradientEndColor,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
-                  titleSpacing: 0,
-                  automaticallyImplyLeading: false,
-                  title: Row(
+                ],
+              ),
+            ),
+            titleSpacing: 0,
+            automaticallyImplyLeading: false,
+            title: Row(
+              children: [
+                args.showBackBtn
+                    ? IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon:
+                            const Icon(Icons.arrow_back, color: Colors.white),
+                      )
+                    : const SizedBox(width: 16),
+                Expanded(
+                  child: Row(
                     children: [
-                      args.showBackBtn
-                          ? IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.arrow_back,
-                                  color: Colors.white),
-                            )
-                          : const SizedBox(width: 16),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                args.appBarTitle,
-                                textScaler: TextScaler.linear(1.0),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                  height: 1.3,
-                                  letterSpacing: 0.3,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              ' ($totalWordCount)',
-                              textScaler: TextScaler.linear(1.0),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.white.withValues(alpha: 0.9),
-                                height: 1.3,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ],
+                      Flexible(
+                        child: Text(
+                          args.appBarTitle,
+                          textScaler: TextScaler.linear(1.0),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                            height: 1.3,
+                            letterSpacing: 0.3,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (dataLoaded)
+                        Text(
+                          ' ($totalWordCount)',
+                          textScaler: TextScaler.linear(1.0),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white.withValues(alpha: 0.9),
+                            height: 1.3,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
 
                       /// 书签图标 - 跳到第一个单词
                       InkWell(
@@ -3320,7 +3336,7 @@ class WordListPageState extends State<WordListPage>
                       end: Alignment.bottomCenter,
                     ),
                   ),
-                  child: (!dataLoaded)
+                  child: (!dataLoaded || !_showList)
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -3332,7 +3348,7 @@ class WordListPageState extends State<WordListPage>
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                '正在加载单词...',
+                                '正在整理词单...',
                                 textScaler: TextScaler.linear(1.0),
                                 style: TextStyle(
                                   color: isDarkMode

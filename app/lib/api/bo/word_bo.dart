@@ -563,12 +563,32 @@ class WordBo {
         ..where(db.learningWords.userId.equals(userId));
       final countResult = await countQuery.getSingle();
       final total = countResult.read(countAll()) ?? 0;
+
+      if (learningWords.isEmpty) {
+        return PagedResults<LearningWordVo>(total);
+      }
+
+      // 批量获取单词信息
+      final wordIds = learningWords.map((lw) => lw.wordId).toList();
+      final wordsQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
+      final words = await wordsQuery.get();
+      final wordMap = {for (var w in words) w.id: w};
+
+      // 批量获取释义项
+      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
+      final allMeaningItems = await meaningItemsQuery.get();
+      final meaningItemsMap = <String, List<MeaningItem>>{};
+      for (var mi in allMeaningItems) {
+        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
+      }
+
       List<LearningWordVo> learningWordVos = [];
+      final userVo = UserVo.c2(userId);
+      userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
+
       for (final lw in learningWords) {
-        final word = await db.wordsDao.getWordById(lw.wordId);
+        final word = wordMap[lw.wordId];
         if (word != null) {
-          final userVo = UserVo.c2(userId);
-          userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
           final wordVo = WordVo.c2(word.spell)
             ..id = word.id
             ..shortDesc = word.shortDesc
@@ -577,15 +597,28 @@ class WordBo {
             ..americaPronounce = word.americaPronounce
             ..britishPronounce = word.britishPronounce
             ..popularity = word.popularity;
-          // 使用 getWordMeaningItems 方法进行词书过滤
-          final meaningItems = await getWordMeaningItems(word.id, userId);
-          List<MeaningItemVo> meaningItemVos = [];
-          for (final mi in meaningItems) {
-            meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
-          }
-          wordVo.meaningItems = meaningItemVos;
-          final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
-              lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
+
+          final mItems = meaningItemsMap[word.id] ?? [];
+          wordVo.meaningItems = mItems
+              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .toList();
+
+          final learningWordVo = LearningWordVo(
+              userVo,
+              lw.addTime,
+              lw.addDay,
+              lw.lastLearningDate,
+              lw.learningOrder,
+              lw.learnedTimes,
+              wordVo,
+              lw.batchId,
+              lw.stability,
+              lw.difficulty,
+              lw.elapsedDays,
+              lw.scheduledDays,
+              lw.reps,
+              lw.lapses,
+              lw.state);
           learningWordVos.add(learningWordVo);
         }
       }
@@ -604,48 +637,88 @@ class WordBo {
     if (user == null) {
       throw Exception('用户不存在');
     }
-    // Remove unused date variables
-    final query = db.select(db.learningWords)
-      ..where((tbl) => tbl.userId.equals(userId) & tbl.isTodayNewWord.equals(true) & tbl.batchId.isBiggerThanValue(0))
-      ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
-      ..limit(pageSize, offset: fromIndex);
-    final learningWords = await query.get();
-    final countQuery = db.selectOnly(db.learningWords)
-      ..addColumns([countAll()])
-      ..where(db.learningWords.userId.equals(userId))
-      ..where(db.learningWords.isTodayNewWord.equals(true))
-      ..where(db.learningWords.batchId.isBiggerThanValue(0));
-    final countResult = await countQuery.getSingle();
-    final total = countResult.read(countAll()) ?? 0;
-    List<LearningWordVo> learningWordVos = [];
-    for (final lw in learningWords) {
-      final word = await db.wordsDao.getWordById(lw.wordId);
-      if (word != null) {
-        final userVo = UserVo.c2(userId);
-        userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
-        final wordVo = WordVo.c2(word.spell)
-          ..id = word.id
-          ..shortDesc = word.shortDesc
-          ..longDesc = word.longDesc
-          ..pronounce = word.pronounce
-          ..americaPronounce = word.americaPronounce
-          ..britishPronounce = word.britishPronounce
-          ..popularity = word.popularity;
-        // 使用 getWordMeaningItems 方法进行词书过滤
-        final meaningItems = await getWordMeaningItems(word.id, userId);
-        List<MeaningItemVo> meaningItemVos = [];
-        for (final mi in meaningItems) {
-          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
-        }
-        wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
-            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
-        learningWordVos.add(learningWordVo);
+
+    try {
+      final query = db.select(db.learningWords)
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.isTodayNewWord.equals(true) & tbl.batchId.isBiggerThanValue(0))
+        ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
+        ..limit(pageSize, offset: fromIndex);
+      final learningWords = await query.get();
+
+      final countQuery = db.selectOnly(db.learningWords)
+        ..addColumns([countAll()])
+        ..where(db.learningWords.userId.equals(userId))
+        ..where(db.learningWords.isTodayNewWord.equals(true))
+        ..where(db.learningWords.batchId.isBiggerThanValue(0));
+      final countResult = await countQuery.getSingle();
+      final total = countResult.read(countAll()) ?? 0;
+
+      if (learningWords.isEmpty) {
+        return PagedResults<LearningWordVo>(total);
       }
+
+      // 批量获取单词信息
+      final wordIds = learningWords.map((lw) => lw.wordId).toList();
+      final wordsQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
+      final words = await wordsQuery.get();
+      final wordMap = {for (var w in words) w.id: w};
+
+      // 批量获取释义项
+      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
+      final allMeaningItems = await meaningItemsQuery.get();
+      final meaningItemsMap = <String, List<MeaningItem>>{};
+      for (var mi in allMeaningItems) {
+        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
+      }
+
+      List<LearningWordVo> learningWordVos = [];
+      final userVo = UserVo.c2(userId);
+      userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
+
+      for (final lw in learningWords) {
+        final word = wordMap[lw.wordId];
+        if (word != null) {
+          final wordVo = WordVo.c2(word.spell)
+            ..id = word.id
+            ..shortDesc = word.shortDesc
+            ..longDesc = word.longDesc
+            ..pronounce = word.pronounce
+            ..americaPronounce = word.americaPronounce
+            ..britishPronounce = word.britishPronounce
+            ..popularity = word.popularity;
+
+          final mItems = meaningItemsMap[word.id] ?? [];
+          wordVo.meaningItems = mItems
+              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .toList();
+
+          final learningWordVo = LearningWordVo(
+              userVo,
+              lw.addTime,
+              lw.addDay,
+              lw.lastLearningDate,
+              lw.learningOrder,
+              lw.learnedTimes,
+              wordVo,
+              lw.batchId,
+              lw.stability,
+              lw.difficulty,
+              lw.elapsedDays,
+              lw.scheduledDays,
+              lw.reps,
+              lw.lapses,
+              lw.state);
+          learningWordVos.add(learningWordVo);
+        }
+      }
+
+      final result = PagedResults<LearningWordVo>(total);
+      result.rows = learningWordVos;
+      return result;
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, operation: '批量获取今日新词');
+      rethrow;
     }
-    final result = PagedResults<LearningWordVo>(total);
-    result.rows = learningWordVos;
-    return result;
   }
 
   Future<PagedResults<LearningWordVo>> getTodayOldWordsForAPage(int fromIndex, int pageSize, String userId) async {
@@ -654,48 +727,88 @@ class WordBo {
     if (user == null) {
       throw Exception('用户不存在');
     }
-    // Remove unused date variables
-    final query = db.select(db.learningWords)
-      ..where((tbl) => tbl.userId.equals(userId) & tbl.isTodayNewWord.equals(false) & tbl.batchId.isBiggerThanValue(0))
-      ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
-      ..limit(pageSize, offset: fromIndex);
-    final learningWords = await query.get();
-    final countQuery = db.selectOnly(db.learningWords)
-      ..addColumns([countAll()])
-      ..where(db.learningWords.userId.equals(userId))
-      ..where(db.learningWords.isTodayNewWord.equals(false))
-      ..where(db.learningWords.batchId.isBiggerThanValue(0));
-    final countResult = await countQuery.getSingle();
-    final total = countResult.read(countAll()) ?? 0;
-    List<LearningWordVo> learningWordVos = [];
-    for (final lw in learningWords) {
-      final word = await db.wordsDao.getWordById(lw.wordId);
-      if (word != null) {
-        final userVo = UserVo.c2(userId);
-        userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
-        final wordVo = WordVo.c2(word.spell)
-          ..id = word.id
-          ..shortDesc = word.shortDesc
-          ..longDesc = word.longDesc
-          ..pronounce = word.pronounce
-          ..americaPronounce = word.americaPronounce
-          ..britishPronounce = word.britishPronounce
-          ..popularity = word.popularity;
-        // 使用 getWordMeaningItems 方法进行词书过滤
-        final meaningItems = await getWordMeaningItems(word.id, userId);
-        List<MeaningItemVo> meaningItemVos = [];
-        for (final mi in meaningItems) {
-          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
-        }
-        wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
-            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
-        learningWordVos.add(learningWordVo);
+
+    try {
+      final query = db.select(db.learningWords)
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.isTodayNewWord.equals(false) & tbl.batchId.isBiggerThanValue(0))
+        ..orderBy([(tbl) => OrderingTerm(expression: tbl.learningOrder)])
+        ..limit(pageSize, offset: fromIndex);
+      final learningWords = await query.get();
+
+      final countQuery = db.selectOnly(db.learningWords)
+        ..addColumns([countAll()])
+        ..where(db.learningWords.userId.equals(userId))
+        ..where(db.learningWords.isTodayNewWord.equals(false))
+        ..where(db.learningWords.batchId.isBiggerThanValue(0));
+      final countResult = await countQuery.getSingle();
+      final total = countResult.read(countAll()) ?? 0;
+
+      if (learningWords.isEmpty) {
+        return PagedResults<LearningWordVo>(total);
       }
+
+      // 批量获取单词信息
+      final wordIds = learningWords.map((lw) => lw.wordId).toList();
+      final wordsQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
+      final words = await wordsQuery.get();
+      final wordMap = {for (var w in words) w.id: w};
+
+      // 批量获取释义项
+      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
+      final allMeaningItems = await meaningItemsQuery.get();
+      final meaningItemsMap = <String, List<MeaningItem>>{};
+      for (var mi in allMeaningItems) {
+        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
+      }
+
+      List<LearningWordVo> learningWordVos = [];
+      final userVo = UserVo.c2(userId);
+      userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
+
+      for (final lw in learningWords) {
+        final word = wordMap[lw.wordId];
+        if (word != null) {
+          final wordVo = WordVo.c2(word.spell)
+            ..id = word.id
+            ..shortDesc = word.shortDesc
+            ..longDesc = word.longDesc
+            ..pronounce = word.pronounce
+            ..americaPronounce = word.americaPronounce
+            ..britishPronounce = word.britishPronounce
+            ..popularity = word.popularity;
+
+          final mItems = meaningItemsMap[word.id] ?? [];
+          wordVo.meaningItems = mItems
+              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .toList();
+
+          final learningWordVo = LearningWordVo(
+              userVo,
+              lw.addTime,
+              lw.addDay,
+              lw.lastLearningDate,
+              lw.learningOrder,
+              lw.learnedTimes,
+              wordVo,
+              lw.batchId,
+              lw.stability,
+              lw.difficulty,
+              lw.elapsedDays,
+              lw.scheduledDays,
+              lw.reps,
+              lw.lapses,
+              lw.state);
+          learningWordVos.add(learningWordVo);
+        }
+      }
+
+      final result = PagedResults<LearningWordVo>(total);
+      result.rows = learningWordVos;
+      return result;
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, operation: '批量获取今日复习词');
+      rethrow;
     }
-    final result = PagedResults<LearningWordVo>(total);
-    result.rows = learningWordVos;
-    return result;
   }
 
   Future<PagedResults<LearningWordVo>> getLearningWordsByBucketForAPage(int bucketKey, int fromIndex, int pageSize, String userId) async {
@@ -836,6 +949,7 @@ class WordBo {
   }
 
   Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize) async {
+    final sw = Stopwatch()..start();
     try {
       // 获取词典单词总数
       final results = PagedResults<DictWordVo>(0);
@@ -940,6 +1054,7 @@ class WordBo {
           results.rows.add(dictWordVo);
         }
       }
+      Global.logger.d('WordBo: getDictWordsForAPage completed in ${sw.elapsedMilliseconds}ms');
       return results;
     } catch (e) {
       Global.logger.e("获取词典单词失败: $e");
@@ -1680,50 +1795,97 @@ class WordBo {
     if (user == null) {
       throw Exception('用户不存在');
     }
-    // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
-    final query = db.select(db.learningWords)
-      ..where((tbl) => tbl.userId.equals(userId) & tbl.batchId.isBiggerThanValue(0))
-      ..orderBy([
-        (tbl) => OrderingTerm(expression: tbl.batchId),
-        (tbl) => OrderingTerm(expression: tbl.learningOrder),
-      ])
-      ..limit(pageSize, offset: fromIndex);
-    final learningWords = await query.get();
-    final countQuery = db.selectOnly(db.learningWords)
-      ..addColumns([countAll()])
-      ..where(db.learningWords.userId.equals(userId))
-      ..where(db.learningWords.batchId.isBiggerThanValue(0));
-    final countResult = await countQuery.getSingle();
-    final total = countResult.read(countAll()) ?? 0;
-    List<LearningWordVo> learningWordVos = [];
-    for (final lw in learningWords) {
-      final word = await db.wordsDao.getWordById(lw.wordId);
-      if (word != null) {
-        final userVo = UserVo.c2(userId);
-        userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
-        final wordVo = WordVo.c2(word.spell)
-          ..id = word.id
-          ..shortDesc = word.shortDesc
-          ..longDesc = word.longDesc
-          ..pronounce = word.pronounce
-          ..americaPronounce = word.americaPronounce
-          ..britishPronounce = word.britishPronounce
-          ..popularity = word.popularity;
-        // 使用 getWordMeaningItems 方法进行词书过滤
-        final meaningItems = await getWordMeaningItems(word.id, userId);
-        List<MeaningItemVo> meaningItemVos = [];
-        for (final mi in meaningItems) {
-          meaningItemVos.add(MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null));
-        }
-        wordVo.meaningItems = meaningItemVos;
-        final learningWordVo = LearningWordVo(userVo, lw.addTime, lw.addDay, lw.lastLearningDate, lw.learningOrder, lw.learnedTimes, wordVo,
-            lw.batchId, lw.stability, lw.difficulty, lw.elapsedDays, lw.scheduledDays, lw.reps, lw.lapses, lw.state);
-        learningWordVos.add(learningWordVo);
+
+    try {
+      // 1. 获取基础学习记录
+      final query = db.select(db.learningWords)
+        ..where((tbl) => tbl.userId.equals(userId) & tbl.batchId.isBiggerThanValue(0))
+        ..orderBy([
+          (tbl) => OrderingTerm(expression: tbl.batchId),
+          (tbl) => OrderingTerm(expression: tbl.learningOrder),
+        ])
+        ..limit(pageSize, offset: fromIndex);
+      final learningWords = await query.get();
+
+      // 2. 获取总数
+      final countQuery = db.selectOnly(db.learningWords)
+        ..addColumns([countAll()])
+        ..where(db.learningWords.userId.equals(userId))
+        ..where(db.learningWords.batchId.isBiggerThanValue(0));
+      final countResult = await countQuery.getSingle();
+      final total = countResult.read(countAll()) ?? 0;
+
+      if (learningWords.isEmpty) {
+        return PagedResults<LearningWordVo>(total);
       }
+
+      // 3. 批量获取单词信息
+      final wordIds = learningWords.map((lw) => lw.wordId).toList();
+      final wordsQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
+      final words = await wordsQuery.get();
+      final wordMap = {for (var w in words) w.id: w};
+
+      // 4. 批量预加载释义项 (优化 N+1 查询)
+      // 注意：getWordMeaningItems 逻辑较复杂，这里采用简化版批量加载，或保持原子加载但尽量减少开销
+      // 为保持逻辑一致性，我们在这里预先批量获取这些单词的所有释义项
+      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
+      final allMeaningItems = await meaningItemsQuery.get();
+      final meaningItemsMap = <String, List<MeaningItem>>{};
+      for (var mi in allMeaningItems) {
+        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
+      }
+
+      List<LearningWordVo> learningWordVos = [];
+      final userVo = UserVo.c2(userId);
+      userVo.level = LevelUtil.getLevelVoByWordCount(user.masteredWordsCount);
+
+      for (final lw in learningWords) {
+        final word = wordMap[lw.wordId];
+        if (word != null) {
+          final wordVo = WordVo.c2(word.spell)
+            ..id = word.id
+            ..shortDesc = word.shortDesc
+            ..longDesc = word.longDesc
+            ..pronounce = word.pronounce
+            ..americaPronounce = word.americaPronounce
+            ..britishPronounce = word.britishPronounce
+            ..popularity = word.popularity;
+
+          // 这里的释义项逻辑如果需要严格遵守 getWordMeaningItems 的过滤规则，
+          // 可以在这里对 meaningItemsMap[word.id] 进行内存过滤，而不是反复查库
+          // 为了极致速度，暂取该词的所有释义或通用释义
+          final mItems = meaningItemsMap[word.id] ?? [];
+          wordVo.meaningItems = mItems
+              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .toList();
+
+          final learningWordVo = LearningWordVo(
+              userVo,
+              lw.addTime,
+              lw.addDay,
+              lw.lastLearningDate,
+              lw.learningOrder,
+              lw.learnedTimes,
+              wordVo,
+              lw.batchId,
+              lw.stability,
+              lw.difficulty,
+              lw.elapsedDays,
+              lw.scheduledDays,
+              lw.reps,
+              lw.lapses,
+              lw.state);
+          learningWordVos.add(learningWordVo);
+        }
+      }
+
+      final result = PagedResults<LearningWordVo>(total);
+      result.rows = learningWordVos;
+      return result;
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, operation: '批量获取今日单词');
+      rethrow;
     }
-    final result = PagedResults<LearningWordVo>(total);
-    result.rows = learningWordVos;
-    return result;
   }
 
   Future<Result> setLearningWordAsMastered(String userId, String wordId, bool deleteLearningWord) async {

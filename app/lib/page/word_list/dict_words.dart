@@ -68,6 +68,7 @@ class DictWordsProvider with WordsProvider implements WordModifier {
 
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
+    final sw = Stopwatch()..start();
     try {
       final results = await WordBo().getDictWordsForAPage(dict.id, fromIndex, pageSize);
       final wrappedResults = PagedResults<WordWrapper>(results.total);
@@ -76,6 +77,7 @@ class DictWordsProvider with WordsProvider implements WordModifier {
         wrappedResults.rows.add(WordWrapper(dictWordVo.word, dictWordVo));
       }
 
+      Global.logger.d('DictWordsProvider: getAPageOfWords(from=$fromIndex) completed in ${sw.elapsedMilliseconds}ms');
       return wrappedResults;
     } catch (e) {
       Global.logger.e("获取词典单词失败: $e");
@@ -137,7 +139,9 @@ class DictWordsProvider with WordsProvider implements WordModifier {
 
   @override
   Future<int> getWordIndex(String spell) async {
+    final sw = Stopwatch()..start();
     var result = await WordBo().getDictWordOrder(dict.id, spell);
+    Global.logger.d('DictWordsProvider: getWordIndex($spell) completed in ${sw.elapsedMilliseconds}ms');
     if (result.success) {
       var order = result.data!;
       return order == -1 ? -1 : (order - 1);

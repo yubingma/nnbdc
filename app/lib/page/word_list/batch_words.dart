@@ -15,17 +15,26 @@ import '../../global.dart';
 import '../../util/word_util.dart';
 
 class StageWordsProvider with WordsProvider {
+  List<LearningWordVo>? _cachedWords;
+
+  Future<List<LearningWordVo>> _getAllWords() async {
+    return _cachedWords ??= await StudyBo().getCurrentBatchCache();
+  }
+
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
-    var words = await StudyBo().getCurrentBatchCache();
-    var results = PagedResults<WordWrapper>(words.length);
-    for (var i = 0; i < words.length; i++) {
-      var word = words[i];
-      if (i >= fromIndex && i < fromIndex + pageSize) {
-        var wrapper = WordWrapper(word.word, word);
-        results.rows.add(wrapper);
-      }
+    final sw = Stopwatch()..start();
+    var allWords = await _getAllWords();
+    var results = PagedResults<WordWrapper>(allWords.length);
+    
+    if (fromIndex < 0) fromIndex = 0;
+    int end = (fromIndex + pageSize) > allWords.length ? allWords.length : (fromIndex + pageSize);
+    
+    for (var i = fromIndex; i < end; i++) {
+      var word = allWords[i];
+      results.rows.add(WordWrapper(word.word, word));
     }
+    Global.logger.d('StageWordsProvider: getAPageOfWords(from=$fromIndex) completed in ${sw.elapsedMilliseconds}ms');
     return results;
   }
 
@@ -46,8 +55,9 @@ class StageWordsProvider with WordsProvider {
 
   @override
   Future<int> getWordIndex(String spell) async {
+    final sw = Stopwatch()..start();
     // 获取当批次的所有单词
-    var words = await StudyBo().getCurrentBatchCache();
+    var words = await _getAllWords();
 
     // 查找指定单词的位置
     for (int i = 0; i < words.length; i++) {
@@ -56,6 +66,7 @@ class StageWordsProvider with WordsProvider {
       }
     }
 
+    Global.logger.d('StageWordsProvider: getWordIndex($spell) completed in ${sw.elapsedMilliseconds}ms');
     return -1; // 单词不在当前批次中
   }
 

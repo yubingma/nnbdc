@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:nnbdc/util/edit_distance.dart';
 
@@ -15,8 +16,33 @@ class PhonemeUtil {
     _loadCompleter = Completer<void>();
     try {
       final content = await rootBundle.loadString(_assetPath);
-      _parse(content); _loaded = true; _loadCompleter!.complete();
-    } catch (e, st) { _loadCompleter!.completeError(e, st); _loadCompleter = null; }
+      // 在后台 Isolate 中解析，避免阻塞主线程
+      final parsedData = await compute(_parseInIsolate, content);
+      _wordToPhonemeVariants.addAll(parsedData);
+      _loaded = true;
+      _loadCompleter!.complete();
+    } catch (e, st) {
+      _loadCompleter!.completeError(e, st);
+      _loadCompleter = null;
+    }
+  }
+
+  // 必须是顶级函数或静态函数才能用于 compute
+  static Map<String, List<List<String>>> _parseInIsolate(String content) {
+    final Map<String, List<List<String>>> data = {};
+    for (var line in content.split('\n')) {
+      line = line.trim();
+      if (line.isEmpty || line.startsWith(';') || line.startsWith('#')) continue;
+      final parts = line.split(RegExp(r'\s+'));
+      if (parts.length < 2) continue;
+      var head = parts.first;
+      final pn = head.indexOf('(');
+      if (pn > 0 && head.endsWith(')')) head = head.substring(0, pn);
+      data
+          .putIfAbsent(head.toLowerCase(), () => [])
+          .add(parts.sublist(1).map((a) => a.replaceAll(RegExp(r'\d+'), '')).toList());
+    }
+    return data;
   }
 
   static Future<List<List<String>>> lookup(String word) async {
@@ -124,14 +150,6 @@ class PhonemeUtil {
     return collapsed;
   }
 
-  static void _parse(String content) {
-    for (var line in content.split('\n')) {
-      line = line.trim(); if (line.isEmpty || line.startsWith(';') || line.startsWith('#')) continue;
-      final parts = line.split(_spaceRegExp); if (parts.length < 2) continue;
-      var head = parts.first; final pn = head.indexOf('('); if (pn > 0 && head.endsWith(')')) head = head.substring(0, pn);
-      _wordToPhonemeVariants.putIfAbsent(head.toLowerCase(), () => []).add(parts.sublist(1).map((a) => a.replaceAll(_digitRegExp, '')).toList());
-    }
-  }
 
   static int _phonemeSimilarity(List<String> a, List<String> b) {
     if (a.isEmpty || b.isEmpty) return 0;

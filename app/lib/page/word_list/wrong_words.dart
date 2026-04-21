@@ -12,14 +12,15 @@ import '../../util/word_util.dart';
 class WrongWordsProvider with WordsProvider {
   @override
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
-    var words = await WordBo().getAnswerWrongWords(Global.getLoggedInUser()!.id);
-    var results = PagedResults<WordWrapper>(words.length);
-    for (var i = 0; i < words.length; i++) {
-      var word = words[i];
-      if (i >= fromIndex && i < fromIndex + pageSize) {
-        var wrapper = WordWrapper(word, word);
-        results.rows.add(wrapper);
-      }
+    var allWords = await WordBo().getAnswerWrongWords(Global.getLoggedInUser()!.id);
+    var results = PagedResults<WordWrapper>(allWords.length);
+    
+    if (fromIndex < 0) fromIndex = 0;
+    int end = (fromIndex + pageSize) > allWords.length ? allWords.length : (fromIndex + pageSize);
+    
+    for (var i = fromIndex; i < end; i++) {
+      var word = allWords[i];
+      results.rows.add(WordWrapper(word, word));
     }
     return results;
   }

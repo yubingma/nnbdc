@@ -945,6 +945,8 @@ class _MePageState extends State<MePage> {
                 ),
               ),
 
+              const SizedBox(height: 12),
+
               // 同步状态指示器
               if (_isSyncing) ...[
                 Row(
@@ -1012,11 +1014,11 @@ class _MePageState extends State<MePage> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
-                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5)),
+                        borderRadius: BorderRadius.circular(16),
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.amber.shade50.withValues(alpha: 0.3),
+                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5), width: 1.5),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1045,10 +1047,11 @@ class _MePageState extends State<MePage> {
 
                 if (isPremium && premiumInfoText != null) {
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       color: Colors.blue.withValues(alpha: 0.05),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.25), width: 1.5),
                     ),
                     child: Row(
                       children: [

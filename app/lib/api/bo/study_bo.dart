@@ -97,6 +97,7 @@ class StudyBo {
   }
 
   Future<List<LearningWordVo>> getCurrentBatchCache() async {
+    final sw = Stopwatch()..start();
     try {
       final user = Global.getLoggedInUser();
       if (user == null) {
@@ -151,37 +152,43 @@ class StudyBo {
 
       // 转换为 LearningWordVo
       final result = <LearningWordVo>[];
+      if (batchWords.isEmpty) return result;
+
+      // 1. 批量获取单词基本信息
+      final wordIds = batchWords.map((bw) => bw.wordId).toList();
+      final wordsList = await db.wordsDao.getWordsByIds(wordIds);
+      final wordMap = {for (var w in wordsList) w.id: w};
+
+      // 2. 批量获取释义项 (仅获取通用词典释义作为列表快速显示，或获取所有释义项后在内存过滤)
+      // 注意：为了极致性能，在列表页我们可能不需要 getWordMeaningItems 那么复杂的过滤逻辑
+      // 这里采用类似 getLearningWordsForAPage 的批量获取方式
+      final meaningItemsQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
+      final allMeaningItems = await meaningItemsQuery.get();
+      final meaningItemsMap = <String, List<MeaningItem>>{};
+      for (var mi in allMeaningItems) {
+        meaningItemsMap.putIfAbsent(mi.wordId, () => []).add(mi);
+      }
+
+      final userVo = UserVo.fromUser(user);
+
       for (final batchWord in batchWords) {
-        final word = await db.wordsDao.getWordById(batchWord.wordId);
+        final word = wordMap[batchWord.wordId];
         if (word != null) {
-          // 创建一个简单的UserVo对象
-          final userVo = UserVo.fromUser(user);
-
           // 构建 WordVo 对象
-          final wordVo = WordVo.c2(word.spell);
-          wordVo.id = word.id;
-          wordVo.shortDesc = word.shortDesc;
-          wordVo.longDesc = word.longDesc;
-          wordVo.pronounce = word.pronounce;
-          wordVo.americaPronounce = word.americaPronounce;
-          wordVo.britishPronounce = word.britishPronounce;
-          wordVo.popularity = word.popularity;
+          final wordVo = WordVo.c2(word.spell)
+            ..id = word.id
+            ..shortDesc = word.shortDesc
+            ..longDesc = word.longDesc
+            ..pronounce = word.pronounce
+            ..americaPronounce = word.americaPronounce
+            ..britishPronounce = word.britishPronounce
+            ..popularity = word.popularity;
 
-          // 使用 getWordMeaningItems 方法进行词书过滤和 popularity limit 过滤
-          final meaningItems = await WordBo().getWordMeaningItems(word.id, user.id);
-          List<MeaningItemVo> meaningItemVos = [];
-          for (final mi in meaningItems) {
-            final meaningItemVo = MeaningItemVo(
-                mi.id,
-                mi.ciXing,
-                mi.meaning,
-                null, // dict
-                null, // synonyms
-                null // sentences
-                );
-            meaningItemVos.add(meaningItemVo);
-          }
-          wordVo.meaningItems = meaningItemVos;
+          // 获取并转换释义项
+          final mItems = meaningItemsMap[word.id] ?? [];
+          wordVo.meaningItems = mItems
+              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .toList();
 
           // 构建 LearningWordVo
           final learningWordVo = LearningWordVo(
@@ -210,6 +217,7 @@ class StudyBo {
       if (result.isEmpty) {
         Global.logger.w('当前批次没有单词可供复习');
       }
+      Global.logger.d('StudyBo: getCurrentBatchCache completed in ${sw.elapsedMilliseconds}ms (count=${result.length})');
       return result;
     } catch (e, stackTrace) {
       Global.logger.e('获取批次单词失败: $e', stackTrace: stackTrace);
