@@ -338,12 +338,15 @@ class _MePageState extends State<MePage> {
         }
       }
 
+      if (loggedInUserVal == null || loggedInUserVal.id == null) return;
+
       final db = MyDatabase.instance;
-      User? user = await db.usersDao.getUserById(loggedInUserVal!.id!);
+      User? user = await db.usersDao.getUserById(loggedInUserVal.id!);
       if (user != null) {
-        var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(user.id);
+        final userId = user.id;
+        var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(userId);
         var totalLearningWords = await (db.select(db.learningWords)
-              ..where((lw) => lw.userId.equals(user.id))
+              ..where((lw) => lw.userId.equals(userId))
               ..where((lw) => lw.stability.isSmallerThanValue(Constants.graduationStability)))
             .get();
         var globalLearningWordsCount = totalLearningWords.length;
@@ -358,7 +361,7 @@ class _MePageState extends State<MePage> {
         var learningWordIds = totalLearningWords.map((w) => w.wordId).toSet();
         var learningWordsInSelectedDictsCount = learningWordIds.intersection(uniqueWordIdsInDicts).length;
 
-        var allMasteredWordIdSet = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+        var allMasteredWordIdSet = await db.masteredWordsDao.getMasteredWordIdSet(userId);
         var globalMasteredWordsCount = allMasteredWordIdSet.length;
 
         var masteredWordIdsInSelectedDicts = allMasteredWordIdSet.intersection(uniqueWordIdsInDicts);
@@ -367,7 +370,7 @@ class _MePageState extends State<MePage> {
         var allDictsFinished = (learningWordsInSelectedDictsCount + masteredWordsInSelectedDictsCount) >= rawWordCount;
         LevelVo levelVo = LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
 
-        var allDakas = await db.dakasDao.getDakaRecords(user.id);
+        var allDakas = await db.dakasDao.getDakaRecords(userId);
         var actualDakaDayCount = allDakas.length;
 
         // 自动修复：如果 User 表中的统计数据与实际打卡记录不符，执行自动修复并同步到后端
