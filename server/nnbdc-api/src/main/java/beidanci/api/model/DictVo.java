@@ -26,6 +26,8 @@ public class DictVo extends UuidVo {
      */
     private Integer wordCount;
     private String domain;
+    private String description;
+
 
     public Boolean getDeletable() {
         return deletable;
@@ -116,5 +118,14 @@ public class DictVo extends UuidVo {
     public void setDomain(String domain) {
         this.domain = domain;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
 
 }

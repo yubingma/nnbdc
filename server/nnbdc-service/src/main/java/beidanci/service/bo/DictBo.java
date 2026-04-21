@@ -353,7 +353,8 @@ public class DictBo extends BaseBo<Dict> {
 
     public DictDto getDictDto(String dictId) throws ParseException {
         // 通用词典现在是数据库中的实际记录，统一从数据库查询
-        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, editable, deletable, create_time, update_time, domain, base_dict_id, sort_alg FROM dict WHERE id=:dictId";
+        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, editable, deletable, create_time, update_time, domain, base_dict_id, sort_alg, description FROM dict WHERE id=:dictId";
+
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         List<DictDto> results = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             DictDto dto = new DictDto();
@@ -372,7 +373,9 @@ public class DictBo extends BaseBo<Dict> {
             dto.setDomain(rs.getString("domain"));
             dto.setBaseDictId(rs.getString("base_dict_id"));
             dto.setSortAlg(rs.getString("sort_alg"));
+            dto.setDescription(rs.getString("description"));
             return dto;
+
         });
         return results.isEmpty() ? null : results.get(0);
     }
@@ -381,9 +384,10 @@ public class DictBo extends BaseBo<Dict> {
      * 获取指定用户的所有词书DTO
      */
     public List<DictDto> getDictDtosOfUser(String userId) {
-        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, editable, deletable, create_time, update_time, domain, base_dict_id, sort_alg "
+        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, editable, deletable, create_time, update_time, domain, base_dict_id, sort_alg, description "
                 +
                 "FROM dict WHERE owner_id = :userId";
+
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             DictDto dto = new DictDto();
@@ -402,7 +406,9 @@ public class DictBo extends BaseBo<Dict> {
             dto.setDomain(rs.getString("domain"));
             dto.setBaseDictId(rs.getString("base_dict_id"));
             dto.setSortAlg(rs.getString("sort_alg"));
+            dto.setDescription(rs.getString("description"));
             return dto;
+
         });
     }
 
@@ -411,9 +417,10 @@ public class DictBo extends BaseBo<Dict> {
      */
     public List<DictStatsVo> getSystemDictsWithStats() {
         // 获取系统词典基本信息
-        String dictSql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time "
+        String dictSql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time, description "
                 +
                 "FROM dict WHERE owner_id = :sysUserId ORDER BY create_time DESC";
+
         MapSqlParameterSource params = new MapSqlParameterSource("sysUserId", Constants.SYS_USER_SYS_ID);
         List<DictStatsVo> dictResults = namedParameterJdbcTemplate.query(dictSql, params, (rs, rowNum) -> {
             DictStatsVo dto = new DictStatsVo();
@@ -427,7 +434,9 @@ public class DictBo extends BaseBo<Dict> {
             dto.setPopularityLimit(rs.getObject("popularity_limit", Integer.class));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
+            dto.setDescription(rs.getString("description"));
             return dto;
+
         });
 
         // 获取总用户数
@@ -468,9 +477,10 @@ public class DictBo extends BaseBo<Dict> {
      */
     public DictStatsVo getDictStats(String dictId) {
         // 获取词典基本信息
-        String dictSql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time "
+        String dictSql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time, description "
                 +
                 "FROM dict WHERE id = :dictId";
+
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         List<DictStatsVo> results = namedParameterJdbcTemplate.query(dictSql, params, (rs, rowNum) -> {
             DictStatsVo dto = new DictStatsVo();
@@ -484,7 +494,9 @@ public class DictBo extends BaseBo<Dict> {
             dto.setPopularityLimit(rs.getObject("popularity_limit", Integer.class));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
+            dto.setDescription(rs.getString("description"));
             return dto;
+
         });
 
         if (results.isEmpty()) {

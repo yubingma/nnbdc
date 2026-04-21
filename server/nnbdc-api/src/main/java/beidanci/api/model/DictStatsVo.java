@@ -16,6 +16,8 @@ public class DictStatsVo {
     private Integer popularityLimit;
     private Date createTime;
     private Date updateTime;
+    private String description;
+
     
     // 统计信息
     private Long userSelectionCount; // 被用户选择的数量
@@ -163,4 +165,13 @@ public class DictStatsVo {
     public void setTargetGameHallIds(java.util.List<String> targetGameHallIds) {
         this.targetGameHallIds = targetGameHallIds;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }
+

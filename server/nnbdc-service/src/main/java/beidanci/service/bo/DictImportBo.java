@@ -117,7 +117,9 @@ public class DictImportBo {
             String dictId = (String) config.get("dictId");
             String dictName = (String) config.get("dictName");
             String domain = (String) config.get("domain");
+            String description = (String) config.get("description");
             @SuppressWarnings("unchecked")
+
             List<String> rawWords = (List<String>) config.get("words"); // 场景2：仅单词
             @SuppressWarnings("unchecked")
             List<Map<String, String>> wordsWithMeanings = (List<Map<String, String>>) config.get("wordsWithMeanings"); // 场景3
@@ -137,9 +139,15 @@ public class DictImportBo {
                     dictId = existingDict.getId();
                     if (domain != null && !domain.isEmpty()) {
                         existingDict.setDomain(domain);
+                    }
+                    if (description != null && !description.isEmpty()) {
+                        existingDict.setDescription(description);
+                    }
+                    if ((domain != null && !domain.isEmpty()) || (description != null && !description.isEmpty())) {
                         dictBo.updateEntity(existingDict);
                     }
                 } else {
+
                     Dict newDict = new Dict();
                     newDict.setWordCount(0);
                     newDict.setIsReady(true);
@@ -152,7 +160,11 @@ public class DictImportBo {
                     if (domain != null && !domain.isEmpty()) {
                         newDict.setDomain(domain);
                     }
+                    if (description != null && !description.isEmpty()) {
+                        newDict.setDescription(description);
+                    }
                     newDict.setOwner(systemUser);
+
                     dictBo.createEntity(newDict);
                     
                     beidanci.service.po.LearningDictId ldId = new beidanci.service.po.LearningDictId(systemUser.getId(), newDict.getId());
