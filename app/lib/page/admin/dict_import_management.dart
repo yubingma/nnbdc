@@ -46,12 +46,16 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3'];
 
   final TextEditingController _dictNameCtrl = TextEditingController(text: "系统词典");
-  final TextEditingController _wordsCtrl = TextEditingController(text: "apple|一种甜酸可口的水果\nbanana\ncat");
+  final TextEditingController _wordsCtrl = TextEditingController(text: "1|apple|一种甜酸可口的水果\n1|banana\n2|cat");
   final TextEditingController _deleteDictIdCtrl = TextEditingController();
   final TextEditingController _domainCtrl = TextEditingController();
   final TextEditingController _sentenceRequirementCtrl = TextEditingController();
   final TextEditingController _voiceRequirementCtrl = TextEditingController();
   final TextEditingController _meaningRequirementCtrl = TextEditingController();
+  final TextEditingController _dictDescCtrl = TextEditingController();
+
+
+
 
   bool _isDictMatched = false;
   int _matchedDictWordCount = 0;
@@ -111,7 +115,11 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           if (dict.domain != null && dict.domain!.isNotEmpty) {
             _domainCtrl.text = dict.domain!;
           }
+          if (dict.description != null && dict.description!.isNotEmpty) {
+            _dictDescCtrl.text = dict.description!;
+          }
         }
+
       } else {
         if (mounted) setState(() { _isDictMatched = false; });
       }
@@ -129,7 +137,11 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     _sentenceRequirementCtrl.dispose();
     _voiceRequirementCtrl.dispose();
     _meaningRequirementCtrl.dispose();
+    _dictDescCtrl.dispose();
     _timer?.cancel();
+
+
+
     super.dispose();
   }
 
@@ -142,6 +154,25 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
       ToastUtil.info("请输入词书名称和单词列表");
       return;
     }
+
+    // 校验单词列表格式: 必须包含 [单元序号|单词]
+    for (int i = 0; i < wordsToImport.length; i++) {
+      final line = wordsToImport[i];
+      final parts = line.split('|');
+      if (parts.length < 2) {
+        ToastUtil.error("第 ${i + 1} 行格式错误: 缺少单元序号。正确格式为: 单元序号|单词[|释义]");
+        return;
+      }
+      if (int.tryParse(parts[0].trim()) == null) {
+        ToastUtil.error("第 ${i + 1} 行格式错误: 单元序号必须为数字");
+        return;
+      }
+      if (parts[1].trim().isEmpty) {
+        ToastUtil.error("第 ${i + 1} 行格式错误: 单词不能为空");
+        return;
+      }
+    }
+
 
     setState(() {
       _isSubmitting = true;
@@ -177,11 +208,14 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
           "generateShuffledVersion": _generateShuffledVersion,
           "targetDictGroupId": _selectedDictGroupId,
           "targetGameHallIds": _selectedGameHallIds.isEmpty ? null : _selectedGameHallIds,
-          "sentenceRequirement": _sentenceRequirementCtrl.text.trim(),
+           "sentenceRequirement": _sentenceRequirementCtrl.text.trim(),
           "voiceRequirement": _voiceRequirementCtrl.text.trim(),
           "meaningRequirement": _meaningRequirementCtrl.text.trim(),
+          "description": _dictDescCtrl.text.trim(),
         })
       });
+
+
 
       final res = await Api.client.submitDictImportTask(request);
       if (res.success && res.data != null) {
@@ -518,6 +552,17 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _dictDescCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: '词书描述 (选填)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+
                     if (_isDictMatched)
                       Padding(
                         padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -556,6 +601,10 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         )
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    const SizedBox(height: 8),
+
+
                     const SizedBox(height: 4),
                     SizedBox(
                       height: 180, 
@@ -572,11 +621,12 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         },
                         decoration: InputDecoration(
                           labelText: '单词列表 (每行一个) - 当前输入 ${_wordsCtrl.text.split('\n').where((e) => e.trim().isNotEmpty).length} 行',
-                          hintText: "格式: [单元序号|]单词[|人工指定释义]\n例如: 1|apple|一种苹果\n如果是扁平导入，单元序号填 0 或省略", 
+                          hintText: "格式: 单元序号|单词[|人工指定释义]\n例如: 1|apple|一种苹果\n注意：每行必须以单元序号开头且包含 | 符号", 
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           alignLabelWithHint: true,
                           contentPadding: const EdgeInsets.all(16),
                         ),
+
                         style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
                       ),
                     ),
