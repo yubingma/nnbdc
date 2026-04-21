@@ -53,11 +53,15 @@ class ThrottledDbSyncService {
     DateTime now = AppClock.now();
 
     // 计算还要等待多长时间进行同步
-    Duration delay = Duration.zero;
+    // 强制增加一个极小的延迟 (50ms - 100ms)，以确保在页面跳转动画期间不会立即抢占 CPU
+    Duration delay = immediate ? const Duration(milliseconds: 50) : const Duration(milliseconds: 200);
     if (!immediate && _lastSyncAttemptTime != null) {
       Duration timeSinceLastAttempt = now.difference(_lastSyncAttemptTime!);
       if (timeSinceLastAttempt < _throttleInterval) {
         delay = _throttleInterval - timeSinceLastAttempt;
+        if (delay < const Duration(milliseconds: 200)) {
+          delay = const Duration(milliseconds: 200);
+        }
       }
     }
 

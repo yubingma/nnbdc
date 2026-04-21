@@ -1004,8 +1004,13 @@ class WordListPageState extends State<WordListPage>
 
   doInit() {
     asr = Asr();
-    asr.initAsr(onAsrResult);
-    _subscribeMeterIfNeeded();
+    // 延迟初始化 ASR，避免阻塞页面进入动画
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      asr.initAsr(onAsrResult);
+      _subscribeMeterIfNeeded();
+    });
+    
     asr.addStateListener((state) {
       if (!mounted) return;
       if (state == AsrState.started) {

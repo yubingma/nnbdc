@@ -22,6 +22,9 @@ class WordBo {
   factory WordBo() => _instance;
   WordBo._internal();
 
+  // 词书缓存，用于加速 getDictWordsForAPage
+  final Map<String, Dict> _dictCache = {};
+
   /// 在本地动态生成乱序版的临时的词库表结构
   /// 这里的 DictWord 仅存放在本地数据库提供阅读游览，不上云
   Future<void> generateShuffledDictLocally(String shuffledDictId, String baseDictId) async {
@@ -975,7 +978,14 @@ class WordBo {
       final wordMap = {for (var word in wordEntries) word.id: word};
 
       final queryDictIds = [dictId];
-      final currDict = await db.dictsDao.findById(dictId);
+      Dict? currDict = _dictCache[dictId];
+      if (currDict == null) {
+        currDict = await db.dictsDao.findById(dictId);
+        if (currDict != null) {
+          _dictCache[dictId] = currDict;
+        }
+      }
+      
       if (currDict != null && currDict.baseDictId != null && currDict.baseDictId!.isNotEmpty) {
         queryDictIds.add(currDict.baseDictId!);
       }
