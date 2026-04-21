@@ -671,26 +671,35 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                     const SizedBox(height: 4),
                     SizedBox(
                       height: 180, 
-                      child: TextField(
-                        controller: _wordsCtrl,
-                        maxLines: null,
-                        expands: true,
-                        keyboardType: TextInputType.multiline,
-                        textAlignVertical: TextAlignVertical.top,
-                        onChanged: (val) {
-                          setState(() {
-                            _isListShuffledManually = false;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          labelText: '单词列表 (每行一个) - 当前输入 ${_wordsCtrl.text.split('\n').where((e) => e.trim().isNotEmpty).length} 行',
-                          hintText: "格式: 单元序号|单词[|人工指定释义]\n例如: 1|apple|一种苹果\n注意：每行必须以单元序号开头且包含 | 符号", 
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          alignLabelWithHint: true,
-                          contentPadding: const EdgeInsets.all(16),
-                        ),
-
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                      child: Builder(
+                        builder: (context) {
+                          final rawLines = _wordsCtrl.text.split('\n').where((e) => e.trim().isNotEmpty).toList();
+                          final uniqueWords = rawLines.map((e) {
+                            final parts = e.split('|');
+                            return parts.length >= 2 ? parts[1].trim() : '';
+                          }).where((e) => e.isNotEmpty).toSet().length;
+                          
+                          return TextField(
+                            controller: _wordsCtrl,
+                            maxLines: null,
+                            expands: true,
+                            keyboardType: TextInputType.multiline,
+                            textAlignVertical: TextAlignVertical.top,
+                            onChanged: (val) {
+                              setState(() {
+                                _isListShuffledManually = false;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              labelText: '单词列表 - 总计 ${rawLines.length} 行, 去重后 $uniqueWords 个单词',
+                              hintText: "格式: 单元序号|单词[|人工指定释义]\n例如: 1|apple|一种苹果\n注意：每行必须以单元序号开头且包含 | 符号", 
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              alignLabelWithHint: true,
+                              contentPadding: const EdgeInsets.all(16),
+                            ),
+                            style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                          );
+                        }
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -959,12 +968,25 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                             ],
                           );
                         } else if (_taskDetails!['status'] == 'COMPLETED') {
+                          int uniqueCount = 0;
+                          try {
+                             final stats = jsonDecode(_taskDetails!['results'] as String);
+                             uniqueCount = stats['addedDictWordCount'] ?? 0;
+                          } catch(e) {
+                             // ignore
+                          }
+                          
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               LinearProgressIndicator(value: 1.0, color: Colors.green, backgroundColor: Colors.green.withValues(alpha: 0.2)),
                               const SizedBox(height: 8),
-                              Center(child: Text('任务已完成 (总计处理 $total 个)', style: const TextStyle(fontSize: 12, color: Colors.green))),
+                              Center(
+                                child: Text(
+                                  '任务已完成 (处理 $total 条目, 词书实获 $uniqueCount 词)', 
+                                  style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold)
+                                )
+                              ),
                             ],
                           );
                         }
@@ -982,6 +1004,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         Builder(
                           builder: (context) {
                             try {
+                              final total = _taskDetails!['totalWords'] ?? 0;
                               final stats = jsonDecode(_taskDetails!['results'] as String);
                               final wordDetails = stats['wordDetails'] as List<dynamic>?;
                               String? currentDictId;
@@ -997,19 +1020,28 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Wrap(
-                                    spacing: 12,
-                                    runSpacing: 12,
-                                    children: [
-                                      _buildStatItem('新增单词', stats['addedWordCount'] ?? 0, Icons.add_circle_outline, Colors.blue),
-                                      _buildStatItem('新增释义', stats['addedMeaningCount'] ?? 0, Icons.menu_book, Colors.purple),
-                                      _buildStatItem('生成例句', stats['addedSentenceCount'] ?? 0, Icons.format_quote, Colors.orange),
-                                      _buildStatItem('AI 音频资源', stats['addedAudioCount'] ?? 0, Icons.volume_up, Colors.teal),
-                                      _buildStatItem('词频跳过', stats['skippedCount'] ?? 0, Icons.skip_next, Colors.grey),
-                                      if ((stats['errorCount'] ?? 0) > 0)
-                                        _buildStatItem('处理失败', stats['errorCount'], Icons.error_outline, Colors.red),
-                                    ],
-                                  ),
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 12,
+                                      children: [
+                                        _buildStatItem('词书实获', stats['addedDictWordCount'] ?? 0, Icons.playlist_add_check, AppTheme.primaryColor),
+                                        _buildStatItem('全局新词', stats['addedWordCount'] ?? 0, Icons.add_circle_outline, Colors.blue),
+                                        _buildStatItem('新增释义', stats['addedMeaningCount'] ?? 0, Icons.menu_book, Colors.purple),
+                                        _buildStatItem('生成例句', stats['addedSentenceCount'] ?? 0, Icons.format_quote, Colors.orange),
+                                        _buildStatItem('AI 音频资源', stats['addedAudioCount'] ?? 0, Icons.volume_up, Colors.teal),
+                                        _buildStatItem('词频跳过', stats['skippedCount'] ?? 0, Icons.skip_next, Colors.grey),
+                                        if ((stats['errorCount'] ?? 0) > 0)
+                                          _buildStatItem('处理失败', stats['errorCount'], Icons.error_outline, Colors.red),
+                                      ],
+                                    ),
+                                    if (total > (stats['addedDictWordCount'] ?? 0))
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 12.0),
+                                        child: Text(
+                                          '注：实获词数小于处理条目数，通常是因为源文件中存在重复单词、空行，或该词已存在于本词书中。',
+                                          style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                                        ),
+                                      ),
                                   if (wordDetails != null && wordDetails.isNotEmpty) ...[
                                     const SizedBox(height: 24),
                                     const Divider(),

@@ -10,6 +10,7 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:provider/provider.dart';
 
 // 系统词典管理组件
@@ -43,7 +44,9 @@ class _DictionaryManagementWidgetState extends State<DictionaryManagementWidget>
     try {
       // 禁用API的自动loading，使用页面自己的loading
       final result = await LoadingUtils.withoutApiLoading(() async {
-        return await Api.client.getSystemDictsWithStats();
+        // 添加时间戳防止缓存
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        return await Api.client.getSystemDictsWithStats(timestamp: timestamp);
       });
 
       if (result.success && result.data != null) {
@@ -468,6 +471,12 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
     
     _selectedDictGroupId = widget.dict.targetDictGroupId;
     _selectedGameHallIds = List<String>.from(widget.dict.targetGameHallIds ?? []);
+    _syncAndLoadOptions();
+  }
+
+  Future<void> _syncAndLoadOptions() async {
+    // 确保本地数据库已同步，否则新创建的分组可能看不到
+    await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
     _loadOptions();
   }
 
@@ -827,6 +836,7 @@ class _EditDictionaryDialogState extends State<_EditDictionaryDialog> {
                                           ),
                                           if (_dictGroups != null)
                                             ..._dictGroups!.map((g) => DropdownMenuItem<String>(
+                                              key: ValueKey(g.id),
                                               value: g.id,
                                               child: Text(g.name),
                                             )),

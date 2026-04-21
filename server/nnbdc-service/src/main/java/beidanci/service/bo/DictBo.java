@@ -587,7 +587,14 @@ public class DictBo extends BaseBo<Dict> {
             sysDbLogBo.logOperation(dict, "UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
 
             // 2. 更新分组关联 (Book Selection Groups & Game Halls)
-            // 先清理旧的关联
+            // 先记录并清理旧的关联
+            String getOldLinksSql = "SELECT group_id FROM group_and_dict_link WHERE dict_id = :dictId";
+            List<String> oldGroupIds = namedParameterJdbcTemplate.queryForList(getOldLinksSql, 
+                    new MapSqlParameterSource("dictId", dictId), String.class);
+            for (String oldGroupId : oldGroupIds) {
+                sysDbLogBo.logOperation("DELETE", "group_and_dict_link", oldGroupId + "_" + dictId, "{}");
+            }
+
             String deleteSql = "DELETE FROM group_and_dict_link WHERE dict_id = :dictId";
             namedParameterJdbcTemplate.update(deleteSql, new MapSqlParameterSource("dictId", dictId));
             
