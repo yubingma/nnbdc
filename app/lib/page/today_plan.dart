@@ -85,21 +85,35 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
       Global.logger.d('loadData already in progress, returning');
       return;
     }
-    Api.setLoadingDisabled(true);
+    
     _isLoadingData = true;
+    Api.setLoadingDisabled(true);
+
     try {
-      // 解决多端同步不一致问题：进入今日计划时，首先立刻同步一次最新数据
+      // 1. 第一步：优先从本地数据库快速加载现有数据，以便立刻展示 UI
+      await _loadEssentialLocalData();
+      
+      // 如果已经有基本数据了，或者不是第一次加载，就直接展示 UI
+      if (mounted && (user != null || dataLoaded)) {
+        setState(() {
+          dataLoaded = true;
+        });
+      }
+
+      // 2. 第二步：执行云端同步（解决多端不一致）
       if (!Global.isGuest && !_hasTriedSync) {
-        Global.logger.i('今日计划首选尝试从云端同步数据...');
+        Global.logger.i('今日计划尝试从云端同步数据...');
         if (mounted) {
           setState(() {
             _isSyncingFromCloud = true;
           });
         }
         try {
+          // 注意：此处不再使用 requestSyncAndWait，而是直接使用 requestSync 并在后台等待，
+          // 或者如果确实需要等待，我们也已经在上面提前展示了本地 UI。
           await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
         } catch (e) {
-          Global.logger.e('进入页面首选同步失败: $e');
+          Global.logger.e('进入页面同步失败: $e');
         } finally {
           _hasTriedSync = true;
           if (mounted) {
@@ -108,103 +122,28 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
             });
           }
         }
+        
+        // 同步完成后，重新加载一次本地用户信息，防止同步覆盖了本地状态
+        await _loadEssentialLocalData();
       }
 
-      Global.logger.d('Fetching logged in user...');
-      var result0 = await UserBo().getLoggedInUser();
-      if (result0.success) {
-        user = result0.data;
-      } else {
-        Global.logger.e('Failed to fetch user: ${result0.msg}');
-        ToastUtil.error(result0.msg!);
-        return;
-      }
-
-      Global.logger.d('Fetching study steps...');
-      var result = await StudyBo().getUserStudySteps();
-      if (result.success) {
-        studySteps = [];
-        List<UserStudyStepVo> userStudySteps = result.data!;
-        for (UserStudyStepVo step in userStudySteps) {
-          if (step.studyStep != 'List') {
-            studySteps!.add(step);
-          }
-        }
-      } else {
-        Global.logger.e('Failed to fetch study steps: ${result.msg}');
-        ToastUtil.error(result.msg!);
-        return;
-      }
-
+      // 3. 第三步：准备今日学习计划 (处理跨天重置、取词等逻辑)
       if (!isReturnFromStudy || prepareResult == null || !prepareResult!.success) {
         Global.logger.d('Starting prepareForStudy...');
         prepareResult = await StudyBo().prepareForStudy(forceSupplement);
-        Global.logger.d('prepareForStudy finished: success=${prepareResult?.success}, code=${prepareResult?.code}');
         
-        // 由于 prepareForStudy 内部可能会重置用户状态（跨天重置），
-        // 必须在准备数据后重新获取最新的用户信息以更新 UI (例如：重置 todayStudyStarted 按钮)
-        final refreshUserResultAfterPrepare = await UserBo().getLoggedInUser();
-        if (refreshUserResultAfterPrepare.success) {
-          user = refreshUserResultAfterPrepare.data;
-        }
-        Global.logger.d('Refreshed user: todayStudyStarted=${user?.todayStudyStarted}');
-      }
-      
-      // 提示：之前此处有一个基于 prepareResult 失败后的重试同步逻辑，
-      // 现在已统一移动到 loadData 方法的最开始处执行，以确保进入页面即获得最新状态。
-
-      // 检查是否缺少词书资源并下载
-      if (!Global.isGuest && user != null) {
-        final db = MyDatabase.instance;
-        List<LearningDict> learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user!.id!);
-        List<DictVo> dictsToDownload = [];
-        for (var ld in learningDicts) {
-          Dict? existing = await db.dictsDao.findById(ld.dictId);
-          if (existing == null) {
-            dictsToDownload.add(DictVo.c2(ld.dictId));
-          } else if (existing.ownerId == "15118" && !(await db.dictWordsDao.hasDictWords(ld.dictId))) {
-            // 如果是衍生词书，确保其依赖的基础词书也被拉入下载列表（如果基础词书也没单词）
-            if (existing.baseDictId != null && existing.baseDictId!.isNotEmpty) {
-              bool baseHasWords = await db.dictWordsDao.hasDictWords(existing.baseDictId!);
-              if (!baseHasWords && !dictsToDownload.any((d) => d.id == existing.baseDictId)) {
-                dictsToDownload.add(DictVo.c2(existing.baseDictId!));
-              }
-            }
-            if (!dictsToDownload.any((d) => d.id == ld.dictId)) {
-              dictsToDownload.add(DictVo.c2(ld.dictId));
-            }
-          }
-        }
-
-        // 检查并下载通用词典 (ID 为 "0")
-        final commonDictId = Global.commonDictId;
-        Dict? commonDictExisting = await db.dictsDao.findById(commonDictId);
-        if (commonDictExisting == null) {
-          dictsToDownload.add(DictVo.c2(commonDictId));
-        } else if (!(await db.dictWordsDao.hasDictWords(commonDictId))) {
-          dictsToDownload.add(DictVo.c2(commonDictId));
-        }
-
-        if (dictsToDownload.isNotEmpty && mounted) {
-          Global.logger.i('发现缺少的词书资源，准备下载: ${dictsToDownload.map((e) => e.id).toList()}');
-          await showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (dialogContext) => DictDownloadDialog(
-              dicts: dictsToDownload,
-              onComplete: () {
-                if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop();
-                }
-              },
-            ),
-          );
-          // 下载完成后重新准备数据
-          prepareResult = await StudyBo().prepareForStudy(forceSupplement);
+        // 重新获取最新的用户信息（prepareForStudy 可能重置了 todayStudyStarted）
+        final refreshUserResult = await UserBo().getLoggedInUser();
+        if (refreshUserResult.success) {
+          user = refreshUserResult.data;
         }
       }
 
-      if (prepareResult!.success || prepareResult!.code == "NNBDC-0012") {
+      // 4. 第四步：检查词书资源下载
+      await _checkAndDownloadDicts();
+
+      // 5. 第五步：计算进度和统计数据
+      if (prepareResult != null && (prepareResult!.success || prepareResult!.code == "NNBDC-0012")) {
         if (forceSupplement) {
           _hasTriedSupplement = true;
         }
@@ -212,19 +151,11 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
         newWordCount = counts[0];
         oldWordCount = counts[1];
         todayWordCount = newWordCount! + oldWordCount!;
-        Global.logger.d('Counts: new=$newWordCount, old=$oldWordCount, total=$todayWordCount');
-      } else {
-        Global.logger.e('prepareResult failed: ${prepareResult!.msg}');
-        ToastUtil.error(prepareResult!.msg!);
-        return;
       }
 
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
-
-      // Calculate progress and counts
       _todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
       
-      // 这里的逻辑必须与 prepareForStudy 返回的 data 保持一致：区分今日新词和旧词
       int calcNewWordCount = 0;
       for (var word in _todayWords!) {
         if (word.isTodayNewWord) calcNewWordCount++;
@@ -247,8 +178,80 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           _isLoadingData = false;
         });
         Api.setLoadingDisabled(false);
-        Global.logger.d('loadData finished, dataLoaded=true');
       }
+    }
+  }
+
+  /// 快速加载本地基础数据（不涉及网络和复杂的计划准备）
+  Future<void> _loadEssentialLocalData() async {
+    final userResult = await UserBo().getLoggedInUser();
+    if (userResult.success) {
+      user = userResult.data;
+    }
+
+    final stepsResult = await StudyBo().getUserStudySteps();
+    if (stepsResult.success) {
+      studySteps = stepsResult.data?.where((step) => step.studyStep != 'List').toList();
+    }
+
+    if (user != null) {
+      _todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
+      _updateProgress();
+      
+      // 估算今日单词数（基于本地已有数据）
+      if (_todayWords != null && _todayWords!.isNotEmpty) {
+        int calcNewWordCount = 0;
+        for (var word in _todayWords!) {
+          if (word.isTodayNewWord) calcNewWordCount++;
+        }
+        newWordCount = calcNewWordCount;
+        oldWordCount = _todayWords!.length - newWordCount!;
+        todayWordCount = _todayWords!.length;
+      }
+    }
+  }
+
+  /// 检查并下载缺失的词典
+  Future<void> _checkAndDownloadDicts() async {
+    if (Global.isGuest || user == null) return;
+    
+    final db = MyDatabase.instance;
+    List<LearningDict> learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user!.id!);
+    List<DictVo> dictsToDownload = [];
+    
+    for (var ld in learningDicts) {
+      Dict? existing = await db.dictsDao.findById(ld.dictId);
+      if (existing == null) {
+        dictsToDownload.add(DictVo.c2(ld.dictId));
+      } else if (existing.ownerId == "15118" && !(await db.dictWordsDao.hasDictWords(ld.dictId))) {
+        if (existing.baseDictId != null && existing.baseDictId!.isNotEmpty) {
+          bool baseHasWords = await db.dictWordsDao.hasDictWords(existing.baseDictId!);
+          if (!baseHasWords && !dictsToDownload.any((d) => d.id == existing.baseDictId)) {
+            dictsToDownload.add(DictVo.c2(existing.baseDictId!));
+          }
+        }
+        if (!dictsToDownload.any((d) => d.id == ld.dictId)) {
+          dictsToDownload.add(DictVo.c2(ld.dictId));
+        }
+      }
+    }
+
+    final commonDictId = Global.commonDictId;
+    Dict? commonDictExisting = await db.dictsDao.findById(commonDictId);
+    if (commonDictExisting == null || !(await db.dictWordsDao.hasDictWords(commonDictId))) {
+      dictsToDownload.add(DictVo.c2(commonDictId));
+    }
+
+    if (dictsToDownload.isNotEmpty && mounted) {
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => DictDownloadDialog(
+          dicts: dictsToDownload,
+          onComplete: () => Navigator.of(dialogContext).pop(),
+        ),
+      );
+      prepareResult = await StudyBo().prepareForStudy(false);
     }
   }
 
@@ -335,14 +338,32 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
                   automaticallyImplyLeading: false,
                   centerTitle: true,
                   toolbarHeight: 56,
-                  title: Text(
-                    'Today\'s Plan',
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Today\'s Plan',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      if (_isSyncingFromCloud) ...[
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isDarkMode ? Colors.white70 : Colors.black45,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   bottom: PreferredSize(
                     preferredSize: const Size.fromHeight(1),

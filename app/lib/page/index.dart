@@ -30,18 +30,9 @@ class IndexPage extends StatefulWidget {
 /// 要让主页面 Index 支持动效，要在它的定义中附加mixin类型的对象TickerProviderStateMixin
 class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   late IndexPageArgs args;
-  int _currentIndex = -1; // 当前界面的索引值
+  int _currentIndex = 0; // 当前界面的索引值
   List<NavigationIconView>? _navigationViews; // 底部图标按钮区域
-  List<StatefulWidget?>? _pageList; // 用来存放我们的图标对应的页面
-  StatefulWidget? _currentPage; // 当前的显示页面
-
-  /// 定义一个触发界面重建的方法，用于响应外部状态变化
-  /// 这里的空setState是有意的，目的是触发Widget树重建
-  void _rebuild() {
-    setState(() {
-      // 空的setState用于触发重建，这是有意的设计
-    });
-  }
+  late List<Widget> _pages;
 
   @override
   void initState() {
@@ -58,34 +49,26 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       NavigationIconView(icon: const Icon(Icons.person_rounded), title: "我", vsync: this),
     ];
 
-    /// 给每一个按钮区域加上监听
-    for (NavigationIconView view in _navigationViews!) {
-      view.controller.addListener(_rebuild);
-    }
-
-    /// 将我们 bottomBar 上面的按钮图标对应的页面存放起来
-    _pageList = <StatefulWidget?>[null, const WordListsPage(), const SearchPage(), if (!Global.isGuest) const GamePage(), const MePage()];
+    // 初始化页面列表
+    _pages = [
+      const BeforeBdcPage(),
+      const WordListsPage(),
+      const SearchPage(),
+      if (!Global.isGuest) const GamePage(),
+      const MePage(),
+    ];
 
     // 如果是游客且请求的是原本的游戏页面索引，则重定向到词表或“我”
     if (Global.isGuest && _currentIndex == 3) {
       _currentIndex = 4; // 默认为“我”
     }
-
-    // 初始页面处理
-    if (_currentIndex == 0) {
-      _currentPage = BeforeBdcPage();
-    } else {
-      // 在游客模式下，如果 _currentIndex 为 4，且 GamePage 已移除，
-      // 我们需要使用正确的实际索引。
-      // 但为了代码简单，我们直接从 _pageList 查找。
-      // 注意：如果 GamePage 被移除，_pageList[3] 就是 MePage。
-      // 所以如果 _currentIndex == 4 且是游客，我们实际需要的是 _pageList[3]。
-      int actualIndex = _currentIndex;
-      if (Global.isGuest && _currentIndex > 3) {
-        actualIndex = _currentIndex - 1;
-      }
-      _currentPage = _pageList![actualIndex];
+    
+    // 初始化时启动选中项的动画
+    int initialActualIndex = _currentIndex;
+    if (Global.isGuest && _currentIndex > 3) {
+      initialActualIndex = _currentIndex - 1;
     }
+    _navigationViews![initialActualIndex].controller.value = 1.0;
   }
 
   // 创建自定义的导航栏项
@@ -104,23 +87,17 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     return Expanded(
       child: GestureDetector(
         onTap: () {
+          if (_currentIndex == index) return;
+          
           setState(() {
             _navigationViews![actualCurrentIndex].controller.reverse();
             _currentIndex = index;
             _navigationViews![actualNewIndex].controller.forward();
-            // 特殊处理学习页面和“我”页面，每次选择时都创建新实例以刷新数据
-            if (index == 0) {
-              _currentPage = BeforeBdcPage();
-            } else if (index == 4) {
-              _currentPage = const MePage();
-            } else {
-              _currentPage = _pageList![actualNewIndex];
-            }
           });
         },
         child: Container(
           height: 54, 
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.transparent,  
           ),
           child: Column(
@@ -202,8 +179,10 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       ),
     );
     return Scaffold(
-      body: Center(child: _currentPage // 动态的展示我们当前的页面
-          ),
+      body: IndexedStack(
+        index: actualCurrentIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: customBottomNav, // 底部工具栏
     );
   }
