@@ -459,6 +459,69 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     );
   }
 
+  Widget _buildProcessedLogView(String log) {
+    final lines = log.split('\n').where((line) => line.trim().isNotEmpty).toList();
+    if (lines.isEmpty) return const SizedBox.shrink();
+
+    // 尝试解析 dictId 以便跳转详情页时使用
+    String? currentDictId;
+    try {
+      if (_taskDetails!['config'] != null) {
+        final configJson = jsonDecode(_taskDetails!['config'] as String);
+        currentDictId = configJson['dictId']?.toString();
+      }
+    } catch(e) { /* ignore */ }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: lines.map((line) {
+        final trimmedLine = line.trim();
+        if (trimmedLine.startsWith('Processed:')) {
+          final word = trimmedLine.replaceFirst('Processed:', '').trim();
+          return ActionChip(
+            avatar: const Icon(Icons.circle, color: Colors.green, size: 10),
+            label: Text(word, style: const TextStyle(fontSize: 12)),
+            onPressed: () async {
+              final wordRes = await WordBo().searchWordLocalOnly(word);
+              if (wordRes.word != null) {
+                Get.to(() => const WordDetailPage(), arguments: WordDetailPageArgs(wordRes.word!, true, null, false, priorityDictIds: currentDictId != null && currentDictId.isNotEmpty ? [currentDictId] : null));
+              } else {
+                ToastUtil.error('单词正在处理或同步中，请稍后查看');
+              }
+            },
+            backgroundColor: Colors.green.withValues(alpha: 0.05),
+            side: BorderSide(color: Colors.green.withValues(alpha: 0.2)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+          );
+        } else if (trimmedLine.startsWith('Failed:')) {
+          final content = trimmedLine.replaceFirst('Failed:', '').trim();
+          return ActionChip(
+            avatar: const Icon(Icons.circle, color: Colors.red, size: 10),
+            label: Text(content, style: const TextStyle(fontSize: 12)),
+            onPressed: () {
+              ToastUtil.info('处理失败: $content');
+            },
+            backgroundColor: Colors.red.withValues(alpha: 0.05),
+            side: BorderSide(color: Colors.red.withValues(alpha: 0.2)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+          );
+        } else {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(trimmedLine, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          );
+        }
+      }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
@@ -996,13 +1059,12 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         ),
                       ],
                       if (_taskDetails!['log'] != null) ...[
+                        const SizedBox(height: 24),
+                        const Divider(),
                         const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(8)),
-                          child: Text(_taskDetails!['log'], style: const TextStyle(color: Colors.red, fontSize: 12)),
-                        )
+                        const Text('实时处理进度', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 16),
+                        _buildProcessedLogView(_taskDetails!['log']!),
                       ]
                     ],
                   ) : const Center(
