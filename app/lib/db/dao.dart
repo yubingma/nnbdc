@@ -480,6 +480,9 @@ class WordsDao extends DatabaseAccessor<MyDatabase> with _$WordsDaoMixin {
     final count = await countQuery.getSingle();
     return count.read(countAll()) ?? 0;
   }
+  Future<List<Word>> getWordsByIds(List<String> wordIds) {
+    return (select(words)..where((w) => w.id.isIn(wordIds))).get();
+  }
 }
 
 @DriftAccessor(tables: [UserDbLogs])

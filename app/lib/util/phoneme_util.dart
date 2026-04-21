@@ -8,7 +8,7 @@ class PhonemeUtil {
   static Completer<void>? _loadCompleter;
   static bool _loaded = false;
   static final Map<String, List<List<String>>> _wordToPhonemeVariants = {};
-  static final RegExp _digitRegExp = RegExp(r'\d+'), _cRegExp = RegExp(r'ce|ci|cy'), _lowerAlphaRegExp = RegExp(r'[a-z]'), _spaceRegExp = RegExp(r'\s+');
+  static final RegExp _digitRegExp = RegExp(r'\d+'), _cRegExp = RegExp(r'ce|ci|cy'), _lowerAlphaRegExp = RegExp(r'[a-z]');
 
   static Future<void> load() async {
     if (_loaded) return;
