@@ -107,7 +107,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     }
     
     _isLoadingData = true;
-    Api.setLoadingDisabled(true);
 
     try {
       // 1. 第一步：优先从本地数据库快速加载现有数据，以便立刻展示 UI
@@ -197,7 +196,6 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
           dataLoaded = true;
           _isLoadingData = false;
         });
-        Api.setLoadingDisabled(false);
       }
     }
   }

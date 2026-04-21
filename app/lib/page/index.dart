@@ -179,9 +179,33 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       ),
     );
     return Scaffold(
-      body: IndexedStack(
-        index: actualCurrentIndex,
-        children: _pages,
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: actualCurrentIndex,
+            children: _pages,
+          ),
+          ValueListenableBuilder<int>(
+            valueListenable: Global.activeRequestCount,
+            builder: (context, count, child) {
+              if (count > 0) {
+                return Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppTheme.primaryColor.withValues(alpha: 0.8),
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
       bottomNavigationBar: customBottomNav, // 底部工具栏
     );

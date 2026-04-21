@@ -19,6 +19,9 @@ class Global {
   /// 启动/初始化阶段错误（用于在启动页展示，而不是toast）
   static final ValueNotifier<String?> startupError = ValueNotifier<String?>(null);
 
+  /// 全局 API 请求计数（用于在后台显示加载状态，而不阻塞用户操作）
+  static final ValueNotifier<int> activeRequestCount = ValueNotifier<int>(0);
+
   static void setStartupError(String message) {
     startupError.value = message;
   }

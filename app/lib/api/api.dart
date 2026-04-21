@@ -189,33 +189,18 @@ class Api {
 }
 
 class CustomInterceptors extends Interceptor {
-  final LoadingService _loadingService = LoadingService();
-
   @override
-  void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
-    if (Api.disableAutoLoading) {
-      return super.onRequest(options, handler);
-    }
-
-    _loadingService.progressColor = Colors.yellow;
-    _loadingService.backgroundColor = Colors.blue;
-    _loadingService.indicatorColor = Colors.yellow;
-    _loadingService.textColor = Colors.yellow;
-    _loadingService.maskColor = Colors.transparent;
-    _loadingService.userInteractions = false;
-    _loadingService.dismissOnTap = false;
-    _loadingService.indicatorSize = 45.0;
-    _loadingService.radius = 10.0;
-
-    await _loadingService.show(status: 'loading...');
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    // 增加全局请求计数
+    Global.activeRequestCount.value++;
     return super.onRequest(options, handler);
   }
 
   @override
   void onResponse(response, ResponseInterceptorHandler handler) async {
-    if (!Api.disableAutoLoading) {
-      _loadingService.dismiss();
+    // 减少全局请求计数
+    if (Global.activeRequestCount.value > 0) {
+      Global.activeRequestCount.value--;
     }
 
     // 简化的响应日志
@@ -247,8 +232,9 @@ class CustomInterceptors extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (!Api.disableAutoLoading) {
-      _loadingService.dismiss();
+    // 减少全局请求计数
+    if (Global.activeRequestCount.value > 0) {
+      Global.activeRequestCount.value--;
     }
 
     // 说明：后端安全机制计划废除，因此这里不再把 401 作为“会话超时”强制跳转登录页。
