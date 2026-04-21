@@ -54,6 +54,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   TabController? _primaryTabController;
   final Map<String, int> _selectedSubGroupIndex = {}; // 记录每个一级分类下选中的二级分类索引
   List<DictGroupVo>? parentCategories;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchText = '';
 
   bool isDictSelected(DictVo dict) {
     return selectedDictVos!.contains(dict);
@@ -71,18 +73,22 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     dictGroups = [];
     customDicts = [];
     _hasUserMadeChanges = false;
+    _searchController.addListener(() {
+      setState(() {
+        _searchText = _searchController.text.trim();
+      });
+    });
     Future.microtask(() => loadData());
   }
 
   @override
   void dispose() {
     _primaryTabController?.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  void _initTabController() {
-    final tabsCount = parentCategories?.length ?? 0;
-
+  void _initTabController(int tabsCount) {
     if (_primaryTabController == null || _primaryTabController!.length != tabsCount) {
       _primaryTabController?.dispose();
       _primaryTabController = TabController(
@@ -324,8 +330,17 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       return _buildCustomTabContent(isDarkMode, backgroundColor, textColor, subtitleColor);
     }
 
-    final subGroups = parentVo.childGroups ?? [];
-    if (subGroups.isEmpty) return const Center(child: Text('没有可用的词书'));
+    final searchLower = _searchText.toLowerCase();
+    final subGroups = (parentVo.childGroups ?? []).where((subGroup) {
+      if (_searchText.isEmpty) return true;
+      return subGroup.dicts?.any((d) => 
+        d.visible == true && 
+        ((d.name?.toLowerCase().contains(searchLower) ?? false) ||
+         (d.shortName?.toLowerCase().contains(searchLower) ?? false))
+      ) ?? false;
+    }).toList();
+
+    if (subGroups.isEmpty) return const Center(child: Text('没有匹配的词书'));
 
     // 如果只有一个二级分类，直接显示列表
     if (subGroups.length == 1) {
@@ -397,7 +412,13 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
     final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
-    final visibleBooks = books.where((b) => b.visible == true).toList();
+    final searchLower = _searchText.toLowerCase();
+    final visibleBooks = books.where((b) => 
+      b.visible == true && 
+      (_searchText.isEmpty || 
+       (b.name?.toLowerCase().contains(searchLower) ?? false) ||
+       (b.shortName?.toLowerCase().contains(searchLower) ?? false))
+    ).toList();
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -484,18 +505,28 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           }),
         ),
         Expanded(
-          child: customDicts!.isEmpty
-              ? Center(
-                  child: Text(
-                    '点击上方按钮创建词书',
-                    style: TextStyle(color: textColor.withValues(alpha: 0.5)),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: customDicts!.length,
-                  itemBuilder: (context, index) {
-                    final dict = customDicts![index];
+          child: Builder(builder: (context) {
+            final searchLower = _searchText.toLowerCase();
+            final filteredCustomDicts = customDicts!.where((d) => 
+              _searchText.isEmpty || 
+              (d.name?.toLowerCase().contains(searchLower) ?? false) ||
+              (d.shortName?.toLowerCase().contains(searchLower) ?? false)
+            ).toList();
+
+            if (filteredCustomDicts.isEmpty) {
+              return Center(
+                child: Text(
+                  _searchText.isEmpty ? '点击上方按钮创建词书' : '没有匹配的自定义词书',
+                  style: TextStyle(color: textColor.withValues(alpha: 0.5)),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: filteredCustomDicts.length,
+              itemBuilder: (context, index) {
+                final dict = filteredCustomDicts[index];
                     final isSelected = isDictSelected(dict);
 
                     return Container(
@@ -592,7 +623,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                       ),
                     );
                   },
-                ),
+                );
+              }),
         ),
       ],
     );
@@ -1377,7 +1409,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       Global.logger.d('📊 导入词典资源完成 - 总耗时: ${totalStopwatch.elapsedMilliseconds}ms');
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
@@ -1399,7 +1430,41 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       );
     }
 
-    _initTabController();
+    final searchLower = _searchText.toLowerCase();
+    final filteredCategories = (parentCategories ?? []).where((category) {
+      if (_searchText.isEmpty) return true;
+      if (category.name == '自定义') {
+        return customDicts?.any((d) => 
+          (d.name?.toLowerCase().contains(searchLower) ?? false) ||
+          (d.shortName?.toLowerCase().contains(searchLower) ?? false)
+        ) ?? false;
+      }
+      return category.childGroups?.any((subGroup) {
+        return subGroup.dicts?.any((d) => 
+          d.visible == true && 
+          ((d.name?.toLowerCase().contains(searchLower) ?? false) ||
+           (d.shortName?.toLowerCase().contains(searchLower) ?? false))
+        ) ?? false;
+      }) ?? false;
+    }).toList();
+
+    if (filteredCategories.isEmpty && _searchText.isNotEmpty) {
+      return Scaffold(
+        backgroundColor: backgroundColor,
+        appBar: AppBar(
+          backgroundColor: backgroundColor,
+          elevation: 0,
+          title: _buildSearchField(isDarkMode, textColor),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: const Center(child: Text('没有找到匹配的词书')),
+      );
+    }
+
+    _initTabController(filteredCategories.length);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -1431,22 +1496,60 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             ),
           ),
         ],
-        bottom: TabBar(
-          controller: _primaryTabController,
-          isScrollable: true,
-          labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-          indicatorColor: AppTheme.primaryColor,
-          indicatorSize: TabBarIndicatorSize.label,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-          dividerColor: Colors.transparent,
-          tabAlignment: TabAlignment.start,
-          tabs: parentCategories!.map((cat) => Tab(text: cat.name)).toList(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(104),
+          child: Column(
+            children: [
+              _buildSearchField(isDarkMode, textColor),
+              TabBar(
+                controller: _primaryTabController,
+                isScrollable: true,
+                labelColor: AppTheme.primaryColor,
+                unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                indicatorColor: AppTheme.primaryColor,
+                indicatorSize: TabBarIndicatorSize.label,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                dividerColor: Colors.transparent,
+                tabAlignment: TabAlignment.start,
+                tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
+              ),
+            ],
+          ),
         ),
       ),
       body: TabBarView(
         controller: _primaryTabController,
-        children: parentCategories!.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
+        children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSearchField(bool isDarkMode, Color textColor) {
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: TextField(
+        controller: _searchController,
+        style: TextStyle(color: textColor, fontSize: 14),
+        decoration: InputDecoration(
+          hintText: '搜索词库...',
+          hintStyle: TextStyle(color: isDarkMode ? Colors.grey[500] : Colors.grey[600], fontSize: 14),
+          prefixIcon: Icon(Icons.search, color: isDarkMode ? Colors.grey[500] : Colors.grey[600], size: 20),
+          suffixIcon: _searchText.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.clear, color: isDarkMode ? Colors.grey[500] : Colors.grey[600], size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
       ),
     );
   }
