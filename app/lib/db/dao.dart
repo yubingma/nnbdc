@@ -438,6 +438,13 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
       rethrow;
     }
   }
+
+  /// 批量检查词典是否存在
+  /// 批量获取词典详情
+  Future<List<Dict>> findByIds(List<String> dictIds) async {
+    if (dictIds.isEmpty) return [];
+    return (select(dicts)..where((d) => d.id.isIn(dictIds))).get();
+  }
 }
 
 @DriftAccessor(tables: [Words])
@@ -661,6 +668,29 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     final count = await countQuery.getSingle();
     return count.read(countAll()) ?? 0;
+  }
+
+  /// 获取一组词书中去重后的单词总数
+  Future<int> getUniqueWordCountInDicts(List<String> dictIds) async {
+    if (dictIds.isEmpty) return 0;
+    // 使用 IN 语句，避免巨大的 set 操作
+    final countQuery = customSelect(
+      'SELECT count(DISTINCT word_id) as c FROM dict_words WHERE dict_id IN (${dictIds.map((id) => "'$id'").join(',')})',
+      readsFrom: {dictWords},
+    );
+    final row = await countQuery.getSingle();
+    return row.read<int>('c');
+  }
+
+  /// 批量检查哪些词典拥有单词
+  Future<List<String>> findDictsWithWords(List<String> dictIds) async {
+    if (dictIds.isEmpty) return [];
+    final query = selectOnly(dictWords)
+      ..addColumns([dictWords.dictId])
+      ..where(dictWords.dictId.isIn(dictIds))
+      ..groupBy([dictWords.dictId]);
+    final rows = await query.get();
+    return rows.map((r) => r.read(dictWords.dictId)!).toList();
   }
 
   // 清空词书中的单词（适用于生词本）
@@ -1162,6 +1192,20 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
       };
     }).toList();
   }
+
+  /// 获取一组词书中包含的“正在学习”单词去重总数
+  Future<int> getLearningWordsCountInDicts(String userId, List<String> dictIds) async {
+    if (dictIds.isEmpty) return 0;
+    final countQuery = customSelect(
+      'SELECT count(DISTINCT word_id) as c FROM learning_words '
+      'WHERE user_id = ? AND stability < ? '
+      'AND word_id IN (SELECT word_id FROM dict_words WHERE dict_id IN (${dictIds.map((id) => "'$id'").join(',')}))',
+      variables: [Variable.withString(userId), Variable.withReal(Constants.graduationStability)],
+      readsFrom: {learningWords, MyDatabase.instance.dictWords},
+    );
+    final row = await countQuery.getSingle();
+    return row.read<int>('c');
+  }
 }
 
 
@@ -1317,6 +1361,16 @@ class DakasDao extends DatabaseAccessor<MyDatabase> with _$DakasDaoMixin {
           ..orderBy([(d) => OrderingTerm(expression: d.forLearningDate, mode: OrderingMode.desc)]))
         .get();
   }
+
+  // 获取用户打卡总天数
+  Future<int> getDakaCount(String userId) async {
+    final countQuery = selectOnly(dakas)
+      ..addColumns([dakas.forLearningDate.count()])
+      ..where(dakas.userId.equals(userId));
+    final count = await countQuery.getSingle();
+    return count.read(dakas.forLearningDate.count()) ?? 0;
+  }
+
 
   // 保存打卡记录
   Future<void> saveDaka(Daka record, bool genLog) async {
@@ -1749,6 +1803,22 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
 
     await (delete(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).go();
     await db.dictsDao.updateWordCount(dictId, false);
+  }
+
+  /// 获取一组词书中包含的“已掌握”单词去重总数
+  Future<int> getMasteredWordsCountInDicts(String userId, List<String> dictIds) async {
+    final masteredDictId = await _getMasteredDictId(userId);
+    if (masteredDictId == null || dictIds.isEmpty) return 0;
+
+    final countQuery = customSelect(
+      'SELECT count(DISTINCT word_id) as c FROM dict_words '
+      'WHERE dict_id = ? '
+      'AND word_id IN (SELECT word_id FROM dict_words WHERE dict_id IN (${dictIds.map((id) => "'$id'").join(',')}))',
+      variables: [Variable.withString(masteredDictId)],
+      readsFrom: {db.dictWords},
+    );
+    final row = await countQuery.getSingle();
+    return row.read<int>('c');
   }
 }
 

@@ -344,81 +344,45 @@ class _MePageState extends State<MePage> {
       User? user = await db.usersDao.getUserById(loggedInUserVal.id!);
       if (user != null) {
         final userId = user.id;
+        
+        // 核心统计数据计算
         var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(userId);
-        var totalLearningWords = await (db.select(db.learningWords)
-              ..where((lw) => lw.userId.equals(userId))
-              ..where((lw) => lw.stability.isSmallerThanValue(Constants.graduationStability)))
-            .get();
-        var globalLearningWordsCount = totalLearningWords.length;
+        final learningDictIds = learningDicts.map((d) => d.dictId).toList();
 
-        var dictWordIds = await (db.selectOnly(db.dictWords)
-              ..addColumns([db.dictWords.wordId])
-              ..where(db.dictWords.dictId.isIn(learningDicts.map((d) => d.dictId).toList())))
-            .get();
-        var uniqueWordIdsInDicts = dictWordIds.map((row) => row.read(db.dictWords.wordId)!).toSet();
-        var rawWordCount = uniqueWordIdsInDicts.length;
+        // [性能优化] 使用 SQL 直接在数据库内完成聚合与去重，避免在 Flutter 主线程进行巨大的 Set 操作（尤其是单词量大的时候）
+        // 1. 全局正在学习的单词总数
+        var globalLearningWordsCount = await (db.selectOnly(db.learningWords)
+              ..addColumns([db.learningWords.wordId.count()])
+              ..where(db.learningWords.userId.equals(userId))
+              ..where(db.learningWords.stability.isSmallerThanValue(Constants.graduationStability)))
+            .getSingle()
+            .then((r) => r.read(db.learningWords.wordId.count()) ?? 0);
 
-        var learningWordIds = totalLearningWords.map((w) => w.wordId).toSet();
-        var learningWordsInSelectedDictsCount = learningWordIds.intersection(uniqueWordIdsInDicts).length;
+        // 2. 当前选中的词书中的去重单词总数
+        var rawWordCount = await db.dictWordsDao.getUniqueWordCountInDicts(learningDictIds);
 
-        var allMasteredWordIdSet = await db.masteredWordsDao.getMasteredWordIdSet(userId);
-        var globalMasteredWordsCount = allMasteredWordIdSet.length;
+        // 3. 当前选中的词书中包含的“正在学习”单词总数
+        var learningWordsInSelectedDictsCount = await db.learningWordsDao.getLearningWordsCountInDicts(userId, learningDictIds);
 
-        var masteredWordIdsInSelectedDicts = allMasteredWordIdSet.intersection(uniqueWordIdsInDicts);
-        var masteredWordsInSelectedDictsCount = masteredWordIdsInSelectedDicts.length;
+        // 4. 全局已掌握单词总数
+        // 尝试更新并获取最新的用户掌握数
+        await db.masteredWordsDao.updateUserMasteredWordCount(userId);
+        final latestUser = await db.usersDao.getUserById(userId);
+        var globalMasteredWordsCount = latestUser?.masteredWordsCount ?? 0;
+
+        // 5. 当前选中的词书中包含的“已掌握”单词总数
+        var masteredWordsInSelectedDictsCount = await db.masteredWordsDao.getMasteredWordsCountInDicts(userId, learningDictIds);
+
+        Global.logger.d('MePage: 统计数据加载完成 - 学习中: $globalLearningWordsCount, 选中书内学习中: $learningWordsInSelectedDictsCount, 掌握: $globalMasteredWordsCount');
 
         var allDictsFinished = (learningWordsInSelectedDictsCount + masteredWordsInSelectedDictsCount) >= rawWordCount;
         LevelVo levelVo = LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
 
-        var allDakas = await db.dakasDao.getDakaRecords(userId);
-        var actualDakaDayCount = allDakas.length;
-
-        // 自动修复：如果 User 表中的统计数据与实际打卡记录不符，执行自动修复并同步到后端
-        if (user.dakaDayCount != actualDakaDayCount) {
-          Global.logger.i('检测到打卡统计不一致，自动修复: ${user.dakaDayCount} -> $actualDakaDayCount');
-
-          // 计算当前的连续打卡天数
-          int calcContinuous() {
-            if (allDakas.isEmpty) return 0;
-            final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
-            final yesterday = today.subtract(const Duration(days: 1));
-            DateTime lastDate = allDakas.first.forLearningDate;
-            if (!DateUtils.isSameDay(lastDate, today) && !DateUtils.isSameDay(lastDate, yesterday)) return 0;
-            int count = 1;
-            for (int i = 1; i < allDakas.length; i++) {
-              final curr = allDakas[i].forLearningDate;
-              final expected = lastDate.subtract(const Duration(days: 1));
-              if (DateUtils.isSameDay(curr, expected)) {
-                count++;
-                lastDate = curr;
-              } else {
-                break;
-              }
-            }
-            return count;
-          }
-
-          int actualContinuous = calcContinuous();
-          int newMax = math.max(user.maxContinuousDakaDayCount, actualContinuous);
-          double newRatio = user.learnedDays > 0 ? actualDakaDayCount / user.learnedDays : 1.0;
-
-          final updatedUser = user.copyWith(
-            dakaDayCount: actualDakaDayCount,
-            continuousDakaDayCount: actualContinuous,
-            maxContinuousDakaDayCount: newMax,
-            dakaRatio: drift.Value(newRatio),
-          );
-          await db.usersDao.saveUser(updatedUser, true);
-          // 刷新内存缓存
-          await Global.loadUserFromDb();
-          user = updatedUser;
-        }
-
-        var actualDakaRatio = user.learnedDays > 0 ? actualDakaDayCount / user.learnedDays : (actualDakaDayCount > 0 ? 1.0 : 0.0);
+        var actualDakaRatio = user.learnedDays > 0 ? user.dakaDayCount / user.learnedDays : (user.dakaDayCount > 0 ? 1.0 : 0.0);
 
         studyProgressVal = StudyProgress(
           user.learnedDays,
-          actualDakaDayCount,
+          user.dakaDayCount,
           actualDakaRatio,
           UserHelper.calculateTotalScore(user.gameScore, user.dakaScore),
           -1.0,
@@ -558,161 +522,132 @@ class _MePageState extends State<MePage> {
     if (!mounted) return;
 
     try {
-      // 先检查并下载通用词典
-      var db = MyDatabase.instance;
-      bool hasWords = await db.dictWordsDao.hasDictWords(Global.commonDictId);
-      if (!hasWords) {
-        // 通用词典中没有单词，需要下载
-        Global.logger.i("通用词典存在但没有单词，需要下载");
-        if (mounted) {
-          await _showDictDownloadDialog([
-            DictVo(
-              id: Global.commonDictId,
-              name: '通用词典',
-              shortName: '通用词典',
-              owner: null,
-              isShared: true,
-              isReady: true,
-              visible: true,
-              editable: false,
-              dictWords: null,
-              wordCount: 0,
-              createTime: AppClock.now(),
-            )
-          ]);
-        }
-      } else {
-        Global.logger.i("通用词典已存在且包含单词，无需下载");
-      }
-
-      // 再下载用户选择的词书
-      // 注意：必须重新查询learningDicts，因为上面的同步可能已经从服务器获取了用户的词书数据
-      List<LearningDict> learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(userId);
+      final db = MyDatabase.instance;
+      // 注意：必须重新查询learningDicts，因为同步可能已经从服务器获取了用户的词书数据
+      List<LearningDict> learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
+      
+      // [性能优化] 批量获取词书详情和单词存在情况，减少数据库查询次数
+      final dictIdsToCheck = [Global.commonDictId, ...learningDicts.map((ld) => ld.dictId)];
+      final existingDicts = await db.dictsDao.findByIds(dictIdsToCheck);
+      final dictMap = {for (var d in existingDicts) d.id: d};
+      
+      final dictsWithWords = await db.dictWordsDao.findDictsWithWords(dictIdsToCheck);
+      final dictsWithWordsSet = dictsWithWords.toSet();
+      
       List<DictVo> dictsToDownload = [];
 
-      // 收集需要下载的词书
+      // 1. 检查通用词典
+      if (!dictsWithWordsSet.contains(Global.commonDictId)) {
+        Global.logger.i("通用词典内容为空，准备下载");
+        dictsToDownload.add(DictVo(
+          id: Global.commonDictId,
+          name: '通用词典',
+          shortName: '通用词典',
+          owner: null,
+          isShared: true,
+          isReady: true,
+          visible: true,
+          editable: false,
+          dictWords: null,
+          wordCount: 0,
+          createTime: AppClock.now(),
+        ));
+      }
+
+      // 2. 收集需要下载的用户词书
       for (var learningDict in learningDicts) {
-        var db = MyDatabase.instance;
-        Dict? existing = await db.dictsDao.findById(learningDict.dictId);
+        if (learningDict.dictId == Global.commonDictId) continue;
+
+        final existing = dictMap[learningDict.dictId];
+        String currentDictName = '词书 ${learningDict.dictId}';
 
         // 检查词书是否存在，或存在但没有单词
         if (existing == null) {
-          // 词书不存在，需要下载
-          Global.logger.i("词书不存在，需要下载: ${learningDict.dictId}");
-
-          // 获取词书名称，如果获取不到则使用ID
-          String dictName = '词书 ${learningDict.dictId}';
+          // 词书不存在，需要从服务端确认信息
           bool dictDeletedOnServer = false;
           try {
-            // 这里只是获取名称：使用轻量接口，避免下载完整词书资源
             final result = await Api.client.getDictInfo(learningDict.dictId);
             if (result.success && result.data?.name != null) {
-              dictName = result.data!.name;
+              currentDictName = result.data!.name;
             } else if (!result.success && result.msg == '词典不存在') {
               dictDeletedOnServer = true;
-            } 
+            }
           } catch (e) {
             Global.logger.e("获取词书名称失败: $e");
           }
 
           if (dictDeletedOnServer) {
-            Global.logger.w("词书已在服务端被彻底物理删除，由于目前还没有同步相关UserDb日志，在此主动解除本地依赖打破死循环: ${learningDict.dictId}");
+            Global.logger.w("词书已在服务端删除，移除本地关联: ${learningDict.dictId}");
             await db.learningDictsDao.deleteEntity(learningDict, true);
-            continue; // 跳过此无效词库
+            continue;
           }
-
-          // 将dictName处理为无后缀的短名称
-          String shortName = getShortName(dictName);
 
           dictsToDownload.add(DictVo(
             id: learningDict.dictId,
-            name: dictName,
-            shortName: shortName,
+            name: currentDictName,
+            shortName: getShortName(currentDictName),
             owner: null,
             isShared: true,
             isReady: true,
             visible: true,
-            editable: dictName == '生词本', // 这里初步判断，如果是生词本则 editable
+            editable: currentDictName == '生词本',
             dictWords: null,
             wordCount: 0,
             createTime: AppClock.now(),
           ));
-        } else {
-          // 词书存在，但只有当owner是系统用户(系统词书)时才需要检查是否有单词
-          if (existing.ownerId == Global.sysUserId) {
-            bool hasWords = await db.dictWordsDao.hasDictWords(learningDict.dictId);
-            if (!hasWords) {
-              // 系统词书中没有单词，需要下载
-              Global.logger.i("系统词书存在但没有单词，需要下载: ${learningDict.dictId}");
+        } else if (existing.ownerId == Global.sysUserId && !dictsWithWordsSet.contains(learningDict.dictId)) {
+          // 系统词书缺失内容
+          Global.logger.i("系统词书内容缺失，准备下载: ${learningDict.dictId}");
+          
+          if (!dictsToDownload.any((d) => d.id == learningDict.dictId)) {
+            dictsToDownload.add(DictVo(
+              id: learningDict.dictId,
+              name: existing.name,
+              shortName: getShortName(existing.name),
+              owner: null,
+              isShared: true,
+              isReady: true,
+              visible: true,
+              editable: existing.name == '生词本',
+              dictWords: null,
+              wordCount: 0,
+              baseDictId: existing.baseDictId,
+              createTime: AppClock.now(),
+            ));
+          }
 
-              // 将dictName处理为无后缀的短名称
-              String shortName = getShortName(existing.name);
-
-              // 如果是衍生词书，确保其依赖的基础词书也被拉入下载列表（如果基础词书也没单词）
-              if (existing.baseDictId != null && existing.baseDictId!.isNotEmpty) {
-                bool baseHasWords = await db.dictWordsDao.hasDictWords(existing.baseDictId!);
-                if (!baseHasWords && !dictsToDownload.any((d) => d.id == existing.baseDictId)) {
-                  // 获取基础词书名称
-                  String baseDictName = '基础词书';
-                  try {
-                    final baseResult = await Api.client.getDictInfo(existing.baseDictId!);
-                    if (baseResult.success && baseResult.data?.name != null) {
-                      baseDictName = baseResult.data!.name;
-                    }
-                  } catch (e) {
-                    Global.logger.e("获取基础词书名称失败: $e");
-                  }
-
-                  dictsToDownload.add(DictVo(
-                    id: existing.baseDictId!,
-                    name: baseDictName,
-                    shortName: getShortName(baseDictName),
-                    owner: null,
-                    isShared: true,
-                    isReady: true,
-                    visible: true,
-                    editable: false,
-                    dictWords: null,
-                    wordCount: 0,
-                    createTime: AppClock.now(),
-                  ));
-                }
-              }
-
-              if (!dictsToDownload.any((d) => d.id == learningDict.dictId)) {
-                dictsToDownload.add(DictVo(
-                  id: learningDict.dictId,
-                  name: existing.name,
-                  shortName: shortName,
-                  owner: null,
-                  isShared: true,
-                  isReady: true,
-                  visible: true,
-                  editable: existing.name == '生词本' || (existing.ownerId != Global.sysUserId),
-                  dictWords: null,
-                  wordCount: 0,
-                  baseDictId: existing.baseDictId,
-                  createTime: AppClock.now(),
-                ));
-              }
-            } else {
-              Global.logger.i("系统词书已存在且包含单词，无需下载, 词书ID: ${learningDict.dictId}");
+          // 衍生词书依赖检查
+          if (existing.baseDictId != null && existing.baseDictId!.isNotEmpty) {
+            if (!dictsWithWordsSet.contains(existing.baseDictId!) && !dictsToDownload.any((d) => d.id == existing.baseDictId)) {
+              String baseName = '基础词书';
+              try {
+                final baseResult = await Api.client.getDictInfo(existing.baseDictId!);
+                if (baseResult.success && baseResult.data?.name != null) baseName = baseResult.data!.name;
+              } catch (_) {}
+              
+              dictsToDownload.add(DictVo(
+                id: existing.baseDictId!,
+                name: baseName,
+                shortName: getShortName(baseName),
+                owner: null,
+                isShared: true,
+                isReady: true,
+                visible: true,
+                editable: false,
+                dictWords: null,
+                wordCount: 0,
+                createTime: AppClock.now(),
+              ));
             }
-          } else {
-            Global.logger.i("非系统词书已存在，无需检查单词数量, 词书ID: ${learningDict.dictId}, 名称: ${existing.name}");
           }
         }
       }
 
-      // 如果有需要下载的词书，显示下载对话框
       if (dictsToDownload.isNotEmpty && mounted) {
         await _showDictDownloadDialog(dictsToDownload);
       }
-    } catch (e) {
-      Global.logger.e("下载用户词书失败: $e");
-      if (mounted) {
-        ToastUtil.error("部分词书下载失败: $e");
-      }
+    } catch (e, stackTrace) {
+      Global.logger.e("检查词书下载失败: $e", stackTrace: stackTrace);
     }
   }
 
@@ -2622,29 +2557,9 @@ class _DictCardState extends State<DictCard> {
     final dictId = widget.learningDict.dictId;
     final userId = widget.learningDict.userId;
 
-    // 获取该词书的所有单词ID
-    final dictWords = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
-    final wordIds = dictWords.map((dw) => dw.wordId).toSet();
-
-    // 获取学习中的单词（stability < graduationStability）
-    final learningWords = await (db.select(db.learningWords)
-          ..where((lw) => lw.userId.equals(userId) & lw.stability.isSmallerThanValue(Constants.graduationStability)))
-        .get();
-    final learningWordIds = learningWords.map((w) => w.wordId).toSet();
-
-    // 获取已掌握的单词
-    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
-
-    // 计算该词书中学习和掌握的数量
-    int learned = 0;
-    int mastered = 0;
-    for (var wordId in wordIds) {
-      if (learningWordIds.contains(wordId)) {
-        learned++;
-      } else if (masteredWordIds.contains(wordId)) {
-        mastered++;
-      }
-    }
+    // [性能优化] 使用 SQL 在数据库端聚合统计，避免每次渲染都把成千上万个单词拉到内存中进行 Set 操作
+    int learned = await db.learningWordsDao.getLearningWordsCountInDicts(userId, [dictId]);
+    int mastered = await db.masteredWordsDao.getMasteredWordsCountInDicts(userId, [dictId]);
 
     if (mounted) {
       setState(() {
