@@ -127,11 +127,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           });
         }
         try {
-          // 注意：此处不再使用 requestSyncAndWait，而是直接使用 requestSync 并在后台等待，
-          // 或者如果确实需要等待，我们也已经在上面提前展示了本地 UI。
-          // 注意：此处不再使用 requestSyncAndWait，以避免阻塞 UI 线程。
-          // 我们使用 background sync，并在后台静默更新。
-          ThrottledDbSyncService().requestSync(immediate: true);
+          if (_todayWords == null || _todayWords!.isEmpty) {
+            Global.logger.i('今日计划本地为空，发起阻塞式同步...');
+            await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+          } else {
+            ThrottledDbSyncService().requestSync();
+          }
         } catch (e) {
           Global.logger.e('进入页面同步失败: $e');
         } finally {

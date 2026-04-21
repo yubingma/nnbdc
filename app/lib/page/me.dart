@@ -531,21 +531,22 @@ class _MePageState extends State<MePage> {
   /// 同步数据库并下载词书
   /// 同步完成后自动检查并下载本地缺失的词书，显示下载进度对话框
   Future<void> _syncAndDownloadDicts(String userId) async {
-    if (_isCheckingDicts) {
-      Global.logger.d("正在检查词书中，跳过重复触发");
-      return;
-    }
-
+    if (_isCheckingDicts) return;
     _isCheckingDicts = true;
     try {
-      // 等待同步完成
-      await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
-
-      // 同步完成后，检查并下载词书
+      final db = MyDatabase.instance;
+      var learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
+      
+      if (learningDicts.isEmpty) {
+        Global.logger.i("本地词书为空，发起阻塞式同步以获取用户数据...");
+        await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+      } else {
+        ThrottledDbSyncService().requestSync();
+      }
+      
       await _checkAndDownloadDicts(userId);
     } catch (e) {
       Global.logger.e("同步或下载词书失败: $e");
-      // 同步失败不影响页面显示，静默处理
     } finally {
       _isCheckingDicts = false;
     }
