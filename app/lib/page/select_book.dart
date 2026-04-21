@@ -73,10 +73,13 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     dictGroups = [];
     customDicts = [];
     _hasUserMadeChanges = false;
+    // 使用 controller 的监听器确保状态同步
     _searchController.addListener(() {
-      setState(() {
-        _searchText = _searchController.text.trim();
-      });
+      if (mounted) {
+        setState(() {
+          _searchText = _searchController.text;
+        });
+      }
     });
     Future.microtask(() => loadData());
   }
@@ -1430,9 +1433,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       );
     }
 
-    final searchLower = _searchText.toLowerCase();
+    final searchLower = _searchText.trim().toLowerCase();
     final filteredCategories = (parentCategories ?? []).where((category) {
-      if (_searchText.isEmpty) return true;
+      if (searchLower.isEmpty) return true;
       if (category.name == '自定义') {
         return customDicts?.any((d) => 
           (d.name?.toLowerCase().contains(searchLower) ?? false) ||
@@ -1447,22 +1450,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         ) ?? false;
       }) ?? false;
     }).toList();
-
-    if (filteredCategories.isEmpty && _searchText.isNotEmpty) {
-      return Scaffold(
-        backgroundColor: backgroundColor,
-        appBar: AppBar(
-          backgroundColor: backgroundColor,
-          elevation: 0,
-          title: _buildSearchField(isDarkMode, textColor),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: const Center(child: Text('没有找到匹配的词书')),
-      );
-    }
 
     _initTabController(filteredCategories.length);
 
@@ -1501,26 +1488,33 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           child: Column(
             children: [
               _buildSearchField(isDarkMode, textColor),
-              TabBar(
-                controller: _primaryTabController,
-                isScrollable: true,
-                labelColor: AppTheme.primaryColor,
-                unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                indicatorColor: AppTheme.primaryColor,
-                indicatorSize: TabBarIndicatorSize.label,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                dividerColor: Colors.transparent,
-                tabAlignment: TabAlignment.start,
-                tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
-              ),
+              if (filteredCategories.isNotEmpty)
+                TabBar(
+                  controller: _primaryTabController,
+                  isScrollable: true,
+                  labelColor: AppTheme.primaryColor,
+                  unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  indicatorColor: AppTheme.primaryColor,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  dividerColor: Colors.transparent,
+                  tabAlignment: TabAlignment.start,
+                  tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
+                )
+              else
+                const SizedBox(height: 48),
             ],
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _primaryTabController,
-        children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
-      ),
+      body: filteredCategories.isNotEmpty
+          ? TabBarView(
+              controller: _primaryTabController,
+              children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
+            )
+          : const Center(
+              child: Text('没有找到匹配的词书'),
+            ),
     );
   }
 
@@ -1535,6 +1529,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       child: TextField(
         controller: _searchController,
         style: TextStyle(color: textColor, fontSize: 14),
+        onChanged: (value) {
+          // 额外的 onChanged 确保某些平台下的实时性
+          setState(() {
+            _searchText = value;
+          });
+        },
         decoration: InputDecoration(
           hintText: '搜索词库...',
           hintStyle: TextStyle(color: isDarkMode ? Colors.grey[500] : Colors.grey[600], fontSize: 14),
@@ -1544,6 +1544,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                   icon: Icon(Icons.clear, color: isDarkMode ? Colors.grey[500] : Colors.grey[600], size: 18),
                   onPressed: () {
                     _searchController.clear();
+                    setState(() {
+                      _searchText = '';
+                    });
                   },
                 )
               : null,
