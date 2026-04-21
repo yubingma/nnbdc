@@ -26,7 +26,7 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   MyDatabase get _db => MyDatabase.instance;
 
   DictWordsProvider(this.dict);
-  
+
   @override
   String? get targetDictId => dict.id;
 
@@ -92,7 +92,7 @@ class DictWordsProvider with WordsProvider implements WordModifier {
       if (userId == null) return false;
 
       await WordBo().setLearningWordAsMastered(userId, wordWrapper.word.id!, true);
-      
+
       ThrottledDbSyncService().requestSync();
       return true;
     } catch (e) {
@@ -164,7 +164,10 @@ class DictWordsProvider with WordsProvider implements WordModifier {
 
     // 检查是否在学习中
     final learningQuery = db.select(db.learningWords)
-      ..where((lw) => lw.userId.equals(user.id) & lw.wordId.equals(wordId) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability)));
+      ..where((lw) =>
+          lw.userId.equals(user.id) &
+          lw.wordId.equals(wordId) &
+          (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability)));
     final learning = await learningQuery.getSingleOrNull();
     if (learning != null) return false; // 学习中
 
@@ -356,7 +359,9 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
                 ownerId: Global.getLoggedInUser()?.id ?? 'local',
                 visible: true,
                 editable: dict.name == '生词本' || (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
-                deletable: dict.name != '生词本' && dict.name != '已掌握' && (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
+                deletable: dict.name != '生词本' &&
+                    dict.name != '已掌握' &&
+                    (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
                 createTime: AppClock.now(),
                 updateTime: AppClock.now(),
               ),

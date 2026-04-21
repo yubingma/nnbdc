@@ -51,7 +51,7 @@ class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
 
     // 初始化页面列表
     _pages = [
-      const BeforeBdcPage(),
+      const TodayPlanPage(),
       const WordListsPage(),
       const SearchPage(),
       if (!Global.isGuest) const GamePage(),

@@ -481,7 +481,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               Api.loadingService.init(); // 确保加载服务已初始化
             });
           });
-          return const BeforeBdcPage();
+          return const TodayPlanPage();
         },
         '/word_list': (context) => const WordListPage(),
         '/walkman': (context) => const WalkmanPage(),

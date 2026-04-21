@@ -29,16 +29,16 @@ import 'package:nnbdc/util/learning_service.dart';
 
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 
-class BeforeBdcPage extends StatefulWidget {
-  const BeforeBdcPage({super.key});
+class TodayPlanPage extends StatefulWidget {
+  const TodayPlanPage({super.key});
 
   @override
-  BeforeBdcPageState createState() {
-    return BeforeBdcPageState();
+  TodayPlanPageState createState() {
+    return TodayPlanPageState();
   }
 }
 
-class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMixin, WidgetsBindingObserver {
+class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMixin, WidgetsBindingObserver {
   List<UserStudyStepVo>? studySteps;
   int? newWordCount;
   int? oldWordCount;

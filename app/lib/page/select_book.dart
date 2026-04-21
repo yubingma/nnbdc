@@ -137,11 +137,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       }
 
       String userId = user.id!;
-
-      // 先同步系统数据库（立即执行，不等待节流）
-      await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
-
-      // 从本地数据库获取词书分组和用户选择的词书
+      
+      // 立即从本地数据库获取现有数据，实现秒开
       var db = MyDatabase.instance;
       var dictGroupsData = await db.select(db.dictGroups).get();
       var groupAndDictLinks = await db.select(db.groupAndDictLinks).get();
@@ -620,7 +617,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                                       _showPremiumPrompt();
                                       return;
                                     }
-                                    await toDictWordsListPage(dict.id, true);
+                                    await toDictWordsListPage(dict, true);
                                     loadData(keepSelection: true);
                                   },
                                   tooltip: '管理单词',

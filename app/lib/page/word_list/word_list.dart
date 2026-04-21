@@ -248,12 +248,16 @@ class WordListPageState extends State<WordListPage>
 
   Future<void> loadData() async {
     final sw = Stopwatch()..start();
-    if (!await checkArgs()) {
+    // 并行获取书签和权限检查
+    final results = await Future.wait([
+      checkArgs(),
+      args.bookMarkProvider.getBookMark(),
+    ]);
+
+    if (!(results[0] as bool)) {
       return;
     }
-
-    // 获取书签位置
-    bookMark = await args.bookMarkProvider.getBookMark();
+    bookMark = results[1] as BookMarkVo?;
 
     if (isBookMarkValid(bookMark)) {
       // 有书签：加载书签所在的那一页单词
