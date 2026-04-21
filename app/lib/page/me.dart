@@ -369,6 +369,48 @@ class _MePageState extends State<MePage> {
 
         var allDakas = await db.dakasDao.getDakaRecords(user.id);
         var actualDakaDayCount = allDakas.length;
+
+        // 自动修复：如果 User 表中的统计数据与实际打卡记录不符，执行自动修复并同步到后端
+        if (user.dakaDayCount != actualDakaDayCount) {
+          Global.logger.i('检测到打卡统计不一致，自动修复: ${user.dakaDayCount} -> $actualDakaDayCount');
+
+          // 计算当前的连续打卡天数
+          int calcContinuous() {
+            if (allDakas.isEmpty) return 0;
+            final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
+            final yesterday = today.subtract(const Duration(days: 1));
+            DateTime lastDate = allDakas.first.forLearningDate;
+            if (!DateUtils.isSameDay(lastDate, today) && !DateUtils.isSameDay(lastDate, yesterday)) return 0;
+            int count = 1;
+            for (int i = 1; i < allDakas.length; i++) {
+              final curr = allDakas[i].forLearningDate;
+              final expected = lastDate.subtract(const Duration(days: 1));
+              if (DateUtils.isSameDay(curr, expected)) {
+                count++;
+                lastDate = curr;
+              } else {
+                break;
+              }
+            }
+            return count;
+          }
+
+          int actualContinuous = calcContinuous();
+          int newMax = math.max(user.maxContinuousDakaDayCount, actualContinuous);
+          double newRatio = user.learnedDays > 0 ? actualDakaDayCount / user.learnedDays : 1.0;
+
+          final updatedUser = user.copyWith(
+            dakaDayCount: actualDakaDayCount,
+            continuousDakaDayCount: actualContinuous,
+            maxContinuousDakaDayCount: newMax,
+            dakaRatio: drift.Value(newRatio),
+          );
+          await db.usersDao.saveUser(updatedUser, true);
+          // 刷新内存缓存
+          await Global.loadUserFromDb();
+          user = updatedUser;
+        }
+
         var actualDakaRatio = user.learnedDays > 0 ? actualDakaDayCount / user.learnedDays : (actualDakaDayCount > 0 ? 1.0 : 0.0);
 
         studyProgressVal = StudyProgress(

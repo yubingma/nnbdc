@@ -326,10 +326,33 @@ class StudyBo {
         );
         await db.dakasDao.saveDaka(daka, true);
 
-        // 给用户一次掷骰子机会 (仅限每日首次打卡)
+        // 更新用户打卡统计信息
+        int newDakaDayCount = user.dakaDayCount + 1;
+        int newContinuousDakaDayCount = 1;
+        if (user.lastDakaDate != null) {
+          final lastDate = DateTime(user.lastDakaDate!.year, user.lastDakaDate!.month, user.lastDakaDate!.day);
+          final yesterday = today.subtract(const Duration(days: 1));
+          if (lastDate.isAtSameMomentAs(yesterday)) {
+            newContinuousDakaDayCount = user.continuousDakaDayCount + 1;
+          } else if (lastDate.isAtSameMomentAs(today)) {
+            // 虽然正常逻辑下 existingDaka != null 会拦截重复打卡，但在并发或异常流中，
+            // 如果走到这里发现日期相同，则保持连续天数不变，总天数不增。
+            newContinuousDakaDayCount = user.continuousDakaDayCount;
+            newDakaDayCount = user.dakaDayCount;
+          }
+        }
+        int newMaxContinuousDakaDayCount = max(user.maxContinuousDakaDayCount, newContinuousDakaDayCount);
+        double newDakaRatio = user.learnedDays > 0 ? newDakaDayCount / user.learnedDays : 1.0;
+
+        // 给用户一次掷骰子机会 (仅限每日首次打卡) 并更新统计信息
         await db.usersDao.saveUser(
             user.copyWith(
               throwDiceChance: user.throwDiceChance + 1,
+              dakaDayCount: newDakaDayCount,
+              continuousDakaDayCount: newContinuousDakaDayCount,
+              maxContinuousDakaDayCount: newMaxContinuousDakaDayCount,
+              lastDakaDate: Value(now),
+              dakaRatio: Value(newDakaRatio),
             ),
             true);
       }
