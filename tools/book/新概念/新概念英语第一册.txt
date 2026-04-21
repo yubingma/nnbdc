@@ -40,13 +40,13 @@
 5|Miss|小姐
 5|new|adj.新的
 5|student|n.学生
-5|French|adj.& n.法国的；法国人
-5|German|adj.& n.德国的；德国人
+5|French|adj.法国的；n.法国人
+5|German|adj.德国的；n.德国人
 5|nice|adj.美好的
 5|meet|v.遇见
-5|Japanese|adj.& n.日本的；日本人
-5|Korean|adj.& n.韩国的；韩国人
-5|Chinese|adj.& n.中国的；中国人
+5|Japanese|adj.日本的；n.日本人
+5|Korean|adj.韩国的；n.韩国人
+5|Chinese|adj.中国的；n.中国人
 5|too|adv.也
 6|make|n.(产品的)牌号
 6|Swedish|adj.瑞典的
@@ -65,7 +65,7 @@
 7|am|v.be动词现在时第一人称单数
 7|are|v.be动词现在时复数
 7|name|n.名字
-7|what|adj.& pron.什么
+7|what|adj.什么；pron.什么
 7|nationality|n.国籍
 7|job|n.工作
 7|keyboard|n.电脑键盘
@@ -130,14 +130,14 @@
 15|customs|n. 海关
 15|officer|n. 官员
 15|girl|n. 女孩，姑娘
-15|Danish|adj.& n. 丹麦的；丹麦人
-15|friend|adj.& n. 朋友
-15|Norwegian|adj.& n. 挪威的；挪威人
+15|Danish|adj.丹麦的；n.丹麦人
+15|friend|adj.朋友；n.朋友
+15|Norwegian|adj.挪威的；n.挪威人
 15|passport|n. 护照
 15|brown|adj. 棕色的
 15|tourist|n. 旅游者
-16|Russian|adj.& n. 俄罗斯的；俄罗斯人
-16|Dutch|adj.& n. 荷兰的；荷兰人
+16|Russian|adj.俄罗斯的；n.俄罗斯人
+16|Dutch|adj.荷兰的；n.荷兰人
 16|these|pron. 这些(this的复数)
 16|red|adj. 红色的
 16|grey|adj. 灰色的
@@ -306,7 +306,7 @@
 37|bookcase|n.书橱，书架
 37|hammer|n.锤子
 37|paint|v.上漆，涂
-37|pink|n.& adj.粉红色；粉红色的
+37|pink|n.粉红色；adj.粉红色的
 37|favourite|adj.最喜欢的
 38|homework|n.作业
 38|listen|v.听
@@ -566,7 +566,7 @@
 70|stationer|n.文具商
 70|Denmark|n.丹麦
 71|awful|adv.让人讨厌的，坏的
-71|telephone|v.& n.打电话；电话
+71|telephone|v.打电话；n.电话
 71|time|n.次(数)
 71|answer|v.接(电话)
 71|last|adj.最后的，前一次的
