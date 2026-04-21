@@ -438,6 +438,7 @@ public class SystemHealthCheckBo {
                         dwDto.setDictId(Constants.COMMON_DICT_ID);
                         dwDto.setWordId(wordId);
                         dwDto.setSeq(dw0.getSeq());
+                        dwDto.setUnit(dw0.getUnit());
                         dwDto.setCreateTime(dw0.getCreateTime());
                         sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + wordId, JsonUtils.toJson(dwDto));
                         fixedCount++;
@@ -472,6 +473,7 @@ public class SystemHealthCheckBo {
                     dwDto.setDictId(Constants.COMMON_DICT_ID);
                     dwDto.setWordId(wordId);
                     dwDto.setSeq(dw.getSeq());
+                    dwDto.setUnit(dw.getUnit());
                     dwDto.setCreateTime(dw.getCreateTime());
                     dictWords.add(dwDto);
                 }

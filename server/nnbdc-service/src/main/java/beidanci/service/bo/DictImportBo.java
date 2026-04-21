@@ -484,6 +484,7 @@ public class DictImportBo {
             dwDto.setDictId(Constants.COMMON_DICT_ID);
             dwDto.setWordId(word.getId());
             dwDto.setSeq(dw0.getSeq());
+            dwDto.setUnit(0);
             dwDto.setCreateTime(dw0.getCreateTime());
             sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
             stats.addSyncLog("INSERT", "dict_word");

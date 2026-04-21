@@ -766,6 +766,7 @@ public class DictBo extends BaseBo<Dict> {
             dictWordDto.setDictId(dictId);
             dictWordDto.setWordId(wordId);
             dictWordDto.setSeq(deletedSeq);
+            dictWordDto.setUnit(0);
             dictWordDto.setCreateTime(null);
             dictWordDto.setUpdateTime(new java.sql.Timestamp(System.currentTimeMillis()));
 

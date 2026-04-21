@@ -348,13 +348,14 @@ public class DictWordBo extends BaseBo<DictWord> {
 
     public List<DictWordDto> getDictWordsOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT dict_id, word_id, seq, create_time, update_time FROM dict_word WHERE dict_id = :dictId";
+        String sql = "SELECT dict_id, word_id, seq, unit, create_time, update_time FROM dict_word WHERE dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         List<DictWordDto> dictWordDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             DictWordDto dictWordDto = new DictWordDto();
             dictWordDto.setDictId(rs.getString("dict_id"));
             dictWordDto.setWordId(rs.getString("word_id"));
             dictWordDto.setSeq(rs.getInt("seq"));
+            dictWordDto.setUnit(rs.getInt("unit"));
             dictWordDto.setCreateTime(rs.getTimestamp("create_time"));
             dictWordDto.setUpdateTime(rs.getTimestamp("update_time"));
             return dictWordDto;
@@ -373,7 +374,7 @@ public class DictWordBo extends BaseBo<DictWord> {
      */
     public List<DictWordDto> getDictWordDtosOfUser(String userId) {
         // 查询用户的生词本中的所有单词
-        String sql = "SELECT dw.dict_id, dw.word_id, dw.seq, dw.create_time, dw.update_time " +
+        String sql = "SELECT dw.dict_id, dw.word_id, dw.seq, dw.unit, dw.create_time, dw.update_time " +
                 "FROM dict_word dw " +
                 "INNER JOIN dict d ON dw.dict_id = d.id " +
                 "WHERE d.owner_id = :userId " +
@@ -384,6 +385,7 @@ public class DictWordBo extends BaseBo<DictWord> {
             dictWordDto.setDictId(rs.getString("dict_id"));
             dictWordDto.setWordId(rs.getString("word_id"));
             dictWordDto.setSeq(rs.getInt("seq"));
+            dictWordDto.setUnit(rs.getInt("unit"));
             dictWordDto.setCreateTime(rs.getTimestamp("create_time"));
             dictWordDto.setUpdateTime(rs.getTimestamp("update_time"));
             return dictWordDto;
@@ -455,13 +457,14 @@ public class DictWordBo extends BaseBo<DictWord> {
 
         // 批量插入
         int count = 0;
-        String insertSql = "INSERT INTO dict_word (dict_id, word_id, seq, create_time, update_time) " +
-                "VALUES (:dictId, :wordId, :seq, :createTime, :updateTime)";
+        String insertSql = "INSERT INTO dict_word (dict_id, word_id, seq, unit, create_time, update_time) " +
+                "VALUES (:dictId, :wordId, :seq, :unit, :createTime, :updateTime)";
         for (DictWordDto dto : dictWordDtos) {
             MapSqlParameterSource insertParams = new MapSqlParameterSource();
             insertParams.addValue("dictId", dto.getDictId());
             insertParams.addValue("wordId", dto.getWordId());
             insertParams.addValue("seq", dto.getSeq());
+            insertParams.addValue("unit", dto.getUnit() != null ? dto.getUnit() : 0);
             insertParams.addValue("createTime", dto.getCreateTime());
             insertParams.addValue("updateTime", dto.getUpdateTime());
             namedParameterJdbcTemplate.update(insertSql, insertParams);

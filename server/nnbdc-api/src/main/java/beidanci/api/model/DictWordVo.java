@@ -10,6 +10,11 @@ public class DictWordVo extends Vo {
      */
     private Integer seq;
 
+    /**
+     * 单词所属单元序号，0 表示无单元
+     */
+    private Integer unit;
+
     public DictVo getDict() {
         return dict;
     }
@@ -32,5 +37,13 @@ public class DictWordVo extends Vo {
 
     public void setSeq(Integer seq) {
         this.seq = seq;
+    }
+
+    public Integer getUnit() {
+        return unit;
+    }
+
+    public void setUnit(Integer unit) {
+        this.unit = unit;
     }
 }
