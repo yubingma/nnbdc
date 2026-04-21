@@ -394,7 +394,6 @@ class _MePageState extends State<MePage> {
           masteredWordsInSelectedDictsCount,
           learningWordsInSelectedDictsCount,
           user.wordsPerDay,
-          user.continuousDakaDayCount,
           user.throwDiceChance,
           allDictsFinished,
           UserHelper.isTodayLearningFinishedFromUser(user),

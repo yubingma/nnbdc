@@ -25,7 +25,6 @@ class StudyProgress {
   int masteredWordsInSelectedDictsCount;
   int learningWordsInSelectedDictsCount;
   int wordsPerDay;
-  int continuousDakaDayCount;
   int throwDiceChance;
   bool allDictsFinished; // 所有词书都已学完(已经取不出词进入学习中单词池了)
   bool todayLearningFinished;
@@ -47,7 +46,6 @@ class StudyProgress {
       this.masteredWordsInSelectedDictsCount,
       this.learningWordsInSelectedDictsCount,
       this.wordsPerDay,
-      this.continuousDakaDayCount,
       this.throwDiceChance,
       this.allDictsFinished,
       this.todayLearningFinished,
