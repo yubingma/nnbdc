@@ -1023,10 +1023,9 @@ class WordListPageState extends State<WordListPage>
       return false;
     }
     args = Get.arguments;
-
-    if (args.wordsProvider is WordModifier) {
-      final String? targetDictId =
-          (args.wordsProvider as WordModifier).targetDictId;
+    // 移除冗余的数据库查询，直接信任参数。如果参数缺失，才进行兜底检查。
+    if (args.canEditWord == false && args.wordsProvider is WordModifier) {
+      final String? targetDictId = (args.wordsProvider as WordModifier).targetDictId;
       if (targetDictId != null) {
         final dict = await MyDatabase.instance.dictsDao.findById(targetDictId);
         if (dict != null && dict.editable) {

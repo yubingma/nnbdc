@@ -65,6 +65,23 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     return group.dicts!.where((element) => isDictSelected(element)).toList();
   }
 
+  bool _fuzzyMatch(String? target, String query) {
+    if (target == null || target.isEmpty) return false;
+    if (query.isEmpty) return true;
+
+    final targetLower = target.toLowerCase();
+    final queryLower = query.toLowerCase().replaceAll(' ', '');
+    
+    if (queryLower.isEmpty) return true;
+
+    // 先尝试直接包含
+    if (targetLower.contains(queryLower)) return true;
+
+    // 模糊匹配：查询字符串中的每个字符都必须出现在目标字符串中
+    final chars = queryLower.split('');
+    return chars.every((char) => targetLower.contains(char));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -333,13 +350,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       return _buildCustomTabContent(isDarkMode, backgroundColor, textColor, subtitleColor);
     }
 
-    final searchLower = _searchText.toLowerCase();
+    final searchLower = _searchText.trim().toLowerCase();
     final subGroups = (parentVo.childGroups ?? []).where((subGroup) {
-      if (_searchText.isEmpty) return true;
+      if (searchLower.isEmpty) return true;
       return subGroup.dicts?.any((d) => 
         d.visible == true && 
-        ((d.name?.toLowerCase().contains(searchLower) ?? false) ||
-         (d.shortName?.toLowerCase().contains(searchLower) ?? false))
+        (_fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower))
       ) ?? false;
     }).toList();
 
@@ -415,12 +431,10 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
     final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
-    final searchLower = _searchText.toLowerCase();
+    final searchLower = _searchText.trim().toLowerCase();
     final visibleBooks = books.where((b) => 
       b.visible == true && 
-      (_searchText.isEmpty || 
-       (b.name?.toLowerCase().contains(searchLower) ?? false) ||
-       (b.shortName?.toLowerCase().contains(searchLower) ?? false))
+      (_searchText.isEmpty || _fuzzyMatch(b.name, searchLower) || _fuzzyMatch(b.shortName, searchLower))
     ).toList();
 
     return ListView.builder(
@@ -509,11 +523,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         ),
         Expanded(
           child: Builder(builder: (context) {
-            final searchLower = _searchText.toLowerCase();
+            final searchLower = _searchText.trim().toLowerCase();
             final filteredCustomDicts = customDicts!.where((d) => 
-              _searchText.isEmpty || 
-              (d.name?.toLowerCase().contains(searchLower) ?? false) ||
-              (d.shortName?.toLowerCase().contains(searchLower) ?? false)
+              _searchText.isEmpty || _fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower)
             ).toList();
 
             if (filteredCustomDicts.isEmpty) {
@@ -1437,16 +1449,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     final filteredCategories = (parentCategories ?? []).where((category) {
       if (searchLower.isEmpty) return true;
       if (category.name == '自定义') {
-        return customDicts?.any((d) => 
-          (d.name?.toLowerCase().contains(searchLower) ?? false) ||
-          (d.shortName?.toLowerCase().contains(searchLower) ?? false)
-        ) ?? false;
+        return customDicts?.any((d) => _fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower)) ?? false;
       }
       return category.childGroups?.any((subGroup) {
         return subGroup.dicts?.any((d) => 
           d.visible == true && 
-          ((d.name?.toLowerCase().contains(searchLower) ?? false) ||
-           (d.shortName?.toLowerCase().contains(searchLower) ?? false))
+          (_fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower))
         ) ?? false;
       }) ?? false;
     }).toList();

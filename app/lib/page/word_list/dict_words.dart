@@ -315,50 +315,53 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
   }
 }
 
-Future<dynamic>? toDictWordsListPage(String dictId, bool showDelBtn) async {
+Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
   try {
-    // 从本地数据库获取词典信息
-    var db = MyDatabase.instance;
-    final dictQuery = db.select(db.dicts)..where((d) => d.id.equals(dictId));
-
-    final dictEntry = await dictQuery.getSingleOrNull();
     DictVo dict;
-
-    if (dictEntry != null) {
-      // 使用本地数据
-      dict = DictVo.c2(dictEntry.id);
-      dict.name = dictEntry.name;
-      dict.shortName = getShortName(dictEntry.name);
-      dict.wordCount = dictEntry.wordCount;
-      dict.isReady = dictEntry.isReady;
-      dict.isShared = dictEntry.isShared;
-      dict.visible = dictEntry.visible;
-      dict.editable = dictEntry.editable;
+    if (dictOrId is DictVo) {
+      dict = dictOrId;
     } else {
-      // 如果本地没有，创建一个默认词典对象
-      dict = DictVo.c2(dictId);
-      dict.name = "词典(本地模式)";
-      dict.shortName = "词典";
-      dict.isReady = true;
-      dict.isShared = false;
-      dict.visible = true;
+      // 从本地数据库获取词典信息
+      var db = MyDatabase.instance;
+      final dictQuery = db.select(db.dicts)..where((d) => d.id.equals(dictOrId.toString()));
+      final dictEntry = await dictQuery.getSingleOrNull();
 
-      // 保存到本地数据库
-      await db.into(db.dicts).insert(
-            Dict(
-              id: dict.id,
-              isReady: true,
-              isShared: false,
-              name: dict.name ?? '词典',
-              wordCount: 0,
-              ownerId: Global.getLoggedInUser()?.id ?? 'local',
-              visible: true,
-              editable: dict.name == '生词本' || (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
-              deletable: dict.name != '生词本' && dict.name != '已掌握' && (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
-              createTime: AppClock.now(),
-              updateTime: AppClock.now(),
-            ),
-          );
+      if (dictEntry != null) {
+        // 使用本地数据
+        dict = DictVo.c2(dictEntry.id);
+        dict.name = dictEntry.name;
+        dict.shortName = getShortName(dictEntry.name);
+        dict.wordCount = dictEntry.wordCount;
+        dict.isReady = dictEntry.isReady;
+        dict.isShared = dictEntry.isShared;
+        dict.visible = dictEntry.visible;
+        dict.editable = dictEntry.editable;
+      } else {
+        // 如果本地没有，创建一个默认词典对象
+        dict = DictVo.c2(dictOrId.toString());
+        dict.name = "词典(本地模式)";
+        dict.shortName = "词典";
+        dict.isReady = true;
+        dict.isShared = false;
+        dict.visible = true;
+
+        // 保存到本地数据库
+        await db.into(db.dicts).insert(
+              Dict(
+                id: dict.id,
+                isReady: true,
+                isShared: false,
+                name: dict.name ?? '词典',
+                wordCount: 0,
+                ownerId: Global.getLoggedInUser()?.id ?? 'local',
+                visible: true,
+                editable: dict.name == '生词本' || (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
+                deletable: dict.name != '生词本' && dict.name != '已掌握' && (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
+                createTime: AppClock.now(),
+                updateTime: AppClock.now(),
+              ),
+            );
+      }
     }
 
     return Get.toNamed('/word_list',
