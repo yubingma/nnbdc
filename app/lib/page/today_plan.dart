@@ -28,6 +28,8 @@ import 'package:intl/intl.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/learning_service.dart';
 
+import 'package:nnbdc/util/date_utils.dart' as app_date;
+
 class BeforeBdcPage extends StatefulWidget {
   const BeforeBdcPage({super.key});
 
@@ -37,7 +39,7 @@ class BeforeBdcPage extends StatefulWidget {
   }
 }
 
-class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMixin {
+class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMixin, WidgetsBindingObserver {
   List<UserStudyStepVo>? studySteps;
   int? newWordCount;
   int? oldWordCount;
@@ -57,11 +59,29 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     Timer.run(() {
       if (mounted) {
         loadData();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      Global.logger.d('App resumed, refreshing Today Plan...');
+      // 恢复时如果数据已加载，则尝试静默刷新以处理跨天逻辑
+      if (mounted && dataLoaded && !_isLoadingData) {
+        loadData();
+      }
+    }
   }
 
   @override
@@ -195,6 +215,21 @@ class BeforeBdcPageState extends State<BeforeBdcPage> with TickerProviderStateMi
     }
 
     if (user != null) {
+      // 检查是否为新的一天。如果是，则不加载本地已有的旧批次单词，防止 UI 闪烁旧数据
+      final today = app_date.DateUtils.pureDate(AppClock.now());
+      bool isNewDay = user!.lastLearningDate == null || !app_date.DateUtils.isSameDay(user!.lastLearningDate!, today);
+      
+      if (isNewDay) {
+        Global.logger.d('Detecting new day in local load, clearing stale data');
+        _todayWords = [];
+        newWordCount = 0;
+        oldWordCount = 0;
+        todayWordCount = 0;
+        _completedStepCount = 0;
+        _totalStepCount = 0;
+        return;
+      }
+
       _todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
       _updateProgress();
       
