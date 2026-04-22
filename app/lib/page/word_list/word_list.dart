@@ -1987,7 +1987,7 @@ class WordListPageState extends State<WordListPage>
         // 计算动态阴影
         List<BoxShadow>? shadows;
         if (isAsrReady) {
-          final glow = _glowController.value;
+          final glow = 1.0 - _glowController.value;
           shadows = [
             // 外层大云雾
             BoxShadow(
