@@ -1082,24 +1082,27 @@ class WordBo {
     try {
       Global.logger.d('开始本地查询词典单词位置: dictId=$dictId, spell=$spell');
       final db = MyDatabase.instance;
-      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
-      final word = await wordQuery.getSingleOrNull();
-      if (word == null) {
-        Global.logger.d('未找到拼写为 $spell 的单词');
+      // 使用单条 SQL + Join 一次性查出单词在词典中的序号
+      final query = db.customSelect(
+        'SELECT count(*) as c '
+        'FROM dict_words dw_all '
+        'JOIN dict_words dw_target ON dw_all.dict_id = dw_target.dict_id '
+        'JOIN words w ON dw_target.word_id = w.id '
+        'WHERE dw_all.dict_id = ? AND w.spell = ? '
+        'AND (dw_all.unit < dw_target.unit OR (dw_all.unit = dw_target.unit AND dw_all.seq <= dw_target.seq))',
+        variables: [Variable.withString(dictId), Variable.withString(spell)],
+        readsFrom: {db.dictWords, db.words},
+      );
+      
+      final row = await query.getSingle();
+      final order = row.read<int>('c');
+      
+      if (order == 0) {
+        // 如果没找到，可能是单词不在词典中，或者是拼写本身不存在
+        Global.logger.d('单词 $spell 不在词典 $dictId 中或不存在');
         return Result("SUCCESS", "获取成功", true)..data = -1;
       }
-      final dictWordQuery = db.select(db.dictWords)..where((tbl) => tbl.dictId.equals(dictId) & tbl.wordId.equals(word.id));
-      final dictWord = await dictWordQuery.getSingleOrNull();
-      if (dictWord == null) {
-        Global.logger.d('单词 $spell 不在词典 $dictId 中');
-        return Result("SUCCESS", "获取成功", true)..data = -1;
-      }
-      final countQuery = db.selectOnly(db.dictWords)
-        ..addColumns([countAll()])
-        ..where(db.dictWords.dictId.equals(dictId))
-        ..where(db.dictWords.unit.isSmallerThanValue(dictWord.unit) | (db.dictWords.unit.equals(dictWord.unit) & db.dictWords.seq.isSmallerOrEqualValue(dictWord.seq)));
-      final countResult = await countQuery.getSingle();
-      final order = countResult.read(countAll()) ?? 0;
+      
       Global.logger.d('找到单词 $spell 在词典 $dictId 中的位置: $order');
       return Result("SUCCESS", "获取成功", true)..data = order;
     } catch (e, stackTrace) {
