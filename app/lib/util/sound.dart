@@ -248,6 +248,8 @@ class SoundUtil {
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
     final player = pool.first;
     
+    final startTime = DateTime.now().millisecondsSinceEpoch;
+    Global.logger.d("~~~~~开始播放音效: $soundFileName");
     try {
       await player.stop(); // 确保从头播放
       await player.setPlaybackRate(speed);
@@ -260,6 +262,7 @@ class SoundUtil {
       if (sleepAfterPlayInMilliSeconds > 0) {
         await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
       }
+      Global.logger.d("~~~~~音效播放完成: $soundFileName (耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
     } on TimeoutException catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效超时: $soundFileName', showToast: false);
     } catch (e, st) {

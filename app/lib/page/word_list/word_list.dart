@@ -755,6 +755,8 @@ class WordListPageState extends State<WordListPage>
   var handlingAsrChinese = "";
 
   onAsrResult(event) async {
+    final startTime = DateTime.now().millisecondsSinceEpoch;
+    Global.logger.d("~~~~~收到语音识别原始结果: $event");
     if (!mounted) return;
 
     // 解析逻辑移出 setState
@@ -842,13 +844,12 @@ class WordListPageState extends State<WordListPage>
       newAsrResult = AsrUtil.preprocess(processedEvent);
     }
 
-    Global.logger.d("~~~~~语音识别最终结果: $newAsrResult");
-
+    Global.logger.d("~~~~~语音识别最终结果: $newAsrResult (耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
+    
     // 仅当结果变化时才触发 setState，减少UI重建
     if (newAsrResult != asrResult) {
       setState(() {
         asrResult = newAsrResult;
-
         if (asrResult.isNotEmpty) {
           if (asrResult != handlingAsrChinese) {
             handlingAsrChinese = asrResult;
@@ -880,6 +881,8 @@ class WordListPageState extends State<WordListPage>
 
   /// 检查语音识别结果是否匹配单词的意思
   checkAsrResult(String asrResult) async {
+    final startTime = DateTime.now().millisecondsSinceEpoch;
+    Global.logger.d("~~~~~开始检查识别结果: $asrResult");
     if (asr.state != AsrState.started) {
       return;
     }
@@ -965,11 +968,11 @@ class WordListPageState extends State<WordListPage>
           }
 
           // 播放提示音
-          // 在说中文模式下，如果已经答对所有意思，使用并发播放并不阻塞后续跳转逻辑，以提升爽快感
-          if (answeredAllMeanings) {
+          // 只要满足跳转条件，就使用并发播放且不阻塞逻辑，追求极致跳转速度
+          if (canLeaveCurrWord) {
             SoundUtil.playAssetSoundConcurrent('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 1.0);
-          } else {
-            // 如果还有意思没答完，则等待音效播完，给用户一点留白时间
+          } else if (result.newMatchCount > 0) {
+            // 只有在还没答完且不能跳转时，才等待音效播完，给用户留白时间
             await SoundUtil.playAssetSound('correct.mp3',
                 mustAnswerAll ? 2.0 : 1.5, 1.0, 2000, 300);
           }
@@ -977,11 +980,9 @@ class WordListPageState extends State<WordListPage>
       }
 
       // 离开当前单词，跳转到下一个（如果回答正确）
-      // 背英文模式：立即跳转 (因为是一对一拼写，不需要等待)
-      // 其他模式（背中文）：等待所有并发任务完成（runningAsrTaskCount == 1），以便用户一次性说出多个意思时能全部匹配
-      if (canLeaveCurrWord &&
-          (studyMode == WordListStudyMode.speakEnglish ||
-              runningAsrTaskCount == 1)) {
+      // 移除对 runningAsrTaskCount 的等待，只要满足跳转条件就立即跳转，追求极致速度
+      if (canLeaveCurrWord) {
+        Global.logger.d("~~~~~满足跳转条件，准备跳转 (当前任务检查耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
         // 立即重置标志位，防止重复跳转 (防抖)
         canLeaveCurrWord = false;
 
@@ -1434,6 +1435,7 @@ class WordListPageState extends State<WordListPage>
 
   /// 带加载动画的 ASR 启动封装
   Future<void> _startAsr(AsrLanguage language) async {
+    Global.logger.d("~~~~~正在启动 ASR (${language.name})...");
     if (!mounted) return;
 
     // 如果已经在处理中（无论是否显示动画），都不再重复启动
@@ -1582,6 +1584,7 @@ class WordListPageState extends State<WordListPage>
 
   onWordPressed(WordWrapper word, int index, bool playSound,
       Function? soundFinishListener) async {
+    Global.logger.d("~~~~~onWordPressed 被调用: ${word.word.spell}");
     // 更新书签位置
     setState(() {
       if (bookMark == null || bookMark!.position != baseIndex! + index) {
@@ -1605,6 +1608,7 @@ class WordListPageState extends State<WordListPage>
         bookMark = BookMarkVo(baseIndex! + index, word.word.spell);
         // 异步保存书签，并处理结果
         args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
+          Global.logger.d("~~~~~书签已保存: ${word.word.spell}");
           if (!success) {
             // 如果保存失败，可以记录日志或者通知用户
             Global.logger.e(
@@ -1655,12 +1659,21 @@ class WordListPageState extends State<WordListPage>
         playSound && studyMode != WordListStudyMode.speakEnglish;
     if (shouldPlaySound) {
       debugPrint('播放单词发音: ${word.word.spell}');
-      final stopwatch = Stopwatch()..start();
-      await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-      stopwatch.stop();
-      debugPrint(
-          '单词发音播放完成: ${word.word.spell}, 耗时 ${stopwatch.elapsedMilliseconds}');
-      soundFinishListener?.call();
+      if (studyMode == WordListStudyMode.speakChinese) {
+        // 在说中文模式下，背景播放发音，不阻塞 ASR 启动，追求极致响应速度
+        unawaited(SoundUtil.playPronounceSound2(word.word, audioPlayer).then((_) {
+          Global.logger.d('~~~~~后台单词发音播放完成: ${word.word.spell}');
+        }));
+        // 立即回调，不等待发音结束
+        soundFinishListener?.call();
+      } else {
+        final stopwatch = Stopwatch()..start();
+        await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+        stopwatch.stop();
+        Global.logger.d(
+            '~~~~~单词发音播放完成: ${word.word.spell}, 耗时 ${stopwatch.elapsedMilliseconds}ms');
+        soundFinishListener?.call();
+      }
     } else {
       // 未播放发音时（如背英文模式），也要触发回调以继续流程（启动ASR等）
       soundFinishListener?.call();
