@@ -128,9 +128,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     _filteredCategories = filtered;
   }
 
-  void _initTabController(int tabsCount) {
-    // 已经切换到 DefaultTabController，不再需要手动管理
-  }
 
   void loadData({bool keepSelection = false}) async {
     setState(() {
