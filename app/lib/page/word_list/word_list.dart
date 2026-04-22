@@ -1767,9 +1767,6 @@ class WordListPageState extends State<WordListPage>
         }
         word.answeredAllMeanings = true;
       }
-    } else if (studyMode == WordListStudyMode.hideChinese ||
-        studyMode == WordListStudyMode.hideEnglish) {
-      word.isAnswerRevealed = true;
     } else if (studyMode == WordListStudyMode.speakEnglish) {
       if (!word.speakEnglishPassed) {
         word.speakEnglishPassed = true;
