@@ -372,6 +372,11 @@ double similarityOf2ShengMu(String shengMu1, String shengMu2) {
   if (shengMu1 == shengMu2) {
     return 1.0;
   }
+  // 零声母与半元音 y, w 的相似度（如：阿姨 - 牙医）
+  if ((shengMu1 == "" && (shengMu2 == "y" || shengMu2 == "w")) ||
+      (shengMu2 == "" && (shengMu1 == "y" || shengMu1 == "w"))) {
+    return 0.6;
+  }
   var sim = shengMuSimularityMap["$shengMu1-$shengMu2"];
   sim ??= shengMuSimularityMap["$shengMu2-$shengMu1"];
   return sim ?? 0.0;
