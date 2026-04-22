@@ -167,8 +167,8 @@ class WordListPageState extends State<WordListPage>
 
   var studyMode = WordListStudyMode.list;
 
-  /// 旧字段已移除，这里默认不强制全部答对（后续由 asrPassRule 控制）
-  bool get mustAnswerAll => false;
+  /// 是否强制全部答对（从本地存储读取，默认为 false）
+  bool get mustAnswerAll => GetStorage().read('wordListMustAnswerAll') ?? false;
 
    late WordListPageArgs args;
   bool dataLoaded = false;
@@ -3843,12 +3843,10 @@ class WordListPageState extends State<WordListPage>
                             Switch(
                               value: mustAnswerAll,
                               onChanged: (value) async {
-                                var currentUser = Global.getLoggedInUser();
-                                if (currentUser != null) {
-                                  // 旧字段已删除：此开关UI保留但不再修改本地用户字段
-                                  setState(() {});
-                                  setDialogState(() {});
-                                }
+                                await GetStorage()
+                                    .write('wordListMustAnswerAll', value);
+                                setState(() {});
+                                setDialogState(() {});
                               },
                               activeThumbColor: const Color(0xFF4A90E2),
                               activeTrackColor: const Color(0xFF4A90E2)
