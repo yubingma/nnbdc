@@ -1604,16 +1604,10 @@ class WordListPageState extends State<WordListPage>
         // 更新老位置的单词状态
         if (bookMark != null &&
             bookMark!.position >= baseIndex! &&
-            bookMark!.position <= baseIndex! + words.length) {
-          var oldWord = words[getBookMarkUiPosition()];
-          if (studyMode == WordListStudyMode.dictation) {
-            // 如果用户输入的单词拼写不正确，那么离开该单词时，自动提供正确的拼写
-            // 仅填充正确答案，不在这里播放发音，避免与跳转前的“离开单词发音”重复
-            if (!Util.equalsIgnoreCase(
-                oldWord.spellController.text, oldWord.word.spell)) {
-              oldWord.spellController.text = oldWord.word.spell;
-              oldWord.isAnswerProvidedBySystem = true;
-            }
+            bookMark!.position < baseIndex! + words.length) {
+          int oldIndex = getBookMarkUiPosition();
+          if (oldIndex >= 0 && oldIndex < words.length) {
+            _revealWordAnswer(words[oldIndex]);
           }
         }
 
@@ -1708,6 +1702,44 @@ class WordListPageState extends State<WordListPage>
 
   bool isBookMarkValid(BookMarkVo? bookMark) {
     return bookMark != null;
+  }
+
+  void _revealWordAnswer(WordWrapper word) {
+    if (studyMode == WordListStudyMode.speakChinese) {
+      if (!word.answeredAllMeanings) {
+        var meaningItems = word.word.getMergedMeaningItems();
+        for (var i = 0; i < meaningItems.length; i++) {
+          var parts = splitMeaning2Parts(meaningItems[i].meaning!);
+          for (var j = 0; j < parts.length; j++) {
+            // 如果没被用户答对过，且不是被括号包裹的干扰项
+            if (!word.asrMatchedMeaningItemParts.contains(Pair(i, j)) &&
+                !_isWholeBracketed(parts[j])) {
+              if (!word.asrRevealedMeaningItemParts.contains(Pair(i, j))) {
+                word.asrRevealedMeaningItemParts.add(Pair(i, j));
+              }
+            }
+          }
+        }
+        word.answeredAllMeanings = true;
+      }
+    } else if (studyMode == WordListStudyMode.speakEnglish) {
+      if (!word.speakEnglishPassed) {
+        word.speakEnglishPassed = true;
+        word.isAnswerProvidedBySystem = true;
+      }
+    } else if (studyMode == WordListStudyMode.dictation) {
+      if (!Util.equalsIgnoreCase(word.spellController.text, word.word.spell)) {
+        word.spellController.text = word.word.spell;
+        word.isAnswerProvidedBySystem = true;
+      }
+    }
+  }
+
+  bool _isWholeBracketed(String text) {
+    String trimmed = text.trim();
+    return (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+        (trimmed.startsWith('(') && trimmed.endsWith(')')) ||
+        (trimmed.startsWith('（') && trimmed.endsWith('）'));
   }
 
   onDelBtnPressed(WordWrapper word, int index) {
@@ -2215,9 +2247,11 @@ class WordListPageState extends State<WordListPage>
                   softWrap: false,
                   textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
-                    color: isBookmarked
-                        ? const Color(0xFF0097A7)
-                        : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                    color: word.isAnswerProvidedBySystem
+                        ? (isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                        : (isBookmarked
+                            ? const Color(0xFF0097A7)
+                            : (isDarkMode ? Colors.white : const Color(0xFF1F2937))),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.6,
@@ -2253,9 +2287,11 @@ class WordListPageState extends State<WordListPage>
                 softWrap: false,
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
-                  color: isBookmarked
-                      ? const Color(0xFF0097A7)
-                      : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                  color: word.isAnswerProvidedBySystem
+                      ? (isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                      : (isBookmarked
+                          ? const Color(0xFF0097A7)
+                          : (isDarkMode ? Colors.white : const Color(0xFF1F2937))),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.6,
@@ -2347,7 +2383,7 @@ class WordListPageState extends State<WordListPage>
               color: Util.equalsIgnoreCase(
                       word.word.spell, word.spellController.text)
                   ? word.isAnswerProvidedBySystem
-                      ? Colors.blue
+                      ? (isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
                       : Colors.green
                   : Colors.red),
         );
