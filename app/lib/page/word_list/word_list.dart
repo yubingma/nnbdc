@@ -2453,45 +2453,59 @@ class WordListPageState extends State<WordListPage>
 
 
   Widget _buildHiddenAnswerArea(WordWrapper word, int index, bool isDarkMode, bool isEnglish) {
+    // 准备实际的内容
+    final Widget answerContent = isEnglish
+        ? _buildWordHeader(word, getBookMarkUiPosition() == index, isDarkMode)
+        : _buildWordMeaning(word, isDarkMode, topPadding: 0);
+
     if (word.isAnswerRevealed) {
-      if (isEnglish) {
-        return _buildWordHeader(word, getBookMarkUiPosition() == index, isDarkMode);
-      } else {
-        return _buildWordMeaning(word, isDarkMode, topPadding: 0);
-      }
+      return answerContent;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-      decoration: BoxDecoration(
-        color: isDarkMode
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isDarkMode ? Colors.white10 : Colors.black12,
-          width: 1,
+    // 未揭晓时，使用 Stack：
+    // 底层放透明的实际内容来撑开空间（解决界面晃动问题），顶层放提示按钮
+    return Stack(
+      alignment: Alignment.centerLeft,
+      children: [
+        // 占位层：完全透明但占据空间，确保高度与揭晓后一致
+        Opacity(
+          opacity: 0.0,
+          child: answerContent,
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.visibility_outlined,
-            size: 14,
-            color: isDarkMode ? Colors.white38 : Colors.black38,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            isEnglish ? '点击显示英文' : '点击显示中文',
-            style: TextStyle(
-              fontSize: 13,
-              color: isDarkMode ? Colors.white54 : Colors.black54,
-              fontWeight: FontWeight.w400,
+        // 按钮层：实际看到的“点击显示”按钮
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isDarkMode ? Colors.white10 : Colors.black12,
+              width: 1,
             ),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.visibility_outlined,
+                size: 14,
+                color: isDarkMode ? Colors.white38 : Colors.black38,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                isEnglish ? '点击显示英文' : '点击显示中文',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDarkMode ? Colors.white54 : Colors.black54,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
