@@ -111,6 +111,17 @@ class SoundUtil {
     await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000);
   }
 
+  /// 预取多个发音文件到缓存
+  static void prefetchSounds(List<String> urls) {
+    if (PlatformUtils.isWeb) return;
+    for (var url in urls) {
+      // 这里的 downloadFile 会检查缓存，如果已存在则不会重复下载
+      unawaited(DefaultCacheManager().downloadFile(url).catchError((e) {
+        Global.logger.w('SoundUtil: 预取音频失败: $url, $e');
+      }));
+    }
+  }
+
   /// 播放例句发音
   static Future<void> playSentenceSound(String englishDigest) async {
     var soundUrl = Util.getSentenceSoundUrl(englishDigest);
@@ -149,9 +160,9 @@ class SoundUtil {
       if (!disposeWhenFinish) {
         try {
           final currentState = player.state;
-          if (currentState != PlayerState.stopped && currentState != PlayerState.disposed) {
-            await player.stop().timeout(const Duration(milliseconds: 1000), onTimeout: () => {});
-            await Future.delayed(const Duration(milliseconds: 100));
+          if (currentState == PlayerState.playing || currentState == PlayerState.paused) {
+            await player.stop().timeout(const Duration(milliseconds: 500), onTimeout: () => {});
+            // 移除了 100ms 的人工延迟，现代播放器通常不需要这个间隔
           }
         } catch (stopError, stackTrace) {
           ErrorHandler.handleError(stopError, stackTrace, logPrefix: '停止音频播放时出错', showToast: false);
@@ -181,19 +192,31 @@ class SoundUtil {
         if (PlatformUtils.isWeb) {
           await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
         } else {
-          var file = await DefaultCacheManager().getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-          // 加一点点延迟，确保文件系统同步完成（虽然理论上不需要，但在某些系统上可能有用）
-          await Future.delayed(const Duration(milliseconds: 50));
-          await player.play(DeviceFileSource(file.path)).timeout(Duration(milliseconds: loadTimeoutMs));
+          // 优先检查缓存，避免 getSingleFile 可能带来的网络检查/下载逻辑延迟
+          final cacheManager = DefaultCacheManager();
+          FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
+          
+          String filePath;
+          if (fileInfo != null) {
+            filePath = fileInfo.file.path;
+          } else {
+            // 缓存未命中，则使用 getSingleFile 触发下载
+            var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+            filePath = file.path;
+          }
+          
+          // 移除了 50ms 的同步等待延迟，直接开始播放
+          await player.play(DeviceFileSource(filePath)).timeout(Duration(milliseconds: loadTimeoutMs));
         }
 
         // 等待播放完成
         await completer.future.timeout(Duration(milliseconds: playTimeoutMs));
 
         // 播放完成后增加一小段静音缓冲时间，避免紧接着的音频切换导致的问题
-        await Future.delayed(const Duration(milliseconds: 200));
+        // 这里的 200ms 不影响播放开始的延迟，只影响 await 返回的时间
+        await Future.delayed(const Duration(milliseconds: 100));
       } finally {
-        await stateSubscription.cancel();
+        await stateSubscription?.cancel();
       }
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleAudioError(e, stackTrace, audioType: 'url:$soundUrl');

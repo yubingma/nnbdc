@@ -422,8 +422,9 @@ class WordListPageState extends State<WordListPage>
         }
       });
 
-      // 异步加载学习状态
+      // 异步加载学习状态和预取音频
       _loadLearningStatusForWords(result.rows);
+      _prefetchAudioForWords(result.rows);
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace,
           logPrefix: '加载单词失败', showToast: false);
@@ -455,6 +456,16 @@ class WordListPageState extends State<WordListPage>
 
     if (mounted && hasUpdates) {
       setState(() {});
+    }
+  }
+
+  void _prefetchAudioForWords(List<WordWrapper> newWords) {
+    if (newWords.isEmpty) return;
+    try {
+      final urls = newWords.map((w) => Util.getWordSoundUrl(w.word.spell, word: w.word)).toList();
+      SoundUtil.prefetchSounds(urls);
+    } catch (e) {
+      Global.logger.w('预取音频失败: $e');
     }
   }
 
