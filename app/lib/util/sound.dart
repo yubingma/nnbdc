@@ -237,25 +237,33 @@ class SoundUtil {
     }
   }
 
-  /// 播放资产音效（同步模式）
+  /// 播放资产音效（使用池化播放器以提升性能）
   static Future<void> playAssetSound(
       String soundFileName, double speed, double volume, int timeoutInMilliSeconds, int sleepAfterPlayInMilliSeconds) async {
     if (!_audioSessionConfigured) {
       await configureAudioSession();
     }
-    final player = AudioPlayer();
+    
+    // 获取或创建该音效对应的播放器（单例模式，避免重复创建）
+    final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
+    final player = pool.first;
+    
     try {
-      player.setPlaybackRate(speed);
-      player.setVolume(volume);
-      await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000));
+      await player.stop(); // 确保从头播放
+      await player.setPlaybackRate(speed);
+      await player.setVolume(volume);
+      await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 2000));
+      
+      // 等待播放完成
       await player.onPlayerComplete.first.timeout(Duration(milliseconds: timeoutInMilliSeconds));
-      await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
+      
+      if (sleepAfterPlayInMilliSeconds > 0) {
+        await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
+      }
     } on TimeoutException catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效超时: $soundFileName', showToast: false);
     } catch (e, st) {
       ErrorHandler.handleError(e, st, logPrefix: '播放音效出错: $soundFileName', showToast: false);
-    } finally {
-      player.dispose();
     }
   }
 

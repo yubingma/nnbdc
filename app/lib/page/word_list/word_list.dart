@@ -964,14 +964,15 @@ class WordListPageState extends State<WordListPage>
             canLeaveCurrWord = true;
           }
 
-          // 播放提示音，等待播放完成后再跳转，避免与下一个单词发音重叠
-          // 注意：这里的 await 会阻塞当前 finally 块的执行，从而保持 runningAsrTaskCount 不减少
-          // 这正是用户想要的：在播放声音期间，如果有新的识别结果进来（用户快速说下一个意思），
-          // runningAsrTaskCount 会增加，从而阻止当前任务触发跳转，等待所有意思都说完。
-          int sleepAfterPlay =
-              answeredAllMeanings ? 0 : 500; // 稍微等一会, 给用户说其他释义的机会, 提升爽快感
-          await SoundUtil.playAssetSound('correct.mp3',
-              mustAnswerAll ? 2.0 : 1.5, 1.0, 2000, sleepAfterPlay);
+          // 播放提示音
+          // 在说中文模式下，如果已经答对所有意思，使用并发播放并不阻塞后续跳转逻辑，以提升爽快感
+          if (answeredAllMeanings) {
+            SoundUtil.playAssetSoundConcurrent('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 1.0);
+          } else {
+            // 如果还有意思没答完，则等待音效播完，给用户一点留白时间
+            await SoundUtil.playAssetSound('correct.mp3',
+                mustAnswerAll ? 2.0 : 1.5, 1.0, 2000, 300);
+          }
         }
       }
 
