@@ -133,7 +133,8 @@ extension StudyStepStateExt on StudyStepState {
   }
 }
 
-enum WordListStudyMode { list, dictation, speakChinese, speakEnglish, walkman }
+enum WordListStudyMode { list, dictation, speakChinese, speakEnglish, walkman, hideChinese, hideEnglish }
+
 
 enum TenseType { pastTense, pastParticiple, presentParticiple }
 

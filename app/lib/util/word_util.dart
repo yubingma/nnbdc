@@ -90,6 +90,9 @@ class WordWrapper {
   /// 发音评分（背英文模式）
   int? pronunciationScore;
 
+  /// 在“隐藏答案”模式下，答案是否已展示
+  bool isAnswerRevealed = false;
+
   WordWrapper(this.word, this.tag);
   
   /// 释放资源

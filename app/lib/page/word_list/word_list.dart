@@ -50,6 +50,9 @@ const String menuImportFromScan = '扫描导入';
 const String menuAiStory = 'AI短文';
 const String menuSettings = '学习设置';
 const String menuLegend = '学习状态图例';
+const String menuHideChinese = '隐藏中文';
+const String menuHideEnglish = '隐藏英文';
+
 
 mixin WordsProvider {
   Future<PagedResults<WordWrapper>> getAPageOfWords(
@@ -1707,8 +1710,9 @@ class WordListPageState extends State<WordListPage>
     }
 
     // 播放单词发音（背英文模式开始时不播放，避免泄露答案）
-    final bool shouldPlaySound =
-        playSound && studyMode != WordListStudyMode.speakEnglish;
+    final bool shouldPlaySound = playSound &&
+        studyMode != WordListStudyMode.speakEnglish &&
+        studyMode != WordListStudyMode.hideEnglish;
     if (shouldPlaySound) {
       debugPrint('播放单词发音: ${word.word.spell}');
       if (studyMode == WordListStudyMode.speakChinese) {
@@ -1763,6 +1767,9 @@ class WordListPageState extends State<WordListPage>
         }
         word.answeredAllMeanings = true;
       }
+    } else if (studyMode == WordListStudyMode.hideChinese ||
+        studyMode == WordListStudyMode.hideEnglish) {
+      word.isAnswerRevealed = true;
     } else if (studyMode == WordListStudyMode.speakEnglish) {
       if (!word.speakEnglishPassed) {
         word.speakEnglishPassed = true;
@@ -2444,7 +2451,52 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
+
+  Widget _buildHiddenAnswerArea(WordWrapper word, int index, bool isDarkMode, bool isEnglish) {
+    if (word.isAnswerRevealed) {
+      if (isEnglish) {
+        return _buildWordHeader(word, getBookMarkUiPosition() == index, isDarkMode);
+      } else {
+        return _buildWordMeaning(word, isDarkMode, topPadding: 0);
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDarkMode ? Colors.white10 : Colors.black12,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.visibility_outlined,
+            size: 14,
+            color: isDarkMode ? Colors.white38 : Colors.black38,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            isEnglish ? '点击显示英文' : '点击显示中文',
+            style: TextStyle(
+              fontSize: 13,
+              color: isDarkMode ? Colors.white54 : Colors.black54,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildWordMeaning(WordWrapper word, bool isDarkMode, {double topPadding = 8}) {
+
     return Padding(
       padding: EdgeInsets.only(top: topPadding),
 
@@ -2806,7 +2858,7 @@ class WordListPageState extends State<WordListPage>
                           onLongPress: () => _handleWordLongPress(word, i),
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(8, 12, 0, 12),
-                            child: (studyMode == WordListStudyMode.speakEnglish)
+                            child: (studyMode == WordListStudyMode.speakEnglish || studyMode == WordListStudyMode.hideEnglish)
                                 ? _buildWordMeaning(word, isDarkMode,
                                     topPadding: 0)
                                 : (studyMode == WordListStudyMode.dictation)
@@ -2824,7 +2876,16 @@ class WordListPageState extends State<WordListPage>
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () {
-                            if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+                            if (studyMode == WordListStudyMode.hideChinese ||
+                                studyMode == WordListStudyMode.hideEnglish) {
+                              setState(() {
+                                word.isAnswerRevealed = !word.isAnswerRevealed;
+                              });
+                              // 如果点击的是非当前单词，也引发跳转（书签跟随），但不播放发音
+                              if (getBookMarkUiPosition() != i) {
+                                onWordPressed(word, i, false, null);
+                              }
+                            } else if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
                                     studyMode == WordListStudyMode.speakChinese ||
                                     studyMode == WordListStudyMode.speakEnglish)) {
                               giveALittleHint(word);
@@ -2857,7 +2918,11 @@ class WordListPageState extends State<WordListPage>
                                             ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
                                             : (studyMode == WordListStudyMode.dictation)
                                                 ? _buildDictationTextField(word, i, isDarkMode)
-                                                : _buildWordMeaning(word, isDarkMode, topPadding: 0),
+                                                : (studyMode == WordListStudyMode.hideChinese)
+                                                    ? _buildHiddenAnswerArea(word, i, isDarkMode, false)
+                                                    : (studyMode == WordListStudyMode.hideEnglish)
+                                                        ? _buildHiddenAnswerArea(word, i, isDarkMode, true)
+                                                        : _buildWordMeaning(word, isDarkMode, topPadding: 0),
                                 
                                 /// 给点提示 (如果是默写模式，位置在输入框下方)
                                 if (studyMode == WordListStudyMode.dictation &&
@@ -2880,6 +2945,7 @@ class WordListPageState extends State<WordListPage>
         ),
       ),
     );
+
 
     if (actions.isEmpty) return itemContent;
 
@@ -3288,6 +3354,9 @@ class WordListPageState extends State<WordListPage>
                             menuItems.add(menuSpeakEnglish);
                           }
                           menuItems.add(menuWriteSpell);
+                          menuItems.add(menuHideChinese);
+                          menuItems.add(menuHideEnglish);
+
                           if (args.showAiStory) {
                             menuItems.add(menuAiStory);
                           }
@@ -3333,6 +3402,13 @@ class WordListPageState extends State<WordListPage>
                                 case menuWriteSpell:
                                   icon = Icons.edit;
                                   break;
+                                case menuHideChinese:
+                                  icon = Icons.visibility_off;
+                                  break;
+                                case menuHideEnglish:
+                                  icon = Icons.visibility_off;
+                                  break;
+
                                 case menuAiStory:
                                   icon = Icons.auto_awesome;
                                   break;
@@ -3348,6 +3424,16 @@ class WordListPageState extends State<WordListPage>
                                 case menuWordList:
                                   isSelected =
                                       studyMode == WordListStudyMode.list;
+                                  break;
+                                case menuHideChinese:
+                                  isSelected =
+                                      studyMode == WordListStudyMode.hideChinese;
+                                  break;
+                                case menuHideEnglish:
+                                  isSelected =
+                                      studyMode == WordListStudyMode.hideEnglish;
+                                  break;
+
                                   break;
                                 case menuSpeakChinese:
                                   isSelected = studyMode ==
@@ -3473,6 +3559,27 @@ class WordListPageState extends State<WordListPage>
                                 _unsubscribeMeter();
                                 asr.stopAsr();
                                 break;
+                              case menuHideChinese:
+                                setState(() {
+                                  studyMode = WordListStudyMode.hideChinese;
+                                  for (final w in words) {
+                                    w.isAnswerRevealed = false;
+                                  }
+                                });
+                                _unsubscribeMeter();
+                                asr.stopAsr();
+                                break;
+                              case menuHideEnglish:
+                                setState(() {
+                                  studyMode = WordListStudyMode.hideEnglish;
+                                  for (final w in words) {
+                                    w.isAnswerRevealed = false;
+                                  }
+                                });
+                                _unsubscribeMeter();
+                                asr.stopAsr();
+                                break;
+
                               case menuSpeakChinese:
                                 asr.stopAsr();
                                 asr.reset();

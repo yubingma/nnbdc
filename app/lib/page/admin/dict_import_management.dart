@@ -42,8 +42,8 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
   List<HallGroupVo>? _hallGroups;
   final List<String> _selectedGameHallIds = [];
 
-  final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3']; 
-  final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3', 'longniuniu_v3', 'longhuhu_v3', 'longjielidou_v3'];
+  final List<String> _availableVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3']; 
+  final List<String> _selectedVoices = ['longanyang', 'longanhuan', 'longxiaochun_v3', 'longxiaoxia_v3'];
 
   final TextEditingController _dictNameCtrl = TextEditingController(text: "系统词典");
   final TextEditingController _wordsCtrl = TextEditingController(text: "1|apple|一种甜酸可口的水果\n1|banana\n2|cat");
@@ -248,7 +248,15 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
     try {
       final res = await Api.client.deleteSystemDict(dictId);
       if (res.success) {
-        ToastUtil.success("系统词典[$dictId]及孤儿文件彻底删除成功");
+        ToastUtil.success("服务端粉碎成功，正在同步到本地...");
+
+        // 发起一次立即同步并等待完成，模拟普通用户通过同步获取删除状态
+        await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
+
+        ToastUtil.success("同步完成，本地词典已清理");
+
+        // 重新检查当前输入框中的词书名称，刷新“已存在”提示
+        _checkDictMatch(_dictNameCtrl.text);
       } else {
         ToastUtil.error("删除词书失败: ${res.msg}");
       }
