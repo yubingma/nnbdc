@@ -1,0 +1,10 @@
+nltk
+wordninja
+flask
+matplotlib
+numpy
+pdfplumber
+pypdfium2
+pyspellchecker
+requests
+tqdm

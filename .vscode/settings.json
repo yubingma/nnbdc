@@ -1,4 +1,5 @@
 {
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
     "java.compile.nullAnalysis.mode": "automatic",
     "java.debug.settings.hotCodeReplace": "auto",
     "java.configuration.updateBuildConfiguration": "automatic",
@@ -19,5 +20,9 @@
     },
     "C_Cpp.files.exclude": {
         "tools/llama.cpp/**": true
+    },
+    "files.exclude": {
+        "**/.venv": true,
+        "**/__pycache__": true
     }
 }

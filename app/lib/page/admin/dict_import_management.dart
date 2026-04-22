@@ -647,10 +647,16 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                               return;
                             }
                             lines.sort((a, b) {
-                              String wordA = Util.purifySpell(a.split('|').first.trim());
-                              String wordB = Util.purifySpell(b.split('|').first.trim());
-                              String md5A = md5.convert(utf8.encode(wordA)).toString();
-                              String md5B = md5.convert(utf8.encode(wordB)).toString();
+                              // 取出单词部分（第二个字段）进行 MD5 运算，如果没有分隔符则取整行
+                              String wordA = a.contains('|') ? a.split('|')[1].trim() : a.trim();
+                              String wordB = b.contains('|') ? b.split('|')[1].trim() : b.trim();
+                              
+                              // 也可以直接用整行进行 MD5，这样打乱得更彻底
+                              // String wordA = a.trim();
+                              // String wordB = b.trim();
+
+                              String md5A = md5.convert(utf8.encode(Util.purifySpell(wordA))).toString();
+                              String md5B = md5.convert(utf8.encode(Util.purifySpell(wordB))).toString();
                               return md5A.compareTo(md5B);
                             });
                             _wordsCtrl.text = '${lines.join('\n')}\n';

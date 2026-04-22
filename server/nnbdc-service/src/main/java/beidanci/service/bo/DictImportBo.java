@@ -375,17 +375,17 @@ public class DictImportBo {
             Integer unit = 0;
             if (line.contains("|")) {
                 String[] parts = line.split("\\|");
-                if (parts.length >= 3) { // 格式: unit|spell|meaning
-                    try {
-                        unit = Integer.parseInt(parts[0].trim());
-                    } catch (NumberFormatException e) {
-                        unit = 0;
-                    }
+                try {
+                    unit = Integer.parseInt(parts[0].trim());
+                } catch (NumberFormatException e) {
+                    unit = 0;
+                }
+
+                if (parts.length >= 2) {
                     spell = parts[1].trim();
+                }
+                if (parts.length >= 3) {
                     manualMeaning = parts[2].trim();
-                } else if (parts.length == 2) { // 格式: spell|meaning
-                    spell = parts[0].trim();
-                    manualMeaning = parts[1].trim();
                 }
                 if (manualMeaning != null && manualMeaning.isEmpty()) manualMeaning = null;
             }

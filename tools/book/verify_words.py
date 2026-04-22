@@ -3,6 +3,16 @@ import wordninja
 import re
 import collections
 
+# Ensure necessary NLTK data is downloaded
+try:
+    nltk.data.find('corpora/words')
+except LookupError:
+    nltk.download('words')
+try:
+    nltk.data.find('corpora/brown')
+except LookupError:
+    nltk.download('brown')
+
 # Load standard dictionary
 try:
     from nltk.corpus import words as nltk_words
