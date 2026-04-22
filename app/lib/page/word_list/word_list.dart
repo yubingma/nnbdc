@@ -1029,7 +1029,6 @@ class WordListPageState extends State<WordListPage>
           debugPrint('已切换到下一个单词：$nextWordIndex');
           asrResult = "";
           handlingAsrChinese = "";
-          _setAsrContextualPhrases();
           // 增加 50ms 极短延迟
           Future.delayed(const Duration(milliseconds: 50), () {
             try {
@@ -1057,8 +1056,40 @@ class WordListPageState extends State<WordListPage>
 
   /// 设置ASR上下文短语（热词机制）
   /// 必须在 startAsr 之前调用，否则只能等到下一次 startAsr 生效
-  void _setAsrContextualPhrases() {
-    // 禁止下发上下文短语，以满足用户“无判断、无偏见”的原始识别需求
+  void _setAsrContextualPhrases([WordVo? word]) {
+    try {
+      WordVo? targetWord = word;
+      if (targetWord == null) {
+        int idx = getBookMarkUiPosition();
+        if (idx >= 0 && idx < words.length) {
+          targetWord = words[idx].word;
+        }
+      }
+
+      if (targetWord == null) {
+        asr.setContextualStrings([]);
+        return;
+      }
+
+      List<String> phrases = [];
+      if (studyMode == WordListStudyMode.speakEnglish) {
+        // 说英文模式：热词设为英文拼写
+        phrases.add(targetWord.spell);
+      } else if (studyMode == WordListStudyMode.speakChinese) {
+        // 说中文模式：热词设为该词的所有可能释义项
+        phrases.addAll(
+            AsrUtil.extractContextualPhrases(targetWord.meaningItems ?? []));
+      }
+
+      if (phrases.isNotEmpty) {
+        Global.logger.d('~~~~~WordList: 设置 ASR 上下文热词: $phrases');
+        asr.setContextualStrings(phrases);
+      } else {
+        asr.setContextualStrings([]);
+      }
+    } catch (e) {
+      Global.logger.d('WordList: 设置 ASR 上下文短语失败: $e');
+    }
   }
 
   doInit() {
@@ -1215,8 +1246,6 @@ class WordListPageState extends State<WordListPage>
   void _initializeAndStartAsr() {
     // 重新初始化事件监听，确保事件订阅有效（类似bdc.dart中的处理）
     asr.initAsr(onAsrResult);
-    // 设置热词（必须在startAsr之前）
-    _setAsrContextualPhrases();
     // 然后启动ASR（内部会加载模型、启动麦克风、设置热词、播放提示音）
     _startAsr(decideAsrLanguage());
     _subscribeMeterIfNeeded();
@@ -1480,6 +1509,7 @@ class WordListPageState extends State<WordListPage>
 
     try {
       Global.logger.d('开始启动ASR，语言: ${language.locale}');
+      _setAsrContextualPhrases();
       await asr.startAsr(language);
       Global.logger.d('ASR启动成功，开始播放提示音');
 
@@ -1643,6 +1673,8 @@ class WordListPageState extends State<WordListPage>
       }
     });
 
+
+
     // 在默写（dictation）模式下，点击单词后让输入框自动获得焦点
     if (studyMode == WordListStudyMode.dictation) {
       try {
@@ -1667,11 +1699,8 @@ class WordListPageState extends State<WordListPage>
     if (shouldPlaySound) {
       debugPrint('播放单词发音: ${word.word.spell}');
       if (studyMode == WordListStudyMode.speakChinese) {
-        // 在说中文模式下，背景播放发音，不阻塞 ASR 启动，追求极致响应速度
-        unawaited(SoundUtil.playPronounceSound2(word.word, audioPlayer).then((_) {
-          Global.logger.d('~~~~~后台单词发音播放完成: ${word.word.spell}');
-        }));
-        // 立即回调，不等待发音结束
+        // 在说中文模式下，为了防止 ASR 识别到手机自身发出的发音，改为等待播放完成后再启动 ASR
+        await SoundUtil.playPronounceSound2(word.word, audioPlayer);
         soundFinishListener?.call();
       } else {
         final stopwatch = Stopwatch()..start();
@@ -1689,7 +1718,6 @@ class WordListPageState extends State<WordListPage>
     // 在语音模式下，播放完成后启动语音识别
     if (studyMode == WordListStudyMode.speakChinese ||
         studyMode == WordListStudyMode.speakEnglish) {
-      _setAsrContextualPhrases();
       _startAsr(decideAsrLanguage());
       _subscribeMeterIfNeeded();
     }
@@ -2248,7 +2276,7 @@ class WordListPageState extends State<WordListPage>
                   textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
                     color: word.isAnswerProvidedBySystem
-                        ? (isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                        ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
                         : (isBookmarked
                             ? const Color(0xFF0097A7)
                             : (isDarkMode ? Colors.white : const Color(0xFF1F2937))),
@@ -2288,7 +2316,7 @@ class WordListPageState extends State<WordListPage>
                 textScaler: TextScaler.linear(1.0),
                 style: TextStyle(
                   color: word.isAnswerProvidedBySystem
-                      ? (isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                      ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
                       : (isBookmarked
                           ? const Color(0xFF0097A7)
                           : (isDarkMode ? Colors.white : const Color(0xFF1F2937))),
@@ -2331,7 +2359,7 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
-  Widget _buildDictationTextField(WordWrapper word, int i) {
+  Widget _buildDictationTextField(WordWrapper word, int i, bool isDarkMode) {
     return AnimatedBuilder(
       animation: word.focusNode,
       builder: (context, child) {
@@ -2383,7 +2411,7 @@ class WordListPageState extends State<WordListPage>
               color: Util.equalsIgnoreCase(
                       word.word.spell, word.spellController.text)
                   ? word.isAnswerProvidedBySystem
-                      ? (isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB))
+                      ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
                       : Colors.green
                   : Colors.red),
         );
@@ -2808,14 +2836,14 @@ class WordListPageState extends State<WordListPage>
                                             ? _buildSpeakChineseArea(word)
                                             : (studyMode == WordListStudyMode.speakEnglish)
                                                 ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
-                                                : _buildDictationTextField(word, i),
+                                                : _buildDictationTextField(word, i, isDarkMode),
                                       )
                                     : (studyMode == WordListStudyMode.speakChinese)
                                         ? _buildSpeakChineseArea(word)
                                         : (studyMode == WordListStudyMode.speakEnglish)
                                             ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
                                             : (studyMode == WordListStudyMode.dictation)
-                                                ? _buildDictationTextField(word, i)
+                                                ? _buildDictationTextField(word, i, isDarkMode)
                                                 : _buildWordMeaning(word, isDarkMode, topPadding: 0),
                                 
                                 /// 给点提示 (如果是默写模式，位置在输入框下方)

@@ -245,8 +245,8 @@ List<Widget> renderMeaningItemParts(
         part,
         style: TextStyle(
           color: isDarkMode
-              ? const Color(0xFF60A5FA)
-              : const Color(0xFF2563EB), // 蓝色高亮，以示区分
+              ? const Color(0xFFD1D5DB)
+              : const Color(0xFF374151), // 与标准释义颜色一致
           fontSize: 14,
           fontWeight: FontWeight.w400,
         ),
