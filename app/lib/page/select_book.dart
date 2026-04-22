@@ -407,28 +407,28 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ChoiceChip(
-              label: Text(group.name),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() {
-                    _selectedSubGroupIndex[parentVo.name] = index;
-                  });
-                }
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedSubGroupIndex[parentVo.name] = index;
+                });
               },
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.primaryColor : (isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF2F2F2)),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  group.name,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
               ),
-              selectedColor: AppTheme.primaryColor,
-              backgroundColor: isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF2F2F2),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              side: BorderSide.none,
-              showCheckmark: false,
-              elevation: 0,
-              pressElevation: 0,
             ),
           );
         },
