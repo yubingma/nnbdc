@@ -167,8 +167,8 @@ class WordListPageState extends State<WordListPage>
 
   var studyMode = WordListStudyMode.list;
 
-  /// 是否强制全部答对（从本地存储读取，默认为 false）
-  bool get mustAnswerAll => GetStorage().read('wordListMustAnswerAll') ?? false;
+  /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
+  String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
 
    late WordListPageArgs args;
   bool dataLoaded = false;
@@ -978,9 +978,21 @@ class WordListPageState extends State<WordListPage>
           );
         });
 
-        final answeredAllMeanings = result.matchedCount == result.totalCount;
         if (result.newMatchCount > 0) {
-          if (answeredAllMeanings || !mustAnswerAll) {
+          bool isPass = false;
+          switch (asrPassRule) {
+            case 'HALF':
+              isPass = result.matchedCount >= (result.totalCount / 2).ceil();
+              break;
+            case 'ALL':
+              isPass = result.matchedCount >= result.totalCount;
+              break;
+            case 'ONE':
+            default:
+              isPass = true; // 只要有新匹配且规则是 ONE，即可通过
+              break;
+          }
+          if (isPass) {
             canLeaveCurrWord = true;
           }
         }
@@ -3817,42 +3829,15 @@ class WordListPageState extends State<WordListPage>
                     children: [
                       if (studyMode == WordListStudyMode.speakChinese ||
                           studyMode == WordListStudyMode.speakEnglish)
-                        Row(
-                          children: [
-                            Icon(
-                              mustAnswerAll
-                                  ? Icons.check_circle
-                                  : Icons.radio_button_unchecked,
-                              size: 20,
-                              color: mustAnswerAll
-                                  ? const Color(0xFF4A90E2)
-                                  : Colors.grey[600],
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                mustAnswerAll ? '必须全部答对才跳转' : '答对一个即可跳转',
-                                style: TextStyle(
-                                  color: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.9)
-                                      : const Color(0xFF2D3748),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Switch(
-                              value: mustAnswerAll,
-                              onChanged: (value) async {
-                                await GetStorage()
-                                    .write('wordListMustAnswerAll', value);
-                                setState(() {});
-                                setDialogState(() {});
-                              },
-                              activeThumbColor: const Color(0xFF4A90E2),
-                              activeTrackColor: const Color(0xFF4A90E2)
-                                  .withValues(alpha: 0.3),
-                            ),
-                          ],
+                        _buildAsrPassRuleSelector(
+                          isDarkMode,
+                          asrPassRule,
+                          (value) async {
+                            await GetStorage()
+                                .write('wordListAsrPassRule', value);
+                            setState(() {});
+                            setDialogState(() {});
+                          },
                         ),
                     ],
                   ),
@@ -3862,9 +3847,9 @@ class WordListPageState extends State<WordListPage>
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: Text(
+                    child: const Text(
                       '关闭',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFF4A90E2),
                         fontSize: 13,
                       ),
@@ -3879,6 +3864,58 @@ class WordListPageState extends State<WordListPage>
     } finally {
       isMenuOpen = false;
     }
+  }
+
+  Widget _buildAsrPassRuleSelector(
+      bool isDarkMode, String currentValue, Function(String) onChanged) {
+    const Map<String, String> options = {
+      'ONE': '说出一个意思即可',
+      'HALF': '说出半数意思',
+      'ALL': '说出全部意思',
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        title: Text(
+          '语音识别通过规则',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white70 : Colors.grey[700],
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          options[currentValue] ?? '说出一个意思即可',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white54 : Colors.grey[500],
+            fontSize: 12,
+          ),
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: Icon(
+            Icons.arrow_drop_down_circle_outlined,
+            color: isDarkMode ? Colors.white54 : Colors.grey[600],
+          ),
+          onSelected: onChanged,
+          itemBuilder: (BuildContext context) {
+            return options.entries.map((entry) {
+              return PopupMenuItem<String>(
+                value: entry.key,
+                child: Text(entry.value),
+              );
+            }).toList();
+          },
+        ),
+      ),
+    );
   }
 
   void _generateAiStory() async {
