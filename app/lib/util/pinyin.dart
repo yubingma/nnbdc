@@ -544,6 +544,16 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
     double maxSimSum = dp[M][N];
     double avgSim = maxSimSum / M;
 
+    // 补偿：如果 ASR 结果比目标短，但已匹配的部分相似度极高（>0.92），说明可能是漏读了后缀或尾音
+    // 限制 character count >= 2 以防止单字误匹配
+    int asrCharCount = chinese1.toString().replaceAll(_nonChineseRegExp, "").length;
+    if (asrCharCount < M && asrCharCount >= 2) {
+      double avgSimOfMatched = maxSimSum / asrCharCount;
+      if (avgSimOfMatched > 0.92) {
+        avgSim = (avgSim + avgSimOfMatched) / 2;
+      }
+    }
+
     // 对于短句（1-2个字），提高匹配门槛，防止被发音接近但完全不同的常用字干扰（误判）
     // 对于 3 个字及以上，维持现状以保证容错率
     double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.78 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch)));
