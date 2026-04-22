@@ -920,8 +920,6 @@ class WordListPageState extends State<WordListPage>
           words[currWordIndex].answeredAllMeanings = true;
           // 标记通过以揭示英文
           words[currWordIndex].speakEnglishPassed = true;
-          // 播放正确提示音，等待播放完成后再播放单词发音，避免重叠
-          await SoundUtil.playAssetSound('correct.mp3', 1.5, 1.0, 2000, 0);
           // 识别正确后，先关闭语音识别，避免录到系统发音
           // 先停止ASR（但使用超时，避免长时间等待）
           try {
@@ -965,16 +963,6 @@ class WordListPageState extends State<WordListPage>
         if (result.newMatchCount > 0) {
           if (answeredAllMeanings || !mustAnswerAll) {
             canLeaveCurrWord = true;
-          }
-
-          // 播放提示音
-          // 只要满足跳转条件，就使用并发播放且不阻塞逻辑，追求极致跳转速度
-          if (canLeaveCurrWord) {
-            SoundUtil.playAssetSoundConcurrent('correct.mp3', mustAnswerAll ? 2.0 : 1.5, 1.0);
-          } else if (result.newMatchCount > 0) {
-            // 只有在还没答完且不能跳转时，才等待音效播完，给用户留白时间
-            await SoundUtil.playAssetSound('correct.mp3',
-                mustAnswerAll ? 2.0 : 1.5, 1.0, 2000, 300);
           }
         }
       }
