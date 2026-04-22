@@ -138,6 +138,11 @@ public class AdminController {
         return Result.success(systemHealthCheckBo.checkWordImageIntegrity());
     }
 
+    @GetMapping("/admin/checkSentenceAudioIntegrity.do")
+    public Result<SystemHealthCheckResult> checkSentenceAudioIntegrity() {
+        return Result.success(systemHealthCheckBo.checkSentenceAudioIntegrity());
+    }
+
     @GetMapping("/admin/checkUserDictIntegrity.do")
     public Result<SystemHealthCheckResult> checkUserDictIntegrity() {
         return Result.success(systemHealthCheckBo.checkUserDictIntegrity());

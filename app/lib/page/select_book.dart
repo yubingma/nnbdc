@@ -57,6 +57,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   TabController? _primaryTabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchText = '';
+  final GlobalKey _searchKey = GlobalKey(); // 用于锁定搜索框焦点的稳定 Key
 
   bool isDictSelected(DictVo dict) {
     return selectedDictVos!.contains(dict);
@@ -1465,11 +1466,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       appBar: AppBar(
         backgroundColor: backgroundColor,
         elevation: 0,
-        centerTitle: true,
-        title: Text(
-          '选词书',
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
+        // 将搜索框移至 title，使其处于最顶层的全局位置
+        title: _buildSearchField(isDarkMode, textColor),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
           onPressed: () => Navigator.pop(context),
@@ -1490,44 +1488,39 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             ),
           ),
         ],
-        // TabBar 直接放在 AppBar.bottom，不套任何额外 Widget
-        // 这是原始可工作的结构，套 Column 后 hit testing 会失效
-        bottom: (tabController != null && filteredCategories.isNotEmpty)
-            ? TabBar(
-                controller: tabController,
-                isScrollable: true,
-                labelColor: AppTheme.primaryColor,
-                unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                indicatorColor: AppTheme.primaryColor,
-                indicatorSize: TabBarIndicatorSize.label,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                dividerColor: Colors.transparent,
-                tabAlignment: TabAlignment.start,
-                tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
-              )
-            : null,
+        // 保持 bottom 高度稳定，防止 AppBar 高度跳变导致 title 里的 TextField 失去焦点
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: (tabController != null && filteredCategories.isNotEmpty)
+              ? TabBar(
+                  controller: tabController,
+                  isScrollable: true,
+                  labelColor: AppTheme.primaryColor,
+                  unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  indicatorColor: AppTheme.primaryColor,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  dividerColor: Colors.transparent,
+                  tabAlignment: TabAlignment.start,
+                  tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
+                )
+              : const SizedBox(height: 48),
+        ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildSearchField(isDarkMode, textColor),
-          Expanded(
-            child: (filteredCategories.isEmpty || tabController == null)
-                ? const Center(child: Text('没有找到匹配的词书'))
-                : TabBarView(
-                    controller: tabController,
-                    children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
-                  ),
-          ),
-        ],
-      ),
+      body: (filteredCategories.isEmpty || tabController == null)
+          ? const Center(child: Text('没有找到匹配的词书'))
+          : TabBarView(
+              controller: tabController,
+              children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
+            ),
     );
   }
 
   Widget _buildSearchField(bool isDarkMode, Color textColor) {
     return Container(
+      key: _searchKey, // 绑定稳定 Key
       height: 40,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
         color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),

@@ -57,6 +57,12 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       'step': 12,
       'category': 'word_image_integrity'
     },
+    {
+      'id': 13,
+      'title': '例句发音完整性',
+      'step': 13,
+      'category': 'sentence_audio_integrity'
+    },
     {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
     {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
     {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
@@ -661,6 +667,9 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       // 12. 检查单词配图完整性
       await _checkWordImageIntegrity(result, 12);
 
+      // 13. 检查例句发音完整性
+      await _checkSentenceAudioIntegrity(result, 13);
+
       // 8. 检查网络连接
       await _checkNetworkConnectivity(result, 8);
 
@@ -1022,6 +1031,53 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
         'word_image_integrity',
         stackTrace: stackTrace.toString(),
         logMessage: '单词配图完整性检查: $e',
+      );
+      setState(() {
+        _checkStates[step] = 'failed';
+      });
+    }
+  }
+
+  Future<void> _checkSentenceAudioIntegrity(
+      SystemHealthResult result, int step) async {
+    setState(() {
+      _checkStates[step] = false; // 进行中
+    });
+
+    try {
+      final apiResult = await Api.client.checkSentenceAudioIntegrity();
+
+      if (apiResult.success && apiResult.data != null) {
+        final data = apiResult.data!;
+
+        if ((data.isHealthy == false) && data.issues.isNotEmpty) {
+          for (final issue in data.issues) {
+            result.addIssue(
+                issue.type, issue.description, 'sentence_audio_integrity');
+          }
+          setState(() {
+            _checkStates[step] = 'failed';
+          });
+        } else {
+          setState(() {
+            _checkStates[step] = true; // 通过
+          });
+        }
+      } else {
+        result.addIssue(
+            '例句发音完整性', 'API调用失败: ${apiResult.msg}', 'sentence_audio_integrity');
+        setState(() {
+          _checkStates[step] = 'failed';
+        });
+      }
+    } catch (e, stackTrace) {
+      Global.logger.e('检查例句发音完整性时出错: $e', error: e, stackTrace: stackTrace);
+      result.addIssue(
+        '例句发音完整性',
+        '检查例句发音完整性时出错: $e',
+        'sentence_audio_integrity',
+        stackTrace: stackTrace.toString(),
+        logMessage: '例句发音完整性检查: $e',
       );
       setState(() {
         _checkStates[step] = 'failed';

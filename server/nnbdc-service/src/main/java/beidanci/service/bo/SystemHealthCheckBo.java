@@ -376,6 +376,49 @@ public class SystemHealthCheckBo {
     }
 
     /**
+     * 检查例句发音完整性 (检查音频文件是否存在)
+     */
+    public SystemHealthCheckResult checkSentenceAudioIntegrity() {
+        List<SystemHealthIssue> issues = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        
+        try {
+            // 获取所有摘要不为空的例句记录
+            String sql = "SELECT id, english_digest FROM sentence WHERE english_digest IS NOT NULL AND english_digest != ''";
+            List<Object[]> sentences = namedParameterJdbcTemplate.query(sql, new MapSqlParameterSource(), (rs, rowNum) -> 
+                new Object[]{
+                    rs.getString("id"),
+                    rs.getString("english_digest")
+                }
+            );
+            
+            String baseDir = sysParamUtil.getSoundPath() + "/sentence/";
+            int missingCount = 0;
+            
+            for (Object[] sentence : sentences) {
+                String digest = (String) sentence[1];
+                java.io.File file = new java.io.File(baseDir + digest + ".mp3");
+                if (!file.exists()) {
+                    missingCount++;
+                }
+            }
+            
+            if (missingCount > 0) {
+                issues.add(new SystemHealthIssue(
+                    "例句发音文件缺失",
+                    String.format("发现 %d 条例句记录对应的物理发音文件不存在", missingCount),
+                    "sentence_audio_integrity"
+                ));
+            }
+            
+        } catch (Exception e) {
+            errors.add("检查例句发音完整性时出错: " + e.getMessage());
+        }
+        
+        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
+    /**
      * 自动修复系统问题
      */
     public SystemHealthFixResult autoFixSystemIssues(List<String> issueTypes) {
@@ -395,6 +438,7 @@ public class SystemHealthCheckBo {
                     case "user_study_steps" -> fixedCount += fixUserStudySteps(fixed);
                     case "missing_raw_word_dict", "missing_user_dict" -> fixedCount += fixMissingUserDicts(fixed);
                     case "word_image_integrity" -> fixedCount += fixWordImageIntegrity(fixed);
+                    case "sentence_audio_integrity" -> fixedCount += fixSentenceAudioIntegrity(fixed);
                     default -> errors.add("未知的问题类型: " + issueType);
                 }
                 // fixedCount += fixLearningProgress(fixed);
@@ -542,6 +586,51 @@ public class SystemHealthCheckBo {
             }
         } catch (Exception e) {
             fixed.add("修复单词配图完整性时出错: " + e.getMessage());
+        }
+        return fixedCount;
+    }
+
+    /**
+     * 修复例句发音完整性 (将缺失文件的例句标记为等待 TTS)
+     */
+    private int fixSentenceAudioIntegrity(List<String> fixed) {
+        int fixedCount = 0;
+        try {
+            String sql = "SELECT id, english_digest FROM sentence WHERE english_digest IS NOT NULL AND english_digest != ''";
+            List<Object[]> sentences = namedParameterJdbcTemplate.query(sql, new MapSqlParameterSource(), (rs, rowNum) -> 
+                new Object[]{
+                    rs.getString("id"),
+                    rs.getString("english_digest")
+                }
+            );
+            
+            String baseDir = sysParamUtil.getSoundPath() + "/sentence/";
+            List<String> missingIds = new ArrayList<>();
+            
+            for (Object[] sentence : sentences) {
+                String id = (String) sentence[0];
+                String digest = (String) sentence[1];
+                java.io.File file = new java.io.File(baseDir + digest + ".mp3");
+                if (!file.exists()) {
+                    missingIds.add(id);
+                }
+            }
+            
+            if (!missingIds.isEmpty()) {
+                // 分批更新，避免 SQL 过长
+                int batchSize = 500;
+                for (int i = 0; i < missingIds.size(); i += batchSize) {
+                    List<String> batch = missingIds.subList(i, Math.min(i + batchSize, missingIds.size()));
+                    String updateSql = "UPDATE sentence SET need_tts = 1, the_type = :type WHERE id IN (:ids)";
+                    MapSqlParameterSource params = new MapSqlParameterSource();
+                    params.addValue("type", Sentence.WAITTING_TTS);
+                    params.addValue("ids", batch);
+                    fixedCount += namedParameterJdbcTemplate.update(updateSql, params);
+                }
+                fixed.add(String.format("成功将 %d 条缺失发音的例句标记为等待 TTS 重新生成。", fixedCount));
+            }
+        } catch (Exception e) {
+            fixed.add("修复例句发音完整性时出错: " + e.getMessage());
         }
         return fixedCount;
     }
