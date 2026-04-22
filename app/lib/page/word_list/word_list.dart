@@ -149,7 +149,7 @@ class WordListPage extends StatefulWidget {
 class WordListPageState extends State<WordListPage>
     with
         WidgetsBindingObserver,
-        SingleTickerProviderStateMixin,
+        TickerProviderStateMixin,
         AutomaticKeepAliveClientMixin {
   static const double leftPadding = 6;
   static const double rightPadding = 8;
@@ -214,6 +214,7 @@ class WordListPageState extends State<WordListPage>
   bool _isAsrModelLoading = false; // 控制UI显示（大脑动画）
   bool _isAsrProcessing = false; // 逻辑锁，防止重复启动（无论是否显示动画）
   late AnimationController _asrModelLoadingController;
+  late AnimationController _glowController;
   AsrLanguage? _lastAsrLanguage;
 
   /// "请勿查询"标志，当此标志为true时，如果本来有查询动作（比如滚动到顶部或底部），该动作也不再执行
@@ -657,11 +658,14 @@ class WordListPageState extends State<WordListPage>
     super.initState();
     // 异步预加载音素字典，避免用户说话时才开始解析导致的延迟
     unawaited(PhonemeUtil.load());
-    // 初始化大脑加载动画控制器（脉冲效果）
     _asrModelLoadingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
     WidgetsBinding.instance.addObserver(this);
 
     doInit();
@@ -1129,6 +1133,7 @@ class WordListPageState extends State<WordListPage>
     _audioPlayerDisposed = true; // 标记为已释放
     _meterLevelNotifier.dispose();
     _asrModelLoadingController.dispose();
+    _glowController.dispose();
 
     // 释放所有 WordWrapper 中的资源，移至下一个 Event Loop 执行，避免阻塞 Pop 动画和主页面
     final wordsToDispose = List<WordWrapper>.from(words);
@@ -1914,18 +1919,51 @@ class WordListPageState extends State<WordListPage>
       required bool isBookmarked,
       required bool isDarkMode,
       bool? learningStatus}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          width: 1.2,
-          strokeAlign: BorderSide.strokeAlignInside,
-          color: isBookmarked
-              ? (isDarkMode ? Colors.white24 : Colors.black12)
-              : Colors.transparent,
-        ),
-      ),
+    final isAsrReady = isBookmarked && asr.state == AsrState.started;
+
+    return AnimatedBuilder(
+      animation: _glowController,
+      builder: (context, child) {
+        // 计算动态阴影
+        List<BoxShadow>? shadows;
+        if (isAsrReady) {
+          final glow = _glowController.value;
+          shadows = [
+            // 外层大云雾
+            BoxShadow(
+              color: AppTheme.gradientStartColor.withValues(alpha: 0.2 * glow),
+              blurRadius: 15 + 10 * glow,
+              spreadRadius: 2 + 4 * glow,
+            ),
+            // 内层亮色光晕
+            BoxShadow(
+              color: AppTheme.gradientEndColor.withValues(alpha: 0.3 * glow),
+              blurRadius: 8 + 5 * glow,
+              spreadRadius: 1 + 2 * glow,
+            ),
+          ];
+        }
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.black26 : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: shadows,
+            border: Border.all(
+              width: 1.2,
+              strokeAlign: BorderSide.strokeAlignInside,
+              color: isBookmarked
+                  ? (isAsrReady 
+                      ? AppTheme.gradientStartColor.withValues(alpha: 0.5)
+                      : (isDarkMode ? Colors.white24 : Colors.black12))
+                  : Colors.transparent,
+            ),
+          ),
+          child: child,
+        );
+      },
       child: child,
     );
   }

@@ -357,8 +357,7 @@ List<String> hanziToPinyin(final String hanzi) {
     // er2 r2
     hanzi2 = '而';
   } else if (hanzi2 == '哟' || hanzi2 == '唷') {
-    // yo1 yo5
-    hanzi2 = '优';
+    return ['yo1', 'yao1', 'you1'];
   }
 
   return PinyinHelper.convertToPinyinArray(hanzi2, PinyinFormat.WITH_TONE_NUMBER);
