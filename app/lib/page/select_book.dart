@@ -51,9 +51,10 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   int totalBytes = 0;
   bool _isLoading = false;
   bool _hasUserMadeChanges = false; // 用户是否进行了选择动作
-  TabController? _primaryTabController;
   final Map<String, int> _selectedSubGroupIndex = {}; // 记录每个一级分类下选中的二级分类索引
   List<DictGroupVo>? parentCategories;
+  List<DictGroupVo> _filteredCategories = [];
+  TabController? _primaryTabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchText = '';
 
@@ -90,14 +91,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     dictGroups = [];
     customDicts = [];
     _hasUserMadeChanges = false;
-    // 使用 controller 的监听器确保状态同步
-    _searchController.addListener(() {
-      if (mounted) {
-        setState(() {
-          _searchText = _searchController.text;
-        });
-      }
-    });
+    // 注意：不要用 addListener，它会在焦点变化时也触发，导致点击 Tab 时 setState 重置控制器
+    // 改为只在 onChanged 中更新，避免 Tab 点击被打断
     Future.microtask(() => loadData());
   }
 
@@ -108,14 +103,32 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     super.dispose();
   }
 
-  void _initTabController(int tabsCount) {
-    if (_primaryTabController == null || _primaryTabController!.length != tabsCount) {
+  /// 重新计算过滤后的分类列表，并同步更新 TabController。
+  /// 只应在数据加载完成或搜索词改变时调用，而不是在 build() 中实时重算。
+  void _recomputeFilteredCategories() {
+    final searchLower = _searchText.trim().toLowerCase();
+    final filtered = (parentCategories ?? []).where((category) {
+      if (searchLower.isEmpty) return true;
+      if (category.name == '自定义') {
+        return customDicts?.any((d) => _fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower)) ?? false;
+      }
+      return category.childGroups?.any((subGroup) {
+        return subGroup.dicts?.any((d) =>
+          d.visible == true &&
+          (_fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower))
+        ) ?? false;
+      }) ?? false;
+    }).toList();
+
+    if (_primaryTabController == null || _primaryTabController!.length != filtered.length) {
       _primaryTabController?.dispose();
-      _primaryTabController = TabController(
-        length: tabsCount,
-        vsync: this,
-      );
+      _primaryTabController = TabController(length: filtered.length, vsync: this);
     }
+    _filteredCategories = filtered;
+  }
+
+  void _initTabController(int tabsCount) {
+    // 已经切换到 DefaultTabController，不再需要手动管理
   }
 
   void loadData({bool keepSelection = false}) async {
@@ -273,15 +286,17 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       }
 
       if (!mounted) return;
-      // 更新UI
+      // 更新UI，并重算过滤分类
       setState(() {
         _isLoading = false;
+        _recomputeFilteredCategories();
       });
     } catch (e, stackTrace) {
       ErrorHandler.handleNetworkError(e, stackTrace, api: '加载词书数据', showToast: true);
       if (!mounted) return;
       setState(() {
         _isLoading = false;
+        _recomputeFilteredCategories();
       });
     } finally {
       // 重新启用API调用的自动loading
@@ -1442,21 +1457,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       );
     }
 
-    final searchLower = _searchText.trim().toLowerCase();
-    final filteredCategories = (parentCategories ?? []).where((category) {
-      if (searchLower.isEmpty) return true;
-      if (category.name == '自定义') {
-        return customDicts?.any((d) => _fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower)) ?? false;
-      }
-      return category.childGroups?.any((subGroup) {
-        return subGroup.dicts?.any((d) => 
-          d.visible == true && 
-          (_fuzzyMatch(d.name, searchLower) || _fuzzyMatch(d.shortName, searchLower))
-        ) ?? false;
-      }) ?? false;
-    }).toList();
-
-    _initTabController(filteredCategories.length);
+    final filteredCategories = _filteredCategories;
+    final tabController = _primaryTabController;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -1488,38 +1490,37 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             ),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(104),
-          child: Column(
-            children: [
-              _buildSearchField(isDarkMode, textColor),
-              if (filteredCategories.isNotEmpty)
-                TabBar(
-                  controller: _primaryTabController,
-                  isScrollable: true,
-                  labelColor: AppTheme.primaryColor,
-                  unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  indicatorColor: AppTheme.primaryColor,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  dividerColor: Colors.transparent,
-                  tabAlignment: TabAlignment.start,
-                  tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
-                )
-              else
-                const SizedBox(height: 48),
-            ],
-          ),
-        ),
+        // TabBar 直接放在 AppBar.bottom，不套任何额外 Widget
+        // 这是原始可工作的结构，套 Column 后 hit testing 会失效
+        bottom: (tabController != null && filteredCategories.isNotEmpty)
+            ? TabBar(
+                controller: tabController,
+                isScrollable: true,
+                labelColor: AppTheme.primaryColor,
+                unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                indicatorColor: AppTheme.primaryColor,
+                indicatorSize: TabBarIndicatorSize.label,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                dividerColor: Colors.transparent,
+                tabAlignment: TabAlignment.start,
+                tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
+              )
+            : null,
       ),
-      body: filteredCategories.isNotEmpty
-          ? TabBarView(
-              controller: _primaryTabController,
-              children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
-            )
-          : const Center(
-              child: Text('没有找到匹配的词书'),
-            ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildSearchField(isDarkMode, textColor),
+          Expanded(
+            child: (filteredCategories.isEmpty || tabController == null)
+                ? const Center(child: Text('没有找到匹配的词书'))
+                : TabBarView(
+                    controller: tabController,
+                    children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1535,9 +1536,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         controller: _searchController,
         style: TextStyle(color: textColor, fontSize: 14),
         onChanged: (value) {
-          // 额外的 onChanged 确保某些平台下的实时性
           setState(() {
             _searchText = value;
+            _recomputeFilteredCategories();
           });
         },
         decoration: InputDecoration(
