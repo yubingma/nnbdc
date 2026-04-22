@@ -251,12 +251,17 @@ class WordListPageState extends State<WordListPage>
   }
 
   Future<void> loadData() async {
-    final sw = Stopwatch()..start();
+    final swTotal = Stopwatch()..start();
+    final swInit = Stopwatch()..start();
+    
     // 并行获取书签和权限检查
     final results = await Future.wait([
       checkArgs(),
       args.bookMarkProvider.getBookMark(),
     ]);
+
+    Global.logger.d('WordListPage: checkArgs and getBookMark took ${swInit.elapsedMilliseconds}ms');
+    swInit.reset();
 
     if (!(results[0] as bool)) {
       return;
@@ -265,7 +270,10 @@ class WordListPageState extends State<WordListPage>
 
     if (isBookMarkValid(bookMark)) {
       // 有书签：加载书签所在的那一页单词
+      final swIdx = Stopwatch()..start();
       var wordIndex = await args.wordsProvider.getWordIndex(bookMark!.spell);
+      Global.logger.d('WordListPage: getWordIndex took ${swIdx.elapsedMilliseconds}ms');
+      
       if (wordIndex != -1) {
         // 计算书签所在页的起始位置
         baseIndex = (wordIndex ~/ _pageSize) * _pageSize;
@@ -295,6 +303,8 @@ class WordListPageState extends State<WordListPage>
     setState(() {
       dataLoaded = true;
     });
+    
+    Global.logger.d('WordListPage: loadData total completed in ${swTotal.elapsedMilliseconds}ms');
 
     // 数据加载完成后，如果当前是语音模式，启动ASR
     if (studyMode == WordListStudyMode.speakChinese ||
@@ -305,7 +315,7 @@ class WordListPageState extends State<WordListPage>
         }
       });
     }
-    Global.logger.d('WordListPage: loadData completed in ${sw.elapsedMilliseconds}ms (baseIndex=$baseIndex)');
+    Global.logger.d('WordListPage: loadData completed in ${swTotal.elapsedMilliseconds}ms (baseIndex=$baseIndex)');
   }
 
   doQuery(bool clearCurrent, int fromIndex, final int pageSize,
@@ -1062,7 +1072,7 @@ class WordListPageState extends State<WordListPage>
     if (args.canEditWord == false && args.wordsProvider is WordModifier) {
       final String? targetDictId = (args.wordsProvider as WordModifier).targetDictId;
       if (targetDictId != null) {
-        final dict = await MyDatabase.instance.dictsDao.findById(targetDictId);
+        final dict = await WordBo().getDict(targetDictId);
         if (dict != null && dict.editable) {
           args.canEditWord = true;
           args.showDelBtn = true;
