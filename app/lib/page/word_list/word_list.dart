@@ -2634,16 +2634,12 @@ class WordListPageState extends State<WordListPage>
         ? (isBookmarked ? const Color(0xFF2A2A2A) : const Color(0xFF1E1E1E))
         : (isBookmarked ? const Color(0xFFF5F5F5) : Colors.white);
 
-    Widget itemContent = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _handleWordTap(word, i),
-      onLongPress: () => _handleWordLongPress(word, i),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          color: bgColor,
-          child: Stack(
-            children: [
+    Widget itemContent = ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        color: bgColor,
+        child: Stack(
+          children: [
             /// 1. 左侧高长条背景 (通过 Positioned.fill 自动伸缩至全高)
             Positioned.fill(
               child: Row(
@@ -2659,77 +2655,80 @@ class WordListPageState extends State<WordListPage>
               ),
             ),
 
-          /// 2. 实际内容层
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              /// 左侧指示器区域 (固定宽度 24)
-              SizedBox(
-                width: 24,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-
-                    /// 单词序号 (纯文本)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
-                        textScaler: const TextScaler.linear(1.0),
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                          color: isDarkMode ? Colors.white38 : Colors.black38,
+            /// 2. 实际内容层
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                /// 左侧热区 (序号 + 状态)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _handleWordTap(word, i),
+                  onLongPress: () => _handleWordLongPress(word, i),
+                  child: SizedBox(
+                    width: 24,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        /// 单词序号 (纯文本)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
+                            textScaler: const TextScaler.linear(1.0),
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w500,
+                              color: isDarkMode ? Colors.white38 : Colors.black38,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+
+                        /// 状态色块 (正方形小色块)
+                        if (statusColor != null)
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: statusColor,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+
+                        /// 掌握度进度条（横条）
+                        if (args.showWordProgress)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: _buildWordProgressContainer(word, isDarkMode,
+                                width: 18),
+                          ),
+
+                        // 紧凑波形或评分
+                        if (studyMode == WordListStudyMode.speakChinese ||
+                            studyMode == WordListStudyMode.speakEnglish)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: _buildAudioIndicator(
+                                word, isBookmarked, isDarkMode),
+                          ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-
-                    /// 状态色块 (正方形小色块)
-                    if (statusColor != null)
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-
-                    /// 掌握度进度条（横条）
-                    if (args.showWordProgress)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: _buildWordProgressContainer(word, isDarkMode,
-                            width: 18),
-                      ),
-
-                    // 紧凑波形或评分
-                    if (studyMode == WordListStudyMode.speakChinese ||
-                        studyMode == WordListStudyMode.speakEnglish)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: _buildAudioIndicator(
-                            word, isBookmarked, isDarkMode),
-                      ),
-                  ],
+                  ),
                 ),
-              ),
 
-              /// 单词内容 - 拼写和释义排成一行
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                /// 单词内容区
+                Expanded(
+                  child: Row(
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          /// 左侧区域 (flex 2)
-                          Expanded(
-                            flex: 2,
+                      /// 左半部内容 (点击发音)
+                      Expanded(
+                        flex: 2,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _handleWordTap(word, i),
+                          onLongPress: () => _handleWordLongPress(word, i),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 12, 0, 12),
                             child: (studyMode == WordListStudyMode.speakEnglish)
                                 ? _buildWordMeaning(word, isDarkMode,
                                     topPadding: 0)
@@ -2739,60 +2738,70 @@ class WordListPageState extends State<WordListPage>
                                         isDarkMode,
                                         learningStatus: learningStatus),
                           ),
-
-                          if (studyMode != WordListStudyMode.dictation)
-                            const SizedBox(width: 12),
-
-                          /// 右侧区域 (flex 3)
-                          Expanded(
-                            flex: 3,
-                            child: (isBookmarked && (studyMode == WordListStudyMode.dictation ||
-                                    studyMode == WordListStudyMode.speakChinese ||
-                                    studyMode == WordListStudyMode.speakEnglish))
-                                ? GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      // 如果是默写模式且点击了输入框之外的区域，或者是语音模式
-                                      giveALittleHint(word);
-                                    },
-                                    child: IgnorePointer(
-                                      // 默写模式下需要点击输入框，不能 ignore
-                                      ignoring: studyMode != WordListStudyMode.dictation,
-                                      child: (studyMode == WordListStudyMode.speakChinese)
-                                          ? _buildSpeakChineseArea(word)
-                                          : (studyMode == WordListStudyMode.speakEnglish)
-                                              ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
-                                              : _buildDictationTextField(word, i),
-                                    ),
-                                  )
-                                : (studyMode == WordListStudyMode.speakChinese)
-                                    ? _buildSpeakChineseArea(word)
-                                    : (studyMode == WordListStudyMode.speakEnglish)
-                                        ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
-                                        : (studyMode == WordListStudyMode.dictation)
-                                            ? _buildDictationTextField(word, i)
-                                            : _buildWordMeaning(word, isDarkMode, topPadding: 0),
-                          ),
-                        ],
+                        ),
                       ),
 
-                      /// 给点提示 (如果是默写模式，位置在输入框下方)
-                      if (studyMode == WordListStudyMode.dictation &&
-                          getBookMarkUiPosition() == i)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: _buildDictationHint(word),
+                      /// 右半部内容 (点击提示)
+                      Expanded(
+                        flex: 3,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+                                    studyMode == WordListStudyMode.speakChinese ||
+                                    studyMode == WordListStudyMode.speakEnglish)) {
+                              giveALittleHint(word);
+                            } else {
+                              // 非当前单词或非做题模式下，点击右侧也触发发音/跳转
+                              _handleWordTap(word, i);
+                            }
+                          },
+                          onLongPress: () => _handleWordLongPress(word, i),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+                                        studyMode == WordListStudyMode.speakChinese ||
+                                        studyMode == WordListStudyMode.speakEnglish))
+                                    ? IgnorePointer(
+                                        ignoring: studyMode != WordListStudyMode.dictation,
+                                        child: (studyMode == WordListStudyMode.speakChinese)
+                                            ? _buildSpeakChineseArea(word)
+                                            : (studyMode == WordListStudyMode.speakEnglish)
+                                                ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
+                                                : _buildDictationTextField(word, i),
+                                      )
+                                    : (studyMode == WordListStudyMode.speakChinese)
+                                        ? _buildSpeakChineseArea(word)
+                                        : (studyMode == WordListStudyMode.speakEnglish)
+                                            ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
+                                            : (studyMode == WordListStudyMode.dictation)
+                                                ? _buildDictationTextField(word, i)
+                                                : _buildWordMeaning(word, isDarkMode, topPadding: 0),
+                                
+                                /// 给点提示 (如果是默写模式，位置在输入框下方)
+                                if (studyMode == WordListStudyMode.dictation &&
+                                    getBookMarkUiPosition() == i)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: _buildDictationHint(word),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-    ),
     );
 
     if (actions.isEmpty) return itemContent;
