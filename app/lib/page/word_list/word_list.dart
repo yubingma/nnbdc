@@ -517,17 +517,31 @@ class WordListPageState extends State<WordListPage>
             children: List.generate(bars, (i) {
               final v = buckets[i].clamp(0.0, 1.0);
               final h = 1.0 + v * 47.0; // 1..48 px 高度（v=0 时几乎不可见）
+              final isReady = asr.state == AsrState.started;
               return Expanded(
                 child: Align(
                   alignment: Alignment.bottomCenter,
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     width: double.infinity,
                     height: h,
-                    margin: EdgeInsets.zero,
+                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
                     decoration: BoxDecoration(
-                      color: Color.lerp(AppTheme.gradientStartColor,
-                          AppTheme.gradientEndColor, v),
+                      color: isReady
+                          ? Color.lerp(AppTheme.gradientStartColor,
+                              AppTheme.gradientEndColor, v)
+                          : (isDarkMode ? Colors.white10 : Colors.black12),
                       borderRadius: BorderRadius.circular(2),
+                      boxShadow: isReady && v > 0.5
+                          ? [
+                              BoxShadow(
+                                color: AppTheme.gradientStartColor
+                                    .withValues(alpha: 0.3),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              )
+                            ]
+                          : null,
                     ),
                   ),
                 ),
@@ -568,13 +582,16 @@ class WordListPageState extends State<WordListPage>
       children: List.generate(
           16,
           (i) => Expanded(
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
                   height: 4,
-                  margin: EdgeInsets.zero,
+                  margin: const EdgeInsets.symmetric(horizontal: 0.5),
                   decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? const Color(0xFF2A2A2A)
-                        : const Color(0xFFEAEAEA),
+                    color: asr.state == AsrState.started
+                        ? AppTheme.gradientStartColor.withValues(alpha: 0.3)
+                        : (isDarkMode
+                            ? const Color(0xFF2A2A2A)
+                            : const Color(0xFFEAEAEA)),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -784,6 +801,7 @@ class WordListPageState extends State<WordListPage>
               candidates.map((e) => e.toString()).toList();
 
           // 结合拼写相似度和音素相似度的智能选择 (Async)
+          // 结合拼写相似度和音素相似度的智能选择 (Async)
           final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
               candidateStrings, target);
           // 记录评分到当前单词
@@ -883,12 +901,14 @@ class WordListPageState extends State<WordListPage>
   checkAsrResult(String asrResult) async {
     final startTime = DateTime.now().millisecondsSinceEpoch;
     Global.logger.d("~~~~~开始检查识别结果: $asrResult");
-    if (asr.state != AsrState.started) {
-      return;
-    }
 
     final currWordIndex = getBookMarkUiPosition();
-    if (currWordIndex == -1) {
+    if (currWordIndex == -1) return;
+
+    // 记录开始检查时的单词ID
+    final checkWordId = words[currWordIndex].word.id;
+
+    if (asr.state != AsrState.started) {
       return;
     }
 
@@ -903,8 +923,8 @@ class WordListPageState extends State<WordListPage>
             .d('背英文模式检查: inputText=$inputText, correctSpell=$correctSpell');
 
         // 判定通过条件：
-        // 1. 精确拼写匹配（preprocessEnglish 已做过编辑距离/映射表救援）
-        // 2. 音素相似度达到阈值（兜底同音词场景，如 mail vs male）
+        // 1. 精确拼写匹配
+        // 2. 音素相似度达到阈值
         bool isMatch = inputText == correctSpell;
         if (!isMatch && currWordIndex >= 0 && currWordIndex < words.length) {
           final score = words[currWordIndex].pronunciationScore;
@@ -918,10 +938,8 @@ class WordListPageState extends State<WordListPage>
         if (isMatch) {
           canLeaveCurrWord = true;
           words[currWordIndex].answeredAllMeanings = true;
-          // 标记通过以揭示英文
           words[currWordIndex].speakEnglishPassed = true;
-          // 识别正确后，先关闭语音识别，避免录到系统发音
-          // 先停止ASR（但使用超时，避免长时间等待）
+          
           try {
             await asr.stopAsr().timeout(
               const Duration(milliseconds: 500),
@@ -929,15 +947,13 @@ class WordListPageState extends State<WordListPage>
                 Global.logger.w('停止ASR超时，继续播放单词发音');
               },
             );
-            // reset操作不等待，在后台执行
-            asr.reset().catchError((e) {
+            await asr.reset().catchError((e) {
               Global.logger.d("重置ASR失败: $e");
             });
           } catch (e) {
             Global.logger.d("停止ASR失败: $e");
-            // 即使停止失败，也继续播放单词发音
           }
-          // 然后播放一次标准发音（提示音已播放完成，ASR已停止，不会干扰播放）
+          
           try {
             if (!_audioPlayerDisposed) {
               await SoundUtil.playPronounceSound2(
@@ -946,7 +962,6 @@ class WordListPageState extends State<WordListPage>
           } catch (e) {
             Global.logger.d("播放发音失败: $e");
           }
-          Global.logger.d('背英文模式：拼写正确！');
         }
       } else {
         // 背中文模式：检查中文释义
@@ -958,7 +973,6 @@ class WordListPageState extends State<WordListPage>
           );
         });
 
-        // 说出了正确意思，播放音效，同时置可离开当前单词的标志
         final answeredAllMeanings = result.matchedCount == result.totalCount;
         if (result.newMatchCount > 0) {
           if (answeredAllMeanings || !mustAnswerAll) {
@@ -968,33 +982,36 @@ class WordListPageState extends State<WordListPage>
       }
 
       // 离开当前单词，跳转到下一个（如果回答正确）
-      // 移除对 runningAsrTaskCount 的等待，只要满足跳转条件就立即跳转，追求极致速度
       if (canLeaveCurrWord) {
+        // 必须保证还是同一个单词（防止异步竞争）
+        if (words[currWordIndex].word.id != checkWordId) {
+          Global.logger.d("~~~~~单词已发生变化，丢弃旧识别结果的跳转请求");
+          return;
+        }
+
         Global.logger.d("~~~~~满足跳转条件，准备跳转 (当前任务检查耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
         // 立即重置标志位，防止重复跳转 (防抖)
         canLeaveCurrWord = false;
 
-        // 提示音已播放完成，可以安全地停止 ASR
         try {
-          asr.stopAsr();
-          asr.reset(); // 清除缓冲区
+          await asr.stopAsr();
+          await asr.reset(); // 清除缓冲区
         } catch (e) {
           Global.logger.d("停止ASR失败: $e");
         }
 
-        // 跳过全部释义已经答对的单词
         var nextWordIndex = currWordIndex + 1;
         if (nextWordIndex == words.length) {
-          nextWordIndex = 0; // 已达末尾，回到开始
+          nextWordIndex = 0;
         }
-        var count = 0; // 已尝试跳过的单词数量，不得大于单词数量，防止无穷循环
+        var count = 0;
         while (nextWordIndex < words.length) {
           if (!words[nextWordIndex].answeredAllMeanings) {
             break;
           }
           nextWordIndex += 1;
           if (nextWordIndex == words.length) {
-            nextWordIndex = 0; // 已达末尾，回到开始
+            nextWordIndex = 0;
           }
           count += 1;
           if (count > words.length) {
@@ -1006,16 +1023,17 @@ class WordListPageState extends State<WordListPage>
         debugPrint('跳转到下一个单词：$nextWordIndex');
         jumpToNextWord(nextWordIndex - 1, true, () {
           debugPrint('已切换到下一个单词：$nextWordIndex');
-          // 新单词：清空识别展示，避免显示上一个单词的结果
           asrResult = "";
           handlingAsrChinese = "";
-          // 确保先设置热词
           _setAsrContextualPhrases();
-          try {
-            _startAsr(decideAsrLanguage());
-          } catch (e) {
-            Global.logger.e("启动ASR失败: $e");
-          }
+          // 增加 50ms 极短延迟
+          Future.delayed(const Duration(milliseconds: 50), () {
+            try {
+              _startAsr(decideAsrLanguage());
+            } catch (e) {
+              Global.logger.e("启动ASR失败: $e");
+            }
+          });
         });
       }
     } catch (e) {
@@ -1050,10 +1068,12 @@ class WordListPageState extends State<WordListPage>
     
     asr.addStateListener((state) {
       if (!mounted) return;
+      setState(() {
+        // 触发 UI 重绘以更新 ASR 状态指示器
+      });
       if (state == AsrState.started) {
         // 恢复识别后，确保重新订阅电平流
         _subscribeMeterIfNeeded();
-        // 上下文短语已在启动前通过 _setAsrContextualPhrases 设置，此处不再重复设置
       } else if (state == AsrState.stopped) {
         _unsubscribeMeter();
       }
@@ -1459,8 +1479,8 @@ class WordListPageState extends State<WordListPage>
       Global.logger.d('ASR启动成功，开始播放提示音');
 
       // 播放提示音, 提醒用户可以开始说话
-      Global.logger.d('播放ASR启动提示音');
-      SoundUtil.playAsrReadyHintSound();
+      Global.logger.d('播放ASR启动提示音 (已禁用)');
+      // SoundUtil.playAsrReadyHintSound();
     } catch (e, stackTrace) {
       Global.logger.e('❌ ASR启动失败', error: e, stackTrace: stackTrace);
     } finally {
@@ -1638,8 +1658,8 @@ class WordListPageState extends State<WordListPage>
     // 强制停止ASR将导致状态变化，从而触发 listener 更新 context strings (热词)
     if (studyMode == WordListStudyMode.speakChinese ||
         studyMode == WordListStudyMode.speakEnglish) {
-      asr.stopAsr();
-      asr.reset(); // 清除缓冲区
+      await asr.stopAsr();
+      await asr.reset(); // 清除缓冲区
     }
 
     // 播放单词发音（背英文模式开始时不播放，避免泄露答案）
