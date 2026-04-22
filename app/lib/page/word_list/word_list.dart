@@ -48,6 +48,7 @@ const String menuWriteSpell = '拼写练习';
 const String menuImportFromBook = '从词书导入';
 const String menuImportFromScan = '扫描导入';
 const String menuAiStory = 'AI短文';
+const String menuSettings = '学习设置';
 const String menuLegend = '学习状态图例';
 
 mixin WordsProvider {
@@ -3278,6 +3279,10 @@ class WordListPageState extends State<WordListPage>
                           if (args.showAiStory) {
                             menuItems.add(menuAiStory);
                           }
+                          if (studyMode == WordListStudyMode.speakChinese ||
+                              studyMode == WordListStudyMode.speakEnglish) {
+                            menuItems.add(menuSettings);
+                          }
 
                           // 5. 显示菜单 (使用 RootNavigator)
                           // ignore: use_build_context_synchronously
@@ -3319,6 +3324,9 @@ class WordListPageState extends State<WordListPage>
                                 case menuAiStory:
                                   icon = Icons.auto_awesome;
                                   break;
+                                case menuSettings:
+                                  icon = Icons.settings;
+                                  break;
                                 default:
                                   icon = Icons.help_outline;
                               }
@@ -3349,6 +3357,9 @@ class WordListPageState extends State<WordListPage>
                                   isSelected = false;
                                   break;
                                 case menuAiStory:
+                                  isSelected = false;
+                                  break;
+                                case menuSettings:
                                   isSelected = false;
                                   break;
                               }
@@ -3489,6 +3500,9 @@ class WordListPageState extends State<WordListPage>
                                 case menuAiStory:
                                   _generateAiStory();
                                   break;
+                                case menuSettings:
+                                  _showSettingsDialog();
+                                  break;
                               }
                           }
                         } finally {
@@ -3557,27 +3571,7 @@ class WordListPageState extends State<WordListPage>
                           child: renderPage(),
                         ),
                 ),
-                // 设置按钮 - 固定在右下角，使用 Column 垂直排列
-                if (studyMode == WordListStudyMode.speakChinese ||
-                    studyMode == WordListStudyMode.speakEnglish)
-                  Positioned(
-                    right: 16,
-                    bottom: 16,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // 设置按钮
-                        FloatingActionButton(
-                          mini: true,
-                          heroTag: "settings",
-                          child: const Icon(Icons.settings),
-                          onPressed: () {
-                            _showSettingsDialog();
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+
               ],
             ),
           ),
