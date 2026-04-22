@@ -21,6 +21,7 @@ import beidanci.service.util.SysParamUtil;
  */
 @Service
 public class SystemHealthCheckBo {
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class);
 
     @Autowired
     private DictBo dictBo;
@@ -403,6 +404,8 @@ public class SystemHealthCheckBo {
                 }
             }
             
+            logger.info("例句发音完整性检查完成：扫描 {} 条记录，发现 {} 条缺失音频文件", sentences.size(), missingCount);
+            
             if (missingCount > 0) {
                 issues.add(new SystemHealthIssue(
                     "例句发音文件缺失",
@@ -617,17 +620,21 @@ public class SystemHealthCheckBo {
             }
             
             if (!missingIds.isEmpty()) {
+                logger.info("开始修复例句发音完整性：准备更新 {} 条记录", missingIds.size());
                 // 分批更新，避免 SQL 过长
                 int batchSize = 500;
                 for (int i = 0; i < missingIds.size(); i += batchSize) {
                     List<String> batch = missingIds.subList(i, Math.min(i + batchSize, missingIds.size()));
-                    String updateSql = "UPDATE sentence SET need_tts = 1, the_type = :type WHERE id IN (:ids)";
+                    String updateSql = "UPDATE sentence SET need_tts = true, the_type = :type WHERE id IN (:ids)";
                     MapSqlParameterSource params = new MapSqlParameterSource();
                     params.addValue("type", Sentence.WAITTING_TTS);
                     params.addValue("ids", batch);
                     fixedCount += namedParameterJdbcTemplate.update(updateSql, params);
                 }
                 fixed.add(String.format("成功将 %d 条缺失发音的例句标记为等待 TTS 重新生成。", fixedCount));
+                logger.info("例句发音完整性修复完成：已成功更新 {} 条记录的状态", fixedCount);
+            } else {
+                logger.info("例句发音完整性修复：未发现需要修复的记录");
             }
         } catch (Exception e) {
             fixed.add("修复例句发音完整性时出错: " + e.getMessage());
