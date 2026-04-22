@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:get_storage/get_storage.dart';
 
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -70,6 +71,9 @@ mixin WordsProvider {
 
   /// 获取单词的学习状态：null=未学习, true=已掌握, false=学习中
   Future<bool?> getWordLearningStatus(String wordId) async => null;
+
+  /// 批量获取单词的学习状态
+  Future<Map<String, bool?>> getWordsLearningStatus(List<String> wordIds) async => {};
 
   /// 当单词被标记为“掌握”时，是否保留在当前UI列表中（不自动移除）
   bool get keepWordsOnMaster => false;
@@ -417,11 +421,20 @@ class WordListPageState extends State<WordListPage>
   }
 
   Future<void> _loadLearningStatusForWords(List<WordWrapper> newWords) async {
+    final wordIds = newWords
+        .where((w) => w.word.id != null && w.initialLearningStatus == null)
+        .map((w) => w.word.id!)
+        .toList();
+    if (wordIds.isEmpty) return;
+
+    final statusMap = await args.wordsProvider.getWordsLearningStatus(wordIds);
+    if (statusMap.isEmpty) return;
+
     bool hasUpdates = false;
     for (var wordWrapper in newWords) {
       final wordId = wordWrapper.word.id;
-      if (wordId != null && wordWrapper.initialLearningStatus == null) {
-        final status = await args.wordsProvider.getWordLearningStatus(wordId);
+      if (wordId != null && statusMap.containsKey(wordId)) {
+        final status = statusMap[wordId];
         if (status != null) {
           wordWrapper.initialLearningStatus = status;
           wordWrapper.currentLearningStatus = status;
@@ -429,6 +442,7 @@ class WordListPageState extends State<WordListPage>
         }
       }
     }
+
     if (mounted && hasUpdates) {
       setState(() {});
     }
@@ -632,9 +646,20 @@ class WordListPageState extends State<WordListPage>
   /// 检查并显示新手引导
   Future<void> _checkAndShowGuide() async {
     try {
-      // 检查是否已显示过引导
-      final hasShown =
-          await MyDatabase.instance.localParamsDao.getWordListGuideShown();
+      final storage = GetStorage();
+      final cacheKey = 'wordListGuideShown_${Global.currentUserId}';
+
+      // 优先从缓存读取，极快
+      bool hasShown = storage.read<bool>(cacheKey) ?? false;
+
+      if (!hasShown) {
+        // 只有缓存没有时才查数据库
+        hasShown = await MyDatabase.instance.localParamsDao.getWordListGuideShown();
+        if (hasShown) {
+          storage.write(cacheKey, true);
+        }
+      }
+
       Global.logger.d('新手引导检查: hasShown=$hasShown');
       if (!hasShown) {
         // 延迟到下一帧，待布局完成后计算菜单按钮位置
@@ -699,6 +724,7 @@ class WordListPageState extends State<WordListPage>
       _guideOverlay = null;
       // 标记为已显示
       await MyDatabase.instance.localParamsDao.setWordListGuideShown(true);
+      GetStorage().write('wordListGuideShown_${Global.currentUserId}', true);
     } catch (e) {
       Global.logger.e('关闭新手引导失败: $e');
     }

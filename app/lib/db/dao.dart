@@ -1153,6 +1153,18 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
     }
   }
 
+  /// 批量获取单词的学习状态（在学习中）
+  Future<Set<String>> getLearningWordIdSet(String userId, List<String> wordIds) async {
+    if (wordIds.isEmpty) return {};
+    final rows = await (selectOnly(learningWords)
+          ..addColumns([learningWords.wordId])
+          ..where(learningWords.userId.equals(userId) &
+              learningWords.wordId.isIn(wordIds) &
+              (learningWords.stability.isNull() | learningWords.stability.isSmallerThanValue(Constants.graduationStability))))
+        .get();
+    return rows.map((row) => row.read(learningWords.wordId)!).toSet();
+  }
+
   /// 删除已掌握的学习中单词（掌握度为5）
   Future<int> deleteMasteredLearningWords(String userId) async {
     final query = delete(learningWords)
@@ -1622,6 +1634,18 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
           ..where((dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordId)))
         .getSingleOrNull();
     return existing != null;
+  }
+
+  /// 批量检查单词是否已被掌握
+  Future<Set<String>> getMasteredWordIdSetForWords(String userId, List<String> wordIds) async {
+    if (wordIds.isEmpty) return {};
+    final dictId = await _getMasteredDictId(userId);
+    if (dictId == null) return {};
+    final rows = await (selectOnly(db.dictWords)
+          ..addColumns([db.dictWords.wordId])
+          ..where(db.dictWords.dictId.equals(dictId) & db.dictWords.wordId.isIn(wordIds)))
+        .get();
+    return rows.map((row) => row.read(db.dictWords.wordId)!).toSet();
   }
 
   // 将单词添加到"已掌握"词书
