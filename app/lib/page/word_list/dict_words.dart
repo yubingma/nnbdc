@@ -228,37 +228,45 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
 
   @override
   Future<BookMarkVo?> getBookMark() async {
+    // 1. 优先尝试从内存缓存获取
+    final cached = WordBo().getBookmarkFromCache(bookMarkName);
+    if (cached != null) return cached;
+
     try {
       final userId = Global.getLoggedInUser()?.id;
       if (userId == null) return null;
 
-      // 从本地Bookmarks表获取书签
-      final bookmarkQuery = _db.select(_db.bookMarks)..where((b) => b.userId.equals(userId) & b.bookMarkName.equals(bookMarkName));
+      // 2. 从本地Bookmarks表获取
+      final bookmarkQuery = _db.select(_db.bookMarks)
+        ..where((b) => b.userId.equals(userId) & b.bookMarkName.equals(bookMarkName));
 
       final bookmark = await bookmarkQuery.getSingleOrNull();
 
       if (bookmark != null) {
-        return BookMarkVo(bookmark.position, bookmark.spell);
+        final vo = BookMarkVo(bookmark.position, bookmark.spell);
+        WordBo().updateBookmarkCache(bookMarkName, vo);
+        return vo;
       }
 
-      // 如果Bookmarks表没有，检查旧的localParams表
+      // 3. 检查旧的localParams表
       final paramQuery = _db.select(_db.localParams)..where((p) => p.name.equals(bookMarkName));
-
       final param = await paramQuery.getSingleOrNull();
 
       if (param != null) {
-        // 解析本地保存的书签 spell:position 格式
-        final parts = param.value.split(':');
-        if (parts.length == 2) {
-          // 找到旧格式书签，迁移到新表
-          final bookMark = BookMarkVo(int.tryParse(parts[1]) ?? 0, parts[0]);
-          await _saveBookMarkLocally(bookMark);
-          // 删除旧记录
-          await (_db.delete(_db.localParams)..where((p) => p.name.equals(bookMarkName))).go();
-          return bookMark;
+        final content = param.value;
+        if (content.contains(':')) {
+          final parts = content.split(':');
+          if (parts.length == 2) {
+            final bookMark = BookMarkVo(int.tryParse(parts[1]) ?? 0, parts[0]);
+            WordBo().updateBookmarkCache(bookMarkName, bookMark);
+            // 异步迁移到新表，不阻塞当前返回
+            _saveBookMarkLocally(bookMark).then((_) {
+              (_db.delete(_db.localParams)..where((p) => p.name.equals(bookMarkName))).go();
+            });
+            return bookMark;
+          }
         }
       }
-
       return null;
     } catch (e) {
       Global.logger.d("获取书签失败: $e");
@@ -317,8 +325,11 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
 
   @override
   Future<bool> saveBookMark(BookMarkVo bookMark) async {
-    // 先保存到本地数据库
-    Global.logger.d('保存字典书签: position=[38;5;28m[1m[22m[39m${bookMark.position}, spell=${bookMark.spell}');
+    // 0. 更新内存缓存
+    WordBo().updateBookmarkCache(bookMarkName, bookMark);
+
+    // 1. 保存到本地数据库
+    Global.logger.d('保存字典书签: position=${bookMark.position}, spell=${bookMark.spell}');
     final success = await _saveBookMarkLocally(bookMark);
 
     if (success) {

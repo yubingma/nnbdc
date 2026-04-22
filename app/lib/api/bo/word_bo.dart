@@ -24,12 +24,22 @@ class WordBo {
 
   // 词书缓存，用于加速 getDictWordsForAPage
   final Map<String, Dict> _dictCache = {};
+  // 书签缓存，用于加速页面进入
+  final Map<String, BookMarkVo> _bookmarkCache = {};
 
   Future<Dict?> getDict(String dictId) async {
     if (_dictCache.containsKey(dictId)) return _dictCache[dictId];
     final dict = await MyDatabase.instance.dictsDao.findById(dictId);
     if (dict != null) _dictCache[dictId] = dict;
     return dict;
+  }
+
+  void updateBookmarkCache(String name, BookMarkVo vo) {
+    _bookmarkCache[name] = vo;
+  }
+
+  BookMarkVo? getBookmarkFromCache(String name) {
+    return _bookmarkCache[name];
   }
 
   /// 在本地动态生成乱序版的临时的词库表结构
@@ -961,47 +971,57 @@ class WordBo {
   Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize) async {
     final sw = Stopwatch()..start();
     try {
-      // 获取词典单词总数
       final results = PagedResults<DictWordVo>(0);
       final db = MyDatabase.instance;
-      final countQuery = db.selectOnly(db.dictWords)
-        ..addColumns([countAll()])
-        ..where(db.dictWords.dictId.equals(dictId));
-      final count = await countQuery.getSingle();
-      results.total = count.read(countAll()) ?? 0;
 
-      final dictWordQuery = db.select(db.dictWords)
-        ..where((dw) => dw.dictId.equals(dictId))
-        // 所有词书都按seq排序
-        ..orderBy([(t) => OrderingTerm(expression: t.unit), (t) => OrderingTerm(expression: t.seq)])
-        ..limit(pageSize, offset: fromIndex);
-      final dictWordEntries = await dictWordQuery.get();
+      // 1) 并行获取总数和分页条目
+      final queryResults = await Future.wait([
+        (db.selectOnly(db.dictWords)
+              ..addColumns([countAll()])
+              ..where(db.dictWords.dictId.equals(dictId)))
+            .getSingle(),
+        (db.select(db.dictWords)
+              ..where((dw) => dw.dictId.equals(dictId))
+              ..orderBy([(t) => OrderingTerm(expression: t.unit), (t) => OrderingTerm(expression: t.seq)])
+              ..limit(pageSize, offset: fromIndex))
+            .get(),
+      ]);
+
+      results.total = (queryResults[0] as TypedResult).read(countAll()) ?? 0;
+      final dictWordEntries = queryResults[1] as List<DictWord>;
+
       if (dictWordEntries.isEmpty) {
         return results;
       }
-      final wordIds = dictWordEntries.map((dw) => dw.wordId).toList();
-      final wordQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
-      final wordEntries = await wordQuery.get();
-      final wordMap = {for (var word in wordEntries) word.id: word};
 
+      final wordIds = dictWordEntries.map((dw) => dw.wordId).toList();
       final queryDictIds = [dictId];
       Dict? currDict = _dictCache[dictId];
-      if (currDict == null) {
-        currDict = await db.dictsDao.findById(dictId);
-        if (currDict != null) {
-          _dictCache[dictId] = currDict;
-        }
+
+      // 2) 并行获取单词详情、词典元数据和定制释义
+      final detailResults = await Future.wait([
+        (db.select(db.words)..where((w) => w.id.isIn(wordIds))).get(),
+        currDict != null ? Future.value(currDict) : db.dictsDao.findById(dictId),
+      ]);
+
+      final wordEntries = detailResults[0] as List<Word>;
+      currDict = detailResults[1] as Dict?;
+      if (currDict != null && !_dictCache.containsKey(dictId)) {
+        _dictCache[dictId] = currDict;
       }
-      
+
       if (currDict != null && currDict.baseDictId != null && currDict.baseDictId!.isNotEmpty) {
         queryDictIds.add(currDict.baseDictId!);
       }
 
-      // 1) 先取本词书(dictId)或其基础词书的定制释义
-      final dictSpecificMeaningQuery = db.select(db.meaningItems)
-        ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.isIn(queryDictIds))
-        ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]);
-      final dictSpecificMeaningItems = await dictSpecificMeaningQuery.get();
+      final wordMap = {for (var word in wordEntries) word.id: word};
+
+      // 3) 获取定制释义
+      final dictSpecificMeaningItems = await (db.select(db.meaningItems)
+            ..where((mi) => mi.wordId.isIn(wordIds) & mi.dictId.isIn(queryDictIds))
+            ..orderBy([(mi) => OrderingTerm(expression: mi.popularity)]))
+          .get();
+
       final meaningItemsMap = <String, List<MeaningItem>>{};
       for (final mi in dictSpecificMeaningItems) {
         (meaningItemsMap[mi.wordId] ??= []).add(mi);
