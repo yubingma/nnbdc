@@ -115,10 +115,15 @@ class SoundUtil {
   static void prefetchSounds(List<String> urls) {
     if (PlatformUtils.isWeb) return;
     for (var url in urls) {
-      // 这里的 downloadFile 会检查缓存，如果已存在则不会重复下载
-      unawaited(DefaultCacheManager().downloadFile(url).catchError((e) {
-        Global.logger.w('SoundUtil: 预取音频失败: $url, $e');
-      }));
+      // 使用 unawaited 结合 try-catch 异步块，避免 catchError 的返回值类型问题
+      unawaited(() async {
+        try {
+          // 这里的 downloadFile 会检查缓存，如果已存在则不会重复下载
+          await DefaultCacheManager().downloadFile(url);
+        } catch (e) {
+          Global.logger.w('SoundUtil: 预取音频失败: $url, $e');
+        }
+      }());
     }
   }
 
@@ -216,7 +221,7 @@ class SoundUtil {
         // 这里的 200ms 不影响播放开始的延迟，只影响 await 返回的时间
         await Future.delayed(const Duration(milliseconds: 100));
       } finally {
-        await stateSubscription?.cancel();
+        await stateSubscription.cancel();
       }
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleAudioError(e, stackTrace, audioType: 'url:$soundUrl');

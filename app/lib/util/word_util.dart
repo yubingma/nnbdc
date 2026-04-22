@@ -192,11 +192,11 @@ List<Widget> renderAsrMeaningItems(WordWrapper word,
             child: Text(
               meaningItem.ciXing!,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 color: isDarkMode
                     ? const Color(0xFFD1D5DB)
-                    : const Color(0xFF4B5563),
-                fontWeight: FontWeight.w600,
+                    : const Color(0xFF374151), // 与标准释义颜色一致
+                fontWeight: FontWeight.w400, // 从 w600 改为 w400
               ),
             ),
           ),
@@ -233,7 +233,7 @@ List<Widget> renderMeaningItemParts(
           color: isDarkMode
               ? const Color(0xFF4ADE80)
               : const Color(0xFF16A34A), // 绿色高亮
-          fontSize: 15, // 稍微加大一些，更清晰
+          fontSize: 14, // 与英文释义字体大小保持一致
           fontWeight: FontWeight.w400,
         ),
       );
@@ -247,7 +247,7 @@ List<Widget> renderMeaningItemParts(
           color: isDarkMode
               ? const Color(0xFF60A5FA)
               : const Color(0xFF2563EB), // 蓝色高亮，以示区分
-          fontSize: 15,
+          fontSize: 14,
           fontWeight: FontWeight.w400,
         ),
       );
@@ -272,11 +272,11 @@ List<Widget> renderMeaningItemParts(
         if (displayText[i] == '^') {
           // 未显示的汉字用固定宽度的占位符
           finalWidgets.add(SizedBox(
-            width: 16, // 固定宽度，大约等于一个汉字的宽度
+            width: 15, // 固定宽度，大约等于一个汉字的宽度
             child: Text(
               '＿',
               style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   color: isDarkMode ? Colors.white54 : Colors.black38),
               textAlign: TextAlign.center,
             ),
@@ -286,8 +286,11 @@ List<Widget> renderMeaningItemParts(
           finalWidgets.add(Text(
             displayText[i],
             style: TextStyle(
-                fontSize: 15,
-                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A)),
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: isDarkMode
+                    ? const Color(0xFFD1D5DB)
+                    : const Color(0xFF374151)), // 与标准释义颜色一致
           ));
         }
       }
@@ -303,7 +306,9 @@ List<Widget> renderMeaningItemParts(
       partWidgets.add(Text(
         "；",
         style: TextStyle(
-            fontSize: 15, color: isDarkMode ? Colors.white54 : Colors.black38),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: isDarkMode ? Colors.white54 : Colors.black38),
       ));
     }
   }
