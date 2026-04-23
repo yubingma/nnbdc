@@ -85,7 +85,7 @@ public class SysParamUtil {
 
     public int getAiChatUserLimit() {
         SysParam param = sysParamBO.findById("AiChatUserLimit", false);
-        return param == null ? 2 : Integer.parseInt(param.getParamValue());
+        return param == null ? 5 : Integer.parseInt(param.getParamValue());
     }
 
 
@@ -116,7 +116,7 @@ public class SysParamUtil {
         list.add(new SysParam("exportFileUrl", "http://localhost/export", "导出文件访问URL"));
         list.add(new SysParam("AiStoryConcurrencyLimit", "5", "AI 短文生成并发上限"));
         list.add(new SysParam("AiChatGlobalLimit", "20", "AI 聊天全局并发上限"));
-        list.add(new SysParam("AiChatUserLimit", "2", "AI 聊天单用户并发上限"));
+        list.add(new SysParam("AiChatUserLimit", "5", "AI 聊天单用户并发上限"));
         list.add(new SysParam("AiChatUserDailyLimit", "100", "AI 聊天单用户每日次数上限"));
         list.add(new SysParam("cdnRefreshFileUrls", "", "CDN文件刷新URL配置"));
         list.add(new SysParam("cdnRefreshDirUrls", "", "CDN目录刷新URL配置"));

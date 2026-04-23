@@ -300,26 +300,46 @@ public class AiBo {
         int userLimit = sysParamUtil.getAiChatUserLimit();
         int userDailyLimit = sysParamUtil.getAiChatUserDailyLimit();
 
-        if (activeAiChatRequests.get() >= globalLimit) {
-            logger.warn("AI 全局并发达到上限: {}", globalLimit);
-            return Result.fail("服务器 AI 服务并发达到上限，请稍后再试");
+        // 1. 全局并发检查 (使用自旋保证原子性)
+        while (true) {
+            int current = activeAiChatRequests.get();
+            if (current >= globalLimit) {
+                logger.warn("AI 系统全局并发达到上限: {}, 拒绝来自用户 [{}]({}) 的请求", globalLimit, userId, userIdentifier);
+                return Result.fail("服务器 AI 服务并发达到上限，请稍后再试");
+            }
+            if (activeAiChatRequests.compareAndSet(current, current + 1)) {
+                break;
+            }
         }
 
+        // 2. 用户并发检查 (使用自旋保证原子性)
         AtomicInteger userCount = userAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
-        if (userCount.get() >= userLimit) {
-            logger.warn("AI 用户并发达到上限: {}", userLimit);
-            return Result.fail("您的 AI 聊天并发请求过多，请等待上一个回复结束");
+        while (true) {
+            int current = userCount.get();
+            if (current >= userLimit) {
+                activeAiChatRequests.decrementAndGet(); // 回退全局计数
+                logger.warn("单用户 AI 并发达到上限: 用户 [{}]({}) 已达 {} 并发", userId, userIdentifier, userLimit);
+                return Result.fail("您的 AI 聊天并发请求过多，请等待上一个回复结束");
+            }
+            if (userCount.compareAndSet(current, current + 1)) {
+                break;
+            }
         }
 
+        // 3. 今日次数检查
         AtomicInteger userDailyCount = userDailyAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
-        if (userDailyCount.get() >= userDailyLimit) {
-            logger.warn("今日 AI 聊天次数达到上限: {}", userDailyLimit);
-            return Result.fail("您今日的 AI 聊天次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
+        while (true) {
+            int current = userDailyCount.get();
+            if (current >= userDailyLimit) {
+                activeAiChatRequests.decrementAndGet(); // 回退全局计数
+                userCount.decrementAndGet();           // 回退用户并发计数
+                logger.warn("用户今日 AI 聊天次数达到上限: 用户 [{}]({}) 已达 {} 次", userId, userIdentifier, userDailyLimit);
+                return Result.fail("您今日的 AI 聊天次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
+            }
+            if (userDailyCount.compareAndSet(current, current + 1)) {
+                break;
+            }
         }
-
-        activeAiChatRequests.incrementAndGet();
-        userCount.incrementAndGet();
-        userDailyCount.incrementAndGet();
 
         return Result.success(null, () -> {
             activeAiChatRequests.decrementAndGet();

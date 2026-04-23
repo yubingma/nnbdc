@@ -351,6 +351,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   int? _activePointerId;
   final Set<int> _ignoredPointers = {}; 
   DateTime _lastStrokeEndTime = DateTime.fromMillisecondsSinceEpoch(0);
+  late double _currentSmartZoneWidth;
   
   // 用于防止在一次划动中重复触发区域动作
   bool _rewriteTriggered = false;
@@ -378,6 +379,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   void initState() {
     super.initState();
     _controller = _HandwritingController(widget.lines);
+    _currentSmartZoneWidth = widget.smartRightZoneWidth;
   }
 
   @override
@@ -426,15 +428,15 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         );
 
         return Listener(
-          behavior: widget.smartRightZoneWidth > 0 ? HitTestBehavior.translucent : HitTestBehavior.opaque,
+          behavior: _currentSmartZoneWidth > 0 ? HitTestBehavior.translucent : HitTestBehavior.opaque,
           onPointerDown: (event) {
             if (_activePointerId != null) return;
 
             final p = event.localPosition;
             
             // 智能交互区逻辑
-            if (widget.smartRightZoneWidth > 0) {
-              final inRightZone = p.dx > width - widget.smartRightZoneWidth;
+            if (_currentSmartZoneWidth > 0) {
+              final inRightZone = p.dx > width - _currentSmartZoneWidth;
               final isRecentWriting = DateTime.now().difference(_lastStrokeEndTime).inMilliseconds < 600;
               
               if (inRightZone && !isRecentWriting) {
@@ -699,13 +701,27 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   ),
                 ),
                 // 智能交互区视觉提示
-                if (widget.smartRightZoneWidth > 0)
+                if (_currentSmartZoneWidth > 0)
                   Positioned(
                     right: 0,
                     top: 0,
                     bottom: 0,
-                    width: widget.smartRightZoneWidth,
-                    child: IgnorePointer(
+                    width: _currentSmartZoneWidth,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onHorizontalDragUpdate: (details) {
+                        // 向左拉扩大感应区 (dx 是负值)
+                        setState(() {
+                          _currentSmartZoneWidth -= details.delta.dx;
+                          _currentSmartZoneWidth = _currentSmartZoneWidth.clamp(40.0, width * 0.7);
+                        });
+                      },
+                      onHorizontalDragEnd: (details) {
+                        // 如果快速向左滑，触发关闭
+                        if (details.primaryVelocity != null && details.primaryVelocity! < -800) {
+                          widget.onCancel?.call();
+                        }
+                      },
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -719,9 +735,23 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                           border: Border(
                             left: BorderSide(
                               color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.15),
-                              width: 1.2,
+                              width: 1.5,
                             ),
                           ),
+                        ),
+                        // 在边界处增加一个视觉指示器
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              left: 0,
+                              top: height / 2 - 20,
+                              child: Icon(
+                                Icons.chevron_left, 
+                                size: 16, 
+                                color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.3)
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
