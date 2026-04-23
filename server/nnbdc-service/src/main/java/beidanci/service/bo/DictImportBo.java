@@ -883,10 +883,8 @@ public class DictImportBo {
             userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 5, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
         }
 
-        String rawJson = aiBo.generateText(systemPrompt, userPrompt.toString());
-        // 清理 AI 可能带的 Markdown 代码块标签
-        rawJson = rawJson.replaceAll("```json", "").replaceAll("```", "").trim();
-        Map<String, Object> map = JsonUtils.parseMap(rawJson);
+        String rawOutput = aiBo.generateText(systemPrompt, userPrompt.toString());
+        Map<String, Object> map = JsonUtils.parseAiMap(rawOutput);
         
         AiResult res = new AiResult();
         res.phonetic = (String) map.get("phonetic");

@@ -68,7 +68,7 @@ public class AdminCigenOptimizeController {
                         try {
                             String json = aiBo.parseCigenDescription(description);
                             if (json != null) {
-                                Map<String, Object> data = JsonUtils.parseMap(json);
+                                Map<String, Object> data = JsonUtils.parseAiMap(json);
                                 String spell = (String) data.get("spell");
                                 String category = (String) data.get("category");
                                 String meaningCn = (String) data.get("meaningCn");

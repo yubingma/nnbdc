@@ -1017,17 +1017,13 @@ public class SystemHealthCheckBo {
                         String spell = word.getSpell();
                         String promptText = "单词：[" + spell + "]\n要求：请造一个能准确反映词性[" + (mi.getCiXing() != null ? mi.getCiXing() : "未知") + "] 和释义[" + mi.getMeaning() + "]的例句。只返回JSON。";
                         
-                        String jsonStr = aiBo.generateText(systemPrompt, promptText);
+                        String rawOutput = aiBo.generateText(systemPrompt, promptText);
                         
-                        if (jsonStr != null) {
-                            int firstBrace = jsonStr.indexOf('{');
-                            int lastBrace = jsonStr.lastIndexOf('}');
-                            if (firstBrace >= 0 && lastBrace >= firstBrace) {
-                                jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
-                                java.util.Map<String, Object> map = JsonUtils.parseMap(jsonStr);
-                                if (map != null && map.containsKey("sentenceEn")) {
-                                    String sentenceEn = (String) map.get("sentenceEn");
-                                    String sentenceCn = (String) map.get("sentenceCn");
+                        if (rawOutput != null) {
+                            java.util.Map<String, Object> map = JsonUtils.parseAiMap(rawOutput);
+                            if (map != null && map.containsKey("sentenceEn")) {
+                                String sentenceEn = (String) map.get("sentenceEn");
+                                String sentenceCn = (String) map.get("sentenceCn");
                                     
                                     Sentence sentence = new Sentence();
                                     sentence.setEnglish(sentenceEn);
@@ -1050,22 +1046,21 @@ public class SystemHealthCheckBo {
                                     logger.info("成功为单词 {} 的释义补充了 AI 例句: {}", spell, sentenceEn);
                                 }
                             }
+                            
+                            Thread.sleep(1500); // 防阿里云限流QPS
+                        } catch (Exception innerE) {
+                            logger.warn("处理释义项 {} 发生异常: {}", meaningId, innerE.getMessage());
                         }
-                        
-                        Thread.sleep(1500); // 防阿里云限流QPS
-                    } catch (Exception innerE) {
-                        logger.warn("处理释义项 {} 发生异常: {}", meaningId, innerE.getMessage());
                     }
+                    logger.info("通用词典例句后台补齐任务全部完成！");
+                } catch (Exception e) {
+                    org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("后台补齐大异常", e);
                 }
-                logger.info("通用词典例句后台补齐任务全部完成！");
-            } catch (Exception e) {
-                org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).error("后台补齐大异常", e);
-            }
-        }).start();
+            }).start();
 
-        fixed.add("缺失例句释义项的 AI 后台补齐任务已提交，进度可在服务器日志中查看，补齐会自动同步到客户端更新。");
-        return meaningsWithoutSentences.size();
-    }
+            fixed.add("缺失例句释义项的 AI 后台补齐任务已提交，进度可在服务器日志中查看，补齐会自动同步到客户端更新。");
+            return meaningsWithoutSentences.size();
+        }
 
     private int fixUserStudySteps(List<String> fixed) {
         int fixedCount = 0;

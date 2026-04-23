@@ -625,10 +625,7 @@ public class AiBo {
 
         try {
             String result = generateText(systemPrompt, "待解析描述：[" + description + "]");
-            if (result != null) {
-                return result.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
-            }
-            return null;
+            return beidanci.service.util.JsonUtils.repairAiJson(result);
         } catch (Exception e) {
             logger.error("AI 解析词根描述异常: " + description, e);
             return null;
