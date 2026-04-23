@@ -56,7 +56,7 @@
 5|conceited
 5|presumptuous
 5|fatuous
-5|cliché
+5|cliche
 6|goodwill
 6|cricket
 6|inclination
