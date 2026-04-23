@@ -4241,6 +4241,7 @@ class WordListPageState extends State<WordListPage>
             
             Positioned.fill(
               child: HandwritingBoard(
+                key: ValueKey('handwriting_$bookmarkedIndex'),
                 showHeader: false,
                 showCloseButton: false, 
                 useBoxDecoration: false,
@@ -4250,7 +4251,12 @@ class WordListPageState extends State<WordListPage>
                   if (targetWord != null) {
                     setState(() {
                       targetWord.spellController.text = text;
-                      if (Util.equalsIgnoreCase(targetWord.word.spell, text)) {
+                      
+                      // 模糊匹配逻辑：忽略空格和连字符，提升手写容错率
+                      final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
+                      final String normalizedInput = text.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
+                      
+                      if (normalizedTarget == normalizedInput) {
                          WidgetsBinding.instance.addPostFrameCallback((_) async {
                            try {
                              await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
