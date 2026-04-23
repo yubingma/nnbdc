@@ -15,6 +15,7 @@ class HandwritingBoard extends StatefulWidget {
   final bool showCloseButton;
   final bool showHeader;
   final bool useBoxDecoration;
+  final bool showCanvasButtons;
 
   const HandwritingBoard({
     super.key,
@@ -24,6 +25,7 @@ class HandwritingBoard extends StatefulWidget {
     this.showCloseButton = true,
     this.showHeader = true,
     this.useBoxDecoration = true,
+    this.showCanvasButtons = true,
   });
 
   @override
@@ -287,6 +289,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
                   onUndo: _incrementVersion,
                   onRecognize: _recognize,
                   onStartWriting: widget.onStartWriting,
+                  showButtons: widget.showCanvasButtons,
                 ),
               ],
             ),
@@ -304,6 +307,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback onUndo;
   final VoidCallback onRecognize;
   final VoidCallback? onStartWriting;
+  final bool showButtons;
 
   const _HandwritingCanvas({
     required this.lines,
@@ -312,6 +316,7 @@ class _HandwritingCanvas extends StatefulWidget {
     required this.onUndo,
     required this.onRecognize,
     this.onStartWriting,
+    required this.showButtons,
   });
 
   @override
@@ -481,15 +486,20 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   // 执行手势动作
                   if (swipeStatus == 2) {
                     // 向左滑：删除最后一笔 (撤销)
-                     _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
-                     _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
-                     widget.onUndo();
-                     HapticFeedback.mediumImpact();
-                    
+                    _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
+                    _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
+                    widget.onUndo();
+                    HapticFeedback.mediumImpact();
+
                     // 如果删完后画板空了，同步清空外部输入框
                     if (widget.lines.isEmpty) {
                       widget.onRewrite();
                     }
+                  } else if (swipeStatus == 1) {
+                    // 向右滑：清除全部 (重写)
+                    _controller.clear();
+                    widget.onRewrite();
+                    HapticFeedback.mediumImpact();
                   }
                 }
               }
@@ -566,79 +576,81 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 ),
               ),
               
-              // 居中显示的感应目标区
-              Positioned(
-                left: rewriteZone.left,
-                top: rewriteZone.top,
-                child: Container(
-                  width: zoneWidth,
-                  height: zoneHeight,
-                  decoration: BoxDecoration(
-                    color: _activeZone == 1 
-                      ? Colors.grey.withValues(alpha: 0.2) 
-                      : Colors.grey.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.1), 
-                      width: _activeZone == 1 ? 1.5 : 1
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.delete_sweep_outlined, 
-                        color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.4), 
-                        size: 22
+              if (widget.showButtons) ...[
+                // 居中显示的感应目标区
+                Positioned(
+                  left: rewriteZone.left,
+                  top: rewriteZone.top,
+                  child: Container(
+                    width: zoneWidth,
+                    height: zoneHeight,
+                    decoration: BoxDecoration(
+                      color: _activeZone == 1 
+                        ? Colors.grey.withValues(alpha: 0.2) 
+                        : Colors.grey.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.1), 
+                        width: _activeZone == 1 ? 1.5 : 1
                       ),
-                      Text(
-                        isNarrow ? '重写' : '划过重写', 
-                        style: TextStyle(
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.delete_sweep_outlined, 
                           color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.4), 
-                          fontSize: isNarrow ? 12 : 11,
-                          fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
-                        )
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                left: undoZone.left,
-                top: undoZone.top,
-                child: Container(
-                  width: zoneWidth,
-                  height: zoneHeight,
-                  decoration: BoxDecoration(
-                    color: _activeZone == 2 
-                      ? AppTheme.primaryColor.withValues(alpha: 0.2) 
-                      : AppTheme.primaryColor.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.1), 
-                      width: _activeZone == 2 ? 1.5 : 1
+                          size: 22
+                        ),
+                        Text(
+                          isNarrow ? '重写' : '划过重写', 
+                          style: TextStyle(
+                            color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.4), 
+                            fontSize: isNarrow ? 12 : 11,
+                            fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
+                          )
+                        ),
+                      ],
                     ),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.undo_outlined, 
-                        color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
-                        size: 22
+                ),
+                Positioned(
+                  left: undoZone.left,
+                  top: undoZone.top,
+                  child: Container(
+                    width: zoneWidth,
+                    height: zoneHeight,
+                    decoration: BoxDecoration(
+                      color: _activeZone == 2 
+                        ? AppTheme.primaryColor.withValues(alpha: 0.2) 
+                        : AppTheme.primaryColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.1), 
+                        width: _activeZone == 2 ? 1.5 : 1
                       ),
-                      Text(
-                        isNarrow ? '撤销' : '划过撤销', 
-                        style: TextStyle(
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.undo_outlined, 
                           color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
-                          fontSize: isNarrow ? 12 : 11,
-                          fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
-                        )
-                      ),
-                    ],
+                          size: 22
+                        ),
+                        Text(
+                          isNarrow ? '撤销' : '划过撤销', 
+                          style: TextStyle(
+                            color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
+                            fontSize: isNarrow ? 12 : 11,
+                            fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
+                          )
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         );

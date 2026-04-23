@@ -2944,31 +2944,7 @@ class WordListPageState extends State<WordListPage>
                                   ),
                                 if (studyMode == WordListStudyMode.dictationHandwriting &&
                                     getBookMarkUiPosition() == i)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 12),
-                                    child: SizedBox(
-                                      height: 260,
-                                      child: HandwritingBoard(
-                                        onRecognized: (text) {
-                                          setState(() {
-                                            word.spellController.text = text;
-                                            // 模拟 onChanged 触发检查
-                                            if (Util.equalsIgnoreCase(word.word.spell, text)) {
-                                              WidgetsBinding.instance.addPostFrameCallback((_) async {
-                                                try {
-                                                  await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-                                                } catch (e) {}
-                                                jumpToNextWord(i, false, () {});
-                                              });
-                                            }
-                                          });
-                                        },
-                                        onCancel: () {
-                                          // 手写模式不取消，除非切换模式
-                                        },
-                                      ),
-                                    ),
-                                  ),
+                                  const SizedBox(height: 12),
                               ],
                             ),
                           ),
@@ -3754,6 +3730,33 @@ class WordListPageState extends State<WordListPage>
           ),
           floatingActionButton: null,
         ),
+        if (studyMode == WordListStudyMode.dictationHandwriting)
+          Positioned.fill(
+            child: HandwritingBoard(
+              showHeader: false,
+              showCloseButton: false,
+              useBoxDecoration: false,
+              showCanvasButtons: false,
+              onRecognized: (text) {
+                final i = getBookMarkUiPosition();
+                if (i >= 0 && i < words.length) {
+                  final word = words[i];
+                  setState(() {
+                    word.spellController.text = text;
+                    if (Util.equalsIgnoreCase(word.word.spell, text)) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) async {
+                        try {
+                          await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+                        } catch (e) {}
+                        jumpToNextWord(i, false, () {});
+                      });
+                    }
+                  });
+                }
+              },
+              onCancel: () {},
+            ),
+          ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar
         if (showGuide) _buildGuideOverlay(),
       ],
