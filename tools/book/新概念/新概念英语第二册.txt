@@ -61,7 +61,7 @@
 8|path|n.小路，小径
 8|wooden|a.木头的
 8|pool|n.水池
-9|welcome|n.欢迎 v.欢迎
+9|welcome|n.欢迎; v.欢迎
 9|crowd|n.人群
 9|gather|v.聚集
 9|hand|n.(表或机器的)指针
@@ -396,7 +396,7 @@
 52|actually|ad.实际上
 53|hot|a.带电的，充电的
 53|fireman|n.消防队员
-53|cause|v.引起 n.原因
+53|cause|v.引起; n.原因
 53|examine|v.检查
 53|accidentally|ad.意外地,偶然地
 53|remains|n.尸体，残骸
@@ -793,7 +793,7 @@
 88|smoothly|ad.顺利地
 89|slip|n.小错误
 89|comedy|n.喜剧
-89|present|v.演出 a.出席，到场的
+89|present|v.演出; a.出席，到场的
 89|queue|v.排队
 89|dull|a.枯燥，无味
 89|artiste|n.艺人

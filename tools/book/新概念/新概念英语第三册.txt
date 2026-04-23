@@ -3,10 +3,10 @@
 1|evidence|n.证据
 1|accumulate|v.积累，积聚
 1|oblige|v.使…感到必须
-1|hunt|n.追猎；寻找；v.打猎
+1|hunt|n.追猎；寻找; v.打猎
 1|blackberry|n.黑莓
 1|human|人类
-1|corner|v.使走投无路，使陷入困境；n.角落
+1|corner|v.使走投无路，使陷入困境; n.角落
 1|trail|n.一串，一系列
 1|print|n.印痕
 1|cling|v.粘
@@ -328,7 +328,7 @@
 24|medicine|n.医学
 24|guestroom|n.(家庭中的)客房
 24|unpack|vt.(从箱中)取出
-24|stack|v.(整齐地)堆放，排放；n.堆
+24|stack|v.(整齐地)堆放，排放; n.堆
 24|underclothes|n.内衣
 24|drawer|n.抽屉
 24|petrify|v.使惊呆
@@ -348,7 +348,7 @@
 25|plank|n.大块木板
 25|fit|v.安装
 25|Equator|n.赤道
-25|delay|v. n.耽误
+25|delay|v.耽误; n.耽误
 26|influence|v.影响
 26|pride|v.骄傲
 26|taste|n.鉴赏力;品尝
@@ -437,7 +437,7 @@
 31|reprimand|v.训斥
 31|stage|v.暗中策划
 31|elaborate|a.精心构思的；精致的
-32|salvage|v.n.救助，营救，打捞;
+32|salvage|v.救助，营救，打捞; n.救助，营救，打捞;
 32|Barents|n.巴伦支(海)
 32|sunken|a.沉没的
 32|cargo|n.货物
@@ -451,7 +451,7 @@
 32|find|n.找到的物品
 32|log book|航海日志
 32|piece|v.拼成整体
-32|convoy|v.n.护航
+32|convoy|v.护航; n.护航
 32|torpedo|v.用鱼雷攻击
 32|submarine|n.潜水艇
 32|naval|a.海军的
@@ -468,7 +468,7 @@
 33|windscreen|n.(汽车的)挡风玻璃
 33|alongside|prep.在……的旁边，与……并排
 33|slide|v.滑；回避
-33|stray|a.迷失的，离群的；v.迷路，偏离
+33|stray|a.迷失的，离群的; v.迷路，偏离
 33|confusion|n.混乱
 33|greedily|ad.贪婪地
 33|devour|v.狼吞虎咽地吃
@@ -484,7 +484,7 @@
 34|junk|n.破烂货，废品
 34|carve|v.镌刻
 34|dagger|n.短剑，匕首
-34|litter|v.杂乱地布满；n.垃圾
+34|litter|v.杂乱地布满; n.垃圾
 34|dedicated|a.专心致志的；全身心投入的
 34|bargain hunter|n.到处找便宜货买的人
 34|dealer|v.商人
@@ -505,7 +505,7 @@
 35|concept|n.概念，观念
 35|mete|给予，处置
 35|interference|n.干涉
-35|accord|v. n.一致
+35|accord|v.一致; n.一致
 35|premises|n.房屋
 35|convert|v.转变，改变
 35|disused|a.不再用的，废弃的
@@ -516,7 +516,7 @@
 35|emerge|v.(从某处)出现
 36|credulous|a.轻信的
 36|improbable|a.不大可能的
-36|obscure|a.不起眼的；v.遮掩，模糊
+36|obscure|a.不起眼的; v.遮掩，模糊
 36|maidservant|n.女仆，女佣
 36|presume|v.假定
 36|wickedly|ad.心眼坏地，居心叵测地
@@ -531,7 +531,7 @@
 36|acquaint|v.使了解
 36|reunite|v.使团聚
 36|assume|v.假定，认为
-37|express|n.快车 a.高速的
+37|express|n.快车; a.高速的
 37|punctual|a.准时的
 37|condition|v.使习惯于
 37|unshakable|a.不可动摇的
@@ -548,7 +548,7 @@
 37|mighty|a.强大的，有力的
 37|dawdle|v.慢吞吞地动或做
 37|chug|v.咔嚓咔嚓地响
-37|lodge|v.提出；n.小屋，(旅游区的)小旅馆
+37|lodge|v.提出; n.小屋，(旅游区的)小旅馆
 37|complaint|n.抱怨
 37|triumph|n.胜利; v.战胜
 37|asterisk|n.星号
@@ -839,7 +839,7 @@
 49|industriousness|n.勤奋
 49|qualification|n.资格，能力
 49|mirth|n.欢笑，高兴
-49|stack|v.(整齐地)堆放，排放；n.堆
+49|stack|v.(整齐地)堆放，排放; n.堆
 49|cellar|n.地窖
 50|resolution|n.决心
 50|mentally|ad.内心里
@@ -861,7 +861,7 @@
 50|betray|v.暴露，显露
 50|troop|v.成群结队地走动
 50|unsettle|v.使不安
-50|taunt|n.v.嘲笑，奚落人的话
+50|taunt|n.奚落人的话; v.嘲笑
 50|jibe|n.嘲弄，挖苦
 50|good-humouredly|ad.和气地，心情好地
 50|wane|v.逐渐变小，变弱
@@ -1023,7 +1023,7 @@
 58|fussy|a.大惊小怪的，小题大做的
 59|amass|v.积聚，收集
 59|indiscriminate|a.不加选择的
-59|clutter|n. v.一堆杂物;乱糟糟地堆满
+59|clutter|n.一堆杂物; v.乱糟糟地堆满
 59|string|n.细线, 细绳
 59|requisite|n.必需品
 59|mania|n.癖好,狂热

@@ -16,7 +16,7 @@
 2|content|a.满足的
 3|Matterhorn|n.马特霍恩峰(阿尔卑斯山峰之一)
 3|alpinist|n.登山运动员
-3|pioneer|v.开辟，倡导;n.先锋，开辟者
+3|pioneer|v.开辟，倡导; n.先锋，开辟者
 3|summit|n.顶峰
 3|attain|v.到达
 3|perilous|a.危险的
@@ -39,7 +39,7 @@
 4|opaque|a.不透明的
 4|lotto|n.一种有编号的纸牌
 4|slipper|n.拖鞋
-4|blindfold|a.& ad.被蒙上眼睛的
+4|blindfold|a.被蒙上眼睛的; ad.被蒙上眼睛的
 5|leave|n.允许
 5|fundamentals|n.基本原则
 5|glorious|a.光辉灿烂的
@@ -209,7 +209,7 @@
 15|inquiry|n.调查研究
 15|positive|a.确实的
 15|process|n.过程
-15|patent|n.专利 v.得到专利权
+15|patent|n.专利; v.得到专利权
 15|agent|n.情报人员
 16|physiological|a.生理的
 16|maximum|a.最大限度的
