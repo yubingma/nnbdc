@@ -3751,47 +3751,6 @@ class WordListPageState extends State<WordListPage>
                           child: renderPage(),
                         ),
                 ),
-                if (studyMode == WordListStudyMode.dictationHandwriting)
-                  Positioned.fill(
-                    child: HandwritingBoard(
-                      showHeader: false,
-                      showCloseButton: false,
-                      useBoxDecoration: false,
-                      showCanvasButtons: false,
-                      onRecognized: (text) {
-                        final i = getBookMarkUiPosition();
-                        if (i >= 0 && i < words.length) {
-                          final word = words[i];
-                          setState(() {
-                            word.spellController.text = text;
-                            if (Util.equalsIgnoreCase(word.word.spell, text)) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) async {
-                                try {
-                                  await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-                                } catch (e) {
-                                  // Ignore sound play failure
-                                }
-                                jumpToNextWord(i, false, () {});
-                              });
-                            }
-                          });
-                        }
-                      },
-                      onSwipeUp: () {
-                        final i = getBookMarkUiPosition();
-                        if (i < words.length - 1) {
-                          jumpToNextWord(i, true, () {});
-                        }
-                      },
-                      onSwipeDown: () {
-                        final i = getBookMarkUiPosition();
-                        if (i > 0) {
-                          jumpToPreviousWord(i, true);
-                        }
-                      },
-                      onCancel: () {},
-                    ),
-                  ),
               ],
             ),
           ),
@@ -4273,49 +4232,51 @@ class WordListPageState extends State<WordListPage>
       bottom: 0,
       child: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              color: (isDarkMode ? Colors.black : Colors.white).withValues(alpha: 0.1),
+          if (_isHandwritingOverlayVisible) ...[
+            Positioned.fill(
+              child: Container(
+                color: (isDarkMode ? Colors.black : Colors.white).withValues(alpha: 0.1),
+              ),
             ),
-          ),
-          
-          Positioned.fill(
-            child: HandwritingBoard(
-              showHeader: false,
-              showCloseButton: false, 
-              useBoxDecoration: false,
-              showCanvasButtons: true, 
-              onRecognized: (text) {
-                final targetWord = activeWord;
-                if (targetWord != null) {
+            
+            Positioned.fill(
+              child: HandwritingBoard(
+                showHeader: false,
+                showCloseButton: false, 
+                useBoxDecoration: false,
+                showCanvasButtons: true, 
+                onRecognized: (text) {
+                  final targetWord = activeWord;
+                  if (targetWord != null) {
+                    setState(() {
+                      targetWord.spellController.text = text;
+                      if (Util.equalsIgnoreCase(targetWord.word.spell, text)) {
+                         WidgetsBinding.instance.addPostFrameCallback((_) async {
+                           try {
+                             await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
+                           } catch (e) {
+                             // Ignore errors
+                           }
+                           jumpToNextWord(bookmarkedIndex, false, () {});
+                         });
+                      }
+                    });
+                  }
+                },
+                onSwipeUp: () => jumpToNextWord(bookmarkedIndex, true, () {}),
+                onSwipeDown: () => jumpToPreviousWord(bookmarkedIndex, true),
+                onCancel: () {
                   setState(() {
-                    targetWord.spellController.text = text;
-                    if (Util.equalsIgnoreCase(targetWord.word.spell, text)) {
-                       WidgetsBinding.instance.addPostFrameCallback((_) async {
-                         try {
-                           await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
-                         } catch (e) {
-                           // Ignore errors
-                         }
-                         jumpToNextWord(bookmarkedIndex, false, () {});
-                       });
-                    }
+                    _isHandwritingOverlayVisible = false;
                   });
-                }
-              },
-              onSwipeUp: () => jumpToNextWord(bookmarkedIndex, true, () {}),
-              onSwipeDown: () => jumpToPreviousWord(bookmarkedIndex, true),
-              onCancel: () {
-                setState(() {
-                  _isHandwritingOverlayVisible = false;
-                });
-              },
+                },
+              ),
             ),
-          ),
+          ],
 
           Positioned(
             right: 0, 
-            top: _thumbtackY - appBarHeight - 32, // Adjust for offset if needed, but thumbtackY is global
+            top: _thumbtackY - appBarHeight - 32,
             child: GestureDetector(
               onPanDown: (details) {
                 HapticFeedback.mediumImpact();
