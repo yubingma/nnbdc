@@ -4249,7 +4249,7 @@ class WordListPageState extends State<WordListPage>
                 enableNavigationGestures: false,
                 onRecognized: (text) {
                   final targetWord = activeWord;
-                  if (targetWord != null) {
+                  if (targetWord != null) { 
                     setState(() {
                       targetWord.spellController.text = text;
                       

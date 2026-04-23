@@ -727,11 +727,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     height: zoneHeight,
                     decoration: BoxDecoration(
                       color: _activeZone == 2 
-                        ? AppTheme.primaryColor.withValues(alpha: 0.25) 
-                        : AppTheme.primaryColor.withValues(alpha: 0.1),
+                        ? Colors.grey.withValues(alpha: 0.25) 
+                        : Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.2), 
+                        color: _activeZone == 2 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
                         width: _activeZone == 2 ? 1.5 : 1
                       ),
                     ),
@@ -740,13 +740,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       children: [
                         Icon(
                           Icons.undo_outlined, 
-                          color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.6), 
+                          color: _activeZone == 2 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
                           size: 22
                         ),
                         Text(
                           isNarrow ? '撤销' : '划过撤销', 
                           style: TextStyle(
-                            color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.6), 
+                            color: _activeZone == 2 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
                             fontSize: isNarrow ? 12 : 11,
                             fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
                           )
