@@ -1691,9 +1691,8 @@ class WordListPageState extends State<WordListPage>
         }
       }
 
-      // 如果处于手写模式，点击单词后确保遮罩层重新出现
       if (studyMode == WordListStudyMode.dictationHandwriting) {
-        _isHandwritingOverlayVisible = true;
+        // _isHandwritingOverlayVisible = true; // 移除这里的全局自动恢复
       }
     });
 
@@ -2895,7 +2894,10 @@ class WordListPageState extends State<WordListPage>
                       /// 右半部内容 (点击提示)
                       Expanded(
                         flex: 3,
-                        child: GestureDetector(
+                        child: Stack(
+                          alignment: Alignment.centerRight,
+                          children: [
+                            GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () {
                             if (studyMode == WordListStudyMode.hideChinese ||
@@ -2960,7 +2962,35 @@ class WordListPageState extends State<WordListPage>
                             ),
                           ),
                         ),
-                      ),
+                        if (studyMode == WordListStudyMode.dictationHandwriting)
+                          Positioned(
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isHandwritingOverlayVisible = true;
+                                });
+                                if (getBookMarkUiPosition() != i) {
+                                  onWordPressed(word, i, false, null);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.draw_outlined, 
+                                  size: 20, 
+                                  color: isDarkMode ? Colors.white38 : Colors.black38
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                     ],
                   ),
                 ),
@@ -4302,6 +4332,9 @@ class WordListPageState extends State<WordListPage>
               },
               onPanEnd: (details) {
                 if (_dragHighlightedIndex != null) {
+                   setState(() {
+                     _isHandwritingOverlayVisible = true;
+                   });
                    onWordPressed(words[_dragHighlightedIndex!], _dragHighlightedIndex!, false, null);
                    HapticFeedback.lightImpact();
                 }
