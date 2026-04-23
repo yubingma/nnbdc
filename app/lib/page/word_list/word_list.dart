@@ -4209,7 +4209,7 @@ class WordListPageState extends State<WordListPage>
     return Positioned(
       top: appBarHeight,
       left: 0,
-      right: 0,
+      right: 60.0, // 关键：右侧留出 60 像素的物理空白，使手势天然透传
       bottom: 0,
       child: Stack(
         children: [
@@ -4221,7 +4221,7 @@ class WordListPageState extends State<WordListPage>
               useBoxDecoration: false,
               showCanvasButtons: true, 
               enableNavigationGestures: false,
-              smartRightZoneWidth: 60.0,
+              smartRightZoneWidth: 0, // 外部已留白，内部不再需要逻辑感应区
               onRecognized: (text) {
                 final targetWord = activeWord;
                 if (targetWord != null) { 
