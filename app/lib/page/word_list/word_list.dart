@@ -2198,15 +2198,11 @@ class WordListPageState extends State<WordListPage>
               ),
             ),
             child: Text(
-              // 只有当前单词才显示提示文字或识别结果
-              // 提示文字优先于识别结果显示
+              // 只有当前单词才显示提示文字
               isBookmarked
                   ? (word.hintLetterCount > 0
                       ? word.word.spell.substring(0, word.hintLetterCount)
-                      : ((asrResult is String &&
-                              (asrResult as String).isNotEmpty)
-                          ? (asrResult as String)
-                          : '请说出单词发音'))
+                      : '请说出单词发音')
                   : '', // 非当前单词只显示下划线，不显示文字
               textScaler: TextScaler.linear(1.0),
               style: TextStyle(
