@@ -4214,7 +4214,18 @@ class WordListPageState extends State<WordListPage>
       child: Stack(
         children: [
           Positioned.fill(
-            child: HandwritingBoard(
+            child: Container(
+              // 为手写区域添加微弱的底色，与右侧纯透传区形成对比
+              decoration: BoxDecoration(
+                color: (isDarkMode ? Colors.black : Colors.white).withValues(alpha: 0.1),
+                border: Border(
+                  right: BorderSide(
+                    color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: HandwritingBoard(
               key: ValueKey('handwriting_$bookmarkedIndex'),
               showHeader: false,
               showCloseButton: false, 
@@ -4250,9 +4261,10 @@ class WordListPageState extends State<WordListPage>
               onCancel: () {},
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
   }
 }
 
