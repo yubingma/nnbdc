@@ -278,7 +278,7 @@
 0|exaggeration
 0|reliant
 0|reliance
-0|exe
+0|exert
 0|abolish
 0|retain
 0|incentive
@@ -449,13 +449,13 @@
 0|endure
 0|emphasize
 0|emphasis
-0|impo
+0|import
 0|academic
 0|academically
 0|enroll
 0|enrollment
 0|alternative
-0|counterpa
+0|counterpart
 0|revise
 0|urgent
 0|diverse
@@ -492,7 +492,7 @@
 0|limit
 0|limitation
 0|limited
-0|disto
+0|distort
 0|distorted
 0|distortion
 0|identical

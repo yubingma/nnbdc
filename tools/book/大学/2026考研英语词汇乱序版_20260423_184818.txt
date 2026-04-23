@@ -74,7 +74,7 @@
 0|identify
 0|significant
 0|balance
-0|expe
+0|expert
 0|source
 0|trend
 0|interpret
@@ -421,7 +421,7 @@
 0|detect
 0|dispute
 0|additional
-0|impo
+0|import
 0|sympathy
 0|provision
 0|shed
@@ -545,7 +545,7 @@
 0|considerable
 0|hormone
 0|vulnerable
-0|counterpa
+0|counterpart
 0|immune
 0|permit
 0|transition
@@ -702,7 +702,7 @@
 0|scheme
 0|distinguish
 0|index
-0|conve
+0|convert
 0|instinct
 0|civil
 0|engagement
@@ -764,7 +764,7 @@
 0|suppress
 0|universal
 0|barely
-0|exe
+0|exert
 0|innocent
 0|vague
 0|subsidy
@@ -777,7 +777,7 @@
 0|shelter
 0|industrial
 0|philosopher
-0|ale
+0|alert
 0|complicated
 0|intensity
 0|simplify
@@ -913,7 +913,7 @@
 0|margin
 0|senate
 0|monopoly
-0|disto
+0|distort
 0|originate
 0|artefact
 0|artifact
@@ -1007,7 +1007,7 @@
 0|differentiate
 0|threshold
 0|underlie
-0|asse
+0|assert
 0|variation
 0|reserve
 0|wholly
@@ -1109,7 +1109,7 @@
 0|decent
 0|fantasy
 0|enthusiastic
-0|depa
+0|depart
 0|interrupt
 0|coalition
 0|emergency
@@ -1352,7 +1352,7 @@
 0|presumably
 0|occasion
 0|soar
-0|transpo
+0|transport
 0|dignity
 0|forge
 0|hook
@@ -1407,7 +1407,7 @@
 0|occurrence
 0|intimate
 0|fraction
-0|inve
+0|invert
 0|disclose
 0|plug
 0|inferior
@@ -1477,7 +1477,7 @@
 0|chip
 0|gut
 0|comparable
-0|expo
+0|export
 0|feeble
 0|defer
 0|editorial
@@ -1696,7 +1696,7 @@
 0|cling
 0|withhold
 0|seemingly
-0|dive
+0|divert
 0|initiate
 0|congratulate
 0|persist
@@ -1855,7 +1855,7 @@
 0|weed
 0|perplex
 0|swell
-0|ove
+0|overt
 0|anecdote
 0|obstruct
 0|casualty
@@ -2078,7 +2078,7 @@
 0|suicide
 0|cherish
 0|hawk
-0|reso
+0|resort
 0|blend
 0|economical
 0|monotonous
@@ -2558,7 +2558,7 @@
 0|Celsius
 0|eject
 0|shave
-0|qua
+0|quart
 0|stove
 0|exquisite
 0|twinkle
@@ -2578,7 +2578,7 @@
 0|hum
 0|spectator
 0|compile
-0|inse
+0|insert
 0|autonomy
 0|procession
 0|scratch
@@ -2895,7 +2895,7 @@
 0|commonwealth
 0|omit
 0|naked
-0|impa
+0|impart
 0|petty
 0|deduct
 0|adore
@@ -2972,7 +2972,7 @@
 0|plaintiff
 0|timid
 0|ventilate
-0|ave
+0|avert
 0|overthrow
 0|cube
 0|amend
@@ -3111,7 +3111,7 @@
 0|grease
 0|skull
 0|pistol
-0|esco
+0|escort
 0|forehead
 0|thigh
 0|inflict
@@ -3266,7 +3266,7 @@
 0|heap
 0|velvet
 0|hollow
-0|reto
+0|retort
 0|expel
 0|diagram
 0|blouse
@@ -3350,7 +3350,7 @@
 0|air conditioning
 0|aircraft
 0|airline
-0|airpo
+0|airport
 0|alive
 0|all
 0|allow
@@ -3383,7 +3383,7 @@
 0|anything
 0|anyway
 0|anywhere
-0|apa
+0|apart
 0|apartment
 0|apologize
 0|apologise
@@ -3399,6 +3399,7 @@
 0|arrival
 0|arrive
 0|arrow
+0|art
 0|article
 0|artist
 0|artistic
@@ -3582,7 +3583,7 @@
 0|carrier
 0|carrot
 0|carry
-0|ca
+0|cart
 0|cartoon
 0|case
 0|castle
@@ -3617,7 +3618,7 @@
 0|character
 0|charge
 0|charm
-0|cha
+0|chart
 0|chat
 0|cheap
 0|cheat
@@ -3686,7 +3687,7 @@
 0|colour
 0|comb
 0|come
-0|comfo
+0|comfort
 0|common
 0|communicate
 0|communication
@@ -3703,7 +3704,7 @@
 0|computer
 0|comrade
 0|concept
-0|conce
+0|concert
 0|condition
 0|confident
 0|congratulation
@@ -3739,7 +3740,7 @@
 0|couple
 0|courage
 0|course
-0|cou
+0|court
 0|cousin
 0|cover
 0|cow
@@ -3805,11 +3806,11 @@
 0|department
 0|depend
 0|depth
-0|dese
+0|desert
 0|design
 0|desire
 0|desk
-0|desse
+0|dessert
 0|destroy
 0|determine
 0|develop
@@ -3835,7 +3836,7 @@
 0|direction
 0|directly
 0|director
-0|di
+0|dirt
 0|dirty
 0|disable
 0|disappoint
@@ -3906,7 +3907,7 @@
 0|edge
 0|education
 0|effect
-0|effo
+0|effort
 0|egg
 0|eight
 0|eighteen
@@ -4217,7 +4218,7 @@
 0|health
 0|healthy
 0|hear
-0|hea
+0|heart
 0|heat
 0|heaven
 0|heavy
@@ -4277,7 +4278,7 @@
 0|hunt
 0|hurricane
 0|hurry
-0|hu
+0|hurt
 0|husband
 0|I
 0|ice
@@ -4733,7 +4734,7 @@
 0|pardon
 0|parent
 0|park
-0|pa
+0|part
 0|particular
 0|partly
 0|partner
@@ -4741,7 +4742,7 @@
 0|pass
 0|passage
 0|passenger
-0|passpo
+0|passport
 0|past
 0|pat
 0|path
@@ -4834,7 +4835,7 @@
 0|popular
 0|population
 0|pork
-0|po
+0|port
 0|position
 0|possession
 0|possible
@@ -4954,7 +4955,7 @@
 0|repair
 0|repeat
 0|reply
-0|repo
+0|report
 0|republic
 0|request
 0|require
@@ -5093,13 +5094,13 @@
 0|shine
 0|ship
 0|shipment
-0|shi
+0|shirt
 0|shock
 0|shoe
 0|shoot
 0|shop
 0|shore
-0|sho
+0|short
 0|shortage
 0|shot
 0|should
@@ -5145,13 +5146,14 @@
 0|skim
 0|skin
 0|skip
+0|skirt
 0|sky
 0|slave
 0|sleep
 0|slim
 0|slow
 0|small
-0|sma
+0|smart
 0|smell
 0|smile
 0|smoke
@@ -5185,6 +5187,7 @@
 0|soon
 0|sorrow
 0|sorry
+0|sort
 0|soul
 0|sound
 0|soup
@@ -5207,7 +5210,7 @@
 0|spit
 0|splendid
 0|spoon
-0|spo
+0|sport
 0|sportsman
 0|sportswoman
 0|spread
@@ -5222,7 +5225,7 @@
 0|standard
 0|star
 0|stare
-0|sta
+0|start
 0|station
 0|stay
 0|steady
@@ -5280,7 +5283,7 @@
 0|supermarket
 0|supper
 0|supply
-0|suppo
+0|support
 0|suppose
 0|sure
 0|surface
@@ -6616,7 +6619,7 @@
 0|discernible
 0|disciplinary
 0|disclaim
-0|disconce
+0|disconcert
 0|disengage
 0|dishonesty
 0|disinfect
@@ -6747,7 +6750,7 @@
 0|forester
 0|forgery
 0|formative
-0|fo
+0|fort
 0|forthright
 0|fortnightly
 0|fourfold
@@ -6978,7 +6981,7 @@
 0|marquetry
 0|marsh
 0|marshal
-0|ma
+0|mart
 0|matchmaker
 0|maximal
 0|mayoral
@@ -7008,7 +7011,7 @@
 0|mindlessly
 0|mineralogist
 0|minimalist
-0|miniski
+0|miniskirt
 0|ministerial
 0|misapply
 0|mischievous
@@ -7348,6 +7351,7 @@
 0|titanic
 0|toothless
 0|toothy
+0|tort
 0|tournament
 0|traceable
 0|trainee
@@ -7493,7 +7497,6 @@
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 7495
 # Total Entries Extracted: 7495
-# Duplicate Words Merged : 4
-# Duplicate List Preview : ['a', 'ski', 'so', 'to']
-# Final Unique Word Count: 7491
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 7495
 # -------------------------------

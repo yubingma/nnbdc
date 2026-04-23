@@ -266,7 +266,7 @@
 0|democracy
 0|lingual
 0|phenomenon
-0|asse
+0|assert
 0|component
 0|compromise
 0|concentrate
@@ -409,7 +409,7 @@
 0|inappropriate
 0|invade
 0|seldom
-0|counterpa
+0|counterpart
 0|deceptive
 0|impartial
 0|subscribe
@@ -589,7 +589,7 @@
 0|underlie
 0|upside
 0|permission
-0|conve
+0|convert
 0|establishment
 0|renovation
 0|sorrow
@@ -597,7 +597,7 @@
 0|firm
 0|grieve
 0|regret
-0|depa
+0|depart
 0|induce
 0|regular
 0|agency
@@ -749,7 +749,7 @@
 0|restore
 0|restrict
 0|turbulent
-0|apa
+0|apart
 0|turnaround
 0|colleague
 0|dismiss
@@ -776,7 +776,7 @@
 0|explore
 0|pledge
 0|express
-0|inve
+0|invert
 0|distribute
 0|revolution
 0|commercial
@@ -1133,7 +1133,7 @@
 0|enviable
 0|flywheel
 0|heel
-0|impo
+0|import
 0|landscape
 0|lottery
 0|Midwestern
@@ -1159,7 +1159,7 @@
 0|bar
 0|candidate
 0|dawn
-0|effo
+0|effort
 0|faith
 0|hand
 0|knowledge
@@ -1245,7 +1245,7 @@
 0|blank
 0|buzzword
 0|cream
-0|disto
+0|distort
 0|electronic
 0|environmentalist
 0|extremely
@@ -1404,7 +1404,7 @@
 0|marine
 0|never
 0|open
-0|pa
+0|part
 0|raw
 0|subfield
 0|tempt
@@ -1643,7 +1643,7 @@
 0|recall
 0|search
 0|supply
-0|suppo
+0|support
 0|textile
 0|assemble
 0|Virginia
@@ -1754,7 +1754,7 @@
 0|little
 0|frown
 0|self-serving
-0|cou
+0|court
 0|mirror
 0|golden
 0|scoop
@@ -1807,7 +1807,7 @@
 0|body
 0|carry-on
 0|cultural
-0|dive
+0|divert
 0|embarrassed
 0|erase
 0|fantasize
@@ -2191,7 +2191,7 @@
 0|green
 0|horse
 0|linguist
-0|miniski
+0|miniskirt
 0|overfund
 0|serve
 0|unnecessary
@@ -2421,7 +2421,7 @@
 0|Christ
 0|flight
 0|guilt
-0|hu
+0|hurt
 0|vain
 0|loop
 0|misunderstand
@@ -2441,7 +2441,7 @@
 0|sharp
 0|tour
 0|maintain
-0|ale
+0|alert
 0|boycott
 0|chromosome
 0|design
@@ -2598,6 +2598,7 @@
 0|shorten
 0|sparingly
 0|taxpayer
+0|tort
 0|watcher
 0|wire
 0|along
@@ -2608,7 +2609,7 @@
 0|parachute
 0|moment
 0|renege
-0|sho
+0|short
 0|trail
 0|brochure
 0|devil
@@ -2664,7 +2665,7 @@
 0|mold
 0|mould
 0|prison
-0|repo
+0|report
 0|sightseeing
 0|bulk
 0|clean
@@ -2674,7 +2675,7 @@
 0|mount
 0|private
 0|sign
-0|transpo
+0|transport
 0|ambition
 0|bummer
 0|clear
@@ -2778,7 +2779,7 @@
 0|trend
 0|busy
 0|climate
-0|di
+0|dirt
 0|excel
 0|fortune
 0|museum
@@ -2847,7 +2848,7 @@
 0|civilization
 0|conclusion
 0|corruption
-0|disconce
+0|disconcert
 0|exchequer
 0|finally
 0|further
@@ -2888,7 +2889,7 @@
 0|troublemaker
 0|coal
 0|discover
-0|exe
+0|exert
 0|interact
 0|picture
 0|slight
@@ -3019,7 +3020,7 @@
 0|color
 0|colour
 0|dispose
-0|expe
+0|expert
 0|intricate
 0|return
 0|soft
@@ -3049,7 +3050,7 @@
 0|plead
 0|review
 0|solve
-0|comfo
+0|comfort
 0|function
 0|invent
 0|pleasure
@@ -3065,7 +3066,7 @@
 0|future
 0|plenty
 0|revitalize
-0|so
+0|sort
 0|comment
 0|futurologist
 0|pluck
@@ -3154,7 +3155,7 @@
 0|successive
 0|tragedy
 0|unemployed
-0|upsta
+0|upstart
 0|wealthy
 0|workday
 0|circuit
@@ -3200,7 +3201,7 @@
 0|policymaker
 0|ring
 0|species
-0|a
+0|art
 0|compass
 0|double
 0|pool
@@ -3305,7 +3306,7 @@
 0|pound
 0|pour
 0|spur
-0|conce
+0|concert
 0|concertgoer
 0|drug
 0|drugstore
@@ -3368,7 +3369,7 @@
 0|attorney
 0|prehistoric
 0|star
-0|airpo
+0|airport
 0|attraction
 0|biologist
 0|broadly
@@ -3401,7 +3402,7 @@
 0|useful
 0|website
 0|conjunction
-0|sta
+0|start
 0|auction
 0|startle
 0|audience
@@ -3503,7 +3504,6 @@
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 3502
 # Total Entries Extracted: 3502
-# Duplicate Words Merged : 1
-# Duplicate List Preview : ['to']
-# Final Unique Word Count: 3501
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 3502
 # -------------------------------

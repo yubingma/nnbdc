@@ -96,11 +96,11 @@
 0|magnet
 0|appendix
 0|orchestra
-0|apa
+0|apart
 0|sufficient
 0|these
-0|reso
-0|passpo
+0|resort
+0|passport
 0|ally
 0|lower
 0|within
@@ -162,7 +162,7 @@
 0|susceptible
 0|bracket
 0|encounter
-0|conve
+0|convert
 0|specification
 0|fraction
 0|landlord
@@ -216,7 +216,7 @@
 0|nitrogen
 0|stack
 0|agriculture
-0|ski
+0|skirt
 0|appreciate
 0|typist
 0|approval
@@ -340,7 +340,7 @@
 0|transfer
 0|primitive
 0|find
-0|dive
+0|divert
 0|volt
 0|occasion
 0|possible
@@ -419,7 +419,7 @@
 0|equipment
 0|pathetic
 0|sensitive
-0|sho
+0|short
 0|sunrise
 0|eliminate
 0|swim
@@ -504,7 +504,7 @@
 0|prone
 0|notify
 0|specialize
-0|asse
+0|assert
 0|log
 0|week
 0|peep
@@ -524,7 +524,7 @@
 0|monitor
 0|data
 0|please
-0|so
+0|sort
 0|husband
 0|personality
 0|limitation
@@ -555,7 +555,7 @@
 0|shock
 0|rust
 0|shower
-0|reto
+0|retort
 0|cry
 0|apartment
 0|violence
@@ -607,7 +607,7 @@
 0|irrigate
 0|doze
 0|mechanical
-0|cou
+0|court
 0|detective
 0|penetrate
 0|inventory
@@ -694,7 +694,7 @@
 0|structure
 0|coalition
 0|composite
-0|conce
+0|concert
 0|magistrate
 0|portray
 0|leather
@@ -704,7 +704,7 @@
 0|fifty
 0|likelihood
 0|central
-0|comfo
+0|comfort
 0|pinch
 0|crash
 0|source
@@ -895,7 +895,7 @@
 0|mount
 0|ministry
 0|salesman
-0|suppo
+0|support
 0|width
 0|pause
 0|warehouse
@@ -984,7 +984,7 @@
 0|influential
 0|learned
 0|hearing
-0|depa
+0|depart
 0|simultaneous
 0|mug
 0|reap
@@ -1056,7 +1056,7 @@
 0|sophomore
 0|many
 0|fatal
-0|expe
+0|expert
 0|thing
 0|lose
 0|bear
@@ -1194,7 +1194,7 @@
 0|delay
 0|publicity
 0|keep
-0|counterpa
+0|counterpart
 0|theme
 0|mill
 0|hurl
@@ -1412,6 +1412,7 @@
 0|diverse
 0|umbrella
 0|utter
+0|so
 0|intention
 0|session
 0|food
@@ -1525,7 +1526,7 @@
 0|mist
 0|unity
 0|past
-0|ca
+0|cart
 0|drawback
 0|classify
 0|behavior
@@ -1556,7 +1557,7 @@
 0|habit
 0|donate
 0|humiliate
-0|di
+0|dirt
 0|visit
 0|shove
 0|baby
@@ -1643,7 +1644,7 @@
 0|distress
 0|concede
 0|poll
-0|repo
+0|report
 0|hill
 0|night
 0|intimate
@@ -2094,7 +2095,7 @@
 0|consecutive
 0|fisherman
 0|trust
-0|impa
+0|impart
 0|contrary
 0|usually
 0|sincere
@@ -2178,6 +2179,7 @@
 0|complete
 0|matter
 0|ready
+0|art
 0|advise
 0|horse
 0|shake
@@ -2229,7 +2231,7 @@
 0|funeral
 0|pest
 0|rude
-0|shi
+0|shirt
 0|god
 0|banquet
 0|prudent
@@ -2272,7 +2274,7 @@
 0|scan
 0|visual
 0|percent
-0|ave
+0|avert
 0|happy
 0|gang
 0|catch
@@ -2295,7 +2297,7 @@
 0|destiny
 0|counsel
 0|connect
-0|disto
+0|distort
 0|ballet
 0|loan
 0|overwhelming
@@ -2443,7 +2445,7 @@
 0|satisfactory
 0|layman
 0|cripple
-0|transpo
+0|transport
 0|pace
 0|extensive
 0|early
@@ -2594,7 +2596,7 @@
 0|quarrel
 0|notable
 0|torch
-0|pa
+0|part
 0|spouse
 0|basketball
 0|denounce
@@ -2682,7 +2684,7 @@
 0|hit
 0|dish
 0|fierce
-0|impo
+0|import
 0|clock
 0|mention
 0|noun
@@ -2695,7 +2697,7 @@
 0|lawn
 0|fragrant
 0|Christian
-0|exe
+0|exert
 0|alive
 0|brave
 0|super
@@ -2812,7 +2814,7 @@
 0|alcohol
 0|zip
 0|virtual
-0|dese
+0|desert
 0|strengthen
 0|maintenance
 0|injure
@@ -2892,7 +2894,7 @@
 0|anywhere
 0|celebrate
 0|widow
-0|esco
+0|escort
 0|restaurant
 0|series
 0|riot
@@ -3335,7 +3337,7 @@
 0|meantime
 0|jungle
 0|conform
-0|sta
+0|start
 0|aesthetic
 0|switch
 0|cow
@@ -3480,7 +3482,7 @@
 0|notwithstanding
 0|flap
 0|hair
-0|hu
+0|hurt
 0|stem
 0|receipt
 0|physics
@@ -3519,7 +3521,7 @@
 0|different
 0|front
 0|scar
-0|hea
+0|heart
 0|noble
 0|bulletin
 0|popular
@@ -3801,7 +3803,7 @@
 0|stocking
 0|living-room
 0|once
-0|airpo
+0|airport
 0|carry
 0|suppress
 0|troop
@@ -3909,7 +3911,7 @@
 0|romantic
 0|deposit
 0|way
-0|sma
+0|smart
 0|considerable
 0|expression
 0|office
@@ -4020,7 +4022,7 @@
 0|cartoon
 0|commonplace
 0|ambition
-0|inse
+0|insert
 0|layout
 0|regard
 0|pollute
@@ -4059,7 +4061,8 @@
 0|display
 0|citizen
 0|petty
-0|effo
+0|ski
+0|effort
 0|spelling
 0|acquire
 0|boat
@@ -4096,7 +4099,7 @@
 0|reluctant
 0|sister
 0|nickel
-0|po
+0|port
 0|collapse
 0|waste
 0|behalf
@@ -4109,7 +4112,7 @@
 0|control
 0|half
 0|tragedy
-0|ale
+0|alert
 0|write
 0|detail
 0|research
@@ -4172,7 +4175,7 @@
 0|kill
 0|breathe
 0|classification
-0|qua
+0|quart
 0|tolerance
 0|curious
 0|manner
@@ -4367,7 +4370,7 @@
 0|figure
 0|predominant
 0|wise
-0|inve
+0|invert
 0|devil
 0|military
 0|refrain
@@ -4467,7 +4470,7 @@
 0|southwest
 0|decline
 0|shortly
-0|spo
+0|sport
 0|comprise
 0|underline
 0|cite
@@ -4552,7 +4555,7 @@
 0|executive
 0|mediate
 0|mentor
-0|ove
+0|overt
 0|plagiarism
 0|policewoman
 0|habitat
@@ -4807,7 +4810,7 @@
 0|neck
 0|attach
 0|casualty
-0|desse
+0|dessert
 0|literary
 0|restless
 0|fork
@@ -5039,7 +5042,7 @@
 0|foolish
 0|feudal
 0|glue
-0|cha
+0|chart
 0|reject
 0|carpenter
 0|thank
@@ -5266,6 +5269,7 @@
 0|repeat
 0|tray
 0|velvet
+0|dive
 0|awake
 0|epoch
 0|five
@@ -5353,7 +5357,7 @@
 0|tug
 0|civil
 0|adjust
-0|expo
+0|export
 0|farther
 0|extract
 0|wage
@@ -5557,7 +5561,6 @@
 # --- Extraction Audit Report ---
 # PDF Max Sequence Number: 5559
 # Total Entries Extracted: 5559
-# Duplicate Words Merged : 4
-# Duplicate List Preview : ['so', 'a', 'ski', 'dive']
-# Final Unique Word Count: 5555
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 5559
 # -------------------------------

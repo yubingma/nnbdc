@@ -368,7 +368,7 @@
 0|democracy
 0|lingual
 0|phenomenon
-0|asse
+0|assert
 0|assertion
 0|component
 0|compromise
@@ -603,7 +603,7 @@
 0|inappropriate
 0|invade
 0|seldom
-0|counterpa
+0|counterpart
 0|deceptive
 0|deception
 0|deceptiveness
@@ -876,7 +876,7 @@
 0|recoup
 0|permission
 0|permissive
-0|conve
+0|convert
 0|establishment
 0|renovation
 0|sorrow
@@ -886,7 +886,7 @@
 0|grievance
 0|regret
 0|regrettable
-0|depa
+0|depart
 0|departure
 0|induce
 0|regular
@@ -1125,7 +1125,7 @@
 0|restrict
 0|restriction
 0|turbulent
-0|apa
+0|apart
 0|turnaround
 0|dismiss
 0|turnover
@@ -1170,7 +1170,7 @@
 0|express
 0|expressive
 0|expressly
-0|inve
+0|invert
 0|distribute
 0|distribution
 0|revolution
@@ -1577,7 +1577,7 @@
 0|flywheel
 0|goallessness
 0|heel
-0|impo
+0|import
 0|importation
 0|landscape
 0|lottery
@@ -1608,7 +1608,7 @@
 0|well-being
 0|candidate
 0|dawn
-0|effo
+0|effort
 0|faith
 0|knowledge
 0|knowledgeable
@@ -1702,7 +1702,7 @@
 0|blank
 0|buzzword
 0|cream
-0|disto
+0|distort
 0|electronic
 0|environmentalist
 0|extremely
@@ -1862,7 +1862,7 @@
 0|leader
 0|leadership
 0|marine
-0|pa
+0|part
 0|raw
 0|subfield
 0|tempt
@@ -2134,7 +2134,7 @@
 0|search
 0|supply
 0|supplier
-0|suppo
+0|support
 0|supportive
 0|textile
 0|assemble
@@ -2319,7 +2319,7 @@
 0|body
 0|carry-on
 0|cultural
-0|dive
+0|divert
 0|embarrassed
 0|embarrassment
 0|erase
@@ -2701,7 +2701,7 @@
 0|chat
 0|chatter
 0|linguist
-0|miniski
+0|miniskirt
 0|overfund
 0|serve
 0|service
@@ -2947,7 +2947,7 @@
 0|flight
 0|guilt
 0|guilty
-0|hu
+0|hurt
 0|vain
 0|vanity
 0|loop
@@ -2970,7 +2970,7 @@
 0|tourism
 0|maintain
 0|maintenance
-0|ale
+0|alert
 0|boycott
 0|chromosome
 0|design
@@ -3137,7 +3137,7 @@
 0|shorten
 0|sparingly
 0|taxpayer
-0|to
+0|tort
 0|watcher
 0|wire
 0|along
@@ -3216,7 +3216,7 @@
 0|privatise
 0|privatization
 0|privatisation
-0|transpo
+0|transport
 0|transportation
 0|bummer
 0|sign
@@ -3415,7 +3415,7 @@
 0|civilization
 0|conclusion
 0|corruption
-0|disconce
+0|disconcert
 0|finally
 0|further
 0|hacking
@@ -3453,7 +3453,7 @@
 0|discover
 0|discovery
 0|troublemaker
-0|exe
+0|exert
 0|interact
 0|interaction
 0|slight
@@ -3577,7 +3577,7 @@
 0|dispose
 0|disposable
 0|disposal
-0|expe
+0|expert
 0|intricate
 0|column
 0|explain
@@ -3610,7 +3610,7 @@
 0|reviewer
 0|solve
 0|solution
-0|comfo
+0|comfort
 0|function
 0|functional
 0|functioning
@@ -3633,7 +3633,7 @@
 0|soothing
 0|arc
 0|revitalize
-0|so
+0|sort
 0|comment
 0|futurologist
 0|pluck
@@ -3698,7 +3698,7 @@
 0|successive
 0|tragedy
 0|unemployed
-0|upsta
+0|upstart
 0|wealthy
 0|workday
 0|circuit
@@ -3749,7 +3749,7 @@
 0|comparison
 0|policymaker
 0|species
-0|a
+0|art
 0|artist
 0|artistic
 0|artwork
@@ -3857,7 +3857,7 @@
 0|pound
 0|pour
 0|spur
-0|conce
+0|concert
 0|concertgoer
 0|power
 0|powerful
@@ -3926,7 +3926,7 @@
 0|confusing
 0|attorney
 0|prehistoric
-0|airpo
+0|airport
 0|attraction
 0|biologist
 0|broadly

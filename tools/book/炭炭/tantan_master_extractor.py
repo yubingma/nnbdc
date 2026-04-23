@@ -45,15 +45,21 @@ def extract_pdf(pdf_path, output_path):
                 if val > max_seq_num: max_seq_num = val
                 
                 if i + 1 < len(lines):
-                    word = lines[i+1].strip()
-                    if word and not word.isdigit() and word not in ["Word", "Meaning", "N0.", "NO.", "Vocabulary List"]:
-                        if any(header in word for header in ["Vocabula", "List", "中英词表", "默写释义"]):
+                    # CRITICAL FIX: Do NOT strip() before character replacement
+                    # because \xa0 (rt in shifted) might be stripped as whitespace.
+                    word_raw = lines[i+1] 
+                    word = word_raw
+                    
+                    if word_raw.strip() and not word_raw.strip().isdigit() and word_raw.strip() not in ["Word", "Meaning", "N0.", "NO.", "Vocabulary List"]:
+                        if any(header in word_raw for header in ["Vocabula", "List", "中英词表", "默写释义"]):
                             i += 1
                             continue
 
                         for char, rep in replacements.items():
                             word = word.replace(char, rep)
                         
+                        # Strip only AFTER replacement
+                        word = word.strip()
                         cleaned_word = "".join(c for c in word if ord(c) < 128)
                         if cleaned_word:
                             raw_entries.append(cleaned_word)
@@ -75,13 +81,11 @@ def extract_pdf(pdf_path, output_path):
         for word in unique_words:
             f.write(f"0|{word}\n")
         
-        # Write Audit Report at the end
         f.write(f"\n# --- Extraction Audit Report ---\n")
         f.write(f"# PDF Max Sequence Number: {max_seq_num}\n")
         f.write(f"# Total Entries Extracted: {len(raw_entries)}\n")
         f.write(f"# Duplicate Words Merged : {len(duplicate_words)}\n")
         if duplicate_words:
-            # Show up to 15 duplicates for visibility
             display_list = duplicate_words[:15]
             f.write(f"# Duplicate List Preview : {display_list}{'...' if len(duplicate_words) > 15 else ''}\n")
         f.write(f"# Final Unique Word Count: {len(unique_words)}\n")
