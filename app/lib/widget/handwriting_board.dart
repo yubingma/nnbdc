@@ -19,6 +19,7 @@ class HandwritingBoard extends StatefulWidget {
   final bool useBoxDecoration;
   final bool showCanvasButtons;
   final bool enableNavigationGestures;
+  final double smartRightZoneWidth;
 
   const HandwritingBoard({
     super.key,
@@ -32,6 +33,7 @@ class HandwritingBoard extends StatefulWidget {
     this.useBoxDecoration = true,
     this.showCanvasButtons = true,
     this.enableNavigationGestures = true,
+    this.smartRightZoneWidth = 0.0,
   });
 
   @override
@@ -300,6 +302,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
                   showButtons: widget.showCanvasButtons,
                   onCancel: widget.onCancel,
                   enableNavigationGestures: widget.enableNavigationGestures,
+                  smartRightZoneWidth: widget.smartRightZoneWidth,
                 ),
               ],
             ),
@@ -322,6 +325,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final bool showButtons;
   final VoidCallback? onCancel;
   final bool enableNavigationGestures;
+  final double smartRightZoneWidth;
 
   const _HandwritingCanvas({
     required this.lines,
@@ -335,6 +339,7 @@ class _HandwritingCanvas extends StatefulWidget {
     required this.showButtons,
     this.onCancel,
     this.enableNavigationGestures = true,
+    this.smartRightZoneWidth = 0.0,
   });
 
   @override
@@ -344,6 +349,8 @@ class _HandwritingCanvas extends StatefulWidget {
 class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   late final _HandwritingController _controller;
   int? _activePointerId;
+  final Set<int> _ignoredPointers = {}; 
+  DateTime _lastStrokeEndTime = DateTime.fromMillisecondsSinceEpoch(0);
   
   // 用于防止在一次划动中重复触发区域动作
   bool _rewriteTriggered = false;
@@ -391,6 +398,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
       builder: (context, constraints) {
         final height = constraints.maxHeight;
         final width = constraints.maxWidth;
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
         
         // 定义中心化的感应区，更加适合平板书写习惯，减少运笔负荷
         final bool isNarrow = width < 500;
@@ -418,17 +426,30 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         );
 
         return Listener(
-          behavior: HitTestBehavior.opaque,
+          behavior: widget.smartRightZoneWidth > 0 ? HitTestBehavior.translucent : HitTestBehavior.opaque,
           onPointerDown: (event) {
-            // 注意：重写按钮现在不被 isRecognizing 锁定，确保随时可重置
             if (_activePointerId != null) return;
+
+            final p = event.localPosition;
+            
+            // 智能交互区逻辑
+            if (widget.smartRightZoneWidth > 0) {
+              final inRightZone = p.dx > width - widget.smartRightZoneWidth;
+              final isRecentWriting = DateTime.now().difference(_lastStrokeEndTime).inMilliseconds < 600;
+              
+              if (inRightZone && !isRecentWriting) {
+                _ignoredPointers.add(event.pointer);
+                return; // 忽略此指针，让其透传到底层UI
+              }
+            }
+
             _activePointerId = event.pointer;
+            _ignoredPointers.remove(event.pointer); // 确保从忽略列表中移除（如果它是由于isRecentWriting被捕获的）
+            
             _rewriteTriggered = false;
             _undoTriggered = false;
             _closeTriggered = false;
 
-            final p = event.localPosition;
-            
             // 触发开始书写回调并取消自动识别计时
             widget.onStartWriting?.call();
             _autoRecognizeTimer?.cancel();
@@ -452,7 +473,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _controller.start(p);
           },
           onPointerMove: (event) {
-            if (event.pointer != _activePointerId) return;
+            if (event.pointer != _activePointerId) {
+              // 如果是正在书写的过程中进入了右侧感应区，且当前指针未被锁定（即起笔不在右侧），
+              // 那么它其实应该已经被捕获了。这里的逻辑主要是防止处理被忽略的指针。
+              if (_ignoredPointers.contains(event.pointer)) return;
+              return;
+            }
             
             final p = event.localPosition;
             
@@ -501,7 +527,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _controller.move(p, event.localDelta);
           },
           onPointerUp: (event) {
-            if (event.pointer != _activePointerId) return;
+            if (event.pointer != _activePointerId) {
+              _ignoredPointers.remove(event.pointer);
+              return;
+            }
+            
+            _lastStrokeEndTime = DateTime.now();
 
             try {
               final p = event.localPosition;
@@ -615,7 +646,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             }
           },
           onPointerCancel: (event) {
-            if (event.pointer != _activePointerId) return;
+            if (event.pointer != _activePointerId) {
+              _ignoredPointers.remove(event.pointer);
+              return;
+            }
             _activePointerId = null;
             _controller.end();
             setState(() => _activeZone = 0);
@@ -645,6 +679,32 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     ),
                   ),
                 ),
+                // 智能交互区视觉提示
+                if (widget.smartRightZoneWidth > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: widget.smartRightZoneWidth,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.03),
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        border: Border(
+                          left: BorderSide(
+                            color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 // 居中显示的感应目标区
                 Positioned(
                   left: rewriteZone.left,

@@ -4277,6 +4277,7 @@ class WordListPageState extends State<WordListPage>
                 useBoxDecoration: false,
                 showCanvasButtons: true, 
                 enableNavigationGestures: false,
+                smartRightZoneWidth: 60.0,
                 onRecognized: (text) {
                   final targetWord = activeWord;
                   if (targetWord != null) { 
