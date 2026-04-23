@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 import 'package:get/get.dart';
+import 'package:nnbdc/widget/handwriting_board.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -44,7 +45,8 @@ const String menuWordList = '浏览词表';
 const String menuWalkman = '随身听';
 const String menuSpeakChinese = '说中文';
 const String menuSpeakEnglish = '说英文';
-const String menuWriteSpell = '拼写练习';
+const String menuWriteSpellTyping = '拼写(打字)';
+const String menuWriteSpellHandwriting = '拼写(手写)';
 const String menuImportFromBook = '从词书导入';
 const String menuImportFromScan = '扫描导入';
 const String menuAiStory = 'AI短文';
@@ -1064,6 +1066,7 @@ class WordListPageState extends State<WordListPage>
 
   AsrLanguage decideAsrLanguage() {
     if (studyMode == WordListStudyMode.dictation ||
+        studyMode == WordListStudyMode.dictationHandwriting ||
         studyMode == WordListStudyMode.speakEnglish) {
       return AsrLanguage.english;
     }
@@ -1692,7 +1695,7 @@ class WordListPageState extends State<WordListPage>
 
 
     // 在默写（dictation）模式下，点击单词后让输入框自动获得焦点
-    if (studyMode == WordListStudyMode.dictation) {
+    if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
       try {
         word.focusNode.requestFocus();
       } catch (e, stackTrace) {
@@ -1772,7 +1775,7 @@ class WordListPageState extends State<WordListPage>
         word.speakEnglishPassed = true;
         word.isAnswerProvidedBySystem = true;
       }
-    } else if (studyMode == WordListStudyMode.dictation) {
+    } else if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
       if (!Util.equalsIgnoreCase(word.spellController.text, word.word.spell)) {
         word.spellController.text = word.word.spell;
         word.isAnswerProvidedBySystem = true;
@@ -2046,7 +2049,7 @@ class WordListPageState extends State<WordListPage>
   }
 
   void _handleWordTap(WordWrapper word, int i) async {
-    if (studyMode == WordListStudyMode.dictation) {
+    if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
       final curr = getBookMarkUiPosition();
       // 点击引发跳转：播放离开的那个单词发音
       if (curr >= 0 && curr != i && curr < words.length) {
@@ -2090,6 +2093,7 @@ class WordListPageState extends State<WordListPage>
 
     // 2. 提示相关按钮 (仅对书签单词有效)
     if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+            studyMode == WordListStudyMode.dictationHandwriting ||
         studyMode == WordListStudyMode.speakChinese ||
         studyMode == WordListStudyMode.speakEnglish)) {
       // 提示按钮已移至右侧点击区域
@@ -2868,7 +2872,7 @@ class WordListPageState extends State<WordListPage>
                             child: (studyMode == WordListStudyMode.speakEnglish || studyMode == WordListStudyMode.hideEnglish)
                                 ? _buildWordMeaning(word, isDarkMode,
                                     topPadding: 0)
-                                : (studyMode == WordListStudyMode.dictation)
+                                : (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting)
                                     ? const SizedBox.shrink()
                                     : _buildWordHeader(word, isBookmarked,
                                         isDarkMode,
@@ -2893,6 +2897,7 @@ class WordListPageState extends State<WordListPage>
                                 onWordPressed(word, i, false, null);
                               }
                             } else if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+                                    studyMode == WordListStudyMode.dictationHandwriting ||
                                     studyMode == WordListStudyMode.speakChinese ||
                                     studyMode == WordListStudyMode.speakEnglish)) {
                               giveALittleHint(word);
@@ -2909,10 +2914,11 @@ class WordListPageState extends State<WordListPage>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 (isBookmarked && (studyMode == WordListStudyMode.dictation ||
+                                        studyMode == WordListStudyMode.dictationHandwriting ||
                                         studyMode == WordListStudyMode.speakChinese ||
                                         studyMode == WordListStudyMode.speakEnglish))
                                     ? IgnorePointer(
-                                        ignoring: studyMode != WordListStudyMode.dictation,
+                                        ignoring: (studyMode != WordListStudyMode.dictation && studyMode != WordListStudyMode.dictationHandwriting),
                                         child: (studyMode == WordListStudyMode.speakChinese)
                                             ? _buildSpeakChineseArea(word)
                                             : (studyMode == WordListStudyMode.speakEnglish)
@@ -2923,7 +2929,7 @@ class WordListPageState extends State<WordListPage>
                                         ? _buildSpeakChineseArea(word)
                                         : (studyMode == WordListStudyMode.speakEnglish)
                                             ? _buildSpeakEnglishArea(word, isBookmarked, isDarkMode)
-                                            : (studyMode == WordListStudyMode.dictation)
+                                            : (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting)
                                                 ? _buildDictationTextField(word, i, isDarkMode)
                                                 : (studyMode == WordListStudyMode.hideChinese)
                                                     ? _buildHiddenAnswerArea(word, i, isDarkMode, false)
@@ -2932,11 +2938,36 @@ class WordListPageState extends State<WordListPage>
                                                         : _buildWordMeaning(word, isDarkMode, topPadding: 0),
                                 
                                 /// 给点提示 (如果是默写模式，位置在输入框下方)
-                                if (studyMode == WordListStudyMode.dictation &&
-                                    getBookMarkUiPosition() == i)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 8),
                                     child: _buildDictationHint(word),
+                                  ),
+                                if (studyMode == WordListStudyMode.dictationHandwriting &&
+                                    getBookMarkUiPosition() == i)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: SizedBox(
+                                      height: 260,
+                                      child: HandwritingBoard(
+                                        onRecognized: (text) {
+                                          setState(() {
+                                            word.spellController.text = text;
+                                            // 模拟 onChanged 触发检查
+                                            if (Util.equalsIgnoreCase(word.word.spell, text)) {
+                                              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                                                try {
+                                                  await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+                                                } catch (e) {}
+                                                jumpToNextWord(i, false, () {});
+                                              });
+                                            }
+                                          });
+                                        },
+                                        onCancel: () {
+                                          // 手写模式不取消，除非切换模式
+                                        },
+                                      ),
+                                    ),
                                   ),
                               ],
                             ),
@@ -2973,7 +3004,7 @@ class WordListPageState extends State<WordListPage>
       var nextWord = words[currWordIndex + 1];
       onWordPressed(
           nextWord, currWordIndex + 1, playPronounce, soundFinishListener);
-      if (studyMode == WordListStudyMode.dictation) {
+      if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
         nextWord.focusNode.requestFocus();
       }
       if (studyMode == WordListStudyMode.speakChinese ||
@@ -3013,7 +3044,7 @@ class WordListPageState extends State<WordListPage>
 
   void giveALittleHint(WordWrapper word) {
     setState(() {
-      if (studyMode == WordListStudyMode.dictation) {
+      if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
         if (word.hintLetterCount < word.word.spell.length) {
           word.hintLetterCount++;
         }
@@ -3030,6 +3061,7 @@ class WordListPageState extends State<WordListPage>
   void giveFullHint(WordWrapper word) {
     setState(() {
       if (studyMode == WordListStudyMode.dictation ||
+          studyMode == WordListStudyMode.dictationHandwriting ||
           studyMode == WordListStudyMode.speakEnglish) {
         word.hintLetterCount = word.word.spell.length;
       } else if (studyMode == WordListStudyMode.speakChinese) {
@@ -3360,7 +3392,8 @@ class WordListPageState extends State<WordListPage>
                           if (PlatformUtils.isEnglishAsrSupported()) {
                             menuItems.add(menuSpeakEnglish);
                           }
-                          menuItems.add(menuWriteSpell);
+                          menuItems.add(menuWriteSpellTyping);
+                          menuItems.add(menuWriteSpellHandwriting);
                           menuItems.add(menuHideChinese);
                           menuItems.add(menuHideEnglish);
 
@@ -3406,8 +3439,11 @@ class WordListPageState extends State<WordListPage>
                                 case menuSpeakEnglish:
                                   icon = Icons.record_voice_over;
                                   break;
-                                case menuWriteSpell:
-                                  icon = Icons.edit;
+                                case menuWriteSpellTyping:
+                                  icon = Icons.keyboard;
+                                  break;
+                                case menuWriteSpellHandwriting:
+                                  icon = Icons.gesture;
                                   break;
                                 case menuHideChinese:
                                   icon = Icons.visibility_off;
@@ -3449,9 +3485,13 @@ class WordListPageState extends State<WordListPage>
                                   isSelected = studyMode ==
                                       WordListStudyMode.speakEnglish;
                                   break;
-                                case menuWriteSpell:
+                                case menuWriteSpellTyping:
                                   isSelected =
                                       studyMode == WordListStudyMode.dictation;
+                                  break;
+                                case menuWriteSpellHandwriting:
+                                  isSelected =
+                                      studyMode == WordListStudyMode.dictationHandwriting;
                                   break;
                                 case menuImportFromBook:
                                   isSelected =
@@ -3553,9 +3593,21 @@ class WordListPageState extends State<WordListPage>
                                   setState(() {});
                                 }
                                 break;
-                              case menuWriteSpell:
+                              case menuWriteSpellTyping:
                                 setState(() {
                                   studyMode = WordListStudyMode.dictation;
+                                  for (final w in words) {
+                                    w.spellController.text = '';
+                                    w.isAnswerProvidedBySystem = false;
+                                    w.hintLetterCount = 0;
+                                  }
+                                });
+                                _unsubscribeMeter();
+                                asr.stopAsr();
+                                break;
+                              case menuWriteSpellHandwriting:
+                                setState(() {
+                                  studyMode = WordListStudyMode.dictationHandwriting;
                                   for (final w in words) {
                                     w.spellController.text = '';
                                     w.isAnswerProvidedBySystem = false;
