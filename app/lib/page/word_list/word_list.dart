@@ -3445,7 +3445,6 @@ class WordListPageState extends State<WordListPage>
                                       studyMode == WordListStudyMode.hideEnglish;
                                   break;
 
-                                  break;
                                 case menuSpeakChinese:
                                   isSelected = studyMode ==
                                       WordListStudyMode.speakChinese;
