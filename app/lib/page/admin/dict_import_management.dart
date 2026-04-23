@@ -155,6 +155,16 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
       return;
     }
 
+    if (_selectedDictGroupId == null) {
+      ToastUtil.info("请选择目标词书分组");
+      return;
+    }
+
+    if (_selectedGameHallIds.isEmpty) {
+      ToastUtil.info("请选择至少一个目标游戏大厅");
+      return;
+    }
+
     // 校验单词列表格式: 必须包含 [单元序号|单词]
     for (int i = 0; i < wordsToImport.length; i++) {
       final line = wordsToImport[i];
@@ -803,7 +813,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                             children: [
                               Icon(Icons.link, size: 18, color: Colors.blueGrey),
                               SizedBox(width: 8),
-                              Text('一键建立公共区域关联 (可选)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text('一键建立公共区域关联 (必填)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -819,7 +829,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             ),
                             items: [
-                              const DropdownMenuItem<String>(value: null, child: Text("不建立关联 (隐藏)")),
+                              const DropdownMenuItem<String>(value: null, child: Text("请选择一个分组 (必填)")),
                               if (_dictGroups != null)
                                 ..._dictGroups!.map((g) => DropdownMenuItem<String>(value: g.id, child: Text(g.name))),
                             ],
@@ -827,7 +837,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8),
-                            child: Text('目标游戏大厅 (挂载到哪个大厅去玩，可多选)', style: TextStyle(fontSize: 14)),
+                            child: Text('目标游戏大厅 (挂载到哪个大厅去玩，必选其一)', style: TextStyle(fontSize: 14)),
                           ),
                           if (_hallGroups != null)
                             Wrap(
