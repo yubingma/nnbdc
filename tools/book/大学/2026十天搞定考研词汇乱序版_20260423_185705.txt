@@ -2969,3 +2969,10 @@
 0|horseback
 0|butter
 0|duchess
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 2971
+# Total Entries Extracted: 2971
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 2971
+# -------------------------------

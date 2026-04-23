@@ -3796,3 +3796,10 @@
 0|witness
 0|worsen
 0|zone
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 3798
+# Total Entries Extracted: 3798
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 3798
+# -------------------------------

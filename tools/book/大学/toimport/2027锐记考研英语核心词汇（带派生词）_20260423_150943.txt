@@ -3088,3 +3088,10 @@
 0|dive
 0|dig
 0|sink
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 3090
+# Total Entries Extracted: 3090
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 3090
+# -------------------------------

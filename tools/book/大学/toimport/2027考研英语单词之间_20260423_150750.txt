@@ -3842,3 +3842,10 @@
 0|wreck
 0|shipwreck
 0|zone
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 3844
+# Total Entries Extracted: 3844
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 3844
+# -------------------------------

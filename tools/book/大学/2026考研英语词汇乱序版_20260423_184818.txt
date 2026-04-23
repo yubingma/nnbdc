@@ -7489,3 +7489,11 @@
 0|well-chosen
 0|well-developed
 0|well-paid
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 7495
+# Total Entries Extracted: 7495
+# Duplicate Words Merged : 4
+# Duplicate List Preview : ['a', 'ski', 'so', 'to']
+# Final Unique Word Count: 7491
+# -------------------------------

@@ -6095,3 +6095,11 @@
 0|wordy
 0|worshipper
 0|yearning
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 6098
+# Total Entries Extracted: 6098
+# Duplicate Words Merged : 1
+# Duplicate List Preview : ['resume']
+# Final Unique Word Count: 6097
+# -------------------------------

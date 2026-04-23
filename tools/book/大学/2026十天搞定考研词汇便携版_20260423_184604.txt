@@ -3499,3 +3499,11 @@
 0|might
 0|badly
 0|tide
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 3502
+# Total Entries Extracted: 3502
+# Duplicate Words Merged : 1
+# Duplicate List Preview : ['to']
+# Final Unique Word Count: 3501
+# -------------------------------

@@ -3759,3 +3759,10 @@
 0|transport
 0|volatile
 0|vicinity
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 3761
+# Total Entries Extracted: 3761
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 3761
+# -------------------------------

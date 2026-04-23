@@ -1623,3 +1623,10 @@
 0|workload
 0|workplace
 0|wreak
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 1625
+# Total Entries Extracted: 1625
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 1625
+# -------------------------------

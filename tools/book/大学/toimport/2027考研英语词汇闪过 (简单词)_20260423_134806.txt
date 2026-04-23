@@ -1801,3 +1801,10 @@
 0|enough
 0|such
 0|lot
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 1803
+# Total Entries Extracted: 1803
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 1803
+# -------------------------------

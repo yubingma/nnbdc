@@ -1221,3 +1221,10 @@
 0|foster
 0|chase
 0|dip
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 1223
+# Total Entries Extracted: 1223
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 1223
+# -------------------------------

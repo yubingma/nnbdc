@@ -5960,3 +5960,10 @@
 0|wreck
 0|wrench
 0|zigzag
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 5962
+# Total Entries Extracted: 5962
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 5962
+# -------------------------------

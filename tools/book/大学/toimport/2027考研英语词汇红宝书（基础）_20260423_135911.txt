@@ -3780,3 +3780,11 @@
 0|yourself
 0|yourselves
 0|zoo
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 3783
+# Total Entries Extracted: 3783
+# Duplicate Words Merged : 1
+# Duplicate List Preview : ['cafe']
+# Final Unique Word Count: 3782
+# -------------------------------

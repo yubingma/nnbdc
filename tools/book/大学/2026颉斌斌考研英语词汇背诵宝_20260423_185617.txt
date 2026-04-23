@@ -5553,3 +5553,11 @@
 0|pottery
 0|predator
 0|strand
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 5559
+# Total Entries Extracted: 5559
+# Duplicate Words Merged : 4
+# Duplicate List Preview : ['so', 'a', 'ski', 'dive']
+# Final Unique Word Count: 5555
+# -------------------------------

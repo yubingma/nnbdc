@@ -1078,3 +1078,10 @@
 0|wreak
 0|wrongdoing
 0|yearning
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 1080
+# Total Entries Extracted: 1080
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 1080
+# -------------------------------

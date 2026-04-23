@@ -466,3 +466,10 @@
 0|wordy
 0|worshipper
 0|yearning
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 468
+# Total Entries Extracted: 468
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 468
+# -------------------------------

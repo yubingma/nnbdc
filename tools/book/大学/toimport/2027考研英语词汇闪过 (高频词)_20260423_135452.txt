@@ -969,3 +969,10 @@
 0|witness
 0|wonder
 0|yield
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 971
+# Total Entries Extracted: 971
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 971
+# -------------------------------

@@ -6705,3 +6705,11 @@
 0|wreak
 0|wrongdoing
 0|yearning
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 6708
+# Total Entries Extracted: 6708
+# Duplicate Words Merged : 1
+# Duplicate List Preview : ['cafe']
+# Final Unique Word Count: 6707
+# -------------------------------

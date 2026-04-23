@@ -633,3 +633,10 @@
 0|wholly
 0|worthy
 0|youth
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 635
+# Total Entries Extracted: 635
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 635
+# -------------------------------

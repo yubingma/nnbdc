@@ -1493,3 +1493,10 @@
 0|notwithstanding
 0|underneath
 0|albeit
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 1495
+# Total Entries Extracted: 1495
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 1495
+# -------------------------------

@@ -3069,3 +3069,10 @@
 0|work for
 0|work with
 0|work on
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 3071
+# Total Entries Extracted: 3071
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 3071
+# -------------------------------

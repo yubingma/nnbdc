@@ -674,3 +674,11 @@
 0|worship
 0|wound
 0|wrap
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 677
+# Total Entries Extracted: 677
+# Duplicate Words Merged : 1
+# Duplicate List Preview : ['resume']
+# Final Unique Word Count: 676
+# -------------------------------

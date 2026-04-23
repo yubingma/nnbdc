@@ -16,27 +16,10 @@ MAPPINGS = {
 }
 
 def detect_mapping(doc):
-    """Detect which mapping table to use based on key header characters."""
-    # The word "Vocabulary" is the best anchor. 
-    # In standard, "ry" is \x95. In shifted, "ry" is \xa3.
     for i in range(min(10, len(doc))):
         text = doc[i].get_text()
-        if '\xa3' in text: # Definitive for shifted "ry"
-            return "shifted_14"
-        if '\x95' in text: 
-            # In standard, \x95 is "ry" (common in headers).
-            # In shifted, \x95 is "ff" (rare in headers).
-            # So if \x95 is found in a header area, it's almost certainly standard.
-            return "standard"
-            
-    # Fallback to checking other common corrupted characters
-    for i in range(min(10, len(doc))):
-        text = doc[i].get_text()
-        if '\xa0' in text or '\x9c' in text: # rt or fi in shifted
-            return "shifted_14"
-        if '\x92' in text or '\x8e' in text: # rt or fi in standard
-            return "standard"
-            
+        if '\xa3' in text: return "shifted_14"
+        if '\x95' in text: return "standard"
     return "standard"
 
 def extract_pdf(pdf_path, output_path):
@@ -46,21 +29,24 @@ def extract_pdf(pdf_path, output_path):
 
     doc = fitz.open(pdf_path)
     map_type = detect_mapping(doc)
-    print(f"  Detected mapping: {map_type}")
     replacements = MAPPINGS[map_type]
     replacements['\xe9'] = 'e'
     
-    words = []
+    raw_entries = []
+    max_seq_num = 0
+    
     for page in doc:
         lines = page.get_text().split('\n')
         i = 0
         while i < len(lines):
             line = lines[i].strip()
             if line.isdigit():
+                val = int(line)
+                if val > max_seq_num: max_seq_num = val
+                
                 if i + 1 < len(lines):
                     word = lines[i+1].strip()
                     if word and not word.isdigit() and word not in ["Word", "Meaning", "N0.", "NO.", "Vocabulary List"]:
-                        # Manual skip for corrupted header variations
                         if any(header in word for header in ["Vocabula", "List", "中英词表", "默写释义"]):
                             i += 1
                             continue
@@ -69,33 +55,46 @@ def extract_pdf(pdf_path, output_path):
                             word = word.replace(char, rep)
                         
                         cleaned_word = "".join(c for c in word if ord(c) < 128)
-                        
                         if cleaned_word:
-                            words.append(cleaned_word)
+                            raw_entries.append(cleaned_word)
                         i += 1
             i += 1
     doc.close()
 
     seen = set()
     unique_words = []
-    for w in words:
+    duplicate_words = []
+    for w in raw_entries:
         if w not in seen:
             unique_words.append(w)
             seen.add(w)
+        else:
+            duplicate_words.append(w)
             
     with open(output_path, 'w', encoding='utf-8') as f:
         for word in unique_words:
             f.write(f"0|{word}\n")
-            
-    print(f"  Success: Extracted {len(unique_words)} words to {os.path.basename(output_path)}")
+        
+        # Write Audit Report at the end
+        f.write(f"\n# --- Extraction Audit Report ---\n")
+        f.write(f"# PDF Max Sequence Number: {max_seq_num}\n")
+        f.write(f"# Total Entries Extracted: {len(raw_entries)}\n")
+        f.write(f"# Duplicate Words Merged : {len(duplicate_words)}\n")
+        if duplicate_words:
+            # Show up to 15 duplicates for visibility
+            display_list = duplicate_words[:15]
+            f.write(f"# Duplicate List Preview : {display_list}{'...' if len(duplicate_words) > 15 else ''}\n")
+        f.write(f"# Final Unique Word Count: {len(unique_words)}\n")
+        if max_seq_num > len(raw_entries):
+            f.write(f"# Warning: {max_seq_num - len(raw_entries)} sequence numbers missing from PDF or skipped.\n")
+        f.write(f"# -------------------------------\n")
+
+    print(f"  Result: {len(unique_words)} words. Merged duplicates: {duplicate_words[:5]}...")
 
 def batch_process(source_dir):
     pdf_files = glob.glob(os.path.join(source_dir, "*.pdf"))
-    if not pdf_files:
-        print(f"No PDF files found in {source_dir}")
-        return
-
-    print(f"Batch processing {len(pdf_files)} files in {source_dir}...")
+    if not pdf_files: return
+    print(f"Batch processing {len(pdf_files)} files...")
     for pdf_file in pdf_files:
         txt_file = os.path.splitext(pdf_file)[0] + ".txt"
         print(f"Processing {os.path.basename(pdf_file)}...")

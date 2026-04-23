@@ -670,3 +670,10 @@
 0|worship
 0|wound
 0|youngster
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 672
+# Total Entries Extracted: 672
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 672
+# -------------------------------

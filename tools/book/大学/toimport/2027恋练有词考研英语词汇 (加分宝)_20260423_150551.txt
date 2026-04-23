@@ -4334,3 +4334,10 @@
 0|zigzag
 0|zip
 0|zoom
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 4336
+# Total Entries Extracted: 4336
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 4336
+# -------------------------------
