@@ -1695,7 +1695,7 @@ class WordListPageState extends State<WordListPage>
 
 
     // 在默写（dictation）模式下，点击单词后让输入框自动获得焦点
-    if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
+    if (studyMode == WordListStudyMode.dictation) {
       try {
         word.focusNode.requestFocus();
       } catch (e, stackTrace) {
@@ -2382,7 +2382,10 @@ class WordListPageState extends State<WordListPage>
       builder: (context, child) {
         final hasFocus = word.focusNode.hasFocus;
         final fontSize = hasFocus ? 22.0 : 16.0;
+        final isHandwriting = studyMode == WordListStudyMode.dictationHandwriting;
         return TextField(
+          readOnly: isHandwriting,
+          enableInteractiveSelection: !isHandwriting,
           controller: word.spellController,
           focusNode: word.focusNode,
           keyboardType: TextInputType.visiblePassword,
@@ -2394,10 +2397,12 @@ class WordListPageState extends State<WordListPage>
             enabledBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.grey),
             ),
-            focusedBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFF0097A7)),
-            ),
+            focusedBorder: isHandwriting
+                ? const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))
+                : const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0097A7))),
             contentPadding: EdgeInsets.zero,
+            hintText: isHandwriting ? '请在屏幕任何位置手写拼写' : null,
+            hintStyle: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white24 : Colors.black26),
           ),
           onTap: () {
             bool isAlreadyActive = getBookMarkUiPosition() == i;
@@ -2980,7 +2985,7 @@ class WordListPageState extends State<WordListPage>
       var nextWord = words[currWordIndex + 1];
       onWordPressed(
           nextWord, currWordIndex + 1, playPronounce, soundFinishListener);
-      if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
+      if (studyMode == WordListStudyMode.dictation) {
         nextWord.focusNode.requestFocus();
       }
       if (studyMode == WordListStudyMode.speakChinese ||
