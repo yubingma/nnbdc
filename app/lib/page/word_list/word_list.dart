@@ -1324,15 +1324,6 @@ class WordListPageState extends State<WordListPage>
       var currentPosition =
           positions.where((pos) => pos.index == wordUiIndex).firstOrNull;
       if (currentPosition != null) {
-        // 如果单词已经在屏幕中部附近（误差在5%以内），不需要滚动
-        if (currentPosition.itemLeadingEdge >= 0.45 &&
-            currentPosition.itemLeadingEdge <= 0.55) {
-          return;
-        }
-        // 如果单词在目标位置上方（更靠近屏幕顶部），不进行向下滚动调整
-        if (currentPosition.itemLeadingEdge < 0.5) {
-          return;
-        }
       }
     }
 
@@ -1422,7 +1413,7 @@ class WordListPageState extends State<WordListPage>
                   },
                   itemScrollController: itemScrollController,
                   itemPositionsListener: itemPositionsListener,
-                  padding: const EdgeInsets.only(bottom: 120),
+                  padding: const EdgeInsets.only(top: 20, bottom: 120),
                 ),
               ),
               // 底部的按钮，固定在页面底部
