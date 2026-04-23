@@ -155,7 +155,7 @@ public class DictImportBo {
                     newDict.setVisible(true);
                     newDict.setEditable(false);
                     newDict.setDeletable(false); // 防止非系统用户删除
-                    newDict.setPopularityLimit(10);
+                    newDict.setPopularityLimit(5);
                     newDict.setName(dictName.trim());
                     if (domain != null && !domain.isEmpty()) {
                         newDict.setDomain(domain);
@@ -256,7 +256,7 @@ public class DictImportBo {
                         newDict.setVisible(true);
                         newDict.setEditable(false);
                         newDict.setDeletable(false);
-                        newDict.setPopularityLimit(10);
+                        newDict.setPopularityLimit(5);
                         newDict.setName(shuffledDictName);
                         newDict.setDomain(null); // 衍生词典的 domain 为 null, 表示跟随原词典
                         newDict.setBaseDictId(dictId);
