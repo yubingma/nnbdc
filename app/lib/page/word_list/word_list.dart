@@ -4246,6 +4246,7 @@ class WordListPageState extends State<WordListPage>
                 showCloseButton: false, 
                 useBoxDecoration: false,
                 showCanvasButtons: true, 
+                enableNavigationGestures: false,
                 onRecognized: (text) {
                   final targetWord = activeWord;
                   if (targetWord != null) {

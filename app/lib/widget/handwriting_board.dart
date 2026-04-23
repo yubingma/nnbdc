@@ -18,6 +18,7 @@ class HandwritingBoard extends StatefulWidget {
   final bool showHeader;
   final bool useBoxDecoration;
   final bool showCanvasButtons;
+  final bool enableNavigationGestures;
 
   const HandwritingBoard({
     super.key,
@@ -30,6 +31,7 @@ class HandwritingBoard extends StatefulWidget {
     this.showHeader = true,
     this.useBoxDecoration = true,
     this.showCanvasButtons = true,
+    this.enableNavigationGestures = true,
   });
 
   @override
@@ -297,6 +299,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
                   onSwipeDown: widget.onSwipeDown,
                   showButtons: widget.showCanvasButtons,
                   onCancel: widget.onCancel,
+                  enableNavigationGestures: widget.enableNavigationGestures,
                 ),
               ],
             ),
@@ -318,6 +321,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback? onSwipeDown;
   final bool showButtons;
   final VoidCallback? onCancel;
+  final bool enableNavigationGestures;
 
   const _HandwritingCanvas({
     required this.lines,
@@ -330,6 +334,7 @@ class _HandwritingCanvas extends StatefulWidget {
     this.onSwipeDown,
     required this.showButtons,
     this.onCancel,
+    this.enableNavigationGestures = true,
   });
 
   @override
@@ -531,13 +536,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     _controller.clear();
                     widget.onRewrite();
                     HapticFeedback.mediumImpact();
-                  } else if (swipeStatus == 3) {
+                  } else if (widget.enableNavigationGestures && swipeStatus == 3) {
                     // 向上滑：下一个单词
                     _controller.clear();
                     widget.onRewrite();
                     widget.onSwipeUp?.call();
                     HapticFeedback.mediumImpact();
-                  } else if (swipeStatus == 4) {
+                  } else if (widget.enableNavigationGestures && swipeStatus == 4) {
                     // 向下滑：上一个单词
                     _controller.clear();
                     widget.onRewrite();
