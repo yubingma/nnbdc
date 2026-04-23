@@ -404,13 +404,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
           zoneWidth, 
           zoneHeight
         );
-        final closeZone = Rect.fromLTWH(
+        final undoZone = Rect.fromLTWH(
           width / 2 - zoneWidth / 2, 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
         );
-        final undoZone = Rect.fromLTWH(
+        final closeZone = Rect.fromLTWH(
           width / 2 + zoneWidth * 0.6, 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
@@ -708,7 +708,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                           size: 22
                         ),
                         Text(
-                          '退出', 
+                          '关闭', 
                           style: TextStyle(
                             color: _activeZone == 3 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
                             fontSize: isNarrow ? 12 : 11,
