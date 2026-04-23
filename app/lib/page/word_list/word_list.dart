@@ -2873,7 +2873,7 @@ class WordListPageState extends State<WordListPage>
                                 ? _buildWordMeaning(word, isDarkMode,
                                     topPadding: 0)
                                 : (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting)
-                                    ? const SizedBox.shrink()
+                                    ? _buildWordMeaning(word, isDarkMode, topPadding: 0)
                                     : _buildWordHeader(word, isBookmarked,
                                         isDarkMode,
                                         learningStatus: learningStatus),
