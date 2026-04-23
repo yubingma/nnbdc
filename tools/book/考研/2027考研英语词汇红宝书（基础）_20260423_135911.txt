@@ -2670,7 +2670,6 @@
 0|cabbage
 0|cabin
 0|cafe
-0|café
 0|cafeteria
 0|cage
 0|cake

@@ -5703,7 +5703,6 @@
 0|cabbage
 0|cabin
 0|cafe
-0|café
 0|cafeteria
 0|cage
 0|cake
@@ -6931,7 +6930,7 @@
 0|claimant
 0|clamp
 0|clear-cut
-0|cliché
+0|cliche
 0|clout
 0|coax
 0|codify

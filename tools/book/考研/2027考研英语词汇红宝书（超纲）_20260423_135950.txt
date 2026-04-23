@@ -131,7 +131,7 @@
 0|claimant
 0|clamp
 0|clear-cut
-0|cliché
+0|cliche
 0|clout
 0|coax
 0|codify

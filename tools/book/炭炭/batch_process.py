@@ -21,7 +21,8 @@ def extract_and_clean_words(pdf_path, output_path):
         '\x92': 'rt',
         '\x93': 'rv',
         '\x94': 'rx',
-        '\x95': 'ry'
+        '\x95': 'ry',
+        '\xe9': 'e'
     }
     
     for page in doc:
@@ -39,8 +40,8 @@ def extract_and_clean_words(pdf_path, output_path):
                         for char, rep in replacements.items():
                             word = word.replace(char, rep)
                         
-                        # Special case: keep 'é' but remove other non-ascii control characters
-                        cleaned_word = "".join(c for c in word if ord(c) < 128 or c == 'é')
+                        # Remove all non-ascii characters
+                        cleaned_word = "".join(c for c in word if ord(c) < 128)
                         
                         if cleaned_word:
                             words.append(cleaned_word)
