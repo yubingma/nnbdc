@@ -4264,12 +4264,6 @@ class WordListPageState extends State<WordListPage>
         children: [
           if (_isHandwritingOverlayVisible) ...[
             Positioned.fill(
-              child: Container(
-                color: (isDarkMode ? Colors.black : Colors.white).withValues(alpha: 0.1),
-              ),
-            ),
-            
-            Positioned.fill(
               child: HandwritingBoard(
                 key: ValueKey('handwriting_$bookmarkedIndex'),
                 showHeader: false,

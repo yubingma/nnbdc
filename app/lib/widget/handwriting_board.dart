@@ -656,6 +656,25 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
           },
           child: Stack(
             children: [
+              // 背景遮罩层 - 使用 IgnorePointer 确保它不拦截任何点击
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          color: (isDarkMode ? Colors.black : Colors.white).withValues(alpha: 0.1),
+                        ),
+                      ),
+                      if (widget.smartRightZoneWidth > 0)
+                        Container(
+                          width: widget.smartRightZoneWidth,
+                          color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
               RepaintBoundary(
                 child: CustomPaint(
                   painter: _HandwritingPainter(_controller),
@@ -686,20 +705,22 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     top: 0,
                     bottom: 0,
                     width: widget.smartRightZoneWidth,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.transparent,
-                            (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.03),
-                          ],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        border: Border(
-                          left: BorderSide(
-                            color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.05),
-                            width: 1,
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                            ],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          border: Border(
+                            left: BorderSide(
+                              color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                              width: 1.2,
+                            ),
                           ),
                         ),
                       ),
