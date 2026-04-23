@@ -155,7 +155,7 @@ public class DictImportBo {
                     newDict.setVisible(true);
                     newDict.setEditable(false);
                     newDict.setDeletable(false); // 防止非系统用户删除
-                    newDict.setPopularityLimit(5);
+                    newDict.setPopularityLimit(Constants.DEFAULT_POPULARITY_LIMIT);
                     newDict.setName(dictName.trim());
                     if (domain != null && !domain.isEmpty()) {
                         newDict.setDomain(domain);
@@ -256,7 +256,7 @@ public class DictImportBo {
                         newDict.setVisible(true);
                         newDict.setEditable(false);
                         newDict.setDeletable(false);
-                        newDict.setPopularityLimit(5);
+                        newDict.setPopularityLimit(Constants.DEFAULT_POPULARITY_LIMIT);
                         newDict.setName(shuffledDictName);
                         newDict.setDomain(null); // 衍生词典的 domain 为 null, 表示跟随原词典
                         newDict.setBaseDictId(dictId);
@@ -880,7 +880,7 @@ public class DictImportBo {
                             "DO NOT under any circumstances generate multiple entries in the 'meanings' array unless the provided text explicitly contains multiple distinct senses. " +
                             "Treat this manual meaning as the absolute, single, and only source for the dictionary entry.", 
                     manualMeaning, spell));
-            userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": 5, \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
+            userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": " + Constants.DEFAULT_POPULARITY_LIMIT + ", \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
         }
 
         String rawOutput = aiBo.generateText(systemPrompt, userPrompt.toString());

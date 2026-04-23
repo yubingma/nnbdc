@@ -263,7 +263,7 @@ public class DictBo extends BaseBo<Dict> {
         rawDict.setEditable(true);
         rawDict.setDeletable(false);
         rawDict.setOwner(user);
-        rawDict.setPopularityLimit(5); // 新用户生词本默认 popularityLimit 为 5
+        rawDict.setPopularityLimit(Constants.DEFAULT_POPULARITY_LIMIT); // 新用户生词本默认 popularityLimit 为 5
         createEntity(rawDict);
 
         // 创建学习词典关联
@@ -321,7 +321,7 @@ public class DictBo extends BaseBo<Dict> {
         masteredDict.setEditable(true);
         masteredDict.setDeletable(false);
         masteredDict.setOwner(user);
-        masteredDict.setPopularityLimit(5);
+        masteredDict.setPopularityLimit(Constants.DEFAULT_POPULARITY_LIMIT);
         createEntity(masteredDict);
 
         return masteredDict;
