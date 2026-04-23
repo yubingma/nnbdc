@@ -2989,7 +2989,8 @@ class WordListPageState extends State<WordListPage>
         nextWord.focusNode.requestFocus();
       }
       if (studyMode == WordListStudyMode.speakChinese ||
-          studyMode == WordListStudyMode.speakEnglish) {
+          studyMode == WordListStudyMode.speakEnglish ||
+          studyMode == WordListStudyMode.dictationHandwriting) {
         scrollToWord(currWordIndex + 1);
 
         /// 如果目标单词不可见（在视口下方），则视口向下滚动一个单词
@@ -3008,6 +3009,21 @@ class WordListPageState extends State<WordListPage>
         }
         jumpToNextWord(-1, playPronounce, soundFinishListener);
         scrollToWord(0);
+      }
+    }
+  }
+
+  void jumpToPreviousWord(final int currWordIndex, bool playPronounce) {
+    if (currWordIndex > 0) {
+      var prevWord = words[currWordIndex - 1];
+      onWordPressed(prevWord, currWordIndex - 1, playPronounce, null);
+      if (studyMode == WordListStudyMode.dictation) {
+        prevWord.focusNode.requestFocus();
+      }
+      if (studyMode == WordListStudyMode.speakChinese ||
+          studyMode == WordListStudyMode.speakEnglish ||
+          studyMode == WordListStudyMode.dictationHandwriting) {
+        scrollToWord(currWordIndex - 1);
       }
     }
   }
@@ -3729,39 +3745,52 @@ class WordListPageState extends State<WordListPage>
                           child: renderPage(),
                         ),
                 ),
-
+                if (studyMode == WordListStudyMode.dictationHandwriting)
+                  Positioned.fill(
+                    child: HandwritingBoard(
+                      showHeader: false,
+                      showCloseButton: false,
+                      useBoxDecoration: false,
+                      showCanvasButtons: false,
+                      onRecognized: (text) {
+                        final i = getBookMarkUiPosition();
+                        if (i >= 0 && i < words.length) {
+                          final word = words[i];
+                          setState(() {
+                            word.spellController.text = text;
+                            if (Util.equalsIgnoreCase(word.word.spell, text)) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                                try {
+                                  await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+                                } catch (e) {
+                                  // Ignore sound play failure
+                                }
+                                jumpToNextWord(i, false, () {});
+                              });
+                            }
+                          });
+                        }
+                      },
+                      onSwipeUp: () {
+                        final i = getBookMarkUiPosition();
+                        if (i < words.length - 1) {
+                          jumpToNextWord(i, true, () {});
+                        }
+                      },
+                      onSwipeDown: () {
+                        final i = getBookMarkUiPosition();
+                        if (i > 0) {
+                          jumpToPreviousWord(i, true);
+                        }
+                      },
+                      onCancel: () {},
+                    ),
+                  ),
               ],
             ),
           ),
           floatingActionButton: null,
         ),
-        if (studyMode == WordListStudyMode.dictationHandwriting)
-          Positioned.fill(
-            child: HandwritingBoard(
-              showHeader: false,
-              showCloseButton: false,
-              useBoxDecoration: false,
-              showCanvasButtons: false,
-              onRecognized: (text) {
-                final i = getBookMarkUiPosition();
-                if (i >= 0 && i < words.length) {
-                  final word = words[i];
-                  setState(() {
-                    word.spellController.text = text;
-                    if (Util.equalsIgnoreCase(word.word.spell, text)) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) async {
-                        try {
-                          await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-                        } catch (e) {}
-                        jumpToNextWord(i, false, () {});
-                      });
-                    }
-                  });
-                }
-              },
-              onCancel: () {},
-            ),
-          ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar
         if (showGuide) _buildGuideOverlay(),
       ],

@@ -12,6 +12,8 @@ class HandwritingBoard extends StatefulWidget {
   final Function(String) onRecognized;
   final VoidCallback onCancel;
   final VoidCallback? onStartWriting;
+  final VoidCallback? onSwipeUp;
+  final VoidCallback? onSwipeDown;
   final bool showCloseButton;
   final bool showHeader;
   final bool useBoxDecoration;
@@ -22,6 +24,8 @@ class HandwritingBoard extends StatefulWidget {
     required this.onRecognized,
     required this.onCancel,
     this.onStartWriting,
+    this.onSwipeUp,
+    this.onSwipeDown,
     this.showCloseButton = true,
     this.showHeader = true,
     this.useBoxDecoration = true,
@@ -289,6 +293,8 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
                   onUndo: _incrementVersion,
                   onRecognize: _recognize,
                   onStartWriting: widget.onStartWriting,
+                  onSwipeUp: widget.onSwipeUp,
+                  onSwipeDown: widget.onSwipeDown,
                   showButtons: widget.showCanvasButtons,
                 ),
               ],
@@ -307,6 +313,8 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback onUndo;
   final VoidCallback onRecognize;
   final VoidCallback? onStartWriting;
+  final VoidCallback? onSwipeUp;
+  final VoidCallback? onSwipeDown;
   final bool showButtons;
 
   const _HandwritingCanvas({
@@ -316,6 +324,8 @@ class _HandwritingCanvas extends StatefulWidget {
     required this.onUndo,
     required this.onRecognize,
     this.onStartWriting,
+    this.onSwipeUp,
+    this.onSwipeDown,
     required this.showButtons,
   });
 
@@ -499,6 +509,18 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     // 向右滑：清除全部 (重写)
                     _controller.clear();
                     widget.onRewrite();
+                    HapticFeedback.mediumImpact();
+                  } else if (swipeStatus == 3) {
+                    // 向上滑：下一个单词
+                    _controller.clear();
+                    widget.onRewrite();
+                    widget.onSwipeUp?.call();
+                    HapticFeedback.mediumImpact();
+                  } else if (swipeStatus == 4) {
+                    // 向下滑：上一个单词
+                    _controller.clear();
+                    widget.onRewrite();
+                    widget.onSwipeDown?.call();
                     HapticFeedback.mediumImpact();
                   }
                 }
@@ -783,14 +805,21 @@ class _HandwritingController extends ChangeNotifier {
     double height = maxY - minY;
 
     // 判定条件：长横扫动作
-    // 阈值调低 (从 280 降到 160)，增加灵敏度。
-    // 只要划过大约 1/5 屏幕宽度即可触发。
     if (width > 160 && width > height * 2.0) {
       // 检查方向：位移超过 50 像素即认定方向有效
       if (stroke.first.dx - stroke.last.dx > 50) {
         return 2; // Right to Left (向左滑)
       } else if (stroke.last.dx - stroke.first.dx > 50) {
         return 1; // Left to Right (向右滑)
+      }
+    }
+    
+    // 判定条件：长纵扫动作
+    if (height > 160 && height > width * 2.0) {
+      if (stroke.first.dy - stroke.last.dy > 50) {
+        return 3; // Bottom to Top (向上滑)
+      } else if (stroke.last.dy - stroke.first.dy > 50) {
+        return 4; // Top to Bottom (向下滑)
       }
     }
     return 0;
