@@ -235,6 +235,15 @@ class WordListPageState extends State<WordListPage>
   /// 已生成的 AI 短文缓存
   String? _aiStory;
 
+  /// 手写模式图钉坐标
+  double _thumbtackY = 120.0;
+  /// 是否正在拖动图钉
+  bool _isDraggingThumbtack = false;
+  /// 拖动时当前指向的单词索引
+  int? _dragHighlightedIndex;
+  /// 是否显示手写模式遮罩层
+  bool _isHandwritingOverlayVisible = true;
+
   @override
   bool get wantKeepAlive => true; // 保持状态，避免页面重建
 
@@ -1681,6 +1690,11 @@ class WordListPageState extends State<WordListPage>
           handlingAsrChinese = "";
         }
       }
+
+      // 如果处于手写模式，点击单词后确保遮罩层重新出现
+      if (studyMode == WordListStudyMode.dictationHandwriting) {
+        _isHandwritingOverlayVisible = true;
+      }
     });
 
 
@@ -2765,10 +2779,11 @@ class WordListPageState extends State<WordListPage>
       statusColor = const Color(0xFF2196F3).withValues(alpha: 0.6); // 学习中 - 淡淡蓝色
     }
 
+    final bool isHighlighted = _dragHighlightedIndex == i;
     // 确定背景色
     final bgColor = isDarkMode
-        ? (isBookmarked ? const Color(0xFF2A2A2A) : const Color(0xFF1E1E1E))
-        : (isBookmarked ? const Color(0xFFF5F5F5) : Colors.white);
+        ? (isHighlighted ? AppTheme.primaryColor.withValues(alpha: 0.4) : (isBookmarked ? const Color(0xFF2A2A2A) : const Color(0xFF1E1E1E)))
+        : (isHighlighted ? AppTheme.primaryColor.withValues(alpha: 0.15) : (isBookmarked ? const Color(0xFFF5F5F5) : Colors.white));
 
     Widget itemContent = ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -3784,6 +3799,8 @@ class WordListPageState extends State<WordListPage>
         ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar
         if (showGuide) _buildGuideOverlay(),
+        if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayVisible)
+          _buildHandwritingOverlay(isDarkMode),
       ],
     );
   }
@@ -4216,6 +4233,147 @@ class WordListPageState extends State<WordListPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: widgets,
+      ),
+    );
+  }
+
+  int? _calculateIndexFromY(double screenY, double screenHeight) {
+    final double appBarHeight = MediaQuery.of(context).padding.top + kToolbarHeight;
+    final double viewportHeight = screenHeight - appBarHeight;
+    final double relativeYInViewport = (screenY - appBarHeight) / viewportHeight;
+
+    if (relativeYInViewport < 0 || relativeYInViewport > 1) return null;
+
+    final positions = itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return null;
+
+    for (var pos in positions) {
+      if (relativeYInViewport >= pos.itemLeadingEdge && relativeYInViewport <= pos.itemTrailingEdge) {
+        return pos.index;
+      }
+    }
+    return null;
+  }
+
+  Widget _buildHandwritingOverlay(bool isDarkMode) {
+    final Size screenSize = MediaQuery.of(context).size;
+    final double screenHeight = screenSize.height;
+    final double appBarHeight = MediaQuery.of(context).padding.top + kToolbarHeight;
+    
+    final bookmarkedIndex = getBookMarkUiPosition();
+    WordWrapper? activeWord;
+    if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
+      activeWord = words[bookmarkedIndex];
+    }
+
+    return Positioned(
+      top: appBarHeight,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              color: (isDarkMode ? Colors.black : Colors.white).withValues(alpha: 0.1),
+            ),
+          ),
+          
+          Positioned.fill(
+            child: HandwritingBoard(
+              showHeader: false,
+              showCloseButton: false, 
+              useBoxDecoration: false,
+              showCanvasButtons: true, 
+              onRecognized: (text) {
+                final targetWord = activeWord;
+                if (targetWord != null) {
+                  setState(() {
+                    targetWord.spellController.text = text;
+                    if (Util.equalsIgnoreCase(targetWord.word.spell, text)) {
+                       WidgetsBinding.instance.addPostFrameCallback((_) async {
+                         try {
+                           await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
+                         } catch (e) {
+                           // Ignore errors
+                         }
+                         jumpToNextWord(bookmarkedIndex, false, () {});
+                       });
+                    }
+                  });
+                }
+              },
+              onSwipeUp: () => jumpToNextWord(bookmarkedIndex, true, () {}),
+              onSwipeDown: () => jumpToPreviousWord(bookmarkedIndex, true),
+              onCancel: () {
+                setState(() {
+                  _isHandwritingOverlayVisible = false;
+                });
+              },
+            ),
+          ),
+
+          Positioned(
+            right: 0, 
+            top: _thumbtackY - appBarHeight - 32, // Adjust for offset if needed, but thumbtackY is global
+            child: GestureDetector(
+              onPanDown: (details) {
+                HapticFeedback.mediumImpact();
+                setState(() {
+                  _isDraggingThumbtack = true;
+                  _thumbtackY = details.globalPosition.dy;
+                  _dragHighlightedIndex = _calculateIndexFromY(_thumbtackY, screenHeight);
+                });
+              },
+              onPanUpdate: (details) {
+                setState(() {
+                  _thumbtackY = details.globalPosition.dy;
+                  _thumbtackY = _thumbtackY.clamp(appBarHeight + 60.0, screenHeight - 60.0);
+                  _dragHighlightedIndex = _calculateIndexFromY(_thumbtackY, screenHeight);
+                });
+              },
+              onPanEnd: (details) {
+                if (_dragHighlightedIndex != null) {
+                   onWordPressed(words[_dragHighlightedIndex!], _dragHighlightedIndex!, false, null);
+                   HapticFeedback.lightImpact();
+                }
+                setState(() {
+                  _isDraggingThumbtack = false;
+                  _dragHighlightedIndex = null;
+                });
+              },
+              onPanCancel: () {
+                setState(() {
+                  _isDraggingThumbtack = false;
+                  _dragHighlightedIndex = null;
+                });
+              },
+              child: Container(
+                width: 70, 
+                height: 64,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: _isDraggingThumbtack 
+                      ? [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.8)]
+                      : [AppTheme.primaryColor.withValues(alpha: 0.6), AppTheme.primaryColor.withValues(alpha: 0.4)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(32),
+                    bottomLeft: Radius.circular(32),
+                  ),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(Icons.push_pin, color: Colors.white, size: 28),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

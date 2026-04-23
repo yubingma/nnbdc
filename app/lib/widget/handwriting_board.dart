@@ -296,6 +296,7 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
                   onSwipeUp: widget.onSwipeUp,
                   onSwipeDown: widget.onSwipeDown,
                   showButtons: widget.showCanvasButtons,
+                  onCancel: widget.onCancel,
                 ),
               ],
             ),
@@ -316,6 +317,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback? onSwipeUp;
   final VoidCallback? onSwipeDown;
   final bool showButtons;
+  final VoidCallback? onCancel;
 
   const _HandwritingCanvas({
     required this.lines,
@@ -327,6 +329,7 @@ class _HandwritingCanvas extends StatefulWidget {
     this.onSwipeUp,
     this.onSwipeDown,
     required this.showButtons,
+    this.onCancel,
   });
 
   @override
@@ -340,6 +343,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   // 用于防止在一次划动中重复触发区域动作
   bool _rewriteTriggered = false;
   bool _undoTriggered = false;
+  bool _closeTriggered = false;
   
   // 视觉反馈：当前激活的感应区 (0:无, 1:重写, 2:撤销)
   int _activeZone = 0;
@@ -385,18 +389,24 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         
         // 定义中心化的感应区，更加适合平板书写习惯，减少运笔负荷
         final bool isNarrow = width < 500;
-        final double zoneWidth = (width * 0.35).clamp(80.0, 140.0);
+        final double zoneWidth = (width * 0.28).clamp(70.0, 120.0);
         final double zoneHeight = isNarrow ? 56 : 65;
-        final double bottomMargin = isNarrow ? 20 : 40; // 窄屏下稍微靠下一点，留出更多书写空间
+        final double bottomMargin = isNarrow ? 20 : 40; 
 
         final rewriteZone = Rect.fromLTWH(
-          (width / 2 - zoneWidth) / 2, 
+          width / 2 - zoneWidth * 1.6, 
+          height - zoneHeight - bottomMargin, 
+          zoneWidth, 
+          zoneHeight
+        );
+        final closeZone = Rect.fromLTWH(
+          width / 2 - zoneWidth / 2, 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
         );
         final undoZone = Rect.fromLTWH(
-          width / 2 + (width / 2 - zoneWidth) / 2, 
+          width / 2 + zoneWidth * 0.6, 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
@@ -410,6 +420,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _activePointerId = event.pointer;
             _rewriteTriggered = false;
             _undoTriggered = false;
+            _closeTriggered = false;
 
             final p = event.localPosition;
             
@@ -421,6 +432,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             if (isNarrow) {
               if (rewriteZone.contains(p)) {
                 setState(() => _activeZone = 1);
+                return;
+              }
+              if (closeZone.contains(p)) {
+                setState(() => _activeZone = 3);
                 return;
               }
               if (undoZone.contains(p)) {
@@ -459,7 +474,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               setState(() => _activeZone = 2);
               HapticFeedback.lightImpact();
               
-              _autoRecognizeTimer?.cancel(); // 撤销时重置识别计时
+              _autoRecognizeTimer?.cancel();
               _pendingUndoTask?.cancel();
               _pendingUndoTask = Timer(const Duration(milliseconds: 200), () {
                  if (mounted) {
@@ -470,6 +485,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                   });
                 }
               });
+            }
+            if (!isNarrow && closeZone.contains(p) && !_closeTriggered) {
+              _closeTriggered = true;
+              setState(() => _activeZone = 3);
+              HapticFeedback.lightImpact();
+              widget.onCancel?.call();
             }
 
             _controller.move(p, event.localDelta);
@@ -560,6 +581,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 } else {
                   widget.onRewrite(); // 这会触发 _clear() 并重置视觉状态
                 }
+              } else if (!_closeTriggered && closeZone.contains(p)) {
+                _closeTriggered = true;
+                setState(() => _activeZone = 3);
+                HapticFeedback.lightImpact();
+                widget.onCancel?.call();
               }
             } finally {
               // 关键修复：无论发生什么，必须释放指针锁，防止画板永久失效
@@ -599,6 +625,21 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               ),
               
               if (widget.showButtons) ...[
+                // 底部背景栏 - 不透明显示
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: zoneHeight + bottomMargin + 10,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      boxShadow: [
+                        BoxShadow(color: Colors.black12, blurRadius: 10, offset: const Offset(0, -2)),
+                      ],
+                    ),
+                  ),
+                ),
                 // 居中显示的感应目标区
                 Positioned(
                   left: rewriteZone.left,
@@ -608,11 +649,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     height: zoneHeight,
                     decoration: BoxDecoration(
                       color: _activeZone == 1 
-                        ? Colors.grey.withValues(alpha: 0.2) 
-                        : Colors.grey.withValues(alpha: 0.08),
+                        ? Colors.grey.withValues(alpha: 0.25) 
+                        : Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.1), 
+                        color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
                         width: _activeZone == 1 ? 1.5 : 1
                       ),
                     ),
@@ -621,15 +662,52 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       children: [
                         Icon(
                           Icons.delete_sweep_outlined, 
-                          color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.4), 
+                          color: _activeZone == 1 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
                           size: 22
                         ),
                         Text(
                           isNarrow ? '重写' : '划过重写', 
                           style: TextStyle(
-                            color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.4), 
+                            color: _activeZone == 1 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
                             fontSize: isNarrow ? 12 : 11,
                             fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
+                          )
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // 关闭按钮区
+                Positioned(
+                  left: closeZone.left,
+                  top: closeZone.top,
+                  child: Container(
+                    width: zoneWidth,
+                    height: zoneHeight,
+                    decoration: BoxDecoration(
+                      color: _activeZone == 3 
+                        ? Colors.grey.withValues(alpha: 0.25) 
+                        : Colors.grey.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _activeZone == 3 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
+                        width: _activeZone == 3 ? 1.5 : 1
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.close, 
+                          color: _activeZone == 3 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
+                          size: 22
+                        ),
+                        Text(
+                          '退出', 
+                          style: TextStyle(
+                            color: _activeZone == 3 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
+                            fontSize: isNarrow ? 12 : 11,
+                            fontWeight: _activeZone == 3 ? FontWeight.bold : FontWeight.normal,
                           )
                         ),
                       ],
@@ -644,11 +722,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     height: zoneHeight,
                     decoration: BoxDecoration(
                       color: _activeZone == 2 
-                        ? AppTheme.primaryColor.withValues(alpha: 0.2) 
-                        : AppTheme.primaryColor.withValues(alpha: 0.08),
+                        ? AppTheme.primaryColor.withValues(alpha: 0.25) 
+                        : AppTheme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.1), 
+                        color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.2), 
                         width: _activeZone == 2 ? 1.5 : 1
                       ),
                     ),
@@ -657,13 +735,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       children: [
                         Icon(
                           Icons.undo_outlined, 
-                          color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
+                          color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.6), 
                           size: 22
                         ),
                         Text(
                           isNarrow ? '撤销' : '划过撤销', 
                           style: TextStyle(
-                            color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.4), 
+                            color: _activeZone == 2 ? AppTheme.primaryColor : AppTheme.primaryColor.withValues(alpha: 0.6), 
                             fontSize: isNarrow ? 12 : 11,
                             fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
                           )
