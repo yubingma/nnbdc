@@ -2126,6 +2126,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   getNextWord(bool gotoNext, {FsrsRating? fsrsRating}) async {
+    final startTime = DateTime.now();
+    Global.logger.d('[BDC Performance] === getNextWord 开始 ===');
     if (_isGettingNextWord) {
       Global.logger.d('getNextWord: 已经在获取中，跳过重复请求');
       return;
@@ -2150,23 +2152,27 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
           _currentGetWordResult = _presentWord;
           handleWord(_currentGetWordResult);
+          Global.logger.d('[BDC Performance] getNextWord(历史模式回退) 耗时: ${DateTime.now().difference(startTime).inMilliseconds} ms');
           return;
         } else {
           // 查看历史记录中的下一个
           _currentGetWordResult = _history[_historyIndex];
           handleWord(_currentGetWordResult);
+          Global.logger.d('[BDC Performance] getNextWord(查看历史记录) 耗时: ${DateTime.now().difference(startTime).inMilliseconds} ms');
           return;
         }
       } else {
         // 刷新当前历史记录页 (不常见，但作为防御)
         _currentGetWordResult = _history[_historyIndex];
         handleWord(_currentGetWordResult);
+        Global.logger.d('[BDC Performance] getNextWord(刷新当前历史) 耗时: ${DateTime.now().difference(startTime).inMilliseconds} ms');
         return;
       }
     }
 
     _isGettingNextWord = true;
     try {
+      final stopAsrStartTime = DateTime.now();
       // 停止当前 ASR 任务并确保状态同步（Hot Stop 会在 Native 层处理，此处需保证状态为 Stopped）
       await asr.stopAsr();
       _meaningFocusNode.unfocus();
@@ -2178,6 +2184,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _hintTapCount = 0;
       _highlightedWordImg = null;
       _wordImageEdited = false;
+      Global.logger.d('[BDC Performance] getNextWord 停止 ASR 耗时: ${DateTime.now().difference(stopAsrStartTime).inMilliseconds} ms');
 
       // 如果要获取下一个单词，先将当前单词存入历史
       if (gotoNext && _currentGetWordResult != null) {
@@ -2205,8 +2212,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       int triedCount = 0;
       while (true) {
         bool actualGotoNext = triedCount == 0 ? gotoNext : true;
+        final apiStartTime = DateTime.now();
         final result = await StudyBo()
             .getWord(_isWordMastered, actualGotoNext, fsrsRating: fsrsRating);
+        Global.logger.d('[BDC Performance] StudyBo().getWord 接口耗时: ${DateTime.now().difference(apiStartTime).inMilliseconds} ms');
         triedCount++;
 
         if (!result.success) {
@@ -2247,8 +2256,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         break;
       }
 
+      final handleStartTime = DateTime.now();
       handleWord(_currentGetWordResult,
           isFromBatchWordList: isFromBatchWordList);
+      Global.logger.d('[BDC Performance] getNextWord 调用 handleWord 启动耗时(异步开始): ${DateTime.now().difference(handleStartTime).inMilliseconds} ms');
     } catch (e, stackTrace) {
       Global.logger.e('获取下一个单词时发生异常', error: e, stackTrace: stackTrace);
       if (mounted) {
@@ -2260,6 +2271,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     } finally {
       _isGettingNextWord = false;
+      Global.logger.d('[BDC Performance] === getNextWord 结束，总耗时: ${DateTime.now().difference(startTime).inMilliseconds} ms ===');
     }
   }
 
@@ -2408,6 +2420,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   void handleWord(final GetWordResult? getWordResult,
       {bool isFromBatchWordList = false}) async {
+    final handleWordStartTime = DateTime.now();
+    Global.logger.d('[BDC Performance] === handleWord 开始 ===');
     // 异步拉取最新 ASR 规则并缓存，避免后续同步处理挂起
     final config = StudyConfig.fromCurrentUser();
     _asrPassRuleCache = config.asrPassRule;
@@ -2552,6 +2566,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 如果仅返回了ID，则本地补全单词详情与释义
       if (_word != null && (_word!.spell.isEmpty)) {
+        final dbStartTime = DateTime.now();
         try {
           final db = MyDatabase.instance;
           final local = await db.wordsDao.getWordById(_word!.id!);
@@ -2604,23 +2619,29 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         } catch (e) {
           Global.logger.w('本地补全单词失败', error: e);
         }
+        Global.logger.d('[BDC Performance] 本地数据库补全单词详情耗时: ${DateTime.now().difference(dbStartTime).inMilliseconds} ms');
       }
       _wordWrapper = WordWrapper(_word!, null);
 
       // 渲染第一个例句
+      final sentenceStartTime = DateTime.now();
       _englishDigestOfFirstSentence = null; // 先设置为 null
       final allSentences = await _word!.getSentences();
       if (allSentences.isNotEmpty) {
         _englishDigestOfFirstSentence = allSentences[0].englishDigest;
       }
+      Global.logger.d('[BDC Performance] 获取例句耗时: ${DateTime.now().difference(sentenceStartTime).inMilliseconds} ms');
 
       var user = Global.getLoggedInUserNotNull();
 
+      final playStartTime = DateTime.now();
       if (_studyStep == StudyStep.en2Ch.json) {
         playWordAndFirstSentence(await user.toUserVo(), false, false);
       } else if (_studyStep == StudyStep.ch2En.json) {
         playWordAndFirstSentence(await user.toUserVo(), true, false);
       }
+      Global.logger.d('[BDC Performance] 播放音频(异步/开始)耗时: ${DateTime.now().difference(playStartTime).inMilliseconds} ms');
+
       if (!_wordUIStates.containsKey(getWordResult)) {
         _initChoiceData(getWordResult, user);
       }
@@ -2664,6 +2685,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       Global.logger.i('BDC: 单词加载完成，发现加载期间缓存的语音结果，主动触发校验');
       checkAsrResult();
     }
+    Global.logger.d('[BDC Performance] === handleWord 结束，总耗时: ${DateTime.now().difference(handleWordStartTime).inMilliseconds} ms ===');
   }
 
   /// 初始化选择题数据
