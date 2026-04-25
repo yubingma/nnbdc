@@ -2021,7 +2021,7 @@ class WordListPageState extends State<WordListPage>
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
           decoration: BoxDecoration(
             color: isDarkMode ? Colors.black26 : Colors.white,
             borderRadius: BorderRadius.circular(8),
@@ -2437,6 +2437,7 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget _buildDictationHint(WordWrapper word) {
+    if (word.hintLetterCount <= 0) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
       child: Row(
@@ -2785,7 +2786,7 @@ class WordListPageState extends State<WordListPage>
               child: Row(
                 children: [
                   Container(
-                    width: 24,
+                    width: 32,
                     color: isDarkMode
                         ? Colors.white.withValues(alpha: 0.15)
                         : const Color(0xFFE2E8F0),
@@ -2805,24 +2806,21 @@ class WordListPageState extends State<WordListPage>
                   onTap: () => _handleWordTap(word, i),
                   onLongPress: () => _handleWordLongPress(word, i),
                   child: SizedBox(
-                    width: 24,
+                    width: 32,
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        /// 单词序号 (纯文本)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
-                            textScaler: const TextScaler.linear(1.0),
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w500,
-                              color: isDarkMode ? Colors.white38 : Colors.black38,
-                            ),
+                        Text(
+                          '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
+                          textScaler: const TextScaler.linear(1.0),
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w500,
+                            color: isDarkMode ? Colors.white38 : Colors.black38,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
 
                         /// 状态色块 (正方形小色块)
                         if (statusColor != null)
@@ -2838,16 +2836,16 @@ class WordListPageState extends State<WordListPage>
                         /// 掌握度进度条（横条）
                         if (args.showWordProgress)
                           Padding(
-                            padding: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.only(top: 4),
                             child: _buildWordProgressContainer(word, isDarkMode,
-                                width: 18),
+                                width: 22),
                           ),
 
                         // 紧凑波形或评分
                         if (studyMode == WordListStudyMode.speakChinese ||
                             studyMode == WordListStudyMode.speakEnglish)
                           Padding(
-                            padding: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.only(top: 4),
                             child: _buildAudioIndicator(
                                 word, isBookmarked, isDarkMode),
                           ),
@@ -2859,6 +2857,7 @@ class WordListPageState extends State<WordListPage>
                 /// 单词内容区
                 Expanded(
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       /// 左半部内容 (点击发音)
                       Expanded(
@@ -2868,7 +2867,7 @@ class WordListPageState extends State<WordListPage>
                           onTap: () => _handleWordTap(word, i),
                           onLongPress: () => _handleWordLongPress(word, i),
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 12, 0, 12),
+                            padding: const EdgeInsets.fromLTRB(10, 6, 0, 6),
                             child: (studyMode == WordListStudyMode.speakEnglish || studyMode == WordListStudyMode.hideEnglish)
                                 ? _buildWordMeaning(word, isDarkMode,
                                     topPadding: 0)
@@ -2885,7 +2884,7 @@ class WordListPageState extends State<WordListPage>
                       Expanded(
                         flex: 3,
                         child: Stack(
-                          alignment: Alignment.centerRight,
+                          alignment: Alignment.centerLeft,
                           children: [
                             GestureDetector(
                           behavior: HitTestBehavior.opaque,
@@ -2911,7 +2910,7 @@ class WordListPageState extends State<WordListPage>
                           },
                           onLongPress: () => _handleWordLongPress(word, i),
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+                            padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
@@ -2941,13 +2940,14 @@ class WordListPageState extends State<WordListPage>
                                                         : _buildWordMeaning(word, isDarkMode, topPadding: 0),
                                 
                                 /// 给点提示 (如果是默写模式，位置在输入框下方)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: _buildDictationHint(word),
-                                  ),
-                                if (studyMode == WordListStudyMode.dictationHandwriting &&
-                                    getBookMarkUiPosition() == i)
-                                  const SizedBox(height: 12),
+                                  if (word.hintLetterCount > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: _buildDictationHint(word),
+                                    ),
+                                  if (studyMode == WordListStudyMode.dictationHandwriting &&
+                                      getBookMarkUiPosition() == i)
+                                    const SizedBox(height: 4),
                               ],
                             ),
                           ),
