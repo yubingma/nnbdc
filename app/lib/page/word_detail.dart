@@ -931,6 +931,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         ),
                       ),
                       child: TabBar(
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.center,
                         controller: _tabController,
                         labelStyle: const TextStyle(
                           fontSize: 15,
@@ -1561,8 +1563,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               ),
               child: Row(
                 children: [
-                  Expanded(
-                    flex: 3,
+                  Flexible(
                     child: Text(
                       word.spell,
                       style: TextStyle(
@@ -1576,7 +1577,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    flex: 7,
                     child: Text(
                       word.getMeaningStr(),
                       style: TextStyle(
