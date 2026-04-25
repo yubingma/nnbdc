@@ -4023,9 +4023,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _buildTopButtonsRow(),
         // 顶部按钮和题目区之间的间距
         const SizedBox(height: 8),
-        // 题目区 - 使用flex=2（为答案区腾出空间）
+        // 题目区 - 使用flex=1
         Expanded(
-          flex: 2,
+          flex: 1,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 350),
             switchInCurve: Curves.fastOutSlowIn,
@@ -4068,9 +4068,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         ),
         // 题目区和做题区之间的统一间距
         SizedBox(height: _questionAnswerGap),
-        // 做题区 - 使用flex=3
+        // 做题区 - 使用flex=1
         Expanded(
-          flex: 3,
+          flex: 1,
           child: Container(
             // 做题区背景色 - 浅绿色调
             decoration: BoxDecoration(
