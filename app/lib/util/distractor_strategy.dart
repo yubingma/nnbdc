@@ -214,25 +214,55 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         ..where((tbl) => tbl.wordId.equals(targetWordLearningData.wordId));
       final presetSimilarWords = await similarWordsQuery.get();
       
-      final presetCandidateIds = <String>[];
-      for (final sw in presetSimilarWords) {
-        if (!selectedWordIds.contains(sw.similarWordId)) {
-          presetCandidateIds.add(sw.similarWordId);
-          selectedWordIds.add(sw.similarWordId);
+      final inDictCandidateIds = <String>[];
+      final outOfDictCandidateIds = <String>[];
+      
+      // 获取用户当前正在学的词书 ID 列表
+      final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(targetWordLearningData.userId);
+      final selectedDictIds = learningDicts.map((e) => e.dictId).toList();
+      
+      if (selectedDictIds.isNotEmpty && presetSimilarWords.isNotEmpty) {
+        final presetIds = presetSimilarWords.map((e) => e.similarWordId).toList();
+        // 查出哪些预设词在当前词书中
+        final dictWordsQuery = db.select(db.dictWords)
+          ..where((tbl) => tbl.dictId.isIn(selectedDictIds) & tbl.wordId.isIn(presetIds));
+        final inDictWords = await dictWordsQuery.get();
+        final inDictIdSet = inDictWords.map((e) => e.wordId).toSet();
+        
+        for (final sw in presetSimilarWords) {
+          if (!selectedWordIds.contains(sw.similarWordId)) {
+            if (inDictIdSet.contains(sw.similarWordId)) {
+              inDictCandidateIds.add(sw.similarWordId);
+            } else {
+              outOfDictCandidateIds.add(sw.similarWordId);
+            }
+            selectedWordIds.add(sw.similarWordId);
+          }
+        }
+      } else {
+        for (final sw in presetSimilarWords) {
+          if (!selectedWordIds.contains(sw.similarWordId)) {
+            outOfDictCandidateIds.add(sw.similarWordId);
+            selectedWordIds.add(sw.similarWordId);
+          }
         }
       }
-      // 预设形近词内部随机打乱
-      presetCandidateIds.shuffle();
-      candidateIds.addAll(presetCandidateIds);
+      
+      // 分层随机化：范围内的优先，范围外的兜底
+      inDictCandidateIds.shuffle();
+      outOfDictCandidateIds.shuffle();
+      
+      candidateIds.addAll(inDictCandidateIds);
+      candidateIds.addAll(outOfDictCandidateIds);
 
       // 2. 动态形近词补充：【只有当预设形近词不足 2 个时】，才去动态查找邻近词补足
       if (candidateIds.length < 2 && targetSpell.isNotEmpty) {
         final fallbackCandidateIds = <String>[];
-        // 拼写更大的（向后取 10 个）
+        // 拼写更大的（向后取 50 个）
         final largerWordsQuery = db.select(db.words)
           ..where((tbl) => tbl.spell.isBiggerThanValue(targetSpell) & tbl.id.equals(targetWordLearningData.wordId).not())
           ..orderBy([(tbl) => drift.OrderingTerm(expression: tbl.spell)])
-          ..limit(10);
+          ..limit(50);
         final largerWords = await largerWordsQuery.get();
         for (final w in largerWords) {
           if (!selectedWordIds.contains(w.id)) {
@@ -241,11 +271,11 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
           }
         }
 
-        // 拼写更小的（向前取 10 个）
+        // 拼写更小的（向前取 50 个）
         final smallerWordsQuery = db.select(db.words)
           ..where((tbl) => tbl.spell.isSmallerThanValue(targetSpell) & tbl.id.equals(targetWordLearningData.wordId).not())
           ..orderBy([(tbl) => drift.OrderingTerm(expression: tbl.spell, mode: drift.OrderingMode.desc)])
-          ..limit(10);
+          ..limit(50);
         final smallerWords = await smallerWordsQuery.get();
         for (final w in smallerWords) {
           if (!selectedWordIds.contains(w.id)) {
