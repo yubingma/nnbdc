@@ -35,11 +35,13 @@ class StudyBo {
   static String? _cachedUserId;
   static Set<String>? _cachedMasteredWordIds;
   static Set<String>? _cachedLearningWordIds;
+  static List<LearningWord>? _cachedTodayWords;
 
   static void clearUserCaches() {
     _cachedUserId = null;
     _cachedMasteredWordIds = null;
     _cachedLearningWordIds = null;
+    _cachedTodayWords = null;
   }
 
   static Future<Set<String>> getUserLearningWordIds(MyDatabase db, String userId) async {
@@ -427,14 +429,24 @@ class StudyBo {
 
       final now = AppClock.now();
 
-      // 获取今日学习单词 (batchId > 0)
-      final query = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
-        ..orderBy([
-          (tbl) => OrderingTerm(expression: tbl.batchId),
-          (tbl) => OrderingTerm(expression: tbl.learningOrder),
-        ]);
-      final todayWords = await query.get();
+      if (_cachedUserId != user.id) {
+        _cachedUserId = user.id;
+        _cachedMasteredWordIds = null;
+        _cachedLearningWordIds = null;
+        _cachedTodayWords = null;
+      }
+
+      var todayWords = _cachedTodayWords;
+      if (todayWords == null) {
+        final query = db.select(db.learningWords)
+          ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
+          ..orderBy([
+            (tbl) => OrderingTerm(expression: tbl.batchId),
+            (tbl) => OrderingTerm(expression: tbl.learningOrder),
+          ]);
+        todayWords = await query.get();
+        _cachedTodayWords = todayWords;
+      }
 
       if (todayWords.isEmpty) {
         return Result("ERROR", "今日没有学习单词", false);
@@ -478,16 +490,24 @@ class StudyBo {
 
       // 遍历当前批次单词，如果是 List 步骤，则 increment
       bool anyUpdated = false;
+      final cachedList = _cachedTodayWords;
       for (final word in batchWords) {
         int currentStepIndex = word.todayLearnedTimes;
         if (currentStepIndex < modeCount && steps[currentStepIndex].studyStep == 'List') {
-          await db.learningWordsDao.saveEntity(
-              word.copyWith(
-                learnedTimes: word.learnedTimes + 1,
-                todayLearnedTimes: word.todayLearnedTimes + 1,
-                lastLearningDate: Value(now),
-              ),
-              true);
+          final updatedWord = word.copyWith(
+            learnedTimes: word.learnedTimes + 1,
+            todayLearnedTimes: word.todayLearnedTimes + 1,
+            lastLearningDate: Value(now),
+          );
+          await db.learningWordsDao.saveEntity(updatedWord, true);
+          
+          // 极致优化：直接就地同步更新内存状态
+          if (cachedList != null) {
+            final idx = cachedList.indexWhere((w) => w.wordId == word.wordId);
+            if (idx != -1) {
+              cachedList[idx] = updatedWord;
+            }
+          }
           anyUpdated = true;
         }
       }
@@ -515,15 +535,18 @@ class StudyBo {
   /// 返回下一个单词的学习信息，包括单词详情、学习模式、混淆项等
   Future<Result<GetWordResult>> getWord(bool isWordMastered, bool gotoNext, {FsrsRating? fsrsRating}) async {
     try {
+      final swTotal = Stopwatch()..start();
       Global.logger.d('开始获取单词: isWordMastered=$isWordMastered, gotoNext=$gotoNext, fsrsRating=$fsrsRating');
       final db = MyDatabase.instance;
 
+      final swUser = Stopwatch()..start();
       // 获取当前登录用户
       final user = await db.usersDao.getLastLoggedInUser();
       if (user == null) {
         Global.logger.e('获取下一个单词失败: 用户未登录');
         return Result("ERROR", "用户未登录", false);
       }
+      Global.logger.d('🐛 [BDC Performance Item] 获取用户状态耗时: ${swUser.elapsedMilliseconds} ms');
 
       // 跨天检测：直接根据用户 lastLearningDate 判断
       final DateTime now = AppClock.now();
@@ -532,6 +555,7 @@ class StudyBo {
         return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", false);
       }
 
+      final swSteps = Stopwatch()..start();
       // 获取用户的学习步骤配置
       final stepsVo = await _studyStepsService.getActiveUserStudySteps();
       final steps = stepsVo
@@ -548,21 +572,34 @@ class StudyBo {
         Global.logger.e('Error: No active study steps found for user ${user.id}. Cannot proceed.');
         return Result("ERROR", "用户学习步骤未配置", false);
       }
+      Global.logger.d('🐛 [BDC Performance Item] 获取用户学习步骤耗时: ${swSteps.elapsedMilliseconds} ms');
 
-      // 查询今日学习单词，按学习顺序排序
-      // 注意：batchId 可能是 NULL（旧数据），只查询有 batchId 的记录
-      final query = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
-        ..orderBy([
-          (tbl) => OrderingTerm(expression: tbl.batchId),
-          (tbl) => OrderingTerm(expression: tbl.learningOrder),
-        ]);
-      var todayWords = await query.get();
+      final swWords = Stopwatch()..start();
+      if (_cachedUserId != user.id) {
+        _cachedUserId = user.id;
+        _cachedMasteredWordIds = null;
+        _cachedLearningWordIds = null;
+        _cachedTodayWords = null;
+      }
+
+      var todayWords = _cachedTodayWords;
+      if (todayWords == null) {
+        final query = db.select(db.learningWords)
+          ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
+          ..orderBy([
+            (tbl) => OrderingTerm(expression: tbl.batchId),
+            (tbl) => OrderingTerm(expression: tbl.learningOrder),
+          ]);
+        todayWords = await query.get();
+        _cachedTodayWords = todayWords;
+      }
 
       if (todayWords.isEmpty) {
         throw Exception('未知错误: 今日学习单词数为0');
       }
+      Global.logger.d('🐛 [BDC Performance Item] 查询今日单词列表耗时: ${swWords.elapsedMilliseconds} ms');
 
+      final swMastered = Stopwatch()..start();
       // 获取用户已掌握的所有单词ID（内存缓存加速，避免高频磁盘查询）
       if (_cachedUserId != user.id) {
         _cachedUserId = user.id;
@@ -574,6 +611,7 @@ class StudyBo {
         _cachedMasteredWordIds = masteredWords.map((e) => e.wordId).toSet();
       }
       final masteredWordIds = _cachedMasteredWordIds!;
+      Global.logger.d('🐛 [BDC Performance Item] 查询已掌握单词ID耗时: ${swMastered.elapsedMilliseconds} ms');
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
@@ -660,6 +698,7 @@ class StudyBo {
               todayLearnedTimes: currWord.todayLearnedTimes + 1,
             );
           }
+          _cachedTodayWords = todayWords;
         }
       }
 
@@ -746,12 +785,16 @@ class StudyBo {
           returnWord.lapses,
           returnWord.state);
 
+      final swMeaningItems = Stopwatch()..start();
       // 使用 WordBo.getWordMeaningItems 获取目标单词释义并用于生成混淆项
       final targetMeaningItems = await WordBo().getWordMeaningItems(returnWord.wordId, returnWord.userId);
       final targetMeaningItemVos = targetMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+      Global.logger.d('🐛 [BDC Performance Item] 加载当前词释义项耗时: ${swMeaningItems.elapsedMilliseconds} ms');
 
+      final swDistractor = Stopwatch()..start();
       // 生成两个混淆单词（其释义同样通过 WordBo.getWordMeaningItems 获取）
       final otherWords = await getTwoOtherWords(steps, nextStepIndex, targetMeaningItemVos, todayWords, returnWord, db);
+      Global.logger.d('🐛 [BDC Performance Item] 加载混淆项耗时: ${swDistractor.elapsedMilliseconds} ms');
 
       // 计算学习进度
       // 状态驱动：根据今日单词的实际学习次数计算进度
@@ -774,7 +817,7 @@ class StudyBo {
 
       final progress = [totalCompletedSteps, totalSteps];
 
-      return Result<GetWordResult>("SUCCESS", "获取成功", true)
+      final result = Result<GetWordResult>("SUCCESS", "获取成功", true)
         ..data = GetWordResult(
           learningWordVo,
           nextStepIndex,
@@ -793,6 +836,9 @@ class StudyBo {
           false, // inRawWordDict
           _isEffectivelyMastered(returnWord, masteredWordIds), // wordMastered
         );
+
+      Global.logger.d('🐛 [BDC Performance Item] getWord 内部计算总耗时: ${swTotal.elapsedMilliseconds} ms');
+      return result;
     } catch (e, stackTrace) {
       Global.logger.e('获取下一个单词失败 [StudyBo]: $e', stackTrace: stackTrace);
       rethrow; // 直接抛出异常，不再包装成 Result，保留完整堆栈
