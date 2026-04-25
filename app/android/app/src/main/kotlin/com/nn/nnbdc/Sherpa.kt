@@ -276,10 +276,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setOnlineModelConfig(modelConfig)
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
-                .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(12) 
-                .setHotwordsScore(2.0f) // CTC 架构在 modified_beam_search 下是支持热词的
-                .setBlankPenalty(1.0f) 
+                .setDecodingMethod("greedy_search")
+                .setMaxActivePaths(16) // 针对 14M 模型提供更多备选路径
+                .setHotwordsScore(1.5f) // 【生死劫】：降低热词权重，防止解码死循环。
+                .setBlankPenalty(1.0f) // 保持标准罚分
                 .build()
 
             modelZh = OnlineRecognizer(config)
@@ -321,8 +321,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         if (isRecording) {
             Log.i(TAG, "Microphone is already running, re-creating stream with hotwords.")
             currentStream?.release()
-            // 现在中文 (CTC) 和英文 (Transducer) 都开启热词支持
-            val hotwords = pendingHotwords
+            // CTC 模型暂不支持热词，仅英文 (Transducer) 传入
+            val hotwords = if (currentModel == modelEn) pendingHotwords else ""
             currentStream = currentModel?.createStream(hotwords)
             lastSentResult = ""
             isAsrStopped = false
@@ -349,9 +349,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         isRecording = true
         isAsrStopped = false
         
-        // 现在中文和英文都开启热词支持
-        Log.i(TAG, "Creating stream with hotwords: $pendingHotwords")
-        val hotwords = pendingHotwords
+        // 使用当前活动模型创建流 (仅英文 Transducer 支持热词)
+        Log.i(TAG, "Creating stream. Active model is English: ${currentModel == modelEn}")
+        val hotwords = if (currentModel == modelEn) pendingHotwords else ""
         currentStream = currentModel?.createStream(hotwords)
         
         // 重置去重标记
