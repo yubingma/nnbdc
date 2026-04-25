@@ -55,6 +55,8 @@ DO  D UW1
 WATERMELON  W AO1 T ER0 M EH2 L AH0 N
 WHAT  W AH1 T
 MADELEIN  M AE2 D AH0 L EH1 N
+ROPE  R OW1 P
+JOPE  JH OW1 P
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -64,6 +66,16 @@ MADELEIN  M AE2 D AH0 L EH1 N
   });
 
   group('English Phoneme Matching Tests', () {
+    test('jope vs rope - should match', () async {
+      const String target = "rope";
+      const String asrResult = "jope";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Jope vs Rope score: $score');
+      
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+
     test('true vs chew - should match', () async {
       const String target = "true";
       const String asrResult = "chew";
