@@ -32,6 +32,30 @@ class StudyBo {
 
   StudyBo._internal();
 
+  static String? _cachedUserId;
+  static Set<String>? _cachedMasteredWordIds;
+  static Set<String>? _cachedLearningWordIds;
+
+  static void clearUserCaches() {
+    _cachedUserId = null;
+    _cachedMasteredWordIds = null;
+    _cachedLearningWordIds = null;
+  }
+
+  static Future<Set<String>> getUserLearningWordIds(MyDatabase db, String userId) async {
+    if (_cachedUserId != userId) {
+      _cachedUserId = userId;
+      _cachedMasteredWordIds = null;
+      _cachedLearningWordIds = null;
+    }
+    if (_cachedLearningWordIds == null) {
+      final query = db.select(db.learningWords)..where((tbl) => tbl.userId.equals(userId));
+      final words = await query.get();
+      _cachedLearningWordIds = words.map((e) => e.wordId).toSet();
+    }
+    return _cachedLearningWordIds!;
+  }
+
   Future<Result<List<int>>> prepareForStudy(bool addNewWordsIfNotEnough) async {
     try {
       Global.logger.d('开始准备学习单词...');
@@ -539,9 +563,17 @@ class StudyBo {
         throw Exception('未知错误: 今日学习单词数为0');
       }
 
-      // 获取用户已掌握的所有单词ID（最严谨的状态驱动：支持在外部标记掌握后实时生效）
-      final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
-      final masteredWordIds = masteredWords.map((e) => e.wordId).toSet();
+      // 获取用户已掌握的所有单词ID（内存缓存加速，避免高频磁盘查询）
+      if (_cachedUserId != user.id) {
+        _cachedUserId = user.id;
+        _cachedMasteredWordIds = null;
+        _cachedLearningWordIds = null;
+      }
+      if (_cachedMasteredWordIds == null) {
+        final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
+        _cachedMasteredWordIds = masteredWords.map((e) => e.wordId).toSet();
+      }
+      final masteredWordIds = _cachedMasteredWordIds!;
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
@@ -618,6 +650,8 @@ class StudyBo {
           todayWords = List.from(todayWords); // 确保列表可变
           if (isWordMastered) {
             masteredWordIds.add(currWord.wordId);
+            _cachedMasteredWordIds?.add(currWord.wordId);
+            _cachedLearningWordIds?.remove(currWord.wordId);
           } else {
             // 只要推进了进度，todayLearnedTimes 就加 1
             todayWords[currentWordIndex] = currWord.copyWith(

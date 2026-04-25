@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/global.dart';
@@ -271,20 +272,19 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         // 2. 提取候选词的 ID 集合
         final candidateIds = presetSimilarWords.map((sw) => sw.similarWordId).toList();
 
-        // 3. 过滤出「用户当前正在学习的范围之内」的单词
-        final validLearningWordsQuery = db.select(db.learningWords)
-          ..where((tbl) => tbl.userId.equals(targetWordLearningData.userId) & tbl.wordId.isIn(candidateIds));
-        final validLearningWords = await validLearningWordsQuery.get();
+        // 3. 过滤出「用户当前正在学习的范围之内」的单词（通过内存缓存加速）
+        final userLearningWordIds = await StudyBo.getUserLearningWordIds(db, targetWordLearningData.userId);
+        final validCandidateIds = candidateIds.where((id) => userLearningWordIds.contains(id)).toList();
 
         // 4. 组装这些匹配到的候选词
-        for (final lw in validLearningWords) {
+        for (final candidateId in validCandidateIds) {
           if (otherWords.length >= 2) break;
-          if (lw.wordId == targetWordLearningData.wordId || selectedWordIds.contains(lw.wordId)) {
+          if (candidateId == targetWordLearningData.wordId || selectedWordIds.contains(candidateId)) {
             continue;
           }
 
           try {
-            final wordDetails = await db.wordsDao.getWordById(lw.wordId);
+            final wordDetails = await db.wordsDao.getWordById(candidateId);
             if (wordDetails == null) continue;
 
             final otherWordVo = WordVo.c2(wordDetails.spell);
@@ -303,7 +303,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
             otherWords.add(otherWordVo);
             selectedWordIds.add(wordDetails.id);
           } catch (e) {
-            Global.logger.e('ShapeSimilarDistractorStrategy processing candidate word ${lw.wordId}: $e');
+            Global.logger.e('ShapeSimilarDistractorStrategy processing candidate word $candidateId: $e');
           }
         }
       }
