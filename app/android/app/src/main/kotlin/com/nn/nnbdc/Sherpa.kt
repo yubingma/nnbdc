@@ -473,7 +473,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun startAsr() {
         Log.i(TAG, "Starting ASR...")
-        asrResumeTime = System.currentTimeMillis() + 150 // 与短促的提示音配合，缩短等待时间以提升体验
+        asrResumeTime = System.currentTimeMillis() + 300 // 与短促的提示音配合，缩短等待时间以提升体验
         isAsrStopped = false
         lastSentResult = "" // 开启识别时强制重置上一次结果，避免残留
     }

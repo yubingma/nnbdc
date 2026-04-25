@@ -143,7 +143,7 @@ class SoundUtil {
   static Future<void> playAsrReadyHintSound() async {
     // 使用并发播放模式，音量调低，不阻塞 ASR 启动。
     // 将速度提升至 2.5 倍，使其变得极其短促（类似清脆的“滴”），缩短时间至 ~150ms 左右
-    unawaited(playAssetSoundConcurrent('asr_ready_hint.mp3', 2.5, 0.4));
+    unawaited(playAssetSoundConcurrent('asr_ready_hint.mp3', 2.5, 0.2));
   }
 
   /// 播放添加成功提示音

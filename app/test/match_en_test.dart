@@ -274,5 +274,11 @@ COUGH K AA1 F
       
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
+
+    test('fate matches hate', () async {
+      final int score = await PhonemeUtil.similarity('fate', 'hate');
+      debugPrint('fate vs hate score: $score');
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
   });
 }
