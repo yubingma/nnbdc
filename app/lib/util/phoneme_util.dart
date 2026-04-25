@@ -74,11 +74,17 @@ class PhonemeUtil {
     final aC = a.toLowerCase().trim(), bC = b.toLowerCase().trim();
     if (aC == bC) return 100;
     final aVars = await lookup(a), bVars = await lookup(b);
+
+    final wA = aC.split(RegExp(r'[\s\-]+')).where((w) => w.isNotEmpty).toList(), wB = bC.split(RegExp(r'[\s\-]+')).where((w) => w.isNotEmpty).toList();
+    final sA = ' ${wA.join(' ')} ', sB = ' ${wB.join(' ')} ';
+    bool isContained = wA.length != wB.length && (sA.contains(sB) || sB.contains(sA));
+    bool useSubstring = wA.length != wB.length;
+    
     int finalScore = 0, baseBest = 0;
     if (aVars.isNotEmpty && bVars.isNotEmpty) {
       for (var ap in aVars) {
         for (var bp in bVars) {
-          final s = (_phonemeSimilarity(ap, bp) * 0.4 + _phonemeSimilarity(_weakenPhonemes(ap), _weakenPhonemes(bp)) * 0.6).round();
+          final s = (_phonemeSimilarity(ap, bp, substring: useSubstring) * 0.4 + _phonemeSimilarity(_weakenPhonemes(ap), _weakenPhonemes(bp), substring: useSubstring) * 0.6).round();
           if (s > baseBest) baseBest = s;
         }
       }
@@ -86,7 +92,7 @@ class PhonemeUtil {
     } else if (aVars.isNotEmpty || bVars.isNotEmpty) {
       final tps = aVars.isNotEmpty ? aVars : bVars, gWord = aVars.isNotEmpty ? b : a, gPseudo = _convertToPseudoPhonemes(gWord);
       for (final tp in tps) {
-        final s = _phonemeSimilarity(_weakenPhonemes(tp), gPseudo);
+        final s = _phonemeSimilarity(_weakenPhonemes(tp), gPseudo, substring: useSubstring);
         if (s > baseBest) baseBest = s;
       }
       finalScore = baseBest - 2;
@@ -96,8 +102,6 @@ class PhonemeUtil {
       baseBest = finalScore;
     }
 
-    final wA = aC.split(RegExp(r'[\s\-]+')).where((w) => w.isNotEmpty).toList(), wB = bC.split(RegExp(r'[\s\-]+')).where((w) => w.isNotEmpty).toList();
-    bool isContained = wA.length != wB.length && (wA.join(' ').contains(wB.join(' ')) || wB.join(' ').contains(wA.join(' ')));
     double penaltyMult = isContained ? 0.3 : (baseBest > 75 ? 0.5 : 1.0);
     
     if (isContained) finalScore += 10;
@@ -151,25 +155,56 @@ class PhonemeUtil {
   }
 
 
-  static int _phonemeSimilarity(List<String> a, List<String> b) {
+  static int _phonemeSimilarity(List<String> a, List<String> b, {bool substring = false}) {
     if (a.isEmpty || b.isEmpty) return 0;
-    final d = _weightedPhonemeDistance(a, b), m = a.length > b.length ? a.length : b.length;
-    return ((m - d) * 100.0 / m).clamp(0.0, 100.0).round();
+    final isAInB = b.length > a.length;
+    final long = isAInB ? b : a, short = isAInB ? a : b;
+
+    if (substring) {
+      final d = _weightedPhonemeDistance(long, short, substring: true);
+      return ((short.length - d) * 100.0 / short.length).clamp(0.0, 100.0).round();
+    } else {
+      final d = _weightedPhonemeDistance(long, short, substring: false);
+      final m = long.length;
+      return ((m - d) * 100.0 / m).clamp(0.0, 100.0).round();
+    }
   }
 
-  static double _weightedPhonemeDistance(List<String> a, List<String> b) {
-    final n = a.length, m = b.length, dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
-    double getC(List<String> l, int i) { if (l[i] == "@") return i == l.length - 1 ? 0.4 : 0.8; if (l[i] == "R" && i > 0 && ("TD".contains(l[i - 1]) || l[i - 1] == "@")) return 0.4; return 1.0; }
-    for (var i = 1; i <= n; i++) {
-      dp[i][0] = dp[i - 1][0] + getC(a, i - 1);
+  static double _weightedPhonemeDistance(List<String> long, List<String> short, {bool substring = false}) {
+    final n = long.length, m = short.length;
+    final dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
+    double getC(List<String> l, int i) {
+      if (l[i] == "@") return i == l.length - 1 ? 0.4 : 0.8;
+      if (l[i] == "R" && i > 0 && ("TD".contains(l[i - 1]) || l[i - 1] == "@")) return 0.4;
+      return 1.0;
+    }
+
+    if (substring) {
+      for (var i = 0; i <= n; i++) dp[i][0] = 0.0;
+    } else {
+      for (var i = 1; i <= n; i++) {
+        dp[i][0] = dp[i - 1][0] + getC(long, i - 1);
+      }
     }
     for (var j = 1; j <= m; j++) {
-      dp[0][j] = dp[0][j - 1] + getC(b, j - 1);
+      dp[0][j] = dp[0][j - 1] + getC(short, j - 1);
     }
-    for (var i = 1; i <= n; i++) { for (var j = 1; j <= m; j++) {
-      final s = dp[i - 1][j - 1] + _phonemeMatchCost(a[i - 1], b[j - 1]), d = dp[i - 1][j] + getC(a, i - 1), ins = dp[i][j - 1] + getC(b, j - 1);
-      dp[i][j] = [s, d, ins].reduce((v, e) => v < e ? v : e);
-    } }
+    for (var i = 1; i <= n; i++) {
+      for (var j = 1; j <= m; j++) {
+        final s = dp[i - 1][j - 1] + _phonemeMatchCost(long[i - 1], short[j - 1]);
+        final d = dp[i - 1][j] + getC(long, i - 1);
+        final ins = dp[i][j - 1] + getC(short, j - 1);
+        dp[i][j] = [s, d, ins].reduce((v, e) => v < e ? v : e);
+      }
+    }
+
+    if (substring) {
+      double minD = dp[0][m];
+      for (var i = 1; i <= n; i++) {
+        if (dp[i][m] < minD) minD = dp[i][m];
+      }
+      return minD;
+    }
     return dp[n][m];
   }
 

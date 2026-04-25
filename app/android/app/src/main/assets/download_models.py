@@ -26,16 +26,16 @@ def download_file(url, dest_path):
 
 assets_dir = os.path.join(os.environ['PPDC_SRC_DIR'], 'app/android/app/src/main/assets')
 
-# 1. Chinese Model
-zh_name = "sherpa-onnx-streaming-zipformer-zh-14M-2023-02-23"
+# 1. Chinese Model (Multi-dataset Enhanced Version - ~80MB)
+zh_name = "sherpa-onnx-streaming-zipformer-multi-zh-hans-2023-12-12"
 zh_dir = os.path.join(assets_dir, zh_name)
 os.makedirs(zh_dir, exist_ok=True)
 
-zh_base_url = f"https://huggingface.co/csukuangfj/{zh_name}/resolve/main"
+zh_base_url = f"https://huggingface.co/k2-fsa/{zh_name}/resolve/main"
 download_file(f"{zh_base_url}/tokens.txt", os.path.join(zh_dir, "tokens.txt"))
-download_file(f"{zh_base_url}/encoder-epoch-99-avg-1.int8.onnx", os.path.join(zh_dir, "encoder-epoch-99-avg-1.int8.onnx"))
-download_file(f"{zh_base_url}/decoder-epoch-99-avg-1.int8.onnx", os.path.join(zh_dir, "decoder-epoch-99-avg-1.int8.onnx"))
-download_file(f"{zh_base_url}/joiner-epoch-99-avg-1.int8.onnx", os.path.join(zh_dir, "joiner-epoch-99-avg-1.int8.onnx"))
+download_file(f"{zh_base_url}/encoder-epoch-20-avg-1-chunk-16-left-128.int8.onnx", os.path.join(zh_dir, "encoder-epoch-20-avg-1.int8.onnx"))
+download_file(f"{zh_base_url}/decoder-epoch-20-avg-1-chunk-16-left-128.int8.onnx", os.path.join(zh_dir, "decoder-epoch-20-avg-1.int8.onnx"))
+download_file(f"{zh_base_url}/joiner-epoch-20-avg-1-chunk-16-left-128.int8.onnx", os.path.join(zh_dir, "joiner-epoch-20-avg-1.int8.onnx"))
 
 # 2. English Model (Upgraded to 66M version)
 en_name = "sherpa-onnx-streaming-zipformer-en-2023-06-26"

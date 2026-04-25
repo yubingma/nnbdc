@@ -190,7 +190,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 setupChineseModel()
             }
             currentModel = modelZh
-            activeGain = 1.2f
+            activeGain = 2.0f
         }
         
         currentModelType = type
@@ -246,25 +246,26 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun setupChineseModel() {
-        val modelDir = "sherpa-onnx-streaming-zipformer-small-ctc-zh-int8-2025-04-01"
-        Log.i(TAG, "Isolating Recipe: Loading CHINESE model (Upgraded 2025 Small CTC)")
-
+        val multiModelDir = "sherpa-onnx-streaming-zipformer-multi-zh-hans-2023-12-12"
+        val cacheDir = activity.cacheDir.absolutePath
+        
+        Log.i(TAG, "Isolating Recipe: Loading CHINESE model (Multi-dataset Transducer - High Accuracy)")
         try {
-            val cacheDir = activity.cacheDir.absolutePath
-            val destDir = "$cacheDir/$modelDir"
-            val tokensPath = copyAsset(modelDir, "tokens.txt", destDir)
-            val modelPath = copyAsset(modelDir, "model.int8.onnx", destDir)
+            val destDir = "$cacheDir/$multiModelDir"
+            val tokensPath = copyAsset(multiModelDir, "tokens.txt", destDir)
+            val encoderPath = copyAsset(multiModelDir, "encoder-epoch-20-avg-1.int8.onnx", destDir)
+            val decoderPath = copyAsset(multiModelDir, "decoder-epoch-20-avg-1.int8.onnx", destDir)
+            val joinerPath = copyAsset(multiModelDir, "joiner-epoch-20-avg-1.int8.onnx", destDir)
 
             val modelConfig = OnlineModelConfig.builder()
-                .setZipformer2Ctc(OnlineZipformer2CtcModelConfig.builder().setModel(modelPath).build())
+                .setTransducer(OnlineTransducerModelConfig.builder()
+                    .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
                 .setTokens(tokensPath)
                 .setNumThreads(4)
                 .setDebug(true)
                 .build()
 
             val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
-
-            // 中文识别配方：更紧凑的断句逻辑
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
                 .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
@@ -276,19 +277,20 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setOnlineModelConfig(modelConfig)
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
-                .setDecodingMethod("greedy_search")
-                .setMaxActivePaths(16) // 针对 14M 模型提供更多备选路径
-                .setHotwordsScore(1.5f) // 【生死劫】：降低热词权重，防止解码死循环。
-                .setBlankPenalty(1.0f) // 保持标准罚分
+                .setDecodingMethod("modified_beam_search")
+                .setMaxActivePaths(16)
+                .setHotwordsScore(12.0f)
+                .setBlankPenalty(0.0f)
                 .build()
 
             modelZh = OnlineRecognizer(config)
-            Log.i(TAG, "Chinese isolated recipe loaded to memory.")
+            Log.i(TAG, "Chinese Multi-dataset Transducer recipe loaded.")
         } catch (e: Exception) {
             Log.e(TAG, "Chinese model load failed", e)
             throw e
         }
     }
+
 
     private fun copyAsset(assetDir: String, fileName: String, destDir: String): String {
         val destFile = java.io.File(destDir, fileName)
@@ -321,8 +323,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         if (isRecording) {
             Log.i(TAG, "Microphone is already running, re-creating stream with hotwords.")
             currentStream?.release()
-            // CTC 模型暂不支持热词，仅英文 (Transducer) 传入
-            val hotwords = if (currentModel == modelEn) pendingHotwords else ""
+            // 启用热词支持
+            val hotwords = pendingHotwords
             currentStream = currentModel?.createStream(hotwords)
             lastSentResult = ""
             isAsrStopped = false
@@ -349,9 +351,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         isRecording = true
         isAsrStopped = false
         
-        // 使用当前活动模型创建流 (仅英文 Transducer 支持热词)
-        Log.i(TAG, "Creating stream. Active model is English: ${currentModel == modelEn}")
-        val hotwords = if (currentModel == modelEn) pendingHotwords else ""
+        // 使用当前活动模型创建流
+        Log.i(TAG, "Creating stream with hotwords: $pendingHotwords")
+        val hotwords = pendingHotwords
         currentStream = currentModel?.createStream(hotwords)
         
         // 重置去重标记

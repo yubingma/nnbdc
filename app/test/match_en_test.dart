@@ -57,6 +57,8 @@ WHAT  W AH1 T
 MADELEIN  M AE2 D AH0 L EH1 N
 ROPE  R OW1 P
 JOPE  JH OW1 P
+DIDN'T D IH1 D AH0 N T
+COUGH K AA1 F
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -260,6 +262,16 @@ JOPE  JH OW1 P
       final int score = await PhonemeUtil.similarity(asrResult, target);
       debugPrint('What madelein vs Watermelon score: $score');
 
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+    
+    test('didn\'t cough vs cough - should match', () async {
+      const String target = "cough";
+      const String asrResult = "didn't cough";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Didn\'t cough vs Cough score: $score');
+      
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });
