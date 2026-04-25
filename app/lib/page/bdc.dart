@@ -3748,12 +3748,24 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   Widget _buildQuestionContent() {
     return Container(
       decoration: BoxDecoration(
+        color: context.watch<DarkMode>().isDarkMode
+            ? const Color(0xFF1E1E1E)
+            : const Color(0xFFF8F9FA),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.zero,
           topRight: Radius.zero,
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: context.watch<DarkMode>().isDarkMode
+                ? Colors.black.withValues(alpha: 0.4)
+                : Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
         border: _showBorders
             ? Border.all(
                 color: const Color.fromARGB(255, 11, 118, 3),
@@ -6092,20 +6104,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Widget _buildWordStepCard() {
     return Container(
-      decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
-            ? const Color(0xFF1E1E1E)
-            : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: context.watch<DarkMode>().isDarkMode
-                ? Colors.black.withValues(alpha: 0.4)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -6282,20 +6282,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Widget _buildMeaningStepCard() {
     return Container(
-      decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
-            ? const Color(0xFF1E1E1E)
-            : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: context.watch<DarkMode>().isDarkMode
-                ? Colors.black.withValues(alpha: 0.4)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
