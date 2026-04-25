@@ -260,80 +260,55 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         return otherWords;
       }
 
-      // 获取目标词的基本详情
-      final targetWordDetails = await db.wordsDao.getWordById(targetWordLearningData.wordId);
-      if (targetWordDetails == null || targetWordDetails.spell.isEmpty) {
-        // 退回到随机兜底
-        return await RecentlyLearnedDistractorStrategy().getTwoOtherWords(
-          steps: steps,
-          learningMode: learningMode,
-          meaningItemVos: meaningItemVos,
-          todayWords: todayWords,
-          targetWordLearningData: targetWordLearningData,
-          db: db,
-        );
-      }
+      // 1. 获取数据库预设的形近词
+      final similarWordsQuery = db.select(db.similarWords)
+        ..where((tbl) => tbl.wordId.equals(targetWordLearningData.wordId));
+      final presetSimilarWords = await similarWordsQuery.get();
 
-      final targetSpell = targetWordDetails.spell.toLowerCase();
-
-      // 查询前 150 个首字母相同的全局单词，并排除目标词自身
-      final prefix = targetSpell.isNotEmpty ? targetSpell[0] : '';
-      final candidateQuery = db.select(db.words)
-        ..where((tbl) => tbl.spell.like('$prefix%') & tbl.id.equals(targetWordDetails.id).not())
-        ..limit(150);
-      final candidates = await candidateQuery.get();
-
-      if (candidates.length < 2) {
-        // 如果候选太少，首字母不够，再获取一点不限首字母的随机词补齐
-        final fallbackQuery = db.select(db.words)
-          ..where((tbl) => tbl.id.equals(targetWordDetails.id).not())
-          ..limit(50);
-        candidates.addAll(await fallbackQuery.get());
-      }
-
-      // 在内存中根据 Levenshtein 距离排序
-      final candidateWithDist = <Map<String, dynamic>>[];
-      for (final candidate in candidates) {
-        final dist = _getLevenshteinDistance(targetSpell, candidate.spell.toLowerCase());
-        candidateWithDist.add({
-          'candidate': candidate,
-          'distance': dist,
-        });
-      }
-
-      // 编辑距离由小到大排序 (距离越小越形近)
-      candidateWithDist.sort((a, b) => (a['distance'] as int).compareTo(b['distance'] as int));
-
-      // 取出前 2 个作为混淆词
       final selectedWordIds = <String>{};
-      for (final item in candidateWithDist) {
-        if (otherWords.length >= 2) break;
-        final candidate = item['candidate'] as Word;
 
-        if (selectedWordIds.contains(candidate.id)) continue;
+      if (presetSimilarWords.isNotEmpty) {
+        // 2. 提取候选词的 ID 集合
+        final candidateIds = presetSimilarWords.map((sw) => sw.similarWordId).toList();
 
-        try {
-          final otherWordVo = WordVo.c2(candidate.spell);
-          otherWordVo.id = candidate.id;
-          otherWordVo.shortDesc = candidate.shortDesc;
-          otherWordVo.longDesc = candidate.longDesc;
-          otherWordVo.pronounce = candidate.pronounce;
-          otherWordVo.americaPronounce = candidate.americaPronounce;
-          otherWordVo.britishPronounce = candidate.britishPronounce;
-          otherWordVo.popularity = candidate.popularity;
+        // 3. 过滤出「用户当前正在学习的范围之内」的单词
+        final validLearningWordsQuery = db.select(db.learningWords)
+          ..where((tbl) => tbl.userId.equals(targetWordLearningData.userId) & tbl.wordId.isIn(candidateIds));
+        final validLearningWords = await validLearningWordsQuery.get();
 
-          // 获取并装载词书详细释义项
-          final meaningItems = await WordBo().getWordMeaningItems(candidate.id, targetWordLearningData.userId);
-          otherWordVo.meaningItems = meaningItems.take(3).map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+        // 4. 组装这些匹配到的候选词
+        for (final lw in validLearningWords) {
+          if (otherWords.length >= 2) break;
+          if (lw.wordId == targetWordLearningData.wordId || selectedWordIds.contains(lw.wordId)) {
+            continue;
+          }
 
-          otherWords.add(otherWordVo);
-          selectedWordIds.add(candidate.id);
-        } catch (e) {
-          Global.logger.e('Error processing ShapeSimilar candidate word ${candidate.id}: $e');
+          try {
+            final wordDetails = await db.wordsDao.getWordById(lw.wordId);
+            if (wordDetails == null) continue;
+
+            final otherWordVo = WordVo.c2(wordDetails.spell);
+            otherWordVo.id = wordDetails.id;
+            otherWordVo.shortDesc = wordDetails.shortDesc;
+            otherWordVo.longDesc = wordDetails.longDesc;
+            otherWordVo.pronounce = wordDetails.pronounce;
+            otherWordVo.americaPronounce = wordDetails.americaPronounce;
+            otherWordVo.britishPronounce = wordDetails.britishPronounce;
+            otherWordVo.popularity = wordDetails.popularity;
+
+            // 获取并装载词书详细释义项
+            final meaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
+            otherWordVo.meaningItems = meaningItems.take(3).map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+
+            otherWords.add(otherWordVo);
+            selectedWordIds.add(wordDetails.id);
+          } catch (e) {
+            Global.logger.e('ShapeSimilarDistractorStrategy processing candidate word ${lw.wordId}: $e');
+          }
         }
       }
 
-      // 如果依然没凑够 2 个，继续跌落默认策略补充
+      // 5. 如果不足 2 个，使用“最近学习的单词”策略补足
       if (otherWords.length < 2) {
         final fallbackWords = await RecentlyLearnedDistractorStrategy().getTwoOtherWords(
           steps: steps,
@@ -345,9 +320,11 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         );
         for (var fw in fallbackWords) {
           if (otherWords.length >= 2) break;
-          if (fw.id != targetWordDetails.id && !selectedWordIds.contains(fw.id)) {
+          if (fw.id != targetWordLearningData.wordId && !selectedWordIds.contains(fw.id)) {
             otherWords.add(fw);
-            selectedWordIds.add(fw.id!);
+            if (fw.id != null) {
+              selectedWordIds.add(fw.id!);
+            }
           }
         }
       }
@@ -355,7 +332,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
       return otherWords;
     } catch (e, stackTrace) {
       Global.logger.e('Error in ShapeSimilarDistractorStrategy: $e', stackTrace: stackTrace);
-      // 发生任何异常，跌落执行默认策略
+      // 发生任何异常，跌落执行默认的 RecentlyLearned 策略
       return await RecentlyLearnedDistractorStrategy().getTwoOtherWords(
         steps: steps,
         learningMode: learningMode,
@@ -367,26 +344,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
     }
   }
 
-  int _getLevenshteinDistance(String s1, String s2) {
-    if (s1 == s2) return 0;
-    if (s1.isEmpty) return s2.length;
-    if (s2.isEmpty) return s1.length;
 
-    List<int> v0 = List<int>.generate(s2.length + 1, (i) => i);
-    List<int> v1 = List<int>.filled(s2.length + 1, 0);
-
-    for (int i = 0; i < s1.length; i++) {
-      v1[0] = i + 1;
-      for (int j = 0; j < s2.length; j++) {
-        int cost = (s1[i] == s2[j]) ? 0 : 1;
-        v1[j + 1] = min(v1[j] + 1, min(v0[j + 1] + 1, v0[j] + cost));
-      }
-      for (int j = 0; j < v0.length; j++) {
-        v0[j] = v1[j];
-      }
-    }
-    return v0[s2.length];
-  }
 }
 
 class DistractorStrategyFactory {
