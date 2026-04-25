@@ -1563,17 +1563,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               ),
               child: Row(
                 children: [
-                  Flexible(
-                    child: Text(
-                      word.spell,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    word.spell,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
