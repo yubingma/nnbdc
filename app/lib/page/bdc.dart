@@ -1475,8 +1475,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
     soundFuture.whenComplete(() async {
       if (!mounted) return;
-      // 播放一遍单词的标准发音
-      await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
+      // 播放一遍单词的标准发音（中英模式下需要朗读；英中模式下一进入已朗读过，故不需要再读）
+      if (_studyStep == StudyStep.ch2En.json) {
+        await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
+      }
 
       if (_autoJumpAfterCorrect && mounted && _word?.id == currentWordId) {
         getNextWord(true, fsrsRating: rating);
