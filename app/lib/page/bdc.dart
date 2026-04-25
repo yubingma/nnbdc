@@ -4063,8 +4063,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 对测评结果进行展示（即便在极速模式下也展示一下，方便用户看下评分情况）
-          if (_hasFinishedAnswering)
-            _buildFsrsResultPanel(),
+          _buildFsrsResultPanel(),
           Container(
             // 底部按钮区背景色 - 紫色调
             decoration: BoxDecoration(
@@ -5531,9 +5530,40 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   Widget _buildFsrsResultPanel() {
-    if (_fsrsItem == null) return const SizedBox();
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
+
+    if (!_hasFinishedAnswering || _fsrsItem == null) {
+      return Container(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.edit_note, size: 14, color: textColor),
+            const SizedBox(width: 4),
+            Text(
+              '今日测评: 测评中',
+              style: TextStyle(
+                fontSize: 11,
+                color: textColor,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text('|',
+                  style: TextStyle(
+                      fontSize: 10, color: textColor.withValues(alpha: 0.3))),
+            ),
+            Icon(Icons.event_note_outlined, size: 12, color: textColor),
+            const SizedBox(width: 4),
+            Text(
+              '下次复习: --天后',
+              style: TextStyle(fontSize: 11, color: textColor),
+            ),
+          ],
+        ),
+      );
+    }
 
     // 获取本次操作的评估标签和颜色
     String ratingLabel = _lastFsrsRating?.label ?? '未知';
