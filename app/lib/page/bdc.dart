@@ -864,8 +864,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   bool? _savedAutoJumpValue;
   double _slideDirection = 1.0; // 1.0 为向后（显示新内容从右进入），-1.0 为向前（显示旧内容从左进入）
   Timer? _progressBarTapTimer;
-  double _dragOffset = 0;
-  bool _dragTriggered = false;
+
 
   /// 当前单词学习的开始时间
   DateTime? _wordStartTime;
@@ -948,13 +947,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     // 选择题tab
-    children.add(SingleChildScrollView(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          _buildChoiceList(),
-        ],
-      ),
+    children.add(Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        _buildChoiceList(),
+      ],
     ));
 
     return children;
@@ -3405,38 +3402,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onHorizontalDragStart: (_) {
-                  _dragOffset = 0;
-                  _dragTriggered = false;
-                },
-                onHorizontalDragUpdate: (details) {
-                  if (_dragTriggered) return;
-                  _dragOffset += details.delta.dx;
-
-                  // 灵敏度逻辑：只要移动距离超过 80 像素，立即触发翻页，无需等手指抬起
-                  if (_dragOffset > 80) {
-                    _dragTriggered = true;
-                    _goToPreviousWord();
-                  } else if (_dragOffset < -80) {
-                    if (_historyIndex != -1) {
-                      _dragTriggered = true;
-                      getNextWord(true);
-                    }
-                  }
-                },
-                onHorizontalDragEnd: (details) {
-                  if (_dragTriggered) return;
-                  
-                  final velocity = details.velocity.pixelsPerSecond.dx;
-                  // 备用逻辑：如果是快速轻扫（Flick），即便距离没到 80 也触发
-                  if (velocity > 300) {
-                    _goToPreviousWord();
-                  } else if (velocity < -300) {
-                    if (_historyIndex != -1) {
-                      getNextWord(true);
-                    }
-                  }
-                },
+                onHorizontalDragStart: (_) {},
+                onHorizontalDragUpdate: (details) {},
+                onHorizontalDragEnd: (details) {},
                 child: _buildMainContent(),
               ),
             ),
