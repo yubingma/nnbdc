@@ -1,5 +1,7 @@
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/util/distractor_strategy.dart';
+import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/error_handler.dart';
@@ -949,223 +951,16 @@ class StudyBo {
 
   Future<List<WordVo>> getTwoOtherWords(List<UserStudyStep> steps, int learningMode, List<MeaningItemVo> meaningItemVos,
       List<LearningWord> todayWords, LearningWord targetWordLearningData, MyDatabase db) async {
-    try {
-      List<WordVo> otherWords = [];
-      if ([StudyStep.en2Ch.json, StudyStep.ch2En.json].contains(steps[learningMode].studyStep)) {
-        String? targetCiXing;
-        if (meaningItemVos.isNotEmpty && meaningItemVos.first.ciXing != null) {
-          targetCiXing = meaningItemVos.first.ciXing!;
-        } else {
-          Global.logger.w('Target word has no meaningItems or first ciXing is null, cannot use targetCiXing for otherWords filtering.');
-        }
-
-        // 用于跟踪已选择的单词ID，避免重复
-        final selectedWordIds = <String>{};
-
-        // 1. 首先尝试从今日单词中获取混淆单词
-        if (todayWords.isNotEmpty && todayWords.length > 1) {
-          final random = Random();
-          final startIndex = random.nextInt(todayWords.length);
-          int currentLoopIndex = startIndex;
-          int checkedCount = 0;
-          int iterations = 0;
-
-          while (otherWords.length < 2 && checkedCount < todayWords.length && iterations < todayWords.length * 2) {
-            iterations++;
-            final candidateLearningWord = todayWords[currentLoopIndex];
-            currentLoopIndex = (currentLoopIndex + 1) % todayWords.length;
-            checkedCount++;
-
-            if (candidateLearningWord.wordId == targetWordLearningData.wordId || selectedWordIds.contains(candidateLearningWord.wordId)) {
-              continue;
-            }
-
-            try {
-              final candidateWordDetails = await db.wordsDao.getWordById(candidateLearningWord.wordId);
-              assert(candidateWordDetails?.spell != null);
-
-              // 检查词性匹配(仅判断第一个词性)
-              bool ciXingMatch = false;
-
-              // 获取候选单词的详细信息
-              final wordDetails = await db.wordsDao.getWordById(candidateLearningWord.wordId);
-
-              // 获取单词的释义项（优先使用学习中词书）
-              final meaningItems = await WordBo().getWordMeaningItems(wordDetails!.id, targetWordLearningData.userId);
-
-              for (final meaningItem in meaningItems) {
-                if (meaningItem.ciXing == targetCiXing) {
-                  ciXingMatch = true;
-                  break;
-                }
-              }
-
-              if (ciXingMatch) {
-                final otherWordVo = WordVo.c2(wordDetails.spell);
-                otherWordVo.id = wordDetails.id;
-                otherWordVo.shortDesc = wordDetails.shortDesc;
-                otherWordVo.longDesc = wordDetails.longDesc;
-                otherWordVo.pronounce = wordDetails.pronounce;
-                otherWordVo.americaPronounce = wordDetails.americaPronounce;
-                otherWordVo.britishPronounce = wordDetails.britishPronounce;
-                otherWordVo.popularity = wordDetails.popularity;
-                otherWordVo.meaningItems = meaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-                otherWords.add(otherWordVo);
-                selectedWordIds.add(candidateLearningWord.wordId);
-              }
-            } catch (e) {
-              Global.logger.e('Error processing candidate word ${candidateLearningWord.wordId}: $e');
-              continue;
-            }
-          }
-        }
-
-        // 2. 如果今日单词中找不到足够的混淆单词，从所有学习中单词(不包括今日单词)中查找词性相同的
-        if (otherWords.length < 2) {
-          // 获取用户的所有学习单词（不包括今日单词，即 batchId 为空的单词）
-          final allLearningWordsQuery = db.select(db.learningWords)
-            ..where((lw) => lw.userId.equals(targetWordLearningData.userId) & (lw.batchId.isNull() | lw.batchId.equals(0)));
-          final allLearningWords = await allLearningWordsQuery.get();
-
-          // 从所有学习单词中查找词性相同的混淆单词
-          int checkCount = 0;
-          for (final learningWord in allLearningWords) {
-            if (checkCount >= 30) {
-              Global.logger.d('getTwoOtherWords Step 2: 已遍历检查 30 个学习中的候选词，为防止 N+1 查询卡顿提前中止。');
-              break;
-            }
-            if (learningWord.wordId == targetWordLearningData.wordId || selectedWordIds.contains(learningWord.wordId)) {
-              continue;
-            }
-            checkCount++;
-
-            try {
-              // 获取候选单词的详细信息
-              final wordDetails = await db.wordsDao.getWordById(learningWord.wordId);
-              if (wordDetails == null) continue;
-
-              // 获取单词的释义项（优先使用学习中词书）
-              final meaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-
-              // 检查词性匹配
-              bool ciXingMatch = false;
-              for (final meaningItem in meaningItems) {
-                if (meaningItem.ciXing == targetCiXing) {
-                  ciXingMatch = true;
-                  break;
-                }
-              }
-
-              if (ciXingMatch) {
-                final otherWordVo = WordVo.c2(wordDetails.spell);
-                otherWordVo.id = wordDetails.id;
-                otherWordVo.shortDesc = wordDetails.shortDesc;
-                otherWordVo.longDesc = wordDetails.longDesc;
-                otherWordVo.pronounce = wordDetails.pronounce;
-                otherWordVo.americaPronounce = wordDetails.americaPronounce;
-                otherWordVo.britishPronounce = wordDetails.britishPronounce;
-                otherWordVo.popularity = wordDetails.popularity;
-                otherWordVo.meaningItems = meaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-                otherWords.add(otherWordVo);
-                selectedWordIds.add(learningWord.wordId);
-
-                if (otherWords.length >= 2) break;
-              }
-            } catch (e) {
-              Global.logger.e('Error processing learning word ${learningWord.wordId}: $e');
-              continue;
-            }
-          }
-        }
-
-        // 3. 如果仍然找不到足够的混淆单词，从所有学习中单词随机选择以补足
-        if (otherWords.length < 2) {
-          // 重新获取所有学习单词（包括今日单词）用于随机选择
-          final allLearningWordsForRandomQuery = db.select(db.learningWords)..where((lw) => lw.userId.equals(targetWordLearningData.userId));
-          final allLearningWordsForRandom = await allLearningWordsForRandomQuery.get();
-
-          // 随机打乱所有学习单词的顺序
-          final shuffledLearningWords = List<LearningWord>.from(allLearningWordsForRandom);
-          shuffledLearningWords.shuffle(Random());
-
-          int checkCount = 0;
-          for (final learningWord in shuffledLearningWords) {
-            if (checkCount >= 30) {
-              Global.logger.d('getTwoOtherWords Step 3: 已遍历检查 30 个随机学习中候选词，为防止 N+1 查询卡顿提前中止。');
-              break;
-            }
-            if (learningWord.wordId == targetWordLearningData.wordId || selectedWordIds.contains(learningWord.wordId)) {
-              continue;
-            }
-            checkCount++;
-
-            try {
-              final wordDetails = await db.wordsDao.getWordById(learningWord.wordId);
-              if (wordDetails == null) continue;
-
-              final otherWordVo = WordVo.c2(wordDetails.spell);
-              otherWordVo.id = wordDetails.id;
-              otherWordVo.shortDesc = wordDetails.shortDesc;
-              otherWordVo.longDesc = wordDetails.longDesc;
-              otherWordVo.pronounce = wordDetails.pronounce;
-              otherWordVo.americaPronounce = wordDetails.americaPronounce;
-              otherWordVo.britishPronounce = wordDetails.britishPronounce;
-              otherWordVo.popularity = wordDetails.popularity;
-
-              // 获取基本释义项（优先使用学习中词书）
-              final meaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-              otherWordVo.meaningItems = meaningItems.take(3).map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-
-              otherWords.add(otherWordVo);
-              selectedWordIds.add(learningWord.wordId);
-
-              if (otherWords.length >= 2) break;
-            } catch (e) {
-              Global.logger.e('Error processing random learning word ${learningWord.wordId}: $e');
-              continue;
-            }
-          }
-        }
-
-        // 4. 如果仍然找不到足够的混淆单词（例如整个库中只有一个单词），从全局单词表随机补足
-        if (otherWords.length < 2) {
-          final needed = 2 - otherWords.length;
-          final excludeIds = selectedWordIds.toList()..add(targetWordLearningData.wordId);
-
-          // 注意：ORDER BY RANDOM() 在 SQLite 中是标准用法，Drift 支持 OrderingTerm.random()
-          final wordsQuery = db.select(db.words)
-            ..where((tbl) => tbl.id.isNotIn(excludeIds))
-            ..orderBy([(t) => OrderingTerm.random()])
-            ..limit(needed);
-
-          final globalWords = await wordsQuery.get();
-
-          for (final wordDetails in globalWords) {
-            final otherWordVo = WordVo.c2(wordDetails.spell);
-            otherWordVo.id = wordDetails.id;
-            otherWordVo.shortDesc = wordDetails.shortDesc;
-            otherWordVo.longDesc = wordDetails.longDesc;
-            otherWordVo.pronounce = wordDetails.pronounce;
-            otherWordVo.americaPronounce = wordDetails.americaPronounce;
-            otherWordVo.britishPronounce = wordDetails.britishPronounce;
-            otherWordVo.popularity = wordDetails.popularity;
-
-            // 获取基本释义项
-            final meaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-            otherWordVo.meaningItems = meaningItems.take(3).map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-
-            otherWords.add(otherWordVo);
-            selectedWordIds.add(wordDetails.id);
-          }
-        }
-
-        Global.logger.d('Generated ${otherWords.length} otherWords for target ${targetWordLearningData.wordId}.');
-      }
-      return otherWords;
-    } catch (e, stackTrace) {
-      Global.logger.e('Error in getTwoOtherWords: $e', stackTrace: stackTrace);
-      return []; // 发生错误时返回空列表，而不是让应用崩溃
-    }
+    final config = StudyConfig.fromCurrentUser();
+    final strategy = DistractorStrategyFactory.getStrategy(config.distractorStrategy);
+    return await strategy.getTwoOtherWords(
+      steps: steps,
+      learningMode: learningMode,
+      meaningItemVos: meaningItemVos,
+      todayWords: todayWords,
+      targetWordLearningData: targetWordLearningData,
+      db: db,
+    );
   }
 
   /// 提供给UI：根据 wordId 和 userId 获取释义项（封装内部的 popularity limit 逻辑）

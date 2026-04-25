@@ -2798,6 +2798,71 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildDistractorStrategySelector(
+      String currentValue, Function(String) onChanged) {
+    const Map<String, String> options = {
+      'RecentlyLearned': '最近学习的单词',
+      'ShapeSimilar': '形近词',
+    };
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+      dense: true,
+      title: Text(
+        '混淆词取词策略',
+        textScaler: const TextScaler.linear(1.0),
+        style: const TextStyle(
+          fontFamily: "NotoSansSC",
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        options[currentValue] ?? '最近学习的单词',
+        textScaler: const TextScaler.linear(1.0),
+        style: TextStyle(
+          fontFamily: "NotoSansSC",
+          fontSize: 12,
+          color: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.color
+              ?.withValues(alpha: 0.6),
+        ),
+      ),
+      trailing: PopupMenuButton<String>(
+        padding: EdgeInsets.zero,
+        position: PopupMenuPosition.over,
+        onSelected: onChanged,
+        itemBuilder: (BuildContext context) {
+          return options.entries.map((entry) {
+            return PopupMenuItem<String>(
+              value: entry.key,
+              child: Text(
+                entry.value,
+                style: const TextStyle(
+                  fontFamily: "NotoSansSC",
+                  fontSize: 13,
+                ),
+              ),
+            );
+          }).toList();
+        },
+        child: SizedBox(
+          width: 48,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Icon(
+              Icons.arrow_drop_down,
+              color: Global.highlight,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildAsrPassRuleSelector(
       String currentValue, Function(String) onChanged) {
     const Map<String, String> options = {
@@ -2876,6 +2941,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     var localAsrPassRule = studyConfig.asrPassRule;
     var localAutoJumpAfterCorrectCh2En = studyConfig.autoJumpAfterCorrectCh2En;
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
+    var localDistractorStrategy = studyConfig.distractorStrategy;
 
     if (!mounted) return;
 
@@ -2993,6 +3059,14 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                   (value) {
                                     setState(() {
                                       localAsrPassRule = value;
+                                    });
+                                  },
+                                ),
+                                _buildDistractorStrategySelector(
+                                  localDistractorStrategy,
+                                  (value) {
+                                    setState(() {
+                                      localDistractorStrategy = value;
                                     });
                                   },
                                 ),
@@ -3150,6 +3224,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 localAutoJumpAfterCorrectEn2Ch;
                             studyConfigToSave.asrPassRule = localAsrPassRule;
                             studyConfigToSave.enableWordImage = localEnableWordImage;
+                            studyConfigToSave.distractorStrategy = localDistractorStrategy;
                             await studyConfigToSave.saveToCurrentUser();
                           }
 

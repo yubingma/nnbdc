@@ -13,6 +13,7 @@ class StudyConfig {
   String asrPassRule;
   bool enableWordImage;
   bool preferKeyboardInSpelling;
+  String distractorStrategy;
   Map<String, dynamic>? walkman;
 
   StudyConfig({
@@ -25,6 +26,7 @@ class StudyConfig {
     this.asrPassRule = 'ONE',
     this.enableWordImage = true,
     this.preferKeyboardInSpelling = false,
+    this.distractorStrategy = 'RecentlyLearned',
     this.walkman,
   });
 
@@ -39,6 +41,7 @@ class StudyConfig {
       asrPassRule: _toAsrPassRule(json['asrPassRule']),
       enableWordImage: _toBool(json['enableWordImage'], true),
       preferKeyboardInSpelling: _toBool(json['preferKeyboardInSpelling'], false),
+      distractorStrategy: json['distractorStrategy'] is String ? json['distractorStrategy'] : 'RecentlyLearned',
       walkman: json['walkman'] is Map<String, dynamic> ? json['walkman'] : null,
     );
   }
@@ -72,6 +75,7 @@ class StudyConfig {
       'asrPassRule': asrPassRule,
       'enableWordImage': enableWordImage,
       'preferKeyboardInSpelling': preferKeyboardInSpelling,
+      'distractorStrategy': distractorStrategy,
       if (walkman != null) 'walkman': walkman,
     };
   }
