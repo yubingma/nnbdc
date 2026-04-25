@@ -180,7 +180,9 @@ class PhonemeUtil {
     }
 
     if (substring) {
-      for (var i = 0; i <= n; i++) dp[i][0] = 0.0;
+      for (var i = 0; i <= n; i++) {
+        dp[i][0] = 0.0;
+      }
     } else {
       for (var i = 1; i <= n; i++) {
         dp[i][0] = dp[i - 1][0] + getC(long, i - 1);

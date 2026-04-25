@@ -667,11 +667,7 @@ class BdcPage extends StatefulWidget {
 }
 
 class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
-  String _getStudyStageLabel() {
-    final lw = _currentGetWordResult?.learningWord;
-    if (lw == null) return "";
-    return (lw.reps ?? 0) == 0 ? "(测评)" : "(巩固)";
-  }
+
 
   bool dataLoaded = false;
   bool _isGettingNextWord = false;
@@ -6028,23 +6024,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _getStudyStageLabel(),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color: context.watch<DarkMode>().isDarkMode
-                      ? const Color(0xFF9CA3AF)
-                      : const Color(0xFF6B7280),
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -6234,23 +6214,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _getStudyStageLabel(),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color: context.watch<DarkMode>().isDarkMode
-                      ? const Color(0xFF9CA3AF)
-                      : const Color(0xFF6B7280),
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
+
           // 释义/图片/配图按钮
           Padding(
             padding: const EdgeInsets.all(16),
