@@ -190,7 +190,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 setupChineseModel()
             }
             currentModel = modelZh
-            activeGain = 2.0f
+            activeGain = 1.2f
         }
         
         currentModelType = type
@@ -276,10 +276,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setOnlineModelConfig(modelConfig)
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
-                .setDecodingMethod("greedy_search")
-                .setMaxActivePaths(16) // 稍微扩大搜索范围，针对 14M 模型提供更多备选路径
-                .setHotwordsScore(1.5f) // 【生死劫】：极度降低热词权重。用户反馈“可可粉”会变成“咯哥哥哥哥”，这是典型的高分陷阱导致的解码死循环。
-                .setBlankPenalty(1.0f) // 保持标准罚分
+                .setDecodingMethod("modified_beam_search")
+                .setMaxActivePaths(12) 
+                .setHotwordsScore(2.0f) // CTC 架构在 modified_beam_search 下是支持热词的
+                .setBlankPenalty(1.0f) 
                 .build()
 
             modelZh = OnlineRecognizer(config)
@@ -321,8 +321,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         if (isRecording) {
             Log.i(TAG, "Microphone is already running, re-creating stream with hotwords.")
             currentStream?.release()
-            // CTC 模型暂不支持热词，仅英文 (Transducer) 传入
-            val hotwords = if (currentModel == modelEn) pendingHotwords else ""
+            // 现在中文 (CTC) 和英文 (Transducer) 都开启热词支持
+            val hotwords = pendingHotwords
             currentStream = currentModel?.createStream(hotwords)
             lastSentResult = ""
             isAsrStopped = false
@@ -349,9 +349,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         isRecording = true
         isAsrStopped = false
         
-        // 使用当前活动模型创建流 (仅英文 Transducer 支持热词)
-        Log.i(TAG, "Creating stream. Active model is English: ${currentModel == modelEn}")
-        val hotwords = if (currentModel == modelEn) pendingHotwords else ""
+        // 现在中文和英文都开启热词支持
+        Log.i(TAG, "Creating stream with hotwords: $pendingHotwords")
+        val hotwords = pendingHotwords
         currentStream = currentModel?.createStream(hotwords)
         
         // 重置去重标记
@@ -471,7 +471,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun startAsr() {
         Log.i(TAG, "Starting ASR...")
-        asrResumeTime = System.currentTimeMillis() + 300 // 空转抛弃接下来 300ms 的收音，防止播放残余混响被录入
+        asrResumeTime = System.currentTimeMillis() + 50 // 极度缩短启动跳过时间，防止切掉首个音节（如“池塘”的“池”）
         isAsrStopped = false
         lastSentResult = "" // 开启识别时强制重置上一次结果，避免残留
     }

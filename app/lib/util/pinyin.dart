@@ -330,23 +330,6 @@ List<String> chineseToPinyin(String chinese) {
   return pinyins;
 }
 
-/// 把汉字字符串转换为拼音
-/// includeMutiPronounce： 是否包含多音字的多个拼音。比如"重庆"，包含"重"的多个拼音则为：chong2 zhong4 qing4
-String chineseToPinyin2(String chinese, bool includeMutiPronounce) {
-  List<String> allPinyins = [];
-  var chinese_ = chinese.replaceAll(" ", "");
-  for (var i = 0; i < chinese_.length; i++) {
-    var hanzi = chinese_[i];
-    var pinyins = hanziToPinyin((hanzi));
-    if (includeMutiPronounce) {
-      allPinyins.addAll(pinyins);
-    } else {
-      allPinyins.add(pinyins[0]);
-    }
-  }
-
-  return allPinyins.join(" ");
-}
 
 /// 得到一个汉字的拼音（支持多音字）
 List<String> hanziToPinyin(final String hanzi) {
@@ -451,19 +434,20 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
     return false;
   }
 
-  var pinyin = chineseToPinyin2(chinese1.toString().replaceAll("  ", " "), true);
+  String asrText = chinese1.toString().replaceAll(_nonChineseRegExp, "");
+  if (asrText.isEmpty) return false;
+
+  List<List<PinyinParser>> userPinyins = [];
+  for (var i = 0; i < asrText.length; i++) {
+    var hanzi = asrText[i];
+    var pinyins = hanziToPinyin(hanzi);
+    userPinyins.add(pinyins.map((p) => PinyinParser(p)).toList());
+  }
 
   var meaning = chinese2;
   meaning = meaning.replaceAll(_bracketRegExp1, "").replaceAll(_bracketRegExp2, ""); //去掉释义中包含在括号中的内容
   meaning = meaning.toLowerCase().replaceAll(_nonChineseRegExp, "").trim(); // 去掉释义中的非汉字字符
   var meaningUnits = meaning.split(_commaRegExp);
-
-  var parts1Str = pinyin.toLowerCase().replaceAll(_nonPinyinOrSpaceRegExp, "").trim();
-  parts1Str = Util.replaceDoubleSpace(parts1Str);
-  var parts1 = parts1Str.isEmpty ? <String>[] : parts1Str.split(" ");
-  if (parts1.isEmpty) return false;
-
-  List<PinyinParser> parsedParts1 = parts1.map((p) => PinyinParser(p)).toList();
 
   for (var unit in meaningUnits) {
     if (unit.isEmpty) continue;
@@ -480,18 +464,20 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
 
     // DP 求最大分值。这是一个顺序包含的匹配关系，也就是我们需要在 user 识别出的若干发音中，找出和 target按顺序匹配得最好的子集。
     int M = targetPinyins.length;
-    int N = parsedParts1.length;
+    int N = userPinyins.length;
 
     // dp[i][j] 为 target前i个字匹配 user前j个syllable 的最大分值
     List<List<double>> dp = List.generate(M + 1, (_) => List.filled(N + 1, 0.0));
 
     for (int i = 1; i <= M; i++) {
       for (int j = 1; j <= N; j++) {
-        // 计算 target的第i个字（可能有多个发音）和 user的第j个音节(parts1[j-1])的最大相似度
+        // 计算 target的第i个字和 user的第j个字的最大相似度（双方都可能有多个发音）
         double maxSim = 0.0;
-        for (var p2 in targetPinyins[i - 1]) {
-          double sim = similarityOf2ParsedPinyin(parsedParts1[j - 1], p2);
-          if (sim > maxSim) maxSim = sim;
+        for (var pTarget in targetPinyins[i - 1]) {
+          for (var pUser in userPinyins[j - 1]) {
+            double sim = similarityOf2ParsedPinyin(pUser, pTarget);
+            if (sim > maxSim) maxSim = sim;
+          }
         }
 
         double v1 = dp[i - 1][j];
@@ -547,7 +533,7 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
 
     // 补偿：如果 ASR 结果比目标短，但已匹配的部分相似度极高（>0.92），说明可能是漏读了后缀或尾音
     // 限制 character count >= 2 以防止单字误匹配
-    int asrCharCount = chinese1.toString().replaceAll(_nonChineseRegExp, "").length;
+    int asrCharCount = asrText.length;
     if (asrCharCount < M && asrCharCount >= 2) {
       double avgSimOfMatched = maxSimSum / asrCharCount;
       if (avgSimOfMatched > 0.92) {
