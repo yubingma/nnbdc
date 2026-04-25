@@ -6003,7 +6003,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                '英→中 ${_getStudyStageLabel()}',
+                _getStudyStageLabel(),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
@@ -6209,7 +6209,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                '中→英 ${_getStudyStageLabel()}',
+                _getStudyStageLabel(),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
