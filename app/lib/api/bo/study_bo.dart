@@ -1028,10 +1028,16 @@ class StudyBo {
           final allLearningWords = await allLearningWordsQuery.get();
 
           // 从所有学习单词中查找词性相同的混淆单词
+          int checkCount = 0;
           for (final learningWord in allLearningWords) {
+            if (checkCount >= 30) {
+              Global.logger.d('getTwoOtherWords Step 2: 已遍历检查 30 个学习中的候选词，为防止 N+1 查询卡顿提前中止。');
+              break;
+            }
             if (learningWord.wordId == targetWordLearningData.wordId || selectedWordIds.contains(learningWord.wordId)) {
               continue;
             }
+            checkCount++;
 
             try {
               // 获取候选单词的详细信息
@@ -1082,10 +1088,16 @@ class StudyBo {
           final shuffledLearningWords = List<LearningWord>.from(allLearningWordsForRandom);
           shuffledLearningWords.shuffle(Random());
 
+          int checkCount = 0;
           for (final learningWord in shuffledLearningWords) {
+            if (checkCount >= 30) {
+              Global.logger.d('getTwoOtherWords Step 3: 已遍历检查 30 个随机学习中候选词，为防止 N+1 查询卡顿提前中止。');
+              break;
+            }
             if (learningWord.wordId == targetWordLearningData.wordId || selectedWordIds.contains(learningWord.wordId)) {
               continue;
             }
+            checkCount++;
 
             try {
               final wordDetails = await db.wordsDao.getWordById(learningWord.wordId);
