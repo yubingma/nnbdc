@@ -71,7 +71,7 @@ def query_dict_words_with_sentences(dictName: str, limit: int) -> dict:
                 # 查询该单词的所有例句
                 if dictName == '通用词典':
                     sql_sentences = """
-                    SELECT s.id as sentenceId, s.english_raw as englishRaw, s.chinese_raw as chineseRaw, s.wordMeaning
+                    SELECT s.id as sentenceId, s.english as englishRaw, s.chinese as chineseRaw, s.wordMeaning
                     FROM sentence s
                     LEFT JOIN meaning_item mi ON mi.id = s.meaningItemId
                     WHERE mi.wordId = %s AND mi.dictId = '0'
@@ -80,7 +80,7 @@ def query_dict_words_with_sentences(dictName: str, limit: int) -> dict:
                     cursor.execute(sql_sentences, (word_id,))
                 else:
                     sql_sentences = """
-                    SELECT s.id as sentenceId, s.english_raw as englishRaw, s.chinese_raw as chineseRaw, s.wordMeaning
+                    SELECT s.id as sentenceId, s.english as englishRaw, s.chinese as chineseRaw, s.wordMeaning
                     FROM sentence s
                     LEFT JOIN meaning_item mi ON mi.id = s.meaningItemId
                     left join dict d on d.id = mi.dictId
