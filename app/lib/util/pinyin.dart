@@ -173,6 +173,7 @@ Map<String, double> yunMuSimularityMap = {
   "a-ai": 0.20,
   "i-ao": 0.20, // 新增：支持“打死” (dǎ sǐ) 匹配 “打扫” (dǎ sǎo)
   "uan-ua": 0.80, // 新增：支持“转” (zhuǎn) 匹配 “爪” (zhuǎ)
+  "ang-ao": 0.60, // 新增：支持“对账” (duì zhàng) 匹配 “对照” (duì zhào)
 };
 
 /// 解析拼音中的声母和韵母

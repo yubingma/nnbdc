@@ -173,6 +173,8 @@ void main() {
       expect(fuzzyChineseContains('胡建', '福建'), true); // h & f: 0.35 shengmu sim. weight: 0.35*0.4 + 1*0.5 + 0*0.1 = 0.14+0.5=0.64. Threshold length<=3 is 0.6. 0.64 is barely true! Wait, hu vs fu tone 2 vs 2 is 1 (0.1). 0.14+0.5+0.1 = 0.74 > 0.6.
       // zhuan vs zhua
       expect(fuzzyChineseContains('转', '爪'), true);
+      // zhang vs zhao
+      expect(fuzzyChineseContains('对账', '对照'), true);
     });
 
     test('does not match completely different words', () {
