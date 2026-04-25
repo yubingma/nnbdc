@@ -213,15 +213,21 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
       final similarWordsQuery = db.select(db.similarWords)
         ..where((tbl) => tbl.wordId.equals(targetWordLearningData.wordId));
       final presetSimilarWords = await similarWordsQuery.get();
+      
+      final presetCandidateIds = <String>[];
       for (final sw in presetSimilarWords) {
         if (!selectedWordIds.contains(sw.similarWordId)) {
-          candidateIds.add(sw.similarWordId);
+          presetCandidateIds.add(sw.similarWordId);
           selectedWordIds.add(sw.similarWordId);
         }
       }
+      // 预设形近词内部随机打乱
+      presetCandidateIds.shuffle();
+      candidateIds.addAll(presetCandidateIds);
 
-      // 2. 动态形近词补充（如果预设的形近词不够，通过拼写排序前后取词，前缀一致的词长得很像）
-      if (candidateIds.length < 10 && targetSpell.isNotEmpty) {
+      // 2. 动态形近词补充：【只有当预设形近词不足 2 个时】，才去动态查找邻近词补足
+      if (candidateIds.length < 2 && targetSpell.isNotEmpty) {
+        final fallbackCandidateIds = <String>[];
         // 拼写更大的（向后取 10 个）
         final largerWordsQuery = db.select(db.words)
           ..where((tbl) => tbl.spell.isBiggerThanValue(targetSpell) & tbl.id.equals(targetWordLearningData.wordId).not())
@@ -230,7 +236,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         final largerWords = await largerWordsQuery.get();
         for (final w in largerWords) {
           if (!selectedWordIds.contains(w.id)) {
-            candidateIds.add(w.id);
+            fallbackCandidateIds.add(w.id);
             selectedWordIds.add(w.id);
           }
         }
@@ -243,14 +249,15 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         final smallerWords = await smallerWordsQuery.get();
         for (final w in smallerWords) {
           if (!selectedWordIds.contains(w.id)) {
-            candidateIds.add(w.id);
+            fallbackCandidateIds.add(w.id);
             selectedWordIds.add(w.id);
           }
         }
+        
+        // 邻近词内部随机打乱后追加到末尾
+        fallbackCandidateIds.shuffle();
+        candidateIds.addAll(fallbackCandidateIds);
       }
-
-      // 3. 随机打乱候选池，解决“混淆词固定”的问题
-      candidateIds.shuffle();
 
       // 4. 加载备选词的基础数据
       if (candidateIds.isNotEmpty) {
