@@ -3789,8 +3789,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     );
   }
 
-  /// 构建浮动的TabBar
-  Widget _buildFloatingTabBar() {
+  /// 构建TabBar
+  Widget _buildTabBar() {
     // 确保 TabController 的长度与 tabs 数量匹配
     // 如果 TabController 未初始化或其长度与 tabs 数量不匹配，则重新初始化
     final currentTabsLength = _dynamicTabs.length;
@@ -3803,51 +3803,39 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
     }
 
-    return Positioned(
-      bottom: 0,
-      left: leftPadding,
-      right: rightPadding,
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.watch<DarkMode>().isDarkMode
-              ? const Color(0xFF1E1E1E)
-              : const Color(0xFFF8F9FA),
-          border: Border(
-            top: BorderSide(
-              color: context.watch<DarkMode>().isDarkMode
-                  ? Colors.white10
-                  : Colors.black.withValues(alpha: 0.05),
-              width: 1,
-            ),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: context.watch<DarkMode>().isDarkMode
+            ? const Color(0xFF1E1E1E)
+            : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicatorColor: context.watch<DarkMode>().isDarkMode
+            ? Colors.white
+            : Colors.black,
+        indicatorWeight: 2,
+        dividerColor: Colors.transparent,
+        dividerHeight: 0,
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        splashFactory: NoSplash.splashFactory,
+        labelColor: context.watch<DarkMode>().isDarkMode
+            ? Colors.white
+            : Colors.black,
+        unselectedLabelColor: context.watch<DarkMode>().isDarkMode
+            ? Colors.white54
+            : Colors.grey.shade400,
+        labelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
         ),
-        child: TabBar(
-          controller: _tabController,
-          indicatorColor: context.watch<DarkMode>().isDarkMode
-              ? Colors.white
-              : Colors.black,
-          indicatorWeight: 2,
-          dividerColor: Colors.transparent,
-          dividerHeight: 0,
-          overlayColor: WidgetStateProperty.all(Colors.transparent),
-          splashFactory: NoSplash.splashFactory,
-          labelColor: context.watch<DarkMode>().isDarkMode
-              ? Colors.white
-              : Colors.black,
-          unselectedLabelColor: context.watch<DarkMode>().isDarkMode
-              ? Colors.white54
-              : Colors.grey.shade400,
-          labelStyle: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w400,
-          ),
-          tabs: _dynamicTabs,
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w400,
         ),
+        tabs: _dynamicTabs,
       ),
     );
   }
@@ -4035,9 +4023,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _buildTopButtonsRow(),
         // 顶部按钮和题目区之间的间距
         const SizedBox(height: 8),
-        // 题目区 - 使用flex=3（增大高度，便于显示较长题目）
+        // 题目区 - 使用flex=2（为答案区腾出空间）
         Expanded(
-          flex: 3,
+          flex: 2,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 350),
             switchInCurve: Curves.fastOutSlowIn,
@@ -4072,22 +4060,17 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 ),
               );
             },
-            child: Stack(
+            child: Container(
               key: ValueKey('word_card_${_word?.id}_$_historyIndex'),
-              children: [
-                // 题目内容区域
-                _buildQuestionContent(),
-                // 浮动的TabBar
-                _buildFloatingTabBar(),
-              ],
+              child: _buildQuestionContent(),
             ),
           ),
         ),
         // 题目区和做题区之间的统一间距
         SizedBox(height: _questionAnswerGap),
-        // 做题区 - 使用flex=2
+        // 做题区 - 使用flex=3
         Expanded(
-          flex: 2,
+          flex: 3,
           child: Container(
             // 做题区背景色 - 浅绿色调
             decoration: BoxDecoration(
@@ -4105,6 +4088,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     _studyStep == StudyStep.ch2En.json)
                 ? Column(
                     children: [
+                      if (_studyStep == StudyStep.en2Ch.json ||
+                          _studyStep == StudyStep.ch2En.json) ...[
+                        _buildTabBar(),
+                        const SizedBox(height: 8),
+                      ],
                       Expanded(
                         child: (_studyStep == StudyStep.en2Ch.json ||
                                 _studyStep == StudyStep.ch2En.json)
