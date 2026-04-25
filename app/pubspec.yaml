@@ -108,6 +108,7 @@ dependencies:
   app_tracking_transparency: ^2.0.4
   file_picker: ^11.0.2
   flutter_slidable: ^4.0.3
+  archive: ^3.6.1
 dev_dependencies:
   analyzer: ^7.7.1
   flutter_test:
@@ -144,7 +145,7 @@ flutter:
     - assets/video/
     - assets/fonts/
     - assets/cmudict.dict
-    - assets/db/initial.sqlite
+    - assets/db/initial.zip
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

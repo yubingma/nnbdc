@@ -10,6 +10,7 @@ import 'package:nnbdc/db/table.dart';
 import 'package:nnbdc/db/shared.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:archive/archive.dart';
 
 part 'db.g.dart';
 
@@ -172,27 +173,33 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.i('📦 检测到全新安装，正在寻找预置数据库...');
         try {
           // 尝试从 Assets 加载
-          // 注意：需要在 pubspec.yaml 中声明 assets/db/initial.sqlite
-          const assetKey = 'assets/db/initial.sqlite';
+          // 注意：需要在 pubspec.yaml 中声明 assets/db/initial.zip
+          const assetKey = 'assets/db/initial.zip';
 
           try {
             // 检查资源是否存在 (load 会抛出异常如果不存在)
-            // 我们不需要真正 catch，因为 rootBundle.load 失败就是不存在
             final ByteData data = await rootBundle.load(assetKey);
 
-            Global.logger.i('📦 发现预置数据库，正在部署...');
+            Global.logger.i('📦 发现预置数据库压缩包，正在解压部署...');
 
             // 确保父目录存在
             if (!await dbFile.parent.exists()) {
               await dbFile.parent.create(recursive: true);
             }
 
-            // 写入文件
-            // 直接 writeAsBytes，Flutter/Dart 会处理内存，buffer 不算太大通常没问题
-            // 如果文件真的极其巨大(>500MB)，可以考虑 openWrite().add(buffer)
-            await dbFile.writeAsBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), flush: true);
+            // 解压 ZIP 文件
+            final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+            final archive = ZipDecoder().decodeBytes(bytes);
 
-            Global.logger.i('✅ 预置数据库部署成功！');
+            // 假设压缩包里只有一个 sqlite 文件
+            for (final file in archive) {
+              if (file.isFile) {
+                final dbBytes = file.content as List<int>;
+                await dbFile.writeAsBytes(dbBytes, flush: true);
+                Global.logger.i('✅ 预置数据库解压部署成功！');
+                break;
+              }
+            }
           } catch (e) {
             // 资源没找到，是预期的（如果你忘了放进去，或者这是 Release 包没打进去）
             Global.logger.d('未找到预置数据库资源($assetKey)，将使用空库初始化: $e');
