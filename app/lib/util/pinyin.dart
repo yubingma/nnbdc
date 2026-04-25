@@ -395,7 +395,6 @@ final RegExp _bracketRegExp1 = RegExp(r"[（\(].*[）\)]");
 final RegExp _bracketRegExp2 = RegExp(r"\[.*\]");
 final RegExp _nonChineseRegExp = RegExp(r"[^\u4e00-\u9fa5,，]");
 final RegExp _commaRegExp = RegExp(r"[,，]");
-final RegExp _nonPinyinOrSpaceRegExp = RegExp(r"[^a-z1-5\s]");
 final RegExp _nonPinyinRegExp = RegExp(r"[^a-z1-5]");
 
 /// 计算两个拼音（都对应一个汉字）的发音相似性
