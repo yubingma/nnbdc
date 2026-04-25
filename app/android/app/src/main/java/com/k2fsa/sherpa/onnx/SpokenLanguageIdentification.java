@@ -7,15 +7,15 @@ import java.util.Locale;
 import java.util.Map;
 
 public class SpokenLanguageIdentification {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
     private final Map<String, String> localeMap;
     private long ptr = 0;
 
     public SpokenLanguageIdentification(SpokenLanguageIdentificationConfig config) {
+        LibraryLoader.maybeLoad();
         ptr = newFromFile(config);
+        if (ptr == 0) {
+            throw new IllegalArgumentException("Invalid SpokenLanguageIdentificationConfig: failed to create native SpokenLanguageIdentification");
+        }
 
         String[] languages = Locale.getISOLanguages();
         localeMap = new HashMap<String, String>(languages.length);

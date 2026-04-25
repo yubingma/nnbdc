@@ -3,28 +3,22 @@
 package com.k2fsa.sherpa.onnx;
 
 public class WaveReader {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
-    private final int sampleRate;
-    private final float[] samples;
+    private WaveData data;
 
     // It supports only single channel, 16-bit wave file.
     // It will exit the program if the given file has a wrong format
     public WaveReader(String filename) {
-        Object[] arr = readWaveFromFile(filename);
-        samples = (float[]) arr[0];
-        sampleRate = (int) arr[1];
+        LibraryLoader.maybeLoad();
+        this.data = readWaveFromFile(filename);
     }
 
     public int getSampleRate() {
-        return sampleRate;
+        return this.data.getSampleRate();
     }
 
     public float[] getSamples() {
-        return samples;
+        return this.data.getSamples();
     }
 
-    private native Object[] readWaveFromFile(String filename);
+    private native WaveData readWaveFromFile(String filename);
 }

@@ -3,22 +3,47 @@
 package com.k2fsa.sherpa.onnx;
 
 public class OfflineRecognizer {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
     private long ptr = 0;
+    private final OfflineRecognizerConfig config;
 
     public OfflineRecognizer(OfflineRecognizerConfig config) {
+        LibraryLoader.maybeLoad();
         ptr = newFromFile(config);
+        if (ptr == 0) {
+            throw new IllegalArgumentException("Invalid OfflineRecognizerConfig: failed to create native OfflineRecognizer");
+        }
+
+        this.config = config;
+    }
+
+    public void setConfig(OfflineRecognizerConfig config) {
+        setConfig(ptr, config);
+        // we don't update this.config
+    }
+
+    public OfflineRecognizerConfig getConfig() {
+        return config;
     }
 
     public void decode(OfflineStream s) {
         decode(ptr, s.getPtr());
     }
 
+    public void decode(OfflineStream[] ss) {
+        long[] streamPtrs = new long[ss.length];
+        for (int i = 0; i < ss.length; ++i) {
+            streamPtrs[i] = ss[i].getPtr();
+        }
+        decodeStreams(ptr, streamPtrs);
+    }
+
     public OfflineStream createStream() {
         long p = createStream(ptr);
+        return new OfflineStream(p);
+    }
+
+    public OfflineStream createStream(String hotwords) {
+        long p = createStreamWithHotwords(ptr, hotwords);
         return new OfflineStream(p);
     }
 
@@ -37,14 +62,7 @@ public class OfflineRecognizer {
     }
 
     public OfflineRecognizerResult getResult(OfflineStream s) {
-        Object[] arr = getResult(s.getPtr());
-        String text = (String) arr[0];
-        String[] tokens = (String[]) arr[1];
-        float[] timestamps = (float[]) arr[2];
-        String lang = (String) arr[3];
-        String emotion = (String) arr[4];
-        String event = (String) arr[5];
-        return new OfflineRecognizerResult(text, tokens, timestamps, lang, emotion, event);
+        return getResult(s.getPtr());
     }
 
     private native void delete(long ptr);
@@ -53,7 +71,13 @@ public class OfflineRecognizer {
 
     private native long createStream(long ptr);
 
+    private native long createStreamWithHotwords(long ptr, String hotwords);
+
     private native void decode(long ptr, long streamPtr);
 
-    private native Object[] getResult(long streamPtr);
+    private native void setConfig(long ptr, OfflineRecognizerConfig config);
+
+    private native void decodeStreams(long ptr, long[] streamPtrs);
+
+    private native OfflineRecognizerResult getResult(long streamPtr);
 }

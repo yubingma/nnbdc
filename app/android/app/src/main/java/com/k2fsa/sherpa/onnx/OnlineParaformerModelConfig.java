@@ -8,8 +8,8 @@ public class OnlineParaformerModelConfig {
     private final String decoder;
 
     private OnlineParaformerModelConfig(Builder builder) {
-        this.encoder = builder.encoder;
-        this.decoder = builder.decoder;
+      this.encoder = builder.encoder;
+      this.decoder = builder.decoder;
     }
 
     public static Builder builder() {

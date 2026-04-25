@@ -4,18 +4,29 @@
 package com.k2fsa.sherpa.onnx;
 
 public class OnlineRecognizer {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
     private long ptr = 0;
 
     public OnlineRecognizer(OnlineRecognizerConfig config) {
+        LibraryLoader.maybeLoad();
         ptr = newFromFile(config);
+        if (ptr == 0) {
+            throw new IllegalArgumentException("Invalid OnlineRecognizerConfig: failed to create native OnlineRecognizer");
+        }
     }
 
     public void decode(OnlineStream s) {
         decode(ptr, s.getPtr());
+    }
+
+    public void decode(OnlineStream[] ss) {
+        if (ss == null || ss.length == 0) {
+          throw new IllegalArgumentException("Stream array must be non-empty");
+        }
+        long[] streamPtrs = new long[ss.length];
+        for (int i = 0; i < ss.length; ++i) {
+            streamPtrs[i] = ss[i].getPtr();
+        }
+        decodeStreams(ptr, streamPtrs);
     }
 
     public boolean isReady(OnlineStream s) {
@@ -31,10 +42,11 @@ public class OnlineRecognizer {
     }
 
     public OnlineStream createStream() {
-        return createStreamWithHotwords("");
+        long p = createStream(ptr, "");
+        return new OnlineStream(p);
     }
 
-    public OnlineStream createStreamWithHotwords(String hotwords) {
+    public OnlineStream createStream(String hotwords) {
         long p = createStream(ptr, hotwords);
         return new OnlineStream(p);
     }
@@ -45,22 +57,21 @@ public class OnlineRecognizer {
     }
 
     // You'd better call it manually if it is not used anymore
+    protected void close()  {
+      if (this.ptr == 0) {
+        return;
+      }
+      delete(this.ptr);
+      this.ptr = 0;
+    }
+    
     public void release() {
-        if (this.ptr == 0) {
-            return;
-        }
-        delete(this.ptr);
-        this.ptr = 0;
+      this.close();
     }
 
     public OnlineRecognizerResult getResult(OnlineStream s) {
-        Object[] arr = getResult(ptr, s.getPtr());
-        String text = (String) arr[0];
-        String[] tokens = (String[]) arr[1];
-        float[] timestamps = (float[]) arr[2];
-        return new OnlineRecognizerResult(text, tokens, timestamps);
+        return getResult(ptr, s.getPtr());
     }
-
 
     private native void delete(long ptr);
 
@@ -72,9 +83,11 @@ public class OnlineRecognizer {
 
     private native void decode(long ptr, long streamPtr);
 
+    private native void decodeStreams(long ptr, long[] streamPtrs);
+
     private native boolean isEndpoint(long ptr, long streamPtr);
 
     private native boolean isReady(long ptr, long streamPtr);
 
-    private native Object[] getResult(long ptr, long streamPtr);
+    private native OnlineRecognizerResult getResult(long ptr, long streamPtr);
 }

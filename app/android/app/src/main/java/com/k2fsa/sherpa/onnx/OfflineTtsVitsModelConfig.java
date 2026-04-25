@@ -7,7 +7,7 @@ public class OfflineTtsVitsModelConfig {
     private final String lexicon;
     private final String tokens;
     private final String dataDir;
-    private final String dictDir;
+    private final String dictDir;  // unused
     private final float noiseScale;
     private final float noiseScaleW;
     private final float lengthScale;
@@ -60,9 +60,9 @@ public class OfflineTtsVitsModelConfig {
     }
 
     public static class Builder {
-        private String model;
+        private String model = "";
         private String lexicon = "";
-        private String tokens;
+        private String tokens = "";
         private String dataDir = "";
         private String dictDir = "";
         private float noiseScale = 0.667f;

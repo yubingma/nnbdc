@@ -3,14 +3,14 @@
 package com.k2fsa.sherpa.onnx;
 
 public class Vad {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
     private long ptr = 0;
 
     public Vad(VadModelConfig config) {
+        LibraryLoader.maybeLoad();
         ptr = newFromFile(config);
+        if (ptr == 0) {
+            throw new IllegalArgumentException("Invalid VadModelConfig: failed to create native Vad");
+        }
     }
 
     @Override
@@ -28,6 +28,10 @@ public class Vad {
 
     public void acceptWaveform(float[] samples) {
         acceptWaveform(this.ptr, samples);
+    }
+
+    public float compute(float[] samples) {
+        return compute(this.ptr, samples);
     }
 
     public boolean empty() {
@@ -51,11 +55,7 @@ public class Vad {
     }
 
     public SpeechSegment front() {
-        Object[] arr = front(this.ptr);
-        int start = (int) arr[0];
-        float[] samples = (float[]) arr[1];
-
-        return new SpeechSegment(start, samples);
+        return front(this.ptr);
     }
 
     public boolean isSpeechDetected() {
@@ -68,13 +68,15 @@ public class Vad {
 
     private native void acceptWaveform(long ptr, float[] samples);
 
+    private native float compute(long ptr, float[] samples);
+
     private native boolean empty(long ptr);
 
     private native void pop(long ptr);
 
     private native void clear(long ptr);
 
-    private native Object[] front(long ptr);
+    private native SpeechSegment front(long ptr);
 
     private native boolean isSpeechDetected(long ptr);
 

@@ -215,7 +215,6 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setTokens(tokensPath)
                 .setNumThreads(4)
                 .setDebug(true)
-                .setModelType("zipformer2") // 重要：66M 升级版使用的是 zipformer2 架构
                 .build()
 
             val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
@@ -224,7 +223,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
                 .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
-                .setRul3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(30f).build())
+                .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(30f).build())
                 .build()
 
             val config = OnlineRecognizerConfig.builder()
@@ -247,24 +246,20 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun setupChineseModel() {
-        val modelDir = "sherpa-onnx-streaming-zipformer-zh-14M-2023-02-23"
-        Log.i(TAG, "Isolating Recipe: Loading CHINESE model")
+        val modelDir = "sherpa-onnx-streaming-zipformer-small-ctc-zh-int8-2025-04-01"
+        Log.i(TAG, "Isolating Recipe: Loading CHINESE model (Upgraded 2025 Small CTC)")
 
         try {
             val cacheDir = activity.cacheDir.absolutePath
             val destDir = "$cacheDir/$modelDir"
             val tokensPath = copyAsset(modelDir, "tokens.txt", destDir)
-            val encoderPath = copyAsset(modelDir, "encoder-epoch-99-avg-1.int8.onnx", destDir)
-            val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.int8.onnx", destDir)
-            val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
+            val modelPath = copyAsset(modelDir, "model.int8.onnx", destDir)
 
             val modelConfig = OnlineModelConfig.builder()
-                .setTransducer(OnlineTransducerModelConfig.builder()
-                    .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
+                .setZipformer2Ctc(OnlineZipformer2CtcModelConfig.builder().setModel(modelPath).build())
                 .setTokens(tokensPath)
                 .setNumThreads(4)
                 .setDebug(true)
-                .setModelType("zipformer")
                 .build()
 
             val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
@@ -273,7 +268,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
                 .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
-                .setRul3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(20f).build())
+                .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(20f).build())
                 .build()
 
             val config = OnlineRecognizerConfig.builder()
@@ -281,7 +276,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setOnlineModelConfig(modelConfig)
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
-                .setDecodingMethod("modified_beam_search")
+                .setDecodingMethod("greedy_search")
                 .setMaxActivePaths(16) // 稍微扩大搜索范围，针对 14M 模型提供更多备选路径
                 .setHotwordsScore(1.5f) // 【生死劫】：极度降低热词权重。用户反馈“可可粉”会变成“咯哥哥哥哥”，这是典型的高分陷阱导致的解码死循环。
                 .setBlankPenalty(1.0f) // 保持标准罚分
@@ -326,7 +321,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         if (isRecording) {
             Log.i(TAG, "Microphone is already running, re-creating stream with hotwords.")
             currentStream?.release()
-            currentStream = currentModel?.createStreamWithHotwords(pendingHotwords)
+            // CTC 模型暂不支持热词，仅英文 (Transducer) 传入
+            val hotwords = if (currentModel == modelEn) pendingHotwords else ""
+            currentStream = currentModel?.createStream(hotwords)
             lastSentResult = ""
             isAsrStopped = false
             return
@@ -352,9 +349,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         isRecording = true
         isAsrStopped = false
         
-        // 使用当前活动模型创建热词流
-        Log.i(TAG, "Creating stream with hotwords: '$pendingHotwords'")
-        currentStream = currentModel?.createStreamWithHotwords(pendingHotwords)
+        // 使用当前活动模型创建流 (仅英文 Transducer 支持热词)
+        Log.i(TAG, "Creating stream. Active model is English: ${currentModel == modelEn}")
+        val hotwords = if (currentModel == modelEn) pendingHotwords else ""
+        currentStream = currentModel?.createStream(hotwords)
         
         // 重置去重标记
         lastSentResult = ""

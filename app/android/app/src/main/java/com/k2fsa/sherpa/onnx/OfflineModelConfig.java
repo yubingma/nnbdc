@@ -6,9 +6,20 @@ public class OfflineModelConfig {
     private final OfflineTransducerModelConfig transducer;
     private final OfflineParaformerModelConfig paraformer;
     private final OfflineWhisperModelConfig whisper;
+    private final OfflineFireRedAsrModelConfig fireRedAsr;
     private final OfflineMoonshineModelConfig moonshine;
     private final OfflineNemoEncDecCtcModelConfig nemo;
     private final OfflineSenseVoiceModelConfig senseVoice;
+    private final OfflineDolphinModelConfig dolphin;
+    private final OfflineZipformerCtcModelConfig zipformerCtc;
+    private final OfflineWenetCtcModelConfig wenetCtc;
+    private final OfflineOmnilingualAsrCtcModelConfig omnilingual;
+    private final OfflineMedAsrCtcModelConfig medasr;
+    private final OfflineFireRedAsrCtcModelConfig fireRedAsrCtc;
+    private final OfflineFunAsrNanoModelConfig funasrNano;
+    private final OfflineQwen3AsrModelConfig qwen3Asr;
+    private final OfflineCanaryModelConfig canary;
+    private final OfflineCohereTranscribeModelConfig cohereTranscribe;
     private final String teleSpeech;
     private final String tokens;
     private final int numThreads;
@@ -23,9 +34,20 @@ public class OfflineModelConfig {
         this.transducer = builder.transducer;
         this.paraformer = builder.paraformer;
         this.whisper = builder.whisper;
+        this.fireRedAsr = builder.fireRedAsr;
         this.moonshine = builder.moonshine;
         this.nemo = builder.nemo;
+        this.zipformerCtc = builder.zipformerCtc;
+        this.canary = builder.canary;
+        this.wenetCtc = builder.wenetCtc;
+        this.omnilingual = builder.omnilingual;
+        this.medasr = builder.medasr;
+        this.fireRedAsrCtc = builder.fireRedAsrCtc;
+        this.funasrNano = builder.funasrNano;
+        this.qwen3Asr = builder.qwen3Asr;
         this.senseVoice = builder.senseVoice;
+        this.dolphin = builder.dolphin;
+        this.cohereTranscribe = builder.cohereTranscribe;
         this.teleSpeech = builder.teleSpeech;
         this.tokens = builder.tokens;
         this.numThreads = builder.numThreads;
@@ -48,7 +70,7 @@ public class OfflineModelConfig {
         return transducer;
     }
 
-    public OfflineWhisperModelConfig getZipformer2Ctc() {
+    public OfflineWhisperModelConfig getWhisper() {
         return whisper;
     }
 
@@ -58,6 +80,54 @@ public class OfflineModelConfig {
 
     public OfflineSenseVoiceModelConfig getSenseVoice() {
         return senseVoice;
+    }
+
+    public OfflineDolphinModelConfig getDolphin() {
+        return dolphin;
+    }
+
+    public OfflineNemoEncDecCtcModelConfig getNemo() {
+        return nemo;
+    }
+
+    public OfflineZipformerCtcModelConfig getZipformerCtc() {
+        return zipformerCtc;
+    }
+
+    public OfflineWenetCtcModelConfig getWenetCtc() {
+        return wenetCtc;
+    }
+
+    public OfflineOmnilingualAsrCtcModelConfig getOmnilingual() {
+        return omnilingual;
+    }
+
+    public OfflineMedAsrCtcModelConfig getMedAsr() {
+        return medasr;
+    }
+
+    public OfflineFireRedAsrCtcModelConfig getFireRedAsrCtc() {
+        return fireRedAsrCtc;
+    }
+
+    public OfflineFireRedAsrModelConfig getFireRedAsr() {
+        return fireRedAsr;
+    }
+
+    public OfflineFunAsrNanoModelConfig getFunAsrNano() {
+        return funasrNano;
+    }
+
+    public OfflineQwen3AsrModelConfig getQwen3Asr() {
+        return qwen3Asr;
+    }
+
+    public OfflineCanaryModelConfig getCanary() {
+        return canary;
+    }
+
+    public OfflineCohereTranscribeModelConfig getCohereTranscribe() {
+        return cohereTranscribe;
     }
 
     public String getTokens() {
@@ -96,9 +166,21 @@ public class OfflineModelConfig {
         private OfflineParaformerModelConfig paraformer = OfflineParaformerModelConfig.builder().build();
         private OfflineTransducerModelConfig transducer = OfflineTransducerModelConfig.builder().build();
         private OfflineWhisperModelConfig whisper = OfflineWhisperModelConfig.builder().build();
+        private OfflineFireRedAsrModelConfig fireRedAsr = OfflineFireRedAsrModelConfig.builder().build();
         private OfflineMoonshineModelConfig moonshine = OfflineMoonshineModelConfig.builder().build();
         private OfflineNemoEncDecCtcModelConfig nemo = OfflineNemoEncDecCtcModelConfig.builder().build();
         private OfflineSenseVoiceModelConfig senseVoice = OfflineSenseVoiceModelConfig.builder().build();
+        private OfflineDolphinModelConfig dolphin = OfflineDolphinModelConfig.builder().build();
+        private OfflineZipformerCtcModelConfig zipformerCtc = OfflineZipformerCtcModelConfig.builder().build();
+        private OfflineWenetCtcModelConfig wenetCtc = OfflineWenetCtcModelConfig.builder().build();
+        private OfflineOmnilingualAsrCtcModelConfig omnilingual = OfflineOmnilingualAsrCtcModelConfig.builder().build();
+        private OfflineMedAsrCtcModelConfig medasr = OfflineMedAsrCtcModelConfig.builder().build();
+        private OfflineFireRedAsrCtcModelConfig fireRedAsrCtc = OfflineFireRedAsrCtcModelConfig.builder().build();
+        private OfflineFunAsrNanoModelConfig funasrNano = OfflineFunAsrNanoModelConfig.builder().build();
+        private OfflineQwen3AsrModelConfig qwen3Asr = OfflineQwen3AsrModelConfig.builder().build();
+        private OfflineCanaryModelConfig canary = OfflineCanaryModelConfig.builder().build();
+        private OfflineCohereTranscribeModelConfig cohereTranscribe =
+                OfflineCohereTranscribeModelConfig.builder().build();
         private String teleSpeech = "";
         private String tokens = "";
         private int numThreads = 1;
@@ -117,6 +199,11 @@ public class OfflineModelConfig {
             return this;
         }
 
+        public Builder setDolphin(OfflineDolphinModelConfig dolphin) {
+            this.dolphin = dolphin;
+            return this;
+        }
+
         public Builder setParaformer(OfflineParaformerModelConfig paraformer) {
             this.paraformer = paraformer;
             return this;
@@ -127,6 +214,51 @@ public class OfflineModelConfig {
             return this;
         }
 
+        public Builder setZipformerCtc(OfflineZipformerCtcModelConfig zipformerCtc) {
+            this.zipformerCtc = zipformerCtc;
+            return this;
+        }
+
+        public Builder setWenetCtc(OfflineWenetCtcModelConfig wenetCtc) {
+            this.wenetCtc = wenetCtc;
+            return this;
+        }
+
+        public Builder setOmnilingual(OfflineOmnilingualAsrCtcModelConfig omnilingual) {
+            this.omnilingual = omnilingual;
+            return this;
+        }
+
+        public Builder setMedAsr(OfflineMedAsrCtcModelConfig medasr) {
+            this.medasr = medasr;
+            return this;
+        }
+
+        public Builder setFireRedAsrCtc(OfflineFireRedAsrCtcModelConfig fireRedAsrCtc) {
+            this.fireRedAsrCtc = fireRedAsrCtc;
+            return this;
+        }
+
+        public Builder setFunAsrNano(OfflineFunAsrNanoModelConfig funasrNano) {
+            this.funasrNano = funasrNano;
+            return this;
+        }
+
+        public Builder setQwen3Asr(OfflineQwen3AsrModelConfig qwen3Asr) {
+            this.qwen3Asr = qwen3Asr;
+            return this;
+        }
+
+        public Builder setCanary(OfflineCanaryModelConfig canary) {
+            this.canary = canary;
+            return this;
+        }
+
+        public Builder setCohereTranscribe(OfflineCohereTranscribeModelConfig cohereTranscribe) {
+            this.cohereTranscribe = cohereTranscribe;
+            return this;
+        }
+
         public Builder setTeleSpeech(String teleSpeech) {
             this.teleSpeech = teleSpeech;
             return this;
@@ -134,6 +266,11 @@ public class OfflineModelConfig {
 
         public Builder setWhisper(OfflineWhisperModelConfig whisper) {
             this.whisper = whisper;
+            return this;
+        }
+
+        public Builder setFireRedAsr(OfflineFireRedAsrModelConfig fireRedAsr) {
+            this.fireRedAsr = fireRedAsr;
             return this;
         }
 

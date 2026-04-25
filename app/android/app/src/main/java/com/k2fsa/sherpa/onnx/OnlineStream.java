@@ -4,13 +4,10 @@
 package com.k2fsa.sherpa.onnx;
 
 public class OnlineStream {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
     private long ptr = 0;
 
     public OnlineStream() {
+        LibraryLoader.maybeLoad();
         this.ptr = 0;
     }
 
@@ -34,24 +31,46 @@ public class OnlineStream {
         inputFinished(this.ptr);
     }
 
-    public void release() {
-        // stream object must be release after used
-        if (this.ptr == 0) {
-            return;
-        }
-        delete(this.ptr);
-        this.ptr = 0;
+    public void setOption(String key, String value) {
+        setOption(this.ptr, key, value);
     }
 
+    public String getOption(String key) {
+        return getOption(this.ptr, key);
+    }
+
+    public boolean hasOption(String key) {
+        return hasOption(this.ptr, key);
+    }
+
+    public void release() {
+        close();
+    }
+    
+    public void close() {
+      // stream object must be release after used
+      if (this.ptr == 0) {
+          return;
+      }
+      delete(this.ptr);
+      this.ptr = 0;
+    }
+    
     @Override
     protected void finalize() throws Throwable {
-        release();
+        close();
         super.finalize();
     }
 
     private native void acceptWaveform(long ptr, float[] samples, int sampleRate);
 
     private native void inputFinished(long ptr);
+
+    private native void setOption(long ptr, String key, String value);
+
+    private native String getOption(long ptr, String key);
+
+    private native boolean hasOption(long ptr, String key);
 
     private native void delete(long ptr);
 }

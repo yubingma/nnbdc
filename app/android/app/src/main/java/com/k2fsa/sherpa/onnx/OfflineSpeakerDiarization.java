@@ -3,14 +3,14 @@
 package com.k2fsa.sherpa.onnx;
 
 public class OfflineSpeakerDiarization {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
     private long ptr = 0;
 
     public OfflineSpeakerDiarization(OfflineSpeakerDiarizationConfig config) {
+        LibraryLoader.maybeLoad();
         ptr = newFromFile(config);
+        if (ptr == 0) {
+            throw new IllegalArgumentException("Invalid OfflineSpeakerDiarizationConfig: failed to create native OfflineSpeakerDiarization");
+        }
     }
 
     public int getSampleRate() {

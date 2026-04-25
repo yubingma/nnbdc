@@ -3,14 +3,14 @@
 package com.k2fsa.sherpa.onnx;
 
 public class SpeakerEmbeddingExtractor {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
     private long ptr = 0;
 
     public SpeakerEmbeddingExtractor(SpeakerEmbeddingExtractorConfig config) {
+        LibraryLoader.maybeLoad();
         ptr = newFromFile(config);
+        if (ptr == 0) {
+            throw new IllegalArgumentException("Invalid SpeakerEmbeddingExtractorConfig: failed to create native SpeakerEmbeddingExtractor");
+        }
     }
 
     @Override

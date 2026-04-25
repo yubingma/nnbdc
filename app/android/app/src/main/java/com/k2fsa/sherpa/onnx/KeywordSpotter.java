@@ -3,14 +3,14 @@
 package com.k2fsa.sherpa.onnx;
 
 public class KeywordSpotter {
-    static {
-        System.loadLibrary("sherpa-onnx-jni");
-    }
-
     private long ptr = 0;
 
     public KeywordSpotter(KeywordSpotterConfig config) {
+        LibraryLoader.maybeLoad();
         ptr = newFromFile(config);
+        if (ptr == 0) {
+            throw new IllegalArgumentException("Invalid KeywordSpotterConfig: failed to create native KeywordSpotter");
+        }
     }
 
     public OnlineStream createStream(String keywords) {
@@ -27,16 +27,16 @@ public class KeywordSpotter {
         decode(ptr, s.getPtr());
     }
 
+    public void reset(OnlineStream s) {
+        reset(ptr, s.getPtr());
+    }
+
     public boolean isReady(OnlineStream s) {
         return isReady(ptr, s.getPtr());
     }
 
     public KeywordSpotterResult getResult(OnlineStream s) {
-        Object[] arr = getResult(ptr, s.getPtr());
-        String keyword = (String) arr[0];
-        String[] tokens = (String[]) arr[1];
-        float[] timestamps = (float[]) arr[2];
-        return new KeywordSpotterResult(keyword, tokens, timestamps);
+        return getResult(ptr, s.getPtr());
     }
 
     protected void finalize() throws Throwable {
@@ -60,7 +60,9 @@ public class KeywordSpotter {
 
     private native void decode(long ptr, long streamPtr);
 
+    private native void reset(long ptr, long streamPtr);
+
     private native boolean isReady(long ptr, long streamPtr);
 
-    private native Object[] getResult(long ptr, long streamPtr);
+    private native KeywordSpotterResult getResult(long ptr, long streamPtr);
 }

@@ -36,7 +36,7 @@ public class OnlineTransducerModelConfig {
         private String joiner = "";
 
         public OnlineTransducerModelConfig build() {
-            return new OnlineTransducerModelConfig(this);
+          return new OnlineTransducerModelConfig(this);
         }
 
         public Builder setEncoder(String encoder) {
