@@ -626,12 +626,16 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                statusText,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isDarkMode ? Colors.white38 : Colors.black26,
-                  fontWeight: FontWeight.w500,
+              SizedBox(
+                width: 65,
+                child: Text(
+                  statusText,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDarkMode ? Colors.white38 : Colors.black26,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               const SizedBox(width: 4),
@@ -657,14 +661,19 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                         width: 1,
                       ),
                     ),
-                    child: Text(
-                      '${widget.score ?? 0}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: (widget.score ?? 0) >= 60
-                            ? Colors.green
-                            : Colors.orange,
+                    child: SizedBox(
+                      width: 25,
+                      child: Center(
+                        child: Text(
+                          '${widget.score ?? 0}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: (widget.score ?? 0) >= 60
+                                ? Colors.green
+                                : Colors.orange,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -719,6 +728,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   bool _audioPlayerDisposed = false;
 
   late BdcPageArgs _args;
+
+  Future<List<LearningLog>>? _learningHistoryFuture;
 
   /// 是否允许用户点击下一词按钮离开当前单词（英→中模式下，用户asr回答正确了至少一个释义）
   bool _canLeaveCurrWord = false;
@@ -2820,6 +2831,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       if (!(_word?.id != null && _wordUIStates.containsKey(_word!.id!))) {
         _initChoiceData(getWordResult, user);
+      }
+
+      if (_word?.id != null) {
+        _learningHistoryFuture = MyDatabase.instance.learningLogsDao
+            .getHistory(Global.getLoggedInUserNotNull().id, _word!.id!);
+      } else {
+        _learningHistoryFuture = null;
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, operation: '处理单词');
@@ -5784,8 +5802,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           _currentGetWordResult!.stepIndex > 0 &&
           _wordWrapper?.word.id != null) {
         return FutureBuilder<List<LearningLog>>(
-          future: MyDatabase.instance.learningLogsDao.getHistory(
-              Global.getLoggedInUser()!.id, _wordWrapper!.word.id!),
+          future: _learningHistoryFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting ||
                 !snapshot.hasData ||
@@ -6043,8 +6060,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           ),
           if (_wordWrapper?.word.id != null)
             FutureBuilder(
-              future: MyDatabase.instance.learningLogsDao.getHistory(
-                  Global.getLoggedInUser()!.id, _wordWrapper!.word.id!),
+              future: _learningHistoryFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const SizedBox();
