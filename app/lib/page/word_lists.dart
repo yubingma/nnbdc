@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import '../api/vo.dart';
 import '../state.dart';
 import 'package:nnbdc/event/events.dart';
+import '../global.dart';
 
 class WordListsPage extends StatefulWidget {
   const WordListsPage({super.key});
@@ -33,19 +34,25 @@ class _WordListsPageState extends State<WordListsPage> {
   @override
   void initState() {
     super.initState();
+    Global.logger.d('[EventBus Debug] WordListsPage initState() 注册观察者监听');
     loadData();
     
     // 观察者模式：注册自身监听全局“新错词产生”具象业务事件
-    _subscription = EventBus.on<NewWrongWordEvent>().listen((event) {
+    _subscription = EventBus.onNewWrongWord().listen((event) {
+      Global.logger.d('[EventBus Debug] 监听到 NewWrongWordEvent, 本地 _isDirty 设为 true');
       _isDirty = true; 
     });
 
     // 观察者模式：注册自身监听全局“Tab 栏切换”具象业务事件
-    _subscriptionTab = EventBus.on<TabSwitchedEvent>().listen((event) {
+    _subscriptionTab = EventBus.onTabSwitched().listen((event) {
+      Global.logger.d('[EventBus Debug] 监听到 TabSwitchedEvent, 目标 index=${event.index}, 当前本地 _isDirty=$_isDirty');
       if (event.index == 1) {
         if (_isDirty) {
+          Global.logger.d('[EventBus Debug] 条件满足：切入目标 Tab 1 且本地数据为脏，开始触发异步 loadData()');
           loadData();
           _isDirty = false; 
+        } else {
+          Global.logger.d('[EventBus Debug] 条件不满足：本地数据不脏 _isDirty=false，跳过 loadData()');
         }
       }
     });
@@ -59,12 +66,17 @@ class _WordListsPageState extends State<WordListsPage> {
   }
 
   Future<void> loadData() async {
+    Global.logger.d('[EventBus Debug] === loadData 开始异步加载数据 ===');
     wordLists = (await WordBo().getWordLists()).data!;
+    Global.logger.d('[EventBus Debug] === loadData 加载完成，数据长度: ${wordLists.length} ===');
 
     if (mounted) {
       setState(() {
         dataLoaded = true;
       });
+      Global.logger.d('[EventBus Debug] loadData() 已触发 UI 刷新 (setState)');
+    } else {
+      Global.logger.d('[EventBus Debug] loadData() mounted=false, 跳过 UI 刷新');
     }
   }
 

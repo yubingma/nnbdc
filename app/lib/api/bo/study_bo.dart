@@ -1089,7 +1089,9 @@ class StudyBo {
     }
 
     // 观察者模式：发射具象的“产生了新错词”事件
-    EventBus.publish(NewWrongWordEvent(wordId: wrongWord.wordId));
+    Global.logger.d('[EventBus Debug] 准备发射 NewWrongWordEvent, wordId=${wrongWord.wordId}');
+    EventBus.publishNewWrongWord(NewWrongWordEvent(wordId: wrongWord.wordId));
+    Global.logger.d('[EventBus Debug] 已发射 NewWrongWordEvent');
 
     // 触发同步到后端
     ThrottledDbSyncService().requestSync();

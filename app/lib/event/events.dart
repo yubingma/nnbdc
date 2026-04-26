@@ -3,18 +3,27 @@ import 'dart:async';
 /// 基于 Dart Stream 实现的轻量化事件总线 (EventBus)
 /// 支持多订阅、通过泛型自动拦截分发对应的具象业务事件
 class EventBus {
-  EventBus._(); // 阻止实例化
+  EventBus._(); 
 
-  static final StreamController<dynamic> _streamController = StreamController<dynamic>.broadcast();
+  static final _wrongWordController = StreamController<NewWrongWordEvent>.broadcast();
+  static final _tabSwitchedController = StreamController<TabSwitchedEvent>.broadcast();
 
-  /// 发布一个事件（由发射端调用，可以是任何具象类实例）
-  static void publish(dynamic event) {
-    _streamController.add(event);
+  /// 产生的具体业务事件：发射与监听（新错词产生）
+  static void publishNewWrongWord(NewWrongWordEvent event) {
+    _wrongWordController.add(event);
   }
 
-  /// 监听特定类型的事件（由接收端注册，通过泛型精准拦截匹配）
-  static Stream<T> on<T>() {
-    return _streamController.stream.where((event) => event is T).cast<T>();
+  static Stream<NewWrongWordEvent> onNewWrongWord() {
+    return _wrongWordController.stream;
+  }
+
+  /// 产生的具体业务事件：发射与监听（Tab 栏切换）
+  static void publishTabSwitched(TabSwitchedEvent event) {
+    _tabSwitchedController.add(event);
+  }
+
+  static Stream<TabSwitchedEvent> onTabSwitched() {
+    return _tabSwitchedController.stream;
   }
 }
 

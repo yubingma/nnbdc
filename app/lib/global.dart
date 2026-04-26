@@ -25,6 +25,9 @@ class Global {
   /// 全局 API 请求计数（用于在后台显示加载状态，而不阻塞用户操作）
   static final ValueNotifier<int> activeRequestCount = ValueNotifier<int>(0);
 
+  /// 词表管理页面脏标志：产生新错词时置为 true，数据更新后置为 false
+  static final ValueNotifier<bool> wordListsPageIsDirty = ValueNotifier<bool>(false);
+
 
 
   static void setStartupError(String message) {

@@ -98,7 +98,9 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           });
 
           // 观察者模式：发射“Tab 切换”具体业务事件
-          EventBus.publish(TabSwitchedEvent(index));
+          Global.logger.d('[EventBus Debug] 准备发射 TabSwitchedEvent, index=$index');
+          EventBus.publishTabSwitched(TabSwitchedEvent(index));
+          Global.logger.d('[EventBus Debug] 已发射 TabSwitchedEvent, index=$index');
         },
         child: Container(
           height: 54, 
