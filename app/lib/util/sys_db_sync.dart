@@ -212,7 +212,8 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
         } else if (log.tblName == 'word_image') {
           // 单词配图
           if (log.operate == 'DELETE') {
-            await (db.delete(db.wordImages)..where((t) => t.id.equals(log.recordId))).go();
+            final rows = await (db.delete(db.wordImages)..where((t) => t.id.equals(log.recordId))).go();
+            Global.logger.i('🗑️ [同步删除配图] 收到 DELETE word_image 日志, recordId=${log.recordId}, 实际删除了 $rows 行');
           } else {
             WordImage entity = WordImage.fromJson(entityJson);
             await db.wordImagesDao.insertEntity(entity);
