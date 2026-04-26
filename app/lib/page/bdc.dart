@@ -1515,7 +1515,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     _hasFinishedAnswering = true;
     _canLeaveCurrWord = true;
 
-    if (!_autoJumpAfterCorrect) {
+    if (!_autoJumpAfterCorrect || _historyIndex != -1) {
       Global.logger.d(
           'BDC: 非极速模式，拼写正确，准备关闭沉浸式输入界面. _showHandwritingBoard=false, unfocusing');
       _meaningFocusNode.unfocus();
@@ -1734,7 +1734,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           //   _meaningController.text = _word!.spell;
           // }
 
-          if (!_autoJumpAfterCorrect) {
+          if (!_autoJumpAfterCorrect || _historyIndex != -1) {
             Global.logger.d(
                 'BDC [en2Ch]: 非极速模式，拼写正确，准备关闭沉浸式输入界面. _showHandwritingBoard=false, unfocusing');
             _meaningFocusNode.unfocus();
