@@ -826,6 +826,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
   }
 
+  /// 底部按钮是否可用（用于不认识/再学学按钮的500ms延时限制）
+  bool _buttonsEnabled = false;
+
   /// 是否保持在拼写输入界面 (图钉模式)
 
   /// 当前单词的 FSRS 预览结果
@@ -2631,6 +2634,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final config = StudyConfig.fromCurrentUser();
     _asrPassRuleCache = config.asrPassRule;
 
+    // 进入新单词时禁用不认识/再学学按钮，500ms 延时后重新开启（防止闪电模式下点击再学学/不认识后按钮消失导致误触）
+    _buttonsEnabled = false;
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _buttonsEnabled = true;
+        });
+      }
+    });
+
     setState(() {
       _fsrsItem = null;
       _lastFsrsRating = null;
@@ -4403,8 +4416,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () => showWordDetail(_word, true,
-                        fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
+                    onPressed: _buttonsEnabled
+                        ? () => showWordDetail(_word, true,
+                            fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记")
+                        : null,
                     child: const Text('不认识',
                         style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
@@ -4424,8 +4439,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () => showWordDetail(_word, false,
-                        fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
+                    onPressed: _buttonsEnabled
+                        ? () => showWordDetail(_word, false,
+                            fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好")
+                        : null,
                     child: const Text('再学学',
                         style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
