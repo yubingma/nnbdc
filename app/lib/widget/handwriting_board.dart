@@ -353,10 +353,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   DateTime _lastStrokeEndTime = DateTime.fromMillisecondsSinceEpoch(0);
   late double _currentSmartZoneWidth;
   
-  // 用于防止在一次划动中重复触发区域动作
-  bool _rewriteTriggered = false;
-  bool _undoTriggered = false;
-  bool _closeTriggered = false;
+
   
   // 视觉反馈：当前激活的感应区 (0:无, 1:重写, 2:撤销)
   int _activeZone = 0;
@@ -448,29 +445,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _activePointerId = event.pointer;
             _ignoredPointers.remove(event.pointer); // 确保从忽略列表中移除（如果它是由于isRecentWriting被捕获的）
             
-            _rewriteTriggered = false;
-            _undoTriggered = false;
-            _closeTriggered = false;
+
 
             // 触发开始书写回调并取消自动识别计时
             widget.onStartWriting?.call();
             _autoRecognizeTimer?.cancel();
 
-            // 窄屏下，如果在感应区内按下，先给予视觉反馈且不立即开始绘画
-            if (isNarrow) {
-              if (rewriteZone.contains(p)) {
-                setState(() => _activeZone = 1);
-                return;
-              }
-              if (closeZone.contains(p)) {
-                setState(() => _activeZone = 3);
-                return;
-              }
-              if (undoZone.contains(p)) {
-                setState(() => _activeZone = 2);
-                return;
-              }
-            }
+            // 移除了底层按键点击拦截
             
             _controller.start(p);
           },
@@ -495,50 +476,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _lastStrokeEndTime = DateTime.now();
 
             try {
-              final p = event.localPosition;
+
               
               // 移除了全屏滑动手势判定，仅使用底部控制按钮和正常书写
 
-              // 点击检测：重写
-              if (!_rewriteTriggered && rewriteZone.contains(p) && (_controller.rawLines.isEmpty || _controller.rawLines.last.length < 5)) {
-                _rewriteTriggered = true;
-                setState(() => _activeZone = 1);
-                HapticFeedback.lightImpact();
-                
-                _autoRecognizeTimer?.cancel();
-                _pendingRewardTask?.cancel();
-                
-                _controller.clear();
-                widget.onRewrite();
-                
-                Timer(const Duration(milliseconds: 200), () {
-                  if (mounted) setState(() => _activeZone = 0);
-                });
-              } else if (!_undoTriggered && undoZone.contains(p) && (_controller.rawLines.isEmpty || _controller.rawLines.last.length < 5)) {
-                _undoTriggered = true;
-                setState(() => _activeZone = 2);
-                HapticFeedback.lightImpact();
-                
-                _autoRecognizeTimer?.cancel();
-                 _pendingUndoTask?.cancel();
-                 
-                 _controller.removeLast();
-                 widget.onUndo();
-                 
-                 // 如果删完后画板空了，同步清空外部输入框
-                if (widget.lines.isNotEmpty) {
-                  Timer(const Duration(milliseconds: 200), () {
-                    if (mounted) setState(() => _activeZone = 0);
-                  });
-                } else {
-                  widget.onRewrite(); // 这会触发 _clear() 并重置视觉状态
-                }
-              } else if (!_closeTriggered && closeZone.contains(p) && (_controller.rawLines.isEmpty || _controller.rawLines.last.length < 5)) {
-                _closeTriggered = true;
-                setState(() => _activeZone = 3);
-                HapticFeedback.lightImpact();
-                widget.onCancel?.call();
-              }
+              // 原点击检测逻辑已升级迁移为原生 GestureDetector
             } finally {
               // 关键修复：无论发生什么，必须释放指针锁，防止画板永久失效
               _activePointerId = null;
@@ -555,10 +497,8 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 });
               }
               
-              // 如果最终没有触发任何动作，确保重置激活区状态
-              if (!_rewriteTriggered && !_undoTriggered) {
-                setState(() => _activeZone = 0);
-              }
+              // 重置激活区状态
+              setState(() => _activeZone = 0);
             }
           },
           onPointerCancel: (event) {
@@ -674,36 +614,46 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 Positioned(
                   left: rewriteZone.left,
                   top: rewriteZone.top,
-                  child: Container(
-                    width: zoneWidth,
-                    height: zoneHeight,
-                    decoration: BoxDecoration(
-                      color: _activeZone == 1 
-                        ? Colors.grey.withValues(alpha: 0.25) 
-                        : Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
-                        width: _activeZone == 1 ? 1.5 : 1
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _autoRecognizeTimer?.cancel();
+                      _pendingRewardTask?.cancel();
+                      _controller.clear();
+                      widget.onRewrite();
+                    },
+                    child: Container(
+                      width: zoneWidth,
+                      height: zoneHeight,
+                      decoration: BoxDecoration(
+                        color: _activeZone == 1 
+                          ? Colors.grey.withValues(alpha: 0.25) 
+                          : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _activeZone == 1 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
+                          width: _activeZone == 1 ? 1.5 : 1
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.delete_sweep_outlined, 
-                          color: _activeZone == 1 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                          size: 22
-                        ),
-                        Text(
-                          isNarrow ? '重写' : '划过重写', 
-                          style: TextStyle(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.delete_sweep_outlined, 
                             color: _activeZone == 1 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                            fontSize: isNarrow ? 12 : 11,
-                            fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
-                          )
-                        ),
-                      ],
+                            size: 22
+                          ),
+                          Text(
+                            isNarrow ? '重写' : '划过重写', 
+                            style: TextStyle(
+                              color: _activeZone == 1 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
+                              fontSize: isNarrow ? 12 : 11,
+                              fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
+                            )
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -711,72 +661,92 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 Positioned(
                   left: closeZone.left,
                   top: closeZone.top,
-                  child: Container(
-                    width: zoneWidth,
-                    height: zoneHeight,
-                    decoration: BoxDecoration(
-                      color: _activeZone == 3 
-                        ? Colors.grey.withValues(alpha: 0.25) 
-                        : Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _activeZone == 3 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
-                        width: _activeZone == 3 ? 1.5 : 1
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      widget.onCancel?.call();
+                    },
+                    child: Container(
+                      width: zoneWidth,
+                      height: zoneHeight,
+                      decoration: BoxDecoration(
+                        color: _activeZone == 3 
+                          ? Colors.grey.withValues(alpha: 0.25) 
+                          : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _activeZone == 3 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
+                          width: _activeZone == 3 ? 1.5 : 1
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.close, 
-                          color: _activeZone == 3 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                          size: 22
-                        ),
-                        Text(
-                          '关闭', 
-                          style: TextStyle(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.close, 
                             color: _activeZone == 3 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                            fontSize: isNarrow ? 12 : 11,
-                            fontWeight: _activeZone == 3 ? FontWeight.bold : FontWeight.normal,
-                          )
-                        ),
-                      ],
+                            size: 22
+                          ),
+                          Text(
+                            '关闭', 
+                            style: TextStyle(
+                              color: _activeZone == 3 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
+                              fontSize: isNarrow ? 12 : 11,
+                              fontWeight: _activeZone == 3 ? FontWeight.bold : FontWeight.normal,
+                            )
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 Positioned(
                   left: undoZone.left,
                   top: undoZone.top,
-                  child: Container(
-                    width: zoneWidth,
-                    height: zoneHeight,
-                    decoration: BoxDecoration(
-                      color: _activeZone == 2 
-                        ? Colors.grey.withValues(alpha: 0.25) 
-                        : Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _activeZone == 2 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
-                        width: _activeZone == 2 ? 1.5 : 1
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _autoRecognizeTimer?.cancel();
+                      _pendingUndoTask?.cancel();
+                      _controller.removeLast();
+                      widget.onUndo();
+                      if (widget.lines.isEmpty) {
+                        widget.onRewrite();
+                      }
+                    },
+                    child: Container(
+                      width: zoneWidth,
+                      height: zoneHeight,
+                      decoration: BoxDecoration(
+                        color: _activeZone == 2 
+                          ? Colors.grey.withValues(alpha: 0.25) 
+                          : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _activeZone == 2 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
+                          width: _activeZone == 2 ? 1.5 : 1
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.undo_outlined, 
-                          color: _activeZone == 2 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                          size: 22
-                        ),
-                        Text(
-                          isNarrow ? '撤销' : '划过撤销', 
-                          style: TextStyle(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.undo_outlined, 
                             color: _activeZone == 2 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                            fontSize: isNarrow ? 12 : 11,
-                            fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
-                          )
-                        ),
-                      ],
+                            size: 22
+                          ),
+                          Text(
+                            isNarrow ? '撤销' : '划过撤销', 
+                            style: TextStyle(
+                              color: _activeZone == 2 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
+                              fontSize: isNarrow ? 12 : 11,
+                              fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
+                            )
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
