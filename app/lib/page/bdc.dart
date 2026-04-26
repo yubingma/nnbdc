@@ -5754,9 +5754,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       context: context,
       builder: (context) {
         String finalReason = _lastFsrsRatingReason ?? '';
-        if (_currentGetWordResult != null && 
-            _currentGetWordResult!.stepIndex > 0 && 
-            _assessmentRating != null) {
+        // 巩固环节中，只有当自动评分被限制（高于测评环节评分）时才显示提示
+        if (_currentGetWordResult != null &&
+            _currentGetWordResult!.stepIndex > 0 &&
+            _assessmentRating != null &&
+            _lastFsrsRating != null &&
+            _lastFsrsRating!.index > _assessmentRating!.index) {
           if (finalReason.isNotEmpty) {
             finalReason += '\n';
           }
@@ -5765,8 +5768,21 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('修改今日评分',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 12, 8, 8),
+          title: Row(
+            children: [
+              const Expanded(
+                child: Text('修改今日评分',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
