@@ -208,6 +208,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
 
       final candidateIds = <String>[];
       final selectedWordIds = <String>{targetWordLearningData.wordId};
+      final candidateIdToSpell = <String, String>{};
 
       // 1. 获取数据库预设的形近词
       final similarWordsQuery = db.select(db.similarWords)
@@ -236,6 +237,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
             } else {
               outOfDictCandidateIds.add(sw.similarWordId);
             }
+            candidateIdToSpell[sw.similarWordId] = sw.similarWordSpell;
             selectedWordIds.add(sw.similarWordId);
           }
         }
@@ -243,6 +245,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         for (final sw in presetSimilarWords) {
           if (!selectedWordIds.contains(sw.similarWordId)) {
             outOfDictCandidateIds.add(sw.similarWordId);
+            candidateIdToSpell[sw.similarWordId] = sw.similarWordSpell;
             selectedWordIds.add(sw.similarWordId);
           }
         }
@@ -267,6 +270,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         for (final w in largerWords) {
           if (!selectedWordIds.contains(w.id)) {
             fallbackCandidateIds.add(w.id);
+            candidateIdToSpell[w.id] = w.spell;
             selectedWordIds.add(w.id);
           }
         }
@@ -280,6 +284,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         for (final w in smallerWords) {
           if (!selectedWordIds.contains(w.id)) {
             fallbackCandidateIds.add(w.id);
+            candidateIdToSpell[w.id] = w.spell;
             selectedWordIds.add(w.id);
           }
         }
@@ -289,16 +294,66 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
         candidateIds.addAll(fallbackCandidateIds);
       }
 
+      // 3. 重排 candidateIds：尽量不要选前三个字母和目标单词完全相同的
+      final checkLen = targetSpell.length < 3 ? targetSpell.length : 3;
+      if (checkLen > 0) {
+        final targetPrefix = targetSpell.substring(0, checkLen).toLowerCase();
+        
+        final prefixDifferentIds = <String>[];
+        final prefixSameIds = <String>[];
+        
+        for (final id in candidateIds) {
+          final spell = candidateIdToSpell[id] ?? '';
+          final spellPrefix = spell.length < checkLen ? spell.toLowerCase() : spell.substring(0, checkLen).toLowerCase();
+          
+          if (spellPrefix == targetPrefix) {
+            prefixSameIds.add(id);
+          } else {
+            prefixDifferentIds.add(id);
+          }
+        }
+        
+        prefixDifferentIds.shuffle();
+        prefixSameIds.shuffle();
+        
+        candidateIds.clear();
+        candidateIds.addAll(prefixDifferentIds);
+        candidateIds.addAll(prefixSameIds);
+      }
+
       // 4. 加载备选词的基础数据
       if (candidateIds.isNotEmpty) {
         // 取前 10 个来加载，避免 IN 语句过大
         final topCandidateIds = candidateIds.take(10).toList();
         final wordsList = await db.wordsDao.getWordsByIds(topCandidateIds);
         
-        // 详情列表也随机打乱一下
-        wordsList.shuffle();
+        // 将加载出的词按前缀是否相同分类，并各自随机打乱
+        final List<Word> prefixDifferentWords = [];
+        final List<Word> prefixSameWords = [];
 
-        for (final wordDetails in wordsList) {
+        if (checkLen > 0) {
+          final targetPrefix = targetSpell.substring(0, checkLen).toLowerCase();
+          for (final wordDetails in wordsList) {
+            final spell = wordDetails.spell;
+            final spellPrefix = spell.length < checkLen ? spell.toLowerCase() : spell.substring(0, checkLen).toLowerCase();
+            
+            if (spellPrefix == targetPrefix) {
+              prefixSameWords.add(wordDetails);
+            } else {
+              prefixDifferentWords.add(wordDetails);
+            }
+          }
+          
+          prefixDifferentWords.shuffle();
+          prefixSameWords.shuffle();
+        } else {
+          prefixDifferentWords.addAll(wordsList);
+          prefixDifferentWords.shuffle();
+        }
+
+        final List<Word> finalWordsList = [...prefixDifferentWords, ...prefixSameWords];
+
+        for (final wordDetails in finalWordsList) {
           final otherWordVo = WordVo.c2(wordDetails.spell);
           otherWordVo.id = wordDetails.id;
           otherWordVo.shortDesc = wordDetails.shortDesc;
