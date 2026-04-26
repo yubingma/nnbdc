@@ -971,6 +971,61 @@ class StudyBo {
     ThrottledDbSyncService().requestSync();
   }
 
+  Future<void> saveHistoryFSRSUpdate({
+    required LearningWord currWord,
+    required FSRSItem nextFsrs,
+    required FsrsRating newRating,
+  }) async {
+    final db = MyDatabase.instance;
+    final user = await db.usersDao.getLastLoggedInUser();
+    if (user == null) return;
+    final now = AppClock.now();
+
+    // 1. 如果新评分为 Again，记入错词本
+    if (newRating == FsrsRating.again) {
+      await saveWrongWord(currWord, db, user, now);
+    }
+
+    // 2. 覆盖替换最近的一条学习日志
+    try {
+      final logQuery = db.select(db.learningLogs)
+        ..where((tbl) => tbl.wordId.equals(currWord.wordId) & tbl.userId.equals(user.id))
+        ..orderBy([(tbl) => OrderingTerm(expression: tbl.createTime, mode: OrderingMode.desc)])
+        ..limit(1);
+      final lastLogList = await logQuery.get();
+      if (lastLogList.isNotEmpty) {
+        final lastLog = lastLogList.first;
+        await db.update(db.learningLogs).replace(lastLog.copyWith(
+          rating: newRating.value,
+          stability: nextFsrs.stability,
+          difficulty: nextFsrs.difficulty,
+          elapsedDays: nextFsrs.elapsedDays,
+          scheduledDays: nextFsrs.scheduledDays,
+          updateTime: now,
+        ));
+      }
+    } catch (e, s) {
+      Global.logger.e('历史模式下修改 FSRS，更新最近一条 LearningLog 失败', error: e, stackTrace: s);
+    }
+
+    // 3. 更新当前单词的 FSRS 字段，但不改动学习步骤次数
+    await db.learningWordsDao.saveEntity(
+      currWord.copyWith(
+        stability: Value(nextFsrs.stability),
+        difficulty: Value(nextFsrs.difficulty),
+        elapsedDays: Value(nextFsrs.elapsedDays),
+        scheduledDays: Value(nextFsrs.scheduledDays),
+        reps: Value(nextFsrs.reps),
+        lapses: Value(nextFsrs.lapses),
+        state: Value(nextFsrs.state.value),
+      ),
+      true,
+    );
+
+    // 4. 触发数据同步
+    ThrottledDbSyncService().requestSync();
+  }
+
   Result<GetWordResult> _buildTodayStudyFinishedResult() {
     return Result("SUCCESS", "获取成功", true)
       ..data = GetWordResult(

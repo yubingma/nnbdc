@@ -89,6 +89,9 @@ class WordUIState {
   final FSRSItem? fsrsItem;
   final int? daysSinceLastReview;
   final FsrsRating? lastFsrsRating;
+  final List<Pair<int, int>>? asrMatchedMeaningItemParts;
+  final List<Pair<int, int>>? asrRevealedMeaningItemParts;
+  final List<String>? currentAsrCandidates;
 
   WordUIState({
     required this.hasFinishedAnswering,
@@ -104,6 +107,9 @@ class WordUIState {
     this.fsrsItem,
     this.daysSinceLastReview,
     this.lastFsrsRating,
+    this.asrMatchedMeaningItemParts,
+    this.asrRevealedMeaningItemParts,
+    this.currentAsrCandidates,
   });
 }
 
@@ -849,6 +855,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         fsrsItem: _fsrsItem,
         daysSinceLastReview: _daysSinceLastReview,
         lastFsrsRating: _lastFsrsRating,
+        asrMatchedMeaningItemParts: _wordWrapper != null 
+          ? List<Pair<int, int>>.from(_wordWrapper!.asrMatchedMeaningItemParts) 
+          : null,
+        asrRevealedMeaningItemParts: _wordWrapper != null 
+          ? List<Pair<int, int>>.from(_wordWrapper!.asrRevealedMeaningItemParts) 
+          : null,
+        currentAsrCandidates: List<String>.from(_currentAsrCandidates),
       );
     }
   }
@@ -870,10 +883,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _fsrsItem = state.fsrsItem;
       _daysSinceLastReview = state.daysSinceLastReview;
       _lastFsrsRating = state.lastFsrsRating;
+      _currentAsrCandidates = state.currentAsrCandidates != null 
+        ? List<String>.from(state.currentAsrCandidates!) 
+        : [];
     }
   }
   GetWordResult? _presentWord;
-  bool? _savedAutoJumpValue;
   double _slideDirection = 1.0; // 1.0 为向后（显示新内容从右进入），-1.0 为向前（显示旧内容从左进入）
   Timer? _progressBarTapTimer;
 
@@ -1489,7 +1504,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
       }
 
-      if (_autoJumpAfterCorrect && mounted && _word?.id == currentWordId) {
+      if (_autoJumpAfterCorrect && _historyIndex == -1 && mounted && _word?.id == currentWordId) {
         getNextWord(true, fsrsRating: rating);
       }
     });
@@ -1755,7 +1770,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             if (_playingCorrectSounds.isEmpty && _hasFinishedAnswering) {
               if (wasAlreadyCorrect) return;
 
-              if (_autoJumpAfterCorrect && _lastFsrsRating != null) {
+              if (_autoJumpAfterCorrect && _historyIndex == -1 && _lastFsrsRating != null) {
                 await getNextWord(true, fsrsRating: _lastFsrsRating!);
               }
             }
@@ -2135,6 +2150,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             ) : null,
             daysSinceLastReview: stateJson['daysSinceLastReview'],
             lastFsrsRating: stateJson['lastFsrsRating'] != null ? FsrsRating.values[stateJson['lastFsrsRating'] as int] : null,
+            asrMatchedMeaningItemParts: stateJson['asrMatchedMeaningItemParts'] != null 
+              ? (stateJson['asrMatchedMeaningItemParts'] as List).map((p) => Pair<int, int>((p as List)[0], (p as List)[1])).toList() 
+              : null,
+            asrRevealedMeaningItemParts: stateJson['asrRevealedMeaningItemParts'] != null 
+              ? (stateJson['asrRevealedMeaningItemParts'] as List).map((p) => Pair<int, int>((p as List)[0], (p as List)[1])).toList() 
+              : null,
+            currentAsrCandidates: stateJson['currentAsrCandidates'] != null 
+              ? List<String>.from(stateJson['currentAsrCandidates']) 
+              : null,
             words: stateJson['wordsIndices'] != null ? (stateJson['wordsIndices'] as List).map((idx) {
               if (idx == 0) return wordResult.learningWord?.word;
               if (idx == 1 && wordResult.otherWords != null && wordResult.otherWords!.isNotEmpty) return wordResult.otherWords![0];
@@ -2203,12 +2227,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (_historyIndex >= _history.length) {
           // 回到“当前”状态
           _historyIndex = -1;
-          
-          // 恢复闪电模式状态
-          if (_savedAutoJumpValue != null) {
-            _autoJumpAfterCorrect = _savedAutoJumpValue!;
-            _savedAutoJumpValue = null;
-          }
 
           _currentGetWordResult = _presentWord;
           handleWord(_currentGetWordResult);
@@ -2283,6 +2301,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   } : null,
                   'daysSinceLastReview': state.daysSinceLastReview,
                   'lastFsrsRating': state.lastFsrsRating?.index,
+                  'asrMatchedMeaningItemParts': state.asrMatchedMeaningItemParts?.map((p) => [p.first, p.second]).toList(),
+                  'asrRevealedMeaningItemParts': state.asrRevealedMeaningItemParts?.map((p) => [p.first, p.second]).toList(),
+                  'currentAsrCandidates': state.currentAsrCandidates,
                   'wordsIndices': state.words?.map((w) {
                     if (w.spell == "[ 都不对 ]") return 3;
                     if (targetWord != null && w.id == targetWord.id) return 0;
@@ -2395,10 +2416,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     if (_historyIndex == -1) {
       // 从“当前”进入历史模式
       _presentWord = _currentGetWordResult;
-      
-      // 保存并关闭闪电模式（回顾模式下不应自动跳转）
-      _savedAutoJumpValue = _autoJumpAfterCorrect;
-      _autoJumpAfterCorrect = false;
 
       _historyIndex = _history.length - 1;
     } else if (_historyIndex > 0) {
@@ -2728,6 +2745,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         Global.logger.d('[BDC Performance] 本地数据库补全单词详情耗时: ${DateTime.now().difference(dbStartTime).inMilliseconds} ms');
       }
       _wordWrapper = WordWrapper(_word!, null);
+
+      final state = _wordUIStates[getWordResult];
+      if (state != null) {
+        if (state.asrMatchedMeaningItemParts != null) {
+          _wordWrapper!.asrMatchedMeaningItemParts.addAll(state.asrMatchedMeaningItemParts!);
+        }
+        if (state.asrRevealedMeaningItemParts != null) {
+          _wordWrapper!.asrRevealedMeaningItemParts.addAll(state.asrRevealedMeaningItemParts!);
+        }
+      }
 
       // 渲染第一个例句
       final sentenceStartTime = DateTime.now();
@@ -5586,6 +5613,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           );
           _fsrsItem = fsrs.next(prevItem, newRating, _daysSinceLastReview ?? 0);
         }
+
+        // 无论是否处于回看模式，弹窗修改即视为最终决定，立即持久化保存
+        StudyBo().saveHistoryFSRSUpdate(
+          currWord: lw,
+          nextFsrs: _fsrsItem!,
+          newRating: newRating,
+        );
       }
     });
   }
