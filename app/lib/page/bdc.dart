@@ -5883,10 +5883,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.edit_note, size: 14, color: textColor),
-                    const SizedBox(width: 4),
                     Text(
-                      '今日测评: 测评中',
+                      '[巩固] 今日测评: 测评中',
                       style: TextStyle(
                         fontSize: 11,
                         color: textColor,
@@ -5899,8 +5897,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                               fontSize: 10,
                               color: textColor.withValues(alpha: 0.3))),
                     ),
-                    Icon(Icons.event_note_outlined, size: 12, color: textColor),
-                    const SizedBox(width: 4),
                     Text(
                       '下次复习: --天后',
                       style: TextStyle(fontSize: 11, color: textColor),
@@ -5948,10 +5944,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                           const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                       child: Row(
                         children: [
-                          Icon(Icons.edit_note, size: 14, color: ratingColor),
-                          const SizedBox(width: 4),
                           Text(
-                            '今日测评: $ratingLabel',
+                            '[巩固] 今日测评: $ratingLabel',
                             style: TextStyle(
                               fontSize: 11,
                               color: ratingColor,
@@ -5970,8 +5964,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             fontSize: 10,
                             color: textColor.withValues(alpha: 0.3))),
                   ),
-                  Icon(Icons.event_note_outlined, size: 12, color: textColor),
-                  const SizedBox(width: 4),
                   Text.rich(
                     TextSpan(
                       children: [
@@ -6024,10 +6016,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.edit_note, size: 14, color: textColor),
-            const SizedBox(width: 4),
             Text(
-              '今日测评: 测评中',
+              '[测评] 今日测评: 测评中',
               style: TextStyle(
                 fontSize: 11,
                 color: textColor,
@@ -6039,8 +6029,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   style: TextStyle(
                       fontSize: 10, color: textColor.withValues(alpha: 0.3))),
             ),
-            Icon(Icons.event_note_outlined, size: 12, color: textColor),
-            const SizedBox(width: 4),
             Text(
               '下次复习: --天后',
               style: TextStyle(fontSize: 11, color: textColor),
@@ -6074,6 +6062,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         break;
     }
 
+    String stageText = (_currentGetWordResult != null && _currentGetWordResult!.stepIndex > 0) ? '[巩固] ' : '[测评] ';
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -6086,10 +6075,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: Row(
                 children: [
-                  Icon(Icons.edit_note, size: 14, color: ratingColor),
-                  const SizedBox(width: 4),
                   Text(
-                    '今日测评: $ratingLabel',
+                    '$stageText今日测评: $ratingLabel',
                     style: TextStyle(
                       fontSize: 11,
                       color: ratingColor,
@@ -6107,8 +6094,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                 style: TextStyle(
                     fontSize: 10, color: textColor.withValues(alpha: 0.3))),
           ),
-          Icon(Icons.event_note_outlined, size: 12, color: textColor),
-          const SizedBox(width: 4),
           Text.rich(
             TextSpan(
               children: [
