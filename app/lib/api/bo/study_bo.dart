@@ -1029,6 +1029,21 @@ class StudyBo {
       true,
     );
 
+    if (_cachedTodayWords != null) {
+      final idx = _cachedTodayWords!.indexWhere((w) => w.wordId == currWord.word.id!);
+      if (idx != -1) {
+        _cachedTodayWords![idx] = dbLw.copyWith(
+          stability: Value(nextFsrs.stability),
+          difficulty: Value(nextFsrs.difficulty),
+          elapsedDays: Value(nextFsrs.elapsedDays),
+          scheduledDays: Value(nextFsrs.scheduledDays),
+          reps: Value(nextFsrs.reps),
+          lapses: Value(nextFsrs.lapses),
+          state: Value(nextFsrs.state.value),
+        );
+      }
+    }
+
     // 4. 触发数据同步
     ThrottledDbSyncService().requestSync();
   }
