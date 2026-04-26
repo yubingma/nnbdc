@@ -692,12 +692,7 @@ class StudyBo {
             _cachedMasteredWordIds?.add(currWord.wordId);
             _cachedLearningWordIds?.remove(currWord.wordId);
           } else {
-            // 只要推进了进度，todayLearnedTimes 就加 1
-            todayWords[currentWordIndex] = currWord.copyWith(
-              lastLearningDate: Value(now),
-              learnedTimes: currWord.learnedTimes + 1,
-              todayLearnedTimes: currWord.todayLearnedTimes + 1,
-            );
+            // 进度已在 updateCurrWord 中落库并同步至缓存，无需在此覆盖
           }
           _cachedTodayWords = todayWords;
         }
@@ -953,20 +948,19 @@ class StudyBo {
       );
     }
 
-    await db.learningWordsDao.saveEntity(
-        currWord.copyWith(
-          lastLearningDate: Value(learningTime),
-          learnedTimes: (currWord.learnedTimes) + 1,
-          todayLearnedTimes: (currWord.todayLearnedTimes) + 1, // 无论对错，进度都要加1
-          stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
-          difficulty: nextFsrs != null ? Value(nextFsrs.difficulty) : const Value.absent(),
-          elapsedDays: nextFsrs != null ? Value(nextFsrs.elapsedDays) : const Value.absent(),
-          scheduledDays: nextFsrs != null ? Value(nextFsrs.scheduledDays) : const Value.absent(),
-          reps: nextFsrs != null ? Value(nextFsrs.reps) : const Value.absent(),
-          lapses: nextFsrs != null ? Value(nextFsrs.lapses) : const Value.absent(),
-          state: nextFsrs != null ? Value(nextFsrs.state.value) : const Value.absent(),
-        ),
-        true);
+    final updatedWord = currWord.copyWith(
+      lastLearningDate: Value(learningTime),
+      learnedTimes: (currWord.learnedTimes) + 1,
+      todayLearnedTimes: (currWord.todayLearnedTimes) + 1, // 无论对错，进度都要加1
+      stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
+      difficulty: nextFsrs != null ? Value(nextFsrs.difficulty) : const Value.absent(),
+      elapsedDays: nextFsrs != null ? Value(nextFsrs.elapsedDays) : const Value.absent(),
+      scheduledDays: nextFsrs != null ? Value(nextFsrs.scheduledDays) : const Value.absent(),
+      reps: nextFsrs != null ? Value(nextFsrs.reps) : const Value.absent(),
+      lapses: nextFsrs != null ? Value(nextFsrs.lapses) : const Value.absent(),
+      state: nextFsrs != null ? Value(nextFsrs.state.value) : const Value.absent(),
+    );
+    await _saveAndSyncWordState(updatedWord: updatedWord, db: db);
 
     // 触发同步到后端
     ThrottledDbSyncService().requestSync();
@@ -1016,33 +1010,16 @@ class StudyBo {
     }
 
     // 3. 更新当前单词的 FSRS 字段，但不改动学习步骤次数
-    await db.learningWordsDao.saveEntity(
-      dbLw.copyWith(
-        stability: Value(nextFsrs.stability),
-        difficulty: Value(nextFsrs.difficulty),
-        elapsedDays: Value(nextFsrs.elapsedDays),
-        scheduledDays: Value(nextFsrs.scheduledDays),
-        reps: Value(nextFsrs.reps),
-        lapses: Value(nextFsrs.lapses),
-        state: Value(nextFsrs.state.value),
-      ),
-      true,
+    final updatedWord = dbLw.copyWith(
+      stability: Value(nextFsrs.stability),
+      difficulty: Value(nextFsrs.difficulty),
+      elapsedDays: Value(nextFsrs.elapsedDays),
+      scheduledDays: Value(nextFsrs.scheduledDays),
+      reps: Value(nextFsrs.reps),
+      lapses: Value(nextFsrs.lapses),
+      state: Value(nextFsrs.state.value),
     );
-
-    if (_cachedTodayWords != null) {
-      final idx = _cachedTodayWords!.indexWhere((w) => w.wordId == currWord.word.id!);
-      if (idx != -1) {
-        _cachedTodayWords![idx] = dbLw.copyWith(
-          stability: Value(nextFsrs.stability),
-          difficulty: Value(nextFsrs.difficulty),
-          elapsedDays: Value(nextFsrs.elapsedDays),
-          scheduledDays: Value(nextFsrs.scheduledDays),
-          reps: Value(nextFsrs.reps),
-          lapses: Value(nextFsrs.lapses),
-          state: Value(nextFsrs.state.value),
-        );
-      }
-    }
+    await _saveAndSyncWordState(updatedWord: updatedWord, db: db);
 
     // 4. 触发数据同步
     ThrottledDbSyncService().requestSync();
@@ -1068,6 +1045,32 @@ class StudyBo {
         false,
         false,
       );
+  }
+
+  Future<void> _saveAndSyncWordState({
+    required LearningWord updatedWord,
+    required MyDatabase db,
+  }) async {
+    // 1. 落库
+    await db.learningWordsDao.saveEntity(updatedWord, true);
+
+    // 2. 同步更新 _cachedTodayWords
+    if (_cachedTodayWords != null) {
+      final idx = _cachedTodayWords!.indexWhere((w) => w.wordId == updatedWord.wordId);
+      if (idx != -1) {
+        _cachedTodayWords![idx] = updatedWord;
+      }
+    }
+
+    // 3. 同步维护 ID 集合缓存
+    final isGraduated = updatedWord.stability != null && updatedWord.stability! >= Constants.graduationStability;
+    if (isGraduated) {
+      _cachedMasteredWordIds?.add(updatedWord.wordId);
+      _cachedLearningWordIds?.remove(updatedWord.wordId);
+    } else {
+      _cachedMasteredWordIds?.remove(updatedWord.wordId);
+      _cachedLearningWordIds?.add(updatedWord.wordId);
+    }
   }
 
   Future<void> saveWrongWord(
@@ -1199,14 +1202,13 @@ class StudyBo {
     if (user.todayStudyStarted) {
       // 已经进入学习执行阶段：不删除记录，而是将状态“填满”
       // 这样进度条的分母保持不变，分子增加，体验更平滑
-      await db.learningWordsDao.saveEntity(
-          learningWord.copyWith(
-            stability: Value(Constants.graduationStability),
-            lastLearningDate: Value(now),
-            learnedTimes: learningWord.learnedTimes + 1,
-            todayLearnedTimes: stepCount, // 饱和今天的所有环节
-          ),
-          true);
+      final updatedWord = learningWord.copyWith(
+        stability: Value(Constants.graduationStability),
+        lastLearningDate: Value(now),
+        learnedTimes: learningWord.learnedTimes + 1,
+        todayLearnedTimes: stepCount, // 饱和今天的所有环节
+      );
+      await _saveAndSyncWordState(updatedWord: updatedWord, db: db);
     } else {
       // 还在规划阶段：直接删除该学习记录
       await db.learningWordsDao.deleteEntity(learningWord, true);
