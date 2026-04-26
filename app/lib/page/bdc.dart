@@ -731,6 +731,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   Future<List<LearningLog>>? _learningHistoryFuture;
   FsrsRating? _lowestRatingForCurrentWord;
+  FsrsRating? _assessmentRating; // 记录今日测评环节的评分结果
 
 
   /// 是否允许用户点击下一词按钮离开当前单词（英→中模式下，用户asr回答正确了至少一个释义）
@@ -1498,6 +1499,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   void _onAnswerCorrect(FsrsRating rating) async {
+    // 巩固环节自动评分只允许降低，不允许拔高（除非是用户手工设置评分，那里走的是 _updateFsrsRating）
+    if (_currentGetWordResult != null &&
+        _currentGetWordResult!.stepIndex > 0 &&
+        _assessmentRating != null) {
+      if (rating.index > _assessmentRating!.index) {
+        Global.logger.d('BDC: 巩固环节中不允许将评分从 ${_assessmentRating!.label} 拔高至 ${rating.label}，自动调整为限高评分。');
+        rating = _assessmentRating!;
+      }
+    }
+
     _hasFinishedAnswering = true;
     _canLeaveCurrWord = true;
 
@@ -2365,6 +2376,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       final stopAsrStartTime = DateTime.now();
       // 停止当前 ASR 任务并确保状态同步（Hot Stop 会在 Native 层处理，此处需保证状态为 Stopped）
       await asr.stopAsr();
+      await asr.reset();
       _meaningFocusNode.unfocus();
       _showHandwritingBoard = false;
       _meaningController.text = '';
@@ -2860,8 +2872,20 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (_word?.id != null) {
         _learningHistoryFuture = MyDatabase.instance.learningLogsDao
             .getHistory(Global.getLoggedInUserNotNull().id, _word!.id!);
+        if (_currentGetWordResult != null && _currentGetWordResult!.stepIndex > 0) {
+          final logs = await MyDatabase.instance.learningLogsDao
+              .getHistory(Global.getLoggedInUserNotNull().id, _word!.id!);
+          if (logs.isNotEmpty) {
+            _assessmentRating = FsrsRatingExt.fromInt(logs.first.rating);
+          } else {
+            _assessmentRating = null;
+          }
+        } else {
+          _assessmentRating = null;
+        }
       } else {
         _learningHistoryFuture = null;
+        _assessmentRating = null;
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, operation: '处理单词');
