@@ -941,19 +941,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void _restoreWordState(GetWordResult result) {
     final state = _word?.id != null ? _wordUIStates[_word!.id!] : null;
     if (state != null) {
-      if (state.studyStep != null && state.studyStep != _studyStep) {
-        Global.logger.d('BDC: 恢复单词状态发现学习步骤不匹配 (state: ${state.studyStep}, current: $_studyStep)，跳过答题状态恢复');
-      } else {
-        _hasFinishedAnswering = state.hasFinishedAnswering;
-        _canLeaveCurrWord = state.canLeaveCurrWord;
-      }
+      _hasFinishedAnswering = state.hasFinishedAnswering;
+      _canLeaveCurrWord = state.canLeaveCurrWord;
+      _meaningController.text = state.meaningText;
       _showSentenceTranslation = state.showSentenceTranslation;
       _selectedAnswerIndex = state.selectedAnswerIndex;
       _flippedAnswerIndices.clear();
       _flippedAnswerIndices.addAll(state.flippedAnswerIndices);
       _currentTabIndex = state.tabIndex;
       _currentScore = state.currentScore;
-      _meaningController.text = state.meaningText;
       _words = state.words != null ? List<WordVo>.from(state.words!) : null;
       _correctAnswerIndex = state.correctAnswerIndex;
       _fsrsItem = state.fsrsItem;
@@ -2760,7 +2756,11 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _isUpdatingByHint = false;
       _currentScore = null; // 重置发音评分，防止携带上一个单词的分数
 
-      _restoreWordState(getWordResult);
+      if (_historyIndex != -1) {
+        _restoreWordState(getWordResult);
+      } else {
+        _meaningController.text = "";
+      }
 
       // 重新初始化TabController以适应动态tabs，此时已恢复了之前的 _currentTabIndex
       _reinitializeTabController(preserveCurrentIndex: true);
