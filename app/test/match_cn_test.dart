@@ -279,4 +279,20 @@ void main() {
     debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isTrue);
   });
+  test('Test fuzzyChineseContains - 洋洋-洋葱', () {
+    String asrResult = "洋洋";
+    String meaning = "n. 洋葱";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isTrue);
+  });
+  test('Test fuzzyChineseContains - 杨-洋葱', () {
+    String asrResult = "杨";
+    String meaning = "n. 洋葱";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isTrue);
+  });
 }

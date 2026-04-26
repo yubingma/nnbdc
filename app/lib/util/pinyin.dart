@@ -485,6 +485,24 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
         double v2 = dp[i][j - 1];
         double v3 = dp[i - 1][j - 1] + maxSim;
 
+        // 特殊处理：连续重复字匹配。当 ASR 结果包含连续重复字（如"洋洋"），且当前 target 字匹配度很低时，
+        // 允许跳过当前 target 字，让重复字去匹配下一个 target 字
+        // 例如："洋洋" 匹配 "洋葱"：第二个"洋"跳过"葱"，去匹配"洋"
+        if (maxSim <= 0.3 && j >= 2) {
+          // 检查前一个 user 字是否与当前 user 字相同（连续重复）
+          bool isConsecutiveDuplicate = userPinyins[j - 1].any((p1) =>
+            userPinyins[j - 2].any((p2) => p1.shengMu == p2.shengMu && p1.yunMu == p2.yunMu));
+          if (isConsecutiveDuplicate) {
+            // 强制跳过当前 target 字，使用跳过路径
+            // 因为连续重复字不应该计入低相似度匹配
+            double vSkip = dp[i - 1][j];
+            if (maxSim < 0.31 && vSkip > 0.9) {
+              // 当匹配度很低且跳过路径已有不错分数时，选择跳过
+              v3 = vSkip;
+            }
+          }
+        }
+
         // 通用化处理：处理“元音桥接（Vowel Bridge）”情况
         // 如：“吸引”(xi-yin) 的末尾元音 i 与开头元音 i (y) 相同，在快读时极易合并
         // 如果当前字 i 与前一个字 i-1 存在元音桥接，且前一个字已经有了不错的匹配
@@ -532,13 +550,24 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
     double maxSimSum = dp[M][N];
     double avgSim = maxSimSum / M;
 
-    // 补偿：如果 ASR 结果比目标短，但已匹配的部分相似度极高（>0.92），说明可能是漏读了后缀或尾音
-    // 允许单字 ASR 结果参与补偿（如“对”匹配“对账”），增强软件层面的“热词”效果
+// 补偿：如果 ASR 结果比目标短，但已匹配的部分相似度极高（>0.92），说明可能是漏读了后缀或尾音
+    // 允许单字 ASR 结果参与补偿（如"对"匹配"对账"），增强软件层面的"热词"效果
     int asrCharCount = asrText.length;
     if (asrCharCount < M && asrCharCount >= 1) {
       double avgSimOfMatched = maxSimSum / asrCharCount;
       if (avgSimOfMatched > 0.92) {
         avgSim = (avgSim + avgSimOfMatched) / 2;
+      }
+    }
+    
+    // 特殊补偿：当 ASR 结果包含连续重复字（如"洋洋"），且只匹配了目标中的部分字（如"洋-洋"只匹配了"洋"）
+    // 此时使用实际匹配的字符数计算平均相似度
+    if (asrCharCount >= M) {
+      // 计算实际有效匹配的平均相似度（使用ASR字符数作为分母）
+      double avgSimOfMatched = maxSimSum / asrCharCount;
+      if (avgSimOfMatched > 0.92) {
+        // 重复字模式：直接用平均相似度替代整体平均
+        avgSim = avgSimOfMatched;
       }
     }
 
@@ -548,6 +577,34 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
 
     if (avgSim > finalThreshold) {
       return true;
+    }
+    
+    // 补丁：当 ASR 结果包含连续重复字（如"洋洋"），且正常匹配失败时，
+    // 尝试对 ASR 结果去重后再匹配一次
+    // 例如："洋洋" 去重后变成 "洋"，然后再匹配 "洋葱"
+    if (asrCharCount >= 2) {
+      // 检查是否包含连续重复字
+      bool hasConsecutiveDuplicate = false;
+      for (int i = 1; i < asrText.length; i++) {
+        if (asrText[i] == asrText[i - 1]) {
+          hasConsecutiveDuplicate = true;
+          break;
+        }
+      }
+      if (hasConsecutiveDuplicate) {
+        // 去重：保留每个连续重复块中的第一个字
+        StringBuffer deduped = StringBuffer();
+        for (int i = 0; i < asrText.length; i++) {
+          if (i == 0 || asrText[i] != asrText[i - 1]) {
+            deduped.write(asrText[i]);
+          }
+        }
+        String dedupedText = deduped.toString();
+        if (dedupedText.length < asrCharCount) {
+          // 递归调用去重后的结果
+          return fuzzyChineseContains(dedupedText, chinese2);
+        }
+      }
     }
   }
 

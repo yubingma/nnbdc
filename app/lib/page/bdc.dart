@@ -4401,7 +4401,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
-                  ElevatedButton(
+                  AbsorbPointer(
+                    absorbing: !_buttonsEnabled,
+                    child: ElevatedButton(
                     key: const Key('bdc_not_know_btn'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: context.watch<DarkMode>().isDarkMode
@@ -4416,15 +4418,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: _buttonsEnabled
-                        ? () => showWordDetail(_word, true,
-                            fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记")
-                        : null,
+                    onPressed: () => showWordDetail(_word, true,
+                        fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
                     child: const Text('不认识',
                         style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
+                ),
                 if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
-                  ElevatedButton(
+                  AbsorbPointer(
+                    absorbing: !_buttonsEnabled,
+                    child: ElevatedButton(
                     key: const Key('bdc_study_again'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: context.watch<DarkMode>().isDarkMode
@@ -4439,13 +4442,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: _buttonsEnabled
-                        ? () => showWordDetail(_word, false,
-                            fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好")
-                        : null,
+                    onPressed: () => showWordDetail(_word, false,
+                        fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
                     child: const Text('再学学',
                         style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
+                ),
                 if (_canLeaveCurrWord)
                   ElevatedButton(
                     key: const Key('bdc_next_word_btn'),
