@@ -5597,10 +5597,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       ? Text(
                           '拼写练习',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 18,
                             color: (isDarkMode ? Colors.white : Colors.black)
                                 .withValues(alpha: 0.2),
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.normal,
                           ),
                         )
                       : RichText(
@@ -5613,7 +5613,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 ? Colors.red
                                 : (isDarkMode ? Colors.white : Colors.black),
                             const TextStyle(
-                                fontSize: 24, fontWeight: FontWeight.bold),
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ),
                 ),
