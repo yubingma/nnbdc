@@ -50,7 +50,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
     // 页面内部自行监听底层错词广播，维护内聚的数据状态
     _subscription = EventBus.onNewWrongWord().listen((event) {
-      Global.logger.d('[RefreshableTab] 词表页内部监听到 NewWrongWordEvent, _isDirty = true');
+      Global.logger.d('[EventBus Debug] 词表页内部监听到 NewWrongWordEvent, _isDirty = true');
       _isDirty = true;
     });
   }
