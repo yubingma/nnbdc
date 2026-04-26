@@ -171,6 +171,7 @@ class WordListPageState extends State<WordListPage>
   static const int minQueryInterval = 300;
 
   var studyMode = WordListStudyMode.list;
+  bool _isHandwritingOverlayOpen = true;
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
@@ -2966,7 +2967,7 @@ class WordListPageState extends State<WordListPage>
     );
 
 
-    if (actions.isEmpty) return itemContent;
+    if (actions.isEmpty || (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)) return itemContent;
 
     return Slidable(
       key: ValueKey('slidable_${word.word.id}'),
@@ -3610,6 +3611,7 @@ class WordListPageState extends State<WordListPage>
                               case menuWriteSpellHandwriting:
                                 setState(() {
                                   studyMode = WordListStudyMode.dictationHandwriting;
+                                  _isHandwritingOverlayOpen = true;
                                   for (final w in words) {
                                     w.spellController.text = '';
                                     w.isAnswerProvidedBySystem = false;
@@ -3757,7 +3759,7 @@ class WordListPageState extends State<WordListPage>
         ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar
         if (showGuide) _buildGuideOverlay(),
-        if (studyMode == WordListStudyMode.dictationHandwriting)
+        if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)
           _buildHandwritingOverlay(isDarkMode),
       ],
       ),
@@ -4264,7 +4266,7 @@ class WordListPageState extends State<WordListPage>
               onSwipeDown: () => jumpToPreviousWord(bookmarkedIndex, true),
               onCancel: () {
                 setState(() {
-                  studyMode = WordListStudyMode.list;
+                  _isHandwritingOverlayOpen = false;
                 });
               },
             ),
