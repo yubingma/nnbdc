@@ -5753,6 +5753,158 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
     if (!_hasFinishedAnswering || _fsrsItem == null) {
+      if (_currentGetWordResult != null &&
+          _currentGetWordResult!.stepIndex > 0 &&
+          _wordWrapper?.word.id != null) {
+        return FutureBuilder<List<LearningLog>>(
+          future: MyDatabase.instance.learningLogsDao.getHistory(
+              Global.getLoggedInUser()!.id, _wordWrapper!.word.id!),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting ||
+                !snapshot.hasData ||
+                snapshot.data!.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.edit_note, size: 14, color: textColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      '今日测评: 测评中',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: textColor,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('|',
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: textColor.withValues(alpha: 0.3))),
+                    ),
+                    Icon(Icons.event_note_outlined, size: 12, color: textColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      '下次复习: --天后',
+                      style: TextStyle(fontSize: 11, color: textColor),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final latestLog = snapshot.data!.first;
+            final rating = FsrsRatingExt.fromInt(latestLog.rating);
+            final scheduledDays = latestLog.scheduledDays;
+
+            String ratingLabel = rating.label;
+            Color ratingColor;
+            switch (rating) {
+              case FsrsRating.again:
+                ratingColor =
+                    isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
+                break;
+              case FsrsRating.hard:
+                ratingColor =
+                    isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00);
+                break;
+              case FsrsRating.easy:
+                ratingColor =
+                    isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
+                break;
+              case FsrsRating.good:
+              default:
+                ratingColor =
+                    isDarkMode ? AppTheme.primaryColor : AppTheme.primaryColor;
+                break;
+            }
+
+            return Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  InkWell(
+                    onTap: _showRatingModifyDialog,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_note, size: 14, color: ratingColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            '今日测评: $ratingLabel',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: ratingColor,
+                              decoration: TextDecoration.underline,
+                              decorationStyle: TextDecorationStyle.dashed,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text('|',
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: textColor.withValues(alpha: 0.3))),
+                  ),
+                  Icon(Icons.event_note_outlined, size: 12, color: textColor),
+                  const SizedBox(width: 4),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                            text: '下次复习: ',
+                            style: TextStyle(fontSize: 11, color: textColor)),
+                        TextSpan(
+                          text: '$scheduledDays',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDarkMode ? Colors.white70 : Colors.black54,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        TextSpan(
+                            text: '天后',
+                            style: TextStyle(fontSize: 11, color: textColor)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: _showLearningHistoryDialog,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.history_rounded,
+                            size: 14,
+                            color: textColor.withValues(alpha: 0.75)),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${snapshot.data!.length}',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: textColor.withValues(alpha: 0.8),
+                              height: 1.1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      }
+
       return Container(
         padding: const EdgeInsets.only(bottom: 8),
         child: Row(
