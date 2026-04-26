@@ -5753,6 +5753,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (context) {
+        String finalReason = _lastFsrsRatingReason ?? '';
+        if (_currentGetWordResult != null && 
+            _currentGetWordResult!.stepIndex > 0 && 
+            _assessmentRating != null) {
+          if (finalReason.isNotEmpty) {
+            finalReason += '\n';
+          }
+          finalReason += '⚠️ 当前处于巩固环节，自动评分上限被限制为测评结果（${_assessmentRating!.label}）。';
+        }
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -5805,7 +5814,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                '$_lastFsrsRatingReason',
+                                finalReason,
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: AppTheme.primaryColor,
