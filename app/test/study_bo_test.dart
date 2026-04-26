@@ -4,6 +4,7 @@ import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter/services.dart';
 import 'package:get_storage/get_storage.dart';
@@ -38,6 +39,7 @@ void main() {
     db = MyDatabase(NativeDatabase.memory());
     MyDatabase.setInstanceForTesting(db);
     studyBo = StudyBo();
+    StudyCacheManager().clear();
 
     // 1. 生成 Mock User，每日计划是 5 个词
     testUser = User(
@@ -261,10 +263,10 @@ void main() {
       // 我们用 update 强行把所有的词全都标记为学满今天次数
       for (int i = 1; i <= 5; i++) {
         var lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals('word_$i'))).getSingle();
-        await db.learningWordsDao.saveEntity(lw.copyWith(
+        await StudyCacheManager().saveAndSyncWordState(db, lw.copyWith(
           todayLearnedTimes: 2, // 达到总环节数(2)
           learnedTimes: 2,
-        ), true);
+        ));
       }
 
       // 这个时候如果再调 getWord

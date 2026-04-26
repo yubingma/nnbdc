@@ -1,5 +1,6 @@
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/distractor_strategy.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
@@ -33,30 +34,12 @@ class StudyBo {
 
   StudyBo._internal();
 
-  static String? _cachedUserId;
-  static Set<String>? _cachedMasteredWordIds;
-  static Set<String>? _cachedLearningWordIds;
-  static List<LearningWord>? _cachedTodayWords;
-
   static void clearUserCaches() {
-    _cachedUserId = null;
-    _cachedMasteredWordIds = null;
-    _cachedLearningWordIds = null;
-    _cachedTodayWords = null;
+    StudyCacheManager().clear();
   }
 
   static Future<Set<String>> getUserLearningWordIds(MyDatabase db, String userId) async {
-    if (_cachedUserId != userId) {
-      _cachedUserId = userId;
-      _cachedMasteredWordIds = null;
-      _cachedLearningWordIds = null;
-    }
-    if (_cachedLearningWordIds == null) {
-      final query = db.select(db.learningWords)..where((tbl) => tbl.userId.equals(userId));
-      final words = await query.get();
-      _cachedLearningWordIds = words.map((e) => e.wordId).toSet();
-    }
-    return _cachedLearningWordIds!;
+    return StudyCacheManager().getLearningWordIds(db, userId);
   }
 
   Future<Result<List<int>>> prepareForStudy(bool addNewWordsIfNotEnough) async {
@@ -430,24 +413,7 @@ class StudyBo {
 
       final now = AppClock.now();
 
-      if (_cachedUserId != user.id) {
-        _cachedUserId = user.id;
-        _cachedMasteredWordIds = null;
-        _cachedLearningWordIds = null;
-        _cachedTodayWords = null;
-      }
-
-      var todayWords = _cachedTodayWords;
-      if (todayWords == null) {
-        final query = db.select(db.learningWords)
-          ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
-          ..orderBy([
-            (tbl) => OrderingTerm(expression: tbl.batchId),
-            (tbl) => OrderingTerm(expression: tbl.learningOrder),
-          ]);
-        todayWords = await query.get();
-        _cachedTodayWords = todayWords;
-      }
+      var todayWords = await StudyCacheManager().getTodayWords(db, user.id);
 
       if (todayWords.isEmpty) {
         return Result("ERROR", "今日没有学习单词", false);
@@ -489,9 +455,7 @@ class StudyBo {
         return Result("ERROR", "当前没有批次单词需要完成列表学习", false);
       }
 
-      // 遍历当前批次单词，如果是 List 步骤，则 increment
       bool anyUpdated = false;
-      final cachedList = _cachedTodayWords;
       for (final word in batchWords) {
         int currentStepIndex = word.todayLearnedTimes;
         if (currentStepIndex < modeCount && steps[currentStepIndex].studyStep == 'List') {
@@ -500,15 +464,7 @@ class StudyBo {
             todayLearnedTimes: word.todayLearnedTimes + 1,
             lastLearningDate: Value(now),
           );
-          await db.learningWordsDao.saveEntity(updatedWord, true);
-          
-          // 极致优化：直接就地同步更新内存状态
-          if (cachedList != null) {
-            final idx = cachedList.indexWhere((w) => w.wordId == word.wordId);
-            if (idx != -1) {
-              cachedList[idx] = updatedWord;
-            }
-          }
+          await StudyCacheManager().saveAndSyncWordState(db, updatedWord);
           anyUpdated = true;
         }
       }
@@ -576,24 +532,7 @@ class StudyBo {
       Global.logger.d('🐛 [BDC Performance Item] 获取用户学习步骤耗时: ${swSteps.elapsedMilliseconds} ms');
 
       final swWords = Stopwatch()..start();
-      if (_cachedUserId != user.id) {
-        _cachedUserId = user.id;
-        _cachedMasteredWordIds = null;
-        _cachedLearningWordIds = null;
-        _cachedTodayWords = null;
-      }
-
-      var todayWords = _cachedTodayWords;
-      if (todayWords == null) {
-        final query = db.select(db.learningWords)
-          ..where((tbl) => tbl.userId.equals(user.id) & tbl.batchId.isBiggerThanValue(0))
-          ..orderBy([
-            (tbl) => OrderingTerm(expression: tbl.batchId),
-            (tbl) => OrderingTerm(expression: tbl.learningOrder),
-          ]);
-        todayWords = await query.get();
-        _cachedTodayWords = todayWords;
-      }
+      var todayWords = await StudyCacheManager().getTodayWords(db, user.id);
 
       if (todayWords.isEmpty) {
         throw Exception('未知错误: 今日学习单词数为0');
@@ -601,17 +540,7 @@ class StudyBo {
       Global.logger.d('🐛 [BDC Performance Item] 查询今日单词列表耗时: ${swWords.elapsedMilliseconds} ms');
 
       final swMastered = Stopwatch()..start();
-      // 获取用户已掌握的所有单词ID（内存缓存加速，避免高频磁盘查询）
-      if (_cachedUserId != user.id) {
-        _cachedUserId = user.id;
-        _cachedMasteredWordIds = null;
-        _cachedLearningWordIds = null;
-      }
-      if (_cachedMasteredWordIds == null) {
-        final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
-        _cachedMasteredWordIds = masteredWords.map((e) => e.wordId).toSet();
-      }
-      final masteredWordIds = _cachedMasteredWordIds!;
+      final masteredWordIds = await StudyCacheManager().getMasteredWordIds(db, user.id);
       Global.logger.d('🐛 [BDC Performance Item] 查询已掌握单词ID耗时: ${swMastered.elapsedMilliseconds} ms');
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
@@ -683,18 +612,10 @@ class StudyBo {
         );
 
         // 同步内存状态
-        // 注意：只有当 gotoNext=true 时，后端才认为应该开始推导“下一个”位置
-        // 如果 gotoNext=false，说明我们要留在当前，不再重复更新内存导致“假性推进”
         if (gotoNext) {
-          todayWords = List.from(todayWords); // 确保列表可变
           if (isWordMastered) {
             masteredWordIds.add(currWord.wordId);
-            _cachedMasteredWordIds?.add(currWord.wordId);
-            _cachedLearningWordIds?.remove(currWord.wordId);
-          } else {
-            // 进度已在 updateCurrWord 中落库并同步至缓存，无需在此覆盖
           }
-          _cachedTodayWords = todayWords;
         }
       }
 
@@ -1051,26 +972,7 @@ class StudyBo {
     required LearningWord updatedWord,
     required MyDatabase db,
   }) async {
-    // 1. 落库
-    await db.learningWordsDao.saveEntity(updatedWord, true);
-
-    // 2. 同步更新 _cachedTodayWords
-    if (_cachedTodayWords != null) {
-      final idx = _cachedTodayWords!.indexWhere((w) => w.wordId == updatedWord.wordId);
-      if (idx != -1) {
-        _cachedTodayWords![idx] = updatedWord;
-      }
-    }
-
-    // 3. 同步维护 ID 集合缓存
-    final isGraduated = updatedWord.stability != null && updatedWord.stability! >= Constants.graduationStability;
-    if (isGraduated) {
-      _cachedMasteredWordIds?.add(updatedWord.wordId);
-      _cachedLearningWordIds?.remove(updatedWord.wordId);
-    } else {
-      _cachedMasteredWordIds?.remove(updatedWord.wordId);
-      _cachedLearningWordIds?.add(updatedWord.wordId);
-    }
+    await StudyCacheManager().saveAndSyncWordState(db, updatedWord);
   }
 
   Future<void> saveWrongWord(
@@ -1208,14 +1110,14 @@ class StudyBo {
         learnedTimes: learningWord.learnedTimes + 1,
         todayLearnedTimes: stepCount, // 饱和今天的所有环节
       );
-      await _saveAndSyncWordState(updatedWord: updatedWord, db: db);
+      await StudyCacheManager().saveAndSyncWordState(db, updatedWord);
     } else {
       // 还在规划阶段：直接删除该学习记录
-      await db.learningWordsDao.deleteEntity(learningWord, true);
+      await StudyCacheManager().deleteAndSyncWordState(db, learningWord);
     }
 
     // 将单词添加到已掌握词书
-    await db.masteredWordsDao.saveMasteredWord(user.id, learningWord.wordId, true, true);
+    await StudyCacheManager().saveMasteredWordAndSync(db, user.id, learningWord.wordId);
 
     ThrottledDbSyncService().requestSync();
   }
