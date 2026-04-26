@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
@@ -7,10 +8,12 @@ import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
+import 'package:nnbdc/page/index.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
 import '../state.dart';
+import 'package:nnbdc/event/events.dart';
 
 class WordListsPage extends StatefulWidget {
   const WordListsPage({super.key});
@@ -25,11 +28,24 @@ class _WordListsPageState extends State<WordListsPage> {
   static const double leftPadding = 16;
   static const double rightPadding = 16;
   int _lastParentTabIndex = -1;
+  StreamSubscription<NewWrongWordEvent>? _subscription;
+  bool _isDirty = false;
 
   @override
   void initState() {
     super.initState();
     loadData();
+    
+    // 观察者模式：注册自身监听全局“新错词产生”具象业务事件
+    _subscription = EventBus.on<NewWrongWordEvent>().listen((event) {
+      _isDirty = true; 
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   Future<void> loadData() async {
@@ -225,13 +241,20 @@ class _WordListsPageState extends State<WordListsPage> {
 
     // 拦截 IndexPage 的切 Tab 事件，一旦展现【词表管理】则自动静默刷新
     try {
-      dynamic indexPageState = context.findAncestorStateOfType();
+      final indexPageState = context.findAncestorStateOfType<IndexPageState>();
       if (indexPageState != null) {
-        final parentIndex = indexPageState.currentIndex as int;
-        if (parentIndex == 1 && _lastParentTabIndex != 1) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) loadData();
-          });
+        final parentIndex = indexPageState.currentIndex;
+        if (parentIndex == 1) {
+          if (_isDirty || _lastParentTabIndex != 1) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) {
+                  loadData();
+                  _isDirty = false; // 清除本地脏标志
+                }
+              });
+            });
+          }
         }
         _lastParentTabIndex = parentIndex;
       }

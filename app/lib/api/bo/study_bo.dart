@@ -13,6 +13,7 @@ import 'package:nnbdc/util/oper_type.dart';
 import 'package:drift/drift.dart';
 import 'dart:async';
 import 'dart:math';
+import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/util/fsrs.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -1086,6 +1087,9 @@ class StudyBo {
           true);
       Global.logger.d('错词已存在，更新时间: ${wrongWord.wordId}');
     }
+
+    // 观察者模式：发射具象的“产生了新错词”事件
+    EventBus.publish(NewWrongWordEvent(wordId: wrongWord.wordId));
 
     // 触发同步到后端
     ThrottledDbSyncService().requestSync();

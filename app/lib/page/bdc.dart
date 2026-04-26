@@ -2151,10 +2151,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             daysSinceLastReview: stateJson['daysSinceLastReview'],
             lastFsrsRating: stateJson['lastFsrsRating'] != null ? FsrsRating.values[stateJson['lastFsrsRating'] as int] : null,
             asrMatchedMeaningItemParts: stateJson['asrMatchedMeaningItemParts'] != null 
-              ? (stateJson['asrMatchedMeaningItemParts'] as List).map((p) => Pair<int, int>((p as List)[0], (p as List)[1])).toList() 
+              ? (stateJson['asrMatchedMeaningItemParts'] as List).map((p) => Pair<int, int>((p as List)[0], (p)[1])).toList() 
               : null,
             asrRevealedMeaningItemParts: stateJson['asrRevealedMeaningItemParts'] != null 
-              ? (stateJson['asrRevealedMeaningItemParts'] as List).map((p) => Pair<int, int>((p as List)[0], (p as List)[1])).toList() 
+              ? (stateJson['asrRevealedMeaningItemParts'] as List).map((p) => Pair<int, int>((p as List)[0], (p)[1])).toList() 
               : null,
             currentAsrCandidates: stateJson['currentAsrCandidates'] != null 
               ? List<String>.from(stateJson['currentAsrCandidates']) 

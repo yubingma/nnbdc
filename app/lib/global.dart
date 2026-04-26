@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:logger/logger.dart' as logger_pkg;
@@ -11,6 +12,8 @@ import 'package:nnbdc/util/platform_util.dart';
 
 import 'api/vo.dart';
 
+
+
 class Global {
   static String get appName => PlatformUtils.isAndroid ? '牛牛背单词' : '泡泡单词';
   static String version = 'NONE';
@@ -21,6 +24,8 @@ class Global {
 
   /// 全局 API 请求计数（用于在后台显示加载状态，而不阻塞用户操作）
   static final ValueNotifier<int> activeRequestCount = ValueNotifier<int>(0);
+
+
 
   static void setStartupError(String message) {
     startupError.value = message;
