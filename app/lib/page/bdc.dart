@@ -730,6 +730,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   late BdcPageArgs _args;
 
   Future<List<LearningLog>>? _learningHistoryFuture;
+  FsrsRating? _lowestRatingForCurrentWord;
+
 
   /// 是否允许用户点击下一词按钮离开当前单词（英→中模式下，用户asr回答正确了至少一个释义）
   bool _canLeaveCurrWord = false;
@@ -1771,6 +1773,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               }
             }
 
+            if (_lowestRatingForCurrentWord == null) {
+              _lowestRatingForCurrentWord = rating;
+            } else {
+              if (rating.index < _lowestRatingForCurrentWord!.index) {
+                _lowestRatingForCurrentWord = rating;
+              }
+            }
+            rating = _lowestRatingForCurrentWord!;
+
             String reason = "回答耗时${rTime ?? '-'}秒";
             if (usedTranslation) {
               reason += "，查看了例句翻译";
@@ -1945,6 +1956,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             rating = FsrsRating.again;
           }
         }
+
+        if (_lowestRatingForCurrentWord == null) {
+          _lowestRatingForCurrentWord = rating;
+        } else {
+          if (rating.index < _lowestRatingForCurrentWord!.index) {
+            _lowestRatingForCurrentWord = rating;
+          }
+        }
+        rating = _lowestRatingForCurrentWord!;
 
         String reason = "回答耗时${rTime ?? '-'}秒";
         if (usedTranslation) {
@@ -2720,6 +2740,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // }
       }
 
+
+      if (_word?.id != getWordResult.learningWord!.word.id) {
+        _lowestRatingForCurrentWord = null;
+      }
 
       if (getWordResult.learningWord?.word == null) {
         Global.logger.e(
@@ -4823,6 +4847,15 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
       }
 
+      if (_lowestRatingForCurrentWord == null) {
+        _lowestRatingForCurrentWord = rating;
+      } else {
+        if (rating.index < _lowestRatingForCurrentWord!.index) {
+          _lowestRatingForCurrentWord = rating;
+        }
+      }
+      rating = _lowestRatingForCurrentWord!;
+
       String reason = "回答耗时${rTime ?? '-'}秒";
       if (usedTranslation) {
         reason += "，查看了例句翻译";
@@ -4834,18 +4867,32 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _lastFsrsRatingReason = reason;
       _onAnswerCorrect(rating);
     } else {
+      if (_lowestRatingForCurrentWord == null) {
+        _lowestRatingForCurrentWord = FsrsRating.again;
+      } else {
+        if (FsrsRating.again.index < _lowestRatingForCurrentWord!.index) {
+          _lowestRatingForCurrentWord = FsrsRating.again;
+        }
+      }
       //不认识或答案错误（错误提示音不需要等待，因为不会跳转到下一个单词）
       SoundUtil.playAssetSoundConcurrent('failed.mp3', 1.5, 1.0);
       showWordDetail(_word!, true,
-          fsrsRating: FsrsRating.again, reason: "选错了答案，评分: 忘记"); // 传递true表示本次回答错误
+          fsrsRating: _lowestRatingForCurrentWord, reason: "选错了答案，评分: 忘记"); // 传递true表示本次回答错误
     }
   }
 
   showWordDetail(var word, bool isAnswerWrong, {FsrsRating? fsrsRating, String? reason}) async {
     // 本次如果确定有评分（如选择了不认识），就算还未跳转下一题，也应立刻结算本地 FSRS 预览，让用户在返回时可以看到评分状态。
     if (fsrsRating != null) {
-      _lastFsrsRating = fsrsRating;
-      _lastFsrsRatingReason = reason ?? "系统判定错误或不熟，评分: ${fsrsRating.label}";
+      if (_lowestRatingForCurrentWord == null) {
+        _lowestRatingForCurrentWord = fsrsRating;
+      } else {
+        if (fsrsRating.index < _lowestRatingForCurrentWord!.index) {
+          _lowestRatingForCurrentWord = fsrsRating;
+        }
+      }
+      _lastFsrsRating = _lowestRatingForCurrentWord;
+      _lastFsrsRatingReason = reason ?? "系统判定错误或不熟，评分: ${_lowestRatingForCurrentWord!.label}";
       _hasFinishedAnswering = true; // 将界面切入“结束当前作答”状态，以展示下拉按钮
       _canLeaveCurrWord = true;
       _meaningFocusNode.unfocus();
