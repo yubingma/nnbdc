@@ -1923,7 +1923,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           } else {
             // 语音识别模式：标准时间
             if (responseTime < 6 &&
-                (_currentScore == null || _currentScore! >= 90)) {
+                (_currentScore == null || _currentScore! >= 60)) {
               rating = FsrsRating.easy; // Easy
             } else if (responseTime >= 15) {
               rating = FsrsRating.hard; // Hard
