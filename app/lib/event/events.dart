@@ -25,3 +25,11 @@ class NewWrongWordEvent {
   final String? wordId;
   NewWrongWordEvent({this.wordId});
 }
+
+/// Tab 栏切换的具体业务事件
+class TabSwitchedEvent {
+  final int index;
+  TabSwitchedEvent(this.index);
+}
+
+

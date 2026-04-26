@@ -11,6 +11,7 @@ import 'me.dart';
 import 'nav_icon_view.dart';
 import '../global.dart';
 import '../state.dart';
+import 'package:nnbdc/event/events.dart';
 
 class IndexPageArgs {
   late int buttonIndex;
@@ -95,6 +96,9 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
             _currentIndex = index;
             _navigationViews![actualNewIndex].controller.forward();
           });
+
+          // 观察者模式：发射“Tab 切换”具体业务事件
+          EventBus.publish(TabSwitchedEvent(index));
         },
         child: Container(
           height: 54, 

@@ -8,7 +8,6 @@ import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
-import 'package:nnbdc/page/index.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
@@ -27,8 +26,8 @@ class _WordListsPageState extends State<WordListsPage> {
   late List<WordList> wordLists;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
-  int _lastParentTabIndex = -1;
   StreamSubscription<NewWrongWordEvent>? _subscription;
+  StreamSubscription<TabSwitchedEvent>? _subscriptionTab;
   bool _isDirty = false;
 
   @override
@@ -40,11 +39,22 @@ class _WordListsPageState extends State<WordListsPage> {
     _subscription = EventBus.on<NewWrongWordEvent>().listen((event) {
       _isDirty = true; 
     });
+
+    // 观察者模式：注册自身监听全局“Tab 栏切换”具象业务事件
+    _subscriptionTab = EventBus.on<TabSwitchedEvent>().listen((event) {
+      if (event.index == 1) {
+        if (_isDirty) {
+          loadData();
+          _isDirty = false; 
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
+    _subscriptionTab?.cancel();
     super.dispose();
   }
 
@@ -238,27 +248,6 @@ class _WordListsPageState extends State<WordListsPage> {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA);
     final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
-
-    // 拦截 IndexPage 的切 Tab 事件，一旦展现【词表管理】则自动静默刷新
-    try {
-      final indexPageState = context.findAncestorStateOfType<IndexPageState>();
-      if (indexPageState != null) {
-        final parentIndex = indexPageState.currentIndex;
-        if (parentIndex == 1) {
-          if (_isDirty || _lastParentTabIndex != 1) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Future.delayed(const Duration(milliseconds: 300), () {
-                if (mounted) {
-                  loadData();
-                  _isDirty = false; // 清除本地脏标志
-                }
-              });
-            });
-          }
-        }
-        _lastParentTabIndex = parentIndex;
-      }
-    } catch (_) {}
 
     return Scaffold(
       backgroundColor: backgroundColor,
