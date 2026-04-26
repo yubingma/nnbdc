@@ -972,7 +972,7 @@ class StudyBo {
   }
 
   Future<void> saveHistoryFSRSUpdate({
-    required LearningWord currWord,
+    required LearningWordVo currWord,
     required FSRSItem nextFsrs,
     required FsrsRating newRating,
   }) async {
@@ -981,15 +981,21 @@ class StudyBo {
     if (user == null) return;
     final now = AppClock.now();
 
+    final lwQuery = db.select(db.learningWords)
+      ..where((tbl) => tbl.wordId.equals(currWord.word.id!) & tbl.userId.equals(user.id));
+    final lwList = await lwQuery.get();
+    if (lwList.isEmpty) return;
+    final dbLw = lwList.first;
+
     // 1. 如果新评分为 Again，记入错词本
     if (newRating == FsrsRating.again) {
-      await saveWrongWord(currWord, db, user, now);
+      await saveWrongWord(dbLw, db, user, now);
     }
 
     // 2. 覆盖替换最近的一条学习日志
     try {
       final logQuery = db.select(db.learningLogs)
-        ..where((tbl) => tbl.wordId.equals(currWord.wordId) & tbl.userId.equals(user.id))
+        ..where((tbl) => tbl.wordId.equals(currWord.word.id!) & tbl.userId.equals(user.id))
         ..orderBy([(tbl) => OrderingTerm(expression: tbl.createTime, mode: OrderingMode.desc)])
         ..limit(1);
       final lastLogList = await logQuery.get();
@@ -1001,7 +1007,7 @@ class StudyBo {
           difficulty: nextFsrs.difficulty,
           elapsedDays: nextFsrs.elapsedDays,
           scheduledDays: nextFsrs.scheduledDays,
-          updateTime: now,
+          updateTime: Value(now),
         ));
       }
     } catch (e, s) {
@@ -1010,7 +1016,7 @@ class StudyBo {
 
     // 3. 更新当前单词的 FSRS 字段，但不改动学习步骤次数
     await db.learningWordsDao.saveEntity(
-      currWord.copyWith(
+      dbLw.copyWith(
         stability: Value(nextFsrs.stability),
         difficulty: Value(nextFsrs.difficulty),
         elapsedDays: Value(nextFsrs.elapsedDays),
