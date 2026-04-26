@@ -4215,13 +4215,17 @@ class WordListPageState extends State<WordListPage>
         children: [
           Positioned.fill(
             child: Container(
-              // 为手写区域添加微弱的底色，与右侧纯透传区形成对比
+              // 为手写区域添加显著的覆盖底色
               decoration: BoxDecoration(
-                color: (isDarkMode ? Colors.black : Colors.white).withValues(alpha: 0.1),
+                color: (isDarkMode 
+                        ? Colors.black.withValues(alpha: 0.65) 
+                        : Colors.white.withValues(alpha: 0.85)),
                 border: Border(
                   right: BorderSide(
-                    color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.05),
-                    width: 0.5,
+                    color: (isDarkMode 
+                            ? Colors.white.withValues(alpha: 0.2) 
+                            : Colors.black.withValues(alpha: 0.1)),
+                    width: 1.0,
                   ),
                 ),
               ),
