@@ -76,6 +76,7 @@ class BdcPageArgs {
 }
 
 class WordUIState {
+  final String? studyStep;
   final bool hasFinishedAnswering;
   final bool canLeaveCurrWord;
   final bool showSentenceTranslation;
@@ -94,6 +95,7 @@ class WordUIState {
   final List<String>? currentAsrCandidates;
 
   WordUIState({
+    this.studyStep,
     required this.hasFinishedAnswering,
     required this.canLeaveCurrWord,
     required this.showSentenceTranslation,
@@ -416,11 +418,12 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
         break;
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return RepaintBoundary(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // 波纹动画反馈 (始终显示以保持布局稳定)
@@ -483,7 +486,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -562,11 +565,12 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
         break;
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return RepaintBoundary(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // 波纹动画反馈
@@ -630,42 +634,47 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              if (widget.score != null && widget.score! > 0) ...[
-                const SizedBox(width: 4),
-                Tooltip(
+              const SizedBox(width: 4),
+              Visibility(
+                visible: widget.score != null && widget.score! > 0,
+                maintainSize: true,
+                maintainState: true,
+                maintainAnimation: true,
+                child: Tooltip(
                   message: '发音评分',
                   triggerMode: TooltipTriggerMode.tap,
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     decoration: BoxDecoration(
-                      color: widget.score! >= 60
+                      color: (widget.score ?? 0) >= 60
                           ? Colors.green.withValues(alpha: 0.1)
                           : Colors.orange.withValues(alpha: 0.1),
                       border: Border.all(
-                        color: widget.score! >= 60
+                        color: (widget.score ?? 0) >= 60
                             ? Colors.green.withValues(alpha: 0.5)
                             : Colors.orange.withValues(alpha: 0.5),
                         width: 1,
                       ),
                     ),
                     child: Text(
-                      '${widget.score}',
+                      '${widget.score ?? 0}',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color:
-                            widget.score! >= 60 ? Colors.green : Colors.orange,
+                        color: (widget.score ?? 0) >= 60
+                            ? Colors.green
+                            : Colors.orange,
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
@@ -842,6 +851,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void _saveCurrentWordState() {
     if (_word?.id != null) {
       _wordUIStates[_word!.id!] = WordUIState(
+        studyStep: _studyStep,
         hasFinishedAnswering: _hasFinishedAnswering,
         canLeaveCurrWord: _canLeaveCurrWord,
         showSentenceTranslation: _showSentenceTranslation,
@@ -918,8 +928,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   void _restoreWordState(GetWordResult result) {
     final state = _word?.id != null ? _wordUIStates[_word!.id!] : null;
     if (state != null) {
-      _hasFinishedAnswering = state.hasFinishedAnswering;
-      _canLeaveCurrWord = state.canLeaveCurrWord;
+      if (state.studyStep != null && state.studyStep != _studyStep) {
+        Global.logger.d('BDC: 恢复单词状态发现学习步骤不匹配 (state: ${state.studyStep}, current: $_studyStep)，跳过答题状态恢复');
+      } else {
+        _hasFinishedAnswering = state.hasFinishedAnswering;
+        _canLeaveCurrWord = state.canLeaveCurrWord;
+      }
       _showSentenceTranslation = state.showSentenceTranslation;
       _selectedAnswerIndex = state.selectedAnswerIndex;
       _flippedAnswerIndices.clear();
@@ -2674,7 +2688,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       // 极端防御：如果在渲染新单词时 ASR 状态依然是 started（通常是异步时序导致），强制同步一次状态
       // 确保 _handleTabChangeForAsr 能够触发新的 _startAsr() 而不是认为已经启动
-      if (asr.state == AsrState.started && oldStudyStep == _studyStep) {
+      if (asr.state == AsrState.started) {
         Global.logger.w('BDC: 检测到 ASR 残留状态，准备通过 stopAsr 确保下一环节能正常启动');
         await asr.stopAsr();
       }
@@ -5583,10 +5597,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       ? Text(
                           '拼写练习',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 24,
                             color: (isDarkMode ? Colors.white : Colors.black)
                                 .withValues(alpha: 0.2),
-                            fontWeight: FontWeight.normal,
+                            fontWeight: FontWeight.bold,
                           ),
                         )
                       : RichText(
