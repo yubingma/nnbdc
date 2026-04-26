@@ -24,6 +24,7 @@ class _WordListsPageState extends State<WordListsPage> {
   late List<WordList> wordLists;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
+  int _lastParentTabIndex = -1;
 
   @override
   void initState() {
@@ -221,6 +222,20 @@ class _WordListsPageState extends State<WordListsPage> {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA);
     final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
+
+    // 拦截 IndexPage 的切 Tab 事件，一旦展现【词表管理】则自动静默刷新
+    try {
+      dynamic indexPageState = context.findAncestorStateOfType();
+      if (indexPageState != null) {
+        final parentIndex = indexPageState.currentIndex as int;
+        if (parentIndex == 1 && _lastParentTabIndex != 1) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) loadData();
+          });
+        }
+        _lastParentTabIndex = parentIndex;
+      }
+    } catch (_) {}
 
     return Scaffold(
       backgroundColor: backgroundColor,

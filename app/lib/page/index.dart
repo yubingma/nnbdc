@@ -24,13 +24,14 @@ class IndexPage extends StatefulWidget {
 
   /// 固定的写法
   @override
-  State<StatefulWidget> createState() => _IndexPageState();
+  State<StatefulWidget> createState() => IndexPageState();
 }
 
 /// 要让主页面 Index 支持动效，要在它的定义中附加mixin类型的对象TickerProviderStateMixin
-class _IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
+class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   late IndexPageArgs args;
   int _currentIndex = 0; // 当前界面的索引值
+  int get currentIndex => _currentIndex;
   List<NavigationIconView>? _navigationViews; // 底部图标按钮区域
   late List<Widget> _pages;
 
