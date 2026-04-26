@@ -4218,8 +4218,8 @@ class WordListPageState extends State<WordListPage>
               // 为手写区域添加显著的覆盖底色
               decoration: BoxDecoration(
                 color: (isDarkMode 
-                        ? Colors.black.withValues(alpha: 0.65) 
-                        : Colors.white.withValues(alpha: 0.85)),
+                        ? Colors.black.withValues(alpha: 0.35) 
+                        : Colors.white.withValues(alpha: 0.45)),
                 border: Border(
                   right: BorderSide(
                     color: (isDarkMode 
@@ -4262,7 +4262,11 @@ class WordListPageState extends State<WordListPage>
               },
               onSwipeUp: () => jumpToNextWord(bookmarkedIndex, true, () {}),
               onSwipeDown: () => jumpToPreviousWord(bookmarkedIndex, true),
-              onCancel: () {},
+              onCancel: () {
+                setState(() {
+                  studyMode = WordListStudyMode.list;
+                });
+              },
             ),
           ),
         ),
