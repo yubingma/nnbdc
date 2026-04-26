@@ -1614,7 +1614,11 @@ class WordBo {
         ]);
       final wrongWords = await wrongWordsQuery.get();
       List<WordVo> wordVos = [];
+      Set<String> seenWordIds = {};
       for (final wrongWord in wrongWords) {
+        if (!seenWordIds.add(wrongWord.wordId)) {
+          continue;
+        }
         final word = await db.wordsDao.getWordById(wrongWord.wordId);
         if (word != null) {
           final wordVo = WordVo.c2(word.spell)
@@ -1751,12 +1755,12 @@ class WordBo {
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
       final wrongWordsQuery = db.selectOnly(db.userWrongWords)
-        ..addColumns([countAll()])
+        ..addColumns([db.userWrongWords.wordId.count(distinct: true)])
         ..where(db.userWrongWords.userId.equals(user.id))
         ..where((db.userWrongWords.createTime.isBiggerOrEqualValue(startOfDay) & db.userWrongWords.createTime.isSmallerOrEqualValue(endOfDay)) |
             (db.userWrongWords.updateTime.isBiggerOrEqualValue(startOfDay) & db.userWrongWords.updateTime.isSmallerOrEqualValue(endOfDay)));
       final wrongWordsCount = await wrongWordsQuery.getSingle();
-      wordLists.add(WordList("今日错词", wrongWordsCount.read(countAll()) ?? 0));
+      wordLists.add(WordList("今日错词", wrongWordsCount.read(db.userWrongWords.wordId.count(distinct: true)) ?? 0));
       final newWordsQuery = db.selectOnly(db.learningWords)
         ..addColumns([countAll()])
         ..where(db.learningWords.userId.equals(user.id))

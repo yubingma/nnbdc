@@ -111,7 +111,7 @@ class _WordListsPageState extends State<WordListsPage> {
           borderRadius: BorderRadius.circular(16),
           onTap: () async {
             if (wordList.name == '今日错词') {
-              toWrongWordsListPage();
+              toWrongWordsListPage()?.then((value) => loadData());
             } else if (wordList.name == '今日新词') {
               toTodayNewWordsListPage(true)!.then((value) => loadData());
             } else if (wordList.name == '今日旧词') {
