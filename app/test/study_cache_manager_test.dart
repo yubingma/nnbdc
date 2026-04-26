@@ -387,6 +387,61 @@ void main() {
       final dbWord = await (db.select(db.learningWords)..where((tbl) => tbl.wordId.equals('word_1'))).getSingle();
       expect(dbWord.todayLearnedTimes, 5);
     });
+
+    test('多端增量同步：高效合并数据而不销毁全局缓存', () async {
+      final initialWord = LearningWord(
+        userId: userId1,
+        wordId: 'word_1',
+        addTime: now,
+        addDay: 1,
+        batchId: 1,
+        learnedTimes: 0,
+        todayLearnedTimes: 0,
+        learningOrder: 1,
+        isTodayNewWord: true,
+        createTime: now,
+        updateTime: now,
+      );
+      await db.into(db.learningWords).insert(initialWord);
+
+      // 加载初态缓存
+      await StudyCacheManager().getTodayWords(db, userId1);
+      await StudyCacheManager().getLearningWordIds(db, userId1);
+      expect(StudyCacheManager().cachedTodayWords!.length, 1);
+
+      // 云端增量同步拉回了两个变更：1. 更新 word_1 的学过次数； 2. 新增今日计划 word_2
+      final cloudUpdatedWord1 = initialWord.copyWith(learnedTimes: 3, todayLearnedTimes: 2);
+      final cloudNewWord2 = LearningWord(
+        userId: userId1,
+        wordId: 'word_2',
+        addTime: now,
+        addDay: 1,
+        batchId: 1,
+        learnedTimes: 0,
+        todayLearnedTimes: 0,
+        learningOrder: 2,
+        isTodayNewWord: true,
+        createTime: now,
+        updateTime: now,
+      );
+
+      // 模拟多端增量同步
+      StudyCacheManager().mergeSyncData(db, userId1, 
+        updatedLearningWords: [cloudUpdatedWord1, cloudNewWord2],
+      );
+
+      // 断言：缓存保持在内存状态（不为 null 证明未被全量清空，保持最高性能）
+      expect(StudyCacheManager().cachedTodayWords, isNotNull);
+      expect(StudyCacheManager().cachedTodayWords!.length, 2);
+
+      // 断言：缓存中的数据已经静默与云端同步保持一致
+      final targetWord1 = StudyCacheManager().cachedTodayWords!.firstWhere((w) => w.wordId == 'word_1');
+      expect(targetWord1.learnedTimes, 3);
+      expect(targetWord1.todayLearnedTimes, 2);
+
+      final targetWord2 = StudyCacheManager().cachedTodayWords!.firstWhere((w) => w.wordId == 'word_2');
+      expect(targetWord2.learningOrder, 2);
+    });
   });
   });
 }

@@ -121,7 +121,44 @@ class StudyCacheManager {
     await getLearningWordIds(db, userId);
     await getTodayWords(db, userId);
   }
+  /// 根据多端同步拉取到的增量数据，增量合并到现有缓存中（避免全量刷新破坏性能）
+  void mergeSyncData(MyDatabase db, String userId, {
+    List<LearningWord>? updatedLearningWords,
+    List<String>? newMasteredWordIds,
+    List<String>? removedLearningWordIds,
+  }) {
+    _checkUser(db, userId);
+    
+    // 1. 增量更新今日背词计划
+    if (updatedLearningWords != null && _cachedTodayWords != null) {
+      for (final updated in updatedLearningWords) {
+        final idx = _cachedTodayWords!.indexWhere((w) => w.wordId == updated.wordId);
+        if (idx != -1) {
+          _cachedTodayWords![idx] = updated;
+        } else if ((updated.batchId ?? 0) > 0) {
+          _cachedTodayWords!.add(updated);
+        }
+      }
+      
+      // 保持学习顺序排序
+      _cachedTodayWords!.sort((a, b) {
+        final batchCompare = (a.batchId ?? 0).compareTo(b.batchId ?? 0);
+        if (batchCompare != 0) return batchCompare;
+        return (a.learningOrder ?? 0).compareTo(b.learningOrder ?? 0);
+      });
+    }
 
+    // 2. 增量维护已掌握和学习中 ID
+    if (newMasteredWordIds != null) {
+      _cachedMasteredWordIds?.addAll(newMasteredWordIds);
+      _cachedLearningWordIds?.removeAll(newMasteredWordIds);
+    }
+
+    if (removedLearningWordIds != null) {
+      _cachedLearningWordIds?.removeAll(removedLearningWordIds);
+      _cachedTodayWords?.removeWhere((w) => removedLearningWordIds.contains(w.wordId));
+    }
+  }
   // 仅供测试使用：获取当前缓存状态以供断言
   Set<String>? get cachedMasteredWordIds => _cachedMasteredWordIds;
   Set<String>? get cachedLearningWordIds => _cachedLearningWordIds;
