@@ -1690,9 +1690,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           // 彻底停止当前识别会话
           await asr.stopAsr();
 
-          if (asrInput != null) {
-            _meaningController.text = _word!.spell;
-          }
+          // 英→中模式下说对了单词的示意时，不自动填上正确英文拼写
+          // if (asrInput != null) {
+          //   _meaningController.text = _word!.spell;
+          // }
 
           if (!_autoJumpAfterCorrect) {
             Global.logger.d(
