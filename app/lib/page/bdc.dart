@@ -2878,9 +2878,18 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
       Global.logger.d('[BDC Performance] 播放音频(异步/开始)耗时: ${DateTime.now().difference(playStartTime).inMilliseconds} ms');
 
-      if (!(_word?.id != null && _wordUIStates.containsKey(_word!.id!))) {
+      bool needInitChoice = true;
+      if (_historyIndex != -1 && _word?.id != null && _wordUIStates.containsKey(_word!.id!)) {
+        final state = _wordUIStates[_word!.id!];
+        if (state != null && state.words != null && state.words!.isNotEmpty) {
+          needInitChoice = false;
+        }
+      }
+
+      if (needInitChoice) {
         _initChoiceData(getWordResult, user);
       }
+
 
       if (_word?.id != null) {
         _learningHistoryFuture = MyDatabase.instance.learningLogsDao
@@ -2975,7 +2984,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           // 备选答案中含[都不对]
           // 随机选择一个单词索引号（1～3），从数组中删除该单词
           var rnd = Random();
-          var indexToDelete = 1 + rnd.nextInt(3 - 1);
+          var indexToDelete = 1 + rnd.nextInt(3);
           _words!.removeAt(indexToDelete - 1);
 
           // 添加[都不对]选项
