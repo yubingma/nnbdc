@@ -836,12 +836,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 历史记录
   final List<GetWordResult> _history = [];
   /// 缓存每个单词的 UI 状态，用于在回顾模式中恢复
-  final Map<GetWordResult, WordUIState> _wordUIStates = {};
+  final Map<String, WordUIState> _wordUIStates = {};
   int _historyIndex = -1; // -1 表示当前词
 
   void _saveCurrentWordState() {
-    if (_currentGetWordResult != null) {
-      _wordUIStates[_currentGetWordResult!] = WordUIState(
+    if (_word?.id != null) {
+      _wordUIStates[_word!.id!] = WordUIState(
         hasFinishedAnswering: _hasFinishedAnswering,
         canLeaveCurrWord: _canLeaveCurrWord,
         showSentenceTranslation: _showSentenceTranslation,
@@ -868,7 +868,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   void _persistLastWordHistoryItem() {
     try {
-      final state = _wordUIStates[_currentGetWordResult!];
+      final state = _word?.id != null ? _wordUIStates[_word!.id!] : null;
       if (state != null) {
         final targetWord = _currentGetWordResult!.learningWord?.word;
         final others = _currentGetWordResult!.otherWords;
@@ -916,7 +916,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   void _restoreWordState(GetWordResult result) {
-    final state = _wordUIStates[result];
+    final state = _word?.id != null ? _wordUIStates[_word!.id!] : null;
     if (state != null) {
       _hasFinishedAnswering = state.hasFinishedAnswering;
       _canLeaveCurrWord = state.canLeaveCurrWord;
@@ -1607,6 +1607,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     final bool wasAlreadyCorrect = _hasFinishedAnswering;
 
+    if (_hasFinishedAnswering) {
+      if (asrInput == null) {
+        return;
+      }
+    }
+
     if (asr.state != AsrState.started &&
         asr.state != AsrState.initialized &&
         !isHandwritingOrKeyboard) {
@@ -2222,7 +2228,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           );
           
           _history.add(wordResult);
-          _wordUIStates[wordResult] = state;
+          final wordId = wordResult.learningWord?.word.id;
+          if (wordId != null) {
+            _wordUIStates[wordId] = state;
+          }
         }
       } catch (e, stackTrace) {
         Global.logger.e('恢复上一个单词的历史状态失败', error: e, stackTrace: stackTrace);
@@ -2337,7 +2346,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
           if (_history.length > 20) {
             final removed = _history.removeAt(0);
-            _wordUIStates.remove(removed);
+            final removedId = removed.learningWord?.word.id;
+            if (removedId != null) {
+              _wordUIStates.remove(removedId);
+            }
           }
         }
       }
@@ -2762,7 +2774,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
       _wordWrapper = WordWrapper(_word!, null);
 
-      final state = _wordUIStates[getWordResult];
+      final state = _word?.id != null ? _wordUIStates[_word!.id!] : null;
       if (state != null) {
         if (state.asrMatchedMeaningItemParts != null) {
           _wordWrapper!.asrMatchedMeaningItemParts.addAll(state.asrMatchedMeaningItemParts!);
@@ -2791,7 +2803,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       }
       Global.logger.d('[BDC Performance] 播放音频(异步/开始)耗时: ${DateTime.now().difference(playStartTime).inMilliseconds} ms');
 
-      if (!_wordUIStates.containsKey(getWordResult)) {
+      if (!(_word?.id != null && _wordUIStates.containsKey(_word!.id!))) {
         _initChoiceData(getWordResult, user);
       }
     } catch (e, stackTrace) {
