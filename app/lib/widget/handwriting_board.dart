@@ -442,6 +442,12 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
               }
             }
 
+            // 如果点击的是底部的功能控制按钮区域，则不作为书写轨迹起笔，交由底部的 GestureDetector 处理
+            if (rewriteZone.contains(p) || undoZone.contains(p) || closeZone.contains(p)) {
+              _ignoredPointers.add(event.pointer);
+              return;
+            }
+
             _activePointerId = event.pointer;
             _ignoredPointers.remove(event.pointer); // 确保从忽略列表中移除（如果它是由于isRecentWriting被捕获的）
             
@@ -710,7 +716,9 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       HapticFeedback.lightImpact();
                       _autoRecognizeTimer?.cancel();
                       _pendingUndoTask?.cancel();
-                      _controller.removeLast();
+                      setState(() {
+                        _controller.removeLast();
+                      });
                       widget.onUndo();
                       if (widget.lines.isEmpty) {
                         widget.onRewrite();
