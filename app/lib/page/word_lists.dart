@@ -19,49 +19,48 @@ class WordListsPage extends StatefulWidget {
   const WordListsPage({super.key});
 
   @override
-  State<StatefulWidget> createState() => _WordListsPageState();
+  State<StatefulWidget> createState() => WordListsPageState();
 }
 
-class _WordListsPageState extends State<WordListsPage> {
+class WordListsPageState extends State<WordListsPage> implements RefreshableTab {
+  static WordListsPageState? instance;
   bool dataLoaded = false;
   late List<WordList> wordLists;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
-  StreamSubscription<NewWrongWordEvent>? _subscription;
-  StreamSubscription<TabSwitchedEvent>? _subscriptionTab;
   bool _isDirty = false;
+  StreamSubscription? _subscription;
+
+  @override
+  bool get isDirty => _isDirty;
+
+  @override
+  void refreshData() {
+    Global.logger.d('[RefreshableTab] 词表页收到 refreshData() 指令，开始刷新');
+    loadData();
+    _isDirty = false;
+  }
 
   @override
   void initState() {
     super.initState();
-    Global.logger.d('[EventBus Debug] WordListsPage initState() 注册观察者监听');
+    instance = this;
+    Global.logger.d('[EventBus Debug] WordListsPage initState()');
     loadData();
-    
-    // 观察者模式：注册自身监听全局“新错词产生”具象业务事件
-    _subscription = EventBus.onNewWrongWord().listen((event) {
-      Global.logger.d('[EventBus Debug] 监听到 NewWrongWordEvent, 本地 _isDirty 设为 true');
-      _isDirty = true; 
-    });
 
-    // 观察者模式：注册自身监听全局“Tab 栏切换”具象业务事件
-    _subscriptionTab = EventBus.onTabSwitched().listen((event) {
-      Global.logger.d('[EventBus Debug] 监听到 TabSwitchedEvent, 目标 index=${event.index}, 当前本地 _isDirty=$_isDirty');
-      if (event.index == 1) {
-        if (_isDirty) {
-          Global.logger.d('[EventBus Debug] 条件满足：切入目标 Tab 1 且本地数据为脏，开始触发异步 loadData()');
-          loadData();
-          _isDirty = false; 
-        } else {
-          Global.logger.d('[EventBus Debug] 条件不满足：本地数据不脏 _isDirty=false，跳过 loadData()');
-        }
-      }
+    // 页面内部自行监听底层错词广播，维护内聚的数据状态
+    _subscription = EventBus.onNewWrongWord().listen((event) {
+      Global.logger.d('[RefreshableTab] 词表页内部监听到 NewWrongWordEvent, _isDirty = true');
+      _isDirty = true;
     });
   }
 
   @override
   void dispose() {
+    if (instance == this) {
+      instance = null;
+    }
     _subscription?.cancel();
-    _subscriptionTab?.cancel();
     super.dispose();
   }
 

@@ -39,6 +39,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
     args = Get.arguments ?? IndexPageArgs(0);
     _currentIndex = args.buttonIndex;
 
@@ -97,10 +98,11 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
             _navigationViews![actualNewIndex].controller.forward();
           });
 
-          // 观察者模式：发射“Tab 切换”具体业务事件
-          Global.logger.d('[EventBus Debug] 准备发射 TabSwitchedEvent, index=$index');
-          EventBus.publishTabSwitched(TabSwitchedEvent(index));
-          Global.logger.d('[EventBus Debug] 已发射 TabSwitchedEvent, index=$index');
+          final tabState = _getTabState(index);
+          if (tabState != null && tabState.isDirty) {
+            Global.logger.d('[Index Manager] 检测到目标页面(index=$index)为脏数据，触发 refreshData()');
+            tabState.refreshData();
+          }
         },
         child: Container(
           height: 54, 
@@ -140,6 +142,13 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+
+
+  RefreshableTab? _getTabState(int index) {
+    if (index == 1) return WordListsPageState.instance;
+    return null;
   }
 
   @override
