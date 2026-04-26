@@ -86,6 +86,9 @@ class WordUIState {
   final String meaningText;
   final List<WordVo>? words;
   final int correctAnswerIndex;
+  final FSRSItem? fsrsItem;
+  final int? daysSinceLastReview;
+  final FsrsRating? lastFsrsRating;
 
   WordUIState({
     required this.hasFinishedAnswering,
@@ -98,6 +101,9 @@ class WordUIState {
     required this.meaningText,
     this.words,
     required this.correctAnswerIndex,
+    this.fsrsItem,
+    this.daysSinceLastReview,
+    this.lastFsrsRating,
   });
 }
 
@@ -840,6 +846,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         meaningText: _meaningController.text,
         words: _words != null ? List<WordVo>.from(_words!) : null,
         correctAnswerIndex: _correctAnswerIndex,
+        fsrsItem: _fsrsItem,
+        daysSinceLastReview: _daysSinceLastReview,
+        lastFsrsRating: _lastFsrsRating,
       );
     }
   }
@@ -858,6 +867,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _meaningController.text = state.meaningText;
       _words = state.words != null ? List<WordVo>.from(state.words!) : null;
       _correctAnswerIndex = state.correctAnswerIndex;
+      _fsrsItem = state.fsrsItem;
+      _daysSinceLastReview = state.daysSinceLastReview;
+      _lastFsrsRating = state.lastFsrsRating;
     }
   }
   GetWordResult? _presentWord;
@@ -958,9 +970,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   /// 重新初始化TabController
-  void _reinitializeTabController() {
+  void _reinitializeTabController({bool preserveCurrentIndex = false}) {
     // 记住当前tab索引
-    if (_tabController != null) {
+    if (!preserveCurrentIndex && _tabController != null) {
       _currentTabIndex = _tabController!.index;
     }
 
@@ -1002,9 +1014,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       // 当前在"说"tab
       _firstMatchTime = null;
 
-      // 如果正在手写/拼写沉浸模式，或者正在获取下一词，或者当前页面不是顶层路由（如已进入详情页），则严禁启动语音识别提示
-      if (_showHandwritingBoard || _isGettingNextWord || !(ModalRoute.of(context)?.isCurrent ?? true)) {
-        Global.logger.d('BDC: 由于正处于拼写模式、正在加载下一词或页面不在顶层，严禁自动启动 ASR (showHandwriting=$_showHandwritingBoard, isGettingNext=$_isGettingNextWord, isCurrent=${ModalRoute.of(context)?.isCurrent})');
+      // 如果已经做完题、正在手写/拼写沉浸模式，或者正在获取下一词，或者当前页面不是顶层路由（如已进入详情页），则严禁启动语音识别提示
+      if (_hasFinishedAnswering || _showHandwritingBoard || _isGettingNextWord || !(ModalRoute.of(context)?.isCurrent ?? true)) {
+        Global.logger.d('BDC: 由于正处于答题完毕状态、拼写模式、正在加载下一词或页面不在顶层，严禁自动启动 ASR (hasFinishedAnswering=$_hasFinishedAnswering, showHandwriting=$_showHandwritingBoard, isGettingNext=$_isGettingNextWord, isCurrent=${ModalRoute.of(context)?.isCurrent})');
         if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
           asr.stopAsr();
         }
@@ -2094,6 +2106,55 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
       Global.logger.d('开始加载单词数据...');
       await getNextWord(false);
+      
+      // 恢复持久化的上一个单词
+      try {
+        final lastWordDataStr = GetStorage().read<String>('last_word_history_item');
+        if (lastWordDataStr != null) {
+          final lastWordData = json.decode(lastWordDataStr);
+          final wordResult = GetWordResult.fromJson(lastWordData['wordResult']);
+          final stateJson = lastWordData['state'];
+          final state = WordUIState(
+            hasFinishedAnswering: stateJson['hasFinishedAnswering'] ?? false,
+            canLeaveCurrWord: stateJson['canLeaveCurrWord'] ?? false,
+            showSentenceTranslation: stateJson['showSentenceTranslation'] ?? false,
+            selectedAnswerIndex: stateJson['selectedAnswerIndex'],
+            flippedAnswerIndices: Set<int>.from(stateJson['flippedAnswerIndices'] ?? []),
+            tabIndex: stateJson['tabIndex'] ?? 0,
+            currentScore: stateJson['currentScore'],
+            meaningText: stateJson['meaningText'] ?? '',
+            correctAnswerIndex: stateJson['correctAnswerIndex'] ?? 0,
+            fsrsItem: stateJson['fsrsItem'] != null ? FSRSItem(
+              stability: (stateJson['fsrsItem']['stability'] as num).toDouble(),
+              difficulty: (stateJson['fsrsItem']['difficulty'] as num).toDouble(),
+              elapsedDays: stateJson['fsrsItem']['elapsedDays'] as int,
+              scheduledDays: stateJson['fsrsItem']['scheduledDays'] as int,
+              reps: stateJson['fsrsItem']['reps'] as int,
+              lapses: stateJson['fsrsItem']['lapses'] as int,
+              state: FsrsState.values[stateJson['fsrsItem']['state'] as int],
+            ) : null,
+            daysSinceLastReview: stateJson['daysSinceLastReview'],
+            lastFsrsRating: stateJson['lastFsrsRating'] != null ? FsrsRating.values[stateJson['lastFsrsRating'] as int] : null,
+            words: stateJson['wordsIndices'] != null ? (stateJson['wordsIndices'] as List).map((idx) {
+              if (idx == 0) return wordResult.learningWord?.word;
+              if (idx == 1 && wordResult.otherWords != null && wordResult.otherWords!.isNotEmpty) return wordResult.otherWords![0];
+              if (idx == 2 && wordResult.otherWords != null && wordResult.otherWords!.length > 1) return wordResult.otherWords![1];
+              if (idx == 3) {
+                var mockWord = WordVo.c2("[ 都不对 ]");
+                mockWord.setMeaningStr("[ 都不对 ]");
+                return mockWord;
+              }
+              return null;
+            }).whereType<WordVo>().toList() : null,
+          );
+          
+          _history.add(wordResult);
+          _wordUIStates[wordResult] = state;
+        }
+      } catch (e, stackTrace) {
+        Global.logger.e('恢复上一个单词的历史状态失败', error: e, stackTrace: stackTrace);
+      }
+
       if (_currentGetWordResult == null) {
         Global.logger
             .e('loadData: _currentGetWordResult is null after getNextWord');
@@ -2191,6 +2252,52 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         // 只有非“已完成”且非“无词”的结果才存入历史
         if (!_currentGetWordResult!.finished && !_currentGetWordResult!.noWord) {
           _history.add(_currentGetWordResult!);
+          
+          // 持久化上一个单词
+          try {
+            final state = _wordUIStates[_currentGetWordResult!];
+            if (state != null) {
+              final targetWord = _currentGetWordResult!.learningWord?.word;
+              final others = _currentGetWordResult!.otherWords;
+              
+              final lastWordData = {
+                'wordResult': _currentGetWordResult!.toJson(),
+                'state': {
+                  'hasFinishedAnswering': state.hasFinishedAnswering,
+                  'canLeaveCurrWord': state.canLeaveCurrWord,
+                  'showSentenceTranslation': state.showSentenceTranslation,
+                  'selectedAnswerIndex': state.selectedAnswerIndex,
+                  'flippedAnswerIndices': state.flippedAnswerIndices.toList(),
+                  'tabIndex': state.tabIndex,
+                  'currentScore': state.currentScore,
+                  'meaningText': state.meaningText,
+                  'correctAnswerIndex': state.correctAnswerIndex,
+                  'fsrsItem': state.fsrsItem != null ? {
+                    'stability': state.fsrsItem!.stability,
+                    'difficulty': state.fsrsItem!.difficulty,
+                    'elapsedDays': state.fsrsItem!.elapsedDays,
+                    'scheduledDays': state.fsrsItem!.scheduledDays,
+                    'reps': state.fsrsItem!.reps,
+                    'lapses': state.fsrsItem!.lapses,
+                    'state': state.fsrsItem!.state.index,
+                  } : null,
+                  'daysSinceLastReview': state.daysSinceLastReview,
+                  'lastFsrsRating': state.lastFsrsRating?.index,
+                  'wordsIndices': state.words?.map((w) {
+                    if (w.spell == "[ 都不对 ]") return 3;
+                    if (targetWord != null && w.id == targetWord.id) return 0;
+                    if (others != null && others.isNotEmpty && w.id == others[0].id) return 1;
+                    if (others != null && others.length > 1 && w.id == others[1].id) return 2;
+                    return -1;
+                  }).toList(),
+                }
+              };
+              GetStorage().write('last_word_history_item', json.encode(lastWordData));
+            }
+          } catch (e, s) {
+            Global.logger.e('持久化上一个单词失败', error: e, stackTrace: s);
+          }
+
           if (_history.length > 20) {
             final removed = _history.removeAt(0);
             _wordUIStates.remove(removed);
@@ -2561,7 +2668,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       _restoreWordState(getWordResult);
 
       // 重新初始化TabController以适应动态tabs，此时已恢复了之前的 _currentTabIndex
-      _reinitializeTabController();
+      _reinitializeTabController(preserveCurrentIndex: true);
 
       // 如果仅返回了ID，则本地补全单词详情与释义
       if (_word != null && (_word!.spell.isEmpty)) {
@@ -5014,7 +5121,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               runSpacing: 4,
               children: [
                 // 上一个按钮
-                if (_history.isNotEmpty)
+                if (_historyIndex != -1)
+                  _buildTopActionButton(
+                    icon: Icons.arrow_forward,
+                    label: '返回',
+                    onTap: () => getNextWord(false),
+                  )
+                else if (_history.isNotEmpty)
                   _buildTopActionButton(
                     icon: Icons.skip_previous_outlined,
                     label: '回看',
