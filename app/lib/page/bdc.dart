@@ -866,6 +866,55 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
   }
 
+  void _persistLastWordHistoryItem() {
+    try {
+      final state = _wordUIStates[_currentGetWordResult!];
+      if (state != null) {
+        final targetWord = _currentGetWordResult!.learningWord?.word;
+        final others = _currentGetWordResult!.otherWords;
+        
+        final lastWordData = {
+          'wordResult': _currentGetWordResult!.toJson(),
+          'state': {
+            'hasFinishedAnswering': state.hasFinishedAnswering,
+            'canLeaveCurrWord': state.canLeaveCurrWord,
+            'showSentenceTranslation': state.showSentenceTranslation,
+            'selectedAnswerIndex': state.selectedAnswerIndex,
+            'flippedAnswerIndices': state.flippedAnswerIndices.toList(),
+            'tabIndex': state.tabIndex,
+            'currentScore': state.currentScore,
+            'meaningText': state.meaningText,
+            'correctAnswerIndex': state.correctAnswerIndex,
+            'fsrsItem': state.fsrsItem != null ? {
+              'stability': state.fsrsItem!.stability,
+              'difficulty': state.fsrsItem!.difficulty,
+              'elapsedDays': state.fsrsItem!.elapsedDays,
+              'scheduledDays': state.fsrsItem!.scheduledDays,
+              'reps': state.fsrsItem!.reps,
+              'lapses': state.fsrsItem!.lapses,
+              'state': state.fsrsItem!.state.index,
+            } : null,
+            'daysSinceLastReview': state.daysSinceLastReview,
+            'lastFsrsRating': state.lastFsrsRating?.index,
+            'asrMatchedMeaningItemParts': state.asrMatchedMeaningItemParts?.map((p) => [p.first, p.second]).toList(),
+            'asrRevealedMeaningItemParts': state.asrRevealedMeaningItemParts?.map((p) => [p.first, p.second]).toList(),
+            'currentAsrCandidates': state.currentAsrCandidates,
+            'wordsIndices': state.words?.map((w) {
+              if (w.spell == "[ 都不对 ]") return 3;
+              if (targetWord != null && w.id == targetWord.id) return 0;
+              if (others != null && others.isNotEmpty && w.id == others[0].id) return 1;
+              if (others != null && others.length > 1 && w.id == others[1].id) return 2;
+              return -1;
+            }).toList(),
+          }
+        };
+        GetStorage().write('last_word_history_item', json.encode(lastWordData));
+      }
+    } catch (e, s) {
+      Global.logger.e('持久化上一个单词失败', error: e, stackTrace: s);
+    }
+  }
+
   void _restoreWordState(GetWordResult result) {
     final state = _wordUIStates[result];
     if (state != null) {
@@ -2230,6 +2279,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             nextFsrs: _fsrsItem!,
             newRating: _lastFsrsRating!,
           );
+          _saveCurrentWordState();
+          _persistLastWordHistoryItem();
         }
 
         _slideDirection = 1.0;
@@ -2282,52 +2333,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           _history.add(_currentGetWordResult!);
           
           // 持久化上一个单词
-          try {
-            final state = _wordUIStates[_currentGetWordResult!];
-            if (state != null) {
-              final targetWord = _currentGetWordResult!.learningWord?.word;
-              final others = _currentGetWordResult!.otherWords;
-              
-              final lastWordData = {
-                'wordResult': _currentGetWordResult!.toJson(),
-                'state': {
-                  'hasFinishedAnswering': state.hasFinishedAnswering,
-                  'canLeaveCurrWord': state.canLeaveCurrWord,
-                  'showSentenceTranslation': state.showSentenceTranslation,
-                  'selectedAnswerIndex': state.selectedAnswerIndex,
-                  'flippedAnswerIndices': state.flippedAnswerIndices.toList(),
-                  'tabIndex': state.tabIndex,
-                  'currentScore': state.currentScore,
-                  'meaningText': state.meaningText,
-                  'correctAnswerIndex': state.correctAnswerIndex,
-                  'fsrsItem': state.fsrsItem != null ? {
-                    'stability': state.fsrsItem!.stability,
-                    'difficulty': state.fsrsItem!.difficulty,
-                    'elapsedDays': state.fsrsItem!.elapsedDays,
-                    'scheduledDays': state.fsrsItem!.scheduledDays,
-                    'reps': state.fsrsItem!.reps,
-                    'lapses': state.fsrsItem!.lapses,
-                    'state': state.fsrsItem!.state.index,
-                  } : null,
-                  'daysSinceLastReview': state.daysSinceLastReview,
-                  'lastFsrsRating': state.lastFsrsRating?.index,
-                  'asrMatchedMeaningItemParts': state.asrMatchedMeaningItemParts?.map((p) => [p.first, p.second]).toList(),
-                  'asrRevealedMeaningItemParts': state.asrRevealedMeaningItemParts?.map((p) => [p.first, p.second]).toList(),
-                  'currentAsrCandidates': state.currentAsrCandidates,
-                  'wordsIndices': state.words?.map((w) {
-                    if (w.spell == "[ 都不对 ]") return 3;
-                    if (targetWord != null && w.id == targetWord.id) return 0;
-                    if (others != null && others.isNotEmpty && w.id == others[0].id) return 1;
-                    if (others != null && others.length > 1 && w.id == others[1].id) return 2;
-                    return -1;
-                  }).toList(),
-                }
-              };
-              GetStorage().write('last_word_history_item', json.encode(lastWordData));
-            }
-          } catch (e, s) {
-            Global.logger.e('持久化上一个单词失败', error: e, stackTrace: s);
-          }
+          _persistLastWordHistoryItem();
 
           if (_history.length > 20) {
             final removed = _history.removeAt(0);
