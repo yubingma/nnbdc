@@ -144,7 +144,7 @@ class StudyCacheManager {
       _cachedTodayWords!.sort((a, b) {
         final batchCompare = (a.batchId ?? 0).compareTo(b.batchId ?? 0);
         if (batchCompare != 0) return batchCompare;
-        return (a.learningOrder ?? 0).compareTo(b.learningOrder ?? 0);
+        return a.learningOrder.compareTo(b.learningOrder);
       });
     }
 

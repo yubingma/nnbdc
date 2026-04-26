@@ -13,6 +13,7 @@ import 'package:drift/drift.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/services/study_cache_manager.dart';
 
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
@@ -329,6 +330,12 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
     await db.transaction(() async {
       try {
+        final List<LearningWord> updatedLearningWords = [];
+        final List<String> newMasteredWordIds = [];
+        final List<String> removedLearningWordIds = [];
+        
+        final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
+
         for (var log in backendToLocal) {
           try {
             // 处理BATCH_DELETE操作类型
@@ -381,8 +388,10 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               LearningWord entity = LearningWord.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.learningWordsDao.saveEntity(entity, false);
+                updatedLearningWords.add(entity);
               } else if (log.operate == 'DELETE') {
                 await db.learningWordsDao.deleteEntity(entity, false);
+                removedLearningWordIds.add(entity.wordId);
               }
             } else if (log.tblName == 'masteredWords') {
               // 已废弃：mastered_word 已迁移到 dict + dict_word 体系
@@ -399,6 +408,9 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               final entity = DictWord.fromJson(entityJson);
               if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
                 await db.dictWordsDao.insertEntity(entity, false);
+                if (masteredDict != null && entity.dictId == masteredDict.id) {
+                  newMasteredWordIds.add(entity.wordId);
+                }
               } else if (log.operate == 'DELETE') {
                 await db.dictWordsDao.deleteEntity(entity, false);
               }
@@ -540,6 +552,16 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
         // 清空本地日志
         await db.userDbLogsDao.deleteUserDbLogs(userId);
+
+        // 多端增量同步内存缓存更新
+        if (updatedLearningWords.isNotEmpty || newMasteredWordIds.isNotEmpty || removedLearningWordIds.isNotEmpty) {
+          StudyCacheManager().mergeSyncData(db, userId,
+            updatedLearningWords: updatedLearningWords,
+            newMasteredWordIds: newMasteredWordIds,
+            removedLearningWordIds: removedLearningWordIds,
+          );
+          Global.logger.d('📥 [Sync-Cache] 已将多端同步增量数据合并至 StudyCacheManager');
+        }
 
         // 同步完成后，再次验证核心数据完整性
         await _validateCoreData(userId);

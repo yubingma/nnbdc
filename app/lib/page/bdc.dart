@@ -5815,7 +5815,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                     isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
                 break;
               case FsrsRating.good:
-              default:
                 ratingColor =
                     isDarkMode ? AppTheme.primaryColor : AppTheme.primaryColor;
                 break;

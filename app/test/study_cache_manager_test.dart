@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter/services.dart';
 
 void main() {
@@ -165,7 +164,7 @@ void main() {
       final masteredIds = await StudyCacheManager().getMasteredWordIds(db, uniqueUserId);
       final todayWords = await StudyCacheManager().getTodayWords(db, uniqueUserId);
 
-      print('DEBUG: uniqueUserId=$uniqueUserId, learningIds=$learningIds');
+
 
       // 验证缓存与数据库一致
       expect(learningIds.contains('word_1'), true);
