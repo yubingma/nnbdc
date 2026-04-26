@@ -5125,7 +5125,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                   _buildTopActionButton(
                     icon: Icons.arrow_forward,
                     label: '返回',
-                    onTap: () => getNextWord(false),
+                    onTap: () => getNextWord(true, fsrsRating: _lastFsrsRating),
                   )
                 else if (_history.isNotEmpty)
                   _buildTopActionButton(
