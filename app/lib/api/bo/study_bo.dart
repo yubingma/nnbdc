@@ -1080,7 +1080,8 @@ class StudyBo {
       // 更新错词的时间，表示再次答错
       await db.userWrongWordsDao.saveEntity(
           existingWrongWord.copyWith(
-            updateTime: Value(now),
+            createTime: now, // 纯 DateTime?
+            updateTime: Value(now), // Value<DateTime?>
           ),
           true);
       Global.logger.d('错词已存在，更新时间: ${wrongWord.wordId}');

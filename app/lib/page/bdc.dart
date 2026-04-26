@@ -2222,6 +2222,16 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     // 历史模式处理
     if (_historyIndex != -1) {
       if (gotoNext) {
+        // 在离开回看状态前，把用户最终改动的 FSRS 结果落库持久化
+        final lw = _currentGetWordResult?.learningWord;
+        if (lw != null && _fsrsItem != null && _lastFsrsRating != null) {
+          StudyBo().saveHistoryFSRSUpdate(
+            currWord: lw,
+            nextFsrs: _fsrsItem!,
+            newRating: _lastFsrsRating!,
+          );
+        }
+
         _slideDirection = 1.0;
         _historyIndex++;
         if (_historyIndex >= _history.length) {
@@ -5613,13 +5623,6 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           );
           _fsrsItem = fsrs.next(prevItem, newRating, _daysSinceLastReview ?? 0);
         }
-
-        // 无论是否处于回看模式，弹窗修改即视为最终决定，立即持久化保存
-        StudyBo().saveHistoryFSRSUpdate(
-          currWord: lw,
-          nextFsrs: _fsrsItem!,
-          newRating: newRating,
-        );
       }
     });
   }
