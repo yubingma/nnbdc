@@ -257,6 +257,7 @@ class _WordListsPageState extends State<WordListsPage> {
 
   @override
   Widget build(BuildContext context) {
+    Global.logger.d('[EventBus Debug] WordListsPage build() 正在执行！！！');
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA);
     final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
