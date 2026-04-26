@@ -11,15 +11,13 @@ class StudyCacheManager {
   Set<String>? _cachedMasteredWordIds;
   Set<String>? _cachedLearningWordIds;
   List<LearningWord>? _cachedTodayWords;
-
   void clear() {
     _cachedUserId = null;
     _cachedMasteredWordIds = null;
     _cachedLearningWordIds = null;
     _cachedTodayWords = null;
   }
-
-  void _checkUser(String userId) {
+  void _checkUser(MyDatabase db, String userId) {
     if (_cachedUserId != userId) {
       _cachedUserId = userId;
       _cachedMasteredWordIds = null;
@@ -29,7 +27,7 @@ class StudyCacheManager {
   }
 
   Future<Set<String>> getLearningWordIds(MyDatabase db, String userId) async {
-    _checkUser(userId);
+    _checkUser(db, userId);
     if (_cachedLearningWordIds == null) {
       final query = db.select(db.learningWords)..where((tbl) => tbl.userId.equals(userId));
       final words = await query.get();
@@ -39,7 +37,7 @@ class StudyCacheManager {
   }
 
   Future<Set<String>> getMasteredWordIds(MyDatabase db, String userId) async {
-    _checkUser(userId);
+    _checkUser(db, userId);
     if (_cachedMasteredWordIds == null) {
       final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(userId);
       _cachedMasteredWordIds = masteredWords.map((e) => e.wordId).toSet();
@@ -48,7 +46,7 @@ class StudyCacheManager {
   }
 
   Future<List<LearningWord>> getTodayWords(MyDatabase db, String userId) async {
-    _checkUser(userId);
+    _checkUser(db, userId);
     if (_cachedTodayWords == null) {
       final query = db.select(db.learningWords)
         ..where((tbl) => tbl.userId.equals(userId) & tbl.batchId.isBiggerThanValue(0))
@@ -63,7 +61,7 @@ class StudyCacheManager {
 
   /// 保存单词状态并同步缓存（核心：保证数据库与缓存一致）
   Future<void> saveAndSyncWordState(MyDatabase db, LearningWord updatedWord) async {
-    _checkUser(updatedWord.userId);
+    _checkUser(db, updatedWord.userId);
     
     // 1. 落库
     await db.learningWordsDao.saveEntity(updatedWord, true);
@@ -92,7 +90,7 @@ class StudyCacheManager {
 
   /// 标记已掌握并同步缓存
   Future<void> saveMasteredWordAndSync(MyDatabase db, String userId, String wordId) async {
-    _checkUser(userId);
+    _checkUser(db, userId);
     
     await db.masteredWordsDao.saveMasteredWord(userId, wordId, true, true);
     
@@ -102,7 +100,7 @@ class StudyCacheManager {
 
   /// 移除今日单词并同步缓存
   Future<void> deleteAndSyncWordState(MyDatabase db, LearningWord learningWord) async {
-    _checkUser(learningWord.userId);
+    _checkUser(db, learningWord.userId);
     
     await db.learningWordsDao.deleteEntity(learningWord, true);
     
