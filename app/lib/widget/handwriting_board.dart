@@ -484,48 +484,6 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             
             final p = event.localPosition;
             
-            // 碰撞检测：扫过即触发
-            if (!isNarrow && rewriteZone.contains(p) && !_rewriteTriggered) {
-              _rewriteTriggered = true;
-              setState(() => _activeZone = 1);
-              HapticFeedback.lightImpact();
-              
-              _autoRecognizeTimer?.cancel(); // 取消自动识别
-              _pendingRewardTask?.cancel();
-              
-              // 立即执行清空，不再等待 250ms
-              _controller.clear(); 
-              widget.onRewrite();
-              
-              // 延时恢复视觉状态即可
-              Timer(const Duration(milliseconds: 200), () {
-                if (mounted) setState(() => _activeZone = 0);
-              });
-            }
-            if (!isNarrow && undoZone.contains(p) && !_undoTriggered) {
-              _undoTriggered = true;
-              setState(() => _activeZone = 2);
-              HapticFeedback.lightImpact();
-              
-              _autoRecognizeTimer?.cancel();
-              _pendingUndoTask?.cancel();
-              _pendingUndoTask = Timer(const Duration(milliseconds: 200), () {
-                 if (mounted) {
-                   _controller.removeLast();
-                   widget.onUndo();
-                   Future.delayed(const Duration(milliseconds: 100), () {
-                    if (mounted) setState(() => _activeZone = 0);
-                  });
-                }
-              });
-            }
-            if (!isNarrow && closeZone.contains(p) && !_closeTriggered) {
-              _closeTriggered = true;
-              setState(() => _activeZone = 3);
-              HapticFeedback.lightImpact();
-              widget.onCancel?.call();
-            }
-
             _controller.move(p, event.localDelta);
           },
           onPointerUp: (event) {
@@ -539,54 +497,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             try {
               final p = event.localPosition;
               
-              // 先检查是否有全屏/回退手势 (增加空判断，修复 Bad state: No element)
-              if (_controller.rawLines.isNotEmpty) {
-                final swipeStatus = _controller._detectSwipe(_controller.rawLines.last);
-                if (swipeStatus != 0) {
-                  // 如果是手势，取消所有感应区的任务
-                  _pendingRewardTask?.cancel();
-                  _pendingUndoTask?.cancel();
-                  setState(() => _activeZone = 0);
-                  
-                  // 标记为已触发，防止下方点击检测再次触发
-                  _rewriteTriggered = true; 
-                  _undoTriggered = true;
-
-                  // 执行手势动作
-                  if (swipeStatus == 2) {
-                    // 向左滑：删除最后一笔 (撤销)
-                    _controller.removeLast(); // 1. 先删掉这道“划痕”手势本身
-                    _controller.removeLast(); // 2. 再删掉上一笔真正的内容笔迹
-                    widget.onUndo();
-                    HapticFeedback.mediumImpact();
-
-                    // 如果删完后画板空了，同步清空外部输入框
-                    if (widget.lines.isEmpty) {
-                      widget.onRewrite();
-                    }
-                  } else if (swipeStatus == 1) {
-                    // 向右滑：清除全部 (重写)
-                    _controller.clear();
-                    widget.onRewrite();
-                    HapticFeedback.mediumImpact();
-                  } else if (widget.enableNavigationGestures && swipeStatus == 3) {
-                    // 向上滑：下一个单词
-                    _controller.clear();
-                    widget.onRewrite();
-                    widget.onSwipeUp?.call();
-                    HapticFeedback.mediumImpact();
-                  } else if (widget.enableNavigationGestures && swipeStatus == 4) {
-                    // 向下滑：上一个单词
-                    _controller.clear();
-                    widget.onRewrite();
-                    widget.onSwipeDown?.call();
-                    HapticFeedback.mediumImpact();
-                  }
-                }
-              }
+              // 移除了全屏滑动手势判定，仅使用底部控制按钮和正常书写
 
               // 点击检测：重写
-              if (!_rewriteTriggered && rewriteZone.contains(p)) {
+              if (!_rewriteTriggered && rewriteZone.contains(p) && (_controller.rawLines.isEmpty || _controller.rawLines.last.length < 5)) {
                 _rewriteTriggered = true;
                 setState(() => _activeZone = 1);
                 HapticFeedback.lightImpact();
@@ -600,7 +514,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 Timer(const Duration(milliseconds: 200), () {
                   if (mounted) setState(() => _activeZone = 0);
                 });
-              } else if (!_undoTriggered && undoZone.contains(p)) {
+              } else if (!_undoTriggered && undoZone.contains(p) && (_controller.rawLines.isEmpty || _controller.rawLines.last.length < 5)) {
                 _undoTriggered = true;
                 setState(() => _activeZone = 2);
                 HapticFeedback.lightImpact();
@@ -619,7 +533,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                 } else {
                   widget.onRewrite(); // 这会触发 _clear() 并重置视觉状态
                 }
-              } else if (!_closeTriggered && closeZone.contains(p)) {
+              } else if (!_closeTriggered && closeZone.contains(p) && (_controller.rawLines.isEmpty || _controller.rawLines.last.length < 5)) {
                 _closeTriggered = true;
                 setState(() => _activeZone = 3);
                 HapticFeedback.lightImpact();
@@ -981,43 +895,7 @@ class _HandwritingController extends ChangeNotifier {
     }
   }
 
-  /// 简单高效的“划掉”识别：检测到一个贯穿性的长横笔
-  /// 手势识别：0:无, 1:从左往右(清除全部), 2:从右往左(删除最后一笔)
-  int _detectSwipe(List<Offset> stroke) {
-    if (stroke.length < 5) return 0;
-    
-    double minX = double.infinity, minY = double.infinity;
-    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
-    for (var p in stroke) {
-      if (p.dx < minX) minX = p.dx;
-      if (p.dx > maxX) maxX = p.dx;
-      if (p.dy < minY) minY = p.dy;
-      if (p.dy > maxY) maxY = p.dy;
-    }
 
-    double width = maxX - minX;
-    double height = maxY - minY;
-
-    // 判定条件：长横扫动作
-    if (width > 160 && width > height * 2.0) {
-      // 检查方向：位移超过 50 像素即认定方向有效
-      if (stroke.first.dx - stroke.last.dx > 50) {
-        return 2; // Right to Left (向左滑)
-      } else if (stroke.last.dx - stroke.first.dx > 50) {
-        return 1; // Left to Right (向右滑)
-      }
-    }
-    
-    // 判定条件：长纵扫动作
-    if (height > 160 && height > width * 2.0) {
-      if (stroke.first.dy - stroke.last.dy > 50) {
-        return 3; // Bottom to Top (向上滑)
-      } else if (stroke.last.dy - stroke.first.dy > 50) {
-        return 4; // Top to Bottom (向下滑)
-      }
-    }
-    return 0;
-  }
 }
 
 class _HandwritingPainter extends CustomPainter {

@@ -1522,6 +1522,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       setState(() {
         _showHandwritingBoard = false; // 立即关闭且回到主界面
       });
+      _doHandleTabChangeForAsr();
     }
 
     // 计算 FSRS 预览结果
@@ -1685,6 +1686,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         setState(() {
           _showHandwritingBoard = false;
         });
+        _doHandleTabChangeForAsr();
         SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
         return;
       }
@@ -1739,6 +1741,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             setState(() {
               _showHandwritingBoard = false; // 立即关闭当前输入界面回到当前单词
             });
+            _doHandleTabChangeForAsr();
           }
           if (!wasAlreadyCorrect) {
             // 同步计算 FSRS 评分
@@ -1919,6 +1922,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             setState(() {
               _showHandwritingBoard = false;
             });
+            _doHandleTabChangeForAsr();
           }
           SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
           return;
@@ -3780,6 +3784,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                       setState(() {
                         _showHandwritingBoard = false;
                       });
+                      _doHandleTabChangeForAsr();
                     },
                   ),
                 ),
@@ -3876,6 +3881,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                 setState(() {
                                   _showHandwritingBoard = false;
                                 });
+                                _doHandleTabChangeForAsr();
                               },
                             ),
                           ],
