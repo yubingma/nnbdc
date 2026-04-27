@@ -11,12 +11,16 @@ String getProcessedText(String target, String text) {
       anchors.add({'idx': i, 'type': 'd'});
     } else if (lowerTarget[i] == 'c' && (i + 1) < lowerTarget.length && lowerTarget[i + 1] == 'l') {
       anchors.add({'idx': i, 'type': 'cl'});
+    } else if (lowerTarget[i] == 'h') {
+      anchors.add({'idx': i, 'type': 'h'});
+    } else if (lowerTarget[i] == 'n') {
+      anchors.add({'idx': i, 'type': 'n'});
     }
   }
   
   for (int idx = 0; idx < text.length; idx++) {
     final iChar = text[idx].toLowerCase();
-    if (iChar == 'd' && anchors.isNotEmpty) {
+    if ((iChar == 'd' || iChar == 'h' || iChar == 'n') && anchors.isNotEmpty) {
       Map<String, dynamic> nearestAnchor = anchors[0];
       int minDistance = (idx - (anchors[0]['idx'] as int)).abs();
       
@@ -28,9 +32,16 @@ String getProcessedText(String target, String text) {
         }
       }
       
-      // 距离安全阈值防护罩：如果距离锚点太远，绝不强行匹配！
-      if (nearestAnchor['type'] == 'cl' && minDistance <= 3) {
+      if (iChar == 'd' && nearestAnchor['type'] == 'cl') {
         processedText += (text[idx] == 'D') ? 'CL' : 'cl';
+        continue;
+      }
+      if (iChar == 'h' && nearestAnchor['type'] == 'n') {
+        processedText += (text[idx] == 'H') ? 'N' : 'n';
+        continue;
+      }
+      if (iChar == 'n' && nearestAnchor['type'] == 'h') {
+        processedText += (text[idx] == 'N') ? 'H' : 'h';
         continue;
       }
     }
@@ -103,6 +114,28 @@ void main() {
       final processedText = getProcessedText(target, rawInput);
       final isMatch = isSuperMatch(target, processedText);
       expect(isMatch, false); 
+    });
+
+    test('场景 F：手写 H 被误认为 N (如 hat)', () {
+      final target = 'hat';
+      final rawInput = 'nat'; 
+      
+      final processedText = getProcessedText(target, rawInput);
+      expect(processedText, 'hat'); 
+      
+      final isMatch = isSuperMatch(target, processedText);
+      expect(isMatch, true); 
+    });
+
+    test('场景 G：手写 N 被误认为 H (如 nice)', () {
+      final target = 'nice';
+      final rawInput = 'hice'; 
+      
+      final processedText = getProcessedText(target, rawInput);
+      expect(processedText, 'nice'); 
+      
+      final isMatch = isSuperMatch(target, processedText);
+      expect(isMatch, true); 
     });
   });
 }

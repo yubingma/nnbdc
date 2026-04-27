@@ -4302,20 +4302,24 @@ class WordListPageState extends State<WordListPage>
                       String processedText = "";
                       final String lowerTarget = targetWord.word.spell.toLowerCase();
                       
-                      // 1. 提取正确单词中所有 D 和 CL 的【物理锚点序列】
+                      // 1. 提取正确单词中所有 D、CL、H、N 的【物理锚点序列】
                       List<Map<String, dynamic>> anchors = [];
                       for (int i = 0; i < lowerTarget.length; i++) {
                         if (lowerTarget[i] == 'd') {
                           anchors.add({'idx': i, 'type': 'd'});
                         } else if (lowerTarget[i] == 'c' && (i + 1) < lowerTarget.length && lowerTarget[i + 1] == 'l') {
                           anchors.add({'idx': i, 'type': 'cl'});
+                        } else if (lowerTarget[i] == 'h') {
+                          anchors.add({'idx': i, 'type': 'h'});
+                        } else if (lowerTarget[i] == 'n') {
+                          anchors.add({'idx': i, 'type': 'n'});
                         }
                       }
                       
                       // 2. 遍历用户输入的 text，基于“物理距离最近”判定真伪
                       for (int idx = 0; idx < text.length; idx++) {
                         final iChar = text[idx].toLowerCase();
-                        if (iChar == 'd' && anchors.isNotEmpty) {
+                        if ((iChar == 'd' || iChar == 'h' || iChar == 'n') && anchors.isNotEmpty) {
                           Map<String, dynamic> nearestAnchor = anchors[0];
                           int minDistance = (idx - (anchors[0]['idx'] as int)).abs();
                           
@@ -4327,8 +4331,18 @@ class WordListPageState extends State<WordListPage>
                             }
                           }
                           
-                          if (nearestAnchor['type'] == 'cl') {
+                          // D 与 CL 连写容错
+                          if (iChar == 'd' && nearestAnchor['type'] == 'cl') {
                             processedText += (text[idx] == 'D') ? 'CL' : 'cl';
+                            continue;
+                          }
+                          // H 与 N 连写容错
+                          if (iChar == 'h' && nearestAnchor['type'] == 'n') {
+                            processedText += (text[idx] == 'H') ? 'N' : 'n';
+                            continue;
+                          }
+                          if (iChar == 'n' && nearestAnchor['type'] == 'h') {
+                            processedText += (text[idx] == 'N') ? 'H' : 'h';
                             continue;
                           }
                         }
