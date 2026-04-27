@@ -305,6 +305,18 @@ public class DictImportBo {
                     linkDictToGroup(dictId, targetDictGroupId);
                 }
                 
+                List<?> rawGroupIds = (List<?>) config.get("targetDictGroupIds");
+                if (rawGroupIds != null && !rawGroupIds.isEmpty()) {
+                    for (Object idObj : rawGroupIds) {
+                        if (idObj instanceof String) {
+                            String gid = (String) idObj;
+                            if (!gid.trim().isEmpty()) {
+                                linkDictToGroup(dictId, gid);
+                            }
+                        }
+                    }
+                }
+                
                 if (rawGameHallIds != null && !rawGameHallIds.isEmpty()) {
                     for (Object idObj : rawGameHallIds) {
                         if (idObj instanceof String) {
@@ -326,8 +338,19 @@ public class DictImportBo {
                         if (targetDictGroupId != null && !targetDictGroupId.trim().isEmpty()) {
                             linkDictToGroup(sDict.getId(), targetDictGroupId);
                         }
+                        if (rawGroupIds != null && !rawGroupIds.isEmpty()) {
+                            for (Object idObj : rawGroupIds) {
+                                if (idObj instanceof String) {
+                                    String gid = (String) idObj;
+                                    if (!gid.trim().isEmpty()) {
+                                        linkDictToGroup(sDict.getId(), gid);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
+
             }
 
             task = importTaskBo.findById(taskId); // 重新加载以防状态冲突

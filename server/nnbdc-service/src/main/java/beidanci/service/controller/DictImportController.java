@@ -128,7 +128,10 @@ public class DictImportController {
     }
     @SuppressWarnings("unchecked")
     @PostMapping("/batch")
-    public Result<String> batchSubmit(@RequestParam String dirPath) {
+    public Result<String> batchSubmit(@RequestParam String dirPath,
+                                      @RequestParam(required = false) List<String> defaultDictGroupIds,
+                                      @RequestParam(required = false) List<String> defaultGameHallIds) {
+
         String batchId = "BATCH_" + System.currentTimeMillis();
         try {
             File metaFile = new File(dirPath, "meta.json");
@@ -161,7 +164,15 @@ public class DictImportController {
             boolean generateWordImage = (boolean) metaMap.getOrDefault("generateWordImage", false);
             boolean generateShuffledVersion = (boolean) metaMap.getOrDefault("generateShuffledVersion", false);
             String globalGroupId = (String) metaMap.get("targetDictGroupId");
+            List<String> globalGroupIds = (List<String>) metaMap.get("targetDictGroupIds");
             List<String> globalGameHallIds = (List<String>) metaMap.get("targetGameHallIds");
+
+            if ((globalGroupId == null || globalGroupId.trim().isEmpty()) && (globalGroupIds == null || globalGroupIds.isEmpty())) {
+                globalGroupIds = defaultDictGroupIds;
+            }
+            if (globalGameHallIds == null || globalGameHallIds.isEmpty()) {
+                globalGameHallIds = defaultGameHallIds;
+            }
 
             int createdCount = 0;
 
@@ -172,14 +183,16 @@ public class DictImportController {
                 String domain = (String) book.get("domain");
                 String description = (String) book.get("description");
                 String targetDictGroupId = (String) book.get("targetDictGroupId");
+                List<String> targetDictGroupIds = (List<String>) book.get("targetDictGroupIds");
                 List<String> targetGameHallIds = (List<String>) book.get("targetGameHallIds");
 
-                if (targetDictGroupId == null || targetDictGroupId.trim().isEmpty()) {
-                    targetDictGroupId = globalGroupId;
+                if ((targetDictGroupId == null || targetDictGroupId.trim().isEmpty()) && (targetDictGroupIds == null || targetDictGroupIds.isEmpty())) {
+                    targetDictGroupIds = globalGroupIds;
                 }
                 if (targetGameHallIds == null || targetGameHallIds.isEmpty()) {
                     targetGameHallIds = globalGameHallIds;
                 }
+
 
                 // 读取对应的 TXT 文件提取单词
                 File txtFile = new File(dirPath, fileName);
@@ -210,7 +223,9 @@ public class DictImportController {
                 configMap.put("domain", domain);
                 configMap.put("description", description);
                 configMap.put("targetDictGroupId", targetDictGroupId);
+                configMap.put("targetDictGroupIds", targetDictGroupIds);
                 configMap.put("targetGameHallIds", targetGameHallIds);
+
                 configMap.put("words", words);
 
                 ImportTask task = new ImportTask();
