@@ -44,6 +44,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   List<List<Offset>> _lines = [];
   bool _isRecognizing = false;
   int _recognitionVersion = 0;
+  final GlobalKey<_HandwritingCanvasState> _canvasKey = GlobalKey<_HandwritingCanvasState>();
 
   void clearBoard() {
     setState(() {
@@ -56,11 +57,11 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   }
 
   void clearBoardSilently() {
-    setState(() {
-      _lines = [];
-      _isRecognizing = false;
-      _recognitionVersion++;
-    });
+    // 彻底摒弃任何 setState 的触发，直接打穿底层控制器的内存状态进行局部 Canvas 重绘！
+    _canvasKey.currentState?._controller.clear();
+    _lines.clear();
+    _isRecognizing = false;
+    _recognitionVersion++;
   }
 
   void _clear() {
@@ -305,6 +306,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
             child: Stack(
               children: [
                 _HandwritingCanvas(
+                  key: _canvasKey,
                   lines: _lines,
                   isRecognizing: _isRecognizing,
                   onRewrite: _clear,
@@ -342,6 +344,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final double smartRightZoneWidth;
 
   const _HandwritingCanvas({
+    super.key,
     required this.lines,
     required this.isRecognizing,
     required this.onRewrite,
