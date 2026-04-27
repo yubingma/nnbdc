@@ -2965,27 +2965,31 @@ class WordListPageState extends State<WordListPage>
                     ),
                   ),
 
-                    ],
-                  ),
+              ],
+            ),
+          ),
+          if (studyMode == WordListStudyMode.dictationHandwriting)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                onWordPressed(word, i, false, null);
+                _handwritingBoardKey.currentState?.clearBoardSilently();
+              },
+              child: Container(
+                width: 60,
+                color: Colors.transparent,
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.edit_rounded,
+                  size: 20,
+                  color: isBookmarked
+                      ? const Color(0xFF0097A7)
+                      : (isDarkMode ? Colors.white38 : Colors.black38),
                 ),
-                if (studyMode == WordListStudyMode.dictationHandwriting)
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      onWordPressed(word, i, false, null);
-                      _handwritingBoardKey.currentState?.clearBoardSilently();
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Icon(
-                        Icons.edit_rounded,
-                        size: 22,
-                        color: isBookmarked
-                            ? const Color(0xFF0097A7)
-                            : (isDarkMode ? Colors.white38 : Colors.black38),
-                      ),
-                    ),
-                  ),
+              ),
+            ),
+
+
 
               ],
             ),
