@@ -1,0 +1,985 @@
+0|galvanize
+0|fraught
+0|mortarboard
+0|graduation
+0|slump
+0|scion
+0|morph
+0|grunt
+0|testing
+0|revert
+0|nag
+0|the civil service
+0|detached
+0|technocratic
+0|recount
+0|episode
+0|cop
+0|daytime
+0|aimless
+0|comprehensive
+0|backside
+0|dead-end
+0|tricky
+0|proceed
+0|upcoming
+0|cutoff
+0|psychotherapist
+0|heal
+0|transition
+0|crucially
+0|offspring
+0|sap
+0|consultation
+0|pushy
+0|wary
+0|sympathetically
+0|setback
+0|scale
+0|nudge
+0|saddle
+0|advocate
+0|antidote
+0|apathy
+0|aerial
+0|photographic
+0|lounge
+0|corpse
+0|mortuary
+0|look on
+0|fork out
+0|turn down
+0|in the same boat
+0|pull pints
+0|come full circle
+0|take a soft line
+0|take a hard line
+0|if nothing else
+0|strike the right note
+0|by all means
+0|talk through
+0|go for sb.
+0|go for sth.
+0|hassle
+0|inland
+0|deduct
+0|repayment
+0|loan
+0|landlord
+0|dropout
+0|economics
+0|gamble
+0|fortunately
+0|belongings
+0|photocopy
+0|regular
+0|client
+0|demanding
+0|crust
+0|payday
+0|boyfriend
+0|anonymous
+0|highlight
+0|florist
+0|lot
+0|sympathize
+0|stock
+0|collateral
+0|odds
+0|redirect
+0|break
+0|investor
+0|thriving
+0|repay
+0|honesty
+0|if you ask me
+0|sth. is not all it's cracked up to be
+0|bang on
+0|out of the blue
+0|at this rate
+0|let alone
+0|have sb.'s eye on sth.
+0|bow towards the inevitable
+0|bow to the inevitable
+0|pack up
+0|end up
+0|by name
+0|to cut a long story short
+0|dead easy
+0|treat sb. to sth.
+0|cheer up
+0|pretty well
+0|pretty much
+0|for fear that
+0|exceed expectations
+0|exceed sb.'s expectations
+0|accessory
+0|navigator
+0|concise
+0|educational
+0|evaluation
+0|unrelated
+0|overdo
+0|embellish
+0|harmonize
+0|Europass
+0|enthusiastically
+0|freelancer
+0|mysterious
+0|wonderland
+0|observer
+0|disconcerting
+0|neglect
+0|normally
+0|interact
+0|landscape
+0|bookshop
+0|vista
+0|wrath
+0|dialect
+0|enchant
+0|exclude
+0|confront
+0|supremely
+0|influential
+0|bedtime
+0|hint
+0|mystical
+0|monk
+0|priest
+0|cite
+0|poetic
+0|meaninglessness
+0|immerse
+0|passivity
+0|foster
+0|coin
+0|home run
+0|base
+0|diamond
+0|runner
+0|likewise
+0|induce
+0|insistently
+0|desperately
+0|reproduce
+0|sensation
+0|withstand
+0|peace and quiet
+0|have sth. in common
+0|have sth. in common with sb.
+0|take the trouble
+0|take the trouble to do sth.
+0|seek out
+0|in one sitting
+0|goodly
+0|obstacle
+0|demoralize
+0|confession
+0|immorality
+0|whet
+0|classification
+0|prohibition
+0|recommendation
+0|throttle
+0|impulse
+0|misanthrope
+0|strive
+0|idle
+0|ammunition
+0|enrich
+0|threefold
+0|irrepressible
+0|gratuitous
+0|drown
+0|secretly
+0|wade
+0|advantageous
+0|rashly
+0|intensely
+0|earnestly
+0|forego
+0|enlightenment
+0|acumen
+0|tackle
+0|stature
+0|indubitably
+0|originality
+0|storehouse
+0|autobiographical
+0|repetitive
+0|realm
+0|prodigious
+0|unparalleled
+0|widely
+0|royally
+0|for the most part
+0|long to do sth.
+0|look upon
+0|mind you
+0|part with
+0|toy with
+0|stumble upon
+0|on the side
+0|as it were
+0|tribe
+0|missionary
+0|warrior
+0|undoing
+0|sacrifice
+0|tribespeople
+0|Christianity
+0|enthusiastic
+0|convert
+0|ringleader
+0|bitterly
+0|administrator
+0|pacification
+0|stereotypical
+0|portrayal
+0|colonizer
+0|invasion
+0|regiment
+0|assault
+0|occasional
+0|gunfire
+0|dodge
+0|casualty
+0|superficial
+0|graze
+0|fleshy
+0|fairly
+0|tactful
+0|mortal
+0|prehistoric
+0|functional
+0|waterproof
+0|modesty
+0|low-maintenance
+0|Scandinavian
+0|imply
+0|exclusively
+0|fashionista
+0|follower
+0|fabulous
+0|practicality
+0|gauge
+0|build
+0|exquisite
+0|dictate
+0|extravagant
+0|self-absorbed
+0|inappropriate
+0|accordingly
+0|favourable
+0|crisp
+0|combination
+0|sombre
+0|camouflage
+0|disguise
+0|funky
+0|businesslike
+0|outfit
+0|fabric
+0|adolescent
+0|romantic
+0|maternity
+0|pregnancy
+0|dubious
+0|necklace
+0|multi-coloured
+0|sneaker
+0|outing
+0|ubiquitous
+0|indicative
+0|chastening
+0|might as well
+0|might just as well
+0|at the expense of sth.
+0|run the risk
+0|run the risk of sth.
+0|dress down
+0|a sense of occasion
+0|work out
+0|highs and lows
+0|jewellery
+0|designer
+0|elusive
+0|scour
+0|sidle
+0|tumble
+0|magically
+0|luminous
+0|stint
+0|chunk
+0|officially
+0|gem
+0|amber
+0|tumbler
+0|bead
+0|pierce
+0|microfilament
+0|commission
+0|anklet
+0|engagement
+0|jeweller
+0|shingle
+0|cabinet
+0|preside
+0|stunning
+0|afield
+0|collector
+0|county
+0|tonne
+0|folly
+0|negligence
+0|disposal
+0|vastly
+0|credentials
+0|murky
+0|extraction
+0|revive
+0|dump
+0|condone
+0|chuck
+0|pounce
+0|spoil
+0|tide
+0|pebble
+0|hard and fast
+0|wear away
+0|chance upon
+0|turn out
+0|break down
+0|revolve around
+0|wise to sth.
+0|play into sb.'s hands
+0|wash up
+0|knot
+0|cravat
+0|Croatian
+0|necktie
+0|turndown
+0|wearer
+0|hippy
+0|width
+0|hemline
+0|contented
+0|transaction
+0|smoothly
+0|abject
+0|pathetic
+0|exclusive
+0|complaint
+0|technically
+0|credit rating
+0|indispensable
+0|desirable
+0|distinctive
+0|shiny
+0|potentially
+0|risk
+0|liable
+0|lure
+0|impoverished
+0|unrealistic
+0|charity shop
+0|thrift shop
+0|darling
+0|transpire
+0|suitability
+0|overseas
+0|current account
+0|checking account
+0|naturally
+0|correspondence
+0|overdraft
+0|omit
+0|exorbitant
+0|overspend
+0|sensibly
+0|sparingly
+0|notify
+0|restraint
+0|economical
+0|spree
+0|vanity
+0|greed
+0|crunch
+0|wicked
+0|banker
+0|publicity
+0|flashy
+0|yearn
+0|in full
+0|put down
+0|it transpired
+0|it transpired that
+0|sort out
+0|into the red
+0|out of the red
+0|omit to do sth.
+0|go from bad to worse
+0|lay out
+0|exceedingly
+0|harmonious
+0|somewhat
+0|crease
+0|alienate
+0|unnaturally
+0|circus
+0|clown
+0|amiable
+0|precarious
+0|respectful
+0|tremendous
+0|compassionate
+0|puppy
+0|seriously
+0|expenditure
+0|saving
+0|reckon
+0|ascertain
+0|breed
+0|leash
+0|sizeable
+0|healthcare
+0|vet
+0|doubtless
+0|injection
+0|medication
+0|enlighten
+0|leaflet
+0|scheme
+0|premium
+0|prediction
+0|crucial
+0|by any means
+0|know the meaning of sth.
+0|not know the meaning of sth.
+0|frown on
+0|for a rainy day
+0|add up
+0|gateway
+0|euroland
+0|euro
+0|adoption
+0|historic
+0|macroeconomic
+0|stability
+0|shaky
+0|stabilize
+0|sterling
+0|banknote
+0|uncontroversial
+0|diversity
+0|heritage
+0|Austrian
+0|openness
+0|metaphor
+0|architectural
+0|classical
+0|Romanesque
+0|doorway
+0|Gothic
+0|Baroque
+0|Art Nouveau
+0|gossip
+0|highbrow
+0|proportion
+0|dramatically
+0|findings
+0|womenfolk
+0|focus group
+0|initially
+0|semantics
+0|stigma
+0|unwritten
+0|stage whisper
+0|animated
+0|high-pitched
+0|scandalous
+0|unemotional
+0|sniff
+0|bemoan
+0|informant
+0|speculate
+0|motive
+0|exhaustive
+0|rake
+0|irrelevant
+0|unmanly
+0|appreciative
+0|reciprocate
+0|suitably
+0|inappropriately
+0|girly
+0|disturbingly
+0|effeminate
+0|decidedly
+0|camp
+0|etiquette
+0|juicy
+0|expletive
+0|acceptably
+0|masculine
+0|to the effect that
+0|staple
+0|linguistic
+0|alter
+0|unmarked
+0|presume
+0|singular
+0|plural
+0|frivolousness
+0|entrust
+0|doctorette
+0|poetess
+0|nominee
+0|eyelash
+0|cellulite
+0|denote
+0|marker
+0|make-up
+0|cowboy
+0|necklaced
+0|hippie
+0|slacks
+0|hairstyle
+0|staggering
+0|eloquent
+0|disqualify
+0|lace
+0|spike
+0|sexy
+0|unintended
+0|availability
+0|quote
+0|rub
+0|undermine
+0|alluring
+0|myriad
+0|hostile
+0|title
+0|professionally
+0|rebellious
+0|duck
+0|variously
+0|thereby
+0|uppity
+0|hence
+0|sarcastic
+0|over-achiever
+0|congratulatory
+0|surname
+0|miserable
+0|alphabetize
+0|go without saying
+0|go without saying that
+0|take account of sth.
+0|take sth. into account
+0|slip into
+0|catch sb. off guard
+0|catch sb. off their guard
+0|fill out
+0|other than
+0|have your cake and eat it
+0|feminism
+0|matriarchal
+0|patriarchal
+0|enormously
+0|contend
+0|liberation
+0|upheaval
+0|previously
+0|flex
+0|feminist
+0|discrimination
+0|harassment
+0|theorist
+0|eunuch
+0|intellectual
+0|contraceptive
+0|sexuality
+0|counterpart
+0|tolerant
+0|democracy
+0|might
+0|monstrous
+0|tyranny
+0|surpass
+0|lamentable
+0|Briton
+0|lord
+0|sickly
+0|lisp
+0|stammer
+0|degenerate
+0|shabby
+0|dispatch
+0|renowned
+0|swap
+0|suffragette
+0|trade unionist
+0|brutal
+0|weapon
+0|tapestry
+0|Admiralty
+0|offensive
+0|sanity
+0|onset
+0|bout
+0|unswervingly
+0|loyal
+0|amends
+0|trench
+0|chancellor
+0|backbench
+0|has-been
+0|retreat
+0|brandish
+0|nationalism
+0|infuriating
+0|limitless
+0|liquor
+0|billboard
+0|irony
+0|eccentricity
+0|big-heartedness
+0|on the brink of sth.
+0|on the brink of doing sth.
+0|pack off
+0|double as
+0|double up as
+0|law and order
+0|date back to
+0|get sb. out of
+0|take off
+0|sit out
+0|lay down your life
+0|sum up
+0|historian
+0|sharply
+0|presumably
+0|reasonably
+0|persuasively
+0|cut-and-dried
+0|memorize
+0|restricted
+0|artifact
+0|approximate
+0|quest
+0|recreate
+0|motivation
+0|sophistication
+0|subtlety
+0|investigate
+0|the high seas
+0|submarine
+0|dissatisfied
+0|warfare
+0|propaganda
+0|interception
+0|whereby
+0|territory
+0|emerge
+0|incomplete
+0|disagreement
+0|premise
+0|garrison
+0|inaccurate
+0|insufficient
+0|proximate
+0|probe
+0|sufficient
+0|self-evident
+0|eliminate
+0|unquestioned
+0|validity
+0|foolproof
+0|destined
+0|intriguing
+0|a state of affairs
+0|piece together
+0|in addition to sth.
+0|make of
+0|in that
+0|in other words
+0|spear
+0|earthenware
+0|lifeless
+0|authenticity
+0|uniformed
+0|period costume
+0|woodworking
+0|roundhouse
+0|settler
+0|restore
+0|manor house
+0|outburst
+0|structural
+0|creativity
+0|crystal
+0|utilitarian
+0|demountable
+0|transfer
+0|sculpture
+0|exhibit
+0|brotherhood
+0|borough
+0|ostensibly
+0|magnificent
+0|Monsieur
+0|extol
+0|utility
+0|lookout
+0|salubrity
+0|capable
+0|medieval
+0|Renaissance
+0|cathedral
+0|minaret
+0|Moslem
+0|worshipper
+0|civic
+0|gathering
+0|masonry
+0|gigantic
+0|lark
+0|essayist
+0|resounding
+0|indignant
+0|relent
+0|effete
+0|filigree
+0|exalt
+0|lightness
+0|widening
+0|initiator
+0|dismember
+0|vow
+0|tricolour
+0|panzer division
+0|Algerian
+0|dynamite
+0|opponent
+0|inconceivable
+0|chimney
+0|antenna
+0|skyscraper
+0|transcend
+0|leave aside
+0|so much the better
+0|love at first sight
+0|prose
+0|poetry
+0|ambiguity
+0|regional
+0|den
+0|dense
+0|texture
+0|contemplate
+0|moderate
+0|shanty
+0|shanty town
+0|organic
+0|layout
+0|prescribed
+0|discomfort
+0|aspire
+0|over-optimistic
+0|occupier
+0|brutalism
+0|reinforced concrete
+0|criticism
+0|modernist
+0|idealistic
+0|aesthetic
+0|faculty
+0|motorway
+0|suspension
+0|skyline
+0|igloo
+0|domed
+0|breathtaking
+0|literally
+0|baroque
+0|complexity
+0|sumptuous
+0|extravagance
+0|comprehensible
+0|supremacy
+0|prosperity
+0|high-rise
+0|rink
+0|sentiment
+0|worship
+0|ethics
+0|paradise
+0|cloister
+0|backdrop
+0|monastery
+0|commandment
+0|divine
+0|creator
+0|scope
+0|interpret
+0|in your own right
+0|do justice to
+0|do sb. justice
+0|do sth. justice
+0|arguably
+0|picturesque
+0|adobe
+0|stucco
+0|earth-tone
+0|tan
+0|beam
+0|colonize
+0|plaza
+0|nationality
+0|revival
+0|conform
+0|code
+0|resident
+0|upscale
+0|boutique
+0|Disneyland
+0|fragile
+0|centralize
+0|blend
+0|longitude
+0|excursion
+0|beaded
+0|coil
+0|hollow
+0|sphere
+0|intersect
+0|latitude
+0|haphazardly
+0|bronze
+0|orb
+0|see-through
+0|imaginary
+0|equator
+0|ecliptic
+0|tropic
+0|meridian
+0|prime meridian
+0|grid
+0|configuration
+0|underneath
+0|adrift
+0|repeatedly
+0|redraw
+0|girdle
+0|concentric
+0|converge
+0|crisscross
+0|cartographer
+0|landmark
+0|index
+0|alphabetical
+0|armchair
+0|misconception
+0|deformity
+0|arbitrarily
+0|predecessor
+0|heavenly
+0|placement
+0|child's play
+0|stump
+0|intervene
+0|geographical
+0|reset
+0|discrepancy
+0|girth
+0|mileage
+0|prerequisite
+0|wristwatch
+0|pendulum
+0|en route
+0|tropical
+0|thicken
+0|lubricate
+0|lubricating oil
+0|disastrous
+0|barometric
+0|barometric pressure
+0|subtle
+0|exploration
+0|willy-nilly
+0|the sands of time
+0|the better part of sth.
+0|worth one's salt
+0|countless
+0|invisible
+0|impalpable
+0|retain
+0|inkling
+0|nay
+0|molecule
+0|mudbank
+0|multitudinous
+0|maw
+0|hurricane
+0|canvas
+0|schooner
+0|conical
+0|bridle
+0|perpendicular
+0|gasket
+0|topmast
+0|raffle
+0|numb
+0|paralyzed
+0|endure
+0|lull
+0|sickening
+0|terrific
+0|muscular
+0|verge
+0|irresistibly
+0|cork
+0|maniacal
+0|splash
+0|masthead
+0|spout
+0|jostle
+0|waterfall
+0|thrice
+0|confound
+0|anarchy
+0|pit
+0|heathen
+0|rip
+0|pulp
+0|smash
+0|kindling
+0|annihilate
+0|automatically
+0|recollection
+0|consciousness
+0|come through
+0|on the verge of
+0|spring up
+0|fall apart
+0|come to
+0|module
+0|lunar module
+0|originally
+0|backup
+0|German measles
+0|complication
+0|unsure
+0|safely
+0|lifeboat
+0|jettison
+0|transmission
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 978
+# Total Entries Extracted: 978
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 978
+# -------------------------------

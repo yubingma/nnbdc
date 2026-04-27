@@ -1,0 +1,955 @@
+0|adolescence
+0|anonymously
+0|attentive
+0|automatically
+0|belle
+0|bolster
+0|brace
+0|bump
+0|capricious
+0|comely
+0|comparison
+0|contingent
+0|crunch
+0|curse
+0|curvy
+0|disfigure
+0|downright
+0|duckling
+0|emeritus
+0|evolve
+0|exclusively
+0|fare
+0|freckled
+0|gawky
+0|gleam
+0|headgear
+0|homely
+0|imperfection
+0|innate
+0|knockout
+0|launch
+0|liable
+0|makeover
+0|makeup
+0|obsess
+0|pageant
+0|quotient
+0|reap
+0|runway
+0|scout
+0|scrutinize
+0|self-appraisal
+0|self-perception
+0|shabby
+0|stroll
+0|subliminal
+0|subsequently
+0|subtle
+0|susceptible
+0|swan
+0|be fixated on
+0|compare with
+0|debate with
+0|doll sb. up
+0|fix oneself up
+0|get in the way
+0|get in the way of
+0|in a favorable light
+0|in contrast
+0|let go of
+0|light up
+0|sign up
+0|zero in on
+0|blocker
+0|clink
+0|completion
+0|delay
+0|endeavor
+0|exhale
+0|extinguish
+0|fret
+0|hitch
+0|ignite
+0|imagery
+0|incision
+0|inspirational
+0|kickoff
+0|mighty
+0|precisely
+0|pro
+0|rehearsal
+0|rehearse
+0|rookie
+0|shot
+0|steadily
+0|strain
+0|supplement
+0|suture
+0|tackle
+0|trajectory
+0|unheralded
+0|visualization
+0|visualize
+0|fake out
+0|push up
+0|put to use
+0|swear by
+0|turn into reality
+0|affection
+0|aggressive
+0|alternate
+0|altruism
+0|anti-vivisectionist
+0|breeding
+0|captive
+0|captivity
+0|cast
+0|chimpanzee
+0|compassion
+0|condor
+0|conservationist
+0|ecosystem
+0|evolutionary
+0|explosive
+0|explosively
+0|extinct
+0|free-range
+0|humility
+0|impede
+0|inflict
+0|inherit
+0|instinctive
+0|intellect
+0|interconnectedness
+0|methane
+0|primate
+0|primatologist
+0|rabid
+0|resentment
+0|sentient
+0|sold-out
+0|stuffed
+0|thought-provoking
+0|torture
+0|unforeseen
+0|vegetarian
+0|as a last resort
+0|as is the case
+0|better off
+0|be capable of
+0|be in favor of
+0|come up
+0|come up to sb.
+0|do one's bit
+0|fit together
+0|hang in there
+0|make a difference
+0|on the road
+0|bottom line
+0|think twice
+0|to some extent
+0|worse off
+0|abuse
+0|affinity
+0|balcony
+0|befriend
+0|boon
+0|buff
+0|caress
+0|caretaker
+0|circus
+0|companionship
+0|coyote
+0|currently
+0|devoted
+0|devotion
+0|dignity
+0|disparity
+0|donation
+0|exceedingly
+0|fluffy
+0|gait
+0|habitat
+0|harbor
+0|immobile
+0|infirmity
+0|kindred
+0|lifespan
+0|lumberingly
+0|outright
+0|passionately
+0|playful
+0|proceeds
+0|recovery
+0|regain
+0|resume
+0|retriever
+0|sanctuary
+0|shepherd
+0|stray
+0|therapeutic
+0|unresolved
+0|venue
+0|vigil
+0|wag
+0|at the request of
+0|catch up
+0|come into sb.'s possession
+0|hold ... in high regard
+0|have ... in common
+0|in the case of
+0|load up
+0|make an appearance
+0|pay tribute to
+0|ally
+0|Anatolian
+0|angular
+0|arguably
+0|artifact
+0|bale
+0|cantilever
+0|celebrated
+0|characterize
+0|cohesive
+0|complement
+0|contradictory
+0|cult
+0|distinguishing
+0|dominant
+0|emulate
+0|equivalent
+0|Etruscan
+0|feminine
+0|ferry
+0|foliage
+0|furnishing
+0|geometric
+0|governing
+0|habitation
+0|ideology
+0|idiosyncratic
+0|imposed
+0|incorporate
+0|lightweight
+0|manifest
+0|masculine
+0|mechanistic
+0|mercurial
+0|Minoan
+0|multi-faceted
+0|non-linearity
+0|organic
+0|organism
+0|perverse
+0|pillar
+0|poetic
+0|prevalent
+0|recognizable
+0|rectangle
+0|rectilinear
+0|rigidly
+0|swooping
+0|symbiotic
+0|sympathetic
+0|tensile
+0|tepee
+0|truss
+0|unified
+0|vault
+0|vernacular
+0|wavy
+0|be integrated with
+0|be rooted in
+0|be sympathetic to
+0|beyond the capabilities of
+0|far from
+0|free up
+0|in harmony with
+0|in opposition to
+0|in the round
+0|open up
+0|pin down
+0|stretch back to
+0|think out
+0|antithesis
+0|aspiration
+0|assemble
+0|consultancy
+0|defining
+0|demolish
+0|diminishing
+0|discourse
+0|encapsulate
+0|homage
+0|instil
+0|intricately
+0|manifesto
+0|occupant
+0|preservation
+0|raze
+0|reinvigorate
+0|relevance
+0|renovation
+0|rip
+0|rootedness
+0|unencumbered
+0|come about
+0|engage with sb.
+0|engage with sth.
+0|off one's radar
+0|pay homage to
+0|strive to do sth.
+0|additive
+0|binder
+0|brand-new
+0|compelling
+0|correspond
+0|customization
+0|cutting-edge
+0|deposit
+0|discard
+0|dividend
+0|entrant
+0|exaggeration
+0|fabrication
+0|gigantic
+0|juggernaut
+0|labor-intensive
+0|largely
+0|layer
+0|margin
+0|microscopic
+0|niftily
+0|orthotic
+0|painstaking
+0|powdered
+0|predict
+0|productivity
+0|retool
+0|scanner
+0|subsequent
+0|substrate
+0|subtractive
+0|transistor
+0|typeset
+0|uncover
+0|undergo
+0|watershed
+0|a sinking ship
+0|be poised to do sth.
+0|best of both worlds
+0|cut down on
+0|every bit as good
+0|every bit as bad
+0|every bit as good as sb.
+0|every bit as bad as sb.
+0|every bit as good as sth.
+0|every bit as bad as sth.
+0|get in on the ground floor
+0|make a fortune
+0|make one's fortune
+0|pay dividends
+0|rear end
+0|slide along
+0|turning point
+0|whittle down
+0|abdomen
+0|anesthetic
+0|approve
+0|avid
+0|biodegradable
+0|blast
+0|buckwheat
+0|capsule
+0|cavity
+0|ceramic
+0|coating
+0|composite
+0|container
+0|decay
+0|dental
+0|desired
+0|economical
+0|eligible
+0|enforcement
+0|fabric
+0|fungus
+0|gelatinous
+0|helmet
+0|hiker
+0|husk
+0|implant
+0|infection
+0|inoculation
+0|insulation
+0|lattice
+0|mold
+0|mycelium
+0|nanoparticle
+0|nicotine
+0|odds
+0|oxygenate
+0|paraffin
+0|petroleum
+0|pierce
+0|pore
+0|prefab
+0|projectile
+0|protective
+0|release
+0|repel
+0|resin
+0|scalp
+0|scrape
+0|skull
+0|solidify
+0|syringe
+0|transplant
+0|two-by-four
+0|underway
+0|voil
+0|weather
+0|withstand
+0|fasten on
+0|in the meantime
+0|inject ... into
+0|recover ... from
+0|slide over
+0|to and fro
+0|watch for
+0|adopter
+0|affluence
+0|affluent
+0|analyst
+0|demographic
+0|detached
+0|diode
+0|emit
+0|incentive
+0|ingredient
+0|lease
+0|miser
+0|motto
+0|offset
+0|offering
+0|outpace
+0|pitch
+0|polysilicon
+0|presumably
+0|recharge
+0|recoup
+0|refinance
+0|repackage
+0|residential
+0|retail
+0|steeply
+0|unofficial
+0|unreachable
+0|upfront
+0|usage
+0|be eligible to
+0|break even
+0|check out
+0|drive up
+0|fit on
+0|jump at
+0|on the cutting edge of
+0|put down
+0|sign on
+0|abundant
+0|accelerate
+0|adverse
+0|bacterial
+0|biofuel
+0|biogas
+0|blade
+0|by-product
+0|caisson
+0|calculator
+0|carrier
+0|combustion
+0|conventional
+0|crust
+0|cylindrical
+0|dam
+0|decompose
+0|degradation
+0|depletion
+0|designate
+0|disposal
+0|dissipation
+0|emission
+0|envisage
+0|excess
+0|exhaustible
+0|exploitation
+0|facility
+0|far-reaching
+0|geothermal
+0|hindrance
+0|hydroelectric
+0|hydrogen
+0|inevitably
+0|inexhaustible
+0|insulating
+0|kinetic
+0|landfill
+0|mill
+0|particulate
+0|perpetually
+0|pollutant
+0|project
+0|propel
+0|reliance
+0|replenish
+0|reservoir
+0|respiratory
+0|rotational
+0|semiconductor
+0|shaft
+0|suspended
+0|thermal
+0|tighten
+0|upsurge
+0|utilization
+0|utilize
+0|vapor
+0|a way out
+0|all walks of life
+0|apart from
+0|be comparable to
+0|convert ... into
+0|heat up
+0|in contrast to
+0|in the absence of
+0|serve as
+0|wind turbine
+0|abdication
+0|aloft
+0|asteroid
+0|astronaut
+0|atmospheric
+0|awfully
+0|booster
+0|coherent
+0|cold-call
+0|commercialize
+0|compartment
+0|convection
+0|cosmos
+0|credibility
+0|credulously
+0|crystalline
+0|democratize
+0|diffract
+0|disciplined
+0|distort
+0|Dutch
+0|dynamism
+0|effectively
+0|engaged
+0|enterprise
+0|enthusiastic
+0|estimable
+0|expendable
+0|exploration
+0|flaw
+0|fleeting
+0|fusion
+0|fuzzy
+0|giddy
+0|go-to
+0|grasshopper
+0|homestead
+0|impressively
+0|induce
+0|justification
+0|microgravity
+0|mining
+0|mostly
+0|mothball
+0|near-term
+0|objection
+0|orbit
+0|ouch
+0|pathogen
+0|perpetual
+0|peyote
+0|phoenix
+0|presidential
+0|protein
+0|publicist
+0|reed
+0|rep
+0|senator
+0|shuttle
+0|skeptic
+0|specifically
+0|stubborn
+0|target
+0|titanium
+0|tout
+0|undertaking
+0|undo
+0|virus
+0|wrangle
+0|zero-g
+0|a fraction of
+0|acquit oneself
+0|at work
+0|by all accounts
+0|cook's tour
+0|distinguish oneself
+0|hang on
+0|in sb.'s blood
+0|in the wake of
+0|make one's case
+0|take off
+0|within reach
+0|accelerated
+0|amass
+0|assassination
+0|atrophy
+0|attributable
+0|bloodstream
+0|bubble
+0|calcium
+0|capillary
+0|circulatory
+0|colonization
+0|congresswoman
+0|cosmic
+0|cumulative
+0|deprivation
+0|distorted
+0|eardrum
+0|eventual
+0|exotic
+0|external
+0|fatigued
+0|follow-up
+0|fragile
+0|girdle
+0|heredity
+0|high-profile
+0|hypertension
+0|inbound
+0|inflating
+0|kilopascal
+0|lethal
+0|Martian
+0|meteor
+0|mouthful
+0|muddy
+0|nifty
+0|nutrient
+0|oriented
+0|outbound
+0|predispose
+0|radiation
+0|remainder
+0|render
+0|renown
+0|rupture
+0|saliva
+0|serendipity
+0|skeletal
+0|slate
+0|swab
+0|theoretical
+0|tissue
+0|transporter
+0|unconsciousness
+0|unprecedented
+0|vacuum
+0|all the same
+0|at ... intervals
+0|carry out
+0|during the course of
+0|in all directions
+0|in anticipation of
+0|in orbit
+0|in the form of
+0|take sb.'s life
+0|accessory
+0|boast
+0|bombardment
+0|brandish
+0|busty
+0|Caucasian
+0|chin
+0|chortle
+0|clench
+0|close-up
+0|conceit
+0|crease
+0|defined
+0|disastrous
+0|dour
+0|epidemic
+0|excise
+0|eyelid
+0|fabulous
+0|handiwork
+0|hang-up
+0|hawk
+0|high-rise
+0|horde
+0|illicit
+0|impeccably
+0|inject
+0|lawsuit
+0|legitimate
+0|licensed
+0|liposuction
+0|malleable
+0|moan
+0|mutant
+0|nip
+0|noninvasive
+0|petite
+0|pinch
+0|plug
+0|plump
+0|pretender
+0|prop
+0|puffy
+0|rage
+0|ramen
+0|reapply
+0|re-engineering
+0|relentless
+0|sag
+0|saggy
+0|scalpel
+0|seethe
+0|sever
+0|shady
+0|silicone
+0|slay
+0|stroke
+0|stylist
+0|suck
+0|surgeon
+0|surgical
+0|tot
+0|tuck
+0|universal
+0|unlicensed
+0|upgrade
+0|upmarket
+0|uptight
+0|vanity
+0|wall-mounted
+0|wield
+0|any Tom, Dick, or Harry
+0|be a hit
+0|beauty is in the eye of the beholder
+0|buy into
+0|chop up
+0|hard cash
+0|hold back
+0|in the quest for
+0|judge a book by its cover
+0|lag behind
+0|rake in
+0|subject ... to
+0|top dollar
+0|agonizing
+0|agony
+0|cane
+0|cartilage
+0|chaplain
+0|charity
+0|chiropractor
+0|circulation
+0|collagen
+0|conservative
+0|consign
+0|cushioning
+0|debilitating
+0|degeneration
+0|degenerative
+0|ease
+0|elasticity
+0|elusive
+0|envision
+0|epidural
+0|gel
+0|hospice
+0|implantable
+0|implantation
+0|infrared
+0|intervertebral
+0|invasive
+0|ligament
+0|lumbar
+0|massage
+0|methadone
+0|minimally
+0|miraculous
+0|mystify
+0|neurostimulator
+0|neurosurgeon
+0|odyssey
+0|originate
+0|pacemaker
+0|painkiller
+0|pat
+0|physiotherapy
+0|prolonged
+0|promising
+0|regenerate
+0|regenerative
+0|spinal
+0|spine
+0|stenosis
+0|sufferer
+0|trial
+0|vertebra
+0|vulnerable
+0|in conjunction with
+0|originate from
+0|rest assured
+0|anemic
+0|annually
+0|assure
+0|ban
+0|basically
+0|bte noire
+0|borough
+0|chronological
+0|clamshell
+0|collection
+0|colloquially
+0|commissioner
+0|compliance
+0|compost
+0|conserve
+0|cost-effective
+0|covet
+0|crucially
+0|crumble
+0|deputy
+0|dissolve
+0|ecological
+0|enact
+0|excessive
+0|fiber
+0|fluorescent
+0|framework
+0|frustrated
+0|fungal
+0|grizzled
+0|hallelujah
+0|hanger
+0|hazardous
+0|incinerator
+0|inedible
+0|lather
+0|legislate
+0|legislation
+0|loom
+0|mattress
+0|mind-set
+0|net
+0|nonrenewable
+0|nontoxic
+0|paradigm
+0|pertinent
+0|polyethylene
+0|polystyrene
+0|recyclable
+0|regarding
+0|resale
+0|rigid
+0|sanitation
+0|septic
+0|simplicity
+0|single-use
+0|specter
+0|sticky
+0|styrofoam
+0|takeout
+0|taxpayer
+0|tear-off
+0|terephthalate
+0|thermometer
+0|throwaway
+0|tip
+0|transfer
+0|trash
+0|truckload
+0|upstate
+0|water-soluble
+0|a boon to
+0|at the very least
+0|be fed up with
+0|conceive of
+0|fold into
+0|for the most part
+0|go it alone
+0|in discussions with
+0|in the event that
+0|off the hook
+0|pipe up
+0|scale up
+0|shine a light on
+0|step down
+0|step up
+0|adaptation
+0|additionally
+0|algal
+0|arid
+0|bacterium
+0|coastal
+0|conflict
+0|dengue
+0|displace
+0|disrupt
+0|estuary
+0|ethnic
+0|exacerbate
+0|extraction
+0|fishery
+0|frail
+0|immune
+0|indigenous
+0|infectious
+0|infirm
+0|inhabit
+0|inherently
+0|irrigation
+0|latitude
+0|livelihood
+0|livestock
+0|magnitude
+0|malaria
+0|malnutrition
+0|marine
+0|meningitis
+0|meningococcal
+0|migrate
+0|negatively
+0|neurological
+0|polar
+0|precipitation
+0|ratio
+0|runoff
+0|shelter
+0|snowpack
+0|sub-Saharan
+0|subsistence
+0|subtropics
+0|sustained
+0|tropical
+0|beyond repair
+0|gain access to
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 948
+# Total Entries Extracted: 948
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 948
+# -------------------------------

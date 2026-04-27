@@ -1,0 +1,788 @@
+0|alternative
+0|caring
+0|collapse
+0|Confucian
+0|Confucianism
+0|democratic
+0|diverse
+0|diversify
+0|embody
+0|enrich
+0|enunciate
+0|exemplify
+0|flexible
+0|fundamental
+0|grace
+0|gracious
+0|harmonious
+0|harmony
+0|homogenize
+0|hospitable
+0|humbly
+0|ideal
+0|identify
+0|inspire
+0|intense
+0|intensity
+0|leaning
+0|non-ostentatiously
+0|permeate
+0|philosopher
+0|respectful
+0|restraint
+0|sacred
+0|sacrifice
+0|sameness
+0|secular
+0|self-discipline
+0|self-identified
+0|spiritual
+0|stagnant
+0|static
+0|statue
+0|ultimate
+0|underlie
+0|ventilate
+0|virtue
+0|virtuous
+0|wisdom
+0|at the expense of
+0|at issue
+0|be attuned to
+0|be compatible with
+0|equate ... with
+0|give oneself to
+0|in action
+0|incorporate sth. in sth.
+0|incorporate sth. into sth.
+0|incorporate sth. within sth.
+0|monopoly in sth.
+0|monopoly of sth.
+0|monopoly on sth.
+0|subordinate ... to ...
+0|adjustment
+0|anecdote
+0|apply
+0|brew
+0|cleanse
+0|concentrate
+0|conduct
+0|continuity
+0|crystallize
+0|cupful
+0|curiosity
+0|dilute
+0|dispel
+0|distraction
+0|dominant
+0|enlightenment
+0|ensure
+0|evaluation
+0|evolve
+0|exhaustion
+0|firewood
+0|flavor
+0|fluidity
+0|gratitude
+0|historical
+0|inadvertently
+0|indispensable
+0|insistence
+0|introspection
+0|liquor
+0|lust
+0|mainstream
+0|master
+0|maturity
+0|mentality
+0|microcosm
+0|necessity
+0|oft-quoted
+0|oneness
+0|optimize
+0|overall
+0|pitcher
+0|practitioner
+0|prefecture
+0|relieve
+0|restore
+0|sauce
+0|spontaneously
+0|steep
+0|transform
+0|ware
+0|Zen
+0|be caught up in sth.
+0|be supposed to
+0|in advance
+0|regardless of
+0|rely on
+0|resort to sth.
+0|constantly
+0|downside
+0|entrepreneur
+0|exception
+0|execute
+0|laterally
+0|marketing
+0|modicum
+0|penchant
+0|productive
+0|propose
+0|span
+0|trait
+0|venture
+0|a hell of
+0|a slew of
+0|off course
+0|out to lunch
+0|run through
+0|sort of
+0|stick to
+0|tend to
+0|beneficial
+0|bulk
+0|cart
+0|courteous
+0|entrepreneurship
+0|forensic
+0|gig
+0|inventory
+0|mentor
+0|mow
+0|partnership
+0|patio
+0|prep
+0|puree
+0|reaction
+0|re-enactor
+0|remark
+0|sanitize
+0|self-sufficient
+0|signature
+0|specialty
+0|squeeze
+0|supplement
+0|supportive
+0|vineyard
+0|wow
+0|back and forth
+0|be struck by
+0|call the shots
+0|go into
+0|try one's hand at
+0|availability
+0|awe
+0|commute
+0|contend
+0|deplete
+0|derive
+0|digitize
+0|dwindle
+0|dystopian
+0|foil
+0|inadequate
+0|influx
+0|infrastructure
+0|inhabitant
+0|jumpsuit
+0|mitigate
+0|mobility
+0|mortar
+0|municipal
+0|passer-by
+0|practicable
+0|practically
+0|proponent
+0|radical
+0|relocate
+0|retrofit
+0|savvy
+0|sewage
+0|strain
+0|supplant
+0|tag
+0|tariff
+0|urbanization
+0|usher
+0|utility
+0|in awe of
+0|be preoccupied with
+0|break down
+0|derive from
+0|derive sth. from
+0|have an impact on
+0|in sync
+0|in sync with
+0|aesthetic
+0|ambient
+0|artificial
+0|bidet
+0|blind
+0|bluetooth
+0|compact
+0|conceptual
+0|display
+0|eco-friendly
+0|fantasize
+0|foam
+0|functionality
+0|futuristic
+0|gadget
+0|gastronomy
+0|grant
+0|high-definition
+0|interface
+0|jelly
+0|lid
+0|molecular
+0|mundane
+0|on-the-go
+0|pad
+0|pitch-black
+0|podcast
+0|projector
+0|prototype
+0|robotics
+0|smartphone
+0|sway
+0|transparent
+0|ultrasonic
+0|vent
+0|vitals
+0|yield
+0|keep up with
+0|make one's way to
+0|on the brink of
+0|on the horizon
+0|pump out
+0|stop by
+0|agile
+0|back
+0|breakthrough
+0|capitalism
+0|capture
+0|catalytic
+0|delivery
+0|earth-shaking
+0|evangelist
+0|exploit
+0|fertile
+0|foster
+0|fund
+0|given
+0|harness
+0|hepatitis
+0|high-stakes
+0|humble
+0|ignore
+0|immunize
+0|innovation
+0|invest
+0|malaria
+0|manufacture
+0|massive
+0|measles
+0|numerous
+0|obstacle
+0|opponent
+0|phenomenal
+0|philanthropic
+0|philanthropy
+0|poverty
+0|profound
+0|purchase
+0|resource
+0|rotavirus
+0|sector
+0|seed
+0|stunning
+0|subset
+0|summit
+0|thrilling
+0|transcend
+0|unexplored
+0|unique
+0|vaccine
+0|versus
+0|a share of
+0|averse to sth.
+0|averse to doing sth.
+0|factor ... into
+0|in favor of
+0|leave off
+0|lose one's shirt
+0|put in
+0|sit on shelves
+0|take the long view
+0|take the long view of sth.
+0|accomplishment
+0|aerodynamics
+0|afloat
+0|alas
+0|anatomy
+0|architect
+0|architecture
+0|biographer
+0|botany
+0|cadaver
+0|cannon
+0|capillary
+0|cervical
+0|construction
+0|contemporary
+0|definitively
+0|deflection
+0|dependence
+0|devise
+0|dissect
+0|double-hulled
+0|dredge
+0|eccentric
+0|envision
+0|explanatory
+0|faculty
+0|far-out
+0|floating
+0|foresee
+0|formation
+0|fortification
+0|fossil
+0|helicopter
+0|hood
+0|humidity
+0|hydrodynamics
+0|illustration
+0|illustrator
+0|implement
+0|inhuman
+0|inquiry
+0|intend
+0|joint
+0|limb
+0|long-winded
+0|masterpiece
+0|mechanical
+0|medieval
+0|nerve
+0|notorious
+0|optics
+0|perspective
+0|precise
+0|predecessor
+0|profitable
+0|prophetic
+0|renaissance
+0|reproduce
+0|revitalize
+0|route
+0|shockingly
+0|sinister
+0|sketch
+0|snowshoe
+0|squelch
+0|startling
+0|systematic
+0|thingamajig
+0|tormentingly
+0|trusty
+0|unsinkable
+0|vertebra
+0|volume
+0|waterwheel
+0|webbed
+0|zoology
+0|a dime a dozen
+0|at heart
+0|at that point
+0|break new ground
+0|cook sth. up
+0|cook up sth.
+0|leave sb. in the dust
+0|oodles of
+0|array
+0|bellow
+0|bureaucratic
+0|cereal
+0|cityscape
+0|cliche
+0|crate
+0|dairy
+0|ecstasy
+0|ever-increasing
+0|ever-present
+0|frolic
+0|glitch
+0|imaginable
+0|lengthy
+0|linguistics
+0|local
+0|lure
+0|obsessive
+0|ooze
+0|outsider
+0|overflow
+0|overripe
+0|Parisian
+0|passageway
+0|pave
+0|plethora
+0|quaint
+0|registration
+0|serene
+0|sip
+0|slang
+0|timeless
+0|underway
+0|vibrant
+0|blend into
+0|dream of ...
+0|dream about ...
+0|in turn
+0|line ... with
+0|line ... with sth.
+0|pump ... out
+0|turn out
+0|administer
+0|billow
+0|calling
+0|candlelit
+0|carnival
+0|cracker
+0|crisp
+0|CV
+0|demonstrate
+0|down-to-earth
+0|due
+0|eccentricity
+0|edit
+0|entity
+0|exhilarating
+0|fitting
+0|fry
+0|glamorous
+0|glorified
+0|gown
+0|harsh
+0|hybrid
+0|intimidating
+0|Latin
+0|literary
+0|lottery
+0|mythical
+0|novelty
+0|obscure
+0|passionate
+0|prayer
+0|prey
+0|tumultuous
+0|underground
+0|utterly
+0|pipe dream
+0|cheer sb. on
+0|get off the phone
+0|nothing but
+0|hunt down ...
+0|birds of prey
+0|arch
+0|cafe
+0|charm
+0|complexity
+0|confine
+0|contentment
+0|cynical
+0|depart
+0|displeased
+0|embellish
+0|enchantment
+0|fiance
+0|frame
+0|furtively
+0|gray
+0|guesthouse
+0|gusto
+0|herd
+0|irritated
+0|isolated
+0|knickknack
+0|lamasery
+0|loiter
+0|monastery
+0|panoramic
+0|pant
+0|perception
+0|puall
+0|remote
+0|saddle
+0|spot
+0|squint
+0|terrain
+0|toddler
+0|touristy
+0|version
+0|weave
+0|a glimmer of
+0|bill ... as ...
+0|break off
+0|creep up on sb.
+0|far afield
+0|farther afield
+0|further afield
+0|flatten out
+0|in full swing
+0|pulse with
+0|aroma
+0|barn
+0|bittersweet
+0|carefree
+0|caw
+0|cheddar-cheese
+0|chowder
+0|chrysanthemum
+0|cinnamon
+0|core
+0|cornfield
+0|cornstalk
+0|crackle
+0|creek
+0|crest
+0|crock
+0|dart
+0|embroider
+0|fluff
+0|garnet
+0|goldfinch
+0|gourd
+0|hazy
+0|hickory
+0|ho-hum
+0|jealousy
+0|leaf-peeping
+0|loop
+0|lump
+0|maple
+0|meander
+0|memorial
+0|mum
+0|oak
+0|pact
+0|pang
+0|patchwork
+0|pedestal
+0|porch
+0|pumpkin
+0|roaring
+0|rust
+0|shagbark
+0|sheaf
+0|skirt
+0|spectacular
+0|squash
+0|stillness
+0|sweep
+0|syrup
+0|trail
+0|trudge
+0|wicker
+0|leave for
+0|happen upon
+0|wallow in
+0|access
+0|accommodate
+0|anthology
+0|appeal
+0|archive
+0|audio
+0|bias
+0|bind
+0|collectively
+0|customizable
+0|distribution
+0|doom
+0|editorial
+0|enhancement
+0|excessively
+0|format
+0|hype
+0|instructor
+0|interactive
+0|mechanism
+0|nagging
+0|old-school
+0|onionskin-thin
+0|output
+0|pedagogical
+0|platform
+0|predominant
+0|previous
+0|relatively
+0|remediation
+0|revenue
+0|scramble
+0|sentiment
+0|simplify
+0|spell
+0|tutorial
+0|vanish
+0|vast
+0|appeal to sb.
+0|bundle ... with
+0|bundle ... with sth.
+0|call for ...
+0|do away with ...
+0|draw sb. into ...
+0|revolve around ...
+0|stick with ...
+0|turn the page
+0|browser
+0|bulletin
+0|campaign
+0|civic
+0|clunky
+0|constituent
+0|contour
+0|crash
+0|debut
+0|e-commerce
+0|frenetically
+0|grave
+0|guru
+0|imam
+0|instant
+0|intern
+0|liquidate
+0|mediate
+0|millennium
+0|nonetheless
+0|notable
+0|pastor
+0|portal
+0|puppy
+0|rabbi
+0|retailer
+0|saturation
+0|settler
+0|sophisticated
+0|swap
+0|virtual
+0|weblog
+0|whiz
+0|a batch of ...
+0|have access to ...
+0|pal around
+0|crop up
+0|from the cradle to the grave
+0|get ... up
+0|get up ...
+0|annual
+0|apparent
+0|authoritative
+0|boom
+0|border
+0|casualty
+0|Catholic
+0|cease
+0|census
+0|commit
+0|controversial
+0|counterpart
+0|county
+0|current
+0|deliver
+0|demographically
+0|despite
+0|disproportionately
+0|domestic
+0|edge
+0|entrepreneurial
+0|immensely
+0|immigrant
+0|immigration
+0|innovative
+0|integral
+0|lifetime
+0|manufacturing
+0|migration
+0|net
+0|offspring
+0|profitably
+0|resident
+0|roll
+0|scorn
+0|shrink
+0|silicon
+0|spectrum
+0|successive
+0|swamp
+0|terrorist
+0|testimony
+0|undermine
+0|assimilate into
+0|assimilate to
+0|draw ... from ...
+0|in the name of
+0|not to mention
+0|out of proportion
+0|out of all proportion to sth.
+0|agency
+0|alter
+0|anime
+0|clout
+0|commerce
+0|consequence
+0|currency
+0|deepen
+0|democracy
+0|dim sum
+0|diner
+0|dominate
+0|emerging
+0|expansion
+0|flagship
+0|flick
+0|forge
+0|forum
+0|geopolitics
+0|giant
+0|globalization
+0|globalize
+0|humanity
+0|inclusive
+0|institute
+0|knit
+0|lavish
+0|Marxism
+0|meager
+0|multilateral
+0|naysayer
+0|negotiation
+0|networking
+0|offload
+0|one-way
+0|outpace
+0|portfolio
+0|processor
+0|proliferate
+0|renewed
+0|reshore
+0|reverse
+0|shift
+0|stall
+0|storied
+0|strive
+0|surge
+0|telecom
+0|trend
+0|run out of steam
+0|be sought after
+0|be set to do sth.
+0|account for
+0|muscle in
+0|muscle in on ...
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 781
+# Total Entries Extracted: 781
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 781
+# -------------------------------

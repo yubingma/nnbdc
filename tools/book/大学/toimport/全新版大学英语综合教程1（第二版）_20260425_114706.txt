@@ -1,0 +1,831 @@
+0|off and on
+0|take hold
+0|associate
+0|assignment
+0|turn out
+0|paragraph
+0|agony
+0|assign
+0|anticipate
+0|cheerless
+0|tedious
+0|reputation
+0|inability
+0|inspire
+0|formal
+0|rigid
+0|out of date
+0|excessively
+0|excessive
+0|prim
+0|primly
+0|severe
+0|wavy
+0|necktie
+0|pointed
+0|jaw
+0|comic
+0|antique
+0|tackle
+0|informal
+0|essay
+0|distribute
+0|finally
+0|face up to
+0|scan
+0|spaghetti
+0|title
+0|extraordinary
+0|sequence
+0|image
+0|vivid
+0|adult
+0|recall
+0|socially
+0|social
+0|respectable
+0|put down
+0|recapture
+0|relive
+0|violate
+0|compose
+0|turn in
+0|command
+0|discipline
+0|what's more
+0|contempt
+0|ridicule
+0|open-hearted
+0|enjoyment
+0|hold back
+0|avoid
+0|demonstration
+0|calling
+0|career
+0|seal
+0|essence
+0|tradition
+0|award
+0|valedictorian
+0|maintain
+0|look forward to
+0|participate in
+0|registration
+0|fee
+0|gym
+0|compare to
+0|falsify
+0|plus
+0|tie
+0|drown out
+0|here and there
+0|filter
+0|resign
+0|make it
+0|principal
+0|policy
+0|regarding
+0|dignity
+0|muster
+0|represent
+0|expectation
+0|clasp
+0|significance
+0|hoe
+0|spring up
+0|delicate
+0|withdrawn
+0|drag
+0|exception
+0|tremble
+0|yell
+0|innocent
+0|hug
+0|pat
+0|cabbie
+0|be lost in
+0|lose oneself in
+0|windshield
+0|cab
+0|available
+0|apologetically
+0|apologetic
+0|or something
+0|go ahead
+0|know ... by heart
+0|learn by heart
+0|on the road
+0|estimate
+0|might as well
+0|might just as well
+0|may as well
+0|may just as well
+0|not much of a
+0|keep up
+0|correspondence
+0|practically
+0|all the way
+0|neighborhood
+0|kind of
+0|sort of
+0|lose touch
+0|lose touch with sb.
+0|guy
+0|a couple of
+0|tough
+0|on one's mind
+0|keep in touch
+0|keep in touch with
+0|come up
+0|shrug
+0|urge
+0|postpone
+0|reference
+0|Halloween
+0|absolutely
+0|absolute
+0|reunion
+0|go by
+0|hang out
+0|every now and then
+0|mostly
+0|awful
+0|choke
+0|choke up
+0|destination
+0|skip
+0|sorrowful
+0|sorrow
+0|in the distance
+0|unpack
+0|right away
+0|let down
+0|burn off
+0|peer
+0|uneasy
+0|bump
+0|get rid of
+0|stuff
+0|tow
+0|soak
+0|pitch
+0|swing
+0|burst into
+0|flame
+0|spin
+0|fling
+0|roar
+0|crash
+0|steer
+0|bare
+0|grip
+0|explosion
+0|extent
+0|injury
+0|worse still
+0|in bad shape
+0|in good shape
+0|despair
+0|hang on
+0|permanently
+0|principle
+0|draw on
+0|character
+0|lean
+0|exclaim
+0|grab
+0|slide
+0|ease
+0|grin
+0|medal
+0|courageous
+0|rescue
+0|highlight
+0|likely
+0|privileged
+0|privilege
+0|minority
+0|do without
+0|highly
+0|risky
+0|nasty
+0|brutish
+0|anyway
+0|put the clock back
+0|turn the clock back
+0|cut off
+0|competition
+0|bring about
+0|moreover
+0|inquiring
+0|inquire
+0|global
+0|suppress
+0|initiative
+0|inventiveness
+0|slow down
+0|rate
+0|ensure
+0|democratic
+0|informed
+0|inform
+0|at the moment
+0|in two minds
+0|steady
+0|evident
+0|cartoon
+0|element
+0|astronomy
+0|series
+0|fiction
+0|harness
+0|background
+0|acid
+0|greenhouse
+0|nuclear
+0|weapon
+0|genetic
+0|engineering
+0|basis
+0|lie in
+0|rote
+0|relevance
+0|in terms of
+0|equation
+0|brief
+0|mathematical
+0|halve
+0|tend
+0|in the form of
+0|precise
+0|qualitative
+0|grasp
+0|concept
+0|sufficient
+0|convey
+0|diagram
+0|framework
+0|molecular
+0|transistor
+0|put across
+0|proportion
+0|truly
+0|magic
+0|fit into
+0|producer
+0|responsibility
+0|educate
+0|entertain
+0|hence
+0|contact
+0|alien
+0|civilization
+0|deadline
+0|headline
+0|immediately
+0|victim
+0|frustrate
+0|yield
+0|step by step
+0|outcome
+0|result in
+0|gradual
+0|process
+0|conclusion
+0|propose
+0|random
+0|compare with
+0|evaluate
+0|quiet work
+0|characterize
+0|bulk
+0|submit
+0|publish
+0|professional
+0|press release
+0|challenge
+0|amount
+0|wear down
+0|organic
+0|trumpet
+0|reverse
+0|somehow
+0|driveway
+0|mow
+0|lawn
+0|comprehend
+0|turn away
+0|weed
+0|assume
+0|compliment
+0|work out
+0|weekly
+0|clean up
+0|do with
+0|determination
+0|personnel
+0|apprentice
+0|capacity
+0|blueprint
+0|micrometer
+0|precision
+0|turn down
+0|skilled
+0|grinder
+0|grind
+0|instrument
+0|for sale
+0|wreck
+0|call on
+0|banker
+0|loan
+0|damn
+0|reluctantly
+0|reluctant
+0|mortgage
+0|down payment
+0|discard
+0|odds and ends
+0|screen
+0|hardware
+0|spot
+0|confidence
+0|amaze
+0|amazement
+0|diet
+0|send for
+0|hunt
+0|abandon
+0|property
+0|shed
+0|sometime
+0|sponsor
+0|amuse
+0|approach
+0|millionaire
+0|pass away
+0|check on
+0|handle
+0|livable
+0|homey
+0|stature
+0|industrialist
+0|route
+0|vision
+0|optimism
+0|above all
+0|integrity
+0|rung
+0|basement
+0|giant
+0|balance
+0|balance sheet
+0|decimal
+0|illegal
+0|immigrant
+0|taco stand
+0|keep up with school
+0|connection
+0|put up with
+0|in search of
+0|head for
+0|supervise
+0|land
+0|temporary
+0|response
+0|risk
+0|acquire
+0|make ends meet
+0|make both ends meet
+0|associate's degree
+0|environment
+0|honors thesis
+0|on the side
+0|stand a chance of
+0|commencement address
+0|prospect
+0|reserve
+0|rare
+0|look right through him
+0|former
+0|quit
+0|deserve
+0|impress
+0|show up
+0|Tex-Mex cookout
+0|flip
+0|humanistic
+0|obituary
+0|die of
+0|coronary
+0|thrombosis
+0|acquaintance
+0|instantly
+0|instant
+0|type A
+0|workaholic
+0|classic
+0|day off
+0|conceivably
+0|conceivable
+0|retire
+0|executive
+0|extracurricular
+0|monthly
+0|golf
+0|salad
+0|overweight
+0|survivor
+0|survive
+0|marketable
+0|mother
+0|give up
+0|compete
+0|compete against
+0|compete with
+0|care for
+0|dearly
+0|beloved
+0|eldest
+0|manufacture
+0|funeral
+0|embarrass
+0|newly
+0|married
+0|odd
+0|grass
+0|grab at
+0|favorite
+0|stay up
+0|board
+0|widow
+0|deceased
+0|the deceased
+0|replace
+0|look sb. in the eye
+0|bitterness
+0|bitter
+0|straighten out
+0|finance
+0|stock
+0|option
+0|stock option
+0|and all that
+0|heart-attack
+0|natural
+0|pick out
+0|lineup
+0|discreetly
+0|discreet
+0|inquiry
+0|replacement
+0|ask around
+0|pop up
+0|enthusiastic
+0|among others
+0|distract
+0|relationship
+0|socialize
+0|delegate
+0|input
+0|typically
+0|disarray
+0|intimacy
+0|divorce
+0|focus on
+0|depression
+0|link
+0|concern
+0|extreme
+0|in short
+0|well-being
+0|solution
+0|addiction
+0|survey
+0|priority
+0|relax
+0|detail
+0|oriented
+0|schedule
+0|overall
+0|fulfilling
+0|reliable
+0|diversion
+0|productive
+0|on one's own
+0|staff
+0|let go
+0|valentine
+0|make one's way
+0|grand
+0|absorb
+0|margin
+0|reflect
+0|thoughtful
+0|insightful
+0|insight
+0|previous
+0|locate
+0|correspond
+0|ship
+0|overseas
+0|fertile
+0|romance
+0|bud
+0|haunt
+0|take a chance
+0|take a chance on sth.
+0|disgust
+0|whichever
+0|lapel
+0|sustain
+0|unfailingly
+0|unfailing
+0|slim
+0|curl
+0|chin
+0|provocative
+0|curve
+0|go sb.'s way
+0|murmur
+0|more than a little
+0|ankle
+0|thrust
+0|heel
+0|split
+0|keen
+0|longing
+0|companion
+0|uphold
+0|sensible
+0|kindly
+0|glow
+0|hesitate
+0|leather
+0|identify
+0|grateful
+0|be grateful to sb. for sth.
+0|square
+0|salute
+0|lieutenant
+0|broaden
+0|wisdom
+0|in response to
+0|come across
+0|make out
+0|hope for
+0|clue
+0|identity
+0|other than
+0|call in
+0|know of sb.
+0|know of sth.
+0|nursing home
+0|exchange
+0|match up to
+0|lead
+0|for sure
+0|security
+0|goodness
+0|relief
+0|be in love with
+0|be in love with sb.
+0|come to an end
+0|adjust
+0|darling
+0|catch up on
+0|catch up on sth.
+0|knot
+0|tie the knot
+0|erect
+0|extensively
+0|extensive
+0|intelligence
+0|intelligent
+0|controversy
+0|surround
+0|consciousness
+0|explore
+0|obvious
+0|vet
+0|keeper
+0|encounter
+0|reveal
+0|convince
+0|feat
+0|captivity
+0|dominant
+0|species
+0|planet
+0|make a deal
+0|conservationist
+0|gorilla
+0|suspicious
+0|peanut
+0|only to
+0|blank
+0|negotiate
+0|stake
+0|pineapple
+0|relieve
+0|orangutan
+0|undertake
+0|anthropologist
+0|figure out
+0|extend
+0|dealing
+0|chip
+0|expand
+0|switch
+0|foil
+0|virtuous
+0|promptly
+0|prompt
+0|stem
+0|whale
+0|cooperate
+0|behaviorist
+0|in sb.'s interest
+0|in sb.'s interests
+0|go far
+0|consultant
+0|behavior
+0|assess
+0|judgment
+0|mate
+0|thrive
+0|at first
+0|stretcher
+0|emergency
+0|go wrong
+0|halt
+0|throw up
+0|apparently
+0|apparent
+0|size up
+0|release
+0|primate
+0|evidence
+0|deceive
+0|inaccessible
+0|original
+0|colony
+0|gaze
+0|give in
+0|underneath
+0|pea-brained
+0|turtle
+0|survival
+0|disaster
+0|wipe out
+0|dinosaur
+0|horizon
+0|value
+0|cautious
+0|display
+0|adequate
+0|accompany
+0|exhibit
+0|nest
+0|vacant
+0|not have the heart
+0|not have the heart to do sth.
+0|status
+0|flock
+0|pull oneself together
+0|at first sight
+0|instinct
+0|purchase
+0|nevertheless
+0|twist
+0|pair off
+0|decline
+0|take to
+0|reproduce
+0|advanced age
+0|magnificent
+0|shed light on
+0|tolerance
+0|heap sth. on sb.
+0|marital
+0|field biologist
+0|coyote
+0|indicate
+0|observe
+0|lick
+0|tell of
+0|otter
+0|get around
+0|make a habit of
+0|alarm
+0|by any chance
+0|in the world
+0|reject
+0|fable
+0|teenager
+0|run out of
+0|file
+0|folder
+0|drugstore
+0|handful
+0|modestly
+0|modest
+0|upset
+0|ignorant
+0|ignorance
+0|senior
+0|private
+0|slice
+0|calculation
+0|nonexistent
+0|chill
+0|indifference
+0|sum
+0|sum up
+0|financial
+0|accumulate
+0|ancestor
+0|intellectual
+0|affect
+0|industrial
+0|function
+0|idle
+0|jam
+0|break down
+0|drive sth. home to sb.
+0|humble
+0|dramatize
+0|headphone
+0|portable
+0|CD
+0|peasant
+0|county
+0|hut
+0|search for
+0|poverty
+0|leisure
+0|luxury
+0|mill
+0|subway
+0|better off
+0|foe
+0|scare
+0|foxhole
+0|wake up
+0|porter
+0|complex
+0|manual
+0|slum
+0|plumbing
+0|privacy
+0|trash
+0|befriend
+0|swear
+0|make a living by
+0|miracle
+0|faculty
+0|contemptible
+0|coward
+0|pop
+0|ditch
+0|multiplication
+0|off-limits
+0|access
+0|seminar
+0|benefit
+0|device
+0|call for
+0|discourage
+0|in the first place
+0|proceed
+0|competent
+0|essential
+0|adolescent
+0|concentrate on
+0|solve
+0|appropriate
+0|cut down
+0|reflect on
+0|effective
+0|confuse
+0|what if
+0|communicate
+0|strategy
+0|at hand
+0|bat
+0|claim
+0|commonplace
+0|section
+0|circumference
+0|factor
+0|quadratic
+0|sole
+0|contribute
+0|ultimate
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 824
+# Total Entries Extracted: 824
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 824
+# -------------------------------

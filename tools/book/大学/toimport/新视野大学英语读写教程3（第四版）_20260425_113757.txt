@@ -1,0 +1,683 @@
+0|scenario
+0|convention
+0|immerse
+0|immersed
+0|lure
+0|executive
+0|identical
+0|furious
+0|furiously
+0|device
+0|tribe
+0|associate
+0|suite
+0|tablet
+0|convert
+0|cockpit
+0|plunge
+0|deletion
+0|deceptive
+0|commerce
+0|substitute
+0|discrete
+0|adequacy
+0|observant
+0|nuance
+0|volume
+0|velocity
+0|acceleration
+0|continual
+0|continually
+0|reflective
+0|converse
+0|critic
+0|partisan
+0|sacred
+0|domestic
+0|chore
+0|consultant
+0|collaborate
+0|enthusiast
+0|alter
+0|assess
+0|burden
+0|plunge into sth.
+0|pick sth. up
+0|wipe sth. out
+0|add up to sth.
+0|dumb sth. down
+0|make room for sb.
+0|make room for sth.
+0|Maria
+0|Jason
+0|subliminal
+0|ironic
+0|imposition
+0|duster
+0|interactive
+0|advent
+0|broadband
+0|savvy
+0|abreast
+0|hectic
+0|recipe
+0|literally
+0|sibling
+0|headquarters
+0|affiliate
+0|monitor
+0|arena
+0|align
+0|invariably
+0|agent
+0|travel agent
+0|dedicate
+0|dedicated
+0|brochure
+0|luxurious
+0|discern
+0|discerning
+0|site
+0|accommodation
+0|practicality
+0|credibility
+0|via
+0|console
+0|akin
+0|blackmail
+0|evade
+0|overseas
+0|concede
+0|erase
+0|flourish
+0|foreseeable
+0|one way or another
+0|in one way or another
+0|one way or the other
+0|check sb. out
+0|check sth. out
+0|stand in line
+0|crop up
+0|catch up with sb.
+0|dense
+0|descendant
+0|giraffe
+0|reef
+0|vague
+0|vaguely
+0|porcelain
+0|heirloom
+0|shard
+0|maritime
+0|mighty
+0|fleet
+0|masted
+0|junk
+0|escort
+0|tanker
+0|cavalry
+0|patrol
+0|frail
+0|Portuguese
+0|caravel
+0|royal
+0|hull
+0|watertight
+0|compartment
+0|seafaring
+0|unprecedented
+0|ballast
+0|appoint
+0|lacquerware
+0|spice
+0|ivory
+0|pearl
+0|exotic
+0|naval
+0|pact
+0|pirate
+0|Arabian
+0|diplomatic
+0|ambassador
+0|realm
+0|maintenance
+0|expansion
+0|epic
+0|complexity
+0|compass
+0|emblem
+0|symbol
+0|navigation
+0|set off
+0|take place
+0|in charge
+0|in charge of sth.
+0|loaded with sth.
+0|Zheng He
+0|Pate
+0|Kenya
+0|Ceylon
+0|Arabia
+0|Columbus
+0|Santa Maria
+0|Confucius
+0|Mencius
+0|Indonesia
+0|Malaysia
+0|ailand
+0|Yemen
+0|Saudi Arabia
+0|Malindi
+0|noteworthy
+0|domain
+0|portray
+0|exemplary
+0|Nazi
+0|brutality
+0|invasion
+0|dart
+0|huddle
+0|foul
+0|anonymous
+0|refugee
+0|confront
+0|fragility
+0|afflict
+0|transcend
+0|rigorous
+0|leading man
+0|humanitarian
+0|divorce
+0|jeopardize
+0|compassionate
+0|alleviate
+0|paradise
+0|catastrophe
+0|cozy
+0|embark
+0|outreach
+0|bleak
+0|drought
+0|beneficiary
+0|wicked
+0|deprive
+0|misery
+0|ideology
+0|integral
+0|stricken
+0|cherish
+0|serene
+0|gracious
+0|perpetual
+0|perpetually
+0|signify
+0|majesty
+0|poise
+0|embark on sth.
+0|embark upon sth.
+0|share in sth.
+0|lead by example
+0|live on
+0|Audrey Hepburn
+0|Breakfast at Tiffany's
+0|Sabrina
+0|Roman Holiday
+0|My Fair Lady
+0|War and Peace
+0|Always
+0|UNICEF
+0|UNICER Goodwill Ambassador
+0|the Netherlands
+0|Gregory Peck
+0|Billy Whilder
+0|Robert Wolders
+0|Switzerland
+0|Robby
+0|Bangladesh
+0|Sudan
+0|Vietnam
+0|Ethiopia
+0|Somalia
+0|groan
+0|terminal
+0|burdensome
+0|airborne
+0|cluster
+0|keepsake
+0|globalize
+0|decidedly
+0|corporate
+0|compulsory
+0|offset
+0|tropical
+0|aviation
+0|hemisphere
+0|solve
+0|stubborn
+0|contemplate
+0|saturate
+0|infinite
+0|finite
+0|prose
+0|verse
+0|loosen
+0|cognitive
+0|imprison
+0|mingle
+0|mundane
+0|endow
+0|trivial
+0|versus
+0|denote
+0|ambiguity
+0|circumference
+0|latitude
+0|longitude
+0|renaissance
+0|diversity
+0|facet
+0|insular
+0|drawback
+0|jet lag
+0|on sale
+0|trade sth. for sth.
+0|trade sb. for sth.
+0|endow sb. with sth.
+0|endow sth. with sth.
+0|be open to sth.
+0|more often than not
+0|Left Bank
+0|Bulgaria
+0|Louvre
+0|Machu Picchu
+0|solo
+0|aesthetics
+0|venerable
+0|statue
+0|chunk
+0|onset
+0|pregnant
+0|zigzag
+0|conceive
+0|inconceivable
+0|reckless
+0|isolation
+0|susceptible
+0|booklet
+0|feast
+0|bilingual
+0|downside
+0|menace
+0|youth hostel
+0|snore
+0|lawnmower
+0|irritate
+0|irritated
+0|perplex
+0|perplexed
+0|safeguard
+0|suppress
+0|hay
+0|wagon
+0|Brit
+0|Aussie
+0|Norwegian
+0|ethnic
+0|tissue
+0|ample
+0|swap
+0|folklore
+0|upfront
+0|caution
+0|presume
+0|disregard
+0|leap
+0|neutral
+0|bureaucrat
+0|despise
+0|constrain
+0|sensational
+0|take time off
+0|show sb. around
+0|show sb. around sth.
+0|show sb. round
+0|show sb. round sth.
+0|pick sb. up
+0|safeguard sb. from sth.
+0|safeguard sb. against sth.
+0|safeguard sth. from sth.
+0|safeguard sth. against sth.
+0|swap sth. with sb.
+0|throw caution to the wind
+0|throw caution to the winds
+0|cast caution to the wind
+0|cast caution to the winds
+0|watch one's back
+0|watch for sth.
+0|watch out for sth.
+0|open one's mind
+0|open one's mind to sth.
+0|constrain sb. from sth.
+0|constrain sb. from doing sth.
+0|abolish
+0|degrade
+0|adverse
+0|conform
+0|revenue
+0|polar
+0|pastime
+0|coincide
+0|voluntary
+0|designate
+0|correlate
+0|manual
+0|mayor
+0|autonomy
+0|diligence
+0|precision
+0|foster
+0|livelihood
+0|grind
+0|gauge
+0|commonplace
+0|automate
+0|automated
+0|upcoming
+0|medieval
+0|aristocracy
+0|pursuit
+0|refrain
+0|celebrity
+0|gossip
+0|extravagant
+0|toxic
+0|bored
+0|array
+0|diversion
+0|hurl
+0|suffice
+0|outlet
+0|aptly
+0|monetary
+0|optimum
+0|contend
+0|to name a few
+0|to name but a few
+0|sink one's teeth into sth.
+0|get one's teeth into sth.
+0|slave away
+0|slave away at sth.
+0|be counting the minutes
+0|be counting down the minutes
+0|be counting the hours
+0|be counting down the hours
+0|be counting the days
+0|be counting down the days
+0|at hand
+0|contend with sth.
+0|hospitality
+0|stitch
+0|patch
+0|spectacle
+0|handicraft
+0|specialty
+0|residential
+0|absurd
+0|bias
+0|gleam
+0|fellowship
+0|linger
+0|impart
+0|charitable
+0|carefree
+0|oversee
+0|melody
+0|nickname
+0|cobbler
+0|periodic
+0|periodically
+0|referee
+0|bully
+0|bullying
+0|fury
+0|vent
+0|sin
+0|rash
+0|rashly
+0|ponder
+0|endeavor
+0|amend
+0|ensue
+0|pierce
+0|infectious
+0|wretched
+0|void
+0|stitch sth. up
+0|live up to sth.
+0|drop in
+0|drop in on sb.
+0|give sth. out
+0|play fair
+0|come away
+0|be hard on sb.
+0|be hard on sth.
+0|take pride in sb.
+0|take pride in sth.
+0|call for sb.
+0|call for sth.
+0|pierce sb.'s heart
+0|carry on sth.
+0|milestone
+0|dock
+0|blueprint
+0|batch
+0|feat
+0|momentous
+0|gigantic
+0|extravehicular
+0|astronautics
+0|normally
+0|simulate
+0|weightlessness
+0|centrifuge
+0|g-force
+0|lift-off
+0|halt
+0|ascend
+0|oscillation
+0|organ
+0|vibrate
+0|inflict
+0|grit
+0|accomplish
+0|unforgettable
+0|rip
+0|boundary
+0|patriotic
+0|trigger
+0|tearfully
+0|embody
+0|lofty
+0|rejuvenation
+0|for the benefit of sb.
+0|for sb.'s benefit
+0|owe a debt to sb.
+0|owe a debt of gratitude to sb.
+0|rip through sth.
+0|Shenzhou-12
+0|People's Liberation Army Air Force
+0|PLA Air Force
+0|PLA Astronaut Group
+0|Shenzhou-5
+0|Shenzhou-7
+0|Shenzhou-9
+0|August 1 Medal
+0|crash
+0|meteorite
+0|disrupt
+0|desolate
+0|first-ever
+0|soft landing
+0|disc
+0|captivating
+0|tidal
+0|rove
+0|deepen
+0|lunar
+0|lull
+0|millennium
+0|unmanned
+0|preparatory
+0|mythology
+0|jade
+0|latecomer
+0|spacecraft
+0|man-made
+0|relay
+0|magpie
+0|rugged
+0|terrain
+0|region
+0|cooperate
+0|species
+0|mini
+0|biosphere
+0|robotic
+0|footprint
+0|nucleus
+0|outpost
+0|kick sth. off
+0|to date
+0|stem from sth.
+0|draw sth. up
+0|Chang'e-4
+0|Luna
+0|Apollo
+0|Chang'e-1
+0|Chang'e-3
+0|Queqiao
+0|Sweden
+0|slump
+0|originate
+0|mortgage
+0|loan
+0|subsidiary
+0|sizable
+0|drastic
+0|spiral
+0|lay-off
+0|termination
+0|rebound
+0|tenant
+0|eviction
+0|expire
+0|migrant
+0|metropolitan
+0|enroll
+0|client
+0|tumble
+0|remnant
+0|deposit
+0|account
+0|checking account
+0|verge
+0|repossess
+0|harassment
+0|forth
+0|resolve
+0|sicken
+0|sickening
+0|certification
+0|retail
+0|comply
+0|reclaim
+0|donate
+0|parasite
+0|jelly
+0|subsistence
+0|surf
+0|index
+0|obstacle
+0|brutal
+0|pack sth. up
+0|wind up
+0|put sth. down
+0|scrape sth. together
+0|scrape sth. up
+0|a roof over one's head
+0|back and forth
+0|for good
+0|come to sb.'s aid
+0|go to sb.'s aid
+0|be in a position to do sth.
+0|Sue Johnson
+0|Mexico
+0|the Caribbean
+0|commodity
+0|estate
+0|real estate
+0|intrinsic
+0|boom
+0|bust
+0|entail
+0|feedback
+0|analogy
+0|spur
+0|flaw
+0|underlying
+0|flock
+0|foremost
+0|justify
+0|amplify
+0|tulip
+0|bulb
+0|assimilate
+0|avert
+0|elastic
+0|provided
+0|retrospect
+0|cumulative
+0|beforehand
+0|equity
+0|appraisal
+0|allocate
+0|default
+0|culminate
+0|dividend
+0|herd
+0|mentality
+0|broker
+0|mercury
+0|thermometer
+0|deterioration
+0|aggregate
+0|striking
+0|buzz
+0|duplicate
+0|envisage
+0|billboard
+0|ambiguous
+0|buck
+0|blunder
+0|fad
+0|auction
+0|any number of sth.
+0|drive sth. up
+0|by no means
+0|not by any means
+0|let sb. in
+0|let sth. in
+0|set in
+0|in aggregate
+0|in the aggregate
+0|sell sth. off
+0|be limited to sth.
+0|buy sth. up
+0|strike it rich
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 676
+# Total Entries Extracted: 676
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 676
+# -------------------------------

@@ -1,0 +1,833 @@
+0|fresher
+0|wearisome
+0|expedition
+0|residence
+0|warden
+0|sign
+0|flush
+0|gasp
+0|unlock
+0|barely
+0|stretch
+0|full-length
+0|muscle
+0|hem
+0|lofty
+0|slope
+0|affable
+0|peer
+0|jerk
+0|wildly
+0|spill
+0|sip
+0|thunderstruck
+0|enquire
+0|peckish
+0|stumble
+0|lengthy
+0|guy
+0|weird
+0|frighteningly
+0|intelligent
+0|gap
+0|impressive
+0|ignorant
+0|concur
+0|ballroom
+0|dramatics
+0|choir
+0|buddy
+0|reassure
+0|inordinately
+0|wardrobe
+0|check in
+0|out of order
+0|stretch out
+0|go along
+0|sign up for
+0|rent out
+0|as long as
+0|burst into tears
+0|burst into song
+0|burst into laughter
+0|run out of
+0|'tis
+0|memoir
+0|admirable
+0|cultural
+0|inadequate
+0|subway
+0|admiringly
+0|pilgrim
+0|scribble
+0|detect
+0|Irish
+0|brogue
+0|persecution
+0|persecute
+0|diploma
+0|surely
+0|cafeteria
+0|Puritan
+0|out of
+0|in the long run
+0|be lost
+0|feel lost
+0|frighten the life out of sb.
+0|frighten sb. to death
+0|dorm
+0|complicated
+0|responsible
+0|oyster
+0|frown
+0|nonsense
+0|frank
+0|nasty
+0|resort
+0|enormous
+0|portion
+0|seafood
+0|crab
+0|prawn
+0|lobster
+0|shellfish
+0|cling
+0|bucket
+0|yummy
+0|schoolboy
+0|juicy
+0|gloomy
+0|emotion
+0|innocence
+0|chip
+0|homesick
+0|region
+0|complain
+0|perception
+0|discard
+0|implement
+0|crack
+0|shell
+0|scrape
+0|mouthful
+0|tease
+0|despair
+0|bake
+0|thumb
+0|slippery
+0|work out
+0|to be frank
+0|come of age
+0|a battery of
+0|now and then
+0|pick up
+0|cacao
+0|crush
+0|paste
+0|spice
+0|stimulating
+0|nourishing
+0|cocoa
+0|highly
+0|flavour
+0|luxury
+0|mould
+0|snap
+0|melt
+0|best-selling
+0|manufacturer
+0|concentrated
+0|condense
+0|condensed milk
+0|manufacture
+0|popularity
+0|property
+0|confess
+0|chocaholic
+0|sweet tooth
+0|inherit
+0|genetic
+0|trait
+0|release
+0|hormone
+0|endorphin
+0|well-being
+0|vitamin
+0|account for
+0|have an effect on
+0|have some effect on
+0|have little effect on
+0|have no effect on
+0|conjure
+0|hamburger
+0|excess
+0|encounter
+0|vendor
+0|ingredient
+0|freshly
+0|industrial
+0|snack
+0|hygiene
+0|unreliable
+0|seller
+0|falafel
+0|commuter
+0|bento
+0|satay
+0|cart
+0|spicy
+0|varied
+0|chaat
+0|characterize
+0|radical
+0|particularly
+0|workplace
+0|suspicion
+0|thwart
+0|organizational
+0|vision
+0|dearth
+0|revere
+0|unmitigated
+0|occasionally
+0|mentor
+0|glimpse
+0|advanced
+0|algebra
+0|malign
+0|sum
+0|pubescent
+0|aisle
+0|lean
+0|rub
+0|agony
+0|tactile
+0|prevalent
+0|presence
+0|humiliate
+0|affirm
+0|powerfully
+0|think for yourself
+0|on purpose
+0|not think much of
+0|find out
+0|for that matter
+0|at length
+0|at great length
+0|at some length
+0|start up
+0|be about to do
+0|at least
+0|uni
+0|basically
+0|improvement
+0|lecturer
+0|passion
+0|context
+0|handout
+0|engage
+0|critical
+0|query
+0|effective
+0|problem-solving
+0|scaffolding
+0|resource
+0|overall
+0|online
+0|encyclopedia
+0|journalism
+0|specialized
+0|slightly
+0|assignment
+0|essential
+0|built-in
+0|revise
+0|edit
+0|well done
+0|be faced with sth.
+0|be faced by sth.
+0|believe it or not
+0|follow up
+0|follow up with
+0|think over
+0|go through
+0|build up
+0|try out
+0|get the picture
+0|make sure
+0|above all
+0|easier said than done
+0|linguistics
+0|systematically
+0|Semitic
+0|Arabic
+0|Hebrew
+0|backtrack
+0|Oriental
+0|Romance language
+0|Spanish
+0|stray
+0|Slav
+0|illustrate
+0|criticism
+0|simplistic
+0|insufficient
+0|biased
+0|efficient
+0|rhetorical
+0|device
+0|repetition
+0|figurative
+0|pickle
+0|dresser
+0|toss
+0|fascinate
+0|jingle
+0|tone
+0|mute
+0|thud
+0|squat
+0|copper
+0|glint
+0|pirate
+0|stack
+0|cardboard
+0|textile
+0|mill
+0|cashier
+0|grin
+0|fund
+0|cone
+0|ice-cream cone
+0|vanilla
+0|parlor
+0|nestle
+0|palm
+0|rattle
+0|nickel
+0|dime
+0|lump
+0|determination
+0|perseverance
+0|eloquently
+0|flowery
+0|significant
+0|lowly
+0|define
+0|doggedly
+0|catsup
+0|palatable
+0|glisten
+0|cuddle
+0|grandchild
+0|whimper
+0|diaper
+0|amazement
+0|fistful
+0|gamut
+0|each and every
+0|hold sb. back
+0|hold sth. back
+0|see to
+0|serve its purpose
+0|lecture sb. on sth.
+0|lecture sb. about sth.
+0|play a part in sth.
+0|play a role in sth.
+0|lay off
+0|to the contrary
+0|take turns
+0|to sb's amazement
+0|legend
+0|perfectionist
+0|definitely
+0|innate
+0|pivotal
+0|spine
+0|thankful
+0|relatively
+0|outgoing
+0|whereas
+0|outspoken
+0|squabble
+0|mood
+0|protective
+0|stroller
+0|distraction
+0|sibling
+0|spoil
+0|syndrome
+0|think back
+0|over and over
+0|again
+0|think of sb. as sth.
+0|think of sth. as sth.
+0|get oneself together
+0|be born with a silver spoon in your mouth
+0|go without
+0|when it comes to sth.
+0|when it comes to doing sth.
+0|come sb.'s way
+0|take a risk
+0|on the one hand ...
+0|on the other hand
+0|store sth. up
+0|get sth. off your chest
+0|for sure
+0|come along
+0|to begin with
+0|in play
+0|start off
+0|to be honest
+0|what with
+0|laugh sb.'s head off
+0|shout sb.'s head off
+0|scream sb.'s head off
+0|nevertheless
+0|campfire
+0|despite
+0|drama
+0|environmental
+0|awareness
+0|circus
+0|self-confidence
+0|motivation
+0|keen
+0|entertaining
+0|childcare
+0|distract
+0|canoeing
+0|extrovert
+0|opportunity
+0|solution
+0|terrorist
+0|exaggerate
+0|historical
+0|memorable
+0|newsworthy
+0|horror
+0|sensational
+0|reaction
+0|instinct
+0|confirmation
+0|startled
+0|objective
+0|global
+0|issue
+0|poverty
+0|ongoing
+0|contrast
+0|odd
+0|unexpected
+0|identify
+0|plight
+0|technician
+0|momentous
+0|echo
+0|chase
+0|element
+0|newsworthiness
+0|immediacy
+0|generally
+0|trainee
+0|regularly
+0|frame
+0|similarly
+0|definition
+0|unfold
+0|necessarily
+0|image
+0|guidelines
+0|covertly
+0|millennium
+0|erode
+0|devolve
+0|proliferation
+0|blog
+0|site
+0|instantly
+0|overnight
+0|never-ending
+0|item
+0|increasingly
+0|source
+0|make the headlines
+0|hit the headlines
+0|grab the headlines
+0|lead with sth.
+0|in contrast
+0|by contrast
+0|identify with
+0|be caught up in sth.
+0|get caught up in sth.
+0|hold up
+0|take off
+0|by definition
+0|not necessarily
+0|more or less
+0|turn to
+0|ritual
+0|circulation
+0|revenue
+0|cover price
+0|vicious
+0|vicious circle
+0|predate
+0|readership
+0|claim
+0|mere
+0|advertiser
+0|outlet
+0|ferocious
+0|remorselessly
+0|downsize
+0|bureau
+0|tabloid
+0|bid
+0|capture
+0|connotation
+0|downmarket
+0|compact
+0|establish
+0|website
+0|reassurance
+0|feedback
+0|deny
+0|impact
+0|billion
+0|annually
+0|estate
+0|furthermore
+0|polluter
+0|survey
+0|laptop
+0|attendant
+0|wrapping
+0|takeaway
+0|swat
+0|wrap
+0|exploitation
+0|lifestyle
+0|commentator
+0|dumb
+0|smarten
+0|integrity
+0|impartiality
+0|coverage
+0|editorial
+0|prestige
+0|moreover
+0|meaningful
+0|armchair
+0|in print
+0|rely on
+0|close down
+0|cut down
+0|turn back
+0|put away
+0|remind sb. of
+0|that is
+0|that is to say
+0|publication
+0|broadsheet
+0|avid
+0|Swedish
+0|traveller
+0|overwhelm
+0|stupidity
+0|surroundings
+0|unpleasant
+0|elderly
+0|lately
+0|tiresome
+0|financial
+0|gown
+0|cynical
+0|pessimistic
+0|browse
+0|craft
+0|rural
+0|elsewhere
+0|artistic
+0|unimaginable
+0|glamour
+0|curiosity
+0|directly
+0|astonishment
+0|olive
+0|herb
+0|comparison
+0|unfamiliar
+0|imagination
+0|realization
+0|nuisance
+0|resolve
+0|by choice
+0|time to spare
+0|money to spare
+0|room to spare
+0|the like of
+0|the likes of
+0|push your way through
+0|in comparison with
+0|in comparison to
+0|duel
+0|Lithuanian
+0|spa
+0|joint
+0|series
+0|pothole
+0|amusingly
+0|highway
+0|properly
+0|halt
+0|sleepy
+0|council
+0|diplomatic
+0|slam
+0|bang
+0|reverse
+0|mayor
+0|fame
+0|farewell
+0|unfortunately
+0|rival
+0|deadly
+0|yield
+0|spark
+0|revolt
+0|dead end
+0|squash
+0|vigorous
+0|stuff
+0|set off
+0|come to a halt
+0|draw to a halt
+0|no sooner ... than
+0|in reverse
+0|be as good as one's word
+0|as usual
+0|come round
+0|in turn
+0|sure enough
+0|fall out
+0|ecotourism
+0|thoughtful
+0|economic
+0|guidebook
+0|current
+0|transferable
+0|belongings
+0|wristwatch
+0|jewellery
+0|conserve
+0|instance
+0|trace
+0|litter
+0|souvenir
+0|economy
+0|community
+0|sustain
+0|passionate
+0|stir
+0|grief
+0|conquer
+0|delightful
+0|scorn
+0|original
+0|unbearable
+0|necessity
+0|humble
+0|soulless
+0|heartless
+0|enclose
+0|unworthy
+0|fate
+0|entirely
+0|liar
+0|doubter
+0|jealous
+0|earnest
+0|earnestness
+0|sincerity
+0|interfere
+0|face to face
+0|delight in
+0|be unworthy of
+0|set sb. free
+0|have faith in
+0|in sb.'s eyes
+0|interfere with
+0|servitude
+0|grace
+0|shed
+0|valentine
+0|satin
+0|undress
+0|reflection
+0|wobble
+0|truthful
+0|cute
+0|kissogram
+0|possessive
+0|faithful
+0|platinum
+0|loop
+0|lethal
+0|scent
+0|embroider
+0|enwrought
+0|dim
+0|tread
+0|investigate
+0|poetry
+0|Persian
+0|traditionally
+0|matchmaker
+0|contact
+0|miai
+0|groom
+0|alter
+0|carve
+0|padlock
+0|lucchetti d'amore
+0|protest
+0|quitter
+0|winner
+0|bulldog
+0|loser
+0|comedian
+0|damn
+0|unattainable
+0|physically
+0|mentally
+0|persist
+0|bombard
+0|adversity
+0|maxim
+0|psychologist
+0|specifically
+0|persistence
+0|extremely
+0|unlikely
+0|Olympic
+0|medalist
+0|persistent
+0|negative
+0|psychological
+0|minor
+0|ailment
+0|indigestion
+0|disorder
+0|protein
+0|inflammation
+0|killer
+0|diabetes
+0|reluctance
+0|emotional
+0|recovery
+0|melancholy
+0|depression
+0|passivity
+0|reassess
+0|realistic
+0|evolutionary
+0|species
+0|individual
+0|aspiration
+0|glorious
+0|career
+0|up to a point
+0|give up on
+0|at any cost
+0|at all costs
+0|in the face of
+0|in the long term
+0|in the middle term
+0|in the short term
+0|look back
+0|what if
+0|set a goal
+0|set yourself a goal
+0|set sb. a goal
+0|shut down
+0|on the positive side
+0|on the negative side
+0|in ... terms
+0|in terms of ...
+0|slow down
+0|earn a living
+0|make a living
+0|grow out of
+0|jog
+0|gear
+0|brainpower
+0|researcher
+0|overweight
+0|cognitive
+0|infection
+0|limb
+0|density
+0|metabolism
+0|calorie
+0|nutrient
+0|digestion
+0|glow
+0|cholesterol
+0|enhance
+0|concentration
+0|agility
+0|alert
+0|tolerance
+0|demonstrate
+0|relieve
+0|estimate
+0|immune
+0|immune system
+0|maintain
+0|enthusiasm
+0|lifetime
+0|motivate
+0|elbow
+0|clench
+0|stride
+0|sandal
+0|variation
+0|gravel
+0|uphill
+0|cobblestones
+0|acupressure
+0|sole
+0|pedometer
+0|measurement
+0|far-reaching
+0|bullet
+0|magic bullet
+0|destructive
+0|lose weight
+0|all of a sudden
+0|come and go
+0|go back to doing sth.
+0|fit into
+0|without a second thought
+0|rarely
+0|cope
+0|polar
+0|sauna
+0|inhabitant
+0|relaxation
+0|essence
+0|chimney
+0|retain
+0|naked
+0|norm
+0|toxin
+0|Finnish
+0|rage
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 826
+# Total Entries Extracted: 826
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 826
+# -------------------------------

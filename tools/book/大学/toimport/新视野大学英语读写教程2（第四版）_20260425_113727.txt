@@ -1,0 +1,675 @@
+0|tedious
+0|oblige
+0|absorb
+0|absorbed
+0|allergic
+0|excursion
+0|earnest
+0|exclaim
+0|civilization
+0|architecture
+0|capture
+0|condense
+0|condensed
+0|exceed
+0|distress
+0|downturn
+0|distinguish
+0|complementary
+0|bulk
+0|criticism
+0|deficit
+0|dumb
+0|grocery
+0|stationary
+0|stationery
+0|proclaim
+0|scandal
+0|proficiency
+0|moreover
+0|vital
+0|adequately
+0|accurate
+0|competent
+0|jerk
+0|jerky
+0|function
+0|span
+0|scratch
+0|tune
+0|adjust
+0|destination
+0|precise
+0|asset
+0|sour
+0|swell
+0|subjunctive
+0|be obliged to do sth.
+0|feel obliged to do sth.
+0|get serious about
+0|be serious about
+0|run into sb.
+0|fresh from
+0|distinguish between
+0|nail sth. down
+0|get lost
+0|feel lost
+0|be lost
+0|become attracted to sth.
+0|be attracted to sth.
+0|out of curiosity
+0|look upon ... as
+0|be equipped with sth.
+0|mysterious
+0|mysteriously
+0|assassinate
+0|autobiography
+0|household
+0|commit
+0|sketch
+0|sophisticated
+0|unsophisticated
+0|bid
+0|desperate
+0|devise
+0|scheme
+0|clue
+0|frustrate
+0|frustrated
+0|launch
+0|quest
+0|appeal
+0|skim
+0|negotiate
+0|format
+0|moist
+0|advisable
+0|advisory
+0|crude
+0|quotation
+0|quotation mark
+0|recall
+0|log
+0|literacy
+0|depict
+0|acquisition
+0|marvellous
+0|successive
+0|confusion
+0|diminish
+0|concentration
+0|fluent
+0|fluently
+0|profound
+0|ignorance
+0|horizon
+0|expand
+0|in a bid to do sth.
+0|turn to sb.
+0|turn to sth.
+0|speak of
+0|launch sb. on sth.
+0|get hold of sth.
+0|appeal to sb. for sth.
+0|focus on
+0|focus sth. on
+0|Malcolm
+0|fairy
+0|fairy tale
+0|burglary
+0|grab
+0|plot
+0|passionate
+0|version
+0|weird
+0|currently
+0|obsess
+0|magnificence
+0|massive
+0|gaze
+0|awe
+0|roller coaster
+0|placement
+0|Advanced Placement
+0|hesitate
+0|semester
+0|introductory
+0|confirm
+0|par
+0|hatred
+0|thereafter
+0|calculate
+0|spectrum
+0|artistic
+0|browse
+0|option
+0|graphic
+0|graphic design
+0|sentiment
+0|resort
+0|prolong
+0|prolonged
+0|source
+0|calling
+0|proofread
+0|release
+0|press release
+0|provoke
+0|thought-provoking
+0|minor
+0|reputable
+0|aspiration
+0|tuition
+0|be passionate about
+0|be obsessed with
+0|be obsessed by
+0|in awe
+0|not up to par
+0|let sb. down
+0|turn out
+0|pick one's brains
+0|throw sth. out
+0|major in
+0|accounting
+0|boost
+0|prospect
+0|defect
+0|bet
+0|persist
+0|accelerate
+0|succession
+0|liberal
+0|liberal arts
+0|logical
+0|bound
+0|dominant
+0|pillar
+0|vivid
+0|compelling
+0|promote
+0|speculate
+0|destruction
+0|self-destruction
+0|conscious
+0|unconscious
+0|constructive
+0|philosopher
+0|myth
+0|landscape
+0|likewise
+0|elegant
+0|spectacular
+0|invest
+0|insight
+0|awareness
+0|self-awareness
+0|thereby
+0|scope
+0|martial
+0|undertake
+0|candidate
+0|mathematician
+0|barrier
+0|liable
+0|ideal
+0|dean
+0|solely
+0|applicant
+0|reservoir
+0|outstanding
+0|stand up for
+0|speculate about
+0|speculate on
+0|capture sb.'s imagination
+0|in the form of
+0|a body of sth.
+0|invest ... with sth.
+0|in a ... manner
+0|in favor of
+0|prepare sb. for
+0|in the company of
+0|Sigmund Freud
+0|Sally Ride
+0|Bruce Lee
+0|grant
+0|conduct
+0|accustomed
+0|utility
+0|exaggeration
+0|shrug
+0|sector
+0|recruit
+0|employee
+0|entrepreneur
+0|entrepreneurship
+0|persevere
+0|persevering
+0|endure
+0|internal
+0|innovation
+0|assign
+0|feature
+0|invaluable
+0|furthermore
+0|conventional
+0|sufficient
+0|shift
+0|schedule
+0|flexible
+0|vigorous
+0|ethic
+0|work ethic
+0|parallel
+0|exhibit
+0|collective
+0|persistence
+0|stunning
+0|enhance
+0|strive
+0|stir
+0|functionality
+0|seamlessly
+0|weave
+0|fabric
+0|motivate
+0|retain
+0|resourceful
+0|perceive
+0|no exaggeration to say ...
+0|no exaggeration that ...
+0|have a passion for sth.
+0|for the sake of
+0|strive for
+0|be based on
+0|tap into
+0|artificial
+0|intelligence
+0|artificial intelligence
+0|characteristic
+0|visual
+0|idealistic
+0|maturity
+0|valid
+0|communicative
+0|proof
+0|illustrate
+0|buddy
+0|evaluation
+0|self-evaluation
+0|perceptive
+0|capability
+0|renew
+0|kindling
+0|offend
+0|offended
+0|individualism
+0|condemn
+0|infer
+0|entree
+0|consequently
+0|cater
+0|caterer
+0|episode
+0|incidental
+0|impulsive
+0|scale
+0|ironically
+0|discrimination
+0|implement
+0|somehow
+0|elevation
+0|automatic
+0|whereas
+0|influential
+0|merit
+0|inspirational
+0|demonstrate
+0|networking
+0|excel
+0|be gifted with
+0|be crazy about
+0|be amazed at
+0|whisper in one's ear
+0|whisper sth. in one's ear
+0|be illustrative of
+0|run out
+0|run out of sth.
+0|miss out on
+0|on a large scale
+0|be depicted as
+0|strategic
+0|anniversary
+0|series
+0|geophysicist
+0|geophysics
+0|geological
+0|geology
+0|undergraduate
+0|rejuvenate
+0|alma mater
+0|seminar
+0|random
+0|entrust
+0|discipline
+0|multidiscipline
+0|crust
+0|maximize
+0|typical
+0|typically
+0|workaholic
+0|lunatic
+0|explicit
+0|resound
+0|urgent
+0|doctoral
+0|gap
+0|survey
+0|faint
+0|tumor
+0|liver
+0|resolute
+0|resolutely
+0|chase
+0|patriotism
+0|embed
+0|fulfill
+0|exceptional
+0|catch one's eye
+0|pass sth. down
+0|be admitted to
+0|stay on
+0|remain committed to
+0|be entrusted to do sth.
+0|hole up
+0|race against time
+0|in urgent need of
+0|pay off
+0|miss the key window for sth.
+0|be embedded in
+0|Changchun Institute of Geology
+0|phase
+0|label
+0|adolescence
+0|infant
+0|infancy
+0|peculiar
+0|acquaint
+0|previous
+0|norm
+0|induction
+0|sensible
+0|equivalent
+0|radical
+0|quit
+0|spouse
+0|stability
+0|static
+0|proportion
+0|saddle
+0|heir
+0|resent
+0|fluid
+0|allowance
+0|transition
+0|predict
+0|guideline
+0|permanent
+0|status
+0|conjunction
+0|incentive
+0|completion
+0|representation
+0|implicit
+0|autonomous
+0|contemporary
+0|witness
+0|deceive
+0|resume
+0|reinforce
+0|take a break from
+0|return to sth.
+0|saddle sb. with sth.
+0|keep a distance from
+0|run away from
+0|make allowance for sth.
+0|make allowances for sth.
+0|give way to
+0|have an effect on
+0|deceive sb. into doing sth.
+0|back off
+0|wonder at
+0|dilemma
+0|manipulate
+0|defy
+0|recession
+0|grave
+0|penalty
+0|charming
+0|tone
+0|odds
+0|permissive
+0|perspective
+0|upright
+0|urge
+0|suspend
+0|luxury
+0|appetite
+0|loyalty
+0|disguise
+0|invade
+0|utmost
+0|diverse
+0|cruise
+0|cement
+0|compact
+0|campaign
+0|echo
+0|stock
+0|scatter
+0|scattered
+0|ingredient
+0|hinder
+0|prime
+0|objective
+0|consult
+0|input
+0|budget
+0|administration
+0|ego
+0|tackle
+0|choppy
+0|get out of
+0|do one's utmost
+0|no shortage of
+0|be cemented into
+0|put sth. off
+0|take sth. in
+0|retain control over sth.
+0|consult with sb.
+0|stay on track
+0|get in one's way
+0|spin out of control
+0|catalog
+0|entitle
+0|scout
+0|issue
+0|filter
+0|probe
+0|sheer
+0|profile
+0|submit
+0|corporation
+0|installment
+0|purchase
+0|tame
+0|rod
+0|stem
+0|wardrobe
+0|trifle
+0|accumulate
+0|fund
+0|barely
+0|ongoing
+0|principal
+0|sanction
+0|impose
+0|negative
+0|gravity
+0|specifically
+0|vision
+0|prohibit
+0|manufacture
+0|bother
+0|cripple
+0|bankrupt
+0|heal
+0|blend
+0|disgust
+0|torture
+0|exemplify
+0|isolate
+0|isolated
+0|chaos
+0|tremendous
+0|remedy
+0|severe
+0|illusion
+0|stagger
+0|staggeringly
+0|pass sth. out
+0|be entitled to sth.
+0|be entitled to do sth.
+0|feel entitled to sth.
+0|feel entitled to do sth.
+0|urge sb. to do sth.
+0|filter sth. out
+0|in accordance with
+0|in despair
+0|shrug sth. off
+0|hide sth. from sb.
+0|lose interest in sth.
+0|tear at
+0|out of the question
+0|suffer from
+0|rival
+0|secondary
+0|imperial
+0|raid
+0|territory
+0|opponent
+0|loyal
+0|vessel
+0|genius
+0|conviction
+0|validate
+0|veteran
+0|enlightening
+0|publication
+0|investigation
+0|multiple
+0|marshal
+0|profit
+0|revolve
+0|eliminate
+0|preserve
+0|session
+0|fluctuate
+0|modify
+0|element
+0|shrink
+0|attach
+0|protest
+0|cling
+0|maintain
+0|underneath
+0|temporary
+0|corresponding
+0|restore
+0|prohibition
+0|delegate
+0|load
+0|committee
+0|prune
+0|discard
+0|outward
+0|prejudice
+0|prejudiced
+0|dose
+0|respective
+0|go up in flames
+0|an exception to sth.
+0|be featured in
+0|profit from
+0|revolve around
+0|be exhausted from
+0|come in handy
+0|pay a big price
+0|pay a big price to do sth.
+0|pay a big price for sth.
+0|be measured in sth.
+0|make a ... effort to do sth.
+0|in a ... fashion
+0|Xiang Yu
+0|Zhang River
+0|Massachusetts Institute of Technology
+0|MIT
+0|venture
+0|acid
+0|button
+0|hint
+0|remote
+0|distribute
+0|convince
+0|convinced
+0|transaction
+0|render
+0|wreck
+0|category
+0|enforce
+0|enforced
+0|highlight
+0|vacant
+0|rely
+0|implication
+0|verify
+0|subtraction
+0|indicate
+0|penetrate
+0|penetrating
+0|transfer
+0|property
+0|residence
+0|dominate
+0|optimistic
+0|lest
+0|overlook
+0|accuse
+0|overwhelming
+0|controversy
+0|angle
+0|prescribe
+0|whatsoever
+0|rejoice
+0|precaution
+0|withstand
+0|specify
+0|trace
+0|rush into
+0|in haste
+0|try sth. on
+0|be out of control
+0|get out of control
+0|run out of control
+0|fall apart
+0|go downhill
+0|settle for
+0|be depressed about
+0|struggle to do sth.
+0|Laozi
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 668
+# Total Entries Extracted: 668
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 668
+# -------------------------------

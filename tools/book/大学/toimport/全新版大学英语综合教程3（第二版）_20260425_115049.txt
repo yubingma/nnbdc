@@ -1,0 +1,916 @@
+0|get by
+0|frustration
+0|suburban
+0|contentment
+0|self-reliant
+0|honey
+0|just about
+0|canoe
+0|ski
+0|low
+0|hawk
+0|cornfield
+0|haul
+0|firewood
+0|sled
+0|strawberry
+0|retile
+0|long-overdue
+0|overdue
+0|improvement
+0|supplement
+0|indoor
+0|chick
+0|typewriter
+0|freelance
+0|pursue
+0|oversee
+0|beehive
+0|organ
+0|stack
+0|wicked
+0|blast
+0|overflow
+0|swamp
+0|freezer
+0|cherry
+0|raspberry
+0|asparagus
+0|canned-goods
+0|plum
+0|jelly
+0|squash
+0|pumpkin
+0|get through
+0|gallon
+0|at that point
+0|decidedly
+0|employer
+0|blessing
+0|bless
+0|on balance
+0|den
+0|illustrate
+0|hitch
+0|dogsled
+0|monster
+0|digest
+0|boundary
+0|wilderness
+0|wilderness area
+0|generate
+0|dental
+0|insurance
+0|policy
+0|fee
+0|minor
+0|premium
+0|aside from
+0|cut back
+0|appreciably
+0|lower
+0|dine out
+0|patronize
+0|opera
+0|ballet
+0|extravagant
+0|combine
+0|suspect
+0|solitude
+0|budget
+0|involve
+0|requirement
+0|self-sufficiency
+0|scale
+0|on a small scale
+0|on a large scale
+0|resist
+0|temptation
+0|laborsaving
+0|device
+0|machinery
+0|horsepower
+0|rotary
+0|cultivator
+0|rotary cultivator
+0|profit
+0|invest
+0|economic
+0|old-fashioned
+0|aroma
+0|roast
+0|Scrabble
+0|at one time
+0|comedy
+0|pearl
+0|get along
+0|workforce
+0|mushroom
+0|miss out
+0|in addition
+0|gasp
+0|commute
+0|whip up
+0|go with
+0|shake
+0|thaw
+0|as a result
+0|relate to
+0|take over
+0|dizzy
+0|array
+0|cable
+0|network
+0|make sense
+0|Saturn
+0|Canadian
+0|alongside
+0|slender
+0|settlement
+0|confident
+0|creator
+0|devotion
+0|cabin
+0|ironically
+0|symbolize
+0|symbol
+0|racial
+0|sellout
+0|unwilling
+0|stand up
+0|stand up for
+0|historic
+0|site
+0|slavery
+0|mission
+0|courageous
+0|forge
+0|web
+0|authorize
+0|civil-rights
+0|civil
+0|unsung
+0|intent
+0|be intent on
+0|peer
+0|urgently
+0|urgent
+0|pistol
+0|decade
+0|someday
+0|on the side
+0|foundry
+0|hunter
+0|capture
+0|chilly
+0|fugitive
+0|watchman
+0|spot
+0|helplessly
+0|helpless
+0|pursuer
+0|close in
+0|close on
+0|close around
+0|hurriedly
+0|wagon
+0|leg
+0|motivate
+0|religious
+0|conviction
+0|Quaker
+0|Bible
+0|bid
+0|clothe
+0|naked
+0|refuge
+0|shelter
+0|converge
+0|terminal
+0|threat
+0|magistrate
+0|impose
+0|jail
+0|Methodist
+0|imprison
+0|log
+0|stripe
+0|as for
+0|cake
+0|bonnet
+0|veil
+0|runaway
+0|disguise
+0|procession
+0|abolish
+0|virgin
+0|harshly
+0|harsh
+0|make the best of
+0|diligently
+0|diligent
+0|compel
+0|plantation
+0|salvation
+0|at risk
+0|in the eyes of
+0|pass for
+0|colonel
+0|detain
+0|disobedience
+0|lead to
+0|legal
+0|usher in
+0|activist
+0|advancement
+0|representation
+0|arrest
+0|be tired of
+0|push ... about
+0|push around
+0|push sb. about
+0|push sb. around
+0|oppose
+0|mistreatment
+0|trial
+0|transportation
+0|throughout
+0|boycott
+0|separation
+0|spokesman
+0|representative
+0|congressional
+0|fame
+0|activism
+0|presidential
+0|equality
+0|lie in honor
+0|lie in state
+0|Capitol
+0|latch
+0|on the latch
+0|universal
+0|close up
+0|rural
+0|unlock
+0|suburb
+0|vulnerable
+0|well-patroled
+0|patrol
+0|urban
+0|statistics
+0|dramatically
+0|dramatic
+0|allegedly
+0|allege
+0|tranquil
+0|era
+0|dead-bolt
+0|bolt
+0|electronic
+0|trip wire
+0|system
+0|hook up to
+0|patio
+0|elegantly
+0|elegant
+0|build in
+0|pry
+0|paste
+0|premise
+0|surveillance
+0|feature
+0|chart
+0|padlock
+0|ad
+0|atmosphere
+0|psychic
+0|transformation
+0|put up
+0|barrier
+0|barricade
+0|medium
+0|wander
+0|threaten
+0|outsider
+0|sophisticated
+0|X-ray
+0|terrorist
+0|terror
+0|frisker
+0|without so much as
+0|with not so much as
+0|sideways
+0|stand for
+0|be bathed in
+0|analyze
+0|with a small margin
+0|by a small margin
+0|with a large margin
+0|by a large margin
+0|caller
+0|error
+0|client
+0|insecure
+0|civilize
+0|reflection
+0|rape
+0|whistle
+0|self-protection
+0|outsmart
+0|outsmart oneself
+0|legacy
+0|look back on
+0|unseen
+0|shun
+0|peacenik
+0|aim at
+0|take the plunge
+0|pacifist
+0|belief
+0|trap
+0|pull in
+0|aggressive
+0|in one's favor
+0|depart
+0|confirm
+0|break in
+0|break into
+0|in circumstances
+0|under the circumstances
+0|in the circumstances
+0|under no circumstances
+0|in no circumstances
+0|advocate
+0|insure
+0|count on
+0|recommend
+0|draw the line at
+0|agile
+0|rip
+0|on the line
+0|wrap
+0|squeeze
+0|in a row
+0|doze off
+0|briskly
+0|brisk
+0|patent
+0|frail
+0|approve
+0|strain
+0|mess
+0|revolutionize
+0|atom
+0|molecule
+0|photon
+0|foundation
+0|quantum
+0|relativity
+0|fabric
+0|outburst
+0|seclude
+0|outbreak
+0|plague
+0|gravitation
+0|historian
+0|anniversary
+0|bushy-haired
+0|superthinker
+0|physicist
+0|unravel
+0|remarkable
+0|author
+0|irreverent
+0|come to a conclusion
+0|reach a conclusion
+0|photoelectric
+0|zinc
+0|electron
+0|loose
+0|spread-out
+0|particulate
+0|blackbody
+0|radiation
+0|particle
+0|unify
+0|magnetism
+0|optics
+0|beyond doubt
+0|beyond any doubt
+0|electromagnetic
+0|not give a fig for
+0|not care a fig for
+0|presence
+0|undermine
+0|never get anywhere
+0|get nowhere
+0|flaw
+0|Ph.D.
+0|beholden
+0|thesis
+0|advisor
+0|roam
+0|accordingly
+0|bizarre
+0|duality
+0|baffle
+0|disdain
+0|caution
+0|intuitive
+0|believe in
+0|intuition
+0|inspiration
+0|dynamo
+0|arc
+0|bulb
+0|high-tech
+0|at the turn of the century
+0|silicon
+0|babysitter
+0|couch
+0|impressive
+0|concentration
+0|precariously
+0|precarious
+0|inkwell
+0|backrest
+0|engross
+0|stimulate
+0|outlandishly
+0|passionately
+0|passionate
+0|assessment
+0|reality
+0|grotesque
+0|credit
+0|imagination
+0|orthodox
+0|mightily
+0|gravity
+0|brainpower
+0|crinkly
+0|if anything
+0|trifle
+0|a trifle
+0|committee
+0|entourage
+0|obsess
+0|shield
+0|spirit
+0|quarantine
+0|disembark
+0|whisk
+0|contribution
+0|despite
+0|meritocracy
+0|marvel
+0|consult
+0|quirk
+0|dub
+0|dopey
+0|rebelliousness
+0|not amount to much
+0|probe
+0|persistence
+0|tenacity
+0|retain
+0|conflict
+0|cease
+0|contrary to
+0|widespread
+0|excel at
+0|predilection
+0|complicated
+0|triumph
+0|overcome
+0|resistance
+0|dogma
+0|evoke
+0|frenzy
+0|appreciate
+0|exuberance
+0|naturalize
+0|disarm
+0|serenade
+0|come by
+0|rebuff
+0|sneak
+0|accost
+0|construct
+0|find out
+0|coastguardsman
+0|under way
+0|carton
+0|pad
+0|rack
+0|ashore
+0|traditional
+0|turkey
+0|put away
+0|sundown
+0|afterdeck
+0|draught
+0|get to
+0|cob
+0|and the rest
+0|quest
+0|in quest of
+0|reverse
+0|verbal
+0|turn over
+0|brighten
+0|repay
+0|take ... for granted
+0|sincere
+0|lastingly
+0|gratitude
+0|statement
+0|heartfelt
+0|appreciation
+0|agricultural
+0|Rev.
+0|Reverend
+0|at sea
+0|specific
+0|behalf
+0|on sb.'s behalf
+0|on the behalf of sb.
+0|instance
+0|uppermost
+0|boyhood
+0|diminish
+0|expose
+0|be exposed to
+0|immerse
+0|be immersed in
+0|marvelous
+0|prayer
+0|assemble
+0|in part
+0|considerate
+0|sprinkle
+0|stardust
+0|sack
+0|unload
+0|cargo
+0|reload
+0|recede
+0|rendezvous
+0|accord
+0|topmost
+0|loudspeaker
+0|rasp
+0|hundred-odd
+0|odd
+0|shipmate
+0|deck
+0|cluster
+0|seaman
+0|bulge
+0|fistful
+0|successive
+0|in turn
+0|amid
+0|sake
+0|for Pete's sake
+0|for God's sake
+0|sentimental
+0|undergo
+0|swift
+0|reassurance
+0|bring back
+0|in a flash
+0|weep
+0|gratefulness
+0|diaper
+0|being
+0|go about
+0|long for sth.
+0|long to do sth.
+0|in secret
+0|quote
+0|paramount
+0|stationery
+0|volunteer
+0|hassle
+0|cut off
+0|home in on sth.
+0|enhance
+0|favorable
+0|negative
+0|per
+0|perceive
+0|out on a limb
+0|compassionate
+0|on a daily basis
+0|on a weekly basis
+0|round up
+0|off the bat
+0|right off the bat
+0|apt
+0|part with
+0|consistency
+0|jot down
+0|concrete
+0|inevitable
+0|entry
+0|boomerang
+0|on average
+0|resonate
+0|reach out
+0|reach out to
+0|gesture
+0|studio
+0|chicory
+0|bishop
+0|sleeve
+0|bishop sleeve
+0|in tune
+0|joint
+0|pneumonia
+0|stalk
+0|icy
+0|scarcely
+0|scarce
+0|hallway
+0|bushy
+0|eyebrow
+0|bosh
+0|carriage
+0|subtract
+0|curative
+0|merry
+0|bedclothes
+0|backward
+0|dreary
+0|ivy
+0|vine
+0|in a whisper
+0|hear of
+0|nonsense
+0|turn loose
+0|miner
+0|look the part
+0|masterpiece
+0|gin
+0|to excess
+0|for the rest
+0|mock
+0|softness
+0|dimly
+0|dim
+0|canvas
+0|easel
+0|fancy
+0|fragile
+0|persistent
+0|mingle
+0|upturned
+0|pull up
+0|wearily
+0|weary
+0|lo
+0|endure
+0|stand out
+0|wear away
+0|twilight
+0|lone
+0|cling
+0|cling to
+0|merciless
+0|call to
+0|stove
+0|sin
+0|hand-mirror
+0|sit up
+0|acute
+0|be wet through
+0|lantern
+0|palette
+0|flutter
+0|elderly
+0|collapse
+0|regain
+0|now and again
+0|marine
+0|start off
+0|wade
+0|military
+0|enable
+0|sedate
+0|partial
+0|conscious
+0|outline
+0|toughen
+0|limp
+0|encouragement
+0|take no notice of
+0|moan
+0|sympathy
+0|cut short
+0|cut sb. short
+0|serial
+0|pull out
+0|weatherman
+0|surgeon
+0|scar
+0|feel like
+0|echo
+0|incapable
+0|independently
+0|independent
+0|unsteady
+0|battlefield
+0|dignity
+0|door-to-door
+0|cripple
+0|betray
+0|gain on
+0|slacks
+0|tan
+0|entryway
+0|briefcase
+0|kick up
+0|tilt
+0|lean
+0|brochure
+0|clip-on
+0|clip
+0|delivery
+0|crush
+0|section
+0|cerebral
+0|palsy
+0|cerebral palsy
+0|disorder
+0|transfer
+0|disabled
+0|impatient
+0|limitation
+0|apply for
+0|Co.
+0|literature
+0|guarantee
+0|pledge
+0|retail
+0|limb
+0|waist
+0|off balance
+0|toddler
+0|shoeshine
+0|employee
+0|lace
+0|doorman
+0|drop ... off
+0|territory
+0|on the phone
+0|garden
+0|pause
+0|tail
+0|spice
+0|register
+0|laundry
+0|profitable
+0|off one's feet
+0|VCR
+0|antenna
+0|solitary
+0|oven
+0|number
+0|commission
+0|surgery
+0|be laid up
+0|be laid up with
+0|checkbook
+0|recipient
+0|signature
+0|scrawl
+0|unreadable
+0|lash
+0|sleepy
+0|go off
+0|campus
+0|take on
+0|institution
+0|branch off
+0|hinge
+0|myth
+0|cash in on
+0|lucrative
+0|load
+0|advertise
+0|come down to
+0|chew sb. out
+0|trivial
+0|rage
+0|settled into
+0|scratch
+0|put through
+0|in the meantime
+0|criticize
+0|blunt
+0|fantastic
+0|for once
+0|clone
+0|brilliant
+0|complication
+0|diabetes
+0|eyesight
+0|horrifying
+0|horrify
+0|Korean
+0|cell
+0|fraudulently
+0|fraudulent
+0|embryonic
+0|fraud
+0|focus on
+0|reproductive
+0|ethically
+0|ethical
+0|standpoint
+0|issue
+0|miscarriage
+0|stillbirth
+0|fetal
+0|anomaly
+0|et cetera
+0|therapeutic
+0|tremendous
+0|potential
+0|in some ways
+0|make the most of
+0|replicate
+0|roadmap
+0|legislation
+0|in place
+0|disapproval
+0|result from
+0|dissuade
+0|legislate
+0|cellular
+0|firestorm
+0|come forward
+0|consent
+0|donate
+0|procedure
+0|no more than
+0|Alzheimer's
+0|Parkinson's
+0|transplant
+0|in reality
+0|transcendent
+0|microscope
+0|blastocyst
+0|misconception
+0|embryo
+0|skepticism
+0|analysis
+0|by necessity
+0|full-time
+0|Pope
+0|opponent
+0|condemn
+0|in a sense
+0|contentious
+0|logically
+0|logical
+0|implant
+0|fetus
+0|have second thought on
+0|have second thoughts on
+0|sweeping prohibition
+0|debate
+0|arise
+0|the pros and cons
+0|plight
+0|infertile
+0|artificial
+0|insemination
+0|in vitro fertilization
+0|subscribe to
+0|outlaw
+0|appeal to
+0|lend support to
+0|objection
+0|surrogate motherhood
+0|come to terms with
+0|be bound to
+0|in essence
+0|stigma
+0|by virtue of
+0|origin
+0|prohibit
+0|grave
+0|label
+0|rest on
+0|reinforce
+0|defy
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 909
+# Total Entries Extracted: 909
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 909
+# -------------------------------

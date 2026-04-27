@@ -1,0 +1,993 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": true,
+  "targetDictGroupId": "",
+  "targetGameHallIds": [],
+  "books": [
+    {
+      "fileName": "2025何凯文考研英语1575必考词_20260423_200316.txt",
+      "dictName": "2025何凯文考研英语1575必考词_20260423_200316",
+      "domain": "",
+      "description": "从 2025何凯文考研英语1575必考词_20260423_200316.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025何凯文考研英语必考词汇_20260423_200357.txt",
+      "dictName": "2025何凯文考研英语必考词汇_20260423_200357",
+      "domain": "",
+      "description": "从 2025何凯文考研英语必考词汇_20260423_200357.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025你还在背考研英语单词吗_20260424_175449.txt",
+      "dictName": "2025你还在背考研英语单词吗_20260424_175449",
+      "domain": "",
+      "description": "从 2025你还在背考研英语单词吗_20260424_175449.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025恋练有词考研英语词汇（主书+加分宝）_20260423_195838.txt",
+      "dictName": "2025恋练有词考研英语词汇（主书+加分宝）_20260423_195838",
+      "domain": "",
+      "description": "从 2025恋练有词考研英语词汇（主书+加分宝）_20260423_195838.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025恋练有词考研英语词汇（主书）_20260423_195918.txt",
+      "dictName": "2025恋练有词考研英语词汇（主书）_20260423_195918",
+      "domain": "",
+      "description": "从 2025恋练有词考研英语词汇（主书）_20260423_195918.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025恋练有词考研英语词汇（加分宝）_20260423_200038.txt",
+      "dictName": "2025恋练有词考研英语词汇（加分宝）_20260423_200038",
+      "domain": "",
+      "description": "从 2025恋练有词考研英语词汇（加分宝）_20260423_200038.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025果然如词考研英语_20260424_175610.txt",
+      "dictName": "2025果然如词考研英语_20260424_175610",
+      "domain": "",
+      "description": "从 2025果然如词考研英语_20260424_175610.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语一词汇背诵宝典_20260424_175731.txt",
+      "dictName": "2025考研英语一词汇背诵宝典_20260424_175731",
+      "domain": "",
+      "description": "从 2025考研英语一词汇背诵宝典_20260424_175731.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语二词汇背诵宝典_20260424_175817.txt",
+      "dictName": "2025考研英语二词汇背诵宝典_20260424_175817",
+      "domain": "",
+      "description": "从 2025考研英语二词汇背诵宝典_20260424_175817.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语大纲词汇5500_20260423_200203.txt",
+      "dictName": "2025考研英语大纲词汇5500_20260423_200203",
+      "domain": "",
+      "description": "从 2025考研英语大纲词汇5500_20260423_200203.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语词汇的逻辑_20260423_200122.txt",
+      "dictName": "2025考研英语词汇的逻辑_20260423_200122",
+      "domain": "",
+      "description": "从 2025考研英语词汇的逻辑_20260423_200122.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语词汇红宝书_20260423_193710.txt",
+      "dictName": "2025考研英语词汇红宝书_20260423_193710",
+      "domain": "",
+      "description": "从 2025考研英语词汇红宝书_20260423_193710.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语词汇红宝书（基础）_20260423_193830.txt",
+      "dictName": "2025考研英语词汇红宝书（基础）_20260423_193830",
+      "domain": "",
+      "description": "从 2025考研英语词汇红宝书（基础）_20260423_193830.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语词汇红宝书（必考+基础）_20260423_193909.txt",
+      "dictName": "2025考研英语词汇红宝书（必考+基础）_20260423_193909",
+      "domain": "",
+      "description": "从 2025考研英语词汇红宝书（必考+基础）_20260423_193909.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语词汇红宝书（必考）_20260423_193750.txt",
+      "dictName": "2025考研英语词汇红宝书（必考）_20260423_193750",
+      "domain": "",
+      "description": "从 2025考研英语词汇红宝书（必考）_20260423_193750.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语词汇红宝书（超纲）_20260423_193945.txt",
+      "dictName": "2025考研英语词汇红宝书（超纲）_20260423_193945",
+      "domain": "",
+      "description": "从 2025考研英语词汇红宝书（超纲）_20260423_193945.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语词汇轻松记_20260424_175649.txt",
+      "dictName": "2025考研英语词汇轻松记_20260424_175649",
+      "domain": "",
+      "description": "从 2025考研英语词汇轻松记_20260424_175649.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语词汇闪过_20260423_195752.txt",
+      "dictName": "2025考研英语词汇闪过_20260423_195752",
+      "domain": "",
+      "description": "从 2025考研英语词汇闪过_20260423_195752.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研英语锐记词汇_20260424_175525.txt",
+      "dictName": "2025考研英语锐记词汇_20260424_175525",
+      "domain": "",
+      "description": "从 2025考研英语锐记词汇_20260424_175525.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研词汇背考通（主考词）_20260424_175854.txt",
+      "dictName": "2025考研词汇背考通（主考词）_20260424_175854",
+      "domain": "",
+      "description": "从 2025考研词汇背考通（主考词）_20260424_175854.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025考研词汇背考通（必背词）_20260424_175937.txt",
+      "dictName": "2025考研词汇背考通（必背词）_20260424_175937",
+      "domain": "",
+      "description": "从 2025考研词汇背考通（必背词）_20260424_175937.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025锐记考研英语核心词汇（带派生词）_20260424_180018.txt",
+      "dictName": "2025锐记考研英语核心词汇（带派生词）_20260424_180018",
+      "domain": "",
+      "description": "从 2025锐记考研英语核心词汇（带派生词）_20260424_180018.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025颉斌斌考研词汇背诵宝_20260423_200242.txt",
+      "dictName": "2025颉斌斌考研词汇背诵宝_20260423_200242",
+      "domain": "",
+      "description": "从 2025颉斌斌考研词汇背诵宝_20260423_200242.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025马天艺考研英语单词之间_20260424_175403.txt",
+      "dictName": "2025马天艺考研英语单词之间_20260424_175403",
+      "domain": "",
+      "description": "从 2025马天艺考研英语单词之间_20260424_175403.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025黄皮书考研英语一真题词汇逐年闪背_20260423_194106.txt",
+      "dictName": "2025黄皮书考研英语一真题词汇逐年闪背_20260423_194106",
+      "domain": "",
+      "description": "从 2025黄皮书考研英语一真题词汇逐年闪背_20260423_194106.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025黄皮书考研英语二真题词汇逐年闪背_20260423_194027.txt",
+      "dictName": "2025黄皮书考研英语二真题词汇逐年闪背_20260423_194027",
+      "domain": "",
+      "description": "从 2025黄皮书考研英语二真题词汇逐年闪背_20260423_194027.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026十天搞定考研词汇便携版（带派生词）_20260423_191425.txt",
+      "dictName": "2026十天搞定考研词汇便携版（带派生词）_20260423_191425",
+      "domain": "",
+      "description": "从 2026十天搞定考研词汇便携版（带派生词）_20260423_191425.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026星火考研英语词汇巧记速记_20260423_191327.txt",
+      "dictName": "2026星火考研英语词汇巧记速记_20260423_191327",
+      "domain": "",
+      "description": "从 2026星火考研英语词汇巧记速记_20260423_191327.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026考研英语一真题词汇逐年闪背_20260423_192050.txt",
+      "dictName": "2026考研英语一真题词汇逐年闪背_20260423_192050",
+      "domain": "",
+      "description": "从 2026考研英语一真题词汇逐年闪背_20260423_192050.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026考研英语二真题词汇逐年闪背_20260423_192007.txt",
+      "dictName": "2026考研英语二真题词汇逐年闪背_20260423_192007",
+      "domain": "",
+      "description": "从 2026考研英语二真题词汇逐年闪背_20260423_192007.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026考研英语研词有理_20260423_191511.txt",
+      "dictName": "2026考研英语研词有理_20260423_191511",
+      "domain": "",
+      "description": "从 2026考研英语研词有理_20260423_191511.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026考研英语词汇轻松记_20260423_191900.txt",
+      "dictName": "2026考研英语词汇轻松记_20260423_191900",
+      "domain": "",
+      "description": "从 2026考研英语词汇轻松记_20260423_191900.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026达叔考研词汇926_20260423_194221.txt",
+      "dictName": "2026达叔考研词汇926_20260423_194221",
+      "domain": "",
+      "description": "从 2026达叔考研词汇926_20260423_194221.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026陈正康考研英语大纲词汇分频速记_20260423_194147.txt",
+      "dictName": "2026陈正康考研英语大纲词汇分频速记_20260423_194147",
+      "domain": "",
+      "description": "从 2026陈正康考研英语大纲词汇分频速记_20260423_194147.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026黄皮书考研英语一词汇学霸狂背_20260423_191727.txt",
+      "dictName": "2026黄皮书考研英语一词汇学霸狂背_20260423_191727",
+      "domain": "",
+      "description": "从 2026黄皮书考研英语一词汇学霸狂背_20260423_191727.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026黄皮书考研英语一高频词汇_20260423_191551.txt",
+      "dictName": "2026黄皮书考研英语一高频词汇_20260423_191551",
+      "domain": "",
+      "description": "从 2026黄皮书考研英语一高频词汇_20260423_191551.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026黄皮书考研英语二词汇学霸狂背_20260423_191814.txt",
+      "dictName": "2026黄皮书考研英语二词汇学霸狂背_20260423_191814",
+      "domain": "",
+      "description": "从 2026黄皮书考研英语二词汇学霸狂背_20260423_191814.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026黄皮书考研英语二高频词汇_20260423_191642.txt",
+      "dictName": "2026黄皮书考研英语二高频词汇_20260423_191642",
+      "domain": "",
+      "description": "从 2026黄皮书考研英语二高频词汇_20260423_191642.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "20天突破考研英语核心短语（2025）_20260423_193617.txt",
+      "dictName": "20天突破考研英语核心短语（2025）_20260423_193617",
+      "domain": "",
+      "description": "从 20天突破考研英语核心短语（2025）_20260423_193617.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "20天背完六级核心词汇_20260425_104738.txt",
+      "dictName": "20天背完六级核心词汇_20260425_104738",
+      "domain": "",
+      "description": "从 20天背完六级核心词汇_20260425_104738.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "20天背完四级核心词汇_20260425_103352.txt",
+      "dictName": "20天背完四级核心词汇_20260425_103352",
+      "domain": "",
+      "description": "从 20天背完四级核心词汇_20260425_103352.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "21天突破英语专4核心词汇_20260425_112214.txt",
+      "dictName": "21天突破英语专4核心词汇_20260425_112214",
+      "domain": "",
+      "description": "从 21天突破英语专4核心词汇_20260425_112214.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "PASS六级词汇乱序版_20260425_104820.txt",
+      "dictName": "PASS六级词汇乱序版_20260425_104820",
+      "domain": "",
+      "description": "从 PASS六级词汇乱序版_20260425_104820.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "一本好词全国专升本英语词汇_20260425_121507.txt",
+      "dictName": "一本好词全国专升本英语词汇_20260425_121507",
+      "domain": "",
+      "description": "从 一本好词全国专升本英语词汇_20260425_121507.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专八词汇乱序版_20260425_112531.txt",
+      "dictName": "专八词汇乱序版_20260425_112531",
+      "domain": "",
+      "description": "从 专八词汇乱序版_20260425_112531.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专八词汇便携版_20260425_112449.txt",
+      "dictName": "专八词汇便携版_20260425_112449",
+      "domain": "",
+      "description": "从 专八词汇便携版_20260425_112449.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专八词汇正序版_20260425_112614.txt",
+      "dictName": "专八词汇正序版_20260425_112614",
+      "domain": "",
+      "description": "从 专八词汇正序版_20260425_112614.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专八词汇词以类记_20260425_112335.txt",
+      "dictName": "专八词汇词以类记_20260425_112335",
+      "domain": "",
+      "description": "从 专八词汇词以类记_20260425_112335.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专升本考试英语巅峰词汇_20260425_121401.txt",
+      "dictName": "专升本考试英语巅峰词汇_20260425_121401",
+      "domain": "",
+      "description": "从 专升本考试英语巅峰词汇_20260425_121401.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专升本英语 你还在背单词吗_20260425_121614.txt",
+      "dictName": "专升本英语 你还在背单词吗_20260425_121614",
+      "domain": "",
+      "description": "从 专升本英语 你还在背单词吗_20260425_121614.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专升本英语30天备考必刷词_20260425_115834.txt",
+      "dictName": "专升本英语30天备考必刷词_20260425_115834",
+      "domain": "",
+      "description": "从 专升本英语30天备考必刷词_20260425_115834.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专升本英语词汇40天一本通_20260425_120149.txt",
+      "dictName": "专升本英语词汇40天一本通_20260425_120149",
+      "domain": "",
+      "description": "从 专升本英语词汇40天一本通_20260425_120149.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专四词汇乱序便携版_20260425_111119.txt",
+      "dictName": "专四词汇乱序便携版_20260425_111119",
+      "domain": "",
+      "description": "从 专四词汇乱序便携版_20260425_111119.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专四词汇乱序版_20260425_111044.txt",
+      "dictName": "专四词汇乱序版_20260425_111044",
+      "domain": "",
+      "description": "从 专四词汇乱序版_20260425_111044.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专四词汇便携版_20260425_111005.txt",
+      "dictName": "专四词汇便携版_20260425_111005",
+      "domain": "",
+      "description": "从 专四词汇便携版_20260425_111005.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专四词汇正序版_20260425_111158.txt",
+      "dictName": "专四词汇正序版_20260425_111158",
+      "domain": "",
+      "description": "从 专四词汇正序版_20260425_111158.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "专四词汇词以类记_20260425_110928.txt",
+      "dictName": "专四词汇词以类记_20260425_110928",
+      "domain": "",
+      "description": "从 专四词汇词以类记_20260425_110928.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "全新版大学英语综合教程1（第二版）_20260425_114706.txt",
+      "dictName": "全新版大学英语综合教程1（第二版）_20260425_114706",
+      "domain": "",
+      "description": "从 全新版大学英语综合教程1（第二版）_20260425_114706.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "全新版大学英语综合教程2（第二版）_20260425_114738.txt",
+      "dictName": "全新版大学英语综合教程2（第二版）_20260425_114738",
+      "domain": "",
+      "description": "从 全新版大学英语综合教程2（第二版）_20260425_114738.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "全新版大学英语综合教程3（第二版）_20260425_115049.txt",
+      "dictName": "全新版大学英语综合教程3（第二版）_20260425_115049",
+      "domain": "",
+      "description": "从 全新版大学英语综合教程3（第二版）_20260425_115049.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "全新版大学英语综合教程4（第二版）_20260425_115203.txt",
+      "dictName": "全新版大学英语综合教程4（第二版）_20260425_115203",
+      "domain": "",
+      "description": "从 全新版大学英语综合教程4（第二版）_20260425_115203.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "全新版大学英语综合教程5（第二版）_20260425_114636.txt",
+      "dictName": "全新版大学英语综合教程5（第二版）_20260425_114636",
+      "domain": "",
+      "description": "从 全新版大学英语综合教程5（第二版）_20260425_114636.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "全新版大学英语综合教程6（第二版）_20260425_120111.txt",
+      "dictName": "全新版大学英语综合教程6（第二版）_20260425_120111",
+      "domain": "",
+      "description": "从 全新版大学英语综合教程6（第二版）_20260425_120111.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "六级新大纲词汇表_20260425_103433.txt",
+      "dictName": "六级新大纲词汇表_20260425_103433",
+      "domain": "",
+      "description": "从 六级新大纲词汇表_20260425_103433.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "六级词汇乱序便携版_20260425_105119.txt",
+      "dictName": "六级词汇乱序便携版_20260425_105119",
+      "domain": "",
+      "description": "从 六级词汇乱序便携版_20260425_105119.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "六级词汇便携版_20260425_105152.txt",
+      "dictName": "六级词汇便携版_20260425_105152",
+      "domain": "",
+      "description": "从 六级词汇便携版_20260425_105152.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "六级词汇分频精讲速记_20260425_105042.txt",
+      "dictName": "六级词汇分频精讲速记_20260425_105042",
+      "domain": "",
+      "description": "从 六级词汇分频精讲速记_20260425_105042.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "六级词汇星火式巧记速记_20260425_103208.txt",
+      "dictName": "六级词汇星火式巧记速记_20260425_103208",
+      "domain": "",
+      "description": "从 六级词汇星火式巧记速记_20260425_103208.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "六级词汇正序版_20260425_105229.txt",
+      "dictName": "六级词汇正序版_20260425_105229",
+      "domain": "",
+      "description": "从 六级词汇正序版_20260425_105229.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "六级词汇词以类记_20260425_105008.txt",
+      "dictName": "六级词汇词以类记_20260425_105008",
+      "domain": "",
+      "description": "从 六级词汇词以类记_20260425_105008.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "六级词汇闪过_20260425_103844.txt",
+      "dictName": "六级词汇闪过_20260425_103844",
+      "domain": "",
+      "description": "从 六级词汇闪过_20260425_103844.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "十天搞定专四词汇便携版_20260425_112410.txt",
+      "dictName": "十天搞定专四词汇便携版_20260425_112410",
+      "domain": "",
+      "description": "从 十天搞定专四词汇便携版_20260425_112410.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "十天搞定六级词汇便携版_20260425_104932.txt",
+      "dictName": "十天搞定六级词汇便携版_20260425_104932",
+      "domain": "",
+      "description": "从 十天搞定六级词汇便携版_20260425_104932.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "十天搞定四级词汇便携版_20260425_103509.txt",
+      "dictName": "十天搞定四级词汇便携版_20260425_103509",
+      "domain": "",
+      "description": "从 十天搞定四级词汇便携版_20260425_103509.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "华研专八词汇突破13000_20260425_112016.txt",
+      "dictName": "华研专八词汇突破13000_20260425_112016",
+      "domain": "",
+      "description": "从 华研专八词汇突破13000_20260425_112016.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "华研专四词汇突破8000_20260425_110557.txt",
+      "dictName": "华研专四词汇突破8000_20260425_110557",
+      "domain": "",
+      "description": "从 华研专四词汇突破8000_20260425_110557.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "同等学力人员申请硕士学位英语水平全国统一考试大纲_20260425_122134.txt",
+      "dictName": "同等学力人员申请硕士学位英语水平全国统一考试大纲_20260425_122134",
+      "domain": "",
+      "description": "从 同等学力人员申请硕士学位英语水平全国统一考试大纲_20260425_122134.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "四六级常考核心词组 1500_20260425_104659.txt",
+      "dictName": "四六级常考核心词组 1500_20260425_104659",
+      "domain": "",
+      "description": "从 四六级常考核心词组 1500_20260425_104659.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "四六级常考词组必备_20260425_104853.txt",
+      "dictName": "四六级常考词组必备_20260425_104853",
+      "domain": "",
+      "description": "从 四六级常考词组必备_20260425_104853.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "四级词汇词以类记_20260425_103548.txt",
+      "dictName": "四级词汇词以类记_20260425_103548",
+      "domain": "",
+      "description": "从 四级词汇词以类记_20260425_103548.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "大学生英语竞赛C类核心词汇2000_20260425_122050.txt",
+      "dictName": "大学生英语竞赛C类核心词汇2000_20260425_122050",
+      "domain": "",
+      "description": "从 大学生英语竞赛C类核心词汇2000_20260425_122050.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "大学英语六级大纲词汇_20260425_103306.txt",
+      "dictName": "大学英语六级大纲词汇_20260425_103306",
+      "domain": "",
+      "description": "从 大学英语六级大纲词汇_20260425_103306.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "大雁趣讲专升本单词_20260425_121326.txt",
+      "dictName": "大雁趣讲专升本单词_20260425_121326",
+      "domain": "",
+      "description": "从 大雁趣讲专升本单词_20260425_121326.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "如鱼得水专八词汇语境记忆_20260425_113409.txt",
+      "dictName": "如鱼得水专八词汇语境记忆_20260425_113409",
+      "domain": "",
+      "description": "从 如鱼得水专八词汇语境记忆_20260425_113409.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "如鱼得水专四词汇语境记忆_20260425_112145.txt",
+      "dictName": "如鱼得水专四词汇语境记忆_20260425_112145",
+      "domain": "",
+      "description": "从 如鱼得水专四词汇语境记忆_20260425_112145.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "广东成人本科学士学位考试大纲_20260425_121205.txt",
+      "dictName": "广东成人本科学士学位考试大纲_20260425_121205",
+      "domain": "",
+      "description": "从 广东成人本科学士学位考试大纲_20260425_121205.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "思思大王六级一笑而过_20260425_110744.txt",
+      "dictName": "思思大王六级一笑而过_20260425_110744",
+      "domain": "",
+      "description": "从 思思大王六级一笑而过_20260425_110744.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "思思大王六级一笑而过（白金版）_20260425_110818.txt",
+      "dictName": "思思大王六级一笑而过（白金版）_20260425_110818",
+      "domain": "",
+      "description": "从 思思大王六级一笑而过（白金版）_20260425_110818.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "恋练有词六级词汇_20260425_103717.txt",
+      "dictName": "恋练有词六级词汇_20260425_103717",
+      "domain": "",
+      "description": "从 恋练有词六级词汇_20260425_103717.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "成人本科学士学位英语水平考试大纲_20260425_121253.txt",
+      "dictName": "成人本科学士学位英语水平考试大纲_20260425_121253",
+      "domain": "",
+      "description": "从 成人本科学士学位英语水平考试大纲_20260425_121253.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新标准大学英语综合教程 1（第二版）_20260425_113441.txt",
+      "dictName": "新标准大学英语综合教程 1（第二版）_20260425_113441",
+      "domain": "",
+      "description": "从 新标准大学英语综合教程 1（第二版）_20260425_113441.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新标准大学英语综合教程 2（第二版）_20260425_113510.txt",
+      "dictName": "新标准大学英语综合教程 2（第二版）_20260425_113510",
+      "domain": "",
+      "description": "从 新标准大学英语综合教程 2（第二版）_20260425_113510.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新标准大学英语综合教程 3（第二版）_20260425_113552.txt",
+      "dictName": "新标准大学英语综合教程 3（第二版）_20260425_113552",
+      "domain": "",
+      "description": "从 新标准大学英语综合教程 3（第二版）_20260425_113552.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新标准大学英语综合教程 4（第二版）_20260425_113625.txt",
+      "dictName": "新标准大学英语综合教程 4（第二版）_20260425_113625",
+      "domain": "",
+      "description": "从 新标准大学英语综合教程 4（第二版）_20260425_113625.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新目标大学英语综合教程1_20260425_114808.txt",
+      "dictName": "新目标大学英语综合教程1_20260425_114808",
+      "domain": "",
+      "description": "从 新目标大学英语综合教程1_20260425_114808.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新目标大学英语综合教程2_20260425_114849.txt",
+      "dictName": "新目标大学英语综合教程2_20260425_114849",
+      "domain": "",
+      "description": "从 新目标大学英语综合教程2_20260425_114849.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新目标大学英语综合教程3_20260425_114921.txt",
+      "dictName": "新目标大学英语综合教程3_20260425_114921",
+      "domain": "",
+      "description": "从 新目标大学英语综合教程3_20260425_114921.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新目标大学英语综合教程4_20260425_114953.txt",
+      "dictName": "新目标大学英语综合教程4_20260425_114953",
+      "domain": "",
+      "description": "从 新目标大学英语综合教程4_20260425_114953.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新视野大学英语读写教程1（第三版）_20260425_115910.txt",
+      "dictName": "新视野大学英语读写教程1（第三版）_20260425_115910",
+      "domain": "",
+      "description": "从 新视野大学英语读写教程1（第三版）_20260425_115910.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新视野大学英语读写教程1（第四版）_20260425_113656.txt",
+      "dictName": "新视野大学英语读写教程1（第四版）_20260425_113656",
+      "domain": "",
+      "description": "从 新视野大学英语读写教程1（第四版）_20260425_113656.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新视野大学英语读写教程2（第三版）_20260425_120330.txt",
+      "dictName": "新视野大学英语读写教程2（第三版）_20260425_120330",
+      "domain": "",
+      "description": "从 新视野大学英语读写教程2（第三版）_20260425_120330.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新视野大学英语读写教程2（第四版）_20260425_113727.txt",
+      "dictName": "新视野大学英语读写教程2（第四版）_20260425_113727",
+      "domain": "",
+      "description": "从 新视野大学英语读写教程2（第四版）_20260425_113727.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新视野大学英语读写教程3（第三版）_20260425_115941.txt",
+      "dictName": "新视野大学英语读写教程3（第三版）_20260425_115941",
+      "domain": "",
+      "description": "从 新视野大学英语读写教程3（第三版）_20260425_115941.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新视野大学英语读写教程3（第四版）_20260425_113757.txt",
+      "dictName": "新视野大学英语读写教程3（第四版）_20260425_113757",
+      "domain": "",
+      "description": "从 新视野大学英语读写教程3（第四版）_20260425_113757.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新视野大学英语读写教程4（第三版）_20260425_120223.txt",
+      "dictName": "新视野大学英语读写教程4（第三版）_20260425_120223",
+      "domain": "",
+      "description": "从 新视野大学英语读写教程4（第三版）_20260425_120223.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "新视野大学英语读写教程4（第四版）_20260425_113829.txt",
+      "dictName": "新视野大学英语读写教程4（第四版）_20260425_113829",
+      "domain": "",
+      "description": "从 新视野大学英语读写教程4（第四版）_20260425_113829.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "星火AB级词汇必背_20260425_122212.txt",
+      "dictName": "星火AB级词汇必背_20260425_122212",
+      "domain": "",
+      "description": "从 星火AB级词汇必背_20260425_122212.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "星火专八巧记速记_20260425_112254.txt",
+      "dictName": "星火专八巧记速记_20260425_112254",
+      "domain": "",
+      "description": "从 星火专八巧记速记_20260425_112254.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "星火专升本英语词汇必背_20260425_121435.txt",
+      "dictName": "星火专升本英语词汇必背_20260425_121435",
+      "domain": "",
+      "description": "从 星火专升本英语词汇必背_20260425_121435.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "星火专四词汇巧记速记_20260425_110851.txt",
+      "dictName": "星火专四词汇巧记速记_20260425_110851",
+      "domain": "",
+      "description": "从 星火专四词汇巧记速记_20260425_110851.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "澜澜有词山东专升本核心词汇_20260425_121659.txt",
+      "dictName": "澜澜有词山东专升本核心词汇_20260425_121659",
+      "domain": "",
+      "description": "从 澜澜有词山东专升本核心词汇_20260425_121659.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "考博词汇乱序版_20260425_120038.txt",
+      "dictName": "考博词汇乱序版_20260425_120038",
+      "domain": "",
+      "description": "从 考博词汇乱序版_20260425_120038.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "考研词汇魔法书_20260423_195707.txt",
+      "dictName": "考研词汇魔法书_20260423_195707",
+      "domain": "",
+      "description": "从 考研词汇魔法书_20260423_195707.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "英语专业八级大纲词汇_20260425_112108.txt",
+      "dictName": "英语专业八级大纲词汇_20260425_112108",
+      "domain": "",
+      "description": "从 英语专业八级大纲词汇_20260425_112108.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "英语专业四级大纲词汇_20260425_110707.txt",
+      "dictName": "英语专业四级大纲词汇_20260425_110707",
+      "domain": "",
+      "description": "从 英语专业四级大纲词汇_20260425_110707.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "英语六级 你还在背单词吗_20260425_103801.txt",
+      "dictName": "英语六级 你还在背单词吗_20260425_103801",
+      "domain": "",
+      "description": "从 英语六级 你还在背单词吗_20260425_103801.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "英语（一）自学教程_20260425_120406.txt",
+      "dictName": "英语（一）自学教程_20260425_120406",
+      "domain": "",
+      "description": "从 英语（一）自学教程_20260425_120406.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "英语（二）自学教程_20260425_120452.txt",
+      "dictName": "英语（二）自学教程_20260425_120452",
+      "domain": "",
+      "description": "从 英语（二）自学教程_20260425_120452.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "英语（二）自学教程_20260425_121740.txt",
+      "dictName": "英语（二）自学教程_20260425_121740",
+      "domain": "",
+      "description": "从 英语（二）自学教程_20260425_121740.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高等职业教育专科英语课程标准_20260425_121129.txt",
+      "dictName": "高等职业教育专科英语课程标准_20260425_121129",
+      "domain": "",
+      "description": "从 高等职业教育专科英语课程标准_20260425_121129.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高级英语1（第四版）_20260425_113322.txt",
+      "dictName": "高级英语1（第四版）_20260425_113322",
+      "domain": "",
+      "description": "从 高级英语1（第四版）_20260425_113322.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高级英语2（第四版）_20260425_115122.txt",
+      "dictName": "高级英语2（第四版）_20260425_115122",
+      "domain": "",
+      "description": "从 高级英语2（第四版）_20260425_115122.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "黄皮书六级大纲词汇背诵宝典_20260425_103634.txt",
+      "dictName": "黄皮书六级大纲词汇背诵宝典_20260425_103634",
+      "domain": "",
+      "description": "从 黄皮书六级大纲词汇背诵宝典_20260425_103634.txt 导入的词书",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    }
+  ]
+}

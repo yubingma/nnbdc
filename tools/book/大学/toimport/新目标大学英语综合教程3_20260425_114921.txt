@@ -1,0 +1,913 @@
+0|alert
+0|alpine
+0|appall
+0|atop
+0|backcountry
+0|bizarre
+0|blank
+0|broadband
+0|cacophony
+0|compass
+0|constellation
+0|counselor
+0|coverage
+0|delete
+0|endanger
+0|enforce
+0|escapade
+0|field
+0|forecast
+0|formerly
+0|heavenly
+0|hike
+0|inability
+0|inessential
+0|intentional
+0|jibber-jabberer
+0|outpost
+0|persistent
+0|playa
+0|populate
+0|prominent
+0|protagonist
+0|router
+0|smother
+0|smug
+0|snap
+0|sparsely
+0|species
+0|squint
+0|track
+0|trailhead
+0|unfold
+0|urge
+0|free of
+0|be free of
+0|draw the line
+0|get away from it all
+0|have a point
+0|live with
+0|off the grid
+0|save for
+0|serve up sth.
+0|sniff at
+0|Bhutan
+0|Charles Marlow
+0|Evgeny Morozov
+0|Instagram
+0|Laos
+0|Mount Whitney
+0|Ralph Waldo Emerson
+0|Yosemite
+0|alienate
+0|alienation
+0|brow
+0|bunny
+0|caption
+0|civically
+0|combo
+0|compliment
+0|conscious
+0|craft
+0|demonstration
+0|dilemma
+0|disengaged
+0|enlightening
+0|fancy
+0|flashback
+0|furrow
+0|hysterically
+0|individualism
+0|inevitable
+0|interaction
+0|invaluable
+0|manifestation
+0|materialistic
+0|mode
+0|namely
+0|narcissism
+0|obsession
+0|offender
+0|prejudice
+0|profess
+0|profile
+0|reaffirm
+0|romanticize
+0|self-absorption
+0|self-actualization
+0|selfie
+0|self-promotion
+0|sexual
+0|shameless
+0|slanty
+0|survey
+0|victim
+0|volunteerism
+0|worthwhile
+0|yearning
+0|at the speed of
+0|concerned with
+0|be concerned with
+0|beyond words
+0|center around
+0|fixate on
+0|for good measure
+0|in part
+0|in partnership with
+0|in the same manner
+0|once and for all
+0|pride oneself on
+0|set off
+0|side effect
+0|stand out
+0|take turns
+0|UCLA
+0|University of California at Los Angeles
+0|University of Michigan
+0|breeze
+0|chatter
+0|clamor
+0|clip
+0|compassionate
+0|contraption
+0|crash
+0|curve
+0|developmental
+0|disbelief
+0|dismiss
+0|endeavor
+0|executive
+0|fashion
+0|forsake
+0|horseshoe
+0|implication
+0|imprison
+0|influential
+0|lavaliere
+0|locomotive
+0|murmur
+0|notion
+0|oncoming
+0|oyster
+0|plumber
+0|podium
+0|reject
+0|ripple
+0|specialist
+0|specialized
+0|stimulate
+0|thrust
+0|unfurl
+0|a host of
+0|buck the trend
+0|by definition
+0|center on
+0|check off
+0|get out of the way
+0|in terms of
+0|kick in
+0|the world is sb.'s oyster
+0|affordable
+0|avenue
+0|classicist
+0|condemn
+0|conscientious
+0|debate
+0|defiant
+0|down-payment
+0|downward
+0|eminently
+0|employability
+0|employable
+0|fascinate
+0|fashionable
+0|incur
+0|irony
+0|irresponsible
+0|manageable
+0|non-vocational
+0|outrage
+0|penury
+0|plumbing
+0|potential
+0|pragmatic
+0|privilege
+0|reassure
+0|ruminate
+0|satirical
+0|secondary
+0|self-evident
+0|self-indulgent
+0|sensible
+0|slip
+0|suppress
+0|synthetic
+0|tertiary
+0|transformation
+0|uncompromising
+0|unquestioned
+0|as far as ... be concerned
+0|be here to stay
+0|die down
+0|for sb.'s sake
+0|for sth.'s sake
+0|for the sake of
+0|in due course
+0|in itself
+0|in the first instance
+0|may as well
+0|pay off
+0|speak up for
+0|take on
+0|Margaret atcher
+0|Tony Blair
+0|actualization
+0|adversity
+0|anew
+0|blind spot
+0|boundary
+0|brake
+0|centric
+0|circumstance
+0|commencement
+0|confront
+0|consequently
+0|continuum
+0|counterproductive
+0|crucible
+0|dawn
+0|deny
+0|diminish
+0|elevate
+0|emerge
+0|fulfill
+0|fulfillment
+0|grumble
+0|illustrate
+0|ineffective
+0|ingrained
+0|intertwine
+0|intrinsic
+0|inward
+0|maximize
+0|metamorphosis
+0|misfortune
+0|mores
+0|navigate
+0|oblivious
+0|perceive
+0|plunge
+0|portrait
+0|predictable
+0|radically
+0|recast
+0|reenact
+0|regulatory
+0|reinforce
+0|script
+0|sidestep
+0|societal
+0|stale
+0|surface
+0|taboo
+0|testament
+0|tragically
+0|undesirable
+0|unenlightened
+0|unfavorable
+0|unlock
+0|unproductive
+0|unrealistic
+0|wake-up call
+0|act out
+0|be on one's way to
+0|connect the dots
+0|for fear of
+0|have no awareness of
+0|in service
+0|keep sth. in perspective
+0|play out
+0|seek out
+0|blueprint
+0|coach
+0|crave
+0|disconnected
+0|domain
+0|entail
+0|explicit
+0|fiancee
+0|further
+0|hone
+0|inordinate
+0|overwhelmed
+0|pseudonym
+0|score
+0|strengthen
+0|succession
+0|sustainable
+0|tension
+0|thoughtful
+0|unfulfilled
+0|zeal
+0|add up
+0|consistent with
+0|be consistent with
+0|fit in
+0|for the taking
+0|in a rut
+0|in common with
+0|in support of
+0|on the face of it
+0|pit sb. against
+0|pit sth. against
+0|rise to the challenge
+0|take a view of
+0|take steps
+0|tap into
+0|trade off ... for ...
+0|Philadelphia
+0|the Wharton School of Business
+0|agitation
+0|anguish
+0|asylum
+0|benchmark
+0|brushstroke
+0|cemetery
+0|characterize
+0|complement
+0|composition
+0|contour
+0|convey
+0|crescent
+0|cypress
+0|decorative
+0|depict
+0|destination
+0|disregard
+0|dominance
+0|emulate
+0|eternity
+0|fascination
+0|gloomy
+0|immortalize
+0|luminous
+0|mourning
+0|opt
+0|palette
+0|resonate
+0|restlessness
+0|resurrection
+0|retract
+0|spiral
+0|spire
+0|swirl
+0|tone
+0|vertical
+0|whirl
+0|at the height of
+0|hailed as
+0|be hailed as
+0|brim with
+0|bring to mind
+0|conjure up
+0|contrast with
+0|draw attention to
+0|refer to
+0|Aries
+0|Barbizon School
+0|Bernard
+0|Expressionist
+0|Gauguin
+0|Impressionist
+0|Leo Tolstoy
+0|Rhone
+0|Saint-Remy
+0|the Netherlands
+0|eo
+0|Van Gogh
+0|admission
+0|atmospherically
+0|base
+0|candidate
+0|chant
+0|commission
+0|component
+0|conjunction
+0|dome
+0|fiberglass
+0|finite
+0|glow
+0|guarantee
+0|heliotrope
+0|hum
+0|illuminate
+0|installation
+0|kiosk
+0|lawn
+0|microscopically
+0|misty
+0|mount
+0|musing
+0|nepenthes
+0|nonetheless
+0|notoriety
+0|offset
+0|overcast
+0|panel
+0|patch
+0|pedestrian
+0|petal
+0|phenomenological
+0|phenomenologically
+0|photovoltaic
+0|renewable
+0|sculpture
+0|sidewalk
+0|solar
+0|sonic
+0|sponsor
+0|spotlight
+0|sprout
+0|submit
+0|sundown
+0|swirly
+0|towering
+0|tweak
+0|unveil
+0|viable
+0|viewership
+0|act as
+0|all told
+0|be tied to
+0|courtesy of
+0|draw up
+0|energy neutral
+0|from a ... perspective
+0|incorporate ... into
+0|put out
+0|so much so that
+0|Council Bluffs
+0|Fort Lauderdale
+0|Oregon
+0|Portland
+0|Seattle
+0|adjoining
+0|briskly
+0|broker
+0|buzz
+0|chronic
+0|clockwork
+0|clutch
+0|confidential
+0|countermand
+0|dash
+0|decidedly
+0|discretion
+0|disorderly
+0|disturbance
+0|dreamily
+0|elemental
+0|exclaim
+0|fidelity
+0|flutter
+0|fountain
+0|fringe
+0|glacier
+0|hurricane
+0|immovable
+0|impersonal
+0|joyfully
+0|landslide
+0|lilac
+0|linger
+0|lull
+0|margin
+0|memorandum
+0|mildly
+0|miniature
+0|mortgage
+0|notify
+0|odor
+0|particle
+0|peach-blow
+0|plain
+0|queerly
+0|radiant
+0|reminiscence
+0|retain
+0|securities
+0|self-possessed
+0|shove
+0|slacken
+0|snatch
+0|stenographer
+0|string
+0|sunnily
+0|tangibly
+0|throng
+0|ticker
+0|tinge
+0|transact
+0|uncoil
+0|uproar
+0|viciously
+0|after the manner of
+0|in company with
+0|in miniature
+0|jump about
+0|make love to
+0|plunge into
+0|acceleration
+0|amusing
+0|ashore
+0|backdrop
+0|beam
+0|cosmic
+0|dread
+0|enthusiasm
+0|ethereal
+0|evaporate
+0|expel
+0|explosion
+0|flee
+0|frown
+0|glitter
+0|grip
+0|gush
+0|heliophobia
+0|helium
+0|hologram
+0|hush
+0|insistently
+0|nobility
+0|object
+0|overhear
+0|perihelion
+0|plaza
+0|pop
+0|project
+0|raging
+0|retort
+0|roast
+0|rumor
+0|silhouette
+0|sparkle
+0|stare
+0|stuffing
+0|therapy
+0|translucent
+0|turbulence
+0|vaporize
+0|flee from
+0|hold fast to
+0|hold on to
+0|ill at ease
+0|in the blink of an eye
+0|live up to
+0|take in
+0|e Exodial Age
+0|Navigation Commission
+0|Pre-Solar Age
+0|depleted
+0|devastation
+0|diagnose
+0|diagnosis
+0|disorder
+0|disparity
+0|doom
+0|familiarity
+0|flaw
+0|genetic
+0|head-on
+0|high-profile
+0|imbalance
+0|insomnia
+0|lurk
+0|masculine
+0|medicate
+0|medication
+0|mind-blowing
+0|misconception
+0|overwhelming
+0|predisposition
+0|privileged
+0|racism
+0|resilience
+0|socioeconomic
+0|spark
+0|spent
+0|stigma
+0|stressor
+0|suicide
+0|therapist
+0|unpredictable
+0|unspeakable
+0|void
+0|a string of
+0|shake off
+0|soldier on
+0|Master's degree
+0|Media Studies
+0|Emmy Award
+0|World Health Organization
+0|Kelly Pierre-Louis
+0|Dawn Armstrong
+0|activate
+0|activation
+0|advisory
+0|agonizing
+0|chase
+0|clinician
+0|closeness
+0|decent
+0|deliberately
+0|distinction
+0|driven
+0|dwell
+0|evolution
+0|fiction
+0|heighten
+0|inadequacy
+0|incentivize
+0|leery
+0|legitimately
+0|loneliness
+0|modernity
+0|mosaic
+0|motif
+0|neural
+0|neuron
+0|neuropsychologist
+0|recognition
+0|repeatedly
+0|sensitize
+0|stumble
+0|survival
+0|synapse
+0|testimonial
+0|verbal
+0|wire
+0|complain about
+0|deep down
+0|dwell on
+0|level the playing field
+0|sink in
+0|stumble upon
+0|Rick Hanson
+0|U.C. Berkeley's Greater Good Science Center
+0|barrier
+0|boost
+0|bureau
+0|cathedral
+0|conviction
+0|criminal
+0|disadvantaged
+0|donate
+0|edifice
+0|enlarge
+0|enormous
+0|impediment
+0|informed
+0|intention
+0|laughable
+0|legacy
+0|legal
+0|obstruction
+0|onerous
+0|outstandingly
+0|pavement
+0|preserve
+0|prohibit
+0|prohibitively
+0|publicise
+0|resuscitation
+0|secure
+0|trauma
+0|undertake
+0|upkeep
+0|come into contact with
+0|deter ... from
+0|in the way
+0|in one's way
+0|go on the offensive
+0|step in
+0|Cubs
+0|David Cameron
+0|Paddington
+0|St. Mary's Hospital
+0|attic
+0|backup
+0|batter
+0|bungalow
+0|charitable
+0|coordination
+0|crush
+0|curb
+0|devastating
+0|drywall
+0|escort
+0|evacuate
+0|flashlight
+0|frigid
+0|generator
+0|horrifying
+0|howling
+0|hunker
+0|impassable
+0|impending
+0|inflate
+0|intensive
+0|kayak
+0|lobby
+0|locate
+0|manually
+0|monitor
+0|needy
+0|neonatal
+0|paddle
+0|rationing
+0|recede
+0|relay
+0|resourceful
+0|ruin
+0|scooter
+0|shambles
+0|slab
+0|slam
+0|stairwell
+0|steady
+0|township
+0|trap
+0|trunk
+0|ventilator
+0|wade
+0|zip
+0|above and beyond
+0|cave in
+0|head back
+0|head toward
+0|on the scene
+0|pitch in
+0|ride out
+0|spring into action
+0|throw on
+0|Barnegat Bay
+0|Hackensack River
+0|Hurricane Sandy
+0|Jersey Shore
+0|Little Ferry
+0|Lower Manhattan
+0|New Jersey
+0|New York University's Langone Medical Centre
+0|the Atlantic Ocean
+0|the East Coast
+0|Toms River
+0|Vespa
+0|Volkswagen
+0|Washington Township
+0|abyss
+0|animation
+0|aural
+0|backward
+0|blossom
+0|bucolic
+0|burgher
+0|buyout
+0|cluster
+0|colony
+0|constrain
+0|dense
+0|density
+0|downturn
+0|eliminate
+0|emerald
+0|entertainment
+0|environmental
+0|flail
+0|foment
+0|gibbon
+0|halfway
+0|hog
+0|leverage
+0|Midwestern
+0|misprice
+0|multiply
+0|muster
+0|obsolete
+0|olfactory
+0|optimistic
+0|prosaic
+0|pundit
+0|recurring
+0|republican
+0|resemblance
+0|skyscraper
+0|slaughter
+0|sprawl
+0|status quo
+0|striking
+0|stultifying
+0|substitute
+0|sustainability
+0|symphonic
+0|trader
+0|trump
+0|ahead of
+0|at risk
+0|cling to
+0|excel in
+0|give off
+0|lose out to
+0|put up with
+0|reside in
+0|rub off
+0|rub off on sb.
+0|Anchorage
+0|Bangalore
+0|Beethoven
+0|Cezanne
+0|Detroit
+0|Florence
+0|Haydn
+0|Monet
+0|Mozart
+0|Rousseau
+0|Seine
+0|Silicon Valley
+0|oreau
+0|Wikipedia
+0|abet
+0|academy
+0|admirable
+0|apparently
+0|assert
+0|breakneck
+0|bust
+0|carve
+0|casino
+0|congested
+0|diving
+0|dredge
+0|drought
+0|epochal
+0|exceed
+0|filthy
+0|foreclosure
+0|glitzy
+0|megacity
+0|mega-size
+0|metro
+0|metropolis
+0|nothingness
+0|oasis
+0|overnight
+0|overpopulation
+0|overshadow
+0|pearl
+0|proceedings
+0|prolong
+0|protocol
+0|recession
+0|ring
+0|rural
+0|seafloor
+0|settlement
+0|sin
+0|slum
+0|strip
+0|swollen
+0|territory
+0|theme
+0|unsustainable
+0|as late as
+0|content with
+0|be content with
+0|blow up
+0|dry up
+0|hit the big time
+0|take advantage of
+0|throw up
+0|turn back
+0|Bellagio
+0|Bombay
+0|Burj Khalifa
+0|Clark County
+0|Dubai
+0|George Saunders
+0|Jakarta
+0|Lagos
+0|Lake Mead
+0|Las Vegas
+0|MGM Grand
+0|Moshin Hamid
+0|National Academy of Sciences
+0|Nevada
+0|So Paulo
+0|United Arab Emirates
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 906
+# Total Entries Extracted: 906
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 906
+# -------------------------------

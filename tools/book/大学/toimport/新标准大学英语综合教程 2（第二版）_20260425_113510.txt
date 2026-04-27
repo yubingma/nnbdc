@@ -1,0 +1,805 @@
+0|haze
+0|marijuana
+0|stimulating
+0|economy
+0|campus
+0|demonstration
+0|radicalism
+0|governor
+0|dissident
+0|liberal
+0|clash
+0|establishment
+0|passionate
+0|protest
+0|alliance
+0|launch
+0|ultimately
+0|resignation
+0|activism
+0|characterize
+0|indie
+0|liberating
+0|creative
+0|awakening
+0|prime
+0|cynic
+0|apathetic
+0|heady
+0|factor
+0|descending
+0|employment
+0|prospect
+0|affordability
+0|issue
+0|accessibility
+0|opportunity
+0|umbilically
+0|obscure
+0|bliss
+0|bring sb. to their knees
+0|bring sth. to their knees
+0|give rise to sth.
+0|form an alliance with
+0|bring about
+0|in spite of
+0|keep off
+0|drop out
+0|in descending order
+0|in itself
+0|of itself
+0|rely on
+0|set up
+0|sophomore
+0|ironic
+0|gender
+0|colonialism
+0|post-colonialism
+0|modernism
+0|postmodernism
+0|postmodern
+0|industrial
+0|post-industrial
+0|overthrow
+0|repressive
+0|rebel
+0|chant
+0|destruction
+0|petition
+0|bracelet
+0|inspirational
+0|philosophy
+0|assert
+0|collectively
+0|nostalgic
+0|frustration
+0|takeover
+0|invade
+0|hostage
+0|resonance
+0|era
+0|technological
+0|profound
+0|sit up
+0|take to
+0|stand for
+0|assert oneself
+0|be associated with
+0|make sense
+0|grip
+0|statute
+0|authorize
+0|deduction
+0|punctually
+0|oblige
+0|syllabus
+0|emphasize
+0|penalize
+0|prior
+0|denounce
+0|contravene
+0|denunciation
+0|irregularity
+0|demise
+0|old-fashioned
+0|bulky
+0|mourning
+0|hoist
+0|shapeless
+0|bundle
+0|puff
+0|moan
+0|uneasy
+0|arouse
+0|venture
+0|excessive
+0|parental
+0|amongst
+0|console
+0|distress
+0|bloodshot
+0|pant
+0|bulging
+0|spurt
+0|inner
+0|uncontrolled
+0|vitality
+0|weaken
+0|retort
+0|fawn
+0|livid
+0|watery
+0|motionless
+0|shrill
+0|sob
+0|probable
+0|stun
+0|contract
+0|distort
+0|snatch
+0|haste
+0|harrowing
+0|uncontrollable
+0|take away
+0|see off
+0|put an end to sth.
+0|rise up
+0|in haste
+0|empathy
+0|crawl
+0|teddy
+0|retrieve
+0|trace
+0|infancy
+0|virtually
+0|infant
+0|response
+0|precursor
+0|developmental
+0|sympathetic
+0|disturbance
+0|misery
+0|confusion
+0|imitate
+0|comprehend
+0|mimicry
+0|imitation
+0|evoke
+0|distinct
+0|toddler
+0|repertoire
+0|cookie
+0|stroke
+0|pat
+0|diverge
+0|sensitivity
+0|keenly
+0|empathic
+0|discipline
+0|misbehaviour
+0|naughty
+0|apart from
+0|stem from
+0|pull away
+0|calm down
+0|tune out
+0|reveal
+0|conscious
+0|reflex
+0|teammate
+0|collide
+0|tournament
+0|clue
+0|pitch
+0|madly
+0|sheer
+0|hum
+0|mournful
+0|reminiscent
+0|chorus
+0|standoff
+0|suspense
+0|newcomer
+0|mostly
+0|whack
+0|cranium
+0|accidentally
+0|random
+0|defender
+0|illustration
+0|soar
+0|hairy
+0|shooter
+0|striker
+0|peel
+0|sprint
+0|resume
+0|precision
+0|priority
+0|periodically
+0|writhe
+0|massage
+0|phony
+0|baloney
+0|reprimand
+0|strategy
+0|mystery
+0|offside
+0|deem
+0|roughly
+0|perplexed
+0|professional
+0|interpretation
+0|touchdown
+0|referee
+0|responsible
+0|hopped-up
+0|backtalk
+0|infraction
+0|punch
+0|flock
+0|blow the whistle on sth.
+0|back and forth
+0|tend to do sth.
+0|put a good face on sth.
+0|by chance
+0|off course
+0|take credit for sth.
+0|take the credit for sth.
+0|peel off
+0|tick away
+0|at a loss for words
+0|gently
+0|illuminate
+0|deafening
+0|tantalisingly
+0|adrenaline
+0|exhilarating
+0|terrifying
+0|ensure
+0|composed
+0|championship
+0|flutter
+0|unified
+0|incur
+0|vocal
+0|performer
+0|strain
+0|eclipse
+0|exhaustion
+0|gruelling
+0|fatigue
+0|roar
+0|boost
+0|thankfully
+0|stamina
+0|exhausted
+0|scoreboard
+0|commentary
+0|tingle
+0|aloft
+0|a sea of sth.
+0|shut out
+0|take over
+0|keep up with
+0|lead up to
+0|fight back
+0|set the pace
+0|hold out
+0|count down
+0|bear sth. in mind
+0|make it
+0|miss out
+0|feel like
+0|spectator
+0|leisurely
+0|intense
+0|tactic
+0|bet
+0|adore
+0|manhood
+0|gang
+0|impressively
+0|impressiveness
+0|habitual
+0|chilly
+0|gust
+0|twirl
+0|intricate
+0|artful
+0|watchful
+0|adown
+0|pacific
+0|thoroughfare
+0|stalwart
+0|swagger
+0|guardian
+0|vicinity
+0|midway
+0|doorway
+0|darkened
+0|hardware
+0|unlighted
+0|reassuring
+0|reassuringly
+0|scar
+0|eyebrow
+0|scarfpin
+0|chum
+0|chap
+0|destiny
+0|proposition
+0|hustle
+0|staunch
+0|plodder
+0|wits
+0|razor
+0|drizzle
+0|astir
+0|dismally
+0|absurdity
+0|doubtfully
+0|bless
+0|exclaim
+0|buddy
+0|moderately
+0|egotism
+0|submerge
+0|glare
+0|simultaneously
+0|gaze
+0|pug
+0|sensible
+0|patrolman
+0|for show
+0|well nigh
+0|lose track of
+0|turn up
+0|pull out
+0|in a groove
+0|in the groove
+0|come around
+0|strapline
+0|deception
+0|impersonate
+0|forge
+0|forgery
+0|fictional
+0|fraudster
+0|custody
+0|consultancy
+0|fraud
+0|pickup
+0|shred
+0|trash
+0|buck
+0|anonymous
+0|mindset
+0|commonplace
+0|baby boomer
+0|ballpoint
+0|household
+0|precaution
+0|gel
+0|hack
+0|pocketbook
+0|log
+0|opportunistic
+0|cancel
+0|pay back
+0|count on
+0|take precautions
+0|look through
+0|tear up
+0|log off
+0|download
+0|invest
+0|threat
+0|sample
+0|publicity
+0|significantly
+0|prosecute
+0|sue
+0|leisure
+0|inactivity
+0|sin
+0|temptation
+0|rugby
+0|cricket
+0|trainspotting
+0|instance
+0|peculiar
+0|fulfil
+0|fulfilled
+0|involve
+0|interaction
+0|evolve
+0|couch potato
+0|understandable
+0|chill
+0|laziness
+0|reclining chair
+0|beanbag
+0|snack
+0|telly
+0|span
+0|attention span
+0|inherently
+0|removal
+0|inherent
+0|belly
+0|dedication
+0|fashionable
+0|muffin
+0|addicted
+0|tuber
+0|pointless
+0|extensive
+0|ill-informed
+0|virtual
+0|insult
+0|adventurous
+0|take up
+0|as a matter of fact
+0|worthy of
+0|move on
+0|get started
+0|pastime
+0|gifted
+0|spasm
+0|futile
+0|insinuate
+0|convulsive
+0|rightly
+0|illumination
+0|swiftly
+0|undue
+0|recuperation
+0|cultivation
+0|improvise
+0|sedulously
+0|vivify
+0|aggravate
+0|unconnected
+0|toil
+0|bore
+0|manual
+0|trifling
+0|gratify
+0|caprice
+0|excitement
+0|additional
+0|satiation
+0|frantically
+0|avenging
+0|boredom
+0|clatter
+0|motion
+0|rational
+0|industrious
+0|compensation
+0|sustenance
+0|grudge
+0|enforced
+0|interruption
+0|vocation
+0|outlook
+0|diversion
+0|banish
+0|catch hold of
+0|let sth. go
+0|at hand
+0|it's no use doing sth.
+0|it's no use in doing sth.
+0|take an interest in
+0|broadly speaking
+0|to death
+0|tire out
+0|as for
+0|lay one's hands on
+0|in vain
+0|at intervals
+0|correspondent
+0|crossword
+0|knit
+0|undoubtedly
+0|bluff
+0|cryptic
+0|lottery
+0|unlucky
+0|mishap
+0|mathematical
+0|coincidence
+0|notion
+0|scrutiny
+0|marginally
+0|sack
+0|spectrum
+0|misfortune
+0|neutral
+0|duration
+0|memorable
+0|memorability
+0|insurer
+0|reminder
+0|bump
+0|leap
+0|subsequent
+0|timescale
+0|extend
+0|prophecy
+0|disprove
+0|tempting
+0|cluster
+0|probability
+0|redundant
+0|vulnerable
+0|responsive
+0|vase
+0|encounter
+0|atlas
+0|route
+0|chore
+0|flick
+0|ordnance
+0|situate
+0|insignificant
+0|awkwardly
+0|curse
+0|incidentally
+0|overlap
+0|adjacent
+0|duplicate
+0|selective
+0|frequency
+0|verifiable
+0|consecutive
+0|disadvantage
+0|considerably
+0|exertion
+0|deprivation
+0|alive and kicking
+0|be bound to
+0|crop up
+0|depressing
+0|anymore
+0|outdated
+0|songbook
+0|biochemist
+0|formula
+0|relativity
+0|simulation
+0|generate
+0|proposal
+0|dreadful
+0|soak
+0|atomic
+0|explosion
+0|namely
+0|blast
+0|hurl
+0|debris
+0|inhabitant
+0|shift
+0|alien
+0|saunter
+0|producer
+0|giant
+0|rotate
+0|centripetal force
+0|astronaut
+0|trek
+0|revolve
+0|superman
+0|baffle
+0|anticlockwise
+0|gear
+0|empire
+0|reckless
+0|on board
+0|speed up
+0|sit back
+0|soak up
+0|be at home
+0|feel at home
+0|with flying colours
+0|verbal
+0|predominantly
+0|dramatically
+0|comply
+0|reinforce
+0|territory
+0|intimidate
+0|empathize
+0|imply
+0|consistently
+0|inhibited
+0|spinal
+0|column
+0|murmur
+0|agitated
+0|renown
+0|assent
+0|jolt
+0|reverie
+0|humanity
+0|heinous
+0|cautiously
+0|cataclysm
+0|erect
+0|demolish
+0|lens
+0|formaldehyde
+0|ether
+0|stretcher
+0|wheelchair
+0|corridor
+0|shiver
+0|locate
+0|pajamas
+0|suicide
+0|visible
+0|earthly
+0|sink in
+0|in praise of
+0|back away
+0|live through
+0|get rid of
+0|consist of
+0|fall out
+0|on the part of sb.
+0|in advance
+0|underwear
+0|peacetime
+0|annexe
+0|refugee
+0|emigrate
+0|Jewish
+0|badge
+0|conceal
+0|confine
+0|rarely
+0|drove
+0|transit
+0|transit camp
+0|chamber
+0|gas chamber
+0|moody
+0|considerable
+0|remarkable
+0|insight
+0|ideal
+0|absurd
+0|impractical
+0|utterly
+0|foundation
+0|wilderness
+0|uphold
+0|cruelty
+0|tranquillity
+0|display
+0|childish
+0|optimism
+0|declaration
+0|solitary
+0|holocaust
+0|evil
+0|typhus
+0|starvation
+0|survivor
+0|publication
+0|recognition
+0|at all times
+0|in droves
+0|come across
+0|in recognition of
+0|remembrance
+0|misty
+0|soberly
+0|chime
+0|respectfully
+0|stir
+0|breeze
+0|lone
+0|trumpet
+0|stripe
+0|maple
+0|veteran
+0|armistice
+0|poppy
+0|grave
+0|battlefield
+0|wreath
+0|rebirth
+0|strut
+0|leading light
+0|cater
+0|multinational
+0|shortage
+0|dread
+0|dreaded
+0|unfilled
+0|solution
+0|frequently
+0|thesis
+0|cooperative
+0|personality
+0|employer
+0|indicator
+0|extrovert
+0|introvert
+0|dichotomy
+0|equally
+0|conviction
+0|community
+0|ivory tower
+0|numerous
+0|option
+0|typically
+0|entertain
+0|underprivileged
+0|agricultural
+0|unnoticed
+0|bolster
+0|play your heart out
+0|work your heart out
+0|sing your heart out
+0|cater for
+0|dash off
+0|line up
+0|pay off
+0|make ends meet
+0|make both ends meet
+0|get ahead
+0|carry out
+0|there is little doubt that
+0|there is no doubt that
+0|cut off
+0|on the contrary
+0|make demands on
+0|location
+0|cataract
+0|surgery
+0|dedicate
+0|prescription
+0|installation
+0|motorcycle
+0|latrine
+0|cement
+0|hostel
+0|mattress
+0|flexibility
+0|archaeological
+0|provider
+0|participant
+0|effectiveness
+0|unorganized
+0|vary
+0|side by side
+0|clean out
+0|kind of
+0|at times
+0|save up
+0|crescent
+0|bloody
+0|horrify
+0|discriminate
+0|treaty
+0|creation
+0|wartime
+0|humanitarian
+0|widen
+0|catastrophe
+0|tsunami
+0|Islamic
+0|inappropriate
+0|crystal
+0|symbolic
+0|recognizable
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 798
+# Total Entries Extracted: 798
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 798
+# -------------------------------

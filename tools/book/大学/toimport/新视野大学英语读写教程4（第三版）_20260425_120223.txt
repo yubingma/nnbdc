@@ -1,0 +1,948 @@
+0|fallacy
+0|pact
+0|shrewd
+0|well-off
+0|dye
+0|makeup
+0|elite
+0|radiant
+0|counterpart
+0|pearl
+0|banner
+0|situated
+0|expressway
+0|venue
+0|luminous
+0|stereo
+0|pedal
+0|gum
+0|staple
+0|distort
+0|stump
+0|obesity
+0|explanatory
+0|underway
+0|inference
+0|analytical
+0|conversion
+0|premature
+0|surpass
+0|premise
+0|tactic
+0|flatter
+0|flattery
+0|discern
+0|crumble
+0|flare
+0|proposition
+0|petitioner
+0|axe
+0|ingenious
+0|muscular
+0|retort
+0|drip
+0|sarcasm
+0|disclosure
+0|make a pact
+0|in exchange for
+0|set a date for
+0|appeal to
+0|make an analogy between
+0|draw an analogy between
+0|make sth. out of ...
+0|give sb. the axe
+0|be dripping with sth.
+0|orthodox
+0|realm
+0|formulate
+0|layman
+0|stainless
+0|incompetence
+0|accountability
+0|petty
+0|veto
+0|refute
+0|hypothesis
+0|hack
+0|stall
+0|trigger
+0|hacker
+0|rivalry
+0|partition
+0|loop
+0|plaza
+0|overstate
+0|prophet
+0|testify
+0|testimony
+0|recount
+0|retention
+0|retrieval
+0|assault
+0|rape
+0|repel
+0|empirical
+0|obscure
+0|incidence
+0|periodic
+0|casino
+0|slot
+0|threshold
+0|trillion
+0|erroneous
+0|decay
+0|watertight
+0|by virtue of
+0|factor sth. into sth.
+0|attribute sth. to sb.
+0|attribute sth. to sth.
+0|in reality
+0|come into play
+0|in that
+0|call for
+0|play the odds
+0|in a row
+0|be stuck on sth.
+0|get stuck on sth.
+0|subject to sth.
+0|rehearsal
+0|bald
+0|arrogant
+0|transient
+0|affix
+0|allotment
+0|groom
+0|grooming
+0|strand
+0|eclipse
+0|magnify
+0|deficient
+0|chronic
+0|inborn
+0|thigh
+0|accessory
+0|violet
+0|outfit
+0|aisle
+0|warfare
+0|bronze
+0|appliance
+0|clay
+0|adhere
+0|via
+0|elasticity
+0|complexion
+0|plaster
+0|cosmetic
+0|obsession
+0|obsessed
+0|lipstick
+0|perfume
+0|gorgeous
+0|homogeneous
+0|conformity
+0|appease
+0|prosecution
+0|outrage
+0|complement
+0|subjective
+0|excuse oneself
+0|come up with
+0|stick to sth.
+0|affix value to sth.
+0|in hopes of
+0|reach out to
+0|become obsessed with ...
+0|be obsessed with ...
+0|voice an opinion on
+0|addicted
+0|biomedical
+0|physiological
+0|corrode
+0|criterion
+0|sensual
+0|outgoing
+0|esthetic
+0|scar
+0|jealousy
+0|preface
+0|naked
+0|exempt
+0|predominant
+0|underscore
+0|dietary
+0|capsule
+0|meditation
+0|regiment
+0|hamper
+0|stylish
+0|costume
+0|galaxy
+0|symphony
+0|majestic
+0|bruise
+0|collide
+0|elicit
+0|barren
+0|stumble
+0|knit
+0|illuminate
+0|ethic
+0|lure
+0|novelty
+0|interwoven
+0|fracture
+0|saint
+0|sentiment
+0|embody
+0|embodiment
+0|mortal
+0|degenerate
+0|checkpoint
+0|purify
+0|divine
+0|be addicted to
+0|on the rise
+0|be exempt from
+0|distract from sth.
+0|distract sb. from sth.
+0|stumble through
+0|stumble across
+0|stumble into
+0|approve of
+0|enquire about
+0|wear out
+0|seek out
+0|from a ... perspective
+0|be accountable to
+0|rectangular
+0|reshuffle
+0|disperse
+0|exquisite
+0|stockholder
+0|deduce
+0|clan
+0|juvenile
+0|invalid
+0|alloy
+0|skyline
+0|terrain
+0|radar
+0|navigation
+0|revive
+0|alumnus
+0|administrate
+0|charter
+0|disrupt
+0|draft
+0|prototype
+0|region
+0|quantify
+0|elapse
+0|interim
+0|patriot
+0|fuse
+0|intermediary
+0|hub
+0|streamline
+0|disjointed
+0|decentralize
+0|decentralized
+0|stab
+0|frugality
+0|gasoline
+0|precedent
+0|dental
+0|centralization
+0|fixture
+0|trappings
+0|courier
+0|forerunner
+0|sphere
+0|touch down
+0|hold sb. in high regard
+0|hold sth. in high regard
+0|pick on sb.
+0|be onto something
+0|take a stab at ...
+0|have a stab at ...
+0|make a stab at ...
+0|boil down to sth.
+0|from time to time
+0|retailer
+0|velocity
+0|snapshot
+0|brew
+0|merge
+0|borough
+0|ankle
+0|hound
+0|tease
+0|predecessor
+0|vocational
+0|bud
+0|verdict
+0|premium
+0|stimulus
+0|magnitude
+0|adjacent
+0|partnership
+0|beverage
+0|multilateral
+0|brass
+0|orchestra
+0|orchestral
+0|reign
+0|reigning
+0|royalty
+0|decree
+0|quota
+0|eligible
+0|optical
+0|vocal
+0|sturdy
+0|stipulate
+0|utilization
+0|turnover
+0|numerical
+0|expenditure
+0|embed
+0|reminiscence
+0|scrub
+0|diagnosis
+0|crowning
+0|in a span of
+0|within a span of
+0|over a span of
+0|go public
+0|adjacent to
+0|a trace of
+0|be eligible for
+0|be critical to
+0|beat sb. down
+0|beat down sb.
+0|lip service
+0|remain committed to
+0|be embedded in sth.
+0|become embedded in sth.
+0|democracy
+0|congressman
+0|constituent
+0|segregate
+0|consolidate
+0|differentiate
+0|definitive
+0|sane
+0|ecological
+0|ozone
+0|deplete
+0|depletion
+0|ecology
+0|thermal
+0|atlas
+0|planetary
+0|reversible
+0|chord
+0|regime
+0|parameter
+0|overt
+0|allege
+0|incompatible
+0|dreadful
+0|eradicate
+0|sovereignty
+0|coalition
+0|legislative
+0|legalization
+0|propagate
+0|bizarre
+0|caribou
+0|standoff
+0|versus
+0|negligible
+0|ecosystem
+0|saw
+0|chop
+0|timber
+0|maneuver
+0|habitat
+0|geology
+0|hierarchy
+0|intelligible
+0|differentiate between
+0|take on
+0|run against the grain
+0|go against the grain
+0|be incompatible with
+0|come through
+0|in part
+0|as ... as the next person
+0|as ... as the next man
+0|choose sth. over sth. else
+0|at a ... cost
+0|be bound up
+0|be bound together
+0|be in order
+0|frame of mind
+0|state of mind
+0|prairie
+0|debris
+0|converge
+0|shrub
+0|vegetation
+0|mattress
+0|texture
+0|plea
+0|preside
+0|impair
+0|marsh
+0|crane
+0|overpass
+0|contaminate
+0|vulgar
+0|zoological
+0|mutation
+0|antelope
+0|graze
+0|prey
+0|slaughter
+0|invert
+0|obedient
+0|cord
+0|repressive
+0|hunch
+0|detach
+0|detached
+0|concurrently
+0|inject
+0|entity
+0|grease
+0|greasy
+0|liquor
+0|peel
+0|repression
+0|mansion
+0|stroll
+0|flap
+0|coexistence
+0|subscribe
+0|odor
+0|botanical
+0|cavity
+0|alienate
+0|intolerant
+0|deplore
+0|numb
+0|spice
+0|dweller
+0|humidity
+0|converge with
+0|preside over sth.
+0|be obedient to
+0|remold sb. into
+0|remold sth. into
+0|disconnect sb. from
+0|disconnect sth. from
+0|be tied to
+0|lean against sth.
+0|lean sth. against sth.
+0|lean on sth.
+0|lean sth. on sth.
+0|peel off
+0|peel sth. off
+0|alienate sb. from sth.
+0|be intolerant of
+0|plunge into
+0|shut out sth.
+0|shut out sb.
+0|peninsula
+0|confidential
+0|confidentially
+0|recipient
+0|nominal
+0|emigrant
+0|taboo
+0|scallop
+0|garlic
+0|flank
+0|cucumber
+0|lunar
+0|mutter
+0|tray
+0|foil
+0|magistrate
+0|breach
+0|etiquette
+0|colony
+0|configuration
+0|fabricate
+0|tribe
+0|censorship
+0|consecutive
+0|aerospace
+0|prod
+0|proceeding
+0|reciprocal
+0|denote
+0|bracket
+0|inconsistency
+0|gulf
+0|spectator
+0|deduction
+0|temporal
+0|ornament
+0|hedge
+0|intolerance
+0|judiciary
+0|malicious
+0|honorary
+0|sieve
+0|nicety
+0|crust
+0|composite
+0|exterior
+0|junction
+0|starve to death
+0|starve sb. to death
+0|starve oneself to death
+0|be attached to
+0|on the side
+0|be suspicious of
+0|get to the point
+0|come to the point
+0|wander around
+0|hedge ... in with ...
+0|hedge ... in by ...
+0|be representative of
+0|if anything
+0|torch
+0|finalize
+0|merger
+0|emirate
+0|detain
+0|memorandum
+0|compile
+0|graph
+0|decimal
+0|exposition
+0|certify
+0|ribbon
+0|blue ribbon
+0|convertible
+0|parade
+0|commemorate
+0|briefing
+0|kidnap
+0|exasperated
+0|interrogation
+0|nil
+0|friction
+0|reel
+0|refund
+0|parachute
+0|bull
+0|rating
+0|sociologist
+0|cohesion
+0|reactionary
+0|nominee
+0|climax
+0|unification
+0|solidarity
+0|compartment
+0|compartmentalize
+0|convene
+0|extract
+0|groove
+0|mute
+0|tactful
+0|courteous
+0|glossary
+0|clarification
+0|mediate
+0|incorporate
+0|have an impact on
+0|have an impact upon
+0|put sb. in charge
+0|put sb. in charge of sb.
+0|put sb. in charge sth.
+0|close the deal
+0|close a deal
+0|seal the deal
+0|seal a deal
+0|divert ... to
+0|charge into
+0|charge down
+0|take a ... approach to sth.
+0|single sb. out
+0|incorporate sth. into sth.
+0|incorporate sth. in sth.
+0|grid
+0|commonwealth
+0|rooster
+0|crow
+0|shepherd
+0|weld
+0|welder
+0|cabinet
+0|lubricate
+0|tract
+0|shutter
+0|liver
+0|copper
+0|mug
+0|brewery
+0|racecourse
+0|spinal
+0|rib
+0|ulcer
+0|optic
+0|receptor
+0|martyr
+0|patriotism
+0|fort
+0|outpost
+0|wrench
+0|screw
+0|levy
+0|sovereign
+0|traverse
+0|allegedly
+0|wedge
+0|textile
+0|mill
+0|banknote
+0|alien
+0|lightweight
+0|coupon
+0|errand
+0|telescope
+0|twinkle
+0|shaft
+0|deductive
+0|racket
+0|emancipate
+0|dock
+0|symmetrical
+0|symmetrically
+0|Republican
+0|lordship
+0|rebellion
+0|mediator
+0|off grid
+0|off the grid
+0|scrape by
+0|extract sth. from sth.
+0|run errands
+0|cater to ...
+0|make a racket
+0|emancipate sb. from sth.
+0|a say on sth.
+0|a say over sth.
+0|have a say on sth.
+0|have a say over sth.
+0|feminist
+0|feminism
+0|obscene
+0|dogma
+0|insurgency
+0|displace
+0|eject
+0|coil
+0|distill
+0|queer
+0|colonize
+0|illiterate
+0|lash
+0|detention
+0|execution
+0|virgin
+0|judicial
+0|transit
+0|pilgrim
+0|colonial
+0|isle
+0|throne
+0|overthrow
+0|discriminatory
+0|ballot
+0|electoral
+0|senate
+0|commission
+0|patent
+0|chorus
+0|spatula
+0|sponge
+0|kidney
+0|kidney bean
+0|transcribe
+0|midwife
+0|segregation
+0|trophy
+0|trophy wife
+0|liner
+0|hostage
+0|tunnel
+0|solicitor
+0|ghost
+0|pirate
+0|quench
+0|appendix
+0|artifact
+0|bygone
+0|epoch
+0|vigilant
+0|continuance
+0|forbid sb. from doing sth.
+0|keep house
+0|eject sb. from sth.
+0|coil sth. up with sth.
+0|against one's will
+0|run for
+0|look down on sb.
+0|look down on sth.
+0|take up
+0|a ghost of sth.
+0|the ghost of sth.
+0|density
+0|triple
+0|uranium
+0|monopoly
+0|fossil
+0|treaty
+0|particulates
+0|poll
+0|insurgent
+0|extinct
+0|indefinite
+0|wisp
+0|hitherto
+0|synthesis
+0|plateau
+0|linear
+0|fusion
+0|confederation
+0|solar
+0|glitter
+0|glittering
+0|intricate
+0|gadget
+0|fringe
+0|apparatus
+0|combustion
+0|semiconductor
+0|transistor
+0|rotary
+0|turbine
+0|clockwise
+0|counterclockwise
+0|axis
+0|viable
+0|slash
+0|clearing
+0|outflow
+0|excavation
+0|biomass
+0|standby
+0|ventilate
+0|diffuse
+0|dioxide
+0|automation
+0|bulletin
+0|hinge
+0|unify
+0|unified
+0|supersonic
+0|inaugurate
+0|collaboration
+0|factor sth. in
+0|factor in sth.
+0|be projected to do sth.
+0|on a ... scale
+0|fill up
+0|clear up
+0|be derived from
+0|pose a risk to sth.
+0|hinge on sth.
+0|hinge upon sth.
+0|be upon sb.
+0|spike
+0|equator
+0|riot
+0|recur
+0|consultancy
+0|turnout
+0|disclose
+0|oracle
+0|foretell
+0|intrigue
+0|garment
+0|intermittent
+0|hoard
+0|wholesale
+0|pistol
+0|volatile
+0|dual
+0|infrastructure
+0|livestock
+0|recipe
+0|excerpt
+0|pamphlet
+0|affluent
+0|piracy
+0|neutralize
+0|dodge
+0|intersection
+0|councilor
+0|bureaucratic
+0|foresight
+0|subsidy
+0|appropriation
+0|militia
+0|coherent
+0|rupture
+0|seam
+0|discrepancy
+0|signpost
+0|non-profit
+0|donor
+0|syndrome
+0|collision
+0|soluble
+0|staircase
+0|calm down
+0|level off
+0|be starved of sth.
+0|run out of sth.
+0|keep sth. at bay
+0|hold sth. at bay
+0|rescue ... from ...
+0|get a recipe for sth.
+0|be a recipe for sth.
+0|point to
+0|on a collision course
+0|angel
+0|obituary
+0|seminar
+0|specimen
+0|assassin
+0|secular
+0|oath
+0|graphic
+0|brochure
+0|leaflet
+0|audio
+0|batch
+0|enclosure
+0|vapor
+0|siege
+0|boycott
+0|incur
+0|wrath
+0|judicious
+0|mastermind
+0|malpractice
+0|lawsuit
+0|sue
+0|passionate
+0|ministerial
+0|parliamentary
+0|sideline
+0|revenge
+0|kit
+0|chronicle
+0|expectancy
+0|life expectancy
+0|stalk
+0|condolence
+0|terminate
+0|questionnaire
+0|stripe
+0|striped
+0|pajamas
+0|retrospective
+0|infinity
+0|successor
+0|antibiotic
+0|vaccinate
+0|cape
+0|crusader
+0|cemetery
+0|turn up
+0|put out
+0|alert sb. to sth.
+0|lay siege to sth.
+0|lay siege to sb.
+0|follow suit
+0|in the face of
+0|stand on the sidelines
+0|stay on the sidelines
+0|remain the sidelines
+0|get revenge for sth.
+0|get revenge on sb. for sth.
+0|appeal to sb. to do sth.
+0|swamp
+0|handset
+0|subscription
+0|thesis
+0|indignant
+0|activate
+0|Catholic
+0|patron
+0|ashore
+0|deport
+0|adherence
+0|tribute
+0|defendant
+0|tribunal
+0|denounce
+0|outdate
+0|outdated
+0|vibrate
+0|agitate
+0|agitation
+0|logo
+0|trumpet
+0|prosecute
+0|animated
+0|wax
+0|tentative
+0|tentatively
+0|commentary
+0|tack
+0|superintendent
+0|tickle
+0|flutter
+0|dub
+0|incidentally
+0|ignite
+0|impetus
+0|manuscript
+0|incomprehensive
+0|bewilder
+0|module
+0|skeleton
+0|crown
+0|marvel
+0|nucleus
+0|serial
+0|timely
+0|particle
+0|retrieve
+0|be swamped by ...
+0|be swamped with ...
+0|fight discrimination against sb.
+0|in adherence to
+0|come to life
+0|tack sth. up
+0|dub ... as ...
+0|marvel at
+0|marvel over
+0|feel strongly about sth.
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 941
+# Total Entries Extracted: 941
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 941
+# -------------------------------

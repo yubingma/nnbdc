@@ -1,0 +1,712 @@
+0|urbanization
+0|modernize
+0|benchmark
+0|demographic
+0|infrastructure
+0|infrastructural
+0|predominant
+0|predominantly
+0|fossil
+0|fossil fuel
+0|devastating
+0|excess
+0|prone
+0|detrimental
+0|outdated
+0|escalate
+0|jargon
+0|interlink
+0|intuitive
+0|optimal
+0|optimize
+0|inhabitant
+0|equate
+0|inclusive
+0|poised
+0|transit
+0|lavish
+0|cellular
+0|computing
+0|parameter
+0|constitute
+0|concrete
+0|sensor
+0|minimal
+0|hypothesis
+0|alert
+0|instantaneous
+0|instantaneously
+0|dispatch
+0|tangible
+0|intangible
+0|fabulous
+0|hurdle
+0|evoke
+0|streamline
+0|mode
+0|be projected to do sth.
+0|define sth. as
+0|equate sth. to sth.
+0|equate sth. with sth.
+0|integrate with sth.
+0|integrate sth. with sth.
+0|integrate into sth.
+0|integrate sth. into sth.
+0|be poised to do sth.
+0|on top of sth.
+0|within a moment's notice
+0|at a moment's notice
+0|within grasp
+0|within one's grasp
+0|rid sth. of sth.
+0|rid sb. of sth.
+0|to that end
+0|be modeled on
+0|Internet of ings
+0|proximity
+0|centralization
+0|commute
+0|magnet
+0|industrial
+0|robotics
+0|merchandise
+0|midst
+0|instance
+0|alternative
+0|solar
+0|panel
+0|solar panel
+0|wind turbine
+0|eminent
+0|underestimate
+0|popularize
+0|automation
+0|erode
+0|constraint
+0|expenditure
+0|recreation
+0|vulnerable
+0|fringe
+0|anguish
+0|humid
+0|rural
+0|thermal
+0|evapotranspiration
+0|ailment
+0|allergy
+0|afloat
+0|vicious
+0|vicious circle
+0|leverage
+0|imperative
+0|deduce
+0|on the horizon
+0|on the fringe
+0|on the fringes
+0|on the fringe of sth.
+0|on the fringes of sth.
+0|simply put
+0|put simply
+0|keep afloat
+0|keep sth. afloat
+0|keep sb. afloat
+0|bid farewell to
+0|the Fourth Industrial Revolution
+0|privilege
+0|corrode
+0|dread
+0|outgoing
+0|esthetic
+0|scar
+0|preface
+0|exempt
+0|underscore
+0|dietary
+0|protein
+0|supplement
+0|capsule
+0|meditation
+0|regiment
+0|hamper
+0|stylish
+0|costume
+0|galaxy
+0|symphony
+0|majestic
+0|bruise
+0|collide
+0|elicit
+0|eternity
+0|barren
+0|stumble
+0|knit
+0|illuminate
+0|indulgent
+0|self-indulgent
+0|manipulation
+0|interwoven
+0|fracture
+0|register
+0|authentic
+0|radiant
+0|radiantly
+0|enquire
+0|embodiment
+0|mortal
+0|checkpoint
+0|purify
+0|resolution
+0|be addicted to
+0|be exempt from
+0|stumble through
+0|stumble across
+0|stumble into
+0|approve of
+0|enquire about
+0|wear sth. out
+0|seek out
+0|be accountable to
+0|Richard
+0|scarcity
+0|allure
+0|alluring
+0|beetle
+0|macro
+0|behold
+0|scenic
+0|dreary
+0|bare
+0|gloomy
+0|monotonous
+0|industrious
+0|lily
+0|preoccupied
+0|perception
+0|distort
+0|generalize
+0|existent
+0|converse
+0|weary
+0|gratitude
+0|splendor
+0|soak
+0|intricacy
+0|admittedly
+0|meditative
+0|distraction
+0|dispel
+0|judgmental
+0|vibrant
+0|picturesque
+0|vitality
+0|essence
+0|beckon
+0|sprout
+0|identify
+0|ponder about
+0|be preoccupied with
+0|soak sth. up
+0|filter sth. through
+0|jump out at sb.
+0|beckon sb. to do sth.
+0|beckon to sb. to do sth.
+0|interior
+0|block
+0|attentive
+0|attentively
+0|spider
+0|makerspace
+0|drone
+0|cram
+0|venue
+0|electronics
+0|showcase
+0|aspire
+0|aspiring
+0|emergence
+0|crowdfunding
+0|paradigm
+0|administrative
+0|carnival
+0|analogous
+0|sponsorship
+0|intersection
+0|hardware
+0|facilitation
+0|commercialize
+0|staff
+0|prototype
+0|momentum
+0|consultation
+0|interface
+0|clarity
+0|hence
+0|keen
+0|override
+0|clash
+0|allocation
+0|ingenious
+0|ecosystem
+0|earnings
+0|conducive
+0|navigate
+0|invigorate
+0|draw to a close
+0|draw to an end
+0|put sth. into practice
+0|trace sth. to sth.
+0|trace sth. back to sth.
+0|gain ground
+0|in terms of sth.
+0|on the contrary
+0|a handful of
+0|pick up
+0|bring sth. to life
+0|reflect on
+0|hail sth. as
+0|hail sb. as
+0|be conducive to sth.
+0|as a whole
+0|XinCheJian
+0|the Administrative Committee of
+0|Zhongguancun Science Park
+0|Shanghai Maker Carnival
+0|Seeed Studio
+0|Hackathon
+0|Beijing Makerspace
+0|erect
+0|underlie
+0|specialize
+0|finalize
+0|complicated
+0|detain
+0|memorandum
+0|compile
+0|graph
+0|decimal
+0|exposition
+0|certify
+0|ribbon
+0|blue ribbon
+0|convertible
+0|parade
+0|briefing
+0|prospective
+0|kidnap
+0|divert
+0|exasperated
+0|interrogation
+0|nil
+0|friction
+0|appropriate
+0|appropriately
+0|reel
+0|refund
+0|parachute
+0|bull
+0|rating
+0|cohesion
+0|nominee
+0|climax
+0|unification
+0|solidarity
+0|convene
+0|extract
+0|groove
+0|mute
+0|tactful
+0|straightforward
+0|courteous
+0|glossary
+0|mediate
+0|incorporate
+0|specialize in
+0|close a deal
+0|seal a deal
+0|divert ... to sth.
+0|charge into
+0|charge around
+0|charge down
+0|take a ... approach to sth.
+0|take a ... approach to doing sth.
+0|take an ... approach to sth.
+0|take an ... approach to doing sth.
+0|single sb. out
+0|single sth. out
+0|incorporate sth. into sth.
+0|incorporate sth. in sth.
+0|Edward Hall
+0|Kevin Johnston
+0|the United Arab Emirates
+0|UAE
+0|Singapore
+0|biodiversity
+0|oasis
+0|organism
+0|microorganism
+0|underpin
+0|ecological
+0|jeopardy
+0|overreach
+0|affluence
+0|ruthless
+0|ruthlessly
+0|habitable
+0|emission
+0|ozone
+0|depletion
+0|threat
+0|ecology
+0|degradation
+0|fertile
+0|falter
+0|perish
+0|breadth
+0|consume
+0|collapse
+0|monumental
+0|dire
+0|economize
+0|stringent
+0|formulate
+0|deter
+0|habitat
+0|extinction
+0|integrity
+0|varied
+0|disposal
+0|conserve
+0|landfill
+0|timber
+0|timely
+0|empower
+0|fare better
+0|no better
+0|pose a threat to ...
+0|pose a danger to ...
+0|pose a risk to ...
+0|under strain
+0|under a strain
+0|with no delay
+0|without delay
+0|play a part
+0|play a part in sth.
+0|cut down on sth.
+0|comply with
+0|bear links to sth.
+0|bear no links to sth.
+0|bear links with sth.
+0|bear no links with sth.
+0|weigh sth. against sth.
+0|World Environment Day
+0|UN Conference on the Human Environment
+0|Stockholm
+0|UN Environment Programme
+0|UNEP
+0|prairie
+0|debris
+0|converge
+0|shrub
+0|texture
+0|plea
+0|preside
+0|impair
+0|marsh
+0|crane
+0|contaminate
+0|mutation
+0|antelope
+0|graze
+0|prey
+0|invert
+0|miniature
+0|creature
+0|hunch
+0|claw
+0|declaw
+0|concurrently
+0|surgery
+0|synthetic
+0|crumb
+0|stain
+0|lean
+0|greasy
+0|liquor
+0|peel
+0|repression
+0|mansion
+0|stroll
+0|hum
+0|flap
+0|subscribe
+0|germ
+0|odor
+0|rub
+0|ounce
+0|cavity
+0|alienate
+0|deplore
+0|detached
+0|numb
+0|dweller
+0|scent
+0|converge with
+0|preside over sth.
+0|disconnect sb. from
+0|disconnect sth. from
+0|be tied to
+0|peel off
+0|peel sth. off
+0|subscribe to sth.
+0|alienate sb. from sth.
+0|be intolerant of
+0|plunge into
+0|shut out
+0|obituary
+0|specimen
+0|blunt
+0|gangster
+0|intrigue
+0|intrigued
+0|secular
+0|oath
+0|leaflet
+0|constrict
+0|enclosure
+0|vapor
+0|siege
+0|cosmetics
+0|exert
+0|boycott
+0|incur
+0|wrath
+0|judicious
+0|watchdog
+0|oppress
+0|oppressed
+0|mastermind
+0|malpractice
+0|lawsuit
+0|sue
+0|humane
+0|parliamentary
+0|sideline
+0|revenge
+0|kit
+0|chronicle
+0|diagnose
+0|expectancy
+0|stalk
+0|sympathy
+0|condolence
+0|questionnaire
+0|stripe
+0|infinity
+0|successor
+0|antibiotic
+0|vaccinate
+0|cape
+0|crusader
+0|cemetery
+0|turn up
+0|put out
+0|alert sb. to sth.
+0|lay siege to sth.
+0|lay siege to sb.
+0|follow suit
+0|in the face of
+0|stand on the sidelines
+0|stay on the sidelines
+0|remain on the sidelines
+0|get revenge for sth.
+0|get revenge on sb. for sth.
+0|appeal to
+0|Henry Spira
+0|New York University
+0|swamp
+0|handset
+0|thesis
+0|indignant
+0|activate
+0|heritage
+0|patron
+0|ashore
+0|deport
+0|immigrant
+0|adherence
+0|tribute
+0|defendant
+0|tribunal
+0|denounce
+0|agitation
+0|trumpet
+0|prosecute
+0|compose
+0|animated
+0|realistic
+0|realistically
+0|wax
+0|tentative
+0|tentatively
+0|commentary
+0|refined
+0|tack
+0|superintendent
+0|tickle
+0|flutter
+0|dub
+0|ignite
+0|impetus
+0|manuscript
+0|coverage
+0|bewilder
+0|bewildered
+0|module
+0|skeleton
+0|crown
+0|consistency
+0|inconsistency
+0|serial
+0|particle
+0|retrieve
+0|in adherence to
+0|in essence
+0|come to life
+0|tack sth. up
+0|dub sb. as
+0|dub sth. as
+0|feel strongly about sth.
+0|Gray
+0|William Butler Yeats
+0|Ellis Island
+0|Fire Department of the City of New York
+0|triple
+0|petroleum
+0|versatile
+0|uranium
+0|monopoly
+0|treaty
+0|particulates
+0|nerve
+0|poll
+0|insurgent
+0|extinct
+0|lump
+0|wisp
+0|eventual
+0|hitherto
+0|synthesis
+0|plateau
+0|linear
+0|fusion
+0|promising
+0|confederation
+0|feverish
+0|feverishly
+0|glitter
+0|glittering
+0|prohibitive
+0|intricate
+0|gadget
+0|apparatus
+0|combustion
+0|transistor
+0|principle
+0|rotate
+0|rotary
+0|blade
+0|clockwise
+0|axis
+0|viable
+0|slash
+0|outflow
+0|excavation
+0|standby
+0|corpse
+0|ventilate
+0|diffuse
+0|dioxide
+0|layer
+0|bulletin
+0|hinge
+0|inaugurate
+0|factor sth. in
+0|on a ... scale
+0|convert sth. into sth.
+0|convert sth. to sth.
+0|on a regular basis
+0|on a daily basis
+0|on a weekly basis
+0|fill up
+0|clear up
+0|derive from
+0|be derived from
+0|hinge on sth.
+0|hinge upon sth.
+0|Chernobyl
+0|Fukushima
+0|spike
+0|equator
+0|export
+0|inflation
+0|inflationary
+0|riot
+0|recur
+0|turnout
+0|disclose
+0|dairy
+0|oracle
+0|foretell
+0|neglect
+0|consensus
+0|garment
+0|intermittent
+0|animate
+0|hoard
+0|wholesale
+0|pistol
+0|volatile
+0|dual
+0|livestock
+0|excerpt
+0|pamphlet
+0|affluent
+0|piracy
+0|neutralize
+0|dodge
+0|agency
+0|foresight
+0|subsidy
+0|coherent
+0|rupture
+0|seam
+0|estimate
+0|discrepancy
+0|signpost
+0|syndrome
+0|soluble
+0|staircase
+0|consistent
+0|consistently
+0|account for
+0|calm down
+0|level off
+0|classify sth. as sth.
+0|be starved of sth.
+0|keep sth. at bay
+0|hold sth. at bay
+0|rescue sth. from sth.
+0|rescue sb. from sth.
+0|get a recipe for sth.
+0|be a recipe for sth.
+0|point to
+0|on a collision course
+0|e Organisation for Economic Co-operation and
+0|OECD
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 705
+# Total Entries Extracted: 705
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 705
+# -------------------------------

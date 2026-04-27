@@ -1,0 +1,767 @@
+0|triumph
+0|pledge
+0|pose
+0|routine
+0|attain
+0|foundation
+0|resource
+0|faculty
+0|comprehensive
+0|facility
+0|community
+0|explore
+0|fascinating
+0|pursue
+0|passion
+0|unique
+0|enthusiasm
+0|reap
+0|benefit
+0|opportunity
+0|overwhelm
+0|available
+0|assume
+0|emerge
+0|sculpture
+0|draft
+0|draftsman
+0|architect
+0|giant
+0|owl
+0|outweigh
+0|virtually
+0|enrich
+0|glow
+0|yield
+0|abundant
+0|responsibility
+0|inherit
+0|inheritor
+0|transmit
+0|acquire
+0|prosperous
+0|remind sb. of sb.
+0|remind sb. of sth.
+0|get by
+0|get on
+0|get with
+0|make the most of sth.
+0|reap the benefits
+0|in advance
+0|stand a chance
+0|stand a chance of doing sth.
+0|over time
+0|all at once
+0|take pleasure in sth.
+0|take pleasure in doing sth.
+0|take delight in sth.
+0|take delight in doing sth.
+0|open the door to sth.
+0|Leonardo da Vinci
+0|participate
+0|incredible
+0|deny
+0|undeniably
+0|depart
+0|inquisitive
+0|engage
+0|despair
+0|embrace
+0|stimulate
+0|intellectual
+0|capacity
+0|bind
+0|connect
+0|assured
+0|curve
+0|decent
+0|boast
+0|bond
+0|blossom
+0|decade
+0|genuine
+0|instinct
+0|secure
+0|proactive
+0|stereotype
+0|comprehend
+0|cultivate
+0|range
+0|innocence
+0|curiosity
+0|flexibility
+0|approach
+0|enthusiastically
+0|talent
+0|evolve
+0|potential
+0|bold
+0|enormously
+0|be about to do sth.
+0|go off
+0|open up
+0|turn into sth.
+0|turn sb. into sth.
+0|turn sth. into sth.
+0|above all things
+0|take sb. seriously
+0|take sth. seriously
+0|sign up
+0|get to sb.
+0|give sb. the benefit of the doubt
+0|reduce sb. to sth.
+0|as long as
+0|give back
+0|feel like sth.
+0|feel like doing sth.
+0|safe and sound
+0|take sb. away
+0|take sth. away
+0|be born to be sth.
+0|be born to do sth.
+0|make it
+0|sb. can't wait
+0|Steve Jobs
+0|clutter
+0|await
+0|efficiency
+0|embarrassment
+0|tube
+0|paste
+0|toothpaste
+0|polish
+0|dump
+0|mismatched
+0|pants
+0|closet
+0|comic
+0|fiction
+0|historical
+0|stuff
+0|sack
+0|stack
+0|plague
+0|clumsy
+0|charity
+0|band
+0|curl
+0|curler
+0|strain
+0|haul
+0|donation
+0|curb
+0|sore
+0|ridiculous
+0|toss
+0|strip
+0|craft
+0|clip
+0|emotional
+0|bug
+0|reverse
+0|token
+0|free of
+0|free from
+0|catch oneself doing sth.
+0|throw sth. away
+0|deal with sth.
+0|at a time
+0|after all
+0|reverse oneself
+0|straighten up
+0|keep sth. back
+0|with open arms
+0|limp
+0|surge
+0|breeze
+0|shiver
+0|complain
+0|chilly
+0|stride
+0|melting
+0|shed
+0|immense
+0|fatigue
+0|aboard
+0|hut
+0|barrel
+0|shell
+0|shellfish
+0|bundle
+0|eel
+0|portion
+0|migration
+0|Dalmatian
+0|wrap
+0|unwrap
+0|suspicious
+0|suspiciously
+0|pinch
+0|vanish
+0|slope
+0|cracker
+0|peak
+0|stretch
+0|overtake
+0|anticipate
+0|reluctance
+0|stoop
+0|restraint
+0|scrape
+0|delicate
+0|grip
+0|sway
+0|accompany
+0|pureed
+0|tuna
+0|awkward
+0|sip
+0|champagne
+0|slow down
+0|make sense
+0|at least
+0|lay sth. out
+0|hang sth. up
+0|once in a while
+0|not care for sth.
+0|not care for sb.
+0|Virginia
+0|Chicago
+0|the Sargasso
+0|the Mediterranean
+0|Mount Fuji
+0|the Potomac
+0|tend
+0|nurture
+0|deserve
+0|plump
+0|vigor
+0|breed
+0|crossbreed
+0|domesticated
+0|skeptical
+0|self-pollinator
+0|offspring
+0|hybrid
+0|transform
+0|deficiency
+0|peer
+0|asteroid
+0|spotlight
+0|humble
+0|fame
+0|adulation
+0|focus
+0|eradicate
+0|poverty
+0|priority
+0|graft
+0|moonflower
+0|pumpkin
+0|trait
+0|genetic
+0|genetics
+0|staple
+0|miracle
+0|sterile
+0|hybridize
+0|commercial
+0|soar
+0|tolerant
+0|nutritious
+0|hectare
+0|chrysanthemum
+0|mourn
+0|mourner
+0|commemorate
+0|lie down
+0|speak for itself
+0|speak for themselves
+0|as well as sth.
+0|as well as sb.
+0|name sb. after sb.
+0|name sb. after sth.
+0|name sth. after sb.
+0|name sth. after sth.
+0|devote oneself to
+0|lift sb. out of sth.
+0|at first
+0|work on sth.
+0|turn one's attention to sth.
+0|turn one's attention to sb.
+0|keep on doing sth.
+0|talk of
+0|Medal of the Republic
+0|World Food Prize
+0|World Food Prize Foundation
+0|Anjiang Agricultural School
+0|era
+0|victim
+0|survivor
+0|tragedy
+0|subsequent
+0|shield
+0|hail
+0|bullet
+0|humanity
+0|assist
+0|civilian
+0|instinctive
+0|instinctively
+0|grace
+0|circumstance
+0|respond
+0|responder
+0|widow
+0|solemn
+0|solemnly
+0|sergeant
+0|commitment
+0|automobile
+0|distinct
+0|military
+0|personnel
+0|jail
+0|confine
+0|solitary
+0|chamber
+0|establish
+0|harmony
+0|reconcile
+0|conflict
+0|conflicted
+0|advocate
+0|grief
+0|rage
+0|association
+0|legislation
+0|authority
+0|intense
+0|involve
+0|fulfillment
+0|give one's life
+0|ring out
+0|shield sb. from sb.
+0|shield sb. from sth.
+0|shield sth. from sth.
+0|shield sth. from sb.
+0|with grace
+0|with good grace
+0|with a good grace
+0|be caught up in sth.
+0|get caught up in sth.
+0|in the words of sb.
+0|in sb.'s words
+0|reserve sth. for sb.
+0|reserve sth. for sth.
+0|relate to sth.
+0|relate to sb.
+0|make sense of sth.
+0|sum up
+0|in need
+0|count on sb.
+0|count on sth.
+0|count upon sb.
+0|count upon sth.
+0|lead to sth.
+0|call on
+0|call upon
+0|Tucson
+0|Arizona
+0|Dory Stoddard
+0|Mavy
+0|Toronto
+0|Ryan Russell
+0|Nelson Mandela
+0|Eleanor McMahon
+0|Share the Road
+0|access
+0|psychiatric
+0|enlist
+0|sake
+0|hike
+0|startle
+0|addict
+0|addiction
+0|brand-new
+0|academic
+0|decline
+0|given
+0|dramatic
+0|responsible
+0|responsibly
+0|compromise
+0|impact
+0|absorption
+0|generate
+0|psychological
+0|depression
+0|considerable
+0|considerably
+0|essential
+0|significant
+0|contribute
+0|approximately
+0|predictable
+0|predictably
+0|apparent
+0|symptom
+0|numerous
+0|trend
+0|preliminary
+0|post
+0|attribute
+0|comparison
+0|interfere
+0|withdrawal
+0|encounter
+0|contact
+0|novelty
+0|survive
+0|disastrous
+0|obsessive
+0|ardent
+0|exhaust
+0|exhausting
+0|undermine
+0|compulsive
+0|extent
+0|fly into a rage
+0|fly into a temper
+0|devote one's time to sth.
+0|devote one's money to sth.
+0|devote one's attention to sth.
+0|end up
+0|be headed for sth.
+0|be heading for sth.
+0|be in danger of sth.
+0|be in danger of doing sth.
+0|no doubt
+0|thanks to sb.
+0|thanks to sth.
+0|go along
+0|in particular
+0|interfere with sth.
+0|cut sb. off
+0|cut sb. from
+0|in turn
+0|as for
+0|Zoey
+0|Amanda
+0|University of Houston
+0|glimpse
+0|install
+0|ensure
+0|evaluate
+0|claim
+0|indifference
+0|contrast
+0|detail
+0|detailed
+0|absolute
+0|absolutely
+0|frank
+0|frankly
+0|reluctant
+0|switch
+0|harness
+0|motive
+0|appealing
+0|forum
+0|triumphant
+0|heartfelt
+0|marvel
+0|spark
+0|response
+0|distract
+0|podcast
+0|upload
+0|irony
+0|overall
+0|aware
+0|paradox
+0|simultaneous
+0|simultaneously
+0|capture
+0|ritual
+0|interaction
+0|process
+0|vicinity
+0|laptop
+0|dynamic
+0|reveal
+0|revealing
+0|nevertheless
+0|reflect
+0|define
+0|intertwine
+0|lens
+0|reframe
+0|catch a glimpse of sb.
+0|catch a glimpse of sth.
+0|get a glimpse of sb.
+0|get a glimpse of sth.
+0|have a glimpse of sb.
+0|have a glimpse of sth.
+0|get to do sth.
+0|all the time
+0|hang on sb.'s words
+0|hang on sb.'s every word
+0|switch off
+0|side by side
+0|at all times
+0|capture sb.'s heart
+0|give up sth.
+0|in between
+0|eternal
+0|ceremony
+0|honorary
+0|laureate
+0|award
+0|applause
+0|salute
+0|podium
+0|prompt
+0|blockade
+0|revolutionary
+0|relevant
+0|reform
+0|dedication
+0|predecessor
+0|conscientious
+0|conscientiously
+0|derive
+0|enable
+0|manure
+0|hoe
+0|squat
+0|cease
+0|integrate
+0|pad
+0|padded
+0|gnaw
+0|pickle
+0|initiative
+0|harsh
+0|affectionate
+0|affectionately
+0|premier
+0|cordial
+0|cordially
+0|blaze
+0|trail
+0|finance
+0|journalism
+0|withdraw
+0|economic
+0|crucial
+0|hesitation
+0|grass roots
+0|in the spotlight
+0|think of sb.
+0|think of sth.
+0|break through
+0|break through sth.
+0|note sth. down
+0|put sth. aside
+0|out of
+0|report for duty
+0|except for
+0|turn sb. down
+0|turn sth. down
+0|the Great Hall of the People
+0|Isabel Crook
+0|David Crook
+0|Revolution in a Chinese Village: Ten Mile Inn
+0|the Central Foreign Affairs School
+0|Beijing Foreign Studies University
+0|the Soviet
+0|the University of Leeds
+0|variable
+0|contradiction
+0|cinematic
+0|intimate
+0|magnetic
+0|sensitive
+0|deliberate
+0|motion
+0|sequence
+0|narrative
+0|retreat
+0|abandon
+0|abandoned
+0|windshield
+0|steer
+0|steering
+0|intact
+0|continuous
+0|continuously
+0|mission
+0|utter
+0|inevitable
+0|inevitably
+0|drag
+0|spill
+0|elaborate
+0|drama
+0|rigid
+0|farewell
+0|occurrence
+0|interpret
+0|abrupt
+0|abruptly
+0|detect
+0|conductor
+0|panic
+0|splash
+0|scare
+0|scared
+0|spontaneous
+0|spontaneously
+0|transparent
+0|curse
+0|cursed
+0|relief
+0|rational
+0|tendency
+0|masculine
+0|feminine
+0|restrain
+0|restrained
+0|in ... terms
+0|in comparison
+0|make up for sth.
+0|at the time
+0|on a mission
+0|pull away
+0|in a new light
+0|in a bad light
+0|in a different light
+0|as well
+0|look sb. in the eye
+0|be born with sth.
+0|Donald
+0|Jessica
+0|John Gray
+0|marathon
+0|route
+0|endurance
+0|regardless
+0|contract
+0|prominent
+0|sponsor
+0|furnish
+0|substantial
+0|mechanism
+0|contest
+0|distinction
+0|amateur
+0|attendance
+0|odd
+0|invisible
+0|assemble
+0|assembled
+0|assert
+0|react
+0|publicity
+0|crush
+0|gear
+0|shuffle
+0|commentator
+0|concerned
+0|welfare
+0|insane
+0|outrun
+0|margin
+0|endear
+0|despite
+0|dim
+0|stroke
+0|legend
+0|magnificent
+0|brilliant
+0|individual
+0|be under contract to sb.
+0|be under contract to sth.
+0|be under a contract to sb.
+0|be under a contract to do sth.
+0|up to sth.
+0|in attendance
+0|might as well
+0|might just as well
+0|go on
+0|leave sb. behind
+0|leave sth. behind
+0|out loud
+0|fall ill
+0|keep at it
+0|come to prominence
+0|gain prominence
+0|give sth. away
+0|pass away
+0|to this day
+0|Cliff Young
+0|Sydney
+0|Melbourne
+0|mold
+0|sustain
+0|inspiration
+0|stimulation
+0|generous
+0|emphasize
+0|mutual
+0|obligation
+0|graceful
+0|abstract
+0|concept
+0|application
+0|strategy
+0|cooperation
+0|inherent
+0|inherently
+0|overcome
+0|lacking
+0|envious
+0|fundamental
+0|positive
+0|outcome
+0|ambition
+0|participation
+0|competitive
+0|hazard
+0|intensity
+0|emphasis
+0|exclusive
+0|exclusively
+0|outlook
+0|demanding
+0|excessive
+0|drain
+0|draining
+0|consequence
+0|desirable
+0|rate
+0|accomplishment
+0|adapt
+0|extreme
+0|extremely
+0|pave
+0|the here and now
+0|early on
+0|free ride
+0|blame sb. for sth.
+0|blame sth. for sth.
+0|cancel out
+0|on the surface
+0|in shape
+0|the way of the world
+0|the ways of the world
+0|pave the way for sth.
+0|Juvenal
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 760
+# Total Entries Extracted: 760
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 760
+# -------------------------------
