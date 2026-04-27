@@ -4297,11 +4297,28 @@ class WordListPageState extends State<WordListPage>
                   final targetWord = activeWord;
                   if (targetWord != null) { 
                     setState(() {
-                      targetWord.spellController.text = text;
+                      // 智能容错：处理 Google ML Kit 经常将手写 c/l 识别为 d 的物理误判
+                      // 智能容错：动态替换手写过程中将 c/l 识别为 d 的物理死穴
+                      String processedText = "";
+                      final String lowerTarget = targetWord.word.spell.toLowerCase();
+                      
+                      for (int idx = 0; idx < text.length; idx++) {
+                        final iChar = text[idx].toLowerCase();
+                        if (iChar == 'd' && idx < lowerTarget.length) {
+                          final tChar = lowerTarget[idx];
+                          if (tChar == 'c' || tChar == 'l') {
+                            processedText += targetWord.word.spell[idx];
+                            continue;
+                          }
+                        }
+                        processedText += text[idx];
+                      }
+                      
+                      targetWord.spellController.text = processedText;
                       
                       // 模糊匹配逻辑：忽略空格和连字符，提升手写容错率
                       final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
-                      final String normalizedInput = text.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
+                      final String normalizedInput = processedText.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
                       
                       if (normalizedTarget == normalizedInput) {
                          WidgetsBinding.instance.addPostFrameCallback((_) async {
