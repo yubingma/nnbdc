@@ -2969,7 +2969,23 @@ class WordListPageState extends State<WordListPage>
                     width: 60,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => _handleWordTap(word, i),
+                      onTap: () {
+                        // 1. 记录上一个具有焦点的单词位置
+                        final curr = getBookMarkUiPosition();
+                        
+                        // 2. 立即将焦点切换到新选中的卡片
+                        onWordPressed(word, i, false, null);
+                        
+                        // 3. 异步播放上一个单词的发音（揭晓答案，避免泄露新词答案）
+                        if (curr >= 0 && curr != i && curr < words.length) {
+                          final lastWord = words[curr];
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            try {
+                              SoundUtil.playPronounceSound2(lastWord.word, audioPlayer);
+                            } catch (_) {}
+                          });
+                        }
+                      },
                       child: Center(
                         child: Container(
                           padding: const EdgeInsets.all(8),

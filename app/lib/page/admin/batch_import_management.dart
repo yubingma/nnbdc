@@ -43,29 +43,37 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
   Future<void> _loadBatches({bool silent = false}) async {
     if (_isLoading) return;
     if (!silent) {
-      setState(() { _isLoading = true; });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() { _isLoading = true; });
+      });
     }
     try {
       final res = await Api.client.getAllBatches();
       if (res.success && res.data != null) {
-        if (mounted) {
-          setState(() {
-            _batches = res.data!.data;
-          });
-        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _batches = res.data!.data;
+            });
+          }
+        });
       }
     } catch (e, stack) {
       Global.logger.e('获取批次异常', error: e, stackTrace: stack);
       if (!silent) {
-        ToastUtil.error('获取批次失败: $e');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ToastUtil.error('获取批次失败: $e');
+        });
       }
-    }
- finally {
-      if (mounted && !silent) {
-        setState(() { _isLoading = false; });
+    } finally {
+      if (!silent) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() { _isLoading = false; });
+        });
       }
     }
   }
+
 
   Future<void> _submitBatch() async {
     final dirPath = _dirPathCtrl.text.trim();
@@ -115,7 +123,11 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       return;
     }
 
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
     bool confirm = await showDialog(
+
+
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('中止批次任务', style: TextStyle(color: Colors.orange)),
@@ -137,7 +149,6 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       final res = await Api.client.cancelBatch(batchId);
       if (res.success) {
         ToastUtil.success(res.data ?? '终止指令下发成功');
-        _loadBatches();
       } else {
         ToastUtil.error(res.msg ?? '未知错误');
       }
@@ -147,17 +158,56 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     }
   }
 
-  Future<void> _deleteBatch(String batchId) async {
+  Future<void> _deleteBatch(String batchId, List tasks) async {
     if (batchId == 'UNBATCHED') {
       ToastUtil.info('无法删除未批次任务');
       return;
     }
 
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
     bool confirm = await showDialog(
+
+
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清理批次', style: TextStyle(color: Colors.red)),
-        content: Text('您确定要彻底删除批次【$batchId】导入的所有词书吗？此操作不可撤销！'),
+        title: const Text('清理批次', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('您确定要彻底删除批次【$batchId】导入的所有词书吗？此操作不可撤销！'),
+            const SizedBox(height: 16),
+            const Text(
+              '将要被清理的词书列表:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 180),
+              width: double.maxFinite,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: tasks.length,
+                itemBuilder: (context, idx) {
+                  final task = tasks[idx];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      '• ${task['dictName'] ?? task['fileName'] ?? '未命名词书'}',
+                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
           TextButton(
@@ -168,6 +218,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
         ],
       ),
     ) ?? false;
+
 
     if (!confirm) return;
 
@@ -321,7 +372,9 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
                   if (running > 0 || tasks.where((t) => t['status'] == 'PENDING').isNotEmpty)
                     IconButton(
                       icon: const Icon(Icons.stop_circle_outlined, color: Colors.orange),
-                      onPressed: () => _cancelBatch(batchId),
+                      onPressed: () {
+                        Future.microtask(() => _cancelBatch(batchId));
+                      },
                       tooltip: '中止该批次所有未完成任务',
                     ),
                   IconButton(
@@ -330,8 +383,16 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
                         ? Colors.grey 
                         : Colors.red),
                     onPressed: (running > 0 || tasks.where((t) => t['status'] == 'PENDING').isNotEmpty)
-                      ? () { ToastUtil.info('该批次内仍有进行中的任务，请先中止任务后再执行粉碎操作。'); }
-                      : () => _deleteBatch(batchId),
+                      ? () { 
+                          Future.microtask(() {
+                            ToastUtil.info('该批次内仍有进行中的任务，请先中止任务后再执行粉碎操作。');
+                          });
+                        }
+                      : () {
+                          Future.microtask(() => _deleteBatch(batchId, tasks));
+                        },
+
+
 
                     tooltip: (running > 0 || tasks.where((t) => t['status'] == 'PENDING').isNotEmpty)
                       ? '任务进行中，无法粉碎'
@@ -353,9 +414,12 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
                 final task = tasks[index];
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
-                  onTap: () => _showTaskDetail(task),
+                  onTap: () {
+                    Future.microtask(() => _showTaskDetail(task));
+                  },
                   title: Text(
                     task['dictName'] ?? task['fileName'] ?? '未命名词库',
+
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                   subtitle: Text(
@@ -394,7 +458,11 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     );
   }
 
-  void _showTaskDetail(dynamic task) {
+  Future<void> _showTaskDetail(dynamic task) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
+
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
