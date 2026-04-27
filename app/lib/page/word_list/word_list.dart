@@ -2977,7 +2977,10 @@ class WordListPageState extends State<WordListPage>
               },
               child: Container(
                 width: 60,
-                color: Colors.transparent,
+                height: 120,
+                color: isDarkMode 
+                    ? Colors.white.withValues(alpha: 0.01) 
+                    : Colors.black.withValues(alpha: 0.01),
                 alignment: Alignment.center,
                 child: Icon(
                   Icons.edit_rounded,
