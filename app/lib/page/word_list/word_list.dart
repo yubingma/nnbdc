@@ -2979,12 +2979,15 @@ class WordListPageState extends State<WordListPage>
                           ? Colors.white.withValues(alpha: 0.01) 
                           : Colors.black.withValues(alpha: 0.01),
                       alignment: Alignment.center,
-                      child: Icon(
-                        Icons.edit_rounded,
-                        size: 20,
-                        color: isBookmarked
-                            ? const Color(0xFF0097A7)
-                            : (isDarkMode ? Colors.white38 : Colors.black38),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 16),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          size: 20,
+                          color: isBookmarked
+                              ? const Color(0xFF0097A7)
+                              : (isDarkMode ? Colors.white38 : Colors.black38),
+                        ),
                       ),
                     ),
                   ),
