@@ -2968,7 +2968,24 @@ class WordListPageState extends State<WordListPage>
                     ],
                   ),
                 ),
-                
+                if (studyMode == WordListStudyMode.dictationHandwriting)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      onWordPressed(word, i, false, null);
+                      _handwritingBoardKey.currentState?.clearBoardSilently();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Icon(
+                        Icons.edit_rounded,
+                        size: 22,
+                        color: isBookmarked
+                            ? const Color(0xFF0097A7)
+                            : (isDarkMode ? Colors.white38 : Colors.black38),
+                      ),
+                    ),
+                  ),
 
               ],
             ),
@@ -4307,17 +4324,8 @@ class WordListPageState extends State<WordListPage>
 
           // 2. 右侧 60 像素的穿透引导视觉装饰层
           // 2. 右侧 60 像素的物理通道分隔虚线
-          Positioned(
-            right: 59,
-            top: 0,
-            bottom: 0,
-            child: IgnorePointer(
-              child: Container(
-                width: 1,
-                color: isDarkMode ? Colors.white12 : Colors.black12,
-              ),
-            ),
-          ),
+          // 2. 右侧 60 像素的物理通道分隔线 + 精美透传小铅笔
+
         ],
       ),
     );
