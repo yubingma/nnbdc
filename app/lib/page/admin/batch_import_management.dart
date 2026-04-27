@@ -24,14 +24,21 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
   Timer? _timer;
   bool _isLoading = false;
 
+  List<Map<String, String>> _availableGroups = [];
+  List<Map<String, String>> _availableHalls = [];
+  final List<String> _selectedGroupIds = [];
+  final List<String> _selectedHallIds = [];
+
   @override
   void initState() {
     super.initState();
     _loadBatches();
+    _loadConfigData();
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _loadBatches(silent: true);
     });
   }
+
 
   @override
   void dispose() {
@@ -40,7 +47,43 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     super.dispose();
   }
 
+  Future<void> _loadConfigData() async {
+    try {
+      final res = await Api.client.getGameHallData();
+      final List<Map<String, String>> groups = [];
+      final List<Map<String, String>> halls = [];
+      final Set<String> groupNames = {};
+      final Set<String> hallIds = {};
+
+      for (var hg in res.hallGroups) {
+        for (var gh in hg.gameHalls) {
+          if (!hallIds.contains(gh.id)) {
+            hallIds.add(gh.id);
+            halls.add({'id': gh.id, 'name': gh.hallName});
+          }
+          if (!groupNames.contains(gh.dictGroup.name)) {
+
+            groupNames.add(gh.dictGroup.name);
+            groups.add({'id': gh.dictGroup.name, 'name': gh.dictGroup.name});
+          }
+        }
+      }
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _availableGroups = groups;
+            _availableHalls = halls;
+          });
+        }
+      });
+    } catch (e) {
+      Global.logger.e('加载配置数据失败', error: e);
+    }
+  }
+
   Future<void> _loadBatches({bool silent = false}) async {
+
     if (_isLoading) return;
     if (!silent) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -84,7 +127,12 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
 
     setState(() { _isSubmitting = true; });
     try {
-      final res = await Api.client.submitBatchImportTask(dirPath);
+      final res = await Api.client.submitBatchImportTask(
+        dirPath,
+        _selectedGroupIds.isEmpty ? null : _selectedGroupIds,
+        _selectedHallIds.isEmpty ? null : _selectedHallIds,
+      );
+
       if (res.success) {
         ToastUtil.success(res.data ?? '任务提交成功');
         _loadBatches();
@@ -329,8 +377,75 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            if (_availableGroups.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text(
+                '缺省词书分组 (多选)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: _availableGroups.map((g) {
+                  final gid = g['id']!;
+                  final gname = g['name']!;
+                  final isSelected = _selectedGroupIds.contains(gid);
+                  return FilterChip(
+                    label: Text(gname, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : Colors.black87)),
+                    selected: isSelected,
+                    selectedColor: AppTheme.primaryColor,
+                    checkmarkColor: Colors.white,
+                    onSelected: (bool selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedGroupIds.add(gid);
+                        } else {
+                          _selectedGroupIds.remove(gid);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+
+            if (_availableHalls.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text(
+                '缺省关联游戏大厅 (多选)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: _availableHalls.map((h) {
+                  final hid = h['id']!;
+                  final hname = h['name']!;
+                  final isSelected = _selectedHallIds.contains(hid);
+                  return FilterChip(
+                    label: Text(hname, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : Colors.black87)),
+                    selected: isSelected,
+                    selectedColor: AppTheme.primaryColor,
+                    checkmarkColor: Colors.white,
+                    onSelected: (bool selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedHallIds.add(hid);
+                        } else {
+                          _selectedHallIds.remove(hid);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+
+            const SizedBox(height: 16),
             _isSubmitting
+
                 ? const Center(child: CircularProgressIndicator())
                 : FilledButton.icon(
                     onPressed: _submitBatch,

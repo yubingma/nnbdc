@@ -805,7 +805,11 @@ abstract class RestClient {
   Future<Result> cancelDictImportTask(@Query("taskId") String taskId);
 
   @POST("/import/batch")
-  Future<Result<String>> submitBatchImportTask(@Query("dirPath") String dirPath);
+  Future<Result<String>> submitBatchImportTask(
+      @Query("dirPath") String dirPath,
+      @Query("defaultDictGroupIds") List<String>? defaultDictGroupIds,
+      @Query("defaultGameHallIds") List<String>? defaultGameHallIds);
+
 
   @GET("/import/allBatches")
   Future<Result<JsonMap>> getAllBatches();
