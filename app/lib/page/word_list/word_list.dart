@@ -2975,9 +2975,9 @@ class WordListPageState extends State<WordListPage>
                     top: 0,
                     bottom: 0,
                     width: 60,
-                    child: GestureDetector(
+                    child: Listener(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () {
+                      onPointerDown: (event) {
                         final sw = Stopwatch()..start();
                         Global.logger.d('PERF_LOG_PENCIL [手写铅笔点击] 开始处理...');
 
@@ -2985,19 +2985,18 @@ class WordListPageState extends State<WordListPage>
                         final curr = getBookMarkUiPosition();
                         Global.logger.d('PERF_LOG_PENCIL [1. 获取老焦点] 耗时: ${sw.elapsedMilliseconds}ms');
 
-                        // 2. 瞬间同步所有状态（由于取消了重载限制，这是0阻隔的）
-                        setState(() {
-                          bookMark = BookMarkVo(baseIndex! + i, word.word.spell);
-                          word.hintLetterCount = 0;
-                          word.spellController.text = '';
-                          word.isAnswerProvidedBySystem = false;
-                          canLeaveCurrWord = false;
-                        });
+                        // 2. 瞬间同步所有状态（内存属性直接更新，坚决不调用耗费算力的全局 setState）
+                        bookMark = BookMarkVo(baseIndex! + i, word.word.spell);
+                        word.hintLetterCount = 0;
+                        word.spellController.text = '';
+                        word.isAnswerProvidedBySystem = false;
+                        canLeaveCurrWord = false;
+                        
                         activeWordIndexNotifier.value = i;
-                        Global.logger.d('PERF_LOG_PENCIL [2. setState UI] 耗时: ${sw.elapsedMilliseconds}ms');
+                        Global.logger.d('PERF_LOG_PENCIL [2. 内存状态写入] 耗时: ${sw.elapsedMilliseconds}ms');
 
                         // 3. 瞬间清除上一个单词的旧笔迹画布
-                        _handwritingBoardKey.currentState?.clearBoard();
+                        _handwritingBoardKey.currentState?.clearBoardSilently();
                         Global.logger.d('PERF_LOG_PENCIL [3. 清除笔画画布] 耗时: ${sw.elapsedMilliseconds}ms');
 
                         // 4. 彻底异步持久化书签到 SQLite（由微任务降级为事件队列普通任务，绝不抢占帧上屏时效）
@@ -4310,18 +4309,8 @@ class WordListPageState extends State<WordListPage>
           Positioned.fill(
             child: Container(
               // 为手写区域添加显著的覆盖底色
-              decoration: BoxDecoration(
-                color: (isDarkMode 
-                        ? Colors.black.withValues(alpha: 0.35) 
-                        : Colors.white.withValues(alpha: 0.45)),
-                border: Border(
-                  right: BorderSide(
-                    color: (isDarkMode 
-                            ? Colors.white.withValues(alpha: 0.2) 
-                            : Colors.black.withValues(alpha: 0.1)),
-                    width: 1.0,
-                  ),
-                ),
+              decoration: const BoxDecoration(
+                color: Colors.transparent,
               ),
               child: HandwritingBoard(
               key: _handwritingBoardKey,

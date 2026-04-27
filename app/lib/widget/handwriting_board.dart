@@ -55,6 +55,14 @@ class HandwritingBoardState extends State<HandwritingBoard> {
     widget.onRecognized("");
   }
 
+  void clearBoardSilently() {
+    setState(() {
+      _lines = [];
+      _isRecognizing = false;
+      _recognitionVersion++;
+    });
+  }
+
   void _clear() {
     clearBoard();
   }
@@ -532,7 +540,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     children: [
                       Expanded(
                         child: Container(
-                          color: (isDarkMode ? Colors.black : Colors.white).withValues(alpha: 0.1),
+                          color: Colors.transparent,
                         ),
                       ),
                       if (widget.smartRightZoneWidth > 0)
