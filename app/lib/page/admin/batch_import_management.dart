@@ -164,11 +164,16 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       return;
     }
 
+    List sortedTasks = List.from(tasks);
+    sortedTasks.sort((a, b) {
+      double progressA = (a['processedWords'] ?? 0) / ((a['totalWords'] ?? 0) > 0 ? a['totalWords'] : 1);
+      double progressB = (b['processedWords'] ?? 0) / ((b['totalWords'] ?? 0) > 0 ? b['totalWords'] : 1);
+      return progressB.compareTo(progressA);
+    });
+
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
     bool confirm = await showDialog(
-
-
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('清理批次', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
@@ -178,13 +183,13 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
           children: [
             Text('您确定要彻底删除批次【$batchId】导入的所有词书吗？此操作不可撤销！'),
             const SizedBox(height: 16),
-            const Text(
-              '将要被清理的词书列表:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+            Text(
+              '将要被清理的词书列表 (共 ${sortedTasks.length} 本):',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
             ),
             const SizedBox(height: 8),
             Container(
-              constraints: const BoxConstraints(maxHeight: 180),
+              constraints: const BoxConstraints(maxHeight: 220),
               width: double.maxFinite,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -194,21 +199,51 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: tasks.map<Widget>((task) {
+                  children: sortedTasks.map<Widget>((task) {
+                    double progress = (task['processedWords'] ?? 0) / ((task['totalWords'] ?? 0) > 0 ? task['totalWords'] : 1);
+                    if (progress > 1.0) progress = 1.0;
+                    if (progress < 0.0) progress = 0.0;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Text(
-                        '• ${task['dictName'] ?? task['fileName'] ?? '未命名词书'}',
-                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '• ${task['dictName'] ?? task['fileName'] ?? '未命名词书'}',
+                                  style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.w500),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                '${(progress * 100).toStringAsFixed(1)}%',
+                                style: const TextStyle(fontSize: 11, color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(2),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                              color: progress == 1.0 ? Colors.green : Colors.blueAccent,
+                              minHeight: 4,
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   }).toList(),
                 ),
               ),
-
             ),
           ],
         ),
+
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
           TextButton(
@@ -352,6 +387,13 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     int running = tasks.where((t) => t['status'] == 'RUNNING').length;
     int failed = tasks.where((t) => t['status'] == 'FAILED').length;
 
+    List sortedTasks = List.from(tasks);
+    sortedTasks.sort((a, b) {
+      double progressA = (a['processedWords'] ?? 0) / ((a['totalWords'] ?? 0) > 0 ? a['totalWords'] : 1);
+      double progressB = (b['processedWords'] ?? 0) / ((b['totalWords'] ?? 0) > 0 ? b['totalWords'] : 1);
+      return progressB.compareTo(progressA);
+    });
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 1,
@@ -409,10 +451,11 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: tasks.length,
+              itemCount: sortedTasks.length,
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final task = tasks[index];
+                final task = sortedTasks[index];
+                double progress = (task['processedWords'] ?? 0) / ((task['totalWords'] ?? 0) > 0 ? task['totalWords'] : 1);
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   onTap: () {
@@ -423,9 +466,25 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
 
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
-                  subtitle: Text(
-                    '${task['processedWords'] ?? 0} / ${task['totalWords'] ?? 0} 词 | ${task['fileName']}',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text(
+                        '${task['processedWords'] ?? 0} / ${task['totalWords'] ?? 0} 词 | ${task['fileName']}',
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: progress.clamp(0.0, 1.0),
+                          backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                          color: (task['status'] ?? 'PENDING') == 'COMPLETED' ? Colors.green : Colors.blueAccent,
+                          minHeight: 3,
+                        ),
+                      ),
+                    ],
                   ),
                   trailing: _buildStatusTag(task['status'] ?? 'PENDING'),
                 );
@@ -439,6 +498,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
   }
 
   Widget _buildStatusTag(String status) {
+
     Color color;
     switch (status) {
       case 'COMPLETED': color = Colors.green; break;

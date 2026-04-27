@@ -2785,46 +2785,16 @@ class WordListPageState extends State<WordListPage>
           children: [
             /// 1. 左侧高长条背景 (通过 Positioned.fill 自动伸缩至全高)
             Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  // 1. 记录上一个具有焦点的单词位置
-                  final curr = getBookMarkUiPosition();
-
-                  // 2. 瞬间把临时高亮切换到新卡片（实现无感极速 UI 响应，且不销毁重建白板）
-                  setState(() {
-                    _tempHandwritingSelectedIndex = i;
-                  });
-
-                  // 3. 延后 120ms 触发重载手写板、持久化书签与异步发音
-                  Future.delayed(const Duration(milliseconds: 120), () {
-                    if (!mounted) return;
-
-                    // 正式切换
-                    onWordPressed(word, i, false, null);
-
-                    // 重置临时高亮变量
-                    _tempHandwritingSelectedIndex = null;
-
-                    // 异步播放上一个单词的发音
-                    if (curr >= 0 && curr != i && curr < words.length) {
-                      try {
-                        SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-                      } catch (_) {}
-                    }
-                  });
-                },
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : const Color(0xFFE2E8F0),
-                    ),
-                    const Expanded(child: SizedBox.shrink()),
-                  ],
-                ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : const Color(0xFFE2E8F0),
+                  ),
+                  const Expanded(child: SizedBox.shrink()),
+                ],
               ),
             ),
 
@@ -3004,28 +2974,28 @@ class WordListPageState extends State<WordListPage>
                         // 1. 记录上一个具有焦点的单词位置
                         final curr = getBookMarkUiPosition();
 
-                        // 2. 瞬间把临时高亮切换到新卡片（实现无感极速 UI 响应，且不销毁重建白板）
+                        // 2. 纯内存状态同步：引发无感极速 UI 响应（避开数据库阻塞）
                         setState(() {
-                          _tempHandwritingSelectedIndex = i;
+                          bookMark = BookMarkVo(baseIndex! + i, word.word.spell);
+                          word.hintLetterCount = 0;
+                          word.spellController.text = '';
+                          word.isAnswerProvidedBySystem = false;
+                          canLeaveCurrWord = false;
                         });
 
-                        // 3. 延后 120ms 触发重载手写板、持久化书签与异步发音
-                        Future.delayed(const Duration(milliseconds: 120), () {
-                          if (!mounted) return;
-
-                          // 正式切换
-                          onWordPressed(word, i, false, null);
-
-                          // 重置临时高亮变量
-                          _tempHandwritingSelectedIndex = null;
-
-                          // 异步播放上一个单词的发音
-                          if (curr >= 0 && curr != i && curr < words.length) {
-                            try {
-                              SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-                            } catch (_) {}
-                          }
+                        // 3. 异步持久化书签到 SQLite（在微任务中静默执行）
+                        Future.microtask(() {
+                          try {
+                            args.bookMarkProvider.saveBookMark(bookMark!);
+                          } catch (_) {}
                         });
+
+                        // 4. 异步播放上一个单词的发音
+                        if (curr >= 0 && curr != i && curr < words.length) {
+                          try {
+                            SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
+                          } catch (_) {}
+                        }
                       },
                       child: Center(
                         child: Container(
