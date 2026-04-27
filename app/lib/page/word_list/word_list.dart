@@ -3696,6 +3696,8 @@ class WordListPageState extends State<WordListPage>
                                 asr.stopAsr();
                                 break;
                               case menuWriteSpellHandwriting:
+                                final swOpen = Stopwatch()..start();
+                                Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [进入听写手写模式] 开始处理...');
                                 setState(() {
                                   studyMode = WordListStudyMode.dictationHandwriting;
                                   _isHandwritingOverlayOpen = true;
@@ -3705,8 +3707,11 @@ class WordListPageState extends State<WordListPage>
                                     w.hintLetterCount = 0;
                                   }
                                 });
+                                Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
                                 _unsubscribeMeter();
                                 asr.stopAsr();
+                                swOpen.stop();
+                                Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [2. 彻底退出事件体] 耗时: ${swOpen.elapsedMilliseconds}ms');
                                 break;
                               case menuHideChinese:
                                 setState(() {
@@ -4291,6 +4296,8 @@ class WordListPageState extends State<WordListPage>
 
 
   Widget _buildHandwritingOverlay(bool isDarkMode) {
+    final swOverlay = Stopwatch()..start();
+    Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [_buildHandwritingOverlay 开始构造]');
     final double appBarHeight = MediaQuery.of(context).padding.top + kToolbarHeight;
     
     final bookmarkedIndex = getBookMarkUiPosition();
@@ -4298,6 +4305,11 @@ class WordListPageState extends State<WordListPage>
     if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
       activeWord = words[bookmarkedIndex];
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      swOverlay.stop();
+      Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [_buildHandwritingOverlay 组件渲染挂载完毕] 耗时: ${swOverlay.elapsedMilliseconds}ms');
+    });
 
     return Positioned(
       top: appBarHeight,
