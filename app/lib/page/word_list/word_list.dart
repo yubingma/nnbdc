@@ -2973,11 +2973,11 @@ class WordListPageState extends State<WordListPage>
                       behavior: HitTestBehavior.opaque,
                       onTap: () {
                         final sw = Stopwatch()..start();
-                        Global.logger.d('✏️ [手写铅笔点击] 开始处理...');
+                        Global.logger.d('PERF_LOG_PENCIL [手写铅笔点击] 开始处理...');
 
                         // 1. 记录上一个具有焦点的单词位置
                         final curr = getBookMarkUiPosition();
-                        Global.logger.d('✏️ [1. 获取老焦点] 耗时: ${sw.elapsedMilliseconds}ms');
+                        Global.logger.d('PERF_LOG_PENCIL [1. 获取老焦点] 耗时: ${sw.elapsedMilliseconds}ms');
 
                         // 2. 瞬间同步所有状态（由于取消了重载限制，这是0阻隔的）
                         setState(() {
@@ -2987,18 +2987,18 @@ class WordListPageState extends State<WordListPage>
                           word.isAnswerProvidedBySystem = false;
                           canLeaveCurrWord = false;
                         });
-                        Global.logger.d('✏️ [2. setState UI] 耗时: ${sw.elapsedMilliseconds}ms');
+                        Global.logger.d('PERF_LOG_PENCIL [2. setState UI] 耗时: ${sw.elapsedMilliseconds}ms');
 
                         // 3. 瞬间清除上一个单词的旧笔迹画布
                         _handwritingBoardKey.currentState?.clearBoard();
-                        Global.logger.d('✏️ [3. 清除笔画画布] 耗时: ${sw.elapsedMilliseconds}ms');
+                        Global.logger.d('PERF_LOG_PENCIL [3. 清除笔画画布] 耗时: ${sw.elapsedMilliseconds}ms');
 
-                        // 4. 异步持久化书签到 SQLite
-                        Future.microtask(() {
+                        // 4. 彻底异步持久化书签到 SQLite（由微任务降级为事件队列普通任务，绝不抢占帧上屏时效）
+                        Future(() {
                           final swDb = Stopwatch()..start();
                           try {
                             args.bookMarkProvider.saveBookMark(bookMark!).then((_) {
-                              Global.logger.d('✏️ [4. 异步落库成功] 耗时: ${swDb.elapsedMilliseconds}ms');
+                              Global.logger.d('PERF_LOG_PENCIL [4. 异步落库成功] 耗时: ${swDb.elapsedMilliseconds}ms');
                             });
                           } catch (_) {}
                         });
@@ -3007,7 +3007,7 @@ class WordListPageState extends State<WordListPage>
                         if (curr >= 0 && curr != i && curr < words.length) {
                           try {
                             SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-                            Global.logger.d('✏️ [5. 异步唤醒声音] 耗时: ${sw.elapsedMilliseconds}ms');
+                            Global.logger.d('PERF_LOG_PENCIL [5. 异步唤醒声音] 耗时: ${sw.elapsedMilliseconds}ms');
                           } catch (_) {}
                         }
                         
