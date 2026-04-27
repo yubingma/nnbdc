@@ -164,12 +164,13 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       return;
     }
 
-    List sortedTasks = List.from(tasks);
+    List sortedTasks = tasks.where((t) => t['dictId'] != null && t['dictId'].toString().trim().isNotEmpty).toList();
     sortedTasks.sort((a, b) {
       double progressA = (a['processedWords'] ?? 0) / ((a['totalWords'] ?? 0) > 0 ? a['totalWords'] : 1);
       double progressB = (b['processedWords'] ?? 0) / ((b['totalWords'] ?? 0) > 0 ? b['totalWords'] : 1);
       return progressB.compareTo(progressA);
     });
+
 
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
