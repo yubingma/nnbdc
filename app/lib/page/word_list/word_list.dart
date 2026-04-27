@@ -2865,9 +2865,10 @@ class WordListPageState extends State<WordListPage>
 
                 /// 单词内容区
                 Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                       /// 左半部内容 (点击发音)
                       Expanded(
                         flex: 2,
@@ -2965,41 +2966,38 @@ class WordListPageState extends State<WordListPage>
                     ),
                   ),
 
+                if (studyMode == WordListStudyMode.dictationHandwriting)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      onWordPressed(word, i, false, null);
+                      _handwritingBoardKey.currentState?.clearBoardSilently();
+                    },
+                    child: Container(
+                      width: 60,
+                      color: isDarkMode 
+                          ? Colors.white.withValues(alpha: 0.01) 
+                          : Colors.black.withValues(alpha: 0.01),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.edit_rounded,
+                        size: 20,
+                        color: isBookmarked
+                            ? const Color(0xFF0097A7)
+                            : (isDarkMode ? Colors.white38 : Colors.black38),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-          if (studyMode == WordListStudyMode.dictationHandwriting)
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                onWordPressed(word, i, false, null);
-                _handwritingBoardKey.currentState?.clearBoardSilently();
-              },
-              child: Container(
-                width: 60,
-                height: 120,
-                color: isDarkMode 
-                    ? Colors.white.withValues(alpha: 0.01) 
-                    : Colors.black.withValues(alpha: 0.01),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.edit_rounded,
-                  size: 20,
-                  color: isBookmarked
-                      ? const Color(0xFF0097A7)
-                      : (isDarkMode ? Colors.white38 : Colors.black38),
-                ),
-              ),
-            ),
-
-
-
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
+        ],
+      ),
+    ),
+  );
 
 
     if (actions.isEmpty || (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)) return itemContent;
