@@ -13,7 +13,13 @@ import beidanci.service.po.Dict;
 import beidanci.util.Constants;
 import java.util.*;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import beidanci.service.util.JsonUtils;
+
 
 @RestController
 @RequestMapping("/import")
@@ -116,6 +122,110 @@ public class DictImportController {
             return Result.fail("查询失败: " + e.getMessage());
         }
     }
+    @SuppressWarnings("unchecked")
+    @PostMapping("/batch")
+    public Result<String> batchSubmit(@RequestParam String dirPath) {
+
+        try {
+            File metaFile = new File(dirPath, "meta.json");
+            if (!metaFile.exists()) {
+                return Result.fail("找不到元数据配置文件 meta.json 于目录: " + dirPath);
+            }
+
+            String metaJson = new String(Files.readAllBytes(metaFile.toPath()), StandardCharsets.UTF_8);
+            Map<String, Object> metaMap = JsonUtils.parseMap(metaJson);
+
+            List<Map<String, Object>> books = (List<Map<String, Object>>) metaMap.get("books");
+            if (books == null || books.isEmpty()) {
+                return Result.fail("meta.json 中没有配置需要导入的词书 books");
+            }
+
+            // 1. 首先验证是否所有的词书都不存在同名词书
+            for (Map<String, Object> book : books) {
+                String dictName = (String) book.get("dictName");
+                if (dictName != null && !dictName.trim().isEmpty()) {
+                    Dict existingDict = dictBo.findByName(dictName.trim());
+                    if (existingDict != null) {
+                        return Result.fail("批量导入失败：同名词书「" + dictName + "」已存在，所有任务不予创建！");
+                    }
+                }
+            }
+
+            // 获取全局通用配置
+            boolean isSystemImport = (boolean) metaMap.getOrDefault("isSystemImport", false);
+            boolean generateWordImage = (boolean) metaMap.getOrDefault("generateWordImage", false);
+            boolean generateShuffledVersion = (boolean) metaMap.getOrDefault("generateShuffledVersion", false);
+            String globalGroupId = (String) metaMap.get("targetDictGroupId");
+            List<String> globalGameHallIds = (List<String>) metaMap.get("targetGameHallIds");
+
+            int createdCount = 0;
+
+            // 2. 校验通过后，开始循环创建任务
+            for (Map<String, Object> book : books) {
+                String fileName = (String) book.get("fileName");
+                String dictName = (String) book.get("dictName");
+                String domain = (String) book.get("domain");
+                String description = (String) book.get("description");
+                String targetDictGroupId = (String) book.get("targetDictGroupId");
+                List<String> targetGameHallIds = (List<String>) book.get("targetGameHallIds");
+
+                if (targetDictGroupId == null || targetDictGroupId.trim().isEmpty()) {
+                    targetDictGroupId = globalGroupId;
+                }
+                if (targetGameHallIds == null || targetGameHallIds.isEmpty()) {
+                    targetGameHallIds = globalGameHallIds;
+                }
+
+                // 读取对应的 TXT 文件提取单词
+                File txtFile = new File(dirPath, fileName);
+                if (!txtFile.exists()) {
+                    return Result.fail("找不到对应的词书物理 TXT 文件: " + fileName);
+                }
+
+                List<String> words = new ArrayList<>();
+                try (BufferedReader reader = new BufferedReader(new FileReader(txtFile))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.trim().isEmpty()) continue;
+                        words.add(line.trim());
+                    }
+                }
+
+                // 构造每个任务的 config JSON
+                Map<String, Object> configMap = new HashMap<>();
+                configMap.put("isSystemImport", isSystemImport);
+                configMap.put("generateWordImage", generateWordImage);
+                configMap.put("generateShuffledVersion", generateShuffledVersion);
+                configMap.put("dictName", dictName);
+                configMap.put("domain", domain);
+                configMap.put("description", description);
+                configMap.put("targetDictGroupId", targetDictGroupId);
+                configMap.put("targetGameHallIds", targetGameHallIds);
+                configMap.put("words", words);
+
+                ImportTask task = new ImportTask();
+                User systemUser = new User();
+                systemUser.setId(Constants.SYS_USER_SYS_ID);
+                task.setOwner(systemUser);
+                task.setConfig(JsonUtils.toJson(configMap));
+                task.setStatus("PENDING");
+                task.setFileName(fileName);
+                task.setCreateTime(new Date());
+                task.setUpdateTime(new Date());
+
+                importTaskBo.createEntity(task);
+                
+                // 异步执行
+                dictImportBo.executeImportTask(task.getId());
+                createdCount++;
+            }
+
+            return Result.success("成功为 " + createdCount + " 本词书创建并拉起导入后台任务！");
+        } catch (Exception e) {
+            return Result.fail("批量导入初始化时发生异常: " + e.getMessage());
+        }
+    }
+
 
     public static class ImportRequest {
         private String ownerId;
