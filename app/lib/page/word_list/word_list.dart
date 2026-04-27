@@ -4298,16 +4298,37 @@ class WordListPageState extends State<WordListPage>
                   if (targetWord != null) { 
                     setState(() {
                       // 智能容错：处理 Google ML Kit 经常将手写 c/l 识别为 d 的物理误判
-                      // 智能容错：动态替换手写过程中将 c/l 识别为 d 的物理死穴
+                      // 智能容错：终极 NLP 锚点距离感知算法 (USER 构想之神级实现)
                       String processedText = "";
                       final String lowerTarget = targetWord.word.spell.toLowerCase();
                       
+                      // 1. 提取正确单词中所有 D 和 CL 的【物理锚点序列】
+                      List<Map<String, dynamic>> anchors = [];
+                      for (int i = 0; i < lowerTarget.length; i++) {
+                        if (lowerTarget[i] == 'd') {
+                          anchors.add({'idx': i, 'type': 'd'});
+                        } else if (lowerTarget[i] == 'c' && (i + 1) < lowerTarget.length && lowerTarget[i + 1] == 'l') {
+                          anchors.add({'idx': i, 'type': 'cl'});
+                        }
+                      }
+                      
+                      // 2. 遍历用户输入的 text，基于“物理距离最近”判定真伪
                       for (int idx = 0; idx < text.length; idx++) {
                         final iChar = text[idx].toLowerCase();
-                        if (iChar == 'd' && idx < lowerTarget.length) {
-                          final tChar = lowerTarget[idx];
-                          if (tChar == 'c' || tChar == 'l') {
-                            processedText += targetWord.word.spell[idx];
+                        if (iChar == 'd' && anchors.isNotEmpty) {
+                          Map<String, dynamic> nearestAnchor = anchors[0];
+                          int minDistance = (idx - (anchors[0]['idx'] as int)).abs();
+                          
+                          for (final anchor in anchors) {
+                            final int dist = (idx - (anchor['idx'] as int)).abs();
+                            if (dist < minDistance) {
+                              minDistance = dist;
+                              nearestAnchor = anchor;
+                            }
+                          }
+                          
+                          if (nearestAnchor['type'] == 'cl') {
+                            processedText += (text[idx] == 'D') ? 'CL' : 'cl';
                             continue;
                           }
                         }
@@ -4320,7 +4341,10 @@ class WordListPageState extends State<WordListPage>
                       final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
                       final String normalizedInput = processedText.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
                       
-                      if (normalizedTarget == normalizedInput) {
+                      // 超级模糊容错：如果单词本就既包含 D 又包含 CL (如 disclose)，后台自动为 'd' 视为 'cl' 的笔画放行
+                      final String fuzzyTarget = normalizedTarget.replaceAll('cl', 'd');
+                      
+                      if (normalizedTarget == normalizedInput || fuzzyTarget == normalizedInput) {
                          WidgetsBinding.instance.addPostFrameCallback((_) async {
                            try {
                              await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
