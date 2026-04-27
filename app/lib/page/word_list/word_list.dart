@@ -173,6 +173,7 @@ class WordListPageState extends State<WordListPage>
   var studyMode = WordListStudyMode.list;
   bool _isHandwritingOverlayOpen = true;
   int? _tempHandwritingSelectedIndex;
+  final GlobalKey<HandwritingBoardState> _handwritingBoardKey = GlobalKey<HandwritingBoardState>();
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
@@ -2974,27 +2975,20 @@ class WordListPageState extends State<WordListPage>
                         // 1. 记录上一个具有焦点的单词位置
                         final curr = getBookMarkUiPosition();
 
-                        // 2. 瞬间仅更新临时高亮（避开重载手写板，实现真正零延迟反馈）
+                        // 2. 瞬间同步所有状态（由于取消了重载限制，这是0阻隔的）
                         setState(() {
-                          _tempHandwritingSelectedIndex = i;
+                          bookMark = BookMarkVo(baseIndex! + i, word.word.spell);
+                          word.hintLetterCount = 0;
+                          word.spellController.text = '';
+                          word.isAnswerProvidedBySystem = false;
+                          canLeaveCurrWord = false;
                         });
 
-                        // 3. 将真正的换词与手写板重建推到第二帧处理
-                        Future.microtask(() {
-                          if (!mounted) return;
-                          
-                          setState(() {
-                            bookMark = BookMarkVo(baseIndex! + i, word.word.spell);
-                            word.hintLetterCount = 0;
-                            word.spellController.text = '';
-                            word.isAnswerProvidedBySystem = false;
-                            canLeaveCurrWord = false;
-                            
-                            // 此时重置临时高亮
-                            _tempHandwritingSelectedIndex = null;
-                          });
+                        // 3. 瞬间清除上一个单词的旧笔迹画布
+                        _handwritingBoardKey.currentState?.clearBoard();
 
-                          // 4. 异步落库保存
+                        // 4. 异步持久化书签到 SQLite
+                        Future.microtask(() {
                           try {
                             args.bookMarkProvider.saveBookMark(bookMark!);
                           } catch (_) {}
@@ -4300,7 +4294,7 @@ class WordListPageState extends State<WordListPage>
                 ),
               ),
               child: HandwritingBoard(
-              key: ValueKey('handwriting_$bookmarkedIndex'),
+              key: _handwritingBoardKey,
               showHeader: false,
               showCloseButton: false, 
               useBoxDecoration: false,

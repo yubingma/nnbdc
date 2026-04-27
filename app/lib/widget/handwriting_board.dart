@@ -37,15 +37,15 @@ class HandwritingBoard extends StatefulWidget {
   });
 
   @override
-  State<HandwritingBoard> createState() => _HandwritingBoardState();
+  State<HandwritingBoard> createState() => HandwritingBoardState();
 }
 
-class _HandwritingBoardState extends State<HandwritingBoard> {
+class HandwritingBoardState extends State<HandwritingBoard> {
   List<List<Offset>> _lines = [];
   bool _isRecognizing = false;
   int _recognitionVersion = 0;
 
-  void _clear() {
+  void clearBoard() {
     setState(() {
       _lines = [];
       _isRecognizing = false;
@@ -53,6 +53,10 @@ class _HandwritingBoardState extends State<HandwritingBoard> {
     });
     // 内容清空时，同步清空外部输入框
     widget.onRecognized("");
+  }
+
+  void _clear() {
+    clearBoard();
   }
 
   void _incrementVersion() {
