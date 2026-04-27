@@ -174,6 +174,7 @@ class WordListPageState extends State<WordListPage>
   bool _isHandwritingOverlayOpen = true;
   int? _tempHandwritingSelectedIndex;
   final GlobalKey<HandwritingBoardState> _handwritingBoardKey = GlobalKey<HandwritingBoardState>();
+  int _renderWordCallCount = 0;
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
@@ -2676,6 +2677,7 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget renderWord(final int i) {
+    _renderWordCallCount++;
     var word = words[i];
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     final isBookmarked = _tempHandwritingSelectedIndex == i || (_tempHandwritingSelectedIndex == null && getBookMarkUiPosition() == i);
@@ -3145,6 +3147,9 @@ class WordListPageState extends State<WordListPage>
 
   @override
   Widget build(BuildContext context) {
+    final swBuild = Stopwatch()..start();
+    _renderWordCallCount = 0;
+    Global.logger.d('PERF_LOG_PENCIL [页面 build 开始]');
 
     super.build(context); // 必须调用，因为使用了 AutomaticKeepAliveClientMixin
     final isDarkMode = context.read<DarkMode>().isDarkMode;
@@ -3155,7 +3160,7 @@ class WordListPageState extends State<WordListPage>
     // 改为在需要时（如 onSelected 或 dispose）处理 ASR 状态，或通过专门的监听器。
     // 这里保留 build 方法的简洁性。
 
-    return PopScope(
+    final _popScopeWidget = PopScope(
       canPop: studyMode != WordListStudyMode.dictationHandwriting,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
@@ -3839,6 +3844,10 @@ class WordListPageState extends State<WordListPage>
       ],
       ),
     );
+
+    swBuild.stop();
+    Global.logger.d('PERF_LOG_PENCIL [页面 build 完毕] 耗时: ${swBuild.elapsedMilliseconds}ms, 累计调用 renderWord 次数: $_renderWordCallCount');
+    return _popScopeWidget;
   }
 
   /// 构建新手引导覆盖层

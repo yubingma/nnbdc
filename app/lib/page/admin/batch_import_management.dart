@@ -193,17 +193,44 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
 
     if (!confirm) return;
 
+    // 显示阻断转圈
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Colors.orange),
+                SizedBox(height: 16),
+                Text('正在平息后台任务，请稍候...', style: TextStyle(fontSize: 14)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
     try {
       final res = await Api.client.cancelBatch(batchId);
+      if (mounted) Navigator.pop(context); // 卸载阻断转圈
+      
       if (res.success) {
         ToastUtil.success(res.data ?? '终止指令下发成功');
+        _loadBatches();
       } else {
         ToastUtil.error(res.msg ?? '未知错误');
       }
     } catch (e, stack) {
+      if (mounted) Navigator.pop(context); // 卸载阻断转圈
       Global.logger.e('终止批次任务异常', error: e, stackTrace: stack);
       ToastUtil.error('操作失败: $e');
     }
+
   }
 
   Future<void> _deleteBatch(String batchId, List tasks) async {
