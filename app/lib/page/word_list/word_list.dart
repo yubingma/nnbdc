@@ -172,6 +172,7 @@ class WordListPageState extends State<WordListPage>
 
   var studyMode = WordListStudyMode.list;
   bool _isHandwritingOverlayOpen = true;
+  int? _tempHandwritingSelectedIndex;
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
@@ -2676,7 +2677,7 @@ class WordListPageState extends State<WordListPage>
   Widget renderWord(final int i) {
     var word = words[i];
     final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final isBookmarked = getBookMarkUiPosition() == i;
+    final isBookmarked = _tempHandwritingSelectedIndex == i || (_tempHandwritingSelectedIndex == null && getBookMarkUiPosition() == i);
 
     // 获取学习状态
     final learningStatus = word.currentLearningStatus;
@@ -2784,16 +2785,46 @@ class WordListPageState extends State<WordListPage>
           children: [
             /// 1. 左侧高长条背景 (通过 Positioned.fill 自动伸缩至全高)
             Positioned.fill(
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                  const Expanded(child: SizedBox.shrink()),
-                ],
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  // 1. 记录上一个具有焦点的单词位置
+                  final curr = getBookMarkUiPosition();
+
+                  // 2. 瞬间把临时高亮切换到新卡片（实现无感极速 UI 响应，且不销毁重建白板）
+                  setState(() {
+                    _tempHandwritingSelectedIndex = i;
+                  });
+
+                  // 3. 延后 120ms 触发重载手写板、持久化书签与异步发音
+                  Future.delayed(const Duration(milliseconds: 120), () {
+                    if (!mounted) return;
+
+                    // 正式切换
+                    onWordPressed(word, i, false, null);
+
+                    // 重置临时高亮变量
+                    _tempHandwritingSelectedIndex = null;
+
+                    // 异步播放上一个单词的发音
+                    if (curr >= 0 && curr != i && curr < words.length) {
+                      try {
+                        SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
+                      } catch (_) {}
+                    }
+                  });
+                },
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.15)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                    const Expanded(child: SizedBox.shrink()),
+                  ],
+                ),
               ),
             ),
 
@@ -2972,19 +3003,29 @@ class WordListPageState extends State<WordListPage>
                       onTap: () {
                         // 1. 记录上一个具有焦点的单词位置
                         final curr = getBookMarkUiPosition();
-                        
-                        // 2. 立即将焦点切换到新选中的卡片
-                        onWordPressed(word, i, false, null);
-                        
-                        // 3. 异步播放上一个单词的发音（揭晓答案，避免泄露新词答案）
-                        if (curr >= 0 && curr != i && curr < words.length) {
-                          final lastWord = words[curr];
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
+
+                        // 2. 瞬间把临时高亮切换到新卡片（实现无感极速 UI 响应，且不销毁重建白板）
+                        setState(() {
+                          _tempHandwritingSelectedIndex = i;
+                        });
+
+                        // 3. 延后 120ms 触发重载手写板、持久化书签与异步发音
+                        Future.delayed(const Duration(milliseconds: 120), () {
+                          if (!mounted) return;
+
+                          // 正式切换
+                          onWordPressed(word, i, false, null);
+
+                          // 重置临时高亮变量
+                          _tempHandwritingSelectedIndex = null;
+
+                          // 异步播放上一个单词的发音
+                          if (curr >= 0 && curr != i && curr < words.length) {
                             try {
-                              SoundUtil.playPronounceSound2(lastWord.word, audioPlayer);
+                              SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
                             } catch (_) {}
-                          });
-                        }
+                          }
+                        });
                       },
                       child: Center(
                         child: Container(
