@@ -2968,80 +2968,7 @@ class WordListPageState extends State<WordListPage>
                   ),
                 ),
                 
-                /// 3. 手写模式下的右侧快速选中透传图标
-                if (studyMode == WordListStudyMode.dictationHandwriting)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 60,
-                    child: Listener(
-                      behavior: HitTestBehavior.opaque,
-                      onPointerDown: (event) {
-                        final sw = Stopwatch()..start();
-                        Global.logger.d('PERF_LOG_PENCIL [手写铅笔点击] 开始处理...');
 
-                        // 1. 记录上一个具有焦点的单词位置
-                        final curr = getBookMarkUiPosition();
-                        Global.logger.d('PERF_LOG_PENCIL [1. 获取老焦点] 耗时: ${sw.elapsedMilliseconds}ms');
-
-                        // 2. 瞬间同步所有状态（内存属性直接更新，坚决不调用耗费算力的全局 setState）
-                        bookMark = BookMarkVo(baseIndex! + i, word.word.spell);
-                        word.hintLetterCount = 0;
-                        word.spellController.text = '';
-                        word.isAnswerProvidedBySystem = false;
-                        canLeaveCurrWord = false;
-                        
-                        activeWordIndexNotifier.value = i;
-                        Global.logger.d('PERF_LOG_PENCIL [2. 内存状态写入] 耗时: ${sw.elapsedMilliseconds}ms');
-
-                        // 3. 瞬间清除上一个单词的旧笔迹画布
-                        _handwritingBoardKey.currentState?.clearBoardSilently();
-                        Global.logger.d('PERF_LOG_PENCIL [3. 清除笔画画布] 耗时: ${sw.elapsedMilliseconds}ms');
-
-                        // 4. 彻底异步持久化书签到 SQLite（由微任务降级为事件队列普通任务，绝不抢占帧上屏时效）
-                        Future(() {
-                          final swDb = Stopwatch()..start();
-                          try {
-                            args.bookMarkProvider.saveBookMark(bookMark!).then((_) {
-                              Global.logger.d('PERF_LOG_PENCIL [4. 异步落库成功] 耗时: ${swDb.elapsedMilliseconds}ms');
-                            });
-                          } catch (_) {}
-                        });
-
-                        // 5. 彻底异步播放上一个单词的发音（隔离底层多媒体通道 IO，确保 100% 优先切换界面）
-                        Future(() {
-                          if (curr >= 0 && curr != i && curr < words.length) {
-                            try {
-                              SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-                              Global.logger.d('PERF_LOG_PENCIL [5. 异步唤醒声音成功]');
-                            } catch (_) {}
-                          }
-                        });
-                        
-                        sw.stop();
-                        Global.logger.d('✏️ [手写铅笔点击] 整个同步函数体执行完毕，总计: ${sw.elapsedMilliseconds}ms');
-                      },
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isBookmarked
-                                ? const Color(0xFF0097A7).withValues(alpha: 0.15)
-                                : Colors.transparent,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.edit,
-                            size: 22,
-                            color: isBookmarked
-                                ? const Color(0xFF0097A7)
-                                : (isDarkMode ? Colors.white38 : Colors.black38),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ],
@@ -3696,12 +3623,17 @@ class WordListPageState extends State<WordListPage>
                                 asr.stopAsr();
                                 break;
                               case menuWriteSpellHandwriting:
+                                Global.openPencilStopwatch.reset();
+                                Global.openPencilStopwatch.start();
                                 final swOpen = Stopwatch()..start();
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [进入听写手写模式] 开始处理...');
+                                WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
                                 setState(() {
                                   studyMode = WordListStudyMode.dictationHandwriting;
                                   _isHandwritingOverlayOpen = true;
-                                  for (final w in words) {
+                                  final activeIdx = getBookMarkUiPosition();
+                                  if (activeIdx >= 0 && activeIdx < words.length) {
+                                    final w = words[activeIdx];
                                     w.spellController.text = '';
                                     w.isAnswerProvidedBySystem = false;
                                     w.hintLetterCount = 0;
@@ -4309,6 +4241,10 @@ class WordListPageState extends State<WordListPage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       swOverlay.stop();
       Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [_buildHandwritingOverlay 组件渲染挂载完毕] 耗时: ${swOverlay.elapsedMilliseconds}ms');
+      if (Global.openPencilStopwatch.isRunning) {
+        Global.openPencilStopwatch.stop();
+        Global.logger.d('🔥 [超级大盘点] 从菜单点击到手写物理像素上屏，用户肉眼经历的真实总耗时：${Global.openPencilStopwatch.elapsedMilliseconds}ms');
+      }
     });
 
     return Positioned(
