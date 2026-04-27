@@ -28,14 +28,17 @@ def generate_meta(target_dir):
     }
 
     for txt_file in sorted(txt_files):
+        import re
         # 词书名称缺省为去除了 .txt 后缀的文件名
         dict_name = os.path.splitext(txt_file)[0]
+        # 去除类似 _20260425_103634 这样的时间戳后缀
+        dict_name = re.sub(r'_\d{8}_\d{6}$', '', dict_name)
         
         book_entry = {
             "fileName": txt_file,
             "dictName": dict_name,
             "domain": "",
-            "description": f"从 {txt_file} 导入的词书",
+            "description": "",
             "targetDictGroupId": "",
             "targetGameHallIds": []
         }
