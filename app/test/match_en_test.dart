@@ -59,6 +59,8 @@ ROPE  R OW1 P
 JOPE  JH OW1 P
 DIDN'T D IH1 D AH0 N T
 COUGH K AA1 F
+COLO K OW1 L OW0
+CLUE K L UW1
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -278,6 +280,16 @@ COUGH K AA1 F
     test('fate matches hate', () async {
       final int score = await PhonemeUtil.similarity('fate', 'hate');
       debugPrint('fate vs hate score: $score');
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+
+    test('colo vs clue - should match', () async {
+      const String target = "clue";
+      const String asrResult = "colo";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Colo vs Clue score: $score');
+      
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });
