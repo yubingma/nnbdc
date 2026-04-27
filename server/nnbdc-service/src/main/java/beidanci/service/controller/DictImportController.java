@@ -283,8 +283,25 @@ public class DictImportController {
                 return Result.fail("不可删除未指定批次(UNBATCHED)的任务");
             }
             
-            String sql = "SELECT id, config FROM import_task";
+            String sql = "SELECT id, config, status FROM import_task";
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+            
+            // 1. 安全前置校验：如果批次中仍有待执行或运行中任务，禁止物理删除
+            for (Map<String, Object> row : rows) {
+                String config = (String) row.get("config");
+                if (config == null || config.trim().isEmpty()) continue;
+                try {
+                    Map<String, Object> cfgMap = JsonUtils.parseMap(config);
+                    String bId = (String) cfgMap.get("batchId");
+                    if (batchId.equals(bId)) {
+                        String status = (String) row.get("status");
+                        if ("PENDING".equals(status) || "RUNNING".equals(status)) {
+                            return Result.fail("删除失败！该批次内尚有词书正在等待(PENDING)或执行(RUNNING)，请点击旁边的「中止」按钮叫停任务链后再操作。");
+                        }
+                    }
+                } catch (Exception ignore) {}
+            }
+
             
             int dictDeletedCount = 0;
             int taskDeletedCount = 0;
@@ -318,6 +335,39 @@ public class DictImportController {
             return Result.fail("删除批次失败: " + e.getMessage());
         }
     }
+
+    @PostMapping("/cancelBatch")
+    public Result<String> cancelBatch(@RequestParam String batchId) {
+        try {
+            if ("UNBATCHED".equals(batchId)) {
+                return Result.fail("无法操作未指定批次(UNBATCHED)的任务");
+            }
+            
+            String sql = "SELECT id, config FROM import_task WHERE status IN ('PENDING', 'RUNNING')";
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+            
+            int canceledCount = 0;
+            
+            for (Map<String, Object> row : rows) {
+                String config = (String) row.get("config");
+                if (config == null || config.trim().isEmpty()) continue;
+                
+                try {
+                    Map<String, Object> cfgMap = JsonUtils.parseMap(config);
+                    String bId = (String) cfgMap.get("batchId");
+                    if (batchId.equals(bId)) {
+                        jdbcTemplate.update("UPDATE import_task SET status = 'CANCELED' WHERE id = ?", row.get("id"));
+                        canceledCount++;
+                    }
+                } catch (Exception ignore) {}
+            }
+            
+            return Result.success("成功中止批次 " + batchId + " 内的 " + canceledCount + " 个待执行或运行中任务。");
+        } catch (Exception e) {
+            return Result.fail("中止批次任务失败: " + e.getMessage());
+        }
+    }
+
 
 
 

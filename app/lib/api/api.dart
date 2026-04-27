@@ -814,6 +814,10 @@ abstract class RestClient {
   @POST("/import/deleteBatch")
   Future<Result<String>> deleteBatch(@Query("batchId") String batchId);
 
+  @POST("/import/cancelBatch")
+  Future<Result<String>> cancelBatch(@Query("batchId") String batchId);
+
+
 
   @POST("/ai/generateAiShortStory.do")
   @FormUrlEncoded()

@@ -109,6 +109,43 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
   }
 
 
+  Future<void> _cancelBatch(String batchId) async {
+    if (batchId == 'UNBATCHED') {
+      ToastUtil.info('无法操作未批次任务');
+      return;
+    }
+
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('中止批次任务', style: TextStyle(color: Colors.orange)),
+        content: Text('您确定要强行中止批次【$batchId】中所有待执行与运行中的词书导入任务吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('确定终止'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (!confirm) return;
+
+    try {
+      final res = await Api.client.cancelBatch(batchId);
+      if (res.success) {
+        ToastUtil.success(res.data ?? '终止指令下发成功');
+        _loadBatches();
+      } else {
+        ToastUtil.error(res.msg ?? '未知错误');
+      }
+    } catch (e, stack) {
+      Global.logger.e('终止批次任务异常', error: e, stackTrace: stack);
+      ToastUtil.error('操作失败: $e');
+    }
+  }
 
   Future<void> _deleteBatch(String batchId) async {
     if (batchId == 'UNBATCHED') {
@@ -278,11 +315,32 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
         ),
         trailing: batchId == 'UNBATCHED'
             ? null
-            : IconButton(
-                icon: const Icon(Icons.delete_forever, color: Colors.red),
-                onPressed: () => _deleteBatch(batchId),
-                tooltip: '彻底粉碎该批次所有词书',
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (running > 0 || tasks.where((t) => t['status'] == 'PENDING').isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.stop_circle_outlined, color: Colors.orange),
+                      onPressed: () => _cancelBatch(batchId),
+                      tooltip: '中止该批次所有未完成任务',
+                    ),
+                  IconButton(
+                    icon: Icon(Icons.delete_forever, 
+                      color: (running > 0 || tasks.where((t) => t['status'] == 'PENDING').isNotEmpty) 
+                        ? Colors.grey 
+                        : Colors.red),
+                    onPressed: (running > 0 || tasks.where((t) => t['status'] == 'PENDING').isNotEmpty)
+                      ? () { ToastUtil.info('该批次内仍有进行中的任务，请先中止任务后再执行粉碎操作。'); }
+                      : () => _deleteBatch(batchId),
+
+                    tooltip: (running > 0 || tasks.where((t) => t['status'] == 'PENDING').isNotEmpty)
+                      ? '任务进行中，无法粉碎'
+                      : '彻底粉碎该批次所有词书',
+                  ),
+
+                ],
               ),
+
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
