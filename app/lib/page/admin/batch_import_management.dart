@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:nnbdc/api/api.dart';
+
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 
@@ -92,6 +94,22 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     }
   }
 
+  Future<void> _pickDirectory() async {
+    try {
+      String? selectedDirectory = await FilePicker.getDirectoryPath();
+      if (selectedDirectory != null) {
+        setState(() {
+          _dirPathCtrl.text = selectedDirectory;
+        });
+      }
+    } catch (e) {
+      Global.logger.e('选取文件夹失败', error: e);
+      ToastUtil.error('选取文件夹异常: $e');
+    }
+  }
+
+
+
   Future<void> _deleteBatch(String batchId) async {
     if (batchId == 'UNBATCHED') {
       ToastUtil.info('无法删除未批次任务');
@@ -178,8 +196,14 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
                 labelText: '词书存放绝对路径',
                 hintText: '例: /Volumes/ssd/ppdc/tools/book/大学/toimport',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.folder_open),
+                  onPressed: _pickDirectory,
+                  tooltip: '浏览选择文件夹',
+                ),
               ),
             ),
+
             const SizedBox(height: 12),
             _isSubmitting
                 ? const Center(child: CircularProgressIndicator())
@@ -271,6 +295,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
                 final task = tasks[index];
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
+                  onTap: () => _showTaskDetail(task),
                   title: Text(
                     task['dictName'] ?? task['fileName'] ?? '未命名词库',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -281,6 +306,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
                   ),
                   trailing: _buildStatusTag(task['status'] ?? 'PENDING'),
                 );
+
               },
             ),
           )
@@ -309,5 +335,106 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       ),
     );
   }
+
+  void _showTaskDetail(dynamic task) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          task['dictName'] ?? task['fileName'] ?? '词库详情',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: SizedBox(
+          width: 500, // 给定一个较大的宽度
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDetailRow('物理文件名', task['fileName'] ?? '无'),
+                _buildDetailRow('任务状态', task['status'] ?? 'PENDING'),
+                _buildDetailRow('处理进度', '${task['processedWords'] ?? 0} / ${task['totalWords'] ?? 0} 词'),
+                _buildDetailRow('创建时间', _formatTime(task['createTime'])),
+                const Divider(height: 24),
+                const Text(
+                  '执行日志:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.maxFinite,
+                  constraints: const BoxConstraints(maxHeight: 200), // 限制日志区高度
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      (task['log'] == null || task['log'].toString().trim().isEmpty)
+                          ? '暂无日志记录'
+                          : task['log'].toString(),
+                      style: const TextStyle(fontFamily: 'Courier', fontSize: 11),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey, fontSize: 13),
+            ),
+          ),
+          Expanded(
+            child: SelectableText(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(dynamic timeObj) {
+    if (timeObj == null) return '未知时间';
+    if (timeObj is int) {
+      final dt = DateTime.fromMillisecondsSinceEpoch(timeObj);
+      return '${dt.year}-${_pad(dt.month)}-${_pad(dt.day)} ${_pad(dt.hour)}:${_pad(dt.minute)}:${_pad(dt.second)}';
+    }
+    // 可能是格式良好的字符串
+    if (timeObj is String) {
+      try {
+        final dt = DateTime.parse(timeObj);
+        return '${dt.year}-${_pad(dt.month)}-${_pad(dt.day)} ${_pad(dt.hour)}:${_pad(dt.minute)}:${_pad(dt.second)}';
+      } catch (_) {
+        return timeObj;
+      }
+    }
+    return timeObj.toString();
+  }
+
+  String _pad(int n) => n.toString().padLeft(2, '0');
+
 
 }

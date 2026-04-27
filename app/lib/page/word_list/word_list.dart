@@ -2028,12 +2028,12 @@ class WordListPageState extends State<WordListPage>
             borderRadius: BorderRadius.circular(8),
             boxShadow: shadows,
             border: Border.all(
-              width: 1.2,
+              width: 1.8,
               strokeAlign: BorderSide.strokeAlignInside,
               color: isBookmarked
                   ? (isAsrReady 
                       ? AppTheme.gradientStartColor.withValues(alpha: 0.5)
-                      : (isDarkMode ? Colors.white24 : Colors.black12))
+                      : const Color(0xFF0097A7))
                   : Colors.transparent,
             ),
           ),
@@ -2773,8 +2773,8 @@ class WordListPageState extends State<WordListPage>
 
     // 确定背景色
     final bgColor = isDarkMode
-        ? (isBookmarked ? const Color(0xFF2A2A2A) : const Color(0xFF1E1E1E))
-        : (isBookmarked ? const Color(0xFFF5F5F5) : Colors.white);
+        ? (isBookmarked ? const Color(0xFF12353A) : const Color(0xFF1E1E1E))
+        : (isBookmarked ? const Color(0xFFE0F2F1) : Colors.white);
 
     Widget itemContent = ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -2959,6 +2959,37 @@ class WordListPageState extends State<WordListPage>
                     ],
                   ),
                 ),
+                
+                /// 3. 手写模式下的右侧快速选中透传图标
+                if (studyMode == WordListStudyMode.dictationHandwriting)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 60,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _handleWordTap(word, i),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isBookmarked
+                                ? const Color(0xFF0097A7).withValues(alpha: 0.15)
+                                : Colors.transparent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.edit,
+                            size: 22,
+                            color: isBookmarked
+                                ? const Color(0xFF0097A7)
+                                : (isDarkMode ? Colors.white38 : Colors.black38),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],

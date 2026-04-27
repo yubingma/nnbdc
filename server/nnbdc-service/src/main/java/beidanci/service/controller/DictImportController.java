@@ -260,6 +260,9 @@ public class DictImportController {
                     taskInfo.put("fileName", row.get("file_name"));
                     taskInfo.put("dictName", cfgMap.get("dictName"));
                     taskInfo.put("dictId", cfgMap.get("dictId"));
+                    taskInfo.put("createTime", row.get("create_time"));
+                    taskInfo.put("log", row.get("log"));
+
                     
                     batchMap.computeIfAbsent(batchId, k -> new ArrayList<>()).add(taskInfo);
                 } catch (Exception ignore) {}
