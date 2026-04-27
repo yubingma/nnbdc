@@ -374,33 +374,41 @@ public class DictImportController {
                 } catch (Exception ignore) {}
             }
 
-            // 2. 阻塞等待：最多等待30秒，直到所有 PENDING 和 RUNNING 状态的任务退出。
+            // 2. 阻塞等待：最多等待30秒，直到该批次下所有正运行的 Java 线程退出
             long startTime = System.currentTimeMillis();
             boolean fullyStopped = false;
             
+            // 先找出所有属于这个批次的 taskId
+            String fetchAllSql = "SELECT id, config FROM import_task";
+            List<Map<String, Object>> allRows = jdbcTemplate.queryForList(fetchAllSql);
+            List<String> taskIdsInBatch = new ArrayList<>();
+            for (Map<String, Object> r : allRows) {
+                String config = (String) r.get("config");
+                if (config == null || config.trim().isEmpty()) continue;
+                try {
+                    Map<String, Object> cfgMap = JsonUtils.parseMap(config);
+                    String bId = (String) cfgMap.get("batchId");
+                    if (batchId.equals(bId)) {
+                        taskIdsInBatch.add((String) r.get("id"));
+                    }
+                } catch (Exception ignore) {}
+            }
+            
             while (System.currentTimeMillis() - startTime < 30000) {
-                String checkSql = "SELECT id, config, status FROM import_task WHERE status IN ('PENDING', 'RUNNING')";
-                List<Map<String, Object>> activeRows = jdbcTemplate.queryForList(checkSql);
-                
-                int activeInBatch = 0;
-                for (Map<String, Object> r : activeRows) {
-                    String config = (String) r.get("config");
-                    if (config == null || config.trim().isEmpty()) continue;
-                    try {
-                        Map<String, Object> cfgMap = JsonUtils.parseMap(config);
-                        String bId = (String) cfgMap.get("batchId");
-                        if (batchId.equals(bId)) {
-                            activeInBatch++;
-                        }
-                    } catch (Exception ignore) {}
+                int activeThreadCount = 0;
+                for (String tId : taskIdsInBatch) {
+                    if (beidanci.service.bo.DictImportBo.runningTaskIds.contains(tId)) {
+                        activeThreadCount++;
+                    }
                 }
                 
-                if (activeInBatch == 0) {
+                if (activeThreadCount == 0) {
                     fullyStopped = true;
                     break;
                 }
                 Thread.sleep(500);
             }
+
             
             if (!fullyStopped) {
                 return Result.success("终止指令已下发完毕（部分后台线程收尾较慢，请稍后刷新列表查看）");

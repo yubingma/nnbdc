@@ -96,6 +96,8 @@ public class DictImportBo {
     @Autowired
     private GameHallBo gameHallBo;
 
+    public static final java.util.Set<String> runningTaskIds = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+
     /**
      * 异步执行导入任务
      *
@@ -103,6 +105,8 @@ public class DictImportBo {
      */
     @Async
     public void executeImportTask(String taskId) {
+        runningTaskIds.add(taskId);
+
         ImportTask task = importTaskBo.findById(taskId);
         if (task == null) return;
 
@@ -193,13 +197,19 @@ public class DictImportBo {
 
             String preferredVoices = (String) config.get("ttsVoices");
 
+            boolean importFinished = false;
             if (isSystemImport) {
-                processSystemImport(task, dictId, dictName, domain, rawWords, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                importFinished = processSystemImport(task, dictId, dictName, domain, rawWords, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
             } else if (rawWords != null) {
-                processUserImportWordsOnly(task, dictId, dictName, domain, rawWords, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                importFinished = processUserImportWordsOnly(task, dictId, dictName, domain, rawWords, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
             } else {
-                processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                importFinished = processUserImportWithMeanings(task, dictId, dictName, domain, wordsWithMeanings, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
             }
+
+            if (!importFinished) {
+                return;
+            }
+
 
             // 更新原词典的单词总数，并下发 UPDATE 同步日志通知客户端
             if (dictId != null && !dictId.isEmpty()) {
@@ -390,16 +400,19 @@ public class DictImportBo {
                 } catch (IllegalAccessException ignore) {}
             }
 
+        } finally {
+            runningTaskIds.remove(taskId);
         }
     }
 
-    private void processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices,
+
+    private boolean processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices,
                                      String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
             ImportTask curTask = importTaskBo.findById(task.getId());
             if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
-                throw new RuntimeException("导入任务已被手动终止");
+                return false;
             }
             String line = words.get(i).trim();
             if (line.isEmpty()) continue;
@@ -432,15 +445,17 @@ public class DictImportBo {
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
+        return true;
     }
 
-    private void processUserImportWordsOnly(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices,
+
+    private boolean processUserImportWordsOnly(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices,
                                             String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             ImportTask curTask = importTaskBo.findById(task.getId());
             if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
-                throw new RuntimeException("导入任务已被手动终止");
+                return false;
             }
             String spell = words.get(i).trim();
             try {
@@ -453,15 +468,17 @@ public class DictImportBo {
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
+        return true;
     }
 
-    private void processUserImportWithMeanings(ImportTask task, String dictId, String dictName, String domain, List<Map<String, String>> words, boolean generateWordImage, String preferredVoices,
+
+    private boolean processUserImportWithMeanings(ImportTask task, String dictId, String dictName, String domain, List<Map<String, String>> words, boolean generateWordImage, String preferredVoices,
                                                String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
             ImportTask curTask = importTaskBo.findById(task.getId());
             if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
-                throw new RuntimeException("导入任务已被手动终止");
+                return false;
             }
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
@@ -476,7 +493,9 @@ public class DictImportBo {
                 importTaskBo.updateProgress(task.getId(), i + 1, "Failed: " + spell + " (" + e.getMessage() + ")");
             }
         }
+        return true;
     }
+
 
     private void processSingleWord(String spell, String manualMeaning, Integer unit, boolean isSystemDict, User user, String dictId, String dictName, String domain,
                                    boolean generateWordImage, String preferredVoices, String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) throws Exception {

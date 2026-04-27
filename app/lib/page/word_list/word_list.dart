@@ -175,6 +175,7 @@ class WordListPageState extends State<WordListPage>
   int? _tempHandwritingSelectedIndex;
   final GlobalKey<HandwritingBoardState> _handwritingBoardKey = GlobalKey<HandwritingBoardState>();
   int _renderWordCallCount = 0;
+  final ValueNotifier<int> activeWordIndexNotifier = ValueNotifier<int>(-1);
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
@@ -1411,7 +1412,7 @@ class WordListPageState extends State<WordListPage>
                   itemBuilder: (context, index) {
                     // 为每个 item 添加 key，提高重用性
                     return RepaintBoundary(
-                      key: ValueKey('word_${words[index].word.id}'),
+                      key: ValueKey('word_${words[index].word.id}_${bookMark?.position == (baseIndex! + index)}'),
                       child: renderWord(index),
                     );
                   },
@@ -2680,52 +2681,55 @@ class WordListPageState extends State<WordListPage>
     _renderWordCallCount++;
     var word = words[i];
     final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final isBookmarked = _tempHandwritingSelectedIndex == i || (_tempHandwritingSelectedIndex == null && getBookMarkUiPosition() == i);
-
-    // 获取学习状态
     final learningStatus = word.currentLearningStatus;
 
-    // 基础单词内容
-    Widget content = _buildWordDecoration(
-      isBookmarked: isBookmarked,
-      isDarkMode: isDarkMode,
-      learningStatus: learningStatus,
-      child: _renderWordContent(word, i, isBookmarked, isDarkMode, learningStatus),
-    );
+    return ValueListenableBuilder<int>(
+      valueListenable: activeWordIndexNotifier,
+      builder: (context, activeIndex, child) {
+        final isBookmarked = activeIndex == i;
 
-    // 检查是否需要显示单元标题（仅当Provider是DictWordsProvider时）
-    if (args.wordsProvider is DictWordsProvider) {
-      final dictWord = word.tag;
-      if (dictWord is DictWordVo) {
-        bool showHeader = false;
-        if (i == 0) {
-          showHeader = true;
-        } else {
-          final prevWord = words[i - 1];
-          final prevDictWord = prevWord.tag;
-          if (prevDictWord is DictWordVo) {
-            if (prevDictWord.unit != dictWord.unit) {
+        // 基础单词内容
+        Widget content = _buildWordDecoration(
+          isBookmarked: isBookmarked,
+          isDarkMode: isDarkMode,
+          learningStatus: learningStatus,
+          child: _renderWordContent(word, i, isBookmarked, isDarkMode, learningStatus),
+        );
+
+        // 检查是否需要显示单元标题（仅当Provider是DictWordsProvider时）
+        if (args.wordsProvider is DictWordsProvider) {
+          final dictWord = word.tag;
+          if (dictWord is DictWordVo) {
+            bool showHeader = false;
+            if (i == 0) {
               showHeader = true;
+            } else {
+              final prevWord = words[i - 1];
+              final prevDictWord = prevWord.tag;
+              if (prevDictWord is DictWordVo) {
+                if (prevDictWord.unit != dictWord.unit) {
+                  showHeader = true;
+                }
+              } else {
+                showHeader = true;
+              }
             }
-          } else {
-            // 如果上一个不是 DictWordVo（虽然不太可能），也显示标题
-            showHeader = true;
+
+            if (showHeader && dictWord.unit != 0) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildUnitHeader(dictWord.unit, isDarkMode),
+                  content,
+                ],
+              );
+            }
           }
         }
 
-        if (showHeader && dictWord.unit != 0) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildUnitHeader(dictWord.unit, isDarkMode),
-              content,
-            ],
-          );
-        }
-      }
-    }
-
-    return content;
+        return content;
+      },
+    );
   }
 
   Widget _buildUnitHeader(int unit, bool isDarkMode) {
@@ -2989,6 +2993,7 @@ class WordListPageState extends State<WordListPage>
                           word.isAnswerProvidedBySystem = false;
                           canLeaveCurrWord = false;
                         });
+                        activeWordIndexNotifier.value = i;
                         Global.logger.d('PERF_LOG_PENCIL [2. setState UI] 耗时: ${sw.elapsedMilliseconds}ms');
 
                         // 3. 瞬间清除上一个单词的旧笔迹画布
@@ -3150,6 +3155,7 @@ class WordListPageState extends State<WordListPage>
     final swBuild = Stopwatch()..start();
     _renderWordCallCount = 0;
     Global.logger.d('PERF_LOG_PENCIL [页面 build 开始]');
+    activeWordIndexNotifier.value = _tempHandwritingSelectedIndex ?? getBookMarkUiPosition();
 
     super.build(context); // 必须调用，因为使用了 AutomaticKeepAliveClientMixin
     final isDarkMode = context.read<DarkMode>().isDarkMode;
