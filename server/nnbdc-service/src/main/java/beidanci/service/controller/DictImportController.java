@@ -26,7 +26,11 @@ import beidanci.service.util.JsonUtils;
 public class DictImportController {
 
     @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
     private DictImportBo dictImportBo;
+
 
     @Autowired
     private ImportTaskBo importTaskBo;
@@ -125,9 +129,10 @@ public class DictImportController {
     @SuppressWarnings("unchecked")
     @PostMapping("/batch")
     public Result<String> batchSubmit(@RequestParam String dirPath) {
-
+        String batchId = "BATCH_" + System.currentTimeMillis();
         try {
             File metaFile = new File(dirPath, "meta.json");
+
             if (!metaFile.exists()) {
                 return Result.fail("找不到元数据配置文件 meta.json 于目录: " + dirPath);
             }
@@ -193,7 +198,9 @@ public class DictImportController {
 
                 // 构造每个任务的 config JSON
                 Map<String, Object> configMap = new HashMap<>();
+                configMap.put("batchId", batchId);
                 configMap.put("isSystemImport", isSystemImport);
+
                 configMap.put("generateWordImage", generateWordImage);
                 configMap.put("generateShuffledVersion", generateShuffledVersion);
                 configMap.put("dictName", dictName);
@@ -220,11 +227,92 @@ public class DictImportController {
                 createdCount++;
             }
 
-            return Result.success("成功为 " + createdCount + " 本词书创建并拉起导入后台任务！");
+            return Result.success("成功为 " + createdCount + " 本词书创建并拉起导入后台任务！批次号为: " + batchId);
         } catch (Exception e) {
             return Result.fail("批量导入初始化时发生异常: " + e.getMessage());
         }
     }
+
+    @GetMapping("/allBatches")
+    public Result<Map<String, List<Map<String, Object>>>> getAllBatches() {
+        try {
+            String sql = "SELECT * FROM import_task ORDER BY create_time DESC";
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+            
+            Map<String, List<Map<String, Object>>> batchMap = new LinkedHashMap<>();
+            
+            for (Map<String, Object> row : rows) {
+                String config = (String) row.get("config");
+                if (config == null || config.trim().isEmpty()) continue;
+                
+                try {
+                    Map<String, Object> cfgMap = JsonUtils.parseMap(config);
+                    String batchId = (String) cfgMap.get("batchId");
+                    if (batchId == null || batchId.trim().isEmpty()) {
+                        batchId = "UNBATCHED";
+                    }
+                    
+                    Map<String, Object> taskInfo = new HashMap<>();
+                    taskInfo.put("id", row.get("id"));
+                    taskInfo.put("status", row.get("status"));
+                    taskInfo.put("totalWords", row.get("total_words"));
+                    taskInfo.put("processedWords", row.get("processed_words"));
+                    taskInfo.put("fileName", row.get("file_name"));
+                    taskInfo.put("dictName", cfgMap.get("dictName"));
+                    taskInfo.put("dictId", cfgMap.get("dictId"));
+                    
+                    batchMap.computeIfAbsent(batchId, k -> new ArrayList<>()).add(taskInfo);
+                } catch (Exception ignore) {}
+            }
+            return Result.success(batchMap);
+        } catch (Exception e) {
+            return Result.fail("获取批次任务列表失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/deleteBatch")
+    public Result<String> deleteBatch(@RequestParam String batchId) {
+        try {
+            if ("UNBATCHED".equals(batchId)) {
+                return Result.fail("不可删除未指定批次(UNBATCHED)的任务");
+            }
+            
+            String sql = "SELECT id, config FROM import_task";
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
+            
+            int dictDeletedCount = 0;
+            int taskDeletedCount = 0;
+            
+            for (Map<String, Object> row : rows) {
+                String config = (String) row.get("config");
+                if (config == null || config.trim().isEmpty()) continue;
+                
+                try {
+                    Map<String, Object> cfgMap = JsonUtils.parseMap(config);
+                    String bId = (String) cfgMap.get("batchId");
+                    if (batchId.equals(bId)) {
+                        String dictId = (String) cfgMap.get("dictId");
+                        if (dictId != null && !dictId.trim().isEmpty()) {
+                            try {
+                                dictBo.deleteSystemDictSafely(dictId);
+                                dictDeletedCount++;
+                            } catch (Exception e) {
+                                // 忽略可能已被删除的情况
+                            }
+                        }
+                        
+                        jdbcTemplate.update("DELETE FROM import_task WHERE id = ?", row.get("id"));
+                        taskDeletedCount++;
+                    }
+                } catch (Exception ignore) {}
+            }
+            
+            return Result.success("成功删除批次 " + batchId + "：共清理词书 " + dictDeletedCount + " 本，任务记录 " + taskDeletedCount + " 条。");
+        } catch (Exception e) {
+            return Result.fail("删除批次失败: " + e.getMessage());
+        }
+    }
+
 
 
     public static class ImportRequest {

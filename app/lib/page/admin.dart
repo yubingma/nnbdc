@@ -17,7 +17,9 @@ import 'package:nnbdc/page/admin/admin_cigen_optimize_page.dart';
 import 'package:nnbdc/page/admin/system_settings_page.dart';
 import 'package:nnbdc/page/admin/dict_group_management.dart';
 import 'package:nnbdc/page/admin/pdf_convert_page.dart';
+import 'package:nnbdc/page/admin/batch_import_management.dart';
 import 'package:nnbdc/state.dart';
+
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:provider/provider.dart';
@@ -73,6 +75,13 @@ class _AdminPageState extends State<AdminPage> {
         color: const Color(0xFF8E24AA),
         onTap: () => _navigateToDictImport(),
       ),
+      _buildManagementCard(
+        title: '词书批量导入',
+        icon: Icons.rocket_launch,
+        color: Colors.deepOrangeAccent,
+        onTap: () => _navigateToBatchDictImport(),
+      ),
+
       _buildManagementCard(
         title: '查词功能',
         icon: Icons.search,
@@ -412,6 +421,16 @@ class _AdminPageState extends State<AdminPage> {
       ),
     );
   }
+
+  void _navigateToBatchDictImport() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BatchImportManagementPage(),
+      ),
+    );
+  }
+
 
   void _navigateToSystemHealthCheck() {
     Navigator.push(

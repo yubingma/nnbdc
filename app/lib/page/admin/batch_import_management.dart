@@ -1,0 +1,306 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/util/toast_util.dart';
+
+class BatchImportManagementPage extends StatefulWidget {
+  const BatchImportManagementPage({super.key});
+
+  @override
+  State<BatchImportManagementPage> createState() => _BatchImportManagementPageState();
+}
+
+class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
+  final TextEditingController _dirPathCtrl = TextEditingController(
+    text: "/Volumes/ssd/ppdc/tools/book/大学/toimport"
+  );
+  bool _isSubmitting = false;
+  Map<String, dynamic> _batches = {};
+  Timer? _timer;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBatches();
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _loadBatches(silent: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _dirPathCtrl.dispose();
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadBatches({bool silent = false}) async {
+    if (_isLoading) return;
+    if (!silent) {
+      setState(() { _isLoading = true; });
+    }
+    try {
+      final res = await Api.client.getAllBatches();
+      if (res.success && res.data != null) {
+        if (mounted) {
+          setState(() {
+            _batches = res.data as Map<String, dynamic>;
+          });
+        }
+
+      }
+    } catch (e) {
+      if (!silent) {
+        ToastUtil.error('获取批次失败: $e');
+      }
+    } finally {
+      if (mounted && !silent) {
+        setState(() { _isLoading = false; });
+      }
+    }
+  }
+
+  Future<void> _submitBatch() async {
+    final dirPath = _dirPathCtrl.text.trim();
+    if (dirPath.isEmpty) {
+      ToastUtil.info('请输入词书绝对路径');
+      return;
+    }
+
+    setState(() { _isSubmitting = true; });
+    try {
+      final res = await Api.client.submitBatchImportTask(dirPath);
+      if (res.success) {
+        ToastUtil.success(res.data ?? '任务提交成功');
+        _loadBatches();
+      } else {
+        ToastUtil.error(res.msg ?? '未知错误');
+      }
+    } catch (e) {
+      ToastUtil.error('提交失败: $e');
+    } finally {
+      if (mounted) {
+        setState(() { _isSubmitting = false; });
+      }
+    }
+  }
+
+  Future<void> _deleteBatch(String batchId) async {
+    if (batchId == 'UNBATCHED') {
+      ToastUtil.info('无法删除未批次任务');
+      return;
+    }
+
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清理批次', style: TextStyle(color: Colors.red)),
+        content: Text('您确定要彻底删除批次【$batchId】导入的所有词书吗？此操作不可撤销！'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('彻底清除'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (!confirm) return;
+
+    try {
+      final res = await Api.client.deleteBatch(batchId);
+      if (res.success) {
+        ToastUtil.success(res.data ?? '删除成功');
+        _loadBatches();
+      } else {
+        ToastUtil.error(res.msg ?? '未知错误');
+      }
+    } catch (e) {
+      ToastUtil.error('删除异常: $e');
+    }
+
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppTheme.createGradientAppBar(
+        title: '批量导入管理',
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.white)
+        ),
+      ),
+      body: _isLoading && _batches.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadBatches,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildSubmitCard(),
+                  const SizedBox(height: 16),
+                  _buildBatchList(),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildSubmitCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              '启动批量导入',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _dirPathCtrl,
+              decoration: InputDecoration(
+                labelText: '词书存放绝对路径',
+                hintText: '例: /Volumes/ssd/ppdc/tools/book/大学/toimport',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _isSubmitting
+                ? const Center(child: CircularProgressIndicator())
+                : FilledButton.icon(
+                    onPressed: _submitBatch,
+                    icon: const Icon(Icons.rocket_launch),
+                    label: const Text('提交批量导入任务'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBatchList() {
+    if (_batches.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.only(top: 40.0),
+          child: Text('暂无历史批次数据', style: TextStyle(color: Colors.grey)),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '历史导入批次',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text(
+              '总批次数: ${_batches.length}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ..._batches.entries.map((entry) {
+          final batchId = entry.key;
+          final List tasks = entry.value as List;
+          return _buildBatchCard(batchId, tasks);
+        }),
+      ],
+    );
+  }
+
+  Widget _buildBatchCard(String batchId, List tasks) {
+    int completed = tasks.where((t) => t['status'] == 'COMPLETED').length;
+    int running = tasks.where((t) => t['status'] == 'RUNNING').length;
+    int failed = tasks.where((t) => t['status'] == 'FAILED').length;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ExpansionTile(
+        title: Text(
+          batchId,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent),
+        ),
+        subtitle: Text(
+          '总计 ${tasks.length} 本 (成功: $completed, 运行: $running, 失败: $failed)',
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        trailing: batchId == 'UNBATCHED'
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.delete_forever, color: Colors.red),
+                onPressed: () => _deleteBatch(batchId),
+                tooltip: '彻底粉碎该批次所有词书',
+              ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: tasks.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final task = tasks[index];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    task['dictName'] ?? task['fileName'] ?? '未命名词库',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Text(
+                    '${task['processedWords'] ?? 0} / ${task['totalWords'] ?? 0} 词 | ${task['fileName']}',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  trailing: _buildStatusTag(task['status'] ?? 'PENDING'),
+                );
+              },
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusTag(String status) {
+    Color color;
+    switch (status) {
+      case 'COMPLETED': color = Colors.green; break;
+      case 'RUNNING': color = Colors.blue; break;
+      case 'FAILED': color = Colors.red; break;
+      default: color = Colors.orange;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+}

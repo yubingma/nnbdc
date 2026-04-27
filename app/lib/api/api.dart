@@ -804,6 +804,17 @@ abstract class RestClient {
   @POST("/import/cancel")
   Future<Result> cancelDictImportTask(@Query("taskId") String taskId);
 
+  @POST("/import/batch")
+  Future<Result<String>> submitBatchImportTask(@Query("dirPath") String dirPath);
+
+  @GET("/import/allBatches")
+  Future<Result<JsonMap>> getAllBatches();
+
+
+  @POST("/import/deleteBatch")
+  Future<Result<String>> deleteBatch(@Query("batchId") String batchId);
+
+
   @POST("/ai/generateAiShortStory.do")
   @FormUrlEncoded()
   Future<Result<String>> generateAiShortStory(
