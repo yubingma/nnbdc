@@ -4322,9 +4322,19 @@ class WordListPageState extends State<WordListPage>
             ),
           ),
 
-          // 2. 右侧 60 像素的穿透引导视觉装饰层
-          // 2. 右侧 60 像素的物理通道分隔虚线
-          // 2. 右侧 60 像素的物理通道分隔线 + 精美透传小铅笔
+          Positioned(
+            right: 59,
+            top: 0,
+            bottom: 0,
+            width: 1,
+            child: IgnorePointer(
+              child: Container(
+                color: isDarkMode 
+                    ? Colors.white.withValues(alpha: 0.06) 
+                    : Colors.black.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
 
         ],
       ),
