@@ -176,6 +176,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
       final file = File('${tempDir.path}/handwriting_${AppClock.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(bytes);
 
+        if (currentVersion != _recognitionVersion) return;
+
         // 3. 调用识别引擎 (统一使用 Google ML Kit Digital Ink Recognition 以获得最佳体验)
         final strokes = _lines.map((line) => line.map((p) => {'x': p.dx, 'y': p.dy}).toList()).toList();
         final recognitionFuture = OcrService.recognizeHandwriting(strokes);
@@ -389,9 +391,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
     // 同步引用：始终确保控制器的 rawLines 指向父组件最新的 _lines
     _controller.rawLines = widget.lines;
     
-    // 如果父组件清空了 _lines，同步清除控制器的内部路径状态
+    // 如果父组件清空了 _lines，同步清除控制器的内部路径状态，并瞬间斩断后台离线识别
     if (widget.lines.isEmpty && oldWidget.lines.isNotEmpty) {
       _controller.clear();
+      _autoRecognizeTimer?.cancel();
     }
   }
 

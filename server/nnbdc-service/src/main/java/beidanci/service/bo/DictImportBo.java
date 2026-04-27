@@ -436,8 +436,9 @@ public class DictImportBo {
                 if (manualMeaning != null && manualMeaning.isEmpty()) manualMeaning = null;
             }
             try {
-                processSingleWord(spell, manualMeaning, unit, true, systemUser, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                processSingleWord(task.getId(), spell, manualMeaning, unit, true, systemUser, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
+
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
                 stats.errorCount++;
@@ -459,8 +460,9 @@ public class DictImportBo {
             }
             String spell = words.get(i).trim();
             try {
-                processSingleWord(spell, null, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                processSingleWord(task.getId(), spell, null, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
+
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
                 stats.errorCount++;
@@ -484,8 +486,9 @@ public class DictImportBo {
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(spell, manualMeaning, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                processSingleWord(task.getId(), spell, manualMeaning, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
+
             } catch (Exception e) {
                 logger.warn("处理单词失败: " + spell, e);
                 stats.errorCount++;
@@ -497,8 +500,14 @@ public class DictImportBo {
     }
 
 
-    private void processSingleWord(String spell, String manualMeaning, Integer unit, boolean isSystemDict, User user, String dictId, String dictName, String domain,
+    private void processSingleWord(String taskId, String spell, String manualMeaning, Integer unit, boolean isSystemDict, User user, String dictId, String dictName, String domain,
                                    boolean generateWordImage, String preferredVoices, String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) throws Exception {
+        
+        ImportTask curTask = importTaskBo.findById(taskId);
+        if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+            throw new InterruptedException("任务已被强行中止");
+        }
+
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
         String actionType = "ADDED";
@@ -507,10 +516,15 @@ public class DictImportBo {
         if (isNewWord) {
             word = new Word();
             word.setSpell(spell);
-            word.setPopularity(5); // 默认中等
-            // 调用 AI 获取音标（及其它固有属性），对新词初始化无需在第一步请求配图，避免重复调用浪费资源
-            // 注意：单词及其音标是全局共用的，不应受词书特定的 meaningRequirement 约束
+            word.setPopularity(5); 
+            
+            curTask = importTaskBo.findById(taskId);
+            if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+                throw new InterruptedException("任务已被强行中止");
+            }
+            
             lastAiResult = getAiResult(spell, null, null, false, null, sentenceRequirement, null);
+
             word.setBritishPronounce(lastAiResult.phonetic);
             word.setAmericaPronounce(lastAiResult.phonetic);
             word.setPronounce(lastAiResult.phonetic);
@@ -622,6 +636,11 @@ public class DictImportBo {
         }
 
         // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音
+        curTask = importTaskBo.findById(taskId);
+        if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+            throw new InterruptedException("任务已被强行中止");
+        }
+        
         try {
             String pureSpell = Utils.uniformSpellForFilename(spell);
             if (pureSpell.length() > 0) {
@@ -629,6 +648,7 @@ public class DictImportBo {
                 java.io.File dir = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar);
                 if (!dir.exists()) dir.mkdirs();
                 java.io.File soundFile = new java.io.File(dir, pureSpell + ".mp3");
+
 
                 if (!soundFile.exists()) {
                     try {
@@ -687,8 +707,14 @@ public class DictImportBo {
                 .map(m -> (m.getCiXing() != null ? m.getCiXing() : "") + " " + m.getMeaning())
                 .collect(java.util.stream.Collectors.joining("; "));
 
+        curTask = importTaskBo.findById(taskId);
+        if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+            throw new InterruptedException("任务已被强行中止");
+        }
+
         if (!isPrivateReusing) {
             boolean hasDomain = (domain != null && !domain.trim().isEmpty());
+
             String aiContext = hasDomain ? domain : null;
 
             if (manualMeaning != null) {

@@ -3010,13 +3010,15 @@ class WordListPageState extends State<WordListPage>
                           } catch (_) {}
                         });
 
-                        // 5. 异步播放上一个单词的发音
-                        if (curr >= 0 && curr != i && curr < words.length) {
-                          try {
-                            SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-                            Global.logger.d('PERF_LOG_PENCIL [5. 异步唤醒声音] 耗时: ${sw.elapsedMilliseconds}ms');
-                          } catch (_) {}
-                        }
+                        // 5. 彻底异步播放上一个单词的发音（隔离底层多媒体通道 IO，确保 100% 优先切换界面）
+                        Future(() {
+                          if (curr >= 0 && curr != i && curr < words.length) {
+                            try {
+                              SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
+                              Global.logger.d('PERF_LOG_PENCIL [5. 异步唤醒声音成功]');
+                            } catch (_) {}
+                          }
+                        });
                         
                         sw.stop();
                         Global.logger.d('✏️ [手写铅笔点击] 整个同步函数体执行完毕，总计: ${sw.elapsedMilliseconds}ms');
@@ -3166,7 +3168,7 @@ class WordListPageState extends State<WordListPage>
     // 改为在需要时（如 onSelected 或 dispose）处理 ASR 状态，或通过专门的监听器。
     // 这里保留 build 方法的简洁性。
 
-    final _popScopeWidget = PopScope(
+    final popScopeWidget = PopScope(
       canPop: studyMode != WordListStudyMode.dictationHandwriting,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
@@ -3853,7 +3855,7 @@ class WordListPageState extends State<WordListPage>
 
     swBuild.stop();
     Global.logger.d('PERF_LOG_PENCIL [页面 build 完毕] 耗时: ${swBuild.elapsedMilliseconds}ms, 累计调用 renderWord 次数: $_renderWordCallCount');
-    return _popScopeWidget;
+    return popScopeWidget;
   }
 
   /// 构建新手引导覆盖层
