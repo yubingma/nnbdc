@@ -2964,6 +2964,7 @@ class WordListPageState extends State<WordListPage>
                       ],
                     ),
                   ),
+
                     ],
                   ),
                 ),
@@ -4250,60 +4251,76 @@ class WordListPageState extends State<WordListPage>
     return Positioned(
       top: appBarHeight,
       left: 0,
-      right: 60.0, // 关键：右侧留出 60 像素的物理空白，使手势天然透传
+      right: 0, // 占满全宽
       bottom: 0,
       child: Stack(
         children: [
-          Positioned.fill(
+          // 1. 左侧手写画板区域
+          Positioned(
+            left: 0,
+            right: 60,
+            top: 0,
+            bottom: 0,
             child: Container(
-              // 为手写区域添加显著的覆盖底色
-              decoration: const BoxDecoration(
-                color: Colors.transparent,
-              ),
+              color: Colors.transparent,
               child: HandwritingBoard(
-              key: _handwritingBoardKey,
-              showHeader: false,
-              showCloseButton: false, 
-              useBoxDecoration: false,
-              showCanvasButtons: true, 
-              enableNavigationGestures: false,
-              smartRightZoneWidth: 0, // 外部已留白，内部不再需要逻辑感应区
-              onRecognized: (text) {
-                final targetWord = activeWord;
-                if (targetWord != null) { 
+                key: _handwritingBoardKey,
+                showHeader: false,
+                showCloseButton: false, 
+                useBoxDecoration: false,
+                showCanvasButtons: true, 
+                enableNavigationGestures: false,
+                smartRightZoneWidth: 0, 
+                onRecognized: (text) {
+                  final targetWord = activeWord;
+                  if (targetWord != null) { 
+                    setState(() {
+                      targetWord.spellController.text = text;
+                      
+                      // 模糊匹配逻辑：忽略空格和连字符，提升手写容错率
+                      final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
+                      final String normalizedInput = text.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
+                      
+                      if (normalizedTarget == normalizedInput) {
+                         WidgetsBinding.instance.addPostFrameCallback((_) async {
+                           try {
+                             await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
+                           } catch (e) {
+                             // Ignore errors
+                           }
+                           jumpToNextWord(bookmarkedIndex, false, () {});
+                         });
+                      }
+                    });
+                  }
+                },
+                onSwipeUp: () => jumpToNextWord(bookmarkedIndex, true, () {}),
+                onSwipeDown: () => jumpToPreviousWord(bookmarkedIndex, true),
+                onCancel: () {
                   setState(() {
-                    targetWord.spellController.text = text;
-                    
-                    // 模糊匹配逻辑：忽略空格和连字符，提升手写容错率
-                    final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
-                    final String normalizedInput = text.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
-                    
-                    if (normalizedTarget == normalizedInput) {
-                       WidgetsBinding.instance.addPostFrameCallback((_) async {
-                         try {
-                           await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
-                         } catch (e) {
-                           // Ignore errors
-                         }
-                         jumpToNextWord(bookmarkedIndex, false, () {});
-                       });
-                    }
+                    _isHandwritingOverlayOpen = false;
                   });
-                }
-              },
-              onSwipeUp: () => jumpToNextWord(bookmarkedIndex, true, () {}),
-              onSwipeDown: () => jumpToPreviousWord(bookmarkedIndex, true),
-              onCancel: () {
-                setState(() {
-                  _isHandwritingOverlayOpen = false;
-                });
-              },
+                },
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+
+          // 2. 右侧 60 像素的穿透引导视觉装饰层
+          // 2. 右侧 60 像素的物理通道分隔虚线
+          Positioned(
+            right: 59,
+            top: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Container(
+                width: 1,
+                color: isDarkMode ? Colors.white12 : Colors.black12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
