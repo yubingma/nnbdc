@@ -4368,14 +4368,21 @@ class WordListPageState extends State<WordListPage>
                            } catch (e) {
                              // Ignore errors
                            }
+                           _handwritingBoardKey.currentState?.clearBoardSilently();
                            jumpToNextWord(bookmarkedIndex, false, () {});
                          });
                       }
                     });
                   }
                 },
-                onSwipeUp: () => jumpToNextWord(bookmarkedIndex, true, () {}),
-                onSwipeDown: () => jumpToPreviousWord(bookmarkedIndex, true),
+                onSwipeUp: () {
+                  _handwritingBoardKey.currentState?.clearBoardSilently();
+                  jumpToNextWord(bookmarkedIndex, true, () {});
+                },
+                onSwipeDown: () {
+                  _handwritingBoardKey.currentState?.clearBoardSilently();
+                  jumpToPreviousWord(bookmarkedIndex, true);
+                },
                 onCancel: () {
                   setState(() {
                     _isHandwritingOverlayOpen = false;
