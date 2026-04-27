@@ -191,9 +191,12 @@ public class DictImportController {
                 try (BufferedReader reader = new BufferedReader(new FileReader(txtFile))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        if (line.trim().isEmpty()) continue;
-                        words.add(line.trim());
+                        String trimmed = line.trim();
+                        if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+                        words.add(trimmed);
                     }
+
+
                 }
 
                 // 构造每个任务的 config JSON

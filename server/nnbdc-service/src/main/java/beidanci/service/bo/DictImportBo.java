@@ -462,16 +462,43 @@ public class DictImportBo {
             word.setBritishPronounce(lastAiResult.phonetic);
             word.setAmericaPronounce(lastAiResult.phonetic);
             word.setPronounce(lastAiResult.phonetic);
-            wordBo.createEntity(word);
-            stats.addedWordCount++;
-            stats.addedAudioCount++; // 统计单词发音资源
+            
+            try {
+                wordBo.createEntity(word);
+                stats.addedWordCount++;
+                stats.addedAudioCount++; // 统计单词发音资源
 
-            // 新增单词全局可见，必须为客户端插入一条系统同步日志
-            WordDto wordDto = new WordDto();
-            org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
-            sysDbSyncBo.logOperation(wordDto, "INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
-            stats.addSyncLog("INSERT", "word");
+                // 新增单词全局可见，必须为客户端插入一条系统同步日志
+                WordDto wordDto = new WordDto();
+                org.springframework.beans.BeanUtils.copyProperties(word, wordDto);
+                sysDbSyncBo.logOperation(wordDto, "INSERT", "word", word.getId(), JsonUtils.toJson(wordDto));
+                stats.addSyncLog("INSERT", "word");
+            } catch (Exception e) {
+                // 可能是由于并发竞态冲突（唯一约束异常）
+                Throwable cause = e;
+                boolean isDup = false;
+                while (cause != null) {
+                    if (cause.toString().contains("duplicate key") || 
+                        cause.toString().contains("DuplicateKey") || 
+                        cause.toString().contains("unique constraint")) {
+                        isDup = true;
+                        break;
+                    }
+                    cause = cause.getCause();
+                }
+                
+                if (isDup) {
+                    logger.info("检测到并发导入冲突，单词 [" + spell + "] 刚才已被其它任务线程写入，执行降级查询。");
+                    word = wordBo.getWordBySpell(spell);
+                    if (word == null) {
+                        throw e;
+                    }
+                } else {
+                    throw e;
+                }
+            }
         }
+
 
         if (word == null) {
             throw new RuntimeException("无法获取或创建单词对象: " + spell);
