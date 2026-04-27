@@ -191,20 +191,21 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
                 color: Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: tasks.length,
-                itemBuilder: (context, idx) {
-                  final task = tasks[idx];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Text(
-                      '• ${task['dictName'] ?? task['fileName'] ?? '未命名词书'}',
-                      style: const TextStyle(fontSize: 12, color: Colors.black87),
-                    ),
-                  );
-                },
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: tasks.map<Widget>((task) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        '• ${task['dictName'] ?? task['fileName'] ?? '未命名词书'}',
+                        style: const TextStyle(fontSize: 12, color: Colors.black87),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
+
             ),
           ],
         ),
