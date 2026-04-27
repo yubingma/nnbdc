@@ -2974,23 +2974,33 @@ class WordListPageState extends State<WordListPage>
                         // 1. 记录上一个具有焦点的单词位置
                         final curr = getBookMarkUiPosition();
 
-                        // 2. 纯内存状态同步：引发无感极速 UI 响应（避开数据库阻塞）
+                        // 2. 瞬间仅更新临时高亮（避开重载手写板，实现真正零延迟反馈）
                         setState(() {
-                          bookMark = BookMarkVo(baseIndex! + i, word.word.spell);
-                          word.hintLetterCount = 0;
-                          word.spellController.text = '';
-                          word.isAnswerProvidedBySystem = false;
-                          canLeaveCurrWord = false;
+                          _tempHandwritingSelectedIndex = i;
                         });
 
-                        // 3. 异步持久化书签到 SQLite（在微任务中静默执行）
+                        // 3. 将真正的换词与手写板重建推到第二帧处理
                         Future.microtask(() {
+                          if (!mounted) return;
+                          
+                          setState(() {
+                            bookMark = BookMarkVo(baseIndex! + i, word.word.spell);
+                            word.hintLetterCount = 0;
+                            word.spellController.text = '';
+                            word.isAnswerProvidedBySystem = false;
+                            canLeaveCurrWord = false;
+                            
+                            // 此时重置临时高亮
+                            _tempHandwritingSelectedIndex = null;
+                          });
+
+                          // 4. 异步落库保存
                           try {
                             args.bookMarkProvider.saveBookMark(bookMark!);
                           } catch (_) {}
                         });
 
-                        // 4. 异步播放上一个单词的发音
+                        // 5. 异步播放上一个单词的发音
                         if (curr >= 0 && curr != i && curr < words.length) {
                           try {
                             SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
