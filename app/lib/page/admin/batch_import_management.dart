@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+
 import 'package:nnbdc/util/toast_util.dart';
 
 class BatchImportManagementPage extends StatefulWidget {
@@ -46,16 +48,17 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       if (res.success && res.data != null) {
         if (mounted) {
           setState(() {
-            _batches = res.data as Map<String, dynamic>;
+            _batches = res.data!.data;
           });
         }
-
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('获取批次异常', error: e, stackTrace: stack);
       if (!silent) {
         ToastUtil.error('获取批次失败: $e');
       }
-    } finally {
+    }
+ finally {
       if (mounted && !silent) {
         setState(() { _isLoading = false; });
       }
@@ -78,9 +81,11 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       } else {
         ToastUtil.error(res.msg ?? '未知错误');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('批量导入提交异常', error: e, stackTrace: stack);
       ToastUtil.error('提交失败: $e');
-    } finally {
+    }
+ finally {
       if (mounted) {
         setState(() { _isSubmitting = false; });
       }
@@ -119,9 +124,11 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       } else {
         ToastUtil.error(res.msg ?? '未知错误');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('删除批次异常', error: e, stackTrace: stack);
       ToastUtil.error('删除异常: $e');
     }
+
 
   }
 
