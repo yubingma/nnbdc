@@ -316,13 +316,10 @@ public class DictImportController {
                     if (batchId.equals(bId)) {
                         String dictId = (String) cfgMap.get("dictId");
                         if (dictId != null && !dictId.trim().isEmpty()) {
-                            try {
-                                dictBo.deleteSystemDictSafely(dictId);
-                                dictDeletedCount++;
-                            } catch (Exception e) {
-                                // 忽略可能已被删除的情况
-                            }
+                            dictBo.deleteSystemDictSafely(dictId);
+                            dictDeletedCount++;
                         }
+
                         
                         jdbcTemplate.update("DELETE FROM import_task WHERE id = ?", row.get("id"));
                         taskDeletedCount++;
