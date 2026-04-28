@@ -151,8 +151,8 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
           
           // 只打包 TXT 和 meta.json
           if (ext == '.txt' || name == 'meta.json') {
-            // 在 zip 中的相对路径
-            final relativePath = p.relative(entity.path, from: sourceDir.path);
+            // 在 zip 中的相对路径（拼接上目录名，以满足后端唯一子目录透传机制）
+            final relativePath = p.join(p.basename(sourceDir.path), p.relative(entity.path, from: sourceDir.path));
             encoder.addFile(entity, relativePath);
           }
         }
