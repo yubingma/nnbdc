@@ -1015,8 +1015,25 @@ public class DictImportBo {
             userPrompt.append("\nReturn in this exact JSON format: {\"phonetic\": \"/xxx/\", \"popularity\": " + Constants.DEFAULT_POPULARITY_LIMIT + ", \"meanings\": [{\"pos\": \"n.\", \"meaning\": \"...\", \"sentenceEn\": \"...\", \"sentenceCn\": \"...\", \"synonyms\": [\"syn1\", \"syn2\"]}], \"imagePrompts\": [\"...\"]}.");
         }
 
-        String rawOutput = aiBo.generateText(systemPrompt, userPrompt.toString());
-        Map<String, Object> map = JsonUtils.parseAiMap(rawOutput);
+        Map<String, Object> map = null;
+        for (int retry = 1; retry <= 3; retry++) {
+            try {
+                String rawOutput = aiBo.generateText(systemPrompt, userPrompt.toString());
+                map = JsonUtils.parseAiMap(rawOutput);
+                break;
+            } catch (Exception e) {
+                logger.warn(String.format("AI 单词数据获取或解析失败 [单词: %s]，正在进行第 %d 次重试...", spell, retry), e);
+                if (retry == 3) {
+                    throw e;
+                }
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("任务在重试等待中被强行打断", ie);
+                }
+            }
+        }
         
         AiResult res = new AiResult();
         res.phonetic = (String) map.get("phonetic");
