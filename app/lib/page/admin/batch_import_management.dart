@@ -132,34 +132,48 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       ToastUtil.error('目录不存在或无权访问: $dirPath');
       return;
     }
-
     setState(() { _isSubmitting = true; });
     
     File? tempZipFile;
     try {
-      // 1. 过滤 & 打包
-      final encoder = ZipFileEncoder();
       final tempDir = await getTemporaryDirectory();
       final zipPath = p.join(tempDir.path, 'dict_batch_${DateTime.now().millisecondsSinceEpoch}.zip');
-      encoder.create(zipPath);
 
-      // 递归扫描目录
-      int packCount = 0;
-      await for (final entity in sourceDir.list(recursive: true, followLinks: false)) {
-        if (entity is File) {
-          final ext = p.extension(entity.path).toLowerCase();
-          
-          // 白名单模式：只打包 TXT 词书以及 JSON 配置文件
-          if (ext == '.txt' || ext == '.json') {
-            final relativePath = p.relative(entity.path, from: sourceDir.path);
-            encoder.addFile(entity, relativePath);
-            packCount++;
-            Global.logger.i('【打包上传】装载文件: ${entity.path} -> ZIP路径: $relativePath');
+      if (Platform.isMacOS || Platform.isLinux) {
+        // Mac/Linux 原生 zip 命令，能完美兼容中文文件名
+        Global.logger.i('【打包上传】采用系统原生 zip 打包中...');
+        final processRes = await Process.run(
+          'zip',
+          ['-r', zipPath, '.', '-x', '*.pdf', '-x', '*.zip'],
+          workingDirectory: sourceDir.path,
+        );
+        if (processRes.exitCode != 0) {
+          throw Exception('系统 zip 命令执行失败: ${processRes.stderr}');
+        }
+        Global.logger.i('【打包上传】原生 zip 完成');
+      } else {
+        // 1. 过滤 & 打包
+        final encoder = ZipFileEncoder();
+        encoder.create(zipPath);
+
+        // 递归扫描目录
+        int packCount = 0;
+        await for (final entity in sourceDir.list(recursive: true, followLinks: false)) {
+          if (entity is File) {
+            final ext = p.extension(entity.path).toLowerCase();
+            
+            // 白名单模式：只打包 TXT 词书以及 JSON 配置文件
+            if (ext == '.txt' || ext == '.json') {
+              final relativePath = p.relative(entity.path, from: sourceDir.path);
+              encoder.addFile(entity, relativePath);
+              packCount++;
+              Global.logger.i('【打包上传】装载文件: ${entity.path} -> ZIP路径: $relativePath');
+            }
           }
         }
+        encoder.close();
+        Global.logger.i('【打包上传】完成，共归档 $packCount 个有效项');
       }
-      encoder.close();
-      Global.logger.i('【打包上传】完成，共归档 $packCount 个有效项');
 
       tempZipFile = File(zipPath);
       if (!await tempZipFile.exists() || await tempZipFile.length() == 0) {
