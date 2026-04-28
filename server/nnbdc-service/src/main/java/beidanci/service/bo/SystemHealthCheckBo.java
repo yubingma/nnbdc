@@ -232,9 +232,11 @@ public class SystemHealthCheckBo {
             // 检查是否有释义项
             List<String> wordsWithoutMeanings = meaningItemBo.findWordsWithoutMeanings(commonDictId);
             for (String wordId : wordsWithoutMeanings) {
+                Word word = wordBo.findById(wordId);
+                String wordDesc = (word != null && word.getSpell() != null) ? word.getSpell() : wordId;
                 issues.add(new SystemHealthIssue(
                     "通用词典不完整",
-                    "单词 " + wordId + " 缺少释义项",
+                    "单词 " + wordDesc + " 缺少释义项",
                     "common_dict_integrity"
                 ));
             }
@@ -968,25 +970,92 @@ public class SystemHealthCheckBo {
         List<String> wordsWithoutMeanings = meaningItemBo.findWordsWithoutMeanings(commonDictId);
         if (wordsWithoutMeanings != null && !wordsWithoutMeanings.isEmpty()) {
             List<MeaningItemDto> candidates = meaningItemBo.getOneMeaningPerWordFromAnyDict(wordsWithoutMeanings);
+            Set<String> fixedByCopy = new HashSet<>();
             int fixedMeaningCount = 0;
-            for (MeaningItemDto mDto : candidates) {
-                try {
-                    // 拷贝并修改为 0 库属性，生成新 ID 以确保主键不冲突 (源 ID 可能是共享的但 0 库需要物理实体)
-                    String newId = Util.uuid();
-                    mDto.setId(newId);
-                    mDto.setDictId(commonDictId);
-                    mDto.setOwnerId(Constants.SYS_USER_SYS_ID);
-                    mDto.setCreateTime(new java.util.Date());
-                    mDto.setUpdateTime(new java.util.Date());
-                    
-                    meaningItemBo.createMeaningItem(mDto);
-                    sysDbSyncBo.logOperation("INSERT", "meaning_item", newId, JsonUtils.toJson(mDto));
-                    fixedMeaningCount++;
-                } catch (Exception ignore) {}
+            if (candidates != null) {
+                for (MeaningItemDto mDto : candidates) {
+                    try {
+                        String newId = Util.uuid();
+                        mDto.setId(newId);
+                        mDto.setDictId(commonDictId);
+                        mDto.setOwnerId(Constants.SYS_USER_SYS_ID);
+                        mDto.setCreateTime(new java.util.Date());
+                        mDto.setUpdateTime(new java.util.Date());
+                        
+                        meaningItemBo.createMeaningItem(mDto);
+                        sysDbSyncBo.logOperation("INSERT", "meaning_item", newId, JsonUtils.toJson(mDto));
+                        fixedMeaningCount++;
+                        fixedByCopy.add(mDto.getWordId());
+                    } catch (Exception ignore) {}
+                }
             }
             if (fixedMeaningCount > 0) {
                 fixed.add(String.format("成功为 %d 个单词补全了通用词典 0 库释义（从其他词典拷贝）。", fixedMeaningCount));
                 totalFixed += fixedMeaningCount;
+            }
+
+            // 2. 针对无法从外部拷贝释义的单词，排查是脏数据还是纯孤立单词
+            int aiFixedCount = 0;
+            int cleanedCount = 0;
+            for (String wordId : wordsWithoutMeanings) {
+                if (fixedByCopy.contains(wordId)) continue;
+                
+                Word word = wordBo.findById(wordId);
+                // 场景 A: 这是一个孤儿“脏数据”（Word 表中根本不存在此单词）
+                if (word == null || word.getSpell() == null || word.getSpell().trim().isEmpty()) {
+                    try {
+                        String deleteSql = "DELETE FROM dict_word WHERE dict_id = :dictId AND word_id = :wordId";
+                        MapSqlParameterSource delParams = new MapSqlParameterSource();
+                        delParams.addValue("dictId", commonDictId);
+                        delParams.addValue("wordId", wordId);
+                        namedParameterJdbcTemplate.update(deleteSql, delParams);
+                        cleanedCount++;
+                    } catch (Exception ignore) {}
+                    continue;
+                }
+                
+                // 场景 B: 存在拼写，但所有地方都缺少释义 -> 动用 AI
+                try {
+                    String spell = word.getSpell();
+                    String systemPrompt = "你是一个专业的词典编撰者。请为指定的英文单词生成一段中文释义和该释义对应的词性。严格只返回 JSON 对象，格式为：{\"ciXing\": \"n./v./adj.等\", \"meaning\": \"中文释义\"}。不要包含任何 markdown 格式标记或其他多余文字！";
+                    String promptText = "单词：[" + spell + "]";
+                    String rawOutput = aiBo.generateText(systemPrompt, promptText);
+                    
+                    if (rawOutput != null) {
+                        java.util.Map<String, Object> map = JsonUtils.parseAiMap(rawOutput);
+                        if (map != null && map.containsKey("meaning")) {
+                            String ciXing = map.containsKey("ciXing") ? (String) map.get("ciXing") : "";
+                            String meaning = (String) map.get("meaning");
+                            
+                            MeaningItemDto newMeaning = new MeaningItemDto();
+                            String newId = Util.uuid();
+                            newMeaning.setId(newId);
+                            newMeaning.setWordId(wordId);
+                            newMeaning.setDictId(commonDictId);
+                            newMeaning.setCiXing(ciXing);
+                            newMeaning.setMeaning(meaning);
+                            newMeaning.setOwnerId(Constants.SYS_USER_SYS_ID);
+                            newMeaning.setPopularity(1);
+                            newMeaning.setCreateTime(new java.util.Date());
+                            newMeaning.setUpdateTime(new java.util.Date());
+                            
+                            meaningItemBo.createMeaningItem(newMeaning);
+                            sysDbSyncBo.logOperation("INSERT", "meaning_item", newId, JsonUtils.toJson(newMeaning));
+                            aiFixedCount++;
+                        }
+                    }
+                } catch (Exception e) {
+                    org.slf4j.LoggerFactory.getLogger(SystemHealthCheckBo.class).warn("通过 AI 补齐通用释义失败 wordId=" + wordId, e);
+                }
+            }
+            
+            if (cleanedCount > 0) {
+                fixed.add(String.format("成功从 0 库索引中清理了 %d 个不存在对应实体的脏数据。", cleanedCount));
+                totalFixed += cleanedCount;
+            }
+            if (aiFixedCount > 0) {
+                fixed.add(String.format("成功通过 AI 为 %d 个孤立单词生成并补全了释义项。", aiFixedCount));
+                totalFixed += aiFixedCount;
             }
         }
 

@@ -523,6 +523,10 @@ public class DictImportBo {
 
 
 
+        if (canceledTaskIds.contains(taskId)) {
+            throw new RuntimeException("Task canceled");
+        }
+
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
         String actionType = "ADDED";
@@ -727,6 +731,10 @@ public class DictImportBo {
 
 
 
+        if (canceledTaskIds.contains(taskId)) {
+            throw new RuntimeException("Task canceled");
+        }
+
         if (!isPrivateReusing) {
             boolean hasDomain = (domain != null && !domain.trim().isEmpty());
 
@@ -794,6 +802,10 @@ public class DictImportBo {
                     dictBo.updateEntity(dict);
                 }
             }
+        }
+
+        if (canceledTaskIds.contains(taskId)) {
+            throw new RuntimeException("Task canceled");
         }
 
         // ----- 生成单词卡通配图 -----

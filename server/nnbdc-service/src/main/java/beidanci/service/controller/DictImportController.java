@@ -19,6 +19,11 @@ import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import beidanci.service.util.JsonUtils;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipEntry;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 
 
 @RestController
@@ -128,11 +133,38 @@ public class DictImportController {
     }
     @SuppressWarnings("unchecked")
     @PostMapping("/batch")
-    public Result<String> batchSubmit(@RequestParam String dirPath,
+    public Result<String> batchSubmit(@RequestParam("file") MultipartFile file,
                                       @RequestParam(required = false) List<String> defaultDictGroupIds,
                                       @RequestParam(required = false) List<String> defaultGameHallIds) {
 
+        if (file == null || file.isEmpty()) {
+            return Result.fail("上传的词书包文件不能为空");
+        }
+
         String batchId = "BATCH_" + System.currentTimeMillis();
+        String dirPath = "/tmp/dict_import_" + UUID.randomUUID().toString();
+        File targetDir = new File(dirPath);
+        if (!targetDir.exists()) {
+            targetDir.mkdirs();
+        }
+
+        try {
+            unzip(file.getInputStream(), targetDir);
+        } catch (Exception e) {
+            return Result.fail("解压上传的词书压缩包失败: " + e.getMessage());
+        }
+
+        File finalDir = targetDir;
+        if (!new File(finalDir, "meta.json").exists()) {
+            File[] subDirs = targetDir.listFiles(File::isDirectory);
+            if (subDirs != null && subDirs.length == 1) {
+                if (new File(subDirs[0], "meta.json").exists()) {
+                    finalDir = subDirs[0];
+                }
+            }
+        }
+        dirPath = finalDir.getAbsolutePath();
+
         try {
             File metaFile = new File(dirPath, "meta.json");
 
@@ -389,15 +421,17 @@ public class DictImportController {
             }
 
             if (!targetTaskIds.isEmpty()) {
-                // 循环死等：直到当前批次下所有任务均不处于 'RUNNING' 状态
+                // 循环死等：直到当前批次下所有任务的物理线程全部退出
                 while (true) {
-                    String inSql = String.join(",", targetTaskIds.stream().map(id -> "'" + id + "'").collect(java.util.stream.Collectors.toList()));
-                    String countRunningSql = "SELECT count(*) FROM import_task WHERE id IN (" + inSql + ") AND status = 'RUNNING'";
-                    Integer runningCount = jdbcTemplate.queryForObject(countRunningSql, Integer.class);
-
-                    
-                    if (runningCount == null || runningCount == 0) {
-                        break; // 0 个在真正干活，意味着后台游魂彻底收网！
+                    boolean anyRunning = false;
+                    for (String tId : targetTaskIds) {
+                        if (beidanci.service.bo.DictImportBo.runningTaskIds.contains(tId)) {
+                            anyRunning = true;
+                            break;
+                        }
+                    }
+                    if (!anyRunning) {
+                        break; // 所有物理线程彻底收网退出！
                     }
                     Thread.sleep(1000); 
                 }
@@ -420,6 +454,31 @@ public class DictImportController {
 
 
 
+
+    private void unzip(InputStream is, File targetDir) throws Exception {
+        try (ZipInputStream zis = new ZipInputStream(is)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                File file = new File(targetDir, entry.getName());
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    File parent = file.getParentFile();
+                    if (parent != null && !parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        byte[] buffer = new byte[4096];
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+                zis.closeEntry();
+            }
+        }
+    }
 
     public static class ImportRequest {
         private String ownerId;
