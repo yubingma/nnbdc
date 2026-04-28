@@ -22,7 +22,6 @@ import beidanci.api.model.WordDto;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
 import beidanci.service.po.DictWordId;
-import beidanci.service.po.GameHall;
 import beidanci.service.po.ImportTask;
 import beidanci.service.po.MeaningItem;
 import beidanci.service.po.Sentence;
@@ -92,8 +91,6 @@ public class DictImportBo {
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    @Autowired
-    private GameHallBo gameHallBo;
 
     public static final java.util.concurrent.ThreadPoolExecutor importThreadPool = 
         new java.util.concurrent.ThreadPoolExecutor(
@@ -317,7 +314,6 @@ public class DictImportBo {
             // 处理词书与分组及大厅的直接绑定
             if (isSystemImport && dictId != null) {
                 String targetDictGroupId = (String) config.get("targetDictGroupId");
-                List<?> rawGameHallIds = (List<?>) config.get("targetGameHallIds");
                 
                 if (targetDictGroupId != null && !targetDictGroupId.trim().isEmpty()) {
                     linkDictToGroup(dictId, targetDictGroupId);
@@ -335,19 +331,7 @@ public class DictImportBo {
                     }
                 }
                 
-                if (rawGameHallIds != null && !rawGameHallIds.isEmpty()) {
-                    for (Object idObj : rawGameHallIds) {
-                        if (idObj instanceof String) {
-                            String targetGameHallId = (String) idObj;
-                            if (!targetGameHallId.trim().isEmpty()) {
-                                GameHall hall = gameHallBo.findById(targetGameHallId);
-                                if (hall != null && hall.getDictGroup() != null) {
-                                    linkDictToGroup(dictId, hall.getDictGroup().getId());
-                                }
-                            }
-                        }
-                    }
-                }
+
                 
                 if (generateShuffledVersion) {
                     String shuffledDictName = dictBo.findById(dictId).getName() + " (乱序版)";
