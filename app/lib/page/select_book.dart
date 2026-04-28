@@ -168,9 +168,20 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             vo.shortName = getShortName(dict.name);
             vo.wordCount = dict.wordCount;
             vo.visible = true;
+            vo.updateTime = dict.updateTime;
             results.add(vo);
           }
         }
+        results.sort((a, b) {
+          if (a.updateTime == null && b.updateTime == null) {
+            return (a.name ?? '').compareTo(b.name ?? '');
+          }
+          if (a.updateTime == null) return 1;
+          if (b.updateTime == null) return -1;
+          int cmp = b.updateTime!.compareTo(a.updateTime!);
+          if (cmp != 0) return cmp;
+          return (a.name ?? '').compareTo(b.name ?? '');
+        });
         return results;
       }
 
@@ -251,6 +262,16 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       }
 
       customDicts = (await WordBo().getCustomDicts(userId)).where((d) => d.name != '已掌握').toList();
+      customDicts!.sort((a, b) {
+        if (a.updateTime == null && b.updateTime == null) {
+          return (a.name ?? '').compareTo(b.name ?? '');
+        }
+        if (a.updateTime == null) return 1;
+        if (b.updateTime == null) return -1;
+        int cmp = b.updateTime!.compareTo(a.updateTime!);
+        if (cmp != 0) return cmp;
+        return (a.name ?? '').compareTo(b.name ?? '');
+      });
 
       if (!keepSelection) {
         selectedDictVos = learningDicts.map((e) {
