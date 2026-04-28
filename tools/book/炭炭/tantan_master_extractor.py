@@ -31,6 +31,7 @@ def extract_pdf(pdf_path, output_path):
     map_type = detect_mapping(doc)
     replacements = MAPPINGS[map_type]
     replacements['\xe9'] = 'e'
+    replacements['\x02'] = 'Th'
     
     raw_entries = []
     max_seq_num = 0
