@@ -144,20 +144,22 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       encoder.create(zipPath);
 
       // 递归扫描目录
+      int packCount = 0;
       await for (final entity in sourceDir.list(recursive: true, followLinks: false)) {
         if (entity is File) {
           final ext = p.extension(entity.path).toLowerCase();
-          final name = p.basename(entity.path).toLowerCase();
           
-          // 只打包 TXT 和 meta.json
-          if (ext == '.txt' || name == 'meta.json') {
-            // 在 zip 中的相对路径（拼接上目录名，以满足后端唯一子目录透传机制）
+          // 白名单模式：只打包 TXT 词书以及 JSON 配置文件
+          if (ext == '.txt' || ext == '.json') {
             final relativePath = p.join(p.basename(sourceDir.path), p.relative(entity.path, from: sourceDir.path));
             encoder.addFile(entity, relativePath);
+            packCount++;
+            Global.logger.i('【打包上传】装载文件: ${entity.path} -> ZIP路径: $relativePath');
           }
         }
       }
       encoder.close();
+      Global.logger.i('【打包上传】完成，共归档 $packCount 个有效项');
 
       tempZipFile = File(zipPath);
       if (!await tempZipFile.exists() || await tempZipFile.length() == 0) {
