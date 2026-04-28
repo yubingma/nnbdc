@@ -149,14 +149,10 @@ public class DictImportController {
             targetDir.mkdirs();
         }
 
-        File zipFile = new File(targetDir, "upload.zip");
         try {
-            file.transferTo(zipFile);
-            try (FileInputStream fis = new FileInputStream(zipFile)) {
-                unzip(fis, targetDir);
-            }
+            unzip(file.getInputStream(), targetDir);
         } catch (Exception e) {
-            return Result.fail("保存或解压上传的词书压缩包失败: " + e.getMessage());
+            return Result.fail("解压上传的词书压缩包失败: " + e.getMessage());
         }
 
         File finalDir = targetDir;

@@ -524,7 +524,7 @@ public class DictImportBo {
 
 
         if (canceledTaskIds.contains(taskId)) {
-            throw new RuntimeException("Task canceled");
+            return;
         }
 
         Word word = wordBo.getWordBySpell(spell);
@@ -732,7 +732,7 @@ public class DictImportBo {
 
 
         if (canceledTaskIds.contains(taskId)) {
-            throw new RuntimeException("Task canceled");
+            return;
         }
 
         if (!isPrivateReusing) {
@@ -805,7 +805,7 @@ public class DictImportBo {
         }
 
         if (canceledTaskIds.contains(taskId)) {
-            throw new RuntimeException("Task canceled");
+            return;
         }
 
         // ----- 生成单词卡通配图 -----

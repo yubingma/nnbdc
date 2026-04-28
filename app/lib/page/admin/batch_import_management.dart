@@ -144,7 +144,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
         Global.logger.i('【打包上传】采用系统原生 zip 打包中...');
         final processRes = await Process.run(
           'zip',
-          ['-r', zipPath, '.', '-x', '*.pdf', '-x', '*.zip'],
+          ['-r', zipPath, '.', '-i', '*.txt', '-i', 'meta.json'],
           workingDirectory: sourceDir.path,
         );
         if (processRes.exitCode != 0) {
@@ -162,8 +162,8 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
           if (entity is File) {
             final ext = p.extension(entity.path).toLowerCase();
             
-            // 白名单模式：只打包 TXT 词书以及 JSON 配置文件
-            if (ext == '.txt' || ext == '.json') {
+            // 白名单模式：只打包 TXT 词书以及名为 meta.json 的配置文件
+            if (ext == '.txt' || p.basename(entity.path).toLowerCase() == 'meta.json') {
               final relativePath = p.relative(entity.path, from: sourceDir.path);
               encoder.addFile(entity, relativePath);
               packCount++;
@@ -189,7 +189,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       );
 
       if (res.success) {
-        ToastUtil.success('${res.data ?? '任务提交成功'}\n本地 ZIP 已保留: $zipPath');
+        ToastUtil.success(res.data ?? '任务提交成功');
         setState(() {
           _dirPathCtrl.clear();
         });
@@ -203,8 +203,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     } finally {
       try {
         if (tempZipFile != null && await tempZipFile.exists()) {
-          // 调试期间不删：await tempZipFile.delete();
-          Global.logger.i('【调试】本地 ZIP 已保留: ${tempZipFile.path}');
+          await tempZipFile.delete();
         }
       } catch (_) {}
       
