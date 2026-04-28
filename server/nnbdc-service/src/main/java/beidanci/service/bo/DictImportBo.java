@@ -102,6 +102,8 @@ public class DictImportBo {
     public static final java.util.Set<String> runningTaskIds = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
     public static final java.util.Set<String> canceledTaskIds = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
 
+    private static final Object commonDictLock = new Object();
+
     /**
      * 异步执行导入任务
      *
@@ -576,64 +578,70 @@ public class DictImportBo {
             }
         }
 
-
         if (word == null) {
             throw new RuntimeException("无法获取或创建单词对象: " + spell);
         }
 
-        // 无论单词是刚创建的还是已存在的，都必须确保它被通用兜底词书（ID="0"）收录，以免触发数据不一致健康警告
-        DictWord dw0Check = dictWordBo.findById(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
-        if (dw0Check == null) {
-            DictWord dw0 = new DictWord();
-            dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
-            Dict commonDict = new Dict();
-            commonDict.setId(Constants.COMMON_DICT_ID);
-            dw0.setDict(commonDict);
-            dw0.setWord(word);
-            dw0.setSeq(dictWordBo.getMaxSeqNo(commonDict) + 1);
-            dw0.setCreateTime(new Date());
-            
-            // 使用 try-catch 忽略数据库层面的触发器唯一键冲突
-            try {
-                dictWordBo.createEntity(dw0);
-            } catch (Exception ignore) {
+        synchronized (commonDictLock) {
+            // 无论单词是刚创建的还是已存在的，都必须确保它被通用兜底词书（ID="0"）收录，以免触发数据不一致健康警告
+            DictWord dw0Check = dictWordBo.findById(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
+            if (dw0Check == null) {
+                DictWord dw0 = new DictWord();
+                dw0.setId(new beidanci.service.po.DictWordId(Constants.COMMON_DICT_ID, word.getId()));
+                Dict commonDict = new Dict();
+                commonDict.setId(Constants.COMMON_DICT_ID);
+                dw0.setDict(commonDict);
+                dw0.setWord(word);
+                dw0.setSeq(dictWordBo.getMaxSeqNo(commonDict) + 1);
+                dw0.setCreateTime(new Date());
+                
+                // 使用 try-catch 忽略数据库层面的触发器唯一键冲突
+                try {
+                    dictWordBo.createEntity(dw0);
+                } catch (Exception ignore) {
+                }
+
+                // 必须为客户端插入一条系统同步日志，否则客户端不会拉取这条 dict_word ！
+                beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
+                dwDto.setDictId(Constants.COMMON_DICT_ID);
+                dwDto.setWordId(word.getId());
+                dwDto.setSeq(dw0.getSeq());
+                dwDto.setUnit(0);
+                dwDto.setCreateTime(dw0.getCreateTime());
+                sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
+                stats.addSyncLog("INSERT", "dict_word");
+
+                // 更新 "0" 词书的 wordCount
+                Dict dict0 = dictBo.findById(Constants.COMMON_DICT_ID);
+                if (dict0 != null) {
+                    dict0.setWordCount(dict0.getWordCount() + 1);
+                    dictBo.updateEntity(dict0);
+                } else {
+                    // 回退查找，防止在未提交事务中为空
+                    dict0 = new Dict();
+                    dict0.setId(Constants.COMMON_DICT_ID);
+                    dict0.setWordCount(dictWordBo.getMaxSeqNo(commonDict)); // fallback
+                }
             }
+        }
 
-            // 必须为客户端插入一条系统同步日志，否则客户端不会拉取这条 dict_word ！
-            beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
-            dwDto.setDictId(Constants.COMMON_DICT_ID);
-            dwDto.setWordId(word.getId());
-            dwDto.setSeq(dw0.getSeq());
-            dwDto.setUnit(0);
-            dwDto.setCreateTime(dw0.getCreateTime());
-            sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
-            stats.addSyncLog("INSERT", "dict_word");
 
-            // 更新 "0" 词书的 wordCount
+            // 同样必须同步 dict 表的变更
             Dict dict0 = dictBo.findById(Constants.COMMON_DICT_ID);
             if (dict0 != null) {
-                dict0.setWordCount(dict0.getWordCount() + 1);
-                dictBo.updateEntity(dict0);
-            } else {
-                // 回退查找，防止在未提交事务中为空
-                dict0 = new Dict();
-                dict0.setId(Constants.COMMON_DICT_ID);
-                dict0.setWordCount(dictWordBo.getMaxSeqNo(commonDict)); // fallback
+                if (dict0.getOwner() == null) {
+                    User sysUser = new User();
+                    sysUser.setId(Constants.SYS_USER_SYS_ID);
+                    dict0.setOwner(sysUser);
+                }
+                if (dict0.getName() == null) {
+                    dict0.setName("通用词典.dict");
+                }
+                // 已移除：sysDbSyncBo.logOperation(dict0, "UPDATE", "dict", Constants.COMMON_DICT_ID, ...)
+                // 为了减少日志量，通用词库的 UPDATE 日志已移至 executeImportTask 任务结束时统一记录一次
+                stats.addSyncLog("UPDATE", "dict");
             }
-            
-            // 同样必须同步 dict 表的变更
-            if (dict0.getOwner() == null) {
-                User sysUser = new User();
-                sysUser.setId(Constants.SYS_USER_SYS_ID);
-                dict0.setOwner(sysUser);
-            }
-            if (dict0.getName() == null) {
-                dict0.setName("通用词典.dict");
-            }
-            // 已移除：sysDbSyncBo.logOperation(dict0, "UPDATE", "dict", Constants.COMMON_DICT_ID, ...)
-            // 为了减少日志量，通用词库的 UPDATE 日志已移至 executeImportTask 任务结束时统一记录一次
-            stats.addSyncLog("UPDATE", "dict");
-        }
+
 
         List<MeaningItemDto> existingMeaningsInDict = meaningItemBo.findMeaningsByWordAndDict(word.getId(), dictId);
         boolean isPrivateReusing = false;
