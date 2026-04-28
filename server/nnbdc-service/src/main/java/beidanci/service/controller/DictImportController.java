@@ -377,7 +377,38 @@ public class DictImportController {
                 } catch (Exception ignore) {}
             }
 
-            return Result.success("终止指令已成功下发，批次 " + batchId + " 内的 " + canceledCount + " 个任务正在平息退出。");
+            // 2. 铁腕死等：提取该批次的所有 taskId
+            List<String> targetTaskIds = new ArrayList<>();
+            for (Map<String, Object> row : rows) {
+                String config = (String) row.get("config");
+                if (config == null || config.trim().isEmpty()) continue;
+                try {
+                    Map<String, Object> cfgMap = JsonUtils.parseMap(config);
+                    String bId = (String) cfgMap.get("batchId");
+                    if (batchId.equals(bId)) {
+                        targetTaskIds.add((String) row.get("id"));
+                    }
+                } catch (Exception ignore) {}
+            }
+
+            // 循环死等，绝无遗漏
+            while (true) {
+                boolean allDone = true;
+                for (String tId : targetTaskIds) {
+                    if (beidanci.service.bo.DictImportBo.canceledTaskIds.contains(tId) || 
+                        beidanci.service.bo.DictImportBo.runningTaskIds.contains(tId)) {
+                        allDone = false;
+                        break;
+                    }
+                }
+                if (allDone) {
+                    break;
+                }
+                Thread.sleep(1000); 
+            }
+
+            return Result.success("成功中止批次 " + batchId + " 内的全部后台任务。");
+
 
 
         } catch (Exception e) {

@@ -114,11 +114,22 @@ public class DictImportBo {
 
         ImportTask task = importTaskBo.findById(taskId);
         if (task == null) return;
+        
+        if (canceledTaskIds.contains(taskId) || "CANCELED".equals(task.getStatus())) {
+            runningTaskIds.remove(taskId);
+            canceledTaskIds.remove(taskId);
+            return;
+        }
+
 
         TaskStatistics stats = new TaskStatistics();
         try {
+            if (canceledTaskIds.contains(taskId)) {
+                return;
+            }
             task.setStatus("RUNNING");
             importTaskBo.updateEntity(task);
+
 
             Map<String, Object> config = JsonUtils.parseMap(task.getConfig());
             boolean isSystemImport = (boolean) config.getOrDefault("isSystemImport", false);
