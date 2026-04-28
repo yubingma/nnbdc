@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:archive/archive_io.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:nnbdc/api/api.dart';
 
 import 'package:nnbdc/global.dart';
@@ -18,7 +21,6 @@ class BatchImportManagementPage extends StatefulWidget {
 
 class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
   final TextEditingController _dirPathCtrl = TextEditingController();
-  PlatformFile? _selectedFile;
   bool _isSubmitting = false;
   Map<String, dynamic> _batches = {};
   Timer? _timer;
@@ -119,15 +121,53 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
 
 
   Future<void> _submitBatch() async {
-    if (_selectedFile == null || _selectedFile!.path == null) {
-      ToastUtil.info('请先选择需要上传的词书包 ZIP 文件');
+    final dirPath = _dirPathCtrl.text.trim();
+    if (dirPath.isEmpty) {
+      ToastUtil.info('请先选择需要导入的词书目录');
+      return;
+    }
+
+    final sourceDir = Directory(dirPath);
+    if (!await sourceDir.exists()) {
+      ToastUtil.error('目录不存在或无权访问: $dirPath');
       return;
     }
 
     setState(() { _isSubmitting = true; });
+    
+    File? tempZipFile;
     try {
+      // 1. 过滤 & 打包
+      final encoder = ZipFileEncoder();
+      final tempDir = await getTemporaryDirectory();
+      final zipPath = p.join(tempDir.path, 'dict_batch_${DateTime.now().millisecondsSinceEpoch}.zip');
+      encoder.create(zipPath);
+
+      // 递归扫描目录
+      await for (final entity in sourceDir.list(recursive: true, followLinks: false)) {
+        if (entity is File) {
+          final ext = p.extension(entity.path).toLowerCase();
+          final name = p.basename(entity.path).toLowerCase();
+          
+          // 只打包 TXT 和 meta.json
+          if (ext == '.txt' || name == 'meta.json') {
+            // 在 zip 中的相对路径
+            final relativePath = p.relative(entity.path, from: sourceDir.path);
+            encoder.addFile(entity, relativePath);
+          }
+        }
+      }
+      encoder.close();
+
+      tempZipFile = File(zipPath);
+      if (!await tempZipFile.exists() || await tempZipFile.length() == 0) {
+        ToastUtil.error('未在目录下发现有效的 TXT 或 meta.json 文件');
+        return;
+      }
+
+      // 2. 发送上传请求
       final res = await Api.client.submitBatchImportTask(
-        File(_selectedFile!.path!),
+        tempZipFile,
         _selectedGroupIds.isEmpty ? null : _selectedGroupIds,
         _selectedHallIds.isEmpty ? null : _selectedHallIds,
       );
@@ -135,7 +175,6 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       if (res.success) {
         ToastUtil.success(res.data ?? '任务提交成功');
         setState(() {
-          _selectedFile = null;
           _dirPathCtrl.clear();
         });
         _loadBatches();
@@ -143,30 +182,32 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
         ToastUtil.error(res.msg ?? '未知错误');
       }
     } catch (e, stack) {
-      Global.logger.e('批量导入提交异常', error: e, stackTrace: stack);
-      ToastUtil.error('提交失败: $e');
+      Global.logger.e('批量导入打包/提交异常', error: e, stackTrace: stack);
+      ToastUtil.error('打包上传失败: $e');
     } finally {
+      try {
+        if (tempZipFile != null && await tempZipFile.exists()) {
+          await tempZipFile.delete();
+        }
+      } catch (_) {}
+      
       if (mounted) {
         setState(() { _isSubmitting = false; });
       }
     }
   }
 
-  Future<void> _pickZipFile() async {
+  Future<void> _pickDirectory() async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['zip'],
-      );
-      if (result != null && result.files.isNotEmpty) {
+      String? selectedDirectory = await FilePicker.getDirectoryPath();
+      if (selectedDirectory != null) {
         setState(() {
-          _selectedFile = result.files.first;
-          _dirPathCtrl.text = _selectedFile!.name;
+          _dirPathCtrl.text = selectedDirectory;
         });
       }
     } catch (e) {
-      Global.logger.e('选取ZIP文件失败', error: e);
-      ToastUtil.error('选取文件异常: $e');
+      Global.logger.e('选取文件夹失败', error: e);
+      ToastUtil.error('选取文件夹异常: $e');
     }
   }
 
@@ -413,13 +454,13 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
               controller: _dirPathCtrl,
               readOnly: true,
               decoration: InputDecoration(
-                labelText: '待上传的词书压缩包 (.zip)',
-                hintText: '点击右侧按钮选取 ZIP 文件',
+                labelText: '本地词书存放目录',
+                hintText: '点击右侧按钮选择包含词书文件的本地目录',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.upload_file),
-                  onPressed: _pickZipFile,
-                  tooltip: '选择ZIP包',
+                  icon: const Icon(Icons.folder_open),
+                  onPressed: _pickDirectory,
+                  tooltip: '选择词书目录',
                 ),
               ),
             ),
