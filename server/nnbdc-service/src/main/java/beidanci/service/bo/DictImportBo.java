@@ -404,10 +404,18 @@ public class DictImportBo {
             }
 
         } finally {
+            try {
+                ImportTask finalTask = importTaskBo.findById(taskId);
+                if (finalTask != null && "RUNNING".equals(finalTask.getStatus())) {
+                    finalTask.setStatus("CANCELED");
+                    importTaskBo.updateEntity(finalTask);
+                }
+            } catch (Exception ignore) {}
+            
             runningTaskIds.remove(taskId);
             canceledTaskIds.remove(taskId);
-
         }
+
         });
     }
 

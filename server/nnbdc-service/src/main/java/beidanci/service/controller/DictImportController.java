@@ -376,35 +376,40 @@ public class DictImportController {
 
             // 2. 铁腕死等：提取该批次的所有 taskId
             List<String> targetTaskIds = new ArrayList<>();
-            for (Map<String, Object> row : rows) {
-                String config = (String) row.get("config");
+            for (Map<String, Object> r : rows) {
+                String config = (String) r.get("config");
                 if (config == null || config.trim().isEmpty()) continue;
                 try {
                     Map<String, Object> cfgMap = JsonUtils.parseMap(config);
                     String bId = (String) cfgMap.get("batchId");
                     if (batchId.equals(bId)) {
-                        targetTaskIds.add((String) row.get("id"));
+                        targetTaskIds.add((String) r.get("id"));
                     }
                 } catch (Exception ignore) {}
             }
 
-            // 循环死等，绝无遗漏
-            while (true) {
-                boolean allDone = true;
-                for (String tId : targetTaskIds) {
-                    if (beidanci.service.bo.DictImportBo.canceledTaskIds.contains(tId) || 
-                        beidanci.service.bo.DictImportBo.runningTaskIds.contains(tId)) {
-                        allDone = false;
-                        break;
+            if (!targetTaskIds.isEmpty()) {
+                // 循环死等：直到当前批次下所有任务均不处于 'RUNNING' 状态
+                while (true) {
+                    String inSql = String.join(",", targetTaskIds.stream().map(id -> "'" + id + "'").collect(java.util.stream.Collectors.toList()));
+                    String countRunningSql = "SELECT count(*) FROM import_task WHERE id IN (" + inSql + ") AND status = 'RUNNING'";
+                    Integer runningCount = jdbcTemplate.queryForObject(countRunningSql, Integer.class);
+
+                    
+                    if (runningCount == null || runningCount == 0) {
+                        break; // 0 个在真正干活，意味着后台游魂彻底收网！
                     }
+                    Thread.sleep(1000); 
                 }
-                if (allDone) {
-                    break;
-                }
-                Thread.sleep(1000); 
             }
 
-            return Result.success("成功中止批次 " + batchId + " 内的全部后台任务。");
+            // 清理黑名单缓存，防止污染
+            for (String tId : targetTaskIds) {
+                beidanci.service.bo.DictImportBo.canceledTaskIds.remove(tId);
+            }
+
+            return Result.success("成功终止批次 " + batchId + " 内的全部后台任务。");
+
 
 
 
