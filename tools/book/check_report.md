@@ -71,7 +71,6 @@
 - `liberalise` -> 建议拆分: `liberal is e`
 - `centrepiece` -> 建议拆分: `centre piece`
 - `innovatively` -> 建议拆分: `innovative ly`
-- `ursday` -> 建议拆分: `urs day`
 - `policymaker` -> 建议拆分: `policy maker`
 - `kilogramme` -> 建议拆分: `kilogram me`
 - `acrylamide` -> 建议拆分: `a cry l amide`
@@ -100,7 +99,7 @@
 - `so-called` -> 建议拆分: `so called`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `academia`, `addictive`, `adventurism`, `adversarial`, `advertize`, `airbus`, `analog`, `appal`, `archeologist`, `archeology`, `arguably`, `artwork`, `banqueting`, `behavioural`, `benchmark`, `biased`, `biodegradable`, `biofuel`, `biomass`, `biomedical`, `biostatistician`, `biotech`, `biotechnology`, `blog`, `brainstorm`, `broadband`, `buzzword`, `calory`, `caregiver`, `cassette`, `centimetre`, `chairperson`, `characterise`, `childcare`, `civilisation`, `civilise`, `civilised`, `colourful`, `consultancy`, `consumerism`, `contextualize`, `coronavirus`, `cortisol`, `counsellor`, `coworker`, `criticise`, `customise`, `customize`, `cyberspace`, `deli`, `deregulate`, `despatch`, `dialog`, `digitalized`, `dishonour`, `disinfecting`, `download`, `downtime`, `elitism`, `emphasise`, `encyclopaedia`, `endorphin`, `ethnicity`, `euro`, `fantasise`, `fantasize`, `favourable`, `favourably`, `favourite`, `fertiliser`, `fibre`, `filmmaking`, `fledging`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `gasolene`, `globalization`, `globalize`, `groundbreaking`, `hardline`, `headhunter`, `headshot`, `homegrown`, `honourable`, `humourous`, `idealised`, `instal`, `instalment`, `interdisciplinary`, `jackpot`, `jewellery`, `keyword`, `kilometre`, `labourer`, `laptop`, `lifestyle`, `likeability`, `litre`, `logo`, `manoeuvre`, `marginalized`, `marvellous`, `maths`, `maximise`, `medicalize`, `mega`, `meritocracy`, `meritocratic`, `millimetre`, `mindset`, `minimise`, `mispredict`, `mobilise`, `modernise`, `moisturizer`, `multibillion`, `multitask`, `neighbour`, `neurobiology`, `neuroscientist`, `normalisation`, `odour`, `open-mindedness`, `orchestrated`, `organisation`, `organise`, `outsource`, `overjoyed`, `overreact`, `overreaction`, `paralyse`, `personalised`, `postmodern`, `practise`, `preempt`, `printout`, `prioritize`, `procedurally`, `professionalisation`, `programme`, `publicise`, `pushy`, `rarefied`, `realise`, `recognise`, `recycling`, `restructure`, `retiree`, `robotic`, `rumour`, `scrutinise`, `software`, `spammer`, `specialise`, `specialised`, `spokesperson`, `stabilise`, `standardised`, `stenciled`, `stenciling`, `storey`, `summarise`, `superstar`, `sustainability`, `symbolise`, `sympathise`, `tailwind`, `timeline`, `timescale`, `tumour`, `underused`, `unfavourable`, `unionized`, `unsustainability`, `upfront`, `upload`, `upmarket`, `utilise`, `vapour`, `visualise`, `windswept`, `wingtip`, `workaholic`, `workforce`, `workload`, `workstation`, `worshipper`
+`academia`, `addictive`, `adventurism`, `adversarial`, `advertize`, `airbus`, `analog`, `appal`, `archeologist`, `archeology`, `arguably`, `artwork`, `banqueting`, `behavioural`, `benchmark`, `biased`, `biodegradable`, `biofuel`, `biomass`, `biomedical`, `biostatistician`, `biotech`, `biotechnology`, `blog`, `brainstorm`, `broadband`, `buzzword`, `calory`, `caregiver`, `cassette`, `centimetre`, `chairperson`, `characterise`, `childcare`, `civilisation`, `civilise`, `civilised`, `colourful`, `consultancy`, `consumerism`, `contextualize`, `coronavirus`, `cortisol`, `counsellor`, `coworker`, `criticise`, `customise`, `customize`, `cyberspace`, `deli`, `deregulate`, `despatch`, `dialog`, `digitalized`, `dishonour`, `disinfecting`, `download`, `downtime`, `elitism`, `emphasise`, `encyclopaedia`, `endorphin`, `ethnicity`, `euro`, `fantasise`, `fantasize`, `favourable`, `favourably`, `favourite`, `fertiliser`, `fibre`, `filmmaking`, `fledging`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `gasolene`, `globalization`, `globalize`, `groundbreaking`, `hardline`, `headhunter`, `headshot`, `homegrown`, `honourable`, `humourous`, `idealised`, `instal`, `instalment`, `interdisciplinary`, `jackpot`, `jewellery`, `keyword`, `kilometre`, `labourer`, `laptop`, `lifestyle`, `likeability`, `litre`, `logo`, `manoeuvre`, `marginalized`, `marvellous`, `maths`, `maximise`, `medicalize`, `mega`, `meritocracy`, `meritocratic`, `millimetre`, `mindset`, `minimise`, `mispredict`, `mobilise`, `modernise`, `moisturizer`, `multibillion`, `multitask`, `neighbour`, `neurobiology`, `neuroscientist`, `normalisation`, `odour`, `open-mindedness`, `orchestrated`, `organisation`, `organise`, `outsource`, `overjoyed`, `overreact`, `overreaction`, `paralyse`, `personalised`, `postmodern`, `practise`, `preempt`, `printout`, `prioritize`, `procedurally`, `professionalisation`, `programme`, `publicise`, `pushy`, `rarefied`, `realise`, `recognise`, `recycling`, `restructure`, `retiree`, `robotic`, `rumour`, `scrutinise`, `software`, `spammer`, `specialise`, `specialised`, `spokesperson`, `stabilise`, `standardised`, `stenciled`, `stenciling`, `storey`, `summarise`, `superstar`, `sustainability`, `symbolise`, `sympathise`, `tailwind`, `timeline`, `timescale`, `tumour`, `underused`, `unfavourable`, `unionized`, `unsustainability`, `upfront`, `upload`, `upmarket`, `utilise`, `vapour`, `visualise`, `windswept`, `wingtip`, `workaholic`, `workforce`, `workload`, `workstation`, `worshipper`
 
 ---
 
@@ -148,7 +147,6 @@
 
 ## 2025恋练有词考研英语词汇（加分宝）_20260423_200038.txt
 ### 疑似粘连词 (Glued Words)
-- `ursday` -> 建议拆分: `urs day`
 - `policymaker` -> 建议拆分: `policy maker`
 - `kilogramme` -> 建议拆分: `kilogram me`
 - `backload` -> 建议拆分: `back load`
@@ -176,7 +174,7 @@
 - `so-called` -> 建议拆分: `so called`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `academia`, `adversarial`, `airbus`, `analog`, `appal`, `archeology`, `artwork`, `benchmark`, `biodegradable`, `biofuel`, `biostatistician`, `blog`, `buzzword`, `calory`, `cassette`, `centimetre`, `chairperson`, `childcare`, `civilise`, `colourful`, `coronavirus`, `cortisol`, `deli`, `deregulate`, `dialog`, `disinfecting`, `downtime`, `elitism`, `endorphin`, `euro`, `favourite`, `fibre`, `filmmaking`, `fledging`, `freelance`, `fridge`, `gasolene`, `hardline`, `headhunter`, `headshot`, `homegrown`, `honourable`, `humourous`, `instal`, `jackpot`, `jewellery`, `keyword`, `kilometre`, `laptop`, `lifestyle`, `likeability`, `litre`, `logo`, `manoeuvre`, `marginalized`, `marvellous`, `maths`, `medicalize`, `meritocracy`, `meritocratic`, `millimetre`, `moisturizer`, `neighbour`, `neurobiology`, `normalisation`, `odour`, `open-mindedness`, `orchestrated`, `practise`, `preempt`, `printout`, `pushy`, `rarefied`, `recycling`, `robotic`, `rumour`, `software`, `spokesperson`, `stenciled`, `stenciling`, `storey`, `superstar`, `sympathise`, `tailwind`, `timeline`, `tumour`, `unionized`, `upfront`, `upmarket`, `vapour`, `windswept`, `wingtip`, `workaholic`, `workload`
+`academia`, `adversarial`, `airbus`, `analog`, `appal`, `archeology`, `artwork`, `benchmark`, `biodegradable`, `biofuel`, `biostatistician`, `blog`, `buzzword`, `calory`, `cassette`, `centimetre`, `chairperson`, `childcare`, `civilise`, `colourful`, `coronavirus`, `cortisol`, `deli`, `deregulate`, `dialog`, `disinfecting`, `downtime`, `elitism`, `endorphin`, `euro`, `favourite`, `fibre`, `filmmaking`, `fledging`, `freelance`, `fridge`, `gasolene`, `hardline`, `headhunter`, `headshot`, `homegrown`, `honourable`, `humourous`, `instal`, `jackpot`, `jewellery`, `keyword`, `kilometre`, `laptop`, `lifestyle`, `likeability`, `litre`, `logo`, `manoeuvre`, `marginalized`, `marvellous`, `maths`, `medicalize`, `meritocracy`, `meritocratic`, `millimetre`, `moisturizer`, `neighbour`, `neurobiology`, `normalisation`, `odour`, `open-mindedness`, `orchestrated`, `practise`, `preempt`, `printout`, `pushy`, `rarefied`, `recycling`, `robotic`, `rumour`, `software`, `spokesperson`, `stenciled`, `stenciling`, `storey`, `superstar`, `sympathise`, `tailwind`, `timeline`, `tumour`, `unionized`, `upfront`, `upmarket`, `vapour`, `windswept`, `wingtip`, `workaholic`, `workload`
 
 ---
 
@@ -187,17 +185,15 @@
 - `so-called` -> 建议拆分: `so called`
 - `up-to-date` -> 建议拆分: `up to date`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 - `X-ray` -> 建议拆分: `x ray`
 - `generalise` -> 建议拆分: `general is e`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `downwards`, `emphasise`, `encyclopaedia`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `honourable`, `humourous`, `instal`, `instalment`, `laptop`, `licence`, `litre`, `manoeuvre`, `marvellous`, `maths`, `minimise`, `mobilise`, `modernisation`, `neighbour`, `normalisation`, `odour`, `organise`, `paralyse`, `programme`, `recognise`, `rumour`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `sympathise`, `tumour`, `utilise`
+`analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `downwards`, `emphasise`, `encyclopaedia`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `honourable`, `humourous`, `instal`, `instalment`, `laptop`, `licence`, `litre`, `manoeuvre`, `marvellous`, `maths`, `minimise`, `mobilise`, `modernisation`, `neighbour`, `normalisation`, `odour`, `organise`, `paralyse`, `programme`, `recognise`, `rumour`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `sympathise`, `tumour`, `utilise`
 
 ---
 
 ## 2025考研英语一词汇背诵宝典_20260424_175731.txt
 ### 疑似粘连词 (Glued Words)
-- `ursday` -> 建议拆分: `urs day`
 - `mid-list` -> 建议拆分: `mid list`
 - `policymaker` -> 建议拆分: `policy maker`
 - `big-name` -> 建议拆分: `big name`
@@ -230,13 +226,12 @@
 - `up-to-date` -> 建议拆分: `up to date`
 - `air-conditioning` -> 建议拆分: `air conditioning`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `academia`, `analog`, `apologise`, `appal`, `archeologist`, `archeology`, `benchmark`, `bioethics`, `biomass`, `cassette`, `centimetre`, `characterise`, `civilisation`, `civilise`, `consultancy`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `download`, `droid`, `emphasise`, `encyclopaedia`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `gismo`, `gizmo`, `grannie`, `hallucinogen`, `honourable`, `humourous`, `hype`, `ice-cream`, `instal`, `instalment`, `instil`, `intranet`, `jewellery`, `kilometre`, `laptop`, `licence`, `litre`, `manoeuvre`, `marvellous`, `maths`, `meritocracy`, `millimetre`, `minimise`, `mobilise`, `modernisation`, `neighbour`, `neurotransmitter`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `phoney`, `polyurethane`, `pop-up`, `practise`, `pre-empt`, `pre-teen`, `professionalisation`, `programme`, `psychedelic`, `realise`, `recognise`, `rumour`, `shortlist`, `software`, `specialisation`, `specialise`, `spokesperson`, `storey`, `summarise`, `supercluster`, `supercomputer`, `sympathise`, `telecom`, `tumour`, `utilise`, `vapour`, `workforce`
+`academia`, `analog`, `apologise`, `appal`, `archeologist`, `archeology`, `benchmark`, `bioethics`, `biomass`, `cassette`, `centimetre`, `characterise`, `civilisation`, `civilise`, `consultancy`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `download`, `droid`, `emphasise`, `encyclopaedia`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `gismo`, `gizmo`, `grannie`, `hallucinogen`, `honourable`, `humourous`, `hype`, `ice-cream`, `instal`, `instalment`, `instil`, `intranet`, `jewellery`, `kilometre`, `laptop`, `licence`, `litre`, `manoeuvre`, `marvellous`, `maths`, `meritocracy`, `millimetre`, `minimise`, `mobilise`, `modernisation`, `neighbour`, `neurotransmitter`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `phoney`, `polyurethane`, `pop-up`, `practise`, `pre-empt`, `pre-teen`, `professionalisation`, `programme`, `psychedelic`, `realise`, `recognise`, `rumour`, `shortlist`, `software`, `specialisation`, `specialise`, `spokesperson`, `storey`, `summarise`, `supercluster`, `supercomputer`, `sympathise`, `telecom`, `tumour`, `utilise`, `vapour`, `workforce`
 
 ---
 
 ## 2025考研英语二词汇背诵宝典_20260424_175817.txt
 ### 疑似粘连词 (Glued Words)
-- `ursday` -> 建议拆分: `urs day`
 - `prosocial` -> 建议拆分: `pro social`
 - `mid-list` -> 建议拆分: `mid list`
 - `cashless` -> 建议拆分: `cash less`
@@ -286,7 +281,7 @@
 - `up-to-date` -> 建议拆分: `up to date`
 - `air-conditioning` -> 建议拆分: `air conditioning`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Brexit`, `Medicaid`, `Medicare`, `analog`, `apologise`, `appal`, `archeologist`, `archeology`, `artwork`, `authorise`, `biodiversity`, `biofuel`, `biomass`, `biomedical`, `biotech`, `blog`, `broadband`, `buzzword`, `cassette`, `centimetre`, `characterise`, `civilisation`, `civilise`, `commercialisation`, `consultancy`, `consumerism`, `coronavirus`, `cortisol`, `councillor`, `coworker`, `criticise`, `customise`, `customize`, `cyberspace`, `despatch`, `dialog`, `disadvantaged`, `disorganised`, `doormat`, `download`, `downsize`, `downtime`, `droid`, `elitism`, `emphasise`, `encyclopaedia`, `endorphin`, `euro`, `eurobond`, `factoid`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `gasolene`, `gerontologist`, `gismo`, `gizmo`, `globalisation`, `globalization`, `globalize`, `grannie`, `hallucinogen`, `harmonisation`, `healthcare`, `holodeck`, `homogenise`, `honourable`, `hospitalisation`, `humourous`, `ice-cream`, `industrialisation`, `instal`, `instalment`, `instil`, `interdisciplinary`, `jackpot`, `jewellery`, `kilometre`, `labourer`, `laptop`, `licence`, `lifestyle`, `litre`, `logo`, `manoeuvre`, `maths`, `maximise`, `memorisation`, `meritocracy`, `meritocratic`, `millimetre`, `mind-boggling`, `mindset`, `minimise`, `mobilise`, `modernisation`, `moisturizer`, `neighbour`, `neuroscience`, `normalisation`, `odour`, `offload`, `open-mindedness`, `organisation`, `organise`, `paperwork`, `paralyse`, `parenting`, `phoney`, `pop-up`, `practise`, `pre-teen`, `preretiree`, `prioritize`, `privatisation`, `privatise`, `privatization`, `privatize`, `professionalisation`, `programme`, `prompting`, `psychedelic`, `realise`, `recognise`, `reskilling`, `restroom`, `restructure`, `retiree`, `robotic`, `rumour`, `schooler`, `scripted`, `single-mindedness`, `software`, `spammer`, `specialisation`, `specialise`, `spokesperson`, `storey`, `stranglehold`, `submillimetre`, `summarise`, `superstar`, `symbolise`, `sympathise`, `telecom`, `timeline`, `tumour`, `utilise`, `vapour`, `visualise`, `windswept`, `workaholic`, `workforce`, `worldview`
+`Brexit`, `Medicaid`, `Medicare`, `analog`, `apologise`, `appal`, `archeologist`, `archeology`, `artwork`, `authorise`, `biodiversity`, `biofuel`, `biomass`, `biomedical`, `biotech`, `blog`, `broadband`, `buzzword`, `cassette`, `centimetre`, `characterise`, `civilisation`, `civilise`, `commercialisation`, `consultancy`, `consumerism`, `coronavirus`, `cortisol`, `councillor`, `coworker`, `criticise`, `customise`, `customize`, `cyberspace`, `despatch`, `dialog`, `disadvantaged`, `disorganised`, `doormat`, `download`, `downsize`, `downtime`, `droid`, `elitism`, `emphasise`, `encyclopaedia`, `endorphin`, `euro`, `eurobond`, `factoid`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `gasolene`, `gerontologist`, `gismo`, `gizmo`, `globalisation`, `globalization`, `globalize`, `grannie`, `hallucinogen`, `harmonisation`, `healthcare`, `holodeck`, `homogenise`, `honourable`, `hospitalisation`, `humourous`, `ice-cream`, `industrialisation`, `instal`, `instalment`, `instil`, `interdisciplinary`, `jackpot`, `jewellery`, `kilometre`, `labourer`, `laptop`, `licence`, `lifestyle`, `litre`, `logo`, `manoeuvre`, `maths`, `maximise`, `memorisation`, `meritocracy`, `meritocratic`, `millimetre`, `mind-boggling`, `mindset`, `minimise`, `mobilise`, `modernisation`, `moisturizer`, `neighbour`, `neuroscience`, `normalisation`, `odour`, `offload`, `open-mindedness`, `organisation`, `organise`, `paperwork`, `paralyse`, `parenting`, `phoney`, `pop-up`, `practise`, `pre-teen`, `preretiree`, `prioritize`, `privatisation`, `privatise`, `privatization`, `privatize`, `professionalisation`, `programme`, `prompting`, `psychedelic`, `realise`, `recognise`, `reskilling`, `restroom`, `restructure`, `retiree`, `robotic`, `rumour`, `schooler`, `scripted`, `single-mindedness`, `software`, `spammer`, `specialisation`, `specialise`, `spokesperson`, `storey`, `stranglehold`, `submillimetre`, `summarise`, `superstar`, `symbolise`, `sympathise`, `telecom`, `timeline`, `tumour`, `utilise`, `vapour`, `visualise`, `windswept`, `workaholic`, `workforce`, `worldview`
 
 ---
 
@@ -295,11 +290,10 @@
 - `generalise` -> 建议拆分: `general is e`
 - `kilogramme` -> 建议拆分: `kilogram me`
 - `so-called` -> 建议拆分: `so called`
-- `ursday` -> 建议拆分: `urs day`
 - `up-to-date` -> 建议拆分: `up to date`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `emphasise`, `encyclopaedia`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `honourable`, `instal`, `instalment`, `jewellery`, `kilometre`, `laptop`, `licence`, `litre`, `manoeuvre`, `marvellous`, `maths`, `millimetre`, `minimise`, `mobilise`, `modernisation`, `neighbour`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `practise`, `programme`, `realise`, `recognise`, `rumour`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `sympathise`, `tumour`, `utilise`, `vapour`
+`analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `emphasise`, `encyclopaedia`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `honourable`, `instal`, `instalment`, `jewellery`, `kilometre`, `laptop`, `licence`, `litre`, `manoeuvre`, `marvellous`, `maths`, `millimetre`, `minimise`, `mobilise`, `modernisation`, `neighbour`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `practise`, `programme`, `realise`, `recognise`, `rumour`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `sympathise`, `tumour`, `utilise`, `vapour`
 
 ---
 
@@ -344,7 +338,6 @@
 - `X-ray` -> 建议拆分: `x ray`
 - `living-room` -> 建议拆分: `living room`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 - `clear-cut` -> 建议拆分: `clear cut`
 - `cure-all` -> 建议拆分: `cure all`
 - `low-cost` -> 建议拆分: `low cost`
@@ -366,7 +359,7 @@
 - `underfund` -> 建议拆分: `under fund`
 - `unfocussed` -> 建议拆分: `un focussed`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `academia`, `ageing`, `analog`, `apologise`, `appal`, `archeology`, `biased`, `biomedical`, `blog`, `branding`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `download`, `emphasise`, `encyclopaedia`, `ethnicity`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `hardline`, `headhunter`, `honourable`, `humourous`, `ice-cream`, `info`, `instal`, `instalment`, `intranet`, `jewellery`, `keyword`, `kilometre`, `laptop`, `licence`, `lifestyle`, `litre`, `logo`, `manoeuvre`, `marvellous`, `microprocessor`, `millimetre`, `mindset`, `miniaturization`, `minimise`, `mobilise`, `modernisation`, `multimedia`, `neighbour`, `neuroscientist`, `normalisation`, `odour`, `oncogene`, `organisation`, `organise`, `paralyse`, `practise`, `programme`, `psychedelic`, `re-evaluate`, `realise`, `recognise`, `robotics`, `rumour`, `shortlist`, `sightseer`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `superstar`, `sustainability`, `sympathise`, `timescale`, `tumour`, `unfavourable`, `unrecognised`, `upfront`, `upload`, `utilise`, `vapour`, `workforce`, `workload`, `workstation`
+`academia`, `ageing`, `analog`, `apologise`, `appal`, `archeology`, `biased`, `biomedical`, `blog`, `branding`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `download`, `emphasise`, `encyclopaedia`, `ethnicity`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `hardline`, `headhunter`, `honourable`, `humourous`, `ice-cream`, `info`, `instal`, `instalment`, `intranet`, `jewellery`, `keyword`, `kilometre`, `laptop`, `licence`, `lifestyle`, `litre`, `logo`, `manoeuvre`, `marvellous`, `microprocessor`, `millimetre`, `mindset`, `miniaturization`, `minimise`, `mobilise`, `modernisation`, `multimedia`, `neighbour`, `neuroscientist`, `normalisation`, `odour`, `oncogene`, `organisation`, `organise`, `paralyse`, `practise`, `programme`, `psychedelic`, `re-evaluate`, `realise`, `recognise`, `robotics`, `rumour`, `shortlist`, `sightseer`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `superstar`, `sustainability`, `sympathise`, `timescale`, `tumour`, `unfavourable`, `unrecognised`, `upfront`, `upload`, `utilise`, `vapour`, `workforce`, `workload`, `workstation`
 
 ---
 
@@ -377,9 +370,8 @@
 - `X-ray` -> 建议拆分: `x ray`
 - `living-room` -> 建议拆分: `living room`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `civilisation`, `civilise`, `coronavirus`, `cyberspace`, `despatch`, `dialog`, `encyclopaedia`, `fertiliser`, `fibre`, `freelance`, `fridge`, `gasolene`, `humourous`, `ice-cream`, `instal`, `instalment`, `jewellery`, `kilometre`, `laptop`, `litre`, `manoeuvre`, `marvellous`, `millimetre`, `minimise`, `mobilise`, `neighbour`, `odour`, `rumour`, `software`, `spokesperson`, `storey`, `summarise`, `sympathise`, `tumour`, `vapour`
+`analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `civilisation`, `civilise`, `coronavirus`, `cyberspace`, `despatch`, `dialog`, `encyclopaedia`, `fertiliser`, `fibre`, `freelance`, `fridge`, `gasolene`, `humourous`, `ice-cream`, `instal`, `instalment`, `jewellery`, `kilometre`, `laptop`, `litre`, `manoeuvre`, `marvellous`, `millimetre`, `minimise`, `mobilise`, `neighbour`, `odour`, `rumour`, `software`, `spokesperson`, `storey`, `summarise`, `sympathise`, `tumour`, `vapour`
 
 ---
 
@@ -392,9 +384,8 @@
 - `X-ray` -> 建议拆分: `x ray`
 - `living-room` -> 建议拆分: `living room`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `emphasise`, `encyclopaedia`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `honourable`, `humourous`, `ice-cream`, `instal`, `instalment`, `jewellery`, `kilometre`, `laptop`, `licence`, `litre`, `manoeuvre`, `marvellous`, `millimetre`, `minimise`, `mobilise`, `modernisation`, `neighbour`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `practise`, `programme`, `realise`, `recognise`, `rumour`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `sympathise`, `tumour`, `utilise`, `vapour`
+`analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `criticise`, `cyberspace`, `despatch`, `dialog`, `emphasise`, `encyclopaedia`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `gasolene`, `honourable`, `humourous`, `ice-cream`, `instal`, `instalment`, `jewellery`, `kilometre`, `laptop`, `licence`, `litre`, `manoeuvre`, `marvellous`, `millimetre`, `minimise`, `mobilise`, `modernisation`, `neighbour`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `practise`, `programme`, `realise`, `recognise`, `rumour`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `sympathise`, `tumour`, `utilise`, `vapour`
 
 ---
 
@@ -457,7 +448,6 @@
 - `so-called` -> 建议拆分: `so called`
 - `up-to-date` -> 建议拆分: `up to date`
 - `X-ray` -> 建议拆分: `x ray`
-- `ursday` -> 建议拆分: `urs day`
 - `belt-tightening` -> 建议拆分: `belt tightening`
 - `decision-maker` -> 建议拆分: `decision maker`
 - `decision-making` -> 建议拆分: `decision making`
@@ -502,7 +492,7 @@
 - `well-educated` -> 建议拆分: `well educated`
 - `well-rounded` -> 建议拆分: `well rounded`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `academia`, `ageing`, `agro-technological`, `appal`, `biomass`, `blog`, `cassette`, `centimetre`, `centred`, `chairperson`, `codependency`, `coronavirus`, `cyberspace`, `demographics`, `favourably`, `favourite`, `fibre`, `film-making`, `freelance`, `fridge`, `fulfil`, `globalization`, `headhunter`, `honourable`, `instalment`, `jewellery`, `kilometre`, `laptop`, `litre`, `manoeuvre`, `marvellous`, `medicalize`, `millimetre`, `mindset`, `miniskirt`, `neighbour`, `odour`, `overdressed`, `paralyse`, `printout`, `programme`, `realise`, `retiree`, `rumour`, `software`, `spokesperson`, `start-up`, `storey`, `sustainability`, `telecom`, `timescale`, `tumour`, `vapour`, `well-orchestrated`, `wholesaling`, `worshipper`
+`academia`, `ageing`, `agro-technological`, `appal`, `biomass`, `blog`, `cassette`, `centimetre`, `centred`, `chairperson`, `codependency`, `coronavirus`, `cyberspace`, `demographics`, `favourably`, `favourite`, `fibre`, `film-making`, `freelance`, `fridge`, `fulfil`, `globalization`, `headhunter`, `honourable`, `instalment`, `jewellery`, `kilometre`, `laptop`, `litre`, `manoeuvre`, `marvellous`, `medicalize`, `millimetre`, `mindset`, `miniskirt`, `neighbour`, `odour`, `overdressed`, `paralyse`, `printout`, `programme`, `realise`, `retiree`, `rumour`, `software`, `spokesperson`, `start-up`, `storey`, `sustainability`, `telecom`, `timescale`, `tumour`, `vapour`, `well-orchestrated`, `wholesaling`, `worshipper`
 
 ---
 
@@ -556,10 +546,9 @@
 - `up-to-date` -> 建议拆分: `up to date`
 - `so-called` -> 建议拆分: `so called`
 - `living-room` -> 建议拆分: `living room`
-- `ursday` -> 建议拆分: `urs day`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `apologise`, `appal`, `cassette`, `centimetre`, `coronavirus`, `cyberspace`, `despatch`, `dialog`, `fridge`, `ice-cream`, `kilometre`, `laptop`, `litre`, `maths`, `practise`, `programme`, `realise`, `software`, `storey`, `tumour`, `vapour`
+`apologise`, `appal`, `cassette`, `centimetre`, `coronavirus`, `cyberspace`, `despatch`, `dialog`, `fridge`, `ice-cream`, `kilometre`, `laptop`, `litre`, `maths`, `practise`, `programme`, `realise`, `software`, `storey`, `tumour`, `vapour`
 
 ---
 
@@ -887,7 +876,6 @@
 - `special-interest` -> 建议拆分: `special interest`
 - `pharma` -> 建议拆分: `p harm a`
 - `maladapted` -> 建议拆分: `mal adapted`
-- `ursday` -> 建议拆分: `urs day`
 - `clawback` -> 建议拆分: `claw back`
 - `risk-taking` -> 建议拆分: `risk taking`
 - `grade-point` -> 建议拆分: `grade point`
@@ -1799,7 +1787,6 @@
 - `tax-free` -> 建议拆分: `tax free`
 - `out-of-date` -> 建议拆分: `out of date`
 - `up-to-date` -> 建议拆分: `up to date`
-- `ursday` -> 建议拆分: `urs day`
 - `added-worker` -> 建议拆分: `added worker`
 - `anti-avoidance` -> 建议拆分: `anti avoidance`
 - `anti-competitive` -> 建议拆分: `anti competitive`
@@ -1922,7 +1909,7 @@
 - `gurn` -> 建议拆分: `gur n`
 - `pharma` -> 建议拆分: `p harm a`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`ermos`, `Medicare`, `academia`, `adversarial`, `agro-technological`, `all-comers`, `analog`, `apologise`, `appal`, `archeologist`, `archeology`, `artwork`, `authorisation`, `authorise`, `banqueting`, `behavioural`, `benchmark`, `biased`, `biodegradable`, `biomass`, `blog`, `brainstorm`, `broadband`, `caregiver`, `cassette`, `centimetre`, `centralisation`, `centred`, `characterisation`, `characterise`, `checkpoint`, `childcare`, `chopsticks`, `civilisation`, `civilise`, `codependency`, `colourful`, `consultancy`, `cordless`, `coronavirus`, `countdown`, `counter-culture`, `criticise`, `cyberspace`, `demographics`, `demoralisation`, `deregulate`, `dialog`, `dishonour`, `disorganise`, `download`, `eBay`, `emphasise`, `encyclopaedia`, `familiarise`, `favourable`, `favourably`, `fertiliser`, `fibre`, `filmmaking`, `flexitime`, `flextime`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `generalisation`, `globalisation`, `globalization`, `good-natured`, `groundbreaking`, `hardline`, `headhunter`, `healthcare`, `homogenisation`, `homogenise`, `honourable`, `hype`, `ice-cream`, `immunise`, `industrialisation`, `instalment`, `intergenerational`, `jewellery`, `kilometre`, `laptop`, `licence`, `lifestyle`, `litre`, `manoeuvre`, `marvellous`, `maths`, `maximise`, `mediaeval`, `medicalize`, `mementomori`, `microprocessor`, `millimetre`, `mindset`, `mini`, `minimise`, `miniskirt`, `mobilisation`, `mobilise`, `modernisation`, `modernise`, `multimedia`, `nationalisation`, `naturalisation`, `neighbour`, `neuroscientist`, `neurotransmitter`, `odour`, `offence`, `organisation`, `organisational`, `organise`, `overdressed`, `paralyse`, `parenting`, `pop-up`, `postmodern`, `practise`, `preempt`, `printout`, `prioritize`, `procedurally`, `professionalisation`, `programme`, `pushy`, `rationalisation`, `realise`, `recognise`, `reevaluate`, `retiree`, `rumour`, `scrutinise`, `shortlist`, `socialisation`, `specialisation`, `specialise`, `specialised`, `spokesperson`, `stabilise`, `standardisation`, `standardise`, `standing-room`, `start-up`, `storey`, `summarise`, `superstar`, `sustainability`, `sympathise`, `telecoms`, `timeframe`, `timescale`, `tumour`, `unauthorised`, `underused`, `unfavourable`, `upfront`, `upload`, `utilisation`, `utilise`, `vapour`, `visualisation`, `visualise`, `weightlifting`, `well-orchestrated`, `wetland`, `wholesaling`, `workforce`, `workstation`, `worshipper`
+`Medicare`, `academia`, `adversarial`, `agro-technological`, `all-comers`, `analog`, `apologise`, `appal`, `archeologist`, `archeology`, `artwork`, `authorisation`, `authorise`, `banqueting`, `behavioural`, `benchmark`, `biased`, `biodegradable`, `biomass`, `blog`, `brainstorm`, `broadband`, `caregiver`, `cassette`, `centimetre`, `centralisation`, `centred`, `characterisation`, `characterise`, `checkpoint`, `childcare`, `chopsticks`, `civilisation`, `civilise`, `codependency`, `colourful`, `consultancy`, `cordless`, `coronavirus`, `countdown`, `counter-culture`, `criticise`, `cyberspace`, `demographics`, `demoralisation`, `deregulate`, `dialog`, `dishonour`, `disorganise`, `download`, `eBay`, `emphasise`, `encyclopaedia`, `familiarise`, `favourable`, `favourably`, `fertiliser`, `fibre`, `filmmaking`, `flexitime`, `flextime`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `generalisation`, `globalisation`, `globalization`, `good-natured`, `groundbreaking`, `hardline`, `headhunter`, `healthcare`, `homogenisation`, `homogenise`, `honourable`, `hype`, `ice-cream`, `immunise`, `industrialisation`, `instalment`, `intergenerational`, `jewellery`, `kilometre`, `laptop`, `licence`, `lifestyle`, `litre`, `manoeuvre`, `marvellous`, `maths`, `maximise`, `mediaeval`, `medicalize`, `mementomori`, `microprocessor`, `millimetre`, `mindset`, `mini`, `minimise`, `miniskirt`, `mobilisation`, `mobilise`, `modernisation`, `modernise`, `multimedia`, `nationalisation`, `naturalisation`, `neighbour`, `neuroscientist`, `neurotransmitter`, `odour`, `offence`, `organisation`, `organisational`, `organise`, `overdressed`, `paralyse`, `parenting`, `pop-up`, `postmodern`, `practise`, `preempt`, `printout`, `prioritize`, `procedurally`, `professionalisation`, `programme`, `pushy`, `rationalisation`, `realise`, `recognise`, `reevaluate`, `retiree`, `rumour`, `scrutinise`, `shortlist`, `socialisation`, `specialisation`, `specialise`, `specialised`, `spokesperson`, `stabilise`, `standardisation`, `standardise`, `standing-room`, `start-up`, `storey`, `summarise`, `superstar`, `sustainability`, `sympathise`, `telecoms`, `timeframe`, `timescale`, `tumour`, `unauthorised`, `underused`, `unfavourable`, `upfront`, `upload`, `utilisation`, `utilise`, `vapour`, `visualisation`, `visualise`, `weightlifting`, `well-orchestrated`, `wetland`, `wholesaling`, `workforce`, `workstation`, `worshipper`
 
 ---
 
@@ -2177,7 +2164,6 @@
 - `special-interest` -> 建议拆分: `special interest`
 - `pharma` -> 建议拆分: `p harm a`
 - `maladapted` -> 建议拆分: `mal adapted`
-- `ursday` -> 建议拆分: `urs day`
 - `clawback` -> 建议拆分: `claw back`
 - `risk-taking` -> 建议拆分: `risk taking`
 - `grade-point` -> 建议拆分: `grade point`
@@ -2737,7 +2723,6 @@
 - `shell-like` -> 建议拆分: `shell like`
 - `security-wise` -> 建议拆分: `security wise`
 - `X-ray` -> 建议拆分: `x ray`
-- `ursday` -> 建议拆分: `urs day`
 - `kilogramme` -> 建议拆分: `kilogram me`
 - `cross-cultural` -> 建议拆分: `cross cultural`
 - `self-evident` -> 建议拆分: `self evident`
@@ -2755,7 +2740,7 @@
 - `pan-African` -> 建议拆分: `pan african`
 - `pro-European` -> 建议拆分: `pro european`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `counter-example`, `criticise`, `cyberspace`, `despatch`, `dialog`, `downriver`, `downsize`, `dramatise`, `eastwards`, `eco-disaster`, `emphasise`, `encyclopaedia`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `gasolene`, `honourable`, `humourous`, `instal`, `instalment`, `intra-European`, `jewellery`, `kilometre`, `laptop`, `licence`, `litre`, `macroeconomics`, `manoeuvre`, `marvellous`, `maths`, `millimetre`, `minimise`, `miniskirt`, `mobilise`, `modernisation`, `neighbour`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `paramedic`, `practise`, `programme`, `pseudoscience`, `realise`, `recognise`, `rumour`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `surfing`, `sympathise`, `tumour`, `ultrasound`, `upmarket`, `utilise`, `vapour`, `vice-president`
+`analog`, `apologise`, `appal`, `archeology`, `blog`, `cassette`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `coronavirus`, `counter-example`, `criticise`, `cyberspace`, `despatch`, `dialog`, `downriver`, `downsize`, `dramatise`, `eastwards`, `eco-disaster`, `emphasise`, `encyclopaedia`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `gasolene`, `honourable`, `humourous`, `instal`, `instalment`, `intra-European`, `jewellery`, `kilometre`, `laptop`, `licence`, `litre`, `macroeconomics`, `manoeuvre`, `marvellous`, `maths`, `millimetre`, `minimise`, `miniskirt`, `mobilise`, `modernisation`, `neighbour`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `paramedic`, `practise`, `programme`, `pseudoscience`, `realise`, `recognise`, `rumour`, `software`, `specialise`, `spokesperson`, `storey`, `summarise`, `surfing`, `sympathise`, `tumour`, `ultrasound`, `upmarket`, `utilise`, `vapour`, `vice-president`
 
 ---
 
@@ -2765,7 +2750,6 @@
 - `so-called` -> 建议拆分: `so called`
 - `generalise` -> 建议拆分: `general is e`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 - `X-ray` -> 建议拆分: `x ray`
 - `policymaker` -> 建议拆分: `policy maker`
 - `memorise` -> 建议拆分: `memo rise`
@@ -2862,7 +2846,7 @@
 - `well-developed` -> 建议拆分: `well developed`
 - `well-paid` -> 建议拆分: `well paid`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `academia`, `acqui-hire`, `adventurism`, `adversarial`, `analog`, `anonymise`, `anonymize`, `antiperspirant`, `apologise`, `appal`, `archeologist`, `archeology`, `arguably`, `artwork`, `authorisation`, `banqueting`, `benchmark`, `biodegradable`, `biodiversity`, `biofuel`, `biomass`, `biomedical`, `biotech`, `blog`, `brainstorm`, `brexit`, `broadband`, `caregiver`, `cassette`, `centimetre`, `chairperson`, `chalkboard`, `characterisation`, `characterise`, `checkout`, `childcare`, `civilisation`, `civilise`, `code-breaking`, `commercialisation`, `confrontational`, `contextualize`, `copyrighted`, `coronavirus`, `cortisol`, `counterproductive`, `coworker`, `criticise`, `cross-check`, `customise`, `customize`, `cyberspace`, `demoralisation`, `despatch`, `dialog`, `digitalisation`, `disadvantaged`, `download`, `downtime`, `downwards`, `eco-friendly`, `emphasise`, `encyclopaedia`, `endorphin`, `euro`, `factoid`, `fantasise`, `fantasize`, `favourable`, `favourably`, `favourite`, `fertilise`, `fertiliser`, `fibre`, `filmmaking`, `follow-up`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `gerontologist`, `globalize`, `good-natured`, `groundbreaking`, `hardline`, `harmonisation`, `headhunter`, `headshot`, `home-grown`, `homogenisation`, `honourable`, `hospitalisation`, `hype`, `instalment`, `interdisciplinary`, `intergenerational`, `jackpot`, `jewelery`, `jewellery`, `keyword`, `kilometre`, `laptop`, `licence`, `lifestyle`, `litre`, `logo`, `manoeuvre`, `marvellous`, `maths`, `maximise`, `mechanisation`, `mega`, `memorisation`, `meritocracy`, `meritocratic`, `messaging`, `millimetre`, `mindset`, `minimise`, `miniskirt`, `mobilisation`, `mobilise`, `modem`, `modernisation`, `modernise`, `moisturizer`, `multitask`, `naturalisation`, `neighbour`, `neurobiology`, `neuroscience`, `neuroscientist`, `neurotransmitter`, `normalisation`, `odour`, `offload`, `open-source`, `organisation`, `organisational`, `organise`, `outsourcing`, `overdressed`, `overjoyed`, `overreact`, `overreaction`, `paperwork`, `paralyse`, `polyurethane`, `pop-up`, `postmodern`, `practise`, `preempt`, `printout`, `prioritize`, `privatisation`, `privatise`, `privatization`, `privatize`, `procedurally`, `programme`, `publicise`, `rationalisation`, `realise`, `recognise`, `renewables`, `retiree`, `robotic`, `rumour`, `scrutinise`, `sequencing`, `sightseer`, `software`, `spammer`, `specialise`, `spokesperson`, `stabilise`, `standardise`, `storey`, `stranglehold`, `summarise`, `superstar`, `sustainability`, `symbolise`, `sympathise`, `tailwind`, `timeframe`, `timeline`, `timescale`, `tumour`, `unauthorised`, `underused`, `unrecognised`, `upfront`, `upload`, `upmarket`, `utilise`, `vapour`, `visualisation`, `waterhole`, `wetland`, `workaholic`, `workforce`, `workload`, `workstation`, `worshipper`
+`academia`, `acqui-hire`, `adventurism`, `adversarial`, `analog`, `anonymise`, `anonymize`, `antiperspirant`, `apologise`, `appal`, `archeologist`, `archeology`, `arguably`, `artwork`, `authorisation`, `banqueting`, `benchmark`, `biodegradable`, `biodiversity`, `biofuel`, `biomass`, `biomedical`, `biotech`, `blog`, `brainstorm`, `brexit`, `broadband`, `caregiver`, `cassette`, `centimetre`, `chairperson`, `chalkboard`, `characterisation`, `characterise`, `checkout`, `childcare`, `civilisation`, `civilise`, `code-breaking`, `commercialisation`, `confrontational`, `contextualize`, `copyrighted`, `coronavirus`, `cortisol`, `counterproductive`, `coworker`, `criticise`, `cross-check`, `customise`, `customize`, `cyberspace`, `demoralisation`, `despatch`, `dialog`, `digitalisation`, `disadvantaged`, `download`, `downtime`, `downwards`, `eco-friendly`, `emphasise`, `encyclopaedia`, `endorphin`, `euro`, `factoid`, `fantasise`, `fantasize`, `favourable`, `favourably`, `favourite`, `fertilise`, `fertiliser`, `fibre`, `filmmaking`, `follow-up`, `freelance`, `fridge`, `fulfil`, `fulfilment`, `gerontologist`, `globalize`, `good-natured`, `groundbreaking`, `hardline`, `harmonisation`, `headhunter`, `headshot`, `home-grown`, `homogenisation`, `honourable`, `hospitalisation`, `hype`, `instalment`, `interdisciplinary`, `intergenerational`, `jackpot`, `jewelery`, `jewellery`, `keyword`, `kilometre`, `laptop`, `licence`, `lifestyle`, `litre`, `logo`, `manoeuvre`, `marvellous`, `maths`, `maximise`, `mechanisation`, `mega`, `memorisation`, `meritocracy`, `meritocratic`, `messaging`, `millimetre`, `mindset`, `minimise`, `miniskirt`, `mobilisation`, `mobilise`, `modem`, `modernisation`, `modernise`, `moisturizer`, `multitask`, `naturalisation`, `neighbour`, `neurobiology`, `neuroscience`, `neuroscientist`, `neurotransmitter`, `normalisation`, `odour`, `offload`, `open-source`, `organisation`, `organisational`, `organise`, `outsourcing`, `overdressed`, `overjoyed`, `overreact`, `overreaction`, `paperwork`, `paralyse`, `polyurethane`, `pop-up`, `postmodern`, `practise`, `preempt`, `printout`, `prioritize`, `privatisation`, `privatise`, `privatization`, `privatize`, `procedurally`, `programme`, `publicise`, `rationalisation`, `realise`, `recognise`, `renewables`, `retiree`, `robotic`, `rumour`, `scrutinise`, `sequencing`, `sightseer`, `software`, `spammer`, `specialise`, `spokesperson`, `stabilise`, `standardise`, `storey`, `stranglehold`, `summarise`, `superstar`, `sustainability`, `symbolise`, `sympathise`, `tailwind`, `timeframe`, `timeline`, `timescale`, `tumour`, `unauthorised`, `underused`, `unrecognised`, `upfront`, `upload`, `upmarket`, `utilise`, `vapour`, `visualisation`, `waterhole`, `wetland`, `workaholic`, `workforce`, `workload`, `workstation`, `worshipper`
 
 ---
 
@@ -3348,7 +3332,6 @@
 - `so-called` -> 建议拆分: `so called`
 - `anti-intellectual` -> 建议拆分: `anti intellectual`
 - `cure-all` -> 建议拆分: `cure all`
-- `ursday` -> 建议拆分: `urs day`
 - `X-ray` -> 建议拆分: `x ray`
 - `submillimeter` -> 建议拆分: `sub millimeter`
 - `generalise` -> 建议拆分: `general is e`
@@ -3362,7 +3345,7 @@
 - `reengineer` -> 建议拆分: `re engineer`
 - `air-conditioning` -> 建议拆分: `air conditioning`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `addictive`, `apologise`, `appal`, `artwork`, `authorise`, `bioethics`, `blog`, `buzzword`, `cassette`, `centimetre`, `characterise`, `coronavirus`, `counsellor`, `cyberspace`, `despatch`, `destruct`, `download`, `downsize`, `emphasise`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fulfil`, `fulfilment`, `globalization`, `globalize`, `ice-cream`, `keyword`, `kilometre`, `laptop`, `licence`, `lifestyle`, `litre`, `manoeuvre`, `medicalize`, `microprocessor`, `millimetre`, `mindset`, `miniaturization`, `miniskirt`, `mobilise`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `practise`, `prioritize`, `recyclable`, `robotics`, `rumour`, `scrutinise`, `shortlist`, `sightseer`, `software`, `spokesperson`, `storey`, `summarise`, `supercluster`, `superstar`, `sympathise`, `teleconference`, `tumour`, `utilise`, `vapour`, `vice-president`, `workforce`, `worldview`
+`addictive`, `apologise`, `appal`, `artwork`, `authorise`, `bioethics`, `blog`, `buzzword`, `cassette`, `centimetre`, `characterise`, `coronavirus`, `counsellor`, `cyberspace`, `despatch`, `destruct`, `download`, `downsize`, `emphasise`, `favourable`, `favourite`, `fertiliser`, `fibre`, `freelance`, `fulfil`, `fulfilment`, `globalization`, `globalize`, `ice-cream`, `keyword`, `kilometre`, `laptop`, `licence`, `lifestyle`, `litre`, `manoeuvre`, `medicalize`, `microprocessor`, `millimetre`, `mindset`, `miniaturization`, `miniskirt`, `mobilise`, `normalisation`, `odour`, `organisation`, `organise`, `paralyse`, `practise`, `prioritize`, `recyclable`, `robotics`, `rumour`, `scrutinise`, `shortlist`, `sightseer`, `software`, `spokesperson`, `storey`, `summarise`, `supercluster`, `superstar`, `sympathise`, `teleconference`, `tumour`, `utilise`, `vapour`, `vice-president`, `workforce`, `worldview`
 
 ---
 
@@ -3372,10 +3355,9 @@
 - `up-to-date` -> 建议拆分: `up to date`
 - `so-called` -> 建议拆分: `so called`
 - `living-room` -> 建议拆分: `living room`
-- `ursday` -> 建议拆分: `urs day`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `apologise`, `appal`, `cassette`, `centimetre`, `coronavirus`, `cyberspace`, `despatch`, `dialog`, `fridge`, `ice-cream`, `kilometre`, `laptop`, `litre`, `maths`, `practise`, `programme`, `realise`, `software`, `storey`, `tumour`, `vapour`
+`apologise`, `appal`, `cassette`, `centimetre`, `coronavirus`, `cyberspace`, `despatch`, `dialog`, `fridge`, `ice-cream`, `kilometre`, `laptop`, `litre`, `maths`, `practise`, `programme`, `realise`, `software`, `storey`, `tumour`, `vapour`
 
 ---
 
@@ -4215,7 +4197,7 @@
 - `waterborne` -> 建议拆分: `water borne`
 - `workflow` -> 建议拆分: `work flow`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Medicare`, `academia`, `appal`, `authorise`, `biotechnology`, `childcare`, `countdown`, `criticise`, `cyberspace`, `deregulate`, `despatch`, `dialog`, `downplay`, `encyclopaedia`, `fulfil`, `instalment`, `jeopardise`, `know-how`, `landfill`, `logo`, `maneuvre`, `manoeuver`, `manoeuvre`, `mindset`, `mobilise`, `multicultural`, `odour`, `paralyse`, `pasta`, `payload`, `programme`, `recognise`, `rumour`, `telecommunications`, `tumour`, `upload`, `utilise`, `vapour`, `vigour`, `webcast`, `willpower`, `workforce`, `workload`
+`Medicare`, `academia`, `appal`, `authorise`, `biotechnology`, `childcare`, `countdown`, `criticise`, `cyberspace`, `deregulate`, `despatch`, `dialog`, `downplay`, `encyclopaedia`, `fulfil`, `instalment`, `jeopardise`, `know-how`, `landfill`, `logo`, `maneuvre`, `manoeuver`, `manoeuvre`, `mindset`, `mobilise`, `multicultural`, `odour`, `paralyse`, `pasta`, `payload`, `programme`, `recognise`, `rumour`, `telecommunications`, `tumour`, `upload`, `utilise`, `vapour`, `vigour`, `webcast`, `willpower`, `workforce`, `workload`
 
 ---
 
@@ -4533,7 +4515,7 @@
 - `X-ray` -> 建议拆分: `x ray`
 - `well-balanced` -> 建议拆分: `well balanced`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `archeology`, `cassette`, `download`, `eco-friendly`, `fibre`, `fulfil`, `laptop`, `lifestyle`, `multicultural`, `offence`, `paperwork`, `postcode`, `rapids`, `skateboard`, `software`
+`archeology`, `cassette`, `download`, `eco-friendly`, `fibre`, `fulfil`, `laptop`, `lifestyle`, `multicultural`, `offence`, `paperwork`, `postcode`, `rapids`, `skateboard`, `software`
 
 ---
 
@@ -5066,12 +5048,11 @@
 - `old-fashioned` -> 建议拆分: `old fashioned`
 - `rigour` -> 建议拆分: `rig our`
 - `so-called` -> 建议拆分: `so called`
-- `ursday` -> 建议拆分: `urs day`
 - `up-to-date` -> 建议拆分: `up to date`
 - `well-off` -> 建议拆分: `well off`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Medicare`, `appal`, `banknote`, `biotechnology`, `blog`, `countdown`, `cyberspace`, `deregulate`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `encyclopaedia`, `euro`, `fulfil`, `hotdog`, `ice-cream`, `instal`, `instalment`, `knowhow`, `laptop`, `logo`, `mindset`, `neighbour`, `odour`, `paralyse`, `pasta`, `practise`, `programme`, `rumour`, `software`, `storey`, `telecommunications`, `tumour`, `upload`, `vapour`, `vigour`, `webcast`, `willpower`, `workforce`
+`Medicare`, `appal`, `banknote`, `biotechnology`, `blog`, `countdown`, `cyberspace`, `deregulate`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `encyclopaedia`, `euro`, `fulfil`, `hotdog`, `ice-cream`, `instal`, `instalment`, `knowhow`, `laptop`, `logo`, `mindset`, `neighbour`, `odour`, `paralyse`, `pasta`, `practise`, `programme`, `rumour`, `software`, `storey`, `telecommunications`, `tumour`, `upload`, `vapour`, `vigour`, `webcast`, `willpower`, `workforce`
 
 ---
 
@@ -5079,7 +5060,7 @@
 ### 疑似粘连词 (Glued Words)
 - `air-conditioning` -> 建议拆分: `air conditioning`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `cosmonaut`, `deregulate`, `downplay`, `mindset`, `pasta`, `payload`, `telecommunications`
+`cosmonaut`, `deregulate`, `downplay`, `mindset`, `pasta`, `payload`, `telecommunications`
 
 ---
 
@@ -5090,7 +5071,7 @@
 - `patronise` -> 建议拆分: `patron is e`
 - `subsidise` -> 建议拆分: `sub sid is e`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `appal`, `cosmonaut`, `deregulate`, `downplay`, `encyclopaedia`, `mindset`, `pasta`, `payload`, `telecommunications`
+`appal`, `cosmonaut`, `deregulate`, `downplay`, `encyclopaedia`, `mindset`, `pasta`, `payload`, `telecommunications`
 
 ---
 
@@ -5099,7 +5080,7 @@
 - `ill-mannered` -> 建议拆分: `ill mannered`
 - `air-conditioning` -> 建议拆分: `air conditioning`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `appal`, `cyberspace`, `disco`, `freelance`, `fulfil`, `instalment`, `jewellery`, `odour`, `parlour`, `relics`, `telecommunications`, `tumour`, `wipeout`
+`appal`, `cyberspace`, `disco`, `freelance`, `fulfil`, `instalment`, `jewellery`, `odour`, `parlour`, `relics`, `telecommunications`, `tumour`, `wipeout`
 
 ---
 
@@ -5120,7 +5101,6 @@
 - `high-tech` -> 建议拆分: `high tech`
 - `X-ray` -> 建议拆分: `x ray`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
 `Medicare`, `addictive`, `analog`, `appal`, `authorise`, `banknote`, `biotechnology`, `blog`, `centimetre`, `consultancy`, `councillor`, `countdown`, `criticise`, `cyberspace`, `deregulate`, `deregulation`, `desktop`, `dialog`, `disco`, `download`, `encyclopaedia`, `epilog`, `euro`, `fibre`, `fulfil`, `homogenise`, `ice-cream`, `immunise`, `instalment`, `jeopardise`, `kilometre`, `know-how`, `laptop`, `licence`, `litre`, `logo`, `manoeuvre`, `maximise`, `mediaeval`, `millimetre`, `mindset`, `mini`, `minimise`, `mobilise`, `monolog`, `neighbour`, `odour`, `offence`, `organise`, `paralyse`, `pasta`, `programme`, `publicise`, `realise`, `recognise`, `recyclable`, `rollout`, `rumour`, `software`, `stabilise`, `storey`, `summarise`, `telecommunications`, `tumour`, `upload`, `utilise`, `vapour`, `vigour`, `visualise`, `webcast`, `willpower`, `workforce`
 
@@ -5135,7 +5115,7 @@
 - `subsidise` -> 建议拆分: `sub sid is e`
 - `synthesise` -> 建议拆分: `synthesis e`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `appal`, `cliched`, `cosmonaut`, `deadlocked`, `deregulate`, `deregulation`, `dismantling`, `downgrading`, `downplay`, `encyclopaedia`, `franchisee`, `glamourous`, `mentoring`, `mindset`, `pasta`, `patronising`, `payload`, `profiling`, `telecommunications`
+`appal`, `cliched`, `cosmonaut`, `deadlocked`, `deregulate`, `deregulation`, `dismantling`, `downgrading`, `downplay`, `encyclopaedia`, `franchisee`, `glamourous`, `mentoring`, `mindset`, `pasta`, `patronising`, `payload`, `profiling`, `telecommunications`
 
 ---
 
@@ -5143,7 +5123,7 @@
 ### 疑似粘连词 (Glued Words)
 - `air-conditioning` -> 建议拆分: `air conditioning`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `appal`, `instalment`, `odour`, `telecommunications`
+`appal`, `instalment`, `odour`, `telecommunications`
 
 ---
 
@@ -5158,12 +5138,11 @@
 - `air-conditioning` -> 建议拆分: `air conditioning`
 - `middle-class` -> 建议拆分: `middle class`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 - `X-ray` -> 建议拆分: `x ray`
 - `so-called` -> 建议拆分: `so called`
 - `up-to-date` -> 建议拆分: `up to date`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Celcius`, `Medicare`, `appal`, `authorise`, `banknote`, `biotechnology`, `blog`, `centimetre`, `countdown`, `criticise`, `cyberspace`, `deregulate`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `encyclopaedia`, `euro`, `fibre`, `fulfil`, `instal`, `instalment`, `jeopardise`, `kilometre`, `know-how`, `laptop`, `licence`, `logo`, `manoeuvre`, `maths`, `millimetre`, `mindset`, `mobilise`, `neighbour`, `odour`, `organise`, `paralyse`, `pasta`, `practise`, `realise`, `recognise`, `rumour`, `software`, `storey`, `telecommunications`, `tumour`, `upload`, `utilise`, `vapour`, `vigour`, `webcast`, `willpower`, `workforce`, `yogurt`
+`Celcius`, `Medicare`, `appal`, `authorise`, `banknote`, `biotechnology`, `blog`, `centimetre`, `countdown`, `criticise`, `cyberspace`, `deregulate`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `encyclopaedia`, `euro`, `fibre`, `fulfil`, `instal`, `instalment`, `jeopardise`, `kilometre`, `know-how`, `laptop`, `licence`, `logo`, `manoeuvre`, `maths`, `millimetre`, `mindset`, `mobilise`, `neighbour`, `odour`, `organise`, `paralyse`, `pasta`, `practise`, `realise`, `recognise`, `rumour`, `software`, `storey`, `telecommunications`, `tumour`, `upload`, `utilise`, `vapour`, `vigour`, `webcast`, `willpower`, `workforce`, `yogurt`
 
 ---
 
@@ -5396,7 +5375,6 @@
 - `sitting-room` -> 建议拆分: `sitting room`
 - `so-called` -> 建议拆分: `so called`
 - `thermometre` -> 建议拆分: `thermo metre`
-- `ursday` -> 建议拆分: `urs day`
 - `T-shirt` -> 建议拆分: `t shirt`
 - `upside-down` -> 建议拆分: `upside down`
 - `up-to-date` -> 建议拆分: `up to date`
@@ -5459,13 +5437,12 @@
 - `socialise` -> 建议拆分: `social is e`
 - `subsidise` -> 建议拆分: `sub sid is e`
 - `synthesise` -> 建议拆分: `synthesis e`
-- `ursday` -> 建议拆分: `urs day`
 - `up-to-date` -> 建议拆分: `up to date`
 - `urbanise` -> 建议拆分: `urban is e`
 - `well-off` -> 建议拆分: `well off`
 - `x-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Medicare`, `addictive`, `ageing`, `apologise`, `appal`, `authorisation`, `authorise`, `banknote`, `behavioural`, `biotechnology`, `blog`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `colonise`, `colourful`, `computerize`, `councillor`, `counsellor`, `countdown`, `criticise`, `cyberspace`, `demo`, `deregulate`, `deregulation`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `downwards`, `emphasise`, `encyclopaedia`, `euro`, `familiarise`, `favourable`, `favourite`, `fertiliser`, `fibre`, `fridge`, `fulfil`, `fulfilment`, `glamourous`, `globalize`, `honourable`, `hotdog`, `humourous`, `ice-cream`, `immunise`, `instal`, `instalment`, `jeopardise`, `jewelery`, `jewellery`, `kilometre`, `knowhow`, `laptop`, `licence`, `litre`, `logo`, `manoeuvre`, `marvellous`, `materialise`, `maths`, `maximise`, `mechanisation`, `microwavable`, `millimetre`, `mindset`, `minimise`, `mobilise`, `modernisation`, `modernise`, `mouldy`, `neighbour`, `networking`, `normalisation`, `odour`, `offence`, `organisation`, `organisational`, `organise`, `paralyse`, `parenting`, `pasta`, `practise`, `privatisation`, `privatise`, `privatization`, `privatize`, `programme`, `publicise`, `pushy`, `realisation`, `realise`, `recognise`, `recyclable`, `robotic`, `rumour`, `scrutinise`, `smoggy`, `software`, `specialisation`, `specialise`, `splendour`, `spokesperson`, `stabilise`, `standardisation`, `standardise`, `storey`, `summarise`, `surfing`, `sustainability`, `sympathise`, `telecommunications`, `trafficking`, `tumour`, `upload`, `urbanisation`, `utilisation`, `utilise`, `vapour`, `visualise`, `webcast`, `willpower`, `woollen`, `workforce`
+`Medicare`, `addictive`, `ageing`, `apologise`, `appal`, `authorisation`, `authorise`, `banknote`, `behavioural`, `biotechnology`, `blog`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `colonise`, `colourful`, `computerize`, `councillor`, `counsellor`, `countdown`, `criticise`, `cyberspace`, `demo`, `deregulate`, `deregulation`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `downwards`, `emphasise`, `encyclopaedia`, `euro`, `familiarise`, `favourable`, `favourite`, `fertiliser`, `fibre`, `fridge`, `fulfil`, `fulfilment`, `glamourous`, `globalize`, `honourable`, `hotdog`, `humourous`, `ice-cream`, `immunise`, `instal`, `instalment`, `jeopardise`, `jewelery`, `jewellery`, `kilometre`, `knowhow`, `laptop`, `licence`, `litre`, `logo`, `manoeuvre`, `marvellous`, `materialise`, `maths`, `maximise`, `mechanisation`, `microwavable`, `millimetre`, `mindset`, `minimise`, `mobilise`, `modernisation`, `modernise`, `mouldy`, `neighbour`, `networking`, `normalisation`, `odour`, `offence`, `organisation`, `organisational`, `organise`, `paralyse`, `parenting`, `pasta`, `practise`, `privatisation`, `privatise`, `privatization`, `privatize`, `programme`, `publicise`, `pushy`, `realisation`, `realise`, `recognise`, `recyclable`, `robotic`, `rumour`, `scrutinise`, `smoggy`, `software`, `specialisation`, `specialise`, `splendour`, `spokesperson`, `stabilise`, `standardisation`, `standardise`, `storey`, `summarise`, `surfing`, `sustainability`, `sympathise`, `telecommunications`, `trafficking`, `tumour`, `upload`, `urbanisation`, `utilisation`, `utilise`, `vapour`, `visualise`, `webcast`, `willpower`, `woollen`, `workforce`
 
 ---
 
@@ -5583,7 +5560,7 @@
 - `up-to-date` -> 建议拆分: `up to date`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `airbag`, `airbase`, `anchorman`, `anchorwoman`, `ashtray`, `audiovisuals`, `authorise`, `baby-sit`, `biathlon`, `biogas`, `biotechnology`, `birthrate`, `cassette`, `chopsticks`, `civilisation`, `councillor`, `desktop`, `despatch`, `dialog`, `favourable`, `firefighter`, `flextime`, `flowerbed`, `flyover`, `formalise`, `freebie`, `frying-pan`, `fulfil`, `gynaecology`, `headwind`, `hippie`, `hotline`, `ice-cream`, `instalment`, `licence`, `lifestyle`, `litre`, `loudhailer`, `macho`, `minefield`, `mini`, `minibar`, `miniskirt`, `nondrinker`, `organise`, `paralyse`, `payload`, `pedler`, `phobia`, `practise`, `rainforest`, `realise`, `savoury`, `seagull`, `short-wave`, `specialise`, `telex`, `toile`, `tumour`, `uninformative`, `vapour`, `vigour`, `whirr`, `willpower`, `xerox`
+`airbag`, `airbase`, `anchorman`, `anchorwoman`, `ashtray`, `audiovisuals`, `authorise`, `baby-sit`, `biathlon`, `biogas`, `biotechnology`, `birthrate`, `cassette`, `chopsticks`, `civilisation`, `councillor`, `desktop`, `despatch`, `dialog`, `favourable`, `firefighter`, `flextime`, `flowerbed`, `flyover`, `formalise`, `freebie`, `frying-pan`, `fulfil`, `gynaecology`, `headwind`, `hippie`, `hotline`, `ice-cream`, `instalment`, `licence`, `lifestyle`, `litre`, `loudhailer`, `macho`, `minefield`, `mini`, `minibar`, `miniskirt`, `nondrinker`, `organise`, `paralyse`, `payload`, `pedler`, `phobia`, `practise`, `rainforest`, `realise`, `savoury`, `seagull`, `short-wave`, `specialise`, `telex`, `toile`, `tumour`, `uninformative`, `vapour`, `vigour`, `whirr`, `willpower`, `xerox`
 
 ---
 
@@ -5595,7 +5572,6 @@
 - `okey` -> 建议拆分: `o key`
 - `so-called` -> 建议拆分: `so called`
 - `thermometre` -> 建议拆分: `thermo metre`
-- `ursday` -> 建议拆分: `urs day`
 - `T-shirt` -> 建议拆分: `t shirt`
 - `upside-down` -> 建议拆分: `upside down`
 - `up-to-date` -> 建议拆分: `up to date`
@@ -5655,7 +5631,6 @@
 - `sitting-room` -> 建议拆分: `sitting room`
 - `so-called` -> 建议拆分: `so called`
 - `thermometre` -> 建议拆分: `thermo metre`
-- `ursday` -> 建议拆分: `urs day`
 - `T-shirt` -> 建议拆分: `t shirt`
 - `up-to-date` -> 建议拆分: `up to date`
 - `videophone` -> 建议拆分: `video phone`
@@ -5803,7 +5778,7 @@
 - `stressor` -> 建议拆分: `stress or`
 - `Bellagio` -> 建议拆分: `bella g io`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`oreau`, `Bangalore`, `Bhutan`, `Dubai`, `Instagram`, `Lagos`, `Paddington`, `Rhone`, `Volkswagen`, `Wikipedia`, `backcountry`, `benchmark`, `broadband`, `buyout`, `counterproductive`, `depleted`, `disadvantaged`, `fiberglass`, `glitzy`, `hologram`, `incentivize`, `mega-size`, `megacity`, `misprice`, `publicise`, `seafloor`, `shambles`, `sidestep`, `stairwell`, `sustainability`, `viewership`
+`Bangalore`, `Bhutan`, `Dubai`, `Instagram`, `Lagos`, `Paddington`, `Rhone`, `Volkswagen`, `Wikipedia`, `backcountry`, `benchmark`, `broadband`, `buyout`, `counterproductive`, `depleted`, `disadvantaged`, `fiberglass`, `glitzy`, `hologram`, `incentivize`, `mega-size`, `megacity`, `misprice`, `publicise`, `seafloor`, `shambles`, `sidestep`, `stairwell`, `sustainability`, `viewership`
 
 ---
 
@@ -5893,7 +5868,6 @@
 
 ## 新视野大学英语读写教程3（第四版）_20260425_113757.txt
 ### 疑似粘连词 (Glued Words)
-- `ailand` -> 建议拆分: `ail and`
 - `lawnmower` -> 建议拆分: `lawn mower`
 - `extravehicular` -> 建议拆分: `extra vehicular`
 - `g-force` -> 建议拆分: `g force`
@@ -5931,7 +5905,6 @@
 - `hi-tech` -> 建议拆分: `hi tech`
 - `bye-bye` -> 建议拆分: `bye bye`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 - `twenty-first` -> 建议拆分: `twenty first`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
 `apologise`, `cassette`, `centimetre`, `civilisation`, `civilise`, `dialog`, `emphasise`, `favourable`, `favourite`, `fibre`, `fridge`, `fulfil`, `honourable`, `humourous`, `ice-cream`, `instal`, `instalment`, `kilometre`, `licence`, `litre`, `marvellous`, `millimetre`, `neighbour`, `offence`, `organisation`, `organise`, `practise`, `programme`, `realise`, `recognise`, `refundable`, `software`, `specialise`, `summarise`, `utilise`, `walkman`
@@ -6010,7 +5983,6 @@
 ### 疑似粘连词 (Glued Words)
 - `high-tech` -> 建议拆分: `high tech`
 - `kilogramme` -> 建议拆分: `kilogram me`
-- `ursday` -> 建议拆分: `urs day`
 - `clear-cut` -> 建议拆分: `clear cut`
 - `middle-class` -> 建议拆分: `middle class`
 - `old-fashioned` -> 建议拆分: `old fashioned`
@@ -6347,7 +6319,6 @@
 - `thereabout` -> 建议拆分: `there about`
 - `thick-skinned` -> 建议拆分: `thick skinned`
 - `three-quarters` -> 建议拆分: `three quarters`
-- `ursday` -> 建议拆分: `urs day`
 - `tie-up` -> 建议拆分: `tie up`
 - `treasure-house` -> 建议拆分: `treasure house`
 - `undreamed-of` -> 建议拆分: `un dreamed of`
@@ -6358,7 +6329,7 @@
 - `X-chromosome` -> 建议拆分: `x chromosome`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Dacron`, `Hallowe'en`, `Mafia`, `Xerox`, `add-on`, `addictive`, `adventurism`, `aerobics`, `airbase`, `airforce`, `anaesthetic`, `anaesthetize`, `anchorman`, `anchorwoman`, `ardour`, `ashtray`, `audiovisuals`, `authorise`, `baby-sit`, `backbiting`, `backdate`, `barometre`, `beeper`, `benchmark`, `bereaved`, `biotechnology`, `birthrate`, `bleep`, `boardroom`, `boutique`, `boyfriend`, `brainstorming`, `byte`, `cassette`, `centimetre`, `characterise`, `checkout`, `checkpoint`, `chilli`, `chopsticks`, `civilisation`, `civilise`, `colourful`, `colourless`, `condom`, `confetti`, `containerization`, `councillor`, `counsellor`, `criticise`, `crosscheck`, `cyberspace`, `debug`, `deckhand`, `deli`, `demo`, `dependant`, `deregulate`, `desktop`, `despatch`, `dialog`, `disadvantaged`, `disco`, `disfavour`, `dishonour`, `dishonourable`, `donut`, `downtime`, `drily`, `dumbfound`, `dungarees`, `eastwards`, `economise`, `electioneering`, `encyclopaedia`, `epilog`, `epitomise`, `estancia`, `exorcize`, `familiarise`, `fantasise`, `fantasize`, `farmhand`, `favourable`, `favourite`, `fertilise`, `fibre`, `fibreglass`, `fiddly`, `fire-bomb`, `firefighter`, `flavouring`, `flexitime`, `flowchart`, `flowerbed`, `flyover`, `foetus`, `folivore`, `footloose`, `formalise`, `freebie`, `freelance`, `freshwater`, `fridge`, `frying-pan`, `fulfil`, `fulfilment`, `generalisation`, `gipsy`, `girlfriend`, `glamourous`, `gonorrhoea`, `good-humored`, `good-looking`, `gynaecology`, `hairpiece`, `hairspray`, `halleluja`, `hallo`, `handlebar`, `handpicked`, `hangings`, `hardball`, `hardcore`, `hardtop`, `hatchback`, `headhunter`, `headphones`, `headwind`, `heartrending`, `heartwarming`, `hemline`, `hiccough`, `hieroglyphics`, `high-rise`, `highbrow`, `highchair`, `hippie`, `hologram`, `homogenise`, `honourable`, `horsey`, `hotline`, `hovercraft`, `humourous`, `hype`, `hypermarket`, `ice-cream`, `infatuated`, `instalment`, `instil`, `jasmin`, `jeopardise`, `jeweller`, `jewellery`, `jigsaw`, `joystick`, `karat`, `kerosine`, `kilobyte`, `kilometre`, `knowhow`, `labourer`, `laptop`, `leftovers`, `leukaemia`, `licence`, `litre`, `logo`, `lowbrow`, `lychee`, `macho`, `macroeconomic`, `manoeuvre`, `marvellous`, `materialise`, `maths`, `medicaid`, `mesmerise`, `microchip`, `microcomputer`, `microprocessor`, `millimetre`, `millipede`, `minefield`, `misbehaviour`, `mobilise`, `modem`, `modernise`, `moisturize`, `multimedia`, `naturalise`, `neighbour`, `neoclassical`, `odour`, `offence`, `organisation`, `organise`, `overjoyed`, `paperwork`, `paralyse`, `parlour`, `pasta`, `phobia`, `policewomen`, `practise`, `programme`, `psycho`, `pyjamas`, `rainforest`, `rancour`, `realise`, `right-wing`, `rounders`, `rumour`, `savoury`, `schoolchild`, `scriptwriter`, `scrutinise`, `scuba`, `sea-shell`, `seagull`, `sepulchre`, `sexism`, `sexist`, `sheikh`, `shoplift`, `short-wave`, `sidestep`, `sitcom`, `skateboard`, `slimnastics`, `smoulder`, `software`, `splendour`, `storey`, `suburbanisation`, `succour`, `sunbathe`, `surreal`, `symbolise`, `tantalise`, `tatters`, `telecommunications`, `telex`, `terra-cotta`, `trafficker`, `treeline`, `tumour`, `ultrasound`, `underachieve`, `unisex`, `upfront`, `upmarket`, `valour`, `vapour`, `viewfinder`, `vigour`, `waddle`, `warlord`, `whizz`, `willpower`, `woollen`, `workload`, `yoghourt`, `yogurt`, `yuppie`
+`Dacron`, `Hallowe'en`, `Mafia`, `Xerox`, `add-on`, `addictive`, `adventurism`, `aerobics`, `airbase`, `airforce`, `anaesthetic`, `anaesthetize`, `anchorman`, `anchorwoman`, `ardour`, `ashtray`, `audiovisuals`, `authorise`, `baby-sit`, `backbiting`, `backdate`, `barometre`, `beeper`, `benchmark`, `bereaved`, `biotechnology`, `birthrate`, `bleep`, `boardroom`, `boutique`, `boyfriend`, `brainstorming`, `byte`, `cassette`, `centimetre`, `characterise`, `checkout`, `checkpoint`, `chilli`, `chopsticks`, `civilisation`, `civilise`, `colourful`, `colourless`, `condom`, `confetti`, `containerization`, `councillor`, `counsellor`, `criticise`, `crosscheck`, `cyberspace`, `debug`, `deckhand`, `deli`, `demo`, `dependant`, `deregulate`, `desktop`, `despatch`, `dialog`, `disadvantaged`, `disco`, `disfavour`, `dishonour`, `dishonourable`, `donut`, `downtime`, `drily`, `dumbfound`, `dungarees`, `eastwards`, `economise`, `electioneering`, `encyclopaedia`, `epilog`, `epitomise`, `estancia`, `exorcize`, `familiarise`, `fantasise`, `fantasize`, `farmhand`, `favourable`, `favourite`, `fertilise`, `fibre`, `fibreglass`, `fiddly`, `fire-bomb`, `firefighter`, `flavouring`, `flexitime`, `flowchart`, `flowerbed`, `flyover`, `foetus`, `folivore`, `footloose`, `formalise`, `freebie`, `freelance`, `freshwater`, `fridge`, `frying-pan`, `fulfil`, `fulfilment`, `generalisation`, `gipsy`, `girlfriend`, `glamourous`, `gonorrhoea`, `good-humored`, `good-looking`, `gynaecology`, `hairpiece`, `hairspray`, `halleluja`, `hallo`, `handlebar`, `handpicked`, `hangings`, `hardball`, `hardcore`, `hardtop`, `hatchback`, `headhunter`, `headphones`, `headwind`, `heartrending`, `heartwarming`, `hemline`, `hiccough`, `hieroglyphics`, `high-rise`, `highbrow`, `highchair`, `hippie`, `hologram`, `homogenise`, `honourable`, `horsey`, `hotline`, `hovercraft`, `humourous`, `hype`, `hypermarket`, `ice-cream`, `infatuated`, `instalment`, `instil`, `jasmin`, `jeopardise`, `jeweller`, `jewellery`, `jigsaw`, `joystick`, `karat`, `kerosine`, `kilobyte`, `kilometre`, `knowhow`, `labourer`, `laptop`, `leftovers`, `leukaemia`, `licence`, `litre`, `logo`, `lowbrow`, `lychee`, `macho`, `macroeconomic`, `manoeuvre`, `marvellous`, `materialise`, `maths`, `medicaid`, `mesmerise`, `microchip`, `microcomputer`, `microprocessor`, `millimetre`, `millipede`, `minefield`, `misbehaviour`, `mobilise`, `modem`, `modernise`, `moisturize`, `multimedia`, `naturalise`, `neighbour`, `neoclassical`, `odour`, `offence`, `organisation`, `organise`, `overjoyed`, `paperwork`, `paralyse`, `parlour`, `pasta`, `phobia`, `policewomen`, `practise`, `programme`, `psycho`, `pyjamas`, `rainforest`, `rancour`, `realise`, `right-wing`, `rounders`, `rumour`, `savoury`, `schoolchild`, `scriptwriter`, `scrutinise`, `scuba`, `sea-shell`, `seagull`, `sepulchre`, `sexism`, `sexist`, `sheikh`, `shoplift`, `short-wave`, `sidestep`, `sitcom`, `skateboard`, `slimnastics`, `smoulder`, `software`, `splendour`, `storey`, `suburbanisation`, `succour`, `sunbathe`, `surreal`, `symbolise`, `tantalise`, `tatters`, `telecommunications`, `telex`, `terra-cotta`, `trafficker`, `treeline`, `tumour`, `ultrasound`, `underachieve`, `unisex`, `upfront`, `upmarket`, `valour`, `vapour`, `viewfinder`, `vigour`, `waddle`, `warlord`, `whizz`, `willpower`, `woollen`, `workload`, `yoghourt`, `yogurt`, `yuppie`
 
 ---
 
@@ -6465,7 +6436,6 @@
 - `thereabout` -> 建议拆分: `there about`
 - `thick-skinned` -> 建议拆分: `thick skinned`
 - `three-quarters` -> 建议拆分: `three quarters`
-- `ursday` -> 建议拆分: `urs day`
 - `treasure-house` -> 建议拆分: `treasure house`
 - `undreamed-of` -> 建议拆分: `un dreamed of`
 - `unheard-of` -> 建议拆分: `unheard of`
@@ -6474,7 +6444,7 @@
 - `well-to-do` -> 建议拆分: `well to do`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Xerox`, `adventurism`, `airbase`, `airforce`, `anchorman`, `anchorwoman`, `ashtray`, `audiovisuals`, `authorise`, `baby-sit`, `barometre`, `biotechnology`, `birthrate`, `boardroom`, `boyfriend`, `byte`, `cassette`, `centimetre`, `characterise`, `checkout`, `checkpoint`, `chilli`, `chopsticks`, `civilisation`, `civilise`, `colourful`, `colourless`, `councillor`, `counsellor`, `criticise`, `crosscheck`, `deli`, `dependant`, `desktop`, `despatch`, `dialog`, `disadvantaged`, `disco`, `dishonourable`, `donut`, `eastwards`, `economise`, `encyclopaedia`, `familiarise`, `farmhand`, `favourable`, `favourite`, `fertilise`, `fibre`, `firefighter`, `flowchart`, `flowerbed`, `flyover`, `formalise`, `freebie`, `freshwater`, `fridge`, `frying-pan`, `fulfil`, `fulfilment`, `generalisation`, `gipsy`, `girlfriend`, `glamourous`, `good-humored`, `good-looking`, `hairspray`, `hallo`, `headphones`, `headwind`, `high-rise`, `hippie`, `honourable`, `hotline`, `hovercraft`, `humourous`, `ice-cream`, `instalment`, `jeweller`, `jewellery`, `karat`, `kerosine`, `kilobyte`, `kilometre`, `labourer`, `laptop`, `leftovers`, `licence`, `litre`, `marvellous`, `maths`, `microchip`, `microcomputer`, `microprocessor`, `millimetre`, `minefield`, `misbehaviour`, `modem`, `modernise`, `multimedia`, `neighbour`, `offence`, `organisation`, `organise`, `overjoyed`, `paperwork`, `paralyse`, `parlour`, `phobia`, `policewomen`, `practise`, `programme`, `pyjamas`, `rainforest`, `realise`, `right-wing`, `rumour`, `savoury`, `schoolchild`, `scriptwriter`, `sea-shell`, `seagull`, `shoplift`, `short-wave`, `sitcom`, `skateboard`, `software`, `splendour`, `storey`, `suburbanisation`, `sunbathe`, `symbolise`, `telecommunications`, `telex`, `trafficker`, `treeline`, `tumour`, `underachieve`, `unisex`, `vapour`, `viewfinder`, `vigour`, `warlord`, `willpower`, `woollen`, `workload`, `yoghourt`, `yogurt`
+`Xerox`, `adventurism`, `airbase`, `airforce`, `anchorman`, `anchorwoman`, `ashtray`, `audiovisuals`, `authorise`, `baby-sit`, `barometre`, `biotechnology`, `birthrate`, `boardroom`, `boyfriend`, `byte`, `cassette`, `centimetre`, `characterise`, `checkout`, `checkpoint`, `chilli`, `chopsticks`, `civilisation`, `civilise`, `colourful`, `colourless`, `councillor`, `counsellor`, `criticise`, `crosscheck`, `deli`, `dependant`, `desktop`, `despatch`, `dialog`, `disadvantaged`, `disco`, `dishonourable`, `donut`, `eastwards`, `economise`, `encyclopaedia`, `familiarise`, `farmhand`, `favourable`, `favourite`, `fertilise`, `fibre`, `firefighter`, `flowchart`, `flowerbed`, `flyover`, `formalise`, `freebie`, `freshwater`, `fridge`, `frying-pan`, `fulfil`, `fulfilment`, `generalisation`, `gipsy`, `girlfriend`, `glamourous`, `good-humored`, `good-looking`, `hairspray`, `hallo`, `headphones`, `headwind`, `high-rise`, `hippie`, `honourable`, `hotline`, `hovercraft`, `humourous`, `ice-cream`, `instalment`, `jeweller`, `jewellery`, `karat`, `kerosine`, `kilobyte`, `kilometre`, `labourer`, `laptop`, `leftovers`, `licence`, `litre`, `marvellous`, `maths`, `microchip`, `microcomputer`, `microprocessor`, `millimetre`, `minefield`, `misbehaviour`, `modem`, `modernise`, `multimedia`, `neighbour`, `offence`, `organisation`, `organise`, `overjoyed`, `paperwork`, `paralyse`, `parlour`, `phobia`, `policewomen`, `practise`, `programme`, `pyjamas`, `rainforest`, `realise`, `right-wing`, `rumour`, `savoury`, `schoolchild`, `scriptwriter`, `sea-shell`, `seagull`, `shoplift`, `short-wave`, `sitcom`, `skateboard`, `software`, `splendour`, `storey`, `suburbanisation`, `sunbathe`, `symbolise`, `telecommunications`, `telex`, `trafficker`, `treeline`, `tumour`, `underachieve`, `unisex`, `vapour`, `viewfinder`, `vigour`, `warlord`, `willpower`, `woollen`, `workload`, `yoghourt`, `yogurt`
 
 ---
 
@@ -6512,13 +6482,12 @@
 - `normalise` -> 建议拆分: `normal is e`
 - `so-called` -> 建议拆分: `so called`
 - `socialise` -> 建议拆分: `social is e`
-- `ursday` -> 建议拆分: `urs day`
 - `up-to-date` -> 建议拆分: `up to date`
 - `victimise` -> 建议拆分: `victim is e`
 - `well-off` -> 建议拆分: `well off`
 - `X-ray` -> 建议拆分: `x ray`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Medicare`, `addictive`, `ageing`, `analog`, `apologise`, `appal`, `authorisation`, `authorise`, `banknote`, `behavioural`, `biotechnology`, `blog`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `colonise`, `colourful`, `computerize`, `councillor`, `counsellor`, `countdown`, `criticise`, `cyberspace`, `dependant`, `deregulate`, `deregulation`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `downwards`, `emphasise`, `encyclopaedia`, `euro`, `familiarise`, `favourable`, `favourite`, `fertiliser`, `fibre`, `fulfil`, `fulfilment`, `glamourous`, `globalize`, `honourable`, `hotdog`, `humourous`, `ice-cream`, `immunise`, `instal`, `instalment`, `jeopardise`, `jewellery`, `kilometre`, `know-how`, `laptop`, `licence`, `litre`, `logo`, `manoeuvre`, `marvellous`, `materialise`, `maths`, `maximise`, `mechanisation`, `microwavable`, `millimetre`, `mindset`, `minimise`, `mobilise`, `modernisation`, `modernise`, `mouldy`, `neighbour`, `networking`, `normalisation`, `odour`, `offence`, `organisation`, `organisational`, `organise`, `paralyse`, `parenting`, `pasta`, `practise`, `privatisation`, `privatise`, `privatization`, `privatize`, `programme`, `publicise`, `pushy`, `realisation`, `realise`, `recognise`, `recyclable`, `robotic`, `rumour`, `scrutinise`, `smoggy`, `software`, `specialisation`, `specialise`, `splendour`, `spokesperson`, `stabilise`, `standardisation`, `standardise`, `storey`, `summarise`, `surfing`, `sustainability`, `sympathise`, `telecom`, `trafficking`, `tumour`, `upload`, `urbanisation`, `utilisation`, `utilise`, `vapour`, `vigour`, `visualise`, `webcast`, `willpower`, `woollen`, `workforce`, `yoghourt`, `yogurt`
+`Medicare`, `addictive`, `ageing`, `analog`, `apologise`, `appal`, `authorisation`, `authorise`, `banknote`, `behavioural`, `biotechnology`, `blog`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `colonise`, `colourful`, `computerize`, `councillor`, `counsellor`, `countdown`, `criticise`, `cyberspace`, `dependant`, `deregulate`, `deregulation`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `downwards`, `emphasise`, `encyclopaedia`, `euro`, `familiarise`, `favourable`, `favourite`, `fertiliser`, `fibre`, `fulfil`, `fulfilment`, `glamourous`, `globalize`, `honourable`, `hotdog`, `humourous`, `ice-cream`, `immunise`, `instal`, `instalment`, `jeopardise`, `jewellery`, `kilometre`, `know-how`, `laptop`, `licence`, `litre`, `logo`, `manoeuvre`, `marvellous`, `materialise`, `maths`, `maximise`, `mechanisation`, `microwavable`, `millimetre`, `mindset`, `minimise`, `mobilise`, `modernisation`, `modernise`, `mouldy`, `neighbour`, `networking`, `normalisation`, `odour`, `offence`, `organisation`, `organisational`, `organise`, `paralyse`, `parenting`, `pasta`, `practise`, `privatisation`, `privatise`, `privatization`, `privatize`, `programme`, `publicise`, `pushy`, `realisation`, `realise`, `recognise`, `recyclable`, `robotic`, `rumour`, `scrutinise`, `smoggy`, `software`, `specialisation`, `specialise`, `splendour`, `spokesperson`, `stabilise`, `standardisation`, `standardise`, `storey`, `summarise`, `surfing`, `sustainability`, `sympathise`, `telecom`, `trafficking`, `tumour`, `upload`, `urbanisation`, `utilisation`, `utilise`, `vapour`, `vigour`, `visualise`, `webcast`, `willpower`, `woollen`, `workforce`, `yoghourt`, `yogurt`
 
 ---
 
@@ -6542,7 +6511,6 @@
 - `so-called` -> 建议拆分: `so called`
 - `soft-drink` -> 建议拆分: `soft drink`
 - `tax-free` -> 建议拆分: `tax free`
-- `ursday` -> 建议拆分: `urs day`
 - `T-shirt` -> 建议拆分: `t shirt`
 - `up-to-date` -> 建议拆分: `up to date`
 - `videophone` -> 建议拆分: `video phone`
@@ -6586,7 +6554,6 @@
 - `so-called` -> 建议拆分: `so called`
 - `soft-drink` -> 建议拆分: `soft drink`
 - `tax-free` -> 建议拆分: `tax free`
-- `ursday` -> 建议拆分: `urs day`
 - `T-shirt` -> 建议拆分: `t shirt`
 - `up-to-date` -> 建议拆分: `up to date`
 - `videophone` -> 建议拆分: `video phone`
@@ -6628,7 +6595,6 @@
 - `so-called` -> 建议拆分: `so called`
 - `soft-drink` -> 建议拆分: `soft drink`
 - `tax-free` -> 建议拆分: `tax free`
-- `ursday` -> 建议拆分: `urs day`
 - `T-shirt` -> 建议拆分: `t shirt`
 - `up-to-date` -> 建议拆分: `up to date`
 - `videophone` -> 建议拆分: `video phone`
@@ -6712,7 +6678,6 @@
 - `memorise` -> 建议拆分: `memo rise`
 - `middle-class` -> 建议拆分: `middle class`
 - `so-called` -> 建议拆分: `so called`
-- `ursday` -> 建议拆分: `urs day`
 - `up-to-date` -> 建议拆分: `up to date`
 - `urbanise` -> 建议拆分: `urban is e`
 - `well-off` -> 建议拆分: `well off`
@@ -6723,12 +6688,12 @@
 - `Neo-Confucianism` -> 建议拆分: `neo confucianism`
 - `craftsperson` -> 建议拆分: `crafts person`
 ### 疑似拼写错误或生僻词 (Unknown/Typos)
-`anksgiving`, `Daoism`, `Medicare`, `addictive`, `ageing`, `agritourism`, `apologise`, `appal`, `artwork`, `authorisation`, `authorise`, `banknote`, `behavioural`, `biotechnology`, `blog`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `colonise`, `colourful`, `computerize`, `councillor`, `counsellor`, `countdown`, `criticise`, `cyberspace`, `demo`, `deregulate`, `deregulation`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `downwards`, `eco-friendly`, `emphasise`, `encyclopaedia`, `euro`, `familiarise`, `favourable`, `favourite`, `fertiliser`, `fibre`, `fridge`, `fulfil`, `fulfilment`, `glamourous`, `globalize`, `honourable`, `hotdog`, `humourous`, `ice-cream`, `immunise`, `instal`, `instalment`, `jeopardise`, `jewellery`, `kilometre`, `know-how`, `laptop`, `licence`, `lifestyle`, `litre`, `logo`, `manoeuvre`, `marvellous`, `maths`, `maximise`, `mechanisation`, `microwavable`, `millimetre`, `mindset`, `minimise`, `mobilise`, `modernisation`, `modernise`, `mouldy`, `moveable`, `neighbour`, `networking`, `normalisation`, `odour`, `offence`, `organisation`, `organisational`, `organise`, `paralyse`, `parenting`, `pasta`, `privatisation`, `privatise`, `privatization`, `privatize`, `programme`, `publicise`, `pushy`, `realisation`, `realise`, `recognise`, `recyclable`, `reusable`, `robotic`, `robotics`, `rumour`, `scrutinise`, `smoggy`, `software`, `specialisation`, `specialise`, `splendour`, `spokesperson`, `stabilise`, `standardisation`, `standardise`, `storey`, `summarise`, `surfing`, `sustainability`, `sympathise`, `telecommunications`, `trafficking`, `tumour`, `upload`, `urbanisation`, `utilisation`, `utilise`, `vapour`, `visualise`, `webcast`, `willpower`, `woollen`, `workforce`
+`Daoism`, `Medicare`, `addictive`, `ageing`, `agritourism`, `apologise`, `appal`, `artwork`, `authorisation`, `authorise`, `banknote`, `behavioural`, `biotechnology`, `blog`, `centimetre`, `chairperson`, `characterise`, `civilisation`, `civilise`, `colonise`, `colourful`, `computerize`, `councillor`, `counsellor`, `countdown`, `criticise`, `cyberspace`, `demo`, `deregulate`, `deregulation`, `desktop`, `despatch`, `dialog`, `disco`, `download`, `downwards`, `eco-friendly`, `emphasise`, `encyclopaedia`, `euro`, `familiarise`, `favourable`, `favourite`, `fertiliser`, `fibre`, `fridge`, `fulfil`, `fulfilment`, `glamourous`, `globalize`, `honourable`, `hotdog`, `humourous`, `ice-cream`, `immunise`, `instal`, `instalment`, `jeopardise`, `jewellery`, `kilometre`, `know-how`, `laptop`, `licence`, `lifestyle`, `litre`, `logo`, `manoeuvre`, `marvellous`, `maths`, `maximise`, `mechanisation`, `microwavable`, `millimetre`, `mindset`, `minimise`, `mobilise`, `modernisation`, `modernise`, `mouldy`, `moveable`, `neighbour`, `networking`, `normalisation`, `odour`, `offence`, `organisation`, `organisational`, `organise`, `paralyse`, `parenting`, `pasta`, `privatisation`, `privatise`, `privatization`, `privatize`, `programme`, `publicise`, `pushy`, `realisation`, `realise`, `recognise`, `recyclable`, `reusable`, `robotic`, `robotics`, `rumour`, `scrutinise`, `smoggy`, `software`, `specialisation`, `specialise`, `splendour`, `spokesperson`, `stabilise`, `standardisation`, `standardise`, `storey`, `summarise`, `surfing`, `sustainability`, `sympathise`, `telecommunications`, `trafficking`, `tumour`, `upload`, `urbanisation`, `utilisation`, `utilise`, `vapour`, `visualise`, `webcast`, `willpower`, `woollen`, `workforce`
 
 ---
 
 
 ## Summary
 - Total Files Checked: 173
-- Total Glued Words Found: 5551
-- Total Unknown/Typo Words Found: 9492
+- Total Glued Words Found: 5516
+- Total Unknown/Typo Words Found: 9460
