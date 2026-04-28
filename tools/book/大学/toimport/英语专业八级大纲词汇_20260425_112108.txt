@@ -11509,7 +11509,7 @@
 0|than
 0|thank
 0|thankful
-0|anksgiving
+0|Thanksgiving
 0|that
 0|thatch
 0|thaw
@@ -11623,7 +11623,7 @@
 0|thunderclap
 0|thunderous
 0|thunderstorm
-0|ursday
+0|Thursday
 0|thus
 0|thwart
 0|thy

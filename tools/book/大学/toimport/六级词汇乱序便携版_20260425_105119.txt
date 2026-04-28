@@ -928,7 +928,7 @@
 0|parameter
 0|scramble
 0|imaginary
-0|anksgiving
+0|Thanksgiving
 0|relief
 0|champion
 0|allocate

@@ -4683,7 +4683,7 @@
 0|weekend
 0|Monday
 0|Tuesday
-0|ursday
+0|Thursday
 0|Saturday
 0|Sunday
 0|weekly
@@ -4806,7 +4806,7 @@
 0|publish
 0|sing
 0|tape
-0|anksgiving
+0|Thanksgiving
 0|tradition
 0|violin
 0|disc

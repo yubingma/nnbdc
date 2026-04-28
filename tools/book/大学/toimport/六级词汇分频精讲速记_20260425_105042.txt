@@ -2352,7 +2352,7 @@
 0|tease
 0|terrace
 0|terrify
-0|anksgiving
+0|Thanksgiving
 0|thereafter
 0|thermal
 0|thigh

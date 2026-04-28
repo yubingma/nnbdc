@@ -62,7 +62,7 @@
 0|rid sb. of sth.
 0|to that end
 0|be modeled on
-0|Internet of ings
+0|Internet of Things
 0|proximity
 0|centralization
 0|commute
@@ -701,7 +701,7 @@
 0|be a recipe for sth.
 0|point to
 0|on a collision course
-0|e Organisation for Economic Co-operation and
+0|The Organisation for Economic Co-operation and
 0|OECD
 
 # --- Extraction Audit Report ---

@@ -6793,7 +6793,7 @@
 0|than
 0|thank
 0|thankful
-0|anksgiving
+0|Thanksgiving
 0|that
 0|the
 0|theater
@@ -6850,7 +6850,7 @@
 0|thumb
 0|thunder
 0|thunderous
-0|ursday
+0|Thursday
 0|thus
 0|tick
 0|ticket
@@ -8058,7 +8058,7 @@
 0|boarding school
 0|national budget
 0|education allocation
-0|the ousand Talents Program
+0|the Thousand Talents Program
 0|job market
 0|on-campus job fair
 0|financial aid for students
@@ -8209,7 +8209,7 @@
 0|an increasing number of
 0|Confucian teachings
 0|Confucius
-0|the Hundred Schools of ought
+0|the Hundred Schools of Thought
 0|Confucian revival
 0|Neo-Confucianism
 0|abolition of the examination system
@@ -8424,7 +8424,7 @@
 0|market share
 0|eco-friendly
 0|have an edge in technology
-0|the Internet of ings technology
+0|the Internet of Things technology
 0|mobile internet user
 0|mobile payment
 0|penetration rate

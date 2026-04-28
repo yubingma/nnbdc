@@ -4907,7 +4907,7 @@
 0|snow
 0|globe
 0|navy
-0|ursday
+0|Thursday
 0|similarly
 0|bottle
 0|rock
@@ -5759,7 +5759,7 @@
 0|dumb
 0|hill
 0|museum
-0|anksgiving
+0|Thanksgiving
 0|mess
 0|cab
 0|weep

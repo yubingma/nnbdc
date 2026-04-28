@@ -2425,7 +2425,7 @@
 0|external
 0|constant
 0|internal
-0|ursday
+0|Thursday
 0|epidemic
 0|institute
 0|opposite
@@ -3573,7 +3573,7 @@
 0|supersystem
 0|housebuilding
 0|recordkeeper
-0|anksgiving
+0|Thanksgiving
 0|lesser-known
 0|self-contradictory
 0|nevertheless

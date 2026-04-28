@@ -3384,7 +3384,7 @@
 0|thousand
 0|three
 0|through
-0|ursday
+0|Thursday
 0|thus
 0|ticket
 0|tie

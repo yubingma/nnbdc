@@ -4284,7 +4284,7 @@
 0|Monday
 0|Tuesday
 0|Wednesday
-0|ursday
+0|Thursday
 0|Friday
 0|Saturday
 0|Sunday
@@ -4533,7 +4533,7 @@
 0|Christ
 0|god
 0|festival
-0|anksgiving
+0|Thanksgiving
 0|angel
 0|dragon
 0|art

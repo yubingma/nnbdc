@@ -3004,7 +3004,7 @@
 0|testify
 0|testimony
 0|texture
-0|anksgiving
+0|Thanksgiving
 0|theft
 0|theme
 0|thereafter

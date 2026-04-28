@@ -5339,7 +5339,7 @@
 0|textbook
 0|than
 0|thank
-0|anksgiving
+0|Thanksgiving
 0|that
 0|the
 0|theatre
@@ -5377,7 +5377,7 @@
 0|throw
 0|thumb
 0|thunder
-0|ursday
+0|Thursday
 0|thus
 0|ticket
 0|tidy

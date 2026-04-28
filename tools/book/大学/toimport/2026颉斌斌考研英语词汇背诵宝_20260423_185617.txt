@@ -650,7 +650,7 @@
 0|misunderstand
 0|animal
 0|modest
-0|anksgiving
+0|Thanksgiving
 0|distinct
 0|reed
 0|inside
@@ -4913,7 +4913,7 @@
 0|lick
 0|symbol
 0|skillful
-0|ursday
+0|Thursday
 0|solar
 0|jazz
 0|purple

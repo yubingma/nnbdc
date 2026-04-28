@@ -4169,7 +4169,7 @@
 0|thumb
 0|thunder
 0|thunderstorm
-0|ursday
+0|Thursday
 0|thus
 0|tick
 0|ticket

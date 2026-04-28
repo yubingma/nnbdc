@@ -4831,7 +4831,7 @@
 0|testimony
 0|textbook
 0|texture
-0|anksgiving
+0|Thanksgiving
 0|theater
 0|theoretical
 0|theory

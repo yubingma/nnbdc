@@ -3786,8 +3786,8 @@
 0|sometimes
 0|summer
 0|Sunday
-0|anksgiving
-0|ursday
+0|Thanksgiving
+0|Thursday
 0|till
 0|time
 0|timely

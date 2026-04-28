@@ -2205,7 +2205,7 @@
 0|military
 0|ordinary
 0|epidemic
-0|ursday
+0|Thursday
 0|institute
 0|opposite
 0|accustom
@@ -2873,7 +2873,7 @@
 0|metropolitan
 0|recordkeeper
 0|spokesperson
-0|anksgiving
+0|Thanksgiving
 0|lesser-known
 0|self-contradictory
 0|nevertheless

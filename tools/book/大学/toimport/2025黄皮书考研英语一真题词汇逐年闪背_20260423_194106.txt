@@ -4509,7 +4509,7 @@
 0|conversation
 0|kilo
 0|dollar
-0|ursday
+0|Thursday
 0|joke
 0|shared
 0|hidden

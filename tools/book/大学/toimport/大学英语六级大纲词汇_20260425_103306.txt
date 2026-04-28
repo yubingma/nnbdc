@@ -7263,7 +7263,7 @@
 0|than
 0|thank
 0|thankful
-0|anksgiving
+0|Thanksgiving
 0|that
 0|the
 0|theater
@@ -7330,7 +7330,7 @@
 0|thumb
 0|thunder
 0|thunderous
-0|ursday
+0|Thursday
 0|thus
 0|tick
 0|ticket

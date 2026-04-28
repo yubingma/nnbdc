@@ -219,7 +219,7 @@
 0|pay off
 0|speak up for
 0|take on
-0|Margaret atcher
+0|Margaret Thatcher
 0|Tony Blair
 0|actualization
 0|adversity
@@ -383,7 +383,7 @@
 0|Rhone
 0|Saint-Remy
 0|the Netherlands
-0|eo
+0|Theo
 0|Van Gogh
 0|admission
 0|atmospherically
@@ -565,7 +565,7 @@
 0|in the blink of an eye
 0|live up to
 0|take in
-0|e Exodial Age
+0|The Exodial Age
 0|Navigation Commission
 0|Pre-Solar Age
 0|depleted
@@ -834,7 +834,7 @@
 0|Rousseau
 0|Seine
 0|Silicon Valley
-0|oreau
+0|Thoreau
 0|Wikipedia
 0|abet
 0|academy

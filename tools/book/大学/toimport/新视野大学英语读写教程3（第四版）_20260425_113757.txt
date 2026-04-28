@@ -164,7 +164,7 @@
 0|Mencius
 0|Indonesia
 0|Malaysia
-0|ailand
+0|Thailand
 0|Yemen
 0|Saudi Arabia
 0|Malindi

@@ -255,7 +255,7 @@
 0|exhibit
 0|gamble
 0|feast
-0|anksgiving
+0|Thanksgiving
 0|Easter
 0|tramp
 0|trek

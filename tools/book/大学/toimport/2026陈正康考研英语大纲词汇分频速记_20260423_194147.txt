@@ -2594,7 +2594,7 @@
 0|fortnight
 0|Monday
 0|Wednesday
-0|ursday
+0|Thursday
 0|Friday
 0|weekend
 0|weekly
@@ -4941,7 +4941,7 @@
 0|plague
 0|monster
 0|accidental
-0|anksgiving
+0|Thanksgiving
 0|godlike
 0|performative
 0|format

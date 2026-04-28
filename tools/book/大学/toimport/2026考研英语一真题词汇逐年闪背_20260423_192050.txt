@@ -4296,7 +4296,7 @@
 0|rock
 0|kilo
 0|dollar
-0|ursday
+0|Thursday
 0|joke
 0|rapid
 0|shared

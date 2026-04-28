@@ -570,8 +570,8 @@
 0|finally
 0|Christmas
 0|frenzy
-0|anksgiving
-0|anksgiving Day
+0|Thanksgiving
+0|Thanksgiving Day
 0|gift
 0|polite
 0|decorate

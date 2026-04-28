@@ -3683,7 +3683,7 @@
 0|text
 0|than
 0|thank
-0|anksgiving
+0|Thanksgiving
 0|that
 0|the
 0|their
@@ -3703,7 +3703,7 @@
 0|this
 0|those
 0|three
-0|ursday
+0|Thursday
 0|tiger
 0|tired
 0|to

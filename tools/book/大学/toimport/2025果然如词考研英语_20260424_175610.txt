@@ -2312,7 +2312,7 @@
 0|sportswoman
 0|staircase
 0|stairway
-0|anksgiving
+0|Thanksgiving
 0|typewriter
 0|upstairs
 0|wardrobe
@@ -3813,7 +3813,7 @@
 0|through
 0|throw
 0|thumb
-0|ursday
+0|Thursday
 0|thus
 0|ticket
 0|tidy

@@ -3204,7 +3204,7 @@
 0|throw
 0|thunder
 0|thunderstorm
-0|ursday
+0|Thursday
 0|thus
 0|tick
 0|ticket
@@ -4159,7 +4159,7 @@
 0|beyond one's control
 0|call attention to
 0|call one's attention to
-0|e New York Times
+0|The New York Times
 0|Jeremy Bentham
 0|catalyst
 0|breakdown
@@ -4177,8 +4177,8 @@
 0|have no bearing on
 0|grow up
 0|take over
-0|e Partridge Family
-0|e Great Pumpkin, Charlie Brown
+0|The Partridge Family
+0|The Great Pumpkin, Charlie Brown
 0|NBC
 0|ABC
 0|CBS
