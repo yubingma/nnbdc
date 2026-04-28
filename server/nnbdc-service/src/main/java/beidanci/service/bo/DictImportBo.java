@@ -21,7 +21,6 @@ import beidanci.api.model.MeaningItemDto;
 import beidanci.api.model.WordDto;
 import beidanci.service.po.Dict;
 import beidanci.service.po.DictWord;
-import beidanci.service.po.DictWordId;
 import beidanci.service.po.ImportTask;
 import beidanci.service.po.MeaningItem;
 import beidanci.service.po.Sentence;
