@@ -359,8 +359,6 @@ public class DictImportController {
             String sql = "SELECT id, config FROM import_task WHERE status IN ('PENDING', 'RUNNING')";
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
             
-            int canceledCount = 0;
-            
             for (Map<String, Object> row : rows) {
                 String config = (String) row.get("config");
                 if (config == null || config.trim().isEmpty()) continue;
@@ -371,7 +369,6 @@ public class DictImportController {
                     if (batchId.equals(bId)) {
                         jdbcTemplate.update("UPDATE import_task SET status = 'CANCELED' WHERE id = ?", row.get("id"));
                         beidanci.service.bo.DictImportBo.canceledTaskIds.add((String) row.get("id"));
-                        canceledCount++;
                     }
 
                 } catch (Exception ignore) {}
