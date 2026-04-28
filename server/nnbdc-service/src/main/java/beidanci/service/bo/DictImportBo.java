@@ -784,25 +784,47 @@ public class DictImportBo {
         if (dictId != null) {
             Dict dict = new Dict();
             dict.setId(dictId);
-            if (dictWordBo.findById(new DictWordId(dictId, word.getId())) == null) {
+            if (dictWordBo.findById(new beidanci.service.po.DictWordId(dictId, word.getId())) == null) {
                 DictWord dw = new DictWord();
-                dw.setId(new DictWordId(dictId, word.getId()));
+                dw.setId(new beidanci.service.po.DictWordId(dictId, word.getId()));
                 dw.setDict(dict);
                 dw.setWord(word);
                 dw.setUnit(unit);
                 dw.setSeq(dictWordBo.getMaxSeqNo(dict) + 1);
                 dw.setCreateTime(new Date());
-                dictWordBo.createEntity(dw);
-                stats.addedDictWordCount++;
                 
-                // 更新词书单词计数
-                dict = dictBo.findById(dictId);
-                if (dict != null) {
-                    dict.setWordCount(dict.getWordCount() + 1);
-                    dictBo.updateEntity(dict);
+                try {
+                    dictWordBo.createEntity(dw);
+                    stats.addedDictWordCount++;
+                    
+                    // 更新词书单词计数
+                    Dict dictToUpdate = dictBo.findById(dictId);
+                    if (dictToUpdate != null) {
+                        dictToUpdate.setWordCount(dictToUpdate.getWordCount() + 1);
+                        dictBo.updateEntity(dictToUpdate);
+                    }
+                } catch (Exception e) {
+                    // 再次检查异常类型，如果是唯一键冲突，属于可接受的并发竞态，跳过即可
+                    Throwable cause = e;
+                    boolean isDup = false;
+                    while (cause != null) {
+                        if (cause.toString().contains("duplicate key") || 
+                            cause.toString().contains("DuplicateKey") || 
+                            cause.toString().contains("unique constraint")) {
+                            isDup = true;
+                            break;
+                        }
+                        cause = cause.getCause();
+                    }
+                    if (isDup) {
+                        logger.warn("向词书 [{}] 导入单词 [{}] 时遭遇并发冲突，该映射记录已存在，跳过本次写入。", dictId, word.getSpell());
+                    } else {
+                        throw e; // 如果是其他数据库错误，依然严格抛出，绝不姑息！
+                    }
                 }
             }
         }
+
 
         if (canceledTaskIds.contains(taskId)) {
             return;
