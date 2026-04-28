@@ -1035,6 +1035,11 @@ public class DictImportBo {
             }
         }
         
+        assert map != null : "AI 单词解析返回的 JSON 数据结构不可为空";
+        if (map == null) {
+            throw new RuntimeException("AI 单词解析返回的 JSON 数据结构不可为空");
+        }
+        
         AiResult res = new AiResult();
         res.phonetic = (String) map.get("phonetic");
         res.popularity = (Integer) map.getOrDefault("popularity", 5);
