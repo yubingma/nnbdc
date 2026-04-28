@@ -15,6 +15,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/util/client_type.dart';
 import 'package:nnbdc/util/level_util.dart';
+import 'dart:math' as math;
 
 
 class UserBo {
@@ -352,6 +353,61 @@ class UserBo {
       Global.logger.e('注销用户失败: $e', stackTrace: stackTrace);
       ErrorHandler.handleError(e, stackTrace, logPrefix: 'unRegister', userMessage: '注销失败，请稍后重试');
       return Result("ERROR", "注销失败: ${e.toString()}", false);
+    }
+  }
+
+  Future<int> calculateContinuousDakaDays(String userId) async {
+    final db = MyDatabase.instance;
+    final records = await db.dakasDao.getDakaRecords(userId);
+    if (records.isEmpty) return 0;
+
+    int continuousDays = 0;
+    final now = AppClock.now();
+    DateTime checkDate = DateTime(now.year, now.month, now.day);
+
+    final hasDakaToday = records.any((r) => _isSameDay(r.forLearningDate, checkDate));
+    if (!hasDakaToday) {
+      checkDate = checkDate.subtract(const Duration(days: 1));
+    }
+
+    for (final record in records) {
+      final recordDate = DateTime(record.forLearningDate.year, record.forLearningDate.month, record.forLearningDate.day);
+      if (recordDate.isAtSameMomentAs(checkDate)) {
+        continuousDays++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      } else if (recordDate.isBefore(checkDate)) {
+        break;
+      }
+    }
+    return continuousDays;
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Future<void> updateAndSyncUserDakaStats(String userId) async {
+    final db = MyDatabase.instance;
+    final user = await db.usersDao.getUserById(userId);
+    if (user == null) return;
+
+    final realCount = await db.dakasDao.getDakaCount(userId);
+    final realContinuousCount = await calculateContinuousDakaDays(userId);
+
+    if (user.dakaDayCount != realCount || user.continuousDakaDayCount != realContinuousCount) {
+      Global.logger.d('检测到打卡统计数据不一致，进行自我修正: userId=$userId, count: ${user.dakaDayCount} -> $realCount, continuous: ${user.continuousDakaDayCount} -> $realContinuousCount');
+      
+      final maxContinuousCount = math.max(user.maxContinuousDakaDayCount, realContinuousCount);
+      double dakaRatio = user.learnedDays > 0 ? realCount / user.learnedDays : 1.0;
+
+      final updatedUser = user.copyWith(
+        dakaDayCount: realCount,
+        continuousDakaDayCount: realContinuousCount,
+        maxContinuousDakaDayCount: maxContinuousCount,
+        dakaRatio: Value(dakaRatio),
+      );
+      
+      await db.usersDao.saveUser(updatedUser, true);
     }
   }
 

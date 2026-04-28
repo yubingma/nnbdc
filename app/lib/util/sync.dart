@@ -18,6 +18,7 @@ import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/api/bo/user_bo.dart';
 
 export 'package:nnbdc/util/sys_db_sync.dart' show syncSysDb;
 
@@ -822,6 +823,14 @@ Future<void> syncUserDb(String userId) async {
         addDownloadDetails(dDetails);
 
         await doSyncUserDb(localLogs, remoteLogs, remoteDbVersion, userId);
+        
+        // 动态推导并纠正打卡天数统计，防止多端数据冲突
+        try {
+          await UserBo().updateAndSyncUserDakaStats(userId);
+        } catch (e) {
+          Global.logger.e("纠正打卡天数统计失败: $e");
+        }
+
         stopwatch.stop();
         Global.logger.i("✅ 用户数据库同步完成 - 耗时: ${stopwatch.elapsedMilliseconds}ms, 本地变更: ${localLogs.length}, 远程变更: ${remoteLogs.length}");
       } else {

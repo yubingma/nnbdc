@@ -341,10 +341,19 @@ class _MePageState extends State<MePage> {
       if (loggedInUserVal == null || loggedInUserVal.id == null) return;
 
       final db = MyDatabase.instance;
-      User? user = await db.usersDao.getUserById(loggedInUserVal.id!);
-      if (user != null) {
-        final userId = user.id;
+      User? tempUser = await db.usersDao.getUserById(loggedInUserVal.id!);
+      if (tempUser != null) {
+        final userId = tempUser.id;
         
+        // 动态推导并纠正打卡天数统计，防止多端数据冲突
+        try {
+          await UserBo().updateAndSyncUserDakaStats(userId);
+        } catch (e) {
+          Global.logger.e("MePage: 纠正打卡天数统计失败: $e");
+        }
+
+        final user = await db.usersDao.getUserById(userId) ?? tempUser;
+
         // 核心统计数据计算
         var learningDicts = await MyDatabase.instance.learningDictsDao.getLearningDictsOfUser(userId);
         final learningDictIds = learningDicts.map((d) => d.dictId).toList();

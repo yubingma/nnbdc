@@ -22,6 +22,7 @@ import 'word_bo.dart';
 import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/constants.dart';
+import 'package:nnbdc/api/bo/user_bo.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
@@ -388,6 +389,9 @@ class StudyBo {
             updateTime: now,
           ),
           true);
+
+      // 动态推导并纠正打卡天数统计，防止多端数据冲突
+      await UserBo().updateAndSyncUserDakaStats(user.id);
 
       // 触发数据库同步
       ThrottledDbSyncService().requestSync();
