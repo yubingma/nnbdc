@@ -193,98 +193,55 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
 
     if (!confirm) return;
 
-    // 1. 发送非阻塞的终止指令
-    try {
-      final res = await Api.client.cancelBatch(batchId);
-      if (!res.success) {
-        ToastUtil.error(res.msg ?? '指令下发失败');
-        return;
-      }
-    } catch (e) {
-      ToastUtil.error('指令下发异常: $e');
-      return;
-    }
-
-    int activeCount = 0;
-    int pendingCount = 0;
-    bool isFinished = false;
-
     if (!mounted) return;
-    
-    // 2. 构造可局部刷新状态的动态阻断窗口
+
+    // 1. 立刻拉起不透光的等待阻断蒙层
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            
-            // 启动定时循环拉取快照
-            Timer.periodic(const Duration(seconds: 2), (timer) async {
-              if (isFinished) {
-                timer.cancel();
-                return;
-              }
-              
-              try {
-                final batchRes = await Api.client.getAllBatches();
-                if (batchRes.success && batchRes.data != null) {
-                  final dynamic data = batchRes.data!;
-                  final List? tasks = data[batchId];
-                  if (tasks != null) {
-                    // 计算当前属于此批次，依然在真正跑、或者挂起的任务数量
-                    int active = tasks.where((t) => t['isThreadRunning'] == true).length;
-                    int pending = tasks.where((t) => t['status'] == 'PENDING').length;
-                    
-                    if (active == 0 && pending == 0) {
-                      isFinished = true;
-                      timer.cancel();
-                      if (context.mounted) {
-                        Navigator.of(ctx).pop(); // 卸载等待窗口
-                        ToastUtil.success('该批次任务已彻底平息完毕！');
-                        _loadBatches();
-                      }
-                      return;
-                    }
-                    
-                    if (context.mounted) {
-                      setDialogState(() {
-                        activeCount = active;
-                        pendingCount = pending;
-                      });
-                    }
-                  }
-                }
-              } catch (e) {
-                // 忽略查询产生的抖动报错
-              }
-            });
-
-            return Center(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(color: Colors.orange),
-                      const SizedBox(height: 16),
-                      Text(
-                        '正在平息后台任务，请稍候...\n'
-                        '活跃退役线程: $activeCount / 10\n'
-                        '队列排队挂起: $pendingCount',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14, height: 1.5),
-                      ),
-                    ],
-                  ),
+      builder: (ctx) => Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: Colors.orange),
+                const SizedBox(height: 16),
+                const Text(
+                  '正在终止批次任务...\n请耐心等待全部 140+ 线程落库退役。',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, height: 1.5),
                 ),
-              ),
-            );
-          },
-        );
-      },
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+
+    // 2. 发送真正的死等指令：由后端把关，不见零不回头
+    try {
+      final res = await Api.client.cancelBatch(batchId);
+      
+      if (mounted) {
+        Navigator.of(context).pop(); // 关闭等待蒙层
+      }
+
+      if (res.success) {
+        ToastUtil.success('该批次任务已彻底终止退出！');
+        _loadBatches();
+      } else {
+        ToastUtil.error(res.msg ?? '未知错误');
+      }
+    } catch (e, stack) {
+      if (mounted) {
+        Navigator.of(context).pop(); // 关闭等待蒙层
+      }
+      Global.logger.e('终止批次任务异常', error: e, stackTrace: stack);
+      ToastUtil.error('操作失败: $e');
+    }
+
 
 
   }

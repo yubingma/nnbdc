@@ -6,9 +6,7 @@ import json
 import sys
 
 def generate_meta(target_dir):
-    if not os.path.isdir(target_dir):
-        print(f"Error: {target_dir} is not a valid directory.")
-        return
+    assert os.path.isdir(target_dir), f"Error: {target_dir} is not a valid directory."
 
     # 获取目录下所有的 txt 文件
     txt_files = [f for f in os.listdir(target_dir) if f.endswith('.txt') and os.path.isfile(os.path.join(target_dir, f))]
@@ -21,14 +19,19 @@ def generate_meta(target_dir):
     meta_data = {
         "isSystemImport": True,
         "generateWordImage": False,
-        "generateShuffledVersion": True,
+        "generateShuffledVersion": False, # 默认不生成乱序版
         "targetDictGroupId": "",
         "targetGameHallIds": [],
         "books": []
     }
 
+    import re
     for txt_file in sorted(txt_files):
-        import re
+        # 默认不要乱序书
+        if '乱序' in txt_file:
+            print(f"跳过乱序书: {txt_file}")
+            continue
+            
         # 词书名称缺省为去除了 .txt 后缀的文件名
         dict_name = os.path.splitext(txt_file)[0]
         # 去除类似 _20260425_103634 这样的时间戳后缀

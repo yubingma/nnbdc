@@ -1,7 +1,7 @@
 {
   "isSystemImport": true,
   "generateWordImage": false,
-  "generateShuffledVersion": true,
+  "generateShuffledVersion": false,
   "targetDictGroupId": "",
   "targetGameHallIds": [],
   "books": [
