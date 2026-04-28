@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:nnbdc/api/api.dart';
@@ -16,9 +17,8 @@ class BatchImportManagementPage extends StatefulWidget {
 }
 
 class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
-  final TextEditingController _dirPathCtrl = TextEditingController(
-    text: "/Volumes/ssd/ppdc/tools/book/大学/toimport"
-  );
+  final TextEditingController _dirPathCtrl = TextEditingController();
+  PlatformFile? _selectedFile;
   bool _isSubmitting = false;
   Map<String, dynamic> _batches = {};
   Timer? _timer;
@@ -119,22 +119,25 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
 
 
   Future<void> _submitBatch() async {
-    final dirPath = _dirPathCtrl.text.trim();
-    if (dirPath.isEmpty) {
-      ToastUtil.info('请输入词书绝对路径');
+    if (_selectedFile == null || _selectedFile!.path == null) {
+      ToastUtil.info('请先选择需要上传的词书包 ZIP 文件');
       return;
     }
 
     setState(() { _isSubmitting = true; });
     try {
       final res = await Api.client.submitBatchImportTask(
-        dirPath,
+        File(_selectedFile!.path!),
         _selectedGroupIds.isEmpty ? null : _selectedGroupIds,
         _selectedHallIds.isEmpty ? null : _selectedHallIds,
       );
 
       if (res.success) {
         ToastUtil.success(res.data ?? '任务提交成功');
+        setState(() {
+          _selectedFile = null;
+          _dirPathCtrl.clear();
+        });
         _loadBatches();
       } else {
         ToastUtil.error(res.msg ?? '未知错误');
@@ -142,25 +145,28 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     } catch (e, stack) {
       Global.logger.e('批量导入提交异常', error: e, stackTrace: stack);
       ToastUtil.error('提交失败: $e');
-    }
- finally {
+    } finally {
       if (mounted) {
         setState(() { _isSubmitting = false; });
       }
     }
   }
 
-  Future<void> _pickDirectory() async {
+  Future<void> _pickZipFile() async {
     try {
-      String? selectedDirectory = await FilePicker.getDirectoryPath();
-      if (selectedDirectory != null) {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['zip'],
+      );
+      if (result != null && result.files.isNotEmpty) {
         setState(() {
-          _dirPathCtrl.text = selectedDirectory;
+          _selectedFile = result.files.first;
+          _dirPathCtrl.text = _selectedFile!.name;
         });
       }
     } catch (e) {
-      Global.logger.e('选取文件夹失败', error: e);
-      ToastUtil.error('选取文件夹异常: $e');
+      Global.logger.e('选取ZIP文件失败', error: e);
+      ToastUtil.error('选取文件异常: $e');
     }
   }
 
@@ -405,14 +411,15 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
             const SizedBox(height: 12),
             TextField(
               controller: _dirPathCtrl,
+              readOnly: true,
               decoration: InputDecoration(
-                labelText: '词书存放绝对路径',
-                hintText: '例: /Volumes/ssd/ppdc/tools/book/大学/toimport',
+                labelText: '待上传的词书压缩包 (.zip)',
+                hintText: '点击右侧按钮选取 ZIP 文件',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.folder_open),
-                  onPressed: _pickDirectory,
-                  tooltip: '浏览选择文件夹',
+                  icon: const Icon(Icons.upload_file),
+                  onPressed: _pickZipFile,
+                  tooltip: '选择ZIP包',
                 ),
               ),
             ),

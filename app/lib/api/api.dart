@@ -805,8 +805,9 @@ abstract class RestClient {
   Future<Result> cancelDictImportTask(@Query("taskId") String taskId);
 
   @POST("/import/batch")
+  @MultiPart()
   Future<Result<String>> submitBatchImportTask(
-      @Query("dirPath") String dirPath,
+      @Part(name: "file") File file,
       @Query("defaultDictGroupIds") List<String>? defaultDictGroupIds,
       @Query("defaultGameHallIds") List<String>? defaultGameHallIds);
 

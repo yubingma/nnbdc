@@ -138,7 +138,7 @@ public class DictImportController {
                                       @RequestParam(required = false) List<String> defaultGameHallIds) {
 
         if (file == null || file.isEmpty()) {
-            return Result.fail("上传的词书包文件不能为空");
+            return Result.fail("上传的词书包文件不能为空！");
         }
 
         String batchId = "BATCH_" + System.currentTimeMillis();
