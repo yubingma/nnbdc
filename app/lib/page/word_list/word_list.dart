@@ -176,6 +176,7 @@ class WordListPageState extends State<WordListPage>
   final GlobalKey<HandwritingBoardState> _handwritingBoardKey = GlobalKey<HandwritingBoardState>();
   int _renderWordCallCount = 0;
   final ValueNotifier<int> activeWordIndexNotifier = ValueNotifier<int>(-1);
+  final ValueNotifier<bool> _rightZoneVisible = ValueNotifier<bool>(true);
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
@@ -4296,6 +4297,7 @@ class WordListPageState extends State<WordListPage>
                 showCanvasButtons: true, 
                 enableNavigationGestures: false,
                 smartRightZoneWidth: 0, 
+                rightZoneVisibleNotifier: _rightZoneVisible, 
                 onRecognized: (text) {
                   final targetWord = activeWord;
                   if (targetWord != null) { 

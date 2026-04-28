@@ -280,9 +280,10 @@ public class DictImportController {
                     taskInfo.put("dictId", cfgMap.get("dictId"));
                     taskInfo.put("createTime", row.get("create_time"));
                     taskInfo.put("log", row.get("log"));
+                    taskInfo.put("isThreadRunning", beidanci.service.bo.DictImportBo.runningTaskIds.contains(row.get("id")));
 
-                    
                     batchMap.computeIfAbsent(batchId, k -> new ArrayList<>()).add(taskInfo);
+
                 } catch (Exception ignore) {}
             }
             return Result.success(batchMap);
@@ -369,52 +370,15 @@ public class DictImportController {
                     String bId = (String) cfgMap.get("batchId");
                     if (batchId.equals(bId)) {
                         jdbcTemplate.update("UPDATE import_task SET status = 'CANCELED' WHERE id = ?", row.get("id"));
+                        beidanci.service.bo.DictImportBo.canceledTaskIds.add((String) row.get("id"));
                         canceledCount++;
                     }
+
                 } catch (Exception ignore) {}
             }
 
-            // 2. 阻塞等待：最多等待30秒，直到该批次下所有正运行的 Java 线程退出
-            long startTime = System.currentTimeMillis();
-            boolean fullyStopped = false;
-            
-            // 先找出所有属于这个批次的 taskId
-            String fetchAllSql = "SELECT id, config FROM import_task";
-            List<Map<String, Object>> allRows = jdbcTemplate.queryForList(fetchAllSql);
-            List<String> taskIdsInBatch = new ArrayList<>();
-            for (Map<String, Object> r : allRows) {
-                String config = (String) r.get("config");
-                if (config == null || config.trim().isEmpty()) continue;
-                try {
-                    Map<String, Object> cfgMap = JsonUtils.parseMap(config);
-                    String bId = (String) cfgMap.get("batchId");
-                    if (batchId.equals(bId)) {
-                        taskIdsInBatch.add((String) r.get("id"));
-                    }
-                } catch (Exception ignore) {}
-            }
-            
-            while (System.currentTimeMillis() - startTime < 30000) {
-                int activeThreadCount = 0;
-                for (String tId : taskIdsInBatch) {
-                    if (beidanci.service.bo.DictImportBo.runningTaskIds.contains(tId)) {
-                        activeThreadCount++;
-                    }
-                }
-                
-                if (activeThreadCount == 0) {
-                    fullyStopped = true;
-                    break;
-                }
-                Thread.sleep(500);
-            }
+            return Result.success("终止指令已成功下发，批次 " + batchId + " 内的 " + canceledCount + " 个任务正在平息退出。");
 
-            
-            if (!fullyStopped) {
-                return Result.success("终止指令已下发完毕（部分后台线程收尾较慢，请稍后刷新列表查看）");
-            }
-            
-            return Result.success("成功中止批次 " + batchId + " 内的 " + canceledCount + " 个任务。");
 
         } catch (Exception e) {
             return Result.fail("中止批次任务失败: " + e.getMessage());

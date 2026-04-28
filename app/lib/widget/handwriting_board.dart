@@ -20,6 +20,7 @@ class HandwritingBoard extends StatefulWidget {
   final bool showCanvasButtons;
   final bool enableNavigationGestures;
   final double smartRightZoneWidth;
+  final ValueNotifier<bool>? rightZoneVisibleNotifier;
 
   const HandwritingBoard({
     super.key,
@@ -34,6 +35,7 @@ class HandwritingBoard extends StatefulWidget {
     this.showCanvasButtons = true,
     this.enableNavigationGestures = true,
     this.smartRightZoneWidth = 0.0,
+    this.rightZoneVisibleNotifier,
   });
 
   @override
@@ -45,6 +47,14 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   bool _isRecognizing = false;
   int _recognitionVersion = 0;
   final GlobalKey<_HandwritingCanvasState> _canvasKey = GlobalKey<_HandwritingCanvasState>();
+  
+  void hideRightZone() {
+    widget.rightZoneVisibleNotifier?.value = false;
+  }
+
+  void showRightZone() {
+    widget.rightZoneVisibleNotifier?.value = true;
+  }
 
   void clearBoard() {
     setState(() {

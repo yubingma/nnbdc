@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import beidanci.api.model.MeaningItemDto;
@@ -96,16 +95,25 @@ public class DictImportBo {
     @Autowired
     private GameHallBo gameHallBo;
 
+    public static final java.util.concurrent.ThreadPoolExecutor importThreadPool = 
+        new java.util.concurrent.ThreadPoolExecutor(
+            10, 10,
+            0L, java.util.concurrent.TimeUnit.MILLISECONDS,
+            new java.util.concurrent.LinkedBlockingQueue<>(10000)
+        );
+
     public static final java.util.Set<String> runningTaskIds = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+    public static final java.util.Set<String> canceledTaskIds = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
 
     /**
      * 异步执行导入任务
      *
      * @param taskId 任务ID
      */
-    @Async
     public void executeImportTask(String taskId) {
-        runningTaskIds.add(taskId);
+        importThreadPool.submit(() -> {
+            runningTaskIds.add(taskId);
+
 
         ImportTask task = importTaskBo.findById(taskId);
         if (task == null) return;
@@ -402,18 +410,22 @@ public class DictImportBo {
 
         } finally {
             runningTaskIds.remove(taskId);
+            canceledTaskIds.remove(taskId);
+
         }
+        });
     }
+
 
 
     private boolean processSystemImport(ImportTask task, String dictId, String dictName, String domain, List<String> words, boolean generateWordImage, String preferredVoices,
                                      String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) {
         User systemUser = userBo.findById(Constants.SYS_USER_SYS_ID);
         for (int i = 0; i < words.size(); i++) {
-            ImportTask curTask = importTaskBo.findById(task.getId());
-            if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+            if (canceledTaskIds.contains(task.getId())) {
                 return false;
             }
+
             String line = words.get(i).trim();
             if (line.isEmpty()) continue;
             String spell = line;
@@ -454,10 +466,10 @@ public class DictImportBo {
                                             String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
-            ImportTask curTask = importTaskBo.findById(task.getId());
-            if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+            if (canceledTaskIds.contains(task.getId())) {
                 return false;
             }
+
             String spell = words.get(i).trim();
             try {
                 processSingleWord(task.getId(), spell, null, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
@@ -478,10 +490,10 @@ public class DictImportBo {
                                                String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) {
         User owner = task.getOwner();
         for (int i = 0; i < words.size(); i++) {
-            ImportTask curTask = importTaskBo.findById(task.getId());
-            if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
+            if (canceledTaskIds.contains(task.getId())) {
                 return false;
             }
+
             Map<String, String> item = words.get(i);
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
@@ -503,10 +515,8 @@ public class DictImportBo {
     private void processSingleWord(String taskId, String spell, String manualMeaning, Integer unit, boolean isSystemDict, User user, String dictId, String dictName, String domain,
                                    boolean generateWordImage, String preferredVoices, String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) throws Exception {
         
-        ImportTask curTask = importTaskBo.findById(taskId);
-        if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
-            throw new InterruptedException("任务已被强行中止");
-        }
+
+
 
         Word word = wordBo.getWordBySpell(spell);
         boolean isNewWord = (word == null);
@@ -518,10 +528,8 @@ public class DictImportBo {
             word.setSpell(spell);
             word.setPopularity(5); 
             
-            curTask = importTaskBo.findById(taskId);
-            if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
-                throw new InterruptedException("任务已被强行中止");
-            }
+
+
             
             lastAiResult = getAiResult(spell, null, null, false, null, sentenceRequirement, null);
 
@@ -636,10 +644,8 @@ public class DictImportBo {
         }
 
         // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音
-        curTask = importTaskBo.findById(taskId);
-        if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
-            throw new InterruptedException("任务已被强行中止");
-        }
+
+
         
         try {
             String pureSpell = Utils.uniformSpellForFilename(spell);
@@ -707,10 +713,8 @@ public class DictImportBo {
                 .map(m -> (m.getCiXing() != null ? m.getCiXing() : "") + " " + m.getMeaning())
                 .collect(java.util.stream.Collectors.joining("; "));
 
-        curTask = importTaskBo.findById(taskId);
-        if (curTask != null && "CANCELED".equals(curTask.getStatus())) {
-            throw new InterruptedException("任务已被强行中止");
-        }
+
+
 
         if (!isPrivateReusing) {
             boolean hasDomain = (domain != null && !domain.trim().isEmpty());
@@ -1078,9 +1082,29 @@ public class DictImportBo {
     private void linkDictToGroup(String dictId, String groupId) {
         if (dictId == null || groupId == null) return;
         try {
+            // 1. 尝试转译 groupId：可能前端传过来的是分组名字（Name）
+            String realGroupId = groupId;
+            String checkGroupSql = "SELECT id FROM dict_group WHERE id = :gid";
+            MapSqlParameterSource groupParams = new MapSqlParameterSource().addValue("gid", groupId);
+            List<String> foundIds = namedParameterJdbcTemplate.queryForList(checkGroupSql, groupParams, String.class);
+            
+            if (foundIds.isEmpty()) {
+                // 2. 如果按 ID 查不到，说明前端传过来的是名称，按 name 查
+                String findByNameSql = "SELECT id FROM dict_group WHERE name = :name";
+                MapSqlParameterSource nameParams = new MapSqlParameterSource().addValue("name", groupId);
+                foundIds = namedParameterJdbcTemplate.queryForList(findByNameSql, nameParams, String.class);
+            }
+            
+            if (!foundIds.isEmpty()) {
+                realGroupId = foundIds.get(0);
+            } else {
+                logger.warn("未找到对应的词书分组，跳过关联: groupId/name={}", groupId);
+                return;
+            }
+
             String checkSql = "SELECT count(*) FROM group_and_dict_link WHERE group_id = :groupId AND dict_id = :dictId";
             MapSqlParameterSource p = new MapSqlParameterSource()
-                    .addValue("groupId", groupId)
+                    .addValue("groupId", realGroupId)
                     .addValue("dictId", dictId);
             Integer count = namedParameterJdbcTemplate.queryForObject(checkSql, p, Integer.class);
             if (count == null || count == 0) {
@@ -1089,12 +1113,12 @@ public class DictImportBo {
                 
                 // 记录系统同步日志，通知客户端拉取这层关系
                 java.util.Map<String, String> linkDto = new java.util.HashMap<>();
-                linkDto.put("groupId", groupId);
+                linkDto.put("groupId", realGroupId);
                 linkDto.put("dictId", dictId);
-                sysDbSyncBo.logOperation("INSERT", "group_and_dict_link", groupId + "_" + dictId, 
+                sysDbSyncBo.logOperation("INSERT", "group_and_dict_link", realGroupId + "_" + dictId, 
                         JsonUtils.toJson(linkDto));
                         
-                logger.info("系统词库导入：已自动建立词书关联: dictId={}, groupId={}", dictId, groupId);
+                logger.info("系统词库导入：已自动建立词书关联: dictId={}, groupId={}", dictId, realGroupId);
             }
         } catch (Exception e) {
             logger.error("自动关联词库至分组时出错", e);
