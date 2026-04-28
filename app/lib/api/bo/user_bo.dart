@@ -196,31 +196,27 @@ class UserBo {
 
     // 从 dakas 表查询打卡记录（与 hasDakaToday 保持一致的数据源）
     final allDakas = await db.dakasDao.getDakaRecords(userId);
-    final Set<DateTime> dakaDateSet = allDakas
-        .map((d) => DateTime(d.forLearningDate.year, d.forLearningDate.month, d.forLearningDate.day))
+    final Set<String> dakaDateSet = allDakas
+        .map((d) => _formatPureDate(d.forLearningDate))
         .toSet();
 
     // 从 userOpers 表查询登录和学习记录
     final allOpers = await db.userOpersDao.getUserOpers(userId);
 
-    final filteredOpers = allOpers.where((hist) {
-      final operDate = DateTime(hist.operTime.year, hist.operTime.month, hist.operTime.day);
-      return operDate.isAfter(startDate.subtract(const Duration(days: 1))) && operDate.isBefore(endDate.add(const Duration(days: 1)));
-    }).toList();
-
-    final Map<DateTime, Set<String>> dateOperMap = {};
-    for (final hist in filteredOpers) {
-      final operDate = DateTime(hist.operTime.year, hist.operTime.month, hist.operTime.day);
-      dateOperMap.putIfAbsent(operDate, () => {}).add(hist.operType);
+    final Map<String, Set<String>> dateOperMap = {};
+    for (final hist in allOpers) {
+      final dateStr = _formatPureDate(hist.operTime);
+      dateOperMap.putIfAbsent(dateStr, () => {}).add(hist.operType);
     }
 
     for (int i = 0; i < recentNDays; i++) {
       final date = startDate.add(Duration(days: i));
+      final dateStr = _formatPureDate(date);
 
-      if (dakaDateSet.contains(date)) {
+      if (dakaDateSet.contains(dateStr)) {
         dayStatuses[i] = UserDayStatus.dakaed;
       } else {
-        final operTypes = dateOperMap[date] ?? {};
+        final operTypes = dateOperMap[dateStr] ?? {};
         if (operTypes.contains(OperType.startLearn.value)) {
           dayStatuses[i] = UserDayStatus.studied;
         } else if (operTypes.contains(OperType.login.value)) {
@@ -421,6 +417,11 @@ class UserBo {
 
   Future<Result<int>> syncUserDb(int expectedServerDbVersion, String userId, List<UserDbLogDto> logs) async =>
       Api.client.syncUserDb(expectedServerDbVersion, userId, logs);
+
+  String _formatPureDate(DateTime dt) {
+    final local = dt.toLocal();
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+  }
 
   Future<Result<int>> getSystemDbVersion() async => Api.client.getSysDbVersion();
 }
