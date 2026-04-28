@@ -151,7 +151,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
           
           // 白名单模式：只打包 TXT 词书以及 JSON 配置文件
           if (ext == '.txt' || ext == '.json') {
-            final relativePath = p.join(p.basename(sourceDir.path), p.relative(entity.path, from: sourceDir.path));
+            final relativePath = p.relative(entity.path, from: sourceDir.path);
             encoder.addFile(entity, relativePath);
             packCount++;
             Global.logger.i('【打包上传】装载文件: ${entity.path} -> ZIP路径: $relativePath');
@@ -175,7 +175,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
       );
 
       if (res.success) {
-        ToastUtil.success(res.data ?? '任务提交成功');
+        ToastUtil.success('${res.data ?? '任务提交成功'}\n本地 ZIP 已保留: $zipPath');
         setState(() {
           _dirPathCtrl.clear();
         });
@@ -189,7 +189,8 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
     } finally {
       try {
         if (tempZipFile != null && await tempZipFile.exists()) {
-          await tempZipFile.delete();
+          // 调试期间不删：await tempZipFile.delete();
+          Global.logger.i('【调试】本地 ZIP 已保留: ${tempZipFile.path}');
         }
       } catch (_) {}
       

@@ -15,6 +15,7 @@ import java.util.*;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -148,10 +149,14 @@ public class DictImportController {
             targetDir.mkdirs();
         }
 
+        File zipFile = new File(targetDir, "upload.zip");
         try {
-            unzip(file.getInputStream(), targetDir);
+            file.transferTo(zipFile);
+            try (FileInputStream fis = new FileInputStream(zipFile)) {
+                unzip(fis, targetDir);
+            }
         } catch (Exception e) {
-            return Result.fail("解压上传的词书压缩包失败: " + e.getMessage());
+            return Result.fail("保存或解压上传的词书压缩包失败: " + e.getMessage());
         }
 
         File finalDir = targetDir;
