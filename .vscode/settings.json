@@ -24,6 +24,5 @@
     "files.exclude": {
         "**/.venv": true,
         "**/__pycache__": true
-    },
-    "cmake.sourceDirectory": "/Volumes/ssd/ppdc/app/linux"
+    }
 }
