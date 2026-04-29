@@ -1,0 +1,289 @@
+0|seed
+0|plateau
+0|owe
+0|biology
+0|biodiversity
+0|elevated
+0|plain
+0|position
+0|available
+0|pit
+0|allergy
+0|despite
+0|hardship
+0|countless
+0|devoted
+0|unfortunate
+0|accident
+0|iceberg
+0|on top of sth.
+0|the tip of the iceberg
+0|Tibet
+0|Qinghai-Tibet Plateau
+0|Tibet University
+0|chemist
+0|helix
+0|scientific
+0|advance
+0|undying
+0|passion
+0|make-believe
+0|disapproval
+0|publish
+0|cycle
+0|bomb
+0|earn
+0|doctorate
+0|master
+0|crystallography
+0|assign
+0|unnoticed
+0|female
+0|puzzle
+0|couple
+0|clarity
+0|evidence
+0|data
+0|virus
+0|credit
+0|crucial
+0|breakthrough
+0|fellow
+0|gender
+0|inequality
+0|unfair
+0|head-on
+0|get in the way of
+0|get hold of
+0|lose heart
+0|Rosalind Franklin
+0|X-ray
+0|DNA
+0|Cambridge University
+0|King's College London
+0|Maurice Wilkins
+0|James Watson
+0|Francis Crick
+0|Nobel Prize
+0|soul
+0|reality
+0|Aboriginal
+0|impact
+0|blame
+0|brilliant
+0|elsewhere
+0|beg the question
+0|on the other hand
+0|Charlemagne
+0|Juliet
+0|Kuuk Thaayorre
+0|highlight
+0|magnetic
+0|resonance
+0|imaging
+0|scan
+0|promising
+0|enhanced
+0|cognitive
+0|outperform
+0|journal
+0|comprehension
+0|corresponding
+0|trick
+0|distracting
+0|target
+0|versus
+0|filter
+0|considerable
+0|bilingual
+0|cell
+0|open up
+0|nothing short of
+0|Lund University
+0|Sweden
+0|MRI
+0|Northwestern University
+0|Alzheimer's disease
+0|prompt
+0|drugstore
+0|clerk
+0|supply
+0|excess
+0|cash
+0|moral
+0|empathy
+0|tricky
+0|lean
+0|homeless
+0|misfortune
+0|slip
+0|empathic
+0|donor
+0|sufferer
+0|furthermore
+0|immense
+0|universal
+0|empathise
+0|lean towards
+0|take sth. into account
+0|ALS Ice Bucket Challenge
+0|Journal of Consumer Research
+0|employee
+0|drive-through
+0|fierce
+0|spit
+0|frost
+0|headset
+0|greet
+0|glare
+0|supervisor
+0|sub-zero
+0|seal
+0|leather
+0|annoyance
+0|snowflake
+0|eyelash
+0|confused
+0|fog
+0|cheek
+0|facial
+0|expression
+0|succession
+0|slideshow
+0|disturbed
+0|random
+0|delighted
+0|impatient
+0|humble
+0|handful
+0|bend
+0|honk
+0|gratitude
+0|engine
+0|flow
+0|light up
+0|end up
+0|Alberta
+0|shopkeeper
+0|arrange
+0|sidewalk
+0|rumbling
+0|thunder
+0|explode
+0|layer
+0|rip
+0|sway
+0|collapse
+0|lump
+0|pile
+0|tumble
+0|plaster
+0|shatter
+0|throat
+0|coat
+0|burst
+0|leap
+0|pour
+0|spill
+0|bury
+0|furious
+0|unsteady
+0|sneeze
+0|stretch
+0|mayor
+0|ash
+0|raw
+0|spot
+0|burst open
+0|call on
+0|stick ... out
+0|San Francisco
+0|Rincon Hill
+0|strike
+0|typhoon
+0|gush
+0|avalanche
+0|raging
+0|flame
+0|emergency
+0|secure
+0|basement
+0|solid
+0|furniture
+0|battery
+0|evacuation
+0|intense
+0|warning
+0|waterproof
+0|container
+0|Alpine
+0|slope
+0|equipment
+0|frantically
+0|ensure
+0|upwind
+0|pond
+0|spark
+0|blanket
+0|vent
+0|firefighter
+0|kit
+0|flashlight
+0|first-aid
+0|mask
+0|sanitation
+0|damp
+0|towel
+0|opener
+0|backup
+0|burn out
+0|the Pacific Ocean
+0|the Caroline Islands
+0|the Philippines
+0|suffering
+0|lifetime
+0|best-selling
+0|prove
+0|wheelchair
+0|synthesizer
+0|brief
+0|potential
+0|software
+0|contributor
+0|chimpanzee
+0|Stephen Hawking
+0|ALS
+0|Jane Goodall
+0|Grace Hopper
+0|global
+0|mindset
+0|employ
+0|non-profit
+0|found
+0|aim
+0|charitable
+0|foundation
+0|motivation
+0|inspire
+0|necessity
+0|comforting
+0|needy
+0|measure
+0|resident
+0|port
+0|strand
+0|cigarette
+0|ease
+0|accelerator
+0|sturdy
+0|pipe
+0|roughly
+0|shift
+0|Typhoon Mangkhut
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 282
+# Total Entries Extracted: 282
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 282
+# -------------------------------

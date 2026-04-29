@@ -1,0 +1,312 @@
+0|colonist
+0|consume
+0|populated
+0|mistaken
+0|meekly
+0|rebellion
+0|ultimately
+0|make one's way towards
+0|wharf
+0|take command of
+0|for the purpose of
+0|hatch
+0|do damage to
+0|chest
+0|split
+0|on contact with
+0|large quantities of
+0|inevitable
+0|subject
+0|dissatisfied
+0|colonial
+0|representation
+0|make up for
+0|be prepared to
+0|give in to
+0|disguise
+0|prompt
+0|intolerable
+0|signatory
+0|abstain
+0|silversmith
+0|patriot
+0|patriotism
+0|craftsman
+0|military
+0|row
+0|sentry
+0|regular
+0|patrol
+0|release
+0|take liberties with
+0|credit
+0|exaggerate
+0|give an account of
+0|unanimous
+0|endow
+0|unalienable
+0|usurpation
+0|tyranny
+0|solemnly
+0|tyrant
+0|grievance
+0|abolition
+0|defy
+0|discriminate
+0|applicable
+0|sensitivity
+0|focus
+0|ruling
+0|enrol
+0|precise
+0|mob
+0|smash
+0|integration
+0|on the run
+0|imprisonment
+0|apartheid
+0|legislation
+0|restrict
+0|outlaw
+0|pave
+0|spark
+0|defiance
+0|segregation
+0|sanction
+0|seamstress
+0|jail
+0|immeasurable
+0|boycott
+0|inherently
+0|culminate
+0|precede
+0|initiate
+0|infliction
+0|inhumanity
+0|incentive
+0|shape
+0|instrumental
+0|rectify
+0|unspeakable
+0|flaw
+0|shame
+0|root
+0|creed
+0|expose
+0|access
+0|accommodation
+0|toll
+0|blow up
+0|unwilling
+0|watercress
+0|crisp
+0|peppery
+0|stalk
+0|kneel
+0|lower
+0|ledge
+0|smock
+0|carbine
+0|sling
+0|scramble
+0|get to one's feet
+0|grudgingly
+0|grin
+0|flap
+0|flannel
+0|sullenly
+0|dynamite
+0|evenly
+0|sack
+0|gaunt
+0|crease
+0|erosion
+0|marlin
+0|appeal
+0|relatively
+0|apparently
+0|mechanic
+0|seemingly
+0|invalid
+0|cynical
+0|lavish
+0|constraint
+0|distinctly
+0|flowery
+0|sparse
+0|prose
+0|leave out
+0|innovative
+0|clod
+0|promontory
+0|diminish
+0|pipe
+0|magnify
+0|arch-
+0|combat
+0|hound
+0|forgery
+0|attendant
+0|shrewd
+0|unimaginative
+0|stretch out
+0|flatten
+0|indication
+0|scrawl
+0|legend
+0|consult
+0|be connected to
+0|lean
+0|concerning
+0|moor
+0|be connected with
+0|give sb. credit for
+0|reassure
+0|insatiable
+0|appetite
+0|faithful
+0|substitute
+0|genre
+0|dismiss
+0|pulp
+0|be viewed as
+0|intriguing
+0|manor
+0|cosy
+0|unrealistic
+0|in contrast to
+0|revolve
+0|flock
+0|sanitation
+0|scavenger
+0|sewage
+0|conduct
+0|doctorate
+0|psychometric
+0|scale
+0|aggression
+0|notable
+0|mechanism
+0|trigger
+0|incongruous
+0|familiarity
+0|or rather
+0|outcome
+0|pun
+0|perception
+0|incongruity
+0|superior
+0|detached
+0|immune
+0|transcend
+0|limitation
+0|fable
+0|see about
+0|count on
+0|turbulent
+0|hint
+0|venture
+0|coward
+0|address
+0|resemblance
+0|deceive
+0|flattered
+0|for an instant
+0|cordially
+0|vaguely
+0|branch
+0|betray
+0|blank
+0|troublesome
+0|affection
+0|proceed
+0|blush
+0|presently
+0|compliment
+0|aphorism
+0|nominate
+0|bridge
+0|visualise
+0|imbue
+0|prevalence
+0|imperfection
+0|perceive
+0|gaiety
+0|subtle
+0|nourish
+0|dwell
+0|indulge
+0|contradiction
+0|bounce
+0|lightness
+0|subtlety
+0|sham
+0|stupidity
+0|humbug
+0|witty
+0|sane
+0|rage
+0|come into existence
+0|headquarters
+0|charter
+0|resolution
+0|recommendation
+0|enforce
+0|ensure
+0|at a time
+0|veto
+0|proposal
+0|diplomat
+0|neutral
+0|budget
+0|administer
+0|refugee
+0|beret
+0|dispute
+0|vulnerable
+0|exploit
+0|hail
+0|partnership
+0|testimony
+0|forge
+0|disposal
+0|commemorate
+0|showcase
+0|coordinate
+0|contemporary
+0|degradation
+0|symposium
+0|hearten
+0|means
+0|implement
+0|genocide
+0|heinous
+0|secretariat
+0|proliferation
+0|disarmament
+0|mark
+0|indispensable
+0|fare
+0|capacity
+0|multilateral
+0|ongoing
+0|transformation
+0|constructive
+0|dynamic
+0|synergy
+0|augur
+0|fulfilment
+0|fruitful
+0|launch
+0|cradle
+0|delicate
+0|ecology
+0|rhinoceros
+0|preserve
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 305
+# Total Entries Extracted: 305
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 305
+# -------------------------------

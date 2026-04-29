@@ -1,0 +1,597 @@
+0|small talk
+0|informal
+0|serious
+0|confidently
+0|make friends
+0|lack
+0|be nervous about
+0|nervous about
+0|advance
+0|think of
+0|nod
+0|body language
+0|yawn
+0|sigh
+0|look away from
+0|social rules
+0|in addition
+0|find out
+0|opportunity
+0|obligation
+0|prize
+0|application
+0|form
+0|immigration
+0|visa
+0|impolite
+0|tidy
+0|refund
+0|favour
+0|reception
+0|embassy
+0|certain
+0|reply
+0|saleswoman
+0|firm
+0|fax
+0|outspoken
+0|human being
+0|motto
+0|put one's foot in one's mouth
+0|shortcoming
+0|absence
+0|as a consequence
+0|systematic
+0|coincidence
+0|customer
+0|mature
+0|awkward
+0|tease
+0|typist
+0|contradict
+0|pregnant
+0|apology
+0|cautious
+0|acquaintance
+0|messy
+0|divorce
+0|cheer sb. up
+0|fool
+0|clerk
+0|haircut
+0|anyhow
+0|modest
+0|brunch
+0|anniversary
+0|hostess
+0|interrupt
+0|leave out
+0|factual
+0|genuine
+0|hospitable
+0|secretive
+0|violate
+0|define
+0|be aware of
+0|aware of
+0|take the lead
+0|graciously
+0|show off
+0|function
+0|psychologist
+0|successful
+0|formula
+0|imagine
+0|purpose
+0|circumstance
+0|apologise
+0|series
+0|subtle
+0|amber
+0|spyglass
+0|heroine
+0|hero
+0|play an important part in
+0|novel
+0|philosophical
+0|vanish
+0|behave
+0|bush
+0|definitely
+0|hesitate
+0|scent
+0|doubt
+0|direction
+0|rub
+0|knuckle
+0|bite
+0|pad
+0|stupefied
+0|exhaustion
+0|tabby
+0|put down
+0|hold out
+0|come up to
+0|longing
+0|scald
+0|turn away
+0|patrol
+0|hornbeam
+0|paw
+0|pat
+0|invisible
+0|arch
+0|tail
+0|stiffly
+0|alertly
+0|patch
+0|hedge
+0|alarm
+0|sniff
+0|whisker
+0|twitch
+0|wariness
+0|blink
+0|sweep over
+0|keep one's eyes on
+0|fix on
+0|cast about
+0|edge
+0|roughly
+0|square
+0|shape
+0|level
+0|profoundly
+0|alien
+0|entice
+0|stoop
+0|swim
+0|thump
+0|scramble
+0|fabric
+0|palm
+0|boulevard
+0|utterly
+0|be laden with
+0|laden with
+0|prospect
+0|slope
+0|parkland
+0|grove
+0|gleam
+0|bare
+0|bend
+0|shudder
+0|dawning
+0|light-headedness
+0|dream
+0|awake
+0|look around for
+0|revenge
+0|marry
+0|wicked
+0|cottage
+0|put a spell on
+0|punish
+0|appeal
+0|cafeteria
+0|envelope
+0|literary
+0|bond
+0|output
+0|schoolchildren
+0|typewriter
+0|stateswoman
+0|gifted
+0|roots
+0|flesh
+0|be associated with
+0|associated with
+0|format
+0|anecdote
+0|draft
+0|burden
+0|swift
+0|stubborn
+0|overcome
+0|adjustment
+0|automatic
+0|target
+0|criticism
+0|appeal to sb.
+0|curriculum
+0|be restricted to
+0|restricted to
+0|distribute
+0|accumulate
+0|deposit
+0|thus
+0|attain
+0|status
+0|billionaire
+0|wardrobe
+0|sorrow
+0|ahead of
+0|ought
+0|inquisitive
+0|look back over one's shoulder
+0|catch a glimpse of
+0|set out
+0|crunch
+0|pitter-patter
+0|glossy
+0|trail
+0|muffler
+0|curly
+0|gracious
+0|exclaim
+0|elf
+0|magical
+0|power
+0|dwarf
+0|possess
+0|interpersonal
+0|close
+0|trust
+0|chat
+0|note
+0|burst out
+0|knock ... over
+0|financially
+0|moody
+0|lose interest in
+0|from time to time
+0|cloakroom
+0|turn round
+0|amount
+0|locker
+0|fair
+0|raise
+0|raise money
+0|theft
+0|swing
+0|confront
+0|count
+0|underneath
+0|on the phone
+0|lively
+0|quarrel
+0|make up
+0|regret
+0|keep in touch
+0|lose touch with
+0|sweets
+0|alike
+0|be ashamed of
+0|ashamed of
+0|betray
+0|considerate
+0|forgive
+0|loss
+0|scold
+0|hurt
+0|be blessed with
+0|blessed with
+0|bungalow
+0|pine
+0|worm
+0|cage
+0|be allergic to
+0|allergic to
+0|tiny
+0|swell
+0|walnut
+0|squirrel
+0|ripen
+0|harvest
+0|slide
+0|stony
+0|loch
+0|spray
+0|carpenter
+0|broom
+0|cigar
+0|slip
+0|damp
+0|scratch
+0|heel
+0|tear
+0|underwear
+0|be on good terms with
+0|on good terms with
+0|salute
+0|spy
+0|perfect
+0|acute
+0|privilege
+0|be nostalgic for
+0|nostalgic for
+0|rewind
+0|predict
+0|click
+0|Auld Lang Syne
+0|pilgrim
+0|glowing
+0|murmur
+0|flee
+0|pace
+0|amid
+0|liar
+0|reiterate
+0|bud
+0|tread
+0|all at once
+0|auld
+0|bring ... to mind
+0|in return
+0|reunite
+0|couple
+0|partner
+0|mention
+0|belong to
+0|bottom
+0|from the bottom of one's heart
+0|relative
+0|give concerts
+0|conservatory
+0|soloist
+0|repertoire
+0|interpret
+0|be true of
+0|true for
+0|folk song
+0|characteristic
+0|poetry
+0|poetic
+0|give life to
+0|be the same with
+0|the same with
+0|combine
+0|depress
+0|share feelings and ideas with
+0|make contact with
+0|master musician
+0|compose music
+0|ambition
+0|regarding
+0|melody
+0|rhyme
+0|passerby
+0|pedestrian
+0|semi-circle
+0|interval
+0|plug
+0|socket
+0|regulate
+0|organ
+0|echo
+0|side road
+0|quartet
+0|suite
+0|session
+0|saucer
+0|voluntary
+0|shrink
+0|vacant
+0|lid
+0|barrel organ
+0|handle
+0|tap
+0|mop
+0|spotted
+0|all of a sudden
+0|popcorn
+0|dance to the music
+0|rockabilly
+0|tunnel
+0|relay
+0|liveliness
+0|relief
+0|relax
+0|collection
+0|charm
+0|arena
+0|scene
+0|billboard
+0|draw upon
+0|signify
+0|symbolic
+0|numerology
+0|mythology
+0|hairpin
+0|chamber
+0|honour
+0|heritage
+0|present
+0|in addition to
+0|statuette
+0|gramophone
+0|critic
+0|therefore
+0|clone
+0|terrify
+0|wrinkled
+0|wing
+0|chase
+0|disgust
+0|emotion
+0|fiancee
+0|murder
+0|refuse
+0|burn out
+0|breathe
+0|vein
+0|contrast
+0|contrast with
+0|rush
+0|throw oneself on ...
+0|fear
+0|make a sound
+0|again and again
+0|nightmare
+0|gene
+0|identical
+0|beneficial
+0|by mistake
+0|cure
+0|treat ... as
+0|imaginary
+0|head
+0|incredible
+0|nonsense
+0|acid
+0|bacteria
+0|embryo
+0|enzyme
+0|tissue
+0|organism
+0|stem cell
+0|upbringing
+0|genetic
+0|make-up
+0|genetics
+0|transparent
+0|twisting
+0|fundamental
+0|component
+0|pea
+0|procedure
+0|unzip
+0|a sequence of
+0|insert
+0|be identical to
+0|identical to
+0|controversial
+0|valid
+0|optional
+0|reproduce
+0|exceptional
+0|contradictory
+0|vice
+0|virtue
+0|flexible
+0|compulsory
+0|regulation
+0|handy
+0|resist
+0|sow
+0|rot
+0|pest
+0|rely on
+0|biodiversity
+0|breed
+0|analyse
+0|suspect
+0|saliva
+0|spit
+0|fingernail
+0|code
+0|as follows
+0|sci-fi
+0|eccentric
+0|accompany
+0|knock out
+0|get out of control
+0|as far as we know
+0|absorb
+0|sample
+0|intact
+0|break down
+0|arise
+0|vice versa
+0|bring ... back to life
+0|violence
+0|vengeful
+0|invade
+0|abandon
+0|declare war on
+0|operation
+0|make a breakthrough
+0|drown
+0|survivor
+0|last
+0|occupy
+0|beach
+0|troop
+0|commander
+0|eventually
+0|heroism
+0|artillery
+0|shell
+0|pick up
+0|deep
+0|wound
+0|shocked
+0|private
+0|memorial
+0|overlook
+0|grave
+0|weary
+0|condemn
+0|war memorial
+0|nationality
+0|rescue
+0|backpack
+0|afterwards
+0|drop
+0|bomb
+0|campaign
+0|station
+0|chain
+0|view
+0|sequence
+0|image
+0|chaos
+0|senseless
+0|courage
+0|sacrifice
+0|memorable
+0|to one's astonishment
+0|company
+0|baggage
+0|bedding
+0|comb
+0|confidential
+0|mess
+0|perfume
+0|razor
+0|scissors
+0|shave
+0|stockings
+0|tractor
+0|yell
+0|barbershop
+0|stroke
+0|chin
+0|moustache
+0|wax
+0|sharpener
+0|unload
+0|jar
+0|carrot
+0|cheers
+0|liberation
+0|constitution
+0|vinegar
+0|worthwhile
+0|statesman
+0|toil
+0|retreat
+0|encourage
+0|surrender
+0|strategy
+0|quote
+0|helmet
+0|peacekeeper
+0|arm
+0|disagreement
+0|personnel
+0|civilian
+0|despite
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 590
+# Total Entries Extracted: 590
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 590
+# -------------------------------

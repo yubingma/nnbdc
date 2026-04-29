@@ -1,0 +1,392 @@
+0|physiology
+0|artemisinin
+0|crucial
+0|malaria
+0|vital
+0|committed
+0|commit
+0|commit oneself to
+0|commit oneself to sth.
+0|commit oneself to doing sth.
+0|commit oneself to do sth.
+0|academy
+0|academic
+0|objective
+0|botanical
+0|evaluate
+0|property
+0|distinct
+0|extract
+0|wormwood
+0|boil
+0|liquid
+0|obtain
+0|acknowledge
+0|defeat
+0|analyse
+0|analyze
+0|apparently
+0|substance
+0|insist
+0|insist on
+0|scientific
+0|mostly
+0|wear and tear
+0|conclusion
+0|penicillin
+0|flee
+0|circumstance
+0|novelist
+0|novel
+0|flow
+0|chart
+0|flow chart
+0|found
+0|infer
+0|politician
+0|numerous
+0|theory
+0|relativity
+0|formula
+0|genius
+0|gentle
+0|patent
+0|passion
+0|doctorate
+0|extraordinary
+0|gradually
+0|photoelectric
+0|come to power
+0|institution
+0|institute
+0|consequence
+0|take up a position
+0|moustache
+0|mustache
+0|peculiarity
+0|encounter
+0|professor
+0|mourn
+0|brilliant
+0|remarkable
+0|device
+0|sum
+0|sum up
+0|draft
+0|Nobel Prize
+0|Alexander Fleming
+0|Albert Einstein
+0|Hitler
+0|Florence Nightingale
+0|SARS
+0|Switzerland
+0|Swiss
+0|Isaac Newton
+0|Jewish
+0|Princeton
+0|phrase
+0|persuade
+0|switch
+0|switch off
+0|switch on
+0|distant
+0|secure
+0|knob
+0|appliance
+0|remote
+0|remote control
+0|air conditioner
+0|automatic
+0|integrated
+0|integrate
+0|sensor
+0|efficient
+0|mode
+0|routine
+0|daily routine
+0|preference
+0|instant
+0|command
+0|obey
+0|warning
+0|constant
+0|early on
+0|abnormal
+0|critical
+0|cancer
+0|potentially
+0|potential
+0|leak
+0|electrical
+0|wiring
+0|wire
+0|detect
+0|relevant
+0|catch fire
+0|fantasy
+0|innovation
+0|available
+0|in this sense
+0|in ... sense
+0|nevertheless
+0|structure
+0|security
+0|crime
+0|combine
+0|nanobot
+0|artificial
+0|artificial intelligence
+0|AI
+0|clone
+0|predict
+0|prediction
+0|forecast
+0|occupation
+0|oppose
+0|hence
+0|cease
+0|deceased
+0|absence
+0|rural
+0|advocate
+0|emphasis
+0|luxury
+0|keep in touch
+0|keep in touch with ...
+0|career
+0|prospect
+0|resist
+0|resistance
+0|paragraph
+0|signpost
+0|essay
+0|accurate
+0|librarian
+0|Melbourne
+0|Christian
+0|the Amish
+0|buffet
+0|cloth
+0|edge
+0|valley
+0|vast
+0|melt
+0|glacier
+0|reindeer
+0|territory
+0|ban
+0|boundary
+0|cottage
+0|visible
+0|on the move
+0|accompany
+0|adopt
+0|sour
+0|set out
+0|bless
+0|live off
+0|prohibition
+0|prohibit
+0|journalist
+0|sneeze
+0|teapot
+0|label
+0|cream
+0|leopard
+0|stretch
+0|rewarding
+0|bush
+0|lung
+0|cycle
+0|corridor
+0|pedal
+0|fountain
+0|route
+0|ahead
+0|theme
+0|theme park
+0|roller coaster
+0|incredible
+0|appeal
+0|appeal to
+0|pirate
+0|adorable
+0|wander
+0|amusement
+0|amuse
+0|enormous
+0|swing
+0|iron
+0|fashion
+0|rare
+0|steam
+0|superb
+0|aquarium
+0|up to
+0|polar
+0|upside down
+0|splendid
+0|display
+0|appetite
+0|entertainment
+0|column
+0|Sami
+0|Sarek National Park
+0|Sweden
+0|the Arctic Circle
+0|Rapa River
+0|Siberian
+0|Dollywood
+0|interaction
+0|vary
+0|appropriate
+0|by contrast
+0|approve
+0|demonstrate
+0|gesture
+0|witness
+0|employ
+0|identical
+0|interpret
+0|differ
+0|by comparison
+0|cheek
+0|favour
+0|favor
+0|bow
+0|waist
+0|make inferences
+0|break down
+0|barrier
+0|fake
+0|anger
+0|reliable
+0|incident
+0|trial
+0|slight
+0|slightly
+0|twin
+0|nonverbal
+0|assessment
+0|assess
+0|internal
+0|straighten up
+0|slump
+0|pose
+0|bend
+0|reveal
+0|clarify
+0|in other words
+0|educator
+0|tick
+0|tendency
+0|lower
+0|imply
+0|barely
+0|chin
+0|occupy
+0|stare
+0|ceiling
+0|distract
+0|perceive
+0|distinguish
+0|anxiety
+0|chest
+0|embarrassed
+0|ashamed
+0|merely
+0|call on
+0|bother
+0|weep
+0|at work
+0|conflict
+0|inquire
+0|enquire
+0|ultimately
+0|adjust
+0|intervene
+0|react
+0|component
+0|tone
+0|Brazil
+0|Bulgaria
+0|Albania
+0|hybrid
+0|devote
+0|devote ... to
+0|shortage
+0|tackle
+0|crisis
+0|boost
+0|yield
+0|convince
+0|characteristic
+0|attain
+0|conventional
+0|pollinate
+0|assumption
+0|intense
+0|overcome
+0|expand
+0|output
+0|estimate
+0|domestic
+0|consumption
+0|comprise
+0|be comprised of
+0|generate
+0|strain
+0|leisure
+0|deep down
+0|soil
+0|celebrity
+0|envision
+0|sorghum
+0|broom
+0|grain
+0|vision
+0|reality
+0|salty
+0|urban
+0|bomb
+0|tunnel
+0|extension
+0|chemical
+0|wheat
+0|flavour
+0|flavor
+0|fertiliser
+0|fertilizer
+0|nutritional
+0|nutritious
+0|nutrition
+0|alleviate
+0|poverty
+0|organic
+0|pesticide
+0|widespread
+0|bacterium
+0|in turn
+0|digest
+0|essential
+0|mineral
+0|alternative
+0|grocery
+0|instance
+0|for instance
+0|batch
+0|depth
+0|root
+0|entirely
+0|aspect
+0|Vietnam
+0|LED
+0|light-emitting diode
+0|DDT
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 385
+# Total Entries Extracted: 385
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 385
+# -------------------------------

@@ -1,0 +1,270 @@
+0|mood
+0|circus
+0|amusement
+0|amusement park
+0|curly
+0|wig
+0|badge
+0|spot
+0|ankle
+0|clown
+0|entertain
+0|health care
+0|cheer up
+0|do the trick
+0|examine
+0|advertisement
+0|employer
+0|essential
+0|impress
+0|grin
+0|deserve
+0|long face
+0|laughing stock
+0|crack a smile
+0|practical joke
+0|fame
+0|literary
+0|tale
+0|consistently
+0|optimism
+0|witty
+0|medieval
+0|emotive
+0|mischievous
+0|remark
+0|interaction
+0|barber
+0|shave
+0|fellow
+0|brand
+0|brand of humour
+0|essay
+0|conclude
+0|amusing
+0|flatter
+0|gentle
+0|podium
+0|cruel
+0|enthusiasm
+0|illuminate
+0|complicated
+0|composer
+0|fall behind
+0|debt
+0|pace
+0|inform
+0|dread
+0|rarely
+0|overnight
+0|rejection
+0|nevertheless
+0|persevere
+0|criticism
+0|manuscript
+0|rye
+0|best-seller
+0|Victorian
+0|laureate
+0|Poet Laureate
+0|classic
+0|endurance
+0|guarantee
+0|delighted
+0|outcome
+0|worthwhile
+0|blanket
+0|beaver
+0|cucumber
+0|enthusiastic
+0|contest
+0|upset
+0|elect
+0|blessing
+0|appreciative
+0|worthy
+0|worthy of
+0|mere
+0|gentleness
+0|companionship
+0|fingertip
+0|outline
+0|intoxicate
+0|pageant
+0|the pageant of
+0|probe
+0|dawn
+0|delight
+0|revelation
+0|workaday
+0|amid
+0|haunt
+0|permanent
+0|descend
+0|mighty
+0|strains of
+0|orchestra
+0|tactile
+0|perfume
+0|relish
+0|morsel
+0|delightful
+0|embarrassed
+0|a far cry from
+0|shiny
+0|association
+0|muddy
+0|shot
+0|backboard
+0|give way
+0|bump
+0|bounce
+0|sharpen
+0|teammate
+0|footstep
+0|follow in one's footsteps
+0|carry on
+0|warrior
+0|expectation
+0|beyond one's expectations
+0|in a row
+0|philosophy
+0|self-belief
+0|hoop
+0|cheat
+0|yoga
+0|roller skating
+0|remarkable
+0|net
+0|spiker
+0|burst
+0|burst onto
+0|vivid
+0|assign
+0|opponent
+0|quarter-final
+0|preliminary
+0|surgery
+0|pay off
+0|comeback
+0|defeat
+0|semi-final
+0|steely
+0|nerve
+0|seize
+0|cooperation
+0|ingredient
+0|teamwork
+0|tournament
+0|intense
+0|quote
+0|Dutch
+0|float
+0|folk
+0|folk tale
+0|motion
+0|set ... in motion
+0|compose
+0|crouch
+0|peacock
+0|princess
+0|ethnic
+0|abstract
+0|awe-inspiring
+0|installation
+0|wire
+0|cable
+0|innovative
+0|trend
+0|wire fence
+0|contrast
+0|Greek
+0|literally
+0|technician
+0|animation
+0|concept
+0|distinct
+0|innovation
+0|seed
+0|distant
+0|answer the call
+0|disgrace
+0|be a disgrace
+0|geologist
+0|sample
+0|evolve
+0|finch
+0|beak
+0|suspect
+0|ancestor
+0|evolution
+0|generate
+0|characteristic
+0|decline
+0|tortoise
+0|blame
+0|goat
+0|be native to
+0|primitive
+0|worldwide
+0|giant
+0|giant tortoise
+0|mangrove
+0|iguana
+0|comb-like
+0|spine
+0|myth
+0|legend
+0|detect
+0|wasp
+0|pesticide
+0|root
+0|chilli
+0|link
+0|fungus
+0|fungal
+0|cybercrime
+0|centimetre
+0|steadily
+0|massive
+0|delicate
+0|landmark
+0|splendid
+0|permafrost
+0|Tibetan
+0|antelope
+0|leisure
+0|at one's leisure
+0|wetland
+0|grassland
+0|radiation
+0|mirror-like
+0|wander
+0|scenery
+0|plateau
+0|roar
+0|economy
+0|jungle
+0|disturb
+0|emission
+0|operator
+0|conservationist
+0|via
+0|candidate
+0|applicant
+0|favour
+0|in favour of
+0|advertise
+0|genuine
+0|salary
+0|negotiable
+0|preference
+0|qualification
+0|waist
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 263
+# Total Entries Extracted: 263
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 263
+# -------------------------------

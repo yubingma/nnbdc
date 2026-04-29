@@ -1,0 +1,334 @@
+0|acknowledge
+0|comforts
+0|fortune
+0|possession
+0|universal
+0|upset
+0|in possession of
+0|be in want of
+0|heroine
+0|eventual
+0|assure
+0|comment
+0|insult
+0|make a remark
+0|unsociable
+0|resemble
+0|to one's astonishment
+0|blush
+0|go mad
+0|intensely
+0|head over heels
+0|sensible
+0|superficial
+0|rightly
+0|disclose
+0|trim
+0|resentfully
+0|hypocritical
+0|deign
+0|compassion
+0|discretion
+0|fretfully
+0|teasing
+0|circumspection
+0|venture
+0|decline
+0|emphatic
+0|exclamation
+0|adjust
+0|surpass
+0|tumult
+0|neglect
+0|fatigue
+0|rapture
+0|twinkle
+0|splendour
+0|string
+0|scatter
+0|overpower
+0|emigrate
+0|colony
+0|jellyfish
+0|deadly
+0|poison
+0|tentacle
+0|massive
+0|visible
+0|poisonous
+0|venom
+0|be home to
+0|swallow
+0|in trouble
+0|in terms of
+0|scorpion
+0|funnel
+0|spider
+0|transportation
+0|hostile
+0|breathtaking
+0|epic
+0|variety
+0|enslave
+0|hobbit
+0|rolling
+0|transform
+0|fiery
+0|sacred
+0|trilogy
+0|release
+0|anthem
+0|embody
+0|resourcefulness
+0|controversy
+0|icon
+0|accredit
+0|romanticise
+0|shearer
+0|shed
+0|squatter
+0|swagman
+0|disturbance
+0|jolly
+0|eucalyptus
+0|chant
+0|aggressively
+0|sinew
+0|impose
+0|thigh
+0|puff
+0|slavery
+0|threaten
+0|deserve
+0|freedom
+0|abolish
+0|come into existence
+0|critical
+0|agree to
+0|surrender
+0|sympathetic
+0|cause
+0|be born into
+0|circus
+0|reveal
+0|identify
+0|cabin
+0|stimulate
+0|runaway
+0|capture
+0|superb
+0|triangular
+0|numerous
+0|conquer
+0|mine
+0|abundant
+0|lack
+0|indigenous
+0|unsuited
+0|cowrie
+0|textile
+0|brandy
+0|leg
+0|offload
+0|smith
+0|cooper
+0|flourish
+0|cargo
+0|rum
+0|molasses
+0|indigo
+0|forcibly
+0|exceed
+0|enslavement
+0|abduct
+0|dislocation
+0|unimaginable
+0|scale
+0|dedicate
+0|cemetery
+0|address
+0|conceive
+0|liberty
+0|proposition
+0|endure
+0|portion
+0|fitting
+0|consecrate
+0|hallow
+0|detract
+0|in vain
+0|perish
+0|cameraman
+0|symbolic
+0|spectacle
+0|glamorous
+0|viewer
+0|gown
+0|limousine
+0|photographer
+0|journalist
+0|intention
+0|scriptwriter
+0|vote for
+0|category
+0|statue
+0|in weight
+0|cut off
+0|peer
+0|publicity
+0|look back
+0|superficially
+0|furthermore
+0|demanding
+0|musical
+0|suspense
+0|animated
+0|potential
+0|animation
+0|realism
+0|lifelike
+0|sophisticated
+0|toast
+0|blockbuster
+0|mark
+0|centenary
+0|lavish
+0|stage
+0|erect
+0|shoot
+0|screen
+0|tremendous
+0|feature
+0|documentary
+0|reap
+0|revenue
+0|tie-in
+0|usher
+0|mainstream
+0|deregulate
+0|liberalise
+0|consolidate
+0|decisively
+0|eliminate
+0|restriction
+0|new-found
+0|milestone
+0|regain
+0|setback
+0|mistreat
+0|lawful
+0|restore
+0|degrade
+0|faltering
+0|PDA
+0|Personal Digital Assistant
+0|digital
+0|constantly
+0|impressive
+0|non-profit
+0|bowling
+0|never look back
+0|certificated
+0|FAQs
+0|Frequently Asked Questions
+0|dream of
+0|sensibly
+0|curriculum
+0|geek
+0|obsession
+0|burn down
+0|virtual
+0|chat room
+0|copyright
+0|reliable
+0|extract
+0|enrich
+0|virus
+0|coastguard
+0|worm
+0|emergency services
+0|vocational
+0|kit
+0|give in to
+0|peer pressure
+0|cable TV
+0|household
+0|appliance
+0|turn up
+0|remote
+0|revolutionise
+0|enable
+0|executive
+0|feasible
+0|efficiently
+0|structure
+0|effectively
+0|double
+0|productivity
+0|capability
+0|workload
+0|multitasking
+0|juggle
+0|creativity
+0|gear
+0|gadget
+0|stay abreast of
+0|wireless
+0|equip
+0|distract
+0|culturally
+0|racially
+0|diverse
+0|totem
+0|salmon
+0|shellfish
+0|seal
+0|porpoise
+0|harmony
+0|windsurfing
+0|metropolis
+0|magnet
+0|fusion
+0|cuisine
+0|suburb
+0|minority
+0|not to mention
+0|prosperous
+0|microcosm
+0|multiculturalism
+0|diversity
+0|full-scale
+0|derive
+0|name after
+0|talkative
+0|incapable
+0|imaginings
+0|thoughtful
+0|thistle
+0|skunk
+0|honeysuckle
+0|parlor
+0|lilac
+0|lily
+0|scrawny
+0|somewhat
+0|satire
+0|irony
+0|societal
+0|underdog
+0|tycoon
+0|mild
+0|unmistakably
+0|deprecation
+0|anthology
+0|comic
+0|elevate
+0|appendage
+0|confederation
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 327
+# Total Entries Extracted: 327
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 327
+# -------------------------------

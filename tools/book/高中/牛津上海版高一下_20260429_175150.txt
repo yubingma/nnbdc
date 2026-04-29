@@ -1,0 +1,217 @@
+0|phantom
+0|opera
+0|opera house
+0|beneath
+0|mask
+0|force
+0|wander
+0|monster
+0|fall in love with
+0|role
+0|kidnap
+0|audience
+0|rescue
+0|capture
+0|pull off
+0|be shocked at
+0|feel sorry about
+0|suffering
+0|release
+0|burst in
+0|concert hall
+0|lift
+0|tonne
+0|originally
+0|musician
+0|cellist
+0|violinist
+0|elevated
+0|elevated road
+0|drown out
+0|machinery
+0|rail
+0|restore
+0|seat
+0|orchestra
+0|the British Royal Philharmonic Orchestra
+0|charm
+0|bring ... back to life
+0|regard ... as
+0|genius
+0|attempt
+0|workings
+0|universe
+0|lead to
+0|nuclear
+0|nuclear energy
+0|gift
+0|curiosity
+0|sense of humour
+0|reputation
+0|theory
+0|distant
+0|let ... down
+0|guide
+0|platform
+0|perfectly
+0|applause
+0|complex
+0|offer
+0|property
+0|worth
+0|original
+0|spread
+0|award
+0|honour
+0|discovery
+0|physiology
+0|outstanding
+0|literature
+0|present
+0|anniversary
+0|ceremony
+0|Stockholm
+0|diploma
+0|medal
+0|banquet
+0|water lily
+0|pad
+0|float
+0|pond
+0|Victoria lily
+0|centimetre
+0|flower
+0|lotus
+0|relative
+0|root
+0|serve
+0|banyan tree
+0|branch
+0|bark
+0|trunk
+0|separate
+0|enormous
+0|pitch
+0|speak of
+0|gingko tree
+0|longevity
+0|bristlecone pine tree
+0|Nevada
+0|in the air
+0|gardening
+0|decorate
+0|jasmine
+0|bush
+0|vine
+0|frame
+0|sweet-smelling
+0|blossom
+0|ignore
+0|Yulan magnolia
+0|litter
+0|ideal
+0|moist
+0|golden
+0|cactus
+0|tolerate
+0|centigrade
+0|creature
+0|view
+0|shelter
+0|tent
+0|survive
+0|emerge
+0|pest
+0|bored
+0|elastic
+0|artificial
+0|bulletproof
+0|vest
+0|nasty
+0|bite
+0|rarely
+0|poison
+0|treat
+0|disorder
+0|get one's point
+0|have in common
+0|have something in common
+0|hibernate
+0|occur
+0|continuously
+0|absence
+0|upside down
+0|pulse
+0|rate
+0|amphibian
+0|stir
+0|disturb
+0|den
+0|accidentally
+0|smash
+0|miss
+0|temporarily
+0|guilty
+0|conscience
+0|tough
+0|guy
+0|tease
+0|bully
+0|behaviour
+0|at this point
+0|regret
+0|violence
+0|checkout
+0|note
+0|purchase
+0|grumble
+0|error
+0|queue
+0|mean to
+0|on the other hand
+0|counsellor
+0|hesitate
+0|case
+0|persuade
+0|contact
+0|transport
+0|watch for
+0|hurt
+0|suffer
+0|commercial
+0|consumer
+0|estimate
+0|typical
+0|actor
+0|identify with
+0|advertiser
+0|educator
+0|materialistic
+0|survey
+0|possessions
+0|take action
+0|ban
+0|inferior
+0|with reference to
+0|illegal
+0|salary
+0|furthermore
+0|best-selling
+0|association
+0|sponsor
+0|secondary
+0|handle
+0|savings
+0|management
+0|budget
+0|household
+0|expenses
+0|invest
+0|interest
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 210
+# Total Entries Extracted: 210
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 210
+# -------------------------------

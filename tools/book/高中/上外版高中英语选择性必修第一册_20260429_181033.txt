@@ -1,0 +1,338 @@
+0|frequently
+0|recite
+0|trial
+0|educator
+0|Polish
+0|poetry
+0|compose
+0|prose
+0|patriotic
+0|acquire
+0|willingly
+0|poet
+0|aid
+0|experiment
+0|gas
+0|compound
+0|practically
+0|experimental
+0|somehow
+0|nickname
+0|herd-boy
+0|calf
+0|slingshot
+0|gather
+0|honey
+0|stream
+0|twine
+0|wire
+0|unruly
+0|donkey
+0|bush
+0|unseat
+0|embarrass
+0|dignity
+0|suffer
+0|fate
+0|defeat
+0|opponent
+0|dishonour
+0|run away
+0|by heart
+0|take turns
+0|take it in turns
+0|lose face
+0|Marie Curie
+0|Charles Darwin
+0|Nelson Mandela
+0|cease
+0|indigo
+0|plumb line
+0|compass
+0|process
+0|thus
+0|press
+0|metal
+0|grindstone
+0|wisdom
+0|conduct
+0|distance
+0|wave
+0|carriage
+0|pile
+0|dragon
+0|deed
+0|virtue
+0|profound
+0|sage
+0|thoroughbred
+0|pace
+0|leap
+0|nag
+0|achievement
+0|carve
+0|rotten
+0|persist
+0|inlay
+0|on tiptoe
+0|in the distance
+0|into the distance
+0|make use of
+0|come of
+0|come from
+0|consist in
+0|volunteer
+0|cheetah
+0|threat
+0|purchase
+0|collar
+0|earn
+0|lemonade
+0|donate
+0|wildlife
+0|organisation
+0|twin
+0|launch
+0|database
+0|shelter
+0|urban
+0|request
+0|plastic
+0|march
+0|county
+0|campaign
+0|promote
+0|reusable
+0|urge
+0|movement
+0|gallery
+0|emperor
+0|brick
+0|latest
+0|make a difference
+0|base on
+0|base upon
+0|hang around
+0|Seattle
+0|Namibia
+0|Orange County
+0|the Forbidden City
+0|the Palace Museum
+0|boarding school
+0|orphanage
+0|pickup
+0|soccer
+0|mission
+0|educated
+0|deliver
+0|construction
+0|undo
+0|structure
+0|hire
+0|awkward
+0|failure
+0|styling
+0|band
+0|logical
+0|fashionable
+0|crisp
+0|Tanzanian
+0|uniform
+0|regular
+0|crop
+0|regulate
+0|official
+0|haircut
+0|productivity
+0|resource
+0|criticize
+0|intention
+0|assume
+0|consist of
+0|lead up to
+0|off the track
+0|Tanzania
+0|endurance
+0|advertisement
+0|hazardous
+0|wage
+0|explorer
+0|via
+0|pole
+0|expedition
+0|exceptionally
+0|stuck
+0|freezing
+0|disaster
+0|melt
+0|crew
+0|abandon
+0|sink
+0|survive
+0|float
+0|lifeboat
+0|exhausted
+0|rescue
+0|Norwegian
+0|whaling
+0|exhausting
+0|continuously
+0|tent
+0|starve
+0|frozen
+0|Chilean
+0|sail
+0|continent
+0|bury
+0|exceptional
+0|leadership
+0|unbelievable
+0|set out
+0|Ernest Shackleton
+0|the Endurance
+0|Antarctica
+0|the Weddell Sea
+0|the Ross Sea
+0|the South Pole
+0|Elephant Island
+0|South Georgia
+0|voyage
+0|impression
+0|sailor
+0|dive
+0|depth
+0|resolution
+0|resolve
+0|desperate
+0|plainly
+0|soundness
+0|observation
+0|expose
+0|shore
+0|last
+0|indeed
+0|afterwards
+0|calm
+0|sea-sick
+0|charming
+0|perfectly
+0|rough
+0|persuade
+0|clap
+0|frightened
+0|freshwater
+0|clear up
+0|die away
+0|come up
+0|come up to sb.
+0|dome
+0|proof
+0|solar-powered
+0|dust
+0|iron
+0|energy
+0|equivalent
+0|ring
+0|ski
+0|nestle
+0|gigantic
+0|surround
+0|lush
+0|shrub
+0|flit
+0|roof-top
+0|constant
+0|loft
+0|roof
+0|border
+0|lawn
+0|normally
+0|fancy
+0|solar panel
+0|space-age
+0|butler
+0|oversee
+0|security
+0|discreet
+0|servant
+0|humidity
+0|lighting
+0|gadget
+0|chore
+0|crossword
+0|button
+0|forwards
+0|integrated
+0|laundry
+0|easy-care
+0|fabric
+0|socket
+0|attach
+0|electrical
+0|appliance
+0|old-fashioned
+0|duster
+0|filter
+0|scent
+0|perfume
+0|entrance
+0|adventure
+0|simulator
+0|surfing
+0|loathe
+0|for a start
+0|on your way
+0|on the way
+0|on its way
+0|automatically
+0|wardrobe
+0|housekeeper
+0|nanny
+0|advertise
+0|reliable
+0|quantity
+0|overpopulation
+0|room
+0|error
+0|interconnect
+0|tunnel
+0|skyscraper
+0|identical
+0|spot
+0|lecturer
+0|polar bear
+0|tap
+0|metallic
+0|echo
+0|recycle
+0|take over
+0|take over from
+0|Los Angeles
+0|nap
+0|hike
+0|benefit
+0|adventurous
+0|sustainable
+0|base
+0|exhaust
+0|wilderness
+0|badge
+0|pin
+0|explore
+0|ocean
+0|adventurer
+0|closet
+0|on the road
+0|go on to
+0|substantial
+0|forehead
+0|altogether
+0|in the course of
+0|over the course of
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 331
+# Total Entries Extracted: 331
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 331
+# -------------------------------

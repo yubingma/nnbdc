@@ -1,0 +1,319 @@
+0|survey
+0|add up
+0|upset
+0|ignore
+0|calm
+0|calm down
+0|calm ... down
+0|have got to
+0|concern
+0|be concerned about
+0|walk the dog
+0|loose
+0|vet
+0|go through
+0|Amsterdam
+0|Netherlands
+0|Jewish
+0|German
+0|Nazi
+0|set down
+0|series
+0|a series of
+0|Kitty
+0|outdoors
+0|spellbind
+0|on purpose
+0|in order to
+0|dusk
+0|at dusk
+0|thunder
+0|entire
+0|entirely
+0|power
+0|face to face
+0|curtain
+0|dusty
+0|no longer
+0|not ... any longer
+0|partner
+0|settle
+0|suffer
+0|suffer from
+0|loneliness
+0|highway
+0|recover
+0|get tired of
+0|be tired of
+0|pack
+0|pack up
+0|pack sth. up
+0|suitcase
+0|Margot
+0|overcoat
+0|teenager
+0|get along with
+0|gossip
+0|fall in love
+0|exactly
+0|disagree
+0|grateful
+0|dislike
+0|join in
+0|tip
+0|secondly
+0|swap
+0|item
+0|subway
+0|elevator
+0|petrol
+0|gas
+0|official
+0|voyage
+0|conquer
+0|because of
+0|native
+0|Amy
+0|come up
+0|apartment
+0|actually
+0|AD
+0|base
+0|at present
+0|gradual
+0|gradually
+0|Danish
+0|enrich
+0|vocabulary
+0|Shakespeare
+0|make use of
+0|spelling
+0|Samuel Johnson
+0|Noah Webster
+0|latter
+0|identity
+0|fluent
+0|fluently
+0|Singapore
+0|Malaysia
+0|such as
+0|frequent
+0|frequently
+0|usage
+0|command
+0|request
+0|dialect
+0|expression
+0|midwestern
+0|African
+0|Spanish
+0|play a part
+0|play a part in
+0|eastern
+0|southeastern
+0|northwestern
+0|recognize
+0|lorry
+0|Lori
+0|Houston
+0|Texas
+0|accent
+0|Buford
+0|Lester
+0|catfish
+0|lightning
+0|straight
+0|block
+0|cab
+0|journal
+0|transport
+0|prefer
+0|disadvantage
+0|fare
+0|route
+0|Mekong
+0|flow
+0|ever since
+0|persuade
+0|cycle
+0|graduate
+0|finally
+0|schedule
+0|fond
+0|be fond of
+0|shortcoming
+0|stubborn
+0|organize
+0|care about
+0|detail
+0|source
+0|determine
+0|determined
+0|change one's mind
+0|journey
+0|altitude
+0|make up one's mind
+0|give in
+0|atlas
+0|glacier
+0|rapids
+0|valley
+0|waterfall
+0|pace
+0|bend
+0|meander
+0|delta
+0|attitude
+0|Qomolangma
+0|boil
+0|forecast
+0|parcel
+0|insurance
+0|wool
+0|as usual
+0|reliable
+0|view
+0|yak
+0|pillow
+0|midnight
+0|at midnight
+0|flame
+0|beneath
+0|Laos
+0|Laotian
+0|temple
+0|cave
+0|earthquake
+0|quake
+0|right away
+0|well
+0|crack
+0|smelly
+0|farmyard
+0|pipe
+0|burst
+0|million
+0|event
+0|as if
+0|at an end
+0|nation
+0|canal
+0|steam
+0|dirt
+0|ruin
+0|in ruins
+0|suffering
+0|extreme
+0|injure
+0|survivor
+0|destroy
+0|brick
+0|dam
+0|track
+0|useless
+0|shock
+0|rescue
+0|trap
+0|electricity
+0|disaster
+0|dig out
+0|bury
+0|mine
+0|miner
+0|shelter
+0|a number of
+0|a great number of
+0|title
+0|reporter
+0|bar
+0|damage
+0|frighten
+0|frightened
+0|frightening
+0|congratulation
+0|judge
+0|sincerely
+0|express
+0|outline
+0|headline
+0|cyclist
+0|Nelson Mandela
+0|quality
+0|warm-hearted
+0|mean
+0|active
+0|generous
+0|easy-going
+0|self
+0|selfish
+0|selfless
+0|selflessly
+0|devote
+0|devoted
+0|Bible
+0|Norman Bethune
+0|invader
+0|found
+0|republic
+0|principle
+0|nationalism
+0|livelihood
+0|Mohandas Gandhi
+0|peaceful
+0|giant
+0|leap
+0|mankind
+0|Elias
+0|lawyer
+0|guidance
+0|legal
+0|fee
+0|passbook
+0|Johannesburg
+0|out of work
+0|hopeful
+0|ANC
+0|youth
+0|league
+0|Youth League
+0|stage
+0|vote
+0|attack
+0|violence
+0|as a matter of fact
+0|blow up
+0|equal
+0|in trouble
+0|willing
+0|unfair
+0|turn to
+0|quote
+0|release
+0|lose heart
+0|Robben Island
+0|escape
+0|blanket
+0|educate
+0|educated
+0|come to power
+0|beg
+0|relative
+0|terror
+0|cruelty
+0|reward
+0|Transkei
+0|set up
+0|sentence
+0|be sentenced to
+0|anti-black
+0|Cape Town
+0|president
+0|Nobel Peace Prize
+0|opinion
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 312
+# Total Entries Extracted: 312
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 312
+# -------------------------------

@@ -1,0 +1,328 @@
+0|cultural
+0|relic
+0|rare
+0|valuable
+0|survive
+0|vase
+0|dynasty
+0|Taj Mahal
+0|ivory
+0|dragon
+0|amber
+0|in search of
+0|Frederick William I
+0|Prussia
+0|amaze
+0|amazing
+0|select
+0|honey
+0|design
+0|fancy
+0|style
+0|decorate
+0|jewel
+0|artist
+0|belong
+0|belong to
+0|Peter the Great
+0|in return
+0|Czar
+0|troop
+0|St Petersburg
+0|reception
+0|Catherine II
+0|at war
+0|remove
+0|less than
+0|wooden
+0|doubt
+0|Knigsberg
+0|the Baltic Sea
+0|mystery
+0|former
+0|worth
+0|rebuild
+0|local
+0|apart
+0|take apart
+0|Leningrad
+0|painting
+0|castle
+0|Windsor Castle
+0|trial
+0|eyewitness
+0|evidence
+0|Jan Hasek
+0|Czech Republic
+0|explode
+0|entrance
+0|Hans Braun
+0|sailor
+0|sink
+0|Anna Petrov
+0|maid
+0|Berlin
+0|think highly of
+0|Johann Webber
+0|informal
+0|debate
+0|ancient
+0|compete
+0|competitor
+0|take part in
+0|medal
+0|stand for
+0|mascot
+0|Pausanias
+0|Greece
+0|Greek
+0|magical
+0|volunteer
+0|homeland
+0|regular
+0|basis
+0|athlete
+0|admit
+0|slave
+0|nowadays
+0|gymnastics
+0|athletics
+0|stadium
+0|gymnasium
+0|gym
+0|as well
+0|host
+0|responsibility
+0|olive
+0|wreath
+0|replace
+0|motto
+0|swift
+0|similarity
+0|Athens
+0|charge
+0|in charge
+0|physical
+0|fine
+0|poster
+0|advertise
+0|Atalanta
+0|princess
+0|glory
+0|bargain
+0|prince
+0|hopeless
+0|Hippomenes
+0|foolish
+0|goddess
+0|pain
+0|one after another
+0|deserve
+0|striker
+0|abacus
+0|calculator
+0|PC
+0|personal computer
+0|laptop
+0|PDA
+0|analytical
+0|calculate
+0|universal
+0|simplify
+0|sum
+0|Charles Babbage
+0|operator
+0|logical
+0|logically
+0|technology
+0|technological
+0|revolution
+0|artificial
+0|intelligence
+0|intelligent
+0|Alan Turing
+0|solve
+0|mathematical
+0|from ... on
+0|reality
+0|designer
+0|personal
+0|personally
+0|tube
+0|transistor
+0|chip
+0|as a result
+0|total
+0|totally
+0|so ... that ...
+0|network
+0|web
+0|application
+0|finance
+0|mobile
+0|rocket
+0|explore
+0|Mars
+0|anyhow
+0|goal
+0|happiness
+0|human race
+0|supporting
+0|download
+0|programmer
+0|virus
+0|android
+0|signal
+0|teammate
+0|Nagoya
+0|Seattle
+0|type
+0|in a way
+0|coach
+0|arise
+0|with the help of
+0|electronic
+0|appearance
+0|character
+0|mop
+0|deal with
+0|watch over
+0|naughty
+0|niece
+0|spoil
+0|wildlife
+0|protection
+0|wild
+0|habitat
+0|threaten
+0|decrease
+0|endanger
+0|die out
+0|loss
+0|reserve
+0|hunt
+0|zone
+0|in peace
+0|in danger
+0|in danger of
+0|Daisy
+0|species
+0|carpet
+0|respond
+0|distant
+0|fur
+0|antelope
+0|Zimbabwe
+0|relief
+0|in relief
+0|laughter
+0|burst into laughter
+0|mercy
+0|certain
+0|importance
+0|WWF
+0|rub
+0|protect ... from
+0|mosquito
+0|millipede
+0|insect
+0|contain
+0|powerful
+0|affect
+0|attention
+0|pay attention to
+0|appreciate
+0|succeed
+0|Indonesia
+0|rhino
+0|secure
+0|income
+0|employ
+0|harm
+0|Milu deer
+0|bite
+0|extinction
+0|dinosaur
+0|come into being
+0|county
+0|inspect
+0|unexpected
+0|incident
+0|dust
+0|according to
+0|Mauritius
+0|disappearance
+0|fierce
+0|so that
+0|ending
+0|faithfully
+0|Colobus monkey
+0|classical
+0|roll
+0|rock 'n' roll
+0|orchestra
+0|rap
+0|folk
+0|jazz
+0|choral
+0|the Monkees
+0|musician
+0|dream of
+0|karaoke
+0|pretend
+0|to be honest
+0|attach
+0|attach ... to
+0|form
+0|fame
+0|passer-by
+0|earn
+0|extra
+0|instrument
+0|perform
+0|performance
+0|pub
+0|cash
+0|in cash
+0|studio
+0|millionaire
+0|play jokes on
+0|actor
+0|rely
+0|rely on
+0|broadcast
+0|humorous
+0|familiar
+0|be familiar with
+0|get familiar with
+0|or so
+0|break up
+0|reunite
+0|attractive
+0|addition
+0|in addition
+0|sort out
+0|excitement
+0|ballad
+0|overnight
+0|dip
+0|tadpole
+0|lily
+0|confident
+0|Freddy
+0|brief
+0|briefly
+0|devotion
+0|afterwards
+0|invitation
+0|beard
+0|sensitive
+0|painful
+0|above all
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 321
+# Total Entries Extracted: 321
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 321
+# -------------------------------

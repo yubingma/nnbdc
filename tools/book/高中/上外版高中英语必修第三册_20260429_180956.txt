@@ -1,0 +1,386 @@
+0|foolish
+0|honor
+0|commencement
+0|connect
+0|dot
+0|calligraphy
+0|practical
+0|application
+0|typography
+0|backwards
+0|somehow
+0|loss
+0|dawn
+0|company
+0|remarkable
+0|convince
+0|settle
+0|quote
+0|someday
+0|diagnose
+0|cancer
+0|code
+0|curable
+0|surgery
+0|thankfully
+0|limited
+0|amazing
+0|publication
+0|catalog
+0|issue
+0|farewell
+0|anew
+0|dawn on
+0|start over
+0|be diagnosed with
+0|live through
+0|Reed College
+0|Macintosh
+0|Woz
+0|Apple
+0|NeXT
+0|Whole Earth Catalog
+0|malaria
+0|path
+0|physiology
+0|verse
+0|further
+0|academy
+0|treatment
+0|disease
+0|widespread
+0|examine
+0|gather
+0|prescription
+0|summarise
+0|collection
+0|anti-malarial
+0|dynasty
+0|wormwood
+0|persistence
+0|artemisinin
+0|conclusive
+0|moment
+0|career
+0|researcher
+0|modest
+0|passionate
+0|commitment
+0|cure
+0|struggle
+0|worthwhile
+0|settle down
+0|thanks to
+0|Tu Youyou
+0|Nobel Prize in Physiology or Medicine
+0|Book of Songs
+0|Peking University
+0|China Academy of Traditional Chinese Medicine
+0|Ge Hong
+0|Eastern Jin
+0|Africa
+0|Asia
+0|carpenter
+0|talent
+0|title
+0|shrimp
+0|crab
+0|display
+0|shade
+0|ink
+0|beyond
+0|aquatic
+0|symbolic
+0|prosperity
+0|harvest
+0|base
+0|dove
+0|vase
+0|bat
+0|putonghua
+0|stable
+0|harmonious
+0|figure
+0|expression
+0|detail
+0|energetic
+0|stroke
+0|manner
+0|trend
+0|typical
+0|recognise
+0|seal
+0|carving
+0|hardworking
+0|eyesight
+0|pursue
+0|award
+0|council
+0|couple ... with
+0|honour ... with
+0|on display
+0|rich in
+0|fill ... with
+0|International Peace Prize
+0|World Peace Council
+0|banquet
+0|extend
+0|greeting
+0|distinguished
+0|attendance
+0|literature
+0|giant
+0|respectful
+0|tone
+0|slight
+0|literary
+0|stage
+0|ordinary
+0|bet
+0|bar
+0|audience
+0|dozen
+0|grateful
+0|occupy
+0|studio
+0|ultimately
+0|in person
+0|in place
+0|grateful for
+0|be grateful for
+0|Swedish Academy
+0|Nobel Prize for Literature
+0|William Shakespeare
+0|Hamlet
+0|Carnegie Hall
+0|charge
+0|beverage
+0|grain
+0|protein
+0|nutrient
+0|fat-free
+0|soda
+0|source
+0|extra
+0|calorie
+0|routine
+0|trash
+0|rate
+0|jog
+0|basis
+0|fitness
+0|app
+0|download
+0|smartphone
+0|device
+0|track
+0|challenge
+0|charity
+0|infection
+0|moody
+0|irritable
+0|motivate
+0|on a regular basis
+0|keep track of
+0|sign up
+0|fight off
+0|classic
+0|beneficial
+0|workout
+0|depression
+0|anxiety
+0|lower
+0|pressure
+0|improve
+0|reduce
+0|fatigue
+0|extreme
+0|suffer
+0|germ
+0|soap
+0|sanitiser
+0|alcohol
+0|option
+0|rub
+0|toothbrush
+0|electric
+0|manual
+0|confirm
+0|power
+0|plaque
+0|symptom
+0|gum
+0|DDS
+0|Doctor of Dental Surgery
+0|clinic
+0|oral
+0|overall
+0|circulation
+0|look into
+0|deal with
+0|blood pressure
+0|at least
+0|University of Georgia
+0|Cochrane
+0|Ricardo Vidal Gonzalez
+0|Mayo Clinic
+0|immediately
+0|sleek
+0|polished
+0|puppy
+0|movement
+0|stretch
+0|chase
+0|flexible
+0|attract
+0|sight
+0|possess
+0|impressive
+0|respond
+0|view
+0|demanding
+0|mature
+0|adult
+0|complain
+0|hesitation
+0|enthusiastic
+0|response
+0|evoke
+0|emotional
+0|powerful
+0|enthusiasm
+0|frustrated
+0|mutual
+0|delight
+0|command
+0|constantly
+0|patience
+0|annoy
+0|terrier
+0|discipline
+0|breathe
+0|miserably
+0|eventually
+0|interactive
+0|to start with
+0|shower ... with
+0|die down
+0|delight in
+0|refer to
+0|remote
+0|surgeon
+0|surgical
+0|operation
+0|attractive
+0|specialist
+0|operate
+0|lack
+0|artificial
+0|intelligence
+0|image
+0|conference
+0|instruct
+0|sew
+0|chest
+0|advanced
+0|technique
+0|apart
+0|network
+0|currently
+0|signal
+0|delay
+0|millisecond
+0|telesurgery
+0|neurosurgeon
+0|insert
+0|locate
+0|artificial intelligence
+0|work out
+0|Parkinson's disease
+0|characteristic
+0|influential
+0|definition
+0|respondent
+0|finding
+0|element
+0|percent
+0|fulfil
+0|significant
+0|predictor
+0|outcome
+0|military
+0|marathon
+0|feature
+0|relate
+0|soldier
+0|psychologist
+0|expert
+0|effective
+0|salesperson
+0|grit
+0|perseverance
+0|stamina
+0|talented
+0|troublesome
+0|outgoing
+0|creative
+0|gentle
+0|based
+0|nationality
+0|convey
+0|sail
+0|cannonball
+0|forever
+0|exist
+0|get along with
+0|Vincent van Gogh
+0|Bob Dylan
+0|longevity
+0|profile
+0|disability
+0|expectancy
+0|average
+0|centenarian
+0|breast
+0|colon
+0|cardiovascular
+0|healthcare
+0|interpersonal
+0|living
+0|major
+0|tofu
+0|counter
+0|saying
+0|bounty
+0|in common
+0|life expectancy
+0|Hunza
+0|Caucasus Mountains
+0|Okinawa
+0|negative
+0|effect
+0|intelligent
+0|gradually
+0|face-to-face
+0|demand
+0|automation
+0|inequality
+0|apply
+0|qualified
+0|threaten
+0|limit
+0|statement
+0|upset
+0|mental
+0|VR
+0|virtual reality
+0|Thailand
+0|South Korea
+0|New York City
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 379
+# Total Entries Extracted: 379
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 379
+# -------------------------------

@@ -1,0 +1,263 @@
+0|academic
+0|province
+0|enthusiastic
+0|amazing
+0|information
+0|website
+0|brilliant
+0|comprehension
+0|instruction
+0|method
+0|bored
+0|embarrassed
+0|attitude
+0|behaviour
+0|previous
+0|description
+0|amazed
+0|embarrassing
+0|technology
+0|impress
+0|correction
+0|encouragement
+0|enjoyment
+0|fluency
+0|misunderstanding
+0|disappointed
+0|disappointing
+0|system
+0|teenager
+0|disappear
+0|move
+0|assistant
+0|cover
+0|diploma
+0|amusing
+0|energetic
+0|intelligent
+0|nervous
+0|organised
+0|patient
+0|serious
+0|shy
+0|strict
+0|impression
+0|avoid
+0|hate
+0|incorrectly
+0|completely
+0|immediately
+0|appreciate
+0|admit
+0|scientific
+0|literature
+0|loudly
+0|wave
+0|joke
+0|summary
+0|respect
+0|headmaster
+0|headmistress
+0|period
+0|revision
+0|translation
+0|timetable
+0|topic
+0|vacation
+0|revise
+0|discipline
+0|relationship
+0|formal
+0|relaxed
+0|similarly
+0|helicopter
+0|motorbike
+0|tram
+0|distance
+0|abandoned
+0|camel
+0|cassette
+0|desert
+0|diamond
+0|expert
+0|midnight
+0|product
+0|scenery
+0|shoot
+0|soil
+0|journey
+0|train
+0|circus
+0|seaside
+0|stadium
+0|eagle
+0|frighten
+0|kindergarten
+0|apartment
+0|cartoon
+0|interview
+0|interviewer
+0|event
+0|exhausted
+0|downtown
+0|vacuum
+0|rail
+0|ceremony
+0|track
+0|souvenir
+0|survey
+0|neighbourhood
+0|local
+0|suburb
+0|hometown
+0|attractive
+0|fortunate
+0|pretty
+0|sound
+0|tourist
+0|bother
+0|nuisance
+0|rent
+0|district
+0|approach
+0|harbour
+0|gorgeous
+0|architecture
+0|starve
+0|park
+0|traffic
+0|committee
+0|organisation
+0|unemployed
+0|household
+0|occupation
+0|professional
+0|manual
+0|employment
+0|gallery
+0|exchange
+0|fascinating
+0|afford
+0|survive
+0|contact
+0|liquid
+0|expand
+0|contract
+0|substance
+0|mixture
+0|oxygen
+0|electricity
+0|stage
+0|conclusion
+0|aim
+0|reaction
+0|electrical
+0|equipment
+0|react
+0|potassium
+0|sodium
+0|calcium
+0|magnesium
+0|aluminium
+0|zinc
+0|partial
+0|copper
+0|oxide
+0|rust
+0|boil
+0|ordinary
+0|steam
+0|float
+0|form
+0|dissolve
+0|balance
+0|crucible
+0|tongs
+0|flame
+0|facility
+0|lecture
+0|department
+0|astonished
+0|contain
+0|access
+0|crash
+0|keyword
+0|log
+0|software
+0|breakdown
+0|source
+0|accessible
+0|data
+0|defence
+0|create
+0|network
+0|via
+0|percentage
+0|design
+0|document
+0|invention
+0|permission
+0|military
+0|concentrate
+0|definite
+0|fantastic
+0|independent
+0|essay
+0|pass
+0|frequently
+0|disadvantage
+0|average
+0|statistics
+0|shorten
+0|sideways
+0|in other words
+0|look forward to
+0|at the start of
+0|at the end of
+0|go to college
+0|be divided into
+0|take part in
+0|make sure
+0|so that
+0|make progress
+0|as a result
+0|in fact
+0|fall asleep
+0|tell jokes
+0|get on
+0|get off
+0|get into
+0|get out of
+0|take off
+0|be short for
+0|not ... any more
+0|out of date
+0|refer to
+0|put up
+0|so far
+0|up to now
+0|till now
+0|get away from
+0|a great many
+0|a number of
+0|go up
+0|add ... to ...
+0|used to
+0|in the area of
+0|be proud of
+0|be supposed to
+0|consist of
+0|as well
+0|become known as ...
+0|go down
+0|come up with
+0|from that moment on
+0|concentrate on
+0|compared with
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 256
+# Total Entries Extracted: 256
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 256
+# -------------------------------

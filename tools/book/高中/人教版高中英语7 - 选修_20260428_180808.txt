@@ -1,0 +1,394 @@
+0|disability
+0|disabled
+0|hearing
+0|eyesight
+0|syndrome
+0|infantile paralysis
+0|Rosalyn
+0|lap
+0|ambition
+0|ambitious
+0|dictation
+0|Sally
+0|noisy
+0|suitable
+0|entry
+0|beneficial
+0|Marty Fielding
+0|in other words
+0|clumsy
+0|bump
+0|outgoing
+0|adapt
+0|adapt to
+0|bench
+0|cut out
+0|microscope
+0|out of breath
+0|absence
+0|fellow
+0|annoy
+0|annoyed
+0|annoyance
+0|all in all
+0|firm
+0|software
+0|sit around
+0|as well as
+0|parrot
+0|tank
+0|tortoise
+0|in many ways
+0|psychology
+0|psychologically
+0|make fun of
+0|encouragement
+0|conduct
+0|mainstream
+0|fulfilling
+0|never mind
+0|politics
+0|abolish
+0|abolition
+0|resign
+0|slavery
+0|literature
+0|Barry Minto
+0|Mount Kilimanjaro
+0|companion
+0|assistance
+0|congratulate
+0|congratulation
+0|bowling
+0|graduation
+0|certificate
+0|all the best
+0|architect
+0|Sanders
+0|adequate
+0|access
+0|accessible
+0|wheelchair
+0|handy
+0|earphone
+0|impair
+0|row
+0|basement
+0|outwards
+0|exit
+0|meet with
+0|approval
+0|dignity
+0|profit
+0|italics
+0|community
+0|household
+0|fiction
+0|desire
+0|Isaac Asimov
+0|satisfaction
+0|Larry Belmont
+0|test out
+0|Claire
+0|bonus
+0|alarm
+0|alarmed
+0|apron
+0|sympathy
+0|overweight
+0|elegant
+0|Gladys Claffern
+0|favour
+0|pile
+0|scan
+0|fingernail
+0|absurd
+0|haircut
+0|makeup
+0|accompany
+0|cushion
+0|bedding
+0|necklace
+0|clerk
+0|counter
+0|ring up
+0|turn around
+0|awful
+0|affair
+0|armchair
+0|declare
+0|cuisine
+0|envy
+0|leave ... alone
+0|digital
+0|mailbox
+0|aside
+0|set aside
+0|grand
+0|Marion
+0|alphabetical
+0|receiver
+0|in all
+0|affection
+0|bound
+0|be bound to
+0|biography
+0|holy
+0|imagination
+0|transfusion
+0|part-time
+0|master's degree
+0|staff
+0|Philadelphia
+0|navy
+0|junior
+0|PhD
+0|Doctor of Philosophy
+0|biochemistry
+0|Boston
+0|talent
+0|chapter
+0|the Foundation trilogy
+0|empire
+0|theoretical
+0|framework
+0|thinking
+0|divorce
+0|obey
+0|disobey
+0|assessment
+0|snorkel
+0|aquarium
+0|anecdote
+0|Clancy
+0|baleen
+0|baleen whale
+0|annual
+0|migration
+0|witness
+0|accommodation
+0|shore
+0|offshore
+0|opposite
+0|yell
+0|pause
+0|oar
+0|telescope
+0|teamwork
+0|blow-hole
+0|dive
+0|flee
+0|harpoon
+0|drag
+0|depth
+0|meantime
+0|in the meantime
+0|lip
+0|overboard
+0|urge
+0|abandon
+0|shark
+0|help out
+0|help ... out
+0|relationship
+0|conservation
+0|iceberg
+0|jog
+0|seaside
+0|net
+0|target
+0|tide
+0|driftnet
+0|dimension
+0|reflect
+0|pure
+0|cell
+0|aware
+0|be aware of
+0|become aware of
+0|vivid
+0|neat
+0|seaweed
+0|narrow
+0|flashlight
+0|upside down
+0|suck
+0|sea-slug
+0|turtle
+0|eel
+0|sharp
+0|tasty
+0|giant
+0|clam
+0|grey
+0|scare
+0|scared to death
+0|be scared to death
+0|shallow
+0|steep
+0|boundary
+0|Antarctic
+0|the Antarctic
+0|awesome
+0|leap
+0|seal
+0|refund
+0|pension
+0|pensioner
+0|airmail
+0|Papua New Guinea
+0|fortnight
+0|hear from
+0|dying to
+0|be dying to
+0|roof
+0|muddy
+0|textbook
+0|concept
+0|bucket
+0|the other day
+0|weekly
+0|bubble
+0|relevant
+0|remote
+0|ridge
+0|weed
+0|hut
+0|rectangle
+0|rectangular
+0|adjust
+0|platform
+0|broom
+0|tin
+0|jar
+0|sniff
+0|participate
+0|interpreter
+0|grill
+0|dry out
+0|leftover
+0|evil
+0|dry up
+0|otherwise
+0|privilege
+0|paperwork
+0|arrangement
+0|toast
+0|comb
+0|astronaut
+0|angle
+0|catalogue
+0|donate
+0|voluntary
+0|in need
+0|purchase
+0|anniversary
+0|seed
+0|seedling
+0|vaccination
+0|loan
+0|sew
+0|sewing machine
+0|supplement
+0|ox
+0|plough
+0|trunk
+0|trunk library
+0|tractor
+0|Kenya
+0|Bangladesh
+0|click
+0|tailor
+0|Tanzania
+0|economic
+0|political
+0|Nepal
+0|Uganda
+0|distribute
+0|distribution
+0|financial
+0|security
+0|operate
+0|Sudan
+0|clinic
+0|Malawi
+0|adjust to
+0|keep it up
+0|fit in
+0|motherland
+0|visa
+0|queue
+0|cafeteria
+0|lecture
+0|qualification
+0|preparation
+0|recommend
+0|shopkeeper
+0|idiom
+0|comfort
+0|substitute
+0|academic
+0|requirement
+0|essay
+0|tutor
+0|revise
+0|revision
+0|draft
+0|numb
+0|acknowledge
+0|as far as one is concerned
+0|contradict
+0|autonomous
+0|occupy
+0|be occupied with
+0|enterprise
+0|apology
+0|seminar
+0|videophone
+0|Rugby
+0|bachelor
+0|bachelor's degree
+0|routine
+0|minibus
+0|optional
+0|day in and day out
+0|cage
+0|bark
+0|battery
+0|site
+0|Julie
+0|Abigail
+0|drill
+0|oilfield
+0|Jamie
+0|Sam
+0|Lima
+0|Cuzco
+0|the Andes mountains
+0|Peru
+0|Lia
+0|agent
+0|travel agent
+0|geographical
+0|parallel
+0|Lake Titicaca
+0|abundant
+0|Inca
+0|govern
+0|onwards
+0|destination
+0|Machu Picchu
+0|inn
+0|out of the question
+0|hike
+0|Puno
+0|tomb
+0|the Amazon
+0|settle in
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 387
+# Total Entries Extracted: 387
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 387
+# -------------------------------

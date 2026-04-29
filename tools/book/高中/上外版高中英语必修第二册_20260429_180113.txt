@@ -1,0 +1,316 @@
+0|creature
+0|species
+0|paradise
+0|wither
+0|replace
+0|elaborate
+0|fountain
+0|nobleman
+0|majesty
+0|trick
+0|whisper
+0|reward
+0|solution
+0|theory
+0|restore
+0|royal
+0|former
+0|splendour
+0|disappear
+0|poo
+0|particularly
+0|moth
+0|fool
+0|worm
+0|native
+0|rare
+0|flourish
+0|amongst
+0|insect
+0|organism
+0|balance
+0|destroy
+0|delicate
+0|send for
+0|break into
+0|tragedy
+0|damage
+0|beyond
+0|generation
+0|pauper
+0|preserve
+0|appreciate
+0|miraculous
+0|aflame
+0|sunset
+0|transform
+0|familiar
+0|landscape
+0|wonderland
+0|clump
+0|daffodil
+0|glow
+0|affect
+0|mood
+0|responsible
+0|gloomy
+0|romantic
+0|bud
+0|timid
+0|frozen
+0|intrinsic
+0|sunrise
+0|breeze
+0|gaze
+0|renew
+0|aware
+0|positive
+0|tear up
+0|cruel
+0|debate
+0|establishment
+0|welfare
+0|concern
+0|argue
+0|remove
+0|habitat
+0|cage
+0|hunt
+0|additionally
+0|exhibit
+0|adjust
+0|climate
+0|location
+0|design
+0|extinction
+0|conservation
+0|essential
+0|threat
+0|illegal
+0|extinct
+0|moreover
+0|attempt
+0|replicate
+0|material
+0|exhibition
+0|tropical
+0|typically
+0|indoors
+0|tank
+0|slightly
+0|approach
+0|overall
+0|definitely
+0|reunite
+0|retire
+0|bricklayer
+0|penguin
+0|death
+0|feather
+0|diet
+0|strength
+0|release
+0|nearby
+0|elderly
+0|migrate
+0|recall
+0|affectionate
+0|emerge
+0|peck
+0|lap
+0|sardine
+0|Joao
+0|Rio de Janeiro
+0|Brazil
+0|Dindim
+0|shock
+0|culture shock
+0|host
+0|multiple
+0|variety
+0|champagne
+0|slice
+0|serving
+0|focus
+0|facility
+0|strategy
+0|phenomenon
+0|graph
+0|honeymoon
+0|phase
+0|frustrating
+0|overwhelming
+0|encounter
+0|tend
+0|utensil
+0|appetite
+0|grab
+0|run into
+0|galette des rois
+0|International Programs Office
+0|type
+0|culinary
+0|identify
+0|seek
+0|stressed
+0|identity
+0|cuisine
+0|precious
+0|recipe
+0|means
+0|cope
+0|homesickness
+0|unique
+0|belief
+0|harmony
+0|vital
+0|trait
+0|flavour
+0|spicy
+0|sour
+0|bitter
+0|style
+0|architecture
+0|costume
+0|nutritious
+0|appealing
+0|immigration
+0|ingredient
+0|diversity
+0|globalise
+0|access
+0|embrace
+0|inform
+0|portal
+0|identify with
+0|pass down
+0|garage
+0|barely
+0|neighborhood
+0|guy
+0|varsity
+0|crush
+0|hustle
+0|dribble
+0|shoot
+0|sit-up
+0|push-up
+0|pull-up
+0|hoop
+0|sneaker
+0|severe
+0|critic
+0|ally
+0|challenging
+0|endearing
+0|ultimate
+0|tough
+0|competitor
+0|visa
+0|million
+0|hang out
+0|leave off
+0|leave ... off ...
+0|work on
+0|Jordan
+0|Louisiana
+0|Georgetown
+0|NBA
+0|National Basketball Association
+0|bend
+0|German
+0|penalty area
+0|net
+0|goal
+0|relief
+0|scream
+0|referee
+0|whistle
+0|full-time
+0|draw
+0|friendly
+0|pitch
+0|pep talk
+0|relieve
+0|crack
+0|goalkeeper
+0|roll
+0|breath
+0|calm
+0|roar
+0|stadium
+0|spot
+0|incredibly
+0|yell
+0|groan
+0|crossbar
+0|bounce
+0|crowd
+0|gutted
+0|kick off
+0|break through
+0|turn over
+0|step up
+0|calm down
+0|calm ... down
+0|Beckham
+0|Sally
+0|Jules
+0|Mel
+0|Hannah
+0|Jess
+0|bloom
+0|Antarctic
+0|exploration
+0|rainforest
+0|reduction
+0|energy
+0|amazement
+0|awe
+0|stress
+0|contentment
+0|curiosity
+0|reveal
+0|David Attenborough
+0|Dacher Keltner
+0|observe
+0|safari
+0|flight
+0|stair
+0|carbon monoxide
+0|meow
+0|scratch
+0|Salty
+0|World Trade Center
+0|Winnie
+0|custom
+0|cappuccino
+0|associate
+0|association
+0|link
+0|immigrant
+0|heritage
+0|nutrition
+0|shortcake
+0|kung fu
+0|athlete
+0|judge
+0|admire
+0|realistic
+0|professional
+0|Olympic
+0|Serbian
+0|title
+0|spectator
+0|commentator
+0|Bruce Lee
+0|European Championships
+0|World Championships
+0|Finland
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 309
+# Total Entries Extracted: 309
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 309
+# -------------------------------

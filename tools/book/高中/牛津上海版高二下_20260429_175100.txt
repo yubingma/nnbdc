@@ -1,0 +1,286 @@
+0|former
+0|lecturer
+0|compliment
+0|look one's best
+0|keep fit
+0|cosmetic surgery
+0|regardless of
+0|emphasis
+0|obsession
+0|fit
+0|current
+0|perspective
+0|horrendous
+0|rib
+0|stretch
+0|tribe
+0|ear lobe
+0|ridiculous
+0|endure
+0|considerable
+0|free
+0|free to do something
+0|point
+0|quaint
+0|alter
+0|facelift
+0|set out
+0|issue
+0|aerobics
+0|activity
+0|aerobic
+0|aim at
+0|lung
+0|supply
+0|optimal
+0|fitness
+0|intense
+0|workout
+0|lose weight
+0|moderate
+0|intensity
+0|recommend
+0|suitable
+0|overdo
+0|sharp
+0|sum up
+0|practical joke
+0|define ... as ...
+0|play a trick on ...
+0|unsuspecting
+0|victim
+0|embarrassed
+0|colleague
+0|inferior
+0|co-worker
+0|humble
+0|precisely
+0|peg
+0|proceed
+0|reverse
+0|depart
+0|exchange ... for ...
+0|roar with laughter
+0|puzzled
+0|diameter
+0|conceal
+0|replace ... with ...
+0|at the end of
+0|stick
+0|on top of
+0|alternate
+0|in the end
+0|belief
+0|nonsense
+0|proverb
+0|strengthen
+0|immune
+0|immune system
+0|be equivalent to
+0|rowing machine
+0|emotion
+0|increasingly
+0|therapy
+0|comedy
+0|clown
+0|foundation
+0|charity
+0|run
+0|undergo
+0|cheer ... up
+0|deny
+0|volunteer
+0|bureau
+0|personality
+0|fascinating
+0|emotional
+0|guesswork
+0|psychologist
+0|energetic
+0|adventurous
+0|firmness
+0|ambitious
+0|optimistic
+0|remind ... of
+0|peace and quiet
+0|relaxed
+0|familiar
+0|rare
+0|injury
+0|associate ... with ...
+0|stimulate
+0|thus
+0|think of ... as ...
+0|reliable
+0|travel agent
+0|symbolize
+0|association
+0|depend on
+0|make a difference
+0|wrap
+0|circumstances
+0|offend
+0|embarrass
+0|prosperity
+0|funeral
+0|shed
+0|mourning
+0|bride
+0|virtue
+0|purity
+0|stick to
+0|smart
+0|Brazil
+0|unpack
+0|mistake ... for
+0|painter
+0|deserve
+0|work
+0|fame
+0|the Netherlands
+0|dealer
+0|missionary
+0|Belgium
+0|superior
+0|financial
+0|believe in
+0|take one's own life
+0|upset
+0|cut off
+0|mental
+0|sane
+0|clarity
+0|possess
+0|admire
+0|tremendously
+0|realistic
+0|abstract
+0|stroke
+0|visible
+0|subject
+0|undoubtedly
+0|view
+0|masterpiece
+0|decade
+0|origin
+0|Altamira
+0|amateur
+0|archaeologist
+0|investigate
+0|artefact
+0|peek
+0|take a peek
+0|bison
+0|boar
+0|base on
+0|maintain
+0|date from
+0|the Stone Age
+0|claim
+0|ridicule
+0|community
+0|lifelike
+0|genuine
+0|magical
+0|religious
+0|inspiration
+0|orchid
+0|foresee
+0|consequence
+0|obese
+0|personal
+0|vital
+0|growl
+0|obsess
+0|be obsessed with
+0|switch on
+0|flash
+0|directly
+0|master
+0|apart
+0|blow
+0|cut down
+0|dam
+0|provide
+0|vast
+0|profit
+0|delay
+0|pan
+0|mighty
+0|course
+0|doomed
+0|command
+0|ingredient
+0|impatiently
+0|threat
+0|responsible
+0|manner
+0|cause
+0|ozone
+0|layer
+0|ozone layer
+0|depletion
+0|epidemic
+0|CFC
+0|aerosol
+0|manufacturer
+0|label
+0|cosmetics
+0|face cream
+0|persuasive
+0|advertising
+0|campaign
+0|anti-ageing
+0|present
+0|packaging
+0|double
+0|poison
+0|lipstick
+0|blind
+0|make-up
+0|sue
+0|force-feed
+0|injection
+0|drip
+0|amazing
+0|unconventional
+0|principle
+0|prosper
+0|revolutionize
+0|immoral
+0|limitation
+0|refill
+0|recycle
+0|unique
+0|alternative
+0|remarkably
+0|global
+0|publicity
+0|hold
+0|pro-environment
+0|publicize
+0|make up
+0|tube
+0|wrapper
+0|transport
+0|cardboard
+0|end up
+0|landfill
+0|take up
+0|stink
+0|leak
+0|substance
+0|take the lead
+0|carton
+0|appropriate
+0|sort
+0|process
+0|vigilant
+0|do one's part
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 279
+# Total Entries Extracted: 279
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 279
+# -------------------------------

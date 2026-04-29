@@ -1,0 +1,317 @@
+0|achievement
+0|Joan of Arc
+0|Elizabeth Fry
+0|Quaker
+0|welfare
+0|project
+0|institute
+0|China Welfare Institute
+0|specialist
+0|specialize
+0|Jane Goodall
+0|chimp
+0|connection
+0|human being
+0|Jody Williams
+0|campaign
+0|landmine
+0|organization
+0|Gombe National Park
+0|behave
+0|behaviour
+0|behavior
+0|shade
+0|move off
+0|worthwhile
+0|nest
+0|bond
+0|observe
+0|observation
+0|childhood
+0|outspoken
+0|respect
+0|argue
+0|argument
+0|entertainment
+0|lead a ... life
+0|crowd
+0|crowd in
+0|inspire
+0|inspiration
+0|support
+0|look down upon
+0|look down on
+0|refer
+0|refer to
+0|audience
+0|by chance
+0|come across
+0|career
+0|rate
+0|sickness
+0|intend
+0|emergency
+0|generation
+0|determination
+0|kindness
+0|considerate
+0|consideration
+0|deliver
+0|carry on
+0|modest
+0|statistic
+0|sunburnt
+0|struggle
+0|decade
+0|super
+0|hybrid
+0|output
+0|strain
+0|crop
+0|hunger
+0|disturbing
+0|expand
+0|circulate
+0|Vietnam
+0|thanks to
+0|battle
+0|rid
+0|rid ... of
+0|be satisfied with
+0|freedom
+0|would rather
+0|therefore
+0|equip
+0|sorghum
+0|grain
+0|peanut
+0|export
+0|nationality
+0|occupation
+0|personality
+0|confuse
+0|regret
+0|chemical
+0|organic
+0|fertile
+0|fertilizer
+0|production
+0|bacteria
+0|pest
+0|build up
+0|lead to
+0|nutrition
+0|mineral
+0|discovery
+0|focus
+0|focus on
+0|soil
+0|reduce
+0|keep ... free from
+0|keep ... free of
+0|soybean
+0|soyabean
+0|root
+0|skim
+0|underline
+0|summary
+0|comment
+0|producer
+0|industrial
+0|humour
+0|punchline
+0|verbal
+0|nonverbal
+0|mime
+0|Charlie Chaplin
+0|Edward Lear
+0|comedy
+0|Victor Hugo
+0|up to now
+0|brighten
+0|depressed
+0|content
+0|feel content with
+0|be content with
+0|performer
+0|astonish
+0|astonishing
+0|fortunate
+0|unfortunately
+0|badly off
+0|teens
+0|ordinary
+0|bored
+0|subtle
+0|entertain
+0|entertaining
+0|charming
+0|tramp
+0|throughout
+0|homeless
+0|moustache
+0|worn
+0|worn-out
+0|stiffly
+0|failure
+0|optimism
+0|overcome
+0|underdog
+0|snowstorm
+0|leather
+0|pick out
+0|lace
+0|cut off
+0|chew
+0|mouthful
+0|enjoyment
+0|convince
+0|convincing
+0|direct
+0|star in
+0|Oscar
+0|outstanding
+0|Switzerland
+0|confidence
+0|costume
+0|gesture
+0|particular
+0|particularly
+0|occasion
+0|budget
+0|actress
+0|slide
+0|amuse
+0|amusing
+0|pancake
+0|explanation
+0|detective
+0|Sherlock Holmes
+0|mountainous
+0|whisper
+0|vast
+0|rhythm
+0|mess
+0|react
+0|porridge
+0|drunk
+0|statement
+0|greet
+0|represent
+0|association
+0|dormitory
+0|canteen
+0|flight
+0|curious
+0|curiously
+0|Garcia
+0|Colombia
+0|approach
+0|cheek
+0|defend
+0|defend ... against
+0|defence
+0|major
+0|misunderstand
+0|misunderstood
+0|misunderstanding
+0|Akira Nagata
+0|Ahmed Aziz
+0|Jordan
+0|Darlene Coulon
+0|dash
+0|adult
+0|simply
+0|Muslim
+0|spoken
+0|unspoken
+0|posture
+0|Spain
+0|Italy
+0|likely
+0|be likely to
+0|in general
+0|crossroads
+0|employee
+0|frown
+0|misread
+0|facial
+0|function
+0|ease
+0|at ease
+0|truly
+0|false
+0|anger
+0|lose face
+0|turn one's back to
+0|fist
+0|yawn
+0|respectful
+0|subjective
+0|hug
+0|rank
+0|cassette
+0|theme
+0|Camelot Park
+0|central
+0|Central Park
+0|Dollywood
+0|various
+0|cartoon
+0|be famous for
+0|roller coaster
+0|whichever
+0|pirate
+0|fairy
+0|fantasy
+0|amusement
+0|swing
+0|attraction
+0|no wonder
+0|tourism
+0|wherever
+0|unique
+0|carpenter
+0|craftsman
+0|engine
+0|bald
+0|preserve
+0|length
+0|deed
+0|knight
+0|be modelled after
+0|Merlin the Wizard
+0|sword
+0|joust
+0|tournament
+0|settler
+0|athletic
+0|translator
+0|minority
+0|cloth
+0|Futuroscope
+0|jungle
+0|diver
+0|creature
+0|sunlight
+0|T-Rex
+0|advance
+0|in advance
+0|advanced
+0|brand
+0|get close to
+0|come to life
+0|outing
+0|admission
+0|shuttle
+0|freeway
+0|souvenir
+0|sneaker
+0|brochure
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 310
+# Total Entries Extracted: 310
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 310
+# -------------------------------

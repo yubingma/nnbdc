@@ -1,0 +1,374 @@
+0|take place
+0|beauty
+0|harvest
+0|celebration
+0|hunter
+0|starve
+0|origin
+0|religious
+0|seasonal
+0|ancestor
+0|Obon
+0|grave
+0|incense
+0|in memory of
+0|Mexico
+0|feast
+0|skull
+0|bone
+0|Halloween
+0|belief
+0|dress up
+0|trick
+0|play a trick on
+0|poet
+0|Columbus Day
+0|arrival
+0|Christopher Columbus
+0|gain
+0|independence
+0|independent
+0|gather
+0|agriculture
+0|agricultural
+0|award
+0|produce
+0|rooster
+0|admire
+0|energetic
+0|look forward to
+0|carnival
+0|lunar
+0|Easter
+0|parade
+0|day and night
+0|clothing
+0|Christian
+0|Jesus
+0|cherry
+0|blossom
+0|as though
+0|have fun with
+0|custom
+0|worldwide
+0|rosebud
+0|fool
+0|necessity
+0|permission
+0|prediction
+0|fashion
+0|Trinidad
+0|Carla
+0|Hari
+0|parking
+0|parking lot
+0|turn up
+0|keep one's word
+0|hold one's breath
+0|apologize
+0|drown
+0|sadness
+0|obvious
+0|wipe
+0|weave
+0|woven
+0|herd
+0|the Milky Way
+0|magpie
+0|weep
+0|announcer
+0|Valentine's Day
+0|set off
+0|remind
+0|remind ... of ...
+0|forgive
+0|forgiven
+0|diet
+0|spaghetti
+0|nut
+0|muscle
+0|protective
+0|bean
+0|pea
+0|cucumber
+0|eggplant
+0|pepper
+0|mushroom
+0|peach
+0|lemon
+0|balance
+0|balanced diet
+0|barbecue
+0|mutton
+0|kebab
+0|roast
+0|stir
+0|fry
+0|stir-fry
+0|ought
+0|ought to
+0|bacon
+0|cola
+0|sugary
+0|sign
+0|lose weight
+0|slim
+0|curiosity
+0|hostess
+0|raw
+0|vinegar
+0|get away with
+0|lie
+0|tell a lie
+0|customer
+0|discount
+0|win ... back
+0|weakness
+0|strength
+0|consult
+0|fibre
+0|digest
+0|poisonous
+0|carrot
+0|scurvy
+0|rickets
+0|obesity
+0|vitamin
+0|protein
+0|earn one's living
+0|debt
+0|in debt
+0|glare
+0|spy
+0|spy on
+0|limit
+0|limited
+0|benefit
+0|breast
+0|garlic
+0|sigh
+0|combine
+0|cut down
+0|before long
+0|put on weight
+0|cooperation
+0|ingredient
+0|flavour
+0|Mark Twain
+0|birthplace
+0|Florida
+0|bring up
+0|Hannibal
+0|Missouri
+0|Mississippi
+0|novel
+0|boyhood
+0|adventure
+0|Tom Sawyer
+0|Huckleberry Finn
+0|phrase
+0|fathom
+0|author
+0|Samuel Langhorne Clemens
+0|scene
+0|narrator
+0|Roderick
+0|Oliver
+0|bet
+0|make a bet
+0|penniless
+0|wander
+0|pavement
+0|businessman
+0|permit
+0|ahead
+0|go ahead
+0|by accident
+0|bay
+0|stare
+0|stare at
+0|nightfall
+0|fault
+0|spot
+0|passage
+0|unpaid
+0|account
+0|account for
+0|embassy
+0|seek
+0|patience
+0|contrary
+0|on the contrary
+0|charity
+0|envelope
+0|unbelievable
+0|Horace
+0|steak
+0|pineapple
+0|dessert
+0|amount
+0|take a chance
+0|rude
+0|manner
+0|scream
+0|genuine
+0|issue
+0|fake
+0|rag
+0|in rags
+0|indeed
+0|as for
+0|bow
+0|barber
+0|astronomy
+0|astronomer
+0|solar
+0|system
+0|solar system
+0|religion
+0|theory
+0|Big Bang
+0|atom
+0|billion
+0|globe
+0|global
+0|violent
+0|in time
+0|carbon
+0|dioxide
+0|carbon dioxide
+0|nitrogen
+0|vapour
+0|atmosphere
+0|unlike
+0|fundamental
+0|presence
+0|dissolve
+0|harmful
+0|acid
+0|chain
+0|reaction
+0|multiply
+0|oxygen
+0|shellfish
+0|amphibian
+0|reptile
+0|lay eggs
+0|exist
+0|mammal
+0|give birth to
+0|thus
+0|in one's turn
+0|prevent ... from
+0|puzzle
+0|biology
+0|biologist
+0|gravity
+0|satellite
+0|gentle
+0|geologist
+0|physicist
+0|block out
+0|extinct
+0|climate
+0|comet
+0|crash
+0|Isaac Newton
+0|Albert Einstein
+0|Stephen Hawking
+0|spaceship
+0|pull
+0|lessen
+0|cheer up
+0|float
+0|weightlessly
+0|cabin
+0|now that
+0|get the hang of
+0|break out
+0|exhaust
+0|watch out for
+0|multicultural
+0|quiz
+0|Canadian
+0|Vancouver
+0|Toronto
+0|Calgary
+0|Ottawa
+0|beaver
+0|grizzly
+0|polar
+0|penguin
+0|prime
+0|minister
+0|prime minister
+0|governor
+0|rather than
+0|continent
+0|baggage
+0|chat
+0|scenery
+0|eastward
+0|westward
+0|upward
+0|surround
+0|the Rocky Mountains
+0|harbour
+0|harbor
+0|measure
+0|aboard
+0|settle down
+0|manage to do
+0|catch sight of
+0|eagle
+0|stampede
+0|cowboy
+0|have a gift for
+0|within
+0|border
+0|slight
+0|slightly
+0|acre
+0|urban
+0|Thunder Bay
+0|Lake Superior
+0|location
+0|the Vatican City State
+0|topic
+0|mix
+0|mixture
+0|bush
+0|maple
+0|frost
+0|confirm
+0|wealthy
+0|distance
+0|in the distance
+0|mist
+0|misty
+0|Niagara
+0|schoolmate
+0|booth
+0|downtown
+0|pearl
+0|Cantonese
+0|approximately
+0|dawn
+0|workplace
+0|buffet
+0|broad
+0|St Lawrence River
+0|nearby
+0|tradition
+0|terrify
+0|terrified
+0|pleased
+0|impress
+0|impressive
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 367
+# Total Entries Extracted: 367
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 367
+# -------------------------------

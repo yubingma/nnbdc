@@ -1,0 +1,348 @@
+0|fiction
+0|science fiction
+0|sci-fi
+0|SF
+0|test out
+0|bonus
+0|more like
+0|ridiculous
+0|integrity
+0|dignity
+0|salary
+0|absurd
+0|appointment
+0|nail
+0|saleswoman
+0|guilty
+0|suspend
+0|ladder
+0|dismiss
+0|declare
+0|whereas
+0|rumour
+0|presume
+0|fare
+0|weekly
+0|on a ... basis
+0|calculate
+0|chairwoman
+0|gramme
+0|gram
+0|flour
+0|venue
+0|salesman
+0|alien
+0|pros and cons
+0|blurred
+0|superior
+0|superior to
+0|take over
+0|inaction
+0|conflict with
+0|labour
+0|leather
+0|lever
+0|panel
+0|inch
+0|backwards
+0|backward
+0|grip
+0|hazy
+0|niece
+0|fetch
+0|handkerchief
+0|lamp
+0|turn out
+0|pace
+0|fall away
+0|division
+0|puff
+0|urge
+0|have an urge to
+0|random
+0|maximum
+0|explode
+0|jolt
+0|flip
+0|stun
+0|mud
+0|overstatement
+0|Isaac Asimov
+0|Larry Belmont
+0|Claire
+0|Gladys Claffern
+0|Braille
+0|braille
+0|The Three-Body Problem
+0|Hugo Award
+0|iconic
+0|foundation
+0|political
+0|didgeridoo
+0|located
+0|equator
+0|barbecue
+0|BBQ
+0|bakery
+0|joint
+0|butcher
+0|premier
+0|herb
+0|dim sim
+0|hollow
+0|vibrate
+0|horn
+0|pitch
+0|straightforward
+0|slogan
+0|minister
+0|prime minister
+0|frog
+0|arrow
+0|entitle
+0|getaway
+0|dive
+0|kayaking
+0|peak season
+0|freedom
+0|domain
+0|sponsor
+0|liberty
+0|golf
+0|strait
+0|sample
+0|monument
+0|kiwi
+0|geyser
+0|sulphuric pool
+0|manuka honey
+0|bungee jumping
+0|a flock of
+0|geothermal park
+0|distribution
+0|pouch
+0|temporary
+0|phase
+0|trunk
+0|licensed
+0|license
+0|licence
+0|session
+0|frequency
+0|violent
+0|violence
+0|nest
+0|mammal
+0|biology
+0|hatch
+0|capacity
+0|a handful of
+0|fence
+0|prison
+0|grand
+0|Aborigine
+0|Sydney
+0|Bondi Beach
+0|Chiang Mai
+0|the Bay of Islands
+0|the haka
+0|Edmonds
+0|Felicity
+0|Tasmanian devil
+0|Tasmania
+0|duck-billed platypus
+0|tale
+0|merchant
+0|set sail
+0|extend
+0|negotiate
+0|fleet
+0|behold
+0|league
+0|in a league of one's own
+0|royal
+0|spice
+0|withdraw
+0|withdraw from
+0|channel
+0|maritime
+0|bond
+0|in hand
+0|politics
+0|profession
+0|tournament
+0|mixture
+0|laptop
+0|coverage
+0|press conference
+0|applaud
+0|tax
+0|manned
+0|submersible
+0|underwater
+0|capsule
+0|coral
+0|migration
+0|directory
+0|meanwhile
+0|exploit
+0|gallon
+0|murder
+0|mercy
+0|possession
+0|opponent
+0|log
+0|marine
+0|arrest
+0|Marco Polo
+0|Columbus
+0|Ceylon
+0|Churchill
+0|Ferdinand Magellan
+0|Zac Sunderland
+0|Robin Lee Graham
+0|parcel
+0|jam
+0|mail
+0|secondary
+0|clay
+0|dust
+0|dusty
+0|weed
+0|chorus
+0|a chorus of
+0|cotton
+0|uniform
+0|not to mention
+0|tablet
+0|rubber
+0|washroom
+0|rigid
+0|bubble
+0|tube
+0|circus
+0|chemist
+0|shade
+0|jaw
+0|wrinkle
+0|forehead
+0|hut
+0|housing
+0|platform
+0|fireplace
+0|saucer
+0|kettle
+0|pan
+0|jar
+0|ripe
+0|grill
+0|doorway
+0|leftover
+0|handshake
+0|drag
+0|privilege
+0|plug
+0|disabled
+0|resign
+0|deserve
+0|lately
+0|input
+0|tune
+0|contract
+0|grant
+0|take for granted
+0|take ... for granted
+0|cardiac
+0|circuit
+0|disability
+0|consultation
+0|relay
+0|relay to
+0|criterion
+0|criteria
+0|stability
+0|pray
+0|pray that
+0|hypothetical
+0|Papua New Guinea
+0|Ghana
+0|Congo
+0|Panama
+0|bounce
+0|bounce around
+0|aptitude
+0|head start
+0|scenario
+0|lawyer
+0|assemble
+0|drawer
+0|a chest of drawers
+0|breast
+0|hydrogen
+0|radium
+0|wrist
+0|bridegroom
+0|geometry
+0|debt
+0|categorise
+0|profile
+0|participant
+0|code
+0|orient
+0|detective
+0|graphic
+0|estate
+0|estate agent
+0|real estate agent
+0|accountant
+0|spy
+0|justice
+0|accuse
+0|come to a conclusion
+0|greedy
+0|entrepreneur
+0|receptionist
+0|CV
+0|resume
+0|socialist
+0|communist
+0|dedicate
+0|fox
+0|council
+0|canal
+0|attend to
+0|supervise
+0|handwriting
+0|disk
+0|disc
+0|parking
+0|camel
+0|fry
+0|purse
+0|sew
+0|knit
+0|wool
+0|intermediate
+0|priority
+0|proficiency
+0|cage
+0|collar
+0|flea collar
+0|finance
+0|receipt
+0|certificate
+0|employer
+0|desert
+0|acquire
+0|Marie Curie
+0|The Communist Manifesto
+0|Olivia
+0|PETS
+0|Public English Test System
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 341
+# Total Entries Extracted: 341
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 341
+# -------------------------------

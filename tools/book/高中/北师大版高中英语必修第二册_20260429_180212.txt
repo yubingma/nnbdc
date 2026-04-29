@@ -1,0 +1,323 @@
+0|app
+0|enable
+0|convenience
+0|effect
+0|impact
+0|self-focused
+0|addicted
+0|be addicted to
+0|indeed
+0|download
+0|recommendation
+0|super
+0|avatar
+0|explore
+0|personality
+0|admit
+0|alarm
+0|image
+0|fancy
+0|trick
+0|identity
+0|2D
+0|2-dimensional
+0|variety
+0|a variety of
+0|instant
+0|instant messenger
+0|sex
+0|sensible
+0|creativity
+0|blog
+0|obviously
+0|experiment
+0|nowadays
+0|hairstyle
+0|selection
+0|type
+0|concern
+0|virtual
+0|cheat
+0|view
+0|accommodation
+0|subscribe
+0|powerful
+0|latest
+0|reality
+0|VR
+0|Virtual Reality
+0|AR
+0|Augmented Reality
+0|MR
+0|Mixed Reality
+0|account
+0|software
+0|device
+0|mobile device
+0|ensure
+0|material
+0|gender
+0|press
+0|button
+0|goods
+0|favour
+0|confirm
+0|deliver
+0|error
+0|harm
+0|argument
+0|replace
+0|hug
+0|concentrate
+0|concerned
+0|be concerned with
+0|rewarding
+0|addition
+0|in addition
+0|content
+0|shallow
+0|trivial
+0|basis
+0|percent
+0|opinion
+0|focus
+0|focus on
+0|maintain
+0|smartphone
+0|tablet
+0|limiting
+0|brief
+0|emoji
+0|creative
+0|thought-provoking
+0|authority
+0|profile
+0|location
+0|optional
+0|imaginary
+0|fantasy
+0|series
+0|author
+0|amazing
+0|privacy
+0|policy
+0|digitise
+0|sailor
+0|accessible
+0|wristband
+0|disaster
+0|flood
+0|drought
+0|hurricane
+0|landslide
+0|volcanic
+0|eruption
+0|wildlife
+0|comment
+0|crowded
+0|landscape
+0|living
+0|weed
+0|deer
+0|insect
+0|whale
+0|dolphin
+0|shark
+0|kangaroo
+0|eagle
+0|fox
+0|soil
+0|climate
+0|ecology
+0|jungle
+0|shock
+0|lecture
+0|overuse
+0|million
+0|greenhouse
+0|turn one's back
+0|turn one's back on sb.
+0|turn one's back on sth.
+0|title
+0|whirlpool
+0|wave
+0|escape
+0|survive
+0|float
+0|file
+0|descent
+0|tidal
+0|poetry
+0|mystery
+0|soul
+0|frightened
+0|horrible
+0|edge
+0|on the edge of
+0|barrel
+0|curious
+0|observation
+0|equal
+0|extent
+0|tube
+0|rescue
+0|vehicle
+0|trap
+0|attempt
+0|interrupt
+0|death
+0|loss
+0|damage
+0|measure
+0|operation
+0|overseas
+0|site
+0|process
+0|battle
+0|duty
+0|suffering
+0|conduct
+0|protection
+0|lamp
+0|nearby
+0|breathe
+0|breathe in
+0|dust
+0|run out
+0|explorer
+0|preparation
+0|sledge
+0|ski
+0|tent
+0|boot
+0|captain
+0|polar
+0|base
+0|anxiously
+0|break down
+0|ambition
+0|exploration
+0|cheerful
+0|prove
+0|distant
+0|continent
+0|honesty
+0|sincerity
+0|bravery
+0|brochure
+0|shelter
+0|aftershock
+0|observe
+0|metal
+0|varied
+0|scary
+0|harmless
+0|skiing
+0|originality
+0|disappearance
+0|admirable
+0|admire
+0|remarkable
+0|career
+0|put out fires
+0|cure
+0|fight for ...
+0|justice
+0|generation
+0|reform
+0|mankind
+0|intelligent
+0|generous
+0|have ... in mind
+0|evil
+0|creatively
+0|mosquito
+0|apart
+0|apart from ...
+0|drug
+0|effective
+0|female
+0|stage
+0|award
+0|committee
+0|honour
+0|recognition
+0|academy
+0|gain
+0|establish
+0|chemical
+0|herb
+0|literature
+0|recipe
+0|limited
+0|resource
+0|staff
+0|eventually
+0|come across
+0|promising
+0|fame
+0|renowned
+0|despite
+0|wisdom
+0|potential
+0|advance
+0|integrate
+0|Mahatma
+0|pick out
+0|independence
+0|peaceful
+0|protest
+0|racial
+0|discrimination
+0|inspiring
+0|bar
+0|behind bars
+0|skin
+0|What a shame!
+0|further
+0|march
+0|self-evident
+0|judge
+0|impressive
+0|respect
+0|independent
+0|the other day
+0|horror
+0|regard
+0|be regarded as
+0|novelist
+0|journalist
+0|passion
+0|opportunity
+0|reputation
+0|awareness
+0|organisation
+0|strike
+0|severe
+0|movement
+0|nightmare
+0|depression
+0|due to
+0|ongoing
+0|commitment
+0|undertake
+0|intense
+0|engage
+0|design
+0|biography
+0|passionate
+0|energetic
+0|advocate
+0|disability
+0|attitude
+0|summary
+0|daring
+0|originally
+0|in spite of
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 316
+# Total Entries Extracted: 316
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 316
+# -------------------------------

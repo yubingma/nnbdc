@@ -1,0 +1,211 @@
+0|hemisphere
+0|adaptable
+0|plain
+0|the Arctic
+0|resemble
+0|domestic
+0|prey on
+0|mammal
+0|moose
+0|gorge
+0|gorge oneself
+0|pack
+0|bear
+0|cub
+0|fierce
+0|proof
+0|indeed
+0|livestock
+0|threaten
+0|extinction
+0|initiate
+0|objective
+0|habitat
+0|positive
+0|orang-utan
+0|jungle
+0|race
+0|confirm
+0|species
+0|ape
+0|come into contact with
+0|consequently
+0|advance
+0|the wild
+0|be to blame
+0|be to blame for something
+0|decline
+0|smuggle
+0|serve
+0|serve as something
+0|existence
+0|dramatic
+0|dolphin
+0|cling
+0|cling to something
+0|pray
+0|pray for something
+0|approach
+0|drive away
+0|coastguard
+0|locate
+0|befriend
+0|tow
+0|penalty
+0|complicated
+0|set
+0|a set of something
+0|sonar
+0|seek out
+0|voluntarily
+0|unconditional
+0|repay
+0|intended
+0|prey
+0|enlightened
+0|severe
+0|depression
+0|sympathetically
+0|enthusiast
+0|supernatural
+0|extreme
+0|crew
+0|navy
+0|witness
+0|anchor
+0|fascinated
+0|given
+0|extremely
+0|jaws
+0|sight
+0|predator
+0|demonstrate
+0|incredible
+0|live off
+0|live off something
+0|plankton
+0|flexible
+0|cartilage
+0|hatch
+0|live
+0|marine
+0|vocation
+0|autobiographical
+0|rough it
+0|Virginia City
+0|momentous
+0|shift for oneself
+0|gain
+0|livelihood
+0|dazzle
+0|grocery
+0|tiresome
+0|bother
+0|private
+0|mill
+0|amount to
+0|mining
+0|descend
+0|shaft
+0|pick
+0|pickaxe
+0|shovel
+0|toss
+0|land
+0|cabin
+0|misery
+0|amuse
+0|territory
+0|in print
+0|eureka
+0|fortune
+0|enter upon
+0|publication
+0|in a nutshell
+0|bore
+0|bare
+0|wagon
+0|renew
+0|sensational
+0|wretched
+0|drag
+0|hostile
+0|rough
+0|legitimate
+0|furnish
+0|commendation
+0|compensate
+0|financially
+0|two-way
+0|passion
+0|reward
+0|risk-free
+0|figure out
+0|internal
+0|expo
+0|exposition
+0|industrialist
+0|exhibitor
+0|profession
+0|representative
+0|institution
+0|miss out on
+0|expertise
+0|intend
+0|prospectus
+0|field
+0|take after
+0|scholarship
+0|aim
+0|aim to do something
+0|feature
+0|seminar
+0|outline
+0|respective
+0|get across
+0|retrain
+0|available
+0|dead-end
+0|intention
+0|prospective
+0|employer
+0|frankly
+0|normally
+0|squash
+0|make up for
+0|discomfort
+0|entry
+0|vacancy
+0|ambition
+0|jump-start
+0|drive
+0|post
+0|innovatively
+0|creatively
+0|human resources
+0|application
+0|base ... in
+0|secretarial
+0|interpret
+0|candidate
+0|standard
+0|advanced
+0|presentation
+0|spreadsheet
+0|corporate
+0|memo
+0|position
+0|enthusiastic
+0|previous
+0|identify
+0|negotiate
+0|contract
+0|self-motivated
+0|competitive
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 204
+# Total Entries Extracted: 204
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 204
+# -------------------------------

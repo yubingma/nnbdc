@@ -1,0 +1,368 @@
+0|senior
+0|secondary
+0|stressful
+0|challenging
+0|differ
+0|previous
+0|dynamic
+0|campus
+0|schedule
+0|expectation
+0|confidence
+0|competence
+0|chapter
+0|all in all
+0|apartment
+0|am
+0|shift
+0|pressure
+0|leisure
+0|recover
+0|injury
+0|plus
+0|unfortunately
+0|challenge
+0|arise
+0|lifestyle
+0|chat
+0|surf
+0|surf the Internet
+0|voluntary
+0|engine
+0|search engine
+0|definitely
+0|teen
+0|laptop
+0|digital
+0|native
+0|range
+0|various
+0|hardware
+0|necessity
+0|convenient
+0|quality
+0|from time to time
+0|living room
+0|addict
+0|according to
+0|in person
+0|media
+0|social media
+0|actually
+0|drag
+0|tend to do sth
+0|goal
+0|aim
+0|target
+0|update
+0|meanwhile
+0|distance
+0|volunteer
+0|revise
+0|saying
+0|ahead
+0|get ahead
+0|cafe
+0|downtown
+0|stress
+0|suffer
+0|suffer from
+0|reduce
+0|expert
+0|frank
+0|to be frank
+0|editor
+0|remove
+0|entirely
+0|position
+0|military
+0|due to
+0|absolutely
+0|stressed
+0|extent
+0|thus
+0|tension
+0|organise
+0|in other words
+0|function
+0|seek
+0|professional
+0|feature
+0|typical
+0|province
+0|graduate
+0|graduate from
+0|certificate
+0|inspire
+0|apply
+0|apply for
+0|eager
+0|sort
+0|sort of
+0|independently
+0|power
+0|supply
+0|unstable
+0|dusty
+0|muddy
+0|tough
+0|flash
+0|give up
+0|deal with
+0|responsible
+0|be responsible for
+0|attractive
+0|as well as ...
+0|laughter
+0|confident
+0|besides
+0|contact
+0|charity
+0|organisation
+0|contribution
+0|intend
+0|junior
+0|formal
+0|informal
+0|adapt
+0|adapt to sth.
+0|gym
+0|moment
+0|at the moment
+0|presentation
+0|slide
+0|forward
+0|look forward to sth.
+0|look forward to doing sth.
+0|digestion
+0|recreation
+0|entertainment
+0|rural
+0|athlete
+0|frequency
+0|prefer
+0|rather than
+0|badminton
+0|golf
+0|gymnastics
+0|jog
+0|cycle
+0|bowling
+0|skateboard
+0|track
+0|in good
+0|balanced
+0|diet
+0|stair
+0|regularly
+0|net
+0|court
+0|within
+0|underdog
+0|defeat
+0|company
+0|guy
+0|champion
+0|shot
+0|inspiration
+0|try out for sth.
+0|bench
+0|replacement
+0|desire
+0|crash
+0|crash into
+0|gather
+0|gather around
+0|not ... anymore
+0|pack
+0|sharply
+0|let sb. down
+0|onto
+0|extra
+0|pay off
+0|keep up with
+0|energy
+0|crowd
+0|clap
+0|earn
+0|boxing
+0|bounce
+0|belt
+0|announcement
+0|defence
+0|audience
+0|remind
+0|bite
+0|prohibit
+0|case
+0|in case
+0|sign up
+0|annual
+0|application
+0|warm-up
+0|quit
+0|halfway
+0|tip
+0|ought to
+0|occupy
+0|disappointment
+0|amazingly
+0|relieve
+0|strengthen
+0|immune
+0|system
+0|immune system
+0|cheer up
+0|weekly
+0|be fed up with
+0|awkward
+0|particular
+0|in particular
+0|benefit
+0|membership
+0|equipment
+0|capable
+0|be capable of
+0|prevent
+0|disease
+0|upper
+0|flow
+0|oxygen
+0|relief
+0|ache
+0|guideline
+0|click
+0|detail
+0|principle
+0|amount
+0|shortcut
+0|overnight
+0|achievable
+0|make sure
+0|muscle
+0|bone
+0|satisfaction
+0|sweat
+0|overdo
+0|sight
+0|cyclist
+0|overtake
+0|amazed
+0|sportsmanship
+0|bronze
+0|medal
+0|response
+0|gesture
+0|take advantage of sth.
+0|defend
+0|flexibility
+0|occasion
+0|dragon
+0|Dragon-Boat Festival
+0|graduation
+0|lunar
+0|lunar month
+0|barbecue
+0|sticky
+0|adult
+0|lantern
+0|pudding
+0|turkey
+0|congratulation
+0|decorate
+0|tradition
+0|monster
+0|immediately
+0|gathering
+0|snack
+0|put up
+0|decoration
+0|let off
+0|account
+0|summarise
+0|host
+0|sweep
+0|sweep away
+0|character
+0|attach
+0|upside down
+0|expectant
+0|scare
+0|scare sb. away
+0|scare sth. away
+0|flight
+0|wine
+0|surround
+0|accent
+0|hotpot
+0|firecracker
+0|retired
+0|buzz
+0|joy
+0|throughout
+0|original
+0|custom
+0|wedding
+0|greet
+0|beer
+0|teenager
+0|studio
+0|as far as
+0|appropriately
+0|specific
+0|neat
+0|suit
+0|jeans
+0|in general
+0|effort
+0|make an effort
+0|represent
+0|extend
+0|fortunate
+0|memory
+0|stocking
+0|move in
+0|somehow
+0|slightly
+0|pole
+0|envelope
+0|stuff
+0|lap
+0|frosty
+0|patience
+0|over and over
+0|eve
+0|branch
+0|plate
+0|behaviour
+0|whisper
+0|merry
+0|ballet
+0|roll
+0|catch sb.'s eye
+0|wave
+0|affair
+0|swallow
+0|pass away
+0|no longer
+0|event
+0|description
+0|awesome
+0|downstairs
+0|nowhere
+0|select
+0|album
+0|calm
+0|calm down
+0|uniform
+0|tear
+0|cuisine
+0|thoroughly
+0|humbly
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 361
+# Total Entries Extracted: 361
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 361
+# -------------------------------

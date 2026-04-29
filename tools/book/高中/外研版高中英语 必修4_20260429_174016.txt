@@ -1,0 +1,308 @@
+0|brick
+0|concrete
+0|mud
+0|alternative
+0|crime
+0|for sure
+0|prediction
+0|risky
+0|resource
+0|run out
+0|material
+0|rely
+0|rely on
+0|solar
+0|urban
+0|get rid of
+0|load
+0|landfill
+0|arrest
+0|criminal
+0|fire
+0|limit
+0|outdoors
+0|online
+0|catalogue
+0|command
+0|recreation
+0|bowling
+0|softball
+0|charge
+0|free of charge
+0|power
+0|flick
+0|switch
+0|surgery
+0|telesurgery
+0|outpatient
+0|clinic
+0|disability
+0|attach
+0|spaceport
+0|use up
+0|look out
+0|optimistic
+0|dishwasher
+0|definitely
+0|eventually
+0|for a start
+0|on the way out
+0|colony
+0|predict
+0|shape
+0|pad
+0|doormat
+0|trolleybus
+0|be connected to
+0|wire
+0|suburban
+0|be stuck in
+0|get stuck in
+0|in no time
+0|display
+0|cab
+0|permit
+0|receipt
+0|get around
+0|fare
+0|air-conditioned
+0|destination
+0|impressive
+0|route
+0|double-decker
+0|provide
+0|under construction
+0|convenient
+0|pedal
+0|tricycle
+0|single
+0|return
+0|explore
+0|roadwork
+0|switch off
+0|keep cool
+0|blow
+0|horn
+0|react
+0|solution
+0|mood
+0|no way
+0|congestion
+0|registration
+0|communication
+0|communicate
+0|unconscious
+0|vary
+0|on guard
+0|formal
+0|aggressive
+0|traditionally
+0|weapon
+0|gesture
+0|threatening
+0|deal
+0|make a deal
+0|involve
+0|slightly
+0|Muslim
+0|salaam
+0|forehead
+0|Hindu
+0|bow
+0|informal
+0|youth
+0|hold up
+0|palm
+0|spread
+0|slap
+0|give away
+0|mind reader
+0|conscious
+0|ankle
+0|eyebrow
+0|lip
+0|wrist
+0|bend
+0|hug
+0|stare
+0|wipe
+0|lift up
+0|up and down
+0|religion
+0|host
+0|by accident
+0|toast
+0|sip
+0|blank
+0|panic
+0|rude
+0|say hello to
+0|switch on
+0|invitation
+0|request
+0|RSVP
+0|favour
+0|live
+0|performance
+0|performer
+0|classical
+0|applause
+0|judgement
+0|prolong
+0|equality
+0|handclap
+0|social
+0|infectious
+0|funeral
+0|biochemistry
+0|biology
+0|botany
+0|genetics
+0|zoology
+0|staple
+0|producer
+0|leading
+0|figure
+0|bring up
+0|educate
+0|nickname
+0|agriculture
+0|breeding
+0|species
+0|yield
+0|original
+0|publish
+0|sterile
+0|breakthrough
+0|support
+0|as a result of
+0|production
+0|convert
+0|cash crop
+0|export
+0|hybrid
+0|agricultural
+0|replace
+0|quantity
+0|quality
+0|be known for
+0|best-seller
+0|cosmology
+0|diagnose
+0|motor neurone disease
+0|victim
+0|brilliant
+0|career
+0|brief
+0|partly
+0|physical
+0|graduate
+0|personal
+0|relativity
+0|earn one's living
+0|come to power
+0|rocket
+0|millennium
+0|gunpowder
+0|explosion
+0|explode
+0|escape
+0|arrow
+0|straight
+0|clear
+0|cave
+0|peak
+0|plain
+0|plateau
+0|shore
+0|slope
+0|valley
+0|wood
+0|flat
+0|at the edge of
+0|surround
+0|colleague
+0|downstream
+0|goods
+0|trade
+0|temple
+0|dock
+0|hilly
+0|raft
+0|narrow
+0|at least
+0|detour
+0|legend
+0|be heavy with
+0|deck
+0|distant
+0|exploit
+0|in the distance
+0|cruise
+0|cabin
+0|forbid
+0|lounge
+0|mountainous
+0|immense
+0|fertile
+0|remote
+0|steep
+0|varied
+0|spot
+0|rip off
+0|get a kick out of
+0|view
+0|pin
+0|naturally
+0|torch
+0|monster
+0|attack
+0|footprint
+0|hairy
+0|frightening
+0|creature
+0|grey
+0|claw
+0|exist
+0|sharp
+0|nail
+0|journal
+0|sighting
+0|seal
+0|mysterious
+0|claim
+0|surface
+0|dive
+0|calm
+0|sceptical
+0|unlikely
+0|volcanic
+0|cover
+0|adapt
+0|disappear
+0|extinct
+0|evolve
+0|die out
+0|throw light on
+0|come straight to the point
+0|fierce
+0|destruction
+0|generous
+0|unpredictable
+0|emperor
+0|robe
+0|reputation
+0|border
+0|positive
+0|indicate
+0|identity
+0|due to
+0|myth
+0|fortune
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 301
+# Total Entries Extracted: 301
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 301
+# -------------------------------

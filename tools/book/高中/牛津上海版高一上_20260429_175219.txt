@@ -1,0 +1,200 @@
+0|well-dressed
+0|glance
+0|sigh
+0|senior
+0|employee
+0|prefer
+0|communicate
+0|gesture
+0|expression
+0|appearance
+0|impression
+0|downwards
+0|assistance
+0|without hesitation
+0|remark
+0|remind
+0|eye contact
+0|signal
+0|hostility
+0|boredom
+0|confusion
+0|maintain
+0|consider
+0|lack of
+0|last
+0|avoid
+0|respect
+0|authority
+0|in authority
+0|concentration
+0|subtle
+0|stare
+0|rude
+0|hairstyle
+0|suit
+0|guarantee
+0|on top of the world
+0|expert
+0|curl
+0|angle
+0|balanced
+0|in addition
+0|shampoo
+0|effective
+0|conditioner
+0|normal
+0|apply
+0|wet
+0|squeeze
+0|squeeze out
+0|comb
+0|damage
+0|loosen
+0|dirt
+0|hairdryer
+0|overuse
+0|bald
+0|ensure
+0|pay attention to
+0|protein
+0|adequate
+0|dairy product
+0|stress
+0|rob ... of
+0|remedy
+0|rinse
+0|regularly
+0|rub
+0|twist
+0|construction
+0|magnificent
+0|structure
+0|base
+0|include
+0|gallery
+0|bronze ware
+0|sculpture
+0|calligraphy
+0|seal
+0|historical
+0|civilization
+0|preserve
+0|admit
+0|scenery
+0|landscape
+0|attract
+0|reflection
+0|remains
+0|abandon
+0|access
+0|stadium
+0|hold
+0|empire
+0|ruin
+0|fall into ruin
+0|stand
+0|overlook
+0|tomb
+0|wonder
+0|studio
+0|film
+0|director
+0|contestant
+0|whisper
+0|faint
+0|gasp
+0|cameraman
+0|seat
+0|rush forward
+0|powder
+0|cue
+0|clap
+0|boom
+0|quiz
+0|terrific
+0|ahead of
+0|tense
+0|beat
+0|keep still
+0|trend
+0|surround
+0|achieve
+0|suspend
+0|stereo
+0|arrange
+0|viewer
+0|digital
+0|cigarette lighter
+0|record
+0|cassette
+0|mixed grill
+0|steak
+0|pork chop
+0|sound
+0|vegetarian
+0|influence
+0|astronaut
+0|crowd
+0|tiny
+0|pepper
+0|grow
+0|instead of
+0|cattle
+0|appetite
+0|contain
+0|vitamin
+0|mineral
+0|pesticide
+0|source
+0|energy
+0|variety
+0|advise
+0|cheeseburger
+0|milkshake
+0|increase
+0|heart attack
+0|intelligent
+0|decide on
+0|tell ... from
+0|agriculture
+0|farming
+0|farm
+0|natural
+0|zone
+0|nourish
+0|mixture
+0|fertilizer
+0|make the best use of
+0|experimental
+0|facility
+0|enterprise
+0|involve
+0|profitable
+0|chemical
+0|prove
+0|economic
+0|benefit
+0|used to
+0|backward
+0|amazed
+0|high-tech
+0|weight
+0|cancer
+0|account for
+0|moderation
+0|in contrast to
+0|soya
+0|soy
+0|AE
+0|in comparison
+0|experience
+0|fortunately
+0|be aware of
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 193
+# Total Entries Extracted: 193
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 193
+# -------------------------------

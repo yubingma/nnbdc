@@ -1,0 +1,287 @@
+0|clinic
+0|gallery
+0|grocery
+0|stadium
+0|bakery
+0|cafeteria
+0|canteen
+0|suburb
+0|forum
+0|conflict
+0|intervention
+0|disagreement
+0|envy
+0|friction
+0|encouragement
+0|hang out
+0|disturb
+0|apologise
+0|theory
+0|chain
+0|impression
+0|network
+0|sociologist
+0|random
+0|parcel
+0|release
+0|bimonthly
+0|phrase
+0|additionally
+0|closely-knit
+0|frequently
+0|household
+0|outskirts
+0|bond
+0|consequence
+0|gable
+0|adopt
+0|stiff
+0|freeze
+0|amazement
+0|clasp
+0|burst into
+0|proceed
+0|reveal
+0|tear-stained
+0|orphan
+0|investigate
+0|sigh
+0|despair
+0|dare
+0|bare
+0|faucet
+0|shiver
+0|bone
+0|sob
+0|pillow
+0|dive
+0|frown
+0|resolutely
+0|appeal
+0|emperor
+0|sorrow
+0|republic
+0|loan
+0|forgiveness
+0|debt
+0|interrupt
+0|legal
+0|document
+0|negotiate
+0|compromise
+0|inquire
+0|resolve
+0|annoying
+0|inconvenience
+0|detect
+0|somewhat
+0|annoy
+0|ashamed
+0|maturity
+0|monitor
+0|self-control
+0|assign
+0|pack
+0|tank
+0|plug
+0|drummer
+0|complaint
+0|drum
+0|vote
+0|resolution
+0|warning
+0|cease
+0|property
+0|chorus
+0|departure
+0|prejudiced
+0|bitter
+0|anyhow
+0|remote
+0|edge
+0|arrest
+0|tailor
+0|pleasant
+0|violence
+0|literally
+0|tolerate
+0|keen
+0|balcony
+0|unsuspecting
+0|bother
+0|recall
+0|violently
+0|withdraw
+0|firmly
+0|soldier
+0|bomb
+0|general
+0|trench
+0|frontier
+0|murder
+0|border
+0|flee
+0|weep
+0|civilian
+0|machine gun
+0|panic
+0|pray
+0|identification
+0|pile
+0|display
+0|representative
+0|greet
+0|mud
+0|distribute
+0|temporary
+0|midnight
+0|ward
+0|dozen
+0|surgeon
+0|ceremony
+0|appreciation
+0|incident
+0|ban
+0|tobacco
+0|cigarette
+0|alcohol
+0|fried
+0|harm
+0|desirable
+0|obesity
+0|tax
+0|false
+0|invest
+0|conclude
+0|beneficial
+0|sacred
+0|permanent
+0|recovery
+0|loose
+0|carpet
+0|ankle
+0|greed
+0|fry
+0|request
+0|well-being
+0|vitamin
+0|entertainment
+0|innovation
+0|gifted
+0|labour-saving
+0|productive
+0|garbage
+0|device
+0|scientific
+0|microscope
+0|donate
+0|correspond
+0|instant
+0|launch
+0|satellite
+0|orbit
+0|split
+0|particle
+0|premier
+0|outspoken
+0|subsequently
+0|relativity
+0|constant
+0|finding
+0|biologist
+0|mould
+0|penicillin
+0|perceive
+0|million
+0|humble
+0|outcome
+0|navy
+0|accuracy
+0|missile
+0|physicist
+0|joint
+0|tube
+0|circuit
+0|efficiently
+0|propose
+0|emerge
+0|coincidence
+0|clueless
+0|incubation
+0|evaluation
+0|theoretical
+0|overcome
+0|PhD
+0|Doctor of Philosophy
+0|cosmology
+0|grand
+0|decline
+0|in spite of
+0|bonus
+0|gravity
+0|steam
+0|kettle
+0|boil
+0|improvement
+0|revolution
+0|availability
+0|fibre
+0|explode
+0|mass
+0|sailor
+0|regulate
+0|illustrate
+0|mechanical
+0|preserve
+0|specifically
+0|accurate
+0|electric
+0|Max
+0|Frigyes Karinthy
+0|Stanley Milgram
+0|Kevin Bacon
+0|Lucy Maud Montgomery
+0|Matthew Cuthbert
+0|Marilla
+0|Spencer
+0|Smith
+0|Jones
+0|Tim
+0|James Mckay
+0|Keith Smith
+0|Laurene
+0|Katherine Maguire
+0|Do Chuc
+0|Seymour Hersh
+0|Bill
+0|Frank Richards
+0|Susan
+0|Albert Einstein
+0|Alexander Fleming
+0|Eckert
+0|Mauchly
+0|Tim Berners-Lee
+0|Bond
+0|Stephen Hawking
+0|Jane Wilde
+0|Elaine Mason
+0|Leonard Mlodinow
+0|James Watt
+0|Columbia University
+0|University of Milan
+0|Roseto
+0|My Lai
+0|University of Oxford
+0|St Albans School
+0|University of Cambridge
+0|England
+0|London
+0|Canada
+0|Prince Edward Island
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 280
+# Total Entries Extracted: 280
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 280
+# -------------------------------

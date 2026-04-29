@@ -1,0 +1,390 @@
+0|exchange
+0|lecture
+0|registration
+0|register
+0|sex
+0|female
+0|male
+0|nationality
+0|nation
+0|designer
+0|design
+0|campus
+0|formal
+0|anxious
+0|annoyed
+0|annoy
+0|frightened
+0|p.m.
+0|a.m.
+0|senior
+0|senior high school
+0|at last
+0|outgoing
+0|impression
+0|impress
+0|make an impression
+0|what if
+0|guy
+0|concentrate
+0|concentrate on
+0|experiment
+0|leave ... alone
+0|awkward
+0|junior
+0|junior high school
+0|explore
+0|confident
+0|confidence
+0|forward
+0|look forward to
+0|take notes
+0|flash
+0|flash card
+0|organise
+0|organize
+0|organisation
+0|organization
+0|goal
+0|strategy
+0|partner
+0|improve
+0|curious
+0|company
+0|personality
+0|style
+0|revise
+0|teenage
+0|teenager
+0|ballet
+0|volunteer
+0|debate
+0|prefer
+0|prefer ... to ...
+0|content
+0|movement
+0|greenhouse
+0|clean up
+0|suitable
+0|suitable for
+0|actually
+0|challenge
+0|title
+0|topic
+0|freshman
+0|confusing
+0|confuse
+0|confused
+0|fluent
+0|graduate
+0|recommend
+0|sign up
+0|sign up for sth.
+0|advanced
+0|advance
+0|literature
+0|extra-curricular
+0|extra
+0|obviously
+0|quit
+0|responsible
+0|responsibility
+0|be responsible for
+0|solution
+0|schedule
+0|editor
+0|plate
+0|adventure
+0|youth
+0|survival
+0|expert
+0|behaviour
+0|generation
+0|attract
+0|be attracted to
+0|focus
+0|focus on
+0|addicted
+0|addict
+0|addicted to
+0|adult
+0|Chicago
+0|Seoul
+0|castle
+0|apply
+0|apply for
+0|visa
+0|rent
+0|pack
+0|amazing
+0|amazed
+0|arrangement
+0|extremely
+0|source
+0|narrow
+0|flat
+0|powerful
+0|empire
+0|emperor
+0|site
+0|take control of
+0|official
+0|recognise
+0|recognize
+0|type
+0|flight
+0|accommodation
+0|unique
+0|path
+0|destination
+0|other than
+0|admire
+0|architecture
+0|architect
+0|brochure
+0|package
+0|package tour
+0|contact
+0|civilisation
+0|civilization
+0|make up
+0|soldier
+0|transport
+0|transportation
+0|hike
+0|economy
+0|economic
+0|credit
+0|credit card
+0|detail
+0|check in
+0|check out
+0|request
+0|view
+0|sight
+0|statue
+0|BCE
+0|before the Common Era
+0|tomb
+0|unearth
+0|comment
+0|the Eiffel Tower
+0|Neuschwanstein Castle
+0|Iceland
+0|Disneyland
+0|Peru
+0|the Andes Mountains
+0|the Amazon rainforest
+0|the Inca Empire
+0|Machu Picchu
+0|Spain
+0|Spanish
+0|Cusco
+0|Lake Titicaca
+0|the Uros
+0|the Terracotta Army
+0|fitness
+0|soccer
+0|stadium
+0|stadiums
+0|stadia
+0|boxing
+0|badminton
+0|marathon
+0|event
+0|come along
+0|ski
+0|host
+0|track
+0|track and field
+0|gym
+0|gymnastics
+0|work out
+0|sweat
+0|make it
+0|legend
+0|athlete
+0|master
+0|set an example
+0|honour
+0|glory
+0|medal
+0|championship
+0|champion
+0|determination
+0|apart
+0|fall apart
+0|injure
+0|injured
+0|injury
+0|captain
+0|lose heart
+0|graceful
+0|strength
+0|failure
+0|give up
+0|compete
+0|make sense
+0|pretend
+0|pretend to do sth.
+0|even if
+0|even though
+0|million
+0|cheat
+0|audience
+0|positive
+0|slim
+0|diet
+0|make a difference
+0|rather
+0|rather than
+0|push-up
+0|cut ... out
+0|now and then
+0|compare ... with ...
+0|compare ... to ...
+0|jog
+0|stress
+0|error
+0|disaster
+0|tornado
+0|drought
+0|landslide
+0|landfall
+0|slide
+0|tsunami
+0|flood
+0|volcanic eruption
+0|magnitude
+0|rescue
+0|damage
+0|destroy
+0|evacuate
+0|helicopter
+0|death
+0|affect
+0|shelter
+0|crack
+0|gas
+0|as if
+0|ruin
+0|in ruins
+0|percent
+0|brick
+0|metal
+0|shock
+0|in shock
+0|electricity
+0|trap
+0|bury
+0|breathe
+0|revive
+0|revival
+0|effort
+0|unify
+0|wisdom
+0|context
+0|suffer
+0|volcano
+0|volcanoes
+0|volcanos
+0|erupt
+0|supply
+0|typhoon
+0|in the open air
+0|hurricane
+0|survive
+0|power
+0|tap
+0|pipe
+0|whistle
+0|emergency
+0|calm
+0|aid
+0|kit
+0|first aid kit
+0|on hand
+0|crash
+0|sweep
+0|sweep away
+0|wave
+0|strike
+0|deliver
+0|summary
+0|effect
+0|length
+0|Ecuador
+0|Memphis
+0|Alberta
+0|Colombo
+0|Sri Lanka
+0|Indonesia
+0|Thailand
+0|Malaysia
+0|Sumatra Island
+0|Chandra Theeravit
+0|billion
+0|native
+0|attitude
+0|reference
+0|refer
+0|refer to
+0|system
+0|despite
+0|ups and downs
+0|factor
+0|based
+0|base
+0|date back
+0|date back to ...
+0|bone
+0|shell
+0|symbol
+0|carve
+0|dynasty
+0|variety
+0|major
+0|no matter where
+0|no matter who
+0|no matter what
+0|dialect
+0|means
+0|classic
+0|regard
+0|character
+0|calligraphy
+0|global
+0|affair
+0|appreciate
+0|specific
+0|CE
+0|Common Era
+0|struggle
+0|tongue
+0|point of view
+0|semester
+0|petrol
+0|subway
+0|underground
+0|apartment
+0|pants
+0|beg
+0|equal
+0|gap
+0|demand
+0|vocabulary
+0|description
+0|relate
+0|relate to
+0|Korean
+0|Danish
+0|Denmark
+0|Arabic
+0|FIFA
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 383
+# Total Entries Extracted: 383
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 383
+# -------------------------------

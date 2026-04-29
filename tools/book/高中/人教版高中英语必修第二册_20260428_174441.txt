@@ -1,0 +1,409 @@
+0|heritage
+0|creatively
+0|creative
+0|temple
+0|relic
+0|mount
+0|former
+0|clue
+0|preserve
+0|promote
+0|cypress
+0|app
+0|application
+0|take part in
+0|give way to
+0|balance
+0|keep balance
+0|lead to
+0|dam
+0|proposal
+0|make a proposal
+0|protest
+0|likely
+0|turn to
+0|committee
+0|establish
+0|limit
+0|prevent
+0|prevent ... from ...
+0|loss
+0|contribution
+0|contribute
+0|department
+0|fund
+0|within
+0|investigate
+0|issue
+0|conduct
+0|document
+0|donate
+0|donate ... to ...
+0|disappear
+0|attempt
+0|make sure
+0|worthwhile
+0|download
+0|republic
+0|professional
+0|archaeologist
+0|entrance
+0|pyramid
+0|process
+0|overseas
+0|exit
+0|sheet
+0|parade
+0|mirror
+0|roof
+0|chiwen
+0|dragon
+0|forgive
+0|digital
+0|image
+0|cave
+0|throughout
+0|quality
+0|all over the world
+0|tradition
+0|further
+0|historic
+0|opinion
+0|quote
+0|paraphrase
+0|comparison
+0|contrast
+0|identify
+0|forever
+0|Aswan Dam
+0|the Nile
+0|Egypt
+0|Egyptian
+0|UNESCO
+0|United Nations Educational, Scientific and Cultural
+0|Cairo
+0|Tanzania
+0|the Kremlin
+0|Moscow
+0|Saint Basil's Cathedral
+0|the Forbidden City
+0|Los Angeles
+0|poster
+0|illegal
+0|illegally
+0|hunt
+0|hunter
+0|immediately
+0|species
+0|shark
+0|fin
+0|on earth
+0|die out
+0|alarming
+0|alarm
+0|rate
+0|rating
+0|extinct
+0|extinction
+0|mass
+0|habitat
+0|aware
+0|aware of
+0|endanger
+0|average
+0|on average
+0|prince
+0|make progress
+0|concern
+0|concerned
+0|concerned about
+0|living
+0|adapt
+0|adapt to
+0|measure
+0|authority
+0|pressure
+0|under pressure
+0|whale
+0|antelope
+0|Tibetan antelope
+0|reserve
+0|plain
+0|make out
+0|herd
+0|observe
+0|beauty
+0|remind
+0|remind sb. of sb.
+0|remind sb. of sth.
+0|fur
+0|sacred
+0|shoot
+0|profit
+0|watch over
+0|day and night
+0|attack
+0|effective
+0|recover
+0|remove
+0|intend
+0|threat
+0|threaten
+0|exist
+0|harmony
+0|goods
+0|creature
+0|deer
+0|kangaroo
+0|reduce
+0|due
+0|due to
+0|insect
+0|net
+0|neighbourhood
+0|binoculars
+0|bird field guide
+0|search for
+0|dolphin
+0|Yangtze River dolphin
+0|koala
+0|stir
+0|stir up
+0|emotion
+0|skin
+0|unusual
+0|Tibetan
+0|Tibet
+0|blog
+0|blog post
+0|blogger
+0|engine
+0|search engine
+0|chat
+0|stream
+0|identity
+0|identity card
+0|convenient
+0|cash
+0|update
+0|database
+0|software
+0|network
+0|stuck
+0|keep sb. company
+0|surf
+0|benefit
+0|distance
+0|inspire
+0|now that
+0|access
+0|charity
+0|go through
+0|tough
+0|province
+0|conference
+0|resident
+0|plus
+0|function
+0|battery
+0|confirm
+0|Wi-Fi
+0|press
+0|button
+0|file
+0|in shape
+0|keep track of
+0|discount
+0|account
+0|click
+0|privacy
+0|theft
+0|rude
+0|target
+0|troll
+0|cyberbully
+0|false
+0|particular
+0|embarrassing
+0|make fun of
+0|upset
+0|guideline
+0|author
+0|tip
+0|familiar
+0|keep in mind
+0|keep ... in mind
+0|define
+0|case
+0|the World Wide Web
+0|WWW
+0|Jan Tchamani
+0|Birmingham
+0|Confucius
+0|mansion
+0|cemetery
+0|philosophy
+0|descendant
+0|individual
+0|heel
+0|Achilles' heel
+0|kingdom
+0|chief
+0|puzzle
+0|nearby
+0|join ... to ...
+0|break away
+0|break away from sb.
+0|break away from sth.
+0|belong
+0|belong to
+0|as well as
+0|currency
+0|military
+0|defence
+0|legal
+0|surround
+0|evidence
+0|achievement
+0|location
+0|conquer
+0|battle
+0|port
+0|fascinating
+0|keep your eyes open
+0|keep your eyes open for
+0|charge
+0|announce
+0|amount
+0|gallery
+0|approach
+0|ensure
+0|landscape
+0|generous
+0|butter
+0|honey
+0|ancestor
+0|position
+0|courtyard
+0|snack
+0|eager
+0|poet
+0|county
+0|feast
+0|roll
+0|dot
+0|cattle
+0|roar
+0|ocean
+0|scent
+0|greet
+0|pub
+0|wine
+0|beer
+0|stew
+0|custom
+0|sensory
+0|striking
+0|transition
+0|crowd
+0|Wales
+0|Scotland
+0|Northern Ireland
+0|Anglo-Saxon
+0|Viking
+0|Norman
+0|the Normans
+0|Battle of Hastings
+0|Roman
+0|Van Gogh
+0|the Emerald Isle
+0|Irish
+0|classical
+0|hip-hop
+0|techno
+0|energy
+0|soul
+0|bagpipes
+0|stringed
+0|stringed instrument
+0|virtual
+0|virtual choir
+0|composition
+0|opportunity
+0|perform
+0|performance
+0|performer
+0|onto
+0|studio
+0|ordinary
+0|enable
+0|prove
+0|award
+0|composer
+0|conductor
+0|fall in love with
+0|original
+0|phenomenon
+0|phenomena
+0|stage
+0|altogether
+0|thus
+0|band
+0|rap
+0|nowadays
+0|gradual
+0|capable
+0|relief
+0|cure
+0|absorbed in sth.
+0|absorbed in sb.
+0|previous
+0|unemployed
+0|romantic
+0|album
+0|impact
+0|aim
+0|set sth. up
+0|equipment
+0|try out
+0|talent
+0|piano
+0|assume
+0|addition
+0|in addition
+0|in addition to sb.
+0|in addition to sth.
+0|disease
+0|ache
+0|treatment
+0|from on
+0|from then on
+0|lean
+0|get through
+0|moreover
+0|satisfaction
+0|being
+0|various
+0|somehow
+0|rhetorical
+0|metaphor
+0|personification
+0|repetition
+0|simile
+0|outline
+0|reaction
+0|Eric Whitacre
+0|Nevada
+0|Mozart
+0|Lux Aurumque
+0|UNICEF
+0|United Nations Children's Fund
+0|Las Vegas
+0|John A. Logan
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 402
+# Total Entries Extracted: 402
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 402
+# -------------------------------

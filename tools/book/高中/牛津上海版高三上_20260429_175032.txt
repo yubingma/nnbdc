@@ -1,0 +1,228 @@
+0|fast
+0|raise
+0|fund
+0|World Vision
+0|shocking
+0|famine
+0|senior
+0|starve
+0|donation
+0|collect
+0|donate
+0|generous
+0|freshman
+0|funfair
+0|forecast
+0|stall
+0|in aid of
+0|appeal
+0|brilliant
+0|crowded
+0|portrait-sketching
+0|karaoke
+0|calculate
+0|walkathon
+0|alumni
+0|home
+0|purchase
+0|IT
+0|information technology
+0|finance
+0|sophomore
+0|proceeds
+0|come to
+0|astonished
+0|pick up
+0|souvenir
+0|lasting
+0|drive
+0|extensively
+0|pint
+0|play a role in
+0|trucking
+0|recognize
+0|virtually
+0|critical
+0|on hand
+0|absolutely
+0|substitute
+0|pair ... with
+0|due to
+0|ongoing
+0|precious
+0|sacrifice
+0|well-argued
+0|motion
+0|refute
+0|argument
+0|propose
+0|servant
+0|status
+0|confine
+0|commit suicide
+0|cling
+0|mention
+0|manual
+0|manual labour
+0|statistics
+0|life expectancy
+0|weightlifting
+0|pay ... a compliment
+0|superior
+0|concede
+0|working
+0|non-working
+0|work out
+0|priority
+0|burden
+0|point out
+0|discrimination
+0|resource
+0|play one's part
+0|urge
+0|vote
+0|proposition
+0|puberty
+0|phase
+0|head
+0|adulthood
+0|responsibility
+0|deepen
+0|pimple
+0|see-saw
+0|hormone
+0|adolescent
+0|insecure
+0|reluctant
+0|cope
+0|sensible
+0|risky
+0|lifelong
+0|strait
+0|the Straits of Malacca
+0|luxurious
+0|acre
+0|beachfront
+0|whirlpool
+0|cuisine
+0|windsurfing
+0|waterskiing
+0|arcade
+0|bet
+0|promote
+0|a couple of
+0|enclosed
+0|coach
+0|overseas
+0|take up
+0|annoying
+0|parasailing
+0|have a go at
+0|put up with
+0|stand up for
+0|parachute
+0|nervous
+0|put off
+0|excursion
+0|dozen
+0|dozens of
+0|tame
+0|flu
+0|get over
+0|get together
+0|ecotourism
+0|term
+0|era
+0|consciousness
+0|typically
+0|heritage
+0|primary
+0|attraction
+0|take ... into consideration
+0|ecology
+0|conservation
+0|preservation
+0|form
+0|declare
+0|bird-watching
+0|hiking
+0|photography
+0|mountaineering
+0|various
+0|annual
+0|greenwashing
+0|profit
+0|reserve
+0|absorb
+0|rural
+0|rich in
+0|ecological
+0|destination
+0|groom
+0|registry
+0|registry office
+0|gown
+0|costly
+0|hire
+0|outfit
+0|dinner jacket
+0|bridesmaid
+0|bouquet
+0|bunch
+0|evil
+0|spirit
+0|fragrant
+0|florist
+0|stationery
+0|album
+0|consult
+0|specialist
+0|printer
+0|book
+0|limousine
+0|reception
+0|afterwards
+0|resist
+0|temptation
+0|photographer
+0|specialize
+0|view
+0|avenue
+0|personalized
+0|chauffeur
+0|consultation
+0|reunion
+0|the Pilgrims
+0|Plymouth
+0|Massachusetts
+0|settler
+0|folk
+0|set aside
+0|highway
+0|shut down
+0|indoors
+0|dine
+0|turkey
+0|stuffing
+0|gravy
+0|cranberry
+0|sauce
+0|cranberry sauce
+0|mashed potatoes
+0|fare
+0|overflow
+0|brisk
+0|parade
+0|nibble
+0|reunite
+0|thankful
+0|occasion
+0|entire
+0|togetherness
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 221
+# Total Entries Extracted: 221
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 221
+# -------------------------------

@@ -1,0 +1,401 @@
+0|realistic
+0|abstract
+0|sculpture
+0|sculptor
+0|gallery
+0|faith
+0|faithfully
+0|consequently
+0|aim
+0|conventional
+0|typical
+0|evident
+0|Giotto di Bondone
+0|renaissance
+0|the Renaissance
+0|adopt
+0|humanistic
+0|possess
+0|possession
+0|superb
+0|perspective
+0|technique
+0|Masaccio
+0|coincidence
+0|by coincidence
+0|masterpiece
+0|impressionism
+0|impressionist
+0|post-impressionist
+0|a great deal
+0|shadow
+0|ridiculous
+0|controversial
+0|attempt
+0|on the other hand
+0|predict
+0|landscape
+0|specific
+0|figure
+0|clay
+0|critic
+0|bronze
+0|marble
+0|Mona Lisa
+0|Leonardo da Vinci
+0|carve
+0|delicate
+0|Michelangelo
+0|canvas
+0|Picasso
+0|cafe
+0|allergic
+0|effectively
+0|exhibition
+0|aggressive
+0|scholar
+0|flesh
+0|in the flesh
+0|Matisse
+0|geometry
+0|bunch
+0|Manhattan
+0|avenue
+0|preference
+0|Guggenheim Museum
+0|display
+0|appeal
+0|appeal to
+0|fragile
+0|circular
+0|metropolitan
+0|reputation
+0|civilization
+0|Egypt
+0|Egyptian
+0|visual
+0|fragrant
+0|Monet
+0|Whitney
+0|Madison
+0|contemporary
+0|permanent
+0|district
+0|committee
+0|signature
+0|poetry
+0|tick
+0|rhyme
+0|convey
+0|emotion
+0|nursery
+0|nursery rhyme
+0|concrete
+0|repetition
+0|contradictory
+0|hush
+0|mockingbird
+0|diamond
+0|brass
+0|billy-goat
+0|flexible
+0|pattern
+0|squire
+0|cottage
+0|coffin
+0|sparrow
+0|kitten
+0|take it easy
+0|run out of
+0|cinquain
+0|be made up of
+0|tease
+0|salty
+0|droop
+0|dread
+0|endless
+0|haiku
+0|syllable
+0|minimum
+0|translation
+0|branch
+0|melt
+0|brimful
+0|in particular
+0|eventually
+0|await
+0|transform
+0|revolve
+0|utter
+0|sorrow
+0|bare
+0|librarian
+0|forever
+0|trunk
+0|cement
+0|section
+0|appropriate
+0|exchange
+0|diploma
+0|sponsor
+0|blank
+0|compass
+0|bride
+0|bridegroom
+0|championship
+0|rhythmic
+0|darkness
+0|warmth
+0|try out
+0|scholarship
+0|pianist
+0|violinist
+0|let out
+0|load
+0|cigarette
+0|alcohol
+0|alcoholic
+0|abuse
+0|fitness
+0|sexual
+0|stress
+0|stressful
+0|obesity
+0|adolescent
+0|adolescence
+0|ban
+0|due
+0|due to
+0|tough
+0|addicted
+0|addicted to
+0|nicotine
+0|accustom
+0|accustomed
+0|accustomed to
+0|withdrawal
+0|bad-tempered
+0|automatic
+0|automatically
+0|mental
+0|mentally
+0|quit
+0|effect
+0|lung
+0|pregnant
+0|abnormal
+0|breathless
+0|unfit
+0|strengthen
+0|resolve
+0|decide on
+0|packet
+0|feel like
+0|feel like doing
+0|relaxation
+0|desperate
+0|chemist
+0|gum
+0|chewing gum
+0|disappointed
+0|weaken
+0|ashamed
+0|comprehension
+0|in spite of
+0|take risks
+0|take a risk
+0|get into
+0|etc
+0|et cetera
+0|appendix
+0|illegal
+0|pill
+0|robbery
+0|slippery
+0|HIV
+0|Human Immunodeficiency Virus
+0|AIDS
+0|Acquired Immune Deficiency Syndrome
+0|at risk
+0|SARS
+0|Severe Acute Respiratory Syndrome
+0|immune
+0|survival
+0|sex
+0|fluid
+0|inject
+0|injection
+0|needle
+0|spill
+0|male
+0|female
+0|condom
+0|homosexual
+0|prejudice
+0|judgement
+0|disco
+0|abortion
+0|cigar
+0|embarrassed
+0|awkward
+0|consume
+0|renewable
+0|greenhouse
+0|Fahrenheit
+0|come about
+0|Sophie
+0|Armstrong
+0|graph
+0|random
+0|phenomenon
+0|subscribe
+0|subscribe to
+0|fossil
+0|fuel
+0|byproduct
+0|Janice
+0|Foster
+0|methane
+0|Celsius
+0|quantity
+0|quantities of
+0|tend
+0|go up
+0|Charles Keeling
+0|measurement
+0|per
+0|data
+0|result in
+0|trend
+0|catastrophe
+0|flood
+0|drought
+0|famine
+0|George Hambley
+0|oppose
+0|opposed
+0|be opposed to
+0|mild
+0|environmental
+0|environmentalist
+0|consequence
+0|state
+0|range
+0|even if
+0|keep on
+0|glance
+0|steady
+0|tendency
+0|widespread
+0|on the whole
+0|economical
+0|hectare
+0|average
+0|existence
+0|outer
+0|on behalf of
+0|individual
+0|advocate
+0|commitment
+0|put up with
+0|pollution
+0|growth
+0|electrical
+0|appliance
+0|so long as
+0|casual
+0|and so on
+0|motor
+0|can
+0|circumstance
+0|microwave
+0|refresh
+0|educator
+0|contribution
+0|imperative
+0|heading
+0|slogan
+0|presentation
+0|nuclear
+0|disagreement
+0|diagram
+0|volcano
+0|volcanic
+0|volcanology
+0|volcanologist
+0|erupt
+0|eruption
+0|ash
+0|crater
+0|lava
+0|hurricane
+0|questionnaire
+0|alongside
+0|equipment
+0|appoint
+0|observatory
+0|database
+0|Mount Kilauea
+0|evaluate
+0|burn to the ground
+0|wave
+0|molten
+0|fountain
+0|absolute
+0|absolutely
+0|spaceman
+0|suit
+0|helmet
+0|boot
+0|make one's way
+0|potential
+0|actual
+0|geology
+0|Mount Etna
+0|Sicily
+0|sample
+0|candidate
+0|Mount Vesuvius
+0|threat
+0|bungalow
+0|Pompeii
+0|tornado
+0|typhoon
+0|thunderstorm
+0|precious
+0|novelist
+0|fog
+0|document
+0|rainbow
+0|uncomfortable
+0|balcony
+0|unconscious
+0|shoot
+0|shot
+0|tremble
+0|sweat
+0|anxious
+0|anxiety
+0|panic
+0|tsunami
+0|glance through
+0|Manchu
+0|vary from ... to ...
+0|diverse
+0|diversity
+0|crane
+0|leopard
+0|spectacular
+0|bathe
+0|arouse
+0|appreciation
+0|peak
+0|persuasion
+0|guarantee
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 394
+# Total Entries Extracted: 394
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 394
+# -------------------------------

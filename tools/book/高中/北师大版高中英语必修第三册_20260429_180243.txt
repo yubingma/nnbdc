@@ -1,0 +1,282 @@
+0|opera
+0|band
+0|performance
+0|exhibition
+0|classical
+0|jazz
+0|drama
+0|comedy
+0|calligraphy
+0|performer
+0|talented
+0|professional
+0|component
+0|stage
+0|costume
+0|shade
+0|atmosphere
+0|monthly
+0|uplifting
+0|masterpiece
+0|figure
+0|starry
+0|mentally
+0|massive
+0|beneath
+0|affect
+0|drug
+0|spot
+0|failure
+0|scream
+0|striking
+0|let out a scream
+0|viewer
+0|burning
+0|cause
+0|empire
+0|scene
+0|mysterious
+0|visual
+0|reaction
+0|female
+0|male
+0|mask
+0|clown
+0|emotion
+0|acrobatics
+0|master
+0|refer
+0|refer to
+0|perform
+0|pattern
+0|otherwise
+0|carriage
+0|complex
+0|aspect
+0|orchestra
+0|genius
+0|symphony
+0|minor
+0|composer
+0|piano
+0|struggle
+0|proceed
+0|note
+0|score
+0|respond
+0|backstage
+0|tense
+0|conductor
+0|hesitate
+0|not hesitate to do sth.
+0|charge
+0|take charge of
+0|joyous
+0|signal
+0|broad
+0|broad smile
+0|compose
+0|advertisement
+0|youth
+0|contest
+0|martial
+0|martial arts
+0|madam
+0|documentary
+0|currently
+0|acceptable
+0|individual
+0|appreciate
+0|faithfully
+0|expressive
+0|artistic
+0|extensively
+0|symbolism
+0|sculptor
+0|admiration
+0|best-selling
+0|permission
+0|threatening
+0|messy
+0|punishable
+0|tap
+0|tissue
+0|ocean
+0|smog
+0|desert
+0|global
+0|industrial
+0|extinction
+0|solution
+0|electricity
+0|transport
+0|recycle
+0|battery
+0|carbon
+0|balance
+0|do my part for sth.
+0|flat
+0|root
+0|shoot
+0|bothered
+0|not be bothered to do sth.
+0|just-me-ism
+0|gallon
+0|take action
+0|institute
+0|chimpanzee
+0|firm
+0|foundation
+0|brick
+0|all around the world
+0|wag
+0|involve
+0|poster
+0|founder
+0|profit
+0|pm
+0|organiser
+0|union
+0|contented
+0|occur
+0|make sb.'s dream come true
+0|agriculture
+0|proposal
+0|region
+0|slim
+0|survival
+0|rate
+0|quote
+0|headstone
+0|overcome
+0|determination
+0|work through
+0|former
+0|current
+0|county
+0|ordinary
+0|parking
+0|therefore
+0|path
+0|come up with
+0|disappear
+0|tracking
+0|destination
+0|pedal
+0|resident
+0|official
+0|attitude
+0|diagram
+0|percentage
+0|take part
+0|take part in
+0|cut back on
+0|disposable
+0|packaging
+0|plastic
+0|honey
+0|butter
+0|yoghurt
+0|container
+0|majority
+0|air conditioning
+0|sum
+0|to sum up
+0|indicate
+0|landfill
+0|clean-burning
+0|waste-to-energy
+0|footwear
+0|annually
+0|near-surface
+0|build-up
+0|pollutant
+0|flooding
+0|overflow
+0|approach
+0|geometry
+0|partner
+0|brush up
+0|brush up on
+0|reflect
+0|reflect on
+0|argue
+0|argue with
+0|assume
+0|automatic
+0|inner
+0|outer
+0|flexible
+0|end up doing
+0|promote
+0|work out
+0|in short
+0|attempt to
+0|at the heart of ...
+0|unlikely
+0|be based on ...
+0|dinosaur
+0|exist
+0|data
+0|ignore
+0|impression
+0|simplified
+0|classic
+0|unfamiliar
+0|memorise
+0|strategy
+0|effectively
+0|beyond
+0|recommend
+0|novel
+0|sufficient
+0|input
+0|normally
+0|context
+0|chunk
+0|acquire
+0|be honoured to do sth.
+0|odd
+0|soccer
+0|subway
+0|in one way or another
+0|worldwide
+0|arrangement
+0|childhood
+0|emotional
+0|excitement
+0|as a result
+0|photographic
+0|digit
+0|pi
+0|helicopter
+0|publish
+0|curve
+0|sharp
+0|timely
+0|cell
+0|periodically
+0|take it easy
+0|memorisation
+0|technique
+0|reflection
+0|reflective
+0|journal
+0|moreover
+0|surfing
+0|seafood
+0|gap
+0|gender
+0|identical
+0|comic
+0|fiction
+0|evidence
+0|expose
+0|outcome
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 275
+# Total Entries Extracted: 275
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 275
+# -------------------------------

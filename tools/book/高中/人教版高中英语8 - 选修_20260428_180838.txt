@@ -1,0 +1,443 @@
+0|California
+0|Californian
+0|illustrate
+0|distinct
+0|distinction
+0|immigrant
+0|live on
+0|strait
+0|Bering Strait
+0|Arctic
+0|the Arctic
+0|means
+0|by means of ...
+0|prehistoric
+0|majority
+0|ministry
+0|Catholic
+0|Alaska
+0|San Francisco
+0|adventurer
+0|make a life
+0|despite
+0|hardship
+0|elect
+0|federal
+0|rail
+0|percentage
+0|Los Angeles
+0|Italy
+0|Italian
+0|Denmark
+0|keep up
+0|Hollywood
+0|boom
+0|aircraft
+0|Cambodian
+0|Korea
+0|Korean
+0|Pakistan
+0|Pakistani
+0|immigrate
+0|immigration
+0|racial
+0|crossing
+0|vice
+0|nephew
+0|pole
+0|applicant
+0|customs
+0|socialist
+0|socialism
+0|occur
+0|cattle
+0|Hispanic
+0|indicate
+0|back to back
+0|luggage
+0|shave
+0|cable
+0|cable car
+0|Andrew Hallidie
+0|tram
+0|apparent
+0|apparently
+0|brake
+0|conductor
+0|slip
+0|wharf
+0|bakery
+0|ferry
+0|Angel Island
+0|team up with
+0|hire
+0|fascinating
+0|mark out
+0|seagull
+0|take in
+0|a great many
+0|a good many
+0|apply for
+0|nowhere
+0|miserable
+0|punishment
+0|justice
+0|mourn
+0|civil
+0|authority
+0|reform
+0|grasp
+0|thoughtful
+0|thankful
+0|insert
+0|differ
+0|exact
+0|cutting
+0|twin
+0|identical
+0|commercial
+0|straightforward
+0|complicated
+0|undertake
+0|undertook
+0|undertaken
+0|pay off
+0|breakthrough
+0|procedure
+0|nucleus
+0|somatic
+0|embryo
+0|carrier
+0|cast
+0|cast down
+0|altogether
+0|arbitrary
+0|fate
+0|correction
+0|object
+0|objection
+0|impact
+0|medium
+0|media
+0|the media
+0|obtain
+0|attain
+0|moral
+0|conservative
+0|forbid
+0|forbade
+0|forbad
+0|forbidden
+0|accumulate
+0|in favour of
+0|side road
+0|constitution
+0|compulsory
+0|opera
+0|chorus
+0|loaf
+0|flour
+0|owe
+0|shortly
+0|retire
+0|bother
+0|bound to
+0|be bound to do ...
+0|assumption
+0|regulation
+0|nonsense
+0|popularity
+0|Jurassic
+0|strike
+0|struck
+0|strike ... into one's heart
+0|bison
+0|calf
+0|from time to time
+0|bring back to life
+0|initial
+0|DNA
+0|vain
+0|in vain
+0|resist
+0|drawback
+0|merely
+0|restore
+0|aurochs
+0|decoration
+0|unable
+0|great auk
+0|feather
+0|quagga
+0|fairly
+0|in good condition
+0|in poor condition
+0|turkey
+0|dye
+0|claw
+0|adore
+0|hatch
+0|reasonable
+0|amphibious
+0|George Stephenson
+0|patent
+0|call up
+0|courtyard
+0|now and then
+0|walnut
+0|distinguish
+0|merciful
+0|product
+0|powder
+0|set about
+0|perfume
+0|stainless
+0|jelly
+0|cube
+0|cubic
+0|abrupt
+0|abruptly
+0|convenient
+0|caution
+0|expectation
+0|passive
+0|merry
+0|merrily
+0|seize
+0|recognition
+0|criterion
+0|criteria
+0|claim
+0|valid
+0|file
+0|ripe
+0|string
+0|glue
+0|rod
+0|freezing
+0|greengrocer
+0|identification
+0|directory
+0|dial
+0|rainfall
+0|courtroom
+0|innocent
+0|lantern
+0|bear
+0|jam
+0|Alexander Graham Bell
+0|microphone
+0|forehead
+0|beaten track
+0|occasionally
+0|dive into
+0|dynamic
+0|set out
+0|set out to do
+0|multiple
+0|Morse code
+0|dot
+0|tap
+0|wire
+0|straw
+0|reproduce
+0|current
+0|helicopter
+0|triangle
+0|tetrahedron
+0|stable
+0|invaluable
+0|associate
+0|practical
+0|James Dyson
+0|refrigerator
+0|court
+0|extension
+0|hang on
+0|out of order
+0|get through
+0|ring back
+0|ring off
+0|version
+0|competence
+0|competent
+0|personnel
+0|Pygmalion
+0|George Bernard Shaw
+0|adaptation
+0|classic
+0|caption
+0|plot
+0|professor
+0|Higgins
+0|phonetics
+0|colonel
+0|Pickering
+0|fateful
+0|whistle
+0|garment
+0|woollen
+0|woolen
+0|hesitate
+0|uncomfortable
+0|uncomfortably
+0|troublesome
+0|wallet
+0|outcome
+0|thief
+0|handkerchief
+0|disguise
+0|in disguise
+0|mistaken
+0|brilliant
+0|classify
+0|remark
+0|betray
+0|upper
+0|extraordinary
+0|condemn
+0|gutter
+0|properly
+0|pass ... off as ...
+0|duchess
+0|ambassador
+0|acquaintance
+0|make one's acquaintance
+0|handful
+0|amazement
+0|in amazement
+0|fortune
+0|authentic
+0|generally speaking
+0|status
+0|superior
+0|in terms of ...
+0|disapprove
+0|rob
+0|antique
+0|musical
+0|stocking
+0|believer
+0|Buddhism
+0|Buddhist
+0|Buddha
+0|vowel
+0|Pearce
+0|cookie
+0|teapot
+0|cream
+0|nail
+0|show ... in
+0|wax
+0|disk
+0|wax disk
+0|shabby
+0|curtsy
+0|shilling
+0|referee
+0|compromise
+0|horrible
+0|laundry
+0|bathtub
+0|sob
+0|waist
+0|vest
+0|disgusting
+0|once more
+0|in need of
+0|heartily
+0|overlook
+0|alphabet
+0|effective
+0|fade
+0|fade out
+0|identify
+0|alternative
+0|archaeology
+0|archeology
+0|archaeological
+0|archeological
+0|archaeologist
+0|archeologist
+0|starvation
+0|tentative
+0|accuracy
+0|excavate
+0|excavation
+0|interrupt
+0|acute
+0|assume
+0|regardless
+0|regardless of
+0|mat
+0|quilt
+0|beast
+0|at most
+0|centimetre
+0|centimeter
+0|sharpen
+0|sharpener
+0|cut up
+0|scrape
+0|scraper
+0|ample
+0|messy
+0|primitive
+0|bead
+0|botany
+0|botanical
+0|analysis
+0|analyses
+0|seashell
+0|ripen
+0|category
+0|significance
+0|somehow
+0|systematic
+0|spit
+0|spat
+0|delete
+0|album
+0|scratch
+0|academy
+0|receptionist
+0|onion
+0|kindergarten
+0|skateboard
+0|fed up with
+0|yogurt
+0|radioactive
+0|radioactivity
+0|division
+0|BC
+0|melon
+0|wrinkle
+0|pulse
+0|vein
+0|applaud
+0|look ahead
+0|howl
+0|accelerate
+0|spear
+0|arrest
+0|dizzy
+0|eyebrow
+0|cheekbone
+0|arrowhead
+0|axe
+0|hammer
+0|gay
+0|gaily
+0|skilful
+0|date back
+0|date back to ...
+0|punctuation
+0|worship
+0|craftsmanship
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 436
+# Total Entries Extracted: 436
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 436
+# -------------------------------

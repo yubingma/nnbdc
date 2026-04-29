@@ -1,0 +1,367 @@
+0|hurdling
+0|boxing
+0|hula hooping
+0|pogo stick jumping
+0|jumping jack
+0|somersaulting
+0|lunge
+0|Ashrita Furman
+0|Guinness
+0|Guinness Book of World Records
+0|approximate
+0|exact
+0|approximately
+0|conventional
+0|laughter
+0|reality
+0|in reality
+0|adjustment
+0|tough
+0|extreme
+0|vomit
+0|gymnastics
+0|gymnastically
+0|unfit
+0|fascinate
+0|meditation
+0|Sri Chinmoy
+0|spiritual
+0|marathon
+0|urge
+0|accomplish
+0|motivation
+0|devotion
+0|soul
+0|sacred
+0|deed
+0|conception
+0|tact
+0|regret
+0|repentance
+0|wisdom
+0|virtue
+0|noble
+0|doom
+0|bid
+0|juggle
+0|Paralympics
+0|Paralympic
+0|amateur
+0|triathlon
+0|champion
+0|therefore
+0|Barcelona
+0|springboard
+0|economics
+0|Slovenia
+0|entire
+0|the Danube River
+0|attain
+0|the Parana River
+0|profile
+0|courageous
+0|appreciate
+0|appreciation
+0|accountant
+0|receptionist
+0|lawyer
+0|politician
+0|scarf
+0|zip
+0|underwear
+0|overcoat
+0|salary
+0|wage
+0|Marco Polo
+0|latitude
+0|voyage
+0|mercy
+0|at the mercy of
+0|encyclopedia
+0|alongside
+0|exploration
+0|minimum
+0|celestial
+0|pole
+0|equator
+0|horizon
+0|overhead
+0|seaweed
+0|nowhere
+0|offshore
+0|outward
+0|tide
+0|secure
+0|knot
+0|log
+0|nautical
+0|nautical mile
+0|magnetic
+0|bearing circle
+0|random
+0|astrolabe
+0|awkward
+0|reference
+0|quadrant
+0|precise
+0|simplify
+0|portable
+0|shortcoming
+0|sextant
+0|update
+0|tendency
+0|reliable
+0|Samuel
+0|swoop
+0|parcel
+0|peck
+0|cliff
+0|expedition
+0|compulsory
+0|reform
+0|survival
+0|Captain Bligh
+0|Tahiti
+0|incident
+0|departure
+0|crew
+0|deposit
+0|dilemma
+0|drawback
+0|dusk
+0|routine
+0|reckon
+0|reckoning
+0|starvation
+0|psychology
+0|psychologically
+0|tension
+0|gradual
+0|gradually
+0|foresee
+0|foresaw
+0|foreseen
+0|thirst
+0|Timor
+0|set loose
+0|tear
+0|hardship
+0|jaw
+0|jaws of death
+0|Greenland
+0|Shetland Islands
+0|the Faroe Islands
+0|roar
+0|background
+0|associate
+0|associate ... with ...
+0|Perth
+0|Kakadu
+0|Canberra
+0|Uluru
+0|barrier
+0|Great Barrier Reef
+0|brochure
+0|Commonwealth
+0|Kosciuszko
+0|Oceania
+0|adequate
+0|Melbourne
+0|ecology
+0|autonomous
+0|federal
+0|defence
+0|policy
+0|tax
+0|taxation
+0|nation
+0|citizen
+0|citizenship
+0|celebration
+0|birthplace
+0|tolerate
+0|tolerance
+0|migrant
+0|homeland
+0|via
+0|Adelaide
+0|superb
+0|Nullarbor
+0|rust
+0|rusty
+0|tropical
+0|splendour
+0|timetable
+0|heritage
+0|aboriginal
+0|out of respect
+0|fortnight
+0|reservation
+0|Hobart
+0|highway
+0|cradle
+0|rainfall
+0|agriculture
+0|sow
+0|bachelor
+0|correspond
+0|correspond with
+0|owe
+0|owe ... to
+0|enclosure
+0|authority
+0|desperate
+0|shrink
+0|barbecue
+0|talk ... into ...
+0|wind
+0|wound
+0|limb
+0|venom
+0|venomous
+0|anti-venom
+0|paralyze
+0|sickness
+0|recover
+0|funnel
+0|funnelweb spider
+0|snatch
+0|amongst
+0|vinegar
+0|unconscious
+0|pollinate
+0|pollinator
+0|courtyard
+0|balcony
+0|exotic
+0|date back to
+0|distant
+0|Egypt
+0|goods
+0|scale
+0|conflict
+0|missionary
+0|d'Incarville
+0|Joseph Banks
+0|endeavour
+0|anchor
+0|Nathaniel Ward
+0|tight
+0|seal
+0|container
+0|Wardian case
+0|restriction
+0|fluency
+0|shave
+0|thunderstorm
+0|pirate
+0|Father Farges
+0|appeal
+0|dove
+0|botanist
+0|chrysanthemum
+0|red date
+0|lower
+0|beard
+0|ripe
+0|irrigation
+0|weed
+0|spear
+0|string
+0|spade
+0|postpone
+0|pyramid
+0|monument
+0|pitcher
+0|Rafflesia arnoldii
+0|rot
+0|evolve
+0|evolution
+0|nectar
+0|attach
+0|wasp
+0|beetle
+0|bat
+0|moth
+0|humming-bird
+0|typical
+0|petal
+0|tube
+0|delicate
+0|fragrant
+0|daisy
+0|odour
+0|odourless
+0|give out
+0|dull
+0|musty
+0|fruity
+0|billboard
+0|casual
+0|garment
+0|turn ... into
+0|advertiser
+0|advert
+0|advertisement
+0|inform
+0|association
+0|target
+0|fit into
+0|basis
+0|technique
+0|lane
+0|feature
+0|conscience
+0|worthy
+0|corporation
+0|budget
+0|expense
+0|broadcast
+0|rely
+0|rely on
+0|visual
+0|generate
+0|response
+0|stereo
+0|have no use for
+0|refresh
+0|partly
+0|murder
+0|suitcase
+0|sheet
+0|actress
+0|typist
+0|spokesman
+0|fluent
+0|hostess
+0|invitation
+0|appoint
+0|chairman
+0|raise
+0|dial
+0|operator
+0|litre
+0|liter
+0|mature
+0|fashion
+0|misleading
+0|dishonest
+0|alcoholic
+0|tobacco
+0|ban
+0|promote
+0|immoral
+0|decent
+0|ethics
+0|ethical
+0|offending
+0|beware
+0|consumer
+0|trustworthy
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 360
+# Total Entries Extracted: 360
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 360
+# -------------------------------

@@ -1,0 +1,369 @@
+0|venture
+0|web
+0|Scottish
+0|suffering
+0|gall-bladder
+0|strengthen
+0|Perce Blackborow
+0|Sir Ernest Shackleton
+0|endurance
+0|hut
+0|stove
+0|unbearable
+0|cosy
+0|block out
+0|breathless
+0|rotten
+0|blacken
+0|circumstance
+0|blast
+0|hoarse
+0|bless
+0|selfish
+0|Tom Orde-Lees
+0|hook
+0|aboard
+0|seasickness
+0|anyhow
+0|steward
+0|crush
+0|mourn
+0|urgent
+0|bedding
+0|Hussey
+0|banjo
+0|vital
+0|cheerful
+0|persevere
+0|perseverance
+0|faith
+0|give way to
+0|framework
+0|rank
+0|morale
+0|select
+0|booming
+0|swear
+0|advocate
+0|freezing
+0|stool
+0|gratitude
+0|punishment
+0|loyal
+0|tactful
+0|Frank Worsley
+0|odd
+0|stout
+0|Hubert Hudson
+0|optimism
+0|delay
+0|discourage
+0|dynamic
+0|regular
+0|grasp
+0|give off
+0|Lionel Greenstreet
+0|bored
+0|liver
+0|chef
+0|changeable
+0|caution
+0|snow blindness
+0|admirable
+0|commitment
+0|proverb
+0|King Lear
+0|respectful
+0|disrespectful
+0|disrespectfully
+0|emperor
+0|shorten
+0|modernize
+0|throne
+0|Regan
+0|Goneril
+0|Cordelia
+0|duke
+0|Albany
+0|Cornwall
+0|Kent
+0|burden
+0|hand over
+0|responsibility
+0|boundary
+0|allocate
+0|whichever
+0|darling
+0|adore
+0|pray
+0|care for
+0|majesty
+0|lord
+0|bridegroom
+0|distribute
+0|troop
+0|contradict
+0|hear ... out
+0|on behalf of
+0|flattery
+0|flatter
+0|beyond question
+0|speak out
+0|friction
+0|forecast
+0|oppose
+0|pack up
+0|frontier
+0|give away
+0|fond
+0|be fond of
+0|deceitful
+0|corrupt
+0|greedy
+0|greed
+0|innocent
+0|cunning
+0|storage
+0|author
+0|sacrifice
+0|Stratford-on-Avon
+0|Latin
+0|make a name
+0|allergic
+0|sneeze
+0|armchair
+0|confirm
+0|rewind
+0|cash
+0|cheque
+0|signature
+0|terminal
+0|vacant
+0|dusty
+0|Burgundy
+0|respond
+0|Oswald
+0|staff
+0|Caius
+0|suspect
+0|insult
+0|scold
+0|drunken
+0|scratch
+0|baggage
+0|demand
+0|prop
+0|civil
+0|trolleybus
+0|register
+0|Maryann Jones
+0|Montgomery
+0|Martin Luther King, Jr
+0|boycott
+0|prohibit
+0|offence
+0|unjust
+0|separation
+0|tradition
+0|submit
+0|unwilling
+0|seize
+0|seize on
+0|collision
+0|collision course
+0|hopeful
+0|negotiate
+0|chaos
+0|Serena
+0|sandal
+0|punctual
+0|coincidence
+0|pedestrian
+0|march
+0|pavement
+0|salute
+0|abuse
+0|hostility
+0|resolve
+0|prayer
+0|bomb
+0|supreme
+0|nationwide
+0|constitution
+0|constitutional
+0|fundamental
+0|battle
+0|happiness
+0|liberty
+0|skim
+0|evident
+0|self-evident
+0|brief
+0|discrimination
+0|philosophy
+0|Scout
+0|Atticus
+0|Jem
+0|Arthur
+0|commit
+0|Walter Cunningham
+0|Caroline
+0|live out
+0|creed
+0|brotherhood
+0|oasis
+0|Alabama
+0|symphony
+0|Jew
+0|Gentile
+0|Protestant
+0|Catholic
+0|Negro
+0|almighty
+0|quotation
+0|metaphor
+0|simile
+0|Ewell
+0|Mayella
+0|dominate
+0|efficient
+0|efficiently
+0|centigrade
+0|diameter
+0|recipe
+0|booklet
+0|endeavour
+0|competent
+0|up to ...
+0|caption
+0|digest
+0|beneath
+0|adopt
+0|preview
+0|frequent
+0|in detail
+0|manual
+0|New Zealand
+0|assess
+0|consult
+0|underneath
+0|shabby
+0|rainbow
+0|brewery
+0|acute
+0|bent
+0|cab
+0|taxi
+0|currency
+0|lotus
+0|cuisine
+0|educator
+0|seminar
+0|acquisition
+0|ballet
+0|album
+0|resemble
+0|cassette
+0|tend
+0|tend to
+0|tend to do sth
+0|messy
+0|tiresome
+0|vague
+0|bonus
+0|auditory
+0|tactile
+0|oral
+0|component
+0|concrete
+0|literary
+0|genre
+0|recount
+0|Agnes Grey
+0|Jane Austen
+0|Charlotte Bront
+0|Tess of d'Urbevilles
+0|prejudice
+0|Wuthering Heights
+0|Margaret Mitchell
+0|Rudyard Kipling
+0|consensus
+0|equality
+0|in force
+0|twist
+0|contradiction
+0|get round
+0|George Eliot
+0|limitation
+0|heroine
+0|obstacle
+0|ironic
+0|hopeless
+0|under the name of ...
+0|sceptical
+0|see through
+0|deception
+0|approval
+0|explicit
+0|struggle against
+0|outspoken
+0|growth
+0|childhood
+0|hail
+0|revelation
+0|premier
+0|ambiguous
+0|concession
+0|stand out
+0|critic
+0|injustice
+0|possess
+0|sponsor
+0|eccentric
+0|Betsy Trotwood
+0|generous
+0|merchant
+0|straight away
+0|warehouse
+0|bargain
+0|burglar
+0|sequence
+0|inspect
+0|bungalow
+0|chain
+0|dangle
+0|semicircle
+0|squeak
+0|pull oneself up
+0|roof
+0|collar
+0|bench
+0|pine
+0|claw
+0|squirrel
+0|romance
+0|vain
+0|in vain
+0|signal
+0|discount
+0|sensitive
+0|decline
+0|arrogant
+0|at length
+0|enquire
+0|against one's will
+0|think ill of
+0|do everything in one's power to ...
+0|rejoice
+0|initial
+0|fault
+0|hasty
+0|hastily
+0|sensible
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 362
+# Total Entries Extracted: 362
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 362
+# -------------------------------

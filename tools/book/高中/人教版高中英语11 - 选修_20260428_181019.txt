@@ -1,0 +1,317 @@
+0|Auckland
+0|Maori
+0|kiwi
+0|Stewart Island
+0|tectonic
+0|geological
+0|geology
+0|plateau
+0|Alps
+0|backbone
+0|graze
+0|strip
+0|Christchurch
+0|carve
+0|paddle
+0|uninhabited
+0|extinction
+0|fern
+0|scarce
+0|warlike
+0|tribe
+0|wipe out
+0|take over
+0|fence
+0|immunity
+0|immune
+0|Christianity
+0|treaty
+0|representative
+0|ownership
+0|unrest
+0|civilian
+0|bungee jumping
+0|bungy jumping
+0|fasten
+0|elastic
+0|suspension
+0|appetite
+0|buffet
+0|pasta
+0|porter
+0|suite
+0|lounge
+0|laundry
+0|helicopter
+0|brunch
+0|Napier
+0|Burma
+0|Lake Taupo
+0|dairy
+0|statistics
+0|eco-friendly
+0|subtropical
+0|fiord
+0|not to mention
+0|recreation
+0|raft
+0|abseil
+0|get around
+0|hemisphere
+0|schedule
+0|extensive
+0|flexible
+0|pace
+0|insurance
+0|insure
+0|theft
+0|handy
+0|consultant
+0|guidance
+0|database
+0|cater
+0|cater for sb.
+0|cater for sth.
+0|enquiry
+0|inquiry
+0|extension
+0|vertical
+0|axis
+0|detect
+0|Bahmad
+0|jogger
+0|forensic
+0|spray
+0|fingerprint
+0|stain
+0|wrap
+0|bind
+0|torso
+0|Dempsey
+0|surgeon
+0|X-ray
+0|abnormal
+0|Shipley
+0|emergency
+0|by law
+0|jury
+0|imprisonment
+0|assessment
+0|widow
+0|compensate
+0|maximum
+0|motive
+0|savagely
+0|ward
+0|lame
+0|thriller
+0|confidential
+0|ministry
+0|funeral
+0|memorial
+0|trend
+0|unemployment
+0|taxpayer
+0|import
+0|aluminium
+0|surplus
+0|Arthur Conan Doyle
+0|Jabez Wilson
+0|Sherlock Holmes
+0|flame
+0|greengrocer
+0|alley
+0|remark
+0|make of sth
+0|make of sb
+0|candidate
+0|furnish
+0|expel
+0|allowance
+0|every so often
+0|peculiar
+0|strategy
+0|myth
+0|harmony
+0|depressed
+0|well-balanced
+0|prescription
+0|cope
+0|cope with
+0|let down
+0|proportion
+0|fulfil
+0|effective
+0|agenda
+0|interval
+0|session
+0|contradictory
+0|revise
+0|curriculum
+0|informal
+0|deadline
+0|rigid
+0|subscribe
+0|post-graduate
+0|academy
+0|stead
+0|stand sb. in good stead
+0|employer
+0|diploma
+0|format
+0|glory
+0|glory in
+0|forgetful
+0|administration
+0|choir
+0|postcode
+0|withdraw
+0|sake
+0|for one's own sake
+0|pursuit
+0|pursue
+0|pedicab
+0|sleep rough
+0|feed on
+0|philosophical
+0|socialism
+0|receipt
+0|outweigh
+0|ensure
+0|reproach
+0|jealousy
+0|cease
+0|count up
+0|reinforce
+0|Odysseus
+0|Trojan
+0|Ithaca
+0|Telemachus
+0|split
+0|violate
+0|temporary
+0|Penelope
+0|statesman
+0|statesmanlike
+0|unconditional
+0|Cyclops
+0|scar
+0|howl
+0|merciful
+0|at the crack of dawn
+0|quick as a flash
+0|hatch
+0|whistle
+0|heel
+0|a wolf in sheep's clothing
+0|pint
+0|dead to the world
+0|socket
+0|stagger
+0|agony
+0|belly
+0|wrestle
+0|Circe
+0|marble
+0|arch
+0|coarse
+0|pillow
+0|quilt
+0|trough
+0|slice
+0|wear off
+0|saucer
+0|circus
+0|freeway
+0|plug
+0|hydrogen
+0|clay
+0|moustache
+0|mustard
+0|Theseus
+0|enlarge
+0|tournament
+0|fist
+0|combat
+0|walnut
+0|transparent
+0|transparently
+0|tug
+0|dismay
+0|pulse
+0|zoom
+0|zoom in on
+0|insignificant
+0|Sinis
+0|Procrustes
+0|Crete
+0|fleece
+0|Perseus
+0|vice versa
+0|faced with
+0|be faced with
+0|scholarship
+0|in disbelief
+0|drop into
+0|unsettling
+0|dozens of
+0|now and again
+0|expectantly
+0|suck
+0|co-operate
+0|preference
+0|pleasurable
+0|anticipation
+0|intellectual
+0|arithmetic
+0|algebra
+0|interpersonal
+0|complex
+0|agro-scientific
+0|core
+0|drop in
+0|recommendation
+0|call on
+0|composer
+0|mathematician
+0|stewardess
+0|diplomat
+0|embassy
+0|referee
+0|brake
+0|swerve
+0|missile
+0|bishop
+0|circuit
+0|go on circuit
+0|razor
+0|shaver
+0|oval
+0|orbit
+0|substance
+0|curriculum vitae
+0|CV
+0|nickname
+0|presentational
+0|fabulous
+0|IELTS
+0|accountancy
+0|function
+0|bureaucratic
+0|ethos
+0|minefield
+0|unwary
+0|autobiography
+0|build on
+0|prosperous
+0|to tell you the truth
+0|tempt
+0|appendix
+0|roundabout
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 310
+# Total Entries Extracted: 310
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 310
+# -------------------------------

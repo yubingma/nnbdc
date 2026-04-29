@@ -1,0 +1,532 @@
+0|dream team
+0|star
+0|forward
+0|defend
+0|guard
+0|referee
+0|hoop
+0|court
+0|slam dunk
+0|association
+0|league
+0|top-class
+0|talented
+0|professional
+0|complicated
+0|hold
+0|consecutive
+0|title
+0|centre
+0|scorer
+0|valued
+0|in the history of
+0|grow up
+0|attend
+0|with an average of
+0|average
+0|per
+0|gold medal
+0|motivation
+0|tie
+0|steak
+0|alongside
+0|awesome
+0|shipyard
+0|various
+0|entire
+0|immediate
+0|There's no doubt that ...
+0|deserve
+0|outstanding
+0|generation
+0|popularity
+0|live
+0|commentary
+0|half
+0|overtime
+0|coach
+0|commentator
+0|rely
+0|stamina
+0|quarter
+0|selfish
+0|all the time
+0|nature
+0|instant
+0|hit
+0|nationwide
+0|if necessary
+0|be rude to
+0|dominate
+0|be used to
+0|draw sb's attention to
+0|wrestling
+0|boxing
+0|upwards
+0|angle
+0|collision
+0|parallel
+0|adequate
+0|sock
+0|sneaker
+0|absorb
+0|bound
+0|vest
+0|abrupt
+0|horizontal
+0|accelerate
+0|bounce
+0|tournament
+0|interval
+0|appoint
+0|typical
+0|slim
+0|stout
+0|belly
+0|obtain
+0|circuit
+0|boundary
+0|controversial
+0|aside
+0|dip
+0|commit
+0|foul
+0|suspension
+0|penalty
+0|take possession of
+0|howl
+0|bleed
+0|cheek
+0|pulse
+0|confirm
+0|dizzy
+0|bandage
+0|blanket
+0|ambulance
+0|considerate
+0|apologise
+0|sniff
+0|weep
+0|frustration
+0|teamwork
+0|scar
+0|oval
+0|gymnasium
+0|pole
+0|basis
+0|be based on
+0|version
+0|highlight
+0|chart
+0|prom
+0|peer
+0|mediator
+0|forever
+0|look back at
+0|settle
+0|have fun
+0|competitive
+0|elect
+0|suit
+0|rent
+0|It's a great pity that ...
+0|dinner jacket
+0|enormous
+0|slogan
+0|attract
+0|photography
+0|keen
+0|issue
+0|as far as I'm concerned
+0|in my view
+0|after-school
+0|consider
+0|be considered as
+0|develop
+0|activity
+0|ability
+0|outdoor
+0|water skiing
+0|be likely to do
+0|tradition
+0|boarding
+0|nursery
+0|recite
+0|alphabet
+0|institution
+0|sew
+0|woollen
+0|suitcase
+0|luggage
+0|innocent
+0|pillow
+0|quilt
+0|worn
+0|armchair
+0|shabby
+0|cushion
+0|kettle
+0|decoration
+0|curtain
+0|washroom
+0|basin
+0|bathtub
+0|sob
+0|arithmetic
+0|multiply
+0|algebra
+0|geometry
+0|concept
+0|cubic
+0|acre
+0|gram
+0|dynamic
+0|bachelor
+0|botanical
+0|microscope
+0|regulation
+0|punctual
+0|T-shirt
+0|weekday
+0|Catholic
+0|irritate
+0|upset
+0|polish
+0|zipper
+0|button
+0|mailbox
+0|mummy
+0|airmail
+0|fortnight
+0|certificate
+0|scholarship
+0|cheerleading
+0|cheerleader
+0|cheer
+0|squad
+0|pompom
+0|routine
+0|course
+0|novelist
+0|scene
+0|cruel
+0|feed
+0|pot
+0|warden
+0|serve
+0|eager
+0|appetite
+0|whisper
+0|nudge
+0|desperate
+0|healthy
+0|in astonishment
+0|support
+0|in a ... voice
+0|no sooner ... than ...
+0|seize
+0|hang
+0|lock
+0|workhouse
+0|reward
+0|scream
+0|collar
+0|rough
+0|drag
+0|naughty
+0|rascal
+0|orphan
+0|convict
+0|escape
+0|prison
+0|wedding
+0|intend
+0|illegally
+0|repay
+0|cast
+0|distribute
+0|chapter
+0|filthy
+0|sparrow
+0|seagull
+0|pipe
+0|smog
+0|choke
+0|swallow
+0|rag
+0|dustbin
+0|attain
+0|nutrition
+0|starvation
+0|welfare
+0|concern
+0|taxpayer
+0|compass
+0|anchor
+0|inn
+0|carrier
+0|accumulate
+0|corporation
+0|navy
+0|pile
+0|paperwork
+0|trial
+0|pump
+0|fountain
+0|pub
+0|maid
+0|bunch
+0|mistress
+0|accomplish
+0|ambassador
+0|humble
+0|pedestrian
+0|lantern
+0|mourn
+0|a huge amount of
+0|bring sth. to the attention of sb.
+0|soul music
+0|blues
+0|harmonica
+0|sophisticated
+0|rhythmic
+0|rhythm
+0|gospel
+0|improvisation
+0|syncopation
+0|DJ
+0|hip hop
+0|graffiti
+0|microphone
+0|percussion
+0|rap
+0|reggae
+0|turntable
+0|movement
+0|MC-ing
+0|technique
+0|Jamaica
+0|side by side
+0|improvise
+0|vocal
+0|approach
+0|be bored with
+0|disco
+0|decline
+0|take advantage of
+0|backing track
+0|rapper
+0|emerge
+0|rather than
+0|touch
+0|trumpet
+0|in order
+0|try out
+0|arise
+0|offshore
+0|boom
+0|friction
+0|harmony
+0|virtue
+0|be blessed with
+0|conventional
+0|fancy
+0|blouse
+0|slacks
+0|neat
+0|mom
+0|consensus
+0|makeover
+0|budget
+0|cheque
+0|consultant
+0|vain
+0|bonus
+0|DVD
+0|pace
+0|tight
+0|schedule
+0|spokeswoman
+0|deadline
+0|otherwise
+0|come out
+0|allowance
+0|far from
+0|part-time
+0|devote
+0|be devoted to
+0|swap
+0|super
+0|yell
+0|beg
+0|beg for
+0|pension
+0|quit
+0|refreshing
+0|pioneer
+0|solo
+0|satchel
+0|make an impression on sb.
+0|protest
+0|migrant
+0|humorous
+0|ethnic
+0|minority
+0|rainforest
+0|diverse
+0|native
+0|bright-coloured
+0|belt
+0|varied
+0|maze
+0|cobbled
+0|run
+0|inherit
+0|property
+0|custom
+0|apron
+0|hieroglyphic
+0|in use
+0|hatch
+0|pineapple
+0|bucket
+0|splash
+0|apparently
+0|have a population of
+0|crop
+0|opera
+0|maize
+0|farm
+0|fish
+0|script
+0|ouch
+0|hammer
+0|foolish
+0|lame
+0|hop
+0|tyre
+0|firm
+0|jungle
+0|soul
+0|in the distance
+0|ox
+0|spear
+0|garment
+0|sleeve
+0|necklace
+0|jewellery
+0|set off
+0|arch
+0|rigid
+0|framework
+0|fasten
+0|loose
+0|fibre
+0|corn
+0|spade
+0|tool
+0|chick
+0|rooster
+0|fold
+0|adjust
+0|furnish
+0|mat
+0|teapot
+0|bare
+0|waist
+0|widow
+0|nephew
+0|garage
+0|awkward
+0|pierce
+0|rainbow
+0|aborigine
+0|gatherer
+0|venue
+0|preserve
+0|agreement
+0|invest
+0|divert
+0|prehistoric
+0|remains
+0|archaeologist
+0|primitive
+0|skull
+0|item
+0|existence
+0|relation
+0|limestone
+0|span
+0|fossil
+0|beast
+0|sharpen
+0|excavation
+0|list
+0|evolution
+0|exposure
+0|weed
+0|cement
+0|contribute
+0|maintain
+0|endangered
+0|recommend
+0|awareness
+0|propose
+0|fund
+0|assistance
+0|precious
+0|of vital importance
+0|catastrophe
+0|estimate
+0|length
+0|request
+0|apart from
+0|waterproof
+0|marvellous
+0|imperial
+0|tangible
+0|intangible
+0|delegate
+0|monument
+0|inhabitant
+0|mankind
+0|directory
+0|bid
+0|enlarge
+0|discrimination
+0|go through
+0|practitioner
+0|advocate
+0|status
+0|virus
+0|malaria
+0|compromise
+0|remind sb. of sth.
+0|seminar
+0|symbolic ambassador
+0|epic
+0|agenda
+0|mercy
+0|at the mercy of ...
+0|undertake
+0|absence
+0|subjective
+0|diplomacy
+0|thorough
+0|bureaucratic
+0|in return
+0|autonomy
+0|federal
+0|guidance
+0|ignore
+0|Hispanic
+0|honour
+0|be honoured for
+0|journalism
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 525
+# Total Entries Extracted: 525
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 525
+# -------------------------------

@@ -1,0 +1,314 @@
+0|have ... in common
+0|linguist
+0|make a difference
+0|accent
+0|obvious
+0|motorway
+0|underground
+0|subway
+0|get around
+0|flashlight
+0|queue
+0|confusing
+0|preposition
+0|compare
+0|omit
+0|variety
+0|differ
+0|settler
+0|be similar to
+0|remark
+0|variation
+0|have difficulty in doing sth.
+0|have difficulty doing sth.
+0|steadily
+0|satellite
+0|flick
+0|switch
+0|lead to
+0|structure
+0|rapidly
+0|announcement
+0|linguistics
+0|edition
+0|cute
+0|add
+0|in favour of
+0|present
+0|refer to ... as ...
+0|attempt
+0|simplify
+0|combination
+0|thanks to
+0|distinctive
+0|look
+0|criticise
+0|standard
+0|reference
+0|intellectual
+0|satisfying
+0|stressful
+0|accountant
+0|barber
+0|biochemist
+0|electrician
+0|miner
+0|volunteer
+0|offer
+0|signal
+0|in particular
+0|sheer
+0|on average
+0|in theory
+0|in practice
+0|respect
+0|toll
+0|bend
+0|circular
+0|direct
+0|pass by
+0|take ... for granted
+0|encounter
+0|profound
+0|have an effect on
+0|mission
+0|qualified
+0|take up
+0|vertical
+0|take notice of
+0|temporary
+0|freezer
+0|freeze
+0|contract
+0|earn
+0|permanent
+0|salary
+0|staff
+0|sign
+0|agent
+0|analyst
+0|apply
+0|deduction
+0|organisational
+0|post
+0|chef
+0|require
+0|renewable
+0|essential
+0|model
+0|shot
+0|in response to
+0|grateful
+0|available
+0|database
+0|demand
+0|bioinformatician
+0|traditional
+0|youngster
+0|suffer
+0|pathologist
+0|double
+0|leisure
+0|individual
+0|fitness
+0|outgoing
+0|personality
+0|biography
+0|fantasy
+0|have connection with
+0|detective
+0|solve
+0|murderer
+0|account
+0|run away
+0|companion
+0|raft
+0|pour
+0|shelter
+0|paddle
+0|lie
+0|panic
+0|curious
+0|tie
+0|rope
+0|beard
+0|fright
+0|crawl
+0|terrified
+0|trunk
+0|play a trick on sb.
+0|make up
+0|outline
+0|disturb
+0|comedy
+0|romantic
+0|fiction
+0|review
+0|be in the mood
+0|be in the mood for sth.
+0|be in the mood to do sth.
+0|feel in the mood
+0|feel in the mood for sth.
+0|feel in the mood to do sth.
+0|set a play in
+0|set a novel in
+0|resemble
+0|create
+0|exception
+0|warn
+0|shallow
+0|adolescent
+0|determined
+0|make one's fortune
+0|set off
+0|penny
+0|force
+0|pilot
+0|vivid
+0|establish
+0|reputation
+0|carnival
+0|Christian
+0|ghost
+0|costume
+0|hide
+0|confusion
+0|extend
+0|pretend
+0|come to an end
+0|dress up
+0|firearm
+0|empire
+0|memory
+0|revive
+0|council
+0|book
+0|wander
+0|elegant
+0|magic
+0|era
+0|calendar
+0|dove
+0|bean
+0|flour
+0|garlic
+0|onion
+0|pea
+0|pork
+0|sausage
+0|consist of
+0|herb
+0|ingredient
+0|relaxing
+0|whistle
+0|tasty
+0|parade
+0|multicultural
+0|plantation
+0|mark
+0|trade
+0|transport
+0|landowner
+0|import
+0|master
+0|abolish
+0|magnificent
+0|celebration
+0|freedom
+0|unite
+0|origin
+0|athletics
+0|rugby
+0|bat
+0|club
+0|net
+0|pitch
+0|ring
+0|stadium
+0|track
+0|tracksuit
+0|trainer
+0|retire
+0|perform
+0|retirement
+0|background
+0|brand
+0|sportswear
+0|logo
+0|on the increase
+0|advantage
+0|guarantee
+0|purchase
+0|designer
+0|gymnast
+0|slogan
+0|specific
+0|symbol
+0|marathon
+0|score
+0|ministry
+0|final
+0|champion
+0|quality
+0|ultimate
+0|rise to one's feet
+0|victory
+0|dramatically
+0|protest
+0|declare
+0|borough
+0|competitor
+0|tough
+0|endanger
+0|reserve
+0|habitat
+0|extinct
+0|struggle
+0|wildlife
+0|protect
+0|poacher
+0|antelope
+0|battle
+0|plateau
+0|ideal
+0|shawl
+0|herd
+0|worth
+0|skin
+0|spot
+0|raid
+0|confiscate
+0|condition
+0|meanwhile
+0|dealer
+0|aim
+0|reptile
+0|involve
+0|live
+0|lay
+0|wonder
+0|insect
+0|mammal
+0|bald
+0|be concerned about sth.
+0|whale
+0|ibis
+0|feed on
+0|brink
+0|extinction
+0|initial
+0|stand for
+0|branch
+0|continent
+0|focus
+0|energy
+0|waste
+0|monitor
+0|set up
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 307
+# Total Entries Extracted: 307
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 307
+# -------------------------------

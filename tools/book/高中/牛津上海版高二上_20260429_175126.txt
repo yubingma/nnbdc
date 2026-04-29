@@ -1,0 +1,293 @@
+0|promise
+0|straight
+0|get straight A's
+0|keep one's word
+0|despite
+0|Seoul
+0|South Korea
+0|shuttle
+0|resort
+0|be dying to
+0|be dying to do something
+0|scramble
+0|check in
+0|slope
+0|floodlight
+0|suit
+0|ski
+0|instructor
+0|gentle
+0|sideways
+0|point
+0|tip
+0|cross
+0|in case
+0|to be honest
+0|success
+0|definitely
+0|manage to do
+0|nevertheless
+0|athletics
+0|the Olympic Games
+0|the Olympics
+0|athlete
+0|compete
+0|participate
+0|refer to
+0|track event
+0|field event
+0|combine
+0|event
+0|hurdling
+0|shot-put
+0|discus
+0|javelin
+0|marathon
+0|endurance
+0|require
+0|a series of
+0|competition
+0|category
+0|decathlon
+0|all-round
+0|physical
+0|be equal in
+0|in many ways
+0|motto
+0|desire
+0|humanity
+0|soar
+0|tutorial
+0|fee
+0|reasonable
+0|command of
+0|tutor
+0|qualified
+0|sincere
+0|confidence
+0|cheat
+0|make money
+0|attend
+0|be forced to
+0|be forced to do something
+0|supplementary
+0|comic
+0|video
+0|arcade
+0|video arcade
+0|as a result
+0|as a result of
+0|recommendation
+0|enrol
+0|detective
+0|be willing to
+0|be willing to do something
+0|factor
+0|solution
+0|describe ... as
+0|pace
+0|at one's own pace
+0|convenient
+0|be convenient for
+0|degree
+0|career
+0|interest
+0|correspondence
+0|correspondence course
+0|audio
+0|disc
+0|mail
+0|comment
+0|make comments
+0|e-learning
+0|software
+0|Internet
+0|on one's own
+0|freedom
+0|adapt ... to
+0|self-discipline
+0|achievement
+0|sense of achievement
+0|sense of satisfaction
+0|fashion
+0|fashionable
+0|illustrate
+0|bring along
+0|object
+0|blouse
+0|a piece of clothing
+0|extravagant
+0|afford
+0|be keen on
+0|contest
+0|sight
+0|appreciate
+0|search for
+0|cool
+0|trainers
+0|ruin
+0|blonde
+0|wig
+0|close down
+0|affect
+0|beaver
+0|fur
+0|extinct
+0|go out of style
+0|saying
+0|uniform
+0|school uniform
+0|public school
+0|elementary
+0|Maryland
+0|go against
+0|reduce
+0|programme
+0|promote
+0|link
+0|be linked to
+0|gang
+0|decrease
+0|peer
+0|pressure
+0|peer pressure
+0|academic
+0|resistance
+0|complain
+0|individuality
+0|court
+0|unlikely
+0|adopt
+0|nationwide
+0|drive-in
+0|stand
+0|California
+0|car park
+0|tidy
+0|immediately
+0|staff
+0|impress
+0|service
+0|read
+0|set up
+0|outlet
+0|expand
+0|launch
+0|branch
+0|swiftly
+0|take over
+0|ownership
+0|stand for
+0|detail
+0|establish
+0|import
+0|as well as
+0|pack
+0|personnel
+0|no doubt
+0|chain store
+0|be likely to
+0|be likely to do something
+0|of some kind
+0|bakery
+0|convenience store
+0|pop into
+0|roll
+0|hotpot
+0|appliance
+0|meet one's needs
+0|range
+0|a wide range of
+0|well-lit
+0|operate
+0|laptop
+0|thanks to
+0|magic
+0|virtual
+0|reality
+0|virtual reality
+0|headset
+0|image
+0|data
+0|reach out
+0|enable
+0|distinguish
+0|distinguish ... from ...
+0|observe
+0|thrill
+0|hand-feed
+0|dinosaur
+0|manufacture
+0|metal
+0|inspect
+0|concerned
+0|critic
+0|powerful
+0|medium
+0|commit
+0|get used to
+0|experiment
+0|for sure
+0|step into
+0|wearable
+0|performance
+0|monitor
+0|measure
+0|beat
+0|perform
+0|currently
+0|equipment
+0|before long
+0|keyboard
+0|sleeve
+0|electronic
+0|remove
+0|part
+0|fabric
+0|transform
+0|Mars
+0|dream of
+0|interplanetary
+0|come true
+0|Martian
+0|the greenhouse effect
+0|expedition
+0|conduct
+0|landing
+0|sign
+0|spacesuit
+0|carbon dioxide
+0|gravity
+0|solar
+0|orbit
+0|polar
+0|ice cap
+0|spray
+0|reflect
+0|retain
+0|melt
+0|vapour
+0|water vapour
+0|convert
+0|oxygen
+0|go up to
+0|migrate
+0|breathable
+0|inhabitant
+0|transformation
+0|manned
+0|tie
+0|rocket
+0|boom
+0|consume
+0|explosion
+0|name after
+0|mission
+0|lunar
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 286
+# Total Entries Extracted: 286
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 286
+# -------------------------------

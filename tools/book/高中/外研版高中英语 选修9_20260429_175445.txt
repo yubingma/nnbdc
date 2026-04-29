@@ -1,0 +1,372 @@
+0|come to life
+0|make ... out of ...
+0|refined
+0|be connected with
+0|charming
+0|domineering
+0|rebel
+0|treat ... as ...
+0|be ready to
+0|pass ...  off as sth.
+0|succeed in doing sth.
+0|complexion
+0|likeable
+0|recognise ... as ...
+0|insensitive
+0|rather than
+0|become of
+0|crush
+0|superior
+0|slipper
+0|thunder
+0|bitter
+0|submission
+0|uneasy
+0|lofty
+0|complain of
+0|presume
+0|moderate
+0|champagne
+0|recollect
+0|writhe
+0|sincere
+0|reasonably
+0|irritation
+0|subjective
+0|ignorant
+0|prayer
+0|impatiently
+0|desperation
+0|enlightened
+0|impressed
+0|thrust
+0|rattle
+0|condescend
+0|trivial
+0|stand
+0|bite
+0|munch
+0|confirmed
+0|bachelor
+0|stir
+0|dreamy
+0|genial
+0|afterthought
+0|chap
+0|dishonest
+0|monologue
+0|solicitor
+0|shove
+0|decent
+0|morality
+0|respectable
+0|take after
+0|hereditary
+0|have an influence on
+0|have an enormous influence on
+0|question
+0|investigation
+0|perform an operation
+0|alter
+0|consequence
+0|trait
+0|to a great extent
+0|in detail
+0|nonetheless
+0|insure
+0|modify
+0|regulatory
+0|label
+0|molecular
+0|resistance
+0|drought
+0|resistant
+0|insecticide
+0|carcinogen
+0|transfer
+0|approve
+0|soybean
+0|oppose
+0|pimento
+0|edible
+0|transgenic
+0|issue
+0|inspection
+0|evolve
+0|bare
+0|indescribably
+0|frail
+0|fancy
+0|queer
+0|peculiar
+0|flaxen
+0|shaft
+0|shudder
+0|dawn
+0|differentiate
+0|archaeology
+0|archaeological
+0|terracotta
+0|warrior
+0|clay
+0|unify
+0|crossbow
+0|pit
+0|hollow
+0|glue
+0|inscribe
+0|protect ... from ...
+0|tribe
+0|individual
+0|unsurprisingly
+0|set off
+0|collapse
+0|prosperity
+0|rival
+0|feudal
+0|luxurious
+0|mausoleum
+0|be fully aware of
+0|be impressed by
+0|subsequent
+0|vault
+0|formation
+0|array
+0|reproduction
+0|stylised
+0|revelation
+0|inner
+0|centralise
+0|authority
+0|stiff
+0|simplicity
+0|chubby
+0|naively
+0|veteran
+0|accessory
+0|distinction
+0|rank
+0|intermediate
+0|stance
+0|infantryman
+0|archer
+0|all in all
+0|portray
+0|invaluable
+0|banish
+0|raiment
+0|gem
+0|stud
+0|bedecked
+0|glimmer
+0|pendant
+0|undismayed
+0|serpent
+0|roam
+0|bestride
+0|outlast
+0|supreme
+0|savage
+0|ford
+0|gaze
+0|chill
+0|halt
+0|oar
+0|whirlpool
+0|roar
+0|bay
+0|conscience
+0|grieve
+0|mandarin
+0|apart from
+0|overtake
+0|Muslim
+0|under the control of
+0|expand
+0|more or less
+0|be based on
+0|on average
+0|trend
+0|definition
+0|ceremonial
+0|outlook
+0|bleak
+0|document
+0|refer to ... as ...
+0|enthusiasm
+0|inquiry
+0|distort
+0|extract
+0|ornament
+0|discourse
+0|disposition
+0|execute
+0|counsel
+0|marshalling
+0|sloth
+0|affectation
+0|scholar
+0|bound
+0|crafty
+0|confute
+0|swallow
+0|digest
+0|diligence
+0|deputy
+0|distill
+0|flashy
+0|virus
+0|worm
+0|file
+0|avalanche
+0|infect
+0|attachment
+0|set foot on
+0|prosper
+0|lead to
+0|Christianity
+0|needless to say
+0|resent
+0|hostile
+0|brutal
+0|collaboration
+0|starvation
+0|chief
+0|invader
+0|nomadic
+0|mount
+0|fearless
+0|livestock
+0|make peace
+0|make peace with sb.
+0|in turn
+0|reservation
+0|junk
+0|primarily
+0|immigrant
+0|pursue
+0|await
+0|consist of
+0|elusive
+0|void
+0|manufacturer
+0|atmosphere
+0|irrigation
+0|in particular
+0|sufficient
+0|dependent
+0|vital
+0|credit
+0|ease
+0|tension
+0|ailing
+0|recover
+0|transcontinental
+0|stretch
+0|blast
+0|untapped
+0|spur
+0|territory
+0|cultivate
+0|profitable
+0|virtually
+0|riot
+0|enact
+0|exclusion
+0|repeal
+0|barrier
+0|initiate
+0|removal
+0|acquaint
+0|execution
+0|warfare
+0|bayonet
+0|stockade
+0|drizzle
+0|nugget
+0|seal
+0|doom
+0|brigand
+0|enormity
+0|conceal
+0|greed
+0|exile
+0|groan
+0|of all time
+0|biographer
+0|lexicographer
+0|compile
+0|revise
+0|contract
+0|quotation
+0|playwright
+0|fault
+0|publication
+0|comprehensive
+0|slip
+0|obsolete
+0|enlarge
+0|prolific
+0|landau
+0|coachman
+0|clip-clop
+0|poplar
+0|forbidding
+0|mansion
+0|solemn
+0|immense
+0|rehearse
+0|make sb.'s acquaintance
+0|momentary
+0|mutual
+0|embarrassment
+0|tick
+0|muffled
+0|clank
+0|asylum
+0|criminally
+0|insane
+0|arguable
+0|assist
+0|see the light
+0|see the light of day
+0|sort
+0|motive
+0|actuate
+0|mercenary
+0|accessibility
+0|electronic
+0|computerise
+0|complexity
+0|navigate
+0|apparatus
+0|encyclopaedic
+0|entry
+0|multimedia
+0|audio
+0|thesaurus
+0|synonym
+0|organically
+0|devise
+0|faculty
+0|abstract
+0|entitle
+0|considerable
+0|bulky
+0|voluminous
+0|ample
+0|massive
+0|alphabetical
+0|relevant
+0|buzzword
+0|broadband
+0|alternative
+0|linguistic
+0|browse
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 365
+# Total Entries Extracted: 365
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 365
+# -------------------------------

@@ -1,0 +1,1284 @@
+0|abandon oneself to
+0|above all
+0|according to
+0|account for
+0|accuse ... of ...
+0|act as
+0|adapt to
+0|add in
+0|adjust to
+0|admit doing sth.
+0|after all
+0|agree on
+0|ahead of
+0|aim at
+0|all alone
+0|all but
+0|all of a sudden
+0|all one's life
+0|all over
+0|all right
+0|all round
+0|all around
+0|all the best
+0|all the same
+0|all the way
+0|all through
+0|all together
+0|allow for
+0|along with
+0|and so on
+0|answer for
+0|anything but
+0|apart from
+0|apologize to sb. for sth.
+0|apologize to sb. for doing sth.
+0|appeal to
+0|apply for
+0|approve of
+0|arise from
+0|arm in arm
+0|around the corner
+0|arrive at
+0|as a consequence
+0|as a matter of fact
+0|as a result
+0|as far as
+0|as follows
+0|as for
+0|as if
+0|as though
+0|as long as
+0|so long as
+0|as soon as
+0|as usual
+0|as well
+0|as well as
+0|ask for
+0|at a distance
+0|at a loss
+0|at a low price
+0|at a time
+0|at all
+0|at all costs
+0|at any rate
+0|at ease
+0|at first
+0|at first sight
+0|at hand
+0|at last
+0|at least
+0|at length
+0|at most
+0|at the most
+0|at once
+0|at one's best
+0|at present
+0|at random
+0|at risk
+0|at one's convenience
+0|at one's expense
+0|at one's service
+0|at table
+0|at the age of
+0|at the beginning of
+0|at the bottom of
+0|at the end of
+0|at the moment
+0|at war
+0|at work
+0|attach ... to ...
+0|attempt to do sth.
+0|attend to
+0|attitude to
+0|attitude toward
+0|attribute ... to ...
+0|avoid doing sth.
+0|awake to
+0|back and forth
+0|bargain with sb. for sth.
+0|base ... on ...
+0|be able to do sth.
+0|be about to do sth.
+0|be absorbed in
+0|be abundant in
+0|be accustomed to
+0|be addicted to
+0|be admitted into
+0|be admitted to
+0|be angry with
+0|be anxious about
+0|be ashamed of
+0|be associated with
+0|be aware of
+0|be blessed with
+0|be bored with
+0|be bound to do sth.
+0|be busy with sth.
+0|be capable of
+0|be close to
+0|be concerned about
+0|be content with
+0|be crazy about
+0|be curious about
+0|be different from
+0|be equal to
+0|be faced with
+0|be familiar to
+0|be famous as
+0|be fit for
+0|be fond of
+0|be frightened to death
+0|be full of
+0|be good at
+0|be interested in
+0|be known as
+0|be likely to
+0|be lost in
+0|be opposed to
+0|be particular about
+0|be pleased at
+0|be pleased about
+0|be pleased with
+0|be popular with
+0|be proud of
+0|be ready for
+0|be related to
+0|be relevant to
+0|be responsible for
+0|be sensitive to
+0|be short for
+0|be similar to
+0|be strict in
+0|be supposed to
+0|be sure about
+0|be sure of
+0|be tired of
+0|be true of
+0|be unique to
+0|be willing to do sth.
+0|because of
+0|become of
+0|before long
+0|begin with
+0|believe in
+0|believe it or not
+0|belong to
+0|benefit from
+0|beyond control
+0|blame sb. for sth.
+0|blow away
+0|break away
+0|break away from
+0|bring about
+0|build up
+0|burn down
+0|burst into
+0|but for
+0|by accident
+0|by air
+0|by all means
+0|by chance
+0|by name
+0|by nature
+0|call attention to
+0|call at
+0|calm down
+0|can't but
+0|can't help but
+0|can't help doing sth.
+0|can't wait to
+0|care about
+0|carry away
+0|cast about for
+0|cast aside
+0|catch a glimpse of
+0|catch fire
+0|catch hold of
+0|catch on
+0|catch up
+0|catch up with
+0|cater for
+0|center on
+0|center upon
+0|change ... for ...
+0|change into
+0|change one's mind
+0|charge sb. with
+0|check in
+0|cheer ... on
+0|cheer up
+0|chew over
+0|chip in
+0|choke off
+0|clean up
+0|clear away
+0|clear up
+0|click on
+0|close down
+0|collect oneself
+0|come about
+0|come across
+0|come along
+0|come into being
+0|come out
+0|come to terms with
+0|come true
+0|come up with
+0|compare ... to ...
+0|compensate for
+0|complain about
+0|complain of
+0|concentrate on
+0|concentrate upon
+0|congratulate ... on ...
+0|congratulate ... upon ...
+0|connect with
+0|consider ... as ...
+0|consist in
+0|contrary to
+0|contribute to
+0|convince ... of ...
+0|cool down
+0|cool off
+0|correspond to
+0|count on
+0|count upon
+0|cross out
+0|crowd in
+0|cry out
+0|cut across
+0|dance to
+0|dare to
+0|date from
+0|day after day
+0|deal with
+0|debate on
+0|debate about
+0|decide on
+0|decide upon
+0|declare against
+0|dedicate ... to ...
+0|defend ... against ...
+0|defend ... from ...
+0|depend on
+0|depend upon
+0|deposit ... in ...
+0|descend from
+0|describe ... as ...
+0|develop into
+0|devote ... to ...
+0|die away
+0|differ from
+0|dig into
+0|distinguish between ... and ...
+0|dive into
+0|divide ... into ...
+0|do away with
+0|do harm to
+0|do without
+0|donate ... to ...
+0|dozens of
+0|draw a conclusion
+0|draw in
+0|dream about
+0|dream of
+0|dress up
+0|drop away
+0|drop out
+0|drop out of
+0|dry out
+0|due to
+0|each other
+0|earn a living
+0|earn one's living
+0|ease off
+0|eat one's words
+0|eat up
+0|either ... or ...
+0|end up with
+0|enjoy oneself
+0|enter for
+0|even as
+0|even if
+0|even though
+0|ever since
+0|every now and then
+0|every now and again
+0|every other
+0|except for
+0|exist in
+0|expose ... to ...
+0|face to face
+0|fade away
+0|fall in love with
+0|fall over
+0|fall behind
+0|far from
+0|far too
+0|feed on
+0|feel like
+0|feel one's way
+0|figure out
+0|fill in
+0|find out
+0|first of all
+0|fix on
+0|fix upon
+0|focus on
+0|focus upon
+0|for free
+0|for sale
+0|for sure
+0|for the time being
+0|free from
+0|from time to time
+0|get across
+0|get along
+0|get on
+0|get along with
+0|get on with
+0|get away from
+0|get away with
+0|get down to
+0|get in touch
+0|get in touch with
+0|get into
+0|get involved in
+0|get off
+0|get rid of
+0|get stuck
+0|get through
+0|get tired of
+0|give away
+0|give in
+0|give off
+0|give out
+0|give sb. a lift
+0|glare at
+0|go against
+0|go ahead
+0|go in for
+0|go on a diet
+0|go through
+0|had better
+0|hand back
+0|hang about
+0|hardly ... when ...
+0|have a class
+0|have classes
+0|have a cold
+0|have a gift for
+0|have a go
+0|have a good time
+0|have a great time
+0|have a hand in
+0|have a population of
+0|have a say in
+0|have a taste of
+0|have a temperature
+0|have a word with
+0|have an appetite for
+0|have an effect on
+0|have an eye for
+0|have an impact on
+0|have a desire to do
+0|have difficulty in
+0|have faith in
+0|have fun in
+0|have fun with
+0|have to
+0|have got to
+0|have ... in common
+0|have influence on
+0|have an influence on
+0|have something to do with
+0|have sth. on one's mind
+0|have sth. in stock
+0|have sth. to do
+0|have trouble doing sth.
+0|have trouble in doing sth.
+0|have words with
+0|hear about
+0|hear of
+0|heart and soul
+0|help oneself
+0|help oneself to
+0|help ... out
+0|help sb. with
+0|here you are
+0|hit on
+0|hit upon
+0|hold back
+0|how about
+0|how far
+0|how long
+0|hundreds of
+0|hunt for
+0|hurry into
+0|hurry up
+0|if only
+0|if possible
+0|impress on
+0|impress with
+0|improve on
+0|improve upon
+0|in a dilemma
+0|in a flash
+0|in a hurry
+0|in a rush
+0|in a moment
+0|in a nutshell
+0|in a row
+0|in a way
+0|in a whisper
+0|in whispers
+0|in a word
+0|in accordance with
+0|in addition
+0|in advance
+0|in agreement with
+0|in aid of
+0|in all
+0|in amazement
+0|in answer to
+0|in any case
+0|in appreciation of
+0|in battle
+0|in brief
+0|in case
+0|in case of
+0|in cash
+0|in celebration of
+0|in charge
+0|in charge of
+0|in common
+0|in company
+0|in comparison with
+0|in comparison to
+0|in conclusion
+0|in ... condition
+0|in confidence
+0|in contrast to
+0|in control
+0|in control of
+0|in danger
+0|in debt
+0|in demand
+0|in detail
+0|in disguise
+0|in effect
+0|in English
+0|in error
+0|in exchange
+0|in existence
+0|in the face of
+0|in fact
+0|in favor of
+0|in force
+0|in front
+0|in front of
+0|in future
+0|in general
+0|in hand
+0|in harmony
+0|in harmony with
+0|in honor of
+0|in hospital
+0|in line
+0|in memory of
+0|in nature
+0|in need
+0|in need of
+0|in no case
+0|in no hurry
+0|in no time
+0|in one's opinion
+0|in one's view
+0|in one's sight
+0|in one's turn
+0|in order
+0|in order that
+0|in order to do sth.
+0|in other words
+0|in pairs
+0|in part
+0|in particular
+0|in peace
+0|in person
+0|in place
+0|in place of
+0|in possession of
+0|in practice
+0|in praise of
+0|in preference to
+0|in private
+0|in public
+0|in rags
+0|in reality
+0|in recognition of
+0|in relief
+0|in response to
+0|in return
+0|in ruins
+0|in search of
+0|in season
+0|in shape
+0|in short
+0|in sight
+0|in silence
+0|in some case
+0|in spite of
+0|in store
+0|in sum
+0|in support of
+0|in surprise
+0|in terms of
+0|in that case
+0|in the abstract
+0|in the area of
+0|in the balance
+0|in the beginning
+0|in the charge of
+0|in the company of
+0|in the course of
+0|in the distance
+0|in the end
+0|in the flesh
+0|in the form of
+0|in the front of
+0|in the future
+0|in the history of
+0|in the hope of
+0|in the least
+0|in the long run
+0|in the meantime
+0|in the middle of
+0|in the mood for
+0|in the open air
+0|in the way
+0|in one's way
+0|in the world
+0|in theory
+0|in this way
+0|in time
+0|in total
+0|in trouble
+0|in turn
+0|in use
+0|in vain
+0|in view of
+0|in want of
+0|increase to
+0|infer from
+0|inferior to
+0|insist on
+0|insist upon
+0|instead of
+0|join hands
+0|join in
+0|join the army
+0|join up
+0|jot down
+0|judge ... from ...
+0|judge ... by ...
+0|judging by
+0|judging from
+0|jump the queue
+0|just a minute
+0|just a moment
+0|just about
+0|just now
+0|just so
+0|just then
+0|keep a record of
+0|keep an eye on
+0|keep an eye out
+0|keep an eye out for
+0|keep at
+0|keep away
+0|keep away from
+0|keep back
+0|keep fit
+0|keep from ...
+0|keep ... from ...
+0|keep ... in mind
+0|keep in touch
+0|keep in touch with
+0|keep it up
+0|keep off
+0|keep on doing
+0|keep one's balance
+0|keep one's eyes on
+0|keep one's head
+0|keep one's promise
+0|keep a promise
+0|keep one's word
+0|keep out of
+0|keep pace with
+0|keep to
+0|keep up
+0|keep up with
+0|kick off
+0|kill off
+0|kill time
+0|kind of
+0|knock about
+0|knock around
+0|know about
+0|know of
+0|know ... by heart
+0|know ... from ...
+0|lack of
+0|land on one's feet
+0|last but not least
+0|later on
+0|laugh at
+0|laugh one's head off
+0|lay aside
+0|lay down
+0|lay off
+0|lay out
+0|lay up
+0|lead a ... life
+0|lead the way
+0|lead to
+0|lead up to
+0|learn about
+0|learn of
+0|learn ... by heart
+0|learn from
+0|least of all
+0|leave a message
+0|leave ... alone
+0|leave aside
+0|leave behind
+0|leave for
+0|leave off
+0|leave out
+0|leave school
+0|lend sth. to sb.
+0|less than
+0|let alone
+0|let down
+0|let go
+0|let in
+0|let off
+0|let out
+0|let up
+0|lie down
+0|lie in
+0|lie with
+0|lift up
+0|link ... to ...
+0|link up
+0|link up with
+0|listen to
+0|little by little
+0|live by
+0|live in
+0|live on
+0|live through
+0|live up to
+0|lock up
+0|log in
+0|log on
+0|long after
+0|long before
+0|long for
+0|look about
+0|look around
+0|look about for
+0|look around for
+0|look after
+0|look ahead
+0|look as if
+0|look at
+0|look away
+0|look away from
+0|look back on
+0|look back upon
+0|look down on
+0|look down upon
+0|look for
+0|look forward to
+0|look in on
+0|look in at
+0|look into
+0|look like
+0|look on
+0|look upon
+0|look on ... as ...
+0|look upon ... as ...
+0|look out
+0|look out for
+0|look over
+0|look the same
+0|look through
+0|look to
+0|look up
+0|look up and down
+0|look up to
+0|lose control of
+0|lose face
+0|lose heart
+0|lose interest in
+0|lose one's balance
+0|lose one's head
+0|lose one's heart to
+0|lose one's life
+0|lose one's sight
+0|lose one's temper
+0|lose one's voice
+0|lose one's way
+0|lose out
+0|lose sight of
+0|lose touch with
+0|lose weight
+0|lots of
+0|major in
+0|make a choice
+0|make a decision
+0|make a difference
+0|make a face
+0|make a living
+0|make one's living
+0|make a promise
+0|make a speech
+0|make contact with
+0|make ends meet
+0|make an effort
+0|make for
+0|make friends
+0|make friends with
+0|make fun of
+0|make it
+0|make a fortune
+0|make one's fortune
+0|make one's way to
+0|make one's way toward
+0|make one's way through
+0|make out
+0|make progress
+0|make sense
+0|make sure
+0|make the best of
+0|make the most of
+0|make up
+0|make use of
+0|manage to do sth.
+0|masses of
+0|mean to do sth.
+0|mistake ... for ...
+0|mix up
+0|more and more
+0|more or less
+0|more than
+0|much too
+0|name after
+0|narrow escape
+0|needless to say
+0|neither ... nor ...
+0|never mind
+0|next to
+0|no longer
+0|no problem
+0|object to
+0|occur to
+0|of all time
+0|of course
+0|of one's own
+0|of the moment
+0|off duty
+0|on account of
+0|on all fours
+0|on and on
+0|on average
+0|on behalf of
+0|on board
+0|on business
+0|on condition that
+0|on contact
+0|on contact with
+0|on duty
+0|on earth
+0|on end
+0|on fire
+0|on foot
+0|on good terms with
+0|on guard
+0|on hand
+0|on holiday
+0|on occasion
+0|on offer
+0|on one's own
+0|on one's part
+0|on one's way
+0|on the way
+0|on one's way to
+0|on the way to
+0|on principle
+0|on purpose
+0|on sale
+0|on second thought
+0|on second thoughts
+0|on show
+0|on sight
+0|on the alert
+0|on the basis of
+0|on the brink of
+0|on the contrary
+0|on the decline
+0|on the increase
+0|on the one hand ... on the other ...
+0|on the one hand ... on the other hand ...
+0|on the phone
+0|on the point of doing sth.
+0|on the radio
+0|over the radio
+0|on the rise
+0|on the run
+0|on the spot
+0|on the stage
+0|on the tip of one's tongue
+0|on the way out
+0|on the whole
+0|on time
+0|on top of
+0|once again
+0|once in a blue moon
+0|once in a while
+0|once more
+0|once upon a time
+0|one after another
+0|one by one
+0|one day
+0|only if
+0|only to do sth.
+0|open up
+0|operate on
+0|or else
+0|or rather
+0|or so
+0|other than
+0|ought to
+0|out of breath
+0|out of control
+0|out of date
+0|out of order
+0|out of place
+0|out of respect
+0|out of sight
+0|out of the question
+0|out of work
+0|over and over
+0|over and over again
+0|owe ... to ...
+0|owing to
+0|pack up
+0|participate in
+0|pass away
+0|pass by
+0|pass down
+0|pass on
+0|pass out
+0|pass through
+0|pass up
+0|pay a visit to
+0|pay attention to
+0|pay back
+0|pay for
+0|pay off
+0|pay up
+0|persist in
+0|persuade sb. to do sth.
+0|pick out
+0|pick up
+0|pile up
+0|play a joke on
+0|play jokes on
+0|play a part in
+0|play a role in
+0|play with
+0|plenty of
+0|point at
+0|polish up
+0|pour in
+0|pour out
+0|prefer to do sth.
+0|prefer to do rather than do
+0|prepare for
+0|prevent sb. from doing sth.
+0|protect ... against
+0|protect ... from ...
+0|provide sth. for sb.
+0|provide sth. to sb.
+0|pull down
+0|pull in
+0|pull off
+0|pull out
+0|pull over
+0|pull round
+0|pull through
+0|pull up
+0|push ahead with
+0|push for
+0|push on
+0|push on with
+0|push one's way through
+0|push over
+0|put across
+0|put an end to
+0|put aside
+0|put away
+0|put back
+0|put by
+0|put down
+0|put forth
+0|put forward
+0|put ... in prison
+0|put ... into ...
+0|put sth. into action
+0|put sth. into effect
+0|put sth. into practice
+0|put off
+0|put on
+0|put one's finger on
+0|put one's foot in one's mouth
+0|put one's hand in one's pocket
+0|put out
+0|put pressure on
+0|put pressure upon
+0|put through
+0|put together
+0|put up
+0|put up with
+0|puzzle over
+0|quantities of
+0|quarrel with sb. about sth.
+0|quarrel with sb. over sth.
+0|queue up
+0|quite a few
+0|rain cats and dogs
+0|raise money
+0|raise one's eyebrows
+0|range from ... to ...
+0|rather than
+0|rather too
+0|reach out
+0|reach out to
+0|react against
+0|react to
+0|read out
+0|reckon on
+0|recognize ... as ...
+0|recommend doing sth.
+0|recover from
+0|refer to
+0|refer to ... as ...
+0|reflect on
+0|refuse to do sth.
+0|regard ... as ...
+0|regardless of
+0|regret doing sth.
+0|relate to
+0|relieve sb. of
+0|rely on
+0|remark on
+0|remark upon
+0|remember doing sth.
+0|remind sb. of sth.
+0|remind sb. to do sth.
+0|remind sb. not to do sth.
+0|replace ... with ...
+0|remove ... from ...
+0|resign from
+0|resign oneself to
+0|respond to
+0|result from
+0|result in
+0|retire from
+0|return to
+0|rid ... of ...
+0|ride on
+0|right away
+0|right now
+0|ring back
+0|ring off
+0|ring out
+0|ring up
+0|rip off
+0|rise to one's feet
+0|rise up against
+0|risk one's life
+0|rob sb. of sth.
+0|roll in
+0|roll over
+0|roll up
+0|round up
+0|rule out
+0|run across
+0|run after
+0|run away
+0|run for
+0|run into
+0|run out
+0|run out of
+0|run over
+0|run through
+0|see sb. off
+0|send for
+0|set in
+0|set about
+0|set an example to
+0|set aside
+0|set down
+0|set fire to
+0|set foot on
+0|set foot in
+0|set off
+0|set out
+0|set up
+0|settle down
+0|show off
+0|show up
+0|shut up
+0|side by side
+0|so as to
+0|so far
+0|speed up
+0|split up
+0|stand by
+0|stand for
+0|stand out
+0|stare at
+0|stay away
+0|stay in touch with
+0|stay up
+0|stick out
+0|stick to
+0|succeed in doing sth.
+0|such as
+0|suffer from
+0|sum up
+0|switch on
+0|take a breath
+0|take a chance
+0|take chances
+0|take a day off
+0|take a look at
+0|take a walk
+0|take action
+0|take advantage of
+0|take after
+0|take aim at
+0|take an interest in
+0|take apart
+0|take away
+0|take back
+0|take ... by surprise
+0|take care
+0|take care of
+0|take charge of
+0|take command of
+0|take control of
+0|take down
+0|take effect
+0|take exercise
+0|take ... for example
+0|take ... for granted
+0|take hold of
+0|take in
+0|take ... into account
+0|take ... into consideration
+0|take it easy
+0|take measures
+0|take notice of
+0|take off
+0|take office
+0|take on
+0|take one's seat
+0|take one's time
+0|take out
+0|take over
+0|take pains
+0|take part in
+0|take place
+0|take possession of
+0|take pride in
+0|take risks
+0|take sb. in one's arms
+0|take sb.'s advice
+0|take sb.'s place
+0|take sides with
+0|take the lead
+0|take the place of
+0|take turns
+0|take up
+0|talk of
+0|talk about
+0|talk to
+0|teach oneself
+0|tear down
+0|tear off
+0|tear up
+0|tell a joke
+0|tell jokes
+0|tell a lie
+0|tell lies
+0|tell apart
+0|tell by
+0|tell sb. about sth.
+0|tell the truth
+0|test out
+0|thanks to
+0|that is to say
+0|the day after tomorrow
+0|the other day
+0|think about
+0|think aloud
+0|think back to
+0|think highly of
+0|think well of
+0|think nothing of
+0|think of
+0|think of ... as ...
+0|think out
+0|think over
+0|think up
+0|thousands of
+0|throw away
+0|throw light on
+0|throw off
+0|throw oneself on
+0|throw up
+0|tidy up
+0|time and again
+0|till now
+0|tire out
+0|to be honest
+0|to one's credit
+0|to sb.'s delight
+0|to sb.'s surprise
+0|to the contrary
+0|to the point
+0|together with
+0|too much
+0|too ... to ...
+0|trade with
+0|translate ... into ...
+0|treat ... as ...
+0|treat ... to ...
+0|trick sb. into doing sth.
+0|trip over
+0|try for
+0|try one's best
+0|try out
+0|try to do sth.
+0|turn a blind eye to
+0|turn against
+0|turn around
+0|turn away
+0|turn back
+0|turn down
+0|turn in
+0|turn into
+0|turn off
+0|turn on
+0|turn one's back on
+0|turn out
+0|turn over
+0|turn to
+0|turn up
+0|under age
+0|under any circumstances
+0|under all circumstances
+0|under construction
+0|under control
+0|under pressure
+0|under repair
+0|under sb.'s direction
+0|under the charge of
+0|under the name of
+0|under way
+0|up and down
+0|up in the air
+0|up to
+0|up to date
+0|up to now
+0|up until
+0|upside down
+0|use up
+0|used to do sth.
+0|vary from ... to ...
+0|view ... as ...
+0|vote against
+0|vote for
+0|wait for
+0|wait on
+0|wait upon
+0|wake up
+0|walk along
+0|walk of life
+0|wander about
+0|wander around
+0|warm up
+0|warn ... of ...
+0|warn ... about ...
+0|warn against sth.
+0|warn sb. against doing sth.
+0|wash away
+0|wash down
+0|wash out
+0|wash up
+0|waste ... doing sth.
+0|waste ... on sth.
+0|waste ... in doing sth.
+0|waste one's breath
+0|watch for
+0|watch out
+0|watch over
+0|wear off
+0|wear out
+0|what about ...
+0|what for
+0|what if ...
+0|what's more
+0|what's up
+0|what's wrong with ...
+0|whether ... or ...
+0|win back
+0|wind up
+0|wipe off
+0|wipe out
+0|wish for
+0|with an average of
+0|with pleasure
+0|with respect to
+0|with the help of
+0|with the purpose of
+0|within limits
+0|within reach of
+0|without delay
+0|without doubt
+0|wonder at
+0|work as
+0|work at
+0|work on
+0|work out
+0|worry about
+0|would like to do sth.
+0|would love to do sth.
+0|would rather
+0|write down
+0|year after year
+0|year by year
+0|year in, year out
+0|yield to
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 1277
+# Total Entries Extracted: 1277
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 1277
+# -------------------------------

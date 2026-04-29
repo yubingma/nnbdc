@@ -1,0 +1,481 @@
+0|lantern
+0|carnival
+0|costume
+0|dress up
+0|dress sb. up
+0|march
+0|congratulation
+0|congratulate
+0|riddle
+0|ceremony
+0|samba
+0|make-up
+0|after all
+0|range
+0|range from ... to ...
+0|origin
+0|religion
+0|religious
+0|figure
+0|charm
+0|joy
+0|joyful
+0|gratitude
+0|harvest
+0|agricultural
+0|agriculture
+0|crop
+0|gather
+0|grateful
+0|feature
+0|decorate
+0|church
+0|significant
+0|fade
+0|fade away
+0|typical
+0|firecracker
+0|evil
+0|in spite of
+0|commercial
+0|commercialise
+0|commercialize
+0|commercialisation
+0|commercialization
+0|take advantage of
+0|medium
+0|media
+0|the media
+0|reflect
+0|belief
+0|faith
+0|occasion
+0|have sth. in common
+0|atmosphere
+0|lunar
+0|eve
+0|envelope
+0|Christmas carol
+0|merry
+0|Merry Christmas!
+0|pumpkin
+0|pudding
+0|mashed potatoes
+0|roast
+0|turkey
+0|roast turkey
+0|pleased
+0|firework
+0|frank
+0|to be frank
+0|go off
+0|except for
+0|inner
+0|autonomous
+0|region
+0|represent
+0|wrestling
+0|wrestle
+0|wrestler
+0|archery
+0|set off
+0|fancy
+0|robe
+0|eagle
+0|grace
+0|absolutely
+0|moment
+0|tent
+0|pot
+0|brief
+0|branch
+0|wedding
+0|clap
+0|respect
+0|horrible
+0|Coming-of-Age Day
+0|Rio
+0|Rio de Janeiro
+0|Carla
+0|Halloween
+0|Thanksgiving
+0|Thanksgiving Day
+0|La Tomatina
+0|Buol
+0|the Naadam Festival
+0|Inner Mongolia Autonomous Region
+0|Mongolian
+0|moral
+0|virtue
+0|dilemma
+0|moral dilemma
+0|faint
+0|illustrate
+0|precious
+0|entrust
+0|carry sb. through sth.
+0|marriage
+0|majority
+0|complain
+0|tuition
+0|fee
+0|tuition fees
+0|respond
+0|response
+0|union
+0|scholarship
+0|hire
+0|physician
+0|resident physician
+0|colleague
+0|reject
+0|rejection
+0|appoint
+0|clinic
+0|faraway
+0|elect
+0|election
+0|decade
+0|elsewhere
+0|tend
+0|tend to do sth.
+0|publish
+0|staff
+0|retire
+0|saving
+0|kindergarten
+0|principle
+0|passive
+0|scared
+0|scare
+0|sharp
+0|insurance
+0|energetic
+0|replace
+0|accident
+0|operation
+0|whisper
+0|midnight
+0|import
+0|export
+0|pole
+0|lap
+0|bite
+0|lip
+0|assist
+0|first aid
+0|pass away
+0|chairman
+0|memory
+0|in memory of
+0|chain
+0|cafe
+0|waitress
+0|pregnant
+0|disguise
+0|maple
+0|cart
+0|spill
+0|spilt
+0|spilled
+0|trip over
+0|limp
+0|tear
+0|in tears
+0|harm
+0|despair
+0|in despair
+0|might
+0|a great deal
+0|a great deal of
+0|fable
+0|court
+0|flexible
+0|income
+0|per
+0|therefore
+0|tension
+0|Peking Union Medical College
+0|the Wenhai Scholarship
+0|the OB-GYN department
+0|Department of Obstetrics and Gynecology
+0|the People's Republic of China
+0|the National People's Congress
+0|the North Pole
+0|the South Pole
+0|Henry Norman Bethune
+0|diverse
+0|diversity
+0|fortune
+0|fortune cookie
+0|gumbo
+0|nachos
+0|chip
+0|cheese
+0|spicy
+0|ethnic
+0|admit
+0|definitely
+0|occur
+0|downtown
+0|mission
+0|district
+0|graffiti
+0|comic
+0|afterwards
+0|afterward
+0|head to
+0|historical
+0|seek
+0|sought
+0|seek one's fortune
+0|earn
+0|earn a living
+0|immigrant
+0|select
+0|china
+0|jazz
+0|bar
+0|diagram
+0|journal
+0|claim
+0|series
+0|series of
+0|apart from
+0|aside from
+0|minority
+0|escape
+0|bring about
+0|Atlantic
+0|financial
+0|poetry
+0|jeans
+0|boot
+0|mushroom
+0|poisonous
+0|poison
+0|fold
+0|super
+0|collection
+0|accessory
+0|souvenir
+0|percentage
+0|climate
+0|mild
+0|settle
+0|construction
+0|material
+0|to name but a few
+0|tai chi
+0|t'ai chi
+0|clothing
+0|herbal
+0|suit
+0|first hand
+0|at first hand
+0|item
+0|contain
+0|neat
+0|San Francisco
+0|Napa Valley
+0|the Golden Gate Bridge
+0|the Mission District
+0|Mexico
+0|California
+0|Cantonese
+0|the Richmond District
+0|Huangguoshu Waterfall
+0|Journey to the West
+0|Tin How Temple
+0|Bank of Canton
+0|Portsmouth
+0|Robert Louis Stevenson
+0|astronaut
+0|procedure
+0|mental
+0|cm
+0|centimetre
+0|centimeter
+0|intelligent
+0|rocket
+0|gravity
+0|frontier
+0|vehicle
+0|universe
+0|determined
+0|determine
+0|satellite
+0|launch
+0|orbit
+0|giant
+0|leap
+0|leapt
+0|leaped
+0|mankind
+0|agency
+0|transmit
+0|data
+0|disappointed
+0|desire
+0|carry on
+0|ongoing
+0|on board
+0|independently
+0|independent
+0|spacecraft
+0|spacewalk
+0|jade
+0|dock
+0|signal
+0|in the hope of doing sth.
+0|so as to
+0|so as to do sth.
+0|recycle
+0|muscle
+0|lack
+0|float
+0|otherwise
+0|beyond
+0|solar
+0|solar system
+0|current
+0|figure out
+0|sufficient
+0|soap
+0|towel
+0|microwave
+0|microwave oven
+0|tissue
+0|facility
+0|keen
+0|globe
+0|argue
+0|argument
+0|fatal
+0|shallow
+0|result in
+0|pattern
+0|analysis
+0|analyses
+0|as a result
+0|high-end
+0|monitor
+0|regularly
+0|regular
+0|foam
+0|pillow
+0|smartphone
+0|resource
+0|limited
+0|provide for sb.
+0|closing
+0|in closing
+0|mystery
+0|run out
+0|attach
+0|oxygen
+0|Sputnik
+0|the USSR
+0|the Union of Soviet Socialist Republics
+0|Yuri Gagarin
+0|Neil Armstrong
+0|NASA
+0|National Aeronautics and Space Administration
+0|Voyager
+0|Soyuz
+0|Challenger
+0|the International Space Station
+0|Jade Rabbit
+0|Mars
+0|Jupiter
+0|Typhoon Goni
+0|GPS
+0|global positioning system
+0|basis
+0|on the basis of
+0|loan
+0|take out a loan
+0|plastic
+0|apologise
+0|apologize
+0|ignore
+0|in return
+0|judge
+0|scene
+0|narrator
+0|narration
+0|bet
+0|make a bet
+0|servant
+0|as a matter of fact
+0|by accident
+0|sail
+0|spot
+0|consulate
+0|dare
+0|sort
+0|mining
+0|patience
+0|to be honest
+0|ought to
+0|be about to do sth.
+0|indicate
+0|beneath
+0|postpone
+0|odd
+0|obligation
+0|intention
+0|nowhere
+0|in case
+0|extent
+0|to ... extent
+0|opera
+0|musical
+0|dinosaur
+0|hug
+0|pursue
+0|duty
+0|on duty
+0|hesitate
+0|sequence
+0|eventually
+0|tailor
+0|clerk
+0|manner
+0|in a ... manner
+0|downstairs
+0|stair
+0|aside
+0|frown
+0|in that case
+0|option
+0|broad
+0|indeed
+0|normal
+0|willing
+0|be willing to do sth.
+0|element
+0|plot
+0|ambassador
+0|upper-class
+0|upper
+0|the upper class
+0|maintain
+0|permission
+0|permit
+0|saying
+0|external
+0|Roderick
+0|Oliver
+0|Henry Adams
+0|The Phantom of the Opera
+0|Reid
+0|Todd
+0|Portia Langham
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 474
+# Total Entries Extracted: 474
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 474
+# -------------------------------

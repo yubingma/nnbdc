@@ -1,0 +1,243 @@
+0|take action
+0|boyhood
+0|ambition
+0|trainee
+0|correspondent
+0|bullfighting
+0|historical
+0|detective
+0|ultimately
+0|dot
+0|backwards
+0|admission
+0|make up one's mind
+0|pass up
+0|have second thoughts
+0|put off
+0|reject ... out of hand
+0|weigh up
+0|participation
+0|complex
+0|diverge
+0|undergrowth
+0|numerous
+0|commercial
+0|thoughtful
+0|symbolize
+0|alternative
+0|dilemma
+0|arise
+0|circumstance
+0|mixture
+0|affection
+0|qualified
+0|fluency
+0|sincerely
+0|yours sincerely
+0|refreshments
+0|shift
+0|be reunited with
+0|weaken
+0|pessimistic
+0|anticipate
+0|possession
+0|abnormal
+0|widespread
+0|recognition
+0|phrase
+0|cooperate
+0|fee
+0|university fees
+0|outstretched
+0|cram
+0|pure
+0|transparent
+0|vexed
+0|absurd
+0|lean
+0|Madame
+0|stroke
+0|instinctively
+0|despair
+0|luxury
+0|gateway
+0|oasis
+0|glorious
+0|boast
+0|grotto
+0|testimony
+0|statue
+0|mural
+0|religious
+0|Apsaras
+0|immortal
+0|heavenly
+0|peak
+0|Taoist priest
+0|scroll
+0|ceramics
+0|crossroads
+0|expo
+0|strengthen
+0|coverage
+0|scholar
+0|department
+0|institute
+0|I Ching
+0|The Analects
+0|Sinologist
+0|temple
+0|tune
+0|shepherd
+0|historian
+0|prior
+0|prior to
+0|genius
+0|chamber
+0|romance
+0|kingdom
+0|stratagem
+0|enormous
+0|forehead
+0|blank
+0|dizzy
+0|chairwoman
+0|sunrise
+0|potential
+0|bug
+0|enterprising
+0|input
+0|obstacle
+0|phase
+0|manufacturer
+0|cosmetics
+0|purchase
+0|distribution
+0|bonus
+0|entrepreneurial
+0|guidance
+0|consultant
+0|conventional
+0|discriminate
+0|equator
+0|estate
+0|superior
+0|mild
+0|calorie
+0|subjective
+0|freshman
+0|make ends meet
+0|afloat
+0|interfere
+0|interfere with
+0|rational
+0|exceed
+0|go into debt
+0|financial
+0|accumulate
+0|automatically
+0|toddler
+0|sorrow
+0|frustration
+0|hire
+0|designer clothes
+0|rent out
+0|thereby
+0|supervision
+0|expense
+0|at the expense of
+0|abuse
+0|theft
+0|purse
+0|civilisation
+0|intrigue
+0|bury
+0|pyramid
+0|astronomy
+0|canal
+0|tropical
+0|cyclone
+0|megadrought
+0|downfall
+0|ruin
+0|fall into ruin
+0|abandon
+0|dismiss
+0|expansion
+0|getaway
+0|make a getaway
+0|run for one's life
+0|check out
+0|test the waters
+0|steer clear of
+0|retreat
+0|subdue
+0|the unknown
+0|set out
+0|uncharted
+0|delve
+0|throw oneself into
+0|think twice
+0|shrink
+0|shrink from
+0|look into
+0|investigation
+0|shipwreck
+0|archaeological
+0|coral
+0|millimetre
+0|barreleye
+0|upwards
+0|trench
+0|equivalent
+0|stack
+0|furthermore
+0|notable
+0|substance
+0|vessel
+0|drilling
+0|vol.
+0|volume
+0|become accustomed to
+0|notion
+0|hazardous
+0|unexceptional
+0|shuttle
+0|the space shuttle
+0|excursion
+0|rekindle
+0|tragically
+0|instantaneously
+0|shadow
+0|cast a shadow on
+0|scream
+0|suspend
+0|crew
+0|simulated
+0|simulator
+0|lifelike
+0|submit
+0|awesome
+0|telescope
+0|the naked eye
+0|angle
+0|galaxy
+0|cosmic
+0|conceivably
+0|subatomic
+0|particle
+0|invisible
+0|straightforward
+0|self-discipline
+0|fetch
+0|muscle
+0|pepper
+0|sneeze
+0|disc
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 236
+# Total Entries Extracted: 236
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 236
+# -------------------------------

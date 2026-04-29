@@ -1,0 +1,351 @@
+0|integrity
+0|virtue
+0|licence
+0|loan
+0|adulthood
+0|milestone
+0|election
+0|wage
+0|tax
+0|have a say
+0|behind the wheel
+0|ambulance
+0|legal
+0|mature
+0|instantly
+0|childhood
+0|obey
+0|subtle
+0|gradual
+0|selfish
+0|organ donation
+0|approve
+0|steady
+0|tempt
+0|librarian
+0|household
+0|commute
+0|deposit
+0|commitment
+0|suitable
+0|minimum
+0|bittersweet
+0|boarder
+0|varied
+0|cherish
+0|routine
+0|primeval
+0|boa constrictor
+0|swallow
+0|prey
+0|chew
+0|digestion
+0|ponder
+0|masterpiece
+0|digest
+0|lay aside
+0|devote oneself to
+0|arithmetic
+0|disheartened
+0|tiresome
+0|at a glance
+0|consequence
+0|intimately
+0|golf
+0|politics
+0|necktie
+0|evidence
+0|airline
+0|memorable
+0|bond
+0|conclusion
+0|security
+0|moderator
+0|detox
+0|fundraising
+0|switch
+0|switch on
+0|motivate
+0|occupy
+0|profile
+0|distract
+0|constantly
+0|towel
+0|throw in the towel
+0|access
+0|rely
+0|rely on
+0|deadline
+0|procrastination
+0|appropriate
+0|spit
+0|headphones
+0|bin
+0|considerate
+0|promote
+0|clarify
+0|headline
+0|max out
+0|in contrast to
+0|district
+0|necessity
+0|toothpaste
+0|soap
+0|item
+0|unprecedentedly
+0|personal finances
+0|jar
+0|invest
+0|lifelong
+0|vision
+0|likewise
+0|objectively
+0|equip
+0|nail
+0|decade
+0|legendary
+0|fixture
+0|elderly
+0|tablet
+0|sympathy
+0|bunch
+0|a bunch of
+0|dusty
+0|shelf
+0|furniture
+0|mist
+0|brick
+0|exterior
+0|stationery
+0|saleswoman
+0|leadership
+0|organic
+0|recital
+0|jazz
+0|pop up
+0|humble
+0|compete
+0|emphasise
+0|reconstruction
+0|journalist
+0|era
+0|reform
+0|reform and opening-up
+0|pave
+0|pave the way
+0|socialist
+0|alongside
+0|initiative
+0|the Belt and Road Initiative
+0|solid
+0|economic
+0|occupation
+0|cafeteria
+0|emoji
+0|integral
+0|component
+0|category
+0|expand
+0|pictograph
+0|emotional
+0|gesture
+0|facial
+0|textspeak
+0|intention
+0|adaptation
+0|accessible
+0|soul
+0|tendency
+0|facilitate
+0|educator
+0|pictorial
+0|secondary
+0|comic
+0|costume
+0|urgently
+0|convincing
+0|boundary
+0|statistic
+0|assist
+0|tackle
+0|vital
+0|comrade
+0|tragic
+0|Ebola
+0|combat
+0|relieve
+0|specialist
+0|infectious
+0|clinic
+0|disinfect
+0|outbreak
+0|devotion
+0|vomit
+0|miracle
+0|van
+0|twin
+0|ward
+0|compensate
+0|collaborate
+0|mankind
+0|realistic
+0|minority
+0|cast
+0|inclusive
+0|culture shock
+0|joint
+0|harmonious
+0|mutual
+0|rewarding
+0|mount
+0|civil
+0|civil war
+0|slave
+0|confederate
+0|union
+0|civilian
+0|division
+0|bring forth
+0|conceive
+0|liberty
+0|dedicate
+0|endure
+0|battlefield
+0|portion
+0|altogether
+0|consecrate
+0|hallow
+0|detract
+0|nobly
+0|in vain
+0|perish
+0|influential
+0|communist
+0|halfway
+0|dramatically
+0|heritage
+0|inhabitant
+0|penguin
+0|habitat
+0|rat
+0|subsequently
+0|appetite
+0|multiply
+0|vegetation
+0|erosion
+0|parakeet
+0|chaos
+0|conservation
+0|virus
+0|decrease
+0|trap
+0|departure
+0|immunity
+0|explode
+0|collapse
+0|substantial
+0|incident
+0|intervention
+0|owe
+0|postscript
+0|pest
+0|ecology
+0|dissolve
+0|nutrient
+0|comparison
+0|visual
+0|session
+0|on behalf of
+0|herbal
+0|mysterious
+0|status
+0|criterion
+0|prosper
+0|rare
+0|biological
+0|apparently
+0|vast
+0|altitude
+0|variation
+0|thrive
+0|fossil
+0|floral
+0|vertebrate
+0|beehive
+0|endangered
+0|elsewhere
+0|invasion
+0|coexist
+0|secure
+0|greeting
+0|fox
+0|chacma baboon
+0|crime
+0|seaside
+0|suburb
+0|greedy
+0|thief
+0|commit
+0|urban
+0|predator
+0|newcomer
+0|flourish
+0|racoon
+0|container
+0|garbage
+0|lamb
+0|kebab
+0|garlic
+0|estimate
+0|migratory
+0|appreciate
+0|crucial
+0|restrict
+0|hiker
+0|kit
+0|optimistic
+0|clay
+0|cave
+0|heat wave
+0|indoors
+0|cope with
+0|fuel
+0|consumption
+0|supplement
+0|eliminate
+0|firefighter
+0|bring ... under control
+0|blaze
+0|fierce
+0|react
+0|monthly
+0|get rid of
+0|Mars
+0|advanced
+0|wipe
+0|wipe out
+0|nuclear
+0|terrifying
+0|hostile
+0|unmanned
+0|spacecraft
+0|orbit
+0|stunning
+0|agency
+0|consist
+0|consist of
+0|in the meantime
+0|infer
+0|expose
+0|astronaut
+0|dust
+0|capsule
+0|exposure
+0|trunk
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 344
+# Total Entries Extracted: 344
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 344
+# -------------------------------

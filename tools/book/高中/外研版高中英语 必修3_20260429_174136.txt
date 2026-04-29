@@ -1,0 +1,243 @@
+0|across
+0|boot
+0|continental
+0|face
+0|range
+0|landmark
+0|gallery
+0|situated
+0|symbol
+0|located
+0|architect
+0|project
+0|sculpture
+0|birthplace
+0|civilisation
+0|ancient
+0|opposite
+0|sign
+0|agreement
+0|whereabouts
+0|govern
+0|head
+0|representative
+0|parliament
+0|region
+0|geographical
+0|feature
+0|produce
+0|hunger
+0|income
+0|poverty
+0|human
+0|development
+0|index
+0|measure
+0|goal
+0|expectancy
+0|position
+0|educate
+0|figure
+0|household
+0|homeless
+0|charity
+0|crowded
+0|freeway
+0|inhabitant
+0|similarity
+0|unfortunate
+0|location
+0|tourism
+0|transport
+0|industrial
+0|polluted
+0|smart
+0|vast
+0|entertainment
+0|exchange
+0|disaster
+0|flood
+0|hurricane
+0|lightning
+0|thunderstorm
+0|tornado
+0|column
+0|experience
+0|cause
+0|current
+0|latitude
+0|furniture
+0|bury
+0|feather
+0|fur
+0|occur
+0|tropical
+0|equator
+0|rotating
+0|violent
+0|wave
+0|strike
+0|cemetery
+0|coffin
+0|ruin
+0|ash
+0|erupt
+0|lava
+0|tidal
+0|volcano
+0|previous
+0|eruption
+0|possibility
+0|earthquake
+0|terrifying
+0|luckily
+0|thankfully
+0|hopefully
+0|sadly
+0|fortunately
+0|warning
+0|worldwide
+0|active
+0|damage
+0|sandstorm
+0|frightening
+0|inland
+0|mass
+0|campaign
+0|dune
+0|desertification
+0|process
+0|citizen
+0|dust
+0|forecast
+0|strength
+0|cycle
+0|mask
+0|atmosphere
+0|carbon
+0|dioxide
+0|chemical
+0|environment
+0|garbage
+0|melt
+0|pollution
+0|recycle
+0|coastal
+0|concerned
+0|evidence
+0|major
+0|urgent
+0|pollute
+0|complain
+0|nutshell
+0|scary
+0|absolutely
+0|protection
+0|equal
+0|importance
+0|philosopher
+0|philosophy
+0|teaching
+0|thinker
+0|kindness
+0|order
+0|principle
+0|stress
+0|resign
+0|adviser
+0|influential
+0|love
+0|honesty
+0|justice
+0|bark
+0|contribution
+0|invent
+0|leather
+0|monk
+0|soft
+0|category
+0|sutra
+0|inventor
+0|argument
+0|freedom
+0|fuel
+0|condition
+0|bulletin
+0|canal
+0|civil
+0|cliff
+0|dam
+0|engineering
+0|gorge
+0|hydro-electric
+0|reservoir
+0|structure
+0|terminal
+0|date
+0|accommodate
+0|carving
+0|construction
+0|relic
+0|site
+0|Buddhist
+0|generate
+0|harness
+0|historical
+0|narrow
+0|poem
+0|submerge
+0|global
+0|watchtower
+0|remove
+0|freezing
+0|ridiculous
+0|enormous
+0|observatory
+0|foggy
+0|crash
+0|because of
+0|be known as
+0|ever since
+0|in terms of
+0|on the other hand
+0|little by little
+0|at the top of
+0|at the bottom of
+0|make efforts
+0|be connected with
+0|be close to
+0|pick up
+0|take off
+0|on average
+0|end up
+0|set fire to
+0|catch fire
+0|put out
+0|take place
+0|in all
+0|cut down
+0|be caught in
+0|one after another
+0|have a bad effect on
+0|take in
+0|give out
+0|in a nutshell
+0|look through
+0|be at war with
+0|bring up
+0|become interested in
+0|be proud of
+0|in conclusion
+0|for the first time
+0|date from
+0|hold back
+0|come true
+0|make sense
+0|bring an end to
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 236
+# Total Entries Extracted: 236
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 236
+# -------------------------------

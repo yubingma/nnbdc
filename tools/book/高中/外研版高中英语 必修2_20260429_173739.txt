@@ -1,0 +1,245 @@
+0|diet
+0|fat
+0|fit
+0|flu
+0|rare
+0|toothache
+0|unhealthy
+0|wealthy
+0|rarely
+0|proverb
+0|anxious
+0|captain
+0|injure
+0|injury
+0|pain
+0|painful
+0|normal
+0|lifestyle
+0|head
+0|eye
+0|overweight
+0|lung
+0|throat
+0|breathe
+0|pneumonia
+0|prescription
+0|symptom
+0|X-ray
+0|awful
+0|insurance
+0|questionnaire
+0|drug
+0|bronchitis
+0|cancer
+0|cigarette
+0|tobacco
+0|addictive
+0|cannabis
+0|cocaine
+0|danger
+0|addict
+0|inject
+0|needle
+0|powerful
+0|reduce
+0|nearby
+0|burglary
+0|crime
+0|criminal
+0|connection
+0|illegal
+0|ratio
+0|shoplifting
+0|treatment
+0|likely
+0|adult
+0|cafe
+0|disagree
+0|ban
+0|horrible
+0|affect
+0|participant
+0|recognise
+0|leaflet
+0|distraction
+0|jogging
+0|gymnastic
+0|audience
+0|choir
+0|classical
+0|composer
+0|conductor
+0|jazz
+0|musician
+0|orchestra
+0|saxophone
+0|court
+0|director
+0|genius
+0|lose
+0|musical
+0|peasant
+0|symphony
+0|talent
+0|Austria
+0|Austrian
+0|prince
+0|compose
+0|tour
+0|album
+0|ballad
+0|band
+0|catchy
+0|complex
+0|influence
+0|lyrics
+0|solo
+0|tune
+0|record
+0|lecturer
+0|mix
+0|like
+0|dislike
+0|artist
+0|colourful
+0|contemporary
+0|delightful
+0|drawing
+0|paint
+0|painter
+0|painting
+0|scene
+0|traditional
+0|alive
+0|aspect
+0|imitate
+0|observe
+0|reality
+0|style
+0|adopt
+0|aim
+0|stand
+0|unusual
+0|exhibition
+0|expression
+0|landscape
+0|portrait
+0|realise
+0|realistic
+0|watercolour
+0|destroy
+0|headline
+0|photograph
+0|celebrity
+0|economy
+0|politics
+0|photographer
+0|cosmonaut
+0|navigator
+0|taikonaut
+0|universe
+0|sailor
+0|orbit
+0|capsule
+0|flight
+0|congratulation
+0|aboard
+0|welcome
+0|historical
+0|achievement
+0|replace
+0|alien
+0|amateur
+0|astronomer
+0|autograph
+0|delighted
+0|fan
+0|spaceship
+0|telescope
+0|actor
+0|backstage
+0|part
+0|politician
+0|belief
+0|disbelief
+0|evidence
+0|cultural
+0|financial
+0|review
+0|royal
+0|found
+0|produce
+0|poster
+0|thriller
+0|comedy
+0|sword
+0|actress
+0|character
+0|female
+0|male
+0|masterpiece
+0|fiance
+0|rooftop
+0|leap
+0|graceful
+0|interest
+0|brave
+0|moving
+0|occasionally
+0|ad
+0|argue
+0|channel
+0|entertaining
+0|telly
+0|drama
+0|plot
+0|setting
+0|shark
+0|section
+0|be connected with
+0|take exercise
+0|be crazy about
+0|have a temperature
+0|lie down
+0|begin with
+0|put ... into ...
+0|become ill
+0|related to
+0|break into
+0|belong to
+0|become addicted to
+0|take one's advice
+0|in order to
+0|so as to
+0|give up
+0|be impressed with
+0|split up
+0|make a note of
+0|be tired of
+0|get tired of
+0|be fond of
+0|tell by
+0|put off
+0|take turns
+0|a series of
+0|in total
+0|now that
+0|believe in
+0|be similar to
+0|come out
+0|fall in love with
+0|be in love with
+0|play a part
+0|to one's surprise
+0|in surprise
+0|care about
+0|every now and then
+0|at the age of
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 238
+# Total Entries Extracted: 238
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 238
+# -------------------------------
