@@ -27,10 +27,8 @@ def generate_meta(target_dir):
 
     import re
     for txt_file in sorted(txt_files):
-        # 默认不要乱序书
-        if '乱序' in txt_file:
-            print(f"跳过乱序书: {txt_file}")
-            continue
+        # 包含乱序书
+
             
         # 词书名称缺省为去除了 .txt 后缀的文件名
         dict_name = os.path.splitext(txt_file)[0]

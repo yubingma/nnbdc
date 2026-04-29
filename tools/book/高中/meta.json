@@ -1,0 +1,593 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "",
+  "targetGameHallIds": [],
+  "books": [
+    {
+      "fileName": "100个句子记完3500个高考单词_20260428_141405.txt",
+      "dictName": "100个句子记完3500个高考单词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025上海市高考英语词汇手册 便携版_20260428_141511.txt",
+      "dictName": "2025上海市高考英语词汇手册 便携版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025维克多新高中英语词汇_20260428_135925.txt",
+      "dictName": "2025维克多新高中英语词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2025高考天津卷英语常用词词汇手册_20260428_141437.txt",
+      "dictName": "2025高考天津卷英语常用词词汇手册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026高考天津卷英语常用词词汇手册_20260428_135738.txt",
+      "dictName": "2026高考天津卷英语常用词词汇手册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "2026高考词汇闪过_20260428_140321.txt",
+      "dictName": "2026高考词汇闪过",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "20天背完高考核心词汇_20260428_174402.txt",
+      "dictName": "20天背完高考核心词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "24 天突破高考大纲词汇 3500_20260428_141158.txt",
+      "dictName": "24 天突破高考大纲词汇 3500",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "24 天突破高考英语必备短语_20260428_141124.txt",
+      "dictName": "24 天突破高考英语必备短语",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "PASS图解速记高中英语词汇正序版_20260428_142057.txt",
+      "dictName": "PASS图解速记高中英语词汇正序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "Pass图解速记高中英语词汇乱序版_20260428_141619.txt",
+      "dictName": "Pass图解速记高中英语词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "上外版高中英语必修第一册_20260429_180643.txt",
+      "dictName": "上外版高中英语必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "上外版高中英语必修第三册_20260429_180956.txt",
+      "dictName": "上外版高中英语必修第三册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "上外版高中英语必修第二册_20260429_180113.txt",
+      "dictName": "上外版高中英语必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "上外版高中英语选择性必修第一册_20260429_181033.txt",
+      "dictName": "上外版高中英语选择性必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "上外版高中英语选择性必修第二册_20260429_181111.txt",
+      "dictName": "上外版高中英语选择性必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "中等职业学校英语教学大纲_20260429_180926.txt",
+      "dictName": "中等职业学校英语教学大纲",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语1 - 必修_20260428_174322.txt",
+      "dictName": "人教版高中英语1 - 必修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语10 - 选修_20260428_180949.txt",
+      "dictName": "人教版高中英语10 - 选修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语11 - 选修_20260428_181019.txt",
+      "dictName": "人教版高中英语11 - 选修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语2 - 必修_20260428_174243.txt",
+      "dictName": "人教版高中英语2 - 必修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语3 - 必修_20260428_180545.txt",
+      "dictName": "人教版高中英语3 - 必修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语4 - 必修_20260428_180631.txt",
+      "dictName": "人教版高中英语4 - 必修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语5 - 必修_20260428_180704.txt",
+      "dictName": "人教版高中英语5 - 必修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语6 - 选修_20260428_180735.txt",
+      "dictName": "人教版高中英语6 - 选修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语7 - 选修_20260428_180808.txt",
+      "dictName": "人教版高中英语7 - 选修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语8 - 选修_20260428_180838.txt",
+      "dictName": "人教版高中英语8 - 选修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语9 - 选修_20260428_180919.txt",
+      "dictName": "人教版高中英语9 - 选修",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语必修第一册_20260428_174652.txt",
+      "dictName": "人教版高中英语必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语必修第三册_20260428_174513.txt",
+      "dictName": "人教版高中英语必修第三册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语必修第二册_20260428_174441.txt",
+      "dictName": "人教版高中英语必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语选择性必修第一册_20260428_174720.txt",
+      "dictName": "人教版高中英语选择性必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语选择性必修第三册_20260428_174550.txt",
+      "dictName": "人教版高中英语选择性必修第三册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版高中英语选择性必修第四册_20260428_174623.txt",
+      "dictName": "人教版高中英语选择性必修第四册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版高中英语必修第一册_20260429_180142.txt",
+      "dictName": "北师大版高中英语必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版高中英语必修第三册_20260429_180243.txt",
+      "dictName": "北师大版高中英语必修第三册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版高中英语必修第二册_20260429_180212.txt",
+      "dictName": "北师大版高中英语必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版高中英语选择性必修第一册_20260429_180312.txt",
+      "dictName": "北师大版高中英语选择性必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版高中英语选择性必修第三册_20260429_180424.txt",
+      "dictName": "北师大版高中英语选择性必修第三册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版高中英语选择性必修第二册_20260429_180343.txt",
+      "dictName": "北师大版高中英语选择性必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版高中英语选择性必修第四册_20260429_180534.txt",
+      "dictName": "北师大版高中英语选择性必修第四册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 必修1_20260429_174210.txt",
+      "dictName": "外研版高中英语 必修1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 必修2_20260429_173739.txt",
+      "dictName": "外研版高中英语 必修2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 必修3_20260429_174136.txt",
+      "dictName": "外研版高中英语 必修3",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 必修4_20260429_174016.txt",
+      "dictName": "外研版高中英语 必修4",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 必修5_20260429_174100.txt",
+      "dictName": "外研版高中英语 必修5",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 选修10_20260429_175318.txt",
+      "dictName": "外研版高中英语 选修10",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 选修11_20260429_175248.txt",
+      "dictName": "外研版高中英语 选修11",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 选修6_20260429_173653.txt",
+      "dictName": "外研版高中英语 选修6",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 选修7_20260429_175416.txt",
+      "dictName": "外研版高中英语 选修7",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 选修8_20260429_175348.txt",
+      "dictName": "外研版高中英语 选修8",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语 选修9_20260429_175445.txt",
+      "dictName": "外研版高中英语 选修9",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语选择性必修第一册_20260429_173940.txt",
+      "dictName": "外研版高中英语选择性必修第一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语选择性必修第三册_20260429_173810.txt",
+      "dictName": "外研版高中英语选择性必修第三册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语选择性必修第二册_20260429_173910.txt",
+      "dictName": "外研版高中英语选择性必修第二册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版高中英语选择性必修第四册_20260429_173838.txt",
+      "dictName": "外研版高中英语选择性必修第四册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "星火英语高中英语词汇乱序版_20260428_140003.txt",
+      "dictName": "星火英语高中英语词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版高一上_20260429_175219.txt",
+      "dictName": "牛津上海版高一上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版高一下_20260429_175150.txt",
+      "dictName": "牛津上海版高一下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版高三上_20260429_175032.txt",
+      "dictName": "牛津上海版高三上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版高三下_20260429_180559.txt",
+      "dictName": "牛津上海版高三下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版高二上_20260429_175126.txt",
+      "dictName": "牛津上海版高二上",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版高二下_20260429_175100.txt",
+      "dictName": "牛津上海版高二下",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津高中英语（模块一）_20260428_180510.txt",
+      "dictName": "牛津高中英语（模块一）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "维克多新高中英语词汇分级速记手册_20260428_140250.txt",
+      "dictName": "维克多新高中英语词汇分级速记手册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "蝶变单词 详解巧记高中英语词汇_20260428_141544.txt",
+      "dictName": "蝶变单词 详解巧记高中英语词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高中英语常考短语与句型_20260428_141227.txt",
+      "dictName": "高中英语常考短语与句型",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高中英语词汇乱序便携版_20260428_140039.txt",
+      "dictName": "高中英语词汇乱序便携版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高中英语词汇乱序版_20260428_140114.txt",
+      "dictName": "高中英语词汇乱序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高中英语词汇正序版_20260428_140145.txt",
+      "dictName": "高中英语词汇正序版",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高考历年真题核心高频688_20260428_141326.txt",
+      "dictName": "高考历年真题核心高频688",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高考英语 你还在背单词吗_20260428_140215.txt",
+      "dictName": "高考英语 你还在背单词吗",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "高考英语大纲词汇_20260428_135839.txt",
+      "dictName": "高考英语大纲词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    }
+  ]
+}
