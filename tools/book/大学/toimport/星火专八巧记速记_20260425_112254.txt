@@ -3026,7 +3026,7 @@
 0|deckhand
 0|firsthand
 0|highhanded
-0|oand
+0|offhand
 0|shorthand
 0|underhand
 0|handcuff

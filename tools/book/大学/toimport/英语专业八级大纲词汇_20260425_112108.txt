@@ -7954,7 +7954,7 @@
 0|offender
 0|offensive
 0|offer
-0|oand
+0|offhand
 0|office
 0|officer
 0|official

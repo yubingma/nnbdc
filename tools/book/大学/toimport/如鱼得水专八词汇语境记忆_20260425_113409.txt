@@ -3338,7 +3338,7 @@
 0|ode
 0|odour
 0|odor
-0|oand
+0|offhand
 0|oily
 0|omega
 0|omniscient

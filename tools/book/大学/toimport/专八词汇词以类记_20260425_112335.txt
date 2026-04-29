@@ -4698,7 +4698,7 @@
 0|monstrous
 0|negligent
 0|obstinate
-0|oand
+0|offhand
 0|ostentatious
 0|poignant
 0|prodigal

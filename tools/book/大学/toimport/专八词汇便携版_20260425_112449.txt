@@ -1513,7 +1513,7 @@
 0|obsess
 0|obsolete
 0|odds
-0|oand
+0|offhand
 0|omniscient
 0|oncoming
 0|ongoing

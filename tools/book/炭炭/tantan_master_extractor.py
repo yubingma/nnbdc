@@ -6,11 +6,11 @@ import sys
 # Mapping tables
 MAPPINGS = {
     "standard": {
-        '\x87': 'ff', '\x8a': 'ffi', '\x8c': 'ffl', '\x8e': 'fi', '\x90': 'fl',
+        '\x87': 'ff', '\x89': 'ffh', '\x8a': 'ffi', '\x8c': 'ffl', '\x8e': 'fi', '\x90': 'fl',
         '\x91': 'rf', '\x92': 'rt', '\x93': 'rv', '\x94': 'rx', '\x95': 'ry'
     },
     "shifted_14": {
-        '\x95': 'ff', '\x98': 'ffi', '\x9a': 'ffl', '\x9c': 'fi', '\x9e': 'fl',
+        '\x95': 'ff', '\x97': 'ffh', '\x98': 'ffi', '\x9a': 'ffl', '\x9c': 'fi', '\x9e': 'fl',
         '\x9f': 'rf', '\xa0': 'rt', '\xa1': 'rv', '\xa2': 'rx', '\xa3': 'ry'
     }
 }
@@ -107,6 +107,14 @@ def batch_process(source_dir):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        batch_process(sys.argv[1])
+        path = sys.argv[1]
+        if os.path.isdir(path):
+            batch_process(path)
+        elif os.path.isfile(path) and path.endswith('.pdf'):
+            txt_file = os.path.splitext(path)[0] + ".txt"
+            print(f"Processing {os.path.basename(path)}...")
+            extract_pdf(path, txt_file)
+        else:
+            print("Usage: python tantan_master_extractor.py <directory_or_pdf_file>")
     else:
-        print("Usage: python tantan_master_extractor.py <directory>")
+        print("Usage: python tantan_master_extractor.py <directory_or_pdf_file>")

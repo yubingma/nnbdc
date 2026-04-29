@@ -1310,7 +1310,7 @@
 0|occur
 0|odds
 0|offensive
-0|oand
+0|offhand
 0|ominous
 0|omniscient
 0|oncoming
