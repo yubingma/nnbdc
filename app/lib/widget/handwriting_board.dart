@@ -14,6 +14,17 @@ class HandwritingBoard extends StatefulWidget {
   final ValueNotifier<bool>? rightZoneVisibleNotifier;
   final VoidCallback? onHint;
 
+  final VoidCallback? onStartWriting;
+  final VoidCallback? onPointerUp;
+  final VoidCallback? onSwipeUp;
+  final VoidCallback? onSwipeDown;
+  final bool showCloseButton;
+  final bool showHeader;
+  final bool useBoxDecoration;
+  final bool showCanvasButtons;
+  final bool enableNavigationGestures;
+  final double smartRightZoneWidth;
+
   const HandwritingBoard({
     super.key,
     required this.onRecognized,
