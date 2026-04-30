@@ -2117,7 +2117,7 @@ class WordListPageState extends State<WordListPage>
     if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
             studyMode == WordListStudyMode.dictationHandwriting ||
         studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish)) {
+        studyMode == WordListStudyMode.speakEnglish) && (word.hintLetterCount ?? 0) > 0) {
       // 提示按钮已移至右侧点击区域
       actions.add(SlidableAction(
         onPressed: (_) => clearHint(word),
