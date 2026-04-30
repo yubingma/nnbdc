@@ -1714,8 +1714,8 @@ class WordListPageState extends State<WordListPage>
 
 
 
-    // 在默写（dictation）模式下，点击单词后让输入框自动获得焦点
-    if (studyMode == WordListStudyMode.dictation) {
+    // 在默写（dictation）或手写默写模式下，点击单词后让输入框获得焦点（用以触发大字号显示）
+    if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
       try {
         word.focusNode.requestFocus();
       } catch (e, stackTrace) {
@@ -2396,9 +2396,7 @@ class WordListPageState extends State<WordListPage>
     return AnimatedBuilder(
       animation: word.focusNode,
       builder: (context, child) {
-        final isActive = getBookMarkUiPosition() == i;
-        final hasFocus = word.focusNode.hasFocus;
-        final fontSize = (hasFocus || isActive) ? 22.0 : 16.0;
+        const fontSize = 16.0;
         final isHandwriting = studyMode == WordListStudyMode.dictationHandwriting;
         return TextField(
           readOnly: isHandwriting,

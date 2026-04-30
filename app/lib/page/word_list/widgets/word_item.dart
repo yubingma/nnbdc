@@ -434,8 +434,7 @@ class _WordItemState extends State<WordItem> {
     return AnimatedBuilder(
       animation: widget.word.focusNode,
       builder: (context, child) {
-        final hasFocus = widget.word.focusNode.hasFocus;
-        final fontSize = (hasFocus || widget.isBookmarked) ? 22.0 : 16.0;
+        const fontSize = 16.0;
         return Row(
           children: [
             Expanded(
