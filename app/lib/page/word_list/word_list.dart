@@ -3711,6 +3711,7 @@ class WordListPageState extends State<WordListPage>
                                     w.spellController.text = '';
                                     w.isAnswerProvidedBySystem = false;
                                     w.hintLetterCount = 0;
+                                    _detectedSimilarWord = null;
                                     // 同时重置 ASR 等临时状态
                                     asrResult = "";
                                     handlingAsrChinese = "";
