@@ -80,7 +80,13 @@ mixin WordsProvider {
   Future<bool?> getWordLearningStatus(String wordId) async => null;
 
   /// 批量获取单词的学习状态
-  Future<Map<String, bool?>> getWordsLearningStatus(List<String> wordIds) async => {};
+  Future<Map<String, bool?>> getWordsLearningStatus(List<String> wordIds) async {
+    final Map<String, bool?> results = {};
+    for (final id in wordIds) {
+      results[id] = await getWordLearningStatus(id);
+    }
+    return results;
+  }
 
   /// 当单词被标记为“掌握”时，是否保留在当前UI列表中（不自动移除）
   bool get keepWordsOnMaster => false;

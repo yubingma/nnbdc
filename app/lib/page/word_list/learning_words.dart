@@ -69,6 +69,30 @@ class LearningWordsProvider with WordsProvider {
     // 页面中的单词本身就是学习中的，返回 false 
     return false;
   }
+
+  @override
+  Future<Map<String, bool?>> getWordsLearningStatus(List<String> wordIds) async {
+    final user = Global.getLoggedInUser();
+    if (user == null || wordIds.isEmpty) return {};
+
+    final db = MyDatabase.instance;
+    final Map<String, bool?> result = {};
+
+    // 批量检查已掌握
+    final masteredSet = await db.masteredWordsDao.getMasteredWordIdSetForWords(user.id, wordIds);
+    for (var id in masteredSet) {
+      result[id] = true;
+    }
+
+    // 对于列表中的其他词，它们必然是学习中的（因为这是学习中列表）
+    for (var id in wordIds) {
+      if (!result.containsKey(id)) {
+        result[id] = false;
+      }
+    }
+
+    return result;
+  }
 }
 
 class LearningWordsProgressProvider implements WordProgressProvider {

@@ -51,6 +51,11 @@ class MasteredWordsProvider with WordsProvider implements WordModifier {
     return true;
   }
 
+  @override
+  Future<Map<String, bool?>> getWordsLearningStatus(List<String> wordIds) async {
+    return {for (var id in wordIds) id: true};
+  }
+
   Future<String?> _getMasteredDictId() async {
     final userId = Global.getLoggedInUser()?.id;
     if (userId == null) return null;
