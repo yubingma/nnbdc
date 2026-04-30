@@ -2639,8 +2639,7 @@ class WordListPageState extends State<WordListPage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          _buildLegendItem(
-              const Color(0xFF2196F3).withValues(alpha: 0.6), '学习中', isDarkMode),
+          _buildLegendItem(Colors.orange, '学习中', isDarkMode),
           const SizedBox(width: 16),
           _buildLegendItem(const Color(0xFF4CAF50), '已掌握', isDarkMode),
         ],
@@ -2653,11 +2652,11 @@ class WordListPageState extends State<WordListPage>
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 6,
+          height: 6,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(2),
+            shape: BoxShape.circle,
           ),
         ),
         const SizedBox(width: 6),
