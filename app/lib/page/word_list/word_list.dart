@@ -3128,6 +3128,17 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
+  void _clearHandwritingHints(WordWrapper? word) {
+    if (_detectedSimilarWord != null || (word?.hintLetterCount ?? 0) > 0) {
+      setState(() {
+        _detectedSimilarWord = null;
+        if (word != null) {
+          word.hintLetterCount = 0;
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final swBuild = Stopwatch()..start();
@@ -4333,15 +4344,14 @@ class WordListPageState extends State<WordListPage>
                     giveALittleHint(activeWord);
                   }
                 },
+                onUndo: () => _clearHandwritingHints(activeWord),
+                onRewrite: () => _clearHandwritingHints(activeWord),
                 onStartWriting: () {
                   _handwritingPaddingTimer?.cancel();
-                  if (_handwritingRightPadding != 0 || _detectedSimilarWord != null || (activeWord?.hintLetterCount ?? 0) > 0) {
+                  _clearHandwritingHints(activeWord);
+                  if (_handwritingRightPadding != 0) {
                     setState(() {
                       _handwritingRightPadding = 0;
-                      _detectedSimilarWord = null;
-                      if (activeWord != null) {
-                        activeWord.hintLetterCount = 0;
-                      }
                     });
                   }
                 },

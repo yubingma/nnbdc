@@ -41,7 +41,12 @@ class HandwritingBoard extends StatefulWidget {
     this.smartRightZoneWidth = 0.0,
     this.rightZoneVisibleNotifier,
     this.onHint,
+    this.onUndo,
+    this.onRewrite,
   });
+
+  final VoidCallback? onUndo;
+  final VoidCallback? onRewrite;
 
   @override
   State<HandwritingBoard> createState() => HandwritingBoardState();
@@ -81,10 +86,12 @@ class HandwritingBoardState extends State<HandwritingBoard> {
 
   void _clear() {
     clearBoard();
+    widget.onRewrite?.call();
   }
 
   void _incrementVersion() {
     _recognitionVersion++;
+    widget.onUndo?.call();
   }
 
   Future<void> _recognize() async {
