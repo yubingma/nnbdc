@@ -2797,7 +2797,7 @@ class WordListPageState extends State<WordListPage>
     if (learningStatus == true) {
       statusColor = const Color(0xFF4CAF50); // 已掌握 - 绿色
     } else if (learningStatus == false) {
-      statusColor = const Color(0xFF2196F3).withValues(alpha: 0.6); // 学习中 - 淡淡蓝色
+      statusColor = Colors.orange; // 学习中 - 橙色
     }
 
     // 确定背景色
