@@ -443,12 +443,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         
         // 定义中心化的感应区，更加适合平板书写习惯，减少运笔负荷
         final bool isNarrow = width < 500;
-        final double zoneWidth = (width * 0.28).clamp(70.0, 120.0);
+        // 如果有提示按钮，采用四按钮布局，宽度需要弄窄一些
+        final bool hasHint = widget.onHint != null;
+        final double zoneWidth = hasHint 
+            ? (width * 0.21).clamp(60.0, 95.0) 
+            : (width * 0.28).clamp(70.0, 120.0);
         final double zoneHeight = isNarrow ? 56 : 65;
         final double bottomMargin = isNarrow ? 20 : 40; 
-
-        // 如果有提示按钮，采用四按钮布局
-        final bool hasHint = widget.onHint != null;
         
         final rewriteZone = Rect.fromLTWH(
           width / 2 - (hasHint ? zoneWidth * 2.15 : zoneWidth * 1.6), 
