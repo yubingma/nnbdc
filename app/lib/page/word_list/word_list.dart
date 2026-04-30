@@ -1731,7 +1731,9 @@ class WordListPageState extends State<WordListPage>
     // 播放单词发音（背英文模式开始时不播放，避免泄露答案）
     final bool shouldPlaySound = playSound &&
         studyMode != WordListStudyMode.speakEnglish &&
-        studyMode != WordListStudyMode.hideEnglish;
+        studyMode != WordListStudyMode.hideEnglish &&
+        studyMode != WordListStudyMode.dictation &&
+        studyMode != WordListStudyMode.dictationHandwriting;
     if (shouldPlaySound) {
       debugPrint('播放单词发音: ${word.word.spell}');
       if (studyMode == WordListStudyMode.speakChinese) {
@@ -2986,6 +2988,9 @@ class WordListPageState extends State<WordListPage>
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
+                      setState(() {
+                        _isHandwritingOverlayOpen = true;
+                      });
                       onWordPressed(word, i, false, null);
                       _handwritingBoardKey.currentState?.clearBoardSilently();
                     },
@@ -4410,13 +4415,27 @@ class WordListPageState extends State<WordListPage>
                     });
                   }
                 },
-                onSwipeUp: () {
+                onSwipeUp: () async {
                   _handwritingBoardKey.currentState?.clearBoardSilently();
-                  jumpToNextWord(bookmarkedIndex, true, () {});
+                  // 播放当前离开单词的发音
+                  if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
+                    try {
+                      await SoundUtil.playPronounceSound2(
+                          words[bookmarkedIndex].word, audioPlayer);
+                    } catch (_) {}
+                  }
+                  jumpToNextWord(bookmarkedIndex, false, () {});
                 },
-                onSwipeDown: () {
+                onSwipeDown: () async {
                   _handwritingBoardKey.currentState?.clearBoardSilently();
-                  jumpToPreviousWord(bookmarkedIndex, true);
+                  // 播放当前离开单词的发音
+                  if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
+                    try {
+                      await SoundUtil.playPronounceSound2(
+                          words[bookmarkedIndex].word, audioPlayer);
+                    } catch (_) {}
+                  }
+                  jumpToPreviousWord(bookmarkedIndex, false);
                 },
                 onCancel: () {
                   setState(() {
