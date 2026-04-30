@@ -4476,57 +4476,64 @@ class WordListPageState extends State<WordListPage>
               left: 12,
               right: 12 + _handwritingRightPadding,
               top: 10,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.5), width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.info_outline, color: Colors.orangeAccent, size: 16),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '注意，你写成了另一个单词: ${_detectedSimilarWord!.spell}',
-                            style: const TextStyle(
-                              color: Colors.orangeAccent, 
-                              fontSize: 13, 
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.none,
+              child: GestureDetector(
+                onTap: () {
+                  Get.to(() => const WordDetailPage(),
+                      arguments: WordDetailPageArgs(_detectedSimilarWord!, true, null, false));
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.5), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Colors.orangeAccent, size: 16),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '注意，你写成了另一个单词: ${_detectedSimilarWord!.spell}',
+                              style: const TextStyle(
+                                color: Colors.orangeAccent, 
+                                fontSize: 13, 
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.none,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 22),
-                      child: Text(
-                        _detectedSimilarWord!.meaningItems?.map((e) => "${e.ciXing}. ${e.meaning}").join("; ") ?? "暂无释义",
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9), 
-                          fontSize: 12,
-                          decoration: TextDecoration.none,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                          const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 12),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 22),
+                        child: Text(
+                          _detectedSimilarWord!.meaningItems?.map((e) => "${e.ciXing}. ${e.meaning}").join("; ") ?? "暂无释义",
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9), 
+                            fontSize: 12,
+                            decoration: TextDecoration.none,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
