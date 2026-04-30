@@ -754,6 +754,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                         _controller.removeLast();
                       });
                       widget.onUndo();
+                      widget.onRecognize();
                       if (widget.lines.isEmpty) {
                         widget.onRewrite();
                       }
