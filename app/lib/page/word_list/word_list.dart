@@ -2644,6 +2644,7 @@ class WordListPageState extends State<WordListPage>
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildLegendItem(Colors.orange, '学习中', isDarkMode),
           const SizedBox(width: 16),
@@ -2656,6 +2657,7 @@ class WordListPageState extends State<WordListPage>
   Widget _buildLegendItem(Color color, String label, bool isDarkMode) {
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           width: 6,
@@ -2844,14 +2846,17 @@ class WordListPageState extends State<WordListPage>
                     width: 32,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
                           textScaler: const TextScaler.linear(1.0),
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 9,
-                            fontWeight: FontWeight.w500,
+                            height: 1.2,
+                            fontWeight: FontWeight.w600,
                             color: isDarkMode ? Colors.white38 : Colors.black38,
                           ),
                         ),
