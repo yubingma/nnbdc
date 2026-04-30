@@ -4362,13 +4362,15 @@ class WordListPageState extends State<WordListPage>
                           anchors.add({'idx': i, 'type': 'h'});
                         } else if (lowerTarget[i] == 'n') {
                           anchors.add({'idx': i, 'type': 'n'});
+                        } else if (lowerTarget[i] == 'a') {
+                          anchors.add({'idx': i, 'type': 'a'});
                         }
                       }
                       
                       // 2. 遍历用户输入的 text，基于“物理距离最近”判定真伪
                       for (int idx = 0; idx < text.length; idx++) {
                         final iChar = text[idx].toLowerCase();
-                        if ((iChar == 'd' || iChar == 'h' || iChar == 'n') && anchors.isNotEmpty) {
+                        if ((iChar == 'd' || iChar == 'h' || iChar == 'n' || iChar == 'a') && anchors.isNotEmpty) {
                           Map<String, dynamic> nearestAnchor = anchors[0];
                           int minDistance = (idx - (anchors[0]['idx'] as int)).abs();
                           
@@ -4392,6 +4394,15 @@ class WordListPageState extends State<WordListPage>
                           }
                           if (iChar == 'n' && nearestAnchor['type'] == 'h') {
                             processedText += (text[idx] == 'N') ? 'H' : 'h';
+                            continue;
+                          }
+                          // D 与 A 形状误判容错
+                          if (iChar == 'd' && nearestAnchor['type'] == 'a') {
+                            processedText += (text[idx] == 'D') ? 'A' : 'a';
+                            continue;
+                          }
+                          if (iChar == 'a' && nearestAnchor['type'] == 'd') {
+                            processedText += (text[idx] == 'A') ? 'D' : 'd';
                             continue;
                           }
                         }
