@@ -4400,9 +4400,9 @@ class WordListPageState extends State<WordListPage>
                       
                       targetWord.spellController.text = processedText;
                       
-                      // 模糊匹配逻辑：忽略空格和连字符，提升手写容错率
-                      final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
-                      final String normalizedInput = processedText.replaceAll(RegExp(r'[\s\-]'), '').toLowerCase();
+                      // 模糊匹配逻辑：忽略非英文字符（如空格、连字符、点等），提升手写容错率
+                      final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[^a-zA-Z]'), '').toLowerCase();
+                      final String normalizedInput = processedText.replaceAll(RegExp(r'[^a-zA-Z]'), '').toLowerCase();
                       
                       // 超级模糊容错：如果单词本就既包含 D 又包含 CL (如 disclose)，后台自动为 'd' 视为 'cl' 的笔画放行
                       final String fuzzyTarget = normalizedTarget.replaceAll('cl', 'd');
