@@ -1732,12 +1732,10 @@ class WordListPageState extends State<WordListPage>
       await asr.reset(); // 清除缓冲区
     }
 
-    // 播放单词发音（背英文模式开始时不播放，避免泄露答案）
+    // 播放单词发音（背英文模式/默写模式进入时不播放由调用者控制，避免泄露答案）
     final bool shouldPlaySound = playSound &&
         studyMode != WordListStudyMode.speakEnglish &&
-        studyMode != WordListStudyMode.hideEnglish &&
-        studyMode != WordListStudyMode.dictation &&
-        studyMode != WordListStudyMode.dictationHandwriting;
+        studyMode != WordListStudyMode.hideEnglish;
     if (shouldPlaySound) {
       debugPrint('播放单词发音: ${word.word.spell}');
       if (studyMode == WordListStudyMode.speakChinese) {
@@ -2077,8 +2075,11 @@ class WordListPageState extends State<WordListPage>
       int curr = getBookMarkUiPosition();
       if (curr >= 0 && curr < words.length && curr != index) {
         SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
+        onWordPressed(word, index, false, null);
+      } else {
+        // 如果点击的就是当前单词（左侧区域），则手动播放该词发音
+        onWordPressed(word, index, true, null);
       }
-      onWordPressed(word, index, false, null);
     } else {
       onWordPressed(word, index, true, null);
     }
