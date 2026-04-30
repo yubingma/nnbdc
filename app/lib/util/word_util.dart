@@ -93,6 +93,9 @@ class WordWrapper {
   /// 在“隐藏答案”模式下，答案是否已展示
   bool isAnswerRevealed = false;
 
+  /// 最近一次的语音识别结果（用于展示）
+  String? lastAsrResult;
+
   WordWrapper(this.word, this.tag);
   
   /// 释放资源

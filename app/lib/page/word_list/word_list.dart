@@ -901,6 +901,10 @@ class WordListPageState extends State<WordListPage>
     if (newAsrResult != asrResult) {
       setState(() {
         asrResult = newAsrResult;
+        int activeIdx = getBookMarkUiPosition();
+        if (activeIdx >= 0 && activeIdx < words.length) {
+          words[activeIdx].lastAsrResult = asrResult;
+        }
         if (asrResult.isNotEmpty) {
           if (asrResult != handlingAsrChinese) {
             handlingAsrChinese = asrResult;
@@ -1431,7 +1435,7 @@ class WordListPageState extends State<WordListPage>
                   itemBuilder: (context, index) {
                     // 为每个 item 添加 key，提高重用性
                     return RepaintBoundary(
-                      key: ValueKey('word_${words[index].word.id}_${bookMark?.position == (baseIndex! + index)}'),
+                      key: ValueKey('word_${words[index].word.id}'),
                       child: renderWord(index),
                     );
                   },
@@ -1695,13 +1699,8 @@ class WordListPageState extends State<WordListPage>
 
         // 切换到新单词时，重置“背英文”模式的临时状态，避免显示上一个单词的识别/结果
         if (studyMode == WordListStudyMode.speakEnglish) {
-          // 新单词默认未通过
-          word.speakEnglishPassed = false;
-          // 清空上一次的识别展示文本
+          // 切换到新单词时，重置 ASR 识别结果和分数，但保留已通过状态（如果之前已通过）
           asrResult = "";
-          // 这里的 word 是 oldWord (如果 bookMark 还没更新?) 或者 newWord?
-          // 上下文是：切换到新单词时。
-          // 这里的 word 参数是传入的新单词。
           word.pronunciationScore = null;
           handlingAsrChinese = "";
         }
@@ -2011,6 +2010,7 @@ class WordListPageState extends State<WordListPage>
       word.answeredAllMeanings = false;
       word.speakEnglishPassed = false;
       word.pronunciationScore = null;
+      word.lastAsrResult = null;
     }
   }
 
@@ -2111,7 +2111,7 @@ class WordListPageState extends State<WordListPage>
     if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
             studyMode == WordListStudyMode.dictationHandwriting ||
         studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish) && (word.hintLetterCount ?? 0) > 0) {
+        studyMode == WordListStudyMode.speakEnglish) && word.hintLetterCount > 0) {
       // 提示按钮已移至右侧点击区域
       actions.add(SlidableAction(
         onPressed: (_) => clearHint(word),
@@ -2220,10 +2220,16 @@ class WordListPageState extends State<WordListPage>
             child: Text(
               // 只有当前单词才显示提示文字
               isBookmarked
-                  ? (word.hintLetterCount > 0
-                      ? word.word.spell.substring(0, word.hintLetterCount)
-                      : '请说出单词发音')
-                  : '', // 非当前单词只显示下划线，不显示文字
+                  ? (asrResult != null && asrResult.toString().isNotEmpty
+                      ? asrResult.toString()
+                      : (word.hintLetterCount > 0
+                          ? word.word.spell.substring(0, word.hintLetterCount)
+                          : '请说出单词发音'))
+                  : (word.lastAsrResult != null && word.lastAsrResult!.isNotEmpty
+                      ? word.lastAsrResult!
+                      : (word.hintLetterCount > 0
+                          ? word.word.spell.substring(0, word.hintLetterCount)
+                          : '')), // 非当前单词显示提示或识别结果，否则保持原样
               textScaler: TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 14,
@@ -3102,6 +3108,7 @@ class WordListPageState extends State<WordListPage>
       if (studyMode == WordListStudyMode.speakEnglish) {
         asrResult = "";
         word.pronunciationScore = null;
+        word.speakEnglishPassed = false;
       }
     });
   }
@@ -3678,27 +3685,32 @@ class WordListPageState extends State<WordListPage>
                                 }
                                 break;
                               case menuWriteSpellTyping:
-                                setState(() {
-                                  studyMode = WordListStudyMode.dictation;
-                                  for (final w in words) {
-                                    w.spellController.text = '';
-                                    w.isAnswerProvidedBySystem = false;
-                                    w.hintLetterCount = 0;
-                                  }
+                                if (studyMode != WordListStudyMode.dictation) {
+                                  setState(() {
+                                    studyMode = WordListStudyMode.dictation;
+                                    for (final w in words) {
+                                      w.spellController.text = '';
+                                      w.isAnswerProvidedBySystem = false;
+                                      w.hintLetterCount = 0;
+                                    }
+                                  });
+                                  _unsubscribeMeter();
+                                  asr.stopAsr();
+                                }
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  jumpToBookMark();
                                 });
-                                _unsubscribeMeter();
-                                asr.stopAsr();
                                 break;
                               case menuWriteSpellHandwriting:
-                                // 如果已经是在手写模式下再次点击，则执行“彻底重置”逻辑
+                                final swOpen = Stopwatch()..start();
+                                // 如果已经是在手写模式下再次点击，则不执行重复初始化逻辑
                                 if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen) {
                                   _handwritingBoardKey.currentState?.clearBoardSilently();
-                                }
-                                Global.openPencilStopwatch.reset();
-                                Global.openPencilStopwatch.start();
-                                final swOpen = Stopwatch()..start();
-                                Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [进入听写手写模式] 开始处理...');
-                                WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
+                                } else {
+                                  Global.openPencilStopwatch.reset();
+                                  Global.openPencilStopwatch.start();
+                                  Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [进入听写手写模式] 开始处理...');
+                                  WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
                                   setState(() {
                                     studyMode = WordListStudyMode.dictationHandwriting;
                                     _isHandwritingOverlayOpen = true;
@@ -3711,19 +3723,20 @@ class WordListPageState extends State<WordListPage>
                                     asrResult = "";
                                     handlingAsrChinese = "";
                                   });
-                                  // 滚动当前单词到可视区域（偏上位置）
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                    if (itemScrollController.isAttached) {
-                                      final activeIdx = getBookMarkUiPosition();
-                                      if (activeIdx >= 0) {
-                                        itemScrollController.scrollTo(
-                                          index: activeIdx,
-                                          duration: const Duration(milliseconds: 300),
-                                          alignment: _handwritingScrollAlignment,
-                                        );
-                                      }
+                                }
+                                // 滚动当前单词到可视区域（偏上位置）
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (itemScrollController.isAttached) {
+                                    final activeIdx = getBookMarkUiPosition();
+                                    if (activeIdx >= 0) {
+                                      itemScrollController.scrollTo(
+                                        index: activeIdx,
+                                        duration: const Duration(milliseconds: 300),
+                                        alignment: _handwritingScrollAlignment,
+                                      );
                                     }
-                                  });
+                                  }
+                                });
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
                                 _unsubscribeMeter();
                                 asr.stopAsr();
@@ -3752,28 +3765,38 @@ class WordListPageState extends State<WordListPage>
                                 break;
 
                               case menuSpeakChinese:
-                                asr.stopAsr();
-                                asr.reset();
-                                setState(() {
-                                  clearWordStates();
-                                  asrResult = "";
-                                  handlingAsrChinese = "";
-                                  studyMode = WordListStudyMode.speakChinese;
+                                if (studyMode != WordListStudyMode.speakChinese) {
+                                  asr.stopAsr();
+                                  asr.reset();
+                                  setState(() {
+                                    clearWordStates();
+                                    asrResult = "";
+                                    handlingAsrChinese = "";
+                                    studyMode = WordListStudyMode.speakChinese;
+                                  });
+                                  _startAsr(decideAsrLanguage());
+                                  _subscribeMeterIfNeeded();
+                                }
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  jumpToBookMark();
                                 });
-                                _startAsr(decideAsrLanguage());
-                                _subscribeMeterIfNeeded();
                                 break;
                               case menuSpeakEnglish:
-                                asr.stopAsr();
-                                asr.reset();
-                                setState(() {
-                                  clearWordStates();
-                                  asrResult = "";
-                                  handlingAsrChinese = "";
-                                  studyMode = WordListStudyMode.speakEnglish;
+                                if (studyMode != WordListStudyMode.speakEnglish) {
+                                  asr.stopAsr();
+                                  asr.reset();
+                                  setState(() {
+                                    clearWordStates();
+                                    asrResult = "";
+                                    handlingAsrChinese = "";
+                                    studyMode = WordListStudyMode.speakEnglish;
+                                  });
+                                  _startAsr(decideAsrLanguage());
+                                  _subscribeMeterIfNeeded();
+                                }
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  jumpToBookMark();
                                 });
-                                _startAsr(decideAsrLanguage());
-                                _subscribeMeterIfNeeded();
                                 break;
                                 case menuWalkman:
                                   if (studyMode ==
