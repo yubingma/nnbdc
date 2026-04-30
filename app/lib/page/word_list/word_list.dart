@@ -2850,16 +2850,14 @@ class WordListPageState extends State<WordListPage>
                             color: isDarkMode ? Colors.white38 : Colors.black38,
                           ),
                         ),
-                        const SizedBox(height: 4),
-
-                        /// 状态色块 (正方形小色块)
+                        const SizedBox(height: 2),
                         if (statusColor != null)
                           Container(
-                            width: 10,
-                            height: 10,
+                            width: 3,
+                            height: 3,
                             decoration: BoxDecoration(
                               color: statusColor,
-                              borderRadius: BorderRadius.circular(2),
+                              shape: BoxShape.circle,
                             ),
                           ),
 
