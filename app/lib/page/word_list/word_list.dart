@@ -168,6 +168,7 @@ class WordListPageState extends State<WordListPage>
   static const double delBtnSize = 24;
   static const int _pageSize = 30;
   static const double bookMarkBorderWidth = 2;
+  static const double _handwritingScrollAlignment = 0.3;
 
   /// 当列表中的单词数量小于此值时, 将触发加载数据动作。因为加载数据主要是由滚动事件触发的，
   /// 而删除动作可能会使滚动条消失，所以删除动作需要主动检测此值
@@ -310,7 +311,7 @@ class WordListPageState extends State<WordListPage>
             itemScrollController.scrollTo(
                 index: bookMarkUiPos,
                 duration: const Duration(milliseconds: 300),
-                alignment: 0.45); // 显示在屏幕偏上部
+                alignment: _handwritingScrollAlignment); // 显示在屏幕偏上部
           }
         });
       } else {
@@ -447,7 +448,7 @@ class WordListPageState extends State<WordListPage>
               itemScrollController.scrollTo(
                   index: (words.length - 1),
                   duration: const Duration(milliseconds: 300),
-                  alignment: 0.45)); // 显示在屏幕偏上部
+                  alignment: _handwritingScrollAlignment)); // 显示在屏幕偏上部
         }
       });
 
@@ -1313,7 +1314,7 @@ class WordListPageState extends State<WordListPage>
             positions.where((pos) => pos.index == bookMarkUiPos).firstOrNull;
         if (currentPosition != null) {
           // 如果单词已经在屏幕中部附近（误差在5%以内），不需要滚动
-          if (currentPosition.itemLeadingEdge >= 0.45 &&
+          if (currentPosition.itemLeadingEdge >= _handwritingScrollAlignment &&
               currentPosition.itemLeadingEdge <= 0.55) {
             return;
           }
@@ -1354,7 +1355,7 @@ class WordListPageState extends State<WordListPage>
     itemScrollController.scrollTo(
         index: wordUiIndex,
         duration: const Duration(milliseconds: 300),
-        alignment: 0.45); // 稍微偏上
+        alignment: _handwritingScrollAlignment); // 稍微偏上
   }
 
   int getBookMarkUiPosition() {
@@ -3262,7 +3263,7 @@ class WordListPageState extends State<WordListPage>
                                 itemScrollController.scrollTo(
                                     index: 0,
                                     duration: const Duration(milliseconds: 300),
-                                    alignment: 0.45); // 显示在屏幕偏上部
+                                    alignment: _handwritingScrollAlignment); // 显示在屏幕偏上部
                               });
                             });
                           });
@@ -3368,7 +3369,7 @@ class WordListPageState extends State<WordListPage>
                                 itemScrollController.scrollTo(
                                     index: words.length - 1,
                                     duration: const Duration(milliseconds: 300),
-                                    alignment: 0.45); // 显示在屏幕偏上部
+                                    alignment: _handwritingScrollAlignment); // 显示在屏幕偏上部
                               });
                             });
                           });
