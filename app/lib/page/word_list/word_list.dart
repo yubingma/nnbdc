@@ -4335,10 +4335,13 @@ class WordListPageState extends State<WordListPage>
                 },
                 onStartWriting: () {
                   _handwritingPaddingTimer?.cancel();
-                  if (_handwritingRightPadding != 0 || _detectedSimilarWord != null) {
+                  if (_handwritingRightPadding != 0 || _detectedSimilarWord != null || (activeWord?.hintLetterCount ?? 0) > 0) {
                     setState(() {
                       _handwritingRightPadding = 0;
                       _detectedSimilarWord = null;
+                      if (activeWord != null) {
+                        activeWord.hintLetterCount = 0;
+                      }
                     });
                   }
                 },

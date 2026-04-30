@@ -732,11 +732,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                       height: zoneHeight,
                       decoration: BoxDecoration(
                         color: _activeZone == 4 
-                          ? Colors.orange.withValues(alpha: 0.25) 
-                          : Colors.orange.withValues(alpha: 0.1),
+                          ? Colors.grey.withValues(alpha: 0.25) 
+                          : Colors.grey.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _activeZone == 4 ? Colors.orange : Colors.orange.withValues(alpha: 0.2), 
+                          color: _activeZone == 4 ? Colors.grey : Colors.grey.withValues(alpha: 0.2), 
                           width: _activeZone == 4 ? 1.5 : 1
                         ),
                       ),
@@ -745,13 +745,13 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                         children: [
                           Icon(
                             Icons.lightbulb_outline, 
-                            color: _activeZone == 4 ? Colors.orange[800] : Colors.orange.withValues(alpha: 0.8), 
+                            color: _activeZone == 4 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
                             size: 22
                           ),
                           Text(
                             '提示', 
                             style: TextStyle(
-                              color: _activeZone == 4 ? Colors.orange[800] : Colors.orange.withValues(alpha: 0.8), 
+                              color: _activeZone == 4 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
                               fontSize: 12,
                               fontWeight: _activeZone == 4 ? FontWeight.bold : FontWeight.normal,
                             )
