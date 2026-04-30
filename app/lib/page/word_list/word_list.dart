@@ -3714,6 +3714,19 @@ class WordListPageState extends State<WordListPage>
                                     asrResult = "";
                                     handlingAsrChinese = "";
                                   });
+                                  // 滚动当前单词到可视区域（偏上位置）
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (itemScrollController.isAttached) {
+                                      final activeIdx = getBookMarkUiPosition();
+                                      if (activeIdx >= 0) {
+                                        itemScrollController.scrollTo(
+                                          index: activeIdx,
+                                          duration: const Duration(milliseconds: 300),
+                                          alignment: _handwritingScrollAlignment,
+                                        );
+                                      }
+                                    }
+                                  });
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
                                 _unsubscribeMeter();
                                 asr.stopAsr();
