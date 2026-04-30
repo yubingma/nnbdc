@@ -2070,24 +2070,17 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
-  void _handleWordTap(WordWrapper word, int i) async {
-    if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
-      final curr = getBookMarkUiPosition();
-      // 点击引发跳转：播放离开的那个单词发音
-      if (curr >= 0 && curr != i && curr < words.length) {
-        try {
-          await SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-        } catch (e, stackTrace) {
-          // 音频播放失败不影响主流程，但需要记录
-          Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
-        }
-        onWordPressed(word, i, false, null);
-      } else {
-        // 未引发跳转：播放当前单词
-        onWordPressed(word, i, true, null);
+  void _handleWordTap(WordWrapper word, int index) {
+    if (studyMode == WordListStudyMode.dictation ||
+        studyMode == WordListStudyMode.dictationHandwriting) {
+      // 揭晓答案：如果是切换单词，播放当前正在离开的那个词
+      int curr = getBookMarkUiPosition();
+      if (curr >= 0 && curr < words.length && curr != index) {
+        SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
       }
+      onWordPressed(word, index, false, null);
     } else {
-      onWordPressed(word, i, true, null);
+      onWordPressed(word, index, true, null);
     }
   }
 
@@ -2402,8 +2395,9 @@ class WordListPageState extends State<WordListPage>
     return AnimatedBuilder(
       animation: word.focusNode,
       builder: (context, child) {
+        final isActive = getBookMarkUiPosition() == i;
         final hasFocus = word.focusNode.hasFocus;
-        final fontSize = hasFocus ? 22.0 : 16.0;
+        final fontSize = (hasFocus || isActive) ? 22.0 : 16.0;
         final isHandwriting = studyMode == WordListStudyMode.dictationHandwriting;
         return TextField(
           readOnly: isHandwriting,
@@ -2428,8 +2422,14 @@ class WordListPageState extends State<WordListPage>
           ),
           onTap: () {
             bool isAlreadyActive = getBookMarkUiPosition() == i;
+            if (!isAlreadyActive) {
+              // 揭晓答案：离开旧词时播放旧词发音
+              int curr = getBookMarkUiPosition();
+              if (curr >= 0 && curr < words.length) {
+                SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
+              }
+            }
             onWordPressed(word, i, false, null);
-            // 如果该行已经是当前做题行，点击输入框也给提示，做到“点击整个右侧区域”都能提示
             if (isAlreadyActive) {
               giveALittleHint(word);
             }
@@ -2929,7 +2929,7 @@ class WordListPageState extends State<WordListPage>
                                       word.isAnswerRevealed = !word.isAnswerRevealed;
                                     });
                                     if (getBookMarkUiPosition() != i) {
-                                      onWordPressed(word, i, false, null);
+                                      onWordPressed(word, i, true, null);
                                     }
                                   } else if (isBookmarked && (studyMode == WordListStudyMode.dictation ||
                                           studyMode == WordListStudyMode.dictationHandwriting ||
@@ -2996,6 +2996,11 @@ class WordListPageState extends State<WordListPage>
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
+                      // 揭晓答案
+                      int curr = getBookMarkUiPosition();
+                      if (curr >= 0 && curr < words.length && curr != i) {
+                        SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
+                      }
                       setState(() {
                         _isHandwritingOverlayOpen = true;
                       });
@@ -4429,11 +4434,11 @@ class WordListPageState extends State<WordListPage>
                          _detectedSimilarWord = null;
                        });
                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                         // 写对了，播放当前单词（揭晓答案/确认）
                          try {
                            await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
-                         } catch (e) {
-                           // Ignore errors
-                         }
+                         } catch (_) {}
+                         
                          _handwritingBoardKey.currentState?.clearBoardSilently();
                          jumpToNextWord(bookmarkedIndex, false, () {});
                        });
@@ -4464,22 +4469,20 @@ class WordListPageState extends State<WordListPage>
                 },
                 onSwipeUp: () async {
                   _handwritingBoardKey.currentState?.clearBoardSilently();
-                  // 播放当前离开单词的发音
+                  // 揭晓答案：离开当前词时播放
                   if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
                     try {
-                      await SoundUtil.playPronounceSound2(
-                          words[bookmarkedIndex].word, audioPlayer);
+                      await SoundUtil.playPronounceSound2(words[bookmarkedIndex].word, audioPlayer);
                     } catch (_) {}
                   }
                   jumpToNextWord(bookmarkedIndex, false, () {});
                 },
                 onSwipeDown: () async {
                   _handwritingBoardKey.currentState?.clearBoardSilently();
-                  // 播放当前离开单词的发音
+                  // 揭晓答案：离开当前词时播放
                   if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
                     try {
-                      await SoundUtil.playPronounceSound2(
-                          words[bookmarkedIndex].word, audioPlayer);
+                      await SoundUtil.playPronounceSound2(words[bookmarkedIndex].word, audioPlayer);
                     } catch (_) {}
                   }
                   jumpToPreviousWord(bookmarkedIndex, false);
