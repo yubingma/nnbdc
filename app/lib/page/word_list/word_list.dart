@@ -3669,6 +3669,10 @@ class WordListPageState extends State<WordListPage>
                                 asr.stopAsr();
                                 break;
                               case menuWriteSpellHandwriting:
+                                // 如果已经是在手写模式下再次点击，则执行“彻底重置”逻辑
+                                if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen) {
+                                  _handwritingBoardKey.currentState?.clearBoardSilently();
+                                }
                                 Global.openPencilStopwatch.reset();
                                 Global.openPencilStopwatch.start();
                                 final swOpen = Stopwatch()..start();
@@ -3683,6 +3687,9 @@ class WordListPageState extends State<WordListPage>
                                     w.spellController.text = '';
                                     w.isAnswerProvidedBySystem = false;
                                     w.hintLetterCount = 0;
+                                    // 同时重置 ASR 等临时状态
+                                    asrResult = "";
+                                    handlingAsrChinese = "";
                                   }
                                 });
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
