@@ -11,17 +11,8 @@ import '../theme/app_theme.dart';
 class HandwritingBoard extends StatefulWidget {
   final Function(String) onRecognized;
   final VoidCallback onCancel;
-  final VoidCallback? onStartWriting;
-  final VoidCallback? onPointerUp;
-  final VoidCallback? onSwipeUp;
-  final VoidCallback? onSwipeDown;
-  final bool showCloseButton;
-  final bool showHeader;
-  final bool useBoxDecoration;
-  final bool showCanvasButtons;
-  final bool enableNavigationGestures;
-  final double smartRightZoneWidth;
   final ValueNotifier<bool>? rightZoneVisibleNotifier;
+  final VoidCallback? onHint;
 
   const HandwritingBoard({
     super.key,
@@ -38,6 +29,7 @@ class HandwritingBoard extends StatefulWidget {
     this.enableNavigationGestures = true,
     this.smartRightZoneWidth = 0.0,
     this.rightZoneVisibleNotifier,
+    this.onHint,
   });
 
   @override
@@ -332,6 +324,8 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   onCancel: widget.onCancel,
                   enableNavigationGestures: widget.enableNavigationGestures,
                   smartRightZoneWidth: widget.smartRightZoneWidth,
+                  rightZoneVisibleNotifier: widget.rightZoneVisibleNotifier,
+                  onHint: widget.onHint,
                 ),
               ],
             ),
@@ -356,6 +350,8 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback? onCancel;
   final bool enableNavigationGestures;
   final double smartRightZoneWidth;
+  final ValueNotifier<bool>? rightZoneVisibleNotifier;
+  final VoidCallback? onHint;
 
   const _HandwritingCanvas({
     super.key,
@@ -372,6 +368,8 @@ class _HandwritingCanvas extends StatefulWidget {
     this.onCancel,
     this.enableNavigationGestures = true,
     this.smartRightZoneWidth = 0.0,
+    this.rightZoneVisibleNotifier,
+    this.onHint,
   });
 
   @override
@@ -438,20 +436,29 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
         final double zoneHeight = isNarrow ? 56 : 65;
         final double bottomMargin = isNarrow ? 20 : 40; 
 
+        // 如果有提示按钮，采用四按钮布局
+        final bool hasHint = widget.onHint != null;
+        
         final rewriteZone = Rect.fromLTWH(
-          width / 2 - zoneWidth * 1.6, 
+          width / 2 - (hasHint ? zoneWidth * 2.15 : zoneWidth * 1.6), 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
         );
         final undoZone = Rect.fromLTWH(
-          width / 2 - zoneWidth / 2, 
+          width / 2 - (hasHint ? zoneWidth * 1.05 : zoneWidth / 2), 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
         );
+        final hintZone = hasHint ? Rect.fromLTWH(
+          width / 2 + zoneWidth * 0.05, 
+          height - zoneHeight - bottomMargin, 
+          zoneWidth, 
+          zoneHeight
+        ) : Rect.zero;
         final closeZone = Rect.fromLTWH(
-          width / 2 + zoneWidth * 0.6, 
+          width / 2 + (hasHint ? zoneWidth * 1.15 : zoneWidth * 0.6), 
           height - zoneHeight - bottomMargin, 
           zoneWidth, 
           zoneHeight
@@ -476,7 +483,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             }
 
             // 如果点击的是底部的功能控制按钮区域，则不作为书写轨迹起笔，交由底部的 GestureDetector 处理
-            if (rewriteZone.contains(p) || undoZone.contains(p) || closeZone.contains(p)) {
+            if (rewriteZone.contains(p) || undoZone.contains(p) || closeZone.contains(p) || hintZone.contains(p)) {
               _ignoredPointers.add(event.pointer);
               return;
             }
@@ -697,7 +704,51 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                     ),
                   ),
                 ),
-                // 关闭按钮区
+                // 提示按钮区 (仅在传入了 onHint 时显示)
+                if (hasHint)
+                Positioned(
+                  left: hintZone.left,
+                  top: hintZone.top,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      widget.onHint?.call();
+                    },
+                    child: Container(
+                      width: zoneWidth,
+                      height: zoneHeight,
+                      decoration: BoxDecoration(
+                        color: _activeZone == 4 
+                          ? Colors.orange.withValues(alpha: 0.25) 
+                          : Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _activeZone == 4 ? Colors.orange : Colors.orange.withValues(alpha: 0.2), 
+                          width: _activeZone == 4 ? 1.5 : 1
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline, 
+                            color: _activeZone == 4 ? Colors.orange[800] : Colors.orange.withValues(alpha: 0.8), 
+                            size: 22
+                          ),
+                          Text(
+                            '提示', 
+                            style: TextStyle(
+                              color: _activeZone == 4 ? Colors.orange[800] : Colors.orange.withValues(alpha: 0.8), 
+                              fontSize: 12,
+                              fontWeight: _activeZone == 4 ? FontWeight.bold : FontWeight.normal,
+                            )
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 Positioned(
                   left: closeZone.left,
                   top: closeZone.top,

@@ -4328,6 +4328,11 @@ class WordListPageState extends State<WordListPage>
                 enableNavigationGestures: false,
                 smartRightZoneWidth: 0, 
                 rightZoneVisibleNotifier: _rightZoneVisible, 
+                onHint: () {
+                  if (activeWord != null) {
+                    giveALittleHint(activeWord);
+                  }
+                },
                 onStartWriting: () {
                   _handwritingPaddingTimer?.cancel();
                   if (_handwritingRightPadding != 0 || _detectedSimilarWord != null) {
