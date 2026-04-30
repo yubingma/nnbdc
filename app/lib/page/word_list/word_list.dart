@@ -3702,21 +3702,18 @@ class WordListPageState extends State<WordListPage>
                                 final swOpen = Stopwatch()..start();
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [进入听写手写模式] 开始处理...');
                                 WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
-                                setState(() {
-                                  studyMode = WordListStudyMode.dictationHandwriting;
-                                  _isHandwritingOverlayOpen = true;
-                                  final activeIdx = getBookMarkUiPosition();
-                                  if (activeIdx >= 0 && activeIdx < words.length) {
-                                    final w = words[activeIdx];
-                                    w.spellController.text = '';
-                                    w.isAnswerProvidedBySystem = false;
-                                    w.hintLetterCount = 0;
+                                  setState(() {
+                                    studyMode = WordListStudyMode.dictationHandwriting;
+                                    _isHandwritingOverlayOpen = true;
+                                    for (final w in words) {
+                                      w.spellController.clear();
+                                      w.hintLetterCount = 0;
+                                      w.isAnswerProvidedBySystem = false;
+                                    }
                                     _detectedSimilarWord = null;
-                                    // 同时重置 ASR 等临时状态
                                     asrResult = "";
                                     handlingAsrChinese = "";
-                                  }
-                                });
+                                  });
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
                                 _unsubscribeMeter();
                                 asr.stopAsr();
