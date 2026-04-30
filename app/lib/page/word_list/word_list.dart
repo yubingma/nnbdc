@@ -2834,9 +2834,10 @@ class WordListPageState extends State<WordListPage>
             ),
 
             /// 2. 实际内容层
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                 /// 左侧热区 (序号 + 状态)
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -3035,7 +3036,8 @@ class WordListPageState extends State<WordListPage>
             ),
           ],
         ),
-      ],
+      ),
+    ],
     ),
   ),
 );
