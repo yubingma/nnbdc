@@ -685,10 +685,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                             size: 22
                           ),
                           Text(
-                            isNarrow ? '重写' : '划过重写', 
+                            '重写', 
                             style: TextStyle(
                               color: _activeZone == 1 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                              fontSize: isNarrow ? 12 : 11,
+                              fontSize: 12,
                               fontWeight: _activeZone == 1 ? FontWeight.bold : FontWeight.normal,
                             )
                           ),
@@ -732,7 +732,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                             '关闭', 
                             style: TextStyle(
                               color: _activeZone == 3 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                              fontSize: isNarrow ? 12 : 11,
+                              fontSize: 12,
                               fontWeight: _activeZone == 3 ? FontWeight.bold : FontWeight.normal,
                             )
                           ),
@@ -781,10 +781,10 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                             size: 22
                           ),
                           Text(
-                            isNarrow ? '回退' : '划过回退', 
+                            '回退', 
                             style: TextStyle(
                               color: _activeZone == 2 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
-                              fontSize: isNarrow ? 12 : 11,
+                              fontSize: 12,
                               fontWeight: _activeZone == 2 ? FontWeight.bold : FontWeight.normal,
                             )
                           ),
