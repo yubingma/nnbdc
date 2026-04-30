@@ -249,6 +249,9 @@ class WordListPageState extends State<WordListPage>
   /// 已生成的 AI 短文缓存
   String? _aiStory;
 
+  /// 识别出的“写错但合法”的单词，用于显示释义提示
+  WordVo? _detectedSimilarWord;
+
   @override
   bool get wantKeepAlive => true; // 保持状态，避免页面重建
 
@@ -1687,6 +1690,7 @@ class WordListPageState extends State<WordListPage>
         word.spellController.text = '';
         word.isAnswerProvidedBySystem = false;
         canLeaveCurrWord = false;
+        _detectedSimilarWord = null;
 
         // 切换到新单词时，重置“背英文”模式的临时状态，避免显示上一个单词的识别/结果
         if (studyMode == WordListStudyMode.speakEnglish) {
@@ -4326,9 +4330,10 @@ class WordListPageState extends State<WordListPage>
                 rightZoneVisibleNotifier: _rightZoneVisible, 
                 onStartWriting: () {
                   _handwritingPaddingTimer?.cancel();
-                  if (_handwritingRightPadding != 0) {
+                  if (_handwritingRightPadding != 0 || _detectedSimilarWord != null) {
                     setState(() {
                       _handwritingRightPadding = 0;
+                      _detectedSimilarWord = null;
                     });
                   }
                 },
@@ -4342,71 +4347,96 @@ class WordListPageState extends State<WordListPage>
                     }
                   });
                 },
-                onRecognized: (text) {
+                onRecognized: (text) async {
                   final targetWord = activeWord;
                   if (targetWord != null) { 
+                    // 智能容错：处理 Google ML Kit 经常将手写 c/l 识别为 d 的物理误判
+                    // 智能容错：终极 NLP 锚点距离感知算法 (USER 构想之神级实现)
+                    String processedText = "";
+                    final String lowerTarget = targetWord.word.spell.toLowerCase();
+                    
+                    // 1. 提取正确单词中所有 D、CL 的【物理锚点序列】
+                    List<Map<String, dynamic>> anchors = [];
+                    for (int i = 0; i < lowerTarget.length; i++) {
+                      if (lowerTarget[i] == 'd') {
+                        anchors.add({'idx': i, 'type': 'd'});
+                      } else if (lowerTarget[i] == 'c' && (i + 1) < lowerTarget.length && lowerTarget[i + 1] == 'l') {
+                        anchors.add({'idx': i, 'type': 'cl'});
+                      }
+                    }
+                    
+                    // 2. 遍历用户输入的 text，基于“物理距离最近”判定真伪
+                    for (int idx = 0; idx < text.length; idx++) {
+                      final iChar = text[idx].toLowerCase();
+                      if ((iChar == 'd' || iChar == 'c') && anchors.isNotEmpty) {
+                        Map<String, dynamic> nearestAnchor = anchors[0];
+                        int minDistance = (idx - (anchors[0]['idx'] as int)).abs();
+                        
+                        for (final anchor in anchors) {
+                          final int dist = (idx - (anchor['idx'] as int)).abs();
+                          // 如果在同样的距离内发现类型匹配的锚点，优先选择匹配的类型，防止“误纠正”
+                          if (dist < minDistance || (dist == minDistance && anchor['type'] == iChar)) {
+                            minDistance = dist;
+                            nearestAnchor = anchor;
+                          }
+                        }
+                        
+                        // D 与 CL 连写容错
+                        if (iChar == 'd' && nearestAnchor['type'] == 'cl') {
+                          processedText += (text[idx] == 'D') ? 'CL' : 'cl';
+                          continue;
+                        }
+                      }
+                      processedText += text[idx];
+                    }
+                    
                     setState(() {
-                      // 智能容错：处理 Google ML Kit 经常将手写 c/l 识别为 d 的物理误判
-                      // 智能容错：终极 NLP 锚点距离感知算法 (USER 构想之神级实现)
-                      String processedText = "";
-                      final String lowerTarget = targetWord.word.spell.toLowerCase();
-                      
-                      // 1. 提取正确单词中所有 D、CL 的【物理锚点序列】
-                      List<Map<String, dynamic>> anchors = [];
-                      for (int i = 0; i < lowerTarget.length; i++) {
-                        if (lowerTarget[i] == 'd') {
-                          anchors.add({'idx': i, 'type': 'd'});
-                        } else if (lowerTarget[i] == 'c' && (i + 1) < lowerTarget.length && lowerTarget[i + 1] == 'l') {
-                          anchors.add({'idx': i, 'type': 'cl'});
-                        }
-                      }
-                      
-                      // 2. 遍历用户输入的 text，基于“物理距离最近”判定真伪
-                      for (int idx = 0; idx < text.length; idx++) {
-                        final iChar = text[idx].toLowerCase();
-                        if ((iChar == 'd' || iChar == 'c') && anchors.isNotEmpty) {
-                          Map<String, dynamic> nearestAnchor = anchors[0];
-                          int minDistance = (idx - (anchors[0]['idx'] as int)).abs();
-                          
-                          for (final anchor in anchors) {
-                            final int dist = (idx - (anchor['idx'] as int)).abs();
-                            // 如果在同样的距离内发现类型匹配的锚点，优先选择匹配的类型，防止“误纠正”
-                            if (dist < minDistance || (dist == minDistance && anchor['type'] == iChar)) {
-                              minDistance = dist;
-                              nearestAnchor = anchor;
-                            }
-                          }
-                          
-                          // D 与 CL 连写容错
-                          if (iChar == 'd' && nearestAnchor['type'] == 'cl') {
-                            processedText += (text[idx] == 'D') ? 'CL' : 'cl';
-                            continue;
-                          }
-                        }
-                        processedText += text[idx];
-                      }
-                      
                       targetWord.spellController.text = processedText;
-                      
-                      // 模糊匹配逻辑：忽略非英文字符（如空格、连字符、点等），提升手写容错率
-                      final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[^a-zA-Z]'), '').toLowerCase();
-                      final String normalizedInput = processedText.replaceAll(RegExp(r'[^a-zA-Z]'), '').toLowerCase();
-                      
-                      // 超级模糊容错：如果单词本就既包含 D 又包含 CL (如 disclose)，后台自动为 'd' 视为 'cl' 的笔画放行
-                      final String fuzzyTarget = normalizedTarget.replaceAll('cl', 'd');
-                      
-                      if (normalizedTarget == normalizedInput || fuzzyTarget == normalizedInput) {
-                         WidgetsBinding.instance.addPostFrameCallback((_) async {
-                           try {
-                             await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
-                           } catch (e) {
-                             // Ignore errors
-                           }
-                           _handwritingBoardKey.currentState?.clearBoardSilently();
-                           jumpToNextWord(bookmarkedIndex, false, () {});
-                         });
-                      }
                     });
+                    
+                    // 模糊匹配逻辑：忽略非英文字符（如空格、连字符、点等），提升手写容错率
+                    final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[^a-zA-Z]'), '').toLowerCase();
+                    final String normalizedInput = processedText.replaceAll(RegExp(r'[^a-zA-Z]'), '').toLowerCase();
+                    
+                    // 超级模糊容错：如果单词本就既包含 D 又包含 CL (如 disclose)，后台自动为 'd' 视为 'cl' 的笔画放行
+                    final String fuzzyTarget = normalizedTarget.replaceAll('cl', 'd');
+                    
+                    if (normalizedTarget == normalizedInput || fuzzyTarget == normalizedInput) {
+                       setState(() {
+                         _detectedSimilarWord = null;
+                       });
+                       WidgetsBinding.instance.addPostFrameCallback((_) async {
+                         try {
+                           await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
+                         } catch (e) {
+                           // Ignore errors
+                         }
+                         _handwritingBoardKey.currentState?.clearBoardSilently();
+                         jumpToNextWord(bookmarkedIndex, false, () {});
+                       });
+                    } else if (normalizedInput.length >= 2) {
+                       // 如果输入不正确，但输入长度大于2，则尝试查词看是不是写成了别的合法单词
+                       final result = await WordBo().searchWordLocalOnly(normalizedInput);
+                       if (result.word != null && result.word!.spell.toLowerCase() == normalizedInput) {
+                         if (mounted) {
+                           setState(() {
+                             _detectedSimilarWord = result.word;
+                           });
+                         }
+                       } else {
+                         if (mounted) {
+                           setState(() {
+                             _detectedSimilarWord = null;
+                           });
+                         }
+                       }
+                    } else {
+                       if (mounted) {
+                         setState(() {
+                           _detectedSimilarWord = null;
+                         });
+                       }
+                    }
                   }
                 },
                 onSwipeUp: () async {
@@ -4439,6 +4469,67 @@ class WordListPageState extends State<WordListPage>
               ),
             ),
           ),
+
+          // 2. 相似词提示框
+          if (_detectedSimilarWord != null)
+            Positioned(
+              left: 12,
+              right: 12 + _handwritingRightPadding,
+              top: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.5), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: Colors.orangeAccent, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '注意，你写成了另一个单词: ${_detectedSimilarWord!.spell}',
+                            style: const TextStyle(
+                              color: Colors.orangeAccent, 
+                              fontSize: 13, 
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 22),
+                      child: Text(
+                        _detectedSimilarWord!.meaningItems?.map((e) => "${e.ciXing}. ${e.meaning}").join("; ") ?? "暂无释义",
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9), 
+                          fontSize: 12,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           Positioned(
             right: _handwritingRightPadding > 0 ? _handwritingRightPadding - 1 : -1,
