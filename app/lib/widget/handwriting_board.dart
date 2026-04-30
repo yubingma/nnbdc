@@ -781,7 +781,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
                             size: 22
                           ),
                           Text(
-                            isNarrow ? '撤销' : '划过撤销', 
+                            isNarrow ? '回退' : '划过回退', 
                             style: TextStyle(
                               color: _activeZone == 2 ? Colors.grey[800] : Colors.grey.withValues(alpha: 0.6), 
                               fontSize: isNarrow ? 12 : 11,
