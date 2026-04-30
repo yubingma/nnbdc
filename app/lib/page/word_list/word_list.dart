@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -177,6 +178,8 @@ class WordListPageState extends State<WordListPage>
   int _renderWordCallCount = 0;
   final ValueNotifier<int> activeWordIndexNotifier = ValueNotifier<int>(-1);
   final ValueNotifier<bool> _rightZoneVisible = ValueNotifier<bool>(true);
+  double _handwritingRightPadding = 60.0;
+  Timer? _handwritingPaddingTimer;
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
@@ -1168,6 +1171,7 @@ class WordListPageState extends State<WordListPage>
   @override
   void dispose() {
     final sw = Stopwatch()..start();
+    _handwritingPaddingTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
     // 停止 ASR：仅当当前页面处于语音学习模式时才停止，
@@ -4284,7 +4288,7 @@ class WordListPageState extends State<WordListPage>
           // 1. 左侧手写画板区域
           Positioned(
             left: 0,
-            right: 60,
+            right: _handwritingRightPadding,
             top: 0,
             bottom: 0,
             child: Container(
@@ -4298,6 +4302,24 @@ class WordListPageState extends State<WordListPage>
                 enableNavigationGestures: false,
                 smartRightZoneWidth: 0, 
                 rightZoneVisibleNotifier: _rightZoneVisible, 
+                onStartWriting: () {
+                  _handwritingPaddingTimer?.cancel();
+                  if (_handwritingRightPadding != 0) {
+                    setState(() {
+                      _handwritingRightPadding = 0;
+                    });
+                  }
+                },
+                onPointerUp: () {
+                  _handwritingPaddingTimer?.cancel();
+                  _handwritingPaddingTimer = Timer(const Duration(milliseconds: 500), () {
+                    if (mounted && _handwritingRightPadding != 60) {
+                      setState(() {
+                        _handwritingRightPadding = 60;
+                      });
+                    }
+                  });
+                },
                 onRecognized: (text) {
                   final targetWord = activeWord;
                   if (targetWord != null) { 
@@ -4395,7 +4417,7 @@ class WordListPageState extends State<WordListPage>
           ),
 
           Positioned(
-            right: 59,
+            right: _handwritingRightPadding > 0 ? _handwritingRightPadding - 1 : -1,
             top: 0,
             bottom: 0,
             width: 1,

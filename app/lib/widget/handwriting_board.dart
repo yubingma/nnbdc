@@ -12,6 +12,7 @@ class HandwritingBoard extends StatefulWidget {
   final Function(String) onRecognized;
   final VoidCallback onCancel;
   final VoidCallback? onStartWriting;
+  final VoidCallback? onPointerUp;
   final VoidCallback? onSwipeUp;
   final VoidCallback? onSwipeDown;
   final bool showCloseButton;
@@ -27,6 +28,7 @@ class HandwritingBoard extends StatefulWidget {
     required this.onRecognized,
     required this.onCancel,
     this.onStartWriting,
+    this.onPointerUp,
     this.onSwipeUp,
     this.onSwipeDown,
     this.showCloseButton = true,
@@ -323,6 +325,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
                   onUndo: _incrementVersion,
                   onRecognize: _recognize,
                   onStartWriting: widget.onStartWriting,
+                  onPointerUp: widget.onPointerUp,
                   onSwipeUp: widget.onSwipeUp,
                   onSwipeDown: widget.onSwipeDown,
                   showButtons: widget.showCanvasButtons,
@@ -346,6 +349,7 @@ class _HandwritingCanvas extends StatefulWidget {
   final VoidCallback onUndo;
   final VoidCallback onRecognize;
   final VoidCallback? onStartWriting;
+  final VoidCallback? onPointerUp;
   final VoidCallback? onSwipeUp;
   final VoidCallback? onSwipeDown;
   final bool showButtons;
@@ -361,6 +365,7 @@ class _HandwritingCanvas extends StatefulWidget {
     required this.onUndo,
     required this.onRecognize,
     this.onStartWriting,
+    this.onPointerUp,
     this.onSwipeUp,
     this.onSwipeDown,
     required this.showButtons,
@@ -508,6 +513,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             }
             
             _lastStrokeEndTime = DateTime.now();
+            widget.onPointerUp?.call();
 
             try {
 
