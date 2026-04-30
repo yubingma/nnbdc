@@ -4526,7 +4526,7 @@ class WordListPageState extends State<WordListPage>
                       Padding(
                         padding: const EdgeInsets.only(left: 22),
                         child: Text(
-                          _detectedSimilarWord!.meaningItems?.map((e) => "${e.ciXing}. ${e.meaning}").join("; ") ?? "暂无释义",
+                          _detectedSimilarWord!.getMeaningStr().replaceAll('\n', ' '),
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9), 
                             fontSize: 12,
