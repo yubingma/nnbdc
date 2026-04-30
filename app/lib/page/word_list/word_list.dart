@@ -320,6 +320,11 @@ class WordListPageState extends State<WordListPage>
       // 没有书签：从第一页开始
       baseIndex = 0;
       await doQuery(true, baseIndex!, _pageSize, false);
+      // 自动设置首位书签：如果词表不为空且当前确实没有书签
+      if (words.isNotEmpty && bookMark == null) {
+        bookMark = BookMarkVo(0, words[0].word.spell);
+        args.bookMarkProvider.saveBookMark(bookMark!);
+      }
     }
 
     setState(() {
