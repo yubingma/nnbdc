@@ -2220,11 +2220,9 @@ class WordListPageState extends State<WordListPage>
             child: Text(
               // 只有当前单词才显示提示文字
               isBookmarked
-                  ? (asrResult != null && asrResult.toString().isNotEmpty
-                      ? asrResult.toString()
-                      : (word.hintLetterCount > 0
-                          ? word.word.spell.substring(0, word.hintLetterCount)
-                          : '请说出单词发音'))
+                  ? (word.hintLetterCount > 0
+                      ? word.word.spell.substring(0, word.hintLetterCount)
+                      : '请说出单词发音')
                   : (word.lastAsrResult != null && word.lastAsrResult!.isNotEmpty
                       ? word.lastAsrResult!
                       : (word.hintLetterCount > 0
@@ -3031,12 +3029,11 @@ class WordListPageState extends State<WordListPage>
               ),
             ),
           ],
-              ),
-            ],
-          ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
 
 
     if (actions.isEmpty || (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)) return itemContent;
