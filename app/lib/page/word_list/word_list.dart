@@ -2540,19 +2540,21 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget _buildWordMeaning(WordWrapper word, bool isDarkMode, {double topPadding = 8}) {
-
+    final meaning = word.word.getMeaningStr();
     return Padding(
       padding: EdgeInsets.only(top: topPadding),
-
-      child: Text(
-        word.word.getMeaningStr(),
-        textScaler: TextScaler.linear(1.0),
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
-          height: 1.5,
-          letterSpacing: 0.3,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 24),
+        child: Text(
+          meaning.isNotEmpty ? meaning : "（暂无释义）",
+          textScaler: TextScaler.linear(1.0),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
+            height: 1.5,
+            letterSpacing: 0.3,
+          ),
         ),
       ),
     );
@@ -2887,12 +2889,10 @@ class WordListPageState extends State<WordListPage>
                   ),
                 ),
 
-                /// 单词内容区
                 Expanded(
-                  child: IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
                       /// 左半部内容 (点击发音)
                       Expanded(
                         flex: 2,
@@ -3027,16 +3027,16 @@ class WordListPageState extends State<WordListPage>
                       ),
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
+          ],
+              ),
+            ],
           ),
-          ),
-        ],
+        ),
       ),
-        ],
-      ),
-    ),
-  );
+    );
 
 
     if (actions.isEmpty || (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)) return itemContent;
