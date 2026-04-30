@@ -2853,8 +2853,8 @@ class WordListPageState extends State<WordListPage>
                         const SizedBox(height: 2),
                         if (statusColor != null)
                           Container(
-                            width: 3,
-                            height: 3,
+                            width: 4,
+                            height: 4,
                             decoration: BoxDecoration(
                               color: statusColor,
                               shape: BoxShape.circle,
