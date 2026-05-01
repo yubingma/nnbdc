@@ -2035,6 +2035,8 @@ class WordListPageState extends State<WordListPage>
               if (word.tag is LearningWordVo) {
                 (word.tag as LearningWordVo).stability = 180.0;
               }
+              // 同步更新进度条
+              word.currentProgress = word.maxProgress;
             });
             Global.logger.d('[Perf] onMasterBtnPressed STATE_UPDATED (keep)');
             return;
@@ -2045,6 +2047,8 @@ class WordListPageState extends State<WordListPage>
             if (word.tag is LearningWordVo) {
               (word.tag as LearningWordVo).stability = 180.0;
             }
+            // 同步更新进度条
+            word.currentProgress = word.maxProgress;
             words.remove(word);
             totalWordCount--;
           });
@@ -2114,6 +2118,8 @@ class WordListPageState extends State<WordListPage>
               if (word.tag is LearningWordVo) {
                 (word.tag as LearningWordVo).stability = 0.0;
               }
+              // 同步更新进度条
+              word.currentProgress = 0.0;
             });
             Global.logger.d('[Perf] onUnmasterBtnPressed STATE_UPDATED');
           }
