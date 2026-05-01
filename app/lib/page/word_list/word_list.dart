@@ -2272,7 +2272,7 @@ class WordListPageState extends State<WordListPage>
           backgroundColor: Colors.grey[400]!,
           foregroundColor: Colors.white,
           icon: Icons.check_circle,
-          label: '已熟知',
+          label: '已掌握',
         ));
       } else {
         String buttonText;
@@ -2284,7 +2284,7 @@ class WordListPageState extends State<WordListPage>
           color = const Color(0xFF2196F3);
           icon = Icons.replay;
         } else if (isSpecialList) {
-          buttonText = '熟知';
+          buttonText = '掌握';
           color = const Color(0xFF26A69A);
           icon = Icons.check_circle;
         } else {
