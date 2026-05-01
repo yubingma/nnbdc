@@ -180,6 +180,7 @@ class WordListPageState extends State<WordListPage>
 
   var studyMode = WordListStudyMode.list;
   bool _isHandwritingOverlayOpen = true;
+  bool _isSwitchingMode = false;
   int? _tempHandwritingSelectedIndex;
   final GlobalKey<HandwritingBoardState> _handwritingBoardKey = GlobalKey<HandwritingBoardState>();
   int _renderWordCallCount = 0;
@@ -3705,11 +3706,20 @@ class WordListPageState extends State<WordListPage>
 
                           // 6. 处理选择
                           if (selectedValue != null) {
-                            // 优化：给菜单收起动画一点时间，避免后续沉重的加载逻辑导致 UI 卡死
-                            Future.delayed(const Duration(milliseconds: 100), () async {
+                            // 根本解决方案：不使用延迟等待，也不使用全局 Modal 路由。
+                            // 而是通过 setState 触发页面内部的加载层。
+                            // 这样 Navigator 只有一个 pop 动作，没有路由冲突，动画会极其顺滑。
+                            setState(() {
+                              _isSwitchingMode = true;
+                            });
+
+                            // 利用微任务将沉重的逻辑切分到下一帧开始
+                            Future.microtask(() async {
                               if (!mounted) return;
-                              switch (selectedValue) {
-                                case menuWordList:
+                              
+                              try {
+                                switch (selectedValue) {
+                              case menuWordList:
                                 setState(() {
                                   studyMode = WordListStudyMode.list;
                                 });
@@ -3878,6 +3888,13 @@ class WordListPageState extends State<WordListPage>
                                 case menuSettings:
                                   _showSettingsDialog();
                                   break;
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isSwitchingMode = false;
+                                  });
+                                }
                               }
                             });
                           }
@@ -4121,6 +4138,42 @@ class WordListPageState extends State<WordListPage>
                 ),
               ),
             ),
+            if (_isSwitchingMode)
+              Container(
+                color: Colors.black.withValues(alpha: 0.3),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.grey[850] : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 10,
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '模式切换中...',
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white70 : Colors.black87,
+                            fontSize: 14,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
