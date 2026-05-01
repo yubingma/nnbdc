@@ -3521,7 +3521,10 @@ class WordListPageState extends State<WordListPage>
 
                         try {
                           // 再次检查 mounted，确保 showMenu 调用安全 (虽然上面已经检查过，但为了满足 strict linter flow analysis)
-                          if (!capturedContext.mounted) return;
+                          if (!capturedContext.mounted) {
+                            isMenuOpen = false;
+                            return;
+                          }
 
                           // 4. 构建菜单项
                           List<String> menuItems = [
@@ -3702,8 +3705,11 @@ class WordListPageState extends State<WordListPage>
 
                           // 6. 处理选择
                           if (selectedValue != null) {
-                            switch (selectedValue) {
-                              case menuWordList:
+                            // 优化：给菜单收起动画一点时间，避免后续沉重的加载逻辑导致 UI 卡死
+                            Future.delayed(const Duration(milliseconds: 100), () async {
+                              if (!mounted) return;
+                              switch (selectedValue) {
+                                case menuWordList:
                                 setState(() {
                                   studyMode = WordListStudyMode.list;
                                 });
@@ -3873,6 +3879,7 @@ class WordListPageState extends State<WordListPage>
                                   _showSettingsDialog();
                                   break;
                               }
+                            });
                           }
                         } finally {
                           // 7. 恢复标志位
