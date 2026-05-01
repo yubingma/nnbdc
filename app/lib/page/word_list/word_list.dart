@@ -43,7 +43,8 @@ import 'import_from_scan_page.dart';
 import 'word_list_actions.dart';
 import 'modes/list_mode_item.dart';
 import 'modes/speak_mode_item.dart';
-import 'modes/dictation_mode_item.dart';
+import 'modes/typing_mode_item.dart';
+import 'modes/handwriting_mode_item.dart';
 import 'modes/hide_mode_item.dart';
 
 const String menuWordList = '浏览词表';
@@ -2490,8 +2491,7 @@ class WordListPageState extends State<WordListPage>
           audioLevelBar: _audioLevelBar(),
         );
       case WordListStudyMode.dictation:
-      case WordListStudyMode.dictationHandwriting:
-        return DictationModeItem(
+        return TypingModeItem(
           word: word,
           index: i,
           baseIndex: baseIndex ?? 0,
@@ -2499,7 +2499,18 @@ class WordListPageState extends State<WordListPage>
           isDarkMode: isDarkMode,
           learningStatus: learningStatus,
           showWordProgress: args.showWordProgress,
-          studyMode: studyMode,
+          actions: this,
+          slidableActions: slidableActions,
+        );
+      case WordListStudyMode.dictationHandwriting:
+        return HandwritingModeItem(
+          word: word,
+          index: i,
+          baseIndex: baseIndex ?? 0,
+          isBookmarked: isBookmarked,
+          isDarkMode: isDarkMode,
+          learningStatus: learningStatus,
+          showWordProgress: args.showWordProgress,
           actions: this,
           slidableActions: slidableActions,
         );

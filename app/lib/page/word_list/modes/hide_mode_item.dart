@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
+
 import '../word_list_actions.dart';
-import 'word_list_item_layout.dart';
 import 'mode_components.dart';
+import 'word_list_item_layout.dart';
 
 /// 隐藏模式：包含“隐藏中文”或“隐藏英文”，用户点击后才会揭晓答案
 class HideModeItem extends StatelessWidget {

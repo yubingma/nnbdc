@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
+
 import '../word_list_actions.dart';
-import 'word_list_item_layout.dart';
 import 'mode_components.dart';
+import 'word_list_item_layout.dart';
 
 /// 浏览模式：最基础的单词列表模式，左边显示单词和音标，右边显示释义
 class ListModeItem extends StatelessWidget {

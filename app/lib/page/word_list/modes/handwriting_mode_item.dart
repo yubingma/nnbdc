@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/enum.dart';
-import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/word_util.dart';
-
+import 'package:nnbdc/util/utils.dart';
 import '../word_list_actions.dart';
-import 'mode_components.dart';
 import 'word_list_item_layout.dart';
+import 'mode_components.dart';
 
-/// 拼写模式：用户需要拼写出单词。支持“键盘拼写”和“手写拼写”两种子模式。
-class DictationModeItem extends StatelessWidget {
+/// 手写模式：用户通过全屏手写面板输入单词拼写
+class HandwritingModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;
   final int baseIndex;
@@ -16,11 +15,10 @@ class DictationModeItem extends StatelessWidget {
   final bool isDarkMode;
   final bool? learningStatus;
   final bool showWordProgress;
-  final WordListStudyMode studyMode;
   final WordListActionHandler actions;
   final List<Widget> slidableActions;
 
-  const DictationModeItem({
+  const HandwritingModeItem({
     super.key,
     required this.word,
     required this.index,
@@ -29,20 +27,17 @@ class DictationModeItem extends StatelessWidget {
     required this.isDarkMode,
     required this.learningStatus,
     required this.showWordProgress,
-    required this.studyMode,
     required this.actions,
     required this.slidableActions,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool isHandwritingMode = studyMode == WordListStudyMode.dictationHandwriting;
-
     return WordListItemLayout(
       word: word,
       index: index,
       baseIndex: baseIndex,
-      studyMode: studyMode,
+      studyMode: WordListStudyMode.dictationHandwriting,
       isBookmarked: isBookmarked,
       isDarkMode: isDarkMode,
       learningStatus: learningStatus,
@@ -65,53 +60,41 @@ class DictationModeItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildTextField(),
+                _buildReadOnlyTextField(),
                 if (word.hintLetterCount > 0)
                   _buildHint(),
               ],
             ),
           ),
-          if (isHandwritingMode)
-            _buildHandwritingButton(),
+          _buildHandwritingButton(),
         ],
       ),
     );
   }
 
-  Widget _buildTextField() {
-    return AnimatedBuilder(
-      animation: word.focusNode,
-      builder: (context, child) {
-        final isHandwriting = studyMode == WordListStudyMode.dictationHandwriting;
-        return TextField(
-          readOnly: isHandwriting,
-          enableInteractiveSelection: !isHandwriting,
-          controller: word.spellController,
-          focusNode: word.focusNode,
-          keyboardType: TextInputType.visiblePassword,
-          decoration: InputDecoration(
-            isCollapsed: true,
-            border: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-            focusedBorder: isHandwriting
-                ? const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))
-                : const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0097A7))),
-            contentPadding: EdgeInsets.zero,
-            hintText: isHandwriting ? '请在屏幕任何位置手写拼写' : null,
-            hintStyle: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white24 : Colors.black26),
-          ),
-          onTap: () => actions.onWordTap(word, index),
-          onChanged: (value) => actions.onSpellChanged(word, index, value),
-          style: TextStyle(
-            fontSize: 16,
-            color: Util.equalsIgnoreCase(word.word.spell, word.spellController.text)
-                ? word.isAnswerProvidedBySystem
-                    ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
-                    : Colors.green
-                : Colors.red,
-          ),
-        );
-      },
+  Widget _buildReadOnlyTextField() {
+    return TextField(
+      readOnly: true,
+      enableInteractiveSelection: false,
+      controller: word.spellController,
+      decoration: InputDecoration(
+        isCollapsed: true,
+        border: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+        contentPadding: EdgeInsets.zero,
+        hintText: '请在屏幕手写拼写',
+        hintStyle: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white24 : Colors.black26),
+      ),
+      onTap: () => actions.onWordTap(word, index),
+      style: TextStyle(
+        fontSize: 16,
+        color: Util.equalsIgnoreCase(word.word.spell, word.spellController.text)
+            ? word.isAnswerProvidedBySystem
+                ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
+                : Colors.green
+            : Colors.red,
+      ),
     );
   }
 
