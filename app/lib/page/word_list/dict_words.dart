@@ -204,12 +204,12 @@ class DictWordsProvider with WordsProvider implements WordModifier {
 class DictWordsProgressProvider implements WordProgressProvider {
   @override
   double getWordProgress(wordTag) {
-    throw UnimplementedError();
+    return 0.0;
   }
 
   @override
   double getWordProgressMax(wordTag) {
-    throw UnimplementedError();
+    return 100.0;
   }
 }
 
