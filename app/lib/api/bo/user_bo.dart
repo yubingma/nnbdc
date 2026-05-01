@@ -1,21 +1,21 @@
+import 'dart:math' as math;
+
+import 'package:drift/drift.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
-import 'package:nnbdc/api/vo.dart';
-import 'package:nnbdc/services/throttled_sync_service.dart';
-import 'package:nnbdc/util/sync.dart' as dbsync;
-import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/global.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
-import 'package:nnbdc/util/oper_type.dart';
-import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/error_handler.dart';
-import 'package:drift/drift.dart';
+import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/util/client_type.dart';
+import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/level_util.dart';
-import 'dart:math' as math;
+import 'package:nnbdc/util/sync.dart' as dbsync;
+import 'package:nnbdc/util/toast_util.dart';
 
 
 class UserBo {

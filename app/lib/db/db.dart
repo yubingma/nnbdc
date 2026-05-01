@@ -217,7 +217,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 38;
+  int get schemaVersion => 40;
 
   @override
   MigrationStrategy get migration {
@@ -346,6 +346,12 @@ class MyDatabase extends _$MyDatabase {
           if (from < 38) {
             await _migrateFromV37ToV38AddDescriptionToDicts();
           }
+          if (from < 39) {
+            await _migrateFromV38ToV39DropSentenceRawFields();
+          }
+          if (from < 40) {
+            await _migrateFromV39ToV40AddUserStudyDailyStats(m);
+          }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
@@ -382,6 +388,25 @@ class MyDatabase extends _$MyDatabase {
       await m.addColumn(users, users.premiumOverrideUpdateTime);
       await m.addColumn(users, users.premiumOverrideReason);
       await m.addColumn(users, users.premiumOverrideDuration);
+    });
+  }
+
+  /// 从版本 38 升级到版本 39：同步后端删除 sentence 表的 raw 字段
+  Future<void> _migrateFromV38ToV39DropSentenceRawFields() async {
+    await transaction(() async {
+      try {
+        await customStatement('ALTER TABLE sentences DROP COLUMN IF EXISTS english_raw');
+        await customStatement('ALTER TABLE sentences DROP COLUMN IF EXISTS chinese_raw');
+      } catch (e) {
+        Global.logger.e('删除 sentence raw 字段失败: $e');
+      }
+    });
+  }
+
+  /// 从版本 39 升级到版本 40：添加每日学习统计表
+  Future<void> _migrateFromV39ToV40AddUserStudyDailyStats(Migrator m) async {
+    await transaction(() async {
+      await m.createTable(userStudyDailyStats);
     });
   }
 
