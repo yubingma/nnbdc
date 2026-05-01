@@ -2020,17 +2020,10 @@ class WordBo {
     // 计算最大 popularity limit
     int? maxPopularityLimit;
 
-    // 检查该单词是否存在于用户的学习词书中（dictWords）
-    List<String> relatedDictIds = [];
-    if (selectedDictIds.isNotEmpty) {
-      final dwQuery = db.select(db.dictWords)..where((dw) => dw.wordId.equals(wordId) & dw.dictId.isIn(selectedDictIds));
-      final dictWords = await dwQuery.get();
-      relatedDictIds = dictWords.map((e) => e.dictId).toList();
-    }
 
-    // 情况1：在学习词书中存在该单词 → 取这些词书的最大 limit
-    // 情况2：否则 → 取所有学习词书的最大 limit
-    final targetDictIds = relatedDictIds.isNotEmpty ? relatedDictIds : selectedDictIds;
+
+    // 取所有学习词书的最大 limit (采用最宽松策略：只要用户学习的任何一本书允许，就显示该释义)
+    final targetDictIds = selectedDictIds;
     if (targetDictIds.isNotEmpty) {
       for (final dictId in targetDictIds) {
         final dict = await db.dictsDao.findById(dictId);
@@ -2050,12 +2043,35 @@ class WordBo {
       maxPopularityLimit = null;
     }
 
+    if (maxPopularityLimit != null && userId != null && userId.isNotEmpty) {
+      final isMastered = await db.masteredWordsDao.isWordMastered(userId, wordId);
+      if (isMastered) {
+        maxPopularityLimit = null;
+      } else {
+        final lw = await (db.select(db.learningWords)..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(wordId))).getSingleOrNull();
+        if (lw != null) {
+          maxPopularityLimit = null;
+        }
+      }
+    }
+
     // 按最大 popularity limit 过滤通用释义
     if (maxPopularityLimit == null) {
       return commonMeaningItems;
     }
+    
     final intLimit = maxPopularityLimit;
-    return commonMeaningItems.where((mi) => mi.popularity <= intLimit).toList();
+    final filtered = commonMeaningItems.where((mi) => mi.popularity <= intLimit).toList();
+
+    // 【保底逻辑】如果一个单词的释义由于限制度太严格而被过滤完了，或者剩余太少，
+    // 我们至少保留常用度排名最靠前的 3 个释义，防止出现“暂无释义”。
+    // 注意：commonMeaningItems 已经在前面按 popularity 升序排过序了。
+    const minMeanings = 3;
+    if (filtered.length < minMeanings && commonMeaningItems.length > filtered.length) {
+      return commonMeaningItems.take(minMeanings).toList();
+    }
+    
+    return filtered;
   }
 
   /// 提供给UI：根据 wordId 和 userId 获取释义项（封装内部的 popularity limit 逻辑）

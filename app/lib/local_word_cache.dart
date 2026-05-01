@@ -268,6 +268,25 @@ class LocalWordCache {
         }
       }
 
+      // 【保底逻辑】对所有单词进行检查，确保每个词至少有保底数量的释义（如果词库有的话）
+      const minMeanings = 3;
+      for (final wordId in wordIds) {
+        final currentMeanings = wordMeanings[wordId] ?? [];
+        if (currentMeanings.length < minMeanings) {
+          // 获取该单词在通用词典中的所有释义
+          final allCommonMeanings = commonMeanings.where((m) => m.wordId == wordId).toList();
+          if (allCommonMeanings.length > currentMeanings.length) {
+            // 补齐到 minMeanings 个
+            for (final m in allCommonMeanings) {
+              if (currentMeanings.length >= minMeanings) break;
+              if (!currentMeanings.any((existing) => existing.id == m.id)) {
+                wordMeanings.putIfAbsent(wordId, () => []).add(m);
+              }
+            }
+          }
+        }
+      }
+
 
       // 不再使用任意词典兜底：仅允许通用词典（dictId = '0'）作为兜底
 
