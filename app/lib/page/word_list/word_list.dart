@@ -1461,6 +1461,11 @@ class WordListPageState extends State<WordListPage>
       var currentPosition =
           positions.where((pos) => pos.index == wordUiIndex).firstOrNull;
       if (currentPosition != null) {
+        // 如果单词已经在合适位置附近（误差在5%以内），不需要滚动
+        if (currentPosition.itemLeadingEdge >= _handwritingScrollAlignment - 0.05 &&
+            currentPosition.itemLeadingEdge <= _handwritingScrollAlignment + 0.05) {
+          return;
+        }
       }
     }
 
@@ -1822,8 +1827,11 @@ class WordListPageState extends State<WordListPage>
         }
       }
 
-      if (studyMode == WordListStudyMode.dictationHandwriting) {
-        // _isHandwritingOverlayVisible = true; // 移除这里的全局自动恢复
+      if (studyMode == WordListStudyMode.dictation ||
+          studyMode == WordListStudyMode.dictationHandwriting ||
+          studyMode == WordListStudyMode.speakChinese ||
+          studyMode == WordListStudyMode.speakEnglish) {
+        scrollToWord(index);
       }
     });
 
@@ -2554,13 +2562,9 @@ class WordListPageState extends State<WordListPage>
       }
       if (studyMode == WordListStudyMode.speakChinese ||
           studyMode == WordListStudyMode.speakEnglish ||
+          studyMode == WordListStudyMode.dictation ||
           studyMode == WordListStudyMode.dictationHandwriting) {
         scrollToWord(currWordIndex + 1);
-
-        /// 如果目标单词不可见（在视口下方），则视口向下滚动一个单词
-        /*if (currWordIndex + 3 >= getLastVisibleListItem()) {
-          scrollToWord(getFirstVisibleListItem() + 1);
-        }*/
       }
     } else {
       // 到达最后一个单词
@@ -2586,6 +2590,7 @@ class WordListPageState extends State<WordListPage>
       }
       if (studyMode == WordListStudyMode.speakChinese ||
           studyMode == WordListStudyMode.speakEnglish ||
+          studyMode == WordListStudyMode.dictation ||
           studyMode == WordListStudyMode.dictationHandwriting) {
         scrollToWord(currWordIndex - 1);
       }
