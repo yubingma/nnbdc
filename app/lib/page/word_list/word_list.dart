@@ -3136,6 +3136,9 @@ class WordListPageState extends State<WordListPage>
                                 });
                                 _unsubscribeMeter();
                                 asr.stopAsr();
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  jumpToBookMark(force: true);
+                                });
                                 break;
                               case menuImportFromBook:
                                 final needRefresh =
@@ -3181,7 +3184,7 @@ class WordListPageState extends State<WordListPage>
                                   asr.stopAsr();
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark();
+                                  jumpToBookMark(force: true);
                                 });
                                 break;
                               case menuWriteSpellHandwriting:
@@ -3207,18 +3210,9 @@ class WordListPageState extends State<WordListPage>
                                     handlingAsrChinese = "";
                                   });
                                 }
-                                // 滚动当前单词到可视区域（偏上位置）
+                                // 滚动当前单词到可视区域
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  if (itemScrollController.isAttached) {
-                                    final activeIdx = getBookMarkUiPosition();
-                                    if (activeIdx >= 0) {
-                                      itemScrollController.scrollTo(
-                                        index: activeIdx,
-                                        duration: const Duration(milliseconds: 300),
-                                        alignment: _handwritingScrollAlignment,
-                                      );
-                                    }
-                                  }
+                                  jumpToBookMark(force: true);
                                 });
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
                                 _unsubscribeMeter();
@@ -3235,6 +3229,9 @@ class WordListPageState extends State<WordListPage>
                                 });
                                 _unsubscribeMeter();
                                 asr.stopAsr();
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  jumpToBookMark(force: true);
+                                });
                                 break;
                               case menuHideEnglish:
                                 setState(() {
@@ -3245,6 +3242,9 @@ class WordListPageState extends State<WordListPage>
                                 });
                                 _unsubscribeMeter();
                                 asr.stopAsr();
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  jumpToBookMark(force: true);
+                                });
                                 break;
 
                               case menuSpeakChinese:
@@ -3261,7 +3261,7 @@ class WordListPageState extends State<WordListPage>
                                   _subscribeMeterIfNeeded();
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark();
+                                  jumpToBookMark(force: true);
                                 });
                                 break;
                               case menuSpeakEnglish:
@@ -3278,7 +3278,7 @@ class WordListPageState extends State<WordListPage>
                                   _subscribeMeterIfNeeded();
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark();
+                                  jumpToBookMark(force: true);
                                 });
                                 break;
                                 case menuWalkman:
