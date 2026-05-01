@@ -940,7 +940,7 @@ class WordListPageState extends State<WordListPage>
     Global.logger.d("~~~~~开始检查识别结果: $asrResult");
 
     final currWordIndex = getBookMarkUiPosition();
-    if (currWordIndex == -1) return;
+    if (currWordIndex == -1 || currWordIndex >= words.length) return;
 
     // 记录开始检查时的单词ID
     final checkWordId = words[currWordIndex].word.id;
@@ -1330,10 +1330,12 @@ class WordListPageState extends State<WordListPage>
       }
 
       // 让书签单词的上沿显示在屏幕中部
-      itemScrollController.scrollTo(
-          index: bookMarkUiPos,
-          duration: const Duration(milliseconds: 300),
-          alignment: 0.5); // 显示在屏幕中部
+      if (itemScrollController.isAttached) {
+        itemScrollController.scrollTo(
+            index: bookMarkUiPos,
+            duration: const Duration(milliseconds: 300),
+            alignment: 0.5); // 显示在屏幕中部
+      }
     }
   }
 
@@ -1356,10 +1358,12 @@ class WordListPageState extends State<WordListPage>
     }
 
     // 让目标单词的上沿显示在屏幕偏上部（约 35% 处），为底部手写板留出更多视觉空间
-    itemScrollController.scrollTo(
-        index: wordUiIndex,
-        duration: const Duration(milliseconds: 300),
-        alignment: _handwritingScrollAlignment); // 稍微偏上
+    if (itemScrollController.isAttached) {
+      itemScrollController.scrollTo(
+          index: wordUiIndex,
+          duration: const Duration(milliseconds: 300),
+          alignment: _handwritingScrollAlignment); // 稍微偏上
+    }
   }
 
   int getBookMarkUiPosition() {
@@ -1431,6 +1435,7 @@ class WordListPageState extends State<WordListPage>
               // _buildLegend(isDarkMode), // 已移动到更多菜单中
               Expanded(
                 child: ScrollablePositionedList.builder(
+                  key: const ValueKey('word_list_scrollable_positioned_list'),
                   itemCount: words.length,
                   itemBuilder: (context, index) {
                     // 为每个 item 添加 key，提高重用性
@@ -2282,22 +2287,25 @@ class WordListPageState extends State<WordListPage>
 
   Widget _buildSpeakEnglishPassed(
       WordWrapper word, bool isBookmarked, bool isDarkMode) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // 估算单词和音标所需的宽度
-        final spellWidth = word.word.spell.length * 14.0; // 估算单词宽度
-        final pronounceWidth = word.word.mergedPronounce.isNotEmpty
-            ? (word.word.mergedPronounce.length * 7.0 +
-                24.0) // 估算音标宽度（包括容器padding）
-            : 0.0;
-        final totalWidth = spellWidth + pronounceWidth + 8.0; // 包括间距
+    // 估算可用宽度，避免使用 LayoutBuilder 破坏 IntrinsicHeight
+    final screenWidth = MediaQuery.of(context).size.width;
+    // 扣除边距、侧边栏(32)等占用的宽度 (大约 100)
+    final availableWidth = screenWidth - 100;
 
-        // 如果总宽度超过可用宽度，或者音标很长，则换行显示
-        final shouldWrap = totalWidth > constraints.maxWidth ||
-            (word.word.mergedPronounce.isNotEmpty &&
-                word.word.mergedPronounce.length > 25);
+    // 估算单词和音标所需的宽度
+    final spellWidth = word.word.spell.length * 14.0; // 估算单词宽度
+    final pronounceWidth = word.word.mergedPronounce.isNotEmpty
+        ? (word.word.mergedPronounce.length * 7.0 +
+            24.0) // 估算音标宽度（包括容器padding）
+        : 0.0;
+    final totalWidth = spellWidth + pronounceWidth + 8.0; // 包括间距
 
-        if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
+    // 如果总宽度超过可用宽度，或者音标很长，则换行显示
+    final shouldWrap = totalWidth > availableWidth ||
+        (word.word.mergedPronounce.isNotEmpty &&
+            word.word.mergedPronounce.length > 25);
+
+    if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
           // 换行显示：单词一行，音标一行
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2385,8 +2393,6 @@ class WordListPageState extends State<WordListPage>
             ],
           );
         }
-      },
-    );
   }
 
   Widget _buildSpeakChineseArea(WordWrapper word) {
@@ -2816,38 +2822,22 @@ class WordListPageState extends State<WordListPage>
       borderRadius: BorderRadius.circular(8),
       child: Container(
         color: bgColor,
-        child: Stack(
-          children: [
-            /// 1. 左侧高长条背景 (通过 Positioned.fill 自动伸缩至全高)
-            Positioned.fill(
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.15)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                  const Expanded(child: SizedBox.shrink()),
-                ],
-              ),
-            ),
-
-            /// 2. 实际内容层
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                /// 左侧热区 (序号 + 状态)
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _handleWordTap(word, i),
-                  onLongPress: () => _handleWordLongPress(word, i),
-                  child: SizedBox(
-                    width: 32,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              /// 1. 左侧序号和点 (带背景色，强制全高并居中)
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _handleWordTap(word, i),
+                onLongPress: () => _handleWordLongPress(word, i),
+                child: Container(
+                  width: 32,
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : const Color(0xFFE2E8F0),
+                  child: Center(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
@@ -2856,12 +2846,13 @@ class WordListPageState extends State<WordListPage>
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 9,
-                            height: 1.2,
+                            height: 1.0,
+                            leadingDistribution: TextLeadingDistribution.even,
                             fontWeight: FontWeight.w600,
                             color: isDarkMode ? Colors.white38 : Colors.black38,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         if (statusColor != null)
                           Container(
                             width: 4,
@@ -2872,7 +2863,7 @@ class WordListPageState extends State<WordListPage>
                             ),
                           ),
 
-                        /// 掌握度进度条（横条）
+                        /// 掌握度进度条
                         if (args.showWordProgress)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
@@ -2892,8 +2883,9 @@ class WordListPageState extends State<WordListPage>
                     ),
                   ),
                 ),
+              ),
 
-                Expanded(
+              Expanded(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -3037,10 +3029,8 @@ class WordListPageState extends State<WordListPage>
           ],
         ),
       ),
-    ],
     ),
-  ),
-);
+  );
 
 
     if (actions.isEmpty || (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)) return itemContent;
