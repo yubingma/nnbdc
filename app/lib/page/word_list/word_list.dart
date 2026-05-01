@@ -305,6 +305,7 @@ class WordListPageState extends State<WordListPage>
         
         // 计算书签所在页的起始位置
         baseIndex = (wordIndex ~/ _pageSize) * _pageSize;
+        _initialScrollIndex = wordIndex - baseIndex!; // 预设初始滚动位置
         await doQuery(true, baseIndex!, _pageSize, false);
 
         // 数据和页面都准备好后，执行一次精准跳转
@@ -681,6 +682,8 @@ class WordListPageState extends State<WordListPage>
     _lastMeterAt = null;
   }
 
+  int? _initialScrollIndex;
+  
   @override
   void initState() {
     final sw = Stopwatch()..start();
@@ -1303,7 +1306,6 @@ class WordListPageState extends State<WordListPage>
     if (isBookMarkValid(bookMark)) {
       final bookMarkUiPos = getBookMarkUiPosition();
       if (bookMarkUiPos == -1 || bookMarkUiPos >= words.length) {
-        Global.logger.w('jumpToBookMark: 非法位置 $bookMarkUiPos');
         return;
       }
 
@@ -1312,26 +1314,34 @@ class WordListPageState extends State<WordListPage>
         return;
       }
 
-      if (!force) {
-        // 检查当前单词是否已经在合适的位置
-        var positions = itemPositionsListener.itemPositions.value;
-        if (positions.isNotEmpty) {
-          // 找到当前单词的位置信息
-          var currentPosition =
-              positions.where((pos) => pos.index == bookMarkUiPos).firstOrNull;
-          if (currentPosition != null) {
-            // 如果单词已经在屏幕中部附近（误差在5%以内），不需要滚动
-            if (currentPosition.itemLeadingEdge >=
-                    _handwritingScrollAlignment - 0.05 &&
-                currentPosition.itemLeadingEdge <=
-                    _handwritingScrollAlignment + 0.05) {
-              return;
-            }
+      // 如果提供了初始索引，说明我们已经通过 initialScrollIndex 定位到了附近
+      // 此时执行一次精准对齐跳转
+      if (force) {
+        // 使用 jumpTo 替代 scrollTo 实现“瞬时成功”，避免进入页面时的滚动过程干扰
+        itemScrollController.jumpTo(
+            index: bookMarkUiPos, alignment: _handwritingScrollAlignment);
+        _initialScrollIndex = null; // 清除标志，防止重复跳转
+        return;
+      }
+
+      // 正常模式下的位置检查逻辑
+      var positions = itemPositionsListener.itemPositions.value;
+      if (positions.isNotEmpty) {
+        // 找到当前单词的位置信息
+        var currentPosition =
+            positions.where((pos) => pos.index == bookMarkUiPos).firstOrNull;
+        if (currentPosition != null) {
+          // 如果单词已经在屏幕中部附近（误差在5%以内），不需要滚动
+          if (currentPosition.itemLeadingEdge >=
+                  _handwritingScrollAlignment - 0.05 &&
+              currentPosition.itemLeadingEdge <=
+                  _handwritingScrollAlignment + 0.05) {
+            return;
           }
         }
       }
 
-      // 执行滚动
+      // 正常运行时的滚动（带动画，提升视觉连续性）
       itemScrollController.scrollTo(
           index: bookMarkUiPos,
           duration: const Duration(milliseconds: 300),
@@ -1444,6 +1454,7 @@ class WordListPageState extends State<WordListPage>
                       child: renderWord(index),
                     );
                   },
+                  initialScrollIndex: _initialScrollIndex ?? 0,
                   itemScrollController: itemScrollController,
                   itemPositionsListener: itemPositionsListener,
                   padding: const EdgeInsets.only(top: 20, bottom: 120),
