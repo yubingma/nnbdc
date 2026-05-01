@@ -2990,8 +2990,7 @@ class WordListPageState extends State<WordListPage>
                           if (args.showAiStory) {
                             menuItems.add(menuAiStory);
                           }
-                          if (studyMode == WordListStudyMode.speakChinese ||
-                              studyMode == WordListStudyMode.speakEnglish) {
+                          if (studyMode == WordListStudyMode.speakChinese) {
                             menuItems.add(menuSettings);
                           }
 
@@ -3674,8 +3673,8 @@ class WordListPageState extends State<WordListPage>
                 ),
                 title: Text(
                   studyMode == WordListStudyMode.speakEnglish
-                      ? '背英文模式设置'
-                      : '背中文模式设置',
+                      ? '说英文模式设置'
+                      : '说中文模式设置',
                   style: TextStyle(
                     color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
                     fontSize: 16,
