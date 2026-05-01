@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 
 import '../util/utils.dart';
 import '../state.dart';
+import '../util/asr.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -46,6 +47,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // 进入查词页时强制关停 ASR
+    Asr().stopAsr();
     loadData();
     _focusNode.addListener(() {
       if (mounted) setState(() {});

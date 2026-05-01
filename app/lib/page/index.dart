@@ -12,6 +12,7 @@ import 'nav_icon_view.dart';
 import '../global.dart';
 import '../state.dart';
 import 'package:nnbdc/event/events.dart';
+import '../util/asr.dart';
 
 class IndexPageArgs {
   late int buttonIndex;
@@ -39,6 +40,8 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // 进入主页时强制关闭 ASR，确保状态干净
+    Asr().stopAsr();
 
     args = Get.arguments ?? IndexPageArgs(0);
     _currentIndex = args.buttonIndex;
@@ -92,6 +95,9 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
         onTap: () {
           if (_currentIndex == index) return;
           
+          // 切换 Tab 时强制关闭 ASR，防止后台残留
+          Asr().stopAsr();
+
           setState(() {
             _navigationViews![actualCurrentIndex].controller.reverse();
             _currentIndex = index;

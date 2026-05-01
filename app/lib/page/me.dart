@@ -50,6 +50,7 @@ import '../theme/app_theme.dart';
 import '../util/level_util.dart';
 import '../constants.dart';
 import '../config.dart';
+import '../util/asr.dart';
 
 class MePage extends StatefulWidget {
   const MePage({super.key});
@@ -251,6 +252,8 @@ class _MePageState extends State<MePage> {
   @override
   void initState() {
     super.initState();
+    // 进入“我”页面时强制关闭 ASR
+    Asr().stopAsr();
 
     // 连接socket服务器
     SocketIoClient.instance.connect();

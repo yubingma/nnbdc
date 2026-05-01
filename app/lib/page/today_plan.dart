@@ -28,6 +28,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/learning_service.dart';
 
 import 'package:nnbdc/util/date_utils.dart' as app_date;
+import 'package:nnbdc/util/asr.dart';
 
 class TodayPlanPage extends StatefulWidget {
   const TodayPlanPage({super.key});
@@ -58,6 +59,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   @override
   void initState() {
     super.initState();
+    // 首页初始化时强制关停 ASR
+    Asr().stopAsr();
     WidgetsBinding.instance.addObserver(this);
     Timer.run(() {
       if (mounted) {
