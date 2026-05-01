@@ -45,6 +45,7 @@ part 'db.g.dart';
   SysDbVersion,
   LocalExceptions,
   LearningLogs,
+  UserStudyDailyStats,
 ], daos: [
   UsersDao,
   LocalParamsDao,
@@ -77,6 +78,7 @@ part 'db.g.dart';
   SysDbVersionDao,
   LocalExceptionsDao,
   LearningLogsDao,
+  UserStudyDailyStatsDao,
 ])
 class MyDatabase extends _$MyDatabase {
   MyDatabase(super.e);

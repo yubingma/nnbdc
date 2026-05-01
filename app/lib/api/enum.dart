@@ -64,6 +64,19 @@ extension UserDayStatusExt on UserDayStatus {
         return "DAKAED";
     }
   }
+
+  static UserDayStatus fromJson(String json) {
+    switch (json) {
+      case "LOGGEDIN":
+        return UserDayStatus.loggedIn;
+      case "STUDIED":
+        return UserDayStatus.studied;
+      case "DAKAED":
+        return UserDayStatus.dakaed;
+      default:
+        return UserDayStatus.notLogin;
+    }
+  }
 }
 
 enum StudyStep {

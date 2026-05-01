@@ -1290,6 +1290,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
         await dao.saveUser(updatedDbUser, true);
         Global.updateUserCache(updatedDbUser);
+        
+        // 更新历史每日统计
+        await MyDatabase.instance.userStudyDailyStatsDao.incrementSeconds(user.id, AppClock.now(), secsToSync);
       }
     } catch (e) {
       Global.logger.e("同步学习时长失败", error: e);

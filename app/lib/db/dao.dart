@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/table.dart';
+import 'package:intl/intl.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/oper_type.dart';
@@ -1485,6 +1487,19 @@ class UserOpersDao extends DatabaseAccessor<MyDatabase> with _$UserOpersDaoMixin
     if (genLog) {
       await DbLogUtil.logOperation(record.userId, 'INSERT', 'userOpers', record.id, record);
     }
+
+    // [性能优化] 同步更新每日统计表，以便热力图高性能展示
+    UserDayStatus? status;
+    if (record.operType == OperType.daka.value) {
+      status = UserDayStatus.dakaed;
+    } else if (record.operType == OperType.startLearn.value) {
+      status = UserDayStatus.studied;
+    } else if (record.operType == OperType.login.value) {
+      status = UserDayStatus.loggedIn;
+    }
+    if (status != null) {
+      await db.userStudyDailyStatsDao.updateDayStatus(record.userId, record.operTime, status);
+    }
   }
 
   // 创建登录操作记录
@@ -2190,18 +2205,119 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
     final startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
     final startTimestamp = startDate.millisecondsSinceEpoch ~/ 1000;
 
+    // 优先从新表查询，如果没有数据则从旧表（learning_logs）查询
+    final stats = await db.userStudyDailyStatsDao.getRecentStats(userId, days);
+    if (stats.isNotEmpty) {
+      return stats.map((s) => {
+        'day': DateFormat('yyyy-MM-dd').format(s.date),
+        'count': s.reviewCount,
+        'seconds': s.studySeconds,
+      }).toList();
+    }
+
     final query = customSelect(
-      'SELECT date(create_time, "unixepoch", "localtime") as day, count(*) as count '
+      'SELECT COALESCE(date(create_time, "unixepoch", "localtime"), date(create_time)) as day, count(*) as count '
       'FROM learning_logs '
-      'WHERE user_id = ? AND create_time >= ? '
+      'WHERE user_id = ? AND (create_time >= ? OR create_time >= date(?, "unixepoch")) '
       'GROUP BY day '
       'ORDER BY day ASC',
-      variables: [Variable.withString(userId), Variable.withInt(startTimestamp)],
+      variables: [Variable.withString(userId), Variable.withInt(startTimestamp), Variable.withInt(startTimestamp)],
       readsFrom: {learningLogs},
     );
 
     final rows = await query.get();
     return rows.map((r) => r.data).toList();
+  }
+}
+
+@DriftAccessor(tables: [UserStudyDailyStats])
+class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStudyDailyStatsDaoMixin {
+  UserStudyDailyStatsDao(super.db);
+
+  Future<void> incrementSeconds(String userId, DateTime date, int seconds) async {
+    final pureDate = DateTime(date.year, date.month, date.day);
+    final existing = await (select(userStudyDailyStats)
+          ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
+        .getSingleOrNull();
+
+    if (existing == null) {
+      await into(userStudyDailyStats).insert(UserStudyDailyStatsCompanion.insert(
+        userId: userId,
+        date: pureDate,
+        studySeconds: Value(seconds),
+      ));
+    } else {
+      await update(userStudyDailyStats).replace(existing.copyWith(
+        studySeconds: existing.studySeconds + seconds,
+      ));
+    }
+  }
+
+  Future<void> incrementReviewCount(String userId, DateTime date) async {
+    final pureDate = DateTime(date.year, date.month, date.day);
+    final existing = await (select(userStudyDailyStats)
+          ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
+        .getSingleOrNull();
+
+    if (existing == null) {
+      await into(userStudyDailyStats).insert(UserStudyDailyStatsCompanion.insert(
+        userId: userId,
+        date: pureDate,
+        reviewCount: const Value(1),
+      ));
+    } else {
+      await update(userStudyDailyStats).replace(existing.copyWith(
+        reviewCount: existing.reviewCount + 1,
+      ));
+    }
+  }
+
+  Future<List<UserStudyDailyStat>> getRecentStats(String userId, int days) async {
+    final now = AppClock.now();
+    final startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
+    return (select(userStudyDailyStats)
+          ..where((t) => t.userId.equals(userId) & t.date.isBiggerOrEqualValue(startDate))
+          ..orderBy([(t) => OrderingTerm.asc(t.date)]))
+        .get();
+  }
+
+  Future<void> updateDayStatus(String userId, DateTime date, UserDayStatus newStatus) async {
+    final pureDate = DateTime(date.year, date.month, date.day);
+    final existing = await (select(userStudyDailyStats)
+          ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
+        .getSingleOrNull();
+
+    final statusValue = newStatus.json;
+
+    if (existing == null) {
+      await into(userStudyDailyStats).insert(UserStudyDailyStatsCompanion.insert(
+        userId: userId,
+        date: pureDate,
+        dayStatus: Value(statusValue),
+      ));
+    } else {
+      // 状态升级逻辑：dakaed > studied > logined > notLogin
+      bool shouldUpdate = false;
+      final currentStatus = existing.dayStatus;
+      
+      if (currentStatus == null) {
+        shouldUpdate = true;
+      } else if (statusValue == UserDayStatus.dakaed.json) {
+        shouldUpdate = true;
+      } else if (statusValue == UserDayStatus.studied.json && currentStatus != UserDayStatus.dakaed.json) {
+        shouldUpdate = true;
+      } else if (statusValue == UserDayStatus.loggedIn.json && 
+                 currentStatus != UserDayStatus.dakaed.json && 
+                 currentStatus != UserDayStatus.studied.json) {
+        shouldUpdate = true;
+      }
+
+      if (shouldUpdate) {
+        await update(userStudyDailyStats).replace(existing.copyWith(
+          dayStatus: Value(statusValue),
+        ));
+      }
+    }
   }
 }
 

@@ -653,3 +653,15 @@ class LearningLogs extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// 每日学习统计表（持久化存储历史时长和单词数）
+class UserStudyDailyStats extends Table {
+  TextColumn get userId => text()();
+  DateTimeColumn get date => dateTime()(); // 纯日期（0点）
+  IntColumn get studySeconds => integer().withDefault(const Constant(0))();
+  IntColumn get reviewCount => integer().withDefault(const Constant(0))();
+  TextColumn get dayStatus => text().nullable()(); // 记录当天的最高状态 (login, studied, dakaed)
+
+  @override
+  Set<Column> get primaryKey => {userId, date};
+}

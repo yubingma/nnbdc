@@ -194,41 +194,25 @@ class UserBo {
 
     final List<UserDayStatus> dayStatuses = List.filled(recentNDays, UserDayStatus.notLogin);
 
-    // 从 dakas 表查询打卡记录（与 hasDakaToday 保持一致的数据源）
-    final allDakas = await db.dakasDao.getDakaRecords(userId);
-    final Set<String> dakaDateSet = allDakas
-        .map((d) => _formatPureDate(d.forLearningDate))
-        .toSet();
-
-    // 从 userOpers 表查询登录和学习记录
-    final allOpers = await db.userOpersDao.getUserOpers(userId);
-
-    final Map<String, Set<String>> dateOperMap = {};
-    for (final hist in allOpers) {
-      final dateStr = _formatPureDate(hist.operTime);
-      dateOperMap.putIfAbsent(dateStr, () => {}).add(hist.operType);
-    }
+    // [性能优化] 直接从每日统计表获取状态，避免查询 dakas 和 userOpers 两张大表
+    final stats = await db.userStudyDailyStatsDao.getRecentStats(userId, recentNDays);
+    final Map<String, String> dateStatusMap = {
+      for (var s in stats) _formatPureDate(s.date): s.dayStatus ?? UserDayStatus.notLogin.json
+    };
 
     for (int i = 0; i < recentNDays; i++) {
       final date = startDate.add(Duration(days: i));
       final dateStr = _formatPureDate(date);
-
-      if (dakaDateSet.contains(dateStr)) {
-        dayStatuses[i] = UserDayStatus.dakaed;
-      } else {
-        final operTypes = dateOperMap[dateStr] ?? {};
-        if (operTypes.contains(OperType.startLearn.value)) {
-          dayStatuses[i] = UserDayStatus.studied;
-        } else if (operTypes.contains(OperType.login.value)) {
-          dayStatuses[i] = UserDayStatus.loggedIn;
-        }
+      final statusJson = dateStatusMap[dateStr];
+      if (statusJson != null) {
+        dayStatuses[i] = UserDayStatusExt.fromJson(statusJson);
       }
     }
 
-    final List<String> result = dayStatuses.map((status) => status.json).toList();
-    final ret = Result<List<String>>("SUCCESS", "获取成功", true);
-    ret.data = result;
-    return ret;
+    final resultData = dayStatuses.map((s) => s.json).toList();
+    final result = Result<List<String>>("SUCCESS", "获取成功", true);
+    result.data = resultData;
+    return result;
   }
 
   Future<Result<bool>> hasDakaToday(String userId) async {

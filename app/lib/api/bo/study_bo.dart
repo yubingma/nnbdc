@@ -871,6 +871,11 @@ class StudyBo {
         ),
         true,
       );
+      
+      // 更新历史每日统计 (单词数)
+      await db.userStudyDailyStatsDao.incrementReviewCount(user.id, now);
+      // 更新每日状态为“已学习”
+      await db.userStudyDailyStatsDao.updateDayStatus(user.id, now, UserDayStatus.studied);
     }
 
     final updatedWord = currWord.copyWith(
