@@ -300,18 +300,17 @@ class WordListPageState extends State<WordListPage>
       Global.logger.d('WordListPage: getWordIndex took ${swIdx.elapsedMilliseconds}ms');
       
       if (wordIndex != -1) {
+        // 重要：更新书签中的实时位置，防止位置陈旧导致计算UI偏移出错
+        bookMark = BookMarkVo(wordIndex, bookMark!.spell);
+        
         // 计算书签所在页的起始位置
         baseIndex = (wordIndex ~/ _pageSize) * _pageSize;
         await doQuery(true, baseIndex!, _pageSize, false);
 
-        // 滚动到书签位置
+        // 数据和页面都准备好后，执行一次精准跳转
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final bookMarkUiPos = getBookMarkUiPosition();
-          if (bookMarkUiPos >= 0 && bookMarkUiPos < words.length) {
-            itemScrollController.scrollTo(
-                index: bookMarkUiPos,
-                duration: const Duration(milliseconds: 300),
-                alignment: _handwritingScrollAlignment); // 显示在屏幕偏上部
+          if (mounted) {
+            jumpToBookMark(force: true);
           }
         });
       } else {
@@ -332,6 +331,7 @@ class WordListPageState extends State<WordListPage>
 
     setState(() {
       dataLoaded = true;
+      _showList = true; // 数据加载完直接允许显示列表
     });
     
     Global.logger.d('WordListPage: loadData total completed in ${swTotal.elapsedMilliseconds}ms');
@@ -700,18 +700,8 @@ class WordListPageState extends State<WordListPage>
     WidgetsBinding.instance.addObserver(this);
 
     doInit();
-    // 立即开始异步加载数据，不再等待首帧完成，减少白屏/加载态感知时间
     loadData();
     
-    // 延迟显示列表内容，给路由过渡动画留出呼吸空间
-    // 从 150ms 缩减到 20ms，提升进入速度的感知，同时仍保留一帧缓冲
-    Future.delayed(const Duration(milliseconds: 20), () {
-      if (mounted) {
-        setState(() {
-          _showList = true;
-        });
-      }
-    });
     _checkAndShowGuide();
     Global.logger.d('WordListPage: initState completed in ${sw.elapsedMilliseconds}ms');
   }
@@ -1309,44 +1299,43 @@ class WordListPageState extends State<WordListPage>
     _subscribeMeterIfNeeded();
   }
 
-  jumpToBookMark() {
+  void jumpToBookMark({bool force = false}) {
     if (isBookMarkValid(bookMark)) {
       final bookMarkUiPos = getBookMarkUiPosition();
       if (bookMarkUiPos == -1 || bookMarkUiPos >= words.length) {
+        Global.logger.w('jumpToBookMark: 非法位置 $bookMarkUiPos');
         return;
       }
 
-      // 确保数据已加载完成
-      if (!dataLoaded || words.isEmpty) {
+      // 确保数据已加载完成且控制器已挂载
+      if (!dataLoaded || words.isEmpty || !itemScrollController.isAttached) {
         return;
       }
 
-      // 检查当前单词是否已经在合适的位置
-      var positions = itemPositionsListener.itemPositions.value;
-      if (positions.isNotEmpty) {
-        // 找到当前单词的位置信息
-        var currentPosition =
-            positions.where((pos) => pos.index == bookMarkUiPos).firstOrNull;
-        if (currentPosition != null) {
-          // 如果单词已经在屏幕中部附近（误差在5%以内），不需要滚动
-          if (currentPosition.itemLeadingEdge >= _handwritingScrollAlignment &&
-              currentPosition.itemLeadingEdge <= 0.55) {
-            return;
-          }
-          // 如果单词在目标位置上方（更靠近屏幕顶部），不进行向下滚动调整
-          if (currentPosition.itemLeadingEdge < 0.5) {
-            return;
+      if (!force) {
+        // 检查当前单词是否已经在合适的位置
+        var positions = itemPositionsListener.itemPositions.value;
+        if (positions.isNotEmpty) {
+          // 找到当前单词的位置信息
+          var currentPosition =
+              positions.where((pos) => pos.index == bookMarkUiPos).firstOrNull;
+          if (currentPosition != null) {
+            // 如果单词已经在屏幕中部附近（误差在5%以内），不需要滚动
+            if (currentPosition.itemLeadingEdge >=
+                    _handwritingScrollAlignment - 0.05 &&
+                currentPosition.itemLeadingEdge <=
+                    _handwritingScrollAlignment + 0.05) {
+              return;
+            }
           }
         }
       }
 
-      // 让书签单词的上沿显示在屏幕中部
-      if (itemScrollController.isAttached) {
-        itemScrollController.scrollTo(
-            index: bookMarkUiPos,
-            duration: const Duration(milliseconds: 300),
-            alignment: 0.5); // 显示在屏幕中部
-      }
+      // 执行滚动
+      itemScrollController.scrollTo(
+          index: bookMarkUiPos,
+          duration: const Duration(milliseconds: 300),
+          alignment: _handwritingScrollAlignment);
     }
   }
 
