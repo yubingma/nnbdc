@@ -303,10 +303,25 @@ class WordListPageState extends State<WordListPage>
         // 重要：更新书签中的实时位置，防止位置陈旧导致计算UI偏移出错
         bookMark = BookMarkVo(wordIndex, bookMark!.spell);
         
-        // 计算书签所在页的起始位置
-        baseIndex = (wordIndex ~/ _pageSize) * _pageSize;
+        // --- 智能页补齐逻辑 ---
+        // 计算基础页索引
+        int calculatedBase = (wordIndex ~/ _pageSize) * _pageSize;
+        int queryIndex = calculatedBase;
+        int querySize = _pageSize;
+
+        // 如果书签靠近页首（前10个），且前面还有数据，则多加载上一页作为缓冲
+        if (wordIndex - calculatedBase < 10 && calculatedBase > 0) {
+          queryIndex = calculatedBase - _pageSize;
+          querySize = _pageSize * 2;
+        } 
+        // 如果书签靠近页尾（最后10个），则多加载下一页作为缓冲
+        else if (calculatedBase + _pageSize - wordIndex < 10) {
+          querySize = _pageSize * 2;
+        }
+
+        baseIndex = queryIndex;
         _initialScrollIndex = wordIndex - baseIndex!; // 预设初始滚动位置
-        await doQuery(true, baseIndex!, _pageSize, false);
+        await doQuery(true, baseIndex!, querySize, false);
 
         // 数据和页面都准备好后，执行一次精准跳转
         WidgetsBinding.instance.addPostFrameCallback((_) {
