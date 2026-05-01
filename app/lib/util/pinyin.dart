@@ -82,8 +82,8 @@ Map<String, double> shengMuSimularityMap = {
 Map<String, double> yunMuSimularityMap = {
   // 单元音/半元音接近
   "o-e": 0.35,
-  "o-u": 0.50,
-  "e-u": 0.35,
+  "o-u": 0.85,
+  "e-u": 0.85,
   "i-v": 0.70, // i ~ ü
   "v-u": 0.40,
   "i-ie": 0.70,
