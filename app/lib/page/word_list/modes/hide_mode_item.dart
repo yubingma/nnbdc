@@ -16,7 +16,7 @@ class HideModeItem extends StatelessWidget {
   final bool showWordProgress;
   final WordListStudyMode studyMode;
   final WordListActionHandler actions;
-  final List<SlidableAction> slidableActions;
+  final List<Widget> slidableActions;
 
   const HideModeItem({
     super.key,

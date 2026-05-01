@@ -2254,25 +2254,33 @@ class WordListPageState extends State<WordListPage>
     final bool isSpecialList = specialLists.contains(title);
 
     if (title != '已掌握' && !isSpecialList) {
-      actions.add(SlidableAction(
+      actions.add(CustomSlidableAction(
         onPressed: (_) => isMastered
             ? onUnmasterBtnPressed(word, i)
             : onMasterBtnPressed(word, i),
         backgroundColor: isMastered ? Colors.grey[400]! : const Color(0xFF4CAF50),
-        foregroundColor: Colors.white,
-        icon: isMastered ? Icons.check_circle : Icons.check_circle_outline,
-        label: isMastered ? '已掌握' : '掌握',
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(isMastered ? Icons.check_circle : Icons.check_circle_outline, color: Colors.white, size: 20),
+            Text(isMastered ? '已掌握' : '掌握', style: const TextStyle(color: Colors.white, fontSize: 10)),
+          ],
+        ),
       ));
     }
 
     if (args.showDelBtn || isSpecialList) {
       if (isMastered && isSpecialList) {
-        actions.add(SlidableAction(
+        actions.add(CustomSlidableAction(
           onPressed: (_) => onUnmasterBtnPressed(word, i),
           backgroundColor: Colors.grey[400]!,
-          foregroundColor: Colors.white,
-          icon: Icons.check_circle,
-          label: '已掌握',
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              Text('已掌握', style: TextStyle(color: Colors.white, fontSize: 10)),
+            ],
+          ),
         ));
       } else {
         String buttonText;
@@ -2293,14 +2301,18 @@ class WordListPageState extends State<WordListPage>
           icon = Icons.delete;
         }
 
-        actions.add(SlidableAction(
-          onPressed: (_) => (buttonText == '掌握' || buttonText == '熟知') 
+        actions.add(CustomSlidableAction(
+          onPressed: (_) => (buttonText == '掌握') 
               ? onMasterBtnPressed(word, i) 
               : onDelBtnPressed(word, i),
           backgroundColor: color,
-          foregroundColor: Colors.white,
-          icon: icon,
-          label: buttonText,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              Text(buttonText, style: const TextStyle(color: Colors.white, fontSize: 10)),
+            ],
+          ),
         ));
       }
     }
@@ -2460,7 +2472,7 @@ class WordListPageState extends State<WordListPage>
           learningStatus: learningStatus,
           showWordProgress: args.showWordProgress,
           actions: this,
-          slidableActions: slidableActions.cast<SlidableAction>(),
+          slidableActions: slidableActions,
         );
       case WordListStudyMode.speakChinese:
       case WordListStudyMode.speakEnglish:
@@ -2474,7 +2486,7 @@ class WordListPageState extends State<WordListPage>
           showWordProgress: args.showWordProgress,
           studyMode: studyMode,
           actions: this,
-          slidableActions: slidableActions.cast<SlidableAction>(),
+          slidableActions: slidableActions,
           audioLevelBar: _audioLevelBar(),
         );
       case WordListStudyMode.dictation:
@@ -2489,7 +2501,7 @@ class WordListPageState extends State<WordListPage>
           showWordProgress: args.showWordProgress,
           studyMode: studyMode,
           actions: this,
-          slidableActions: slidableActions.cast<SlidableAction>(),
+          slidableActions: slidableActions,
         );
       case WordListStudyMode.hideChinese:
       case WordListStudyMode.hideEnglish:
@@ -2503,7 +2515,7 @@ class WordListPageState extends State<WordListPage>
           showWordProgress: args.showWordProgress,
           studyMode: studyMode,
           actions: this,
-          slidableActions: slidableActions.cast<SlidableAction>(),
+          slidableActions: slidableActions,
         );
       default:
         return ListModeItem(
@@ -2515,7 +2527,7 @@ class WordListPageState extends State<WordListPage>
           learningStatus: learningStatus,
           showWordProgress: args.showWordProgress,
           actions: this,
-          slidableActions: slidableActions.cast<SlidableAction>(),
+          slidableActions: slidableActions,
         );
     }
   }

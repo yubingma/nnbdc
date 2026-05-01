@@ -16,7 +16,7 @@ class SpeakModeItem extends StatelessWidget {
   final bool showWordProgress;
   final WordListStudyMode studyMode;
   final WordListActionHandler actions;
-  final List<SlidableAction> slidableActions;
+  final List<Widget> slidableActions;
   final Widget? audioLevelBar;
 
   const SpeakModeItem({

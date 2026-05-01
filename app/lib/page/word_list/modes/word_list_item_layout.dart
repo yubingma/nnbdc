@@ -18,7 +18,7 @@ class WordListItemLayout extends StatelessWidget {
   final Widget? centerContent;
   final Widget? rightContent;
   final Widget? audioIndicator;
-  final List<SlidableAction> slidableActions;
+  final List<Widget> slidableActions;
 
   const WordListItemLayout({
     super.key,

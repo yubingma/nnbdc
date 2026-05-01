@@ -6,6 +6,7 @@ import '../word_list_actions.dart';
 import 'word_list_item_layout.dart';
 import 'mode_components.dart';
 
+/// 浏览模式：最基础的单词列表模式，左边显示单词和音标，右边显示释义
 class ListModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;
@@ -15,7 +16,7 @@ class ListModeItem extends StatelessWidget {
   final bool? learningStatus;
   final bool showWordProgress;
   final WordListActionHandler actions;
-  final List<SlidableAction> slidableActions;
+  final List<Widget> slidableActions;
 
   const ListModeItem({
     super.key,
