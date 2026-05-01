@@ -52,6 +52,7 @@ import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/notification_util.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/page/study_stats.dart';
 
 import 'config.dart';
 import 'local_word_cache.dart';
@@ -498,6 +499,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/ai_activation': (context) => const AiActivationPage(),
         '/ai_diagnostic': (context) => const AiDiagnosticPage(),
         '/golden_master': (context) => const GoldenMasterToolPage(),
+        '/study_stats': (context) => const StudyStatsPage(),
       },
     );
   }

@@ -2184,4 +2184,24 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
 
     await query.go();
   }
+
+  Future<List<Map<String, dynamic>>> getDailyReviewCounts(String userId, int days) async {
+    final now = AppClock.now();
+    final startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
+    final startTimestamp = startDate.millisecondsSinceEpoch ~/ 1000;
+
+    final query = customSelect(
+      'SELECT date(create_time, "unixepoch", "localtime") as day, count(*) as count '
+      'FROM learning_logs '
+      'WHERE user_id = ? AND create_time >= ? '
+      'GROUP BY day '
+      'ORDER BY day ASC',
+      variables: [Variable.withString(userId), Variable.withInt(startTimestamp)],
+      readsFrom: {learningLogs},
+    );
+
+    final rows = await query.get();
+    return rows.map((r) => r.data).toList();
+  }
 }
+
