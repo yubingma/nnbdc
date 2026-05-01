@@ -174,27 +174,29 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var activeGain: Float = 2.0f
 
     private fun loadModel(type: String) {
-        // 先清理旧的流，释放资源
-        currentStream?.release()
-        currentStream = null
-        
-        // 懒加载模式，如果需要切换的目标模型不存在则去初始化
-        if (type == "en") {
-            if (modelEn == null) {
-                 setupEnglishModel()
+        synchronized(this) {
+            // 先清理旧的流，释放资源
+            currentStream?.release()
+            currentStream = null
+            
+            // 懒加载模式，如果需要切换的目标模型不存在则去初始化
+            if (type == "en") {
+                if (modelEn == null) {
+                     setupEnglishModel()
+                }
+                currentModel = modelEn
+                activeGain = 2.5f
+            } else {
+                if (modelZh == null) {
+                    setupChineseModel()
+                }
+                currentModel = modelZh
+                activeGain = 2.0f
             }
-            currentModel = modelEn
-            activeGain = 2.5f
-        } else {
-            if (modelZh == null) {
-                setupChineseModel()
-            }
-            currentModel = modelZh
-            activeGain = 2.0f
+            
+            currentModelType = type
+            Log.i(TAG, "Switched working model to: $type, Gain: $activeGain")
         }
-        
-        currentModelType = type
-        Log.i(TAG, "Switched working model to: $type, Gain: $activeGain")
     }
 
     private fun setupEnglishModel() {
@@ -322,12 +324,14 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private fun startMicrophone() {
         if (isRecording) {
             Log.i(TAG, "Microphone is already running, re-creating stream with hotwords.")
-            currentStream?.release()
-            // 启用热词支持
-            val hotwords = pendingHotwords
-            currentStream = currentModel?.createStream(hotwords)
-            lastSentResult = ""
-            isAsrStopped = false
+            synchronized(this) {
+                currentStream?.release()
+                // 启用热词支持
+                val hotwords = pendingHotwords
+                currentStream = currentModel?.createStream(hotwords)
+                lastSentResult = ""
+                isAsrStopped = false
+            }
             return
         }
 
@@ -354,7 +358,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         // 使用当前活动模型创建流
         Log.i(TAG, "Creating stream with hotwords: $pendingHotwords")
         val hotwords = pendingHotwords
-        currentStream = currentModel?.createStream(hotwords)
+        synchronized(this) {
+            currentStream = currentModel?.createStream(hotwords)
+        }
         
         // 重置去重标记
         lastSentResult = ""
