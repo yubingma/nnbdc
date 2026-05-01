@@ -685,6 +685,8 @@ class WordListPageState extends State<WordListPage>
   void initState() {
     final sw = Stopwatch()..start();
     super.initState();
+    // 进门先关 ASR，确保状态干净
+    Asr().stopAsr();
     // 异步预加载音素字典，避免用户说话时才开始解析导致的延迟
     unawaited(PhonemeUtil.load());
     _asrModelLoadingController = AnimationController(

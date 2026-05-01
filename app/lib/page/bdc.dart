@@ -1153,6 +1153,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // 进门先关 ASR，确保状态干净
+    Asr().stopAsr();
     unawaited(SoundUtil.configureAudioSession());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     final argsJson = GetStorage().read<String>("BdcPageArgs");
