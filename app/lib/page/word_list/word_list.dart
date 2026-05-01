@@ -22,6 +22,7 @@ import 'package:nnbdc/widget/handwriting_board.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import 'package:nnbdc/event/events.dart';
 import '../../api/api.dart';
 import '../../api/bo/word_bo.dart';
 import '../../db/db.dart';
@@ -1860,7 +1861,10 @@ class WordListPageState extends State<WordListPage>
         Global.logger.d('[Perf] onDelBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
         
         if (value) {
-        // 判断是否应该从UI上移除单词
+          // 发布事件，通知今日计划页面刷新
+          EventBus.publishTodayPlanChanged(TodayPlanChangedEvent(wordId: word.word.id.toString()));
+          
+          // 判断是否应该从UI上移除单词
         // 如果是今日学习相关的列表（包括分批次学习的阶段列表），并且今日学习已经正式开始，则不从UI移除记录，只更新状态
         // 这样可以保持今日学习单词表的记录总数不变，符合已经开始后的预期
         final String providerType = args.wordsProvider.runtimeType.toString();
@@ -1926,6 +1930,9 @@ class WordListPageState extends State<WordListPage>
         Global.logger.d('[Perf] onMasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
 
         if (value) {
+          // 发布事件，通知今日计划页面刷新
+          EventBus.publishTodayPlanChanged(TodayPlanChangedEvent(wordId: word.word.id.toString()));
+
           final String providerType = args.wordsProvider.runtimeType.toString();
           final bool isTodayTask = providerType == 'StageWordsProvider' ||
               ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表']
@@ -1990,6 +1997,9 @@ class WordListPageState extends State<WordListPage>
         final apiEnd = DateTime.now().millisecondsSinceEpoch;
         Global.logger.d('[Perf] onUnmasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
         if (value) {
+          // 发布事件，通知今日计划页面刷新
+          EventBus.publishTodayPlanChanged(TodayPlanChangedEvent(wordId: word.word.id.toString()));
+
           if (initialStatus == true && !args.wordsProvider.keepWordsOnMaster) {
             setState(() {
               words.remove(word);

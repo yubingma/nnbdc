@@ -29,6 +29,7 @@ import 'package:nnbdc/util/learning_service.dart';
 
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/event/events.dart';
 
 class TodayPlanPage extends StatefulWidget {
   const TodayPlanPage({super.key});
@@ -55,6 +56,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _completedStepCount = 0;
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
+  StreamSubscription? _planSubscription;
 
   @override
   void initState() {
@@ -67,11 +69,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         loadData();
       }
     });
+
+    // 订阅今日计划变更事件
+    _planSubscription = EventBus.onTodayPlanChanged().listen((event) {
+      Global.logger.d('TodayPlanPage received TodayPlanChangedEvent, refreshing data...');
+      if (mounted && !_isLoadingData) {
+        loadData();
+      }
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _planSubscription?.cancel();
     super.dispose();
   }
 
