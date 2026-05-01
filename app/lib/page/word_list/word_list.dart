@@ -1143,8 +1143,18 @@ class WordListPageState extends State<WordListPage>
     // 延迟初始化 ASR，避免阻塞页面进入动画
     Future.delayed(const Duration(milliseconds: 200), () {
       if (!mounted) return;
-      asr.initAsr(onAsrResult);
-      _subscribeMeterIfNeeded();
+      // 只有在语音学习模式下才初始化监听器并尝试恢复 ASR
+      if (studyMode == WordListStudyMode.speakChinese ||
+          studyMode == WordListStudyMode.speakEnglish) {
+        asr.initAsr(onAsrResult);
+        _subscribeMeterIfNeeded();
+      } else {
+        // 如果是普通列表或默写等非语音模式，确保 ASR 是停止的（防止从上个页面残留）
+        if (asr.state == AsrState.started) {
+          Global.logger.d('WordList: 非语音模式，确保停止残留的 ASR 引擎');
+          asr.stopAsr();
+        }
+      }
     });
     
     asr.addStateListener((state) {
@@ -1192,15 +1202,14 @@ class WordListPageState extends State<WordListPage>
     _handwritingPaddingTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
-    // 停止 ASR：仅当当前页面处于语音学习模式时才停止，
-    // 避免作为子页面销毁时误杀了父页面的 ASR 实例
-    if (studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish) {
-      try {
+    // 停止 ASR：不再检查 studyMode，只要页面销毁就尝试停止识别引擎
+    // 因为 WordListPage 在本项目中始终作为独立路由页面使用
+    try {
+      if (asr.state == AsrState.started || asr.state == AsrState.initialized) {
         asr.stopAsr();
-      } catch (e) {
-        Global.logger.d("dispose: 停止 ASR 失败：$e");
       }
+    } catch (e) {
+      Global.logger.d("dispose: 停止 ASR 失败：$e");
     }
 
     // 清理 meter 订阅（通过 ASR 单例统一管理）
@@ -1522,6 +1531,9 @@ class WordListPageState extends State<WordListPage>
   Future<void> _startAsr(AsrLanguage language) async {
     Global.logger.d("~~~~~正在启动 ASR (${language.name})...");
     if (!mounted) return;
+
+    // 确保监听器已初始化
+    asr.initAsr(onAsrResult);
 
     // 如果已经在处理中（无论是否显示动画），都不再重复启动
     if (_isAsrProcessing) {
