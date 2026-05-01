@@ -300,8 +300,14 @@ class WordListPageState extends State<WordListPage>
       var wordIndex = await args.wordsProvider.getWordIndex(bookMark!.spell);
       Global.logger.d('WordListPage: getWordIndex took ${swIdx.elapsedMilliseconds}ms');
       
+      if (wordIndex == -1 && isBookMarkValid(bookMark)) {
+        // --- 容错处理：拼写定位失败，尝试使用物理位置回退 ---
+        Global.logger.w('书签单词 "${bookMark!.spell}" 在当前列表中已不存在，尝试回退到物理位置: ${bookMark!.position}');
+        wordIndex = bookMark!.position;
+      }
+
       if (wordIndex != -1) {
-        // 重要：更新书签中的实时位置，防止位置陈旧导致计算UI偏移出错
+        // 重要：更新书签中的实时位置
         bookMark = BookMarkVo(wordIndex, bookMark!.spell);
         
         // --- 智能页补齐逻辑 ---
@@ -331,7 +337,7 @@ class WordListPageState extends State<WordListPage>
           }
         });
       } else {
-        // 书签无效，从第一页开始
+        // 完全无法定位书签，从第一页开始
         baseIndex = 0;
         await doQuery(true, baseIndex!, _pageSize, false);
       }
