@@ -96,6 +96,10 @@ class WordWrapper {
   /// 最近一次的语音识别结果（用于展示）
   String? lastAsrResult;
 
+  /// 缓存进度信息，用于 UI 展示
+  double? currentProgress;
+  double? maxProgress;
+
   WordWrapper(this.word, this.tag);
   
   /// 释放资源

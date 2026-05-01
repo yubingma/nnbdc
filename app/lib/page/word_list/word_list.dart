@@ -5,7 +5,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -41,6 +40,11 @@ import 'dict_words.dart';
 import 'edit_meaning_dialog.dart';
 import 'import_from_book_page.dart';
 import 'import_from_scan_page.dart';
+import 'word_list_actions.dart';
+import 'modes/list_mode_item.dart';
+import 'modes/speak_mode_item.dart';
+import 'modes/dictation_mode_item.dart';
+import 'modes/hide_mode_item.dart';
 
 const String menuWordList = '浏览词表';
 const String menuWalkman = '随身听';
@@ -163,7 +167,65 @@ class WordListPageState extends State<WordListPage>
     with
         WidgetsBindingObserver,
         TickerProviderStateMixin,
-        AutomaticKeepAliveClientMixin {
+        AutomaticKeepAliveClientMixin,
+        WordListActionHandler {
+  @override
+  void onWordTap(WordWrapper word, int index) => _handleWordTap(word, index);
+
+  @override
+  void onWordLongPress(WordWrapper word, int index) =>
+      _handleWordLongPress(word, index);
+
+  @override
+  void onEditBtnPressed(WordWrapper word, int index) =>
+      _showEditMeaningDialog(word);
+
+  @override
+  void onResetHint(WordWrapper word) => clearHint(word);
+
+  @override
+  void onGiveHint(WordWrapper word) => giveALittleHint(word);
+
+  @override
+  void onToggleAnswer(WordWrapper word, int index) {
+    setState(() {
+      word.isAnswerRevealed = !word.isAnswerRevealed;
+    });
+    if (getBookMarkUiPosition() != index) {
+      onWordPressed(word, index, true, null);
+    }
+  }
+
+  @override
+  void onHandwritingPressed(WordWrapper word, int index) {
+    // 揭晓答案
+    int curr = getBookMarkUiPosition();
+    if (curr >= 0 && curr < words.length && curr != index) {
+      SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
+    }
+    setState(() {
+      _isHandwritingOverlayOpen = true;
+    });
+    onWordPressed(word, index, false, null);
+    _handwritingBoardKey.currentState?.clearBoardSilently();
+  }
+
+  @override
+  void onSpellChanged(WordWrapper word, int index, String value) {
+    // 先刷新UI，使颜色立即变绿/红
+    setState(() {});
+    // 如果拼写正确：先让UI变绿，再执行后续动作（播放离开单词发音+跳转）
+    if (Util.equalsIgnoreCase(word.word.spell, value)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+        } catch (e, stackTrace) {
+          Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
+        }
+        jumpToNextWord(index, false, () {});
+      });
+    }
+  }
   static const double leftPadding = 6;
   static const double rightPadding = 8;
   static const double delBtnSize = 24;
@@ -436,6 +498,10 @@ class WordListPageState extends State<WordListPage>
         var beforeLen = newWords.length;
         var newData =
             result.rows.where((element) => !words.contains(element)).toList();
+        for (var w in newData) {
+          w.currentProgress = args.wordProgressProvider.getWordProgress(w.tag);
+          w.maxProgress = args.wordProgressProvider.getWordProgressMax(w.tag);
+        }
         Global.logger.d('向上加载新数据: 新数据数量=${newData.length}');
         newWords.insertAll(0, newData);
         // 更新baseIndex
@@ -457,8 +523,12 @@ class WordListPageState extends State<WordListPage>
         }
       } else {
         // 向下滚动加载，从尾部添加新数据
-        newWords
-            .addAll(result.rows.where((element) => !words.contains(element)));
+        final loadedRows = result.rows.where((element) => !words.contains(element)).toList();
+        for (var w in loadedRows) {
+          w.currentProgress = args.wordProgressProvider.getWordProgress(w.tag);
+          w.maxProgress = args.wordProgressProvider.getWordProgressMax(w.tag);
+        }
+        newWords.addAll(loadedRows);
       }
 
       // 更新状态
@@ -1854,6 +1924,7 @@ class WordListPageState extends State<WordListPage>
         (trimmed.startsWith('（') && trimmed.endsWith('）'));
   }
 
+  @override
   onDelBtnPressed(WordWrapper word, int index) {
     final start = DateTime.now().millisecondsSinceEpoch;
     Global.logger.d('[Perf] onDelBtnPressed START: word=${word.word.spell}, index=$index');
@@ -1925,6 +1996,7 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
+  @override
   onMasterBtnPressed(WordWrapper word, int index) {
     Global.logger.d('[Perf] onMasterBtnPressed START: word=${word.word.spell}');
 
@@ -1991,6 +2063,7 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
+  @override
   onUnmasterBtnPressed(WordWrapper word, int index) {
     Global.logger.d('[Perf] onUnmasterBtnPressed START: word=${word.word.spell}');
 
@@ -2235,463 +2308,9 @@ class WordListPageState extends State<WordListPage>
     return actions;
   }
 
-  Widget _buildSpeakEnglishArea(
-      WordWrapper word, bool isBookmarked, bool isDarkMode) {
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (!word.speakEnglishPassed)
-          _buildSpeakEnglishNotPassed(word, isBookmarked, isDarkMode)
-        else
-          _buildSpeakEnglishPassed(word, isBookmarked, isDarkMode),
-      ],
-    );
-  }
-
-  Widget _buildSpeakEnglishNotPassed(
-      WordWrapper word, bool isBookmarked, bool isDarkMode) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 下划线：只有当前单词显示提示，其他只显示下划线
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Container(
-            constraints: const BoxConstraints(minWidth: 120),
-            padding: const EdgeInsets.only(bottom: 2),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: isDarkMode
-                      ? Colors.white38
-                      : (Colors.grey[500] ?? Colors.grey),
-                  width: 1.0,
-                ),
-              ),
-            ),
-            child: Text(
-              // 只有当前单词才显示提示文字
-              isBookmarked
-                  ? (word.hintLetterCount > 0
-                      ? word.word.spell.substring(0, word.hintLetterCount)
-                      : '请说出单词发音')
-                  : (word.lastAsrResult != null && word.lastAsrResult!.isNotEmpty
-                      ? word.lastAsrResult!
-                      : (word.hintLetterCount > 0
-                          ? word.word.spell.substring(0, word.hintLetterCount)
-                          : '')), // 非当前单词显示提示或识别结果，否则保持原样
-              textScaler: TextScaler.linear(1.0),
-              style: TextStyle(
-                fontSize: 14,
-                color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
-                height: 1.2,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-        if (isBookmarked &&
-            word.pronunciationScore != null &&
-            word.pronunciationScore! > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: word.pronunciationScore! >= 60
-                    ? Colors.green.withValues(alpha: 0.1)
-                    : Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.record_voice_over,
-                    size: 14,
-                    color: word.pronunciationScore! >= 60
-                        ? Colors.green
-                        : Colors.orange,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '发音: ${word.pronunciationScore}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: word.pronunciationScore! >= 60
-                          ? Colors.green
-                          : Colors.orange,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildSpeakEnglishPassed(
-      WordWrapper word, bool isBookmarked, bool isDarkMode) {
-    // 估算可用宽度，避免使用 LayoutBuilder 破坏 IntrinsicHeight
-    final screenWidth = MediaQuery.of(context).size.width;
-    // 扣除边距、侧边栏(32)等占用的宽度 (大约 100)
-    final availableWidth = screenWidth - 100;
-
-    // 估算单词和音标所需的宽度
-    final spellWidth = word.word.spell.length * 14.0; // 估算单词宽度
-    final pronounceWidth = word.word.mergedPronounce.isNotEmpty
-        ? (word.word.mergedPronounce.length * 7.0 +
-            24.0) // 估算音标宽度（包括容器padding）
-        : 0.0;
-    final totalWidth = spellWidth + pronounceWidth + 8.0; // 包括间距
-
-    // 如果总宽度超过可用宽度，或者音标很长，则换行显示
-    final shouldWrap = totalWidth > availableWidth ||
-        (word.word.mergedPronounce.isNotEmpty &&
-            word.word.mergedPronounce.length > 25);
-
-    if (shouldWrap && word.word.mergedPronounce.isNotEmpty) {
-          // 换行显示：单词一行，音标一行
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 单词行
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  word.word.spell,
-                  softWrap: false,
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: word.isAnswerProvidedBySystem
-                        ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
-                        : (isBookmarked
-                            ? const Color(0xFF0097A7)
-                            : (isDarkMode ? Colors.white : const Color(0xFF1F2937))),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-              // 音标行
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '[${word.word.mergedPronounce}]',
-                  textScaler: TextScaler.linear(1.0),
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    fontSize: 12,
-                    fontFamily: 'NotoSans',
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-            ],
-          );
-        } else {
-          // 同行显示：单词和音标在一行
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                word.word.spell,
-                softWrap: false,
-                textScaler: TextScaler.linear(1.0),
-                style: TextStyle(
-                  color: word.isAnswerProvidedBySystem
-                      ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
-                      : (isBookmarked
-                          ? const Color(0xFF0097A7)
-                          : (isDarkMode ? Colors.white : const Color(0xFF1F2937))),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.6,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-              if (word.word.mergedPronounce.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    '[${word.word.mergedPronounce}]',
-                    textScaler: TextScaler.linear(1.0),
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      fontSize: 12,
-                      fontFamily: 'NotoSans',
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
-                ),
-              ],
-            ],
-          );
-        }
-  }
-
-  Widget _buildSpeakChineseArea(WordWrapper word) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: renderAsrMeaningItems(word),
-    );
-  }
-
-  Widget _buildDictationTextField(WordWrapper word, int i, bool isDarkMode) {
-    return AnimatedBuilder(
-      animation: word.focusNode,
-      builder: (context, child) {
-        const fontSize = 16.0;
-        final isHandwriting = studyMode == WordListStudyMode.dictationHandwriting;
-        return TextField(
-          readOnly: isHandwriting,
-          enableInteractiveSelection: !isHandwriting,
-          controller: word.spellController,
-          focusNode: word.focusNode,
-          keyboardType: TextInputType.visiblePassword,
-          decoration: InputDecoration(
-            isCollapsed: true,
-            border: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
-            ),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.grey),
-            ),
-            focusedBorder: isHandwriting
-                ? const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))
-                : const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0097A7))),
-            contentPadding: EdgeInsets.zero,
-            hintText: isHandwriting ? '请在屏幕任何位置手写拼写' : null,
-            hintStyle: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white24 : Colors.black26),
-          ),
-          onTap: () {
-            bool isAlreadyActive = getBookMarkUiPosition() == i;
-            if (!isAlreadyActive) {
-              // 揭晓答案：离开旧词时播放旧词发音
-              int curr = getBookMarkUiPosition();
-              if (curr >= 0 && curr < words.length) {
-                SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-              }
-            }
-            onWordPressed(word, i, false, null);
-            if (isAlreadyActive) {
-              giveALittleHint(word);
-            }
-          },
-          onChanged: (value) async {
-            // 先刷新UI，使颜色立即变绿
-            setState(() {});
-            // 如果拼写正确：先让UI变绿，再执行后续动作（播放离开单词发音+跳转）
-            if (Util.equalsIgnoreCase(word.word.spell, value)) {
-              WidgetsBinding.instance.addPostFrameCallback((_) async {
-                try {
-                  await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-                } catch (e, stackTrace) {
-                  // 音频播放失败不影响主流程，但需要记录
-                  Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
-                }
-                jumpToNextWord(i, false, () {});
-              });
-            }
-          },
-          style: TextStyle(
-              fontSize: fontSize,
-              color: Util.equalsIgnoreCase(
-                      word.word.spell, word.spellController.text)
-                  ? word.isAnswerProvidedBySystem
-                      ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
-                      : Colors.green
-                  : Colors.red),
-        );
-      },
-    );
-  }
-
-  Widget _buildDictationHint(WordWrapper word) {
-    if (word.hintLetterCount <= 0) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(word.word.spell.substring(0, word.hintLetterCount)),
-        ],
-      ),
-    );
-  }
+  // --- Obsolete UI builders removed ---
 
 
-  Widget _buildHiddenAnswerArea(WordWrapper word, int index, bool isDarkMode, bool isEnglish) {
-    // 准备实际的内容
-    final Widget answerContent = isEnglish
-        ? _buildWordHeader(word, getBookMarkUiPosition() == index, isDarkMode)
-        : _buildWordMeaning(word, isDarkMode, topPadding: 0);
-
-    if (word.isAnswerRevealed) {
-      return answerContent;
-    }
-
-    // 未揭晓时，使用 Stack：
-    // 底层放透明的实际内容来撑开空间（解决界面晃动问题），顶层放提示按钮
-    return Stack(
-      alignment: Alignment.centerLeft,
-      children: [
-        // 占位层：完全透明但占据空间，确保高度与揭晓后一致
-        Opacity(
-          opacity: 0.0,
-          child: answerContent,
-        ),
-        // 按钮层：实际看到的“点击显示”按钮
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-          decoration: BoxDecoration(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.black.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isDarkMode ? Colors.white10 : Colors.black12,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.visibility_outlined,
-                size: 14,
-                color: isDarkMode ? Colors.white38 : Colors.black38,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                isEnglish ? '点击显示英文' : '点击显示中文',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDarkMode ? Colors.white54 : Colors.black54,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWordMeaning(WordWrapper word, bool isDarkMode, {double topPadding = 8}) {
-    final meaning = word.word.getMeaningStr();
-    return Padding(
-      padding: EdgeInsets.only(top: topPadding),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 24),
-        child: Text(
-          meaning.isNotEmpty ? meaning : "（暂无释义）",
-          textScaler: TextScaler.linear(1.0),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
-            height: 1.5,
-            letterSpacing: 0.3,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWordHeader(WordWrapper word, bool isBookmarked, bool isDarkMode,
-      {bool? learningStatus}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 单词行
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            word.word.spell,
-            softWrap: false,
-            textScaler: TextScaler.linear(1.0),
-            style: TextStyle(
-              color: isBookmarked
-                  ? const Color(0xFF0097A7)
-                  : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ),
-        if (word.word.mergedPronounce.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            '[${word.word.mergedPronounce}]',
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              color: isDarkMode ? Colors.white38 : Colors.black38,
-              fontSize: 12,
-              fontFamily: 'NotoSans',
-              fontWeight: FontWeight.w400,
-              height: 1.3,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildAudioIndicator(
-      WordWrapper word, bool isBookmarked, bool isDarkMode) {
-    if (isBookmarked) {
-      // 当前单词显示波形
-      return Container(
-        width: 32,
-        height: 12,
-        margin: const EdgeInsets.only(top: 3),
-        child: _audioLevelBar(),
-      );
-    } else if (word.pronunciationScore != null &&
-        word.pronunciationScore! > 0) {
-      // 已过单词显示评分
-      return Container(
-        width: 32,
-        height: 12,
-        margin: const EdgeInsets.only(top: 3),
-        alignment: Alignment.center,
-        child: Text(
-          '${word.pronunciationScore}',
-          textScaler: TextScaler.linear(1.0),
-          style: TextStyle(
-            fontSize: 9,
-            height: 1.1,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'RobotoCondensed',
-            color:
-                word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
-          ),
-        ),
-      );
-    }
-    return Container();
-  }
 
 
   Widget _buildLegendForMenu(bool isDarkMode) {
@@ -2735,30 +2354,6 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
-  Widget _buildWordProgressContainer(WordWrapper word, bool isDarkMode,
-      {double width = 32}) {
-    return Container(
-      width: width,
-      height: 4,
-      margin: const EdgeInsets.only(top: 4),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.all(Radius.circular(2)),
-        child: FAProgressBar(
-          borderRadius: const BorderRadius.all(Radius.circular(2)),
-          currentValue: args.wordProgressProvider.getWordProgress(word.tag),
-          maxValue: args.wordProgressProvider.getWordProgressMax(word.tag),
-          displayText: '',
-          direction: Axis.horizontal,
-          displayTextStyle:
-              const TextStyle(color: Color(0x00000000), fontSize: 0),
-          backgroundColor:
-              isDarkMode ? const Color(0xFF404040) : const Color(0xFFE5E7EB),
-          progressColor: progressColor(word),
-          animatedDuration: const Duration(milliseconds: 200),
-        ),
-      ),
-    );
-  }
 
   Widget renderWord(final int i) {
     _renderWordCallCount++;
@@ -2851,262 +2446,78 @@ class WordListPageState extends State<WordListPage>
 
   Widget _renderWordContent(WordWrapper word, int i, bool isBookmarked,
       bool isDarkMode, bool? learningStatus) {
-    final actions = _getSlidableActions(word, i, isBookmarked,
+    final slidableActions = _getSlidableActions(word, i, isBookmarked,
         learningStatus: learningStatus);
 
-    // 获取状态颜色
-    Color? statusColor;
-    if (learningStatus == true) {
-      statusColor = const Color(0xFF4CAF50); // 已掌握 - 绿色
-    } else if (learningStatus == false) {
-      statusColor = Colors.orange; // 学习中 - 橙色
+    switch (studyMode) {
+      case WordListStudyMode.list:
+        return ListModeItem(
+          word: word,
+          index: i,
+          baseIndex: baseIndex ?? 0,
+          isBookmarked: isBookmarked,
+          isDarkMode: isDarkMode,
+          learningStatus: learningStatus,
+          showWordProgress: args.showWordProgress,
+          actions: this,
+          slidableActions: slidableActions.cast<SlidableAction>(),
+        );
+      case WordListStudyMode.speakChinese:
+      case WordListStudyMode.speakEnglish:
+        return SpeakModeItem(
+          word: word,
+          index: i,
+          baseIndex: baseIndex ?? 0,
+          isBookmarked: isBookmarked,
+          isDarkMode: isDarkMode,
+          learningStatus: learningStatus,
+          showWordProgress: args.showWordProgress,
+          studyMode: studyMode,
+          actions: this,
+          slidableActions: slidableActions.cast<SlidableAction>(),
+          audioLevelBar: _audioLevelBar(),
+        );
+      case WordListStudyMode.dictation:
+      case WordListStudyMode.dictationHandwriting:
+        return DictationModeItem(
+          word: word,
+          index: i,
+          baseIndex: baseIndex ?? 0,
+          isBookmarked: isBookmarked,
+          isDarkMode: isDarkMode,
+          learningStatus: learningStatus,
+          showWordProgress: args.showWordProgress,
+          studyMode: studyMode,
+          actions: this,
+          slidableActions: slidableActions.cast<SlidableAction>(),
+        );
+      case WordListStudyMode.hideChinese:
+      case WordListStudyMode.hideEnglish:
+        return HideModeItem(
+          word: word,
+          index: i,
+          baseIndex: baseIndex ?? 0,
+          isBookmarked: isBookmarked,
+          isDarkMode: isDarkMode,
+          learningStatus: learningStatus,
+          showWordProgress: args.showWordProgress,
+          studyMode: studyMode,
+          actions: this,
+          slidableActions: slidableActions.cast<SlidableAction>(),
+        );
+      default:
+        return ListModeItem(
+          word: word,
+          index: i,
+          baseIndex: baseIndex ?? 0,
+          isBookmarked: isBookmarked,
+          isDarkMode: isDarkMode,
+          learningStatus: learningStatus,
+          showWordProgress: args.showWordProgress,
+          actions: this,
+          slidableActions: slidableActions.cast<SlidableAction>(),
+        );
     }
-
-    // 确定背景色
-    final bgColor = isDarkMode
-        ? (isBookmarked ? const Color(0xFF12353A) : const Color(0xFF1E1E1E))
-        : (isBookmarked ? const Color(0xFFE0F2F1) : Colors.white);
-
-    Widget itemContent = ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        color: bgColor,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              /// 1. 左侧序号和点 (带背景色，强制全高并居中)
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _handleWordTap(word, i),
-                onLongPress: () => _handleWordLongPress(word, i),
-                child: Container(
-                  width: 32,
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : const Color(0xFFE2E8F0),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${(baseIndex! + i + 1) > 0 ? (baseIndex! + i + 1) : 1}',
-                          textScaler: const TextScaler.linear(1.0),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 9,
-                            height: 1.0,
-                            leadingDistribution: TextLeadingDistribution.even,
-                            fontWeight: FontWeight.w600,
-                            color: isDarkMode ? Colors.white38 : Colors.black38,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        if (statusColor != null)
-                          Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-
-                        /// 掌握度进度条
-                        if (args.showWordProgress)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: _buildWordProgressContainer(word, isDarkMode,
-                                width: 22),
-                          ),
-
-                        // 紧凑波形或评分
-                        if (studyMode == WordListStudyMode.speakChinese ||
-                            studyMode == WordListStudyMode.speakEnglish)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: _buildAudioIndicator(
-                                word, isBookmarked, isDarkMode),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      /// 左半部内容 (点击发音)
-                      Expanded(
-                        flex: 2,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => _handleWordTap(word, i),
-                          onLongPress: () => _handleWordLongPress(word, i),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 6, 0, 6),
-                            child: (studyMode == WordListStudyMode.speakEnglish || studyMode == WordListStudyMode.hideEnglish)
-                                ? _buildWordMeaning(word, isDarkMode,
-                                    topPadding: 0)
-                                : (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting)
-                                    ? _buildWordMeaning(word, isDarkMode, topPadding: 0)
-                                    : _buildWordHeader(word, isBookmarked,
-                                        isDarkMode,
-                                        learningStatus: learningStatus),
-                          ),
-                        ),
-                      ),
-
-                      /// 右半部内容
-                      Expanded(
-                        flex: 3,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            if (studyMode == WordListStudyMode.hideChinese ||
-                                studyMode == WordListStudyMode.hideEnglish) {
-                              setState(() {
-                                word.isAnswerRevealed = !word.isAnswerRevealed;
-                              });
-                              if (getBookMarkUiPosition() != i) {
-                                onWordPressed(word, i, true, null);
-                              }
-                            } else if (isBookmarked &&
-                                (studyMode == WordListStudyMode.dictation ||
-                                    studyMode ==
-                                        WordListStudyMode.dictationHandwriting ||
-                                    studyMode == WordListStudyMode.speakChinese ||
-                                    studyMode == WordListStudyMode.speakEnglish)) {
-                              giveALittleHint(word);
-                            } else {
-                              _handleWordTap(word, i);
-                            }
-                          },
-                          onLongPress: () => _handleWordLongPress(word, i),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                (isBookmarked &&
-                                        (studyMode == WordListStudyMode.dictation ||
-                                            studyMode ==
-                                                WordListStudyMode.dictationHandwriting ||
-                                            studyMode ==
-                                                WordListStudyMode.speakChinese ||
-                                            studyMode ==
-                                                WordListStudyMode.speakEnglish))
-                                    ? IgnorePointer(
-                                        ignoring: (studyMode !=
-                                                WordListStudyMode.dictation &&
-                                            studyMode !=
-                                                WordListStudyMode.dictationHandwriting),
-                                        child: (studyMode ==
-                                                WordListStudyMode.speakChinese)
-                                            ? _buildSpeakChineseArea(word)
-                                            : (studyMode ==
-                                                    WordListStudyMode.speakEnglish)
-                                                ? _buildSpeakEnglishArea(
-                                                    word, isBookmarked, isDarkMode)
-                                                : _buildDictationTextField(
-                                                    word, i, isDarkMode),
-                                      )
-                                    : (studyMode == WordListStudyMode.speakChinese)
-                                        ? _buildSpeakChineseArea(word)
-                                        : (studyMode ==
-                                                WordListStudyMode.speakEnglish)
-                                            ? _buildSpeakEnglishArea(
-                                                word, isBookmarked, isDarkMode)
-                                            : (studyMode ==
-                                                    WordListStudyMode.dictation ||
-                                                studyMode ==
-                                                    WordListStudyMode.dictationHandwriting)
-                                                ? _buildDictationTextField(
-                                                    word, i, isDarkMode)
-                                                : (studyMode ==
-                                                        WordListStudyMode.hideChinese)
-                                                    ? _buildHiddenAnswerArea(
-                                                        word, i, isDarkMode, false)
-                                                    : (studyMode ==
-                                                            WordListStudyMode.hideEnglish)
-                                                        ? _buildHiddenAnswerArea(
-                                                            word, i, isDarkMode, true)
-                                                        : _buildWordMeaning(word,
-                                                            isDarkMode,
-                                                            topPadding: 0),
-                                if (word.hintLetterCount > 0)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: _buildDictationHint(word),
-                                  ),
-                                if (studyMode ==
-                                        WordListStudyMode.dictationHandwriting &&
-                                    getBookMarkUiPosition() == i)
-                                  const SizedBox(height: 4),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                if (studyMode == WordListStudyMode.dictationHandwriting)
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      // 揭晓答案
-                      int curr = getBookMarkUiPosition();
-                      if (curr >= 0 && curr < words.length && curr != i) {
-                        SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-                      }
-                      setState(() {
-                        _isHandwritingOverlayOpen = true;
-                      });
-                      onWordPressed(word, i, false, null);
-                      _handwritingBoardKey.currentState?.clearBoardSilently();
-                    },
-                    child: Container(
-                      width: 60,
-                      color: isDarkMode 
-                          ? Colors.white.withValues(alpha: 0.01) 
-                          : Colors.black.withValues(alpha: 0.01),
-                      alignment: Alignment.center,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Icon(
-                          Icons.edit_rounded,
-                          size: 20,
-                          color: isBookmarked
-                              ? const Color(0xFF0097A7)
-                              : (isDarkMode ? Colors.white38 : Colors.black38),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-
-
-    if (actions.isEmpty || (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)) return itemContent;
-
-    return Slidable(
-      key: ValueKey('slidable_${word.word.id}'),
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        extentRatio: (0.25 * actions.length).clamp(0.0, 0.75),
-        children: actions,
-      ),
-      child: itemContent,
-    );
   }
 
   void jumpToNextWord(final int currWordIndex, bool playPronounce,
