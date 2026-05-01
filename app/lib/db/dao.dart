@@ -2234,6 +2234,24 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
 class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStudyDailyStatsDaoMixin {
   UserStudyDailyStatsDao(super.db);
 
+  Future<void> saveEntity(UserStudyDailyStat record, bool genLog) async {
+    await (into(userStudyDailyStats).insertOnConflictUpdate(record));
+    if (genLog) {
+      // 复合主键使用 userId|date_iso 形式作为 recordId
+      final recordId = '${record.userId}|${DateFormat('yyyy-MM-dd').format(record.date)}';
+      await DbLogUtil.logOperation(record.userId, 'UPDATE', 'userStudyDailyStats', recordId, record);
+    }
+  }
+
+  Future<void> batchDeleteUserRecords(String userId, {Map<String, dynamic>? filters}) async {
+    final query = delete(userStudyDailyStats)..where((t) => t.userId.equals(userId));
+    if (filters != null && filters.containsKey('date')) {
+      final date = DateTime.parse(filters['date']);
+      query.where((t) => t.date.equals(date));
+    }
+    await query.go();
+  }
+
   Future<void> incrementSeconds(String userId, DateTime date, int seconds) async {
     final pureDate = DateTime(date.year, date.month, date.day);
     final existing = await (select(userStudyDailyStats)
@@ -2241,15 +2259,16 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         .getSingleOrNull();
 
     if (existing == null) {
-      await into(userStudyDailyStats).insert(UserStudyDailyStatsCompanion.insert(
+      await saveEntity(UserStudyDailyStat(
         userId: userId,
         date: pureDate,
-        studySeconds: Value(seconds),
-      ));
+        studySeconds: seconds,
+        reviewCount: 0,
+      ), true);
     } else {
-      await update(userStudyDailyStats).replace(existing.copyWith(
+      await saveEntity(existing.copyWith(
         studySeconds: existing.studySeconds + seconds,
-      ));
+      ), true);
     }
   }
 
@@ -2260,15 +2279,16 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         .getSingleOrNull();
 
     if (existing == null) {
-      await into(userStudyDailyStats).insert(UserStudyDailyStatsCompanion.insert(
+      await saveEntity(UserStudyDailyStat(
         userId: userId,
         date: pureDate,
-        reviewCount: const Value(1),
-      ));
+        studySeconds: 0,
+        reviewCount: 1,
+      ), true);
     } else {
-      await update(userStudyDailyStats).replace(existing.copyWith(
+      await saveEntity(existing.copyWith(
         reviewCount: existing.reviewCount + 1,
-      ));
+      ), true);
     }
   }
 
@@ -2290,13 +2310,15 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
     final statusValue = newStatus.json;
 
     if (existing == null) {
-      await into(userStudyDailyStats).insert(UserStudyDailyStatsCompanion.insert(
+      await saveEntity(UserStudyDailyStat(
         userId: userId,
         date: pureDate,
-        dayStatus: Value(statusValue),
-      ));
+        studySeconds: 0,
+        reviewCount: 0,
+        dayStatus: statusValue,
+      ), true);
     } else {
-      // 状态升级逻辑：dakaed > studied > logined > notLogin
+      // 状态升级逻辑：dakaed > studied > loggedIn > notLogin
       bool shouldUpdate = false;
       final currentStatus = existing.dayStatus;
       
@@ -2313,9 +2335,9 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
       }
 
       if (shouldUpdate) {
-        await update(userStudyDailyStats).replace(existing.copyWith(
+        await saveEntity(existing.copyWith(
           dayStatus: Value(statusValue),
-        ));
+        ), true);
       }
     }
   }
