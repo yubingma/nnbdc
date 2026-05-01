@@ -7,6 +7,7 @@ import '../word_list_actions.dart';
 import 'word_list_item_layout.dart';
 import 'mode_components.dart';
 
+/// 拼写模式：用户需要拼写出单词。支持“键盘拼写”和“手写拼写”两种子模式。
 class DictationModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;

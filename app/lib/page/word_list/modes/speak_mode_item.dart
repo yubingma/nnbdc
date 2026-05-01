@@ -6,6 +6,8 @@ import '../word_list_actions.dart';
 import 'word_list_item_layout.dart';
 import 'mode_components.dart';
 
+/// 听说模式：包含“看中文说英文”和“看英文说单词发音”两种子模式。
+/// 该模式会调用 ASR (语音识别) 来检查用户的发音。
 class SpeakModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;

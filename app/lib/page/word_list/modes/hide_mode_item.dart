@@ -6,6 +6,7 @@ import '../word_list_actions.dart';
 import 'word_list_item_layout.dart';
 import 'mode_components.dart';
 
+/// 隐藏模式：包含“隐藏中文”或“隐藏英文”，用户点击后才会揭晓答案
 class HideModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;
