@@ -11,6 +11,17 @@ import '../util/custom_convert.dart';
 
 part 'vo.g.dart';
 
+@JsonSerializable()
+class AiStoryVo {
+  final String storyContent;
+  final String wordsHash;
+
+  AiStoryVo({required this.storyContent, required this.wordsHash});
+
+  factory AiStoryVo.fromJson(Map<String, dynamic> json) => _$AiStoryVoFromJson(json);
+  Map<String, dynamic> toJson() => _$AiStoryVoToJson(this);
+}
+
 class StudyProgress {
   int existDays;
   int dakaDayCount;

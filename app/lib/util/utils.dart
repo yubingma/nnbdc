@@ -82,6 +82,11 @@ class Util {
     return "${Config.soundBaseUrl}sentence/$englishDigest.mp3";
   }
 
+  /// 获取指定的 AI 短文对应的发音文件Url
+  static String getAiStorySoundUrl(String wordsHash) {
+    return "${Config.soundBaseUrl}ai_story/$wordsHash.mp3";
+  }
+
   static bool equalsIgnoreCase(String? string1, String? string2) {
     return string1?.toLowerCase() == string2?.toLowerCase();
   }

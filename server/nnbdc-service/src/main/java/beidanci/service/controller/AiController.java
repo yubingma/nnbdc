@@ -26,6 +26,7 @@ import com.alibaba.dashscope.common.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import beidanci.api.Result;
+import beidanci.api.model.AiStoryVo;
 import beidanci.service.bo.AiBo;
 import beidanci.service.bo.SysParamBo;
 import beidanci.service.bo.UserBo;
@@ -59,10 +60,10 @@ public class AiController {
      * @return 生成的小短文
      */
     @PostMapping("/ai/generateAiShortStory.do")
-    public DeferredResult<Result<String>> generateAiShortStory(
+    public DeferredResult<Result<AiStoryVo>> generateAiShortStory(
             @RequestParam("wordsJson") String wordsJson,
             @RequestParam("userId") String userId) {
-        DeferredResult<Result<String>> deferredResult = new DeferredResult<>(60000L); // 60秒超时
+        DeferredResult<Result<AiStoryVo>> deferredResult = new DeferredResult<>(60000L); // 60秒超时
         deferredResult.onTimeout(() -> deferredResult.setErrorResult(Result.fail("生成 AI 短文超时")));
 
         try {
@@ -73,7 +74,7 @@ public class AiController {
             }
 
             List<String> words = mapper.readValue(wordsJson, mapper.getTypeFactory().constructCollectionType(List.class, String.class));
-            CompletableFuture<Result<String>> future = aiBo.generateShortStory(words);
+            CompletableFuture<Result<AiStoryVo>> future = aiBo.generateShortStory(words);
             
             future.thenAccept(result -> deferredResult.setResult(result))
                   .exceptionally(ex -> {

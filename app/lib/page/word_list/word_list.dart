@@ -313,7 +313,7 @@ class WordListPageState extends State<WordListPage>
   bool isMenuOpen = false;
 
   /// 已生成的 AI 短文缓存
-  String? _aiStory;
+  AiStoryVo? _aiStory;
 
   /// 识别出的“写错但合法”的单词，用于显示释义提示
   WordVo? _detectedSimilarWord;
@@ -3817,7 +3817,7 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
-  void _showAiStoryDialog(String story) {
+  void _showAiStoryDialog(AiStoryVo storyVo) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -3826,10 +3826,17 @@ class WordListPageState extends State<WordListPage>
             title: 'AI 单词小短文',
             actions: [
               IconButton(
+                icon: const Icon(Icons.volume_up),
+                tooltip: '播放配音',
+                onPressed: () {
+                  SoundUtil.playAiStorySound(storyVo.wordsHash);
+                },
+              ),
+              IconButton(
                 icon: const Icon(Icons.copy),
                 tooltip: '复制',
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: story));
+                  Clipboard.setData(ClipboardData(text: storyVo.storyContent));
                   ToastUtil.info('已复制到剪贴板');
                 },
               ),
@@ -3837,7 +3844,7 @@ class WordListPageState extends State<WordListPage>
           ),
           body: Container(
             color: Theme.of(context).scaffoldBackgroundColor, // 为背景提供清晰颜色，避免透视
-            child: _buildClickableStory(story),
+            child: _buildClickableStory(storyVo.storyContent),
           ),
         ),
       ),

@@ -67,7 +67,7 @@ public class SystemController {
      * 生成 AI 短文 - 遗留接口 (兼容旧版本)
      */
     @PostMapping("/generateAiShortStory.do")
-    public DeferredResult<Result<String>> legacyGenerateAiShortStory(
+    public DeferredResult<Result<AiStoryVo>> legacyGenerateAiShortStory(
             @RequestParam("wordsJson") String wordsJson,
             @RequestParam(value = "userId", required = false) String userId) {
         if (userId == null || userId.isEmpty()) {

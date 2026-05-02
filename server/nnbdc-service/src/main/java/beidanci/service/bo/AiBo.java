@@ -2,10 +2,11 @@ package beidanci.service.bo;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
+import java.io.File;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -50,6 +51,7 @@ import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 
 import beidanci.api.Result;
+import beidanci.api.model.AiStoryVo;
 import beidanci.service.config.AliyunAiProperties;
 import beidanci.service.po.AiStory;
 import beidanci.service.util.SysParamUtil;
@@ -77,7 +79,7 @@ public class AiBo {
     private final AtomicInteger activeAiChatRequests = new AtomicInteger(0);
     private final ConcurrentHashMap<String, AtomicInteger> userAiChatRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicInteger> userDailyAiChatRequests = new ConcurrentHashMap<>();
-    private final Map<String, java.util.concurrent.CompletableFuture<Result<String>>> inFlightStories = new ConcurrentHashMap<>();
+    private final Map<String, java.util.concurrent.CompletableFuture<Result<AiStoryVo>>> inFlightStories = new ConcurrentHashMap<>();
 
     public static class ExtractionTask {
         public final String taskId;
@@ -663,7 +665,7 @@ public class AiBo {
      * @param words 单词列表 (拼写)
      * @return 生成结果的 Future
      */
-    public java.util.concurrent.CompletableFuture<Result<String>> generateShortStory(List<String> words) {
+    public java.util.concurrent.CompletableFuture<Result<AiStoryVo>> generateShortStory(List<String> words) {
         if (words == null || words.isEmpty()) {
             return java.util.concurrent.CompletableFuture.completedFuture(Result.fail("没有单词可以生成短文。"));
         }
@@ -684,14 +686,21 @@ public class AiBo {
         AiStory cachedStory = aiStoryBo.findByWordsHash(wordsHash);
         if (cachedStory != null) {
             logger.info("命中 AI 短文缓存: {}", wordsHash);
-            return java.util.concurrent.CompletableFuture.completedFuture(Result.success(cachedStory.getStoryContent()));
+            // 异步检查并补全缺失的配音文件
+            checkAndGenerateAudioAsync(cachedStory.getStoryContent(), wordsHash);
+            return java.util.concurrent.CompletableFuture.completedFuture(Result.success(new AiStoryVo(cachedStory.getStoryContent(), wordsHash)));
         }
 
         // 3. 检查是否有正在生成的任务
         return inFlightStories.computeIfAbsent(wordsHash, k -> {
             return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {
-                    return doGenerateShortStory(words, wordsHash, wordsJsonForHash);
+                    Result<String> textResult = doGenerateShortStory(words, wordsHash, wordsJsonForHash);
+                    if (textResult.isSuccess()) {
+                        return Result.success(new AiStoryVo(textResult.getData(), wordsHash));
+                    } else {
+                        return Result.fail(textResult.getMsg());
+                    }
                 } finally {
                     inFlightStories.remove(k);
                 }
@@ -728,6 +737,15 @@ public class AiBo {
                 logger.error("保存 AI 短文缓存失败", e);
             }
 
+            // 异步生成配音
+            new Thread(() -> {
+                try {
+                    generateShortStoryAudio(storyContent, wordsHash);
+                } catch (Exception e) {
+                    logger.error("异步生成 AI 短文配音失败: {}", wordsHash, e);
+                }
+            }).start();
+
             return Result.success(storyContent);
         } catch (Exception e) {
             logger.error("AI 生成短文失败", e);
@@ -736,6 +754,44 @@ public class AiBo {
             activeAiStoryRequests.decrementAndGet();
         }
     }
+
+    private void checkAndGenerateAudioAsync(String storyContent, String wordsHash) {
+        new Thread(() -> {
+            try {
+                String soundPath = sysParamUtil.getSoundPath();
+                File audioFile = new File(soundPath + "/ai_story/" + wordsHash + ".mp3");
+                if (!audioFile.exists()) {
+                    logger.info("检测到缓存短文缺失配音，开始补全: {}", wordsHash);
+                    generateShortStoryAudio(storyContent, wordsHash);
+                }
+            } catch (Exception e) {
+                logger.error("补全 AI 短文配音失败: {}", wordsHash, e);
+            }
+        }).start();
+    }
+
+    private void generateShortStoryAudio(String storyContent, String wordsHash) throws Exception {
+        // 1. 预处理文本：去掉 markdown 加粗符号，避免 TTS 念出星号
+        String cleanText = storyContent.replace("**", "");
+
+        // 2. 调用 TTS 合成语音
+        byte[] audioBytes = callCosyVoice(cleanText, aiProperties.getVoice(), null);
+
+        // 3. 确定保存路径并确保存储目录存在
+        String soundPath = sysParamUtil.getSoundPath();
+        File dir = new File(soundPath, "ai_story");
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                throw new IOException("无法创建 AI 短文配音目录: " + dir.getAbsolutePath());
+            }
+        }
+
+        // 4. 保存为 MP3 文件
+        File audioFile = new File(dir, wordsHash + ".mp3");
+        Files.write(audioFile.toPath(), audioBytes);
+        logger.info("AI 短文配音已生成: {}", audioFile.getAbsolutePath());
+    }
+
     /**
      * 调用阿里云AI OCR 将 PDF 转换为单词列表 (流式解析)
      * @param pdfFile PDF 文件对象

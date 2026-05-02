@@ -826,7 +826,7 @@ abstract class RestClient {
 
   @POST("/ai/generateAiShortStory.do")
   @FormUrlEncoded()
-  Future<Result<String>> generateAiShortStory(
+  Future<Result<AiStoryVo>> generateAiShortStory(
       @Field("wordsJson") String wordsJson, @Field("userId") String userId);
 
   @GET("/ai/getConfig.do")

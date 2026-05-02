@@ -133,6 +133,12 @@ class SoundUtil {
     await playSoundByUrl(soundUrl, AudioPlayer(), true);
   }
 
+  /// 播放 AI 短文发音
+  static Future<void> playAiStorySound(String wordsHash) async {
+    var soundUrl = Util.getAiStorySoundUrl(wordsHash);
+    await playSoundByUrl(soundUrl, AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
+  }
+
   /// 播放例句发音
   static Future<void> playSentenceSound2(String englishDigest, AudioPlayer player) async {
     var soundUrl = Util.getSentenceSoundUrl(englishDigest);
