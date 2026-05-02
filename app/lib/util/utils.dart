@@ -82,9 +82,14 @@ class Util {
     return "${Config.soundBaseUrl}sentence/$englishDigest.mp3";
   }
 
-  /// 获取指定的 AI 短文对应的发音文件Url
-  static String getAiStorySoundUrl(String wordsHash) {
-    return "${Config.soundBaseUrl}ai_story/$wordsHash.mp3";
+  /// 获取指定的 AI 短文对应的发音文件Url (英文版)
+  static String getAiStoryEnSoundUrl(String wordsHash) {
+    return "${Config.soundBaseUrl}ai_story/${wordsHash}_en.mp3";
+  }
+
+  /// 获取指定的 AI 短文对应的发音文件Url (中文版)
+  static String getAiStoryCnSoundUrl(String wordsHash) {
+    return "${Config.soundBaseUrl}ai_story/${wordsHash}_cn.mp3";
   }
 
   static bool equalsIgnoreCase(String? string1, String? string2) {

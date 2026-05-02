@@ -133,9 +133,15 @@ class SoundUtil {
     await playSoundByUrl(soundUrl, AudioPlayer(), true);
   }
 
-  /// 播放 AI 短文发音
-  static Future<void> playAiStorySound(String wordsHash) async {
-    var soundUrl = Util.getAiStorySoundUrl(wordsHash);
+  /// 播放 AI 短文发音 (英文)
+  static Future<void> playAiStoryEnSound(String wordsHash) async {
+    var soundUrl = Util.getAiStoryEnSoundUrl(wordsHash);
+    await playSoundByUrl(soundUrl, AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
+  }
+
+  /// 播放 AI 短文发音 (中文)
+  static Future<void> playAiStoryCnSound(String wordsHash) async {
+    var soundUrl = Util.getAiStoryCnSoundUrl(wordsHash);
     await playSoundByUrl(soundUrl, AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
   }
 

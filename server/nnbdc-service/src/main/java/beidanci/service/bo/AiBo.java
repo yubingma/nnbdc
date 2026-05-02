@@ -759,9 +759,11 @@ public class AiBo {
         new Thread(() -> {
             try {
                 String soundPath = sysParamUtil.getSoundPath();
-                File audioFile = new File(soundPath + "/ai_story/" + wordsHash + ".mp3");
-                if (!audioFile.exists()) {
-                    logger.info("检测到缓存短文缺失配音，开始补全: {}", wordsHash);
+                boolean enMissing = sysParamUtil.isAiStoryEnTtsEnabled() && !new File(soundPath + "/ai_story/" + wordsHash + "_en.mp3").exists();
+                boolean cnMissing = sysParamUtil.isAiStoryCnTtsEnabled() && !new File(soundPath + "/ai_story/" + wordsHash + "_cn.mp3").exists();
+                
+                if (enMissing || cnMissing) {
+                    logger.info("检测到缓存短文缺失部分配音，开始补全: {}", wordsHash);
                     generateShortStoryAudio(storyContent, wordsHash);
                 }
             } catch (Exception e) {
@@ -771,25 +773,50 @@ public class AiBo {
     }
 
     private void generateShortStoryAudio(String storyContent, String wordsHash) throws Exception {
-        // 1. 预处理文本：去掉 markdown 加粗符号，避免 TTS 念出星号
-        String cleanText = storyContent.replace("**", "");
+        // 1. 拆分中英文内容
+        String enPart = "";
+        String cnPart = "";
 
-        // 2. 调用 TTS 合成语音
-        byte[] audioBytes = callCosyVoice(cleanText, aiProperties.getVoice(), null);
-
-        // 3. 确定保存路径并确保存储目录存在
-        String soundPath = sysParamUtil.getSoundPath();
-        File dir = new File(soundPath, "ai_story");
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                throw new IOException("无法创建 AI 短文配音目录: " + dir.getAbsolutePath());
+        // 寻找第一个中文字符的位置作为拆分点
+        int firstChineseCharIndex = -1;
+        for (int i = 0; i < storyContent.length(); i++) {
+            char c = storyContent.charAt(i);
+            if (c >= '\u4e00' && c <= '\u9fa5') {
+                firstChineseCharIndex = i;
+                break;
             }
         }
 
-        // 4. 保存为 MP3 文件
-        File audioFile = new File(dir, wordsHash + ".mp3");
-        Files.write(audioFile.toPath(), audioBytes);
-        logger.info("AI 短文配音已生成: {}", audioFile.getAbsolutePath());
+        if (firstChineseCharIndex != -1) {
+            enPart = storyContent.substring(0, firstChineseCharIndex).trim();
+            cnPart = storyContent.substring(firstChineseCharIndex).trim();
+        } else {
+            enPart = storyContent.trim();
+        }
+
+        // 2. 预处理文本：去掉 markdown 加粗符号
+        enPart = enPart.replace("**", "");
+        cnPart = cnPart.replace("**", "");
+
+        String soundPath = sysParamUtil.getSoundPath();
+        File dir = new File(soundPath, "ai_story");
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("无法创建 AI 短文配音目录: " + dir.getAbsolutePath());
+        }
+
+        // 3. 生成英文配音
+        if (!enPart.isEmpty() && sysParamUtil.isAiStoryEnTtsEnabled()) {
+            byte[] enBytes = callCosyVoice(enPart, aiProperties.getVoice(), "English");
+            Files.write(new File(dir, wordsHash + "_en.mp3").toPath(), enBytes);
+            logger.info("AI 短文英文配音已生成: {}", wordsHash);
+        }
+
+        // 4. 生成中文配音
+        if (!cnPart.isEmpty() && sysParamUtil.isAiStoryCnTtsEnabled()) {
+            byte[] cnBytes = callCosyVoice(cnPart, aiProperties.getVoice(), "Chinese");
+            Files.write(new File(dir, wordsHash + "_cn.mp3").toPath(), cnBytes);
+            logger.info("AI 短文中文配音已生成: {}", wordsHash);
+        }
     }
 
     /**

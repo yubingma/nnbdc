@@ -3826,10 +3826,27 @@ class WordListPageState extends State<WordListPage>
             title: 'AI 单词小短文',
             actions: [
               IconButton(
-                icon: const Icon(Icons.volume_up),
-                tooltip: '播放配音',
+                icon: const Row(
+                  children: [
+                    Icon(Icons.volume_up, size: 20),
+                    Text(' En', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+                tooltip: '播放英文配音',
                 onPressed: () {
-                  SoundUtil.playAiStorySound(storyVo.wordsHash);
+                  SoundUtil.playAiStoryEnSound(storyVo.wordsHash);
+                },
+              ),
+              IconButton(
+                icon: const Row(
+                  children: [
+                    Icon(Icons.volume_up, size: 20),
+                    Text(' 中', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+                tooltip: '播放中文配音',
+                onPressed: () {
+                  SoundUtil.playAiStoryCnSound(storyVo.wordsHash);
                 },
               ),
               IconButton(
