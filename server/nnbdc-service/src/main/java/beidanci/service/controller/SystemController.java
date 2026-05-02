@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import beidanci.api.Result;
 import beidanci.api.model.*;
 import beidanci.service.bo.*;
+import org.springframework.web.context.request.async.DeferredResult;
 
 @RestController
 public class SystemController {
@@ -66,7 +67,7 @@ public class SystemController {
      * 生成 AI 短文 - 遗留接口 (兼容旧版本)
      */
     @PostMapping("/generateAiShortStory.do")
-    public Result<String> legacyGenerateAiShortStory(
+    public DeferredResult<Result<String>> legacyGenerateAiShortStory(
             @RequestParam("wordsJson") String wordsJson,
             @RequestParam(value = "userId", required = false) String userId) {
         if (userId == null || userId.isEmpty()) {
