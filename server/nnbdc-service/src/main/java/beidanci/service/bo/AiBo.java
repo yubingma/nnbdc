@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -50,6 +51,7 @@ import com.alibaba.dashscope.exception.NoApiKeyException;
 
 import beidanci.api.Result;
 import beidanci.service.config.AliyunAiProperties;
+import beidanci.service.po.AiStory;
 import beidanci.service.util.SysParamUtil;
 import io.reactivex.Flowable;
 
@@ -67,6 +69,9 @@ public class AiBo {
 
     @Autowired
     private SysParamUtil sysParamUtil;
+
+    @Autowired
+    private AiStoryBo aiStoryBo;
 
     private final AtomicInteger activeAiStoryRequests = new AtomicInteger(0);
     private final AtomicInteger activeAiChatRequests = new AtomicInteger(0);
@@ -662,6 +667,25 @@ public class AiBo {
             return Result.fail("没有单词可以生成短文。");
         }
 
+        // 1. 生成一致的 Key (去重、小写、排序后哈希)
+        List<String> normalizedWords = new ArrayList<>();
+        for (String w : words) {
+            String lower = w.trim().toLowerCase();
+            if (!normalizedWords.contains(lower)) {
+                normalizedWords.add(lower);
+            }
+        }
+        Collections.sort(normalizedWords);
+        String wordsJsonForHash = beidanci.service.util.JsonUtils.toJson(normalizedWords);
+        String wordsHash = org.apache.commons.codec.digest.DigestUtils.md5Hex(wordsJsonForHash);
+
+        // 2. 检查缓存
+        AiStory cachedStory = aiStoryBo.findByWordsHash(wordsHash);
+        if (cachedStory != null) {
+            logger.info("命中 AI 短文缓存: {}", wordsHash);
+            return Result.success(cachedStory.getStoryContent());
+        }
+
         // 限制并发量，防止瞬间大量请求冲垮服务器
         int limit = sysParamUtil.getAiStoryConcurrencyLimit();
         if (activeAiStoryRequests.get() >= limit) {
@@ -678,8 +702,21 @@ public class AiBo {
                     "4. 同时提供对应的中文翻译，放在英文文章之后。";
 
             String userPrompt = "单词列表：" + String.join(", ", words);
-            String story = generateText(systemPrompt, userPrompt);
-            return Result.success(story);
+            String storyContent = generateText(systemPrompt, userPrompt);
+
+            // 3. 异步存入缓存 (不影响主流程)
+            new Thread(() -> {
+                try {
+                    AiStory aiStory = new AiStory(java.util.UUID.randomUUID().toString().replace("-", ""), wordsHash, wordsJsonForHash, storyContent);
+                    aiStory.setCreateTime(new java.util.Date());
+                    aiStory.setUpdateTime(new java.util.Date());
+                    aiStoryBo.createEntity(aiStory);
+                } catch (Exception e) {
+                    logger.error("异步保存 AI 短文缓存失败", e);
+                }
+            }).start();
+
+            return Result.success(storyContent);
         } catch (Exception e) {
             return Result.fail(e.getMessage());
         } finally {

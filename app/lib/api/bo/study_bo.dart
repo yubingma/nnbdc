@@ -23,6 +23,8 @@ import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
+import 'dart:convert';
+import 'package:nnbdc/api/api.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
@@ -231,6 +233,21 @@ class StudyBo {
         Global.logger.w('当前批次没有单词可供复习');
       }
       Global.logger.d('StudyBo: getCurrentBatchCache completed in ${sw.elapsedMilliseconds}ms (count=${result.length})');
+      
+      // 预生成 AI 短文：异步触发，不阻塞主流程
+      if (result.isNotEmpty && result.length >= 5) { // 单词太少生成短文意义不大
+        final wordSpells = result.map((w) => w.word.spell).toList();
+        unawaited(Api.client.generateAiShortStory(jsonEncode(wordSpells), Global.currentUserId!).then((res) {
+          if (res.success) {
+            Global.logger.d('AI 短文预生成成功');
+          } else {
+            Global.logger.w('AI 短文预生成失败: ${res.msg}');
+          }
+        }).catchError((e) {
+          Global.logger.w('AI 短文预生成异常: $e');
+        }));
+      }
+
       return result;
     } catch (e, stackTrace) {
       Global.logger.e('获取批次单词失败: $e', stackTrace: stackTrace);
