@@ -77,6 +77,7 @@ public class AiBo {
     private final AtomicInteger activeAiChatRequests = new AtomicInteger(0);
     private final ConcurrentHashMap<String, AtomicInteger> userAiChatRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicInteger> userDailyAiChatRequests = new ConcurrentHashMap<>();
+    private final Map<String, java.util.concurrent.CompletableFuture<Result<String>>> inFlightStories = new ConcurrentHashMap<>();
 
     public static class ExtractionTask {
         public final String taskId;
@@ -686,6 +687,27 @@ public class AiBo {
             return Result.success(cachedStory.getStoryContent());
         }
 
+        // 3. 检查是否有正在生成的任务
+        java.util.concurrent.CompletableFuture<Result<String>> future = inFlightStories.computeIfAbsent(wordsHash, k -> {
+            return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                try {
+                    return doGenerateShortStory(words, wordsHash, wordsJsonForHash);
+                } finally {
+                    inFlightStories.remove(k);
+                }
+            });
+        });
+
+        try {
+            // 等待生成结果 (如果是预生成请求，这里也会阻塞，但它是异步发起的，所以没关系)
+            return future.get(60, java.util.concurrent.TimeUnit.SECONDS);
+        } catch (Exception e) {
+            logger.error("获取 AI 短文失败", e);
+            return Result.fail("生成 AI 短文超时或失败: " + e.getMessage());
+        }
+    }
+
+    private Result<String> doGenerateShortStory(List<String> words, String wordsHash, String wordsJsonForHash) {
         // 限制并发量，防止瞬间大量请求冲垮服务器
         int limit = sysParamUtil.getAiStoryConcurrencyLimit();
         if (activeAiStoryRequests.get() >= limit) {
@@ -704,21 +726,20 @@ public class AiBo {
             String userPrompt = "单词列表：" + String.join(", ", words);
             String storyContent = generateText(systemPrompt, userPrompt);
 
-            // 3. 异步存入缓存 (不影响主流程)
-            new Thread(() -> {
-                try {
-                    AiStory aiStory = new AiStory(java.util.UUID.randomUUID().toString().replace("-", ""), wordsHash, wordsJsonForHash, storyContent);
-                    aiStory.setCreateTime(new java.util.Date());
-                    aiStory.setUpdateTime(new java.util.Date());
-                    aiStoryBo.createEntity(aiStory);
-                } catch (Exception e) {
-                    logger.error("异步保存 AI 短文缓存失败", e);
-                }
-            }).start();
+            // 存入持久化缓存
+            try {
+                AiStory aiStory = new AiStory(java.util.UUID.randomUUID().toString().replace("-", ""), wordsHash, wordsJsonForHash, storyContent);
+                aiStory.setCreateTime(new java.util.Date());
+                aiStory.setUpdateTime(new java.util.Date());
+                aiStoryBo.createEntity(aiStory);
+            } catch (Exception e) {
+                logger.error("保存 AI 短文缓存失败", e);
+            }
 
             return Result.success(storyContent);
         } catch (Exception e) {
-            return Result.fail(e.getMessage());
+            logger.error("AI 生成短文失败", e);
+            return Result.fail("AI 生成短文失败: " + e.getMessage());
         } finally {
             activeAiStoryRequests.decrementAndGet();
         }

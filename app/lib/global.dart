@@ -79,6 +79,9 @@ class Global {
     // 从本地数据库获取用户信息
     final db = MyDatabase.instance;
     _currentUser = await db.usersDao.getUserById(userId);
+    if (_currentUser != null) {
+      currentUserId = _currentUser!.id;
+    }
     return _currentUser;
   }
 

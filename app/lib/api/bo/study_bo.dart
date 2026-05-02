@@ -36,6 +36,29 @@ class StudyBo {
   }
 
   StudyBo._internal();
+  
+  String? _lastPreGeneratedBatchHash;
+
+  void _triggerAiStoryPreGeneration(List<String> wordSpells) {
+    if (wordSpells.length < 5) return;
+    
+    // 生成一个简单的识别标志，防止重复请求同一批次
+    final spells = List<String>.from(wordSpells)..sort();
+    final batchHash = spells.join(',');
+    if (batchHash == _lastPreGeneratedBatchHash) return;
+    _lastPreGeneratedBatchHash = batchHash;
+
+    Global.logger.d('触发 AI 短文预生成: $wordSpells, userId: ${Global.currentUserId}');
+    unawaited(Api.client.generateAiShortStory(jsonEncode(wordSpells), Global.currentUserId!).then((res) {
+      if (res.success) {
+        Global.logger.d('AI 短文预生成成功');
+      } else {
+        Global.logger.w('AI 短文预生成失败: ${res.msg}');
+      }
+    }).catchError((e) {
+      Global.logger.w('AI 短文预生成异常: $e');
+    }));
+  }
 
   static void clearUserCaches() {
     StudyCacheManager().clear();
@@ -234,18 +257,9 @@ class StudyBo {
       }
       Global.logger.d('StudyBo: getCurrentBatchCache completed in ${sw.elapsedMilliseconds}ms (count=${result.length})');
       
-      // 预生成 AI 短文：异步触发，不阻塞主流程
-      if (result.isNotEmpty && result.length >= 5) { // 单词太少生成短文意义不大
-        final wordSpells = result.map((w) => w.word.spell).toList();
-        unawaited(Api.client.generateAiShortStory(jsonEncode(wordSpells), Global.currentUserId!).then((res) {
-          if (res.success) {
-            Global.logger.d('AI 短文预生成成功');
-          } else {
-            Global.logger.w('AI 短文预生成失败: ${res.msg}');
-          }
-        }).catchError((e) {
-          Global.logger.w('AI 短文预生成异常: $e');
-        }));
+      // 预生成 AI 短文
+      if (result.isNotEmpty) {
+        _triggerAiStoryPreGeneration(result.map((w) => w.word.spell).toList());
       }
 
       return result;
@@ -576,6 +590,20 @@ class StudyBo {
       for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + batchSize; i++) {
         batchWords.add(todayWords[i]);
       }
+
+      // 异步预生成 AI 短文
+      unawaited(Future(() async {
+        try {
+          List<String> spells = [];
+          for (var bw in batchWords) {
+            final wordItem = await db.wordsDao.getWordById(bw.wordId);
+            if (wordItem != null) spells.add(wordItem.spell);
+          }
+          _triggerAiStoryPreGeneration(spells);
+        } catch (e) {
+          Global.logger.w('预获取批次单词拼写失败: $e');
+        }
+      }));
 
       // 添加批次状态日志
       Global.logger.d('~~~~~BDC_BATCH: startIdx=$batchStartIndex, batchSize=${batchWords.length}, activeStepCount=$activeStepCount');
