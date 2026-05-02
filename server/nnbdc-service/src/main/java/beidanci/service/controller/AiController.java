@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.context.request.async.DeferredResult;
+import java.util.concurrent.CompletableFuture;
 
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.common.Message;
@@ -57,20 +59,33 @@ public class AiController {
      * @return 生成的小短文
      */
     @PostMapping("/ai/generateAiShortStory.do")
-    public Result<String> generateAiShortStory(
+    public DeferredResult<Result<String>> generateAiShortStory(
             @RequestParam("wordsJson") String wordsJson,
             @RequestParam("userId") String userId) {
+        DeferredResult<Result<String>> deferredResult = new DeferredResult<>(60000L); // 60秒超时
+        deferredResult.onTimeout(() -> deferredResult.setErrorResult(Result.fail("生成 AI 短文超时")));
+
         try {
             // 验证用户身份
             if (userBo.findById(userId) == null) {
-                return Result.fail("用户身份验证失败");
+                deferredResult.setResult(Result.fail("用户身份验证失败"));
+                return deferredResult;
             }
 
             List<String> words = mapper.readValue(wordsJson, mapper.getTypeFactory().constructCollectionType(List.class, String.class));
-            return aiBo.generateShortStory(words);
+            CompletableFuture<Result<String>> future = aiBo.generateShortStory(words);
+            
+            future.thenAccept(result -> deferredResult.setResult(result))
+                  .exceptionally(ex -> {
+                      deferredResult.setErrorResult(Result.fail("生成异常: " + ex.getMessage()));
+                      return null;
+                  });
+            
         } catch (Exception e) {
-            return Result.fail(e.getMessage());
+            deferredResult.setResult(Result.fail(e.getMessage()));
         }
+        
+        return deferredResult;
     }
 
     /**

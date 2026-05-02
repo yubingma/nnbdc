@@ -661,11 +661,11 @@ public class AiBo {
     /**
      * 根据单词列表生成小短文
      * @param words 单词列表 (拼写)
-     * @return 生成结果 (含短文或错误信息)
+     * @return 生成结果的 Future
      */
-    public Result<String> generateShortStory(List<String> words) {
+    public java.util.concurrent.CompletableFuture<Result<String>> generateShortStory(List<String> words) {
         if (words == null || words.isEmpty()) {
-            return Result.fail("没有单词可以生成短文。");
+            return java.util.concurrent.CompletableFuture.completedFuture(Result.fail("没有单词可以生成短文。"));
         }
 
         // 1. 生成一致的 Key (去重、小写、排序后哈希)
@@ -684,11 +684,11 @@ public class AiBo {
         AiStory cachedStory = aiStoryBo.findByWordsHash(wordsHash);
         if (cachedStory != null) {
             logger.info("命中 AI 短文缓存: {}", wordsHash);
-            return Result.success(cachedStory.getStoryContent());
+            return java.util.concurrent.CompletableFuture.completedFuture(Result.success(cachedStory.getStoryContent()));
         }
 
         // 3. 检查是否有正在生成的任务
-        java.util.concurrent.CompletableFuture<Result<String>> future = inFlightStories.computeIfAbsent(wordsHash, k -> {
+        return inFlightStories.computeIfAbsent(wordsHash, k -> {
             return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {
                     return doGenerateShortStory(words, wordsHash, wordsJsonForHash);
@@ -697,14 +697,6 @@ public class AiBo {
                 }
             });
         });
-
-        try {
-            // 等待生成结果 (如果是预生成请求，这里也会阻塞，但它是异步发起的，所以没关系)
-            return future.get(60, java.util.concurrent.TimeUnit.SECONDS);
-        } catch (Exception e) {
-            logger.error("获取 AI 短文失败", e);
-            return Result.fail("生成 AI 短文超时或失败: " + e.getMessage());
-        }
     }
 
     private Result<String> doGenerateShortStory(List<String> words, String wordsHash, String wordsJsonForHash) {
