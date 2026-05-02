@@ -3828,8 +3828,9 @@ class WordListPageState extends State<WordListPage>
               IconButton(
                 icon: const Row(
                   children: [
-                    Icon(Icons.volume_up, size: 20),
-                    Text(' En', style: TextStyle(fontSize: 12)),
+                    Icon(Icons.volume_up, size: 20, color: Colors.white),
+                    Text(' En',
+                        style: TextStyle(fontSize: 12, color: Colors.white)),
                   ],
                 ),
                 tooltip: '播放英文配音',
@@ -3840,8 +3841,9 @@ class WordListPageState extends State<WordListPage>
               IconButton(
                 icon: const Row(
                   children: [
-                    Icon(Icons.volume_up, size: 20),
-                    Text(' 中', style: TextStyle(fontSize: 12)),
+                    Icon(Icons.volume_up, size: 20, color: Colors.white),
+                    Text(' 中',
+                        style: TextStyle(fontSize: 12, color: Colors.white)),
                   ],
                 ),
                 tooltip: '播放中文配音',
@@ -3850,7 +3852,7 @@ class WordListPageState extends State<WordListPage>
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.copy),
+                icon: const Icon(Icons.copy, color: Colors.white),
                 tooltip: '复制',
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: storyVo.storyContent));
