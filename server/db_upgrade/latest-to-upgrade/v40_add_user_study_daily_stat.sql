@@ -7,5 +7,7 @@ CREATE TABLE IF NOT EXISTS user_study_daily_stat (
     study_seconds INT DEFAULT 0,
     review_count INT DEFAULT 0,
     day_status VARCHAR(20) DEFAULT NULL,
+    create_time TIMESTAMP NOT NULL,
+    update_time TIMESTAMP,
     PRIMARY KEY (user_id, date)
 );
