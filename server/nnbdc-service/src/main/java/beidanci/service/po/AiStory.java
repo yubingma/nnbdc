@@ -5,7 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "ai_stories")
+@Table(name = "ai_story")
 public class AiStory extends UuidPo {
 
     @Column(name = "words_hash", length = 64, nullable = false, unique = true)

@@ -101,7 +101,7 @@ public class UserDbSyncBo {
     private UserSorter userSorter;
 
     @Autowired
-    private UserStudyDailyStatsBo userStudyDailyStatsBo;
+    private UserStudyDailyStatBo userStudyDailyStatBo;
 
     @Autowired
     private WordBo wordBo;
@@ -391,7 +391,7 @@ public class UserDbSyncBo {
             case "user_cow_dung_log" -> processUserCowDungLogSync(userId, recordJson, operation);
             case "meaning_item" -> processMeaningItemSync(userId, recordJson, operation);
             case "learning_log" -> processLearningLogSync(userId, recordJson, operation);
-            case "user_study_daily_stats" -> processUserStudyDailyStatsSync(userId, recordJson, operation);
+            case "user_study_daily_stat" -> processUserStudyDailyStatSync(userId, recordJson, operation);
             default -> {
                 String errorMsg = String.format("不支持的表同步: %s, 记录ID: %s, 操作: %s", tableName, log.getRecordId(),
                         operation);
@@ -740,23 +740,23 @@ public class UserDbSyncBo {
     /**
      * 处理每日学习统计同步
      */
-    private void processUserStudyDailyStatsSync(String userId, String recordJson, String operation) throws IllegalAccessException {
+    private void processUserStudyDailyStatSync(String userId, String recordJson, String operation) throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
-            userStudyDailyStatsBo.batchDeleteUserRecords(userId, recordJson);
+            userStudyDailyStatBo.batchDeleteUserRecords(userId, recordJson);
         } else {
-            UserStudyDailyStatsDto statsDto = JsonUtils.makeObject(recordJson, UserStudyDailyStatsDto.class);
+            UserStudyDailyStatDto statsDto = JsonUtils.makeObject(recordJson, UserStudyDailyStatDto.class);
             statsDto.setUserId(userId);
-            UserStudyDailyStats stats = userStudyDailyStatsBo.fromDto(statsDto);
+            UserStudyDailyStat stats = userStudyDailyStatBo.fromDto(statsDto);
             switch (operation) {
                 case "INSERT", "UPDATE" -> {
-                    UserStudyDailyStats existing = userStudyDailyStatsBo.findById(stats.getId());
+                    UserStudyDailyStat existing = userStudyDailyStatBo.findById(stats.getId());
                     if (existing == null) {
-                        userStudyDailyStatsBo.createEntity(stats);
+                        userStudyDailyStatBo.createEntity(stats);
                     } else {
-                        userStudyDailyStatsBo.updateEntity(stats);
+                        userStudyDailyStatBo.updateEntity(stats);
                     }
                 }
-                case "DELETE" -> userStudyDailyStatsBo.deleteEntity(stats);
+                case "DELETE" -> userStudyDailyStatBo.deleteEntity(stats);
             }
         }
     }
@@ -1338,15 +1338,15 @@ public class UserDbSyncBo {
             }
 
             // 生成用户每日学习统计全量日志
-            List<UserStudyDailyStatsDto> statsDtos = userStudyDailyStatsBo.getStatsDtosOfUser(userId);
+            List<UserStudyDailyStatDto> statsDtos = userStudyDailyStatBo.getStatsDtosOfUser(userId);
             SimpleDateFormat statsDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            for (UserStudyDailyStatsDto dto : statsDtos) {
+            for (UserStudyDailyStatDto dto : statsDtos) {
                 UserDbLogDto log = new UserDbLogDto(
                         Util.uuid(),
                         userId,
                         userDbVersion,
                         "INSERT",
-                        "user_study_daily_stats",
+                        "user_study_daily_stat",
                         userId + "|" + statsDateFormat.format(dto.getDate()),
                         JsonUtils.toJson(dto),
                         null,

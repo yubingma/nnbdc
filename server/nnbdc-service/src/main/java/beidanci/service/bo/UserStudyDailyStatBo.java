@@ -1,10 +1,10 @@
 package beidanci.service.bo;
 
-import beidanci.api.model.UserStudyDailyStatsDto;
+import beidanci.api.model.UserStudyDailyStatDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
-import beidanci.service.po.UserStudyDailyStats;
-import beidanci.service.po.UserStudyDailyStatsId;
+import beidanci.service.po.UserStudyDailyStat;
+import beidanci.service.po.UserStudyDailyStatId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -17,22 +17,22 @@ import java.util.*;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
-public class UserStudyDailyStatsBo extends BaseBo<UserStudyDailyStats> {
+public class UserStudyDailyStatBo extends BaseBo<UserStudyDailyStat> {
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @PostConstruct
     public void init() {
-        setDao(new BaseDao<UserStudyDailyStats>() {
+        setDao(new BaseDao<UserStudyDailyStat>() {
         });
     }
 
-    public UserStudyDailyStatsDto toDto(UserStudyDailyStats entity) {
+    public UserStudyDailyStatDto toDto(UserStudyDailyStat entity) {
         if (entity == null) {
             return null;
         }
-        UserStudyDailyStatsDto dto = new UserStudyDailyStatsDto();
+        UserStudyDailyStatDto dto = new UserStudyDailyStatDto();
         dto.setUserId(entity.getId().getUserId());
         dto.setDate(entity.getId().getDate());
         dto.setStudySeconds(entity.getStudySeconds());
@@ -41,24 +41,24 @@ public class UserStudyDailyStatsBo extends BaseBo<UserStudyDailyStats> {
         return dto;
     }
 
-    public List<UserStudyDailyStatsDto> getStatsDtosOfUser(String userId) {
-        String sql = "SELECT * FROM user_study_daily_stats WHERE user_id = :userId";
+    public List<UserStudyDailyStatDto> getStatsDtosOfUser(String userId) {
+        String sql = "SELECT * FROM user_study_daily_stat WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
-        List<UserStudyDailyStats> stats = namedParameterJdbcTemplate.query(sql, params,
-                new EntityRowMapper<>(UserStudyDailyStats.class));
+        List<UserStudyDailyStat> stats = namedParameterJdbcTemplate.query(sql, params,
+                new EntityRowMapper<>(UserStudyDailyStat.class));
 
-        List<UserStudyDailyStatsDto> dtos = new ArrayList<>();
-        for (UserStudyDailyStats stat : stats) {
+        List<UserStudyDailyStatDto> dtos = new ArrayList<>();
+        for (UserStudyDailyStat stat : stats) {
             dtos.add(toDto(stat));
         }
         return dtos;
     }
 
-    public UserStudyDailyStats fromDto(UserStudyDailyStatsDto dto) {
-        UserStudyDailyStatsId id = new UserStudyDailyStatsId(dto.getUserId(), dto.getDate());
-        UserStudyDailyStats entity = findById(id);
+    public UserStudyDailyStat fromDto(UserStudyDailyStatDto dto) {
+        UserStudyDailyStatId id = new UserStudyDailyStatId(dto.getUserId(), dto.getDate());
+        UserStudyDailyStat entity = findById(id);
         if (entity == null) {
-            entity = new UserStudyDailyStats(id, dto.getStudySeconds(), dto.getReviewCount(), dto.getDayStatus());
+            entity = new UserStudyDailyStat(id, dto.getStudySeconds(), dto.getReviewCount(), dto.getDayStatus());
         } else {
             entity.setStudySeconds(dto.getStudySeconds());
             entity.setReviewCount(dto.getReviewCount());
@@ -74,7 +74,7 @@ public class UserStudyDailyStatsBo extends BaseBo<UserStudyDailyStats> {
                 filters = parseFilters(filtersJson);
             }
 
-            StringBuilder sql = new StringBuilder("DELETE FROM user_study_daily_stats WHERE user_id = :userId");
+            StringBuilder sql = new StringBuilder("DELETE FROM user_study_daily_stat WHERE user_id = :userId");
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("userId", userId);
 
@@ -90,7 +90,7 @@ public class UserStudyDailyStatsBo extends BaseBo<UserStudyDailyStats> {
 
             namedParameterJdbcTemplate.update(Objects.requireNonNull(sql.toString(), "SQL cannot be null"), params);
         } catch (DataAccessException e) {
-            throw new RuntimeException("批量删除 user_study_daily_stats 记录失败: " + e.getMessage(), e);
+            throw new RuntimeException("批量删除 user_study_daily_stat 记录失败: " + e.getMessage(), e);
         }
     }
 

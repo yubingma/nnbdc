@@ -19,6 +19,6 @@ public class AiStoryBo extends BaseBo<AiStory> {
     }
 
     public AiStory findByWordsHash(String wordsHash) {
-        return queryUnique("SELECT * FROM ai_stories WHERE words_hash = :wordsHash", Pair.of("wordsHash", wordsHash));
+        return queryUnique("SELECT * FROM ai_story WHERE words_hash = :wordsHash", Pair.of("wordsHash", wordsHash));
     }
 }

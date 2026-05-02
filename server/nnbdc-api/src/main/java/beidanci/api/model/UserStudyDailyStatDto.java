@@ -1,42 +1,43 @@
-package beidanci.service.po;
+package beidanci.api.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import java.util.Date;
 
-@Entity
-@Table(name = "user_study_daily_stats")
-public class UserStudyDailyStats extends Po {
+/**
+ * 每日学习统计DTO
+ */
+public class UserStudyDailyStatDto implements Dto {
 
-    @Id
-    private UserStudyDailyStatsId id;
-
-    @Column(name = "study_seconds")
+    private String userId;
+    private Date date;
     private Integer studySeconds;
-
-    @Column(name = "review_count")
     private Integer reviewCount;
-
-    @Column(name = "day_status")
     private String dayStatus;
 
-    public UserStudyDailyStats() {
+    public UserStudyDailyStatDto() {
     }
 
-    public UserStudyDailyStats(UserStudyDailyStatsId id, Integer studySeconds, Integer reviewCount, String dayStatus) {
-        this.id = id;
+    public UserStudyDailyStatDto(String userId, Date date, Integer studySeconds, Integer reviewCount, String dayStatus) {
+        this.userId = userId;
+        this.date = date;
         this.studySeconds = studySeconds;
         this.reviewCount = reviewCount;
         this.dayStatus = dayStatus;
     }
 
-    public UserStudyDailyStatsId getId() {
-        return id;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setId(UserStudyDailyStatsId id) {
-        this.id = id;
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
     }
 
     public Integer getStudySeconds() {

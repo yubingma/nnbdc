@@ -1,7 +1,7 @@
 -- Upgrade database from v39 to v40
--- Add user_study_daily_stats table for study history heatmap
+-- Add user_study_daily_stat table for study history heatmap
 
-CREATE TABLE IF NOT EXISTS user_study_daily_stats (
+CREATE TABLE IF NOT EXISTS user_study_daily_stat (
     user_id VARCHAR(50) NOT NULL,
     date DATE NOT NULL,
     study_seconds INT DEFAULT 0,

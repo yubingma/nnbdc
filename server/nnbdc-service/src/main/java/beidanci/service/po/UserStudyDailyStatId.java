@@ -6,7 +6,7 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
 @Embeddable
-public class UserStudyDailyStatsId implements java.io.Serializable {
+public class UserStudyDailyStatId implements java.io.Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -16,10 +16,10 @@ public class UserStudyDailyStatsId implements java.io.Serializable {
     @Column(name = "date", nullable = false)
     private Date date;
 
-    public UserStudyDailyStatsId() {
+    public UserStudyDailyStatId() {
     }
 
-    public UserStudyDailyStatsId(String userId, Date date) {
+    public UserStudyDailyStatId(String userId, Date date) {
         this.userId = userId;
         this.date = date;
     }
@@ -46,9 +46,9 @@ public class UserStudyDailyStatsId implements java.io.Serializable {
             return true;
         if ((other == null))
             return false;
-        if (!(other instanceof UserStudyDailyStatsId))
+        if (!(other instanceof UserStudyDailyStatId))
             return false;
-        UserStudyDailyStatsId castOther = (UserStudyDailyStatsId) other;
+        UserStudyDailyStatId castOther = (UserStudyDailyStatId) other;
 
         return this.userId.equals(castOther.userId) && this.date.equals(castOther.date);
     }
