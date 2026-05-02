@@ -688,7 +688,7 @@ public class AiBo {
             logger.info("命中 AI 短文缓存: {}", wordsHash);
             // 异步检查并补全缺失的配音文件
             checkAndGenerateAudioAsync(cachedStory.getStoryContent(), wordsHash);
-            return java.util.concurrent.CompletableFuture.completedFuture(Result.success(new AiStoryVo(cachedStory.getStoryContent(), wordsHash)));
+            return java.util.concurrent.CompletableFuture.completedFuture(Result.success(new AiStoryVo(cachedStory.getStoryContent(), wordsHash, sysParamUtil.isAiStoryEnTtsEnabled(), sysParamUtil.isAiStoryCnTtsEnabled())));
         }
 
         // 3. 检查是否有正在生成的任务
@@ -697,7 +697,7 @@ public class AiBo {
                 try {
                     Result<String> textResult = doGenerateShortStory(words, wordsHash, wordsJsonForHash);
                     if (textResult.isSuccess()) {
-                        return Result.success(new AiStoryVo(textResult.getData(), wordsHash));
+                        return Result.success(new AiStoryVo(textResult.getData(), wordsHash, sysParamUtil.isAiStoryEnTtsEnabled(), sysParamUtil.isAiStoryCnTtsEnabled()));
                     } else {
                         return Result.fail(textResult.getMsg());
                     }

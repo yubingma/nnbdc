@@ -15,8 +15,15 @@ part 'vo.g.dart';
 class AiStoryVo {
   final String storyContent;
   final String wordsHash;
+  final bool enTtsEnabled;
+  final bool cnTtsEnabled;
 
-  AiStoryVo({required this.storyContent, required this.wordsHash});
+  AiStoryVo({
+    required this.storyContent,
+    required this.wordsHash,
+    required this.enTtsEnabled,
+    required this.cnTtsEnabled,
+  });
 
   factory AiStoryVo.fromJson(Map<String, dynamic> json) => _$AiStoryVoFromJson(json);
   Map<String, dynamic> toJson() => _$AiStoryVoToJson(this);

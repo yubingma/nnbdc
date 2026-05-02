@@ -3825,32 +3825,34 @@ class WordListPageState extends State<WordListPage>
           appBar: AppTheme.createGradientAppBar(
             title: 'AI 单词小短文',
             actions: [
-              IconButton(
-                icon: const Row(
-                  children: [
-                    Icon(Icons.volume_up, size: 20, color: Colors.white),
-                    Text(' En',
-                        style: TextStyle(fontSize: 12, color: Colors.white)),
-                  ],
+              if (storyVo.enTtsEnabled)
+                IconButton(
+                  icon: const Row(
+                    children: [
+                      Icon(Icons.volume_up, size: 20, color: Colors.white),
+                      Text(' En',
+                          style: TextStyle(fontSize: 12, color: Colors.white)),
+                    ],
+                  ),
+                  tooltip: '播放英文配音',
+                  onPressed: () {
+                    SoundUtil.playAiStoryEnSound(storyVo.wordsHash);
+                  },
                 ),
-                tooltip: '播放英文配音',
-                onPressed: () {
-                  SoundUtil.playAiStoryEnSound(storyVo.wordsHash);
-                },
-              ),
-              IconButton(
-                icon: const Row(
-                  children: [
-                    Icon(Icons.volume_up, size: 20, color: Colors.white),
-                    Text(' 中',
-                        style: TextStyle(fontSize: 12, color: Colors.white)),
-                  ],
+              if (storyVo.cnTtsEnabled)
+                IconButton(
+                  icon: const Row(
+                    children: [
+                      Icon(Icons.volume_up, size: 20, color: Colors.white),
+                      Text(' 中',
+                          style: TextStyle(fontSize: 12, color: Colors.white)),
+                    ],
+                  ),
+                  tooltip: '播放中文配音',
+                  onPressed: () {
+                    SoundUtil.playAiStoryCnSound(storyVo.wordsHash);
+                  },
                 ),
-                tooltip: '播放中文配音',
-                onPressed: () {
-                  SoundUtil.playAiStoryCnSound(storyVo.wordsHash);
-                },
-              ),
               IconButton(
                 icon: const Icon(Icons.copy, color: Colors.white),
                 tooltip: '复制',
