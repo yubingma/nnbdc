@@ -1,33 +1,32 @@
 import 'dart:async';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:get/get.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/bdc/models/bdc_page_args.dart';
+import 'package:nnbdc/services/ai_service.dart';
 import 'package:nnbdc/theme/app_theme.dart';
-import 'package:nnbdc/util/sound.dart';
-import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
-import 'package:nnbdc/config.dart';
-import 'package:nnbdc/services/ai_service.dart';
-import 'package:get_storage/get_storage.dart';
-import 'bdc.dart';
-import 'pic_search.dart';
-import '../util/asr.dart';
-import '../util/study_config.dart';
-
-import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../global.dart';
 import '../state.dart';
-import '../util/utils.dart';
+import '../util/asr.dart';
+import '../util/study_config.dart';
 import '../util/subscription_util.dart';
+import '../util/utils.dart';
+import 'pic_search.dart';
 
 
 class WordDetailPageArgs {

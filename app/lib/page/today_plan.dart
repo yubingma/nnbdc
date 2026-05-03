@@ -1,36 +1,33 @@
 import 'dart:async';
-import 'package:drift/drift.dart' as drift;
 
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/models/bdc_page_args.dart';
-import 'package:nnbdc/state.dart';
-import 'package:nnbdc/util/toast_util.dart';
-import 'package:provider/provider.dart';
-import 'package:nnbdc/services/throttled_sync_service.dart';
-import 'package:nnbdc/util/subscription_util.dart';
-import 'package:nnbdc/widget/dict_download_dialog.dart';
-import 'package:nnbdc/constants.dart';
-
-import 'bdc.dart';
-import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
-import 'package:intl/intl.dart';
+import 'package:nnbdc/page/word_list/today_words.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/learning_service.dart';
-
-import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/asr.dart';
-import 'package:nnbdc/event/events.dart';
+import 'package:nnbdc/util/date_utils.dart' as app_date;
+import 'package:nnbdc/util/learning_service.dart';
+import 'package:nnbdc/util/subscription_util.dart';
+import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:provider/provider.dart';
 
 class TodayPlanPage extends StatefulWidget {
   const TodayPlanPage({super.key});
