@@ -70,7 +70,7 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         Assert.hasText(recordId, "SysDbSync: recordId must not be blank");
         Assert.hasText(record, "SysDbSync: record content must not be blank");
 
-        record = enrichRecordJson(record);
+        record = JsonUtils.enrichRecordJson(record);
 
         // 针对核心表的业务级预校验 (及早发现由于 DTO 映射导致的数据缺失)
         if (!operate.equals("DELETE")) {
