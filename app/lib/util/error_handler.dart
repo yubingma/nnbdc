@@ -61,6 +61,7 @@ class ErrorHandler {
           context: context,
           userId: userId,
           createTime: now,
+          updateTime: now,
         );
 
         await db.localExceptionsDao.insertException(exception);

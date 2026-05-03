@@ -141,7 +141,7 @@ class MyDatabase extends _$MyDatabase {
         if (tables.isNotEmpty) {
         // 4. 再次确保核心表的审计字段没有 NULL (双重保险)
         try {
-          final fixTables = ["users", "local_params", "user_study_daily_stats", "learning_logs"];
+          final fixTables = ["users", "local_params", "user_study_daily_stats", "learning_logs", "similar_words"];
           for (var t in fixTables) {
             await db.customUpdate('UPDATE "$t" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = \'\' OR create_time = 0;');
             await db.customUpdate('UPDATE "$t" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = \'\' OR update_time = 0;');
@@ -237,7 +237,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 41;
+  int get schemaVersion => 42;
 
   @override
   MigrationStrategy get migration {
@@ -375,6 +375,9 @@ class MyDatabase extends _$MyDatabase {
           if (from < 41) {
             await _migrateFromV40ToV41AddAuditColumns(m);
           }
+          if (from < 42) {
+            await _migrateFromV41ToV42AddMissingAuditColumns(m);
+          }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
@@ -436,7 +439,7 @@ class MyDatabase extends _$MyDatabase {
     });
   }
 
-  /// 从版本 40 升级到版本 41：补全所有表的审计字段 (create_time, update_time)
+  /// 从版本 40 升级到版本 41：补全部分表的审计字段 (create_time, update_time)
   Future<void> _migrateFromV40ToV41AddAuditColumns(Migrator m) async {
     await transaction(() async {
       final tablesToUpdate = [
@@ -473,6 +476,48 @@ class MyDatabase extends _$MyDatabase {
         } catch (e) {
           Global.logger.e('回填 $tableName 审计字段失败: $e');
         }
+      }
+    });
+  }
+
+  /// 从版本 41 升级到版本 42：补全所有剩余表的审计字段 (create_time, update_time)
+  /// 确保所有表都有一致的审计字段定义，防止导入/同步时出现 SQL 错误
+  Future<void> _migrateFromV41ToV42AddMissingAuditColumns(Migrator m) async {
+    await transaction(() async {
+      final allTables = [
+        users, localParams, votedSentences, votedWordImages, learningDicts,
+        dicts, words, userDbLogs, userDbVersions, dictWords, wordImages,
+        verbTenses, synonyms, similarWords, cigens, cigenWordLinks,
+        meaningItems, sentences, learningWords, bookMarks, dictGroups,
+        groupAndDictLinks, userStudySteps, dakas, userOpers, userCowDungLogs,
+        userWrongWords, sysDbVersion, localExceptions, learningLogs,
+        userStudyDailyStats
+      ];
+
+      for (final dynamic table in allTables) {
+        final tableName = table.actualTableName;
+        
+        // 检查并添加 create_time
+        try {
+          await m.addColumn(table, table.createTime);
+          Global.logger.i('✅ 向 $tableName 补全了 create_time 列');
+        } catch (_) {
+          // 列已存在或表结构不支持直接添加
+        }
+
+        // 检查并添加 update_time
+        try {
+          await m.addColumn(table, table.updateTime);
+          Global.logger.i('✅ 向 $tableName 补全了 update_time 列');
+        } catch (_) {
+          // 列已存在或表结构不支持直接添加
+        }
+
+        // 统一回填默认值
+        try {
+          await customStatement('UPDATE "$tableName" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = 0;');
+          await customStatement('UPDATE "$tableName" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = 0;');
+        } catch (_) {}
       }
     });
   }
@@ -1535,7 +1580,10 @@ class MyDatabase extends _$MyDatabase {
 
   /// 手动补全缺失的审计字段 (用于处理迁移失败的极端情况)
   static Future<void> _manuallyAddAuditColumns(MyDatabase db) async {
-    final tables = ['users', 'local_params', 'user_study_daily_stats', 'learning_logs'];
+    final tables = [
+      'users', 'local_params', 'user_study_daily_stats', 'learning_logs',
+      'similar_words', 'dict_words', 'synonyms', 'sentences', 'words', 'word_images'
+    ];
     for (final table in tables) {
       try {
         final columns = await db.customSelect("PRAGMA table_info('$table')").get();

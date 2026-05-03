@@ -644,6 +644,7 @@ class LocalExceptions extends Table {
 
   /// 创建时间
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};

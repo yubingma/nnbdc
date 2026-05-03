@@ -76,10 +76,17 @@ Future<void> _runImport({
     sendPhase('parse');
     Uint8List raw;
     if (filePath != null) {
-      raw = await File(filePath).readAsBytes();
+      final file = File(filePath);
+      if (!await file.exists()) {
+        sendError('导入失败：找不到临时文件 $filePath');
+        return;
+      }
+      final size = await file.length();
+      Global.logger.d('📖 开始读取临时文件: $filePath, 大小: $size bytes');
+      raw = await file.readAsBytes();
       // 读完就删，避免临时文件堆积
       try {
-        await File(filePath).delete();
+        await file.delete();
       } catch (_) {}
     } else if (bytes != null) {
       raw = bytes.materialize().asUint8List();
