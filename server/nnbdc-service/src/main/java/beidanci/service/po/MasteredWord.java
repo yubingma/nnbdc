@@ -77,7 +77,7 @@ public class MasteredWord extends Po {
         // 设置其他属性
         masteredWord.setMasterAtTime(dto.getMasterAtTime());
         masteredWord.setCreateTime(dto.getCreateTime());
-        masteredWord.setUpdateTime(dto.getUpdateTime());
+        masteredWord.setUpdateTime(dto.getUpdateTime() != null ? dto.getUpdateTime() : dto.getCreateTime());
 
         return masteredWord;
     }

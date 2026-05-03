@@ -73,6 +73,8 @@ public class WrongWord extends Po {
         }
         if (dto.getUpdateTime() != null) {
             wrongWord.setUpdateTime(dto.getUpdateTime());
+        } else {
+            wrongWord.setUpdateTime(dto.getCreateTime());
         }
         return wrongWord;
     }

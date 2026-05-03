@@ -283,6 +283,8 @@ public class LearningWord extends Po {
         }
         if (dto.getUpdateTime() != null) {
             learningWord.setUpdateTime(dto.getUpdateTime());
+        } else {
+            learningWord.setUpdateTime(dto.getCreateTime());
         }
         learningWord.setStability(dto.getStability());
         learningWord.setDifficulty(dto.getDifficulty());

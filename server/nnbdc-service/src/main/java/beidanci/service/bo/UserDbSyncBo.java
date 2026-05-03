@@ -616,7 +616,7 @@ public class UserDbSyncBo {
                         dict.setPopularityLimit(dictDto.getPopularityLimit());
                         dict.setEditable(dictDto.getEditable() != null ? dictDto.getEditable() : false);
                         dict.setCreateTime(dictDto.getCreateTime());
-                        dict.setUpdateTime(dictDto.getUpdateTime());
+                        dict.setUpdateTime(dictDto.getUpdateTime() != null ? dictDto.getUpdateTime() : dictDto.getCreateTime());
 
                         dictBo.createEntity(dict);
                         logger.debug("同步创建词书成功: dictId={}, name={}, wordCount={}",

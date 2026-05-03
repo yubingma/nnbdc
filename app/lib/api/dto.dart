@@ -24,7 +24,10 @@ class DictDto {
   DictDto(this.id, this.isReady, this.isShared, this.name, this.wordCount, this.ownerId, this.visible, this.popularityLimit, this.createTime,
       this.updateTime, [this.editable, this.deletable, this.domain, this.baseDictId, this.sortAlg]);
 
-  factory DictDto.fromJson(Map<String, dynamic> json) => _$DictDtoFromJson(json);
+  factory DictDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$DictDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$DictDtoToJson(this);
 
@@ -45,11 +48,14 @@ class DictWordDto {
   final int seq;
   final int unit;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   DictWordDto(this.dictId, this.wordId, this.seq, this.createTime, this.updateTime, [this.unit = 0]);
 
-  factory DictWordDto.fromJson(Map<String, dynamic> json) => _$DictWordDtoFromJson(json);
+  factory DictWordDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$DictWordDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$DictWordDtoToJson(this);
 }
@@ -67,12 +73,15 @@ class WordDto {
   final String? shortDesc;
   final String spell;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   WordDto(this.id, this.americaPronounce, this.britishPronounce, this.groupInfo, this.longDesc, this.popularity, this.pronounce, this.shortDesc,
       this.spell, this.createTime, this.updateTime);
 
-  factory WordDto.fromJson(Map<String, dynamic> json) => _$WordDtoFromJson(json);
+  factory WordDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$WordDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$WordDtoToJson(this);
 }
@@ -88,11 +97,14 @@ class MeaningItemDto {
   final int popularity;
   final String? ownerId;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   MeaningItemDto(this.id, this.wordId, this.dictId, this.ciXing, this.meaning, this.popularity, this.ownerId, this.createTime, this.updateTime);
 
-  factory MeaningItemDto.fromJson(Map<String, dynamic> json) => _$MeaningItemDtoFromJson(json);
+  factory MeaningItemDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$MeaningItemDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$MeaningItemDtoToJson(this);
 }
@@ -106,7 +118,10 @@ class SimilarWordDto {
 
   SimilarWordDto(this.wordId, this.similarWordId, this.similarWordSpell, this.distance);
 
-  factory SimilarWordDto.fromJson(Map<String, dynamic> json) => _$SimilarWordDtoFromJson(json);
+  factory SimilarWordDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$SimilarWordDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$SimilarWordDtoToJson(this);
 }
@@ -118,11 +133,14 @@ class SynonymDto {
   final String wordId;
   final String spell;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   SynonymDto(this.meaningItemId, this.wordId, this.spell, this.createTime, this.updateTime);
 
-  factory SynonymDto.fromJson(Map<String, dynamic> json) => _$SynonymDtoFromJson(json);
+  factory SynonymDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$SynonymDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$SynonymDtoToJson(this);
 }
@@ -142,7 +160,7 @@ class SentenceDto {
   final String meaningItemId;
   final String wordMeaning;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   final String? ttsVoice;
   final String? ttsEngine;
@@ -164,7 +182,10 @@ class SentenceDto {
       this.ttsVoice,
       this.ttsEngine);
 
-  factory SentenceDto.fromJson(Map<String, dynamic> json) => _$SentenceDtoFromJson(json);
+  factory SentenceDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$SentenceDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$SentenceDtoToJson(this);
 }
@@ -180,11 +201,14 @@ class WordImageDto {
   final String? ownerId;
   final String wordId;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   WordImageDto(this.id, this.imageFile, this.foot, this.hand, this.authorId, this.ownerId, this.wordId, this.createTime, this.updateTime);
 
-  factory WordImageDto.fromJson(Map<String, dynamic> json) => _$WordImageDtoFromJson(json);
+  factory WordImageDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$WordImageDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$WordImageDtoToJson(this);
 }
@@ -197,11 +221,14 @@ class VerbTenseDto {
   final String? tensedSpell;
   final String? wordId;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   VerbTenseDto(this.id, this.tenseType, this.tensedSpell, this.wordId, this.createTime, this.updateTime);
 
-  factory VerbTenseDto.fromJson(Map<String, dynamic> json) => _$VerbTenseDtoFromJson(json);
+  factory VerbTenseDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$VerbTenseDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$VerbTenseDtoToJson(this);
 }
@@ -216,11 +243,14 @@ class CigenDto {
   final String? meaningCn;
   final String? meaningEn;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   CigenDto(this.id, this.description, this.createTime, this.updateTime, {this.spell, this.category, this.meaningCn, this.meaningEn});
 
-  factory CigenDto.fromJson(Map<String, dynamic> json) => _$CigenDtoFromJson(json);
+  factory CigenDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$CigenDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$CigenDtoToJson(this);
 }
@@ -232,11 +262,14 @@ class CigenWordLinkDto {
   final String wordId;
   final String theExplain;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   CigenWordLinkDto(this.cigenId, this.wordId, this.theExplain, this.createTime, this.updateTime);
 
-  factory CigenWordLinkDto.fromJson(Map<String, dynamic> json) => _$CigenWordLinkDtoFromJson(json);
+  factory CigenWordLinkDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$CigenWordLinkDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$CigenWordLinkDtoToJson(this);
 }
@@ -311,7 +344,10 @@ class UserDbLogDto {
 
   UserDbLogDto(this.id, this.userId, this.version, this.operate, this.tblName, this.recordId, this.record, this.createTime, this.updateTime);
 
-  factory UserDbLogDto.fromJson(Map<String, dynamic> json) => _$UserDbLogDtoFromJson(json);
+  factory UserDbLogDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$UserDbLogDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$UserDbLogDtoToJson(this);
 }
@@ -483,7 +519,10 @@ class UserDto {
 
   UserDto();
 
-  factory UserDto.fromJson(Map<String, dynamic> json) => _$UserDtoFromJson(json);
+  factory UserDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$UserDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$UserDtoToJson(this);
 }
@@ -511,7 +550,10 @@ class SysDbLogDto {
     this.updateTime,
   );
 
-  factory SysDbLogDto.fromJson(Map<String, dynamic> json) => _$SysDbLogDtoFromJson(json);
+  factory SysDbLogDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$SysDbLogDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$SysDbLogDtoToJson(this);
 }
@@ -527,7 +569,7 @@ class WordShortDescChineseDto {
   final String author;
   final String ownerId;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   WordShortDescChineseDto(
     this.id,
@@ -541,7 +583,10 @@ class WordShortDescChineseDto {
     this.updateTime,
   );
 
-  factory WordShortDescChineseDto.fromJson(Map<String, dynamic> json) => _$WordShortDescChineseDtoFromJson(json);
+  factory WordShortDescChineseDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$WordShortDescChineseDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$WordShortDescChineseDtoToJson(this);
 }
@@ -554,11 +599,14 @@ class UserStudyStepDto {
   final int seq;
   final String state;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   UserStudyStepDto(this.userId, this.studyStep, this.seq, this.state, this.createTime, this.updateTime);
 
-  factory UserStudyStepDto.fromJson(Map<String, dynamic> json) => _$UserStudyStepDtoFromJson(json);
+  factory UserStudyStepDto.fromJson(Map<String, dynamic> json) {
+    json['updateTime'] ??= json['createTime'];
+    return _$UserStudyStepDtoFromJson(json);
+  }
 
   Map<String, dynamic> toJson() => _$UserStudyStepDtoToJson(this);
 }

@@ -24,7 +24,7 @@ class UserStudySteps extends Table {
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {userId, studyStep};
@@ -194,7 +194,7 @@ class LearningDicts extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {userId, dictId};
@@ -233,7 +233,7 @@ class Dicts extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -260,7 +260,7 @@ class Words extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -296,7 +296,7 @@ class UserDbVersions extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {userId};
@@ -315,7 +315,7 @@ class DictWords extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {dictId, wordId};
@@ -339,7 +339,7 @@ class WordImages extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -356,7 +356,7 @@ class VerbTenses extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -370,7 +370,7 @@ class Synonyms extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {meaningItemId, wordId};
@@ -403,7 +403,7 @@ class Cigens extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -418,7 +418,7 @@ class CigenWordLinks extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {cigenId, wordId};
@@ -438,7 +438,7 @@ class MeaningItems extends Table {
   DateTimeColumn get createTime => dateTime()();
   TextColumn get ownerId => text().withDefault(const Constant('15118'))();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -467,7 +467,7 @@ class Sentences extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -505,7 +505,7 @@ class LearningWords extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {userId, wordId};
@@ -518,7 +518,7 @@ class BookMarks extends Table {
   TextColumn get spell => text()();
   IntColumn get position => integer()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -541,7 +541,7 @@ class Dakas extends Table {
   DateTimeColumn get forLearningDate => dateTime()();
   TextColumn get textContent => text().nullable()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column> get primaryKey => {userId, forLearningDate};
@@ -567,7 +567,7 @@ class MasteredWords extends Table {
   TextColumn get wordId => text()();
   DateTimeColumn get masterAtTime => dateTime()(); // 掌握单词的时间
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column> get primaryKey => {userId, wordId};
@@ -591,7 +591,7 @@ class UserWrongWords extends Table {
   TextColumn get userId => text()();
   TextColumn get wordId => text()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {userId, wordId};
@@ -603,7 +603,7 @@ class SysDbVersion extends Table {
   IntColumn get version => integer()();
   DateTimeColumn get lastSyncTime => dateTime().nullable()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -648,7 +648,7 @@ class LearningLogs extends Table {
   IntColumn get elapsedDays => integer()();
   IntColumn get scheduledDays => integer()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime().nullable()();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};

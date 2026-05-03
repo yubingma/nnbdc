@@ -95,7 +95,7 @@ public class DictWord extends Po  {
         dictWord.setSeq(dto.getSeq());
         dictWord.setUnit(dto.getUnit() != null ? dto.getUnit() : 0);
         dictWord.setCreateTime(dto.getCreateTime());
-        dictWord.setUpdateTime(dto.getUpdateTime());
+        dictWord.setUpdateTime(dto.getUpdateTime() != null ? dto.getUpdateTime() : dto.getCreateTime());
 
         return dictWord;
     }

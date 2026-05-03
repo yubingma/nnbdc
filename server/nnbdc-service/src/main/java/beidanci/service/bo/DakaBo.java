@@ -126,6 +126,8 @@ public class DakaBo extends BaseBo<Daka> {
         }
         if (dto.getUpdateTime() != null) {
             daka.setUpdateTime(dto.getUpdateTime());
+        } else {
+            daka.setUpdateTime(dto.getCreateTime());
         }
 
         return daka;

@@ -1008,6 +1008,11 @@ Future<void> _ensureParentDictsLogs(List<Map<String, dynamic>> logsToBackend, St
 /// 当服务端返回的数据缺少某些前端定义的非空字段时，在此处提供默认值。
 /// 这种改造能有效防止由于前后端版本不一致导致的同步崩溃。
 void _sanitizeEntityJson(String tableName, Map<String, dynamic> json) {
+  // 通用处理：如果缺少 updateTime，则尝试用 createTime 补齐，防止非空约束导致反序列化或写入失败
+  if (json.containsKey('createTime')) {
+    json['updateTime'] ??= json['createTime'];
+  }
+
   switch (tableName) {
     case 'users':
       json['todayStudyStarted'] ??= false;

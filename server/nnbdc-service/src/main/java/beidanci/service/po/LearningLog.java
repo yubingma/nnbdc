@@ -66,7 +66,7 @@ public class LearningLog extends UuidPo {
         log.setElapsedDays(dto.getElapsedDays());
         log.setScheduledDays(dto.getScheduledDays());
         log.setCreateTime(dto.getCreateTime());
-        log.setUpdateTime(dto.getUpdateTime());
+        log.setUpdateTime(dto.getUpdateTime() != null ? dto.getUpdateTime() : dto.getCreateTime());
         return log;
     }
 }

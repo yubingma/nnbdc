@@ -914,6 +914,8 @@ public class User extends UuidPo {
         }
         if (dto.getUpdateTime() != null) {
             user.setUpdateTime(dto.getUpdateTime());
+        } else {
+            user.setUpdateTime(dto.getCreateTime());
         }
         return user;
     }

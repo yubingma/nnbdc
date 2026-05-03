@@ -76,7 +76,7 @@ public class UserOperBo extends BaseBo<UserOper> {
             dto.getRemark()
         );
         entity.setCreateTime(dto.getCreateTime());
-        entity.setUpdateTime(dto.getUpdateTime());
+        entity.setUpdateTime(dto.getUpdateTime() != null ? dto.getUpdateTime() : dto.getCreateTime());
         return entity;
     }
 

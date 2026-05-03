@@ -29,7 +29,7 @@ public abstract class Po {
     /**
      * 对象最近更新时间
      */
-    @Column(name = "update_time")
+    @Column(name = "update_time", nullable = false)
     protected Date updateTime;
 
     public Date getCreateTime() {

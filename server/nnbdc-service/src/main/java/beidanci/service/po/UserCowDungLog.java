@@ -98,7 +98,7 @@ public class UserCowDungLog extends UuidPo {
         log.setDelta(dto.getDelta());
         log.setReason(dto.getReason());
         log.setCreateTime(dto.getCreateTime());
-        log.setUpdateTime(dto.getUpdateTime());
+        log.setUpdateTime(dto.getUpdateTime() != null ? dto.getUpdateTime() : dto.getCreateTime());
 
         // 设置theTime字段，优先使用DTO中的theTime，如果为null则使用createTime，如果createTime也为null则使用当前时间
         if (dto.getTheTime() != null) {
