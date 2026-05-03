@@ -110,6 +110,7 @@ class MeaningItemDto {
 }
 
 @JsonSerializable()
+@CustomDateTimeConverter()
 class SimilarWordDto {
   final String wordId;
   final String similarWordId;

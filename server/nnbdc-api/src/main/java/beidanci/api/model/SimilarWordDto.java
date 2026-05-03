@@ -6,6 +6,8 @@ public class SimilarWordDto implements Dto {
     private String similarWordId;
     private String similarWordSpell;
     private int distance;
+    private java.util.Date createTime;
+    private java.util.Date updateTime;
 
 
     public String getWordId() {
@@ -38,6 +40,22 @@ public class SimilarWordDto implements Dto {
 
     public void setSimilarWordSpell(String similarWordSpell) {
         this.similarWordSpell = similarWordSpell;
+    }
+
+    public java.util.Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(java.util.Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public java.util.Date getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(java.util.Date updateTime) {
+        this.updateTime = updateTime;
     }
 
 }

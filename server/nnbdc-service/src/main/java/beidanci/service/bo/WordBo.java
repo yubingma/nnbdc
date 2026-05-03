@@ -216,7 +216,9 @@ public class WordBo extends BaseBo<Word> {
 
     public List<SimilarWordDto> getSimilarWordsOfDict(String dictId) {
         // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT sw.word_id, sw.similar_word_id, sw.distance, w.spell FROM similar_word sw LEFT JOIN word w ON w.id=sw.similar_word_id WHERE sw.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId)";
+        String sql = "SELECT sw.word_id, sw.similar_word_id, sw.distance, w.spell, sw.create_time, sw.update_time " +
+                     "FROM similar_word sw LEFT JOIN word w ON w.id=sw.similar_word_id " +
+                     "WHERE sw.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId)";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -225,6 +227,8 @@ public class WordBo extends BaseBo<Word> {
             wordDto.setSimilarWordId(rs.getString("similar_word_id"));
             wordDto.setDistance(rs.getObject("distance", Integer.class));
             wordDto.setSimilarWordSpell(rs.getString("spell"));
+            wordDto.setCreateTime(rs.getTimestamp("create_time"));
+            wordDto.setUpdateTime(rs.getTimestamp("update_time"));
             return wordDto;
         });
     }
