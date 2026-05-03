@@ -379,6 +379,9 @@ class MyDatabase extends _$MyDatabase {
           // 某些平台/场景下 pragma 可能失败，不影响继续运行
           Global.logger.w('设置 SQLite PRAGMA 失败: $e');
         }
+
+        // 确保所有表的审计字段都不为 NULL (处理可能存在的历史遗留问题)
+        await _backfillAllAuditColumns();
       },
     );
   }
@@ -428,17 +431,26 @@ class MyDatabase extends _$MyDatabase {
       ];
 
       for (final dynamic table in tablesToUpdate) {
-        // 使用 m.addColumn 更加安全，它会自动处理 SQLite 的限制
+        final tableName = table.actualTableName;
+        // 1. 尝试添加列
         try {
           await m.addColumn(table, table.createTime);
         } catch (e) {
-          Global.logger.w('添加 createTime 到 ${table.actualTableName} 失败 (可能已存在): $e');
+          Global.logger.w('添加 createTime 到 $tableName 失败 (可能已存在): $e');
         }
         
         try {
           await m.addColumn(table, table.updateTime);
         } catch (e) {
-          Global.logger.w('添加 updateTime 到 ${table.actualTableName} 失败 (可能已存在): $e');
+          Global.logger.w('添加 updateTime 到 $tableName 失败 (可能已存在): $e');
+        }
+
+        // 2. 回填 NULL 值 (2000-01-01 00:00:00 UTC = 946656000000ms)
+        try {
+          await customStatement('UPDATE "$tableName" SET create_time = 946656000000 WHERE create_time IS NULL;');
+          await customStatement('UPDATE "$tableName" SET update_time = 946656000000 WHERE update_time IS NULL;');
+        } catch (e) {
+          Global.logger.e('回填 $tableName 审计字段失败: $e');
         }
       }
     });
@@ -1433,6 +1445,64 @@ class MyDatabase extends _$MyDatabase {
     // 使用 Future.microtask 确保在 UI 初始化完成后再显示提示
     Future.microtask(() {
       ToastUtil.error('数据库重建失败，请重启应用');
+    });
+  }
+
+  /// 确保所有表的审计字段都不为 NULL (2000-01-01 00:00:00 UTC = 946656000000ms)
+  Future<void> _backfillAllAuditColumns() async {
+    final List<dynamic> tables = [
+      users,
+      localParams,
+      votedSentences,
+      votedWordImages,
+      learningDicts,
+      dicts,
+      words,
+      userDbLogs,
+      userDbVersions,
+      dictWords,
+      wordImages,
+      verbTenses,
+      synonyms,
+      similarWords,
+      cigens,
+      cigenWordLinks,
+      meaningItems,
+      sentences,
+      learningWords,
+      bookMarks,
+      dictGroups,
+      groupAndDictLinks,
+      userStudySteps,
+      dakas,
+      userOpers,
+      userCowDungLogs,
+      userWrongWords,
+      sysDbVersion,
+      localExceptions,
+      learningLogs,
+      userStudyDailyStats,
+    ];
+
+    await transaction(() async {
+      for (final dynamic table in tables) {
+        final tableName = table.actualTableName;
+        try {
+          // 检查列是否存在 (PRAGMA table_info 是标准 SQLite 方法)
+          final columns = await customSelect("PRAGMA table_info('$tableName')").get();
+          final hasCreateTime = columns.any((c) => c.read<String>('name') == 'create_time');
+          final hasUpdateTime = columns.any((c) => c.read<String>('name') == 'update_time');
+
+          if (hasCreateTime) {
+            await customStatement('UPDATE "$tableName" SET create_time = 946656000000 WHERE create_time IS NULL;');
+          }
+          if (hasUpdateTime) {
+            await customStatement('UPDATE "$tableName" SET update_time = 946656000000 WHERE update_time IS NULL;');
+          }
+        } catch (e) {
+          Global.logger.e('回填 $tableName 审计字段失败: $e');
+        }
+      }
     });
   }
 }
