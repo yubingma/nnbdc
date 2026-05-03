@@ -1,43 +1,23 @@
 -- ==========================================
--- 第一阶段：数据修复 (补齐 update_time 为 NULL 的记录)
+-- 第一阶段：动态数据修复 (确保所有表的 update_time 都有值)
 -- ==========================================
-
--- 1. 用户与日志类
-UPDATE "user" SET update_time = create_time WHERE update_time IS NULL;
-UPDATE user_db_log SET update_time = create_time WHERE update_time IS NULL;
-UPDATE sys_db_log SET update_time = create_time WHERE update_time IS NULL;
-UPDATE user_oper SET update_time = create_time WHERE update_time IS NULL;
-
--- 2. 词书与关系类
-UPDATE dict SET update_time = create_time WHERE update_time IS NULL;
-UPDATE dict_word SET update_time = create_time WHERE update_time IS NULL;
-UPDATE learning_dict SET update_time = create_time WHERE update_time IS NULL;
-
--- 3. 学习数据与统计类
-UPDATE learning_word SET update_time = create_time WHERE update_time IS NULL;
-UPDATE learning_log SET update_time = create_time WHERE update_time IS NULL;
-UPDATE user_wrong_word SET update_time = create_time WHERE update_time IS NULL;
-UPDATE user_study_step SET update_time = create_time WHERE update_time IS NULL;
-UPDATE user_study_daily_stat SET update_time = create_time WHERE update_time IS NULL;
-UPDATE daka SET update_time = create_time WHERE update_time IS NULL;
-UPDATE book_mark SET update_time = create_time WHERE update_time IS NULL;
-UPDATE user_cow_dung_log SET update_time = create_time WHERE update_time IS NULL;
-
--- 4. 核心词库与内容类
-UPDATE word SET update_time = create_time WHERE update_time IS NULL;
-UPDATE meaning_item SET update_time = create_time WHERE update_time IS NULL;
-UPDATE sentence SET update_time = create_time WHERE update_time IS NULL;
-UPDATE word_image SET update_time = create_time WHERE update_time IS NULL;
-UPDATE word_shortdesc_chinese SET update_time = create_time WHERE update_time IS NULL;
-UPDATE cigen SET update_time = create_time WHERE update_time IS NULL;
-UPDATE cigen_word_link SET update_time = create_time WHERE update_time IS NULL;
-
+DO $$ 
+DECLARE 
+    t text;
+BEGIN
+    FOR t IN (SELECT table_name FROM information_schema.columns 
+              WHERE column_name = 'update_time' 
+              AND table_schema = 'public') 
+    LOOP
+        -- 将 update_time 为空的记录补齐为 create_time
+        -- 如果连 create_time 也为空（极少见），则补齐为当前时间
+        EXECUTE format('UPDATE %I SET update_time = COALESCE(create_time, NOW()) WHERE update_time IS NULL', t);
+    END LOOP;
+END $$;
 
 -- ==========================================
--- 第二阶段：约束锁定 (设为 NOT NULL)
+-- 第二阶段：动态约束锁定 (设为 NOT NULL)
 -- ==========================================
-
--- 脚本会自动查找所有包含 update_time 字段且目前允许为空的表，并批量将其设为 NOT NULL
 DO $$ 
 DECLARE 
     t text;
@@ -47,6 +27,8 @@ BEGIN
               AND table_schema = 'public' 
               AND is_nullable = 'YES') 
     LOOP
+        -- 再次检查是否存在漏掉的 NULL（防御性编程）
+        -- 如果存在 NULL，ALTER TABLE 会报错并回滚整个块
         EXECUTE format('ALTER TABLE %I ALTER COLUMN update_time SET NOT NULL', t);
     END LOOP;
 END $$;
