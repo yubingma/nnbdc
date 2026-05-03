@@ -351,7 +351,7 @@ class SoundUtil {
         playCompleter.future,
         Future.delayed(const Duration(milliseconds: 800)),
       ]);
-      await sub?.cancel();
+      await sub.cancel();
     } catch (e) {
       Global.logger.w('SoundUtil: 播放后台音效出错 $soundFileName: $e');
     }
