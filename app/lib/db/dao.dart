@@ -122,7 +122,7 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
         await into(localParams).insert(LocalParamsCompanion.insert(
           name: 'isDarkMode', 
           value: value,
-          updateTime: AppClock.now(),
+          updateTime: Value(AppClock.now()),
         ));
       } else {
         await (update(localParams)..where((e) => e.name.equals('isDarkMode'))).write(LocalParamsCompanion(value: Value(value), updateTime: Value(AppClock.now())));
@@ -154,7 +154,7 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
         await into(localParams).insert(LocalParamsCompanion.insert(
           name: 'wordListGuideShown', 
           value: shown ? 'true' : 'false',
-          updateTime: AppClock.now(),
+          updateTime: Value(AppClock.now()),
         ));
       } else {
         await (update(localParams)..where((e) => e.name.equals('wordListGuideShown')))

@@ -123,7 +123,7 @@ class SyncLogService {
             name: _syncLogsKey,
             value: jsonString,
             description: const Value('同步日志记录'),
-            updateTime: AppClock.now(),
+            updateTime: Value(AppClock.now()),
           ),
         );
       } else {

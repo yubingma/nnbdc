@@ -1248,7 +1248,7 @@ class MyDatabase extends _$MyDatabase {
         LocalParamsCompanion.insert(
           name: 'isDarkMode', 
           value: 'false',
-          updateTime: AppClock.now(),
+          updateTime: Value(AppClock.now()),
         ),
       ]);
     });
