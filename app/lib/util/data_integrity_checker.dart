@@ -827,7 +827,7 @@ class DataIntegrityChecker {
                 seq: stepDto.seq,
                 state: stepDto.state,
                 createTime: stepDto.createTime,
-                updateTime: stepDto.updateTime ?? AppClock.now(),
+                updateTime: stepDto.updateTime,
               )).toList();
           
           if (stepsToInsert.isNotEmpty) {

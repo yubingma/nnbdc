@@ -209,6 +209,7 @@ class Global {
           seq: 0,
           state: 'Active',
           createTime: now,
+          updateTime: now,
         ),
         UserStudyStep(
           userId: guestId,
@@ -216,6 +217,7 @@ class Global {
           seq: 1,
           state: 'Active',
           createTime: now,
+          updateTime: now,
         ),
         UserStudyStep(
           userId: guestId,
@@ -223,6 +225,7 @@ class Global {
           seq: 2,
           state: 'Active',
           createTime: now,
+          updateTime: now,
         ),
       ];
       await db.batch((batch) {

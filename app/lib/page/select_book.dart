@@ -850,7 +850,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                       isPrivileged: false,
                       fetchMastered: false,
                       createTime: AppClock.now(),
-                      updateTime: null);
+                      updateTime: AppClock.now());
                   await learningDictsDao.saveEntity(learningDict, true);
                   
                   // 漏斗：用户成功选择了一本词书

@@ -1291,7 +1291,7 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
       }
     } else {
       // 更新
-      step = step.copyWith(updateTime: Value(AppClock.now()));
+      step = step.copyWith(updateTime: AppClock.now());
       if (existing.state != step.state || existing.seq != step.seq) {
         await update(userStudySteps).replace(step);
         if (genLog) {

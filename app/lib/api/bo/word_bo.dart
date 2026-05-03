@@ -77,6 +77,7 @@ class WordBo {
           seq: i + 1,
           unit: 0,
           createTime: createTime,
+          updateTime: createTime,
         ));
       }
 

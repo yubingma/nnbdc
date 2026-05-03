@@ -164,6 +164,7 @@ class StudyBo {
                 seq: vo.seq,
                 state: vo.state,
                 createTime: AppClock.now(),
+                updateTime: AppClock.now(),
               ))
           .toList();
       final modeCount = steps.length;
@@ -364,7 +365,7 @@ class StudyBo {
         await db.dakasDao.saveDaka(
             existingDaka.copyWith(
               textContent: Value(content),
-              updateTime: Value(now),
+              updateTime: now,
             ),
             true);
       } else {
@@ -463,6 +464,7 @@ class StudyBo {
                 seq: vo.seq,
                 state: vo.state,
                 createTime: AppClock.now(),
+                updateTime: AppClock.now(),
               ))
           .toList();
       final modeCount = steps.length;
@@ -557,6 +559,7 @@ class StudyBo {
                 seq: vo.seq,
                 state: vo.state,
                 createTime: AppClock.now(),
+                updateTime: AppClock.now(),
               ))
           .toList();
       final activeStepCount = steps.length;
@@ -977,7 +980,7 @@ class StudyBo {
           difficulty: nextFsrs.difficulty,
           elapsedDays: nextFsrs.elapsedDays,
           scheduledDays: nextFsrs.scheduledDays,
-          updateTime: Value(now),
+          updateTime: now,
         ));
       }
     } catch (e, s) {
@@ -1056,7 +1059,7 @@ class StudyBo {
       await db.userWrongWordsDao.saveEntity(
           existingWrongWord.copyWith(
             createTime: now, // 纯 DateTime?
-            updateTime: Value(now), // Value<DateTime?>
+            updateTime: now,
           ),
           true);
       Global.logger.d('错词已存在，更新时间: ${wrongWord.wordId}');
@@ -1151,6 +1154,7 @@ class StudyBo {
               seq: vo.seq,
               state: vo.state,
               createTime: AppClock.now(),
+              updateTime: AppClock.now(),
             ))
         .toList();
     final int stepCount = steps.length;

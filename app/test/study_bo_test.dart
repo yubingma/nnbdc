@@ -83,6 +83,7 @@ void main() {
           seq: 0,
           state: 'Active',
           createTime: now,
+          updateTime: now,
         ));
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
@@ -90,6 +91,7 @@ void main() {
           seq: 1,
           state: 'Active',
           createTime: now,
+          updateTime: now,
         ));
 
     // 2. 生成 Mock 词书和映射

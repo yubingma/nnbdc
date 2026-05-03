@@ -94,6 +94,7 @@ class StudyStepsService {
                 seq: vo.seq,
                 state: vo.state,
                 createTime: AppClock.now(),
+                updateTime: AppClock.now(),
               ))
           .toList();
 
