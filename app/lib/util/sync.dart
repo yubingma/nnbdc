@@ -198,6 +198,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       var changeJson = change.toJson();
 
       // 把本地日志中的时间戳由数字时间戳（毫秒）转换为DateTime
+      assert(changeJson['updateTime'] != null, "本地数据库日志 updateTime 不能为空，表：${change.tblName}, ID: ${change.id}");
+      assert(changeJson['createTime'] != null, "本地数据库日志 createTime 不能为空，表：${change.tblName}, ID: ${change.id}");
       changeJson['updateTime'] = DateTime.fromMillisecondsSinceEpoch(changeJson['updateTime']);
       changeJson['createTime'] = DateTime.fromMillisecondsSinceEpoch(changeJson['createTime']);
 
@@ -209,6 +211,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       var changeJson = change.toJson();
 
       // 把后端日志中的时间戳(iso8601 String)转换为DateTime
+      assert(changeJson["updateTime"] != null, "后端同步日志中的 updateTime 不能为空，表：${change.tblName}, ID: ${change.id}");
+      assert(changeJson["createTime"] != null, "后端同步日志中的 createTime 不能为空，表：${change.tblName}, ID: ${change.id}");
       changeJson['updateTime'] = Util.iso8601ToTimestamp(changeJson["updateTime"]);
       changeJson['createTime'] = Util.iso8601ToTimestamp(changeJson["createTime"]);
       backendChangesMap.add(changeJson);
@@ -313,7 +317,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
     // 对远端同步到本地的日志也要按同样的规则进行排序
     backendToLocal.sort((a, b) {
-      int timeCompare = a.createTime.compareTo(b.createTime);
+      int timeCompare = a.createTime!.compareTo(b.createTime!);
       if (timeCompare != 0) {
         return timeCompare;
       }
