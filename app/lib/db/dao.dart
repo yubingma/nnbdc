@@ -107,9 +107,10 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
     try {
       var param = await (select(localParams)..where((e) => e.name.equals('isDarkMode'))).getSingleOrNull();
       return param?.value == 'true';
-    } catch (e, stackTrace) {
-      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'getIsDarkMode', showToast: false);
-      return false; // 默认返回非夜间模式
+    } catch (e) {
+      // 如果出现映射错误（如 Null check operator），也返回默认值
+      Global.logger.e('getIsDarkMode 失败，使用默认值: $e');
+      return false; 
     }
   }
 

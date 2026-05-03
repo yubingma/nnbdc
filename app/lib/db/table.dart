@@ -9,7 +9,7 @@ class LocalParams extends Table {
   TextColumn get description => text().nullable()();
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {name};
@@ -27,7 +27,7 @@ class UserStudySteps extends Table {
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {userId, studyStep};
@@ -41,7 +41,7 @@ class VotedSentences extends Table {
   TextColumn get vote => text()(); // 'HAND'/'FOOT'
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {userId, sentenceId};
@@ -55,7 +55,7 @@ class VotedWordImages extends Table {
   TextColumn get vote => text()(); // 'HAND'/'FOOT'
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {userId, imageId};
@@ -71,7 +71,7 @@ class DictGroups extends Table {
   IntColumn get displayIndex => integer()();
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -193,7 +193,7 @@ class Users extends Table {
   TextColumn get studyConfig => text().nullable()();
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -209,7 +209,7 @@ class LearningDicts extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {userId, dictId};
@@ -248,7 +248,7 @@ class Dicts extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -275,7 +275,7 @@ class Words extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -298,7 +298,7 @@ class UserDbLogs extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -311,7 +311,7 @@ class UserDbVersions extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {userId};
@@ -330,7 +330,7 @@ class DictWords extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {dictId, wordId};
@@ -354,7 +354,7 @@ class WordImages extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -371,7 +371,7 @@ class VerbTenses extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -384,7 +384,7 @@ class Synonyms extends Table {
   TextColumn get spell => text()();
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {meaningItemId, wordId};
@@ -399,7 +399,7 @@ class SimilarWords extends Table {
   IntColumn get distance => integer()();
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {wordId, similarWordId};
@@ -420,7 +420,7 @@ class Cigens extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -435,7 +435,7 @@ class CigenWordLinks extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {cigenId, wordId};
@@ -455,7 +455,7 @@ class MeaningItems extends Table {
   DateTimeColumn get createTime => dateTime()();
   TextColumn get ownerId => text().withDefault(const Constant('15118'))();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -484,7 +484,7 @@ class Sentences extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -522,7 +522,7 @@ class LearningWords extends Table {
 
   DateTimeColumn get createTime => dateTime()();
 
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {userId, wordId};
@@ -535,7 +535,7 @@ class BookMarks extends Table {
   TextColumn get spell => text()();
   IntColumn get position => integer()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -549,7 +549,7 @@ class GroupAndDictLinks extends Table {
   TextColumn get dictId => text()();
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {groupId, dictId};
@@ -561,7 +561,7 @@ class Dakas extends Table {
   DateTimeColumn get forLearningDate => dateTime()();
   TextColumn get textContent => text().nullable()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {userId, forLearningDate};
@@ -575,7 +575,7 @@ class UserOpers extends Table {
   DateTimeColumn get operTime => dateTime()(); // 操作时间
   TextColumn get remark => text().nullable()(); // 备注信息
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -591,7 +591,7 @@ class UserCowDungLogs extends Table {
   TextColumn get reason => text()();
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -603,7 +603,7 @@ class UserWrongWords extends Table {
   TextColumn get userId => text()();
   TextColumn get wordId => text()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column>? get primaryKey => {userId, wordId};
@@ -615,7 +615,7 @@ class SysDbVersion extends Table {
   IntColumn get version => integer()();
   DateTimeColumn get lastSyncTime => dateTime().nullable()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -660,7 +660,7 @@ class LearningLogs extends Table {
   IntColumn get elapsedDays => integer()();
   IntColumn get scheduledDays => integer()();
   DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -675,7 +675,7 @@ class UserStudyDailyStats extends Table {
   TextColumn get dayStatus => text().nullable()(); // 记录当天的最高状态 (login, studied, dakaed)
 
   DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-  DateTimeColumn get updateTime => dateTime()();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {userId, date};

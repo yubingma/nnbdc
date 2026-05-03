@@ -445,10 +445,10 @@ class MyDatabase extends _$MyDatabase {
           Global.logger.w('添加 updateTime 到 $tableName 失败 (可能已存在): $e');
         }
 
-        // 2. 回填 NULL 值 (2000-01-01 00:00:00 UTC = 946656000000ms)
+        // 2. 回填 NULL 值 (2000-01-01 00:00:00 UTC = 946656000s)
         try {
-          await customStatement('UPDATE "$tableName" SET create_time = 946656000000 WHERE create_time IS NULL;');
-          await customStatement('UPDATE "$tableName" SET update_time = 946656000000 WHERE update_time IS NULL;');
+          await customStatement('UPDATE "$tableName" SET create_time = 946656000 WHERE create_time IS NULL;');
+          await customStatement('UPDATE "$tableName" SET update_time = 946656000 WHERE update_time IS NULL;');
         } catch (e) {
           Global.logger.e('回填 $tableName 审计字段失败: $e');
         }
@@ -1448,7 +1448,7 @@ class MyDatabase extends _$MyDatabase {
     });
   }
 
-  /// 确保所有表的审计字段都不为 NULL (2000-01-01 00:00:00 UTC = 946656000000ms)
+  /// 确保所有表的审计字段都不为 NULL (2000-01-01 00:00:00 UTC = 946656000s)
   Future<void> _backfillAllAuditColumns() async {
     final List<dynamic> tables = [
       users,
@@ -1494,10 +1494,12 @@ class MyDatabase extends _$MyDatabase {
           final hasUpdateTime = columns.any((c) => c.read<String>('name') == 'update_time');
 
           if (hasCreateTime) {
-            await customStatement('UPDATE "$tableName" SET create_time = 946656000000 WHERE create_time IS NULL;');
+            final count = await customUpdate('UPDATE "$tableName" SET create_time = 946656000 WHERE create_time IS NULL;');
+            if (count > 0) Global.logger.i('已修复 $tableName 表的 $count 条记录的 create_time 为 NULL 的问题');
           }
           if (hasUpdateTime) {
-            await customStatement('UPDATE "$tableName" SET update_time = 946656000000 WHERE update_time IS NULL;');
+            final count = await customUpdate('UPDATE "$tableName" SET update_time = 946656000 WHERE update_time IS NULL;');
+            if (count > 0) Global.logger.i('已修复 $tableName 表的 $count 条记录的 update_time 为 NULL 的问题');
           }
         } catch (e) {
           Global.logger.e('回填 $tableName 审计字段失败: $e');

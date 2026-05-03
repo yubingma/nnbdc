@@ -69,20 +69,26 @@ class Global {
 
   // 从数据库异步加载用户并更新缓存
   static Future<User?> loadUserFromDb() async {
-    // 从local storage中获取当前登录用户ID
-    String? userId = GetStorage().read<String>("currentUserId");
-    if (userId == null) {
+    try {
+      // 从local storage中获取当前登录用户ID
+      String? userId = GetStorage().read<String>("currentUserId");
+      if (userId == null) {
+        _currentUser = null;
+        return null;
+      }
+
+      // 从本地数据库获取用户信息
+      final db = MyDatabase.instance;
+      _currentUser = await db.usersDao.getUserById(userId);
+      if (_currentUser != null) {
+        currentUserId = _currentUser!.id;
+      }
+      return _currentUser;
+    } catch (e, stackTrace) {
+      Global.logger.e('loadUserFromDb 失败: $e', error: e, stackTrace: stackTrace);
       _currentUser = null;
       return null;
     }
-
-    // 从本地数据库获取用户信息
-    final db = MyDatabase.instance;
-    _currentUser = await db.usersDao.getUserById(userId);
-    if (_currentUser != null) {
-      currentUserId = _currentUser!.id;
-    }
-    return _currentUser;
   }
 
   static Future<UserVo?> refreshLoggedInUser() async {
