@@ -1294,15 +1294,16 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
 
           // 记录魔法泡泡变更日志
           if (cowDungAdjust != 0) {
+            final now = AppClock.now();
             final log = UserCowDungLog(
-              id: AppClock.now().millisecondsSinceEpoch.toString(),
+              id: now.millisecondsSinceEpoch.toString(),
               userId: user.id,
               delta: cowDungAdjust,
               cowDung: newCowDung,
-              theTime: AppClock.now(),
+              theTime: now,
               reason: cowDungAdjust > 0 ? "游戏胜利奖励" : "游戏失败惩罚",
-              createTime: AppClock.now(),
-              updateTime: AppClock.now(),
+              createTime: now,
+              updateTime: now,
             );
             await db.userCowDungLogsDao.insertEntity(log, true);
           }

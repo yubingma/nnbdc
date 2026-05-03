@@ -306,21 +306,21 @@ class StudyBo {
           ),
           true);
 
+      // 记录用户操作
+      final now = AppClock.now();
+
       // 记录魔法泡泡奖励日志
       final log = UserCowDungLog(
-        id: AppClock.now().millisecondsSinceEpoch.toString(),
+        id: now.millisecondsSinceEpoch.toString(),
         userId: user.id,
         delta: finalCowDung,
         cowDung: user.cowDung + finalCowDung,
-        theTime: AppClock.now(),
+        theTime: now,
         reason: "throw dice after learning",
-        createTime: AppClock.now(),
-        updateTime: AppClock.now(),
+        createTime: now,
+        updateTime: now,
       );
       await db.userCowDungLogsDao.insertEntity(log, true);
-
-      // 记录用户操作
-      final now = AppClock.now();
       await db.userOpersDao.saveUserOper(
           UserOper(
             id: now.millisecondsSinceEpoch.toString(),

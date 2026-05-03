@@ -2267,13 +2267,14 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         .getSingleOrNull();
 
     if (existing == null) {
+      final now = AppClock.now();
       await saveEntity(UserStudyDailyStat(
         userId: userId,
         date: pureDate,
         studySeconds: seconds,
         reviewCount: 0,
-        createTime: AppClock.now(),
-        updateTime: AppClock.now(),
+        createTime: now,
+        updateTime: now,
       ), true);
     } else {
       await saveEntity(existing.copyWith(
@@ -2289,13 +2290,14 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         .getSingleOrNull();
 
     if (existing == null) {
+      final now = AppClock.now();
       await saveEntity(UserStudyDailyStat(
         userId: userId,
         date: pureDate,
         studySeconds: 0,
         reviewCount: 1,
-        createTime: AppClock.now(),
-        updateTime: AppClock.now(),
+        createTime: now,
+        updateTime: now,
       ), true);
     } else {
       await saveEntity(existing.copyWith(
@@ -2322,14 +2324,15 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
     final statusValue = newStatus.json;
 
     if (existing == null) {
+      final now = AppClock.now();
       await saveEntity(UserStudyDailyStat(
         userId: userId,
         date: pureDate,
         studySeconds: 0,
         reviewCount: 0,
         dayStatus: statusValue,
-        createTime: AppClock.now(),
-        updateTime: AppClock.now(),
+        createTime: now,
+        updateTime: now,
       ), true);
     } else {
       // 状态升级逻辑：dakaed > studied > loggedIn > notLogin

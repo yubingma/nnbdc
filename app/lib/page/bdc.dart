@@ -4664,6 +4664,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                         var result = await Api.client
                                             .handWordImage(wordImage.id);
                                         if (result.success) {
+                                           final now = AppClock.now();
                                           MyDatabase.instance.votedWordImagesDao
                                               .createEntity(VotedWordImage(
                                                   userId:
@@ -4671,8 +4672,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                           .id,
                                                   imageId: wordImage.id,
                                                   vote: 'HAND',
-                                                  createTime: AppClock.now(),
-                                                  updateTime: AppClock.now()));
+                                                  createTime: now,
+                                                  updateTime: now));
                                           wordImage.hand += 1;
                                           _wordImageEdited = true;
                                           voteFuture = Future.value(true);
@@ -4717,6 +4718,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                         var result = await Api.client
                                             .footWordImage(wordImage.id);
                                         if (result.success) {
+                                           final now = AppClock.now();
                                           MyDatabase.instance.votedWordImagesDao
                                               .createEntity(VotedWordImage(
                                                   userId:
@@ -4724,8 +4726,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                           .id,
                                                   imageId: wordImage.id,
                                                   vote: 'FOOT',
-                                                  createTime: AppClock.now(),
-                                                  updateTime: AppClock.now()));
+                                                  createTime: now,
+                                                  updateTime: now));
                                           wordImage.foot += 1;
                                           _wordImageEdited = true;
                                           voteFuture = Future.value(true);

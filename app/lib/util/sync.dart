@@ -546,8 +546,9 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               warningExcept = DictWordOrderInvalidWarningException("下次修复");
               
               // 更新本地数据库版本（虽然本地未成功提交给后端，但我们已经接收了后端的变动应当更新本地的后端进度）
+              final now = AppClock.now();
               await db.userDbVersionsDao
-                  .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: AppClock.now(), updateTime: AppClock.now()));
+                  .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
               
               // 提前退出此事务处理过程：保留其余所有待上传的日志，不要走到最后的清空环节, 等待下次重推
               return;
@@ -562,8 +563,9 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
         }
 
         // 更新本地数据库版本，使其与后端数据库版本一致
+        final now = AppClock.now();
         await db.userDbVersionsDao
-            .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: AppClock.now(), updateTime: AppClock.now()));
+            .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
 
         // 清空本地日志
         await db.userDbLogsDao.deleteUserDbLogs(userId);

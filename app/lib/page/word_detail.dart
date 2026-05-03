@@ -1785,12 +1785,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   }
                   var result = await Api.client.handSentence(sentence.id, args.word.spell, Global.getLoggedInUser()?.id ?? '');
                   if (result.success) {
+                    final now = AppClock.now();
                     await MyDatabase.instance.votedSentencesDao.createEntity(VotedSentence(
                         userId: Global.getLoggedInUser()!.id,
                         sentenceId: sentence.id,
                         vote: 'HAND',
-                        createTime: AppClock.now(),
-                        updateTime: AppClock.now()));
+                        createTime: now,
+                        updateTime: now));
                     sentence.handCount += 1;
                     await MyDatabase.instance.sentencesDao.updateHandCount(sentence.id, sentence.handCount);
                     _voteFutures[sentence.id] = Future.value(true);
@@ -1832,12 +1833,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   }
                   var result = await Api.client.footSentence(sentence.id, args.word.spell, Global.getLoggedInUser()?.id ?? '');
                   if (result.success) {
+                    final now = AppClock.now();
                     await MyDatabase.instance.votedSentencesDao.createEntity(VotedSentence(
                         userId: Global.getLoggedInUser()!.id,
                         sentenceId: sentence.id,
                         vote: 'FOOT',
-                        createTime: AppClock.now(),
-                        updateTime: AppClock.now()));
+                        createTime: now,
+                        updateTime: now));
                     sentence.footCount += 1;
                     await MyDatabase.instance.sentencesDao.updateFootCount(sentence.id, sentence.footCount);
                     _voteFutures[sentence.id] = Future.value(true);

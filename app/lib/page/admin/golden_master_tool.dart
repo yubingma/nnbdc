@@ -236,6 +236,7 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       // 3. 触发下载通用词典
       setState(() => _statusMessage = '准备下载通用词典...');
 
+      final now = AppClock.now();
       final commonDict = DictVo(
         id: Global.commonDictId,
         name: '通用词典',
@@ -247,7 +248,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
         editable: false,
         dictWords: null,
         wordCount: 0,
-        createTime: AppClock.now(),
+        createTime: now,
+        updateTime: now,
       );
 
       if (mounted) {
