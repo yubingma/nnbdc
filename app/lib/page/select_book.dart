@@ -1052,7 +1052,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         final nonWebStopwatch = Stopwatch()..start();
         double downloadLastEmitted = 0.0;
         final tmpDir = await getTemporaryDirectory();
-        final tmpPath = p.join(tmpDir.path, 'dict_res_$dictId.bin');
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final tmpPath = p.join(tmpDir.path, 'dict_res_${dictId}_$timestamp.bin');
         await Api.dio.download(
           apiPath,
           tmpPath,
