@@ -781,7 +781,7 @@ class DataIntegrityChecker {
               editable: dictDto.editable ?? true,
               deletable: dictDto.deletable ?? false,
               createTime: dictDto.createTime,
-              updateTime: dictDto.updateTime ?? AppClock.now(),
+              updateTime: dictDto.updateTime,
             );
             await _db.dictsDao.saveEntity(dict, false);
           }
@@ -808,7 +808,7 @@ class DataIntegrityChecker {
               editable: dictDto.editable ?? true,
               deletable: dictDto.deletable ?? false,
               createTime: dictDto.createTime,
-              updateTime: dictDto.updateTime ?? AppClock.now(),
+              updateTime: dictDto.updateTime,
             );
             await _db.dictsDao.saveEntity(dict, false);
           }
