@@ -659,7 +659,7 @@ class LearningLogs extends Table {
   RealColumn get difficulty => real()();
   IntColumn get elapsedDays => integer()();
   IntColumn get scheduledDays => integer()();
-  DateTimeColumn get createTime => dateTime()();
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
