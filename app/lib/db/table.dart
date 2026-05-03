@@ -562,17 +562,6 @@ class UserOpers extends Table {
 }
 
 /// 已掌握单词表
-class MasteredWords extends Table {
-  TextColumn get userId => text()();
-  TextColumn get wordId => text()();
-  DateTimeColumn get masterAtTime => dateTime()(); // 掌握单词的时间
-  DateTimeColumn get createTime => dateTime()();
-  DateTimeColumn get updateTime => dateTime()();
-
-  @override
-  Set<Column> get primaryKey => {userId, wordId};
-}
-
 class UserCowDungLogs extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text()();

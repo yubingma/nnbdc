@@ -24,7 +24,6 @@ import beidanci.service.bo.ErrorReportBo;
 import beidanci.service.bo.InfoVoteLogBo;
 import beidanci.service.bo.LearningDictBo;
 import beidanci.service.bo.LearningWordBo;
-import beidanci.service.bo.MasteredWordBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.bo.UserStudyStepBo;
 import beidanci.service.bo.WordAdditionalInfoBo;
@@ -88,8 +87,6 @@ public class WordController {
     @Autowired
     LearningDictBo selectedDictBo;
 
-    @Autowired
-    MasteredWordBo masteredWordBo;
 
 
     @PutMapping("/handImage.do")

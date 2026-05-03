@@ -39,7 +39,6 @@ part 'db.g.dart';
   UserStudySteps,
   Dakas,
   UserOpers,
-  MasteredWords, // 已废弃，保留在列表中仅为了让 Drift 生成 deleteTable 迁移所需的引用
   UserCowDungLogs,
   UserWrongWords,
   SysDbVersion,

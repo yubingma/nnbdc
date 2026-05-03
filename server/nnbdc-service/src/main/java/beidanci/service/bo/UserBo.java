@@ -405,14 +405,6 @@ public class UserBo extends BaseBo<User> {
                 sql = "DELETE FROM learning_log WHERE user_id = ?";
                 jdbcTemplate.update(sql, user.getId());
 
-                // 删除用户已掌握单词记录
-                count = jdbcTemplate.queryForObject(checkTableSql, Integer.class, "mastered_word");
-                if (count != null && count > 0) {
-                    sql = "DELETE FROM mastered_word WHERE user_id = ?";
-                    jdbcTemplate.update(sql, user.getId());
-                } else {
-                    logger.warn("清理已掌握单词记录失败（可能表不存在，忽略）");
-                }
 
                 // 删除用户操作记录
                 sql = "DELETE FROM user_oper WHERE user_id = ?";

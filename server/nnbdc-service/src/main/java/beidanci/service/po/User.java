@@ -91,7 +91,6 @@ public class User extends UuidPo {
     @OrderBy("dictId asc")
     private  List<LearningDict> learningDicts;
 
-    private  List<MasteredWord> masteredWords;
     private  List<LearningWord> learningWords;
 
     private  List<Msg> sentMsgs;
@@ -705,14 +704,6 @@ public class User extends UuidPo {
 
     public void setLearningDicts(List<LearningDict> learningDicts) {
         this.learningDicts = learningDicts;
-    }
-
-    public List<MasteredWord> getMasteredWords() {
-        return masteredWords;
-    }
-
-    public void setMasteredWords(List<MasteredWord> masteredWords) {
-        this.masteredWords = masteredWords;
     }
 
     public List<LearningWord> getLearningWords() {
