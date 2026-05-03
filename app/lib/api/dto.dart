@@ -19,7 +19,7 @@ class DictDto {
   String? baseDictId;
   String? sortAlg;
   DateTime createTime;
-  DateTime? updateTime;
+  DateTime updateTime;
 
   DictDto(this.id, this.isReady, this.isShared, this.name, this.wordCount, this.ownerId, this.visible, this.popularityLimit, this.createTime,
       this.updateTime, [this.editable, this.deletable, this.domain, this.baseDictId, this.sortAlg]);
@@ -296,7 +296,6 @@ class SystemDataDto {
 }
 
 @JsonSerializable()
-@CustomDateTimeConverter()
 class UserDbLogDto {
   String id;
   String userId;
@@ -305,8 +304,10 @@ class UserDbLogDto {
   String tblName;
   String recordId;
   String record;
-  DateTime createTime;
-  DateTime updateTime;
+  @NullableDateTimeConverter()
+  DateTime? createTime;
+  @NullableDateTimeConverter()
+  DateTime? updateTime;
 
   UserDbLogDto(this.id, this.userId, this.version, this.operate, this.tblName, this.recordId, this.record, this.createTime, this.updateTime);
 
@@ -477,8 +478,8 @@ class UserDto {
   bool? isTodayLearningFinished;
   String? appleUserId;
   String? studyConfig;
-  DateTime? createTime;
-  DateTime? updateTime;
+  late DateTime createTime;
+  late DateTime updateTime;
 
   UserDto();
 

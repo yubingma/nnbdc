@@ -317,7 +317,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
     // 对远端同步到本地的日志也要按同样的规则进行排序
     backendToLocal.sort((a, b) {
-      int timeCompare = a.createTime!.compareTo(b.createTime!);
+      int timeCompare = a.createTime.compareTo(b.createTime);
       if (timeCompare != 0) {
         return timeCompare;
       }
