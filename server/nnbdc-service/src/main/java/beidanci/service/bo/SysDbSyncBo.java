@@ -223,13 +223,18 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     }
 
     private List<SysDbLogDto> generateDictGroupLogs(int version) {
-        String sql = "SELECT id, name, parent_id, display_index FROM dict_group";
+        String sql = "SELECT id, name, parent_id, display_index, create_time, update_time FROM dict_group";
         List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
                 rs.getString("id"),
                 rs.getString("name"),
                 rs.getString("parent_id"),
-                rs.getObject("display_index")
+                rs.getObject("display_index"),
+                rs.getTimestamp("create_time"),
+                rs.getTimestamp("update_time")
         });
+
+        java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
 
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
@@ -240,12 +245,19 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             log.setOperate("INSERT");
             log.setTblName("dict_group");
             log.setRecordId((String) tuple[0]);
+
+            // 格式化日期字段
+            String createTimeStr = tuple[4] != null ? isoFormat.format(tuple[4]) : null;
+            String updateTimeStr = tuple[5] != null ? isoFormat.format(tuple[5]) : null;
+
             java.util.Map<String, Object> record = new java.util.HashMap<>();
             record.put("id", tuple[0]);
             record.put("name", tuple[1]);
             record.put("parentId", tuple[2]);
             record.put("displayIndex", tuple[3]);
-            
+            record.put("createTime", createTimeStr);
+            record.put("updateTime", updateTimeStr);
+
             // 强校验：核心字段必须存在
             Assert.notNull(tuple[0], "DictGroup ID must not be null");
             Assert.notNull(tuple[1], "DictGroup Name must not be null");
