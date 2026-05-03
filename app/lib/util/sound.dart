@@ -210,29 +210,32 @@ class SoundUtil {
         if (PlatformUtils.isWeb) {
           await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
         } else {
+          // 确保 AudioSession 仍然活跃（ASR 可能刚停）
+          if (PlatformUtils.isIOS) {
+            await configureAudioSession();
+          }
+
           // 优先检查缓存，避免 getSingleFile 可能带来的网络检查/下载逻辑延迟
           final cacheManager = DefaultCacheManager();
           FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
           
-          String filePath;
+          Source source;
           if (fileInfo != null) {
-            filePath = fileInfo.file.path;
+            source = DeviceFileSource(fileInfo.file.path);
           } else {
             // 缓存未命中，则使用 getSingleFile 触发下载
             var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-            filePath = file.path;
+            source = DeviceFileSource(file.path);
           }
           
-          // 移除了 50ms 的同步等待延迟，直接开始播放
-          await player.play(DeviceFileSource(filePath)).timeout(Duration(milliseconds: loadTimeoutMs));
+          // 直接播放
+          Global.logger.d('SoundUtil: 准备调用 player.play(), source: ${source.toString()}');
+          await player.play(source).timeout(Duration(milliseconds: loadTimeoutMs));
+          Global.logger.d('SoundUtil: player.play() 调用已返回（播放器已启动）');
         }
 
         // 等待播放完成
         await completer.future.timeout(Duration(milliseconds: playTimeoutMs));
-
-        // 播放完成后增加一小段静音缓冲时间，避免紧接着的音频切换导致的问题
-        // 这里的 200ms 不影响播放开始的延迟，只影响 await 返回的时间
-        await Future.delayed(const Duration(milliseconds: 100));
       } finally {
         await stateSubscription.cancel();
       }
@@ -267,6 +270,12 @@ class SoundUtil {
       await player.stop(); // 确保从头播放
       await player.setPlaybackRate(speed);
       await player.setVolume(volume);
+      
+      // 确保 correct.mp3 播放前尝试 resume() 播放器以防其处于暂停态
+      if (soundFileName == 'correct.mp3') {
+        await player.resume();
+      }
+      
       await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 2000));
       
       // 等待播放完成
@@ -285,10 +294,10 @@ class SoundUtil {
 
   /// 并发播放音效
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) async {
-    if (!_audioSessionConfigured) {
-      await configureAudioSession();
-    }
-    final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
+    await configureAudioSession();
+    if (PlatformUtils.isWeb) return;
+
+    final pool = _sfxPools.putIfAbsent(soundFileName, () => []);
     AudioPlayer? player;
     final now = AppClock.now();
 
@@ -328,29 +337,17 @@ class SoundUtil {
           Global.logger.w('SoundUtil: stop() timeout for $soundFileName');
         });
       }
-      await player.setPlaybackRate(speed);
       await player.setVolume(volume);
+      await player.setPlaybackRate(speed);
 
       final Completer<void> playCompleter = Completer<void>();
-
-      player.onPlayerComplete.first.then((_) {
+      StreamSubscription? sub;
+      sub = player.onPlayerComplete.listen((_) {
         if (!playCompleter.isCompleted) playCompleter.complete();
+        sub?.cancel();
       });
 
-      if (player.source == null) {
-        await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000), onTimeout: () {
-          Global.logger.w('SoundUtil: play() timeout for $soundFileName');
-        });
-      } else {
-        // 使用非常短的超时（如 150ms）去 await seek，防止引擎切分时死锁，
-        // 同步又可以避免 seek 和 resume 在引擎底端并发导致音频采样丢包发颤。
-        await player.seek(Duration.zero).timeout(const Duration(milliseconds: 150), onTimeout: () {
-          Global.logger.d('SoundUtil: seek() timeout/skipped for $soundFileName');
-        });
-        await player.resume().timeout(const Duration(milliseconds: 3000), onTimeout: () {
-          Global.logger.w('SoundUtil: resume() timeout for $soundFileName');
-        });
-      }
+      await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000));
 
       if (PlatformUtils.isAndroid) {
         late StreamSubscription stateSubscription;

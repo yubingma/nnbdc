@@ -1426,6 +1426,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
   onAsrResult(event) async {
     // 预处理ASR结果，然后更新 meaningController
+    final asrPerfStart = DateTime.now();
     String processedResult;
     int? oldScore = _currentScore;
 
@@ -1452,8 +1453,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (_studyStep == StudyStep.ch2En.json) {
           if (_word != null) {
             // 中→英模式：结合拼写相似度和音素相似度的智能选择
+            final phonemeStart = DateTime.now();
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
                 candidateStrings, _word!.spell);
+            Global.logger.d('[PERF] selectBestCandidateWithPhonemeAndScore 耗时: ${DateTime.now().difference(phonemeStart).inMilliseconds}ms (candidates: ${candidateStrings.length})');
             _currentScore = result.score;
             processedResult =
                 AsrUtil.preprocessEnglish(result.text, _word!.spell);
@@ -1479,8 +1482,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         if (_studyStep == StudyStep.ch2En.json) {
           if (_word != null) {
             final pre = AsrUtil.preprocessEnglish(event, _word!.spell);
+            final phonemeStart2 = DateTime.now();
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
                 [pre], _word!.spell);
+            Global.logger.d('[PERF] selectBestCandidateWithPhonemeAndScore (single) 耗时: ${DateTime.now().difference(phonemeStart2).inMilliseconds}ms');
             processedResult = result.text;
             _currentScore = result.score;
           } else {
@@ -1499,6 +1504,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     if (mounted) {
+      Global.logger.d('[PERF] onAsrResult 预处理总耗时: ${DateTime.now().difference(asrPerfStart).inMilliseconds}ms');
       if (oldScore != _currentScore) {
         setState(() {}); // 触发 UI 刷新以实时显示最新的发音评分（即使没通过也能让用户看到反馈分数变化）
       }
@@ -1507,6 +1513,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   }
 
   void _onAnswerCorrect(FsrsRating rating) async {
+    final answerCorrectStart = DateTime.now();
     // 巩固环节自动评分只允许降低，不允许拔高（除非是用户手工设置评分，那里走的是 _updateFsrsRating）
     if (_currentGetWordResult != null &&
         _currentGetWordResult!.stepIndex > 0 &&
@@ -1580,26 +1587,39 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       setState(() {}); // 立即显示 FSRS 和完整释义
     }
 
-    if (PlatformUtils.isIOS) {
-      // 给 iOS 音频引擎短暂的 150ms 使缓冲队列刷新，避免 ASR 重置与立即起播发生抢占导致声音发抖发颤
-      await Future.delayed(const Duration(milliseconds: 150));
+    // 中英模式下，在等待 iOS 音频引擎缓冲期间就开始预缓存单词发音文件，
+    // 与 correct.mp3 播放并行，这样 correct.mp3 播完后发音可立即开始而无需等网络下载。
+    if (_studyStep == StudyStep.ch2En.json && _word != null && !PlatformUtils.isWeb) {
+      final soundUrl = Util.getWordSoundUrl(_word!.spell, word: _word);
+      SoundUtil.prefetchSounds([soundUrl]);
     }
 
-    // 播放正确提示音
-    final currentWordId = _word?.id;
-    final soundFuture =
-        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
-    soundFuture.whenComplete(() async {
-      if (!mounted) return;
-      // 播放一遍单词的标准发音（中英模式下需要朗读；英中模式下一进入已朗读过，故不需要再读）
-      if (_studyStep == StudyStep.ch2En.json) {
-        await SoundUtil.playPronounceSound2(_word!, _audioPlayer);
-      }
+    // 核心修复：无论是 Android 还是 iOS，硬件从录音切回播音都需要时间（呼吸窗口）。
+    // 100ms 的延迟足以让 ASR 占用的底层音频轨道彻底关闭，确保后续播放能顺利获得硬件访问权。
+    await Future.delayed(const Duration(milliseconds: 100));
 
-      if (_autoJumpAfterCorrect && _historyIndex == -1 && mounted && _word?.id == currentWordId) {
-        getNextWord(true, fsrsRating: rating);
-      }
-    });
+    // 播放正确提示音（尝试播放，失败不阻塞发音）
+    final currentWordId = _word?.id;
+    try {
+      SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
+    } catch (e) {
+      Global.logger.w('播放 correct.mp3 失败: $e');
+    }
+
+    if (!mounted) return;
+    // 播放一遍单词的标准发音（中英模式下需要朗读）
+    if (_studyStep == StudyStep.ch2En.json) {
+      // 核心优化：立即启动发音播放。
+      // 注意：playPronounceSound2 内部已优化为优先查找本地缓存，实现零延迟起播。
+      unawaited(SoundUtil.playPronounceSound2(_word!, _audioPlayer).then((_) {
+        Global.logger.d('[PERF] playPronounceSound2 异步播放完成');
+      }));
+    }
+
+    Global.logger.d('[PERF] _onAnswerCorrect 反馈启动耗时: ${DateTime.now().difference(answerCorrectStart).inMilliseconds}ms');
+    if (_autoJumpAfterCorrect && _historyIndex == -1 && mounted && _word?.id == currentWordId) {
+      getNextWord(true, fsrsRating: rating);
+    }
   }
 
   checkAsrResult({String? asrInput, bool isVoice = false}) async {
@@ -2001,6 +2021,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _lastFsrsRatingReason = reason;
 
         // 在调用 _onAnswerCorrect 前彻底停止当前识别会话，以便让UI层收到停止状态进而停止波浪动画。
+        // 在 iOS 上必须同步等待停止完成，否则后续立即起播音频会产生资源争抢，导致听不到声音或大幅延迟。
         await asr.stopAsr();
         _onAnswerCorrect(rating);
       }
