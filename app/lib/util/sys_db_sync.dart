@@ -198,10 +198,8 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             CigenWordLink entity = CigenWordLink.fromJson(entityJson);
             await db.cigenWordLinksDao.saveEntity(entity);
           }
-        }
-
-        // === UGC内容表 ===
-        else if (log.tblName == 'sentence') {
+        } else if (log.tblName == 'sentence') {
+          // === UGC内容表 ===
           // 例句
           if (log.operate == 'DELETE') {
             await (db.delete(db.sentences)..where((t) => t.id.equals(log.recordId))).go();

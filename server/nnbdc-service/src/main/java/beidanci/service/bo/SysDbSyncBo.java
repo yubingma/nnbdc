@@ -2,7 +2,9 @@ package beidanci.service.bo;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -41,6 +43,21 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         });
     }
 
+    @SuppressWarnings("unchecked")
+    private String enrichRecordJson(String record) {
+        try {
+            Map<String, Object> map = JsonUtils.parseMap(record);
+            if (map == null) return record;
+            String nowStr = ISO_FMT.format(new Date());
+            map.putIfAbsent("createTime", nowStr);
+            map.putIfAbsent("updateTime", nowStr);
+            return JsonUtils.toJson(map);
+        } catch (Exception e) {
+            log.warn("enrichRecordJson failed, fallback to original record: {}", e.getMessage());
+            return record;
+        }
+    }
+
     /**
      * 记录系统数据操作日志 (增强安全性版本，包含对象所有权校验)
      */
@@ -67,6 +84,8 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         Assert.hasText(table, "SysDbSync: table must not be blank");
         Assert.hasText(recordId, "SysDbSync: recordId must not be blank");
         Assert.hasText(record, "SysDbSync: record content must not be blank");
+
+        record = enrichRecordJson(record);
 
         // 针对核心表的业务级预校验 (及早发现由于 DTO 映射导致的数据缺失)
         if (!operate.equals("DELETE")) {
@@ -233,9 +252,6 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
                 rs.getTimestamp("update_time")
         });
 
-        java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
             Object[] tuple = (Object[]) result;
@@ -246,19 +262,13 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             log.setTblName("dict_group");
             log.setRecordId((String) tuple[0]);
 
-            // 格式化日期字段
-            String createTimeStr = tuple[4] != null ? isoFormat.format(tuple[4]) : null;
-            String updateTimeStr = tuple[5] != null ? isoFormat.format(tuple[5]) : null;
+            Map<String, Object> record = buildRecordMap(tuple, 4,
+                "id", "0",
+                "name", "1",
+                "parentId", "2",
+                "displayIndex", "3"
+            );
 
-            java.util.Map<String, Object> record = new java.util.HashMap<>();
-            record.put("id", tuple[0]);
-            record.put("name", tuple[1]);
-            record.put("parentId", tuple[2]);
-            record.put("displayIndex", tuple[3]);
-            record.put("createTime", createTimeStr);
-            record.put("updateTime", updateTimeStr);
-
-            // 强校验：核心字段必须存在
             Assert.notNull(tuple[0], "DictGroup ID must not be null");
             Assert.notNull(tuple[1], "DictGroup Name must not be null");
 
@@ -272,10 +282,12 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     }
 
     private List<SysDbLogDto> generateGroupAndDictLinkLogs(int version) {
-        String sql = "SELECT group_id, dict_id FROM group_and_dict_link";
+        String sql = "SELECT group_id, dict_id, create_time, update_time FROM group_and_dict_link";
         List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
                 rs.getString("group_id"),
-                rs.getString("dict_id")
+                rs.getString("dict_id"),
+                rs.getTimestamp("create_time"),
+                rs.getTimestamp("update_time")
         });
 
         List<SysDbLogDto> logs = new ArrayList<>();
@@ -287,11 +299,12 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             log.setOperate("INSERT");
             log.setTblName("group_and_dict_link");
             log.setRecordId(tuple[0] + "-" + tuple[1]);
-            java.util.Map<String, Object> record = new java.util.HashMap<>();
-            record.put("groupId", tuple[0]);
-            record.put("dictId", tuple[1]);
 
-            // 强校验：核心字段必须存在
+            Map<String, Object> record = buildRecordMap(tuple, 2,
+                "groupId", "0",
+                "dictId", "1"
+            );
+
             Assert.notNull(tuple[0], "GroupAndDictLink groupId must not be null");
             Assert.notNull(tuple[1], "GroupAndDictLink dictId must not be null");
 
@@ -322,10 +335,6 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
                 rs.getObject("deletable")
         });
 
-        // 用于格式化日期为ISO-8601格式
-        java.text.SimpleDateFormat isoFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-
         List<SysDbLogDto> logs = new ArrayList<>();
         for (Object result : results) {
             Object[] tuple = (Object[]) result;
@@ -336,25 +345,19 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             log.setTblName("dict");
             log.setRecordId((String) tuple[0]);
 
-            // 格式化日期字段
-            String createTimeStr = tuple[8] != null ? isoFormat.format(tuple[8]) : null;
-            String updateTimeStr = tuple[9] != null ? isoFormat.format(tuple[9]) : null;
+            Map<String, Object> record = buildRecordMap(tuple, 8,
+                "id", "0",
+                "name", "1",
+                "ownerId", "2",
+                "isShared", "3",
+                "isReady", "4",
+                "visible", "5",
+                "wordCount", "6",
+                "popularityLimit", "7",
+                "editable", "10",
+                "deletable", "11"
+            );
 
-            java.util.Map<String, Object> record = new java.util.HashMap<>();
-            record.put("id", tuple[0]);
-            record.put("name", tuple[1]);
-            record.put("ownerId", tuple[2]);
-            record.put("isShared", tuple[3]);
-            record.put("isReady", tuple[4]);
-            record.put("visible", tuple[5]);
-            record.put("wordCount", tuple[6]);
-            record.put("popularityLimit", tuple[7]);
-            record.put("editable", tuple[10] != null ? tuple[10] : false);
-            record.put("deletable", tuple[11] != null ? tuple[11] : true);
-            record.put("createTime", createTimeStr);
-            record.put("updateTime", updateTimeStr);
-
-            // 强校验：核心字段必须存在
             Assert.notNull(tuple[0], "Dict ID must not be null");
             Assert.notNull(tuple[1], "Dict Name must not be null");
             Assert.notNull(tuple[2], "Dict Owner ID must not be null");
@@ -382,6 +385,26 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         dto.setCreateTime(log.getCreateTime());
         dto.setUpdateTime(log.getUpdateTime());
         return dto;
+    }
+
+    private static final java.text.SimpleDateFormat ISO_FMT;
+    static {
+        ISO_FMT = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        ISO_FMT.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+    }
+
+    private Map<String, Object> buildRecordMap(Object[] tuple, int timeStartIdx, String... keyValuePairs) {
+        Map<String, Object> record = new LinkedHashMap<>();
+        for (int i = 0; i < keyValuePairs.length; i += 2) {
+            String key = keyValuePairs[i];
+            int idx = Integer.parseInt(keyValuePairs[i + 1]);
+            record.put(key, tuple[idx]);
+        }
+        String ct = tuple[timeStartIdx] != null ? ISO_FMT.format(tuple[timeStartIdx]) : ISO_FMT.format(new Date());
+        String ut = tuple[timeStartIdx + 1] != null ? ISO_FMT.format(tuple[timeStartIdx + 1]) : ISO_FMT.format(new Date());
+        record.put("createTime", ct);
+        record.put("updateTime", ut);
+        return record;
     }
 
     /**
