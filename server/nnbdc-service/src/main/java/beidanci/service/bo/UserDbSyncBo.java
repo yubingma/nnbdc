@@ -1349,8 +1349,8 @@ public class UserDbSyncBo {
                         "user_study_daily_stat",
                         userId + "|" + statsDateFormat.format(dto.getDate()),
                         JsonUtils.toJson(dto),
-                        null,
-                        null);
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
                 logs.add(log);
             }
 

@@ -38,6 +38,8 @@ public class UserStudyDailyStatBo extends BaseBo<UserStudyDailyStat> {
         dto.setStudySeconds(entity.getStudySeconds());
         dto.setReviewCount(entity.getReviewCount());
         dto.setDayStatus(entity.getDayStatus());
+        dto.setCreateTime(entity.getCreateTime());
+        dto.setUpdateTime(entity.getUpdateTime());
         return dto;
     }
 

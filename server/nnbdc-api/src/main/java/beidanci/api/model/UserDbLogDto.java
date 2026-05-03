@@ -35,8 +35,8 @@ public class UserDbLogDto implements Dto {
         this.tblName = tblName;
         this.recordId = recordId;
         this.record = record;
-        this.createTime = createTime;
-        this.updateTime = updateTime;
+        this.createTime = createTime != null ? createTime : new Date();
+        this.updateTime = updateTime != null ? updateTime : this.createTime;
     }
 
     public String getId() {
@@ -88,7 +88,7 @@ public class UserDbLogDto implements Dto {
     }
 
     public Date getCreateTime() {
-        return createTime;
+        return createTime != null ? createTime : new Date();
     }
 
     public void setCreateTime(Date createTime) {
@@ -96,7 +96,8 @@ public class UserDbLogDto implements Dto {
     }
 
     public Date getUpdateTime() {
-        return updateTime == null ? createTime : updateTime;
+        Date effectiveUpdateTime = updateTime == null ? createTime : updateTime;
+        return effectiveUpdateTime != null ? effectiveUpdateTime : new Date();
     }
 
     public void setUpdateTime(Date updateTime) {
