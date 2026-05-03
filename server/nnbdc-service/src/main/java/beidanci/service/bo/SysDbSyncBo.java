@@ -43,7 +43,6 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         });
     }
 
-    @SuppressWarnings("unchecked")
     private String enrichRecordJson(String record) {
         try {
             Map<String, Object> map = JsonUtils.parseMap(record);
