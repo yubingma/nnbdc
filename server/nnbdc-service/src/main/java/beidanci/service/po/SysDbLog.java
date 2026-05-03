@@ -1,5 +1,7 @@
 package beidanci.service.po;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -10,6 +12,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "sys_db_log")
+@AttributeOverrides({@AttributeOverride(name = "updateTime", column = @Column(name = "update_time", nullable = false))})
 public class SysDbLog extends UuidPo {
 
 

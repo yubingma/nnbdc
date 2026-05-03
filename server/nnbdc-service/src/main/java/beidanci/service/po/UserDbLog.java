@@ -2,12 +2,15 @@ package beidanci.service.po;
 
 import java.util.Date;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "user_db_log")
+@AttributeOverrides({@AttributeOverride(name = "updateTime", column = @Column(name = "update_time", nullable = false))})
 public class UserDbLog extends UuidPo {
 
     @Column(name = "user_id", length = 32, nullable = false)

@@ -83,6 +83,7 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         int nextVersion = currentVersion + 1;
 
         // 创建日志
+        Date now= new Date();
         SysDbLog sysDbLog = new SysDbLog();
         sysDbLog.setId(Util.uuid());
         sysDbLog.setVersion(nextVersion);
@@ -90,7 +91,8 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         sysDbLog.setTable(table);
         sysDbLog.setRecordId(recordId);
         sysDbLog.setRecord(record);
-        sysDbLog.setCreateTime(new Date());
+        sysDbLog.setCreateTime(now);
+        sysDbLog.setUpdateTime(now);
 
         log.info("Recording SysDbLog: tbl={}, recordId={}, version={}, operate={}", table, recordId, nextVersion, operate);
         createEntity(sysDbLog);
@@ -249,7 +251,9 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             Assert.notNull(tuple[1], "DictGroup Name must not be null");
 
             log.setRecord(JsonUtils.toJson(record));
-            log.setCreateTime(new Date());
+            Date now = new Date();
+            log.setCreateTime(now);
+            log.setUpdateTime(now);
             logs.add(log);
         }
         return logs;
@@ -280,7 +284,9 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             Assert.notNull(tuple[1], "GroupAndDictLink dictId must not be null");
 
             log.setRecord(JsonUtils.toJson(record));
-            log.setCreateTime(new Date());
+            Date now = new Date();
+            log.setCreateTime(now);
+            log.setUpdateTime(now);
             logs.add(log);
         }
         return logs;
@@ -342,7 +348,9 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
             Assert.notNull(tuple[2], "Dict Owner ID must not be null");
 
             log.setRecord(JsonUtils.toJson(record));
-            log.setCreateTime(new Date());
+            Date now = new Date();
+            log.setCreateTime(now);
+            log.setUpdateTime(now);
             logs.add(log);
         }
         return logs;

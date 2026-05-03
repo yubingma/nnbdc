@@ -304,10 +304,10 @@ class UserDbLogDto {
   String tblName;
   String recordId;
   String record;
-  @NullableDateTimeConverter()
-  DateTime? createTime;
-  @NullableDateTimeConverter()
-  DateTime? updateTime;
+  @CustomDateTimeConverter()
+  DateTime createTime;
+  @CustomDateTimeConverter()
+  DateTime updateTime;
 
   UserDbLogDto(this.id, this.userId, this.version, this.operate, this.tblName, this.recordId, this.record, this.createTime, this.updateTime);
 
@@ -498,7 +498,7 @@ class SysDbLogDto {
   final String recordId;
   final String record;
   final DateTime createTime;
-  final DateTime? updateTime;
+  final DateTime updateTime;
 
   SysDbLogDto(
     this.id,
