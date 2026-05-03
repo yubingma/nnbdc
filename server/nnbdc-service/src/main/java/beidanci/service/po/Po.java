@@ -4,8 +4,11 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PrePersist;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.springframework.util.Assert;
 
 // JDBC 不再支持 Hibernate 注解，创建时间需要在代码中手动设置
 // import org.hibernate.annotations.CreationTimestamp;
@@ -46,6 +49,11 @@ public abstract class Po {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+    @PrePersist
+    public void prePersist() {
+        Assert.notNull(createTime, "createTime must not be null");
+        Assert.notNull(updateTime, "updateTime must not be null");
     }
 
 }
