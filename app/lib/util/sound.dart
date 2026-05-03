@@ -53,7 +53,7 @@ class SoundUtil {
           android: AudioContextAndroid(
             usageType: AndroidUsageType.media,
             contentType: AndroidContentType.speech,
-            audioFocus: AndroidAudioFocus.none,
+            audioFocus: AndroidAudioFocus.gain,
           ),
         ));
       }
@@ -333,12 +333,10 @@ class SoundUtil {
   ) async {
     try {
       if (player.state == PlayerState.playing) {
-        await player.stop().timeout(const Duration(milliseconds: 1000), onTimeout: () {
-          Global.logger.w('SoundUtil: stop() timeout for $soundFileName');
-        });
+        await player.stop().catchError((_) {});
       }
-      await player.setVolume(volume);
       await player.setPlaybackRate(speed);
+      await player.setVolume(volume);
 
       final Completer<void> playCompleter = Completer<void>();
       StreamSubscription? sub;
@@ -348,27 +346,14 @@ class SoundUtil {
       });
 
       await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000));
-
-      if (PlatformUtils.isAndroid) {
-        late StreamSubscription stateSubscription;
-        stateSubscription = player.onPlayerStateChanged.listen((state) {
-          if (state == PlayerState.completed || state == PlayerState.stopped) {
-            if (!playCompleter.isCompleted) playCompleter.complete();
-          }
-        });
-        await Future.any([
-          playCompleter.future,
-          Future.delayed(const Duration(milliseconds: 1500)),
-        ]);
-        await stateSubscription.cancel();
-      } else {
-        await Future.any([
-          playCompleter.future,
-          Future.delayed(const Duration(milliseconds: 1500)),
-        ]);
-      }
-    } on Exception catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放后台音效出错: $soundFileName', showToast: false);
+      
+      await Future.any([
+        playCompleter.future,
+        Future.delayed(const Duration(milliseconds: 800)),
+      ]);
+      await sub?.cancel();
+    } catch (e) {
+      Global.logger.w('SoundUtil: 播放后台音效出错 $soundFileName: $e');
     }
   }
 

@@ -1600,10 +1600,12 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     // 播放正确提示音（尝试播放，失败不阻塞发音）
     final currentWordId = _word?.id;
-    try {
-      SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
-    } catch (e) {
-      Global.logger.w('播放 correct.mp3 失败: $e');
+    if (_studyStep != StudyStep.ch2En.json) {
+      try {
+        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
+      } catch (e) {
+        Global.logger.w('播放 correct.mp3 失败: $e');
+      }
     }
 
     if (!mounted) return;
@@ -1618,7 +1620,13 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
 
     Global.logger.d('[PERF] _onAnswerCorrect 反馈启动耗时: ${DateTime.now().difference(answerCorrectStart).inMilliseconds}ms');
     if (_autoJumpAfterCorrect && _historyIndex == -1 && mounted && _word?.id == currentWordId) {
-      getNextWord(true, fsrsRating: rating);
+      // 核心优化：延迟 800ms 再跳词。
+      // 500ms 有时仍显局促，800ms 能更好地保障发音完整性和视觉停留感。
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted && _word?.id == currentWordId) {
+          getNextWord(true, fsrsRating: rating);
+        }
+      });
     }
   }
 
