@@ -21,7 +21,6 @@ UPDATE user_study_step SET update_time = create_time WHERE update_time IS NULL;
 UPDATE user_study_daily_stat SET update_time = create_time WHERE update_time IS NULL;
 UPDATE daka SET update_time = create_time WHERE update_time IS NULL;
 UPDATE book_mark SET update_time = create_time WHERE update_time IS NULL;
-UPDATE mastered_word SET update_time = create_time WHERE update_time IS NULL;
 UPDATE user_cow_dung_log SET update_time = create_time WHERE update_time IS NULL;
 
 -- 4. 核心词库与内容类
@@ -29,7 +28,7 @@ UPDATE word SET update_time = create_time WHERE update_time IS NULL;
 UPDATE meaning_item SET update_time = create_time WHERE update_time IS NULL;
 UPDATE sentence SET update_time = create_time WHERE update_time IS NULL;
 UPDATE word_image SET update_time = create_time WHERE update_time IS NULL;
-UPDATE word_short_desc_chinese SET update_time = create_time WHERE update_time IS NULL;
+UPDATE word_shortdesc_chinese SET update_time = create_time WHERE update_time IS NULL;
 UPDATE cigen SET update_time = create_time WHERE update_time IS NULL;
 UPDATE cigen_word_link SET update_time = create_time WHERE update_time IS NULL;
 
