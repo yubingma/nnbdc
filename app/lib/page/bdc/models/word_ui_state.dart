@@ -1,0 +1,43 @@
+import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/util/fsrs.dart';
+
+class WordUIState {
+  final String? studyStep;
+  final bool hasFinishedAnswering;
+  final bool canLeaveCurrWord;
+  final bool showSentenceTranslation;
+  final int? selectedAnswerIndex;
+  final Set<int> flippedAnswerIndices;
+  final int tabIndex;
+  final int? currentScore;
+  final String meaningText;
+  final List<WordVo>? words;
+  final int correctAnswerIndex;
+  final FSRSItem? fsrsItem;
+  final int? daysSinceLastReview;
+  final FsrsRating? lastFsrsRating;
+  final List<Pair<int, int>>? asrMatchedMeaningItemParts;
+  final List<Pair<int, int>>? asrRevealedMeaningItemParts;
+  final List<String>? currentAsrCandidates;
+
+  WordUIState({
+    this.studyStep,
+    required this.hasFinishedAnswering,
+    required this.canLeaveCurrWord,
+    required this.showSentenceTranslation,
+    this.selectedAnswerIndex,
+    required this.flippedAnswerIndices,
+    required this.tabIndex,
+    this.currentScore,
+    required this.meaningText,
+    this.words,
+    required this.correctAnswerIndex,
+    this.fsrsItem,
+    this.daysSinceLastReview,
+    this.lastFsrsRating,
+    this.asrMatchedMeaningItemParts,
+    this.asrRevealedMeaningItemParts,
+    this.currentAsrCandidates,
+  });
+}

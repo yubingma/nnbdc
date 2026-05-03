@@ -7,6 +7,7 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/page/bdc/models/bdc_page_args.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/error_handler.dart';
