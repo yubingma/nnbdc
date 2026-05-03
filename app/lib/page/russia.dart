@@ -1301,6 +1301,8 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
               cowDung: newCowDung,
               theTime: AppClock.now(),
               reason: cowDungAdjust > 0 ? "游戏胜利奖励" : "游戏失败惩罚",
+              createTime: AppClock.now(),
+              updateTime: AppClock.now(),
             );
             await db.userCowDungLogsDao.insertEntity(log, true);
           }

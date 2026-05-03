@@ -118,9 +118,13 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
       final existing = await (select(localParams)..where((e) => e.name.equals('isDarkMode'))).getSingleOrNull();
       final value = isDarkMode ? 'true' : 'false';
       if (existing == null) {
-        await into(localParams).insert(LocalParamsCompanion.insert(name: 'isDarkMode', value: value));
+        await into(localParams).insert(LocalParamsCompanion.insert(
+          name: 'isDarkMode', 
+          value: value,
+          updateTime: AppClock.now(),
+        ));
       } else {
-        await (update(localParams)..where((e) => e.name.equals('isDarkMode'))).write(LocalParamsCompanion(value: Value(value)));
+        await (update(localParams)..where((e) => e.name.equals('isDarkMode'))).write(LocalParamsCompanion(value: Value(value), updateTime: Value(AppClock.now())));
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'saveIsDarkMode', showToast: false);
@@ -146,10 +150,14 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
     try {
       final existing = await (select(localParams)..where((e) => e.name.equals('wordListGuideShown'))).getSingleOrNull();
       if (existing == null) {
-        await into(localParams).insert(LocalParamsCompanion.insert(name: 'wordListGuideShown', value: shown ? 'true' : 'false'));
+        await into(localParams).insert(LocalParamsCompanion.insert(
+          name: 'wordListGuideShown', 
+          value: shown ? 'true' : 'false',
+          updateTime: AppClock.now(),
+        ));
       } else {
         await (update(localParams)..where((e) => e.name.equals('wordListGuideShown')))
-            .write(LocalParamsCompanion(value: Value(shown ? 'true' : 'false')));
+            .write(LocalParamsCompanion(value: Value(shown ? 'true' : 'false'), updateTime: Value(AppClock.now())));
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'setWordListGuideShown', showToast: false);
@@ -2264,6 +2272,8 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         date: pureDate,
         studySeconds: seconds,
         reviewCount: 0,
+        createTime: AppClock.now(),
+        updateTime: AppClock.now(),
       ), true);
     } else {
       await saveEntity(existing.copyWith(
@@ -2284,6 +2294,8 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         date: pureDate,
         studySeconds: 0,
         reviewCount: 1,
+        createTime: AppClock.now(),
+        updateTime: AppClock.now(),
       ), true);
     } else {
       await saveEntity(existing.copyWith(
@@ -2316,6 +2328,8 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         studySeconds: 0,
         reviewCount: 0,
         dayStatus: statusValue,
+        createTime: AppClock.now(),
+        updateTime: AppClock.now(),
       ), true);
     } else {
       // 状态升级逻辑：dakaed > studied > loggedIn > notLogin

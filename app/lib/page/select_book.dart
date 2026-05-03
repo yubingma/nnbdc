@@ -1366,7 +1366,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             wordId: similarWord.wordId,
             similarWordId: similarWord.similarWordId,
             similarWordSpell: similarWord.similarWordSpell,
-            distance: similarWord.distance));
+            distance: similarWord.distance,
+            createTime: similarWord.createTime,
+            updateTime: similarWord.updateTime));
         await yieldToUiIfNeeded(100, i); // 更频繁地让出UI
       }
       if (similarWords.isNotEmpty) {

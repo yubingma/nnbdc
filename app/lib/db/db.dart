@@ -216,7 +216,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 40;
+  int get schemaVersion => 41;
 
   @override
   MigrationStrategy get migration {
@@ -351,6 +351,9 @@ class MyDatabase extends _$MyDatabase {
           if (from < 40) {
             await _migrateFromV39ToV40AddUserStudyDailyStats(m);
           }
+          if (from < 41) {
+            await _migrateFromV40ToV41AddAuditColumns(m);
+          }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
@@ -406,6 +409,38 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV39ToV40AddUserStudyDailyStats(Migrator m) async {
     await transaction(() async {
       await m.createTable(userStudyDailyStats);
+    });
+  }
+
+  /// 从版本 40 升级到版本 41：补全所有表的审计字段 (create_time, update_time)
+  Future<void> _migrateFromV40ToV41AddAuditColumns(Migrator m) async {
+    await transaction(() async {
+      final tablesToUpdate = [
+        localParams,
+        votedSentences,
+        votedWordImages,
+        dictGroups,
+        users,
+        groupAndDictLinks,
+        userCowDungLogs,
+        userStudyDailyStats,
+        similarWords,
+      ];
+
+      for (final dynamic table in tablesToUpdate) {
+        // 使用 m.addColumn 更加安全，它会自动处理 SQLite 的限制
+        try {
+          await m.addColumn(table, table.createTime);
+        } catch (e) {
+          Global.logger.w('添加 createTime 到 ${table.actualTableName} 失败 (可能已存在): $e');
+        }
+        
+        try {
+          await m.addColumn(table, table.updateTime);
+        } catch (e) {
+          Global.logger.w('添加 updateTime 到 ${table.actualTableName} 失败 (可能已存在): $e');
+        }
+      }
     });
   }
 
@@ -1177,7 +1212,11 @@ class MyDatabase extends _$MyDatabase {
     // 3. 初始化基础数据
     await batch((b) {
       b.insertAll(localParams, [
-        LocalParamsCompanion.insert(name: 'isDarkMode', value: 'false'),
+        LocalParamsCompanion.insert(
+          name: 'isDarkMode', 
+          value: 'false',
+          updateTime: AppClock.now(),
+        ),
       ]);
     });
     Global.logger.i('✅ 初始化基础数据完成');

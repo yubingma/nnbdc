@@ -3,6 +3,7 @@ import 'package:nnbdc/global.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:nnbdc/util/user_helper.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/level_util.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 
@@ -278,6 +279,8 @@ class UserVo {
 
   /// 强制会员状态修改原因
   String? premiumOverrideReason;
+  DateTime? createTime;
+  DateTime? updateTime;
 
   /// 强制会员状态延续时长（形如：10天/360秒/15分钟；null 表示永久）
   String? premiumOverrideDuration;
@@ -1305,7 +1308,9 @@ User userVo2User(UserVo userVo) {
       premiumOverrideReason: userVo.premiumOverrideReason,
       premiumOverrideDuration: userVo.premiumOverrideDuration,
       studyConfig: userVo.studyConfig,
-      appleUserId: userVo.appleUserId);
+      appleUserId: userVo.appleUserId,
+      createTime: userVo.createTime ?? AppClock.now(),
+      updateTime: userVo.updateTime ?? AppClock.now());
 
   return user;
 }

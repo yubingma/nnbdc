@@ -314,6 +314,8 @@ class StudyBo {
         cowDung: user.cowDung + finalCowDung,
         theTime: AppClock.now(),
         reason: "throw dice after learning",
+        createTime: AppClock.now(),
+        updateTime: AppClock.now(),
       );
       await db.userCowDungLogsDao.insertEntity(log, true);
 

@@ -52,6 +52,8 @@ void main() {
       todayStudyStarted: true,
       totalLearningSeconds: 0,
       todayLearningSeconds: 0,
+      createTime: now,
+      updateTime: now,
     ), false);
 
     await db.usersDao.saveUser(User(
@@ -78,6 +80,8 @@ void main() {
       todayStudyStarted: true,
       totalLearningSeconds: 0,
       todayLearningSeconds: 0,
+      createTime: now,
+      updateTime: now,
     ), false);
 
     // 插入一些基础单词

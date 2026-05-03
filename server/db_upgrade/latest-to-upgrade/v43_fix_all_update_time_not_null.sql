@@ -1,5 +1,31 @@
 -- ==========================================
--- 第一阶段：动态数据修复 (确保 create_time 和 update_time 都有值)
+-- 第一阶段：自动补齐缺失的审计字段 (针对链接表等)
+-- ==========================================
+DO $$ 
+DECLARE 
+    t text;
+BEGIN
+    -- 查找所有在 public 模式下但缺少 create_time 或 update_time 的表
+    FOR t IN (SELECT table_name FROM information_schema.tables 
+              WHERE table_schema = 'public' 
+              AND table_type = 'BASE TABLE') 
+    LOOP
+        -- 如果缺少 create_time，则添加
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name = t AND column_name = 'create_time') THEN
+            EXECUTE format('ALTER TABLE %I ADD COLUMN create_time TIMESTAMP', t);
+        END IF;
+
+        -- 如果缺少 update_time，则添加
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                       WHERE table_name = t AND column_name = 'update_time') THEN
+            EXECUTE format('ALTER TABLE %I ADD COLUMN update_time TIMESTAMP', t);
+        END IF;
+    END LOOP;
+END $$;
+
+-- ==========================================
+-- 第二阶段：动态数据修复 (确保 create_time 和 update_time 都有值)
 -- ==========================================
 DO $$ 
 DECLARE 
@@ -25,7 +51,7 @@ BEGIN
 END $$;
 
 -- ==========================================
--- 第二阶段：动态约束锁定 (设为 NOT NULL)
+-- 第三阶段：动态约束锁定 (设为 NOT NULL)
 -- ==========================================
 DO $$ 
 DECLARE 

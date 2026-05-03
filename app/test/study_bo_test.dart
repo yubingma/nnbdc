@@ -15,7 +15,7 @@ void main() {
   late MyDatabase db;
   late User testUser;
   late StudyBo studyBo;
-  final now = AppClock.now();
+  AppClock.now();
 
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -41,7 +41,7 @@ void main() {
     studyBo = StudyBo();
     StudyCacheManager().clear();
 
-    // 1. 生成 Mock User，每日计划是 5 个词
+    final now = AppClock.now();
     testUser = User(
       id: 'test_user_id',
       userName: 'mock_user',
@@ -67,6 +67,8 @@ void main() {
       totalLearningSeconds: 0,
       todayLearningSeconds: 0,
       lastLearningDate: now,
+      createTime: now,
+      updateTime: now,
     );
     await db.usersDao.saveUser(testUser, false);
 

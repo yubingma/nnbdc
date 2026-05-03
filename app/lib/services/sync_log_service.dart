@@ -122,13 +122,14 @@ class SyncLogService {
           LocalParamsCompanion.insert(
             name: _syncLogsKey,
             value: jsonString,
-            description: Value('同步日志记录'),
+            description: const Value('同步日志记录'),
+            updateTime: AppClock.now(),
           ),
         );
       } else {
         await (db.update(db.localParams)
               ..where((e) => e.name.equals(_syncLogsKey)))
-            .write(LocalParamsCompanion(value: Value(jsonString)));
+            .write(LocalParamsCompanion(value: Value(jsonString), updateTime: Value(AppClock.now())));
       }
     } catch (e) {
       Global.logger.e('保存同步日志失败: $e');

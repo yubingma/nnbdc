@@ -290,7 +290,13 @@ Future<void> _runImport({
         for (int i = 0; i < srcSimilarWords.length; i++) {
           final sw = srcSimilarWords[i];
           similarWords
-              .add(SimilarWord(wordId: sw.wordId, similarWordId: sw.similarWordId, similarWordSpell: sw.similarWordSpell, distance: sw.distance));
+              .add(SimilarWord(
+                  wordId: sw.wordId, 
+                  similarWordId: sw.similarWordId, 
+                  similarWordSpell: sw.similarWordSpell, 
+                  distance: sw.distance,
+                  createTime: sw.createTime,
+                  updateTime: sw.updateTime));
 
           // 每处理100个形近词，yield一次，避免阻塞
           if (i % 100 == 0) {

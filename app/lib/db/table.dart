@@ -8,6 +8,9 @@ class LocalParams extends Table {
 
   TextColumn get description => text().nullable()();
 
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
+
   @override
   Set<Column>? get primaryKey => {name};
 }
@@ -37,6 +40,9 @@ class VotedSentences extends Table {
 
   TextColumn get vote => text()(); // 'HAND'/'FOOT'
 
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
+
   @override
   Set<Column>? get primaryKey => {userId, sentenceId};
 }
@@ -47,6 +53,9 @@ class VotedWordImages extends Table {
   TextColumn get imageId => text()();
 
   TextColumn get vote => text()(); // 'HAND'/'FOOT'
+
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {userId, imageId};
@@ -60,6 +69,9 @@ class DictGroups extends Table {
   TextColumn get parentId => text().nullable()();
 
   IntColumn get displayIndex => integer()();
+
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -179,6 +191,9 @@ class Users extends Table {
 
   /// 学习偏好配置 (JSON格式，目前主要用来包裹 walkman 配置及其他后续动态配置)
   TextColumn get studyConfig => text().nullable()();
+
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -368,8 +383,7 @@ class Synonyms extends Table {
   TextColumn get wordId => text()();
   TextColumn get spell => text()();
 
-  DateTimeColumn get createTime => dateTime()();
-
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updateTime => dateTime()();
 
   @override
@@ -383,6 +397,9 @@ class SimilarWords extends Table {
   TextColumn get similarWordSpell => text()();
 
   IntColumn get distance => integer()();
+
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {wordId, similarWordId};
@@ -531,6 +548,9 @@ class GroupAndDictLinks extends Table {
   TextColumn get groupId => text()();
   TextColumn get dictId => text()();
 
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
+
   @override
   Set<Column>? get primaryKey => {groupId, dictId};
 }
@@ -569,6 +589,9 @@ class UserCowDungLogs extends Table {
   IntColumn get cowDung => integer()();
   DateTimeColumn get theTime => dateTime()();
   TextColumn get reason => text()();
+
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column>? get primaryKey => {id};
@@ -650,6 +673,9 @@ class UserStudyDailyStats extends Table {
   IntColumn get studySeconds => integer().withDefault(const Constant(0))();
   IntColumn get reviewCount => integer().withDefault(const Constant(0))();
   TextColumn get dayStatus => text().nullable()(); // 记录当天的最高状态 (login, studied, dakaed)
+
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime()();
 
   @override
   Set<Column> get primaryKey => {userId, date};

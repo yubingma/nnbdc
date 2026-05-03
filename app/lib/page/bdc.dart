@@ -4670,7 +4670,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                       Global.getLoggedInUser()!
                                                           .id,
                                                   imageId: wordImage.id,
-                                                  vote: 'HAND'));
+                                                  vote: 'HAND',
+                                                  createTime: AppClock.now(),
+                                                  updateTime: AppClock.now()));
                                           wordImage.hand += 1;
                                           _wordImageEdited = true;
                                           voteFuture = Future.value(true);
@@ -4721,7 +4723,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                                                       Global.getLoggedInUser()!
                                                           .id,
                                                   imageId: wordImage.id,
-                                                  vote: 'FOOT'));
+                                                  vote: 'FOOT',
+                                                  createTime: AppClock.now(),
+                                                  updateTime: AppClock.now()));
                                           wordImage.foot += 1;
                                           _wordImageEdited = true;
                                           voteFuture = Future.value(true);

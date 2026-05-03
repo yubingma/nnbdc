@@ -60,6 +60,8 @@ void main() {
       todayStudyStarted: false,
       totalLearningSeconds: 0,
       todayLearningSeconds: 0,
+      createTime: now,
+      updateTime: now,
     );
     await db.usersDao.saveUser(testUser, false);
 

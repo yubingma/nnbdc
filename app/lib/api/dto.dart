@@ -115,8 +115,10 @@ class SimilarWordDto {
   final String similarWordId;
   final String similarWordSpell;
   final int distance;
+  final DateTime createTime;
+  final DateTime updateTime;
 
-  SimilarWordDto(this.wordId, this.similarWordId, this.similarWordSpell, this.distance);
+  SimilarWordDto(this.wordId, this.similarWordId, this.similarWordSpell, this.distance, this.createTime, this.updateTime);
 
   factory SimilarWordDto.fromJson(Map<String, dynamic> json) {
     json['updateTime'] ??= json['createTime'];
