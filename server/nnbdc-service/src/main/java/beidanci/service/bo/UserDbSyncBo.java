@@ -200,7 +200,7 @@ public class UserDbSyncBo {
             log.setTable(logDto.getTblName());
             log.setOperate(logDto.getOperate());
             log.setRecordId(logDto.getRecordId());
-            log.setRecord(logDto.getRecord());
+            log.setRecord(JsonUtils.enrichRecordJson(logDto.getRecord()));
             userDbLogBo.createEntity(log);
         }
 
@@ -270,7 +270,7 @@ public class UserDbSyncBo {
             for (UserDbLogDto log : logs) {
                 String recordJson = null;
                 try {
-                    recordJson = log.getRecord();
+                    recordJson = JsonUtils.enrichRecordJson(log.getRecord());
                     processSyncLog(userId, log, recordJson);
 
                     // 检查record id是否超出长度限制

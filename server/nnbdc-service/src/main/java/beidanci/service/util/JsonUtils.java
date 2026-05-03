@@ -152,4 +152,33 @@ public class JsonUtils {
 
         return json;
     }
+    /**
+     * 为 JSON 记录补全 createTime 和 updateTime 字段（如果缺失）
+     */
+    public static String enrichRecordJson(String record) {
+        if (StringUtils.isBlank(record)) return record;
+        try {
+            Map<String, Object> map = parseMap(record);
+            if (map == null || map.isEmpty()) return record;
+
+            java.text.SimpleDateFormat isoFmt = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            isoFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+            String nowStr = isoFmt.format(new Date());
+
+            boolean changed = false;
+            if (!map.containsKey("createTime")) {
+                map.put("createTime", nowStr);
+                changed = true;
+            }
+            if (!map.containsKey("updateTime")) {
+                map.put("updateTime", nowStr);
+                changed = true;
+            }
+
+            return changed ? toJson(map) : record;
+        } catch (Exception e) {
+            // 解析失败则返回原样，不阻塞流程
+            return record;
+        }
+    }
 }

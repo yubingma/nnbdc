@@ -43,20 +43,6 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         });
     }
 
-    private String enrichRecordJson(String record) {
-        try {
-            Map<String, Object> map = JsonUtils.parseMap(record);
-            if (map == null) return record;
-            String nowStr = ISO_FMT.format(new Date());
-            map.putIfAbsent("createTime", nowStr);
-            map.putIfAbsent("updateTime", nowStr);
-            return JsonUtils.toJson(map);
-        } catch (Exception e) {
-            log.warn("enrichRecordJson failed, fallback to original record: {}", e.getMessage());
-            return record;
-        }
-    }
-
     /**
      * 记录系统数据操作日志 (增强安全性版本，包含对象所有权校验)
      */
