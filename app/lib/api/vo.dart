@@ -162,6 +162,7 @@ class DictVo extends Equatable {
     this.coverUrl,
     this.description,
     this.createTime,
+    this.updateTime,
   });
 
   factory DictVo.fromJson(Map<String, dynamic> json) => _$DictVoFromJson(json);

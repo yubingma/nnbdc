@@ -844,13 +844,14 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                     continue;
                   }
 
+                  final now = AppClock.now();
                   LearningDict learningDict = LearningDict(
                       userId: user.id!,
                       dictId: dictVo.id,
                       isPrivileged: false,
                       fetchMastered: false,
-                      createTime: AppClock.now(),
-                      updateTime: AppClock.now());
+                      createTime: now,
+                      updateTime: now);
                   await learningDictsDao.saveEntity(learningDict, true);
                   
                   // 漏斗：用户成功选择了一本词书

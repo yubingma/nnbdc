@@ -87,14 +87,15 @@ class StudyStepsService {
       }
 
       // 转换为实体对象
+      final now = AppClock.now();
       final entities = voSteps
           .map((vo) => UserStudyStep(
                 userId: user.id,
                 studyStep: vo.studyStep,
                 seq: vo.seq,
                 state: vo.state,
-                createTime: AppClock.now(),
-                updateTime: AppClock.now(),
+                createTime: now,
+                updateTime: now,
               ))
           .toList();
 

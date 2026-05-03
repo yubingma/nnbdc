@@ -145,6 +145,7 @@ class StudyBo {
 
       Global.logger.d('开始获取批次单词: userId=${user.id}');
       final db = MyDatabase.instance;
+      final now = AppClock.now();
 
       // 查询今日已分配批次的单词 (batchId > 0 表示该词属于今日学习计划)
       final query = db.select(db.learningWords)
@@ -163,8 +164,8 @@ class StudyBo {
                 studyStep: vo.studyStep,
                 seq: vo.seq,
                 state: vo.state,
-                createTime: AppClock.now(),
-                updateTime: AppClock.now(),
+                createTime: now,
+                updateTime: now,
               ))
           .toList();
       final modeCount = steps.length;
@@ -317,14 +318,15 @@ class StudyBo {
       await db.userCowDungLogsDao.insertEntity(log, true);
 
       // 记录用户操作
+      final now = AppClock.now();
       await db.userOpersDao.saveUserOper(
           UserOper(
-            id: AppClock.now().millisecondsSinceEpoch.toString(),
+            id: now.millisecondsSinceEpoch.toString(),
             userId: user.id,
             operType: OperType.throwDice.value,
-            operTime: AppClock.now(),
-            createTime: AppClock.now(),
-            updateTime: AppClock.now(),
+            operTime: now,
+            createTime: now,
+            updateTime: now,
           ),
           true);
 
@@ -463,8 +465,8 @@ class StudyBo {
                 studyStep: vo.studyStep,
                 seq: vo.seq,
                 state: vo.state,
-                createTime: AppClock.now(),
-                updateTime: AppClock.now(),
+                createTime: now,
+                updateTime: now,
               ))
           .toList();
       final modeCount = steps.length;
@@ -558,8 +560,8 @@ class StudyBo {
                 studyStep: vo.studyStep,
                 seq: vo.seq,
                 state: vo.state,
-                createTime: AppClock.now(),
-                updateTime: AppClock.now(),
+                createTime: now,
+                updateTime: now,
               ))
           .toList();
       final activeStepCount = steps.length;
@@ -1153,8 +1155,8 @@ class StudyBo {
               studyStep: vo.studyStep,
               seq: vo.seq,
               state: vo.state,
-              createTime: AppClock.now(),
-              updateTime: AppClock.now(),
+              createTime: now,
+              updateTime: now,
             ))
         .toList();
     final int stepCount = steps.length;

@@ -575,13 +575,14 @@ class DataIntegrityChecker {
         try {
           // 不改乱公共云端库，而是抹除本地系统版本戳（置为：0），触发系统数据的全量重拉
           final db = MyDatabase.instance;
+          final now = AppClock.now();
           await db.sysDbVersionDao.saveVersion(
              SysDbVersionData(
                id: 'singleton',
                version: 0,
-               lastSyncTime: AppClock.now(),
-               createTime: AppClock.now(),
-               updateTime: AppClock.now(),
+               lastSyncTime: now,
+               createTime: now,
+               updateTime: now,
              ),
           );
           

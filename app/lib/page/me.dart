@@ -531,6 +531,7 @@ class _MePageState extends State<MePage> {
   /// 先检查通用词典，再检查用户选择的词书
   Future<void> _checkAndDownloadDicts(String userId) async {
     if (!mounted) return;
+    final now = AppClock.now();
 
     try {
       final db = MyDatabase.instance;
@@ -561,7 +562,8 @@ class _MePageState extends State<MePage> {
           editable: false,
           dictWords: null,
           wordCount: 0,
-          createTime: AppClock.now(),
+          createTime: now,
+          updateTime: now,
         ));
       }
 
@@ -604,7 +606,8 @@ class _MePageState extends State<MePage> {
             editable: currentDictName == '生词本',
             dictWords: null,
             wordCount: 0,
-            createTime: AppClock.now(),
+            createTime: now,
+            updateTime: now,
           ));
         } else if (existing.ownerId == Global.sysUserId && !dictsWithWordsSet.contains(learningDict.dictId)) {
           // 系统词书缺失内容
@@ -623,7 +626,8 @@ class _MePageState extends State<MePage> {
               dictWords: null,
               wordCount: 0,
               baseDictId: existing.baseDictId,
-              createTime: AppClock.now(),
+              createTime: now,
+              updateTime: now,
             ));
           }
 
@@ -647,7 +651,8 @@ class _MePageState extends State<MePage> {
                 editable: false,
                 dictWords: null,
                 wordCount: 0,
-                createTime: AppClock.now(),
+                createTime: now,
+                updateTime: now,
               ));
             }
           }

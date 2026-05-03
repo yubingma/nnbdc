@@ -385,6 +385,7 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
         dict.isShared = false;
         dict.visible = true;
 
+        final now = AppClock.now();
         // 保存到本地数据库
         await db.into(db.dicts).insert(
               Dict(
@@ -399,8 +400,8 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
                 deletable: dict.name != '生词本' &&
                     dict.name != '已掌握' &&
                     (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
-                createTime: AppClock.now(),
-                updateTime: AppClock.now(),
+                createTime: now,
+                updateTime: now,
               ),
             );
       }
