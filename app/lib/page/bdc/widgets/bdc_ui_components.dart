@@ -1,4 +1,4 @@
-part of '../../bdc.dart';
+part of '../bdc.dart';
 
 extension BdcPageStateUIComponents on BdcPageState {
   Widget _buildFullscreenImmersiveInputMode() {
@@ -2114,5 +2114,185 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
+
+
+
+  SizedBox spellExerciseTextField(String wordSpell) {
+    TextStyle textStyle =
+        const TextStyle(fontSize: 16, fontWeight: FontWeight.bold);
+    double width = Util.getTextWidth(wordSpell, textStyle);
+    return SizedBox(
+      width: width * 1.3,
+      height: 26,
+      child: TextField(
+        textAlign: TextAlign.center,
+        controller: _wordWrapper!.spellController,
+        focusNode: _wordWrapper!.focusNode,
+        autofocus: true,
+        // 仅保留下边框样式（听音选意模式专用）
+        decoration: InputDecoration(
+          isCollapsed: true,
+          border: const UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey),
+          ),
+          enabledBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Global.highlight),
+          ),
+          contentPadding: EdgeInsets.zero,
+        ),
+        keyboardType: TextInputType.visiblePassword,
+        maxLines: 1,
+        onChanged: (value) {
+          // 拼写正确，播放发音并关闭输入法
+          if (Util.equalsIgnoreCase(_word!.spell, value)) {
+            SoundUtil.playPronounceSound(_word!);
+            Util.closeIme();
+          }
+          updateUI(() {});
+        },
+        style: textStyle,
+      ),
+    );
+  }
+
+
+  Widget buildWordSoundButton(WordVo word, AudioPlayer audioPlayer) {
+    // 在拼写和音标显示的情况下使用小按钮
+    if (_studyStep == StudyStep.en2Ch.json) {
+      return Transform.translate(
+          offset: Offset(6.0, 1.0),
+          child: InkWell(
+            child: Row(
+              children: [
+                AnimatedBuilder(
+                  animation: _wordSoundController,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(_wordSoundController.value < 0.5 ? 0 : -2,
+                          0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
+                      child: Icon(
+                        _playingStates['word']!
+                            ? (_wordSoundController.value < 0.5
+                                ? Icons.volume_up
+                                : Icons.volume_down)
+                            : Icons.volume_up,
+                        color: _playingStates['word']!
+                            ? Colors.teal[300]
+                            : Colors.grey[500],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            onTap: () {
+              if (!_playingStates['word']!) {
+                _playWithAnimation(
+                    () => SoundUtil.playPronounceSound2(word, audioPlayer),
+                    'word');
+              }
+            },
+          ));
+    }
+
+    // 其他情况下使用中等大小的圆形按钮
+    return Container(
+      width: 48,
+      height: 48,
+      margin: const EdgeInsets.only(left: 8),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _playingStates['word']!
+            ? const Color(0xFF1A1A1A)
+            : Colors.grey[200],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            spreadRadius: 1,
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () {
+            if (!_playingStates['word']!) {
+              _playWithAnimation(
+                  () => SoundUtil.playPronounceSound2(word, audioPlayer),
+                  'word');
+            }
+          },
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _wordSoundController,
+              builder: (context, child) {
+                return Icon(
+                  _playingStates['word']!
+                      ? (_wordSoundController.value < 0.5
+                          ? Icons.volume_up
+                          : Icons.volume_down)
+                      : Icons.volume_up,
+                  color:
+                      _playingStates['word']! ? Colors.white : Colors.grey[600],
+                  size: 28,
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget buildSentenceSoundButton() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: context.watch<DarkMode>().isDarkMode
+            ? Colors.white.withValues(alpha: 0.08)
+            : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        child: AnimatedBuilder(
+          animation: _sentenceSoundController,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(_sentenceSoundController.value < 0.5 ? 0 : -2,
+                  0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
+              child: Icon(
+                _playingStates['sentence']!
+                    ? (_sentenceSoundController.value < 0.5
+                        ? Icons.volume_up
+                        : Icons.volume_down)
+                    : Icons.volume_up,
+                color: _playingStates['sentence']!
+                    ? Colors.teal[300]
+                    : Colors.grey[500],
+                size: 18,
+              ),
+            );
+          },
+        ),
+        onTap: () {
+          if (!_playingStates['sentence']! &&
+              _englishDigestOfFirstSentence != null) {
+            _playWithAnimation(
+                () => SoundUtil.playSentenceSound2(
+                    _englishDigestOfFirstSentence!, _audioPlayer),
+                'sentence');
+          }
+        },
+      ),
+    );
+  }
 
 }

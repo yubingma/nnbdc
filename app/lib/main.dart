@@ -15,7 +15,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/admin.dart';
 import 'package:nnbdc/page/ai_activation.dart';
 import 'package:nnbdc/page/ai_diagnostic.dart';
-import 'package:nnbdc/page/bdc.dart';
+import 'package:nnbdc/page/bdc/bdc.dart';
 import 'package:nnbdc/page/today_plan.dart';
 import 'package:nnbdc/page/farm.dart';
 import 'package:nnbdc/page/finish.dart';
