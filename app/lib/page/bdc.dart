@@ -1502,7 +1502,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
       if (oldScore != _currentScore) {
         setState(() {}); // 触发 UI 刷新以实时显示最新的发音评分（即使没通过也能让用户看到反馈分数变化）
       }
-      checkAsrResult(asrInput: processedResult);
+      checkAsrResult(asrInput: processedResult, isVoice: true);
     }
   }
 
@@ -1602,7 +1602,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     });
   }
 
-  checkAsrResult({String? asrInput}) async {
+  checkAsrResult({String? asrInput, bool isVoice = false}) async {
     if (asrInput != null) {
       _isUpdatingByHint = false;
     }
@@ -1627,9 +1627,10 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         _meaningFocusNode.hasFocus;
 
     // 如果输入框中的文本与正在处理的文本相同，则直接返回, 避免无谓的性能损耗
-    if (inputText != _handlingChinese) {
+    // 核心优化：如果是显式 ASR 输入（语音或手写），即使文本相同也允许继续，防止因之前的异步状态竞争导致“识别出正确文本但不跳转”的问题
+    if (asrInput != null || inputText != _handlingChinese) {
       Global.logger.d(
-          'BDC CHECK_ASR: Update _handlingChinese from "$_handlingChinese" to "$inputText"');
+          'BDC CHECK_ASR: Processing input. asrInput=$asrInput, inputText=$inputText, oldHandling=$_handlingChinese');
       _handlingChinese = inputText;
 
       // No setState here to prevent extreme UI repaints on every partial ASR result
@@ -1893,18 +1894,22 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           (asrInput ?? _meaningController.text).trim().toLowerCase();
       String correctSpell = _word!.spell.toLowerCase();
 
-      // 判定通过条件：
-      // 1. 精确拼写匹配（preprocessEnglish 已做过编辑距离/映射表救援）
-      // 2. 音素相似度达到阈值（兜底同音词场景，如 mail vs male）
-      bool isMatch = inputText == correctSpell;
+      // 判定逻辑：
+      // 1. 严格字母匹配（忽略特殊符号如 - ' 空格，但字母必须 100% 一致）
+      String filteredInput = inputText.replaceAll(RegExp(r'[^a-z]'), '');
+      String filteredTarget = correctSpell.replaceAll(RegExp(r'[^a-z]'), '');
+      bool isMatch = filteredInput == filteredTarget;
+
       Global.logger.d(
-          'BDC CHECK_ASR [ch2En]: inputText="$inputText", correctSpell="$correctSpell", basic_match=$isMatch, _currentScore=$_currentScore');
+          'BDC CHECK_ASR [ch2En]: filteredInput="$filteredInput", filteredTarget="$filteredTarget", isMatch=$isMatch, isVoice=$isVoice');
+
+      // 2. 只有语音输入才允许“音素相似度”兜底容错
       if (!isMatch &&
-          asrInput != null &&
+          isVoice &&
           _currentScore != null &&
           _currentScore! >= Constants.phonemeMatchThreshold) {
         Global.logger.d(
-            'Ch2En: 拼写不匹配("$inputText" != "$correctSpell")，但音素相似度($_currentScore)达到阈值(${Constants.phonemeMatchThreshold})，判定通过');
+            'Ch2En (Voice): 拼写不匹配，但音素相似度达到阈值，判定通过');
         isMatch = true;
       }
 
@@ -3769,7 +3774,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         }
                       }
                     },
-                    onRecognized: (text) {
+                    onRecognized: (text) async {
                       _isUpdatingByHint = false;
 
                       // 记录用户偏好：使用手写输入
@@ -3779,10 +3784,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
                         config.saveToCurrentUser();
                       }
 
-                      setState(() {
-                        _meaningController.text = text;
-                      });
-                      checkAsrResult();
+                      _meaningController.text = text;
+                      await checkAsrResult(asrInput: text, isVoice: false);
                     },
                     onCancel: () {
                       _meaningFocusNode.unfocus();
