@@ -27,7 +27,7 @@ extension BdcPageDialogs on BdcPage {
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(0.6),
+                    ?.withValues(alpha: 0.6),
               ),
             )
           : null,
@@ -80,7 +80,7 @@ extension BdcPageDialogs on BdcPage {
               .textTheme
               .bodySmall
               ?.color
-              ?.withOpacity(0.6),
+              ?.withValues(alpha: 0.6),
         ),
       ),
       trailing: PopupMenuButton<String>(
@@ -146,7 +146,7 @@ extension BdcPageDialogs on BdcPage {
               .textTheme
               .bodySmall
               ?.color
-              ?.withOpacity(0.6),
+              ?.withValues(alpha: 0.6),
         ),
       ),
       trailing: PopupMenuButton<String>(
@@ -216,7 +216,7 @@ extension BdcPageDialogs on BdcPage {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Global.highlight.withOpacity(0.1),
+                  color: Global.highlight.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(18),
                     topRight: Radius.circular(18),
@@ -263,8 +263,8 @@ extension BdcPageDialogs on BdcPage {
                             border: Border.all(
                                 color: Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.white.withOpacity(0.05)
-                                    : Colors.black.withOpacity(0.05),
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.05),
                                 width: 0.5),
                           ),
                           padding: const EdgeInsets.symmetric(
@@ -390,9 +390,9 @@ extension BdcPageDialogs on BdcPage {
                                         color: Theme.of(context).brightness ==
                                                 Brightness.dark
                                             ? Colors.white
-                                                .withOpacity(0.08)
+                                                .withValues(alpha: 0.08)
                                             : Colors.grey
-                                                .withOpacity(0.2),
+                                                .withValues(alpha: 0.2),
                                       ),
                                     items[i],
                                   ]
@@ -526,7 +526,7 @@ extension BdcPageDialogs on BdcPage {
               title: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Global.highlight.withOpacity(0.08),
+                  color: Global.highlight.withValues(alpha: 0.08),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(18),
                     topRight: Radius.circular(18),
@@ -573,8 +573,8 @@ extension BdcPageDialogs on BdcPage {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isDark
-                                ? Colors.white.withOpacity(0.08)
-                                : Colors.black.withOpacity(0.06),
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.06),
                           ),
                         ),
                         child: Padding(
@@ -1056,7 +1056,7 @@ extension BdcPageDialogs on BdcPage {
                   color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
           content: history.isEmpty
               ? Text('暂无记忆历史',
-                  style: TextStyle(color: textColor.withOpacity(0.6)))
+                  style: TextStyle(color: textColor.withValues(alpha: 0.6)))
               : SizedBox(
                   width: double.maxFinite,
                   child: ListView.builder(
@@ -1089,8 +1089,8 @@ extension BdcPageDialogs on BdcPage {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: isDarkMode
-                              ? Colors.white.withOpacity(0.03)
-                              : Colors.black.withOpacity(0.02),
+                              ? Colors.white.withValues(alpha: 0.03)
+                              : Colors.black.withValues(alpha: 0.02),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -1099,10 +1099,10 @@ extension BdcPageDialogs on BdcPage {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: ratingColor.withOpacity(0.1),
+                                color: ratingColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                    color: ratingColor.withOpacity(0.2)),
+                                    color: ratingColor.withValues(alpha: 0.2)),
                               ),
                               child: Text(
                                 rating.label,
@@ -1149,7 +1149,7 @@ extension BdcPageDialogs on BdcPage {
                                   Text(
                                     timeStr,
                                     style: TextStyle(
-                                        color: textColor.withOpacity(0.5),
+                                        color: textColor.withValues(alpha: 0.5),
                                         fontSize: 11),
                                   ),
                                 ],
@@ -1157,7 +1157,7 @@ extension BdcPageDialogs on BdcPage {
                             ),
                             Icon(Icons.chevron_right_rounded,
                                 size: 16,
-                                color: textColor.withOpacity(0.3)),
+                                color: textColor.withValues(alpha: 0.3)),
                           ],
                         ),
                       );
@@ -1293,7 +1293,7 @@ extension BdcPageDialogs on BdcPage {
                       ? Colors.green
                       : (isDark
                           ? Colors.white24
-                          : Colors.grey.withOpacity(0.3)),
+                          : Colors.grey.withValues(alpha: 0.3)),
                   borderRadius: mastered
                       ? BorderRadius.circular(2)
                       : BorderRadius.circular(6),
@@ -1314,8 +1314,8 @@ extension BdcPageDialogs on BdcPage {
               scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
               child: AlertDialog(
                 backgroundColor: isDark
-                    ? const Color(0xFF1E1E1E).withOpacity(0.85)
-                    : Colors.white.withOpacity(0.9),
+                    ? const Color(0xFF1E1E1E).withValues(alpha: 0.85)
+                    : Colors.white.withValues(alpha: 0.9),
                 elevation: 24,
                 shadowColor: Colors.black54,
                 shape: RoundedRectangleBorder(
@@ -1334,7 +1334,7 @@ extension BdcPageDialogs on BdcPage {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.blueAccent.withOpacity(0.2),
+                            color: Colors.blueAccent.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.analytics_outlined,
@@ -1401,7 +1401,7 @@ extension BdcPageDialogs on BdcPage {
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? Colors.white24
-                                    : Colors.grey.withOpacity(0.3),
+                                    : Colors.grey.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
                                     color: Colors.orange, width: 1.5),
@@ -1451,8 +1451,8 @@ extension BdcPageDialogs on BdcPage {
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? Colors.white.withOpacity(0.05)
-                                      : Colors.black.withOpacity(0.02),
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : Colors.black.withValues(alpha: 0.02),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: isCurrentBatch
@@ -1712,7 +1712,7 @@ extension BdcPageDialogs on BdcPage {
                   icon: const Icon(Icons.delete_outline),
                   label: const Text('删除图片'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.withOpacity(0.8),
+                    backgroundColor: Colors.red.withValues(alpha: 0.8),
                     foregroundColor: Colors.white,
                   ),
                 ),
