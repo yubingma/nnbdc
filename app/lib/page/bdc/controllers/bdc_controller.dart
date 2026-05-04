@@ -124,40 +124,6 @@ class BdcController extends GetxController with GetTickerProviderStateMixin {
 
   Global.logger.d('BdcController: Initializing with config - autoJump: $autoJumpAfterCorrect');
 
-    // When coming from 'before_bdc', show transition page while initializing ASR
-    final argsJson = GetStorage().read<String>("BdcPageArgs");
-    if (argsJson != null) {
-      final args = BdcPageArgs.fromJson(argsJson);
-      if (args.fromPage == 'before_bdc') {
-        dataLoaded.value = false;
-        _initAsrAndStart();
-        return;
-      }
-    }
-
-    getNextWord(false);
-  }
-
-  Future<void> _initAsrAndStart() async {
-    Global.logger.d('BdcController: Initializing ASR before starting...');
-    try {
-      // Initialize ASR by calling initAsr with a temp listener
-      Asr().initAsr((event) {});
-
-      // Wait for ASR to be ready (max 2 seconds)
-      for (int i = 0; i < 20; i++) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        if (Asr().state == AsrState.initialized || Asr().state == AsrState.started) {
-          Global.logger.d('BdcController: ASR initialized after waiting');
-          break;
-        }
-      }
-    } catch (e) {
-      Global.logger.w('BdcController: ASR init failed, continuing anyway: $e');
-    }
-
-    dataLoaded.value = true;
-    _initAsrListener();
     getNextWord(false);
   }
 
