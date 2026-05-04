@@ -16,6 +16,7 @@ import 'package:nnbdc/page/admin.dart';
 import 'package:nnbdc/page/ai_activation.dart';
 import 'package:nnbdc/page/ai_diagnostic.dart';
 import 'package:nnbdc/page/bdc/bdc.dart';
+import 'package:nnbdc/page/bdc/bdc_binding.dart';
 import 'package:nnbdc/page/today_plan.dart';
 import 'package:nnbdc/page/farm.dart';
 import 'package:nnbdc/page/finish.dart';
@@ -455,52 +456,62 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: themeData,
       initialRoute: '/first',
-      routes: {
-        '/test': (context) => TestPage(),
-        '/first': (context) => const FirstPage(),
-        '/login': (context) => const LoginPage(),
-        '/email_login': (context) => const EmailLoginPage(),
-        '/index': (context) => const IndexPage(),
-        '/protocol': (context) => const ProtocolPage(),
-        '/privacy': (context) => const PrivacyPage(),
-        '/pic_search': (context) => const PicSearchPage(),
-        '/select_book': (context) {
-          // 添加延迟加载以避免黑屏
-          Future.microtask(() {
-            // 确保页面过渡动画完成后再进行复杂的数据加载
-            Future.delayed(const Duration(milliseconds: 100), () {
-              Api.loadingService.init(); // 确保加载服务已初始化
+      getPages: [
+        GetPage(name: '/test', page: () => TestPage()),
+        GetPage(name: '/first', page: () => const FirstPage()),
+        GetPage(name: '/login', page: () => const LoginPage()),
+        GetPage(name: '/email_login', page: () => const EmailLoginPage()),
+        GetPage(name: '/index', page: () => const IndexPage()),
+        GetPage(name: '/protocol', page: () => const ProtocolPage()),
+        GetPage(name: '/privacy', page: () => const PrivacyPage()),
+        GetPage(name: '/pic_search', page: () => const PicSearchPage()),
+        GetPage(
+          name: '/select_book',
+          page: () {
+            // 添加延迟加载以避免黑屏
+            Future.microtask(() {
+              // 确保页面过渡动画完成后再进行复杂的数据加载
+              Future.delayed(const Duration(milliseconds: 100), () {
+                Api.loadingService.init(); // 确保加载服务已初始化
+              });
             });
-          });
-          return const SelectBookPage();
-        },
-        '/before_bdc': (context) {
-          // 添加延迟加载以避免黑屏
-          Future.microtask(() {
-            // 确保页面过渡动画完成后再进行复杂的数据加载
-            Future.delayed(const Duration(milliseconds: 100), () {
-              Api.loadingService.init(); // 确保加载服务已初始化
+            return const SelectBookPage();
+          },
+        ),
+        GetPage(
+          name: '/before_bdc',
+          page: () {
+            // 添加延迟加载以避免黑屏
+            Future.microtask(() {
+              // 确保页面过渡动画完成后再进行复杂的数据加载
+              Future.delayed(const Duration(milliseconds: 100), () {
+                Api.loadingService.init(); // 确保加载服务已初始化
+              });
             });
-          });
-          return const TodayPlanPage();
-        },
-        '/word_list': (context) => const WordListPage(),
-        '/walkman': (context) => const WalkmanPage(),
-        '/game': (context) => const GamePage(),
-        '/russia': (context) => const RussiaPage(),
-        '/word_detail': (context) => const WordDetailPage(),
-        '/bdc': (context) => const BdcPage(),
-        '/finish': (context) => const FinishPage(),
-        '/farm': (context) => const FarmPage(),
-        '/word_lists': (context) => const WordListsPage(),
-        '/msg': (context) => const MsgPage(),
-        '/search': (context) => const SearchPage(),
-        '/admin': (context) => const AdminPage(),
-        '/ai_activation': (context) => const AiActivationPage(),
-        '/ai_diagnostic': (context) => const AiDiagnosticPage(),
-        '/golden_master': (context) => const GoldenMasterToolPage(),
-        '/study_stats': (context) => const StudyStatsPage(),
-      },
+            return const TodayPlanPage();
+          },
+        ),
+        GetPage(name: '/word_list', page: () => const WordListPage()),
+        GetPage(name: '/walkman', page: () => const WalkmanPage()),
+        GetPage(name: '/game', page: () => const GamePage()),
+        GetPage(name: '/russia', page: () => const RussiaPage()),
+        GetPage(name: '/word_detail', page: () => const WordDetailPage()),
+        GetPage(
+          name: '/bdc',
+          page: () => const BdcPage(),
+          binding: BdcBinding(),
+        ),
+        GetPage(name: '/finish', page: () => const FinishPage()),
+        GetPage(name: '/farm', page: () => const FarmPage()),
+        GetPage(name: '/word_lists', page: () => const WordListsPage()),
+        GetPage(name: '/msg', page: () => const MsgPage()),
+        GetPage(name: '/search', page: () => const SearchPage()),
+        GetPage(name: '/admin', page: () => const AdminPage()),
+        GetPage(name: '/ai_activation', page: () => const AiActivationPage()),
+        GetPage(name: '/ai_diagnostic', page: () => const AiDiagnosticPage()),
+        GetPage(name: '/golden_master', page: () => const GoldenMasterToolPage()),
+        GetPage(name: '/study_stats', page: () => const StudyStatsPage()),
+      ],
     );
   }
 }

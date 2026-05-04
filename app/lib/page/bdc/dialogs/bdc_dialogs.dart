@@ -1,7 +1,7 @@
 part of '../bdc.dart';
 
-extension BdcPageStateDialogs on BdcPageState {
-  Widget _buildSettingItem(String title, bool value, Function(bool) onChanged,
+extension BdcPageDialogs on BdcPage {
+  Widget _buildSettingItem(BuildContext context, String title, bool value, Function(bool) onChanged,
       {Widget? customTrailing, String? subtitle}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -27,7 +27,7 @@ extension BdcPageStateDialogs on BdcPageState {
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withValues(alpha: 0.6),
+                    ?.withOpacity(0.6),
               ),
             )
           : null,
@@ -51,8 +51,7 @@ extension BdcPageStateDialogs on BdcPageState {
   }
 
 
-  Widget _buildDistractorStrategySelector(
-      String currentValue, Function(String) onChanged) {
+  Widget _buildDistractorStrategySelector(BuildContext context, String currentValue, Function(String) onChanged) {
     const Map<String, String> options = {
       'RecentlyLearned': '最近学习的单词',
       'ShapeSimilar': '形近词',
@@ -81,7 +80,7 @@ extension BdcPageStateDialogs on BdcPageState {
               .textTheme
               .bodySmall
               ?.color
-              ?.withValues(alpha: 0.6),
+              ?.withOpacity(0.6),
         ),
       ),
       trailing: PopupMenuButton<String>(
@@ -117,8 +116,7 @@ extension BdcPageStateDialogs on BdcPageState {
   }
 
 
-  Widget _buildAsrPassRuleSelector(
-      String currentValue, Function(String) onChanged) {
+  Widget _buildAsrPassRuleSelector(BuildContext context, String currentValue, Function(String) onChanged) {
     const Map<String, String> options = {
       'ONE': '说出一个意思即可',
       'HALF': '说出半数意思',
@@ -148,7 +146,7 @@ extension BdcPageStateDialogs on BdcPageState {
               .textTheme
               .bodySmall
               ?.color
-              ?.withValues(alpha: 0.6),
+              ?.withOpacity(0.6),
         ),
       ),
       trailing: PopupMenuButton<String>(
@@ -184,7 +182,7 @@ extension BdcPageStateDialogs on BdcPageState {
   }
 
 
-  Future<void> showSettingDlg() async {
+  Future<void> showSettingDlg(BuildContext context) async {
     // 在StatefulBuilder外部初始化本地状态
     var currentUser = Global.getLoggedInUser();
     var studyConfig = StudyConfig.fromCurrentUser();
@@ -198,7 +196,7 @@ extension BdcPageStateDialogs on BdcPageState {
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
     var localDistractorStrategy = studyConfig.distractorStrategy;
 
-    if (!mounted) return;
+    if (controller.isClosed) return;
 
     bool? choice = await showDialog<bool>(
         barrierDismissible: false,
@@ -218,7 +216,7 @@ extension BdcPageStateDialogs on BdcPageState {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Global.highlight.withValues(alpha: 0.1),
+                  color: Global.highlight.withOpacity(0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(18),
                     topRight: Radius.circular(18),
@@ -265,8 +263,8 @@ extension BdcPageStateDialogs on BdcPageState {
                             border: Border.all(
                                 color: Theme.of(context).brightness ==
                                         Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.05)
-                                    : Colors.black.withValues(alpha: 0.05),
+                                    ? Colors.white.withOpacity(0.05)
+                                    : Colors.black.withOpacity(0.05),
                                 width: 0.5),
                           ),
                           padding: const EdgeInsets.symmetric(
@@ -274,12 +272,11 @@ extension BdcPageStateDialogs on BdcPageState {
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               final List<Widget> items = [
-                                _buildSettingItem(
-                                  '深色模式',
-                                  _isDarkMode,
+                                _buildSettingItem(context, '深色模式',
+                                  controller.isDarkMode.value,
                                   (value) {
                                     setState(() {
-                                      _isDarkMode = value;
+                                      controller.isDarkMode.value = value;
                                     });
                                     MyDatabase.instance.localParamsDao
                                         .saveIsDarkMode(value);
@@ -293,10 +290,10 @@ extension BdcPageStateDialogs on BdcPageState {
                                       scale: 1.8,
                                       alignment: Alignment.centerRight,
                                       child: DayNightSwitcherIcon(
-                                        isDarkModeEnabled: _isDarkMode,
+                                        isDarkModeEnabled: controller.isDarkMode.value,
                                         onStateChanged: (isDarkModeEnabled) {
                                           setState(() {
-                                            _isDarkMode = isDarkModeEnabled;
+                                            controller.isDarkMode.value = isDarkModeEnabled;
                                           });
                                           MyDatabase.instance.localParamsDao
                                               .saveIsDarkMode(
@@ -309,24 +306,21 @@ extension BdcPageStateDialogs on BdcPageState {
                                     ),
                                   ),
                                 ),
-                                _buildAsrPassRuleSelector(
-                                  localAsrPassRule,
+                                _buildAsrPassRuleSelector(context, localAsrPassRule,
                                   (value) {
                                     setState(() {
                                       localAsrPassRule = value;
                                     });
                                   },
                                 ),
-                                _buildDistractorStrategySelector(
-                                  localDistractorStrategy,
+                                _buildDistractorStrategySelector(context, localDistractorStrategy,
                                   (value) {
                                     setState(() {
                                       localDistractorStrategy = value;
                                     });
                                   },
                                 ),
-                                _buildSettingItem(
-                                  '自动播放单词发音',
+                                _buildSettingItem(context, '自动播放单词发音',
                                   localAutoPlayWord,
                                   (value) {
                                     setState(() {
@@ -334,8 +328,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(
-                                  '自动播放例句',
+                                _buildSettingItem(context, '自动播放例句',
                                   localAutoPlaySentence,
                                   (value) {
                                     setState(() {
@@ -343,8 +336,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(
-                                  '直接显示备选答案',
+                                _buildSettingItem(context, '直接显示备选答案',
                                   localShowAnswersDirectly,
                                   (value) {
                                     setState(() {
@@ -352,8 +344,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(
-                                  '备选答案含[都不对]选项',
+                                _buildSettingItem(context, '备选答案含[都不对]选项',
                                   localEnableAllWrong,
                                   (value) {
                                     setState(() {
@@ -361,8 +352,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(
-                                  '显示单词配图',
+                                _buildSettingItem(context, '显示单词配图',
                                   localEnableWordImage,
                                   (value) {
                                     setState(() {
@@ -370,8 +360,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(
-                                  '中英极速：答对后直接下一词',
+                                _buildSettingItem(context, '中英极速：答对后直接下一词',
                                   localAutoJumpAfterCorrectCh2En,
                                   (value) {
                                     setState(() {
@@ -379,8 +368,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(
-                                  '英中极速：答对后直接下一词',
+                                _buildSettingItem(context, '英中极速：答对后直接下一词',
                                   localAutoJumpAfterCorrectEn2Ch,
                                   (value) {
                                     setState(() {
@@ -402,9 +390,9 @@ extension BdcPageStateDialogs on BdcPageState {
                                         color: Theme.of(context).brightness ==
                                                 Brightness.dark
                                             ? Colors.white
-                                                .withValues(alpha: 0.08)
+                                                .withOpacity(0.08)
                                             : Colors.grey
-                                                .withValues(alpha: 0.2),
+                                                .withOpacity(0.2),
                                       ),
                                     items[i],
                                   ]
@@ -485,10 +473,10 @@ extension BdcPageStateDialogs on BdcPageState {
 
                           // 在异步操作后检查context是否仍然有效
                           if (context.mounted) {
-                            _asrPassRuleCache = localAsrPassRule;
-                            _autoJumpAfterCorrectCh2En =
+                            controller.asrPassRuleCache = localAsrPassRule;
+                            controller.autoJumpAfterCorrectCh2En =
                                 localAutoJumpAfterCorrectCh2En;
-                            _autoJumpAfterCorrectEn2Ch =
+                            controller.autoJumpAfterCorrectEn2Ch =
                                 localAutoJumpAfterCorrectEn2Ch;
                             Navigator.pop(context, true);
                           }
@@ -511,8 +499,8 @@ extension BdcPageStateDialogs on BdcPageState {
       // 设置已在确定按钮中保存，这里刷新界面
       try {
         // 刷新界面，以体现最新配置
-        await asr.stopAsr();
-        handleWord(_currentGetWordResult);
+        await Asr().stopAsr();
+        controller.handleWord(controller.currentGetWordResult.value!);
       } catch (e) {
         ToastUtil.error('刷新界面失败: $e');
       }
@@ -520,14 +508,14 @@ extension BdcPageStateDialogs on BdcPageState {
   }
 
 
-  Future<void> showErrorReportDlg() async {
-    errorReportController.text = '';
+  Future<void> showErrorReportDlg(BuildContext context) async {
+    controller.errorReportController.text = '';
     bool? choice = await showDialog<bool>(
         barrierDismissible: false,
         context: context,
         builder: (BuildContext context) {
           return StatefulBuilder(builder: (context, setState) {
-            final isDark = context.watch<DarkMode>().isDarkMode;
+            final isDark = controller.isDarkMode.value;
             return AlertDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -538,7 +526,7 @@ extension BdcPageStateDialogs on BdcPageState {
               title: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Global.highlight.withValues(alpha: 0.08),
+                  color: Global.highlight.withOpacity(0.08),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(18),
                     topRight: Radius.circular(18),
@@ -569,7 +557,7 @@ extension BdcPageStateDialogs on BdcPageState {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '请输入单词(${_word!.spell})的报错内容',
+                        '请输入单词(${controller.word.value!.spell})的报错内容',
                         textScaler: const TextScaler.linear(1.0),
                         style: const TextStyle(
                           fontFamily: "NotoSansSC",
@@ -585,14 +573,14 @@ extension BdcPageStateDialogs on BdcPageState {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isDark
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : Colors.black.withValues(alpha: 0.06),
+                                ? Colors.white.withOpacity(0.08)
+                                : Colors.black.withOpacity(0.06),
                           ),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: TextField(
-                            controller: errorReportController,
+                            controller: controller.errorReportController,
                             minLines: 4,
                             maxLines: 10,
                             decoration: const InputDecoration(
@@ -634,7 +622,7 @@ extension BdcPageStateDialogs on BdcPageState {
 
     if (choice ?? false) {
       var result = await UserBo()
-          .saveErrorReport(_word!.spell, errorReportController.text);
+          .saveErrorReport(controller.word.value!.spell, controller.errorReportController.text);
       if (result.success) {
         ToastUtil.info('报错成功！感谢你付出宝贵时间');
       } else {
@@ -659,7 +647,7 @@ extension BdcPageStateDialogs on BdcPageState {
         },
         pageBuilder: (context, animation, secondaryAnimation) {
           return StatefulBuilder(builder: (context, dialogSetState) {
-            voteFuture ??= wordImageHasBeenVoted(wordImage);
+            voteFuture ??= Future.value(controller.wordImageHasBeenVoted(wordImage));
             return Align(
               alignment: const Alignment(0, 0),
               child: Container(
@@ -670,7 +658,7 @@ extension BdcPageStateDialogs on BdcPageState {
                 margin: MediaQuery.of(context).viewInsets,
                 // 当软键盘弹出时，对话框自动上移
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                color: context.read<DarkMode>().isDarkMode
+                color: controller.isDarkMode.value
                     ? const Color(0xff333333)
                     : Colors.white,
                 child: SingleChildScrollView(
@@ -767,9 +755,9 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   createTime: now,
                                                   updateTime: now));
                                           wordImage.hand += 1;
-                                          _wordImageEdited = true;
+                                          controller.wordImageEdited = true;
                                           voteFuture = Future.value(true);
-                                          if (mounted) {
+                                          if (!controller.isClosed) {
                                             dialogSetState(() {});
                                           }
                                         } else {
@@ -821,9 +809,9 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   createTime: now,
                                                   updateTime: now));
                                           wordImage.foot += 1;
-                                          _wordImageEdited = true;
+                                          controller.wordImageEdited = true;
                                           voteFuture = Future.value(true);
-                                          if (mounted) {
+                                          if (!controller.isClosed) {
                                             dialogSetState(() {});
                                           }
                                         } else {
@@ -854,7 +842,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                 child: const Text('删除'),
                                 onPressed: () {
                                   // 先关闭对话框，再执行异步操作
-                                  resetHighlightedWordImg();
+                                  controller.resetHighlightedWordImg();
                                   Navigator.pop(context, false);
 
                                   // 然后执行异步删除操作
@@ -868,8 +856,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                       ToastUtil.error(result.msg!);
                                     }
 
-                                    if (mounted) {
-                                      reloadWord();
+                                    if (!controller.isClosed) {
+                                      controller.reloadWord();
                                     }
                                   });
                                 },
@@ -881,10 +869,10 @@ extension BdcPageStateDialogs on BdcPageState {
                               ),
                               child: const Text('关闭'),
                               onPressed: () {
-                                resetHighlightedWordImg();
+                                controller.resetHighlightedWordImg();
                                 Navigator.pop(context, false);
-                                if (_wordImageEdited) {
-                                  reloadWord();
+                                if (controller.wordImageEdited) {
+                                  controller.reloadWord();
                                 }
                               },
                             ),
@@ -901,21 +889,21 @@ extension BdcPageStateDialogs on BdcPageState {
   }
 
 
-  void _showRatingModifyDialog() {
+  void _showRatingModifyDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
-        String finalReason = _lastFsrsRatingReason ?? '';
+        String finalReason = controller.lastFsrsRatingReason.value ?? '';
         // 巩固环节中，只有当自动评分被限制（高于测评环节评分）时才显示提示
-        if (_currentGetWordResult != null &&
-            _currentGetWordResult!.stepIndex > 0 &&
-            _assessmentRating != null &&
-            _lastFsrsRating != null &&
-            _lastFsrsRating!.index > _assessmentRating!.index) {
+        if (controller.currentGetWordResult.value != null &&
+            controller.currentGetWordResult.value!.stepIndex > 0 &&
+            controller.assessmentRating.value != null &&
+            controller.lastFsrsRating.value != null &&
+            controller.lastFsrsRating.value!.index > controller.assessmentRating.value!.index) {
           if (finalReason.isNotEmpty) {
             finalReason += '\n';
           }
-          finalReason += '⚠️ 当前处于巩固环节，自动评分上限被限制为测评结果（${_assessmentRating!.label}）。';
+          finalReason += '⚠️ 当前处于巩固环节，自动评分上限被限制为测评结果（${controller.assessmentRating.value!.label}）。';
         }
         return AlertDialog(
           shape:
@@ -965,7 +953,7 @@ extension BdcPageStateDialogs on BdcPageState {
                         ),
                       ),
                     ),
-                    if (_lastFsrsRatingReason != null) ...[
+                    if (controller.lastFsrsRatingReason.value != null) ...[
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -999,7 +987,7 @@ extension BdcPageStateDialogs on BdcPageState {
               ),
               ...FsrsRating.values.map((rating) {
                 Color ratingColor;
-                final isDarkMode = context.read<DarkMode>().isDarkMode;
+                final isDarkMode = controller.isDarkMode.value;
                 switch (rating) {
                   case FsrsRating.again:
                     ratingColor = isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
@@ -1025,12 +1013,12 @@ extension BdcPageStateDialogs on BdcPageState {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  trailing: _lastFsrsRating == rating
+                  trailing: controller.lastFsrsRating.value == rating
                       ? Icon(Icons.check, color: ratingColor)
                       : null,
                   onTap: () {
                     Navigator.of(context).pop();
-                    _updateFsrsRating(rating);
+                    controller.updateFsrsRating(rating);
                   },
                 );
               }),
@@ -1044,71 +1032,20 @@ extension BdcPageStateDialogs on BdcPageState {
 
 
 
-  void _showErrorWidget(String errorMessage) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red[400]),
-            const SizedBox(width: 8),
-            const Text('出错了'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(errorMessage),
-              const SizedBox(height: 8),
-              const Text(
-                '您可以尝试重新加载或返回上一页。',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pop();
-            },
-            child: const Text('返回'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HealthCheckPage(autoStart: true),
-                ),
-              );
-            },
-            child: const Text('尝试修复'),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  void _showLearningHistoryDialog() async {
-    final wordId = _wordWrapper?.word.id;
+  void _showLearningHistoryDialog(BuildContext context) async {
+    final wordId = controller.wordWrapper.value?.word.id;
     if (wordId == null) return;
 
     final history = await MyDatabase.instance.learningLogsDao
         .getHistory(Global.getLoggedInUser()!.id, wordId);
 
-    if (!mounted) return;
+    if (controller.isClosed) return;
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
       builder: (context) {
-        final isDarkMode = context.watch<DarkMode>().isDarkMode;
+        final isDarkMode = controller.isDarkMode.value;
         final bgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
         final textColor = isDarkMode ? Colors.white70 : Colors.black87;
 
@@ -1119,7 +1056,7 @@ extension BdcPageStateDialogs on BdcPageState {
                   color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
           content: history.isEmpty
               ? Text('暂无记忆历史',
-                  style: TextStyle(color: textColor.withValues(alpha: 0.6)))
+                  style: TextStyle(color: textColor.withOpacity(0.6)))
               : SizedBox(
                   width: double.maxFinite,
                   child: ListView.builder(
@@ -1152,8 +1089,8 @@ extension BdcPageStateDialogs on BdcPageState {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.03)
-                              : Colors.black.withValues(alpha: 0.02),
+                              ? Colors.white.withOpacity(0.03)
+                              : Colors.black.withOpacity(0.02),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -1162,10 +1099,10 @@ extension BdcPageStateDialogs on BdcPageState {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: ratingColor.withValues(alpha: 0.1),
+                                color: ratingColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                    color: ratingColor.withValues(alpha: 0.2)),
+                                    color: ratingColor.withOpacity(0.2)),
                               ),
                               child: Text(
                                 rating.label,
@@ -1212,7 +1149,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                   Text(
                                     timeStr,
                                     style: TextStyle(
-                                        color: textColor.withValues(alpha: 0.5),
+                                        color: textColor.withOpacity(0.5),
                                         fontSize: 11),
                                   ),
                                 ],
@@ -1220,7 +1157,7 @@ extension BdcPageStateDialogs on BdcPageState {
                             ),
                             Icon(Icons.chevron_right_rounded,
                                 size: 16,
-                                color: textColor.withValues(alpha: 0.3)),
+                                color: textColor.withOpacity(0.3)),
                           ],
                         ),
                       );
@@ -1241,13 +1178,13 @@ extension BdcPageStateDialogs on BdcPageState {
   }
 
 
-  void _showDebugOverlay() async {
+  void _showDebugOverlay(BuildContext context) async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
     // 获取今日所有学习单词及其状态
     final words = await LearningService.getTodayLearningWordsFromDb(user.id);
-    final activeSteps = activeUserStudySteps;
+    final activeSteps = controller.activeUserStudySteps;
 
     // 获取用户已掌握的单词 ID 集，用于准确反映调度状态
     final masteredWords = await MyDatabase.instance.masteredWordsDao
@@ -1276,7 +1213,7 @@ extension BdcPageStateDialogs on BdcPageState {
       }
     }
 
-    if (!mounted) return;
+    if (controller.isClosed) return;
 
     // 分批次并按照学习序号排序
     words.sort((a, b) {
@@ -1311,7 +1248,7 @@ extension BdcPageStateDialogs on BdcPageState {
 
     String? nextWordId;
     int? nextStepIndex;
-    String? currentWordId = _currentGetWordResult?.learningWord?.word.id;
+    String? currentWordId = controller.currentGetWordResult.value?.learningWord?.word.id;
 
     if (pendingCells.isNotEmpty) {
       int currentIndex = -1;
@@ -1329,6 +1266,8 @@ extension BdcPageStateDialogs on BdcPageState {
       }
     }
 
+    if (!context.mounted) return;
+
     showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -1338,7 +1277,7 @@ extension BdcPageStateDialogs on BdcPageState {
         return const SizedBox.shrink();
       },
       transitionBuilder: (context, anim1, anim2, child) {
-        final bool isDark = context.watch<DarkMode>().isDarkMode;
+        final bool isDark = controller.isDarkMode.value;
         final Color textColor = isDark ? Colors.white : Colors.black87;
         final Color subTextColor = isDark ? Colors.white70 : Colors.black54;
 
@@ -1354,7 +1293,7 @@ extension BdcPageStateDialogs on BdcPageState {
                       ? Colors.green
                       : (isDark
                           ? Colors.white24
-                          : Colors.grey.withValues(alpha: 0.3)),
+                          : Colors.grey.withOpacity(0.3)),
                   borderRadius: mastered
                       ? BorderRadius.circular(2)
                       : BorderRadius.circular(6),
@@ -1375,8 +1314,8 @@ extension BdcPageStateDialogs on BdcPageState {
               scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
               child: AlertDialog(
                 backgroundColor: isDark
-                    ? const Color(0xFF1E1E1E).withValues(alpha: 0.85)
-                    : Colors.white.withValues(alpha: 0.9),
+                    ? const Color(0xFF1E1E1E).withOpacity(0.85)
+                    : Colors.white.withOpacity(0.9),
                 elevation: 24,
                 shadowColor: Colors.black54,
                 shape: RoundedRectangleBorder(
@@ -1395,7 +1334,7 @@ extension BdcPageStateDialogs on BdcPageState {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.blueAccent.withValues(alpha: 0.2),
+                            color: Colors.blueAccent.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.analytics_outlined,
@@ -1462,7 +1401,7 @@ extension BdcPageStateDialogs on BdcPageState {
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? Colors.white24
-                                    : Colors.grey.withValues(alpha: 0.3),
+                                    : Colors.grey.withOpacity(0.3),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
                                     color: Colors.orange, width: 1.5),
@@ -1512,8 +1451,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? Colors.white.withValues(alpha: 0.05)
-                                      : Colors.black.withValues(alpha: 0.02),
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.02),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: isCurrentBatch
@@ -1549,7 +1488,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                       60), // Space for step names
                                               ...batchWords.map((w) {
                                                 final isCurrentWord =
-                                                    _currentGetWordResult
+                                                    controller.currentGetWordResult.value
                                                             ?.learningWord
                                                             ?.word
                                                             .id ==
@@ -1613,7 +1552,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   SizedBox(
                                                     width: 60,
                                                     child: Text(
-                                                      '${sIndex + 1}: ${stepInfo.studyStep}',
+                                                      '${sIndex + 1}: $stepInfo',
                                                       style: TextStyle(
                                                           fontSize: 10,
                                                           color: subTextColor),
@@ -1625,7 +1564,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   ...batchWords.map((w) {
                                                     // Is the user learning this exact word in this exact step right now?
                                                     final isCurrentStep =
-                                                        _currentGetWordResult
+                                                        controller.currentGetWordResult.value
                                                                     ?.learningWord
                                                                     ?.word
                                                                     .id ==
@@ -1734,4 +1673,53 @@ extension BdcPageStateDialogs on BdcPageState {
     );
   }
 
+  void showImagePreviewWithContext(BuildContext context, WordImageVo image, {VoidCallback? onDeleted}) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(image.imageFile),
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
+            ),
+            if (onDeleted != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onDeleted();
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('删除图片'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.withOpacity(0.8),
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

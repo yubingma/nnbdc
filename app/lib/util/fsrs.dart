@@ -116,4 +116,28 @@ class FSRSItem {
     required this.lapses,
     required this.state,
   });
+
+  factory FSRSItem.fromMap(Map<String, dynamic> map) {
+    return FSRSItem(
+      stability: (map['stability'] as num).toDouble(),
+      difficulty: (map['difficulty'] as num).toDouble(),
+      elapsedDays: (map['elapsedDays'] as num).toInt(),
+      scheduledDays: (map['scheduledDays'] as num).toInt(),
+      reps: (map['reps'] as num).toInt(),
+      lapses: (map['lapses'] as num).toInt(),
+      state: FsrsStateExt.fromInt(map['state'] as int?),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'stability': stability,
+      'difficulty': difficulty,
+      'elapsedDays': elapsedDays,
+      'scheduledDays': scheduledDays,
+      'reps': reps,
+      'lapses': lapses,
+      'state': state.value,
+    };
+  }
 }

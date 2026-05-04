@@ -168,12 +168,12 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                         const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     decoration: BoxDecoration(
                       color: (widget.score ?? 0) >= 60
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : Colors.orange.withValues(alpha: 0.1),
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.orange.withOpacity(0.1),
                       border: Border.all(
                         color: (widget.score ?? 0) >= 60
-                            ? Colors.green.withValues(alpha: 0.5)
-                            : Colors.orange.withValues(alpha: 0.5),
+                            ? Colors.green.withOpacity(0.5)
+                            : Colors.orange.withOpacity(0.5),
                         width: 1,
                       ),
                     ),

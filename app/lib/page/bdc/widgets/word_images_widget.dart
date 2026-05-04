@@ -96,13 +96,21 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
                             errorBuilder: (context, error, stackTrace) {
                               Global.logger.e('图片加载失败 [做题区]: $imageUrl', error: error);
                               // 图片加载失败，显示错误图标，不尝试解码
-                              return const Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Colors.red,
-                                  size: 24,
-                                ),
-                              );
+                              return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                        color: Colors.grey.withValues(alpha: 0.2)),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.red,
+                                      size: 24,
+                                    ),
+                                  ),
+                                );
                             },
                           );
                         }

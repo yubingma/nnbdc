@@ -1,11 +1,11 @@
 part of '../bdc.dart';
 
-extension BdcPageStateUIComponents on BdcPageState {
-  Widget _buildFullscreenImmersiveInputMode() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+extension BdcPageUIComponents on BdcPage {
+  Widget _buildFullscreenImmersiveInputMode(BuildContext context) {
+    final isDarkMode = controller.isDarkMode.value;
 
     // 获取合并后的所有释义项
-    final meaningItems = _word?.getMergedMeaningItems() ?? [];
+    final meaningItems = controller.word.value?.getMergedMeaningItems() ?? [];
     final combinedMeaning = meaningItems
         .map((m) => "${m.ciXing ?? ''} ${m.meaning ?? ''}")
         .join("; ");
@@ -26,8 +26,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                     useBoxDecoration: false, // 隐藏内部背景和圆角，直接使用外层背景
                     onStartWriting: () {
                       // 一旦用户开始手写，立即收起键盘
-                      if (_meaningFocusNode.hasFocus) {
-                        _meaningFocusNode.unfocus();
+                      if (controller.meaningFocusNode.hasFocus) {
+                        controller.meaningFocusNode.unfocus();
                         // 同时记录偏好：既然开始了手写，下次默认就不弹出键盘了
                         final config = StudyConfig.fromCurrentUser();
                         if (config.preferKeyboardInSpelling) {
@@ -37,7 +37,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       }
                     },
                     onRecognized: (text) async {
-                      _isUpdatingByHint = false;
+                      controller.isUpdatingByHint.value = false;
 
                       // 记录用户偏好：使用手写输入
                       final config = StudyConfig.fromCurrentUser();
@@ -46,15 +46,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                         config.saveToCurrentUser();
                       }
 
-                      _meaningController.text = text;
-                      await checkAsrResult(asrInput: text, isVoice: false);
+                      controller.meaningController.text = text;
+                      await controller.checkAsrResult(asrInput: text, isVoice: false);
                     },
                     onCancel: () {
-                      _meaningFocusNode.unfocus();
-                      updateUI(() {
-                        _showHandwritingBoard = false;
-                      });
-                      _doHandleTabChangeForAsr();
+                      controller.meaningFocusNode.unfocus();
+                      controller.showHandwritingBoard.value = false;
+                      controller.update();
+                      controller.handleTabChangeForAsr();
                     },
                   ),
                 ),
@@ -116,29 +115,28 @@ extension BdcPageStateUIComponents on BdcPageState {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Tooltip(
-                              message: _autoJumpAfterCorrect ? '极速模式：答对自动跳到下一词' : '极速模式：已关闭 (答对留在此词)',
+                              message: controller.autoJumpAfterCorrect ? '极速模式：答对自动跳到下一词' : '极速模式：已关闭 (答对留在此词)',
                               triggerMode: TooltipTriggerMode.tap,
                               child: IconButton(
                                 icon: Icon(
-                                  _autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,
-                                  color: _autoJumpAfterCorrect
+                                  controller.autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,
+                                  color: controller.autoJumpAfterCorrect
                                       ? Colors.amber
                                       : (isDarkMode ? Colors.white38 : Colors.black38),
                                   size: 20,
                                 ),
                                 onPressed: () async {
-                                  updateUI(() {
-                                    _autoJumpAfterCorrect = !_autoJumpAfterCorrect;
-                                  });
-                                  ToastUtil.info(_autoJumpAfterCorrect 
+                                  controller.autoJumpAfterCorrect = !controller.autoJumpAfterCorrect;
+                                  controller.update();
+                                  ToastUtil.info(controller.autoJumpAfterCorrect 
                                     ? '极速模式：答对自动跳到下一个单词' 
                                     : '极速模式已关闭：答对后留在当前单词');
                                   
                                   final config = StudyConfig.fromCurrentUser();
-                                  if (_studyStep == StudyStep.ch2En.json) {
-                                    config.autoJumpAfterCorrectCh2En = _autoJumpAfterCorrect;
+                                  if (controller.studyStep.value == StudyStep.ch2En.json) {
+                                    config.autoJumpAfterCorrectCh2En = controller.autoJumpAfterCorrect;
                                   } else {
-                                    config.autoJumpAfterCorrectEn2Ch = _autoJumpAfterCorrect;
+                                    config.autoJumpAfterCorrectEn2Ch = controller.autoJumpAfterCorrect;
                                   }
                                   await config.saveToCurrentUser();
                                 },
@@ -147,11 +145,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                             IconButton(
                               icon: const Icon(Icons.close),
                               onPressed: () {
-                                _meaningFocusNode.unfocus();
-                                updateUI(() {
-                                  _showHandwritingBoard = false;
-                                });
-                                _doHandleTabChangeForAsr();
+                                controller.meaningFocusNode.unfocus();
+                                controller.showHandwritingBoard.value = false;
+                                controller.update();
+                                controller.handleTabChangeForAsr();
                               },
                             ),
                           ],
@@ -183,8 +180,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                   children: [
                     Expanded(
                       child: TextField(
-                        controller: _meaningController,
-                        focusNode: _meaningFocusNode,
+                        controller: controller.meaningController,
+                        focusNode: controller.meaningFocusNode,
                         autofocus: StudyConfig.fromCurrentUser().preferKeyboardInSpelling,
                         keyboardType: TextInputType.visiblePassword,
                         autocorrect: false,
@@ -206,29 +203,28 @@ extension BdcPageStateUIComponents on BdcPageState {
                         ),
                         textInputAction: TextInputAction.done,
                         onChanged: (value) {
-                          _isUpdatingByHint = false;
-                          updateUI(() {});
-                          if (value.isNotEmpty && _word?.spell != null) {
-                            if (Util.equalsIgnoreCase(value, _word!.spell)) {
-                              checkAsrResult();
+                          controller.isUpdatingByHint.value = false;
+                          controller.update();
+                          if (value.isNotEmpty && controller.word.value?.spell != null) {
+                            if (Util.equalsIgnoreCase(value, controller.word.value!.spell)) {
+                              controller.checkAsrResult();
                             }
                           }
                         },
                         onSubmitted: (value) {
-                          _meaningFocusNode.unfocus();
-                          checkAsrResult();
+                          controller.meaningFocusNode.unfocus();
+                          controller.checkAsrResult();
                         },
                       ),
                     ),
                     IconButton(
                       icon: Icon(Icons.lightbulb_outline, color: AppTheme.primaryColor),
                       onPressed: () {
-                        updateUI(() {
-                          _isUpdatingByHint = true;
-                          _meaningController.text = _word?.spell ?? "";
-                          _isUpdatingByHint = false;
-                        });
-                        checkAsrResult();
+                        controller.isUpdatingByHint.value = true;
+                        controller.meaningController.text = controller.word.value?.spell ?? "";
+                        controller.isUpdatingByHint.value = false;
+                        controller.update();
+                        controller.checkAsrResult();
                       },
                     ),
                   ],
@@ -254,10 +250,10 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildQuestionContent() {
+  Widget _buildQuestionContent(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: controller.isDarkMode.value
             ? const Color(0xFF1E1E1E)
             : const Color(0xFFF8F9FA),
         borderRadius: const BorderRadius.only(
@@ -268,14 +264,14 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
         boxShadow: [
           BoxShadow(
-            color: context.watch<DarkMode>().isDarkMode
+            color: controller.isDarkMode.value
                 ? Colors.black.withValues(alpha: 0.4)
                 : Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
         ],
-        border: _showBorders
+        border: controller.showBorders.value
             ? Border.all(
                 color: const Color.fromARGB(255, 11, 118, 3),
                 width: 10,
@@ -284,9 +280,9 @@ extension BdcPageStateUIComponents on BdcPageState {
       ),
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
-            BdcPageState.leftPadding,
+            BdcPage.leftPadding,
             0,
-            BdcPageState.rightPadding,
+            BdcPage.rightPadding,
             max(
                 kTextTabBarHeight + 6.0,
                 MediaQuery.of(context).viewPadding.bottom +
@@ -294,16 +290,16 @@ extension BdcPageStateUIComponents on BdcPageState {
         child: Column(
           children: [
             // 英→中模式整合卡片
-            if (_studyStep == StudyStep.en2Ch.json &&
-                _currentGetWordResult?.learningWord?.word != null)
-              _buildWordStepCard(),
+            if (controller.studyStep.value == StudyStep.en2Ch.json &&
+                controller.currentGetWordResult.value?.learningWord?.word != null)
+              _buildWordStepCard(context),
             // 中→英模式整合卡片
-            if (_studyStep == StudyStep.ch2En.json &&
-                _currentGetWordResult?.learningWord?.word != null)
-              _buildMeaningStepCard(),
+            if (controller.studyStep.value == StudyStep.ch2En.json &&
+                controller.currentGetWordResult.value?.learningWord?.word != null)
+              _buildMeaningStepCard(context),
 
-            _buildPhoneticRow(),
-            _buildFirstSentenceRow(),
+            _buildPhoneticRow(context),
+            _buildFirstSentenceRow(context),
           ],
         ),
       ),
@@ -311,29 +307,25 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(BuildContext context) {
     // 确保 TabController 的长度与 tabs 数量匹配
-    // 如果 TabController 未初始化或其长度与 tabs 数量不匹配，则重新初始化
-    final currentTabsLength = _dynamicTabs.length;
-    if (_tabController == null || _tabController!.length != currentTabsLength) {
-      // 如果 TabController 还未初始化或长度不匹配，立即重新初始化
-      _reinitializeTabController();
-      // 如果重新初始化后仍然为 null（理论上不应该发生），返回空 widget
-      if (_tabController == null) {
-        return const SizedBox.shrink();
-      }
+    // 如果 TabController 的长度与 tabs 数量不匹配，则重新初始化
+    final currentTabsLength = controller.dynamicTabs.length;
+    if (controller.tabController.length != currentTabsLength) {
+      // 如果长度不匹配，立即重新初始化
+      controller.reinitializeTabController();
     }
 
     return Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: controller.isDarkMode.value
             ? const Color(0xFF1E1E1E)
             : const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(8),
       ),
       child: TabBar(
-        controller: _tabController,
-        indicatorColor: context.watch<DarkMode>().isDarkMode
+        controller: controller.tabController,
+        indicatorColor: controller.isDarkMode.value
             ? Colors.white
             : Colors.black,
         indicatorWeight: 2,
@@ -341,10 +333,10 @@ extension BdcPageStateUIComponents on BdcPageState {
         dividerHeight: 0,
         overlayColor: WidgetStateProperty.all(Colors.transparent),
         splashFactory: NoSplash.splashFactory,
-        labelColor: context.watch<DarkMode>().isDarkMode
+        labelColor: controller.isDarkMode.value
             ? Colors.white
             : Colors.black,
-        unselectedLabelColor: context.watch<DarkMode>().isDarkMode
+        unselectedLabelColor: controller.isDarkMode.value
             ? Colors.white54
             : Colors.grey.shade400,
         labelStyle: const TextStyle(
@@ -356,13 +348,13 @@ extension BdcPageStateUIComponents on BdcPageState {
           fontSize: 13,
           fontWeight: FontWeight.w400,
         ),
-        tabs: _dynamicTabs,
+        tabs: controller.dynamicTabs,
       ),
     );
   }
 
 
-  Widget _buildMainContent() {
+  Widget _buildMainContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -370,20 +362,20 @@ extension BdcPageStateUIComponents on BdcPageState {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            _progressBarTapCount++;
-            _progressBarTapTimer?.cancel();
+            controller.progressBarTapCount++;
+            controller.progressBarTapTimer?.cancel();
 
             // 添加震动反馈
             HapticFeedback.lightImpact();
 
-            if (_progressBarTapCount >= 5) {
-              _progressBarTapCount = 0;
-              _showDebugOverlay();
+            if (controller.progressBarTapCount >= 5) {
+              controller.progressBarTapCount = 0;
+              _showDebugOverlay(context);
             } else {
               // 提示还差几次
-              _progressBarTapTimer =
+              controller.progressBarTapTimer =
                   Timer(const Duration(milliseconds: 3000), () {
-                _progressBarTapCount = 0;
+                controller.progressBarTapCount = 0;
               });
             }
           },
@@ -397,21 +389,21 @@ extension BdcPageStateUIComponents on BdcPageState {
               width: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(1.5), // 从 3 改为 1.5
-                color: context.watch<DarkMode>().isDarkMode
+                color: controller.isDarkMode.value
                     ? const Color(0xFF2C2C2C)
                     : const Color(0xFFF0F2F5),
               ),
-              child: _currentGetWordResult?.progress != null
+              child: controller.currentGetWordResult.value?.progress != null
                   ? LayoutBuilder(
                       builder: (context, constraints) {
                         final maxValue =
-                            _currentGetWordResult!.progress![1].toDouble();
+                            controller.currentGetWordResult.value!.progress![1].toDouble();
                         final width = constraints.maxWidth;
 
                         // 计算批次颜色：从红色(0) -> 蓝色(0.5) -> 绿色(1.0) 渐变
                         // 根据白天/黑夜模式调整基础透明度
                         final bool isDarkMode =
-                            context.watch<DarkMode>().isDarkMode;
+                            controller.isDarkMode.value;
                         final double baseAlpha =
                             isDarkMode ? 0.25 : 0.15; // 黑夜模式稍明显一点，白天模式更淡
 
@@ -431,7 +423,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         }
 
                         // 计算批次数量（基于单词数量，每批次10个单词）
-                        final modeCount = activeUserStudySteps.length;
+                        final modeCount = controller.activeUserStudySteps.length;
 
                         // 【根本原因修复】检查 modeCount 和 maxValue 是否有效
                         // 如果学习步骤未配置或进度数据无效，不渲染进度条
@@ -446,7 +438,7 @@ extension BdcPageStateUIComponents on BdcPageState {
 
                         // 计算当前进度所在的批次索引
                         final currentProgress =
-                            _currentGetWordResult!.progress![0].toDouble();
+                            controller.currentGetWordResult.value!.progress![0].toDouble();
                         // 当前步进对应的单词索引
                         final currentWordIndex = min(
                             (currentProgress / modeCount).floor(),
@@ -541,7 +533,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
 
         // 顶部按钮
-        _buildTopButtonsRow(),
+        _buildTopButtonsRow(context),
         // 顶部按钮和题目区之间的间距
         const SizedBox(height: 8),
         // 题目区 - 使用flex=1
@@ -552,19 +544,19 @@ extension BdcPageStateUIComponents on BdcPageState {
             switchInCurve: Curves.fastOutSlowIn,
             switchOutCurve: Curves.fastOutSlowIn,
             transitionBuilder: (Widget child, Animation<double> animation) {
-              final isIncoming = child.key == ValueKey('word_card_${_word?.id}_$_historyIndex');
+              final isIncoming = child.key == ValueKey('word_card_${controller.word.value?.id}_$controller.historyIndex.value');
               
               // 模拟纸张揭起的复合动画
               return SlideTransition(
                 // 入场从侧方稍偏下的位置划入，出场向侧方稍偏上的位置滑出，模拟揭页的轨迹
                 position: Tween<Offset>(
-                  begin: isIncoming ? Offset(_slideDirection, 0.02) : Offset(-_slideDirection, -0.02),
+                  begin: isIncoming ? Offset(controller.slideDirectionValue, 0.02) : Offset(-controller.slideDirectionValue, -0.02),
                   end: Offset.zero,
                 ).animate(animation),
                 child: RotationTransition(
                   // 模拟纸张边角的轻微翘起旋转 (约 3-5 度)
                   turns: Tween<double>(
-                    begin: isIncoming ? _slideDirection * 0.015 : -_slideDirection * 0.01,
+                    begin: isIncoming ? controller.slideDirectionValue * 0.015 : -controller.slideDirectionValue * 0.01,
                     end: 0,
                   ).animate(animation),
                   child: ScaleTransition(
@@ -582,13 +574,13 @@ extension BdcPageStateUIComponents on BdcPageState {
               );
             },
             child: Container(
-              key: ValueKey('word_card_${_word?.id}_$_historyIndex'),
-              child: _buildQuestionContent(),
+              key: ValueKey('word_card_${controller.word.value?.id}_$controller.historyIndex.value'),
+              child: _buildQuestionContent(context),
             ),
           ),
         ),
         // 题目区和做题区之间的统一间距
-        SizedBox(height: BdcPageState._questionAnswerGap),
+        SizedBox(height: BdcPage.questionAnswerGap),
         // 做题区 - 使用flex=1
         Expanded(
           flex: 1,
@@ -596,37 +588,40 @@ extension BdcPageStateUIComponents on BdcPageState {
             // 做题区背景色 - 浅绿色调
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: _showBorders
+              border: controller.showBorders.value
                   ? Border.all(
                       color: Colors.blue,
                       width: 10,
                     )
                   : null,
             ),
-            padding: const EdgeInsets.fromLTRB(BdcPageState.leftPadding, 0, BdcPageState.rightPadding, 0),
-            child: (_showAnswerButtons ||
-                    _studyStep == StudyStep.en2Ch.json ||
-                    _studyStep == StudyStep.ch2En.json)
+            padding: const EdgeInsets.fromLTRB(BdcPage.leftPadding, 0, BdcPage.rightPadding, 0),
+            child: (controller.showAnswerButtons.value ||
+                    controller.studyStep.value == StudyStep.en2Ch.json ||
+                    controller.studyStep.value == StudyStep.ch2En.json)
                 ? Column(
                     children: [
-                      if (_studyStep == StudyStep.en2Ch.json ||
-                          _studyStep == StudyStep.ch2En.json) ...[
-                        _buildTabBar(),
+                      if (controller.studyStep.value == StudyStep.en2Ch.json ||
+                          controller.studyStep.value == StudyStep.ch2En.json) ...[
+                        _buildTabBar(context),
                         const SizedBox(height: 8),
                       ],
                       Expanded(
-                        child: (_studyStep == StudyStep.en2Ch.json ||
-                                _studyStep == StudyStep.ch2En.json)
+                        child: (controller.studyStep.value == StudyStep.en2Ch.json ||
+                                controller.studyStep.value == StudyStep.ch2En.json)
                             ? TabBarView(
-                                controller: _tabController,
+                                controller: controller.tabController,
                                 physics: const NeverScrollableScrollPhysics(),
-                                children: _dynamicTabBarViewChildren,
+                                children: [
+                                  _buildSpeakPanel(context),
+                                  _buildChoiceList(context),
+                                ],
                               )
                             : Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  _buildChoiceList(),
-                                  Expanded(child: _buildSpeakPanel()),
+                                  _buildChoiceList(context),
+                                  Expanded(child: _buildSpeakPanel(context)),
                                 ],
                               ),
                       ),
@@ -647,9 +642,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                       ],
                     ),
                     onTap: () {
-                      updateUI(() {
-                        _showAnswerButtons = true;
-                      });
+                      controller.showAnswerButtons.value = true;
+                      controller.update();
                     },
                   ),
           ),
@@ -659,22 +653,22 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildBottomButtons() {
+  Widget _buildBottomButtons(BuildContext context) {
     return Container(
-      key: _bottomButtonsKey,
+      key: controller.bottomButtonsKey,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // 对测评结果进行展示（即便在极速模式下也展示一下，方便用户看下评分情况）
-          _buildFsrsResultPanel(),
+          _buildFsrsResultPanel(context),
           Container(
             // 底部按钮区背景色 - 紫色调
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: _showBorders
+              border: controller.showBorders.value
                   ? Border.all(
-                      color: context.watch<DarkMode>().isDarkMode
+                      color: controller.isDarkMode.value
                           ? const Color(0xFF9C27B0) // 深色模式：紫色边框
                           : const Color(0xFF7B1FA2), // 浅色模式：深紫色边框
                       width: 2,
@@ -685,16 +679,16 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
+                if (controller.showAnswerButtons.value || controller.studyStep.value == StudyStep.en2Ch.json)
                   AbsorbPointer(
-                    absorbing: !_buttonsEnabled,
+                    absorbing: !controller.buttonsEnabled.value,
                     child: ElevatedButton(
                     key: const Key('bdc_not_know_btn'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: context.watch<DarkMode>().isDarkMode
+                      backgroundColor: controller.isDarkMode.value
                           ? Colors.white.withValues(alpha: 0.1)
                           : const Color(0xFFF5F5F5),
-                      foregroundColor: context.watch<DarkMode>().isDarkMode
+                      foregroundColor: controller.isDarkMode.value
                           ? Colors.white70
                           : const Color(0xFF666666),
                       elevation: 0,
@@ -703,22 +697,22 @@ extension BdcPageStateUIComponents on BdcPageState {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () => showWordDetail(_word, true,
+                    onPressed: () => controller.showWordDetail(controller.word.value!, true,
                         fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
                     child: const Text('不认识',
                         style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
                 ),
-                if (_showAnswerButtons || _studyStep == StudyStep.en2Ch.json)
+                if (controller.showAnswerButtons.value || controller.studyStep.value == StudyStep.en2Ch.json)
                   AbsorbPointer(
-                    absorbing: !_buttonsEnabled,
+                    absorbing: !controller.buttonsEnabled.value,
                     child: ElevatedButton(
                     key: const Key('bdc_study_again'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: context.watch<DarkMode>().isDarkMode
+                      backgroundColor: controller.isDarkMode.value
                           ? Colors.white.withValues(alpha: 0.1)
                           : const Color(0xFFF5F5F5),
-                      foregroundColor: context.watch<DarkMode>().isDarkMode
+                      foregroundColor: controller.isDarkMode.value
                           ? Colors.white70
                           : const Color(0xFF666666),
                       elevation: 0,
@@ -727,20 +721,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () => showWordDetail(_word, false,
+                    onPressed: () => controller.showWordDetail(controller.word.value!, false,
                         fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
                     child: const Text('再学学',
                         style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
                 ),
-                if (_canLeaveCurrWord)
+                if (controller.canLeaveCurrWord.value)
                   ElevatedButton(
                     key: const Key('bdc_next_word_btn'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: context.watch<DarkMode>().isDarkMode
+                      backgroundColor: controller.isDarkMode.value
                           ? Colors.white
                           : AppTheme.primaryColor,
-                      foregroundColor: context.watch<DarkMode>().isDarkMode
+                      foregroundColor: controller.isDarkMode.value
                           ? Colors.black
                           : Colors.white,
                       elevation: 0,
@@ -749,9 +743,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: _isGettingNextWord
+                    onPressed: controller.isGettingNextWord.value
                         ? null
-                        : () => getNextWord(true, fsrsRating: _lastFsrsRating),
+                        : () => controller.getNextWord(true, fsrsRating: controller.lastFsrsRating.value),
                     child: const Text('下一词',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
@@ -764,12 +758,12 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildTopActionButton({
+  Widget _buildTopActionButton(BuildContext context, {
     required IconData icon,
     String? label,
     required VoidCallback onTap,
   }) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = controller.isDarkMode.value;
 
     return Container(
       height: 32, // 恢复原高度
@@ -823,7 +817,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildTopButtonsRow() {
+  Widget _buildTopButtonsRow(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 0), // 完全移除顶部向上的 padding，让按钮更加贴着进度条
       child: Row(
@@ -834,12 +828,12 @@ extension BdcPageStateUIComponents on BdcPageState {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode
+              color: controller.isDarkMode.value
                   ? const Color(0xFF2C2C2C)
                   : const Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: context.watch<DarkMode>().isDarkMode
+                color: controller.isDarkMode.value
                     ? Colors.white10
                     : Colors.black.withValues(alpha: 0.05),
                 width: 1,
@@ -850,16 +844,16 @@ extension BdcPageStateUIComponents on BdcPageState {
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  if (_currentGetWordResult != null && _currentGetWordResult!.progress != null && _currentGetWordResult!.progress!.length >= 2) {
-                    final completed = _currentGetWordResult!.progress![0];
-                    final total = _currentGetWordResult!.progress![1];
+                  if (controller.currentGetWordResult.value != null && controller.currentGetWordResult.value!.progress != null && controller.currentGetWordResult.value!.progress!.length >= 2) {
+                    final completed = controller.currentGetWordResult.value!.progress![0];
+                    final total = controller.currentGetWordResult.value!.progress![1];
                     AnalyticsUtil.trackStudyQuitEarly(completed, total - completed);
                   }
                   Navigator.pop(context);
                 },
                 child: Icon(
                   Icons.arrow_back_ios_new,
-                  color: context.watch<DarkMode>().isDarkMode
+                  color: controller.isDarkMode.value
                       ? Colors.white70
                       : const Color(0xFF333333),
                   size: 18,
@@ -875,50 +869,44 @@ extension BdcPageStateUIComponents on BdcPageState {
               runSpacing: 4,
               children: [
                 // 上一个按钮
-                if (_historyIndex != -1)
-                  _buildTopActionButton(
-                    icon: Icons.arrow_forward,
+                if (controller.historyIndex.value != -1)
+                  _buildTopActionButton(context, icon: Icons.arrow_forward,
                     label: '返回',
-                    onTap: () => getNextWord(true, fsrsRating: _lastFsrsRating),
+                    onTap: () => controller.getNextWord(true, fsrsRating: controller.lastFsrsRating.value),
                   )
-                else if (_history.isNotEmpty)
-                  _buildTopActionButton(
-                    icon: Icons.skip_previous_outlined,
+                else if (controller.history.isNotEmpty)
+                  _buildTopActionButton(context, icon: Icons.skip_previous_outlined,
                     label: '回看',
-                    onTap: () => _goToPreviousWord(),
+                    onTap: () => controller.goToPreviousWord(),
                   ),
 
                 // 已掌握按钮
-                _buildTopActionButton(
-                  icon: Icons.check_circle_outline,
+                _buildTopActionButton(context, icon: Icons.check_circle_outline,
                   label: '掌握',
                   onTap: () {
-                    _hasFinishedAnswering = true;
-                    _isWordMastered = true;
-                    ToastUtil.info("不再学习 ${_word!.spell}");
-                    getNextWord(true);
+                    controller.hasFinishedAnswering.value = true;
+                    controller.isWordMastered.value = true;
+                    ToastUtil.info("不再学习 ${controller.word.value!.spell}");
+                    controller.getNextWord(true);
                   },
                 ),
 
                 // 编辑开关 - 仅在meaning模式下且非Web平台显示
 
                 // 报错按钮
-                _buildTopActionButton(
-                  icon: Icons.report_problem_outlined,
+                _buildTopActionButton(context, icon: Icons.report_problem_outlined,
                   label: '报错',
-                  onTap: () => showErrorReportDlg(),
+                  onTap: () => showErrorReportDlg(context),
                 ),
 
                 // 查词按钮
-                _buildTopActionButton(
-                  icon: Icons.search_rounded,
+                _buildTopActionButton(context, icon: Icons.search_rounded,
                   onTap: () => Get.toNamed('/search'),
                 ),
 
                 // 设置按钮
-                _buildTopActionButton(
-                  icon: Icons.settings_outlined,
-                  onTap: () => showSettingDlg(),
+                _buildTopActionButton(context, icon: Icons.settings_outlined,
+                  onTap: () => showSettingDlg(context),
                 ),
               ],
             ),
@@ -929,10 +917,10 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildAnswerContent(String text) {
+  Widget _buildAnswerContent(BuildContext context, String text) {
     if (text.isEmpty) return const SizedBox();
 
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = controller.isDarkMode.value;
     final lines = text.split('\n');
     List<Widget> widgets = [];
 
@@ -964,7 +952,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
                 ),
                 TextSpan(
-                  text: _hideAnswerLeakContent(meaning),
+                  text: controller.hideAnswerLeakContent(meaning),
                   style: TextStyle(
                     fontFamily: "NotoSansSC",
                     fontSize: 16,
@@ -1007,115 +995,120 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildChoiceList() {
-    if (!(_studyStep == StudyStep.en2Ch.json ||
-        _studyStep == StudyStep.ch2En.json)) {
+  Widget _buildChoiceList(BuildContext context) {
+    if (!(controller.studyStep.value == StudyStep.en2Ch.json ||
+        controller.studyStep.value == StudyStep.ch2En.json)) {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      children: [
-        for (var index = 0; index < (_words?.length ?? 0); index++)
-          Builder(
-            builder: (context) {
-              Color bgColor;
-              Color borderColor;
-              final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          for (var index = 0; index < controller.words.value.length; index++)
+            Builder(
+              builder: (context) {
+                Color bgColor;
+                Color borderColor;
+                final isDarkMode = controller.isDarkMode.value;
 
-              if (_selectedAnswerIndex != null) {
-                if ((index + 1) == _correctAnswerIndex) {
-                  bgColor = Colors.green.withValues(alpha: isDarkMode ? 0.25 : 0.15);
-                  borderColor = Colors.green;
-                } else if ((index + 1) == _selectedAnswerIndex) {
-                  bgColor = Colors.red.withValues(alpha: isDarkMode ? 0.25 : 0.15);
-                  borderColor = Colors.red;
+                if (controller.selectedAnswerIndex != null) {
+                  if ((index + 1) == controller.correctAnswerIndex) {
+                    bgColor = Colors.green.withValues(alpha: isDarkMode ? 0.25 : 0.15);
+                    borderColor = Colors.green;
+                  } else if ((index + 1) == controller.selectedAnswerIndex) {
+                    bgColor = Colors.red.withValues(alpha: isDarkMode ? 0.25 : 0.15);
+                    borderColor = Colors.red;
+                  } else {
+                    bgColor = isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
+                    borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
+                  }
                 } else {
                   bgColor = isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
                   borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
                 }
-              } else {
-                bgColor = isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
-                borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
-              }
 
-              return Padding(
-                padding: _studyStep == StudyStep.ch2En.json
-                    ? const EdgeInsets.symmetric(vertical: 3)
-                    : const EdgeInsets.symmetric(vertical: 6),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: borderColor,
-                        width: 1,
-                      ),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
+                return Padding(
+                  padding: controller.studyStep.value == StudyStep.ch2En.json
+                      ? const EdgeInsets.symmetric(vertical: 3)
+                      : const EdgeInsets.symmetric(vertical: 6),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: bgColor,
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () => onAnswerClicked(index + 1),
-                        child: Stack(
-                          children: [
-                            AnimatedCrossFade(
-                              duration: const Duration(milliseconds: 300),
-                          crossFadeState: _flippedAnswerIndices.contains(index)
-                              ? CrossFadeState.showSecond
-                              : CrossFadeState.showFirst,
-                          firstChild: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            child: _buildAnswerContent(
-                              _studyStep == StudyStep.ch2En.json
-                                  ? (_words?[index].spell.isNotEmpty == true ? _words![index].spell : '无对应英文')
-                                  : (_words?[index].getMeaningStr().isNotEmpty == true ? _words![index].getMeaningStr() : '无对应释义'),
-                            ),
-                          ),
-                          secondChild: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            child: _buildAnswerContent(
-                              _studyStep == StudyStep.ch2En.json
-                                  ? (_words?[index].getMeaningStr().isNotEmpty == true ? _words![index].getMeaningStr() : '无对应释义')
-                                  : (_words?[index].spell.isNotEmpty == true ? _words![index].spell : '无对应英文'),
-                            ),
-                          ),
+                        border: Border.all(
+                          color: borderColor,
+                          width: 1,
                         ),
-                            if ((_hasFinishedAnswering || _selectedAnswerIndex != null) &&
-                                (_words?[index].spell != "[ 都不对 ]"))
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: Icon(
-                                  Icons.sync,
-                                  size: 16,
-                                  color: isDarkMode ? Colors.white30 : Colors.black26,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => controller.onAnswerClicked(index + 1),
+                          child: Stack(
+                            children: [
+                              AnimatedCrossFade(
+                                duration: const Duration(milliseconds: 300),
+                                crossFadeState: controller.flippedAnswerIndices.contains(index)
+                                    ? CrossFadeState.showSecond
+                                    : CrossFadeState.showFirst,
+                                firstChild: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  child: _buildAnswerContent(
+                                    context,
+                                    controller.studyStep.value == StudyStep.ch2En.json
+                                        ? (controller.words.value[index].spell.isNotEmpty == true ? controller.words.value[index].spell : '无对应英文')
+                                        : (controller.words.value[index].getMeaningStr().isNotEmpty == true ? controller.words.value[index].getMeaningStr() : '无对应释义'),
+                                  ),
+                                ),
+                                secondChild: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  child: _buildAnswerContent(
+                                    context,
+                                    controller.studyStep.value == StudyStep.ch2En.json
+                                        ? (controller.words.value[index].getMeaningStr().isNotEmpty == true ? controller.words.value[index].getMeaningStr() : '无对应释义')
+                                        : (controller.words.value[index].spell.isNotEmpty == true ? controller.words.value[index].spell : '无对应英文'),
+                                  ),
                                 ),
                               ),
-                          ],
+                              if ((controller.hasFinishedAnswering.value || controller.selectedAnswerIndex != null) && (controller.words.value[index].spell != "[ 都不对 ]"))
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: Icon(
+                                    Icons.sync,
+                                    size: 16,
+                                    color: isDarkMode ? Colors.white30 : Colors.black26,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-      ],
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 
 
-  Widget _buildSpeakPanel() {
-    if (!((_studyStep == StudyStep.en2Ch.json ||
-            _studyStep == StudyStep.ch2En.json) &&
-        _word != null)) {
+  Widget _buildSpeakPanel(BuildContext context) {
+    if (!((controller.studyStep.value == StudyStep.en2Ch.json ||
+            controller.studyStep.value == StudyStep.ch2En.json) &&
+        controller.word.value != null)) {
       return const SizedBox.shrink();
     }
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = controller.isDarkMode.value;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1124,12 +1117,12 @@ extension BdcPageStateUIComponents on BdcPageState {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: context.watch<DarkMode>().isDarkMode
+            color: controller.isDarkMode.value
                 ? const Color(0xFF1E1E1E)
                 : const Color(0xFFF8F9FA),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             border: Border.all(
-              color: context.watch<DarkMode>().isDarkMode
+              color: controller.isDarkMode.value
                   ? Colors.white10
                   : Colors.black.withValues(alpha: 0.03),
               width: 1,
@@ -1140,21 +1133,21 @@ extension BdcPageStateUIComponents on BdcPageState {
             children: [
               // 语音波形反馈
               Expanded(
-                child: _studyStep == StudyStep.en2Ch.json
+                child: controller.studyStep.value == StudyStep.en2Ch.json
                     ? ChineseAsrInputWidget(
-                        controller: _meaningController,
-                        asrState: asr.state,
-                        onStartAsr: (language) => asr.startAsr(language),
-                        isKeyboardVisible: _isKeyboardVisible,
-                        focusNode: _meaningFocusNode,
+                        controller: controller.meaningController,
+                        asrState: controller.asrState.value,
+                        onStartAsr: (language) => Asr().startAsr(language),
+                        isKeyboardVisible: controller.isKeyboardVisible.value,
+                        focusNode: controller.meaningFocusNode,
                       )
                     : EnglishAsrInputWidget(
-                        controller: _meaningController,
-                        asrState: asr.state,
-                        onStartAsr: (language) => asr.startAsr(language),
-                        isKeyboardVisible: _isKeyboardVisible,
-                        focusNode: _meaningFocusNode,
-                        score: _currentScore,
+                        controller: controller.meaningController,
+                        asrState: controller.asrState.value,
+                        onStartAsr: (language) => Asr().startAsr(language),
+                        isKeyboardVisible: controller.isKeyboardVisible.value,
+                        focusNode: controller.meaningFocusNode,
+                        score: controller.currentScore.value,
                       ),
               ),
 
@@ -1164,17 +1157,15 @@ extension BdcPageStateUIComponents on BdcPageState {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildPanelButton(
-                    icon: Icons.emoji_objects_rounded,
+                  _buildPanelButton(context, icon: Icons.emoji_objects_rounded,
                     label: '提示',
-                    onTap: () => giveALittleHint(_wordWrapper!),
-                    onLongPress: () => giveFullHint(_wordWrapper!),
+                    onTap: () => controller.giveALittleHint(),
+                    onLongPress: () => controller.giveFullHint(),
                   ),
                   const SizedBox(width: 6),
-                  _buildPanelButton(
-                    icon: Icons.refresh,
+                  _buildPanelButton(context, icon: Icons.refresh,
                     label: '清除',
-                    onTap: () => clearHint(_wordWrapper!),
+                    onTap: () => controller.clearHint(),
                   ),
                 ],
               ),
@@ -1187,40 +1178,40 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode
+              color: controller.isDarkMode.value
                   ? const Color(0xFF1E1E1E).withValues(alpha: 0.8)
                   : const Color(0xFFF8F9FA).withValues(alpha: 0.8),
               borderRadius:
                   const BorderRadius.vertical(bottom: Radius.circular(16)),
               border: Border(
                 left: BorderSide(
-                    color: context.watch<DarkMode>().isDarkMode
+                    color: controller.isDarkMode.value
                         ? Colors.white10
                         : Colors.black.withValues(alpha: 0.03)),
                 right: BorderSide(
-                    color: context.watch<DarkMode>().isDarkMode
+                    color: controller.isDarkMode.value
                         ? Colors.white10
                         : Colors.black.withValues(alpha: 0.03)),
                 bottom: BorderSide(
-                    color: context.watch<DarkMode>().isDarkMode
+                    color: controller.isDarkMode.value
                         ? Colors.white10
                         : Colors.black.withValues(alpha: 0.03)),
               ),
             ),
             child: SingleChildScrollView(
-              controller: _speakPanelScrollController,
-              physics: _showHandwritingBoard
+              controller: controller.speakPanelScrollController,
+              physics: controller.showHandwritingBoard.value
                   ? const NeverScrollableScrollPhysics()
                   : null,
               padding: EdgeInsets.zero,
-              child: _studyStep == StudyStep.en2Ch.json
+              child: controller.studyStep.value == StudyStep.en2Ch.json
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...renderAsrMeaningItems(_wordWrapper!,
-                            isDarkMode: context.read<DarkMode>().isDarkMode),
+                        ...renderAsrMeaningItems(controller.wordWrapper.value!,
+                            isDarkMode: controller.isDarkMode.value),
                         const SizedBox(height: 16),
-                        _buildSpellingExerciseButton(isDarkMode),
+                        _buildSpellingExerciseButton(context, isDarkMode),
                       ],
                     )
                   : Column(
@@ -1231,14 +1222,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: context.watch<DarkMode>().isDarkMode
+                            color: controller.isDarkMode.value
                                 ? const Color(0xFFD1D5DB)
                                 : const Color(0xFF4B5563),
                           ),
                         ),
                         const SizedBox(height: 12),
                         // 拼写练习按钮 (替代原来的 TextField)
-                        _buildSpellingExerciseButton(isDarkMode),
+                        _buildSpellingExerciseButton(context, isDarkMode),
                       ],
                     ),
             ),
@@ -1249,19 +1240,18 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildSpellingExerciseButton(bool isDarkMode) {
+  Widget _buildSpellingExerciseButton(BuildContext context, bool isDarkMode) {
     return Column(
       children: [
         InkWell(
           onTap: () {
-            _isUpdatingByHint = true;
-            _meaningController.clear();
-            _isUpdatingByHint = false;
-            updateUI(() {
-              _showHandwritingBoard = true;
-            });
+            controller.isUpdatingByHint.value = true;
+            controller.meaningController.clear();
+            controller.isUpdatingByHint.value = false;
+            controller.showHandwritingBoard.value = true;
+            controller.update();
             // 进入手势拼写模式前，务必强制彻底停止 ASR 会话，避免在手写时后台仍在倾听或产生提示音
-            asr.stopAsr();
+            Asr().stopAsr();
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(
@@ -1269,7 +1259,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                    color: context.watch<DarkMode>().isDarkMode
+                    color: controller.isDarkMode.value
                         ? Colors.white10
                         : Colors.black.withValues(alpha: 0.05)),
               ),
@@ -1280,7 +1270,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     color: AppTheme.primaryColor.withValues(alpha: 0.5)),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _meaningController.text.isEmpty
+                  child: controller.meaningController.text.isEmpty
                       ? Text(
                           '拼写练习',
                           style: TextStyle(
@@ -1293,10 +1283,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                       : RichText(
                           text: SpellingTextEditingController
                               .buildSpellingTextSpan(
-                            _meaningController.text,
-                            _word?.spell ?? "",
-                            _meaningController.text.trim().toLowerCase() !=
-                                    (_word?.spell.toLowerCase() ?? "")
+                            controller.meaningController.text,
+                            controller.word.value?.spell ?? "",
+                            controller.meaningController.text.trim().toLowerCase() !=
+                                    (controller.word.value?.spell.toLowerCase() ?? "")
                                 ? Colors.red
                                 : (isDarkMode ? Colors.white : Colors.black),
                             const TextStyle(
@@ -1314,16 +1304,16 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildFsrsResultPanel() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+  Widget _buildFsrsResultPanel(BuildContext context) {
+    final isDarkMode = controller.isDarkMode.value;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    if (!_hasFinishedAnswering || _fsrsItem == null) {
-      if (_currentGetWordResult != null &&
-          _currentGetWordResult!.stepIndex > 0 &&
-          _wordWrapper?.word.id != null) {
+    if (!controller.hasFinishedAnswering.value || controller.fsrsItem.value == null) {
+      if (controller.currentGetWordResult.value != null &&
+          controller.currentGetWordResult.value!.stepIndex > 0 &&
+          controller.wordWrapper.value?.word.id != null) {
         return FutureBuilder<List<LearningLog>>(
-          future: _learningHistoryFuture,
+          future: controller.learningHistoryFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting ||
                 !snapshot.hasData ||
@@ -1387,7 +1377,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   InkWell(
-                    onTap: _showRatingModifyDialog,
+                    onTap: () => _showRatingModifyDialog(context),
                     borderRadius: BorderRadius.circular(4),
                     child: Padding(
                       padding:
@@ -1436,7 +1426,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
                   const SizedBox(width: 4),
                   InkWell(
-                    onTap: _showLearningHistoryDialog,
+                    onTap: () => _showLearningHistoryDialog(context),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1489,10 +1479,10 @@ extension BdcPageStateUIComponents on BdcPageState {
     }
 
     // 获取本次操作的评估标签和颜色
-    String ratingLabel = _lastFsrsRating?.label ?? '未知';
+    String ratingLabel = controller.lastFsrsRating.value?.label ?? '未知';
     Color ratingColor;
 
-    switch (_lastFsrsRating) {
+    switch (controller.lastFsrsRating.value) {
       case FsrsRating.again:
         ratingColor =
             isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F); // 深红色
@@ -1512,14 +1502,14 @@ extension BdcPageStateUIComponents on BdcPageState {
         break;
     }
 
-    String stageText = (_currentGetWordResult != null && _currentGetWordResult!.stepIndex > 0) ? '[巩固] ' : '[测评] ';
+    String stageText = (controller.currentGetWordResult.value != null && controller.currentGetWordResult.value!.stepIndex > 0) ? '[巩固] ' : '[测评] ';
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           InkWell(
-            onTap: _showRatingModifyDialog,
+            onTap: () => _showRatingModifyDialog(context),
             borderRadius: BorderRadius.circular(4),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -1551,7 +1541,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     text: '下次复习: ',
                     style: TextStyle(fontSize: 11, color: textColor)),
                 TextSpan(
-                  text: '${_fsrsItem!.scheduledDays}',
+                  text: '${controller.fsrsItem.value!.scheduledDays}',
                   style: TextStyle(
                     fontSize: 11,
                     color: isDarkMode ? Colors.white70 : Colors.black54,
@@ -1564,9 +1554,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               ],
             ),
           ),
-          if (_wordWrapper?.word.id != null)
+          if (controller.wordWrapper.value?.word.id != null)
             FutureBuilder(
-              future: _learningHistoryFuture,
+              future: controller.learningHistoryFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const SizedBox();
@@ -1580,7 +1570,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   children: [
                     const SizedBox(width: 4),
                     InkWell(
-                      onTap: _showLearningHistoryDialog,
+                      onTap: () => _showLearningHistoryDialog(context),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1608,13 +1598,13 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildPanelButton({
+  Widget _buildPanelButton(BuildContext context, {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
     VoidCallback? onLongPress,
   }) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = controller.isDarkMode.value;
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
@@ -1661,16 +1651,16 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildPhoneticRow() {
-    if (!(_currentGetWordResult?.learningWord?.word != null &&
-        _studyStep != StudyStep.en2Ch.json)) {
+  Widget _buildPhoneticRow(BuildContext context) {
+    if (!(controller.currentGetWordResult.value?.learningWord?.word != null &&
+        controller.studyStep.value != StudyStep.en2Ch.json)) {
       return const SizedBox.shrink();
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: controller.isDarkMode.value
             ? const Color(0xFF2C2C2C)
             : const Color(0xFFF8F9FB),
         borderRadius: BorderRadius.circular(12),
@@ -1679,16 +1669,16 @@ extension BdcPageStateUIComponents on BdcPageState {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (_studyStep != StudyStep.ch2En.json)
+          if (controller.studyStep.value != StudyStep.ch2En.json)
             Flexible(
               child: Text(
                 Util.getWordDefaultPronounce(
-                            _currentGetWordResult!.learningWord!.word)
+                            controller.currentGetWordResult.value!.learningWord!.word)
                         .isEmpty
                     ? ''
-                    : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
+                    : '[${Util.getWordDefaultPronounce(controller.currentGetWordResult.value!.learningWord!.word)}]',
                 style: TextStyle(
-                  color: context.watch<DarkMode>().isDarkMode
+                  color: controller.isDarkMode.value
                       ? const Color(0xFFD1D5DB)
                       : const Color(0xFF4B5563),
                   fontFamily: "NotoSans",
@@ -1697,27 +1687,27 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
               ),
             ),
-          if (_studyStep != StudyStep.ch2En.json)
+          if (controller.studyStep.value != StudyStep.ch2En.json)
             buildWordSoundButton(
-                _currentGetWordResult!.learningWord!.word, _audioPlayer),
+                controller.currentGetWordResult.value!.learningWord!.word, controller.wordSoundPlayer),
         ],
       ),
     );
   }
 
 
-  Widget _buildFirstSentenceRow() {
-    if (!(_word?.sentences != null &&
-        _word!.sentences!.isNotEmpty &&
-        _studyStep != StudyStep.ch2En.json &&
-        _studyStep != StudyStep.en2Ch.json)) {
+  Widget _buildFirstSentenceRow(BuildContext context) {
+    if (!(controller.word.value?.sentences != null &&
+        controller.word.value!.sentences!.isNotEmpty &&
+        controller.studyStep.value != StudyStep.ch2En.json &&
+        controller.studyStep.value != StudyStep.en2Ch.json)) {
       return const SizedBox.shrink();
     }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: controller.isDarkMode.value
             ? Colors.white.withValues(alpha: 0.03)
             : const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(12),
@@ -1729,7 +1719,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             padding: const EdgeInsets.all(4),
             margin: const EdgeInsets.only(right: 8, top: 2),
             decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode
+              color: controller.isDarkMode.value
                   ? const Color(0xFF1E1E1E).withValues(alpha: 0.5)
                   : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(6),
@@ -1737,18 +1727,18 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: InkWell(
               borderRadius: BorderRadius.circular(6),
               child: AnimatedBuilder(
-                animation: _sentenceSoundController,
+                animation: controller.sentenceSoundController,
                 builder: (context, child) {
                   return Transform.translate(
                     offset: Offset(
-                        _sentenceSoundController.value < 0.5 ? 0 : -2, 0),
+                        controller.sentenceSoundController.value < 0.5 ? 0 : -2, 0),
                     child: Icon(
-                      _playingStates['sentence']!
-                          ? (_sentenceSoundController.value < 0.5
+                      controller.playingStates['sentence']!
+                          ? (controller.sentenceSoundController.value < 0.5
                               ? Icons.volume_up
                               : Icons.volume_down)
                           : Icons.volume_up,
-                      color: _playingStates['sentence']!
+                      color: controller.playingStates['sentence']!
                           ? Colors.teal[300]
                           : Colors.grey[500],
                       size: 24,
@@ -1757,20 +1747,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                 },
               ),
               onTap: () {
-                if (!_playingStates['sentence']! &&
-                    _englishDigestOfFirstSentence != null) {
-                  _playWithAnimation(
-                      () => SoundUtil.playSentenceSound2(
-                          _englishDigestOfFirstSentence!, _audioPlayer),
-                      'sentence');
+                if (!controller.playingStates['sentence']! &&
+                    controller.englishDigestOfFirstSentence != null) {
+                  controller.playWithAnimation(
+                      controller.englishDigestOfFirstSentence!,
+                      controller.sentenceSoundPlayer,
+                      controller.sentenceSoundController);
                 }
               },
             ),
           ),
           Expanded(
             child: Util.makeEnglishSpanText(
-                _word!.sentences![0].english!,
-                _word!.spell,
+                controller.word.value!.sentences![0].english!,
+                controller.word.value!.spell,
                 true,
                 context,
                 false,
@@ -1784,7 +1774,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildWordStepCard() {
+  Widget _buildWordStepCard(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.transparent,
@@ -1803,11 +1793,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                   fit: BoxFit.scaleDown,
                   child: Text(
                     key: const Key('current_word_spell'),
-                    _currentGetWordResult!.learningWord!.word.spell,
+                    controller.currentGetWordResult.value!.learningWord!.word.spell,
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 36,
-                      color: context.watch<DarkMode>().isDarkMode
+                      color: controller.isDarkMode.value
                           ? Colors.white
                           : const Color(0xFF1A1A1A),
                       fontFamily: 'Roboto',
@@ -1823,12 +1813,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                     Flexible(
                       child: Text(
                         Util.getWordDefaultPronounce(
-                                    _currentGetWordResult!.learningWord!.word)
+                                    controller.currentGetWordResult.value!.learningWord!.word)
                                 .isEmpty
                             ? ''
-                            : '[${Util.getWordDefaultPronounce(_currentGetWordResult!.learningWord!.word)}]',
+                            : '[${Util.getWordDefaultPronounce(controller.currentGetWordResult.value!.learningWord!.word)}]',
                         style: TextStyle(
-                          color: context.watch<DarkMode>().isDarkMode
+                          color: controller.isDarkMode.value
                               ? const Color(0xFFD1D5DB)
                               : const Color(0xFF4B5563),
                           fontFamily: "NotoSans",
@@ -1841,12 +1831,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ),
                     const SizedBox(width: 4),
                     buildWordSoundButton(
-                        _currentGetWordResult!.learningWord!.word,
-                        _audioPlayer),
+                        controller.currentGetWordResult.value!.learningWord!.word,
+                        controller.wordSoundPlayer),
                   ],
                 ),
-                if (_word?.sentences != null &&
-                    _word!.sentences!.isNotEmpty) ...[
+                if (controller.word.value?.sentences != null &&
+                    controller.word.value!.sentences!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1856,22 +1846,21 @@ extension BdcPageStateUIComponents on BdcPageState {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Util.makeEnglishSpanText(
-                                _word!.sentences![0].english!,
-                                _word!.spell,
+                                controller.word.value!.sentences![0].english!,
+                                controller.word.value!.spell,
                                 true,
                                 context,
                                 false,
                                 null,
                                 true,
                                 FontWeight.w300),
-                            if (!_showSentenceTranslation)
+                            if (!controller.showSentenceTranslation.value)
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: InkWell(
                                   onTap: () {
-                                    updateUI(() {
-                                      _showSentenceTranslation = true;
-                                    });
+                                    controller.showSentenceTranslation.value = true;
+                                    controller.update();
                                   },
                                   borderRadius: BorderRadius.circular(4),
                                   child: const Padding(
@@ -1890,11 +1879,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Util.makeChineseSpanText(
-                                  _word!.sentences![0].chinese ?? '',
+                                  controller.word.value!.sentences![0].chinese ?? '',
                                   context,
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: context.watch<DarkMode>().isDarkMode
+                                    color: controller.isDarkMode.value
                                         ? Colors.white70
                                         : Colors.black54,
                                   ),
@@ -1907,7 +1896,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         padding: const EdgeInsets.all(4),
                         margin: const EdgeInsets.only(left: 8, top: 2),
                         decoration: BoxDecoration(
-                          color: context.watch<DarkMode>().isDarkMode
+                          color: controller.isDarkMode.value
                               ? Colors.white.withValues(alpha: 0.08)
                               : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(6),
@@ -1915,22 +1904,22 @@ extension BdcPageStateUIComponents on BdcPageState {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(6),
                           child: AnimatedBuilder(
-                            animation: _sentenceSoundController,
+                            animation: controller.sentenceSoundController,
                             builder: (context, child) {
                               return Transform.translate(
                                 offset: Offset(
-                                    _sentenceSoundController.value < 0.5
+                                    controller.sentenceSoundController.value < 0.5
                                         ? 0
                                         : -2,
                                     0),
                                 child: Icon(
-                                  _playingStates['sentence']!
-                                      ? (_sentenceSoundController.value < 0.5
+                                  controller.playingStates['sentence']!
+                                      ? (controller.sentenceSoundController.value < 0.5
                                           ? Icons.volume_up
                                           : Icons.volume_down)
                                       : Icons.volume_up,
-                                  color: _playingStates['sentence']!
-                                      ? (context.watch<DarkMode>().isDarkMode
+                                  color: controller.playingStates['sentence']!
+                                      ? (controller.isDarkMode.value
                                           ? Colors.white
                                           : const Color(0xFF1A1A1A))
                                       : Colors.grey[500],
@@ -1940,13 +1929,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                             },
                           ),
                           onTap: () {
-                            if (!_playingStates['sentence']! &&
-                                _englishDigestOfFirstSentence != null) {
-                              _playWithAnimation(
-                                  () => SoundUtil.playSentenceSound2(
-                                      _englishDigestOfFirstSentence!,
-                                      _audioPlayer),
-                                  'sentence');
+                            if (!controller.playingStates['sentence']! &&
+                                controller.englishDigestOfFirstSentence != null) {
+                              controller.playWithAnimation(
+                                  controller.englishDigestOfFirstSentence!,
+                                  controller.sentenceSoundPlayer,
+                                  controller.sentenceSoundController);
                             }
                           },
                         ),
@@ -1963,7 +1951,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildMeaningStepCard() {
+  Widget _buildMeaningStepCard(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.transparent,
@@ -1988,14 +1976,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                     children: [
                       for (var i = 0;
                           i <
-                              _currentGetWordResult!.learningWord!.word
+                              controller.currentGetWordResult.value!.learningWord!.word
                                   .getMergedMeaningItems()
                                   .length;
                           i++)
                         Padding(
                           padding: EdgeInsets.only(
                               right: i ==
-                                      _currentGetWordResult!.learningWord!.word
+                                      controller.currentGetWordResult.value!.learningWord!.word
                                               .getMergedMeaningItems()
                                               .length -
                                           1
@@ -2006,7 +1994,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                _currentGetWordResult!.learningWord!.word
+                                controller.currentGetWordResult.value!.learningWord!.word
                                         .getMergedMeaningItems()[i]
                                         .ciXing ??
                                     '',
@@ -2017,7 +2005,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                _hideParenthesesContent(_currentGetWordResult!
+                                controller.hideParenthesesContent(controller.currentGetWordResult.value!
                                         .learningWord!.word
                                         .getMergedMeaningItems()[i]
                                         .meaning ??
@@ -2025,7 +2013,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: context.watch<DarkMode>().isDarkMode
+                                  color: controller.isDarkMode.value
                                       ? Colors.white
                                       : const Color(0xFF2D3748),
                                 ),
@@ -2039,51 +2027,51 @@ extension BdcPageStateUIComponents on BdcPageState {
                 // 图片 (仅对管理员开放)
                 if (StudyConfig.fromCurrentUser().enableWordImage &&
                     (Global.getLoggedInUser()?.isAdmin == true) &&
-                    _currentGetWordResult?.images != null &&
-                    _currentGetWordResult!.images!.isNotEmpty)
+                    controller.currentGetWordResult.value?.images != null &&
+                    controller.currentGetWordResult.value!.images!.isNotEmpty)
                   Column(
                     children: [
-                      if (_currentGetWordResult!.images!.isNotEmpty &&
-                          _studyStep != StudyStep.ch2En.json)
+                      if (controller.currentGetWordResult.value!.images!.isNotEmpty &&
+                          controller.studyStep.value != StudyStep.ch2En.json)
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           margin: const EdgeInsets.only(bottom: 8),
                           child: Text(
-                              '图片: ${_currentGetWordResult!.images!.length}',
+                              '图片: ${controller.currentGetWordResult.value!.images!.length}',
                               style: TextStyle(
                                   fontSize: 11, color: Colors.grey.shade400)),
                         ),
                       WordImagesWidget(
-                        images: _currentGetWordResult!.images!,
-                        isEditMode: _isEditMode,
-                        highlightedWordImg: _highlightedWordImg,
+                        images: controller.currentGetWordResult.value!.images!,
+                        isEditMode: controller.isEditMode.value,
+                        highlightedWordImg: controller.highlightedWordImg.value?.imageFile,
                         maxImages: 2,
                         onImageTap: (image) {
                           Global.logger
                               .d('show dialog for image: ${image.imageFile}');
                           showImagePreviewWithContext(context, image,
                               onDeleted: () {
-                            _currentGetWordResult?.images
+                            controller.currentGetWordResult.value?.images
                                 ?.removeWhere((e) => e.id == image.id);
-                            updateUI(() {});
+                            controller.update();
                           });
                         },
                       ),
                     ],
                   ),
                 // 配图按钮
-                if (StudyConfig.fromCurrentUser().enableWordImage && _isEditMode && (_currentGetWordResult?.learningWord?.word.images?.length ?? 0) < 2)
+                if (StudyConfig.fromCurrentUser().enableWordImage && controller.isEditMode.value && (controller.currentGetWordResult.value?.learningWord?.word.images?.length ?? 0) < 2)
                   InkWell(
                     child: Container(
                       margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.add, size: 24.0),
                         style: ElevatedButton.styleFrom(
-                          foregroundColor: context.watch<DarkMode>().isDarkMode
+                          foregroundColor: controller.isDarkMode.value
                               ? Colors.black
                               : Colors.white,
-                          backgroundColor: context.watch<DarkMode>().isDarkMode
+                          backgroundColor: controller.isDarkMode.value
                               ? Colors.white
                               : AppTheme.primaryColor,
                           elevation: 0,
@@ -2092,15 +2080,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                         ),
                         label: const Text('添加配图'),
                         onPressed: () {
-                          if (_currentGetWordResult?.learningWord?.word.id !=
+                          if (controller.currentGetWordResult.value?.learningWord?.word.id !=
                               null) {
                             Get.toNamed('/pic_search',
                                     arguments: PicSearchPageArgs(
-                                        _currentGetWordResult!
-                                            .learningWord!.word.id!,
-                                        _currentGetWordResult!
+                                        controller.currentGetWordResult.value!
                                             .learningWord!.word.spell))!
-                                .then((value) => reloadWord());
+                                .then((value) => controller.reloadWord());
                           }
                         },
                       ),
@@ -2126,8 +2112,8 @@ extension BdcPageStateUIComponents on BdcPageState {
       height: 26,
       child: TextField(
         textAlign: TextAlign.center,
-        controller: _wordWrapper!.spellController,
-        focusNode: _wordWrapper!.focusNode,
+        controller: controller.wordWrapper.value!.spellController,
+        focusNode: controller.wordWrapper.value!.focusNode,
         autofocus: true,
         // 仅保留下边框样式（听音选意模式专用）
         decoration: InputDecoration(
@@ -2147,11 +2133,11 @@ extension BdcPageStateUIComponents on BdcPageState {
         maxLines: 1,
         onChanged: (value) {
           // 拼写正确，播放发音并关闭输入法
-          if (Util.equalsIgnoreCase(_word!.spell, value)) {
-            SoundUtil.playPronounceSound(_word!);
+          if (Util.equalsIgnoreCase(controller.word.value!.spell, value)) {
+            SoundUtil.playPronounceSound(controller.word.value!);
             Util.closeIme();
           }
-          updateUI(() {});
+          controller.update();
         },
         style: textStyle,
       ),
@@ -2161,25 +2147,25 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget buildWordSoundButton(WordVo word, AudioPlayer audioPlayer) {
     // 在拼写和音标显示的情况下使用小按钮
-    if (_studyStep == StudyStep.en2Ch.json) {
+    if (controller.studyStep.value == StudyStep.en2Ch.json) {
       return Transform.translate(
           offset: Offset(6.0, 1.0),
           child: InkWell(
             child: Row(
               children: [
                 AnimatedBuilder(
-                  animation: _wordSoundController,
+                  animation: controller.wordSoundController,
                   builder: (context, child) {
                     return Transform.translate(
-                      offset: Offset(_wordSoundController.value < 0.5 ? 0 : -2,
+                      offset: Offset(controller.wordSoundController.value < 0.5 ? 0 : -2,
                           0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
                       child: Icon(
-                        _playingStates['word']!
-                            ? (_wordSoundController.value < 0.5
+                        controller.playingStates['word']!
+                            ? (controller.wordSoundController.value < 0.5
                                 ? Icons.volume_up
                                 : Icons.volume_down)
                             : Icons.volume_up,
-                        color: _playingStates['word']!
+                        color: controller.playingStates['word']!
                             ? Colors.teal[300]
                             : Colors.grey[500],
                       ),
@@ -2189,10 +2175,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               ],
             ),
             onTap: () {
-              if (!_playingStates['word']!) {
-                _playWithAnimation(
-                    () => SoundUtil.playPronounceSound2(word, audioPlayer),
-                    'word');
+              if (!controller.playingStates['word']!) {
+                controller.playWithAnimation(
+                    word.spell, controller.wordSoundPlayer, controller.wordSoundController);
               }
             },
           ));
@@ -2205,7 +2190,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       margin: const EdgeInsets.only(left: 8),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: _playingStates['word']!
+        color: controller.playingStates['word']!
             ? const Color(0xFF1A1A1A)
             : Colors.grey[200],
         boxShadow: [
@@ -2222,24 +2207,23 @@ extension BdcPageStateUIComponents on BdcPageState {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: () {
-            if (!_playingStates['word']!) {
-              _playWithAnimation(
-                  () => SoundUtil.playPronounceSound2(word, audioPlayer),
-                  'word');
+            if (!controller.playingStates['word']!) {
+              controller.playWithAnimation(
+                  word.spell, controller.wordSoundPlayer, controller.wordSoundController);
             }
           },
           child: Center(
             child: AnimatedBuilder(
-              animation: _wordSoundController,
+              animation: controller.wordSoundController,
               builder: (context, child) {
                 return Icon(
-                  _playingStates['word']!
-                      ? (_wordSoundController.value < 0.5
+                  controller.playingStates['word']!
+                      ? (controller.wordSoundController.value < 0.5
                           ? Icons.volume_up
                           : Icons.volume_down)
                       : Icons.volume_up,
                   color:
-                      _playingStates['word']! ? Colors.white : Colors.grey[600],
+                      controller.playingStates['word']! ? Colors.white : Colors.grey[600],
                   size: 28,
                 );
               },
@@ -2255,7 +2239,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: controller.isDarkMode.value
             ? Colors.white.withValues(alpha: 0.08)
             : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(6),
@@ -2263,18 +2247,18 @@ extension BdcPageStateUIComponents on BdcPageState {
       child: InkWell(
         borderRadius: BorderRadius.circular(6),
         child: AnimatedBuilder(
-          animation: _sentenceSoundController,
+          animation: controller.sentenceSoundController,
           builder: (context, child) {
             return Transform.translate(
-              offset: Offset(_sentenceSoundController.value < 0.5 ? 0 : -2,
+              offset: Offset(controller.sentenceSoundController.value < 0.5 ? 0 : -2,
                   0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
               child: Icon(
-                _playingStates['sentence']!
-                    ? (_sentenceSoundController.value < 0.5
+                controller.playingStates['sentence']!
+                    ? (controller.sentenceSoundController.value < 0.5
                         ? Icons.volume_up
                         : Icons.volume_down)
                     : Icons.volume_up,
-                color: _playingStates['sentence']!
+                color: controller.playingStates['sentence']!
                     ? Colors.teal[300]
                     : Colors.grey[500],
                 size: 18,
@@ -2283,12 +2267,12 @@ extension BdcPageStateUIComponents on BdcPageState {
           },
         ),
         onTap: () {
-          if (!_playingStates['sentence']! &&
-              _englishDigestOfFirstSentence != null) {
-            _playWithAnimation(
-                () => SoundUtil.playSentenceSound2(
-                    _englishDigestOfFirstSentence!, _audioPlayer),
-                'sentence');
+          if (!controller.playingStates['sentence']! &&
+              controller.englishDigestOfFirstSentence != null) {
+            controller.playWithAnimation(
+                controller.englishDigestOfFirstSentence!,
+                controller.sentenceSoundPlayer,
+                controller.sentenceSoundController);
           }
         },
       ),
