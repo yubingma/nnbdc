@@ -20,7 +20,7 @@ import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/constants.dart';
 import '../models/word_detail_page_args.dart' as bdc_args;
 
-class BdcController extends GetxController with GetSingleTickerProviderStateMixin {
+class BdcController extends GetxController with GetTickerProviderStateMixin {
   late TabController tabController;
   final word = Rxn<WordVo>();
   final wordWrapper = Rxn<WordWrapper>();
