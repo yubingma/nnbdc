@@ -479,19 +479,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           },
         ),
         GetPage(
-          name: '/before_bdc',
-          page: () {
-            // 添加延迟加载以避免黑屏
-            Future.microtask(() {
-              // 确保页面过渡动画完成后再进行复杂的数据加载
-              Future.delayed(const Duration(milliseconds: 100), () {
-                Api.loadingService.init(); // 确保加载服务已初始化
-              });
-            });
-            return const TodayPlanPage();
-          },
+          name: '/bdc',
+          page: () => const BdcPage(),
+          binding: BdcBinding(),
         ),
-        GetPage(name: '/word_list', page: () => const WordListPage()),
         GetPage(name: '/walkman', page: () => const WalkmanPage()),
         GetPage(name: '/game', page: () => const GamePage()),
         GetPage(name: '/russia', page: () => const RussiaPage()),

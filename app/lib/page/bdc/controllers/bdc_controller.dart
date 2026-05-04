@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/enum.dart';
@@ -18,6 +19,7 @@ import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/constants.dart';
+import '../models/bdc_page_args.dart';
 import '../models/word_detail_page_args.dart' as bdc_args;
 
 class BdcController extends GetxController with GetTickerProviderStateMixin {
@@ -120,8 +122,42 @@ class BdcController extends GetxController with GetTickerProviderStateMixin {
       Global.logger.w('BdcController: Failed to load config in onInit: $e');
     }
 
-    Global.logger.d('BdcController: Initializing with config - autoJump: $autoJumpAfterCorrect');
-    
+  Global.logger.d('BdcController: Initializing with config - autoJump: $autoJumpAfterCorrect');
+
+    // When coming from 'before_bdc', show transition page while initializing ASR
+    final argsJson = GetStorage().read<String>("BdcPageArgs");
+    if (argsJson != null) {
+      final args = BdcPageArgs.fromJson(argsJson);
+      if (args.fromPage == 'before_bdc') {
+        dataLoaded.value = false;
+        _initAsrAndStart();
+        return;
+      }
+    }
+
+    getNextWord(false);
+  }
+
+  Future<void> _initAsrAndStart() async {
+    Global.logger.d('BdcController: Initializing ASR before starting...');
+    try {
+      // Initialize ASR by calling initAsr with a temp listener
+      Asr().initAsr((event) {});
+
+      // Wait for ASR to be ready (max 2 seconds)
+      for (int i = 0; i < 20; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (Asr().state == AsrState.initialized || Asr().state == AsrState.started) {
+          Global.logger.d('BdcController: ASR initialized after waiting');
+          break;
+        }
+      }
+    } catch (e) {
+      Global.logger.w('BdcController: ASR init failed, continuing anyway: $e');
+    }
+
+    dataLoaded.value = true;
+    _initAsrListener();
     getNextWord(false);
   }
 
