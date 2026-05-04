@@ -379,13 +379,13 @@ class BdcController extends GetxController with GetTickerProviderStateMixin {
       if (word.value != null) {
         if (studyStep.value == StudyStep.en2Ch.json || forcePlayWord) {
           playedSomething.value = true;
-          await playWithAnimation(word.value!.pronounce ?? word.value!.spell, wordSoundPlayer, wordSoundController);
+          await playWithAnimation(word.value!.pronounce ?? word.value!.spell, wordSoundPlayer, wordSoundController, stateKey: 'word');
         }
         if (studyStep.value == StudyStep.en2Ch.json && englishDigestOfFirstSentence != null) {
           playedSomething.value = true;
           await Future.delayed(const Duration(milliseconds: 300));
           if (word.value?.id == savedId) {
-            await playWithAnimation(englishDigestOfFirstSentence!, sentenceSoundPlayer, sentenceSoundController);
+            await playWithAnimation(englishDigestOfFirstSentence!, sentenceSoundPlayer, sentenceSoundController, stateKey: 'sentence');
           }
         }
       }
@@ -398,9 +398,10 @@ class BdcController extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
-  Future<void> playWithAnimation(String sound, AudioPlayer player, AnimationController animationController) async {
+  Future<void> playWithAnimation(String sound, AudioPlayer player, AnimationController animationController, {String? stateKey}) async {
     if (sound.isEmpty) return;
-    playingStates[sound] = true;
+    final key = stateKey ?? sound;
+    playingStates[key] = true;
     try {
       animationController.repeat(reverse: true);
       if (sound.contains('/') || sound.contains('\\')) {
@@ -412,7 +413,7 @@ class BdcController extends GetxController with GetTickerProviderStateMixin {
     } finally {
       animationController.stop(canceled: false);
       animationController.value = 0.0;
-      playingStates[sound] = false;
+      playingStates[key] = false;
     }
   }
 

@@ -1733,12 +1733,12 @@ extension BdcPageUIComponents on BdcPage {
                     offset: Offset(
                         controller.sentenceSoundController.value < 0.5 ? 0 : -2, 0),
                     child: Icon(
-                      controller.playingStates['sentence']!
+                      controller.playingStates['sentence'] ?? false
                           ? (controller.sentenceSoundController.value < 0.5
                               ? Icons.volume_up
                               : Icons.volume_down)
                           : Icons.volume_up,
-                      color: controller.playingStates['sentence']!
+                      color: controller.playingStates['sentence'] ?? false
                           ? Colors.teal[300]
                           : Colors.grey[500],
                       size: 24,
@@ -1747,7 +1747,7 @@ extension BdcPageUIComponents on BdcPage {
                 },
               ),
               onTap: () {
-                if (!controller.playingStates['sentence']! &&
+                if (!(controller.playingStates['sentence'] ?? false) &&
                     controller.englishDigestOfFirstSentence != null) {
                   controller.playWithAnimation(
                       controller.englishDigestOfFirstSentence!,
@@ -1913,12 +1913,12 @@ extension BdcPageUIComponents on BdcPage {
                                         : -2,
                                     0),
                                 child: Icon(
-                                  controller.playingStates['sentence']!
+                                  controller.playingStates['sentence'] ?? false
                                       ? (controller.sentenceSoundController.value < 0.5
                                           ? Icons.volume_up
                                           : Icons.volume_down)
                                       : Icons.volume_up,
-                                  color: controller.playingStates['sentence']!
+                                  color: controller.playingStates['sentence'] ?? false
                                       ? (controller.isDarkMode.value
                                           ? Colors.white
                                           : const Color(0xFF1A1A1A))
@@ -1929,7 +1929,7 @@ extension BdcPageUIComponents on BdcPage {
                             },
                           ),
                           onTap: () {
-                            if (!controller.playingStates['sentence']! &&
+                            if (!(controller.playingStates['sentence'] ?? false) &&
                                 controller.englishDigestOfFirstSentence != null) {
                               controller.playWithAnimation(
                                   controller.englishDigestOfFirstSentence!,
@@ -2160,12 +2160,12 @@ extension BdcPageUIComponents on BdcPage {
                       offset: Offset(controller.wordSoundController.value < 0.5 ? 0 : -2,
                           0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
                       child: Icon(
-                        controller.playingStates['word']!
+                        controller.playingStates['word'] ?? false
                             ? (controller.wordSoundController.value < 0.5
                                 ? Icons.volume_up
                                 : Icons.volume_down)
                             : Icons.volume_up,
-                        color: controller.playingStates['word']!
+                        color: controller.playingStates['word'] ?? false
                             ? Colors.teal[300]
                             : Colors.grey[500],
                       ),
@@ -2175,7 +2175,7 @@ extension BdcPageUIComponents on BdcPage {
               ],
             ),
             onTap: () {
-              if (!controller.playingStates['word']!) {
+              if (!(controller.playingStates['word'] ?? false)) {
                 controller.playWithAnimation(
                     word.spell, controller.wordSoundPlayer, controller.wordSoundController);
               }
@@ -2190,7 +2190,7 @@ extension BdcPageUIComponents on BdcPage {
       margin: const EdgeInsets.only(left: 8),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: controller.playingStates['word']!
+        color: controller.playingStates['word'] ?? false
             ? const Color(0xFF1A1A1A)
             : Colors.grey[200],
         boxShadow: [
@@ -2207,7 +2207,7 @@ extension BdcPageUIComponents on BdcPage {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: () {
-            if (!controller.playingStates['word']!) {
+            if (!(controller.playingStates['word'] ?? false)) {
               controller.playWithAnimation(
                   word.spell, controller.wordSoundPlayer, controller.wordSoundController);
             }
@@ -2217,13 +2217,13 @@ extension BdcPageUIComponents on BdcPage {
               animation: controller.wordSoundController,
               builder: (context, child) {
                 return Icon(
-                  controller.playingStates['word']!
+                  controller.playingStates['word'] ?? false
                       ? (controller.wordSoundController.value < 0.5
                           ? Icons.volume_up
                           : Icons.volume_down)
                       : Icons.volume_up,
                   color:
-                      controller.playingStates['word']! ? Colors.white : Colors.grey[600],
+                      controller.playingStates['word'] ?? false ? Colors.white : Colors.grey[600],
                   size: 28,
                 );
               },
@@ -2253,12 +2253,12 @@ extension BdcPageUIComponents on BdcPage {
               offset: Offset(controller.sentenceSoundController.value < 0.5 ? 0 : -2,
                   0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
               child: Icon(
-                controller.playingStates['sentence']!
+                controller.playingStates['sentence'] ?? false
                     ? (controller.sentenceSoundController.value < 0.5
                         ? Icons.volume_up
                         : Icons.volume_down)
                     : Icons.volume_up,
-                color: controller.playingStates['sentence']!
+                color: controller.playingStates['sentence'] ?? false
                     ? Colors.teal[300]
                     : Colors.grey[500],
                 size: 18,
@@ -2267,7 +2267,7 @@ extension BdcPageUIComponents on BdcPage {
           },
         ),
         onTap: () {
-          if (!controller.playingStates['sentence']! &&
+          if (!(controller.playingStates['sentence'] ?? false) &&
               controller.englishDigestOfFirstSentence != null) {
             controller.playWithAnimation(
                 controller.englishDigestOfFirstSentence!,
