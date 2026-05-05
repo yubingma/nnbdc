@@ -111,10 +111,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             return new ArrayList<>();
         }
 
-        // 使用原生SQL一次性取回所有候选，再在内存中按 word 聚合取第一条
+        // 使用原生SQL一次性取回所有候选，按 word 聚合取最后更新的那条
         String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item "
-                +
-                "WHERE dict_id IS NOT NULL AND word_id IN (:ids) ORDER BY update_time DESC";
+                + "WHERE word_id IN (:ids) ORDER BY update_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", wordIds);
         List<MeaningItemDto> allResults = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
             MeaningItemDto dto = new MeaningItemDto();
@@ -133,34 +132,14 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             return dto;
         });
 
-        // 转换为 Object[] 格式以保持原有逻辑
-        List<?> results = allResults.stream().map(dto -> new Object[] {
-                dto.getId(), dto.getCiXing(), dto.getMeaning(), dto.getWordId(),
-                dto.getDictId(), dto.getPopularity(), dto.getCreateTime(), dto.getUpdateTime()
-        }).collect(Collectors.toList());
-
         List<MeaningItemDto> picked = new ArrayList<>();
         HashSet<String> seen = new HashSet<>();
-        for (Object result : results) {
-            Object[] tuple = (Object[]) result;
-            String wordId = (String) tuple[3];
-            if (seen.contains(wordId)) {
+        for (MeaningItemDto dto : allResults) {
+            if (seen.contains(dto.getWordId())) {
                 continue;
             }
-            MeaningItemDto dto = new MeaningItemDto();
-            dto.setId((String) tuple[0]);
-            dto.setCiXing((String) tuple[1]);
-            dto.setMeaning((String) tuple[2]);
-            dto.setWordId(wordId);
-            dto.setDictId((String) tuple[4]);
-            // 处理 popularity 可能为 NULL 的情况，默认值为 999
-            Integer popularityValue = (Integer) tuple[5];
-            dto.setPopularity(popularityValue != null ? popularityValue : 999);
-            dto.setCreateTime((Timestamp) tuple[6]);
-            dto.setUpdateTime((Timestamp) tuple[7]);
-            dto.setOwnerId((String) tuple[8]);
             picked.add(dto);
-            seen.add(wordId);
+            seen.add(dto.getWordId());
             if (seen.size() == wordIds.size()) {
                 break;
             }

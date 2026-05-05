@@ -1034,6 +1034,13 @@ public class SystemHealthCheckBo {
                         delParams.addValue("dictId", commonDictId);
                         delParams.addValue("wordId", wordId);
                         namedParameterJdbcTemplate.update(deleteSql, delParams);
+                        
+                        // 记录同步日志，通知客户端删除此记录
+                        DictWordDto dwDto = new DictWordDto();
+                        dwDto.setDictId(commonDictId);
+                        dwDto.setWordId(wordId);
+                        sysDbSyncBo.logOperation(dwDto, "DELETE", "dict_word", commonDictId + "_" + wordId, JsonUtils.toJson(dwDto));
+                        
                         cleanedCount++;
                     } catch (Exception ignore) {}
                     continue;
@@ -1120,6 +1127,7 @@ public class SystemHealthCheckBo {
                                 String sentenceCn = (String) map.get("sentenceCn");
                                     
                                 Sentence sentence = new Sentence();
+                                sentence.setId(Util.uuid());
                                 sentence.setEnglish(sentenceEn);
                                 sentence.setChinese(sentenceCn);
                                 sentence.setWordMeaning(mi.getMeaning());
@@ -1153,7 +1161,7 @@ public class SystemHealthCheckBo {
         }).start();
 
         fixed.add("缺失例句释义项的 AI 后台补齐任务已提交，进度可在服务器日志中查看，补齐会自动同步到客户端更新。");
-        return meaningsWithoutSentences.size();
+        return totalFixed + meaningsWithoutSentences.size();
     }
 
     private int fixUserStudySteps(List<String> fixed) {
