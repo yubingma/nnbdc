@@ -227,7 +227,8 @@ class DataIntegrityChecker {
           result.addIssue('序号不连续', '词典 "${dict.name}" 最大序号不等于总单词数', 'dict_word_sequence');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查用户词典单词序号时出错', error: e, stackTrace: stack);
       result.addError('检查用户词典单词序号时出错: $e');
     }
   }
@@ -263,7 +264,8 @@ class DataIntegrityChecker {
           result.addIssue('序号不连续', '词典 "${dict.name}" 最大序号不等于总单词数', 'dict_word_sequence');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查词典单词序号时出错', error: e, stackTrace: stack);
       result.addError('检查词典单词序号时出错: $e');
     }
   }
@@ -280,7 +282,8 @@ class DataIntegrityChecker {
           result.addIssue('单词数量不匹配', '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 'dict_word_count');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查用户词典单词数量时出错', error: e, stackTrace: stack);
       result.addError('检查用户词典单词数量时出错: $e');
     }
   }
@@ -296,7 +299,8 @@ class DataIntegrityChecker {
           result.addIssue('单词数量不匹配', '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 'dict_word_count');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查词典单词数量时出错', error: e, stackTrace: stack);
       result.addError('检查词典单词数量时出错: $e');
     }
   }
@@ -319,7 +323,8 @@ class DataIntegrityChecker {
       if (!hasCh2En) {
         result.addIssue('学习步骤缺失', '用户缺少学习步骤：Ch2En', 'user_study_steps');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查用户学习步骤时出错', error: e, stackTrace: stack);
       result.addError('检查用户学习步骤时出错: $e');
     }
   }
@@ -347,7 +352,8 @@ class DataIntegrityChecker {
         final ids = masteredDicts.map((d) => d.id).join(', ');
         result.addIssue('用户词书冗余', '用户拥有 ${masteredDicts.length} 本"已掌握"词书 (IDs: $ids)', 'missing_user_dict');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查用户词书时出错', error: e, stackTrace: stack);
       result.addError('检查用户词书时出错: $e');
     }
   }
@@ -402,9 +408,9 @@ class DataIntegrityChecker {
            );
          }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查书桌系统词库底层托底时出错', error: e, stackTrace: stack);
       result.addError('检查书桌系统词库底层托底时出错: $e');
-      Global.logger.e('检查书桌系统词库底层托底时出错', error: e);
     }
   }
 
@@ -422,7 +428,8 @@ class DataIntegrityChecker {
       if (invalidLogs.isNotEmpty) {
         result.addIssue('版本号异常', '用户有 ${invalidLogs.length} 条版本号异常的日志', 'user_db_version');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查用户数据库版本时出错', error: e, stackTrace: stack);
       result.addError('检查用户数据库版本时出错: $e');
     }
   }
@@ -444,7 +451,8 @@ class DataIntegrityChecker {
           result.addIssue('版本号异常', '用户 ${user.userName} 有 ${invalidLogs.length} 条版本号异常的日志', 'user_db_version');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查用户数据库版本时出错', error: e, stackTrace: stack);
       result.addError('检查用户数据库版本时出错: $e');
     }
   }
@@ -542,8 +550,7 @@ class DataIntegrityChecker {
 
       Global.logger.d('通用词典完整性检查完成，检查了 ${wordsList.length} 个单词，发现 ${wordsWithoutMeanings.length} 个单词缺少释义项，$meaningsWithoutSentences 个释义项缺少例句');
     } catch (e, stackTrace) {
-      Global.logger.e('检查通用词典完整性时出错: $e');
-      Global.logger.e('错误堆栈: $stackTrace');
+      Global.logger.e('检查通用词典完整性时出错', error: e, stackTrace: stackTrace);
       result.addError('检查通用词典完整性时出错: $e');
     }
   }
@@ -556,33 +563,63 @@ class DataIntegrityChecker {
     try {
       // 修复序号不连续问题
       if (checkResult.hasIssue('dict_word_sequence')) {
-        await _fixDictWordSequences(fixResult, userId);
+        try {
+          await _fixDictWordSequences(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复词典序号时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复词典序号失败: $e');
+        }
       }
 
       // 修复单词数量不匹配问题
       if (checkResult.hasIssue('dict_word_count')) {
-        await _fixDictWordCounts(fixResult, userId);
+        try {
+          await _fixDictWordCounts(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复单词数量时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复单词数量失败: $e');
+        }
       }
 
     
       // 修复学习步骤缺失问题
       if (checkResult.hasIssue('user_study_steps')) {
-        await _fixUserStudySteps(fixResult, userId);
+        try {
+          await _fixUserStudySteps(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复学习步骤时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复学习步骤失败: $e');
+        }
       }
 
       // 修复用户词书缺失问题
       if (checkResult.hasIssue('missing_user_dict')) {
-        await _fixMissingUserDicts(fixResult, userId);
+        try {
+          await _fixMissingUserDicts(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复基础词书时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复基础词书失败: $e');
+        }
       }
 
       // 修复单词托底缺失问题 (点对点向云端索取本地查无释义的丢失数据)
       if (checkResult.hasIssue('sys_dict_missing_fallback')) {
-        await _fixSysDictMissingFallback(fixResult, userId);
+        try {
+          await _fixSysDictMissingFallback(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复底层托底时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复底层托底失败: $e');
+        }
       }
 
       // 修复正在学习单词的释义缺失问题
       if (checkResult.hasIssue('learning_word_missing_meaning')) {
-        await _fixLearningWordMissingMeaning(fixResult, userId);
+        try {
+          await _fixLearningWordMissingMeaning(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复学习单词释义时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复学习单词释义失败: $e');
+        }
       }
 
       // 系统级字典如果有数量不对或序号不对的问题
@@ -603,22 +640,29 @@ class DataIntegrityChecker {
           
           await syncSysDb();
           fixResult.addFixed('检测到系统词库（通用词典）存在缺失，已在本地强制从云端重载系统环境基础数据！');
-        } catch (e) {
+        } catch (e, stack) {
+          Global.logger.e('重载通用系统数据流时发生中断性错误', error: e, stackTrace: stack);
           fixResult.addError('强制重载通用系统数据流失败: $e');
         }
       }
 
       // 修复版本号异常问题
       if (checkResult.hasIssue('user_db_version')) {
-        await _fixUserDbVersions(fixResult, userId);
+        try {
+          await _fixUserDbVersions(fixResult, userId);
+        } catch (e, stack) {
+          Global.logger.e('修复版本号异常时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复版本号异常失败: $e');
+        }
       }
 
       // 提示TTS修复方案
       if (checkResult.hasIssue('local_tts')) {
         fixResult.addFixed('请检查您的系统设置 -> 辅助功能/语言与输入 -> 文字转语音输出，确保已下载对应的中文/英文语音包。');
       }
-    } catch (e) {
-      fixResult.addError('自动修复过程中出现错误：$e');
+    } catch (e, stack) {
+      Global.logger.e('自动修复过程中出现未捕获的全局错误', error: e, stackTrace: stack);
+      fixResult.addError('自动修复过程中出现全局错误：$e');
     }
 
     return fixResult;
@@ -669,7 +713,7 @@ class DataIntegrityChecker {
              // 1. 恢复 DictWord
              final dwList = data['dictWords'] as List<dynamic>? ?? [];
              for (final item in dwList) {
-               final Map<String, dynamic> dictWordMap = item as Map<String, dynamic>;
+               final Map<String, dynamic> dictWordMap = Map<String, dynamic>.from(item as Map);
                final dw = DictWord.fromJson(dictWordMap);
                await _db.dictWordsDao.insertEntity(dw, false);
                dwCount++;
@@ -678,7 +722,7 @@ class DataIntegrityChecker {
              // 2. 恢复 MeaningItem
              final mList = data['meaningItems'] as List<dynamic>? ?? [];
              for (final item in mList) {
-               final Map<String, dynamic> mMap = item as Map<String, dynamic>;
+               final Map<String, dynamic> mMap = Map<String, dynamic>.from(item as Map);
                final m = MeaningItem.fromJson(mMap);
                await _db.meaningItemsDao.insertEntity(m, false);
                mCount++;
@@ -687,7 +731,7 @@ class DataIntegrityChecker {
              // 3. 恢复 Sentence
              final sList = data['sentences'] as List<dynamic>? ?? [];
              for (final item in sList) {
-               final Map<String, dynamic> sMap = item as Map<String, dynamic>;
+               final Map<String, dynamic> sMap = Map<String, dynamic>.from(item as Map);
                final s = Sentence.fromJson(sMap);
                await _db.sentencesDao.insertEntity(s);
                sCount++;
@@ -699,7 +743,8 @@ class DataIntegrityChecker {
            fixResult.addError('请求云端补件接口失败: ${response.msg}');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('靶向修复底层字典托底碎片时出错', error: e, stackTrace: stack);
       fixResult.addError('靶向修复底层字典托底碎片时出错: $e');
     }
   }
@@ -763,9 +808,9 @@ class DataIntegrityChecker {
           'learning_word_missing_meaning'
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查学习单词释义完整性时出错', error: e, stackTrace: stack);
       result.addError('检查学习单词释义完整性时出错: $e');
-      Global.logger.e('检查学习单词释义完整性时出错', error: e);
     }
   }
 
@@ -802,16 +847,11 @@ class DataIntegrityChecker {
 
            await _db.transaction(() async {
              try {
-               Global.logger.i('【修复】进入事务, data类型: ${data.runtimeType}');
+               Global.logger.i('【修复】开始持久化从云端获取的学习单词数据...');
                
-               // 1. 恢复 DictWord
-               final dwRaw = data['dictWords'];
-               Global.logger.i('【修复】dictWords原始类型: ${dwRaw.runtimeType}');
-               final dwList = dwRaw as List<dynamic>? ?? [];
-               Global.logger.i('【修复】开始遍历 dictWords, 数量: ${dwList.length}');
-               
+               // 1. 恢复 DictWord (为了能让单词在词典中显示)
+               final dwList = data['dictWords'] as List<dynamic>? ?? [];
                for (final item in dwList) {
-                 Global.logger.i('【修复】正在处理 DictWord item: $item');
                  final Map<String, dynamic> dictWordMap = Map<String, dynamic>.from(item as Map);
                  final dw = DictWord.fromJson(dictWordMap);
                  await _db.dictWordsDao.insertEntity(dw, false);
@@ -820,7 +860,6 @@ class DataIntegrityChecker {
 
                // 2. 恢复 MeaningItem
                final mList = data['meaningItems'] as List<dynamic>? ?? [];
-               Global.logger.i('【修复】开始遍历 meaningItems, 数量: ${mList.length}');
                for (final item in mList) {
                  final Map<String, dynamic> mMap = Map<String, dynamic>.from(item as Map);
                  final m = MeaningItem.fromJson(mMap);
@@ -830,7 +869,6 @@ class DataIntegrityChecker {
 
                // 3. 恢复 Sentence
                final sList = data['sentences'] as List<dynamic>? ?? [];
-               Global.logger.i('【修复】开始遍历 sentences, 数量: ${sList.length}');
                for (final item in sList) {
                  final Map<String, dynamic> sMap = Map<String, dynamic>.from(item as Map);
                  final s = Sentence.fromJson(sMap);
@@ -838,21 +876,20 @@ class DataIntegrityChecker {
                  sCount++;
                }
              } catch (e, stack) {
-               // 强制用 info 级别打印错误，防止被日志查看器过滤
-               Global.logger.i('【修复】!!! 事务内部发生严重错误 !!!: $e');
-               Global.logger.i('【修复】错误堆栈: $stack');
+               Global.logger.i('【修复】!!! 事务内部发生错误 (info级别打印以防过滤) !!!: $e');
+               Global.logger.i('【修复】堆栈: $stack');
                rethrow;
              }
            });
 
-           Global.logger.i('【修复】本地数据入库成功完成！dw=$dwCount, m=$mCount, s=$sCount');
+           Global.logger.i('【修复】本地数据入库完成: dw=$dwCount, m=$mCount, s=$sCount');
            fixResult.addFixed('成功向云端获取并补全了 ${missingWordIds.length} 个学习单词的释义数据！(包含 $dwCount 条物理连结，$mCount 条释义，$sCount 条例句)');
         } else {
            fixResult.addError('请求云端补全学习单词数据失败: ${response.msg}');
         }
       }
-    } catch (e) {
-      Global.logger.i('【修复】!!! 修复函数发生外部错误 !!!: $e');
+    } catch (e, stack) {
+      Global.logger.e('修复学习单词释义缺失时出错', error: e, stackTrace: stack);
       fixResult.addError('修复学习单词释义缺失时出错: $e');
     }
   }
@@ -892,7 +929,8 @@ class DataIntegrityChecker {
           fixResult.addFixed('修复词典 "${dict.name}" 单词序号');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('修复词典单词序号时出错', error: e, stackTrace: stack);
       fixResult.addError('修复词典单词序号时出错：$e');
     }
   }
@@ -915,7 +953,8 @@ class DataIntegrityChecker {
           fixResult.addFixed('修复词典 "${dict.name}" 单词数量：$actualCount');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('修复词典单词数量时出错', error: e, stackTrace: stack);
       fixResult.addError('修复词典单词数量时出错：$e');
     }
   }
@@ -1010,7 +1049,8 @@ class DataIntegrityChecker {
         fixResult.addError('从服务端获取基础数据失败: ${response.msg}');
         return false;
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('请求服务端基础数据时发生异常', error: e, stackTrace: stack);
       fixResult.addError('请求服务端基础数据时发生异常: $e');
       return false;
     }
@@ -1061,7 +1101,8 @@ class DataIntegrityChecker {
            fixResult.addError('用户缺少学习步骤: ${missing.join(", ")}. 同步恢复失败。');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查用户学习步骤时出错', error: e, stackTrace: stack);
       fixResult.addError('检查用户学习步骤时出错：$e');
     }
   }
@@ -1107,7 +1148,8 @@ class DataIntegrityChecker {
            fixResult.addError('用户缺少基础词书: ${missing.join(", ")}. 同步恢复失败。');
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查用户词书时出错', error: e, stackTrace: stack);
       fixResult.addError('检查用户词书时出错: $e');
     }
   }
@@ -1133,7 +1175,8 @@ class DataIntegrityChecker {
         await _db.userDbLogsDao.deleteUserDbLogs(currentUserId);
         fixResult.addFixed('删除当前用户的 ${invalidLogs.length} 条异常日志');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('修复用户数据库版本时出错', error: e, stackTrace: stack);
       fixResult.addError('修复用户数据库版本时出错：$e');
     }
   }
@@ -1150,8 +1193,8 @@ class DataIntegrityChecker {
         final connectionType = await networkUtil.getConnectionType();
         Global.logger.d('网络连接正常，连接类型: $connectionType');
       }
-    } catch (e) {
-      Global.logger.e('检查网络连接时出错: $e');
+    } catch (e, stack) {
+      Global.logger.e('检查网络连接时出错', error: e, stackTrace: stack);
       result.addIssue('网络检查失败', '无法检查网络连接状态: $e', 'network_connectivity');
     }
   }
@@ -1176,8 +1219,8 @@ class DataIntegrityChecker {
       } else {
         result.addIssue('后端服务器无响应', '后端服务器返回错误状态: ${response.statusCode}', 'backend_server');
       }
-    } catch (e) {
-      Global.logger.e('检查后端服务器时出错: $e');
+    } catch (e, stack) {
+      Global.logger.e('检查后端服务器时出错', error: e, stackTrace: stack);
       result.addIssue('后端服务器连接失败', '无法连接到后端服务器: ${e.toString().substring(0, e.toString().length > 50 ? 50 : e.toString().length)}', 'backend_server');
     }
   }
@@ -1203,8 +1246,8 @@ class DataIntegrityChecker {
         result.addIssue('游戏服务器连接失败', '无法建立WebSocket连接到游戏服务器', 'game_server');
         socketClient.disconnect();
       }
-    } catch (e) {
-      Global.logger.e('检查游戏服务器时出错: $e');
+    } catch (e, stack) {
+      Global.logger.e('检查游戏服务器时出错', error: e, stackTrace: stack);
       result.addIssue('游戏服务器检查失败', '检查游戏服务器连接时出错: ${e.toString().substring(0, e.toString().length > 50 ? 50 : e.toString().length)}', 'game_server');
       // 确保断开连接
       try {
@@ -1254,7 +1297,8 @@ class DataIntegrityChecker {
       } else {
         result.addIssue('缺少英文语音', '本地TTS引擎不支持英文（en-US），请在系统设置中下载英文语音包', 'local_tts');
       }
-    } catch (e) {
+    } catch (e, stack) {
+      Global.logger.e('检查本地TTS功能时出错', error: e, stackTrace: stack);
       result.addError('检查本地TTS功能时出错: $e');
     }
   }
