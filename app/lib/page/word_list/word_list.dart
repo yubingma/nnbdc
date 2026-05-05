@@ -1790,7 +1790,12 @@ class WordListPageState extends State<WordListPage>
         if (studyMode == WordListStudyMode.speakEnglish ||
             studyMode == WordListStudyMode.dictation ||
             studyMode == WordListStudyMode.dictationHandwriting) {
-          await SoundUtil.playPronounceSound2(words[oldIndex].word, audioPlayer);
+          // 如果该单词已经答对或已揭晓答案（刚才已经播放过一次反馈音），则不再重复播放
+          if (words[oldIndex].speakEnglishPassed) {
+            Global.logger.d("onWordPressed: 单词已答对/已揭晓且已播放过，跳过离开时的重复播放");
+          } else {
+            await SoundUtil.playPronounceSound2(words[oldIndex].word, audioPlayer);
+          }
         }
       }
     }
@@ -4055,6 +4060,7 @@ class WordListPageState extends State<WordListPage>
                        WidgetsBinding.instance.addPostFrameCallback((_) async {
                          // 写对了，播放当前单词（揭晓答案/确认）
                          try {
+                           targetWord.speakEnglishPassed = true;
                            await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
                          } catch (_) {}
                          
@@ -4091,6 +4097,7 @@ class WordListPageState extends State<WordListPage>
                   // 揭晓答案：离开当前词时播放
                   if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
                     try {
+                      words[bookmarkedIndex].speakEnglishPassed = true;
                       await SoundUtil.playPronounceSound2(words[bookmarkedIndex].word, audioPlayer);
                     } catch (_) {}
                   }

@@ -177,7 +177,9 @@ class SpeakModeItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode),
+        Flexible(
+          child: ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode),
+        ),
         const SizedBox(width: 8),
         if (word.pronunciationScore != null)
           Container(
