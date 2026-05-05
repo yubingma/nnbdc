@@ -734,6 +734,11 @@ class DataIntegrityChecker {
       if (missingMeanings.isNotEmpty) {
         final List<String> details = [];
         for (final wordId in missingMeanings.take(10)) {
+          // 获取单词拼写
+          final word = await (_db.wordsDao.select(_db.words)..where((w) => w.id.equals(wordId))).getSingleOrNull();
+          final spelling = word?.spell ?? "未知拼写";
+          final shortId = wordId.length > 6 ? wordId.substring(0, 6) : wordId;
+
           // 反查所属词典
           final dictWords = await (_db.dictWordsDao.select(_db.dictWords)..where((dw) => dw.wordId.equals(wordId))).get();
           final dictNames = <String>[];
@@ -741,7 +746,7 @@ class DataIntegrityChecker {
             final dict = await _db.dictsDao.findById(dw.dictId);
             if (dict != null) dictNames.add(dict.name);
           }
-          details.add('"$wordId" (来自词典: ${dictNames.isEmpty ? "未知" : dictNames.join(", ")})');
+          details.add('"$spelling" (ID: $shortId, 来自词典: ${dictNames.isEmpty ? "未知" : dictNames.join(", ")})');
         }
 
         String description = '您正在学习的单词中有 ${missingMeanings.length} 个在本地查无释义。';
