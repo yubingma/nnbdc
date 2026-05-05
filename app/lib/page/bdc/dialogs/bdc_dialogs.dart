@@ -1,7 +1,7 @@
 part of '../bdc.dart';
 
-extension BdcPageDialogs on BdcPage {
-  Widget _buildSettingItem(BuildContext context, String title, bool value, Function(bool) onChanged,
+extension BdcPageStateDialogs on BdcPageState {
+  Widget _buildSettingItem(String title, bool value, Function(bool) onChanged,
       {Widget? customTrailing, String? subtitle}) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -51,7 +51,8 @@ extension BdcPageDialogs on BdcPage {
   }
 
 
-  Widget _buildDistractorStrategySelector(BuildContext context, String currentValue, Function(String) onChanged) {
+  Widget _buildDistractorStrategySelector(
+      String currentValue, Function(String) onChanged) {
     const Map<String, String> options = {
       'RecentlyLearned': '最近学习的单词',
       'ShapeSimilar': '形近词',
@@ -116,7 +117,8 @@ extension BdcPageDialogs on BdcPage {
   }
 
 
-  Widget _buildAsrPassRuleSelector(BuildContext context, String currentValue, Function(String) onChanged) {
+  Widget _buildAsrPassRuleSelector(
+      String currentValue, Function(String) onChanged) {
     const Map<String, String> options = {
       'ONE': '说出一个意思即可',
       'HALF': '说出半数意思',
@@ -182,7 +184,7 @@ extension BdcPageDialogs on BdcPage {
   }
 
 
-  Future<void> showSettingDlg(BuildContext context) async {
+  Future<void> showSettingDlg() async {
     // 在StatefulBuilder外部初始化本地状态
     var currentUser = Global.getLoggedInUser();
     var studyConfig = StudyConfig.fromCurrentUser();
@@ -196,7 +198,7 @@ extension BdcPageDialogs on BdcPage {
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
     var localDistractorStrategy = studyConfig.distractorStrategy;
 
-    if (controller.isClosed) return;
+    if (!mounted) return;
 
     bool? choice = await showDialog<bool>(
         barrierDismissible: false,
@@ -272,11 +274,12 @@ extension BdcPageDialogs on BdcPage {
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               final List<Widget> items = [
-                                _buildSettingItem(context, '深色模式',
-                                  controller.isDarkMode.value,
+                                _buildSettingItem(
+                                  '深色模式',
+                                  _isDarkMode,
                                   (value) {
                                     setState(() {
-                                      controller.isDarkMode.value = value;
+                                      _isDarkMode = value;
                                     });
                                     MyDatabase.instance.localParamsDao
                                         .saveIsDarkMode(value);
@@ -290,10 +293,10 @@ extension BdcPageDialogs on BdcPage {
                                       scale: 1.8,
                                       alignment: Alignment.centerRight,
                                       child: DayNightSwitcherIcon(
-                                        isDarkModeEnabled: controller.isDarkMode.value,
+                                        isDarkModeEnabled: _isDarkMode,
                                         onStateChanged: (isDarkModeEnabled) {
                                           setState(() {
-                                            controller.isDarkMode.value = isDarkModeEnabled;
+                                            _isDarkMode = isDarkModeEnabled;
                                           });
                                           MyDatabase.instance.localParamsDao
                                               .saveIsDarkMode(
@@ -306,21 +309,24 @@ extension BdcPageDialogs on BdcPage {
                                     ),
                                   ),
                                 ),
-                                _buildAsrPassRuleSelector(context, localAsrPassRule,
+                                _buildAsrPassRuleSelector(
+                                  localAsrPassRule,
                                   (value) {
                                     setState(() {
                                       localAsrPassRule = value;
                                     });
                                   },
                                 ),
-                                _buildDistractorStrategySelector(context, localDistractorStrategy,
+                                _buildDistractorStrategySelector(
+                                  localDistractorStrategy,
                                   (value) {
                                     setState(() {
                                       localDistractorStrategy = value;
                                     });
                                   },
                                 ),
-                                _buildSettingItem(context, '自动播放单词发音',
+                                _buildSettingItem(
+                                  '自动播放单词发音',
                                   localAutoPlayWord,
                                   (value) {
                                     setState(() {
@@ -328,7 +334,8 @@ extension BdcPageDialogs on BdcPage {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(context, '自动播放例句',
+                                _buildSettingItem(
+                                  '自动播放例句',
                                   localAutoPlaySentence,
                                   (value) {
                                     setState(() {
@@ -336,7 +343,8 @@ extension BdcPageDialogs on BdcPage {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(context, '直接显示备选答案',
+                                _buildSettingItem(
+                                  '直接显示备选答案',
                                   localShowAnswersDirectly,
                                   (value) {
                                     setState(() {
@@ -344,7 +352,8 @@ extension BdcPageDialogs on BdcPage {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(context, '备选答案含[都不对]选项',
+                                _buildSettingItem(
+                                  '备选答案含[都不对]选项',
                                   localEnableAllWrong,
                                   (value) {
                                     setState(() {
@@ -352,7 +361,8 @@ extension BdcPageDialogs on BdcPage {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(context, '显示单词配图',
+                                _buildSettingItem(
+                                  '显示单词配图',
                                   localEnableWordImage,
                                   (value) {
                                     setState(() {
@@ -360,7 +370,8 @@ extension BdcPageDialogs on BdcPage {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(context, '中英极速：答对后直接下一词',
+                                _buildSettingItem(
+                                  '中英极速：答对后直接下一词',
                                   localAutoJumpAfterCorrectCh2En,
                                   (value) {
                                     setState(() {
@@ -368,7 +379,8 @@ extension BdcPageDialogs on BdcPage {
                                     });
                                   },
                                 ),
-                                _buildSettingItem(context, '英中极速：答对后直接下一词',
+                                _buildSettingItem(
+                                  '英中极速：答对后直接下一词',
                                   localAutoJumpAfterCorrectEn2Ch,
                                   (value) {
                                     setState(() {
@@ -473,10 +485,10 @@ extension BdcPageDialogs on BdcPage {
 
                           // 在异步操作后检查context是否仍然有效
                           if (context.mounted) {
-                            controller.asrPassRuleCache = localAsrPassRule;
-                            controller.autoJumpAfterCorrectCh2En =
+                            _asrPassRuleCache = localAsrPassRule;
+                            _autoJumpAfterCorrectCh2En =
                                 localAutoJumpAfterCorrectCh2En;
-                            controller.autoJumpAfterCorrectEn2Ch =
+                            _autoJumpAfterCorrectEn2Ch =
                                 localAutoJumpAfterCorrectEn2Ch;
                             Navigator.pop(context, true);
                           }
@@ -499,8 +511,8 @@ extension BdcPageDialogs on BdcPage {
       // 设置已在确定按钮中保存，这里刷新界面
       try {
         // 刷新界面，以体现最新配置
-        await Asr().stopAsr();
-        controller.handleWord(controller.currentGetWordResult.value!);
+        await asr.stopAsr();
+        handleWord(_currentGetWordResult);
       } catch (e) {
         ToastUtil.error('刷新界面失败: $e');
       }
@@ -508,14 +520,14 @@ extension BdcPageDialogs on BdcPage {
   }
 
 
-  Future<void> showErrorReportDlg(BuildContext context) async {
-    controller.errorReportController.text = '';
+  Future<void> showErrorReportDlg() async {
+    errorReportController.text = '';
     bool? choice = await showDialog<bool>(
         barrierDismissible: false,
         context: context,
         builder: (BuildContext context) {
           return StatefulBuilder(builder: (context, setState) {
-            final isDark = controller.isDarkMode.value;
+            final isDark = context.watch<DarkMode>().isDarkMode;
             return AlertDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -557,7 +569,7 @@ extension BdcPageDialogs on BdcPage {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '请输入单词(${controller.word.value!.spell})的报错内容',
+                        '请输入单词(${_word!.spell})的报错内容',
                         textScaler: const TextScaler.linear(1.0),
                         style: const TextStyle(
                           fontFamily: "NotoSansSC",
@@ -580,7 +592,7 @@ extension BdcPageDialogs on BdcPage {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: TextField(
-                            controller: controller.errorReportController,
+                            controller: errorReportController,
                             minLines: 4,
                             maxLines: 10,
                             decoration: const InputDecoration(
@@ -622,7 +634,7 @@ extension BdcPageDialogs on BdcPage {
 
     if (choice ?? false) {
       var result = await UserBo()
-          .saveErrorReport(controller.word.value!.spell, controller.errorReportController.text);
+          .saveErrorReport(_word!.spell, errorReportController.text);
       if (result.success) {
         ToastUtil.info('报错成功！感谢你付出宝贵时间');
       } else {
@@ -647,7 +659,7 @@ extension BdcPageDialogs on BdcPage {
         },
         pageBuilder: (context, animation, secondaryAnimation) {
           return StatefulBuilder(builder: (context, dialogSetState) {
-            voteFuture ??= Future.value(controller.wordImageHasBeenVoted(wordImage));
+            voteFuture ??= wordImageHasBeenVoted(wordImage);
             return Align(
               alignment: const Alignment(0, 0),
               child: Container(
@@ -658,7 +670,7 @@ extension BdcPageDialogs on BdcPage {
                 margin: MediaQuery.of(context).viewInsets,
                 // 当软键盘弹出时，对话框自动上移
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                color: controller.isDarkMode.value
+                color: context.read<DarkMode>().isDarkMode
                     ? const Color(0xff333333)
                     : Colors.white,
                 child: SingleChildScrollView(
@@ -755,9 +767,9 @@ extension BdcPageDialogs on BdcPage {
                                                   createTime: now,
                                                   updateTime: now));
                                           wordImage.hand += 1;
-                                          controller.wordImageEdited = true;
+                                          _wordImageEdited = true;
                                           voteFuture = Future.value(true);
-                                          if (!controller.isClosed) {
+                                          if (mounted) {
                                             dialogSetState(() {});
                                           }
                                         } else {
@@ -809,9 +821,9 @@ extension BdcPageDialogs on BdcPage {
                                                   createTime: now,
                                                   updateTime: now));
                                           wordImage.foot += 1;
-                                          controller.wordImageEdited = true;
+                                          _wordImageEdited = true;
                                           voteFuture = Future.value(true);
-                                          if (!controller.isClosed) {
+                                          if (mounted) {
                                             dialogSetState(() {});
                                           }
                                         } else {
@@ -842,7 +854,7 @@ extension BdcPageDialogs on BdcPage {
                                 child: const Text('删除'),
                                 onPressed: () {
                                   // 先关闭对话框，再执行异步操作
-                                  controller.resetHighlightedWordImg();
+                                  resetHighlightedWordImg();
                                   Navigator.pop(context, false);
 
                                   // 然后执行异步删除操作
@@ -856,8 +868,8 @@ extension BdcPageDialogs on BdcPage {
                                       ToastUtil.error(result.msg!);
                                     }
 
-                                    if (!controller.isClosed) {
-                                      controller.reloadWord();
+                                    if (mounted) {
+                                      reloadWord();
                                     }
                                   });
                                 },
@@ -869,10 +881,10 @@ extension BdcPageDialogs on BdcPage {
                               ),
                               child: const Text('关闭'),
                               onPressed: () {
-                                controller.resetHighlightedWordImg();
+                                resetHighlightedWordImg();
                                 Navigator.pop(context, false);
-                                if (controller.wordImageEdited) {
-                                  controller.reloadWord();
+                                if (_wordImageEdited) {
+                                  reloadWord();
                                 }
                               },
                             ),
@@ -889,21 +901,21 @@ extension BdcPageDialogs on BdcPage {
   }
 
 
-  void _showRatingModifyDialog(BuildContext context) {
+  void _showRatingModifyDialog() {
     showDialog(
       context: context,
       builder: (context) {
-        String finalReason = controller.lastFsrsRatingReason.value ?? '';
+        String finalReason = _lastFsrsRatingReason ?? '';
         // 巩固环节中，只有当自动评分被限制（高于测评环节评分）时才显示提示
-        if (controller.currentGetWordResult.value != null &&
-            controller.currentGetWordResult.value!.stepIndex > 0 &&
-            controller.assessmentRating.value != null &&
-            controller.lastFsrsRating.value != null &&
-            controller.lastFsrsRating.value!.index > controller.assessmentRating.value!.index) {
+        if (_currentGetWordResult != null &&
+            _currentGetWordResult!.stepIndex > 0 &&
+            _assessmentRating != null &&
+            _lastFsrsRating != null &&
+            _lastFsrsRating!.index > _assessmentRating!.index) {
           if (finalReason.isNotEmpty) {
             finalReason += '\n';
           }
-          finalReason += '⚠️ 当前处于巩固环节，自动评分上限被限制为测评结果（${controller.assessmentRating.value!.label}）。';
+          finalReason += '⚠️ 当前处于巩固环节，自动评分上限被限制为测评结果（${_assessmentRating!.label}）。';
         }
         return AlertDialog(
           shape:
@@ -953,7 +965,7 @@ extension BdcPageDialogs on BdcPage {
                         ),
                       ),
                     ),
-                    if (controller.lastFsrsRatingReason.value != null) ...[
+                    if (_lastFsrsRatingReason != null) ...[
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -987,7 +999,7 @@ extension BdcPageDialogs on BdcPage {
               ),
               ...FsrsRating.values.map((rating) {
                 Color ratingColor;
-                final isDarkMode = controller.isDarkMode.value;
+                final isDarkMode = context.read<DarkMode>().isDarkMode;
                 switch (rating) {
                   case FsrsRating.again:
                     ratingColor = isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
@@ -1013,12 +1025,12 @@ extension BdcPageDialogs on BdcPage {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  trailing: controller.lastFsrsRating.value == rating
+                  trailing: _lastFsrsRating == rating
                       ? Icon(Icons.check, color: ratingColor)
                       : null,
                   onTap: () {
                     Navigator.of(context).pop();
-                    controller.updateFsrsRating(rating);
+                    _updateFsrsRating(rating);
                   },
                 );
               }),
@@ -1032,20 +1044,71 @@ extension BdcPageDialogs on BdcPage {
 
 
 
-  void _showLearningHistoryDialog(BuildContext context) async {
-    final wordId = controller.wordWrapper.value?.word.id;
+  void _showErrorWidget(String errorMessage) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red[400]),
+            const SizedBox(width: 8),
+            const Text('出错了'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(errorMessage),
+              const SizedBox(height: 8),
+              const Text(
+                '您可以尝试重新加载或返回上一页。',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pop();
+            },
+            child: const Text('返回'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HealthCheckPage(autoStart: true),
+                ),
+              );
+            },
+            child: const Text('尝试修复'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  void _showLearningHistoryDialog() async {
+    final wordId = _wordWrapper?.word.id;
     if (wordId == null) return;
 
     final history = await MyDatabase.instance.learningLogsDao
         .getHistory(Global.getLoggedInUser()!.id, wordId);
 
-    if (controller.isClosed) return;
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     showDialog(
       context: context,
       builder: (context) {
-        final isDarkMode = controller.isDarkMode.value;
+        final isDarkMode = context.watch<DarkMode>().isDarkMode;
         final bgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
         final textColor = isDarkMode ? Colors.white70 : Colors.black87;
 
@@ -1178,13 +1241,13 @@ extension BdcPageDialogs on BdcPage {
   }
 
 
-  void _showDebugOverlay(BuildContext context) async {
+  void _showDebugOverlay() async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
     // 获取今日所有学习单词及其状态
     final words = await LearningService.getTodayLearningWordsFromDb(user.id);
-    final activeSteps = controller.activeUserStudySteps;
+    final activeSteps = activeUserStudySteps;
 
     // 获取用户已掌握的单词 ID 集，用于准确反映调度状态
     final masteredWords = await MyDatabase.instance.masteredWordsDao
@@ -1213,7 +1276,7 @@ extension BdcPageDialogs on BdcPage {
       }
     }
 
-    if (controller.isClosed) return;
+    if (!mounted) return;
 
     // 分批次并按照学习序号排序
     words.sort((a, b) {
@@ -1248,7 +1311,7 @@ extension BdcPageDialogs on BdcPage {
 
     String? nextWordId;
     int? nextStepIndex;
-    String? currentWordId = controller.currentGetWordResult.value?.learningWord?.word.id;
+    String? currentWordId = _currentGetWordResult?.learningWord?.word.id;
 
     if (pendingCells.isNotEmpty) {
       int currentIndex = -1;
@@ -1266,8 +1329,6 @@ extension BdcPageDialogs on BdcPage {
       }
     }
 
-    if (!context.mounted) return;
-
     showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -1277,7 +1338,7 @@ extension BdcPageDialogs on BdcPage {
         return const SizedBox.shrink();
       },
       transitionBuilder: (context, anim1, anim2, child) {
-        final bool isDark = controller.isDarkMode.value;
+        final bool isDark = context.watch<DarkMode>().isDarkMode;
         final Color textColor = isDark ? Colors.white : Colors.black87;
         final Color subTextColor = isDark ? Colors.white70 : Colors.black54;
 
@@ -1488,7 +1549,7 @@ extension BdcPageDialogs on BdcPage {
                                                       60), // Space for step names
                                               ...batchWords.map((w) {
                                                 final isCurrentWord =
-                                                    controller.currentGetWordResult.value
+                                                    _currentGetWordResult
                                                             ?.learningWord
                                                             ?.word
                                                             .id ==
@@ -1552,7 +1613,7 @@ extension BdcPageDialogs on BdcPage {
                                                   SizedBox(
                                                     width: 60,
                                                     child: Text(
-                                                      '${sIndex + 1}: $stepInfo',
+                                                      '${sIndex + 1}: ${stepInfo.studyStep}',
                                                       style: TextStyle(
                                                           fontSize: 10,
                                                           color: subTextColor),
@@ -1564,7 +1625,7 @@ extension BdcPageDialogs on BdcPage {
                                                   ...batchWords.map((w) {
                                                     // Is the user learning this exact word in this exact step right now?
                                                     final isCurrentStep =
-                                                        controller.currentGetWordResult.value
+                                                        _currentGetWordResult
                                                                     ?.learningWord
                                                                     ?.word
                                                                     .id ==
@@ -1673,53 +1734,4 @@ extension BdcPageDialogs on BdcPage {
     );
   }
 
-  void showImagePreviewWithContext(BuildContext context, WordImageVo image, {VoidCallback? onDeleted}) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(image.imageFile),
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-              ],
-            ),
-            if (onDeleted != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    onDeleted();
-                  },
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('删除图片'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.withValues(alpha: 0.8),
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }
