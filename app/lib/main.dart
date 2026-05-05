@@ -34,6 +34,7 @@ import 'package:nnbdc/page/select_book.dart';
 import 'package:nnbdc/page/walkman.dart';
 import 'package:nnbdc/page/word_detail.dart';
 import 'package:nnbdc/page/word_lists.dart';
+import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/test.dart';
@@ -485,11 +486,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         GetPage(name: '/game', page: () => const GamePage()),
         GetPage(name: '/russia', page: () => const RussiaPage()),
         GetPage(name: '/word_detail', page: () => const WordDetailPage()),
-        GetPage(
-          name: '/bdc',
-          page: () => const BdcPage(),
-          binding: BdcBinding(),
-        ),
+        GetPage(name: '/word_list', page: () => const WordListPage()),
         GetPage(name: '/finish', page: () => const FinishPage()),
         GetPage(name: '/farm', page: () => const FarmPage()),
         GetPage(name: '/word_lists', page: () => const WordListsPage()),
