@@ -133,54 +133,54 @@ class DataIntegrityChecker {
       onProgress?.call(7, '检查书桌系统词库底层托底...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 8. 检查网络连接
-      onProgress?.call(8, '检查网络连接...');
+      // 8. 检查正在学习单词的释义完整性
+      onProgress?.call(8, '检查正在学习单词的释义完整性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer8 = Stopwatch()..start();
-      await _checkNetworkConnectivity(result);
+      await _checkLearningWordsMeanings(result, userId);
       timer8.stop();
-      Global.logger.d('✓ 检查网络连接: ${timer8.elapsedMilliseconds}ms');
-      onProgress?.call(8, '检查网络连接...', result: result);
+      Global.logger.d('✓ 检查正在学习单词的释义: ${timer8.elapsedMilliseconds}ms');
+      onProgress?.call(8, '检查正在学习单词的释义完整性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 9. 检查后端服务器连通性
-      onProgress?.call(9, '检查后端服务器连通性...');
+      // 9. 检查网络连接
+      onProgress?.call(9, '检查网络连接...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer9 = Stopwatch()..start();
-      await _checkBackendServer(result);
+      await _checkNetworkConnectivity(result);
       timer9.stop();
-      Global.logger.d('✓ 检查后端服务器: ${timer9.elapsedMilliseconds}ms');
-      onProgress?.call(9, '检查后端服务器连通性...', result: result);
+      Global.logger.d('✓ 检查网络连接: ${timer9.elapsedMilliseconds}ms');
+      onProgress?.call(9, '检查网络连接...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 10. 检查游戏服务器连通性
-      onProgress?.call(10, '检查游戏服务器连通性...');
+      // 10. 检查后端服务器连通性
+      onProgress?.call(10, '检查后端服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer10 = Stopwatch()..start();
-      await _checkGameServer(result);
+      await _checkBackendServer(result);
       timer10.stop();
-      Global.logger.d('✓ 检查游戏服务器: ${timer10.elapsedMilliseconds}ms');
-      onProgress?.call(10, '检查游戏服务器连通性...', result: result);
+      Global.logger.d('✓ 检查后端服务器: ${timer10.elapsedMilliseconds}ms');
+      onProgress?.call(10, '检查后端服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 11. 检查本地TTS功能
-      onProgress?.call(11, '检查本地TTS功能...');
+      // 11. 检查游戏服务器连通性
+      onProgress?.call(11, '检查游戏服务器连通性...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer11 = Stopwatch()..start();
-      await _checkTtsFunctionality(result);
+      await _checkGameServer(result);
       timer11.stop();
-      Global.logger.d('✓ 检查本地TTS: ${timer11.elapsedMilliseconds}ms');
-      onProgress?.call(11, '检查本地TTS功能...', result: result);
+      Global.logger.d('✓ 检查游戏服务器: ${timer11.elapsedMilliseconds}ms');
+      onProgress?.call(11, '检查游戏服务器连通性...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // 12. 检查正在学习单词的释义完整性
-      onProgress?.call(12, '检查正在学习单词的释义完整性...');
+      // 12. 检查本地TTS功能
+      onProgress?.call(12, '检查本地TTS功能...');
       await Future.delayed(const Duration(milliseconds: 100));
       final timer12 = Stopwatch()..start();
-      await _checkLearningWordsMeanings(result, userId);
+      await _checkTtsFunctionality(result);
       timer12.stop();
-      Global.logger.d('✓ 检查正在学习单词的释义: ${timer12.elapsedMilliseconds}ms');
-      onProgress?.call(12, '检查正在学习单词的释义完整性...', result: result);
+      Global.logger.d('✓ 检查本地TTS: ${timer12.elapsedMilliseconds}ms');
+      onProgress?.call(12, '检查本地TTS功能...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
       stopwatch.stop();
