@@ -56,20 +56,20 @@ class _HealthCheckPageState extends State<HealthCheckPage> {
       'step': 7,
       'category': 'sys_dict_missing_fallback'
     },
-    {'id': 8, 'title': '网络连接', 'step': 8, 'category': 'network_connectivity'},
-    {'id': 9, 'title': '后端服务器连通性', 'step': 9, 'category': 'backend_server'},
-    {'id': 10, 'title': '游戏服务器连通性', 'step': 10, 'category': 'game_server'},
     {
-      'id': 11,
-      'title': '本地TTS功能',
-      'step': 11,
-      'category': 'local_tts'
+      'id': 8,
+      'title': '正在学习单词的释义完整性',
+      'step': 8,
+      'category': 'learning_word_missing_meaning'
     },
+    {'id': 9, 'title': '网络连接', 'step': 9, 'category': 'network_connectivity'},
+    {'id': 10, 'title': '后端服务器连通性', 'step': 10, 'category': 'backend_server'},
+    {'id': 11, 'title': '游戏服务器连通性', 'step': 11, 'category': 'game_server'},
     {
       'id': 12,
-      'title': '正在学习单词的释义完整性',
+      'title': '本地TTS功能',
       'step': 12,
-      'category': 'learning_word_missing_meaning'
+      'category': 'local_tts'
     },
   ];
 
