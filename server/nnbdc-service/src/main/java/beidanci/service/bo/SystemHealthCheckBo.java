@@ -507,17 +507,22 @@ public class SystemHealthCheckBo {
     }
 
     /**
-     * 为客户端提供点对点的托底防空洞救转数据，直接打包返回指定单词的全套系统资源
+     * 为客户端提供点对点的托底防空洞救转数据，直接打包返回指定单词的全套资源。
+     * 优先搜索系统公库（0库），如果没找到，则搜索该用户的私有词库。
      */
-    public java.util.Map<String, Object> getFallbackWordsData(List<String> wordIds) {
+    public java.util.Map<String, Object> getFallbackWordsData(List<String> wordIds, String userId) {
         List<DictWordDto> dictWords = new ArrayList<>();
         List<MeaningItemDto> meaningItems = new ArrayList<>();
         List<SentenceDto> sentences = new ArrayList<>();
         
         if (wordIds != null) {
             for (String wordId : wordIds) {
+                String foundDictId = null;
+                
+                // 1. 优先尝试从系统公共库（0库）找
                 DictWord dw = dictWordBo.findById(new DictWordId(Constants.COMMON_DICT_ID, wordId));
                 if (dw != null) {
+                    foundDictId = Constants.COMMON_DICT_ID;
                     DictWordDto dwDto = new DictWordDto();
                     dwDto.setDictId(Constants.COMMON_DICT_ID);
                     dwDto.setWordId(wordId);
@@ -525,16 +530,36 @@ public class SystemHealthCheckBo {
                     dwDto.setUnit(dw.getUnit());
                     dwDto.setCreateTime(dw.getCreateTime());
                     dictWords.add(dwDto);
+                } else if (userId != null && !userId.isEmpty()) {
+                    // 2. 如果公共库没找到，尝试从该用户的私有库里找
+                    List<Dict> userDicts = dictBo.getDictsByOwnerId(userId, null);
+                    for (Dict dict : userDicts) {
+                        DictWord udw = dictWordBo.findById(new DictWordId(dict.getId(), wordId));
+                        if (udw != null) {
+                            foundDictId = dict.getId();
+                            DictWordDto dwDto = new DictWordDto();
+                            dwDto.setDictId(dict.getId());
+                            dwDto.setWordId(wordId);
+                            dwDto.setSeq(udw.getSeq());
+                            dwDto.setUnit(udw.getUnit());
+                            dwDto.setCreateTime(udw.getCreateTime());
+                            dictWords.add(dwDto);
+                            break; // 只要找到一个私有库包含该词即可
+                        }
+                    }
                 }
                 
-                List<MeaningItemDto> mDtos = meaningItemBo.findMeaningsByWordAndDict(wordId, Constants.COMMON_DICT_ID);
-                if (mDtos != null) {
-                    meaningItems.addAll(mDtos);
-                    for (MeaningItemDto mDto : mDtos) {
-                        List<Sentence> sList = sentenceBo.findByMeaningItem(mDto.getId());
-                        if (sList != null) {
-                            for (Sentence s : sList) {
-                                sentences.add(sentenceBo.toDto(s));
+                // 3. 如果找到了物理位置（无论是公库还是私库），则提取其关联的释义和例句
+                if (foundDictId != null) {
+                    List<MeaningItemDto> mDtos = meaningItemBo.findMeaningsByWordAndDict(wordId, foundDictId);
+                    if (mDtos != null) {
+                        meaningItems.addAll(mDtos);
+                        for (MeaningItemDto mDto : mDtos) {
+                            List<Sentence> sList = sentenceBo.findByMeaningItem(mDto.getId());
+                            if (sList != null) {
+                                for (Sentence s : sList) {
+                                    sentences.add(sentenceBo.toDto(s));
+                                }
                             }
                         }
                     }

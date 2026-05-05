@@ -51,13 +51,15 @@ public class SystemController {
      * 为客户端自愈拉取缺失单词包（非管理员接口）
      */
     @PostMapping("/api/getFallbackWordsData.do")
-    public Result<java.util.Map<String, Object>> getFallbackWordsData(@RequestParam("wordIds") String wordIdsJson) {
+    public Result<java.util.Map<String, Object>> getFallbackWordsData(
+            @RequestParam("wordIds") String wordIdsJson,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Id", required = false) String userId) {
         try {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             List<String> ids = mapper.readValue(wordIdsJson, new com.fasterxml.jackson.core.type.TypeReference<List<String>>(){});
             if (ids.isEmpty()) return Result.success(new java.util.HashMap<>());
             
-            return Result.success(systemHealthCheckBo.getFallbackWordsData(ids));
+            return Result.success(systemHealthCheckBo.getFallbackWordsData(ids, userId));
         } catch (Exception e) {
             return Result.fail("获取基础补丁数据失败: " + e.getMessage());
         }
