@@ -33,7 +33,7 @@ class OcrChannel {
                 
             case "recognizeHandwriting":
                 guard let args = call.arguments as? [String: Any],
-                      let strokes = args["strokes"] as? [[[String: Double]]] else {
+                      let strokes = args["strokes"] as? [[[String: Any]]] else {
                     result(FlutterError(
                         code: "INVALID_ARGUMENTS",
                         message: "Missing strokes parameter",
@@ -128,14 +128,15 @@ class OcrChannel {
         }
     }
 
-    private static func recognizeHandwriting(strokesData: [[[String: Double]]], result: @escaping FlutterResult) {
+    private static func recognizeHandwriting(strokesData: [[[String: Any]]], result: @escaping FlutterResult) {
         var recognitionStrokes: [Stroke] = []
         for strokeData in strokesData {
             var points: [StrokePoint] = []
             for pointData in strokeData {
-                let x = Float(pointData["x"] ?? 0)
-                let y = Float(pointData["y"] ?? 0)
-                points.append(StrokePoint(x: x, y: y))
+                let x = (pointData["x"] as? NSNumber)?.floatValue ?? 0.0
+                let y = (pointData["y"] as? NSNumber)?.floatValue ?? 0.0
+                let t = (pointData["t"] as? NSNumber)?.intValue ?? 0
+                points.append(StrokePoint(x: x, y: y, t: t)) 
             }
             recognitionStrokes.append(Stroke(points: points))
         }

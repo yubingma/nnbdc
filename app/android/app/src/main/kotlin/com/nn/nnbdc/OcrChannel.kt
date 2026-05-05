@@ -93,9 +93,10 @@ class OcrChannel(private val context: Context) {
         for (strokeData in strokesData) {
             val strokeBuilder = Ink.Stroke.builder()
             for (pointData in strokeData) {
-                val x = pointData["x"]?.toFloat() ?: 0f
-                val y = pointData["y"]?.toFloat() ?: 0f
-                strokeBuilder.addPoint(Ink.Point.create(x, y))
+                val x = pointData["x"] as? Double ?: 0.0
+                val y = pointData["y"] as? Double ?: 0.0
+                val t = pointData["t"] as? Number ?: 0L
+                strokeBuilder.addPoint(Ink.Point.create(x.toFloat(), y.toFloat(), t.toLong()))
             }
             inkBuilder.addStroke(strokeBuilder.build())
         }

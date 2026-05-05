@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/util/ocr_service.dart';
@@ -48,8 +49,14 @@ class HandwritingBoard extends StatefulWidget {
   State<HandwritingBoard> createState() => HandwritingBoardState();
 }
 
+class PointWithTime {
+  final Offset offset;
+  final int t;
+  PointWithTime(this.offset, this.t);
+}
+
 class HandwritingBoardState extends State<HandwritingBoard> {
-  List<List<Offset>> _lines = [];
+  List<List<PointWithTime>> _lines = [];
   bool _isRecognizing = false;
   int _recognitionVersion = 0;
   final GlobalKey<_HandwritingCanvasState> _canvasKey = GlobalKey<_HandwritingCanvasState>();
@@ -104,7 +111,12 @@ class HandwritingBoardState extends State<HandwritingBoard> {
 
     try {
       // 1. 调用识别引擎 (统一使用 Google ML Kit Digital Ink Recognition)
-      final strokes = _lines.map((line) => line.map((p) => {'x': p.dx, 'y': p.dy}).toList()).toList();
+      // 现在包含了时间戳 't' (毫秒)
+      final strokes = _lines.map((line) => line.map((p) => {
+        'x': p.offset.dx, 
+        'y': p.offset.dy,
+        't': p.t
+      }).toList()).toList();
       final recognitionFuture = OcrService.recognizeHandwriting(strokes);
         
       final startTime = DateTime.now();
@@ -230,7 +242,7 @@ class HandwritingBoardState extends State<HandwritingBoard> {
 }
 
 class _HandwritingCanvas extends StatefulWidget {
-  final List<List<Offset>> lines;
+  final List<List<PointWithTime>> lines;
   final bool isRecognizing;
   final VoidCallback onRewrite;
   final VoidCallback onUndo;
@@ -276,6 +288,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   DateTime _lastStrokeEndTime = DateTime.fromMillisecondsSinceEpoch(0);
   late double _currentSmartZoneWidth;
   Timer? _autoRecognizeTimer;
+  late final bool _isIos;
 
   @override
   void dispose() {
@@ -287,6 +300,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
   @override
   void initState() {
     super.initState();
+    _isIos = defaultTargetPlatform == TargetPlatform.iOS;
     _controller = _HandwritingController(widget.lines);
     _currentSmartZoneWidth = widget.smartRightZoneWidth;
   }
@@ -365,11 +379,11 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
             _ignoredPointers.remove(event.pointer);
             widget.onStartWriting?.call();
             _autoRecognizeTimer?.cancel();
-            _controller.start(p);
+            _controller.start(p, DateTime.now().millisecondsSinceEpoch);
           },
           onPointerMove: (event) {
             if (event.pointer != _activePointerId) return;
-            _controller.move(event.localPosition, event.localDelta);
+            _controller.move(event.localPosition, event.localDelta, DateTime.now().millisecondsSinceEpoch, _isIos);
           },
           onPointerUp: (event) {
             if (event.pointer != _activePointerId) {
@@ -558,7 +572,7 @@ class _HandwritingCanvasState extends State<_HandwritingCanvas> {
 }
 
 class _HandwritingController extends ChangeNotifier {
-  List<List<Offset>> rawLines;
+  List<List<PointWithTime>> rawLines;
   Path finishedPath = Path();
   Path? activePath;
   Offset? lastRenderPoint; 
@@ -574,21 +588,21 @@ class _HandwritingController extends ChangeNotifier {
     finishedPath = Path();
     for (var line in rawLines) {
       if (line.isEmpty) continue;
-      finishedPath.moveTo(line[0].dx, line[0].dy);
+      finishedPath.moveTo(line[0].offset.dx, line[0].offset.dy);
       for (int i = 1; i < line.length - 1; i++) {
-        final p0 = line[i];
-        final p1 = line[i + 1];
+        final p0 = line[i].offset;
+        final p1 = line[i + 1].offset;
         finishedPath.quadraticBezierTo(
             p0.dx, p0.dy, (p0.dx + p1.dx) / 2.0, (p0.dy + p1.dy) / 2.0);
       }
       if (line.length > 1) {
-        finishedPath.lineTo(line.last.dx, line.last.dy);
+        finishedPath.lineTo(line.last.offset.dx, line.last.offset.dy);
       }
     }
   }
 
-  void start(Offset p) {
-    rawLines.add([p]);
+  void start(Offset p, int t) {
+    rawLines.add([PointWithTime(p, t)]);
     activePath = Path();
     activePath!.moveTo(p.dx, p.dy);
     lastRenderPoint = p;
@@ -614,11 +628,19 @@ class _HandwritingController extends ChangeNotifier {
     }
   }
 
-  void move(Offset p, Offset delta) {
+  void move(Offset p, Offset delta, int t, bool isIos) {
     if (activePath == null || lastRenderPoint == null || lastSmoothPoint == null) return;
     if ((p - lastSmoothPoint!).distanceSquared < 0.1) return;
-    final smoothedPoint = lastSmoothPoint! * 0.45 + p * 0.55;
-    rawLines.last.add(smoothedPoint); 
+    
+    // 调整 iOS 的平滑系数：
+    // 原系数为 0.45 (旧值) / 0.55 (新值)。
+    // 对于 iOS，我们适当减小对上一状态的依赖，增加当前采样点的权重 (0.35 / 0.65)，
+    // 这样可以保留更多 iOS 高频采样的细节，减少由于过度平滑导致的字迹粘连。
+    final smoothWeight = isIos ? 0.35 : 0.45;
+    final currentWeight = 1.0 - smoothWeight;
+    
+    final smoothedPoint = lastSmoothPoint! * smoothWeight + p * currentWeight;
+    rawLines.last.add(PointWithTime(smoothedPoint, t)); 
     lastDelta = delta;
     final newMidPoint =
         Offset((lastRenderPoint!.dx + smoothedPoint.dx) / 2.0, (lastRenderPoint!.dy + smoothedPoint.dy) / 2.0);

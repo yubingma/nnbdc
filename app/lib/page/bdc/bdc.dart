@@ -672,7 +672,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
           _showHandwritingBoard = false;
         });
         _doHandleTabChangeForAsr();
-        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
+        SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
         return;
       }
 
@@ -848,7 +848,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         }
 
         final soundFuture =
-            SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
+            SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
         _playingCorrectSounds.add(soundFuture);
         debugPrint(
             'checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
@@ -913,7 +913,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             });
             _doHandleTabChangeForAsr();
           }
-          SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.5, 1.0);
+          SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
           return;
         }
 

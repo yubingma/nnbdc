@@ -19,8 +19,8 @@ class OcrService {
   }
 
   /// 识别手写轨迹中的文字 (Digital Ink Recognition)
-  /// [strokes] 笔画列表，每个笔画是点的列表 [{'x': ..., 'y': ...}]
-  static Future<String> recognizeHandwriting(List<List<Map<String, double>>> strokes) async {
+  /// [strokes] 笔画列表，每个笔画是点的列表 [{'x': ..., 'y': ..., 't': ...}]
+  static Future<String> recognizeHandwriting(List<List<Map<String, dynamic>>> strokes) async {
     try {
       final result = await _channel.invokeMethod<String>('recognizeHandwriting', {
         'strokes': strokes,
