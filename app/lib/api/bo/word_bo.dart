@@ -2014,8 +2014,11 @@ class WordBo {
     final commonMeaningItems = await commonDictQuery.get();
     if (commonMeaningItems.isEmpty) {
       // 正常情况下通用释义不应为空，视为数据异常
-      Global.logger.e('通用释义缺失: wordId=$wordId');
-      throw Exception('通用释义缺失: $wordId');
+      final word = await db.wordsDao.getWordById(wordId);
+      final spell = word?.spell ?? 'unknown';
+      final shortId = wordId.length > 6 ? wordId.substring(0, 6) : wordId;
+      Global.logger.e('通用释义缺失: wordId=$shortId, spell=$spell');
+      throw Exception('通用释义缺失: wordId=$shortId, spell=$spell');
     }
 
     // 计算最大 popularity limit
