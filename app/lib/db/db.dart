@@ -141,7 +141,7 @@ class MyDatabase extends _$MyDatabase {
         if (tables.isNotEmpty) {
         // 4. 再次确保核心表的审计字段没有 NULL (双重保险)
         try {
-          final fixTables = ["users", "local_params", "user_study_daily_stats", "learning_logs", "similar_words"];
+          final fixTables = ["users", "local_params", "user_study_daily_stats", "learning_logs", "similar_words", "user_cow_dung_logs"];
           for (var t in fixTables) {
             await db.customUpdate('UPDATE "$t" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = \'\' OR create_time = 0;');
             await db.customUpdate('UPDATE "$t" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = \'\' OR update_time = 0;');
@@ -1580,26 +1580,28 @@ class MyDatabase extends _$MyDatabase {
 
   /// 手动补全缺失的审计字段 (用于处理迁移失败的极端情况)
   static Future<void> _manuallyAddAuditColumns(MyDatabase db) async {
-    final tables = [
-      'users', 'local_params', 'user_study_daily_stats', 'learning_logs',
-      'similar_words', 'dict_words', 'synonyms', 'sentences', 'words', 'word_images'
-    ];
-    for (final table in tables) {
+    // 遍历数据库定义的所有表
+    for (final table in db.allTables) {
+      final tableName = table.actualTableName;
       try {
-        final columns = await db.customSelect("PRAGMA table_info('$table')").get();
+        final columns = await db.customSelect("PRAGMA table_info('$tableName')").get();
         final hasCreateTime = columns.any((c) => c.read<String>('name') == 'create_time');
         final hasUpdateTime = columns.any((c) => c.read<String>('name') == 'update_time');
 
         if (!hasCreateTime) {
-          await db.customStatement('ALTER TABLE "$table" ADD COLUMN create_time INTEGER NOT NULL DEFAULT 946656000');
-          Global.logger.i('✅ 手动向 $table 添加了 create_time 列');
+          await db.customStatement('ALTER TABLE "$tableName" ADD COLUMN create_time INTEGER NOT NULL DEFAULT 946656000');
+          Global.logger.i('✅ 手动向 $tableName 添加了 create_time 列');
         }
         if (!hasUpdateTime) {
-          await db.customStatement('ALTER TABLE "$table" ADD COLUMN update_time INTEGER NOT NULL DEFAULT 946656000');
-          Global.logger.i('✅ 手动向 $table 添加了 update_time 列');
+          await db.customStatement('ALTER TABLE "$tableName" ADD COLUMN update_time INTEGER NOT NULL DEFAULT 946656000');
+          Global.logger.i('✅ 手动向 $tableName 添加了 update_time 列');
         }
+        
+        // 补全后统一回填默认值
+        await db.customUpdate('UPDATE "$tableName" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = \'\' OR create_time = 0;');
+        await db.customUpdate('UPDATE "$tableName" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = \'\' OR update_time = 0;');
       } catch (e) {
-        Global.logger.e('手动补全 $table 审计字段失败: $e');
+        Global.logger.e('手动补全 $tableName 审计字段失败: $e');
       }
     }
   }
