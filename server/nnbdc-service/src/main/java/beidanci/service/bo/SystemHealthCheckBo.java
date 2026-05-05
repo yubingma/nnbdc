@@ -523,6 +523,7 @@ public class SystemHealthCheckBo {
                 DictWord dw = dictWordBo.findById(new DictWordId(Constants.COMMON_DICT_ID, wordId));
                 if (dw != null) {
                     foundDictId = Constants.COMMON_DICT_ID;
+                    logger.info(String.format("【健康检查】在通用词典(0)找到单词: wordId=%s", wordId));
                     DictWordDto dwDto = new DictWordDto();
                     dwDto.setDictId(Constants.COMMON_DICT_ID);
                     dwDto.setWordId(wordId);
@@ -537,6 +538,7 @@ public class SystemHealthCheckBo {
                         DictWord udw = dictWordBo.findById(new DictWordId(dict.getId(), wordId));
                         if (udw != null) {
                             foundDictId = dict.getId();
+                            logger.info(String.format("【健康检查】在用户私有词典[%s]找到单词: wordId=%s", dict.getName(), wordId));
                             DictWordDto dwDto = new DictWordDto();
                             dwDto.setDictId(dict.getId());
                             dwDto.setWordId(wordId);
@@ -549,20 +551,26 @@ public class SystemHealthCheckBo {
                     }
                 }
                 
-                // 3. 如果找到了物理位置（无论是公库还是私库），则提取其关联的释义和例句
+                // 3. 如果找到了物理位置（无论是公库还是私库），则提取其在该词库下的关联资源
                 if (foundDictId != null) {
                     List<MeaningItemDto> mDtos = meaningItemBo.findMeaningsByWordAndDict(wordId, foundDictId);
-                    if (mDtos != null) {
+                    if (mDtos != null && !mDtos.isEmpty()) {
+                        logger.info(String.format("【健康检查】找到释义项: wordId=%s, dictId=%s, 数量=%d", wordId, foundDictId, mDtos.size()));
                         meaningItems.addAll(mDtos);
                         for (MeaningItemDto mDto : mDtos) {
                             List<Sentence> sList = sentenceBo.findByMeaningItem(mDto.getId());
-                            if (sList != null) {
+                            if (sList != null && !sList.isEmpty()) {
+                                logger.info(String.format("【健康检查】找到关联例句: meaningId=%s, 数量=%d", mDto.getId(), sList.size()));
                                 for (Sentence s : sList) {
                                     sentences.add(sentenceBo.toDto(s));
                                 }
                             }
                         }
+                    } else {
+                        logger.info(String.format("【健康检查】警告：虽然找到了词库关联，但未找到对应的释义项: wordId=%s, dictId=%s", wordId, foundDictId));
                     }
+                } else {
+                    logger.info(String.format("【健康检查】在通用词典和用户私有词典中均未找到该单词: wordId=%s", wordId));
                 }
             }
         }
@@ -1041,6 +1049,7 @@ public class SystemHealthCheckBo {
                         dwDto.setWordId(wordId);
                         sysDbSyncBo.logOperation(dwDto, "DELETE", "dict_word", commonDictId + "_" + wordId, JsonUtils.toJson(dwDto));
                         
+                        logger.info(String.format("【健康检查】清理脏数据: wordId=%s", wordId));
                         cleanedCount++;
                     } catch (Exception ignore) {}
                     continue;
@@ -1058,6 +1067,7 @@ public class SystemHealthCheckBo {
                         if (map != null && map.containsKey("meaning")) {
                             String ciXing = map.containsKey("ciXing") ? (String) map.get("ciXing") : "";
                             String meaning = (String) map.get("meaning");
+                            logger.info(String.format("【健康检查】AI 为单词 [%s] 生成了释义: %s", spell, meaning));
                             
                             MeaningItemDto newMeaning = new MeaningItemDto();
                             String newId = Util.uuid();

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -23,6 +22,8 @@ import beidanci.service.util.Util;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class MeaningItemBo extends BaseBo<MeaningItem> {
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(MeaningItemBo.class);
+    
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
@@ -143,6 +144,11 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             if (seen.size() == wordIds.size()) {
                 break;
             }
+        }
+        if (!picked.isEmpty()) {
+            logger.info(String.format("【健康检查】为 %d 个单词找到了备选释义", picked.size()));
+        } else {
+            logger.info("【健康检查】未找到任何备选释义");
         }
         return picked;
     }
