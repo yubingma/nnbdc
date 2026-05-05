@@ -231,7 +231,7 @@ class WordListPageState extends State<WordListPage>
   /// 两次查询的最小时间间隔，单位毫秒
   static const int minQueryInterval = 300;
 
-  var studyMode = WordListStudyMode.list;
+  var studyMode = WordListStudyMode.hideChinese;
   bool _isHandwritingOverlayOpen = true;
   bool _isSwitchingMode = false;
   int? _tempHandwritingSelectedIndex;
