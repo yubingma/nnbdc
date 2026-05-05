@@ -12,6 +12,8 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
 import 'package:nnbdc/util/tts.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/page/select_book.dart';
+import 'package:nnbdc/api/vo.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
@@ -622,27 +624,27 @@ class DataIntegrityChecker {
         }
       }
 
-      // 系统级字典如果有数量不对或序号不对的问题
+      // 系统级字典（主要是通用词典 ID=0）如果有数量不对或序号不对的问题
       if (checkResult.hasIssue('sys_dict_word_count') || checkResult.hasIssue('sys_dict_word_sequence')) {
         try {
-          // 不改乱公共云端库，而是抹除本地系统版本戳（置为：0），触发系统数据的全量重拉
-          final db = MyDatabase.instance;
-          final now = AppClock.now();
-          await db.sysDbVersionDao.saveVersion(
-             SysDbVersionData(
-               id: 'singleton',
-               version: 0,
-               lastSyncTime: now,
-               createTime: now,
-               updateTime: now,
-             ),
-          );
+          // 策略：不再通过同步流（Version 0）重刷，因为同步流不包含释义和例句。
+          // 而是通过专项词书下载接口（downloadADict）进行靶向修复。
+          Global.logger.i('💡 [修复] 检测到系统通用词典数据不完整，正在启动专项拉取修复...');
           
-          await syncSysDb();
-          fixResult.addFixed('检测到系统词库（通用词典）存在缺失，已在本地强制从云端重载系统环境基础数据！');
+          // 通用词典固定 ID 为 "0"
+          final success = await SelectBookPageState.downloadADict(
+            DictVo.c2("0"),
+            onProgress: (p) => Global.logger.d('💡 [修复] 通用词典下载进度: ${(p * 100).toStringAsFixed(1)}%'),
+          );
+
+          if (success) {
+            fixResult.addFixed('系统通用词典已通过专项接口成功重载并修复！');
+          } else {
+            fixResult.addError('系统通用词典专项重载失败，请检查网络。');
+          }
         } catch (e, stack) {
-          Global.logger.e('重载通用系统数据流时发生中断性错误', error: e, stackTrace: stack);
-          fixResult.addError('强制重载通用系统数据流失败: $e');
+          Global.logger.e('重载通用系统数据时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('强制重载通用系统数据失败: $e');
         }
       }
 
