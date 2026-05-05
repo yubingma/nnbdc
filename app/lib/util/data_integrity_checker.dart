@@ -173,9 +173,19 @@ class DataIntegrityChecker {
       onProgress?.call(11, '检查本地TTS功能...', result: result);
       await Future.delayed(const Duration(milliseconds: 200));
 
+      // 12. 检查正在学习单词的释义完整性
+      onProgress?.call(12, '检查正在学习单词的释义完整性...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      final timer12 = Stopwatch()..start();
+      await _checkLearningWordsMeanings(result, userId);
+      timer12.stop();
+      Global.logger.d('✓ 检查正在学习单词的释义: ${timer12.elapsedMilliseconds}ms');
+      onProgress?.call(12, '检查正在学习单词的释义完整性...', result: result);
+      await Future.delayed(const Duration(milliseconds: 200));
+
       stopwatch.stop();
       Global.logger.d('✓ 健康检查完成，总耗时: ${stopwatch.elapsedMilliseconds}ms');
-      onProgress?.call(11, '检查完成！', result: result);
+      onProgress?.call(12, '检查完成！', result: result);
       await Future.delayed(const Duration(milliseconds: 200)); // 给UI时间显示最后一项的结果
     } catch (e, stackTrace) {
       stopwatch.stop();
@@ -570,6 +580,11 @@ class DataIntegrityChecker {
         await _fixSysDictMissingFallback(fixResult, userId);
       }
 
+      // 修复正在学习单词的释义缺失问题
+      if (checkResult.hasIssue('learning_word_missing_meaning')) {
+        await _fixLearningWordMissingMeaning(fixResult, userId);
+      }
+
       // 系统级字典如果有数量不对或序号不对的问题
       if (checkResult.hasIssue('sys_dict_word_count') || checkResult.hasIssue('sys_dict_word_sequence')) {
         try {
@@ -686,6 +701,136 @@ class DataIntegrityChecker {
       }
     } catch (e) {
       fixResult.addError('靶向修复底层字典托底碎片时出错: $e');
+    }
+  }
+
+  /// 检查用户正在学习的单词是否都有释义
+  Future<void> _checkLearningWordsMeanings(IntegrityCheckResult result, String userId) async {
+    try {
+      // 1. 获取用户正在学习的所有单词
+      final learningWordsList = await (_db.select(_db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
+      if (learningWordsList.isEmpty) return;
+
+      final wordIds = learningWordsList.map((lw) => lw.wordId).toSet().toList();
+      
+      // 2. 分批查询这些单词是否有释义（不限词典）
+      const batchSize = 900;
+      final wordsWithMeanings = <String>{};
+
+      for (int i = 0; i < wordIds.length; i += batchSize) {
+        final batch = wordIds.skip(i).take(batchSize).toList();
+        final existingMeanings = await (_db.meaningItemsDao.select(_db.meaningItems)
+          ..where((mi) => mi.wordId.isIn(batch)))
+        .get();
+        
+        for (final m in existingMeanings) {
+          wordsWithMeanings.add(m.wordId);
+        }
+      }
+
+      // 3. 找出缺失释义的单词及其所属词典
+      final missingMeanings = wordIds.where((id) => !wordsWithMeanings.contains(id)).toList();
+
+      if (missingMeanings.isNotEmpty) {
+        final List<String> details = [];
+        for (final wordId in missingMeanings.take(10)) {
+          // 反查所属词典
+          final dictWords = await (_db.dictWordsDao.select(_db.dictWords)..where((dw) => dw.wordId.equals(wordId))).get();
+          final dictNames = <String>[];
+          for (final dw in dictWords) {
+            final dict = await _db.dictsDao.findById(dw.dictId);
+            if (dict != null) dictNames.add(dict.name);
+          }
+          details.add('"$wordId" (来自词典: ${dictNames.isEmpty ? "未知" : dictNames.join(", ")})');
+        }
+
+        String description = '您正在学习的单词中有 ${missingMeanings.length} 个在本地查无释义。';
+        if (details.isNotEmpty) {
+          description += '\n示例：\n${details.join("\n")}';
+          if (missingMeanings.length > 10) {
+            description += '\n... 等共 ${missingMeanings.length} 个单词';
+          }
+        }
+
+        result.addIssue(
+          '学习单词缺少释义', 
+          description, 
+          'learning_word_missing_meaning'
+        );
+      }
+    } catch (e) {
+      result.addError('检查学习单词释义完整性时出错: $e');
+      Global.logger.e('检查学习单词释义完整性时出错', error: e);
+    }
+  }
+
+  /// 修复正在学习单词缺失释义的问题
+  Future<void> _fixLearningWordMissingMeaning(IntegrityFixResult fixResult, String userId) async {
+    try {
+      final learningWordsList = await (_db.select(_db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
+      if (learningWordsList.isEmpty) return;
+
+      final wordIds = learningWordsList.map((lw) => lw.wordId).toSet().toList();
+      const batchSize = 900;
+      final missingWordIds = <String>[];
+
+      for (int i = 0; i < wordIds.length; i += batchSize) {
+        final batch = wordIds.skip(i).take(batchSize).toList();
+        final existingMeanings = await (_db.meaningItemsDao.select(_db.meaningItems)
+          ..where((mi) => mi.wordId.isIn(batch)))
+        .get();
+        final existingIds = existingMeanings.map((mi) => mi.wordId).toSet();
+
+        for (final id in batch) {
+          if (!existingIds.contains(id)) {
+            missingWordIds.add(id);
+          }
+        }
+      }
+
+      if (missingWordIds.isNotEmpty) {
+        String jsonStr = jsonEncode(missingWordIds);
+        final response = await Api.client.getFallbackWordsData(jsonStr);
+        if (response.success && response.data != null) {
+           final data = response.data!.data;
+           int dwCount = 0, mCount = 0, sCount = 0;
+
+           await _db.transaction(() async {
+             // 1. 恢复 DictWord (为了能让单词在词典中显示)
+             final dwList = data['dictWords'] as List<dynamic>? ?? [];
+             for (final item in dwList) {
+               final Map<String, dynamic> dictWordMap = item as Map<String, dynamic>;
+               final dw = DictWord.fromJson(dictWordMap);
+               await _db.dictWordsDao.insertEntity(dw, false);
+               dwCount++;
+             }
+
+             // 2. 恢复 MeaningItem
+             final mList = data['meaningItems'] as List<dynamic>? ?? [];
+             for (final item in mList) {
+               final Map<String, dynamic> mMap = item as Map<String, dynamic>;
+               final m = MeaningItem.fromJson(mMap);
+               await _db.meaningItemsDao.insertEntity(m, false);
+               mCount++;
+             }
+
+             // 3. 恢复 Sentence
+             final sList = data['sentences'] as List<dynamic>? ?? [];
+             for (final item in sList) {
+               final Map<String, dynamic> sMap = item as Map<String, dynamic>;
+               final s = Sentence.fromJson(sMap);
+               await _db.sentencesDao.insertEntity(s);
+               sCount++;
+             }
+           });
+
+           fixResult.addFixed('成功向云端获取并补全了 ${missingWordIds.length} 个学习单词的释义数据！(包含 $dwCount 条物理连结，$mCount 条释义，$sCount 条例句)');
+        } else {
+           fixResult.addError('请求云端补全学习单词数据失败: ${response.msg}');
+        }
+      }
+    } catch (e) {
+      fixResult.addError('修复学习单词释义缺失时出错: $e');
     }
   }
 
