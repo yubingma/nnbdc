@@ -801,40 +801,58 @@ class DataIntegrityChecker {
            int dwCount = 0, mCount = 0, sCount = 0;
 
            await _db.transaction(() async {
-             // 1. 恢复 DictWord (为了能让单词在词典中显示)
-             final dwList = data['dictWords'] as List<dynamic>? ?? [];
-             for (final item in dwList) {
-               final Map<String, dynamic> dictWordMap = item as Map<String, dynamic>;
-               final dw = DictWord.fromJson(dictWordMap);
-               await _db.dictWordsDao.insertEntity(dw, false);
-               dwCount++;
-             }
+             try {
+               Global.logger.i('【修复】进入事务, data类型: ${data.runtimeType}');
+               
+               // 1. 恢复 DictWord
+               final dwRaw = data['dictWords'];
+               Global.logger.i('【修复】dictWords原始类型: ${dwRaw.runtimeType}');
+               final dwList = dwRaw as List<dynamic>? ?? [];
+               Global.logger.i('【修复】开始遍历 dictWords, 数量: ${dwList.length}');
+               
+               for (final item in dwList) {
+                 Global.logger.i('【修复】正在处理 DictWord item: $item');
+                 final Map<String, dynamic> dictWordMap = Map<String, dynamic>.from(item as Map);
+                 final dw = DictWord.fromJson(dictWordMap);
+                 await _db.dictWordsDao.insertEntity(dw, false);
+                 dwCount++;
+               }
 
-             // 2. 恢复 MeaningItem
-             final mList = data['meaningItems'] as List<dynamic>? ?? [];
-             for (final item in mList) {
-               final Map<String, dynamic> mMap = item as Map<String, dynamic>;
-               final m = MeaningItem.fromJson(mMap);
-               await _db.meaningItemsDao.insertEntity(m, false);
-               mCount++;
-             }
+               // 2. 恢复 MeaningItem
+               final mList = data['meaningItems'] as List<dynamic>? ?? [];
+               Global.logger.i('【修复】开始遍历 meaningItems, 数量: ${mList.length}');
+               for (final item in mList) {
+                 final Map<String, dynamic> mMap = Map<String, dynamic>.from(item as Map);
+                 final m = MeaningItem.fromJson(mMap);
+                 await _db.meaningItemsDao.insertEntity(m, false);
+                 mCount++;
+               }
 
-             // 3. 恢复 Sentence
-             final sList = data['sentences'] as List<dynamic>? ?? [];
-             for (final item in sList) {
-               final Map<String, dynamic> sMap = item as Map<String, dynamic>;
-               final s = Sentence.fromJson(sMap);
-               await _db.sentencesDao.insertEntity(s);
-               sCount++;
+               // 3. 恢复 Sentence
+               final sList = data['sentences'] as List<dynamic>? ?? [];
+               Global.logger.i('【修复】开始遍历 sentences, 数量: ${sList.length}');
+               for (final item in sList) {
+                 final Map<String, dynamic> sMap = Map<String, dynamic>.from(item as Map);
+                 final s = Sentence.fromJson(sMap);
+                 await _db.sentencesDao.insertEntity(s);
+                 sCount++;
+               }
+             } catch (e, stack) {
+               // 强制用 info 级别打印错误，防止被日志查看器过滤
+               Global.logger.i('【修复】!!! 事务内部发生严重错误 !!!: $e');
+               Global.logger.i('【修复】错误堆栈: $stack');
+               rethrow;
              }
            });
 
+           Global.logger.i('【修复】本地数据入库成功完成！dw=$dwCount, m=$mCount, s=$sCount');
            fixResult.addFixed('成功向云端获取并补全了 ${missingWordIds.length} 个学习单词的释义数据！(包含 $dwCount 条物理连结，$mCount 条释义，$sCount 条例句)');
         } else {
            fixResult.addError('请求云端补全学习单词数据失败: ${response.msg}');
         }
       }
     } catch (e) {
+      Global.logger.i('【修复】!!! 修复函数发生外部错误 !!!: $e');
       fixResult.addError('修复学习单词释义缺失时出错: $e');
     }
   }

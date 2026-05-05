@@ -530,6 +530,7 @@ public class SystemHealthCheckBo {
                     dwDto.setSeq(dw.getSeq());
                     dwDto.setUnit(dw.getUnit());
                     dwDto.setCreateTime(dw.getCreateTime());
+                    dwDto.setUpdateTime(dw.getUpdateTime());
                     dictWords.add(dwDto);
                 } else if (userId != null && !userId.isEmpty()) {
                     // 2. 如果公共库没找到，尝试从该用户的私有库里找
@@ -545,6 +546,7 @@ public class SystemHealthCheckBo {
                             dwDto.setSeq(udw.getSeq());
                             dwDto.setUnit(udw.getUnit());
                             dwDto.setCreateTime(udw.getCreateTime());
+                            dwDto.setUpdateTime(udw.getUpdateTime());
                             dictWords.add(dwDto);
                             break; // 只要找到一个私有库包含该词即可
                         }
