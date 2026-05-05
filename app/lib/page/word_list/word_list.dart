@@ -192,6 +192,11 @@ class WordListPageState extends State<WordListPage>
     setState(() {
       word.isAnswerRevealed = !word.isAnswerRevealed;
     });
+
+    if (word.isAnswerRevealed && studyMode == WordListStudyMode.hideEnglish) {
+      SoundUtil.playPronounceSound2(word.word, audioPlayer);
+    }
+
     if (getBookMarkUiPosition() != index) {
       onWordPressed(word, index, true, null);
     }
