@@ -65,7 +65,13 @@ class SpeakModeItem extends StatelessWidget {
       ),
       rightContent: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => actions.onGiveHint(word),
+        onTap: () {
+          if (isBookmarked) {
+            actions.onGiveHint(word);
+          } else {
+            actions.onWordTap(word, index);
+          }
+        },
         onLongPress: () => actions.onWordLongPress(word, index),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),

@@ -1,19 +1,18 @@
 import 'dart:convert';
-import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/global.dart';
-import 'package:nnbdc/config.dart';
-import 'package:nnbdc/util/network_util.dart';
-import 'package:nnbdc/socket_io.dart';
+
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/api.dart';
-import 'package:nnbdc/services/throttled_sync_service.dart';
-import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/sys_db_sync.dart';
-import 'package:nnbdc/util/tts.dart';
-import 'package:nnbdc/util/platform_util.dart';
-import 'package:nnbdc/page/select_book.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/config.dart';
+import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/global.dart';
+import 'package:nnbdc/page/select_book.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/socket_io.dart';
+import 'package:nnbdc/util/network_util.dart';
+import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/tts.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});

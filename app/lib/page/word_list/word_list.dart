@@ -199,11 +199,6 @@ class WordListPageState extends State<WordListPage>
 
   @override
   void onHandwritingPressed(WordWrapper word, int index) {
-    // 揭晓答案
-    int curr = getBookMarkUiPosition();
-    if (curr >= 0 && curr < words.length && curr != index) {
-      SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-    }
     setState(() {
       _isHandwritingOverlayOpen = true;
     });
@@ -215,14 +210,9 @@ class WordListPageState extends State<WordListPage>
   void onSpellChanged(WordWrapper word, int index, String value) {
     // 先刷新UI，使颜色立即变绿/红
     setState(() {});
-    // 如果拼写正确：先让UI变绿，再执行后续动作（播放离开单词发音+跳转）
+    // 如果拼写正确：执行后续动作（onWordPressed 会负责播放离开单词发音+跳转）
     if (Util.equalsIgnoreCase(word.word.spell, value)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        try {
-          await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-        } catch (e, stackTrace) {
-          Global.logger.w('播放单词发音失败', error: e, stackTrace: stackTrace);
-        }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         jumpToNextWord(index, false, () {});
       });
     }
@@ -1787,6 +1777,19 @@ class WordListPageState extends State<WordListPage>
   onWordPressed(WordWrapper word, int index, bool playSound,
       Function? soundFinishListener) async {
     Global.logger.d("~~~~~onWordPressed 被调用: ${word.word.spell}");
+
+    // 如果是切换单词，且处于听说/拼写模式，则先播放当前正在离开的那个词的发音
+    if (bookMark != null && bookMark!.position != baseIndex! + index) {
+      int oldIndex = getBookMarkUiPosition();
+      if (oldIndex >= 0 && oldIndex < words.length) {
+        if (studyMode == WordListStudyMode.speakEnglish ||
+            studyMode == WordListStudyMode.dictation ||
+            studyMode == WordListStudyMode.dictationHandwriting) {
+          await SoundUtil.playPronounceSound2(words[oldIndex].word, audioPlayer);
+        }
+      }
+    }
+
     // 更新书签位置
     setState(() {
       if (bookMark == null || bookMark!.position != baseIndex! + index) {
@@ -2213,15 +2216,8 @@ class WordListPageState extends State<WordListPage>
   void _handleWordTap(WordWrapper word, int index) {
     if (studyMode == WordListStudyMode.dictation ||
         studyMode == WordListStudyMode.dictationHandwriting) {
-      // 揭晓答案：如果是切换单词，播放当前正在离开的那个词
-      int curr = getBookMarkUiPosition();
-      if (curr >= 0 && curr < words.length && curr != index) {
-        SoundUtil.playPronounceSound2(words[curr].word, audioPlayer);
-        onWordPressed(word, index, false, null);
-      } else {
-        // 如果点击的就是当前单词（左侧区域），则手动播放该词发音
-        onWordPressed(word, index, true, null);
-      }
+      // 揭晓答案：如果是切换单词，onWordPressed 会负责播放当前正在离开的那个词
+      onWordPressed(word, index, getBookMarkUiPosition() == index, null);
     } else {
       onWordPressed(word, index, true, null);
     }
