@@ -189,6 +189,15 @@ class UserBo {
     }
 
     final userId = user.id;
+
+    // [性能优化] 检查是否已经执行过历史数据回填
+    final backfillKey = 'backfill_stats_v1_$userId';
+    final hasBackfilled = await db.localParamsDao.getValue(backfillKey) == 'true';
+    if (!hasBackfilled) {
+      await db.userStudyDailyStatsDao.backfillStats(userId);
+      await db.localParamsDao.setValue(backfillKey, 'true');
+    }
+
     final endDate = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
     final startDate = endDate.subtract(Duration(days: recentNDays - 1));
 

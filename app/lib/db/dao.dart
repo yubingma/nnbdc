@@ -165,6 +165,27 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
       rethrow;
     }
   }
+
+  Future<String?> getValue(String name) async {
+    final param = await (select(localParams)..where((e) => e.name.equals(name))).getSingleOrNull();
+    return param?.value;
+  }
+
+  Future<void> setValue(String name, String value) async {
+    final existing = await (select(localParams)..where((e) => e.name.equals(name))).getSingleOrNull();
+    if (existing == null) {
+      await into(localParams).insert(LocalParamsCompanion.insert(
+        name: name,
+        value: value,
+        updateTime: Value(AppClock.now()),
+      ));
+    } else {
+      await (update(localParams)..where((e) => e.name.equals(name))).write(LocalParamsCompanion(
+        value: Value(value),
+        updateTime: Value(AppClock.now()),
+      ));
+    }
+  }
 }
 
 @DriftAccessor(tables: [VotedSentences])
@@ -2358,6 +2379,36 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
         ), true);
       }
     }
+  }
+
+  /// 回填历史统计数据
+  Future<void> backfillStats(String userId) async {
+    Global.logger.i('开始为用户 $userId 回填每日学习统计数据...');
+    
+    // 1. 获取打卡记录
+    final dakaRecords = await db.dakasDao.getDakaRecords(userId);
+    for (final daka in dakaRecords) {
+      await updateDayStatus(userId, daka.forLearningDate, UserDayStatus.dakaed);
+    }
+    
+    // 2. 获取操作记录
+    final operRecords = await db.userOpersDao.getUserOpers(userId);
+    for (final oper in operRecords) {
+      UserDayStatus? status;
+      if (oper.operType == OperType.daka.value) {
+        status = UserDayStatus.dakaed;
+      } else if (oper.operType == OperType.startLearn.value) {
+        status = UserDayStatus.studied;
+      } else if (oper.operType == OperType.login.value) {
+        status = UserDayStatus.loggedIn;
+      }
+      
+      if (status != null) {
+        await updateDayStatus(userId, oper.operTime, status);
+      }
+    }
+    
+    Global.logger.i('用户 $userId 的每日学习统计数据回填完成');
   }
 }
 
