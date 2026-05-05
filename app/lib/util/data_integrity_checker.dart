@@ -467,7 +467,7 @@ class DataIntegrityChecker {
         // 1. 检查记录数量一致性
         final actualCount = await _db.dictWordsDao.getDictWordCount(Global.commonDictId);
         if (commonDict.wordCount != actualCount) {
-          result.addIssue('系统单词数量不匹配', '通用兜底词书记录数量: ${commonDict.wordCount}, 实际数量: $actualCount', 'sys_dict_word_count');
+          result.addIssue('系统单词数量不匹配', '通用兜底词书记录数量: ${commonDict.wordCount}, 实际数量: $actualCount', 'common_dict_integrity');
         }
 
         // 2. 检查序号连续性
@@ -477,11 +477,11 @@ class DataIntegrityChecker {
             .get();
         if (wordsList.isNotEmpty) {
           if (wordsList.first.seq != 1 || wordsList.last.seq != wordsList.length) {
-            result.addIssue('系统单词序号不连续', '通用兜底词书序号发生断层或未从1开始', 'sys_dict_word_sequence');
+            result.addIssue('系统单词序号不连续', '通用兜底词书序号发生断层或未从1开始', 'common_dict_integrity');
           } else {
             for (int i = 0; i < wordsList.length; i++) {
               if (wordsList[i].seq != i + 1) {
-                result.addIssue('系统单词序号不连续', '通用兜底词书序号在位置 ${i + 1} 断层', 'sys_dict_word_sequence');
+                result.addIssue('系统单词序号不连续', '通用兜底词书序号在位置 ${i + 1} 断层', 'common_dict_integrity');
                 break;
               }
             }
@@ -624,8 +624,8 @@ class DataIntegrityChecker {
         }
       }
 
-      // 系统级字典（主要是通用词典 ID=0）如果有数量不对或序号不对的问题
-      if (checkResult.hasIssue('sys_dict_word_count') || checkResult.hasIssue('sys_dict_word_sequence')) {
+      // 系统级字典（主要是通用词典 ID=0）如果有数据不完整的问题
+      if (checkResult.hasIssue('common_dict_integrity')) {
         try {
           // 策略：不再通过同步流（Version 0）重刷，因为同步流不包含释义和例句。
           // 而是通过专项词书下载接口（downloadADict）进行靶向修复。
