@@ -61,10 +61,16 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
-    # 核心修复：解决 M1/M2 Mac 下 GoogleMLKit 的 arm64 架构冲突问题
     target.build_configurations.each do |config|
-      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      # 排除 i386，但保留 arm64 以支持 Apple Silicon 模拟器
+      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+      
+      # 自动签名设置
+      config.build_settings['DEVELOPMENT_TEAM'] = 'FYU9ZT6D7N'
+      config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
+      
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
     end
 
     # 为 fluwx 添加微信 SDK 头文件搜索路径
