@@ -4,7 +4,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/enum.dart';
@@ -19,7 +18,6 @@ import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/constants.dart';
-import '../models/bdc_page_args.dart';
 import '../models/word_detail_page_args.dart' as bdc_args;
 
 class BdcController extends GetxController with GetTickerProviderStateMixin {
