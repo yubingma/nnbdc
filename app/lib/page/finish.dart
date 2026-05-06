@@ -1,22 +1,22 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
+import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:appcheck/appcheck.dart';
 
 import '../api/result.dart';
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
-import '../util/platform_util.dart';
-import '../util/notification_util.dart';
 import '../util/analytics_util.dart';
-import 'package:provider/provider.dart';
+import '../util/notification_util.dart';
+import '../util/platform_util.dart';
 import 'index.dart';
 
 class FinishPage extends StatefulWidget {
