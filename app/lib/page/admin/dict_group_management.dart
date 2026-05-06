@@ -190,32 +190,48 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
   }
 
   Widget _buildTreeItem(_TreeNode node, int depth, bool isDarkMode) {
-    return Column(
-      children: [
-        ListTile(
-          contentPadding: EdgeInsets.only(left: 16.0 + (depth * 20.0), right: 16.0),
-          leading: Icon(
-            node.children.isEmpty ? Icons.folder_open : Icons.folder,
-            color: node.children.isEmpty ? Colors.grey : Colors.orange,
-          ),
-          title: Text(
-            "${node.group.name} (${node.dicts.length} 词书)",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          trailing: PopupMenuButton<String>(
-            onSelected: (value) => _handleAction(value, node),
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'add_child', child: Text('添加子分组')),
-              const PopupMenuItem(value: 'edit', child: Text('编辑名称')),
-              const PopupMenuItem(value: 'delete', child: Text('删除分组')),
-              const PopupMenuItem(value: 'manage_dicts', child: Text('管理词书')),
-            ],
-          ),
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.only(left: 16.0 + (depth * 20.0), right: 16.0),
+        leading: Icon(
+          node.children.isEmpty && node.dicts.isEmpty ? Icons.folder_open : Icons.folder,
+          color: node.children.isEmpty && node.dicts.isEmpty ? Colors.grey : Colors.orange,
         ),
-        if (node.children.isNotEmpty)
+        title: Text(
+          "${node.group.name} (${node.dicts.length} 词书)",
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PopupMenuButton<String>(
+              onSelected: (value) => _handleAction(value, node),
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'add_child', child: Text('添加子分组')),
+                const PopupMenuItem(value: 'edit', child: Text('编辑名称')),
+                const PopupMenuItem(value: 'delete', child: Text('删除分组')),
+                const PopupMenuItem(value: 'manage_dicts', child: Text('管理词书')),
+              ],
+            ),
+            const Icon(Icons.expand_more),
+          ],
+        ),
+        children: [
+          // 子分组
           ...node.children.map((child) => _buildTreeItem(child, depth + 1, isDarkMode)),
-        const Divider(height: 1),
-      ],
+          // 该分组下的词书
+          ...node.dicts.map((dict) => ListTile(
+                contentPadding: EdgeInsets.only(left: 16.0 + ((depth + 1) * 20.0), right: 16.0),
+                leading: const Icon(Icons.book, size: 18, color: Colors.blueGrey),
+                title: Text(dict.name, style: const TextStyle(fontSize: 14)),
+                subtitle: Text("${dict.wordCount} 词", style: const TextStyle(fontSize: 12)),
+                onTap: () {
+                  // 这里以后可以添加点击词书的逻辑，比如查看详情
+                },
+              )),
+        ],
+      ),
     );
   }
 
