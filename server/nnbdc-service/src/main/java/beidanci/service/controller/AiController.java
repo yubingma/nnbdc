@@ -74,7 +74,7 @@ public class AiController {
             }
 
             List<String> words = mapper.readValue(wordsJson, mapper.getTypeFactory().constructCollectionType(List.class, String.class));
-            CompletableFuture<Result<AiStoryVo>> future = aiBo.generateShortStory(words);
+            CompletableFuture<Result<AiStoryVo>> future = aiBo.generateShortStory(words, userId);
             
             future.thenAccept(result -> deferredResult.setResult(result))
                   .exceptionally(ex -> {

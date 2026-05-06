@@ -429,24 +429,24 @@ public class AiBo {
         String voice = voices[new Random().nextInt(voices.length)];
         
         try {
-            return new TtsResult(callCosyVoice(text, voice, voiceInstruction), voice, aiProperties.getTtsModel());
+            return new TtsResult(callCosyVoice(text, voice, voiceInstruction, null), voice, aiProperties.getTtsModel());
         } catch (Exception e) {
             String defaultVoice = voices[0];
             logger.warn("随机音色 {} 合成失败(可能是音色不存在)，尝试回退到用户首选/兜底音色: {}", voice, defaultVoice, e);
             if (!voice.equals(defaultVoice)) {
                 try {
-                    return new TtsResult(callCosyVoice(text, defaultVoice, voiceInstruction), defaultVoice, aiProperties.getTtsModel());
+                    return new TtsResult(callCosyVoice(text, defaultVoice, voiceInstruction, null), defaultVoice, aiProperties.getTtsModel());
                 } catch (Exception fallbackEx) {
                     logger.warn("首选音色也失败了，最后尝试系统全局保底音色: {}", aiProperties.getVoice());
                     try {
-                        return new TtsResult(callCosyVoice(text, aiProperties.getVoice(), voiceInstruction), aiProperties.getVoice(), aiProperties.getTtsModel());
+                        return new TtsResult(callCosyVoice(text, aiProperties.getVoice(), voiceInstruction, null), aiProperties.getVoice(), aiProperties.getTtsModel());
                     } catch (Exception ext) {
                         throw new RuntimeException("保底 TTS 系统异常", ext);
                     }
                 }
             } else if (!voice.equals(aiProperties.getVoice())) {
                 try {
-                    return new TtsResult(callCosyVoice(text, aiProperties.getVoice(), voiceInstruction), aiProperties.getVoice(), aiProperties.getTtsModel());
+                    return new TtsResult(callCosyVoice(text, aiProperties.getVoice(), voiceInstruction, null), aiProperties.getVoice(), aiProperties.getTtsModel());
                 } catch (Exception fallbackEx) {
                     throw new RuntimeException("保底 TTS 系统异常", fallbackEx);
                 }
@@ -455,13 +455,14 @@ public class AiBo {
         }
     }
 
-    private byte[] callCosyVoice(String text, String voice, String voiceInstruction) throws Exception {
-        logger.info("请求语音合成: [模型: {}, 发音人: {}, 指令: {}] 内容: {}", 
-                   aiProperties.getTtsModel(), voice, voiceInstruction, text);
+    private byte[] callCosyVoice(String text, String voice, String voiceInstruction, String userId) throws Exception {
+        String userPrefix = (userId != null) ? "[User: " + userId + "] " : "";
+        logger.info("{}请求语音合成: [模型: {}, 发音人: {}] 内容: {}", 
+                   userPrefix, aiProperties.getTtsModel(), voice, text);
         
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
-            logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
+            logger.error("{}阿里云 AI 调用失败: API Key 未设置或未正确解析", userPrefix);
             throw new RuntimeException("AI 调用失败: 请设置 dashscope_api_key");
         }
 
@@ -473,29 +474,10 @@ public class AiBo {
                 .parameter("format", "mp3")
                 .text(text);
         
-        if (voiceInstruction != null && !voiceInstruction.trim().isEmpty()) {
-            // 目前仅部分带有 -instruct 后缀的模型支持 instruction 参数。
-            // 对于不支持的模型，我们将捕获 ApiException 并进行自动降级。
-            paramBuilder.parameter("instruction", voiceInstruction);
-        }
+        // 移除语气指令 (instruction) 以避免 cosyvoice-v3-flash 报错 (428 InvalidParameter)
         
         SpeechSynthesisParam param = (SpeechSynthesisParam) paramBuilder.build();
-        
-        ByteBuffer buffer;
-        try {
-            buffer = synthesizer.call(param);
-        } catch (com.alibaba.dashscope.exception.ApiException e) {
-            // 特别处理：如果错误代码为 428 (InvalidParameter)，通常意味着模型不支持 instruction 或其它特定参数
-            if (e.getMessage().contains("428") && voiceInstruction != null) {
-                logger.warn("当前 TTS 模型 [{}] 不支持语气指令 [{}], 尝试剥离指令进行降级合成。详情: {}", 
-                           aiProperties.getTtsModel(), voiceInstruction, e.getMessage());
-                paramBuilder.parameter("instruction", null);
-                param = (SpeechSynthesisParam) paramBuilder.build();
-                buffer = synthesizer.call(param);
-            } else {
-                throw e;
-            }
-        }
+        ByteBuffer buffer = synthesizer.call(param);
         
         byte[] audioBytes = new byte[buffer.remaining()];
         buffer.get(audioBytes);
@@ -665,7 +647,7 @@ public class AiBo {
      * @param words 单词列表 (拼写)
      * @return 生成结果的 Future
      */
-    public java.util.concurrent.CompletableFuture<Result<AiStoryVo>> generateShortStory(List<String> words) {
+    public java.util.concurrent.CompletableFuture<Result<AiStoryVo>> generateShortStory(List<String> words, String userId) {
         if (words == null || words.isEmpty()) {
             return java.util.concurrent.CompletableFuture.completedFuture(Result.fail("没有单词可以生成短文。"));
         }
@@ -685,9 +667,9 @@ public class AiBo {
         // 2. 检查缓存
         AiStory cachedStory = aiStoryBo.findByWordsHash(wordsHash);
         if (cachedStory != null) {
-            logger.info("命中 AI 短文缓存: {}", wordsHash);
+            logger.info("[User: {}] 命中 AI 短文缓存: {}", userId, wordsHash);
             // 异步检查并补全缺失的配音文件
-            checkAndGenerateAudioAsync(cachedStory.getStoryContent(), wordsHash);
+            checkAndGenerateAudioAsync(cachedStory.getStoryContent(), wordsHash, userId);
             return java.util.concurrent.CompletableFuture.completedFuture(Result.success(new AiStoryVo(cachedStory.getStoryContent(), wordsHash, sysParamUtil.isAiStoryEnTtsEnabled(), sysParamUtil.isAiStoryCnTtsEnabled())));
         }
 
@@ -695,7 +677,7 @@ public class AiBo {
         return inFlightStories.computeIfAbsent(wordsHash, k -> {
             return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {
-                    Result<String> textResult = doGenerateShortStory(words, wordsHash, wordsJsonForHash);
+                    Result<String> textResult = doGenerateShortStory(words, wordsHash, wordsJsonForHash, userId);
                     if (textResult.isSuccess()) {
                         return Result.success(new AiStoryVo(textResult.getData(), wordsHash, sysParamUtil.isAiStoryEnTtsEnabled(), sysParamUtil.isAiStoryCnTtsEnabled()));
                     } else {
@@ -708,15 +690,17 @@ public class AiBo {
         });
     }
 
-    private Result<String> doGenerateShortStory(List<String> words, String wordsHash, String wordsJsonForHash) {
+    private Result<String> doGenerateShortStory(List<String> words, String wordsHash, String wordsJsonForHash, String userId) {
         // 限制并发量，防止瞬间大量请求冲垮服务器
         int limit = sysParamUtil.getAiStoryConcurrencyLimit();
         if (activeAiStoryRequests.get() >= limit) {
+            logger.warn("[User: {}] 服务器繁忙，AI 生成并发达到上限: {}", userId, limit);
             return Result.fail("服务器繁忙，AI 生成并发达到上限，请稍后再试");
         }
 
         activeAiStoryRequests.incrementAndGet();
         try {
+            logger.info("[User: {}] 开始为用户生成 AI 短文: {}", userId, wordsHash);
             String systemPrompt = "你是一位出色的创意作家和英语老师。请使用用户提供的英文单词列表，创作一篇短小精悍、语言精练且富有逻辑的小故事（约 60-100 词）。\n" +
                     "要求：\n" +
                     "1. 必须使用列表中所有的单词（忽略大小写差异）。\n" +
@@ -735,28 +719,28 @@ public class AiBo {
                 aiStory.setUpdateTime(new java.util.Date());
                 aiStoryBo.createEntity(aiStory);
             } catch (Exception e) {
-                logger.error("保存 AI 短文缓存失败", e);
+                logger.error("[User: {}] 保存 AI 短文缓存失败: {}", userId, wordsHash, e);
             }
 
             // 异步生成配音
             new Thread(() -> {
                 try {
-                    generateShortStoryAudio(storyContent, wordsHash);
+                    generateShortStoryAudio(storyContent, wordsHash, userId);
                 } catch (Exception e) {
-                    logger.error("异步生成 AI 短文配音失败: {}", wordsHash, e);
+                    logger.error("[User: {}] 异步生成 AI 短文配音失败: {}", userId, wordsHash, e);
                 }
             }).start();
 
             return Result.success(storyContent);
         } catch (Exception e) {
-            logger.error("AI 生成短文失败", e);
+            logger.error("[User: {}] AI 生成短文失败: {}", userId, wordsHash, e);
             return Result.fail("AI 生成短文失败: " + e.getMessage());
         } finally {
             activeAiStoryRequests.decrementAndGet();
         }
     }
 
-    private void checkAndGenerateAudioAsync(String storyContent, String wordsHash) {
+    private void checkAndGenerateAudioAsync(String storyContent, String wordsHash, String userId) {
         new Thread(() -> {
             try {
                 String soundPath = sysParamUtil.getSoundPath();
@@ -764,16 +748,16 @@ public class AiBo {
                 boolean cnMissing = sysParamUtil.isAiStoryCnTtsEnabled() && !new File(soundPath + "/ai_story/" + wordsHash + "_cn.mp3").exists();
                 
                 if (enMissing || cnMissing) {
-                    logger.info("检测到缓存短文缺失部分配音，开始补全: {}", wordsHash);
-                    generateShortStoryAudio(storyContent, wordsHash);
+                    logger.info("[User: {}] 检测到缓存短文缺失部分配音，开始补全: {}", userId, wordsHash);
+                    generateShortStoryAudio(storyContent, wordsHash, userId);
                 }
             } catch (Exception e) {
-                logger.error("补全 AI 短文配音失败: {}", wordsHash, e);
+                logger.error("[User: {}] 补全 AI 短文配音失败: {}", userId, wordsHash, e);
             }
         }).start();
     }
 
-    private void generateShortStoryAudio(String storyContent, String wordsHash) throws Exception {
+    private void generateShortStoryAudio(String storyContent, String wordsHash, String userId) throws Exception {
         // 1. 拆分中英文内容
         String enPart = "";
         String cnPart = "";
@@ -807,16 +791,16 @@ public class AiBo {
 
         // 3. 生成英文配音
         if (!enPart.isEmpty() && sysParamUtil.isAiStoryEnTtsEnabled()) {
-            byte[] enBytes = callCosyVoice(enPart, aiProperties.getVoice(), "English");
+            byte[] enBytes = callCosyVoice(enPart, aiProperties.getVoice(), null, userId);
             Files.write(new File(dir, wordsHash + "_en.mp3").toPath(), enBytes);
-            logger.info("AI 短文英文配音已生成: {}", wordsHash);
+            logger.info("[User: {}] AI 短文英文配音已生成: {}", userId, wordsHash);
         }
 
         // 4. 生成中文配音
         if (!cnPart.isEmpty() && sysParamUtil.isAiStoryCnTtsEnabled()) {
-            byte[] cnBytes = callCosyVoice(cnPart, aiProperties.getVoice(), "Chinese");
+            byte[] cnBytes = callCosyVoice(cnPart, aiProperties.getVoice(), null, userId);
             Files.write(new File(dir, wordsHash + "_cn.mp3").toPath(), cnBytes);
-            logger.info("AI 短文中文配音已生成: {}", wordsHash);
+            logger.info("[User: {}] AI 短文中文配音已生成: {}", userId, wordsHash);
         }
     }
 
