@@ -51,34 +51,35 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
 
   Future<void> _loadConfigData() async {
     try {
-      final res = await Api.client.getGameHallData();
+      // 1. 加载所有词书分组
+      final groupsRes = await Api.client.getAllDictGroups();
       final List<Map<String, String>> groups = [];
+      if (groupsRes.success && groupsRes.data != null) {
+        for (var g in groupsRes.data!) {
+          groups.add({'id': g.id, 'name': g.name});
+        }
+      }
+
+      // 2. 加载游戏大厅数据
+      final hallRes = await Api.client.getGameHallData();
       final List<Map<String, String>> halls = [];
-      final Set<String> groupNames = {};
       final Set<String> hallIds = {};
 
-      for (var hg in res.hallGroups) {
+      for (var hg in hallRes.hallGroups) {
         for (var gh in hg.gameHalls) {
           if (!hallIds.contains(gh.id)) {
             hallIds.add(gh.id);
             halls.add({'id': gh.id, 'name': gh.hallName});
           }
-          if (!groupNames.contains(gh.dictGroup.name)) {
-
-            groupNames.add(gh.dictGroup.name);
-            groups.add({'id': gh.dictGroup.name, 'name': gh.dictGroup.name});
-          }
         }
       }
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _availableGroups = groups;
-            _availableHalls = halls;
-          });
-        }
-      });
+      if (mounted) {
+        setState(() {
+          _availableGroups = groups;
+          _availableHalls = halls;
+        });
+      }
     } catch (e) {
       Global.logger.e('加载配置数据失败', error: e);
     }
