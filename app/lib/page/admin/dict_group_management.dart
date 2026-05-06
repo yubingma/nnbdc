@@ -329,22 +329,15 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
   }
 
   Future<void> _confirmDeleteGroup(_TreeNode node) async {
-    if (node.children.isNotEmpty || node.dicts.isNotEmpty) {
-      return showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('无法删除'),
-          content: const Text('该分组下仍有子分组或词书，请先清空后再删除。'),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('确定'))],
-        ),
-      );
-    }
-
+    final hasContent = node.children.isNotEmpty || node.dicts.isNotEmpty;
+    
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除分组 "${node.group.name}" 吗？'),
+        title: Text(hasContent ? '级联删除确认' : '确认删除'),
+        content: Text(hasContent 
+            ? '警告：该分组 "${node.group.name}" 下仍有子分组或词书。级联删除将删除所有子分组，并解除这些分组与词书的关联。确定要继续吗？'
+            : '确定要删除分组 "${node.group.name}" 吗？'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
           TextButton(
@@ -358,7 +351,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
                 ToastUtil.error("删除失败: ${result.msg}");
               }
             },
-            child: const Text('确认删除', style: TextStyle(color: Colors.red)),
+            child: Text(hasContent ? '级联删除' : '确认删除', style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

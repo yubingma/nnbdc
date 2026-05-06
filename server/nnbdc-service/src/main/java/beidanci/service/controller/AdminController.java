@@ -168,7 +168,7 @@ public class AdminController {
         DictGroup dictGroup = dictGroupBo.findById(groupId);
         if (dictGroup == null) return Result.fail("分组不存在");
 
-        dictGroupBo.deleteEntity(dictGroup);
+        dictGroupBo.deleteDictGroupSafely(groupId);
         return Result.success("删除成功");
     }
 

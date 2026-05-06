@@ -152,4 +152,32 @@ public class DictGroupBo extends BaseBo<DictGroup> {
             loadDictGroupsAndDictsForDictGroups(allChildGroups);
         }
     }
+
+    @Autowired
+    private SysDbSyncBo sysDbLogBo;
+
+    /**
+     * 安全地级联删除分组及其所有子分组，并解除与词书的关联
+     */
+    public void deleteDictGroupSafely(String id) {
+        // 1. 获取并递归删除子分组
+        String childGroupsSql = "SELECT id FROM dict_group WHERE parent_id = :parentId";
+        List<String> childGroupIds = namedParameterJdbcTemplate.queryForList(childGroupsSql, 
+                new MapSqlParameterSource("parentId", id), String.class);
+        
+        for (String childId : childGroupIds) {
+            deleteDictGroupSafely(childId);
+        }
+        
+        // 2. 删除与词书的关联 (group_and_dict_link)
+        String deleteLinksSql = "DELETE FROM group_and_dict_link WHERE group_id = :groupId";
+        namedParameterJdbcTemplate.update(deleteLinksSql, new MapSqlParameterSource("groupId", id));
+        
+        // 3. 删除分组本身
+        String deleteGroupSql = "DELETE FROM dict_group WHERE id = :groupId";
+        namedParameterJdbcTemplate.update(deleteGroupSql, new MapSqlParameterSource("groupId", id));
+        
+        // 4. 记录同步日志，使其他客户端能同步删除操作
+        sysDbLogBo.logOperation("DELETE", "dict_group", id, "{}");
+    }
 }
