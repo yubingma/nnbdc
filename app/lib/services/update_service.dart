@@ -66,7 +66,7 @@ class UpdateService extends GetxController {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       _packageName.value = packageInfo.packageName;
-      _currentVersion.value = packageInfo.version;
+      _currentVersion.value = packageInfo.buildNumber;
     } catch (e) {
       debugPrint('获取包信息失败: $e');
     }
