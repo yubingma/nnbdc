@@ -1,0 +1,209 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "",
+  "targetGameHallIds": [],
+  "books": [
+    {
+      "fileName": "CEFR词汇表.txt",
+      "dictName": "CEFR词汇表",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF习语_B2.txt",
+      "dictName": "CERF习语_B2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF习语_C1.txt",
+      "dictName": "CERF习语_C1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF习语_C2.txt",
+      "dictName": "CERF习语_C2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF动词短语_A1.txt",
+      "dictName": "CERF动词短语_A1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF动词短语_A2.txt",
+      "dictName": "CERF动词短语_A2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF动词短语_B1.txt",
+      "dictName": "CERF动词短语_B1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF动词短语_B2.txt",
+      "dictName": "CERF动词短语_B2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF动词短语_C1.txt",
+      "dictName": "CERF动词短语_C1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF动词短语_C2.txt",
+      "dictName": "CERF动词短语_C2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF短语_A1.txt",
+      "dictName": "CERF短语_A1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF短语_A2.txt",
+      "dictName": "CERF短语_A2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF短语_B1.txt",
+      "dictName": "CERF短语_B1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF短语_B2.txt",
+      "dictName": "CERF短语_B2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF短语_C1.txt",
+      "dictName": "CERF短语_C1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF短语_C2.txt",
+      "dictName": "CERF短语_C2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF等级词汇_A1.txt",
+      "dictName": "CERF等级词汇_A1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF等级词汇_A2.txt",
+      "dictName": "CERF等级词汇_A2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF等级词汇_B1.txt",
+      "dictName": "CERF等级词汇_B1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF等级词汇_B2.txt",
+      "dictName": "CERF等级词汇_B2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF等级词汇_C1.txt",
+      "dictName": "CERF等级词汇_C1",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "CERF等级词汇_C2.txt",
+      "dictName": "CERF等级词汇_C2",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "多邻国核心词汇专业.txt",
+      "dictName": "多邻国核心词汇专业",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "多邻国核心词汇中级.txt",
+      "dictName": "多邻国核心词汇中级",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "多邻国核心词汇初级.txt",
+      "dictName": "多邻国核心词汇初级",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    }
+  ]
+}
