@@ -137,6 +137,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           isForce: info['belowMinVersion'] ?? false,
         );
         await updateService.downloadUpdate(updateInfo);
+        tryAutoLogin();
       } else {
         tryAutoLogin();
       }
