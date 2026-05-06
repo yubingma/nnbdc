@@ -406,12 +406,15 @@ class _DictAssignmentSheet extends StatefulWidget {
 
 class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
   late List<Dict> _availableDicts;
+  late List<Dict> _currentDicts;
   String _searchQuery = "";
+  bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
-    _availableDicts = widget.allDicts.where((d) => !widget.currentDicts.any((cd) => cd.id == d.id)).toList();
+    _currentDicts = List.from(widget.currentDicts);
+    _availableDicts = widget.allDicts.where((d) => !_currentDicts.any((cd) => cd.id == d.id)).toList();
   }
 
   @override
@@ -428,15 +431,21 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("管理分组: ${widget.group.name}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("管理分组: ${widget.group.name}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                ],
+              ),
               const SizedBox(height: 16),
-              if (widget.currentDicts.isNotEmpty) ...[
+              if (_currentDicts.isNotEmpty) ...[
                 const Text("当前词书:", style: TextStyle(fontWeight: FontWeight.bold)),
                 Wrap(
                   spacing: 8,
-                  children: widget.currentDicts.map((d) => Chip(
+                  children: _currentDicts.map((d) => Chip(
                     label: Text(d.name),
-                    onDeleted: () => _updateDictGroup(d, null),
+                    onDeleted: _isUpdating ? null : () => _updateDictGroup(d, null),
                   )).toList(),
                 ),
                 const Divider(),
@@ -447,6 +456,7 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
                 onChanged: (val) => setState(() => _searchQuery = val),
               ),
               const SizedBox(height: 8),
+              if (_isUpdating) const LinearProgressIndicator(),
               Expanded(
                 child: ListView.builder(
                   itemCount: filtered.length,
@@ -458,7 +468,7 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
                       subtitle: Text("${d.wordCount} 词"),
                       trailing: IconButton(
                         icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-                        onPressed: () => _updateDictGroup(d, widget.group.id),
+                        onPressed: _isUpdating ? null : () => _updateDictGroup(d, widget.group.id),
                       ),
                     );
                   },
@@ -472,22 +482,38 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
   }
 
   Future<void> _updateDictGroup(Dict dict, String? groupId) async {
-    final result = await Api.client.updateSystemDict(
-      dict.id,
-      dict.name,
-      dict.isReady,
-      dict.visible,
-      dict.popularityLimit,
-      groupId,
-      null, // gameHallIds
-    );
+    setState(() => _isUpdating = true);
+    try {
+      final result = await Api.client.updateSystemDict(
+        dict.id,
+        dict.name,
+        dict.isReady,
+        dict.visible,
+        dict.popularityLimit,
+        groupId,
+        null, // gameHallIds
+      );
 
-    if (result.success) {
-      ToastUtil.success("更新成功");
-      widget.onChanged();
-      if (mounted) Navigator.pop(context);
-    } else {
-      ToastUtil.error("更新失败: ${result.msg}");
+      if (result.success) {
+        setState(() {
+          if (groupId == null) {
+            // 从当前移除
+            _currentDicts.removeWhere((d) => d.id == dict.id);
+            _availableDicts.add(dict);
+          } else {
+            // 添加到当前
+            _currentDicts.add(dict);
+            _availableDicts.removeWhere((d) => d.id == dict.id);
+          }
+        });
+        widget.onChanged(); // 后台刷新父页面数据
+      } else {
+        ToastUtil.error("更新失败: ${result.msg}");
+      }
+    } catch (e) {
+      ToastUtil.error("网络错误: $e");
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
     }
   }
 }
