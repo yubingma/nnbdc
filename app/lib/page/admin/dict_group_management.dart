@@ -362,45 +362,55 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
   Widget build(BuildContext context) {
     final filtered = _availableDicts.where((d) => d.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("管理分组: ${widget.group.name}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          const Text("当前词书:", style: TextStyle(fontWeight: FontWeight.bold)),
-          Wrap(
-            spacing: 8,
-            children: widget.currentDicts.map((d) => Chip(
-              label: Text(d.name),
-              onDeleted: () => _updateDictGroup(d, null),
-            )).toList(),
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("管理分组: ${widget.group.name}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              if (widget.currentDicts.isNotEmpty) ...[
+                const Text("当前词书:", style: TextStyle(fontWeight: FontWeight.bold)),
+                Wrap(
+                  spacing: 8,
+                  children: widget.currentDicts.map((d) => Chip(
+                    label: Text(d.name),
+                    onDeleted: () => _updateDictGroup(d, null),
+                  )).toList(),
+                ),
+                const Divider(),
+              ],
+              const Text("添加词书:", style: TextStyle(fontWeight: FontWeight.bold)),
+              TextField(
+                decoration: const InputDecoration(hintText: '搜索词书...', prefixIcon: Icon(Icons.search)),
+                onChanged: (val) => setState(() => _searchQuery = val),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final d = filtered[index];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(d.name),
+                      subtitle: Text("${d.wordCount} 词"),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+                        onPressed: () => _updateDictGroup(d, widget.group.id),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-          const Divider(),
-          const Text("添加词书:", style: TextStyle(fontWeight: FontWeight.bold)),
-          TextField(
-            decoration: const InputDecoration(hintText: '搜索词书...', prefixIcon: Icon(Icons.search)),
-            onChanged: (val) => setState(() => _searchQuery = val),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: filtered.length,
-              itemBuilder: (context, index) {
-                final d = filtered[index];
-                return ListTile(
-                  title: Text(d.name),
-                  subtitle: Text("${d.wordCount} 词"),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-                    onPressed: () => _updateDictGroup(d, widget.group.id),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
