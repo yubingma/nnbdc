@@ -172,6 +172,19 @@ public class AdminController {
         return Result.success("删除成功");
     }
 
+    @GetMapping("/admin/getAllDictGroups.do")
+    public Result<List<DictGroupVo>> getAllDictGroups() {
+        List<DictGroup> groups = dictGroupBo.queryAll(null, "displayIndex", "asc", false);
+        dictGroupBo.loadDictGroupsAndDictsForDictGroups(groups);
+        return Result.success(PoVoUtils.makeVos(groups, DictGroupVo.class, new String[]{"dictGroup"}));
+    }
+
+    @GetMapping("/admin/getAllDicts.do")
+    public Result<List<DictVo>> getAllDicts() {
+        List<beidanci.service.po.Dict> dicts = dictBo.queryAll(null, "name", "asc", false);
+        return Result.success(PoVoUtils.makeVos(dicts, DictVo.class, null));
+    }
+
     // ============================================
     // 系统健康检查相关API (管理员接口)
     // ============================================

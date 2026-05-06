@@ -200,7 +200,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       topGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
 
       // 2. 构建 parentCategories
-      parentCategories = [DictGroupVo('自定义', [])];
+      parentCategories = [DictGroupVo(id: 'custom_root', name: '自定义', dicts: [])];
 
       for (var topGroup in topGroups) {
         var subGroupVos = <DictGroupVo>[];
@@ -223,7 +223,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         for (var child in children) {
           var childDicts = getGroupDicts(child.id);
           if (childDicts.isNotEmpty) {
-            var childVo = DictGroupVo(child.name, childDicts);
+            var childVo = DictGroupVo(id: child.id, name: child.name, dicts: childDicts, parentId: child.parentId);
             validChildrenVos.add(childVo);
             for (var d in childDicts) {
               if (addedDictIds.add(d.id)) {
@@ -237,17 +237,17 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         if (allDictsInThisCategory.isNotEmpty) {
           // 如果有多个子分组，或者既有子分组又有直属词书，则需要展示“全部”胶囊以供切换
           if (validChildrenVos.length > 1 || (validChildrenVos.isNotEmpty && directDicts.isNotEmpty)) {
-            subGroupVos.add(DictGroupVo('全部', allDictsInThisCategory));
+            subGroupVos.add(DictGroupVo(id: 'all_${topGroup.id}', name: '全部', dicts: allDictsInThisCategory));
             subGroupVos.addAll(validChildrenVos);
           } else if (validChildrenVos.length == 1) {
             // 只有一个子分组且没有直属词书，直接显示该子分组（UI会隐藏胶囊）
             subGroupVos.add(validChildrenVos[0]);
           } else {
             // 只有直属词书（UI会隐藏胶囊）
-            subGroupVos.add(DictGroupVo(topGroup.name, directDicts));
+            subGroupVos.add(DictGroupVo(id: topGroup.id, name: topGroup.name, dicts: directDicts));
           }
 
-          var parentVo = DictGroupVo(topGroup.name, []);
+          var parentVo = DictGroupVo(id: topGroup.id, name: topGroup.name, dicts: []);
           parentVo.childGroups = subGroupVos;
           parentCategories!.add(parentVo);
         }

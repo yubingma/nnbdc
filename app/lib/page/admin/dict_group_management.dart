@@ -5,6 +5,8 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:drift/drift.dart' hide Column;
+import 'package:nnbdc/global.dart';
 
 class DictGroupManagementPage extends StatefulWidget {
   const DictGroupManagementPage({super.key});
@@ -33,6 +35,36 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
     setState(() => _isLoading = true);
     try {
       final db = MyDatabase.instance;
+
+      // 1. 先尝试从服务端获取最新的分组数据并同步到本地
+      try {
+        final groupsResult = await Api.client.getAllDictGroups();
+        if (groupsResult.success) {
+          final groups = groupsResult.data!;
+          await db.batch((batch) {
+            // 注意：这里由于存在外键约束，建议先更新没有父节点的，或者使用 insertAllOnConflictUpdate
+            // Drift 的 insertAllOnConflictUpdate 会自动处理
+            batch.insertAllOnConflictUpdate(
+              db.dictGroups,
+              groups
+                  .map((g) => DictGroupsCompanion(
+                        id: Value(g.id),
+                        name: Value(g.name),
+                        parentId: Value(g.parentId),
+                        displayIndex: Value(g.displayIndex ?? 0),
+                        createTime: g.createTime == null ? const Value.absent() : Value(g.createTime!),
+                        updateTime: g.updateTime == null ? const Value.absent() : Value(g.updateTime!),
+                      ))
+                  .toList(),
+            );
+          });
+        }
+      } catch (e) {
+        Global.logger.e("同步分组数据失败: $e");
+        // 如果同步失败，依然可以继续加载本地数据
+      }
+
+      // 2. 从本地数据库加载
       _allGroups = await db.select(db.dictGroups).get();
       _allDicts = await db.select(db.dicts).get();
       

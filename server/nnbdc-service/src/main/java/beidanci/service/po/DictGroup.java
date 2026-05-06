@@ -89,6 +89,10 @@ public class DictGroup extends UuidPo {
         this.dictGroup = dictGroup;
     }
 
+    public String getParentId() {
+        return dictGroup == null ? null : dictGroup.getId();
+    }
+
     public List<DictGroup> getDictGroups() {
         return this.dictGroups;
     }

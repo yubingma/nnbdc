@@ -866,6 +866,12 @@ abstract class RestClient {
   @DELETE("/admin/deleteDictGroup.do")
   Future<Result<String>> deleteDictGroup(@Query("groupId") String groupId);
 
+  @GET("/admin/getAllDictGroups.do")
+  Future<Result<List<DictGroupVo>>> getAllDictGroups();
+
+  @GET("/admin/getAllDicts.do")
+  Future<Result<List<DictVo>>> getAllDicts();
+
   @POST("/admin/pdf/extractWords.do")
   @MultiPart()
   Future<Result<String>> extractWordsFromPdf(@Part(name: "file") File file);

@@ -896,13 +896,29 @@ class VersionInfo {
 
 @JsonSerializable()
 class DictGroupVo {
+  String id;
   String name;
+  String? parentId;
+  int? displayIndex;
   List<DictVo>? dicts;
   DictGroupVo? dictGroup;
   List<DictGroupVo>? childGroups;
   List<DictVo>? allDicts;
+  DateTime? createTime;
+  DateTime? updateTime;
 
-  DictGroupVo(this.name, this.dicts);
+  DictGroupVo({
+    required this.id,
+    required this.name,
+    this.parentId,
+    this.displayIndex,
+    this.dicts,
+    this.dictGroup,
+    this.childGroups,
+    this.allDicts,
+    this.createTime,
+    this.updateTime,
+  });
 
   factory DictGroupVo.fromJson(Map<String, dynamic> json) => _$DictGroupVoFromJson(json);
 
