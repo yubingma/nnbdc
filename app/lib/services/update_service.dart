@@ -258,7 +258,7 @@ exit
   }
 
   Future<void> _showAndroidUpgradeDialog(UpdateInfo info) async {
-    Get.dialog(
+    final result = await Get.dialog<bool>(
       AlertDialog(
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0), // 统一左右边距
         title: Column(
@@ -282,10 +282,7 @@ exit
             ],
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                Get.back();
-                _downloadAndInstallApk(info);
-              },
+              onPressed: () => Get.back(result: true),
               style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(Get.context!).primaryColor,
                   foregroundColor: Colors.white,
@@ -298,12 +295,16 @@ exit
         actions: [
           if (!info.isForce)
             TextButton(
-                onPressed: () => Get.back(),
+                onPressed: () => Get.back(result: false),
                 child: const Text('稍后再说', style: TextStyle(color: Colors.grey, fontSize: 13))),
         ],
       ),
       barrierDismissible: !info.isForce,
     );
+
+    if (result == true) {
+      await _downloadAndInstallApk(info);
+    }
   }
 
   Future<void> _downloadAndInstallApk(UpdateInfo info) async {

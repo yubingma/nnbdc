@@ -137,6 +137,13 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           isForce: info['belowMinVersion'] ?? false,
         );
         await updateService.downloadUpdate(updateInfo);
+        
+        // 如果是强制更新，则不继续执行自动登录进入主页
+        if (updateInfo.isForce) {
+          debugPrint('强制更新模式，停止自动登录流程');
+          return;
+        }
+        
         tryAutoLogin();
       } else {
         tryAutoLogin();
