@@ -3,6 +3,7 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 
 class DictGroupManagementPage extends StatefulWidget {
@@ -86,15 +87,15 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('词书与分组管理'),
+      appBar: AppTheme.createGradientAppBar(
+        title: '词书与分组管理',
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadData,
           ),
           IconButton(
-            icon: const Icon(Icons.add_box),
+            icon: const Icon(Icons.add_box, color: Colors.white),
             tooltip: '添加根分组',
             onPressed: () => _showGroupEditDialog(null),
           ),
