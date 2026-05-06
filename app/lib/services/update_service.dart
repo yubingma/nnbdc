@@ -13,21 +13,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class AndroidMarket {
-  final String name;
-  final String packageName;
-  final String scheme;
-  final Color color;
-  final bool isLive;
-
-  AndroidMarket({
-    required this.name,
-    required this.packageName,
-    required this.scheme,
-    this.color = Colors.blue,
-    this.isLive = false,
-  });
-}
 
 class UpdateInfo {
   final String version;
@@ -272,21 +257,6 @@ exit
   }
 
   Future<void> _showAndroidUpgradeDialog(UpdateInfo info) async {
-    List<AndroidMarket> installed = [];
-    final all = [
-      AndroidMarket(name: '华为应用市场', packageName: 'com.huawei.appmarket', scheme: 'appmarket://details?id=', color: Colors.green[600]!, isLive: true),
-      AndroidMarket(name: '小米应用商店', packageName: 'com.xiaomi.market', scheme: 'mimarket://details?id=', color: Colors.orange[700]!, isLive: false),
-      AndroidMarket(name: 'vivo 应用商店', packageName: 'com.bbk.appstore', scheme: 'vivomarket://details?id=', color: Colors.blue[700]!, isLive: false),
-    ];
-    try {
-      final appCheck = AppCheck();
-      for (var m in all) {
-        if (m.isLive && await appCheck.isAppInstalled(m.packageName)) {
-          installed.add(m);
-        }
-      }
-    } catch (_) {}
-
     Get.dialog(
       AlertDialog(
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0), // 统一左右边距
@@ -309,35 +279,26 @@ exit
               const SizedBox(height: 6),
               Text(info.releaseNotes, style: const TextStyle(fontSize: 12)),
             ],
-            const SizedBox(height: 12), // 缩减间距
-            ...installed.map((m) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6), // 市场按钮也变紧凑
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Get.back();
-                      openMarket(m);
-                    },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: m.color, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 40)),
-                    child: Text('前往 ${m.name} 更新'),
-                  ),
-                )),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Get.back();
-                  _downloadAndInstallApk(info);
-                },
-                child: const Text('从官网下载更新', style: TextStyle(fontSize: 12, decoration: TextDecoration.underline)),
-              ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Get.back();
+                _downloadAndInstallApk(info);
+              },
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(Get.context!).primaryColor,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 45)),
+              child: const Text('立即下载并安装更新'),
             ),
+            const SizedBox(height: 10),
           ],
         ),
         actions: [
           if (!info.isForce)
             TextButton(
                 onPressed: () => Get.back(),
-                child: const Text('稍后升级', style: TextStyle(color: Colors.grey, fontSize: 13))),
+                child: const Text('稍后再说', style: TextStyle(color: Colors.grey, fontSize: 13))),
         ],
       ),
       barrierDismissible: !info.isForce,
@@ -373,15 +334,6 @@ exit
     }
   }
 
-  Future<void> openMarket(AndroidMarket market) async {
-    final String package = _packageName.value.isNotEmpty ? _packageName.value : "com.nn.nnbdc.android";
-    final url = "${market.scheme}$package";
-    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
-      if (market.packageName == 'com.huawei.appmarket') {
-        launchUrl(Uri.parse("https://appgallery.huawei.com/#/app/$package"), mode: LaunchMode.externalApplication);
-      }
-    }
-  }
 
   Future<void> openAppStore() async {
     await launchUrl(Uri.parse('https://apps.apple.com/app/id6756229006'), mode: LaunchMode.externalApplication);
