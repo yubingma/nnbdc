@@ -369,6 +369,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent, // 背景透明，以便使用自定义圆角卡片
       builder: (context) => _DictAssignmentSheet(
         group: node.group,
         currentDicts: node.dicts,
@@ -421,12 +422,25 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
   Widget build(BuildContext context) {
     final filtered = _availableDicts.where((d) => d.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Container(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
-          padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12), // 增加外边距，使其看起来像悬浮卡片
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(25),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: SafeArea(
+          top: false,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
