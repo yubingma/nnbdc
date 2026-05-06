@@ -46,20 +46,14 @@ class FinishPageState extends State<FinishPage> {
   }
 
   Future<void> loadData() async {
+    /*
     // 检测手机上安装的应用市场
     if (PlatformUtils.isAndroid) {
       if (await AppCheck().isAppInstalled('com.huawei.appmarket')) {
         marketAppUrl = "appmarket://details?id=com.nn.nnbdc.android";
-      } /*else if (await DeviceApps.isAppInstalled('com.xiaomi.market')) {
-        marketAppUrl = "mimarket://details?id=com.nn.nnbdc.android";
-      } else if (await DeviceApps.isAppInstalled('com.sec.android.app.samsungapps')) {
-        marketAppUrl = "samsungapps://ProductDetail/com.nn.nnbdc.android";
-      } else if (await DeviceApps.isAppInstalled('com.oppo.market')) {
-        marketAppUrl = "oppomarket://details?packagename=com.nn.nnbdc.android";
-      } else if (await DeviceApps.isAppInstalled('com.bbk.appstore')) {
-        marketAppUrl = "vivomarket://details?id=com.nn.nnbdc.android";
-      }*/
+      }
     }
+    */
 
     // 检查是否从页面查看器进入，如果是则模拟打卡但不入库
     final arguments = Get.arguments;
