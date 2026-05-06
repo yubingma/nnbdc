@@ -47,7 +47,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
             // 1. 先从本地删除那些在服务器上已经不存在的分组（清理掉已删除的数据）
             // 注意：由于有 parentId 的自引用外键约束，需要小心处理。
             // 更好的做法是直接执行一个 delete where id not in (...)
-            batch.deleteWhere(db.dictGroups, (tbl) => tbl.id.notIn(serverIds));
+            batch.deleteWhere(db.dictGroups, (tbl) => tbl.id.isNotIn(serverIds));
 
             // 2. 更新或插入最新的数据
             batch.insertAllOnConflictUpdate(
