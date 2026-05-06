@@ -1,0 +1,247 @@
+0|baseball
+0|title
+0|corner
+0|Walker
+0|Newcastle
+0|metre
+0|own
+0|nearby
+0|college
+0|university
+0|accountant
+0|during
+0|keen
+0|keen on
+0|be keen on
+0|ski
+0|table tennis
+0|best
+0|physics
+0|ambition
+0|maybe
+0|enclose
+0|height
+0|dream
+0|probably
+0|tie
+0|roof
+0|similar
+0|similar to
+0|be similar to
+0|expect
+0|business
+0|whizz-kid
+0|successful
+0|put on
+0|luckily
+0|popular
+0|responsible
+0|responsible for
+0|be responsible for
+0|sale
+0|client
+0|boring
+0|simple
+0|achieve
+0|fail
+0|exam
+0|return
+0|attend
+0|assist
+0|continue
+0|seldom
+0|usual
+0|repeat
+0|explain
+0|energy
+0|cell
+0|force
+0|heat
+0|physical
+0|article
+0|ever
+0|argue
+0|deal with
+0|trouble
+0|unusual
+0|happen to
+0|argument
+0|hold out
+0|crowd
+0|stare
+0|through
+0|quietly
+0|be going on
+0|steal
+0|purse
+0|postcard
+0|gone
+0|gate
+0|aboard
+0|go after
+0|strange
+0|afraid of
+0|be afraid of
+0|dial
+0|theft
+0|detail
+0|put ... down
+0|get off
+0|worried
+0|well done
+0|realize
+0|fight
+0|rather
+0|downstairs
+0|divide
+0|degree
+0|especially
+0|calculate
+0|brain
+0|part
+0|language
+0|nearly
+0|system
+0|invent
+0|develop
+0|invention
+0|abacus
+0|accurate
+0|electronic
+0|calculator
+0|subtract
+0|multiply
+0|percentage
+0|square root
+0|powerful
+0|in a flash
+0|calculation
+0|whole
+0|lifetime
+0|against
+0|living
+0|human
+0|following
+0|amazing
+0|solve
+0|lightning
+0|like lightning
+0|program
+0|power
+0|complete
+0|check
+0|Africa
+0|Europe
+0|fierce
+0|though
+0|look up
+0|encyclopaedia
+0|dinosaur
+0|exist
+0|even
+0|harmless
+0|harmful
+0|die out
+0|nobody
+0|know about
+0|skeleton
+0|footprint
+0|leave ... behind
+0|thinker
+0|Greece
+0|as ... as possible
+0|jar
+0|amusement park
+0|create
+0|character
+0|mail
+0|real
+0|while
+0|cause
+0|harm
+0|believe
+0|die of
+0|disease
+0|government
+0|repair
+0|fee
+0|journey
+0|captain
+0|take place
+0|in trouble
+0|navigator
+0|lost
+0|run out of
+0|unexplored
+0|bring down
+0|valley
+0|close to
+0|cliff
+0|rock
+0|storey
+0|approach
+0|monster
+0|clearly
+0|partly
+0|kangaroo
+0|giant
+0|except
+0|single
+0|roar
+0|blood
+0|alien
+0|steel
+0|rat
+0|trap
+0|magnet
+0|cage
+0|peace
+0|in peace
+0|in pieces
+0|favour
+0|do ... a favour
+0|trust
+0|offer
+0|frighten
+0|crew
+0|arrange
+0|below
+0|per
+0|escape
+0|escape from
+0|kill
+0|lie
+0|fall asleep
+0|snore
+0|laser
+0|torch
+0|case
+0|attract
+0|interrupt
+0|moment
+0|aim
+0|aim at
+0|beam
+0|hit
+0|attack
+0|damage
+0|finished
+0|make sure
+0|whisper
+0|be done for
+0|panic
+0|freedom
+0|figure
+0|silently
+0|search
+0|crash
+0|base
+0|petrol
+0|decide
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 240
+# Total Entries Extracted: 240
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 240
+# -------------------------------

@@ -1,0 +1,249 @@
+0|average
+0|item
+0|product
+0|fighter
+0|fact
+0|scientist
+0|interested
+0|interested in
+0|be interested in
+0|notebook
+0|suppose
+0|breathe
+0|pure
+0|gas
+0|release
+0|oxygen
+0|hectare
+0|produce
+0|alive
+0|as well as
+0|natural
+0|air conditioner
+0|warn
+0|protect
+0|chemical
+0|nasty
+0|join
+0|communicate
+0|one another
+0|burn
+0|replace
+0|hardly
+0|destroy
+0|exchange
+0|nature
+0|main
+0|lorry
+0|daily
+0|amount
+0|increase
+0|remain
+0|symbol
+0|flow
+0|washbasin
+0|vanish
+0|drain
+0|impatient
+0|obey
+0|faint
+0|float
+0|comfortably
+0|relax
+0|clean up
+0|puzzled
+0|treatment
+0|works
+0|thorough
+0|cleaning
+0|pipe
+0|until
+0|sewage
+0|sewage plant
+0|pump
+0|precious
+0|liquid
+0|rest
+0|ordinary
+0|manufacture
+0|equipment
+0|tool
+0|chart
+0|servant
+0|electricity
+0|trick
+0|foolish
+0|wire
+0|meter
+0|measure
+0|bill
+0|monthly
+0|in a way
+0|explanation
+0|careful
+0|careful with
+0|be careful with
+0|scratch
+0|invisible
+0|bulb
+0|connect to
+0|bury
+0|power station
+0|politely
+0|grin
+0|contain
+0|clear
+0|iron
+0|switch
+0|off
+0|switch off
+0|lock
+0|test
+0|encourage
+0|behave
+0|polite
+0|staff
+0|customer
+0|passage
+0|term
+0|publish
+0|elect
+0|chief
+0|editor
+0|suggest
+0|experience
+0|take charge of
+0|ought to
+0|talk ... over
+0|reader
+0|consider
+0|briefly
+0|whether
+0|a bit
+0|decision
+0|make a decision
+0|conclude
+0|monitor
+0|choice
+0|agree on
+0|youth
+0|in all
+0|talent
+0|gather
+0|congratulation
+0|deserve
+0|delighted
+0|shame
+0|record
+0|team
+0|design
+0|feature
+0|complain
+0|committee
+0|prize
+0|sight
+0|soul
+0|balance
+0|line
+0|belong to
+0|drama
+0|as soon as
+0|reception
+0|exclaim
+0|bark
+0|at once
+0|guest
+0|lead
+0|personally
+0|sensible
+0|describe
+0|alarm
+0|fire alarm
+0|go off
+0|surface
+0|dead
+0|cough
+0|seem
+0|wave
+0|save one's life
+0|lend
+0|event
+0|take care
+0|mind
+0|look out
+0|watch out
+0|label
+0|harbour
+0|defeat
+0|wine
+0|adult
+0|France
+0|now that
+0|abroad
+0|Paris
+0|destination
+0|world-famous
+0|landmark
+0|such as
+0|tree-lined
+0|attraction
+0|go on to do something
+0|enable
+0|agricultural
+0|region
+0|wheat
+0|sunflower
+0|vineyard
+0|excellent
+0|scenic
+0|castle
+0|queen
+0|influence
+0|in some ways
+0|French
+0|cheese
+0|leader
+0|culture
+0|further
+0|concert
+0|throughout
+0|level
+0|at work
+0|site
+0|crane
+0|narrow
+0|plank
+0|scared
+0|verse
+0|on one's own
+0|pleased
+0|pleased with
+0|be pleased with
+0|attention
+0|pay attention
+0|scold
+0|detention
+0|chat
+0|alone
+0|author
+0|pretend
+0|score
+0|thank goodness
+0|concern
+0|accept
+0|reject
+0|feel like
+0|express
+0|pain
+0|medicine
+0|generous
+0|honest
+0|fair
+0|patient
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 242
+# Total Entries Extracted: 242
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 242
+# -------------------------------

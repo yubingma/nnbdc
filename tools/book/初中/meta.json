@@ -1,0 +1,729 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "",
+  "targetGameHallIds": [],
+  "books": [
+    {
+      "fileName": "2025中考词汇闪过_20260430_172557.txt",
+      "dictName": "2025中考词汇闪过",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "20天背完中考核心词汇_20260430_172324.txt",
+      "dictName": "20天背完中考核心词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语七年级上册_20260430_175854.txt",
+      "dictName": "人教版初中英语七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语七年级上册（新版） _20260430_172453.txt",
+      "dictName": "人教版初中英语七年级上册（新版） ",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语七年级下册_20260430_175926.txt",
+      "dictName": "人教版初中英语七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语七年级下册（新版）_20260430_172627.txt",
+      "dictName": "人教版初中英语七年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语九年级全册_20260430_180301.txt",
+      "dictName": "人教版初中英语九年级全册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语八年级上册_20260430_175959.txt",
+      "dictName": "人教版初中英语八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语八年级上册（新版）_20260430_172726.txt",
+      "dictName": "人教版初中英语八年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语八年级下册_20260430_180227.txt",
+      "dictName": "人教版初中英语八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "人教版初中英语八年级下册（新版）_20260430_172246.txt",
+      "dictName": "人教版初中英语八年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语七年级上册_20260430_175813.txt",
+      "dictName": "仁爱版初中英语七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语七年级上册（新版）_20260430_180028.txt",
+      "dictName": "仁爱版初中英语七年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语七年级下册_20260430_180925.txt",
+      "dictName": "仁爱版初中英语七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语七年级下册（新版）_20260430_180058.txt",
+      "dictName": "仁爱版初中英语七年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语九年级上册_20260430_181135.txt",
+      "dictName": "仁爱版初中英语九年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语九年级下册_20260430_181020.txt",
+      "dictName": "仁爱版初中英语九年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语八年级上册_20260430_181230.txt",
+      "dictName": "仁爱版初中英语八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语八年级上册（新版）_20260430_180152.txt",
+      "dictName": "仁爱版初中英语八年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语八年级下册_20260430_180953.txt",
+      "dictName": "仁爱版初中英语八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "仁爱版初中英语八年级下册（新版）_20260430_180331.txt",
+      "dictName": "仁爱版初中英语八年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版三年级起点七年级上册_20260505_160542.txt",
+      "dictName": "冀教版三年级起点七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版三年级起点七年级下册_20260505_160616.txt",
+      "dictName": "冀教版三年级起点七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版三年级起点九年级全册_20260505_160426.txt",
+      "dictName": "冀教版三年级起点九年级全册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版三年级起点八年级上册_20260505_160647.txt",
+      "dictName": "冀教版三年级起点八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版三年级起点八年级下册_20260505_160717.txt",
+      "dictName": "冀教版三年级起点八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版初中英语七年级上册（新版）_20260505_160743.txt",
+      "dictName": "冀教版初中英语七年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版初中英语七年级下册（新版）_20260505_160809.txt",
+      "dictName": "冀教版初中英语七年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版初中英语八年级上册（新版）_20260505_160837.txt",
+      "dictName": "冀教版初中英语八年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "冀教版初中英语八年级下册（新版）_20260505_160909.txt",
+      "dictName": "冀教版初中英语八年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "初中英语大纲词汇_20260430_172354.txt",
+      "dictName": "初中英语大纲词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "初中英语常考短语_20260430_172422.txt",
+      "dictName": "初中英语常考短语",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版初中英语七年级上册_20260505_154047.txt",
+      "dictName": "北师大版初中英语七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版初中英语七年级上册（新版）_20260505_154114.txt",
+      "dictName": "北师大版初中英语七年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版初中英语七年级下册_20260505_154019.txt",
+      "dictName": "北师大版初中英语七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版初中英语七年级下册（新版）_20260505_154143.txt",
+      "dictName": "北师大版初中英语七年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版初中英语九年级全一册_20260505_153849.txt",
+      "dictName": "北师大版初中英语九年级全一册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版初中英语八年级上册_20260505_153953.txt",
+      "dictName": "北师大版初中英语八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版初中英语八年级上册（新版）_20260505_154214.txt",
+      "dictName": "北师大版初中英语八年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "北师大版初中英语八年级下册_20260505_153926.txt",
+      "dictName": "北师大版初中英语八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语七年级上册_20260430_183238.txt",
+      "dictName": "外研版初中英语七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语七年级上册（新版）_20260430_183633.txt",
+      "dictName": "外研版初中英语七年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语七年级下册_20260430_184356.txt",
+      "dictName": "外研版初中英语七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语七年级下册（新版）_20260430_183508.txt",
+      "dictName": "外研版初中英语七年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语九年级上册_20260430_184455.txt",
+      "dictName": "外研版初中英语九年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语九年级下册_20260430_184525.txt",
+      "dictName": "外研版初中英语九年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语八年级上册_20260430_184623.txt",
+      "dictName": "外研版初中英语八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语八年级上册（新版）_20260430_183538.txt",
+      "dictName": "外研版初中英语八年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语八年级下册_20260430_184427.txt",
+      "dictName": "外研版初中英语八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "外研版初中英语八年级下册（新版）_20260430_183700.txt",
+      "dictName": "外研版初中英语八年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语七年级上册_20260430_184326.txt",
+      "dictName": "沪教版牛津英语七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语七年级上册（新版）_20260430_184555.txt",
+      "dictName": "沪教版牛津英语七年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语七年级下册_20260505_152148.txt",
+      "dictName": "沪教版牛津英语七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语七年级下册（新版）_20260430_184653.txt",
+      "dictName": "沪教版牛津英语七年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语九年级上册_20260505_152023.txt",
+      "dictName": "沪教版牛津英语九年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语九年级下册_20260505_151932.txt",
+      "dictName": "沪教版牛津英语九年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语八年级上册_20260505_152118.txt",
+      "dictName": "沪教版牛津英语八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语八年级上册（新版）_20260430_184719.txt",
+      "dictName": "沪教版牛津英语八年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语八年级下册_20260505_152051.txt",
+      "dictName": "沪教版牛津英语八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "沪教版牛津英语八年级下册（新版）_20260430_184753.txt",
+      "dictName": "沪教版牛津英语八年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版七年级上册_20260505_152216.txt",
+      "dictName": "牛津上海版七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版七年级下册_20260505_152244.txt",
+      "dictName": "牛津上海版七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版九年级上册_20260505_151858.txt",
+      "dictName": "牛津上海版九年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版九年级下册_20260505_153801.txt",
+      "dictName": "牛津上海版九年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版八年级上册_20260505_152312.txt",
+      "dictName": "牛津上海版八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "牛津上海版八年级下册_20260505_152340.txt",
+      "dictName": "牛津上海版八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "维克多英语新初中词汇1500+1200+500_20260430_172525.txt",
+      "dictName": "维克多英语新初中词汇1500+1200+500",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "蝶变单词 详解巧记初中英语词汇_20260430_172658.txt",
+      "dictName": "蝶变单词 详解巧记初中英语词汇",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语七年级上册_20260430_180856.txt",
+      "dictName": "译林版牛津英语七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语七年级上册（新版）_20260430_181053.txt",
+      "dictName": "译林版牛津英语七年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语七年级下册_20260430_183310.txt",
+      "dictName": "译林版牛津英语七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语七年级下册（新版）_20260430_181257.txt",
+      "dictName": "译林版牛津英语七年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语九年级上册_20260430_183603.txt",
+      "dictName": "译林版牛津英语九年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语九年级下册_20260430_183437.txt",
+      "dictName": "译林版牛津英语九年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语八年级上册_20260430_183339.txt",
+      "dictName": "译林版牛津英语八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语八年级上册（新版）_20260430_181202.txt",
+      "dictName": "译林版牛津英语八年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语八年级下册_20260430_183410.txt",
+      "dictName": "译林版牛津英语八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "译林版牛津英语八年级下册（新版）_20260430_181327.txt",
+      "dictName": "译林版牛津英语八年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制七年级上册_20260505_155246.txt",
+      "dictName": "鲁教版五四学制七年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制七年级上册（新版）_20260505_155448.txt",
+      "dictName": "鲁教版五四学制七年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制七年级下册_20260505_155324.txt",
+      "dictName": "鲁教版五四学制七年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制七年级下册（新版）_20260505_155550.txt",
+      "dictName": "鲁教版五四学制七年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制九年级全册_20260505_160455.txt",
+      "dictName": "鲁教版五四学制九年级全册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制八年级上册_20260505_155352.txt",
+      "dictName": "鲁教版五四学制八年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制八年级下册_20260505_155004.txt",
+      "dictName": "鲁教版五四学制八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制八年级下册_20260505_155519.txt",
+      "dictName": "鲁教版五四学制八年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制六年级上册_20260505_155114.txt",
+      "dictName": "鲁教版五四学制六年级上册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制六年级上册（新版）_20260505_153719.txt",
+      "dictName": "鲁教版五四学制六年级上册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制六年级下册_20260505_155154.txt",
+      "dictName": "鲁教版五四学制六年级下册",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "鲁教版五四学制六年级下册（新版）_20260505_155422.txt",
+      "dictName": "鲁教版五四学制六年级下册（新版）",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    }
+  ]
+}

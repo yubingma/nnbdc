@@ -1,0 +1,269 @@
+0|raise
+0|permission
+0|disabled
+0|teenager
+0|offer
+0|suffer
+0|serious
+0|illness
+0|organize
+0|express
+0|pain
+0|lonely
+0|friendship
+0|difficulty
+0|joy
+0|peace
+0|hurt
+0|courage
+0|spirits
+0|pay
+0|paid
+0|community
+0|in need
+0|voluntary work
+0|ask permission
+0|suffer from
+0|raise one's spirits
+0|in order to
+0|language
+0|communication
+0|ballet
+0|accept
+0|reject
+0|meaning
+0|gesture
+0|message
+0|bored
+0|part-time
+0|well-dressed
+0|lady
+0|sigh
+0|matter
+0|expression
+0|appearance
+0|impression
+0|towards
+0|hold
+0|held
+0|later
+0|remind
+0|neck
+0|cross
+0|nod
+0|shake
+0|shook
+0|shaken
+0|sure
+0|body language
+0|take place
+0|sit up
+0|make a good impression on ...
+0|remind sb. about sth.
+0|description
+0|describe
+0|fisherman
+0|net
+0|although
+0|fit
+0|cormorant
+0|dive
+0|ready
+0|reach
+0|attract
+0|hang
+0|hung
+0|post
+0|require
+0|practise
+0|tool
+0|scissors
+0|pattern
+0|character
+0|health
+0|luck
+0|wedding
+0|dough
+0|rough
+0|size
+0|simple
+0|lovely
+0|paper cutting
+0|up to
+0|set off
+0|up and down
+0|after dark
+0|no more
+0|all the time
+0|cartoon
+0|warning
+0|role-play
+0|symbol
+0|bubble
+0|thought
+0|sketch
+0|program
+0|record
+0|effect
+0|basic
+0|stage
+0|pleasant
+0|detailed
+0|appear
+0|actor
+0|match
+0|separately
+0|play
+0|score
+0|team
+0|star
+0|mystery
+0|island
+0|storm
+0|jacket
+0|wave
+0|comic strip
+0|pop out
+0|decide on
+0|video camera
+0|play against
+0|weather forecast
+0|life jacket
+0|thank goodness
+0|make it
+0|endangered
+0|file
+0|giant panda
+0|obligation
+0|wild
+0|bamboo
+0|adult
+0|weight
+0|kilogram
+0|population
+0|behaviour
+0|birth
+0|patch
+0|shoulder
+0|central
+0|menu
+0|fur
+0|cruel
+0|organization
+0|danger
+0|face
+0|Asian
+0|weigh
+0|in the wild
+0|at birth
+0|on one's own
+0|close to
+0|respond
+0|complaint
+0|cause
+0|chocolate
+0|dolphin
+0|click
+0|reason
+0|cute
+0|responsibility
+0|feed
+0|fed
+0|according to
+0|faithfully
+0|sofa
+0|noisy
+0|nearly
+0|stranger
+0|common
+0|choice
+0|lie
+0|lay
+0|lain
+0|attention
+0|scare
+0|believe
+0|heart
+0|heart attack
+0|until
+0|care for
+0|what's more
+0|have no choice but to do
+0|run free
+0|lie around
+0|keep sb. from sth.
+0|keep sb. from doing sth.
+0|be faithful to ...
+0|die of
+0|keep on
+0|unknown
+0|alien
+0|astronaut
+0|receive
+0|hill
+0|loud
+0|explore
+0|bush
+0|quiet
+0|round
+0|damage
+0|crash
+0|frightened
+0|discover
+0|terrible
+0|fear
+0|creature
+0|feather
+0|wonder
+0|line
+0|refuse
+0|spread
+0|mark
+0|desert
+0|tent
+0|knife
+0|explain
+0|pleased
+0|keep quiet
+0|because of
+0|in fear
+0|landing site
+0|as soon as possible
+0|agree with
+0|disagree with
+0|Internet
+0|apology
+0|excuse
+0|past
+0|present
+0|hydrogen
+0|wide
+0|shape
+0|cafe
+0|recently
+0|forever
+0|certainly
+0|recommend
+0|satisfy
+0|mix
+0|electronic
+0|relax
+0|while
+0|technology
+0|software
+0|virus
+0|prepare
+0|in the present
+0|at the front
+0|on the Internet
+0|in the shape of
+0|mix ... with ...
+0|prepare for
+0|in a second
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 262
+# Total Entries Extracted: 262
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 262
+# -------------------------------

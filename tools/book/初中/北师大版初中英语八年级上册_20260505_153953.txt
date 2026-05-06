@@ -1,0 +1,412 @@
+0|programme
+0|cartoon
+0|nature
+0|vacation
+0|reviewer
+0|score
+0|result
+0|movie
+0|actor
+0|fantastic
+0|earn
+0|adopt
+0|deaf
+0|moving
+0|dinosaur
+0|die
+0|climate
+0|channel
+0|bored
+0|interview
+0|character
+0|conversation
+0|grammar
+0|passage
+0|pronunciation
+0|vocabulary
+0|quite
+0|rule
+0|experience
+0|carefully
+0|take notes
+0|field
+0|extremely
+0|fit
+0|agree
+0|certainly
+0|pass
+0|goal
+0|score a goal
+0|kick
+0|basket
+0|make a basket
+0|foul
+0|kid
+0|call
+0|terrible
+0|shame
+0|What a shame!
+0|should
+0|complain
+0|hit
+0|court
+0|form
+0|in top form
+0|win
+0|break
+0|prize
+0|lose
+0|fall
+0|magic
+0|tortoise
+0|run after
+0|deer
+0|sky
+0|whale
+0|ocean
+0|photographer
+0|cameraman
+0|host
+0|explain
+0|habit
+0|scenery
+0|explanation
+0|continue
+0|play
+0|experiment
+0|musical
+0|instrument
+0|teamwork
+0|bottle
+0|camera
+0|chopsticks
+0|glue
+0|metal
+0|paper
+0|plastic
+0|wood
+0|material
+0|object
+0|build
+0|describe
+0|video
+0|second
+0|possible
+0|return
+0|on
+0|seat
+0|exam
+0|together
+0|politely
+0|role
+0|question
+0|discussion
+0|research
+0|alone
+0|share
+0|anyone
+0|mind
+0|hate
+0|sound
+0|crazy
+0|stick
+0|argue
+0|choose
+0|suggest
+0|excellent
+0|poor
+0|participate
+0|task
+0|stand
+0|speech
+0|give speeches
+0|special
+0|last
+0|couple
+0|on holiday
+0|resort
+0|take a walk
+0|shake
+0|completely
+0|earthquake
+0|one by one
+0|dark
+0|heavily
+0|moment
+0|at that moment
+0|decide
+0|call for one's attention
+0|until
+0|ruin
+0|look for
+0|blanket
+0|enough
+0|divide
+0|collect
+0|flashlight
+0|flash
+0|journey
+0|encourage
+0|support
+0|safely
+0|lucky
+0|hope
+0|solve
+0|problem
+0|into
+0|astronaut
+0|several
+0|everybody
+0|cooperate
+0|puzzle
+0|discuss
+0|band
+0|high jump
+0|long jump
+0|popular
+0|push-up
+0|sit-up
+0|race
+0|rope
+0|after-class
+0|record
+0|break the record
+0|bit
+0|a bit
+0|sick
+0|active
+0|joke
+0|joke around
+0|weak
+0|size
+0|average
+0|Olympic
+0|diving
+0|gymnastics
+0|horse-riding
+0|weightlifting
+0|athlete
+0|horse-rider
+0|compete
+0|at the age of ...
+0|national
+0|champion
+0|gymnast
+0|diver
+0|medal
+0|competition
+0|metre
+0|gold
+0|weightlifter
+0|runner
+0|expedition
+0|pole
+0|explorer
+0|north
+0|worst
+0|accident
+0|prepare
+0|artificial
+0|careful
+0|ice
+0|better
+0|worse
+0|arrive
+0|arrive at
+0|brave
+0|success
+0|pull-up
+0|event
+0|jumper
+0|health
+0|cough
+0|fever
+0|headache
+0|runny
+0|sore
+0|throat
+0|stomachache
+0|toothache
+0|plenty
+0|plenty of
+0|dentist
+0|matter
+0|temperature
+0|deep
+0|breath
+0|flu
+0|serious
+0|twice
+0|note
+0|patient
+0|date
+0|symptom
+0|treatment
+0|cold
+0|once
+0|advice
+0|sleepy
+0|harmful
+0|for example
+0|bird flu
+0|sneeze
+0|soap
+0|time
+0|air
+0|earphone
+0|volume
+0|harm
+0|care
+0|wonder
+0|bone
+0|blood
+0|hold
+0|although
+0|outside
+0|inside
+0|nutrient
+0|waste
+0|calcium
+0|solid
+0|vitamin
+0|stair
+0|lunchtime
+0|ping-pong
+0|less
+0|letter
+0|blank
+0|potato chip
+0|protect
+0|environment
+0|recycle
+0|save
+0|electricity
+0|off
+0|turn off
+0|community
+0|similar
+0|ever
+0|volunteer
+0|helper
+0|complete
+0|clean-up
+0|seem
+0|can
+0|piece
+0|finished
+0|litter
+0|put up
+0|notice
+0|request
+0|reply
+0|fight
+0|laugh at
+0|polite
+0|avoid
+0|actually
+0|step
+0|without
+0|lead
+0|dare
+0|textbook
+0|copy
+0|appear
+0|surprise
+0|from then on
+0|present
+0|public
+0|in public
+0|garden
+0|lie
+0|hero
+0|tsunami
+0|Christmas
+0|bubble
+0|at once
+0|shout
+0|warn
+0|hotel
+0|because of
+0|guest
+0|kill
+0|thousand
+0|empty
+0|shake hands
+0|show ... around
+0|to one's surprise
+0|delicious
+0|dream
+0|bear
+0|teddy bear
+0|gift
+0|sunglasses
+0|get on
+0|statue
+0|title
+0|unexplained
+0|monster
+0|UFO
+0|unusual
+0|strange
+0|creature
+0|natural
+0|sense
+0|smell
+0|taste
+0|touch
+0|amazing
+0|relax
+0|disappear
+0|search
+0|yard
+0|fence
+0|strangely
+0|noise
+0|wake
+0|hairy
+0|scary
+0|scared
+0|throw
+0|newspaper
+0|sailor
+0|row
+0|boat
+0|toward
+0|dive
+0|side
+0|imaginary
+0|might
+0|right now
+0|prove
+0|brain
+0|asleep
+0|probably
+0|human
+0|common
+0|realise
+0|radio
+0|pyjama
+0|in fact
+0|wake up
+0|France
+0|Germany
+0|the Pyramids
+0|the Temple of Heaven
+0|Japan
+0|Russia
+0|Brazil
+0|the North Pole
+0|the South Pole
+0|Maikhao Beach
+0|Thailand
+0|Bigfoot
+0|Loch Ness Monster
+0|Scotland
+0|the Atlantic Ocean
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 405
+# Total Entries Extracted: 405
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 405
+# -------------------------------

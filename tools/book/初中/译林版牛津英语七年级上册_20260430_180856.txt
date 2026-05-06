@@ -1,0 +1,377 @@
+0|oh
+0|e-dog
+0|master
+0|grade
+0|student
+0|reading
+0|classmate
+0|after school
+0|slim
+0|be good at
+0|over there
+0|classroom
+0|dancing
+0|swimming
+0|age
+0|looks
+0|cute
+0|hobby
+0|glad
+0|everyone
+0|come from
+0|glasses
+0|walking
+0|really
+0|bowl
+0|time
+0|tennis
+0|volleyball
+0|enjoy
+0|go swimming
+0|player
+0|member
+0|club
+0|free
+0|hope
+0|dream
+0|true
+0|come true
+0|drawing
+0|weekend
+0|at weekends
+0|on weekends
+0|at the weekend
+0|on the weekend
+0|of course
+0|shop
+0|table tennis
+0|else
+0|lot
+0|a lot of
+0|lots of
+0|fun
+0|team
+0|talk about
+0|talk of
+0|match
+0|hero
+0|which
+0|best
+0|well
+0|so
+0|biology
+0|geography
+0|history
+0|date
+0|meeting
+0|o'clock
+0|OK
+0|okay
+0|gate
+0|show
+0|around
+0|show sb. around
+0|front
+0|in front of
+0|building
+0|ground
+0|ground floor
+0|first floor
+0|bright
+0|modern
+0|hall
+0|diary
+0|look at
+0|wall
+0|let me see
+0|after class
+0|pardon
+0|phone
+0|telephone
+0|on the phone
+0|from ... to ...
+0|take
+0|get up
+0|go to school
+0|a.m.
+0|p.m.
+0|reading room
+0|only
+0|sure
+0|kind
+0|all kinds of
+0|borrow
+0|borrow ... from ...
+0|letter
+0|few
+0|a few
+0|away
+0|far away from
+0|on foot
+0|the best
+0|all the best
+0|wake
+0|wake up
+0|shall
+0|hill
+0|seldom
+0|out
+0|go out
+0|have breakfast
+0|have lunch
+0|have dinner
+0|need
+0|rest
+0|just
+0|have fun
+0|have lessons
+0|after-school
+0|activity
+0|homework
+0|go to bed
+0|usually
+0|never
+0|be late for
+0|start
+0|quarter
+0|past
+0|in the morning
+0|in the afternoon
+0|in the evening
+0|first
+0|chat
+0|each
+0|other
+0|each other
+0|practise
+0|practice
+0|have a good time
+0|good
+0|wish
+0|would
+0|would like
+0|'d like
+0|life
+0|lives
+0|roller skating
+0|luck
+0|museum
+0|twice
+0|picnic
+0|once
+0|dislike
+0|reason
+0|ready
+0|get ready for sth.
+0|learn
+0|world
+0|celebrate
+0|guess
+0|dress
+0|dress up
+0|as
+0|ghost
+0|Christmas
+0|festival
+0|because
+0|present
+0|together
+0|get together
+0|moon cake
+0|full
+0|USA
+0|United States of America
+0|mask
+0|paint
+0|pumpkin
+0|lantern
+0|when
+0|inside
+0|knock
+0|knock on the door
+0|shout
+0|trick or treat
+0|if
+0|treat
+0|trick
+0|special
+0|question
+0|dumpling
+0|rice dumpling
+0|grandparent
+0|thing
+0|lion
+0|lion dance
+0|firework
+0|find out
+0|more
+0|radio
+0|take photos
+0|at night
+0|seem
+0|different
+0|important
+0|most
+0|off
+0|let off
+0|set off
+0|packet
+0|red packet
+0|lifestyle
+0|noon
+0|hamburger
+0|keep
+0|lemon
+0|watermelon
+0|chocolate
+0|beef
+0|carrot
+0|pork
+0|sweet
+0|candy
+0|meat
+0|snack
+0|health
+0|fit
+0|keep fit
+0|meal
+0|pear
+0|sugar
+0|tooth
+0|teeth
+0|computer game
+0|cola
+0|change
+0|plan
+0|pool
+0|swimming pool
+0|piece
+0|a piece of
+0|glass
+0|plate
+0|salt
+0|cup
+0|kilo
+0|kilogram
+0|carton
+0|bottle
+0|less
+0|than
+0|less than
+0|more than
+0|take a walk
+0|total
+0|number
+0|score
+0|point
+0|order
+0|menu
+0|bean
+0|all right
+0|taste
+0|energy
+0|whole
+0|shopping
+0|mall
+0|shopping mall
+0|down
+0|hate
+0|money
+0|wallet
+0|carry
+0|bookshop
+0|gift
+0|CD
+0|compact disc
+0|maybe
+0|be interested in
+0|stamp
+0|collect
+0|you're welcome
+0|shopkeeper
+0|just a minute
+0|take a look
+0|cost
+0|cheap
+0|last
+0|hair clip
+0|pink
+0|pretty
+0|enough
+0|different from
+0|paper
+0|item
+0|T-shirt
+0|poor
+0|area
+0|pocket
+0|pocket money
+0|pair
+0|a pair of
+0|size
+0|try on
+0|expensive
+0|another
+0|price
+0|large
+0|note
+0|bus stop
+0|restaurant
+0|top
+0|fashion
+0|think about
+0|spend
+0|lazy
+0|blouse
+0|tie
+0|lend
+0|lady
+0|gentleman
+0|gentlemen
+0|style
+0|trainer
+0|sneaker
+0|comfortable
+0|popular
+0|among
+0|purple
+0|grey
+0|smart
+0|cool
+0|cotton
+0|scarf
+0|scarves
+0|both
+0|jeans
+0|silk
+0|wool
+0|boot
+0|both ... and ...
+0|be made of
+0|write to
+0|wait for
+0|look for
+0|lie
+0|go for sth.
+0|fit for
+0|think of
+0|glove
+0|leather
+0|soft
+0|smooth
+0|lovely
+0|hat
+0|jacket
+0|feature
+0|dark
+0|material
+0|design
+0|model
+0|include
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 370
+# Total Entries Extracted: 370
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 370
+# -------------------------------

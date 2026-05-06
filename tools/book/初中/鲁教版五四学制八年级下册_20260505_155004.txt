@@ -1,0 +1,374 @@
+0|swimmer
+0|born
+0|be born
+0|ice
+0|tower
+0|admire
+0|guy
+0|paint
+0|flat
+0|get in trouble
+0|Nobel Prize
+0|literature
+0|as
+0|drop out of school
+0|means
+0|try every means to do
+0|at hand
+0|publish
+0|novel
+0|sorghum
+0|director
+0|frog
+0|works
+0|besides
+0|perform
+0|opera
+0|Brazilian
+0|national
+0|loving
+0|grandson
+0|skating
+0|kind
+0|lover
+0|waltz
+0|poet
+0|listener
+0|chart
+0|the music charts
+0|break up
+0|enter
+0|Minute Waltz
+0|Love Me Do
+0|Imagine
+0|The Quarrymen
+0|The Beatles
+0|Kobe
+0|Messi
+0|David Blaine
+0|Shirley Temple
+0|Mozart
+0|Ronaldo
+0|Arthur
+0|Vivian
+0|Midori
+0|Laura
+0|Fryderyk Chopin
+0|John Lennon
+0|Osaka
+0|Russia
+0|Poland
+0|Warsaw
+0|Liverpool
+0|by
+0|noon
+0|chemistry
+0|rest
+0|unsure
+0|conversation
+0|stranger
+0|relaxed
+0|next to
+0|shyly
+0|uncomfortable
+0|embarrassed
+0|secret
+0|nervously
+0|corner
+0|suggest
+0|attend
+0|community
+0|wait in line
+0|cost
+0|cultural
+0|similarity
+0|small talk
+0|everyday
+0|introduction
+0|dialog
+0|dialogue
+0|empty
+0|period
+0|break the ice
+0|nicely
+0|form
+0|business
+0|worker
+0|helpful
+0|customer
+0|basic
+0|light
+0|humorous
+0|private
+0|subject
+0|avoid
+0|greeting
+0|therefore
+0|chance
+0|general
+0|sample
+0|tip
+0|exhibition
+0|Sandy Beach
+0|tiring
+0|fascinating
+0|thrilling
+0|take it easy
+0|trek
+0|jungle
+0|fall
+0|touristy
+0|spotlight
+0|capital
+0|France
+0|lively
+0|sight
+0|including
+0|cathedral
+0|church
+0|convenient
+0|underground
+0|in general
+0|wine
+0|translate
+0|suppose
+0|pack
+0|entertainment
+0|gallery
+0|sail
+0|finding
+0|survey
+0|receive
+0|as soon as possible
+0|choice
+0|programming
+0|dream of
+0|realistic
+0|willing
+0|be willing to
+0|sportspeople
+0|conclusion
+0|hold on to
+0|company
+0|attitude
+0|ideal
+0|Florida
+0|Amazon
+0|Niagara Falls
+0|Hawaii
+0|Mexico
+0|Eiffel Tower
+0|Notre Dame Cathedral
+0|Sydney
+0|textbook
+0|aloud
+0|pronunciation
+0|sentence
+0|patient
+0|expression
+0|discover
+0|look up
+0|grammar
+0|repeat
+0|note
+0|pal
+0|physics
+0|memorize
+0|pattern
+0|pronounce
+0|increase
+0|speed
+0|partner
+0|be born with
+0|ability
+0|create
+0|brain
+0|active
+0|attention
+0|pay attention to
+0|connect
+0|connect ... with
+0|overnight
+0|review
+0|knowledge
+0|lifelong
+0|wisely
+0|Annie
+0|Alexander Graham Bell
+0|mooncake
+0|lantern
+0|relative
+0|put on
+0|pound
+0|folk
+0|goddess
+0|whoever
+0|steal
+0|stolen
+0|lay
+0|lay out
+0|desert
+0|garden
+0|tradition
+0|tie
+0|haunted
+0|ghost
+0|trick
+0|treat
+0|spider
+0|Christmas
+0|lie
+0|lain
+0|eve
+0|dead
+0|punish
+0|warn
+0|end up
+0|present
+0|warmth
+0|spread
+0|Macao
+0|Chiang Mai
+0|Water Festival
+0|Mid-Autumn Festival
+0|Mother's Day
+0|Father's Day
+0|Halloween
+0|A Christmas Carol
+0|Easter
+0|Clara
+0|Santa
+0|Charles Dickens
+0|Scrooge
+0|Jacob Marley
+0|restroom
+0|stamp
+0|bookstore
+0|beside
+0|postcard
+0|pardon
+0|washroom
+0|bathroom
+0|normally
+0|rush
+0|pass by
+0|staff
+0|grape
+0|central
+0|nearby
+0|pardon me
+0|mail
+0|east
+0|inexpensive
+0|uncrowded
+0|mall
+0|clerk
+0|politely
+0|request
+0|direction
+0|correct
+0|polite
+0|direct
+0|speaker
+0|whom
+0|impolite
+0|address
+0|parking lot
+0|course
+0|Italian
+0|Tim
+0|silent
+0|from time to time
+0|score
+0|background
+0|interview
+0|Asian
+0|deal
+0|deal with
+0|shyness
+0|dare
+0|crowd
+0|ton
+0|guard
+0|require
+0|European
+0|African
+0|British
+0|speech
+0|public
+0|in public
+0|ant
+0|insect
+0|seldom
+0|influence
+0|absent
+0|fail
+0|examination
+0|boarding
+0|in person
+0|exactly
+0|pride
+0|take pride in
+0|proud
+0|be proud of
+0|Paula
+0|Alfred
+0|Billy
+0|Candy
+0|Jerry
+0|Emily
+0|chopstick
+0|coin
+0|fork
+0|blouse
+0|silver
+0|glass
+0|cotton
+0|steel
+0|fair
+0|environmental
+0|grass
+0|leaf
+0|produce
+0|widely
+0|be known for
+0|process
+0|product
+0|no matter
+0|local
+0|brand
+0|handbag
+0|mobile
+0|boss
+0|Germany
+0|surface
+0|material
+0|traffic
+0|postman
+0|cap
+0|glove
+0|international
+0|competitor
+0|its
+0|clay
+0|celebration
+0|balloon
+0|paper cutting
+0|scissors
+0|fairy
+0|historical
+0|heat
+0|polish
+0|complete
+0|Korea
+0|Switzerland
+0|San Francisco
+0|Marcus
+0|Pam
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 367
+# Total Entries Extracted: 367
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 367
+# -------------------------------

@@ -1,0 +1,305 @@
+0|advice
+0|encourage
+0|retire
+0|cheerful
+0|community
+0|medical
+0|fried
+0|wherever
+0|future
+0|soon
+0|smart
+0|attention
+0|seldom
+0|bored
+0|strict
+0|relative
+0|uniform
+0|personality
+0|characteristic
+0|topic
+0|active
+0|smartphone
+0|wisely
+0|competition
+0|shower
+0|online
+0|site
+0|narrow
+0|superman
+0|give up
+0|used to
+0|in the future
+0|be strict about
+0|be worried about
+0|wine
+0|match
+0|rich
+0|lie
+0|cafe
+0|excellent
+0|coast
+0|perfect
+0|mostly
+0|receive
+0|key
+0|remain
+0|lift
+0|step
+0|stair
+0|motorcycle
+0|sightseeing
+0|imagine
+0|destination
+0|address
+0|government
+0|unique
+0|endangered
+0|stretch
+0|huge
+0|wild
+0|discover
+0|volcano
+0|range
+0|snowmobile
+0|wolf
+0|department store
+0|prefer to
+0|by hand
+0|go sightseeing
+0|go on a trip
+0|set up
+0|giant panda
+0|in the wild
+0|all year round
+0|golden monkey
+0|go hiking
+0|hot spring
+0|branch
+0|root
+0|silent
+0|overlook
+0|human
+0|oxygen
+0|create
+0|environment
+0|convenient
+0|furniture
+0|wood
+0|treat
+0|communicate
+0|species
+0|product
+0|side
+0|borrow
+0|dig
+0|hole
+0|stick
+0|accident
+0|knowledge
+0|character
+0|spread
+0|translation
+0|take in
+0|greenhouse gas
+0|to begin with
+0|come from
+0|look around
+0|be made of
+0|for example
+0|communicate with
+0|call on
+0|according to
+0|by accident
+0|dolphin
+0|hen
+0|blind
+0|wool
+0|sir
+0|receptionist
+0|allow
+0|apologize
+0|asleep
+0|smoke
+0|fireman
+0|type
+0|search-and-rescue
+0|service
+0|disaster
+0|guest
+0|team
+0|transport
+0|guard
+0|honey
+0|material
+0|either
+0|shark
+0|scared
+0|grey
+0|somewhere
+0|probably
+0|source
+0|sometime
+0|extinct
+0|effort
+0|lead somebody to
+0|lead to
+0|fall asleep
+0|get down
+0|fire engine
+0|everyday
+0|form
+0|journey
+0|drop
+0|tap
+0|voice
+0|eventually
+0|pipe
+0|return
+0|rush
+0|bath
+0|salt
+0|brain
+0|fix
+0|public
+0|population
+0|agriculture
+0|trade
+0|industry
+0|role
+0|goods
+0|overseas
+0|global
+0|income
+0|nearly
+0|business
+0|leisure
+0|throughout
+0|duty
+0|a bit
+0|at once
+0|drinking water
+0|play a role in
+0|steam engine
+0|as a result
+0|make sure
+0|battery
+0|electricity
+0|switch-off
+0|task
+0|while
+0|tablet
+0|fridge
+0|yogurt
+0|apartment
+0|household
+0|against
+0|speed
+0|safety
+0|instruction
+0|connect
+0|device
+0|rule
+0|climate
+0|amount
+0|power
+0|television set
+0|landmark
+0|have something in common
+0|light bulb
+0|air conditioner
+0|video game
+0|run out of
+0|go bad
+0|electric car
+0|electrical appliance
+0|care about
+0|climate change
+0|join in
+0|contribution
+0|hero
+0|pioneer
+0|technology
+0|engineering
+0|award
+0|education
+0|spend
+0|research
+0|achieve
+0|well-respected
+0|found
+0|eager
+0|raise
+0|mission
+0|honour
+0|approval
+0|praise
+0|society
+0|female
+0|admire
+0|inspire
+0|regular
+0|feed
+0|smokejumper
+0|thick
+0|certain
+0|kill
+0|tool
+0|dead
+0|brave
+0|tough
+0|fit
+0|otherwise
+0|survive
+0|proud
+0|role model
+0|in the field of
+0|devote oneself to
+0|college entrance examination
+0|look up to
+0|sugar pill
+0|chief engineer
+0|put out
+0|be able to
+0|be proud of
+0|possible
+0|athlete
+0|biologist
+0|instrument
+0|interest
+0|career
+0|lifetime
+0|diamond
+0|belt
+0|shoot
+0|extremely
+0|curious
+0|increase
+0|host
+0|beyond
+0|audience
+0|lively
+0|actually
+0|sail
+0|ability
+0|review
+0|perform
+0|kiss
+0|hug
+0|method
+0|compare
+0|nowadays
+0|human being
+0|lecture
+0|go outside
+0|more and more
+0|body language
+0|dream of
+0|come true
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 298
+# Total Entries Extracted: 298
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 298
+# -------------------------------

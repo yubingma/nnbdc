@@ -1,0 +1,407 @@
+0|silk
+0|term
+0|along
+0|lead
+0|trip
+0|note
+0|chance
+0|news
+0|classmate
+0|start
+0|warrior
+0|dream
+0|forward
+0|cave
+0|painting
+0|enough
+0|part
+0|drum
+0|tower
+0|bell
+0|later
+0|wild
+0|goose
+0|geese
+0|pagoda
+0|delicious
+0|dish
+0|bridge
+0|main
+0|discover
+0|almost
+0|geography
+0|twice
+0|social
+0|shop
+0|success
+0|event
+0|high
+0|throw
+0|winner
+0|champion
+0|teammate
+0|village
+0|education
+0|difference
+0|yourself
+0|yourselves
+0|anyone
+0|possible
+0|future
+0|monitor
+0|primary
+0|choose
+0|better
+0|junior
+0|progress
+0|practice
+0|teach
+0|nothing
+0|tonight
+0|countryside
+0|pick
+0|afraid
+0|quickly
+0|survey
+0|relax
+0|seldom
+0|mind
+0|active
+0|instrument
+0|still
+0|inside
+0|anywhere
+0|earphone
+0|bored
+0|acting
+0|improve
+0|role-play
+0|act
+0|theatre
+0|if
+0|fill
+0|form
+0|weekday
+0|shape
+0|gym
+0|pool
+0|chalk
+0|self
+0|interest
+0|agree
+0|care
+0|understand
+0|friendship
+0|argument
+0|hit
+0|decide
+0|bath
+0|sudden
+0|could
+0|trouble
+0|breathe
+0|luckily
+0|save
+0|flat
+0|stone
+0|someone
+0|hurtful
+0|wind
+0|blow
+0|erase
+0|terrible
+0|happen
+0|lose
+0|donate
+0|lucky
+0|raise
+0|change
+0|shy
+0|once
+0|lonely
+0|develop
+0|neighbourhood
+0|neighbour
+0|seem
+0|everywhere
+0|square
+0|deal
+0|project
+0|interview
+0|tailor
+0|another
+0|bakery
+0|full
+0|treat
+0|a.m.
+0|polite
+0|grocery
+0|store
+0|clothing
+0|town
+0|snake
+0|simple
+0|farming
+0|field
+0|hen
+0|circle
+0|grow
+0|own
+0|fresh
+0|knee
+0|lift
+0|apartment
+0|wide
+0|narrow
+0|past
+0|corner
+0|mall
+0|subway
+0|railway
+0|wood
+0|DIY
+0|do-it-yourself
+0|penguin
+0|human
+0|anything
+0|else
+0|magic
+0|lively
+0|scissors
+0|paper-cut
+0|luck
+0|happiness
+0|imagination
+0|costume
+0|clay
+0|myself
+0|cloth
+0|ahead
+0|king
+0|ourselves
+0|traditional
+0|pattern
+0|including
+0|express
+0|able
+0|material
+0|string
+0|stick
+0|glue
+0|connect
+0|butterfly
+0|award
+0|surprising
+0|truth
+0|habit
+0|usual
+0|health
+0|become
+0|awful
+0|poor
+0|balanced
+0|diet
+0|weight
+0|couch
+0|arrive
+0|badminton
+0|tennis
+0|refresh
+0|sleepy
+0|spend
+0|brain
+0|calm
+0|screen
+0|awake
+0|bedtime
+0|dark
+0|remember
+0|rise
+0|wealthy
+0|wise
+0|lifestyle
+0|diary
+0|build
+0|thanks
+0|effort
+0|physical
+0|include
+0|plenty
+0|single
+0|pizza
+0|less
+0|choice
+0|huge
+0|cycle
+0|soil
+0|carry
+0|garden
+0|channel
+0|advice
+0|gardener
+0|enjoyable
+0|dig
+0|log
+0|onto
+0|website
+0|post
+0|journey
+0|police officer
+0|officer
+0|protect
+0|endangered
+0|professor
+0|university
+0|engineering
+0|development
+0|however
+0|provide
+0|protection
+0|giant
+0|province
+0|loss
+0|wildlife
+0|naturally
+0|die
+0|expand
+0|housing
+0|industry
+0|harm
+0|nearly
+0|risk
+0|hunt
+0|disease
+0|southeast
+0|habitat
+0|pollution
+0|Guess what!
+0|learn about
+0|do a study
+0|travel along
+0|far from
+0|look forward to
+0|welcome to ...
+0|show ... around
+0|walk across
+0|have a look
+0|take a picture
+0|How is ... going?
+0|sports meet
+0|first place
+0|long jump
+0|be good at
+0|Sports Day
+0|a big success
+0|take part in
+0|sports event
+0|work hard
+0|Well done!
+0|get in the way
+0|have fun
+0|give up
+0|make a difference
+0|make a big difference
+0|drop out of school
+0|in every possible way
+0|in the future
+0|junior high school
+0|get good grades
+0|get along well with
+0|be ready to do
+0|share ... with ...
+0|make progress
+0|play chess
+0|be good for
+0|Sounds good!
+0|be afraid of
+0|do a good job
+0|free time
+0|play an instrument
+0|fill in
+0|stay in shape
+0|pick up
+0|care about
+0|help sb. out
+0|in hard times
+0|understand the meaning of ...
+0|find out
+0|go through
+0|have an argument
+0|keep on doing
+0|all of a sudden
+0|have trouble doing
+0|in time
+0|write down
+0|blow away
+0|Don't be afraid.
+0|lucky money
+0|work on oneself
+0|the same as
+0|make friends
+0|think of
+0|on weekends
+0|in the square
+0|It's a deal.
+0|full of
+0|get up
+0|on a hill
+0|all year round
+0|in the middle of
+0|here and there
+0|much better
+0|in the past
+0|It's time for ...
+0|Good idea.
+0|cut out the shape
+0|come to life
+0|get started
+0|turn ... into
+0|a pair of scissors
+0|good luck
+0|by oneself
+0|Go ahead.
+0|be able to
+0|cut ... into ...
+0|connect ... to ...
+0|to tell you the truth
+0|as usual
+0|at a time
+0|wake up
+0|balanced diet
+0|used to
+0|put on weight
+0|worry about
+0|all day
+0|go for a walk
+0|stay up late
+0|spend time on
+0|calm down
+0|keep awake
+0|put ... away
+0|thanks to
+0|cut down
+0|of course
+0|plenty of
+0|instead of
+0|be made from
+0|play a part in
+0|carry ... away
+0|miss out
+0|all kinds of
+0|have fun doing
+0|log onto
+0|in the fields
+0|in the wild
+0|be home to
+0|for example
+0|die out
+0|at risk
+0|be famous for
+0|because of
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 400
+# Total Entries Extracted: 400
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 400
+# -------------------------------

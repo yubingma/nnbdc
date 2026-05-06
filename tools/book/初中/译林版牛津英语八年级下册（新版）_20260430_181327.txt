@@ -1,0 +1,407 @@
+0|underground
+0|speed
+0|high-speed train
+0|used to
+0|crowded
+0|convenient
+0|innovation
+0|southern
+0|high-tech
+0|pioneer
+0|reform
+0|at the heart of
+0|technology
+0|industry
+0|giant
+0|lead
+0|move
+0|wealth
+0|a wealth of
+0|facility
+0|as well as
+0|excellent
+0|educational
+0|honour
+0|public
+0|citizen
+0|greenway
+0|electric
+0|planner
+0|since
+0|development
+0|pioneering
+0|creativity
+0|certainly
+0|key
+0|make a living
+0|world-famous
+0|transport
+0|recently
+0|already
+0|yet
+0|reporter
+0|line
+0|step
+0|wide
+0|row
+0|muddy
+0|villager
+0|recent
+0|hopeful
+0|guest
+0|guest house
+0|tourism
+0|empty
+0|common
+0|prefer
+0|ride
+0|scare
+0|explore
+0|reach
+0|rich
+0|attraction
+0|choice
+0|historic
+0|learning
+0|university
+0|body
+0|feel
+0|bank
+0|birthplace
+0|seat of power
+0|dynasty
+0|cave
+0|carving
+0|lover
+0|peony
+0|abroad
+0|admire
+0|make one's way
+0|make one's way to
+0|dreamlike
+0|central
+0|soldier
+0|imagine
+0|site
+0|business
+0|mix
+0|until
+0|message
+0|anywhere
+0|marry
+0|artwork
+0|classical
+0|theme
+0|theme park
+0|base
+0|period
+0|record
+0|hero
+0|twice
+0|show off
+0|no matter ...
+0|click
+0|coast
+0|must
+0|pop
+0|band
+0|be second to none
+0|live
+0|whether
+0|as for
+0|slice
+0|truly
+0|bridge
+0|doubt
+0|no doubt
+0|a bit of everything
+0|count
+0|count down
+0|guard
+0|nightlife
+0|excitement
+0|Italian
+0|digital
+0|in person
+0|check out
+0|menu
+0|sign
+0|sign up
+0|sign up for sth.
+0|training
+0|list
+0|report
+0|book
+0|ticket
+0|cash
+0|ongoing
+0|project
+0|temple
+0|proof
+0|communication
+0|three-D
+0|3D
+0|article
+0|closely
+0|compete
+0|although
+0|introduction
+0|French
+0|queen
+0|tour
+0|zoom
+0|zoom in
+0|crowd
+0|completely
+0|a good read
+0|fiction
+0|non-fiction
+0|make up
+0|novel
+0|crash
+0|be tired out
+0|stomach
+0|fall over
+0|continue
+0|either
+0|break free
+0|pull
+0|rope
+0|army
+0|straight
+0|whom
+0|review
+0|discuss
+0|certain
+0|advise
+0|hand in
+0|timetable
+0|paragraph
+0|summary
+0|ending
+0|rule
+0|first of all
+0|librarian
+0|publishing house
+0|unwilling
+0|sales
+0|copy
+0|especially
+0|literature
+0|publisher
+0|pirate
+0|reader
+0|difficulty
+0|have difficulty doing sth.
+0|have difficulty in doing sth.
+0|copyright
+0|agreement
+0|market
+0|excuse
+0|excuse me
+0|within
+0|journal
+0|title
+0|naughty
+0|describe
+0|faraway
+0|island
+0|opinion
+0|though
+0|manners
+0|litter
+0|tap
+0|wait in line
+0|patiently
+0|congratulations
+0|hallway
+0|on time
+0|feel at home
+0|normally
+0|address
+0|politeness
+0|realize
+0|behave
+0|differently
+0|when it comes to sth.
+0|when it comes to doing sth.
+0|praise
+0|pleased
+0|instead of
+0|reply
+0|modest
+0|openly
+0|host
+0|hospitable
+0|plate
+0|refuse
+0|get used to sth.
+0|fully
+0|all at once
+0|jump the line
+0|loudly
+0|cool off
+0|case
+0|in case
+0|run into sb.
+0|run into sth.
+0|push
+0|past
+0|in one's way
+0|discussion
+0|cheat
+0|promise
+0|keep one's word
+0|pear
+0|even though
+0|own
+0|respectfully
+0|earphones
+0|circle
+0|tip
+0|peaceful
+0|impolite
+0|trouble
+0|one another
+0|hug
+0|kiss
+0|quietly
+0|tasty
+0|rush
+0|unless
+0|be about to do sth.
+0|blind
+0|deaf
+0|disabled
+0|elderly
+0|disability
+0|service
+0|donate
+0|expect
+0|athlete
+0|confidence
+0|require
+0|spare
+0|receive
+0|necessary
+0|wheelchair
+0|remind
+0|remind sb. to do sth.
+0|seat belt
+0|medal
+0|gold
+0|silver
+0|competition
+0|background
+0|ability
+0|warm-hearted
+0|courage
+0|achieve
+0|greatly
+0|influence
+0|smoothly
+0|voluntary
+0|cross
+0|charity
+0|western
+0|popularity
+0|chemistry
+0|north-western
+0|north-eastern
+0|suffer
+0|suffer from
+0|blood
+0|disease
+0|operation
+0|absent
+0|found
+0|medical
+0|organization
+0|organisation
+0|lip
+0|interviewer
+0|billion
+0|cure
+0|treatment
+0|aim
+0|patient
+0|afford
+0|go to hospital
+0|on board
+0|train
+0|benefit
+0|eye care
+0|operate
+0|operate on
+0|treat
+0|carry on with
+0|interview
+0|grateful
+0|darkness
+0|addition
+0|in addition
+0|in addition to
+0|directly
+0|leaflet
+0|hand out
+0|champion
+0|right
+0|healthcare
+0|besides
+0|progress
+0|spread
+0|virus
+0|war
+0|miss out
+0|miss out on
+0|influential
+0|cause
+0|soil
+0|chemical
+0|truck
+0|unclean
+0|fuel
+0|pour
+0|clear
+0|eco-friendly
+0|separate
+0|separate ... into
+0|recycle
+0|level
+0|successfully
+0|total
+0|strict
+0|control
+0|break
+0|punish
+0|fine
+0|resource
+0|wisely
+0|run out
+0|widely
+0|make a difference
+0|management
+0|vote
+0|poster
+0|pollute
+0|affect
+0|gas
+0|coughing
+0|seabird
+0|according to
+0|desertification
+0|hardly
+0|single-use
+0|damage
+0|solar power
+0|second-hand
+0|battery
+0|electronic
+0|electricity
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 400
+# Total Entries Extracted: 400
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 400
+# -------------------------------

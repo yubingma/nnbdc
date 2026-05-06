@@ -1,0 +1,770 @@
+0|let
+0|be
+0|friend
+0|hello
+0|nice
+0|to
+0|meet
+0|you
+0|too
+0|good
+0|morning
+0|I
+0|fine
+0|how
+0|do
+0|like
+0|science
+0|my
+0|name
+0|read
+0|love
+0|hike
+0|enjoy
+0|play
+0|football
+0|sing
+0|Miss
+0|what
+0|your
+0|please
+0|dance
+0|eleven
+0|twelve
+0|thirteen
+0|fourteen
+0|fifteen
+0|sixteen
+0|seventeen
+0|eighteen
+0|nineteen
+0|twenty
+0|hi
+0|this
+0|where
+0|from
+0|and
+0|in
+0|class
+0|grade
+0|which
+0|we
+0|classmate
+0|old
+0|year
+0|see
+0|tall
+0|friendly
+0|three
+0|seven
+0|kind
+0|draw
+0|short
+0|strong
+0|thin
+0|run
+0|cook
+0|helpful
+0|quiet
+0|all
+0|need
+0|can
+0|young
+0|together
+0|help
+0|each
+0|other
+0|he
+0|often
+0|who
+0|best
+0|she
+0|six
+0|here
+0|cute
+0|the
+0|guitar
+0|new
+0|very
+0|happy
+0|at
+0|school
+0|music
+0|have
+0|has
+0|they
+0|it
+0|a
+0|an
+0|dog
+0|two
+0|big
+0|ear
+0|cat
+0|little
+0|black
+0|one
+0|listen
+0|lovely
+0|brother
+0|yes
+0|that
+0|boy
+0|our
+0|no
+0|not
+0|yourself
+0|yourselves
+0|age
+0|swim
+0|girl
+0|everyone
+0|everybody
+0|her
+0|beautiful
+0|picture
+0|book
+0|also
+0|many
+0|thing
+0|such
+0|as
+0|great
+0|time
+0|with
+0|know
+0|card
+0|talk
+0|much
+0|but
+0|really
+0|different
+0|Mr
+0|Mr.
+0|four
+0|family
+0|grandfather
+0|grandpa
+0|grandmother
+0|grandma
+0|father
+0|mother
+0|uncle
+0|aunt
+0|sister
+0|cousin
+0|student
+0|teacher
+0|man
+0|men
+0|always
+0|wear
+0|tie
+0|worker
+0|doctor
+0|nurse
+0|white
+0|shirt
+0|bus
+0|driver
+0|woman
+0|women
+0|blue
+0|dress
+0|policewoman
+0|policewomen
+0|yellow
+0|child
+0|children
+0|pink
+0|toy
+0|rabbit
+0|factory
+0|hospital
+0|restaurant
+0|work
+0|people
+0|there
+0|photo
+0|photograph
+0|of
+0|PE
+0|physical education
+0|teach
+0|us
+0|eight
+0|so
+0|pretty
+0|only
+0|busy
+0|on
+0|Saturday
+0|basketball
+0|noon
+0|afternoon
+0|parent
+0|visit
+0|grandparent
+0|eat
+0|watch
+0|TV
+0|television
+0|chore
+0|go
+0|park
+0|shop
+0|walk
+0|live
+0|small
+0|his
+0|him
+0|some
+0|most
+0|their
+0|text
+0|about
+0|tree
+0|show
+0|after
+0|them
+0|weekend
+0|dinner
+0|something
+0|for
+0|food
+0|set
+0|table
+0|clean
+0|up
+0|job
+0|whose
+0|its
+0|Mrs
+0|Mrs.
+0|son
+0|ride
+0|bike
+0|well
+0|or
+0|me
+0|tell
+0|sport
+0|sometimes
+0|film
+0|home
+0|member
+0|activity
+0|maths
+0|math
+0|study
+0|hard
+0|middle
+0|every
+0|day
+0|look
+0|high
+0|lot
+0|colourful
+0|colorful
+0|life
+0|lives
+0|biology
+0|Chinese
+0|geography
+0|art
+0|history
+0|computer
+0|Wednesday
+0|English
+0|begin
+0|o'clock
+0|ten
+0|half
+0|past
+0|over
+0|quarter
+0|now
+0|favourite
+0|favorite
+0|subject
+0|Thursday
+0|by
+0|underground
+0|plane
+0|foot
+0|feet
+0|car
+0|train
+0|ship
+0|boat
+0|way
+0|stop
+0|usually
+0|come
+0|far
+0|never
+0|take
+0|seldom
+0|near
+0|library
+0|building
+0|floor
+0|five
+0|playground
+0|next
+0|next to
+0|garden
+0|flower
+0|tidy
+0|club
+0|open
+0|p.m.
+0|Tuesday
+0|hall
+0|song
+0|put
+0|Friday
+0|water
+0|game
+0|fun
+0|Monday
+0|raise
+0|national
+0|flag
+0|start
+0|first
+0|a.m.
+0|make
+0|hand
+0|answer
+0|question
+0|box
+0|knife
+0|glass
+0|dish
+0|tomato
+0|country
+0|American
+0|during
+0|classroom
+0|part
+0|bottle
+0|any
+0|juice
+0|blackboard
+0|desk
+0|chair
+0|pencil
+0|ruler
+0|schoolbag
+0|ping-pong
+0|ball
+0|find
+0|lost
+0|colour
+0|color
+0|end
+0|learn
+0|interesting
+0|join
+0|web
+0|page
+0|city
+0|welcome
+0|out
+0|more
+0|want
+0|because
+0|room
+0|writer
+0|ask
+0|sun
+0|spring
+0|summer
+0|autumn
+0|winter
+0|hot
+0|cool
+0|cold
+0|warm
+0|snow
+0|snowman
+0|sunny
+0|today
+0|picnic
+0|weather
+0|season
+0|why
+0|rain
+0|dry
+0|badminton
+0|baseball
+0|phone
+0|shoe
+0|sorry
+0|homework
+0|hope
+0|yo-yo
+0|long
+0|cloudy
+0|outdoors
+0|rainy
+0|indoors
+0|exercise
+0|health
+0|tip
+0|right
+0|clothes
+0|important
+0|before
+0|team
+0|give
+0|keep
+0|pass
+0|win
+0|wish
+0|feel
+0|star
+0|use
+0|grape
+0|fast
+0|feed
+0|bird
+0|red
+0|lake
+0|Tai Chi
+0|when
+0|ski
+0|hometown
+0|travel
+0|mountain
+0|turn
+0|move
+0|survey
+0|week
+0|hour
+0|result
+0|cap
+0|pair
+0|shorts
+0|zoo
+0|wind
+0|leg
+0|race
+0|side
+0|even
+0|write
+0|down
+0|nature
+0|sea
+0|desert
+0|rainforest
+0|waterfall
+0|grassland
+0|wet
+0|plant
+0|animal
+0|fall
+0|hill
+0|grass
+0|elephant
+0|air
+0|top
+0|place
+0|climate
+0|house
+0|window
+0|get
+0|bat
+0|fly
+0|active
+0|night
+0|panda
+0|tail
+0|bamboo
+0|brown
+0|bear
+0|forest
+0|north
+0|fish
+0|think
+0|these
+0|grow
+0|May
+0|June
+0|green
+0|plenty
+0|few
+0|wonder
+0|main
+0|difference
+0|horse
+0|drink
+0|earth
+0|egg
+0|cow
+0|map
+0|apple
+0|sky
+0|windy
+0|kite
+0|orange
+0|bee
+0|shark
+0|climb
+0|monkey
+0|butterfly
+0|duck
+0|call
+0|understand
+0|wild
+0|rest
+0|under
+0|bring
+0|importance
+0|fresh
+0|everyday
+0|milk
+0|south
+0|will
+0|world
+0|healthy
+0|fire
+0|noodle
+0|dumpling
+0|river
+0|vegetable
+0|rice
+0|celebrate
+0|double
+0|ninth
+0|festival
+0|tomb
+0|sweep
+0|dragon
+0|lantern
+0|lunar
+0|August
+0|mooncake
+0|moon
+0|January
+0|lucky
+0|money
+0|around
+0|April
+0|late
+0|month
+0|July
+0|fifth
+0|labour
+0|labor
+0|holiday
+0|buy
+0|remember
+0|thank
+0|Christmas
+0|light
+0|paper
+0|then
+0|present
+0|Confucius
+0|thinker
+0|word
+0|another
+0|September
+0|should
+0|couplet
+0|last
+0|celebration
+0|kitchen
+0|delicious
+0|meal
+0|finally
+0|excited
+0|spend
+0|author
+0|thirteenth
+0|birthday
+0|hundred
+0|second
+0|third
+0|nine
+0|twelfth
+0|twentieth
+0|forty
+0|fortieth
+0|fifty
+0|ninety
+0|fourth
+0|themselves
+0|hang
+0|date
+0|square
+0|street
+0|prepare
+0|guess
+0|riddle
+0|lastly
+0|poster
+0|traditional
+0|February
+0|March
+0|republic
+0|Sunday
+0|cake
+0|calendar
+0|wonderful
+0|December
+0|midnight
+0|bell
+0|ring
+0|say
+0|luck
+0|idea
+0|good morning
+0|like doing sth.
+0|love doing sth.
+0|enjoy doing sth.
+0|be from
+0|help each other
+0|play football
+0|play the guitar
+0|be happy to do sth.
+0|listen to music
+0|draw pictures
+0|draw a picture
+0|such as
+0|at school
+0|like to do sth.
+0|on Saturdays
+0|play basketball
+0|in the morning
+0|in the afternoon
+0|help sb. do sth.
+0|help sb. to do sth.
+0|at noon
+0|watch TV
+0|do chores
+0|go to the park
+0|go shopping
+0|walk the dog
+0|live with sb.
+0|on weekends
+0|set the table
+0|clean up
+0|tell sb. about ...
+0|do sports
+0|watch films
+0|at home
+0|play with sb.
+0|play with sth.
+0|middle school
+0|live in
+0|look after
+0|by underground
+0|by plane
+0|by car
+0|by train
+0|by ship
+0|by bus
+0|by boat
+0|by bike
+0|on foot
+0|talk about
+0|how about ...
+0|what about ...
+0|far from
+0|take the underground
+0|a lot of
+0|lots of
+0|put on
+0|on the playground
+0|answer questions
+0|take photos
+0|take pictures
+0|at the start
+0|at the start of sth.
+0|take part in
+0|play sports
+0|have great fun
+0|find out
+0|want to do sth.
+0|learn about ...
+0|take sb. to do sth.
+0|go hiking
+0|have a picnic
+0|go swimming
+0|talk on the phone
+0|put on ...
+0|be good at ...
+0|learn to do sth.
+0|ask sb. to do sth.
+0|all year long
+0|be good for ...
+0|need to do sth.
+0|take sth. with sb.
+0|warm up
+0|give up
+0|in the end
+0|play for ...
+0|with the help of sb.
+0|a member of ...
+0|pass sth. to sb.
+0|pass sb. sth.
+0|use sth. to do sth.
+0|ride a bike
+0|look at
+0|by the lake
+0|make turns
+0|take a walk
+0|write down
+0|be home to ...
+0|many kinds of
+0|on the top of ...
+0|keep out
+0|at night
+0|in the day
+0|a sea of
+0|different kinds of
+0|plenty of
+0|give sth. to sb.
+0|give sb. sth.
+0|have a rest
+0|be important to sb.
+0|come from
+0|join in
+0|feed on ...
+0|make any fire
+0|make a fire
+0|main food
+0|Double Ninth Festival
+0|Spring Festival
+0|Mid-Autumn Festival
+0|Tomb-sweeping Day
+0|Dragon Boat Festival
+0|Lantern Festival
+0|enjoy the moon
+0|lucky money
+0|sweep the tomb
+0|sweep the tombs
+0|Labor Day
+0|all over the world
+0|make cards
+0|make a card
+0|in many ways
+0|in a way
+0|put up
+0|Spring Festival couplets
+0|talk with ...
+0|prepare for ...
+0|guess the lantern riddles
+0|the People's Republic of China
+0|watch lantern shows
+0|at midnight
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 763
+# Total Entries Extracted: 763
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 763
+# -------------------------------

@@ -1,0 +1,656 @@
+0|stomach
+0|regret
+0|fever
+0|pale
+0|Sara
+0|examination
+0|pain
+0|pardon
+0|X-ray
+0|dentist
+0|refuse
+0|toothache
+0|rotten
+0|fortunately
+0|headset
+0|aching
+0|German
+0|wolf
+0|grain
+0|vitamin
+0|mineral
+0|fibre
+0|corn
+0|protein
+0|bean
+0|Asian
+0|soy
+0|calcium
+0|bone
+0|yogurt
+0|contain
+0|balanced
+0|diet
+0|include
+0|smoke
+0|harmful
+0|disease
+0|lung
+0|harm
+0|breathe
+0|public
+0|law
+0|cigarette
+0|whenever
+0|risk
+0|somebody
+0|damage
+0|unable
+0|dare
+0|wheelchair
+0|control
+0|telephone
+0|hers
+0|cheer
+0|kick
+0|disabled
+0|focus
+0|pity
+0|appendicitis
+0|appendix
+0|sleepy
+0|mention
+0|meaning
+0|dialogue
+0|successful
+0|missing
+0|survey
+0|neighbour
+0|universe
+0|Albert Einstein
+0|lifetime
+0|solve
+0|theory
+0|relativity
+0|Switzerland
+0|pioneer
+0|Nobel
+0|Princeton
+0|nuclear
+0|weapon
+0|conclusion
+0|false
+0|peanut
+0|hybrid
+0|variety
+0|introduction
+0|leader
+0|production
+0|produce
+0|super
+0|planetary
+0|Helen Keller
+0|writer
+0|educator
+0|blind
+0|deaf
+0|illness
+0|ability
+0|Anne Sullivan
+0|progress
+0|community
+0|greatly
+0|Norman Bethune
+0|graduate
+0|Toronto
+0|remain
+0|anti-
+0|decision
+0|aid
+0|worst
+0|condition
+0|operate
+0|government
+0|medical
+0|crossword
+0|puzzle
+0|based
+0|whom
+0|anybody
+0|chemistry
+0|safety
+0|careful
+0|decorate
+0|hang
+0|hung
+0|ceiling
+0|lie
+0|lay
+0|lain
+0|lied
+0|serious
+0|ambulance
+0|necessary
+0|accident
+0|town
+0|Alberta
+0|James
+0|reporter
+0|roll
+0|Andrews
+0|fault
+0|icy
+0|ugly
+0|shoulder
+0|wound
+0|recover
+0|expect
+0|helmet
+0|sudden
+0|wham
+0|blood
+0|knee
+0|bleed
+0|sharp
+0|rock
+0|stick
+0|stuck
+0|scary
+0|goodness
+0|stranger
+0|careless
+0|prevent
+0|certain
+0|themselves
+0|baking
+0|soda
+0|salt
+0|scissors
+0|knife
+0|poison
+0|heat
+0|burn
+0|burned
+0|burnt
+0|bathtub
+0|slip
+0|earthquake
+0|calm
+0|object
+0|system
+0|survival
+0|rule
+0|branch
+0|training
+0|compare
+0|passage
+0|limit
+0|format
+0|rhyme
+0|although
+0|effort
+0|fat
+0|aloud
+0|line
+0|text
+0|poet
+0|single
+0|screen
+0|hum
+0|stretch
+0|liquid
+0|state
+0|noun
+0|adjective
+0|express
+0|fable
+0|woodcutter
+0|axe
+0|dive
+0|dived
+0|dove
+0|admit
+0|silver
+0|policy
+0|loud
+0|frightened
+0|board
+0|awake
+0|musician
+0|perhaps
+0|peek
+0|softly
+0|scene
+0|crawl
+0|selfish
+0|knock
+0|spread
+0|neck
+0|wicked
+0|fairy
+0|tale
+0|character
+0|plot
+0|humorous
+0|experiment
+0|jar
+0|upside
+0|pour
+0|correct
+0|scientific
+0|method
+0|raincoat
+0|force
+0|pressure
+0|conclude
+0|holder
+0|shallow
+0|lighter
+0|match
+0|examine
+0|oxygen
+0|telescope
+0|solar
+0|certainly
+0|unless
+0|double
+0|mystery
+0|Chip Taylor
+0|biology
+0|butterfly
+0|migrate
+0|fantastic
+0|completely
+0|grandchild
+0|female
+0|milkweed
+0|chemical
+0|puzzling
+0|DNA
+0|blueprint
+0|general
+0|complex
+0|twin
+0|repeat
+0|pattern
+0|identify
+0|related
+0|grandson
+0|granddaughter
+0|instruction
+0|affect
+0|suggest
+0|development
+0|mobile phone
+0|discovery
+0|involve
+0|script
+0|director
+0|direct
+0|costume
+0|background
+0|task
+0|effect
+0|France
+0|couple
+0|titanic
+0|Titanic
+0|action
+0|Bruce Lee
+0|prefer
+0|fiction
+0|comedy
+0|Charlie Chaplin
+0|popcorn
+0|goldfish
+0|wife
+0|net
+0|whatever
+0|God
+0|grey
+0|marry
+0|ours
+0|coast
+0|handbag
+0|among
+0|servant
+0|guard
+0|queen
+0|serve
+0|mad
+0|crash
+0|handsome
+0|playwright
+0|William Shakespeare
+0|Hamlet
+0|tragedy
+0|teahouse
+0|actress
+0|victory
+0|beat
+0|beaten
+0|repair
+0|service
+0|message
+0|check
+0|secretary
+0|bounce
+0|ouch
+0|separate
+0|behave
+0|gentleman
+0|gentlemen
+0|Danielle
+0|president
+0|council
+0|organization
+0|provide
+0|agreement
+0|religion
+0|dispute
+0|olive
+0|Noah
+0|flood
+0|snake
+0|lock
+0|suffer
+0|headquarters
+0|security
+0|permanent
+0|situation
+0|satisfy
+0|forever
+0|silence
+0|silent
+0|elder
+0|directly
+0|rather
+0|peacemaker
+0|Chinatown
+0|decoration
+0|bowl
+0|chopstick
+0|spoon
+0|fork
+0|underground
+0|lantern
+0|dragon
+0|Santa Claus
+0|temple
+0|society
+0|generation
+0|wealthy
+0|penny
+0|pound
+0|foolish
+0|whether
+0|human
+0|manners
+0|though
+0|modest
+0|virtue
+0|praise
+0|private
+0|elderly
+0|guest
+0|extra
+0|waiter
+0|tip
+0|percent
+0|central
+0|immigrant
+0|according to
+0|official
+0|custom
+0|tidy
+0|Russian
+0|noisy
+0|chalk
+0|tradition
+0|reaction
+0|react
+0|officer
+0|gun
+0|doll
+0|unit
+0|misunderstanding
+0|require
+0|communication
+0|hardly
+0|solution
+0|anger
+0|interpersonal
+0|passport
+0|proper
+0|listener
+0|contact
+0|promise
+0|cancel
+0|figure
+0|difficulty
+0|dining
+0|simply
+0|somehow
+0|adapt
+0|universal
+0|absent
+0|trouble
+0|secret
+0|moment
+0|tap
+0|familiar
+0|boss
+0|manage
+0|doubt
+0|wealth
+0|astronaut
+0|besides
+0|weekday
+0|primary
+0|asleep
+0|notebook
+0|review
+0|itself
+0|wallet
+0|owner
+0|row
+0|senior
+0|speech
+0|period
+0|valuable
+0|achieve
+0|behalf
+0|congratulation
+0|merchant
+0|mall
+0|faint
+0|agency
+0|definitely
+0|regret doing ...
+0|get a fever
+0|have a fever
+0|get a high fever
+0|have a high fever
+0|get dressed
+0|take an X-ray
+0|go to the dentist
+0|have no choice but to ...
+0|right away
+0|Fear makes the wolf bigger than he is.
+0|be rich in ...
+0|East Asian countries
+0|millions of
+0|as a result of
+0|second-hand smoke
+0|take a risk
+0|get into the habit of ...
+0|stay away from ...
+0|be unable to ...
+0|dare to ...
+0|focus on
+0|take out
+0|now that
+0|so that
+0|deep in thought
+0|succeed in
+0|Theory of Relativity
+0|go on
+0|in the field of ...
+0|the Nobel Prize
+0|pass away
+0|nuclear weapon
+0|Father of Hybrid Rice
+0|since then
+0|together with ...
+0|make a lot of progress
+0|T.B.
+0|remain in use
+0|be well known for ...
+0|Anti-Japanese War
+0|make a decision
+0|first aid
+0|day after day
+0|set up
+0|crossword puzzle
+0|based on ...
+0|jump up
+0|in time
+0|run after
+0|jump out
+0|all of a sudden
+0|go down
+0|so ... that ...
+0|lie down
+0|take off
+0|stick out of
+0|Thank goodness!
+0|put out
+0|baking soda
+0|stay calm
+0|protect ... from ...
+0|protect ... from doing ...
+0|pull over
+0|keep an eye out for
+0|bring down
+0|compared with ...
+0|a set number of
+0|make one's living
+0|dive into ...
+0|Honesty truly is the best policy.
+0|once upon a time
+0|run away
+0|no longer
+0|pass by
+0|knock down
+0|at once
+0|break out in blossom
+0|stretch out
+0|ever since ...
+0|fairy tale
+0|turn ... upside down
+0|pour out
+0|scientific method
+0|take ... off
+0|use up
+0|be made up of
+0|solar system
+0|at night
+0|even if
+0|in general
+0|except for
+0|be related to
+0|billions of
+0|turn ... over
+0|push up
+0|push down
+0|in place
+0|be involved in
+0|divide up
+0|have ... effect on
+0|a couple of
+0|action movie
+0|science fiction
+0|be on
+0|go off
+0|in order to
+0|put on
+0|break down
+0|the day before yesterday
+0|be out of service
+0|text message
+0|jump in
+0|Me neither.
+0|student council
+0|provide ... for ...
+0|in the end
+0|reach an agreement
+0|take ... as ...
+0|suffer through
+0|World War II
+0|the United Nations
+0|the UN
+0|the Secretary-General
+0|the UN Security Council
+0|permanent member
+0|agree on
+0|in silence
+0|keep silent
+0|mean to do ...
+0|after all
+0|thanks to ...
+0|hold a meeting
+0|fight over ...
+0|rather than
+0|lucky money
+0|temple fair
+0|walks of life
+0|in common
+0|be similar to
+0|other than
+0|human being
+0|take turns
+0|Central America
+0|tidy up
+0|hang up
+0|police officer
+0|get along with
+0|be satisfied with
+0|in the open
+0|come to a solution
+0|move on
+0|eye contact
+0|waste time doing
+0|keep one's promise
+0|on time
+0|ahead of
+0|figure out
+0|cool down
+0|dining hall
+0|adapt to
+0|be absent from
+0|so far
+0|do one's share
+0|do one's part
+0|run into
+0|hear from
+0|as for
+0|on top of ...
+0|fall asleep
+0|senior high
+0|senior high school
+0|junior high
+0|junior high school
+0|go by
+0|fall down
+0|pick yourself up
+0|on behalf of
+0|hold out
+0|the Canadian Space Agency
+0|keep one's eye on
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 649
+# Total Entries Extracted: 649
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 649
+# -------------------------------

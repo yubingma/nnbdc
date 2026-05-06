@@ -1,0 +1,425 @@
+0|rubbish
+0|take out the rubbish
+0|fold
+0|sweep
+0|swept
+0|floor
+0|mess
+0|throw
+0|threw
+0|all the time
+0|neither
+0|shirt
+0|as soon as
+0|pass
+0|borrow
+0|lend
+0|lent
+0|finger
+0|hate
+0|chore
+0|while
+0|snack
+0|stress
+0|waste
+0|in order to
+0|provide
+0|anyway
+0|depend
+0|depend on
+0|develop
+0|independence
+0|fairness
+0|since
+0|neighbor
+0|neighbour
+0|take care of
+0|ill
+0|drop
+0|independent
+0|fair
+0|unfair
+0|Sandy
+0|allow
+0|wrong
+0|What's wrong?
+0|midnight
+0|look through
+0|guess
+0|deal
+0|big deal
+0|work out
+0|get on with
+0|relation
+0|communication
+0|argue
+0|cloud
+0|elder
+0|instead
+0|whatever
+0|nervous
+0|offer
+0|proper
+0|secondly
+0|communicate
+0|explain
+0|clear
+0|copy
+0|return
+0|anymore
+0|member
+0|pressure
+0|compete
+0|opinion
+0|skill
+0|typical
+0|football
+0|cut out
+0|quick
+0|continue
+0|compare
+0|compare ... with
+0|crazy
+0|push
+0|development
+0|cause
+0|usual
+0|in one's opinion
+0|perhaps
+0|Cathy
+0|Taylor
+0|rainstorm
+0|alarm
+0|go off
+0|begin
+0|began
+0|heavily
+0|suddenly
+0|pick up
+0|pick up the phone
+0|strange
+0|storm
+0|wind
+0|light
+0|report
+0|area
+0|wood
+0|window
+0|flashlight
+0|match
+0|beat
+0|against
+0|asleep
+0|fall asleep
+0|die down
+0|rise
+0|fallen
+0|apart
+0|have a look
+0|icy
+0|kid
+0|realize
+0|make one's way
+0|passage
+0|pupil
+0|completely
+0|shocked
+0|silence
+0|in silence
+0|recently
+0|take down
+0|terrorist
+0|date
+0|tower
+0|at first
+0|truth
+0|Allen
+0|Martin Luther King
+0|Alabama
+0|Animal Helpline
+0|World Trade Center
+0|shoot
+0|shot
+0|stone
+0|weak
+0|god
+0|remind
+0|bit
+0|a little bit
+0|silly
+0|instead of
+0|turn ... into
+0|object
+0|hide
+0|tail
+0|magic
+0|stick
+0|excite
+0|Western
+0|once upon
+0|stepsister
+0|prince
+0|fall in love
+0|fit
+0|couple
+0|smile
+0|marry
+0|get married
+0|gold
+0|emperor
+0|silk
+0|underwear
+0|nobody
+0|stupid
+0|cheat
+0|stepmother
+0|wife
+0|husband
+0|whole
+0|scene
+0|moonlight
+0|shine
+0|bright
+0|ground
+0|lead
+0|voice
+0|brave
+0|Claudia
+0|Journey to the West
+0|the Monkey King
+0|Sleeping Beauty
+0|Cinderella
+0|Little Red Riding Hood
+0|Hansel and Gretel
+0|square
+0|meter
+0|metre
+0|deep
+0|desert
+0|population
+0|Asia
+0|feel free
+0|tour
+0|tourist
+0|wall
+0|amazing
+0|ancient
+0|protect
+0|wide
+0|as far as I know
+0|man-made
+0|achievement
+0|southwestern
+0|thick
+0|include
+0|freezing
+0|condition
+0|take in
+0|succeed
+0|challenge
+0|in the face of
+0|achieve
+0|force
+0|nature
+0|even though
+0|even if
+0|ocean
+0|the Pacific Ocean
+0|cm
+0|centimeter
+0|centimetre
+0|weigh
+0|birth
+0|at birth
+0|up to
+0|adult
+0|bamboo
+0|endangered
+0|research
+0|keeper
+0|awake
+0|excitement
+0|walk into
+0|fall over
+0|or so
+0|illness
+0|wild
+0|government
+0|whale
+0|oil
+0|protection
+0|huge
+0|Tenzing Norgay
+0|Edmund Hillary
+0|Junko Tabei
+0|Qomolangma
+0|the Nile
+0|the Caspian Sea
+0|the Sahara
+0|the Yangtze River
+0|the Yellow River
+0|the Ming Dynasty
+0|the Ming Great Wall
+0|the Himalayas
+0|the Amazon River
+0|Chengdu Research Base
+0|treasure
+0|island
+0|full of
+0|classic
+0|page
+0|hurry
+0|hurry up
+0|due
+0|ship
+0|tool
+0|gun
+0|mark
+0|sand
+0|cannibal
+0|towards
+0|land
+0|fiction
+0|science fiction
+0|technology
+0|French
+0|pop
+0|rock
+0|band
+0|country music
+0|forever
+0|abroad
+0|actually
+0|ever since
+0|fan
+0|southern
+0|modern
+0|success
+0|belong
+0|one another
+0|laughter
+0|beauty
+0|million
+0|record
+0|introduce
+0|line
+0|Alex
+0|Garth Brooks
+0|The Beatles
+0|Treasure Island
+0|Alice in Wonderland
+0|Little Women
+0|Oliver Twist
+0|Robinson Crusoe
+0|Tom Sawyer
+0|Harry Potter
+0|Nashville
+0|Tennessee
+0|Country Music Hall of Fame Museum
+0|amusement
+0|amusement park
+0|somewhere
+0|camera
+0|invention
+0|invent
+0|unbelievable
+0|progress
+0|rapid
+0|unusual
+0|toilet
+0|encourage
+0|social
+0|peaceful
+0|tea art
+0|performance
+0|perfect
+0|tea set
+0|itself
+0|it
+0|collect
+0|a couple of
+0|German
+0|theme
+0|ride
+0|province
+0|thousand
+0|thousands of
+0|on the one hand ... on the other hand ...
+0|safe
+0|simply
+0|fear
+0|whether
+0|Indian
+0|Japanese
+0|fox
+0|all year round
+0|equator
+0|whenever
+0|spring
+0|mostly
+0|location
+0|National Science Museum
+0|International Museum of Toilets
+0|Hangzhou National Tea Museum
+0|Donald Duck
+0|Disneyland
+0|Disney Cruise
+0|the Terracotta Army
+0|the Bird's Nest
+0|Singapore
+0|Southeast Asia
+0|Night Safari
+0|yard
+0|yard sale
+0|sweet
+0|memory
+0|cent
+0|toy
+0|bear
+0|maker
+0|bread maker
+0|scarf
+0|soft
+0|soft toy
+0|check
+0|check out
+0|board
+0|board game
+0|junior
+0|junior high school
+0|clear out
+0|bedroom
+0|no longer
+0|own
+0|railway
+0|part
+0|part with
+0|certain
+0|as for
+0|honest
+0|to be honest
+0|truthful
+0|hometown
+0|nowadays
+0|search
+0|among
+0|crayon
+0|shame
+0|regard
+0|count
+0|century
+0|according
+0|opposite
+0|especially
+0|childhood
+0|consider
+0|close to
+0|hold
+0|held
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 418
+# Total Entries Extracted: 418
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 418
+# -------------------------------

@@ -1,0 +1,250 @@
+0|elderly
+0|offer
+0|serious
+0|disease
+0|cancer
+0|spirits
+0|pain
+0|belong
+0|spare
+0|volunteer
+0|joy
+0|lose
+0|raise
+0|pound
+0|structure
+0|permission
+0|arrange
+0|donate
+0|mighty
+0|pleasant
+0|ease
+0|ache
+0|voluntary work
+0|disabled people
+0|look after
+0|suffer from
+0|cheer somebody up
+0|raise one's spirits
+0|in low spirits
+0|in order to
+0|in need
+0|flower arranging
+0|tidy up
+0|in vain
+0|shake
+0|clap
+0|madam
+0|boss
+0|expression
+0|impression
+0|hold
+0|observe
+0|remind
+0|ballet
+0|emphasize
+0|nod
+0|meaning
+0|immediately
+0|shy
+0|case
+0|direct
+0|truly
+0|suppose
+0|behaviour
+0|uncomfortable
+0|hold something up
+0|sit up
+0|make a good impression on
+0|eye contact
+0|pay attention
+0|performance
+0|combine
+0|theme
+0|advanced
+0|artificial intelligence
+0|hero
+0|classic
+0|speech
+0|text
+0|warning
+0|mind
+0|gap
+0|crash
+0|wave
+0|folk
+0|risk
+0|leather
+0|advantage
+0|breath
+0|element
+0|shadow puppet
+0|ink-wash painting
+0|come to life
+0|with the help of
+0|comic strip
+0|watch out
+0|look out
+0|weather forecast
+0|life jacket
+0|thank goodness
+0|make it
+0|date back
+0|have an influence on
+0|folk art
+0|at risk of
+0|in the shape of
+0|take one's eyes off something
+0|hold one's breath
+0|neither ... nor ...
+0|master
+0|masterpiece
+0|whenever
+0|alone
+0|copy
+0|damage
+0|separate
+0|exhibition
+0|lifestyle
+0|detail
+0|require
+0|daughter
+0|priceless
+0|sculpture
+0|unfortunately
+0|graduate
+0|limit
+0|temperature
+0|preserve
+0|in one sitting
+0|in the mood
+0|pass along
+0|be at one with ...
+0|next to
+0|at last
+0|all walks of life
+0|all the time
+0|make up one's mind
+0|recognize
+0|mirror
+0|gun
+0|handsome
+0|force
+0|corn
+0|direction
+0|progress
+0|value
+0|official
+0|throw
+0|law
+0|punish
+0|blog
+0|publish
+0|shoulder
+0|rare
+0|slim
+0|alarmed
+0|typical
+0|thirsty
+0|sore
+0|red-crowned crane
+0|polar bear
+0|more than enough
+0|shoot dead
+0|make use of
+0|without a care in the world
+0|ought to
+0|up to
+0|nature reserve
+0|day and night
+0|go missing
+0|look for
+0|lose one's life
+0|stage
+0|clue
+0|promote
+0|abroad
+0|costume
+0|opportunity
+0|acquire
+0|sheet
+0|conclusion
+0|poetry
+0|concerned
+0|creative
+0|pleasure
+0|rosy
+0|youth
+0|worth
+0|Christmas
+0|eve
+0|spelling bee
+0|treasure hunt
+0|cultural exchange
+0|technological development
+0|no wonder
+0|high-speed train
+0|pass by
+0|go by
+0|beef
+0|seafood
+0|afford
+0|mistake
+0|stick
+0|hit
+0|muscle
+0|gym
+0|satellite
+0|destroy
+0|average
+0|probable
+0|select
+0|spaceflight
+0|serve
+0|deliver
+0|fuel
+0|supplies
+0|point
+0|lab
+0|take off
+0|for a while
+0|turn out
+0|cannot afford to
+0|by mistake
+0|daily routine
+0|space junk
+0|naked eye
+0|mention
+0|tonight
+0|frightened
+0|throat
+0|cough
+0|fear
+0|creature
+0|ugly
+0|crazy
+0|refuse
+0|emergency
+0|camera
+0|tent
+0|unnecessary
+0|whether
+0|backward
+0|disappoint
+0|argue
+0|keep quiet
+0|because of
+0|in fear
+0|landing site
+0|agree with
+0|disagree with
+0|move about
+0|in all directions
+0|speed up
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 243
+# Total Entries Extracted: 243
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 243
+# -------------------------------

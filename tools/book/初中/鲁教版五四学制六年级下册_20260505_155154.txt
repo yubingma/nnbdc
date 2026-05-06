@@ -1,0 +1,441 @@
+0|when
+0|month
+0|January
+0|February
+0|March
+0|April
+0|May
+0|June
+0|July
+0|August
+0|September
+0|October
+0|November
+0|December
+0|happy
+0|Happy birthday!
+0|old
+0|How old ...?
+0|party
+0|see
+0|See you!
+0|first
+0|second
+0|third
+0|fifth
+0|eighth
+0|ninth
+0|twelfth
+0|twentieth
+0|test
+0|trip
+0|art
+0|festival
+0|dear
+0|student
+0|thing
+0|term
+0|busy
+0|time
+0|Have a good time!
+0|there
+0|favorite
+0|favourite
+0|subject
+0|science
+0|P.E.
+0|physical education
+0|music
+0|math
+0|Chinese
+0|geography
+0|history
+0|why
+0|because
+0|Monday
+0|Friday
+0|Saturday
+0|for sure
+0|free
+0|cool
+0|Tuesday
+0|Wednesday
+0|Thursday
+0|Sunday
+0|A.M.
+0|a.m.
+0|P.M.
+0|p.m.
+0|say
+0|useful
+0|from
+0|from ... to ...
+0|Mrs.
+0|finish
+0|lesson
+0|hour
+0|guitar
+0|sing
+0|swim
+0|dance
+0|draw
+0|chess
+0|play chess
+0|speak
+0|speak English
+0|join
+0|club
+0|be good at ...
+0|tell
+0|story
+0|write
+0|show
+0|or
+0|talk
+0|talk to ...
+0|kung fu
+0|drum
+0|play the drums
+0|piano
+0|play the piano
+0|violin
+0|play the violin
+0|also
+0|people
+0|home
+0|be good with ...
+0|make
+0|make friends
+0|today
+0|help with sth.
+0|help sb. with sth.
+0|center
+0|centre
+0|weekend
+0|on the weekend
+0|teach
+0|musician
+0|Lisa
+0|Jill
+0|Peter
+0|up
+0|get up
+0|dress
+0|get dressed
+0|brush
+0|tooth
+0|shower
+0|take a shower
+0|usually
+0|forty
+0|wow
+0|never
+0|early
+0|fifty
+0|job
+0|work
+0|station
+0|radio station
+0|o'clock
+0|night
+0|funny
+0|exercise
+0|on weekends
+0|best
+0|group
+0|half
+0|past
+0|quarter
+0|homework
+0|do homework
+0|do one's homework
+0|run
+0|clean
+0|walk
+0|take a walk
+0|quickly
+0|either
+0|either ... or ...
+0|lot
+0|lots of
+0|sometimes
+0|taste
+0|life
+0|Rick
+0|Jim
+0|Scott
+0|Tony
+0|train
+0|bus
+0|subway
+0|take the subway
+0|ride
+0|ride a bike
+0|sixty
+0|seventy
+0|eighty
+0|ninety
+0|hundred
+0|minute
+0|far
+0|kilometer
+0|kilometre
+0|new
+0|every
+0|every day
+0|by
+0|by bike
+0|drive
+0|car
+0|live
+0|stop
+0|think of
+0|cross
+0|river
+0|many
+0|village
+0|between
+0|between ... and ...
+0|bridge
+0|boat
+0|ropeway
+0|year
+0|afraid
+0|like
+0|villager
+0|leave
+0|dream
+0|true
+0|come true
+0|Dave
+0|rule
+0|arrive
+0|on time
+0|be on time
+0|hallway
+0|hall
+0|dining
+0|listen
+0|listen to ...
+0|fight
+0|sorry
+0|outside
+0|wear
+0|important
+0|bring
+0|uniform
+0|quiet
+0|out
+0|go out
+0|practice
+0|dish
+0|do the dishes
+0|before
+0|make one's bed
+0|dirty
+0|kitchen
+0|more
+0|noisy
+0|relax
+0|read
+0|terrible
+0|feel
+0|strict
+0|be strict
+0|be strict with sb.
+0|remember
+0|follow
+0|follow the rules
+0|luck
+0|keep
+0|hair
+0|learn
+0|Clark
+0|Amy
+0|Molly
+0|New York
+0|panda
+0|zoo
+0|tiger
+0|elephant
+0|koala
+0|lion
+0|giraffe
+0|animal
+0|cute
+0|lazy
+0|smart
+0|beautiful
+0|scary
+0|kind
+0|kind of
+0|Australia
+0|south
+0|Africa
+0|South Africa
+0|pet
+0|leg
+0|cat
+0|sleep
+0|friendly
+0|shy
+0|save
+0|symbol
+0|flag
+0|forget
+0|get lost
+0|place
+0|water
+0|danger
+0|be in danger
+0|be in great danger
+0|cut
+0|down
+0|cut down
+0|tree
+0|kill
+0|ivory
+0|over
+0|made of
+0|be made of
+0|Julie
+0|Becky
+0|Thailand
+0|Thai
+0|newspaper
+0|read a newspaper
+0|use
+0|soup
+0|make soup
+0|wash
+0|movie
+0|go to the movies
+0|just
+0|eat out
+0|house
+0|drink
+0|tea
+0|drink tea
+0|tomorrow
+0|pool
+0|shop
+0|supermarket
+0|man
+0|race
+0|host
+0|study
+0|state
+0|the United States
+0|America
+0|the US
+0|the USA
+0|American
+0|dragon
+0|Dragon Boat Festival
+0|any
+0|other
+0|young
+0|child
+0|children
+0|miss
+0|wish
+0|delicious
+0|still
+0|living
+0|Steve
+0|Laura
+0|rain
+0|windy
+0|cloudy
+0|sunny
+0|snow
+0|weather
+0|cook
+0|bad
+0|park
+0|message
+0|take a message
+0|him
+0|he
+0|could
+0|back
+0|call back
+0|call sb. back
+0|problem
+0|again
+0|dry
+0|cold
+0|hot
+0|warm
+0|visit
+0|Canada
+0|summer
+0|sit
+0|juice
+0|soon
+0|vacation
+0|on a vacation
+0|hard
+0|Europe
+0|mountain
+0|country
+0|skate
+0|snowy
+0|winter
+0|Russian
+0|snowman
+0|rainy
+0|Joe
+0|Jeff
+0|Moscow
+0|Toronto
+0|Boston
+0|post
+0|office
+0|post office
+0|police
+0|police station
+0|hotel
+0|restaurant
+0|bank
+0|hospital
+0|street
+0|pay
+0|pay phone
+0|near
+0|across
+0|across from
+0|front
+0|in front of
+0|behind
+0|town
+0|around
+0|north
+0|along
+0|go along
+0|go along the street
+0|turn
+0|right
+0|left
+0|turn right
+0|turn left
+0|crossing
+0|neighborhood
+0|spend
+0|spend time
+0|climb
+0|road
+0|often
+0|air
+0|sunshine
+0|enjoy
+0|enjoy reading
+0|easily
+0|money
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 434
+# Total Entries Extracted: 434
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 434
+# -------------------------------

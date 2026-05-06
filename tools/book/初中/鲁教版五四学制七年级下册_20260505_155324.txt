@@ -1,0 +1,406 @@
+0|sitcom
+0|situation comedy
+0|news
+0|soap opera
+0|educational
+0|plan
+0|hope
+0|find out
+0|discussion
+0|stand
+0|happen
+0|may
+0|expect
+0|joke
+0|comedy
+0|meaningless
+0|action
+0|action movie
+0|cartoon
+0|culture
+0|famous
+0|appear
+0|become
+0|rich
+0|successful
+0|might
+0|main
+0|reason
+0|common
+0|film
+0|movie
+0|unlucky
+0|lose
+0|lost
+0|girlfriend
+0|ready
+0|be ready to
+0|character
+0|simple
+0|dress up
+0|take sb.'s place
+0|army
+0|do a good job
+0|Sarah
+0|Walt Disney
+0|Minnie
+0|Mickey Mouse
+0|Steamboat Willie
+0|Hollywood
+0|the Hollywood Walk of Fame
+0|grow up
+0|computer programmer
+0|cook
+0|doctor
+0|engineer
+0|violinist
+0|driver
+0|pilot
+0|pianist
+0|scientist
+0|be sure about
+0|make sure
+0|college
+0|education
+0|medicine
+0|university
+0|London
+0|article
+0|send
+0|resolution
+0|team
+0|foreign
+0|able
+0|be able to
+0|question
+0|meaning
+0|discuss
+0|promise
+0|beginning
+0|at the beginning of
+0|improve
+0|write down
+0|physical
+0|themselves
+0|have to do with
+0|self-improvement
+0|take up
+0|hobby
+0|weekly
+0|schoolwork
+0|own
+0|personal
+0|relationship
+0|Andy
+0|Ken
+0|Hemingway
+0|Kelly
+0|The Old Man and the Sea
+0|paper
+0|pollution
+0|prediction
+0|future
+0|pollute
+0|environment
+0|planet
+0|earth
+0|plant
+0|part
+0|play a part
+0|peace
+0|sea
+0|sky
+0|astronaut
+0|apartment
+0|rocket
+0|space
+0|space station
+0|human
+0|servant
+0|dangerous
+0|already
+0|factory
+0|over and over again
+0|believe
+0|disagree
+0|even
+0|hundreds of
+0|shape
+0|fall
+0|fall down
+0|inside
+0|look for
+0|possible
+0|impossible
+0|side
+0|probably
+0|during
+0|holiday
+0|word
+0|Nick
+0|James
+0|White
+0|shake
+0|milk shake
+0|blender
+0|turn on
+0|peel
+0|pour
+0|yogurt
+0|yoghurt
+0|honey
+0|watermelon
+0|spoon
+0|pot
+0|add
+0|finally
+0|salt
+0|sugar
+0|cheese
+0|popcorn
+0|corn
+0|machine
+0|dig
+0|hole
+0|sandwich
+0|butter
+0|turkey
+0|lettuce
+0|piece
+0|Thanksgiving
+0|traditional
+0|autumn
+0|celebrate
+0|gravy
+0|mashed potatoes
+0|pumpkin
+0|pie
+0|serve
+0|mix
+0|pepper
+0|fill
+0|oven
+0|plate
+0|cover
+0|temperature
+0|prepare
+0|prepare for
+0|exam
+0|examination
+0|flu
+0|available
+0|another time
+0|until
+0|hang
+0|hung
+0|hang out
+0|catch
+0|accept
+0|refuse
+0|the day before yesterday
+0|the day after tomorrow
+0|weekday
+0|look after
+0|invitation
+0|turn down
+0|reply
+0|forward
+0|delete
+0|print
+0|sad
+0|goodbye
+0|take a trip
+0|glad
+0|preparation
+0|glue
+0|without
+0|surprised
+0|look forward to
+0|hear from
+0|housewarming
+0|opening
+0|concert
+0|headmaster
+0|event
+0|guest
+0|calendar
+0|daytime
+0|Ted
+0|Vince
+0|Steen
+0|Jake
+0|Susan
+0|meeting
+0|video
+0|organize
+0|organise
+0|potato chips
+0|chocolate
+0|upset
+0|taxi
+0|advice
+0|travel
+0|agent
+0|expert
+0|keep ... to oneself
+0|teenager
+0|normal
+0|unless
+0|certainly
+0|wallet
+0|mile
+0|angry
+0|understanding
+0|careless
+0|mistake
+0|himself
+0|careful
+0|advise
+0|solve
+0|step
+0|trust
+0|experience
+0|in half
+0|halfway
+0|Karen
+0|Ben
+0|Michael
+0|Laura
+0|Mills
+0|Robert
+0|Hunt
+0|matter
+0|What's the matter?
+0|sore
+0|have a cold
+0|stomachache
+0|have a stomachache
+0|foot
+0|neck
+0|stomach
+0|throat
+0|fever
+0|lie
+0|lie down
+0|rest
+0|cough
+0|X-ray
+0|toothache
+0|take one's temperature
+0|headache
+0|have a fever
+0|break
+0|take breaks
+0|take a break
+0|hurt
+0|herself
+0|she
+0|bandage
+0|sick
+0|knee
+0|nosebleed
+0|hit
+0|breathe
+0|sunburned
+0|ourselves
+0|we
+0|climber
+0|be used to
+0|risk
+0|take risks
+0|take a risk
+0|accident
+0|situation
+0|kilo
+0|kilogram
+0|rock
+0|run out
+0|run out of
+0|knife
+0|knives
+0|off
+0|cut off
+0|blood
+0|mean
+0|meant
+0|get out of
+0|importance
+0|decision
+0|control
+0|be in control of
+0|spirit
+0|death
+0|give up
+0|trouble
+0|nurse
+0|Judy
+0|Nancy
+0|Mandy
+0|Aron Ralston
+0|Utah
+0|clean up
+0|cheer
+0|cheer up
+0|give out
+0|volunteer
+0|come up with
+0|put off
+0|sign
+0|notice
+0|hand out
+0|call up
+0|used to
+0|lonely
+0|care for
+0|homeless
+0|raise
+0|alone
+0|repair
+0|fix
+0|fix up
+0|give away
+0|take after
+0|broken
+0|wheel
+0|letter
+0|Miss
+0|set up
+0|disabled
+0|make a difference
+0|blind
+0|deaf
+0|imagine
+0|difficulty
+0|open
+0|door
+0|carry
+0|train
+0|excited
+0|training
+0|kindness
+0|clever
+0|understand
+0|understood
+0|change
+0|several
+0|strong
+0|feeling
+0|satisfaction
+0|joy
+0|owner
+0|try out
+0|journey
+0|interest
+0|sir
+0|madam
+0|project
+0|coach
+0|Jimmy
+0|Mario
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 399
+# Total Entries Extracted: 399
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 399
+# -------------------------------

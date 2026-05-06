@@ -1,0 +1,498 @@
+0|nationality
+0|Australian
+0|Canadian
+0|Indian
+0|Japanese
+0|Russian
+0|gesture
+0|thumb
+0|wave
+0|simply
+0|nod
+0|agreement
+0|finger
+0|silence
+0|differently
+0|western
+0|shrug
+0|shoulder
+0|Asian
+0|bow
+0|greet
+0|custom
+0|certain
+0|traveller
+0|kiss
+0|European
+0|cheek
+0|rude
+0|bottom
+0|pat
+0|anger
+0|clap
+0|mate
+0|gas
+0|sneaker
+0|petrol
+0|confused
+0|standard
+0|spelling
+0|grey
+0|native
+0|speaker
+0|confusing
+0|check
+0|note
+0|used
+0|jumper
+0|apartment
+0|tip
+0|structure
+0|chant
+0|as for
+0|work out
+0|by the way
+0|reward
+0|method
+0|suit
+0|make a difference
+0|in order to
+0|familiar
+0|subtitle
+0|jot down
+0|phrase
+0|continuously
+0|image
+0|frustrated
+0|topic
+0|refer
+0|refer to
+0|table
+0|verb
+0|tense
+0|have a try
+0|no longer
+0|comic
+0|classic
+0|bookshop
+0|how-to
+0|fly
+0|adventure
+0|wonderland
+0|orphan
+0|curiosity
+0|friendship
+0|publish
+0|remain
+0|silly
+0|drop
+0|hole
+0|land
+0|character
+0|bright
+0|reader
+0|force
+0|society
+0|thief
+0|steal
+0|preparation
+0|hang
+0|quotation
+0|inspiring
+0|form
+0|continuing
+0|need
+0|advantage
+0|well-known
+0|a world of
+0|depend
+0|depend on
+0|inspire
+0|period
+0|prediction
+0|paint
+0|juicy
+0|silent
+0|focus
+0|painting
+0|artist
+0|carelessly
+0|sweep
+0|back and forth
+0|touch
+0|take a look at
+0|move
+0|consider
+0|offer
+0|honestly
+0|paintbrush
+0|eagerly
+0|regret
+0|lover
+0|benefit
+0|aspect
+0|unlike
+0|extra
+0|as long as
+0|disadvantage
+0|summary
+0|creativity
+0|creative
+0|inventor
+0|musician
+0|design
+0|gun
+0|bridge
+0|helicopter
+0|adding machine
+0|instrument
+0|northern
+0|Italian
+0|painter
+0|engineer
+0|pioneer
+0|as well
+0|far
+0|ahead of
+0|code
+0|left-handed
+0|either way
+0|mirror
+0|backwards
+0|absent
+0|cancel
+0|disagree
+0|weapon
+0|debate
+0|position
+0|response
+0|cut down
+0|nuclear
+0|power
+0|provide
+0|energy
+0|danger
+0|involved
+0|traffic jam
+0|moreover
+0|pollute
+0|pollution
+0|bite
+0|owner
+0|blame
+0|invent
+0|earmuff
+0|crayon holder
+0|Wristies
+0|popsicle
+0|stir
+0|treat
+0|ice-skate
+0|cover
+0|thinking
+0|wire
+0|sew
+0|fur
+0|steel
+0|headband
+0|broken
+0|tube
+0|fit
+0|tightly
+0|mitten
+0|wrist
+0|business
+0|run
+0|laser
+0|typesetting
+0|come up with
+0|developer
+0|publishing
+0|industry
+0|modern
+0|circle
+0|international
+0|international space station
+0|lift
+0|lift off
+0|manned
+0|spacecraft
+0|flight
+0|space flight
+0|spaceship
+0|unmanned
+0|planet
+0|gravity
+0|float
+0|action
+0|tie
+0|rise
+0|set
+0|alarm
+0|muscle
+0|lunch
+0|satellite
+0|achievement
+0|briefly
+0|female
+0|advance
+0|effort
+0|citizen
+0|alien
+0|unknown
+0|captain
+0|spacesuit
+0|uncomfortable
+0|take off
+0|pick
+0|pick up
+0|unlucky
+0|attack
+0|Earth
+0|admire
+0|once
+0|physics
+0|chemistry
+0|mission
+0|role model
+0|realise
+0|faithfully
+0|literature
+0|novel
+0|gable
+0|carriage
+0|passenger
+0|braid
+0|freckle
+0|make up one's mind
+0|cherry
+0|lovely
+0|shyly
+0|normally
+0|apologise
+0|plot
+0|trunk
+0|tusk
+0|flat
+0|hose
+0|iron
+0|mat
+0|thick
+0|upon
+0|king
+0|officer
+0|cloth
+0|guard
+0|spot
+0|obviously
+0|jacket
+0|series
+0|graduation
+0|epic
+0|scale
+0|usual
+0|marriage
+0|raise
+0|resolution
+0|rich
+0|direct
+0|pretend
+0|other than
+0|final
+0|theme park
+0|related
+0|related to
+0|remarry
+0|separate
+0|carelessness
+0|celebrate
+0|enjoy oneself
+0|rush
+0|climax
+0|quality
+0|behave
+0|modest
+0|hard-working
+0|draft
+0|name
+0|voting
+0|despite
+0|challenging
+0|cultural
+0|teammate
+0|personality
+0|pay off
+0|value
+0|charity
+0|found
+0|foundation
+0|retire
+0|policewoman
+0|treasure
+0|importantly
+0|original
+0|owe
+0|outdoor
+0|retired
+0|look down on
+0|organised
+0|caring
+0|digital
+0|co-founder
+0|inc.
+0|incorporated
+0|birth
+0|formal
+0|schooling
+0|afford
+0|fire
+0|a number of
+0|impatient
+0|state
+0|bluntly
+0|put up with
+0|recognise
+0|revolution
+0|negative
+0|beyond
+0|pressure
+0|fascinate
+0|trade
+0|play an important role
+0|get away
+0|ancient
+0|capital
+0|monument
+0|edge
+0|desert
+0|find out
+0|connection
+0|major
+0|north-west
+0|despair
+0|ups and downs
+0|anonymous
+0|path
+0|verse
+0|metaphor
+0|sub-zero
+0|destination
+0|overcome
+0|at times
+0|route
+0|challenge
+0|nut
+0|proper
+0|injury
+0|shape
+0|sharp
+0|historical
+0|shopping mall
+0|waterfront
+0|landmark
+0|style
+0|exist
+0|discovery
+0|lab
+0|laboratory
+0|antibiotic
+0|century
+0|disease
+0|cure
+0|correctly
+0|DNA
+0|block
+0|building block
+0|pass on
+0|characteristic
+0|a great deal
+0|able
+0|be able to
+0|award
+0|first-ever
+0|skin
+0|suitcase
+0|effect
+0|bulb
+0|above all
+0|in closing
+0|honour
+0|present
+0|equipment
+0|researcher
+0|round
+0|applause
+0|chairman
+0|sprout
+0|pot
+0|soil
+0|observation
+0|fully
+0|yet
+0|patient
+0|cm
+0|centimetre
+0|patience
+0|overweight
+0|gradually
+0|reuse
+0|take action
+0|ton
+0|decay
+0|replace
+0|bin
+0|recycling
+0|reduce
+0|global
+0|global warming
+0|organise
+0|car pool
+0|take turns
+0|to start with
+0|as usual
+0|get hold of
+0|vet
+0|painful
+0|handbag
+0|greatly
+0|farmland
+0|affect
+0|expand
+0|worth
+0|seeding
+0|proudly
+0|millionaire
+0|prevent
+0|towards
+0|tap
+0|flush
+0|take part
+0|West
+0|the Middle East
+0|Oxford
+0|Harvard
+0|NBA
+0|Houston Rockets
+0|Rookie of the Month
+0|NBA All-star
+0|Oscar
+0|Antarctic
+0|Atlantic Ocean
+0|Europe
+0|Indian Ocean
+0|Pacific Ocean
+0|the Silk Road
+0|the Gobi Desert
+0|Central Asia
+0|Macau
+0|Arctic
+0|the Bund
+0|the Oriental Pearl Tower
+0|Nobel Prize
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 491
+# Total Entries Extracted: 491
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 491
+# -------------------------------

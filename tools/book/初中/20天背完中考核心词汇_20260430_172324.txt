@@ -1,0 +1,2828 @@
+0|feather
+0|speed
+0|information
+0|together
+0|baseball
+0|crop
+0|scissors
+0|performance
+0|kick
+0|pink
+0|graduate
+0|never
+0|guitar
+0|fear
+0|risk
+0|straight
+0|pill
+0|compare
+0|bamboo
+0|scientist
+0|shoot
+0|icon
+0|reef
+0|address
+0|secretary
+0|worst
+0|playground
+0|choose
+0|model
+0|grass
+0|attention
+0|improve
+0|bathroom
+0|rail
+0|worth
+0|sound
+0|palace
+0|laugh
+0|granny
+0|punish
+0|through
+0|able
+0|university
+0|competition
+0|suppose
+0|widely
+0|aloud
+0|perhaps
+0|swing
+0|memory
+0|whatever
+0|ugly
+0|wonderful
+0|accept
+0|retell
+0|frustrate
+0|realize
+0|shout
+0|escape
+0|trade
+0|party
+0|spread
+0|study
+0|maths
+0|riddle
+0|delicious
+0|notice
+0|least
+0|painter
+0|pleased
+0|gun
+0|reason
+0|pay
+0|yard
+0|flight
+0|secret
+0|fill
+0|arrive
+0|whether
+0|thin
+0|read
+0|energy
+0|thankful
+0|careless
+0|drop
+0|provide
+0|gift
+0|tour
+0|reach
+0|magic
+0|inspector
+0|pause
+0|note
+0|part
+0|raincoat
+0|abroad
+0|recorder
+0|businessman
+0|shower
+0|rest
+0|active
+0|spell
+0|cloud
+0|drought
+0|message
+0|guard
+0|pupil
+0|chopstick
+0|wise
+0|light
+0|bit
+0|decision
+0|form
+0|windy
+0|yet
+0|worried
+0|harm
+0|headache
+0|noodle
+0|fire
+0|cinema
+0|nature
+0|clear
+0|midnight
+0|neighbour
+0|cent
+0|task
+0|tourist
+0|none
+0|whale
+0|alike
+0|lazy
+0|nod
+0|master
+0|while
+0|clone
+0|camera
+0|around
+0|province
+0|prevent
+0|call
+0|plastic
+0|round
+0|successful
+0|celebrate
+0|fall
+0|tale
+0|cabbage
+0|fan
+0|question
+0|coal
+0|bookmark
+0|opposite
+0|fork
+0|cotton
+0|till
+0|beg
+0|public
+0|prepare
+0|advantage
+0|practice
+0|strict
+0|blow
+0|primary
+0|pass
+0|price
+0|free
+0|dream
+0|document
+0|cover
+0|repair
+0|sandwich
+0|cool
+0|dozen
+0|difference
+0|chips
+0|describe
+0|step
+0|pick
+0|grand
+0|assistant
+0|science
+0|crazy
+0|salesgirl
+0|labour
+0|rely
+0|carrot
+0|attract
+0|thirsty
+0|fetch
+0|tear
+0|proper
+0|online
+0|towel
+0|almost
+0|tower
+0|butter
+0|rim
+0|grateful
+0|dialogue
+0|education
+0|policeman
+0|advise
+0|neither
+0|deserve
+0|tennis
+0|fossil
+0|tidy
+0|marriage
+0|hide
+0|repeat
+0|jeans
+0|expensive
+0|dirty
+0|slow
+0|tomb
+0|though
+0|fit
+0|brave
+0|screen
+0|training
+0|furniture
+0|fridge
+0|robbery
+0|coke
+0|clean
+0|thread
+0|journalist
+0|follow
+0|copy
+0|quarrel
+0|breath
+0|build
+0|population
+0|freeze
+0|steer
+0|theatre
+0|experience
+0|unlike
+0|sunshine
+0|result
+0|instruction
+0|success
+0|village
+0|wave
+0|whenever
+0|leaf
+0|mile
+0|mail
+0|beyond
+0|iceberg
+0|line
+0|oil
+0|shall
+0|act
+0|spend
+0|daytime
+0|sock
+0|so-called
+0|panda
+0|crossing
+0|goat
+0|spit
+0|soap
+0|barn
+0|waste
+0|voice
+0|rough
+0|tooth
+0|pull
+0|natural
+0|spoon
+0|nurse
+0|over
+0|fact
+0|cafe
+0|value
+0|conversation
+0|cousin
+0|enter
+0|bookshop
+0|excite
+0|suddenly
+0|parrot
+0|chest
+0|decide
+0|plenty
+0|neck
+0|safety
+0|ring
+0|courage
+0|thief
+0|visit
+0|dumpling
+0|simple
+0|ground
+0|feeling
+0|sunny
+0|ridge
+0|own
+0|base
+0|queen
+0|potato
+0|dare
+0|hug
+0|disease
+0|asleep
+0|joy
+0|marry
+0|lead
+0|exactly
+0|special
+0|nearby
+0|break
+0|pardon
+0|might
+0|captain
+0|cheat
+0|sink
+0|penguin
+0|culture
+0|clap
+0|nose
+0|tiny
+0|wish
+0|golden
+0|quite
+0|leather
+0|loudly
+0|worm
+0|wag
+0|fun
+0|southern
+0|onion
+0|translate
+0|cut
+0|treat
+0|sale
+0|cruel
+0|salad
+0|standard
+0|shy
+0|pool
+0|man-made
+0|spaceship
+0|season
+0|promise
+0|even
+0|stupid
+0|steep
+0|rush
+0|thick
+0|useful
+0|invite
+0|role
+0|confident
+0|disappearance
+0|robot
+0|accident
+0|cookie
+0|moment
+0|place
+0|entrance
+0|wealth
+0|striker
+0|cough
+0|sleepy
+0|connect
+0|minus
+0|purple
+0|shake
+0|passenger
+0|lonely
+0|action
+0|package
+0|electronic
+0|conductor
+0|among
+0|remain
+0|pet
+0|stairs
+0|thought
+0|environment
+0|office
+0|ice-cream
+0|flood
+0|pound
+0|wool
+0|forward
+0|wing
+0|railway
+0|opera
+0|influence
+0|draw
+0|similar
+0|until
+0|slipper
+0|sour
+0|dictionary
+0|amaze
+0|injection
+0|trip
+0|traditional
+0|journey
+0|excited
+0|lamp
+0|afford
+0|display
+0|unless
+0|usual
+0|ability
+0|climb
+0|magical
+0|agree
+0|separate
+0|communication
+0|goal
+0|introduction
+0|advice
+0|depend
+0|size
+0|pretty
+0|matter
+0|gentleman
+0|turning
+0|colourful
+0|rainy
+0|dive
+0|rub
+0|ceiling
+0|surf
+0|pear
+0|live
+0|receive
+0|beat
+0|rich
+0|finger
+0|circle
+0|protect
+0|helpful
+0|collect
+0|hurt
+0|full
+0|praise
+0|medicine
+0|beginning
+0|term
+0|shepherd
+0|forever
+0|catch
+0|hall
+0|brain
+0|discuss
+0|once
+0|appear
+0|beach
+0|common
+0|save
+0|recent
+0|plus
+0|complain
+0|eve
+0|worry
+0|treasure
+0|doorbell
+0|computer
+0|sick
+0|contribution
+0|downstairs
+0|cross
+0|mistake
+0|race
+0|pancake
+0|doll
+0|plane
+0|succeed
+0|immediately
+0|pain
+0|politely
+0|weight
+0|bottom
+0|proud
+0|unit
+0|telegraph
+0|tired
+0|experiment
+0|recycle
+0|include
+0|closed
+0|grey
+0|fight
+0|programme
+0|give
+0|vacation
+0|believe
+0|square
+0|bang
+0|show
+0|centre
+0|test
+0|shot
+0|capital
+0|score
+0|share
+0|foggy
+0|thousand
+0|basic
+0|operation
+0|toe
+0|cost
+0|murder
+0|spare
+0|ancient
+0|prove
+0|start
+0|behaviour
+0|lovely
+0|flag
+0|absent
+0|condition
+0|ant
+0|silence
+0|could
+0|treatment
+0|corner
+0|lift
+0|goodness
+0|interview
+0|spirit
+0|ache
+0|chance
+0|plan
+0|earthquake
+0|wood
+0|sausage
+0|million
+0|postcard
+0|express
+0|church
+0|code
+0|invention
+0|dinosaur
+0|underground
+0|consider
+0|butterfly
+0|postal
+0|course
+0|frustrated
+0|page
+0|excellent
+0|smog
+0|knowledge
+0|relax
+0|expert
+0|board
+0|library
+0|multiply
+0|overcoat
+0|sweep
+0|lively
+0|electric
+0|hate
+0|novel
+0|habit
+0|wardrobe
+0|lap
+0|skill
+0|college
+0|welcome
+0|fix
+0|strawberry
+0|mainland
+0|take
+0|level
+0|soft
+0|right
+0|real
+0|essential
+0|pride
+0|background
+0|button
+0|violin
+0|international
+0|state
+0|final
+0|nervous
+0|kilogramme
+0|track
+0|tractor
+0|present
+0|smoke
+0|soup
+0|grape
+0|prisoner
+0|trap
+0|shame
+0|balloon
+0|purse
+0|direction
+0|humorous
+0|invent
+0|angel
+0|make
+0|seem
+0|search
+0|hang
+0|postman
+0|sail
+0|private
+0|top
+0|future
+0|supermarket
+0|website
+0|picnic
+0|force
+0|enjoy
+0|metal
+0|refuse
+0|serve
+0|terrific
+0|festival
+0|giraffe
+0|across
+0|litter
+0|leave
+0|fantastic
+0|breathe
+0|drawer
+0|chart
+0|pie
+0|especially
+0|frog
+0|lose
+0|check
+0|restaurant
+0|normal
+0|below
+0|seldom
+0|challenge
+0|social
+0|alive
+0|painting
+0|safe
+0|diary
+0|radio
+0|problem
+0|dolphin
+0|upstairs
+0|queue
+0|finish
+0|create
+0|enemy
+0|add
+0|learn
+0|officer
+0|correct
+0|engineer
+0|dig
+0|description
+0|quick
+0|foreign
+0|lay
+0|parking
+0|kilometre
+0|directly
+0|lamb
+0|brochure
+0|wide
+0|push
+0|bright
+0|baker
+0|hamburger
+0|congratulation
+0|bridge
+0|forget
+0|market
+0|fragile
+0|quietly
+0|download
+0|greeting
+0|victim
+0|hole
+0|drum
+0|produce
+0|polite
+0|smooth
+0|steal
+0|raise
+0|daily
+0|wash
+0|coral
+0|development
+0|available
+0|tie
+0|probably
+0|detective
+0|fail
+0|racket
+0|cupboard
+0|necklace
+0|tongue
+0|brush
+0|offer
+0|manager
+0|total
+0|snowy
+0|digital
+0|credit
+0|workplace
+0|notebook
+0|unlucky
+0|ready
+0|weigh
+0|intention
+0|row
+0|alone
+0|sort
+0|camp
+0|crash
+0|chemistry
+0|generosity
+0|keyboard
+0|pan
+0|stamp
+0|illness
+0|toilet
+0|universe
+0|rise
+0|pond
+0|plant
+0|subject
+0|exit
+0|licence
+0|victory
+0|direct
+0|mean
+0|soil
+0|above
+0|painful
+0|spill
+0|burn
+0|drug
+0|list
+0|coast
+0|examine
+0|society
+0|billion
+0|stocking
+0|penny
+0|flu
+0|wallet
+0|handsome
+0|duck
+0|noise
+0|rock
+0|mouse
+0|wear
+0|doubt
+0|event
+0|pepper
+0|silly
+0|avoid
+0|sense
+0|symbol
+0|owner
+0|dentist
+0|robber
+0|shape
+0|shoulder
+0|vehicle
+0|road
+0|click
+0|secondhand
+0|trouble
+0|stick
+0|record
+0|pleasure
+0|object
+0|speech
+0|grab
+0|quiet
+0|duty
+0|modern
+0|decorate
+0|deer
+0|sight
+0|wolf
+0|bitter
+0|ride
+0|mount
+0|pollute
+0|remember
+0|harvest
+0|chess
+0|necessary
+0|shine
+0|skate
+0|stomach
+0|report
+0|artist
+0|continue
+0|gatekeeper
+0|mobile
+0|funny
+0|scenery
+0|candle
+0|guess
+0|station
+0|biology
+0|pop
+0|pronounce
+0|motorbike
+0|win
+0|badly
+0|cancel
+0|field
+0|train
+0|toothpaste
+0|exercise
+0|post
+0|suit
+0|guest
+0|touch
+0|send
+0|divide
+0|enjoyable
+0|dangerous
+0|brown
+0|order
+0|purpose
+0|chocolate
+0|sentence
+0|height
+0|prefer
+0|weekday
+0|wine
+0|cream
+0|poem
+0|hobby
+0|introduce
+0|prison
+0|double
+0|fisherman
+0|mend
+0|composition
+0|disturb
+0|period
+0|agreement
+0|toothache
+0|fireplace
+0|deep
+0|tail
+0|complete
+0|pocket
+0|bleat
+0|national
+0|visitor
+0|surface
+0|wherever
+0|bee
+0|space
+0|pork
+0|edge
+0|since
+0|phone
+0|smell
+0|friendly
+0|passport
+0|rubber
+0|ocean
+0|inside
+0|unusual
+0|wheel
+0|point
+0|cheese
+0|attack
+0|plain
+0|borrow
+0|worse
+0|used
+0|stream
+0|tape
+0|geography
+0|bill
+0|warn
+0|boot
+0|fog
+0|shelf
+0|relative
+0|heaven
+0|count
+0|explore
+0|lab
+0|merry
+0|mention
+0|clever
+0|hotdog
+0|rubbish
+0|tent
+0|twin
+0|trust
+0|iron
+0|several
+0|melon
+0|knee
+0|rapid
+0|friendship
+0|band
+0|along
+0|chimney
+0|serious
+0|regret
+0|medical
+0|crow
+0|patient
+0|glove
+0|traffic
+0|research
+0|often
+0|camel
+0|surprise
+0|channel
+0|terrible
+0|shut
+0|wound
+0|taste
+0|peace
+0|chalk
+0|require
+0|woollen
+0|turn
+0|plate
+0|begin
+0|juice
+0|dish
+0|article
+0|grammar
+0|grade
+0|ink
+0|explain
+0|storm
+0|single
+0|date
+0|jump
+0|fax
+0|rule
+0|satisfy
+0|rabbit
+0|sweet
+0|discover
+0|stay
+0|activity
+0|keep
+0|boss
+0|dismiss
+0|dustbin
+0|steel
+0|disappear
+0|either
+0|boring
+0|planet
+0|dry
+0|textbook
+0|confidence
+0|company
+0|nut
+0|bring
+0|pumpkin
+0|coach
+0|truck
+0|deal
+0|tofu
+0|feed
+0|corn
+0|reply
+0|pleasant
+0|difficulty
+0|goose
+0|pioneer
+0|frighten
+0|hardly
+0|pale
+0|gold
+0|nearly
+0|rope
+0|end
+0|biscuit
+0|servant
+0|watermelon
+0|really
+0|discussion
+0|outdoor
+0|shark
+0|carry
+0|century
+0|newspaper
+0|travel
+0|meaning
+0|librarian
+0|manage
+0|seafood
+0|wheat
+0|satellite
+0|misty
+0|happen
+0|kid
+0|policy
+0|audience
+0|favourite
+0|popular
+0|silent
+0|toy
+0|desert
+0|deaf
+0|mind
+0|solid
+0|change
+0|understand
+0|toothbrush
+0|cancer
+0|progress
+0|communicate
+0|rob
+0|noisy
+0|suggest
+0|blind
+0|except
+0|rice
+0|personal
+0|joke
+0|percent
+0|accent
+0|type
+0|temperature
+0|hold
+0|handwriting
+0|perfect
+0|countryside
+0|conference
+0|scarf
+0|mark
+0|beside
+0|regard
+0|always
+0|care
+0|throw
+0|blouse
+0|cage
+0|mostly
+0|silk
+0|achieve
+0|hit
+0|couple
+0|ordinary
+0|possible
+0|situation
+0|magazine
+0|insist
+0|whole
+0|effort
+0|pizza
+0|review
+0|silver
+0|rocket
+0|concert
+0|quarter
+0|smart
+0|heal
+0|news
+0|set
+0|picture
+0|develop
+0|kitchen
+0|pack
+0|rose
+0|expect
+0|washroom
+0|lion
+0|coffee
+0|prize
+0|country
+0|golf
+0|software
+0|guide
+0|encourage
+0|cause
+0|lock
+0|dim
+0|pity
+0|ham
+0|president
+0|truth
+0|tick
+0|awake
+0|neatly
+0|fever
+0|become
+0|during
+0|government
+0|advertisement
+0|inch
+0|enough
+0|piece
+0|cheer
+0|monitor
+0|general
+0|video
+0|although
+0|method
+0|technology
+0|greet
+0|choice
+0|spoil
+0|winner
+0|service
+0|snake
+0|sadly
+0|main
+0|broom
+0|ever
+0|huge
+0|increase
+0|recite
+0|fair
+0|comfortable
+0|part-time
+0|metre
+0|hike
+0|suggestion
+0|rather
+0|second
+0|pilot
+0|rat
+0|umbrella
+0|try
+0|broken
+0|paint
+0|airline
+0|pronunciation
+0|headmaster
+0|lie
+0|discovery
+0|without
+0|crayon
+0|relation
+0|return
+0|gesture
+0|just
+0|already
+0|towards
+0|museum
+0|bowl
+0|vegetable
+0|wet
+0|against
+0|menu
+0|amazing
+0|diagram
+0|mist
+0|allow
+0|piano
+0|sign
+0|weak
+0|position
+0|surfer
+0|dinner
+0|sure
+0|printer
+0|gym
+0|blood
+0|teamwork
+0|imagine
+0|porridge
+0|physics
+0|inventor
+0|path
+0|control
+0|degree
+0|wake
+0|flat
+0|exciting
+0|need
+0|death
+0|honour
+0|impossible
+0|pour
+0|passage
+0|print
+0|director
+0|supply
+0|handbag
+0|match
+0|ski
+0|wonder
+0|outside
+0|solve
+0|press
+0|honest
+0|zebra
+0|about
+0|ad
+0|aeroplane
+0|afraid
+0|Africa
+0|after
+0|afternoon
+0|again
+0|age
+0|ago
+0|air
+0|airport
+0|all
+0|also
+0|America
+0|and
+0|angry
+0|animal
+0|another
+0|answer
+0|any
+0|anybody
+0|anyone
+0|anything
+0|anytime
+0|anywhere
+0|apple
+0|April
+0|arm
+0|art
+0|as
+0|ask
+0|at
+0|August
+0|aunt
+0|Australia
+0|Australian
+0|autumn
+0|away
+0|baby
+0|back
+0|bad
+0|bag
+0|ball
+0|banana
+0|bank
+0|basket
+0|basketball
+0|be
+0|bear
+0|beautiful
+0|because
+0|bed
+0|bedroom
+0|beef
+0|beeper
+0|beer
+0|before
+0|behind
+0|Berlin
+0|best
+0|best-seller
+0|between
+0|big
+0|bike
+0|bird
+0|birthday
+0|black
+0|blackboard
+0|blue
+0|boat
+0|boating
+0|body
+0|book
+0|born
+0|Boston
+0|both
+0|bottle
+0|box
+0|boy
+0|Brazil
+0|bread
+0|breakfast
+0|brightly
+0|Britain
+0|British
+0|brother
+0|building
+0|bus
+0|business
+0|busy
+0|but
+0|buy
+0|by
+0|bye
+0|cake
+0|can
+0|Canada
+0|Canadian
+0|canoe
+0|cap
+0|car
+0|card
+0|careful
+0|carefully
+0|cat
+0|certainly
+0|chair
+0|cheap
+0|chicken
+0|child
+0|children
+0|China
+0|Chinese
+0|Christmas
+0|city
+0|class
+0|classmate
+0|classroom
+0|cleaner
+0|clearly
+0|clock
+0|close
+0|clothes
+0|club
+0|coat
+0|coin
+0|cold
+0|colour
+0|come
+0|cook
+0|cow
+0|cry
+0|cup
+0|dad
+0|dance
+0|danger
+0|dark
+0|daughter
+0|day
+0|dead
+0|dear
+0|December
+0|desk
+0|die
+0|different
+0|difficult
+0|do
+0|doctor
+0|dog
+0|dollar
+0|door
+0|down
+0|dress
+0|drink
+0|drive
+0|driver
+0|each
+0|ear
+0|earlier
+0|early
+0|earth
+0|east
+0|easy
+0|eat
+0|egg
+0|eight
+0|eighteenth
+0|eighth
+0|elephant
+0|eleven
+0|else
+0|e-mail
+0|empty
+0|England
+0|English
+0|Englishman
+0|eraser
+0|evening
+0|every
+0|everybody
+0|everyone
+0|everything
+0|everywhere
+0|exam
+0|example
+0|excuse
+0|explorer
+0|eye
+0|face
+0|factory
+0|family
+0|famous
+0|far
+0|farm
+0|farmer
+0|farming
+0|farmland
+0|farther
+0|farthest
+0|fast
+0|fat
+0|father
+0|February
+0|feel
+0|few
+0|fifteen
+0|fifth
+0|fifty
+0|film
+0|find
+0|fine
+0|first
+0|fish
+0|fishing
+0|five
+0|floor
+0|flower
+0|fly
+0|food
+0|foot
+0|football
+0|for
+0|foreigner
+0|forest
+0|found
+0|four
+0|fourteen
+0|fox
+0|France
+0|French
+0|Frenchman
+0|Friday
+0|friend
+0|frightened
+0|from
+0|front
+0|fruit
+0|game
+0|garden
+0|gate
+0|German
+0|Germany
+0|get
+0|girl
+0|glad
+0|glass
+0|go
+0|good
+0|goodbye
+0|grandfather
+0|grandma
+0|grandmother
+0|grandpa
+0|great
+0|green
+0|group
+0|grow
+0|hair
+0|half
+0|half-way
+0|hand
+0|happily
+0|happy
+0|hard
+0|hard-working
+0|hat
+0|have
+0|he
+0|head
+0|health
+0|healthily
+0|healthy
+0|hear
+0|heart
+0|heavily
+0|heavy
+0|help
+0|her
+0|here
+0|hers
+0|herself
+0|high
+0|hill
+0|him
+0|himself
+0|his
+0|history
+0|holiday
+0|home
+0|hometown
+0|homework
+0|hope
+0|horse
+0|hospital
+0|hot
+0|hotel
+0|hour
+0|house
+0|housework
+0|how
+0|however
+0|human
+0|hundred
+0|hungry
+0|hurry
+0|husband
+0|I
+0|ice
+0|idea
+0|if
+0|ill
+0|important
+0|in
+0|India
+0|Indian
+0|instead
+0|interest
+0|interested
+0|interesting
+0|Internet
+0|into
+0|island
+0|it
+0|Italian
+0|Italy
+0|its
+0|jacket
+0|January
+0|Japan
+0|Japanese
+0|jeep
+0|job
+0|join
+0|July
+0|jumper
+0|June
+0|key
+0|kill
+0|kilo
+0|kind
+0|kind-hearted
+0|kite
+0|knife
+0|knock
+0|know
+0|laboratory
+0|lady
+0|land
+0|language
+0|large
+0|last
+0|late
+0|later
+0|left
+0|leg
+0|lend
+0|less
+0|lesson
+0|let
+0|letter
+0|life
+0|lifeboat
+0|lifetime
+0|like
+0|listen
+0|little
+0|living-room
+0|London
+0|long
+0|look
+0|lost
+0|lot
+0|loudspeaker
+0|love
+0|low
+0|luck
+0|luckily
+0|lucky
+0|lunch
+0|Macao
+0|machine
+0|madam
+0|man
+0|many
+0|map
+0|March
+0|maybe
+0|me
+0|meal
+0|meat
+0|meet
+0|meeting
+0|member
+0|microcomputer
+0|mid-autumn
+0|middle
+0|milk
+0|mine
+0|minibus
+0|minute
+0|Miss
+0|missing
+0|modem
+0|Monday
+0|money
+0|monkey
+0|month
+0|moon
+0|mooncake
+0|moonlight
+0|more
+0|morning
+0|Moscow
+0|mother
+0|mountain
+0|mouth
+0|mouth-to-mouth
+0|move
+0|moving
+0|much
+0|mum
+0|mummy
+0|music
+0|must
+0|my
+0|myself
+0|name
+0|near
+0|new
+0|next
+0|nice
+0|nine
+0|ninth
+0|nobody
+0|noon
+0|nor
+0|north
+0|northeast
+0|northern
+0|northwest
+0|nothing
+0|November
+0|now
+0|number
+0|o'clock
+0|October
+0|old
+0|Olympic
+0|on
+0|one
+0|one-way
+0|only
+0|onto
+0|open
+0|or
+0|orange
+0|other
+0|our
+0|ours
+0|ourselves
+0|out
+0|pair
+0|paper
+0|parent
+0|park
+0|past
+0|pea
+0|pen
+0|pencil
+0|pencil-box
+0|people
+0|photo
+0|pig
+0|player
+0|playhouse
+0|please
+0|poor
+0|program
+0|put
+0|rain
+0|red
+0|river
+0|roller-skating
+0|Rome
+0|room
+0|ruler
+0|run
+0|runner
+0|Russian
+0|sad
+0|salt
+0|same
+0|sand
+0|Saturday
+0|say
+0|school
+0|schoolbag
+0|schoolboy
+0|schoolyard
+0|Scotland
+0|sea
+0|seat
+0|see
+0|sell
+0|seller
+0|September
+0|seven
+0|she
+0|sheep
+0|ship
+0|shirt
+0|shoe
+0|shop
+0|shopping
+0|short
+0|should
+0|showery
+0|side
+0|sing
+0|singer
+0|sir
+0|sister
+0|sit
+0|six
+0|skirt
+0|sky
+0|sleep
+0|slowly
+0|small
+0|smile
+0|snow
+0|snowman
+0|so
+0|soccer
+0|soldier
+0|some
+0|somebody
+0|someday
+0|someone
+0|something
+0|sometime
+0|sometimes
+0|somewhere
+0|son
+0|song
+0|soon
+0|sorry
+0|so-so
+0|south
+0|speak
+0|speaker
+0|sport
+0|spring
+0|stand
+0|star
+0|still
+0|stop
+0|store
+0|story
+0|strange
+0|street
+0|strong
+0|student
+0|successfully
+0|such
+0|sugar
+0|summer
+0|sun
+0|Sunday
+0|sunglasses
+0|supper
+0|sweater
+0|Sweden
+0|Swedish
+0|swim
+0|Sydney
+0|table
+0|talk
+0|tall
+0|taxi
+0|tea
+0|teach
+0|teacher
+0|team
+0|teapot
+0|telephone
+0|tell
+0|ten
+0|than
+0|thank
+0|thanks
+0|thanksgiving
+0|that
+0|the
+0|their
+0|theirs
+0|them
+0|themselves
+0|then
+0|there
+0|these
+0|they
+0|thing
+0|think
+0|third
+0|thirteen
+0|thirty
+0|this
+0|those
+0|three
+0|Thursday
+0|ticket
+0|tiger
+0|time
+0|Titanic
+0|to
+0|today
+0|Tokyo
+0|tomato
+0|tomorrow
+0|tonight
+0|too
+0|tool
+0|Toronto
+0|town
+0|tree
+0|trousers
+0|tryout
+0|T-shirt
+0|Tuesday
+0|twelfth
+0|twelve
+0|twentieth
+0|twenty-first
+0|twice
+0|two
+0|two-story
+0|UK
+0|uncle
+0|under
+0|undersea
+0|up
+0|us
+0|USA
+0|use
+0|usually
+0|very
+0|vet
+0|volleyball
+0|wait
+0|waiter
+0|walk
+0|wall
+0|want
+0|war
+0|Washington
+0|watch
+0|watchtower
+0|water
+0|way
+0|we
+0|weather
+0|Wednesday
+0|week
+0|weekend
+0|well
+0|west
+0|western
+0|what
+0|when
+0|where
+0|which
+0|white
+0|who
+0|whom
+0|whose
+0|why
+0|wife
+0|will
+0|wind
+0|window
+0|winter
+0|with
+0|woman
+0|word
+0|work
+0|worker
+0|world
+0|write
+0|writer
+0|wrong
+0|year
+0|yellow
+0|yen
+0|yesterday
+0|you
+0|young
+0|your
+0|yours
+0|yourself
+0|yourselves
+0|yo-yo
+0|zero
+0|zoo
+0|a bit of ...
+0|a copy of ...
+0|a cup of ...
+0|a few
+0|a kind of ...
+0|a little
+0|a lot of ...
+0|a number of ...
+0|a piece of ...
+0|above all
+0|according to
+0|achieve one's dream
+0|across from ...
+0|add ... to ...
+0|after a while
+0|after all
+0|again and again
+0|agree on
+0|agree to
+0|agree with sb.
+0|aim at
+0|all by oneself
+0|all day
+0|all day long
+0|all in all
+0|all kinds of ...
+0|all over
+0|all over the world
+0|all around the world
+0|all right
+0|all the same
+0|all the time
+0|all year round
+0|along with ...
+0|and so on
+0|answer the phone
+0|apologize to sb.
+0|apologize for sth.
+0|argue about
+0|argue with sb.
+0|arrive at
+0|as a result of ...
+0|as for ...
+0|as if
+0|as though
+0|as long as
+0|as soon as possible
+0|as soon as
+0|as usual
+0|as well as
+0|as well
+0|ask for
+0|ask one's permission
+0|at breakfast
+0|at lunch
+0|at supper
+0|at first
+0|at last
+0|at least
+0|at night
+0|at noon
+0|at once
+0|at present
+0|at school
+0|at table
+0|at the age of ...
+0|at the back of ...
+0|at the beginning of ...
+0|at the doctor's
+0|at the edge of ...
+0|at the end of ...
+0|at the foot of ...
+0|at the moment
+0|at the same time
+0|at the sight of ...
+0|at work
+0|at the corner
+0|in the corner
+0|at the front of ...
+0|in the front of ...
+0|at weekends
+0|on weekends
+0|be able to
+0|be about to
+0|be afraid of sth.
+0|be afraid of doing sth.
+0|be amazed at ...
+0|be angry with sb.
+0|be away from
+0|be bad for ...
+0|be based on ...
+0|be born in
+0|be born on
+0|be busy with sth.
+0|be busy doing sth.
+0|be close to
+0|be covered with ...
+0|be crowded with ...
+0|be different from ...
+0|be experienced in ...
+0|be familiar to ...
+0|be famous as ...
+0|be famous for ...
+0|be far from ...
+0|be fed up with
+0|be filled in ...
+0|be filled with ...
+0|be fit for
+0|be fond of
+0|be free from ...
+0|be friendly to ...
+0|be frightened to do sth.
+0|be full of
+0|be good at
+0|be good for ...
+0|be ill in bed
+0|be interested in
+0|be keen on
+0|be kind to
+0|be known as ...
+0|be late for ...
+0|be linked to
+0|be mad at
+0|be made from
+0|be made of
+0|be made to do sth.
+0|be made up of
+0|be moved by
+0|be open to ...
+0|be pleased with
+0|be poor in
+0|be proud of
+0|be rich in ...
+0|be sad for
+0|be short for ...
+0|be short of
+0|be similar to ...
+0|be sorry for
+0|be strict in
+0|be strict with sb.
+0|be supposed to do
+0|be sure to do
+0|be surprised at
+0|be talented in
+0|be thankful to sb.
+0|be tired of
+0|be up to
+0|be used as
+0|be used for ...
+0|be used to do
+0|be weak in ...
+0|be willing to do
+0|be worn out
+0|be worried about
+0|be worth doing
+0|be used to doing
+0|get used to doing
+0|because of
+0|before long
+0|beg sb. to do sth.
+0|begin with
+0|believe in
+0|belong to
+0|between ... and
+0|borrow ... from
+0|both ... and ...
+0|break down
+0|break into pieces
+0|break into
+0|break off
+0|break out
+0|break the record
+0|break the rule
+0|break up
+0|bring out
+0|bring up
+0|bring ... to ...
+0|build up
+0|by accident
+0|by chance
+0|by means of
+0|by mistake
+0|by oneself
+0|by the end of
+0|by the time
+0|by the way
+0|by then
+0|by turns
+0|call at sb.
+0|call the police
+0|call up
+0|calm down
+0|can't help doing
+0|care about
+0|care for
+0|carry on
+0|carry out
+0|catch cold
+0|catch a cold
+0|catch up with
+0|change one's mind
+0|chat with
+0|check in
+0|check out
+0|cheer up
+0|clean out
+0|clean up
+0|clear up
+0|climb up
+0|close down
+0|come across
+0|come along
+0|come and go
+0|come by
+0|come down
+0|come from
+0|come in
+0|come on
+0|come out
+0|come over
+0|come to an end
+0|come to know
+0|come to life
+0|come true
+0|come up with
+0|communicate with
+0|compare ... to
+0|compare ... with ...
+0|complain about
+0|concentrate on
+0|connect ... with ...
+0|consist of
+0|cut down
+0|cut in line
+0|cut off
+0|cut up
+0|day after day
+0|day by day
+0|deal with
+0|decide on
+0|depend on
+0|develop a film
+0|die from
+0|die of
+0|die out
+0|differ from
+0|discuss about
+0|divide into
+0|do business
+0|do harm to
+0|do one's best
+0|do sb. a favor
+0|do sb. good
+0|do some exercises
+0|do some shopping
+0|do well in
+0|do with
+0|dozens of
+0|dream of
+0|dress up
+0|drop by
+0|drop in
+0|drop out
+0|dry up
+0|due to
+0|early or late
+0|earn one's living
+0|eat up
+0|either ... or ...
+0|encourage sb. to do
+0|end up with
+0|end up
+0|enjoy oneself
+0|enter for
+0|enter into
+0|even if
+0|even though
+0|ever since
+0|exchange ... with ...
+0|face to face
+0|fail in sth.
+0|fall behind
+0|fall ill
+0|fall in love with
+0|fall into
+0|fall off
+0|fall over
+0|far away
+0|far away from
+0|feed on
+0|feel like doing
+0|fight about
+0|fight for
+0|fill in
+0|find out
+0|first of all
+0|fix up
+0|for a long time
+0|for ever
+0|for example
+0|for free
+0|for instance
+0|for sale
+0|for sure
+0|for the first time
+0|for the purpose of ...
+0|force sb. to do
+0|forget doing sth.
+0|forget to do sth.
+0|free from
+0|from now on
+0|from then on
+0|from time to time
+0|get a ride
+0|get along
+0|get on
+0|get along with
+0|get on with
+0|get away
+0|get back
+0|get down to
+0|get dressed
+0|get in
+0|get in a word
+0|get in the way
+0|get into trouble
+0|get into trouble with ...
+0|get lost
+0|get off
+0|get on well with ...
+0|get out of
+0|get out
+0|get over
+0|get rid of
+0|get to
+0|get together
+0|get up
+0|get mad at
+0|get married with
+0|be married with
+0|get ready for
+0|get ready to do
+0|be ready for
+0|be ready to do
+0|give a concert
+0|give a hand
+0|give a talk
+0|give advice to ...
+0|give away
+0|give back
+0|give birth to
+0|give in
+0|give off
+0|give out
+0|give reasons for ...
+0|give sb. a call
+0|give sb. a hand
+0|give up
+0|go abroad
+0|go ahead
+0|go along with
+0|go along ...
+0|go back home
+0|go back
+0|go by
+0|go down
+0|go fishing
+0|go shopping
+0|go for a walk
+0|go hiking
+0|go in for
+0|go on a diet
+0|go on to do sth.
+0|go on with sth.
+0|go on doing sth.
+0|go on a picnic
+0|have a picnic
+0|go out of one's way to do
+0|go out
+0|go over
+0|go sightseeing
+0|go through
+0|go to sleep
+0|go to the movies
+0|go well with
+0|go wrong
+0|graduate from
+0|green hand
+0|grow up
+0|had better do sth.
+0|had better not do sth.
+0|hand in hand
+0|hand in
+0|hand out
+0|hand over
+0|hand up
+0|hang out
+0|hang up
+0|happen to do
+0|happen to sb.
+0|have a break
+0|have a good time
+0|have a look at
+0|have a meeting
+0|have a rest
+0|have fun
+0|have no idea
+0|have no mind to do
+0|have no time to do
+0|have to
+0|have trouble doing
+0|have a high fever
+0|got a high fever
+0|have a bath
+0|take a bath
+0|have a class
+0|have a lesson
+0|take a class
+0|take a lesson
+0|hear from
+0|hear of
+0|hear about
+0|help do sth.
+0|help to do sth.
+0|help oneself
+0|here and there
+0|hold a sports meeting
+0|hold on to
+0|hold on
+0|hold one's breath
+0|hold up
+0|hope to do
+0|how far
+0|how long
+0|how many
+0|how much
+0|how often
+0|how old
+0|how soon
+0|hundreds of
+0|hurry up
+0|if not
+0|if only
+0|if possible
+0|in a hurry
+0|in a low voice
+0|in a loud voice
+0|in a tired voice
+0|in a mess
+0|in a minute
+0|in a word
+0|in addition
+0|in all
+0|in another way
+0|in case
+0|in charge of
+0|in common
+0|in danger
+0|in English
+0|in fact
+0|in favor of
+0|in front of
+0|in general
+0|in groups
+0|in hospital
+0|in hunger
+0|in no time
+0|in one's fifties
+0|in one's opinion
+0|in order
+0|in order to
+0|in public
+0|in red
+0|in return
+0|in safety
+0|in search of
+0|in short
+0|in spite of
+0|in style
+0|out of style
+0|in surprise
+0|in the 1970s
+0|in the dark
+0|in the day
+0|in the end
+0|in the form of ...
+0|in the future
+0|in the habit of ...
+0|in the middle of
+0|in the open air
+0|in the past
+0|in the past few years
+0|in this way
+0|in time
+0|in trouble
+0|in turn
+0|instead of
+0|join in
+0|jump off
+0|just a moment
+0|just now
+0|just then
+0|keep a diary
+0|keep away from
+0|keep doing sth.
+0|keep fit
+0|keep in mind
+0|keep in touch with
+0|keep off
+0|keep out
+0|keep quiet
+0|keep secrets
+0|keep up with
+0|keep healthy
+0|stay healthy
+0|keep sb. from doing sth.
+0|kill the time
+0|kind of
+0|knock at the door
+0|knock into
+0|knock over
+0|know about
+0|later on
+0|laugh at
+0|lead to
+0|learn about
+0|learn by oneself
+0|learn of
+0|learn from ...
+0|leave a message
+0|leave alone
+0|leave for
+0|lend to
+0|less and less
+0|less than
+0|let out
+0|let down
+0|lie down
+0|lie in
+0|light up
+0|line up
+0|listen to
+0|live in
+0|live on
+0|lived by
+0|long before
+0|long for
+0|look after
+0|look around
+0|look at
+0|look down on ...
+0|look for
+0|look forward to
+0|look into
+0|look like
+0|look out of
+0|look out
+0|look over
+0|look through
+0|look up
+0|lose hope
+0|lose one's job
+0|lose one's life
+0|lose weight
+0|lots of
+0|major in
+0|make a choice
+0|make a decision
+0|make a film
+0|make a fire
+0|make a living
+0|make a mistake
+0|make a phone call to
+0|make a suggestion
+0|make contributions to
+0|make faces
+0|make friends with
+0|make fun of
+0|make it
+0|make money
+0|make note of
+0|make one's living
+0|make one's way to
+0|make out
+0|make progress
+0|make sure
+0|make the bed
+0|make up
+0|make up one's mind
+0|manage to do
+0|marry sb.
+0|match ... with ...
+0|mean to do
+0|meet the needs of
+0|meet with
+0|millions of
+0|mistake for
+0|mix up
+0|mop the floor
+0|more and more
+0|more or less
+0|more than
+0|most of
+0|move to
+0|neck and neck
+0|neither ... nor
+0|never before
+0|never mind
+0|next to
+0|no longer
+0|no matter how
+0|no wonder
+0|no ... but ...
+0|not only ... but also ...
+0|not at all
+0|not ... until
+0|nothing but
+0|now and then
+0|now that ...
+0|of course
+0|of one's own
+0|on a visit to
+0|on average
+0|on board
+0|on business
+0|on display
+0|on duty
+0|on earth
+0|on fire
+0|on foot
+0|on holiday
+0|on one's side
+0|on sale
+0|on show
+0|on the earth
+0|on the map
+0|on the one hand ..., on the other hand ...
+0|on the playground
+0|on the top of
+0|on the way to
+0|on one's way to
+0|on top of
+0|on vacation
+0|on watch
+0|on weekdays
+0|once every year
+0|once in a while
+0|once more
+0|once upon a time
+0|one after another
+0|one another
+0|one by one
+0|one ... another
+0|one ... the other
+0|open up
+0|or so
+0|out of breath
+0|out of order
+0|out of work
+0|over and over again
+0|over there
+0|part of ...
+0|pass away
+0|pass on ... to
+0|pass the time
+0|pass through
+0|pay off
+0|pay attention to
+0|pay no attention to
+0|pay for
+0|pick out
+0|pick up
+0|places of interest
+0|play a joke on
+0|play a role in ...
+0|play a trick on
+0|play the piano
+0|play with
+0|plenty of
+0|point out
+0|point to
+0|pour ... into ...
+0|practice doing
+0|practice with
+0|praise sb. for sth.
+0|prefer doing to doing
+0|prefer to do rather than do
+0|prevent ... from doing
+0|prevent ... from
+0|pros and cons
+0|protect ... from
+0|provide sb. with sth.
+0|provide sth. for sb.
+0|pull down
+0|pull out
+0|put an eye on ...
+0|put away
+0|put down
+0|put forward
+0|put off
+0|put on
+0|be on
+0|put out
+0|put up with
+0|put up
+0|put into
+0|put ... to use
+0|quarrel about ...
+0|quarrel with ...
+0|quite a few
+0|rather than
+0|reach for
+0|reach out
+0|receive ... from ...
+0|refer to
+0|refuse to do sth.
+0|regard ... as ...
+0|rely on
+0|remember doing sth.
+0|remind sb. to do
+0|remind of
+0|result from
+0|right away
+0|right now
+0|ring up
+0|run after
+0|run off
+0|run out of
+0|rush hour
+0|rush out of
+0|save one's life
+0|save up
+0|say hello to
+0|say to oneself
+0|search for
+0|see a film
+0|see sb. off
+0|sell out
+0|send for sb.
+0|send up
+0|send ... to ...
+0|set ... on fire
+0|set an example
+0|set off
+0|set up one's mind
+0|set up
+0|set the alarm clock
+0|shake hands with
+0|share with
+0|shortly after
+0|shoulder to shoulder
+0|shout at
+0|show interest in
+0|show off
+0|show sb. around
+0|show sb. sth.
+0|show sb. the way
+0|show the ticket
+0|show up
+0|shut up
+0|side by side
+0|sing a song
+0|sit down
+0|slow down
+0|so as to
+0|so far
+0|so that
+0|so ... that ...
+0|solve the problem
+0|some time
+0|sooner or later
+0|sound like
+0|sound sleep
+0|speak highly of
+0|speak of
+0|speak to
+0|speed up
+0|stand by
+0|stand for
+0|stand up
+0|start out
+0|start to do
+0|stay away from
+0|stay up
+0|step by step
+0|stick to
+0|stop doing
+0|stop ... from
+0|study for
+0|succeed in
+0|such a fine day
+0|suffer from
+0|sum up
+0|surf the Internet
+0|take part in
+0|take an active part in
+0|take a deep breath
+0|take a message for sb.
+0|take a ride
+0|take a risk
+0|take a vacation
+0|take action
+0|take advantage of
+0|take an exam
+0|take an interest in
+0|take away
+0|take back
+0|take care of
+0|take care
+0|take charge of
+0|take exercise
+0|take hold of
+0|take in
+0|take it easy
+0|take note of ...
+0|take notes
+0|take off
+0|take one's seat
+0|take one's temperature
+0|take one's time
+0|take one's advice
+0|take out of
+0|take out
+0|take place
+0|take pride in
+0|take sb.'s place
+0|take some medicine
+0|take sth. with sb.
+0|take the place of
+0|take up
+0|talk about
+0|talk to sb.
+0|talk with sb.
+0|teach sb. a lesson
+0|tell a lie
+0|tell a story
+0|tell the truth
+0|tell ... from
+0|thanks for
+0|thanks to
+0|the key to ...
+0|the more ... the better
+0|the same as
+0|think about
+0|think of
+0|think out
+0|think over
+0|think up
+0|thousands of ...
+0|three times a week
+0|throw about
+0|throw away
+0|tidy up
+0|tie up
+0|to be honest
+0|to one's disappointment
+0|to one's surprise
+0|to some extent
+0|to start with
+0|to tell the truth
+0|too much
+0|too ... to ...
+0|treat with
+0|treat ... as ...
+0|try on
+0|try one's best
+0|try out
+0|try to do ...
+0|turn around
+0|turn down
+0|turn left
+0|turn off
+0|turn on
+0|turn out
+0|turn over
+0|turn up
+0|turn ... into ...
+0|up and down
+0|upside down
+0|use up
+0|used to do sth.
+0|wait for
+0|wait in line
+0|wake up
+0|walk down
+0|want to do ...
+0|want sb. to do ...
+0|warn sb. of ...
+0|wash up
+0|watch a match
+0|watch out for ...
+0|watch TV
+0|welcome to ...
+0|what if
+0|what's more
+0|What's up?
+0|wish sb. do sth.
+0|with great care
+0|with one voice
+0|with one's own eyes
+0|with pleasure
+0|with the help of
+0|with the purpose of
+0|without permission
+0|work on
+0|wonder if ...
+0|work for ...
+0|work out
+0|worry about
+0|would like to
+0|would love to
+0|would rather ... than
+0|write down
+0|write to sb.
+0|year after year
+0|year by year
+0|year in and year out
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 2821
+# Total Entries Extracted: 2821
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 2821
+# -------------------------------

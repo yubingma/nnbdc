@@ -1,0 +1,284 @@
+0|smell
+0|smelled
+0|smelt
+0|soft
+0|sour
+0|cookie
+0|mm
+0|pizza
+0|lovely
+0|done
+0|try
+0|have a try
+0|pie
+0|sound
+0|sweet tooth
+0|salt
+0|jam
+0|for
+0|favourite
+0|ear
+0|glasses
+0|jeans
+0|nervous
+0|fair
+0|pretty
+0|proud
+0|be proud of ...
+0|stranger
+0|message
+0|sb. can't wait
+0|hobby
+0|at school
+0|in
+0|mark
+0|love
+0|ever
+0|enter
+0|competition
+0|prize
+0|first prize
+0|dream
+0|dreamed
+0|dreamt
+0|afford
+0|write about
+0|make up
+0|invite
+0|move
+0|send
+0|sent
+0|Germany
+0|France
+0|tower
+0|ancient
+0|king
+0|queen
+0|Arabic
+0|way
+0|mix
+0|miss
+0|count
+0|count down
+0|earth
+0|moon
+0|news
+0|planet
+0|reach
+0|yet
+0|just
+0|model
+0|spaceship
+0|project
+0|no problem
+0|latest
+0|on
+0|discover
+0|astronaut
+0|space travel
+0|none
+0|environment
+0|that
+0|solar
+0|system
+0|solar system
+0|group
+0|galaxy
+0|universe
+0|light
+0|impossible
+0|out
+0|communicate
+0|cough
+0|fever
+0|headache
+0|stomach
+0|ache
+0|stomach ache
+0|toothache
+0|ill
+0|this
+0|since
+0|cold
+0|catch a cold
+0|take
+0|took
+0|taken
+0|take sb.'s temperature
+0|fast food
+0|health
+0|well
+0|heart
+0|active
+0|pet
+0|member
+0|take part
+0|take part in sth.
+0|condition
+0|in excellent condition
+0|sleepy
+0|then
+0|daily
+0|weak
+0|illness
+0|exercise
+0|awful
+0|feel awful
+0|all over
+0|perhaps
+0|cartoon
+0|handsome
+0|smart
+0|sky
+0|fight
+0|fought
+0|cool
+0|hero
+0|humorous
+0|can't help doing sth.
+0|laugh
+0|lesson
+0|orange-and-white
+0|ugly
+0|win the heart of sb.
+0|schoolbag
+0|lead
+0|led
+0|clever
+0|as
+0|mess
+0|heaven
+0|expect
+0|artist
+0|invent
+0|copy
+0|black-and-white
+0|own
+0|private
+0|create
+0|satisfy
+0|fan
+0|stamp
+0|tidy up
+0|shelf
+0|have a look
+0|coin
+0|note
+0|pound
+0|dollar
+0|must
+0|valuable
+0|with
+0|value
+0|person
+0|interest
+0|skill
+0|activity
+0|sailing
+0|encourage
+0|come out
+0|result
+0|as a result
+0|pleasure
+0|success
+0|list
+0|make a list
+0|crazy
+0|at the end of ...
+0|shorts
+0|trousers
+0|sunglasses
+0|homestay
+0|weigh
+0|total
+0|weight
+0|passport
+0|culture
+0|at the same time
+0|last
+0|depend
+0|depend on
+0|provide
+0|test
+0|progress
+0|guest
+0|daily life
+0|form
+0|friendship
+0|stay in touch
+0|stay in touch with sb.
+0|prefer
+0|certain
+0|fill
+0|fill out
+0|hardly
+0|take up
+0|point out
+0|sights
+0|thirsty
+0|at the top of ...
+0|waste
+0|square
+0|kilometre
+0|shape
+0|human
+0|wake
+0|woke
+0|woken
+0|wake sb. up
+0|somebody
+0|about
+0|path
+0|pull
+0|freshwater
+0|helpline
+0|separate
+0|explain
+0|mention
+0|refuse
+0|treat
+0|herself
+0|whether
+0|lonely
+0|regret
+0|patient
+0|introduce
+0|join in
+0|silence
+0|in silence
+0|pass
+0|bright
+0|treasure
+0|day by day
+0|trust
+0|include
+0|circle
+0|stick
+0|stuck
+0|glue
+0|suggestion
+0|director
+0|show
+0|around
+0|show sb. around
+0|on air
+0|avoid
+0|background
+0|national
+0|international
+0|presenter
+0|interview
+0|seem
+0|listener
+0|in person
+0|part-time
+0|article
+0|studio
+0|purpose
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 277
+# Total Entries Extracted: 277
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 277
+# -------------------------------

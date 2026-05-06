@@ -1,0 +1,509 @@
+0|daily
+0|routine
+0|tooth
+0|get up
+0|go to bed
+0|sleep
+0|go to school
+0|make one's bed
+0|take a shower
+0|wash
+0|face
+0|after-school
+0|activity
+0|drum
+0|never
+0|alone
+0|seldom
+0|a lot of
+0|always
+0|news
+0|sometimes
+0|finish
+0|early
+0|match
+0|note
+0|cinema
+0|important
+0|fire
+0|firefighter
+0|dangerous
+0|difficult
+0|easy
+0|interesting
+0|safe
+0|training
+0|later
+0|eat
+0|because
+0|km
+0|kilometre
+0|not ... at all
+0|rest
+0|practise
+0|drive
+0|firefighting
+0|communicate
+0|free
+0|if
+0|or
+0|someone
+0|have to
+0|try
+0|best
+0|try one's best
+0|keep
+0|false
+0|safety
+0|bicycle
+0|walk
+0|storm
+0|travel
+0|online
+0|during
+0|bad
+0|lightning
+0|stay
+0|phone
+0|kid
+0|mean
+0|point
+0|have a point
+0|address
+0|smoke
+0|bath
+0|away
+0|stay away from
+0|minute
+0|need
+0|more
+0|star
+0|dress
+0|violin
+0|chore
+0|clean
+0|dust
+0|feed
+0|sweep
+0|floor
+0|rubbish
+0|water
+0|busy
+0|cup
+0|anything
+0|worry
+0|in a minute
+0|ring
+0|knock
+0|candle
+0|wonderful
+0|dish
+0|nose
+0|communication
+0|tool
+0|instant
+0|message
+0|instant message
+0|text
+0|send
+0|receive
+0|while
+0|for a while
+0|hey
+0|slow
+0|just
+0|website
+0|bank
+0|bus stop
+0|museum
+0|police
+0|station
+0|police station
+0|post
+0|office
+0|post office
+0|train
+0|underground
+0|way
+0|excuse
+0|cross
+0|street
+0|road
+0|corner
+0|miss
+0|opposite
+0|across
+0|coffee
+0|town
+0|square
+0|gym
+0|drink
+0|banana
+0|beef
+0|carrot
+0|chicken
+0|grape
+0|ham
+0|milk
+0|pear
+0|potato
+0|tomato
+0|watermelon
+0|fruit
+0|vegetable
+0|meat
+0|price
+0|weight
+0|cent
+0|dollar
+0|pound
+0|kilo
+0|kilogramme
+0|kg
+0|bill
+0|change
+0|south
+0|market
+0|unit
+0|unit price
+0|total
+0|fresh
+0|customer
+0|money
+0|cost
+0|any
+0|wallet
+0|restaurant
+0|menu
+0|item
+0|hamburger
+0|hot dog
+0|ice cream
+0|salad
+0|sandwich
+0|soup
+0|tea
+0|chocolate
+0|healthy
+0|may
+0|order
+0|would
+0|sir
+0|piece
+0|bowl
+0|cone
+0|bread
+0|butter
+0|cheese
+0|cookie
+0|egg
+0|noodle
+0|pancake
+0|rice
+0|salt
+0|sugar
+0|thought
+0|food for thought
+0|top
+0|secret
+0|kind
+0|swimmer
+0|meal
+0|different
+0|heavy
+0|person
+0|than
+0|snack
+0|junk
+0|junk food
+0|report
+0|most
+0|however
+0|group
+0|season
+0|weather
+0|autumn
+0|spring
+0|summer
+0|winter
+0|cloudy
+0|cold
+0|rainy
+0|snowy
+0|sunny
+0|warm
+0|windy
+0|month
+0|January
+0|February
+0|March
+0|April
+0|May
+0|June
+0|August
+0|September
+0|October
+0|November
+0|December
+0|wear
+0|overcoat
+0|glove
+0|scarf
+0|snow
+0|tourist
+0|fly
+0|hard
+0|T-shirt
+0|shorts
+0|skirt
+0|palace
+0|remember
+0|dry
+0|spend
+0|leaf
+0|will
+0|make sure
+0|trainer
+0|comfortable
+0|colourful
+0|around
+0|cloud
+0|sun
+0|wind
+0|tomorrow
+0|sightseeing
+0|beach
+0|visitor
+0|holiday
+0|camp
+0|tour
+0|learn
+0|abroad
+0|eighth
+0|second
+0|fifth
+0|ninth
+0|guess
+0|exciting
+0|fourth
+0|seventh
+0|beautiful
+0|mountain
+0|clear
+0|last
+0|trip
+0|sea
+0|penfriend
+0|nest
+0|tonight
+0|rock
+0|concert
+0|postcard
+0|project
+0|party
+0|example
+0|plan
+0|flower
+0|village
+0|fairytale
+0|enjoy
+0|stone
+0|cave
+0|hiking
+0|island
+0|sand
+0|reason
+0|festival
+0|skate
+0|ski
+0|primary
+0|primary school
+0|third
+0|sixth
+0|tenth
+0|cheap
+0|close
+0|dirty
+0|expensive
+0|far
+0|hometown
+0|building
+0|neighbour
+0|friendly
+0|still
+0|large
+0|flat
+0|traffic
+0|either
+0|truck
+0|yesterday
+0|fast-food restaurant
+0|open
+0|ago
+0|centre
+0|candy
+0|true
+0|feeling
+0|afraid
+0|angry
+0|excited
+0|nervous
+0|sad
+0|story
+0|laugh
+0|quiet
+0|Ms
+0|introduce
+0|noisy
+0|smile
+0|cry
+0|difference
+0|memory
+0|loud
+0|forget
+0|another
+0|slowly
+0|junior
+0|junior high school
+0|pay
+0|attention
+0|pay attention
+0|graduate
+0|middle
+0|anniversary
+0|writer
+0|proud
+0|something
+0|beginning
+0|at first
+0|test
+0|happen
+0|trouble
+0|be in trouble
+0|respect
+0|heart
+0|begin
+0|hear
+0|glad
+0|anyway
+0|review
+0|grade
+0|loudly
+0|poster
+0|buy
+0|experience
+0|speed
+0|recording
+0|understand
+0|perfect
+0|mistake
+0|suggestion
+0|catch
+0|key
+0|main
+0|simple
+0|sentence
+0|meaning
+0|improve
+0|give up
+0|general
+0|quickly
+0|look up
+0|clearly
+0|follow
+0|animal
+0|kingdom
+0|cow
+0|duck
+0|elephant
+0|giraffe
+0|hen
+0|lion
+0|monkey
+0|panda
+0|penguin
+0|pig
+0|sheep
+0|tiger
+0|farm
+0|wild
+0|rabbit
+0|mouse
+0|snake
+0|cute
+0|helpful
+0|ugly
+0|useful
+0|blind
+0|scientist
+0|body
+0|part
+0|ear
+0|eye
+0|head
+0|neck
+0|easily
+0|mile
+0|lay
+0|spread
+0|wide
+0|bend
+0|reach
+0|ground
+0|fat
+0|horse
+0|hold
+0|dear
+0|baby
+0|look after
+0|even
+0|happily
+0|grow
+0|become
+0|finally
+0|few
+0|a few
+0|suddenly
+0|recognise
+0|hurt
+0|hug
+0|warmly
+0|believe
+0|leave
+0|freely
+0|feel
+0|climb
+0|huge
+0|all the time
+0|parrot
+0|hungry
+0|koala
+0|through
+0|guide
+0|US
+0|United States
+0|Hong Kong
+0|London
+0|UK
+0|United Kingdom
+0|Arsenal
+0|Great Wall
+0|Tian'anmen Square
+0|Summer Palace
+0|Fragrant Hills Park
+0|New York
+0|Sydney
+0|Terracotta
+0|Palace Museum
+0|Bird's Nest
+0|Stone Forest
+0|Heaven's Lake
+0|Asia
+0|Africa
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 502
+# Total Entries Extracted: 502
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 502
+# -------------------------------

@@ -1,0 +1,443 @@
+0|Sandra
+0|Cox
+0|physics
+0|recent
+0|perform
+0|advise
+0|agree
+0|glue
+0|immediately
+0|glad
+0|ahead
+0|pancake
+0|lemon
+0|pizza
+0|hate
+0|either
+0|comb
+0|Patrick
+0|Grant
+0|pea
+0|pod
+0|copy
+0|surprise
+0|angrily
+0|lend
+0|lent
+0|cheat
+0|following
+0|gym
+0|embarrassed
+0|enemy
+0|deal
+0|dealt
+0|someone
+0|England
+0|knowledgeable
+0|encourage
+0|discuss
+0|patient
+0|piano
+0|jeans
+0|pleasure
+0|local
+0|geography
+0|sometime
+0|painter
+0|timetable
+0|physical
+0|runner
+0|except
+0|tonight
+0|since
+0|poor
+0|cough
+0|because
+0|seem
+0|convenient
+0|Lisa
+0|Bill
+0|download
+0|librarian
+0|suddenly
+0|rush
+0|into
+0|shout
+0|whisper
+0|quarter
+0|recently
+0|southern
+0|tourist
+0|mine
+0|ocean
+0|remind
+0|finally
+0|discussion
+0|celebrate
+0|mid-
+0|lunar
+0|round
+0|celebration
+0|however
+0|thanksgiving
+0|wonder
+0|memory
+0|past
+0|album
+0|choose
+0|chose
+0|chosen
+0|collection
+0|slide
+0|record
+0|view
+0|lively
+0|birth
+0|attend
+0|touch
+0|size
+0|fit
+0|fitted
+0|anyway
+0|style
+0|hug
+0|turkey
+0|meal
+0|gathering
+0|dessert
+0|conversation
+0|thirteenth
+0|tape
+0|post
+0|yet
+0|address
+0|top
+0|stamp
+0|postman
+0|fashion
+0|balloon
+0|candle
+0|deep
+0|breath
+0|blow
+0|blew
+0|blown
+0|neighbourhood
+0|perfect
+0|thirsty
+0|complete
+0|bakery
+0|biscuit
+0|downtown
+0|coffee
+0|through
+0|cherry
+0|sidewalk
+0|himself
+0|entrance
+0|Michael
+0|pond
+0|freeze
+0|froze
+0|frozen
+0|hockey
+0|block
+0|bank
+0|whole
+0|chat
+0|cost
+0|interview
+0|tailor
+0|fix
+0|sound
+0|enjoyable
+0|treat
+0|flu
+0|mile
+0|across
+0|might
+0|scientist
+0|grow
+0|grew
+0|grown
+0|engineer
+0|page
+0|yearbook
+0|airplane
+0|pilot
+0|fear
+0|height
+0|overcome
+0|model
+0|advice
+0|diamond
+0|spell
+0|spelled
+0|spelt
+0|number
+0|seventeen
+0|eighteen
+0|opposite
+0|Lucas
+0|crop
+0|manager
+0|business
+0|company
+0|creative
+0|Alan
+0|goal
+0|ambition
+0|fisherman
+0|policewoman
+0|artist
+0|choice
+0|path
+0|strict
+0|punish
+0|Helen
+0|wise
+0|actor
+0|transportation
+0|hometown
+0|Britain
+0|seldom
+0|rapid
+0|steam
+0|engine
+0|wheel
+0|born
+0|passenger
+0|railway
+0|most
+0|station
+0|easily
+0|standard
+0|speed
+0|per
+0|Jeremy
+0|wing
+0|pull
+0|cart
+0|skateboard
+0|able
+0|power
+0|appear
+0|machine
+0|space
+0|spaceship
+0|imagine
+0|environment
+0|presentation
+0|invention
+0|backpack
+0|cardboard
+0|fuel
+0|oil
+0|probably
+0|imagination
+0|Sam
+0|hoverboard
+0|smooth
+0|float
+0|transporter
+0|allow
+0|form
+0|pedal
+0|than
+0|energy
+0|hobby
+0|spare
+0|earth
+0|collect
+0|stone
+0|concert
+0|ticket
+0|trade
+0|garden
+0|confidence
+0|postcard
+0|outdoor
+0|Rex
+0|giant
+0|huge
+0|African
+0|hen
+0|anymore
+0|launch
+0|adult
+0|break
+0|broke
+0|broken
+0|land
+0|challenging
+0|spin
+0|performance
+0|common
+0|real
+0|support
+0|daily
+0|unique
+0|suppose
+0|ourselves
+0|person
+0|talent
+0|personal
+0|strength
+0|sense
+0|Georgia
+0|Greece
+0|nobody
+0|return
+0|Greek
+0|junior
+0|continue
+0|Sue
+0|average
+0|stupid
+0|smart
+0|impossible
+0|weak
+0|mirror
+0|microphone
+0|program
+0|confident
+0|voice
+0|excellent
+0|stage
+0|heart
+0|beat
+0|beaten
+0|slowly
+0|herself
+0|Peter
+0|loser
+0|fail
+0|Krista
+0|Mexico
+0|misspelled
+0|accept
+0|award
+0|college
+0|One ... and the other ...
+0|introduce ... to ...
+0|advise ... to do ...
+0|be up to ...
+0|agree with ...
+0|go ahead
+0|play the violin
+0|two peas in a pod
+0|spend ... doing ...
+0|spend ... in doing ...
+0|to one's surprise
+0|make a deal
+0|feel lucky to do ...
+0|encourage ... to do ...
+0|play the piano
+0|have the pleasure of doing ...
+0|be late for
+0|in two minutes
+0|physical education
+0|P.E.
+0|miss class
+0|miss school
+0|have a cough
+0|not ... at all
+0|be convenient for ...
+0|No noise, please!
+0|a quarter
+0|Mother's Day
+0|Father's Day
+0|remind ... of ...
+0|Mid-Autumn Festival
+0|such as
+0|too ... to ...
+0|add ... to ...
+0|face to face
+0|stay in touch with ...
+0|the same size as ...
+0|try on
+0|give ... a big hug
+0|best wishes to ...
+0|on the top of
+0|All ready!
+0|have no luck
+0|in fashion
+0|turn off
+0|make a wish
+0|blow out
+0|go past ...
+0|go by ...
+0|tea biscuit
+0|be lost
+0|get lost
+0|Can you tell me the way to ...?
+0|Turn right at the ... crossing.
+0|Turn left at the ... crossing.
+0|It's ... blocks from ...
+0|It's ... blocks away from ...
+0|be busy doing ...
+0|sound like
+0|I'm doing well.
+0|have the flu
+0|across from
+0|give a talk
+0|be nice to ...
+0|grow up
+0|a fear of heights
+0|stop ... doing ...
+0|stop ... from doing ...
+0|take steps to ...
+0|advice diamond
+0|run a business
+0|no matter what ...
+0|on foot
+0|steam engine
+0|be born
+0|get on
+0|get off
+0|be able to
+0|stay up late
+0|turn on
+0|travel at the speed of light
+0|all the time
+0|from now on
+0|think of
+0|jump down
+0|more than
+0|in one's free time
+0|in one's spare time
+0|be interested in doing ...
+0|all kinds of
+0|not only ... but also ...
+0|take up
+0|Great Great Grandpa
+0|feel proud
+0|not ... anymore
+0|be made of ...
+0|the best-built rocket
+0|up and down
+0|parking lot
+0|put ... on its side
+0|go through
+0|What's up?
+0|SOS
+0|be supposed to
+0|make sense
+0|It's my pleasure.
+0|continue doing ...
+0|continue to do ...
+0|strong points
+0|weak points
+0|dream of being ...
+0|believe in oneself
+0|by oneself
+0|Most-Improved Student Award
+0|because of
+0|Practice makes perfect.
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 436
+# Total Entries Extracted: 436
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 436
+# -------------------------------

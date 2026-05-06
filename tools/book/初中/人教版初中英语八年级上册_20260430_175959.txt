@@ -1,0 +1,496 @@
+0|anyone
+0|anywhere
+0|wonderful
+0|few
+0|quite a few
+0|most
+0|something
+0|nothing
+0|everyone
+0|of course
+0|myself
+0|yourself
+0|yourselves
+0|hen
+0|pig
+0|seem
+0|bored
+0|someone
+0|diary
+0|enjoyable
+0|activity
+0|decide
+0|try
+0|paragliding
+0|feel like
+0|bird
+0|bicycle
+0|building
+0|trader
+0|wonder
+0|difference
+0|top
+0|wait
+0|umbrella
+0|wet
+0|because of
+0|below
+0|enough
+0|hungry
+0|as
+0|hill
+0|duck
+0|dislike
+0|Central Park
+0|Huangguoshu Waterfall
+0|Hong Kong
+0|Malaysia
+0|Malaysian
+0|Georgetown
+0|Weld Quay
+0|Penang Hill
+0|the Palace Museum
+0|Mark
+0|housework
+0|hardly
+0|ever
+0|hardly ever
+0|once
+0|twice
+0|Internet
+0|program
+0|programme
+0|full
+0|swing
+0|swung
+0|swing dance
+0|maybe
+0|least
+0|at least
+0|junk
+0|junk food
+0|coffee
+0|health
+0|result
+0|percent
+0|per cent
+0|online
+0|television
+0|although
+0|through
+0|mind
+0|body
+0|such
+0|such as
+0|together
+0|die
+0|writer
+0|dentist
+0|magazine
+0|however
+0|than
+0|more than
+0|almost
+0|none
+0|less
+0|less than
+0|point
+0|Claire
+0|Sue
+0|American Teenager
+0|outgoing
+0|both
+0|better
+0|loudly
+0|quietly
+0|hard-working
+0|competition
+0|fantastic
+0|which
+0|clearly
+0|win
+0|won
+0|though
+0|talented
+0|truly
+0|care
+0|care about
+0|laugh
+0|serious
+0|mirror
+0|kid
+0|as long as
+0|necessary
+0|be different from
+0|bring out
+0|grade
+0|should
+0|the same as
+0|saying
+0|reach
+0|hand
+0|touch
+0|heart
+0|fact
+0|in fact
+0|break
+0|broke
+0|arm
+0|share
+0|loud
+0|similar
+0|be similar to
+0|primary
+0|primary school
+0|information
+0|Tara
+0|Sam
+0|Nelly
+0|Larry
+0|theater
+0|theatre
+0|comfortable
+0|seat
+0|screen
+0|close
+0|ticket
+0|worst
+0|cheaply
+0|song
+0|DJ
+0|choose
+0|chose
+0|carefully
+0|reporter
+0|so far
+0|fresh
+0|comfortably
+0|worse
+0|service
+0|pretty
+0|menu
+0|role
+0|act
+0|meal
+0|creative
+0|performer
+0|talent
+0|have ... in common
+0|magician
+0|all kinds of
+0|beautifully
+0|be up to
+0|play a role
+0|winner
+0|prize
+0|everybody
+0|make up
+0|example
+0|for example
+0|poor
+0|seriously
+0|take ... seriously
+0|give
+0|gave
+0|crowded
+0|Greg
+0|Danny
+0|Eliza
+0|Vera
+0|Dennis
+0|sitcom
+0|situation comedy
+0|news
+0|soap opera
+0|stand
+0|stood
+0|educational
+0|plan
+0|hope
+0|find out
+0|discussion
+0|happen
+0|expect
+0|joke
+0|comedy
+0|meaningless
+0|action
+0|action movie
+0|cartoon
+0|culture
+0|famous
+0|appear
+0|become
+0|became
+0|rich
+0|successful
+0|might
+0|main
+0|reason
+0|common
+0|film
+0|movie
+0|unlucky
+0|lose
+0|lost
+0|girlfriend
+0|ready
+0|be ready to
+0|character
+0|simple
+0|dress up
+0|take sb.'s place
+0|army
+0|do a good job
+0|Sarah
+0|Walt Disney
+0|Minnie
+0|Mickey Mouse
+0|Steamboat Willie
+0|Hollywood
+0|the Hollywood Walk of Fame
+0|grow up
+0|computer programmer
+0|cook
+0|doctor
+0|engineer
+0|violinist
+0|driver
+0|pilot
+0|pianist
+0|scientist
+0|be sure about
+0|make sure
+0|college
+0|education
+0|medicine
+0|university
+0|London
+0|article
+0|send
+0|sent
+0|resolution
+0|team
+0|make the soccer team
+0|foreign
+0|able
+0|be able to
+0|promise
+0|beginning
+0|at the beginning of
+0|improve
+0|write down
+0|physical
+0|themselves
+0|have to do with
+0|self-improvement
+0|take up
+0|hobby
+0|paint
+0|weekly
+0|schoolwork
+0|question
+0|meaning
+0|discuss
+0|own
+0|personal
+0|relationship
+0|Andy
+0|Ken
+0|Hemingway
+0|Kelly
+0|The Old Man and the Sea
+0|paper
+0|pollution
+0|prediction
+0|future
+0|pollute
+0|environment
+0|planet
+0|earth
+0|plant
+0|part
+0|play a part
+0|peace
+0|sea
+0|build
+0|built
+0|sky
+0|astronaut
+0|apartment
+0|rocket
+0|space
+0|space station
+0|human
+0|servant
+0|dangerous
+0|already
+0|factory
+0|over and over again
+0|Japan
+0|believe
+0|disagree
+0|even
+0|agree
+0|hundreds of
+0|shape
+0|fall
+0|fell
+0|fall down
+0|inside
+0|look for
+0|possible
+0|impossible
+0|side
+0|probably
+0|during
+0|holiday
+0|word
+0|Nick
+0|James
+0|White
+0|shake
+0|shook
+0|milk shake
+0|blender
+0|turn on
+0|peel
+0|pour
+0|yogurt
+0|yoghurt
+0|honey
+0|watermelon
+0|spoon
+0|pot
+0|add
+0|finally
+0|salt
+0|sugar
+0|cheese
+0|popcorn
+0|corn
+0|machine
+0|dig
+0|dug
+0|hole
+0|sandwich
+0|butter
+0|turkey
+0|lettuce
+0|piece
+0|Thanksgiving
+0|traditional
+0|autumn
+0|celebrate
+0|prepare
+0|gravy
+0|mashed
+0|pumpkin
+0|pie
+0|mix
+0|pepper
+0|fill
+0|oven
+0|plate
+0|cover
+0|serve
+0|temperature
+0|prepare for
+0|exam
+0|examination
+0|go to the doctor
+0|go to a doctor
+0|flu
+0|available
+0|another time
+0|until
+0|hang
+0|hung
+0|hang out
+0|catch
+0|caught
+0|invite
+0|accept
+0|refuse
+0|the day before yesterday
+0|the day after tomorrow
+0|weekday
+0|look after
+0|invitation
+0|turn down
+0|reply
+0|forward
+0|delete
+0|print
+0|sad
+0|goodbye
+0|take a trip
+0|glad
+0|help out
+0|preparation
+0|glue
+0|without
+0|surprised
+0|look forward to
+0|hear from
+0|housewarming
+0|opening
+0|concert
+0|headmaster
+0|event
+0|guest
+0|calendar
+0|daytime
+0|Ted
+0|May
+0|Vince
+0|Steen
+0|Jake
+0|Susan
+0|meeting
+0|video
+0|organize
+0|organise
+0|potato chips
+0|chocolate
+0|upset
+0|taxi
+0|advice
+0|travel
+0|agent
+0|expert
+0|keep ... to oneself
+0|teenager
+0|normal
+0|unless
+0|certainly
+0|wallet
+0|mile
+0|angry
+0|understanding
+0|careless
+0|mistake
+0|himself
+0|careful
+0|advise
+0|solve
+0|step
+0|trust
+0|experience
+0|in half
+0|halfway
+0|else
+0|Karen
+0|Ben
+0|Michael
+0|Laura
+0|Mills
+0|Robert
+0|Hunt
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 489
+# Total Entries Extracted: 489
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 489
+# -------------------------------

@@ -1,0 +1,303 @@
+0|attract
+0|a great number of
+0|fetch
+0|introduce
+0|detail
+0|strange
+0|pine
+0|lie in
+0|length
+0|waterfall
+0|height
+0|grand
+0|imperial
+0|carve
+0|stone
+0|guard
+0|heaven
+0|comment
+0|responsibility
+0|gradually
+0|marble
+0|entire
+0|branch
+0|construction
+0|state
+0|remain
+0|brick
+0|separate
+0|enemy
+0|expect
+0|treasure
+0|civilization
+0|suppose
+0|attraction
+0|major
+0|cocoa
+0|porcelain
+0|export
+0|mild
+0|unique
+0|include
+0|topic
+0|world-famous
+0|firewood
+0|sauce
+0|vinegar
+0|pioneer
+0|B.C.
+0|thinker
+0|wise
+0|kindness
+0|philosopher
+0|influence
+0|whom
+0|pass away
+0|unite
+0|defeat
+0|set up
+0|empire
+0|forever
+0|come to an end
+0|captain
+0|lead
+0|compass
+0|sailing
+0|sail
+0|coast
+0|unfortunately
+0|birth
+0|trade
+0|missile
+0|graduation
+0|university
+0|Pacific
+0|further
+0|degree
+0|aerospace
+0|graduate
+0|researcher
+0|theory
+0|motherland
+0|blank
+0|institute
+0|charge
+0|in charge of
+0|spacecraft
+0|related
+0|youth
+0|devotion
+0|express
+0|career
+0|destination
+0|hybrid
+0|gunpowder
+0|printing
+0|sailor
+0|discovery
+0|firework
+0|Arab
+0|eastern
+0|bark
+0|rag
+0|clay
+0|ink
+0|hang
+0|description
+0|Australian
+0|below
+0|harbor
+0|leader
+0|exhibition
+0|lean
+0|private
+0|president
+0|ring out
+0|radium
+0|prize
+0|lifetime
+0|telegraph
+0|photographic
+0|duty
+0|neither
+0|nor
+0|neither ... nor ...
+0|remarry
+0|stepmother
+0|license
+0|lawyer
+0|trust
+0|highly
+0|politician
+0|elect
+0|Civil
+0|break out
+0|union
+0|slave
+0|get rid
+0|set free
+0|shoot
+0|break up
+0|unit
+0|walker
+0|backwards
+0|concern
+0|content
+0|failure
+0|brief
+0|achievement
+0|Egyptian
+0|pyramid
+0|tomb
+0|complete
+0|A.D.
+0|scientific
+0|ton
+0|fix
+0|tool
+0|mystery
+0|completion
+0|graze
+0|make fun of
+0|wolf
+0|iron
+0|glory
+0|peasant
+0|battle
+0|battlefield
+0|memory
+0|in memory of
+0|romantic
+0|tale
+0|home and abroad
+0|scenery
+0|would rather ... than ...
+0|actress
+0|charming
+0|educational
+0|science fiction
+0|tragedy
+0|documentary
+0|comedy
+0|ending
+0|drawing
+0|mission
+0|adventure
+0|mysterious
+0|crew
+0|rescue
+0|award
+0|ceremony
+0|motion
+0|director
+0|general
+0|footstep
+0|talented
+0|take up
+0|coach
+0|formally
+0|rather than
+0|organize
+0|aim
+0|advance
+0|as is known to all
+0|therefore
+0|violence
+0|violent
+0|literature
+0|classic
+0|in one's view
+0|overcome
+0|statement
+0|literary
+0|society
+0|moving
+0|poetry
+0|poet
+0|playwright
+0|drama
+0|scene
+0|kiss
+0|masterpiece
+0|district
+0|unlike
+0|rainbow
+0|inspiration
+0|eventually
+0|golden
+0|monk
+0|narrator
+0|husband
+0|precious
+0|possession
+0|wealth
+0|chain
+0|sudden
+0|all of a sudden
+0|cut off
+0|live through
+0|possibly
+0|comb
+0|jeweled
+0|rim
+0|long for
+0|hunt
+0|at present
+0|couple
+0|the couple
+0|first of all
+0|exchange
+0|chalk
+0|dozen
+0|dozens of
+0|excellence
+0|valuable
+0|bottom
+0|unforgettable
+0|joy
+0|royal
+0|recall
+0|competition
+0|custom
+0|principal
+0|diploma
+0|congratulate
+0|possibility
+0|thankful
+0|in a hurry
+0|hug
+0|in time
+0|promise
+0|conclude
+0|pound
+0|absent
+0|alive
+0|sharply
+0|asleep
+0|awake
+0|ant
+0|hard-working
+0|unless
+0|truth
+0|operate
+0|instruction
+0|northwestern
+0|flow
+0|appearance
+0|muddy
+0|idiom
+0|argument
+0|slap
+0|till
+0|mud
+0|sink
+0|reply
+0|erase
+0|response
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 296
+# Total Entries Extracted: 296
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 296
+# -------------------------------

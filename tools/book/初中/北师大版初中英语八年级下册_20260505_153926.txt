@@ -1,0 +1,404 @@
+0|technology
+0|future
+0|electronic
+0|pocket
+0|keyboard
+0|smartphone
+0|robot
+0|telephone
+0|screen
+0|touch
+0|smart
+0|ID
+0|identification
+0|mark
+0|e-book
+0|invention
+0|product
+0|development
+0|software
+0|traditional
+0|LCD
+0|liquid crystal display
+0|already
+0|store
+0|progress
+0|closely
+0|system
+0|allow
+0|teach
+0|come true
+0|card
+0|make use of
+0|book
+0|ticket
+0|chat
+0|medical
+0|professor
+0|president
+0|connect
+0|e-ticket
+0|elderly
+0|social
+0|media
+0|social media
+0|ill
+0|X-ray
+0|in person
+0|opinion
+0|almost
+0|company
+0|choice
+0|whole
+0|fixed
+0|develop
+0|present
+0|on the other hand
+0|increasing
+0|sell
+0|service
+0|instead
+0|instead of
+0|work from home
+0|imagine
+0|college
+0|manager
+0|purpose
+0|compare
+0|require
+0|include
+0|decision-making
+0|problem-solving
+0|express
+0|at the same time
+0|listener
+0|plan
+0|decision
+0|deal
+0|deal with
+0|situation
+0|rather
+0|rather than
+0|conclusion
+0|spare
+0|introduction
+0|successful
+0|businessman
+0|set
+0|set up
+0|surf
+0|net
+0|according to
+0|pool
+0|blog
+0|face-to-face
+0|sign
+0|sign language
+0|text message
+0|ant
+0|wag
+0|tail
+0|interested
+0|missing
+0|landmine
+0|discover
+0|frog
+0|insect
+0|gentleman
+0|invite
+0|lady
+0|as well
+0|mad
+0|area
+0|knowledge
+0|since
+0|bark
+0|trainer
+0|hide
+0|culture
+0|decorate
+0|themselves
+0|formal
+0|perhaps
+0|anybody
+0|shy
+0|correct
+0|adult
+0|though
+0|treat
+0|myself
+0|ourselves
+0|yourself
+0|yourselves
+0|himself
+0|herself
+0|itself
+0|local
+0|generation
+0|teenager
+0|American
+0|teenage
+0|increase
+0|rapidly
+0|monthly
+0|per
+0|end
+0|at the end of
+0|value
+0|private
+0|convenient
+0|such
+0|such as
+0|lead to
+0|against
+0|law
+0|deliver
+0|urgent
+0|telegram
+0|inconvenient
+0|granny
+0|wherever
+0|interrupt
+0|especially
+0|Thanksgiving
+0|dragon
+0|Dragon Boat Festival
+0|Mid-Autumn Festival
+0|firework
+0|eve
+0|decoration
+0|luck
+0|tofu
+0|fry
+0|peace
+0|fact
+0|wish
+0|midnight
+0|million
+0|millions of
+0|bright
+0|cheer
+0|picnic
+0|bean
+0|biscuit
+0|corn
+0|fork
+0|knife
+0|plate
+0|sausage
+0|spoon
+0|strawberry
+0|a couple of
+0|remind
+0|uniform
+0|gate
+0|deadline
+0|turkey
+0|pumpkin
+0|pie
+0|nearly
+0|expect
+0|oven
+0|heat
+0|voice
+0|failure
+0|worried
+0|pizza
+0|nothing
+0|awful
+0|forward
+0|look forward to
+0|sweet
+0|salty
+0|prefer
+0|beat
+0|enjoyable
+0|lantern
+0|riddle
+0|mooncake
+0|starfruit
+0|difficulty
+0|unhappy
+0|advise
+0|lonely
+0|relaxed
+0|satisfied
+0|upset
+0|offer
+0|control
+0|mood
+0|stupid
+0|manage
+0|from time to time
+0|everyday
+0|break the ice
+0|stranger
+0|unless
+0|trust
+0|achieve
+0|produce
+0|spirit
+0|unhealthy
+0|succeed
+0|stick to
+0|fail
+0|even though
+0|honest
+0|quarrel
+0|forgive
+0|impolite
+0|circle
+0|amount
+0|article
+0|attract
+0|suppose
+0|limit
+0|somewhere
+0|gap
+0|generation gap
+0|housework
+0|add
+0|on one's own
+0|enter
+0|password
+0|praise
+0|lazy
+0|strict
+0|care
+0|care about
+0|boss
+0|grow up
+0|pretty
+0|except
+0|mess
+0|whenever
+0|fair
+0|get along with ...
+0|positive
+0|sympathy
+0|greeting
+0|signature
+0|scold
+0|memorable
+0|influence
+0|confident
+0|poem
+0|mention
+0|pity
+0|thousands of
+0|happiness
+0|mostly
+0|childhood
+0|count
+0|fill
+0|judge
+0|good-looking
+0|great-grandpa
+0|prime minister
+0|war
+0|curtain
+0|German
+0|bomb
+0|luckily
+0|marry
+0|great-grandma
+0|army
+0|enemy
+0|available
+0|machine
+0|air conditioner
+0|cooker
+0|dishwasher
+0|record player
+0|tiny
+0|central
+0|central heating
+0|wet
+0|used to
+0|mainly
+0|round
+0|come round
+0|lemon
+0|second-hand
+0|weekday
+0|theatre
+0|unforgettable
+0|run into
+0|bleed
+0|frightened
+0|pain
+0|ambulance
+0|take care of
+0|detective
+0|British
+0|observe
+0|humorous
+0|degree
+0|wise
+0|solution
+0|unclear
+0|clue
+0|mystery
+0|setting
+0|hall
+0|truth
+0|parlour
+0|lord
+0|least
+0|at least
+0|dead
+0|pass away
+0|recently
+0|doubt
+0|nobody
+0|whether
+0|alive
+0|death
+0|reappear
+0|claim
+0|valuable
+0|inheritance
+0|impossible
+0|exactly
+0|ahead
+0|thirsty
+0|sadly
+0|a little
+0|sleeve
+0|silk
+0|evidence
+0|create
+0|billion
+0|translate
+0|the West End of London
+0|actress
+0|perform
+0|wealthy
+0|pupil
+0|education
+0|cleverly
+0|guilty
+0|fear
+0|intelligence
+0|crime
+0|career
+0|print
+0|sales
+0|fiction
+0|murder
+0|dressmaker
+0|murderer
+0|calm
+0|pin
+0|policeman
+0|heroine
+0|ending
+0|surprising
+0|case
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 397
+# Total Entries Extracted: 397
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 397
+# -------------------------------

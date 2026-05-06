@@ -1,0 +1,605 @@
+0|smart
+0|shopper
+0|mall
+0|market
+0|bookstore
+0|supermarket
+0|yuan
+0|sell
+0|fruit
+0|scarf
+0|would
+0|sure
+0|list
+0|salt
+0|bag
+0|strawberry
+0|kilo
+0|kilogram
+0|coffee
+0|cabbage
+0|chicken
+0|tofu
+0|watermelon
+0|carrot
+0|camera
+0|trousers
+0|party
+0|everything
+0|sale
+0|online
+0|mum
+0|mom
+0|OK
+0|plan
+0|carry
+0|heavy
+0|price
+0|skirt
+0|decide
+0|pocket
+0|pocket money
+0|save
+0|notebook
+0|between
+0|wisely
+0|waste
+0|try
+0|possible
+0|store
+0|careful
+0|expensive
+0|choice
+0|check
+0|payment
+0|again
+0|example
+0|if
+0|share
+0|same
+0|pay
+0|piece
+0|bread
+0|sandwich
+0|thirsty
+0|packet
+0|meat
+0|cost
+0|bed
+0|breakfast
+0|bowl
+0|scissors
+0|colored
+0|cup
+0|cotton
+0|sock
+0|may
+0|honey
+0|sweater
+0|cheap
+0|bad
+0|group
+0|carefully
+0|ad
+0|advertisement
+0|beginning
+0|banana
+0|just
+0|stay
+0|size
+0|special
+0|wait
+0|free
+0|order
+0|planet
+0|ocean
+0|the ocean
+0|metre
+0|meter
+0|kilometre
+0|kilometer
+0|through
+0|eastern
+0|freshwater
+0|million
+0|inland
+0|north-east
+0|large
+0|deep
+0|wide
+0|everywhere
+0|ground
+0|into
+0|form
+0|cloud
+0|ice
+0|drop
+0|full
+0|useful
+0|wash
+0|outside
+0|cycle
+0|quick
+0|shower
+0|off
+0|tap
+0|while
+0|brush
+0|tooth
+0|teeth
+0|reuse
+0|matter
+0|fact
+0|valuable
+0|enough
+0|once
+0|must
+0|collect
+0|dig
+0|worry
+0|story
+0|cover
+0|coastline
+0|than
+0|thousand
+0|eighty
+0|sixty
+0|billion
+0|per cent
+0|percent
+0|land
+0|knock
+0|door
+0|oh
+0|step
+0|litter
+0|suggestion
+0|search
+0|information
+0|introduce
+0|machine
+0|dirty
+0|bath
+0|throw
+0|away
+0|still
+0|provide
+0|protect
+0|soil
+0|human
+0|body
+0|plastic
+0|rubbish
+0|bin
+0|shock
+0|later
+0|develop
+0|habit
+0|count
+0|daily
+0|bank
+0|gym
+0|gymnasium
+0|hotel
+0|theatre
+0|theater
+0|museum
+0|road
+0|bridge
+0|across
+0|corner
+0|excuse
+0|cinema
+0|madam
+0|could
+0|policeman
+0|policemen
+0|sir
+0|line
+0|station
+0|change
+0|minute
+0|along
+0|until
+0|till
+0|crossing
+0|left
+0|gift
+0|build
+0|speed
+0|sign
+0|stand
+0|dark
+0|row
+0|island
+0|front
+0|safe
+0|myself
+0|evening
+0|sad
+0|back
+0|tent
+0|camp
+0|unforgettable
+0|trip
+0|hold
+0|follow
+0|return
+0|hug
+0|clear
+0|safety
+0|problem
+0|solve
+0|behind
+0|post
+0|office
+0|post office
+0|village
+0|beside
+0|neighbour
+0|neighbor
+0|happen
+0|community
+0|add
+0|cry
+0|care
+0|suddenly
+0|shake
+0|sit
+0|arrive
+0|sleep
+0|soon
+0|hear
+0|kiss
+0|easy
+0|centre
+0|center
+0|service
+0|pet
+0|Italian
+0|police
+0|famous
+0|exciting
+0|tired
+0|yours
+0|turning
+0|straight
+0|lend
+0|medical
+0|heavily
+0|volunteer
+0|yesterday
+0|tennis
+0|table tennis
+0|match
+0|dad
+0|exam
+0|examination
+0|repair
+0|voluntary
+0|experience
+0|leave
+0|key
+0|daughter
+0|lose
+0|pick
+0|host
+0|title
+0|ago
+0|crowded
+0|meaningful
+0|town
+0|offer
+0|Dr.
+0|chat
+0|kid
+0|own
+0|bedroom
+0|mine
+0|hers
+0|ours
+0|yard
+0|theirs
+0|both
+0|cut
+0|event
+0|website
+0|nursing
+0|elder
+0|lady
+0|better
+0|housing
+0|transportation
+0|nearby
+0|public
+0|the public
+0|space
+0|item
+0|farmer
+0|farm
+0|drive
+0|goods
+0|business
+0|early
+0|rule
+0|traffic
+0|respect
+0|forget
+0|board
+0|polite
+0|cause
+0|effect
+0|wall
+0|hurt
+0|himself
+0|housework
+0|alone
+0|peephole
+0|stranger
+0|delivery
+0|advantage
+0|cross
+0|guard
+0|accident
+0|noise
+0|environment
+0|fair
+0|court
+0|dear
+0|since
+0|fight
+0|mind
+0|herself
+0|French
+0|itself
+0|ourselves
+0|break
+0|head
+0|slowly
+0|speak
+0|loudly
+0|law
+0|advice
+0|attention
+0|swimming pool
+0|pool
+0|mess
+0|angry
+0|loud
+0|promise
+0|mean
+0|behavior
+0|warning
+0|subway
+0|dollar
+0|helmet
+0|rider
+0|meeting
+0|manner
+0|seat
+0|person
+0|wrong
+0|plate
+0|chopstick
+0|point
+0|drama
+0|newspaper
+0|cheer
+0|shoot
+0|practice
+0|hole
+0|kick
+0|fail
+0|true
+0|skill
+0|teamwork
+0|player
+0|taxi
+0|paper-cut
+0|divide
+0|become
+0|teammate
+0|heart
+0|close
+0|improve
+0|hero
+0|engineer
+0|company
+0|villager
+0|tasty
+0|means
+0|loss
+0|taste
+0|difficulty
+0|voice
+0|proudly
+0|painting
+0|discuss
+0|writing
+0|sound
+0|soccer
+0|channel
+0|tunnel
+0|difficult
+0|project
+0|British
+0|dream
+0|chalk
+0|copy
+0|support
+0|task
+0|goal
+0|face
+0|trust
+0|hard-working
+0|lunch
+0|rainbow
+0|mistake
+0|peace
+0|go shopping
+0|look for
+0|on sale
+0|a pair of
+0|good idea
+0|let sb. do sth.
+0|shopping list
+0|save money
+0|make money
+0|as ... as possible
+0|at ... prices
+0|make choices
+0|as well
+0|for example
+0|a little
+0|go to bed
+0|look good on sb.
+0|look bad on sb.
+0|try one's best to do sth.
+0|do one's best to do sth.
+0|at the start of
+0|at the end of
+0|at the beginning of
+0|next time
+0|at a time
+0|in all
+0|pay for
+0|check out
+0|wait for
+0|go up
+0|as we all know
+0|because of
+0|be full of
+0|turn into
+0|take a shower
+0|turn off
+0|brush one's teeth
+0|as a matter of fact
+0|be valuable for
+0|worry about
+0|start to do sth.
+0|make a difference
+0|make full use of
+0|more than
+0|come in
+0|search for
+0|start with
+0|a few
+0|throw away
+0|be sure to do sth.
+0|provide sth. for sb.
+0|provide sb. with sth.
+0|clean up
+0|get into
+0|look like
+0|in short
+0|develop the habit of
+0|from now on
+0|across from
+0|on the corner of
+0|between ... and
+0|excuse me
+0|get around
+0|be lost
+0|get to
+0|get off
+0|go along
+0|turn left
+0|walk on
+0|on one's right
+0|in a short time
+0|stand for
+0|in front of
+0|in the end
+0|go back to
+0|at first
+0|set up
+0|hold one's hand
+0|take out
+0|all the way
+0|return to
+0|go across
+0|happen to
+0|just now
+0|ask ... for help
+0|go camping
+0|try to do sth.
+0|look up
+0|fall down
+0|build a fire
+0|arrive at
+0|too ... to
+0|go fishing
+0|think of
+0|be famous for
+0|go straight
+0|lend a hand
+0|knock at
+0|knock on
+0|on one's way
+0|pick up
+0|be new to
+0|offer sth. to sb.
+0|offer sb. sth.
+0|bring sb. sth.
+0|bring sth. to sb.
+0|chat with sb.
+0|in one's own way
+0|help out
+0|learn from
+0|care for
+0|keep quiet
+0|on time
+0|say sorry to
+0|forget to do sth.
+0|have a look
+0|enjoy oneself
+0|run into
+0|get up
+0|tidy up
+0|help with sth.
+0|in this way
+0|keep away from
+0|in order
+0|make noise
+0|what's more
+0|hear from sb.
+0|fight with
+0|keep ... in mind
+0|teach oneself
+0|play with sth.
+0|ask for
+0|take care of
+0|in a mess
+0|promise to do sth.
+0|be late for
+0|stay up
+0|point at
+0|cheer sb. on
+0|be angry with
+0|cheer up
+0|look after
+0|do good to
+0|all the time
+0|feel sorry for
+0|try every means to do sth.
+0|sell out
+0|have difficulty in
+0|work for
+0|at last
+0|work out
+0|with the help of
+0|over and over again
+0|go on doing sth.
+0|come true
+0|come up with
+0|at work
+0|keep on doing sth.
+0|make mistakes
+0|make peace
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 598
+# Total Entries Extracted: 598
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 598
+# -------------------------------

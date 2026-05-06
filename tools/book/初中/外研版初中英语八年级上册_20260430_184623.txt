@@ -1,0 +1,333 @@
+0|pair
+0|correct
+0|spelling
+0|word
+0|practise
+0|match
+0|meaning
+0|complete
+0|sentence
+0|dictionary
+0|grammar
+0|letter
+0|look up
+0|mistake
+0|make a mistake
+0|understand
+0|understood
+0|advice
+0|should
+0|possible
+0|write down
+0|notebook
+0|forget
+0|pronounce
+0|aloud
+0|radio
+0|pronunciation
+0|key
+0|main
+0|excellent
+0|agree
+0|agree with sb.
+0|vocabulary
+0|ask for
+0|improve
+0|basic
+0|time
+0|advise
+0|shy
+0|conversation
+0|quickly
+0|natural
+0|suggest
+0|place
+0|hill
+0|population
+0|wide
+0|million
+0|pretty
+0|pretty good
+0|than
+0|get
+0|north
+0|south
+0|west
+0|home town
+0|especially
+0|be famous for
+0|university
+0|island
+0|area
+0|low
+0|mountain
+0|countryside
+0|umbrella
+0|baseball
+0|volleyball
+0|boring
+0|exciting
+0|relaxing
+0|score
+0|already
+0|matter
+0|What's the matter?
+0|hurt
+0|enjoyable
+0|Olympics
+0|stadium
+0|miss
+0|mind
+0|plenty
+0|plenty of
+0|beat
+0|careless
+0|cheer ... on
+0|coach
+0|fan club
+0|against
+0|train
+0|practice
+0|warm
+0|warm up
+0|usual
+0|better
+0|after-school
+0|pleased
+0|pass
+0|pity
+0|chance
+0|loudly
+0|confident
+0|road
+0|accident
+0|except
+0|choice
+0|classmate
+0|far
+0|far from
+0|close
+0|crowded
+0|all the time
+0|journey
+0|book
+0|park
+0|outside
+0|however
+0|cost
+0|actress
+0|teahouse
+0|offer
+0|end
+0|in the end
+0|no idea
+0|act
+0|show
+0|common
+0|twentieth
+0|describe
+0|society
+0|head teacher
+0|college
+0|novel
+0|name
+0|if
+0|magic
+0|snake
+0|neck
+0|thin
+0|danger
+0|in danger
+0|at last
+0|interested
+0|allow
+0|think of
+0|protect
+0|wild
+0|grow
+0|take away
+0|enough
+0|peace
+0|in peace
+0|notice
+0|look after
+0|raise
+0|research
+0|baby
+0|situation
+0|scientist
+0|produce
+0|southwest
+0|in order to
+0|government
+0|set
+0|set up
+0|nature
+0|nature park
+0|develop
+0|feed
+0|fed
+0|symbol
+0|fall
+0|follow
+0|hole
+0|rabbit
+0|ssh
+0|ground
+0|tea party
+0|twice
+0|once or twice
+0|suddenly
+0|pink
+0|pocket
+0|field
+0|think about
+0|deep
+0|while
+0|land
+0|dry
+0|pale
+0|appear
+0|round
+0|corner
+0|hit
+0|glad
+0|in time
+0|fall off ...
+0|risk
+0|attention
+0|pay attention
+0|side
+0|side by side
+0|bite
+0|bit
+0|climb
+0|hide
+0|hid
+0|throw
+0|threw
+0|fridge
+0|pain
+0|worse
+0|medicine
+0|noise
+0|prepare
+0|report
+0|billion
+0|huge
+0|increase
+0|hang on
+0|notes
+0|cause
+0|problem
+0|birth
+0|flat
+0|rubbish
+0|quiet
+0|local
+0|close down
+0|mention
+0|pollution
+0|solve
+0|public
+0|service
+0|pupil
+0|reduce
+0|create
+0|convenient
+0|environment
+0|cloud
+0|shower
+0|snow
+0|storm
+0|cloudy
+0|rainy
+0|snowy
+0|sunny
+0|windy
+0|skate
+0|thick
+0|ice
+0|joke
+0|might
+0|temperature
+0|minus
+0|degree
+0|although
+0|wet
+0|neither
+0|terrible
+0|wish
+0|probably
+0|come on
+0|mile
+0|northwest
+0|southeast
+0|from time to time
+0|cap
+0|chess
+0|a chess set
+0|chopstick
+0|toy
+0|video
+0|video game
+0|gift
+0|surprise
+0|immediately
+0|difference
+0|accept
+0|tradition
+0|example
+0|for example
+0|must
+0|month
+0|serious
+0|taste
+0|experience
+0|stay
+0|someone
+0|for the first time
+0|sandwich
+0|chip
+0|fish and chips
+0|onto
+0|gentleman
+0|shoulder
+0|broken
+0|glass
+0|stairs
+0|aid
+0|first aid
+0|medical
+0|imagine
+0|bottom
+0|at the bottom of ...
+0|wrong
+0|What's wrong with ...?
+0|trouble
+0|lift
+0|lift up
+0|harmful
+0|drop
+0|training
+0|make sure
+0|cover
+0|earthquake
+0|warn
+0|inside
+0|under
+0|window
+0|keep
+0|clear
+0|keep clear of ...
+0|calm
+0|brave
+0|helpful
+0|power
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 326
+# Total Entries Extracted: 326
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 326
+# -------------------------------

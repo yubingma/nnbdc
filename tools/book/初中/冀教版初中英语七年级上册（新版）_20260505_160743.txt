@@ -1,0 +1,415 @@
+0|same
+0|everyone
+0|around
+0|building
+0|borrow
+0|lab
+0|laboratory
+0|together
+0|join
+0|fun
+0|date
+0|p.m.
+0|grade
+0|other
+0|enjoy
+0|language
+0|culture
+0|both
+0|amazing
+0|true
+0|tip
+0|example
+0|meaning
+0|mean
+0|more
+0|only
+0|than
+0|million
+0|level
+0|therein
+0|even
+0|need
+0|phrase
+0|piece
+0|sentence
+0|quick
+0|fox
+0|lazy
+0|fact
+0|would
+0|pot
+0|cabbage
+0|eggplant
+0|mushroom
+0|maybe
+0|tofu
+0|correct
+0|line
+0|feeling
+0|sick
+0|scared
+0|ocean
+0|metre
+0|camera
+0|smell
+0|slim
+0|neck
+0|housework
+0|finger
+0|player
+0|homework
+0|matter
+0|cough
+0|headache
+0|fever
+0|medicine
+0|rest
+0|average
+0|height
+0|blond
+0|different
+0|saying
+0|hobby
+0|as
+0|chess
+0|creative
+0|useful
+0|club
+0|weekend
+0|match
+0|discuss
+0|skill
+0|life
+0|without
+0|just
+0|salt
+0|member
+0|handsome
+0|everything
+0|lady
+0|ready
+0|grandparent
+0|outdoors
+0|picnic
+0|cookie
+0|salad
+0|tablecloth
+0|sandwich
+0|steal
+0|paint
+0|special
+0|laugh
+0|present
+0|smile
+0|away
+0|set
+0|point
+0|secret
+0|end
+0|finally
+0|tiny
+0|crayon
+0|cover
+0|something
+0|rose
+0|sky
+0|poem
+0|riddle
+0|soft
+0|sofa
+0|business
+0|donut
+0|pity
+0|friendly
+0|loyal
+0|rhino
+0|egret
+0|team
+0|each
+0|skin
+0|stay
+0|sound
+0|dangerous
+0|thing
+0|nearby
+0|scare
+0|insect
+0|cheese
+0|butter
+0|feed
+0|sign
+0|giraffe
+0|bamboo
+0|instead
+0|carrot
+0|funny
+0|dinosaur
+0|report
+0|fat
+0|hairy
+0|most
+0|climb
+0|grey
+0|group
+0|leaf
+0|usually
+0|bookstore
+0|underground
+0|station
+0|direction
+0|excuse
+0|madam
+0|east
+0|road
+0|traffic
+0|museum
+0|straight
+0|ancient
+0|hall
+0|history
+0|gentleman
+0|clerk
+0|stair
+0|pass
+0|miss
+0|jade
+0|dragon
+0|second
+0|shopping
+0|list
+0|lamp
+0|pear
+0|strawberry
+0|watermelon
+0|storybook
+0|chocolate
+0|checkout
+0|lunchtime
+0|restaurant
+0|waitress
+0|dumpling
+0|order
+0|cell
+0|code
+0|pleasure
+0|menu
+0|bowl
+0|beef
+0|problem
+0|snack
+0|smart
+0|topic
+0|really
+0|foggy
+0|fog
+0|clear
+0|noon
+0|camp
+0|tent
+0|lunar
+0|calendar
+0|festival
+0|temperature
+0|drop
+0|degree
+0|below
+0|into
+0|snowman
+0|snowmen
+0|snowball
+0|fight
+0|skate
+0|ski
+0|castle
+0|cartoon
+0|sculpture
+0|activity
+0|offer
+0|experience
+0|notebook
+0|forget
+0|mark
+0|important
+0|Christmas
+0|such
+0|snowy
+0|hers
+0|during
+0|probably
+0|volleyball
+0|sand
+0|tide
+0|hope
+0|plan
+0|merry
+0|yours
+0|invite
+0|suppose
+0|country
+0|known
+0|baguette
+0|yummy
+0|beet
+0|popular
+0|tasty
+0|pie
+0|sweet
+0|normal
+0|meal
+0|dessert
+0|chip
+0|rich
+0|capital
+0|across
+0|large
+0|area
+0|Russian
+0|national
+0|south
+0|southern
+0|African
+0|north
+0|American
+0|buffalo
+0|landscape
+0|mountain
+0|forest
+0|waterfall
+0|desert
+0|kilometre
+0|tour
+0|fall
+0|exciting
+0|dry
+0|rainfall
+0|ride
+0|camel
+0|through
+0|rainforest
+0|foreign
+0|video
+0|guess
+0|T-shirt
+0|heavily
+0|scarf
+0|glove
+0|boot
+0|indeed
+0|What's your name?
+0|My name is ...
+0|I'm ...
+0|Nice to meet you!
+0|Good to see you again.
+0|Welcome to ...
+0|show ... around
+0|play sports
+0|in front of
+0|look at
+0|look like
+0|turn around
+0|play ping-pong
+0|have fun
+0|a lot of
+0|How are you doing?
+0|learn about
+0|It's the best day for ...
+0|best wishes
+0|meet up with ...
+0|Same here.
+0|long time no see
+0|How do you like ...?
+0|look for
+0|give an example
+0|I got it!
+0|Good for you.
+0|more than
+0|move around
+0|a piece of cake
+0|jump over
+0|hot pot
+0|You got me.
+0|feel blue
+0|speak Chinese
+0|do homework
+0|help ... with ...
+0|What's the matter?
+0|have a headache
+0|feel sick
+0|have a fever
+0|Don't worry.
+0|take medicine
+0|get some rest
+0|old saying
+0|as for me
+0|make friends
+0|be ready to ...
+0|plant flowers
+0|go outdoors
+0|go on a picnic
+0|by the lake
+0|put ... on ...
+0|look out
+0|over there
+0|have a good time
+0|walk by
+0|walk away
+0|set the table
+0|point to ...
+0|at the end of ...
+0|jump out
+0|jump off
+0|on a business trip
+0|look after
+0|help each other
+0|stay healthy
+0|wake up
+0|take photos
+0|instead of
+0|black and white
+0|be up to
+0|all over the world
+0|live in groups
+0|go by underground
+0|come out of ...
+0|ask for
+0|go down
+0|at the traffic lights
+0|on your right
+0|go straight
+0|next to
+0|You're welcome.
+0|at the museum
+0|shopping list
+0|Here you are.
+0|My pleasure.
+0|robot show
+0|What day is it today?
+0|How is the weather?
+0|by noon
+0|What's the date today?
+0|the first month in the Chinese lunar calendar
+0|have no idea
+0|drop to
+0|turn into
+0|make snowmen
+0|offer ... to ...
+0|make a present for
+0|take away
+0|Merry Christmas!
+0|Happy New Year!
+0|invite ... to ...
+0|be supposed to ...
+0|can't wait to ...
+0|go across
+0|ship of the desert
+0|run through
+0|be on a video call
+0|take off
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 408
+# Total Entries Extracted: 408
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 408
+# -------------------------------

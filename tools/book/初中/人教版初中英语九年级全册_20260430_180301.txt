@@ -1,0 +1,700 @@
+0|textbook
+0|conversation
+0|aloud
+0|pronunciation
+0|sentence
+0|patient
+0|secret
+0|expression
+0|discover
+0|look up
+0|grammar
+0|repeat
+0|note
+0|pal
+0|physics
+0|chemistry
+0|memorize
+0|pattern
+0|novel
+0|pronounce
+0|increase
+0|speed
+0|review
+0|partner
+0|born
+0|be born with
+0|ability
+0|create
+0|brain
+0|active
+0|attention
+0|pay attention to
+0|connect
+0|connect ... with
+0|overnight
+0|knowledge
+0|lifelong
+0|wisely
+0|Annie
+0|Alexander Graham Bell
+0|mooncake
+0|lantern
+0|stranger
+0|relative
+0|put on
+0|pound
+0|folk
+0|goddess
+0|whoever
+0|steal
+0|lay
+0|lay out
+0|dessert
+0|garden
+0|tradition
+0|admire
+0|treat
+0|tie
+0|dinosaur
+0|mushroom
+0|togetherness
+0|happiness
+0|lunar
+0|riddle
+0|celebration
+0|firework
+0|take place
+0|gather
+0|count down
+0|suggest
+0|custom
+0|involve
+0|crowd
+0|bottom
+0|dust
+0|couplet
+0|set off
+0|set off sth.
+0|eve
+0|express
+0|reunion
+0|mark
+0|smell
+0|breeze
+0|picnic
+0|coming
+0|Macao
+0|Chiang Mai
+0|Egypt
+0|Scottish
+0|Water Festival
+0|Mid-Autumn Festival
+0|Mother's Day
+0|Father's Day
+0|Spring Festival
+0|Big Ben
+0|Auld Lang Syne
+0|Times Square
+0|Sham El-Nessim
+0|Clara
+0|restroom
+0|stamp
+0|bookstore
+0|beside
+0|postcard
+0|pardon
+0|washroom
+0|bathroom
+0|normally
+0|rush
+0|pass by
+0|staff
+0|grape
+0|policeman
+0|central
+0|nearby
+0|pardon me
+0|mail
+0|east
+0|fascinating
+0|inexpensive
+0|uncrowded
+0|convenient
+0|mall
+0|clerk
+0|corner
+0|politely
+0|request
+0|direction
+0|correct
+0|polite
+0|direct
+0|speaker
+0|whom
+0|impolite
+0|address
+0|underground
+0|parking lot
+0|course
+0|Italian
+0|Tim
+0|humorous
+0|silent
+0|helpful
+0|from time to time
+0|score
+0|background
+0|interview
+0|Asian
+0|deal
+0|deal with
+0|shyness
+0|dare
+0|ton
+0|private
+0|guard
+0|require
+0|European
+0|African
+0|British
+0|insect
+0|ant
+0|speech
+0|public
+0|in public
+0|spider
+0|seldom
+0|influence
+0|absent
+0|fail
+0|examination
+0|boarding school
+0|in person
+0|exactly
+0|pride
+0|take pride in
+0|proud
+0|be proud of
+0|general
+0|introduction
+0|Paula
+0|Alfred
+0|Billy
+0|Candy
+0|Jerry
+0|Emily
+0|chopstick
+0|coin
+0|fork
+0|blouse
+0|silver
+0|glass
+0|cotton
+0|steel
+0|fair
+0|environmental
+0|grass
+0|leaf
+0|produce
+0|widely
+0|be known for
+0|process
+0|pack
+0|business
+0|product
+0|France
+0|no matter
+0|local
+0|brand
+0|avoid
+0|handbag
+0|mobile
+0|everyday
+0|boss
+0|Germany
+0|surface
+0|material
+0|judge
+0|punish
+0|traffic
+0|postman
+0|cap
+0|glove
+0|international
+0|competitor
+0|its
+0|form
+0|clay
+0|balloon
+0|paper cutting
+0|scissors
+0|lively
+0|fairy tale
+0|historical
+0|heat
+0|polish
+0|complete
+0|South Korea
+0|Switzerland
+0|San Francisco
+0|Marcus
+0|Pam
+0|heel
+0|scoop
+0|electricity
+0|style
+0|project
+0|pleasure
+0|zipper
+0|zip
+0|daily
+0|have a point
+0|website
+0|pioneer
+0|list
+0|mention
+0|spread
+0|by accident
+0|accidental
+0|ruler
+0|boil
+0|remain
+0|sage
+0|national
+0|trade
+0|popularity
+0|doubt
+0|without doubt
+0|fridge
+0|low
+0|somebody
+0|wolf
+0|warn
+0|translate
+0|lock
+0|ring
+0|earthquake
+0|sudden
+0|all of a sudden
+0|bell
+0|biscuit
+0|cookie
+0|musical
+0|instrument
+0|crispy
+0|salty
+0|sour
+0|by mistake
+0|customer
+0|the Olympics
+0|Canadian
+0|divide
+0|divide ... into
+0|basket
+0|not only ... but also ...
+0|look up to
+0|hero
+0|professional
+0|nearly
+0|Berlin
+0|NBA
+0|National Basketball Association
+0|CBA
+0|China Basketball Association
+0|Roy
+0|Whitcomb Judson
+0|Ruby
+0|Thomas Watson
+0|George Crum
+0|James Naismith
+0|license
+0|licence
+0|safety
+0|smoke
+0|part-time
+0|pierce
+0|earring
+0|flash
+0|tiny
+0|cry
+0|field
+0|hug
+0|lift
+0|badly
+0|talk back
+0|awful
+0|teen
+0|regret
+0|poem
+0|community
+0|keep ... away from
+0|chance
+0|make one's own decision
+0|educate
+0|manage
+0|society
+0|get in the way of
+0|support
+0|end up
+0|enter
+0|choice
+0|Picasso
+0|whose
+0|truck
+0|rabbit
+0|attend
+0|valuable
+0|pink
+0|anybody
+0|dej vu
+0|mystery
+0|be known as
+0|theory
+0|familiar
+0|hidden
+0|power
+0|link
+0|parallel
+0|universe
+0|parallel universes
+0|mix-up
+0|generally speaking
+0|trick
+0|unsolved
+0|laboratory
+0|outdoors
+0|coat
+0|lie
+0|sleepy
+0|land
+0|alien
+0|run after
+0|suit
+0|at the same time
+0|circle
+0|Britain
+0|receive
+0|historian
+0|temple
+0|leader
+0|midsummer
+0|medical
+0|purpose
+0|prevent
+0|energy
+0|position
+0|burial
+0|honor
+0|honour
+0|ancestor
+0|victory
+0|enemy
+0|period
+0|noise
+0|Stonehenge
+0|Carla
+0|J.K.Rowling
+0|Jean
+0|Paul Stoker
+0|prefer
+0|lyrics
+0|Australian
+0|electronic
+0|suppose
+0|smooth
+0|spare
+0|director
+0|case
+0|in that case
+0|war
+0|stick
+0|stick to
+0|down
+0|dialog
+0|dialogue
+0|ending
+0|documentary
+0|drama
+0|plenty
+0|plenty of
+0|shut
+0|shut off
+0|superhero
+0|once in a while
+0|intelligent
+0|sense
+0|sadness
+0|pain
+0|reflect
+0|moving
+0|perform
+0|lifetime
+0|by the end of
+0|pity
+0|total
+0|in total
+0|master
+0|praise
+0|recall
+0|wound
+0|painful
+0|World War II
+0|Men in Black
+0|Kung Fu Panda
+0|Titanic
+0|March of the Penguins
+0|Spider-Man
+0|Carmen
+0|Dan Dervish
+0|bow
+0|kiss
+0|greet
+0|relaxed
+0|value
+0|drop by
+0|capital
+0|after all
+0|noon
+0|mad
+0|get mad
+0|effort
+0|make an effort
+0|passport
+0|clean ... off
+0|chalk
+0|blackboard
+0|northern
+0|coast
+0|season
+0|knock
+0|eastern
+0|take off
+0|worth
+0|manner
+0|empty
+0|basic
+0|exchange
+0|go out of one's way
+0|make ... feel at home
+0|teenage
+0|granddaughter
+0|behave
+0|except
+0|elbow
+0|gradually
+0|get used to
+0|suggestion
+0|Brazil
+0|Mexico
+0|Cali
+0|Colombia
+0|Lausanne
+0|Norway
+0|Maria
+0|Katie
+0|Sato
+0|Marie
+0|Teresa Lopez
+0|Marc LeBlanc
+0|rather
+0|would rather
+0|'d rather
+0|drive
+0|drive sb. crazy
+0|drive sb. mad
+0|the more ... the more ...
+0|lately
+0|be friends with sb.
+0|leave out
+0|friendship
+0|king
+0|prime
+0|minister
+0|prime minister
+0|banker
+0|fame
+0|pale
+0|queen
+0|call in
+0|examine
+0|nor
+0|neither ... nor ...
+0|palace
+0|wealth
+0|to start with
+0|grey
+0|lemon
+0|uncomfortable
+0|weight
+0|shoulder
+0|goal
+0|let ... down
+0|coach
+0|kick
+0|kick sb. off
+0|be hard on sb.
+0|besides
+0|teammate
+0|courage
+0|rather than
+0|guy
+0|pull together
+0|relief
+0|nod
+0|agreement
+0|fault
+0|disappoint
+0|Bert
+0|Holly
+0|unexpected
+0|by the time ...
+0|backpack
+0|oversleep
+0|give ... a lift
+0|block
+0|in line with
+0|worker
+0|stare
+0|disbelief
+0|above
+0|burn
+0|burning
+0|alive
+0|airport
+0|till
+0|west
+0|dead
+0|cream
+0|workday
+0|show up
+0|bean
+0|market
+0|fool
+0|costume
+0|embarrassed
+0|costume party
+0|announce
+0|spaghetti
+0|hoax
+0|sell out
+0|discovery
+0|lady
+0|cancel
+0|officer
+0|believable
+0|disappear
+0|embarrassing
+0|New Zealand
+0|Italy
+0|Mars
+0|Matt
+0|Kevin
+0|Carl
+0|Orson Welles
+0|litter
+0|ship
+0|coal
+0|ugly
+0|advantage
+0|cost
+0|wooden
+0|plastic
+0|takeaway
+0|bin
+0|fin
+0|cruel
+0|harmful
+0|be harmful to
+0|at the top of
+0|chain
+0|the food chain
+0|ecosystem
+0|industry
+0|law
+0|scientific
+0|present
+0|take part in
+0|afford
+0|turn off
+0|reusable
+0|pay for
+0|take action
+0|transportation
+0|recycle
+0|napkin
+0|throw away
+0|put sth. to good use
+0|pull ... down
+0|upside down
+0|gate
+0|bottle
+0|president
+0|inspiration
+0|iron
+0|work
+0|metal
+0|bring back
+0|creativity
+0|WildAid
+0|WWF
+0|World Wide Fund for Nature
+0|Jason
+0|Hayes
+0|Jessica
+0|survey
+0|standard
+0|row
+0|in a row
+0|keyboard
+0|method
+0|instruction
+0|double
+0|shall
+0|look back at
+0|overcome
+0|make a mess
+0|graduate
+0|keep one's cool
+0|caring
+0|ours
+0|senior
+0|senior high
+0|senior high school
+0|text
+0|go by
+0|level
+0|degree
+0|manager
+0|believe in
+0|gentleman
+0|graduation
+0|ceremony
+0|first of all
+0|congratulate
+0|thirsty
+0|be thirsty for
+0|thankful
+0|be thankful to sb.
+0|lastly
+0|task
+0|ahead
+0|ahead of
+0|along with
+0|responsible
+0|be responsible for
+0|separate
+0|set out
+0|separate from
+0|wing
+0|Luke
+0|Brian
+0|Griffin
+0|Trent
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 693
+# Total Entries Extracted: 693
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 693
+# -------------------------------

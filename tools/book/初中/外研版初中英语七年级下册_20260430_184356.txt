@@ -1,0 +1,463 @@
+0|crayon
+0|eraser
+0|glove
+0|wallet
+0|watch
+0|whose
+0|first of all
+0|lose
+0|find
+0|found
+0|lost and found box
+0|mine
+0|yours
+0|tape
+0|purple
+0|hers
+0|careful
+0|be careful with
+0|on
+0|from now on
+0|here is ...
+0|here are ...
+0|camera
+0|phone
+0|mobile phone
+0|lost and found office
+0|in a hurry
+0|leave
+0|left
+0|plane
+0|taxi
+0|why
+0|airport
+0|hundred
+0|hundreds of
+0|look for
+0|thousand
+0|strange
+0|boat
+0|duck
+0|pig
+0|sausage
+0|play
+0|tennis
+0|piano
+0|ride
+0|rode
+0|club
+0|term
+0|board
+0|would like
+0|well
+0|all
+0|that's all
+0|worry
+0|worry about
+0|teach
+0|taught
+0|then
+0|monitor
+0|start
+0|get on well with sb.
+0|ready
+0|ready to do sth.
+0|promise
+0|fast
+0|fit
+0|just
+0|ball
+0|game
+0|team
+0|best
+0|score
+0|tidy
+0|sure
+0|everybody
+0|just like
+0|beautiful
+0|fly
+0|flew
+0|kite
+0|swim
+0|swam
+0|go over
+0|picnic
+0|housework
+0|else
+0|nobody
+0|at
+0|nothing
+0|silly
+0|fantastic
+0|forward
+0|look forward to
+0|fan
+0|make friends
+0|shirt
+0|cheer
+0|player
+0|hope
+0|win
+0|won
+0|enjoy oneself
+0|myself
+0|during
+0|May
+0|May Day
+0|late
+0|walk
+0|take a walk
+0|country
+0|second
+0|collect
+0|litter
+0|fun
+0|summer holiday
+0|camp
+0|Australian
+0|sightseeing
+0|go sightseeing
+0|beach
+0|early
+0|chalk
+0|ruler
+0|carry
+0|change
+0|everything
+0|future
+0|in the future
+0|life
+0|need
+0|will
+0|would
+0|maybe
+0|ask
+0|question
+0|by
+0|level
+0|able
+0|be able to
+0|more
+0|not ... any more
+0|free
+0|air
+0|land
+0|machine
+0|rain
+0|robot
+0|sea
+0|space
+0|traffic
+0|jam
+0|traffic jam
+0|wind
+0|true
+0|come true
+0|bike
+0|bicycle
+0|car
+0|cheap
+0|everywhere
+0|not only ... but also ...
+0|into
+0|long
+0|heavy
+0|light
+0|easy
+0|working
+0|hour
+0|short
+0|rise
+0|rose
+0|as well
+0|market
+0|supermarket
+0|biscuit
+0|lemon
+0|strawberry
+0|Mother's Day
+0|size
+0|take
+0|took
+0|may
+0|might
+0|try
+0|try on
+0|certainly
+0|wait a minute
+0|sale
+0|price
+0|look
+0|fresh
+0|advantage
+0|anyone
+0|anything
+0|anywhere
+0|compare
+0|pay
+0|post
+0|product
+0|receive
+0|safe
+0|several
+0|online
+0|shopping
+0|way
+0|one of
+0|almost
+0|something
+0|later
+0|open
+0|out
+0|go out
+0|over
+0|one day
+0|one
+0|bank
+0|museum
+0|along
+0|across
+0|cross
+0|opposite
+0|tourist
+0|excuse
+0|excuse me
+0|street
+0|turn
+0|third
+0|guidebook
+0|bookshop
+0|right
+0|Why not ...?
+0|could
+0|underground
+0|tour
+0|square
+0|middle
+0|famous
+0|painting
+0|from
+0|metre
+0|meter
+0|above
+0|river
+0|clear
+0|bridge
+0|railway
+0|past
+0|church
+0|finish
+0|high
+0|post office
+0|up
+0|down
+0|stop
+0|horse
+0|born
+0|bear
+0|strict
+0|friendly
+0|primary
+0|primary school
+0|town
+0|US
+0|hey
+0|village
+0|nice
+0|good
+0|difficult
+0|bathroom
+0|bedroom
+0|garden
+0|living room
+0|east
+0|coast
+0|ago
+0|store
+0|movie theater
+0|theatre
+0|bored
+0|president
+0|comfortable
+0|lake
+0|last
+0|yesterday
+0|hair
+0|gold
+0|forest
+0|once
+0|upon
+0|once upon a time
+0|decide
+0|go for a walk
+0|basket
+0|notice
+0|all alone
+0|dark
+0|pick
+0|pick up
+0|soon
+0|lost
+0|around
+0|little
+0|towards
+0|knock
+0|door
+0|answer
+0|push
+0|enter
+0|bowl
+0|hungry
+0|either
+0|piece
+0|in pieces
+0|asleep
+0|return
+0|cry
+0|at first
+0|point
+0|point at
+0|shout
+0|jump
+0|without
+0|part
+0|March
+0|April
+0|June
+0|Women's Day
+0|National Day
+0|Children's Day
+0|July
+0|August
+0|September
+0|October
+0|November
+0|December
+0|writer
+0|find out
+0|real
+0|at the age of
+0|newspaper
+0|exact
+0|date
+0|become
+0|became
+0|in the 1860s
+0|poem
+0|marry
+0|successful
+0|work
+0|build
+0|built
+0|fire
+0|die
+0|rich
+0|language
+0|around the world
+0|young
+0|Pacific
+0|so
+0|guess
+0|excited
+0|wow
+0|arrive
+0|relax
+0|world-famous
+0|French
+0|sell
+0|sold
+0|top
+0|till
+0|wonderful
+0|palace
+0|bow
+0|kiss
+0|shake
+0|shook
+0|shake hands
+0|smile
+0|British
+0|German
+0|Japanese
+0|Russian
+0|visitor
+0|Russia
+0|what
+0|nod
+0|head
+0|hug
+0|each
+0|each other
+0|India
+0|together
+0|Maori
+0|touch
+0|nose
+0|finger
+0|foot
+0|feet
+0|knee
+0|leg
+0|mouth
+0|body
+0|foreign
+0|North American
+0|personal
+0|arm
+0|arm in arm
+0|South American
+0|hold
+0|held
+0|move
+0|Britain
+0|not at all
+0|polite
+0|somewhere
+0|wave
+0|fact
+0|in fact
+0|rude
+0|bring
+0|brought
+0|lively
+0|modern
+0|noisy
+0|pop
+0|popular
+0|rock
+0|sound
+0|violin
+0|Western
+0|hmm
+0|through
+0|both
+0|opera
+0|voice
+0|drum
+0|believe
+0|musician
+0|centre
+0|center
+0|European
+0|classical
+0|century
+0|composer
+0|elder
+0|waltz
+0|dance music
+0|another
+0|poor
+0|perfect
+0|sad
+0|slow
+0|feel
+0|felt
+0|ship
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 456
+# Total Entries Extracted: 456
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 456
+# -------------------------------

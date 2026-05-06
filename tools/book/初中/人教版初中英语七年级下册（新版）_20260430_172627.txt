@@ -1,0 +1,602 @@
+0|fox
+0|giraffe
+0|eagle
+0|wolf
+0|wolves
+0|penguin
+0|care
+0|take care of
+0|sandwich
+0|snake
+0|scary
+0|neck
+0|guess
+0|shark
+0|whale
+0|huge
+0|dangerous
+0|save
+0|luck
+0|Thai
+0|trunk
+0|pick
+0|pick up
+0|carry
+0|playful
+0|swimmer
+0|one another
+0|look after
+0|culture
+0|however
+0|danger
+0|in danger
+0|forest
+0|cut down
+0|too many
+0|kill
+0|made of
+0|ivory
+0|friendly
+0|quite
+0|quite a
+0|not ... at all
+0|fur
+0|blind
+0|hearing
+0|Antarctica
+0|Africa
+0|Malee
+0|Thailand
+0|rule
+0|order
+0|follow
+0|late for
+0|arrive
+0|on time
+0|hallway
+0|uniform
+0|litter
+0|polite
+0|treat
+0|respect
+0|if
+0|jacket
+0|have to
+0|everything
+0|lend
+0|sweet
+0|snack
+0|of course
+0|mobile
+0|mobile phone
+0|turn off
+0|queue
+0|jump the queue
+0|feed
+0|leave
+0|absent
+0|absent from
+0|shh
+0|sh
+0|quietly
+0|belt
+0|noise
+0|unhappy
+0|Dr
+0|doctor
+0|make sb.'s bed
+0|make the bed
+0|either
+0|practise
+0|hang
+0|hang out
+0|weekday
+0|awful
+0|become
+0|better
+0|person
+0|focus
+0|focus on
+0|build
+0|spirit
+0|think about
+0|relax
+0|advice
+0|understand
+0|untidy
+0|Mary
+0|Tony
+0|Anne
+0|Eric
+0|fit
+0|baseball
+0|glove
+0|mat
+0|rope
+0|jump rope
+0|racket
+0|hardly
+0|ever
+0|hardly ever
+0|once
+0|twice
+0|mine
+0|hers
+0|maybe
+0|well-used
+0|practice
+0|perfect
+0|seldom
+0|badminton
+0|double
+0|doubles
+0|sometime
+0|volleyball
+0|theirs
+0|jog
+0|few
+0|a few
+0|excuse
+0|excuse me
+0|over there
+0|just
+0|T-shirt
+0|belong
+0|belong to
+0|working
+0|working day
+0|full of
+0|energy
+0|group
+0|skateboard
+0|encourage
+0|trick
+0|succeed
+0|skateboarding
+0|goal
+0|sit-up
+0|work out
+0|app
+0|application
+0|progress
+0|match
+0|team
+0|ours
+0|lose
+0|teenager
+0|Steve
+0|watermelon
+0|cabbage
+0|mutton
+0|cookie
+0|onion
+0|dumpling
+0|coffee
+0|bean
+0|chip
+0|fish and chips
+0|salad
+0|porridge
+0|waiter
+0|What about ...?
+0|taste
+0|anything
+0|dish
+0|choice
+0|meal
+0|pork
+0|strawberry
+0|menu
+0|customer
+0|serve
+0|waitress
+0|sir
+0|go with
+0|instead
+0|pear
+0|too much
+0|sugar
+0|improve
+0|habit
+0|fast food
+0|salt
+0|fat
+0|put on
+0|weight
+0|hamburger
+0|cause
+0|heart
+0|balanced
+0|too ... to
+0|sleepy
+0|after all
+0|away
+0|poor
+0|result
+0|article
+0|common
+0|among
+0|soft
+0|soft drink
+0|enough
+0|thirsty
+0|Gongbao chicken
+0|America
+0|Dongpo pork
+0|right now
+0|ride
+0|moment
+0|at the moment
+0|work on
+0|dragon
+0|festival
+0|hold
+0|hold on
+0|voice
+0|race
+0|darling
+0|somebody
+0|could
+0|message
+0|take a message
+0|leave a message
+0|call back
+0|kick
+0|wow
+0|online
+0|shuttlecock
+0|sight
+0|exam
+0|examination
+0|hope
+0|forward
+0|look forward to
+0|skate
+0|happen
+0|zone
+0|time zone
+0|around the world
+0|rush
+0|in a hurry
+0|shine
+0|brightly
+0|colourful
+0|slowly
+0|such
+0|such as
+0|painting
+0|market
+0|side
+0|side by side
+0|subway
+0|bright
+0|drop
+0|drop off
+0|passenger
+0|central
+0|explain
+0|take part in
+0|tour
+0|sunshine
+0|drive
+0|rush hour
+0|Adam
+0|Dragon Boat Festival
+0|Beth
+0|Nairobi
+0|New York
+0|Kenya
+0|USA
+0|Central Park
+0|rain or shine
+0|affect
+0|dry
+0|lightning
+0|stormy
+0|north
+0|west
+0|south
+0|east
+0|stay in
+0|lucky
+0|lucky you
+0|sunbathe
+0|some day
+0|temperature
+0|snowman
+0|snowmen
+0|heavily
+0|snowy
+0|beach volleyball
+0|high
+0|freezing
+0|tourist
+0|mount
+0|cloud
+0|feel like
+0|magical
+0|rock
+0|rest
+0|area
+0|rest area
+0|make progress
+0|although
+0|still
+0|in high spirits
+0|experience
+0|through
+0|glad
+0|peak
+0|grey
+0|gray
+0|because of
+0|fog
+0|ground
+0|wet
+0|tiring
+0|seem
+0|sunlight
+0|at the top
+0|thought
+0|mountain
+0|at the start
+0|end
+0|at the end
+0|storm
+0|pour
+0|wind
+0|shout
+0|run after
+0|Anna
+0|John
+0|Stockholm
+0|Mount Huangshan
+0|Bright Peak
+0|meet up
+0|museum
+0|exhibition
+0|direction
+0|trip
+0|wastewater
+0|plant
+0|into
+0|remove
+0|piece
+0|waste
+0|machine
+0|germ
+0|step
+0|used to
+0|realize
+0|realise
+0|inside
+0|go on a trip
+0|process
+0|theatre
+0|factory
+0|terrible
+0|actor
+0|gun
+0|try on
+0|along
+0|road
+0|create
+0|record
+0|skill
+0|write down
+0|explore
+0|tent
+0|cucumber
+0|from ... to ...
+0|straight
+0|fill
+0|basket
+0|teach
+0|taught
+0|branch
+0|leaf
+0|leaves
+0|finally
+0|think of
+0|grain
+0|fresh
+0|certainly
+0|diary
+0|entry
+0|agree
+0|agree with
+0|upon
+0|once upon a time
+0|bite
+0|bit
+0|bite through
+0|net
+0|hunter
+0|promise
+0|long ago
+0|war
+0|neighbour
+0|wise
+0|emperor
+0|lie
+0|pretend
+0|official
+0|silly
+0|decide
+0|praise
+0|afraid
+0|suddenly
+0|at first
+0|truth
+0|tell the truth
+0|make money
+0|true
+0|hate
+0|get out
+0|king
+0|artist
+0|quickly
+0|smile
+0|all over
+0|ugly
+0|duckling
+0|real
+0|laugh at
+0|go away
+0|search
+0|search for
+0|hen
+0|hopefully
+0|purr
+0|lay
+0|laid
+0|swan
+0|feather
+0|to sb.'s surprise
+0|size
+0|believe
+0|only if
+0|fisherman
+0|fishermen
+0|fishing
+0|come out
+0|genie
+0|die
+0|make a promise
+0|someone
+0|set
+0|set ... free
+0|rich
+0|powerful
+0|anyone
+0|instead of
+0|succeed in doing sth.
+0|himself
+0|in the end
+0|Hans Christian Andersen
+0|lion
+0|tiger
+0|monkey
+0|should
+0|cool
+0|lovely
+0|cold
+0|stand
+0|close
+0|warm
+0|sea
+0|look
+0|looks
+0|mouse
+0|mice
+0|bear
+0|tail
+0|elephant
+0|strong
+0|ear
+0|heavy
+0|water
+0|cut
+0|safe
+0|late
+0|phone
+0|hand
+0|must
+0|pen
+0|fruit
+0|bring
+0|turn
+0|off
+0|jump
+0|bad
+0|car
+0|cinema
+0|hospital
+0|hurry
+0|show
+0|world
+0|clothes
+0|TV
+0|television
+0|never
+0|over
+0|near
+0|air
+0|evening
+0|tired
+0|win
+0|healthy
+0|body
+0|try
+0|tea
+0|bread
+0|ice cream
+0|vegetable
+0|soup
+0|rice
+0|cup
+0|banana
+0|hungry
+0|young
+0|wash
+0|free
+0|holiday
+0|boat
+0|supermarket
+0|boy
+0|city
+0|street
+0|light
+0|move
+0|river
+0|bag
+0|by
+0|wonderful
+0|taxi
+0|sun
+0|rain
+0|weather
+0|cloudy
+0|windy
+0|sunny
+0|hometown
+0|sad
+0|beach
+0|snow
+0|winter
+0|summer
+0|sweater
+0|kite
+0|spring
+0|season
+0|umbrella
+0|dirty
+0|top
+0|man
+0|men
+0|angry
+0|wrong
+0|bus
+0|astronaut
+0|robot
+0|again
+0|zoo
+0|yesterday
+0|space
+0|stop
+0|farmer
+0|catch
+0|caught
+0|sell
+0|sold
+0|arm
+0|leg
+0|cry
+0|money
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 595
+# Total Entries Extracted: 595
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 595
+# -------------------------------

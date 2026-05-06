@@ -1,0 +1,474 @@
+0|compare
+0|shy
+0|lazy
+0|loud
+0|outgoing
+0|hard-working
+0|perform
+0|solve
+0|flute
+0|congratulation
+0|Congratulations!
+0|Congratulations on ...!
+0|prize
+0|attend
+0|as ... as
+0|besides
+0|spare
+0|spare time
+0|pleasure
+0|have sth. in common
+0|appearance
+0|personality
+0|serious
+0|strength
+0|slim
+0|fact
+0|population
+0|km
+0|kilometre
+0|kilometer
+0|average
+0|rainfall
+0|per
+0|mm
+0|millimetre
+0|millimeter
+0|pleasant
+0|difference
+0|alike
+0|mirror
+0|interest
+0|novel
+0|sense
+0|humour
+0|humor
+0|thanks to
+0|opinion
+0|make a mistake
+0|less
+0|straightforward
+0|honest
+0|direct
+0|similarity
+0|friendship
+0|metre
+0|meter
+0|prince
+0|character
+0|pauper
+0|exchange
+0|by accident
+0|expect
+0|silver
+0|lining
+0|silver lining
+0|situation
+0|care about
+0|reach
+0|reach for
+0|lend a hand
+0|lend sb. a hand
+0|Julie
+0|Vancouver
+0|Matt
+0|Stephen
+0|Diana
+0|Edward
+0|Mark Twain
+0|Rose
+0|moss
+0|redwood
+0|cheetah
+0|folding
+0|folding fan
+0|bamboo
+0|yeah
+0|goodness
+0|tool
+0|actually
+0|shoot
+0|appear
+0|feel free
+0|feel free to do sth.
+0|land
+0|African
+0|rose
+0|peony
+0|butterfly
+0|wing
+0|frog
+0|up to
+0|weigh
+0|kg
+0|kilogram
+0|kilogramme
+0|ginkgo
+0|believe
+0|take a walk
+0|connect
+0|connected
+0|be connected with
+0|be connected to
+0|without
+0|imagine
+0|honey
+0|disappointed
+0|connection
+0|pollination
+0|pollen
+0|action
+0|in fact
+0|per cent
+0|for this reason
+0|planet
+0|in order to
+0|store
+0|honeycomb
+0|communicate
+0|play a part
+0|play a part in sth.
+0|ecosystem
+0|importance
+0|title
+0|human
+0|ant
+0|be home to sb.
+0|be home to sth.
+0|happiness
+0|disappoint
+0|mushroom
+0|ton
+0|role
+0|play a role
+0|play a role in
+0|pea
+0|climate
+0|ocean
+0|except
+0|tiny
+0|lively
+0|the Arctic Ocean
+0|Billy
+0|pepper
+0|cut up
+0|mix
+0|bake
+0|oven
+0|pour sth. into sth.
+0|flour
+0|boil
+0|butter
+0|cheese
+0|cut sth. in sth.
+0|cut sth. into sth.
+0|tablespoon
+0|mash
+0|mashed potatoes
+0|stir-fry
+0|do with
+0|bowl
+0|heat
+0|oil
+0|pan
+0|put sth. back
+0|mix ... with ...
+0|simple
+0|ingredient
+0|instruction
+0|steamed fish
+0|sour
+0|hot and sour soup
+0|mess
+0|pretty
+0|Christmas
+0|pancake
+0|dream
+0|university
+0|go boating
+0|memory
+0|visible
+0|along with sb.
+0|along with sth.
+0|pumpkin
+0|pie
+0|warm up
+0|cinnamon
+0|fill ... with ...
+0|sweetness
+0|college
+0|host
+0|hostess
+0|recipe
+0|cream
+0|crust
+0|mixture
+0|least
+0|at least
+0|secret
+0|according to
+0|whenever
+0|item
+0|spaghetti
+0|spoon
+0|slice
+0|couple
+0|island
+0|wife
+0|separate
+0|born
+0|one by one
+0|Thanksgiving
+0|Guoqiao Rice Noodles
+0|yourself
+0|engineer
+0|fashion
+0|designer
+0|director
+0|musician
+0|fireman
+0|AI
+0|artificial intelligence
+0|essay
+0|classic
+0|keep on doing sth.
+0|make sure
+0|try one's best
+0|literature
+0|athlete
+0|photographer
+0|painter
+0|businessman
+0|actress
+0|lawyer
+0|law
+0|bath
+0|miss
+0|be tired of
+0|able
+0|stick to sth.
+0|resolution
+0|have ... to do with sb.
+0|have ... to do with sth.
+0|have to do with sb.
+0|have to do with sth.
+0|mini-goal
+0|achieve
+0|physical
+0|health
+0|healthily
+0|take up
+0|photography
+0|self-improvement
+0|confident
+0|organized
+0|organised
+0|wisely
+0|possible
+0|paragraph
+0|introduce
+0|meaning
+0|fail
+0|ahead
+0|put out
+0|design
+0|bridge
+0|final
+0|confidence
+0|form
+0|relationship
+0|push-up
+0|energetic
+0|last but not least
+0|Jason
+0|Tina
+0|prediction
+0|outer
+0|outer space
+0|space
+0|worse
+0|take over
+0|sci-fi
+0|science fiction
+0|ticket
+0|positive
+0|traffic
+0|technology
+0|video
+0|transport
+0|system
+0|efficient
+0|education
+0|length
+0|topic
+0|partner
+0|shall
+0|pass
+0|winner
+0|cure
+0|cancer
+0|concert
+0|wallet
+0|guest
+0|chief
+0|researcher
+0|research
+0|futurist
+0|everywhere
+0|robotics
+0|industry
+0|service
+0|disaster
+0|emergency
+0|disappear
+0|challenging
+0|pilot
+0|expert
+0|replace
+0|creativity
+0|emotional
+0|intelligence
+0|emotional intelligence
+0|mention
+0|refrigerator
+0|fridge
+0|low
+0|run low
+0|run low on sth.
+0|accept
+0|influence
+0|creative
+0|impossible
+0|quality
+0|develop
+0|German
+0|valuable
+0|public
+0|medical
+0|challenge
+0|task
+0|depend
+0|depend on
+0|depend upon
+0|come over
+0|as long as
+0|Jennifer
+0|Harry
+0|Asimov
+0|France
+0|Mandy
+0|communication
+0|face to face
+0|text message
+0|sign
+0|speaker
+0|rehearsal
+0|show sb. around
+0|local
+0|face-to-face
+0|professor
+0|speech
+0|argue
+0|make up
+0|make up with sb.
+0|in person
+0|prefer
+0|calm
+0|worry about
+0|expression
+0|chance
+0|meeting
+0|difficulty
+0|line
+0|drop sb. a line
+0|detail
+0|reunion
+0|training
+0|nervous
+0|tip
+0|carefully
+0|show interest in sth.
+0|listener
+0|point
+0|surely
+0|continue
+0|impolite
+0|personal
+0|argue with sb.
+0|move on
+0|move on to sth.
+0|sincere
+0|find out
+0|pay
+0|attention
+0|pay attention
+0|pay attention to
+0|be yourself
+0|offer
+0|reasonable
+0|social
+0|medium
+0|social media
+0|trust
+0|keep away from ...
+0|keep ... away from
+0|misunderstanding
+0|event
+0|take place
+0|cost
+0|opportunity
+0|benefit
+0|benefit ... from ...
+0|reply
+0|honour
+0|honor
+0|sincerely
+0|opening
+0|closing
+0|sentence
+0|date
+0|clause
+0|Susan
+0|Jones
+0|kung fu
+0|skipping rope
+0|high jump
+0|snowball
+0|pajamas
+0|pillow
+0|pity
+0|traditional
+0|whether
+0|outdoor
+0|indoor
+0|take part in
+0|fitness
+0|mental
+0|enter
+0|represent
+0|value
+0|fair
+0|likely
+0|shape
+0|excitement
+0|sum up
+0|empty
+0|stomach
+0|within
+0|slow
+0|fan
+0|earth
+0|bee
+0|far
+0|meat
+0|grape
+0|thin
+0|worker
+0|star
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 467
+# Total Entries Extracted: 467
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 467
+# -------------------------------

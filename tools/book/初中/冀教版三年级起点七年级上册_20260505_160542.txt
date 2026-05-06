@@ -1,0 +1,574 @@
+0|Jenny
+0|Canada
+0|Danny
+0|thanks
+0|student
+0|four
+0|five
+0|over
+0|Jones
+0|homeroom
+0|Kate
+0|classmate
+0|Jack
+0|visiting
+0|show
+0|around
+0|classroom
+0|office
+0|plan
+0|fun
+0|lab
+0|eraser
+0|guess
+0|first
+0|wall
+0|may
+0|excuse
+0|OK
+0|okay
+0|borrow
+0|two
+0|three
+0|store
+0|later
+0|thing
+0|need
+0|list
+0|ten
+0|six
+0|seven
+0|one
+0|nine
+0|eight
+0|Smith
+0|sure
+0|blouse
+0|really
+0|Kim
+0|pink
+0|paint
+0|mix
+0|rainbow
+0|purple
+0|out
+0|sky
+0|Bob
+0|scarf
+0|scarfs
+0|scarves
+0|glove
+0|maybe
+0|Lynn
+0|just
+0|catch
+0|ready
+0|dinosaur
+0|T-shirt
+0|jacket
+0|forget
+0|hat
+0|pants
+0|colourful
+0|so
+0|bright
+0|world
+0|report
+0|traditional
+0|wow
+0|sari
+0|India
+0|uniform
+0|pretty
+0|centre
+0|Saturday
+0|will
+0|pair
+0|part
+0|feeling
+0|Robin
+0|robot
+0|camera
+0|smell
+0|finger
+0|player
+0|homework
+0|singer
+0|question
+0|sick
+0|scared
+0|smile
+0|wave
+0|mean
+0|metre
+0|bit
+0|against
+0|tail
+0|flat
+0|upon
+0|ground
+0|oh
+0|hurt
+0|donut
+0|enough
+0|laugh
+0|Jim
+0|stomachache
+0|better
+0|Dr.
+0|doctor
+0|matter
+0|headache
+0|aachoo
+0|medicine
+0|stay
+0|rest
+0|different
+0|cute
+0|twelve
+0|blond
+0|thirteen
+0|funny
+0|almost
+0|glass
+0|glasses
+0|restaurant
+0|fifteen
+0|cereal
+0|would
+0|salad
+0|sugar
+0|delicious
+0|Mary
+0|cup
+0|full
+0|cookie
+0|chocolate
+0|everything
+0|meat
+0|job
+0|market
+0|grape
+0|carrot
+0|cabbage
+0|watermelon
+0|sweet
+0|pear
+0|waitress
+0|order
+0|fourteen
+0|beef
+0|eleven
+0|dumpling
+0|something
+0|problem
+0|menu
+0|can
+0|coke
+0|bottle
+0|corner
+0|money
+0|clerk
+0|fridge
+0|refrigerator
+0|twenty
+0|pass
+0|away
+0|sandwich
+0|takeout
+0|tip
+0|only
+0|P.S.
+0|postscript
+0|member
+0|son
+0|daughter
+0|drive
+0|policeman
+0|radio
+0|businessman
+0|weekend
+0|together
+0|others
+0|hard
+0|bedroom
+0|dictionary
+0|front
+0|above
+0|thirty
+0|picnic
+0|carry
+0|basket
+0|Rover
+0|tablecloth
+0|lot
+0|quiet
+0|paper
+0|inside
+0|poem
+0|rose
+0|riddle
+0|present
+0|soft
+0|woof
+0|Jane
+0|set
+0|Fred
+0|Heidi
+0|teacup
+0|bookstore
+0|ride
+0|broken
+0|off
+0|lost
+0|lady
+0|traffic
+0|straight
+0|luck
+0|fresh
+0|follow
+0|count
+0|forty
+0|fifty
+0|sixty
+0|seventy
+0|eighty
+0|ninety
+0|hundred
+0|dream
+0|noise
+0|lion
+0|lonely
+0|miss
+0|forest
+0|course
+0|countryside
+0|feed
+0|pick
+0|friendly
+0|quickly
+0|moo
+0|museum
+0|hall
+0|famous
+0|painting
+0|boring
+0|war
+0|learn
+0|history
+0|area
+0|gift
+0|movie
+0|theatre
+0|kung fu
+0|price
+0|hero
+0|save
+0|airport
+0|hotel
+0|magic
+0|fight
+0|Monday
+0|rainy
+0|swimming
+0|Tuesday
+0|outside
+0|Wednesday
+0|Thursday
+0|snowy
+0|skate
+0|Nick
+0|mark
+0|calendar
+0|December
+0|best
+0|Tony
+0|Friday
+0|Christmas
+0|eve
+0|Sunday
+0|sale
+0|midnight
+0|date
+0|January
+0|March
+0|April
+0|June
+0|second
+0|February
+0|third
+0|fourth
+0|fifth
+0|May
+0|sixth
+0|August
+0|September
+0|November
+0|leap
+0|seventh
+0|July
+0|eighth
+0|ninth
+0|tenth
+0|October
+0|eleventh
+0|twelfth
+0|international
+0|national
+0|festival
+0|usually
+0|during
+0|mountain
+0|climb
+0|excited
+0|beach
+0|Anne
+0|Australia
+0|hope
+0|yours
+0|direction
+0|north
+0|south
+0|east
+0|west
+0|point
+0|country
+0|New Zealand
+0|grandparent
+0|southeast
+0|U.S.
+0|United States
+0|soon
+0|invite
+0|everyone
+0|hey
+0|Sydney
+0|John
+0|London
+0|capital
+0|U.K.
+0|United Kingdom
+0|Mike
+0|Washington
+0|Greg
+0|Vancouver
+0|language
+0|else
+0|flag
+0|palace
+0|the Palace Museum
+0|lovely
+0|French
+0|Ottawa
+0|leaf
+0|leaves
+0|beaver
+0|Niagara
+0|waterfall
+0|stripe
+0|eagle
+0|statue
+0|liberty
+0|Statue of Liberty
+0|New York
+0|same
+0|as
+0|Big Ben
+0|tower
+0|Canberra
+0|kangaroo
+0|opera
+0|Sydney Opera House
+0|Singapore
+0|Africa
+0|South Africa
+0|be from ...
+0|What's your name?
+0|My name is ...
+0|I'm ...
+0|How are you?
+0|I'm fine. And you?
+0|Nice to meet you, too.
+0|Good morning.
+0|over there
+0|homeroom teacher
+0|visiting student
+0|show ... around
+0|have lessons
+0|play sports
+0|have fun
+0|guessing game
+0|Excuse me. May I have ...?
+0|Here you are.
+0|You're welcome!
+0|See you later.
+0|What about ...?
+0|shopping list
+0|light blue
+0|Good afternoon.
+0|How about ...?
+0|look at ...
+0|How many colours do you see?
+0|come out
+0|in the sky
+0|just right
+0|catch a cold
+0|ready for ...
+0|be ready for ...
+0|go back
+0|put on
+0|go well with
+0|take ... all out of
+0|look so pretty
+0|in black and white
+0|go shopping
+0|at the shopping centre
+0|a pair of
+0|play with
+0|listen to
+0|wave one's hand
+0|see red
+0|How tall is he?
+0|How tall is she?
+0|He is ... metres tall.
+0|She is ... metres tall.
+0|a bit
+0|How tall are you?
+0|I'm ... metres tall.
+0|stand against
+0|stand upon
+0|How do you feel?
+0|I feel ...
+0|What's wrong?
+0|see a doctor
+0|Are you OK?
+0|I have a stomachache.
+0|I have a headache.
+0|You'd better ...
+0|You had better ...
+0|What's the matter?
+0|have a cold
+0|stay home
+0|have a rest
+0|What does he look like?
+0|What does she look like?
+0|look cool
+0|look cute
+0|look funny
+0|look different
+0|Time for ...
+0|What's for breakfast?
+0|What would you like?
+0|I'd like ...
+0|I would like ...
+0|a glass of ...
+0|a cup of ...
+0|have to
+0|Do you want to come with me?
+0|be full of ...
+0|What would you like to buy?
+0|write down
+0|Good job!
+0|Are you ready to order?
+0|How much is ...?
+0|How much are ...?
+0|How much for ...?
+0|Would you like ...?
+0|No problem.
+0|a can of ...
+0|a bottle of ...
+0|corner store
+0|Can I help you?
+0|Let me see.
+0|take down
+0|pass around
+0|be away
+0|get enough rest
+0|watch TV
+0|every day
+0|the Smith family
+0|What does she do?
+0|She is a ...
+0|talk on the police radio
+0|walk to school
+0|on weekends
+0|play football
+0|be close to ...
+0|be ready to ...
+0|work hard at school
+0|in front of ...
+0|How old is he?
+0|How old is she?
+0|He is ...
+0|She is ...
+0|He is ... years old.
+0|She is ... years old.
+0|How old are you?
+0|I'm ... years old.
+0|go on a picnic
+0|a basket of ...
+0|lots of ...
+0|look out
+0|have a birthday party
+0|make a birthday card
+0|on the front
+0|on the front of ...
+0|Happy Birthday!
+0|set the table
+0|How can we get there?
+0|take Bus 42
+0|get off
+0|get lost
+0|on the way to
+0|look for
+0|Go down this street. Turn left at the traffic lights.
+0|Good luck!
+0|May I help you?
+0|next to
+0|Yes?
+0|What can I do for you?
+0|I will take it.
+0|go to the zoo
+0|make noises
+0|of course
+0|on the farm
+0|Come on!
+0|learn about
+0|by bike
+0|find out
+0|How is the weather? It is ...
+0|go swimming
+0|have a good time
+0|go skating
+0|Boxing Day
+0|big sales
+0|count down
+0|Happy New Year!
+0|What's the date?
+0|Sports Day
+0|leap year
+0|International Workers' Day
+0|Children's Day
+0|Teachers' Day
+0|National Day
+0|the Spring Festival
+0|New Year's Day
+0|What do you like to do on holidays?
+0|watch a movie
+0|go mountain climbing
+0|Thank you for inviting me.
+0|come from
+0|a lot of
+0|the Great Wall
+0|the same ... as ...
+0|in the corner
+0|English-speaking countries
+0|all over the world
+0|a list of ...
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 567
+# Total Entries Extracted: 567
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 567
+# -------------------------------

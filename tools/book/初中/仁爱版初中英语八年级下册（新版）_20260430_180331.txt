@@ -1,0 +1,537 @@
+0|learner
+0|attend
+0|experiment
+0|note
+0|internet
+0|relative
+0|pizza
+0|chemistry
+0|shocked
+0|purple
+0|silver
+0|cooking
+0|pronunciation
+0|programme
+0|program
+0|hardly
+0|whenever
+0|repeat
+0|oral
+0|abroad
+0|pen
+0|die
+0|background
+0|remind
+0|disappoint
+0|imagine
+0|educator
+0|state
+0|master
+0|private
+0|thought
+0|poem
+0|etc.
+0|wise
+0|truth
+0|increase
+0|digital
+0|ability
+0|husband
+0|education
+0|suppose
+0|foreign
+0|educational
+0|satisfy
+0|personal
+0|able
+0|except
+0|else
+0|meaning
+0|socialism
+0|dictionary
+0|aloud
+0|discussion
+0|solution
+0|topic
+0|explain
+0|memorize
+0|serious
+0|deaf
+0|actually
+0|poor
+0|afford
+0|borrow
+0|progress
+0|effort
+0|enter
+0|college
+0|graduate
+0|realise
+0|realize
+0|stick
+0|coin
+0|euro
+0|pound
+0|cash
+0|credit
+0|foreigner
+0|mobile
+0|laptop
+0|yogurt
+0|menu
+0|butter
+0|bill
+0|mutton
+0|salad
+0|lemon
+0|pancake
+0|cheese
+0|porridge
+0|fork
+0|convenient
+0|wallet
+0|unit
+0|persuade
+0|inform
+0|entertain
+0|resource
+0|frog
+0|toolmaker
+0|hunt
+0|agree
+0|reader
+0|truck
+0|hen
+0|sheep
+0|continue
+0|number
+0|directly
+0|case
+0|invent
+0|shell
+0|warring
+0|rope
+0|easily
+0|less
+0|metal
+0|invention
+0|technology
+0|almost
+0|exist
+0|covering
+0|situation
+0|action
+0|connect
+0|predict
+0|importantly
+0|rapid
+0|growth
+0|suggest
+0|greatly
+0|economy
+0|piggy
+0|blouse
+0|budget
+0|unnecessary
+0|twice
+0|wastepaper
+0|monthly
+0|total
+0|amount
+0|magazine
+0|university
+0|basic
+0|graduation
+0|cent
+0|necessary
+0|therefore
+0|society
+0|shall
+0|responsible
+0|silly
+0|goose
+0|golden
+0|upon
+0|lay
+0|basket
+0|kill
+0|disappointment
+0|force
+0|earthquake
+0|wildfire
+0|typhoon
+0|flood
+0|snowstorm
+0|heatwave
+0|usual
+0|sudden
+0|mix
+0|hit
+0|elsewhere
+0|blow
+0|burn
+0|prevent
+0|disaster
+0|reduce
+0|stuck
+0|passenger
+0|those
+0|hurricane
+0|southern
+0|god
+0|coastal
+0|western
+0|coast
+0|bleed
+0|badly
+0|fear
+0|terrible
+0|homeless
+0|reasonable
+0|umbrella
+0|harmful
+0|insect
+0|deadly
+0|disease
+0|waterway
+0|preparation
+0|glue
+0|tape
+0|flashlight
+0|within
+0|hide
+0|danger
+0|emergency
+0|kit
+0|aftershock
+0|whether
+0|storm
+0|thunder
+0|lightning
+0|quake
+0|prevention
+0|perform
+0|November
+0|superstorm
+0|hillside
+0|roof
+0|painful
+0|clothing
+0|limit
+0|outdoor
+0|fog
+0|rainstorm
+0|ahead
+0|passage
+0|pour
+0|pale
+0|towel
+0|coal
+0|global
+0|nose
+0|mouth
+0|terribly
+0|several
+0|recent
+0|seriously
+0|injured
+0|physically
+0|scared
+0|helpless
+0|normal
+0|none
+0|download
+0|banking
+0|video
+0|social
+0|whatever
+0|account
+0|hate
+0|connection
+0|chess
+0|steal
+0|disadvantage
+0|virus
+0|weigh
+0|ton
+0|powerful
+0|desktop
+0|lap
+0|smartphone
+0|tablet
+0|risk
+0|password
+0|address
+0|link
+0|click
+0|reply
+0|app
+0|application
+0|partner
+0|mail
+0|collection
+0|proper
+0|amazed
+0|latest
+0|expert
+0|product
+0|possibility
+0|disappear
+0|citizen
+0|judge
+0|safely
+0|communication
+0|airport
+0|cancel
+0|mention
+0|watchful
+0|shoulder
+0|fantastic
+0|kung fu
+0|pot
+0|herbal
+0|ill
+0|talented
+0|lion
+0|president
+0|bravely
+0|monitor
+0|clarify
+0|clue
+0|embroidery
+0|Manchu
+0|fashion
+0|wedding
+0|married
+0|trader
+0|warmly
+0|rely
+0|camel
+0|transport
+0|northwestern
+0|tradition
+0|waterwheel
+0|grand
+0|canal
+0|Ms
+0|Ms.
+0|leaf
+0|tense
+0|actual
+0|roll
+0|swing
+0|Korean
+0|onto
+0|article
+0|knee
+0|treat
+0|pack
+0|boil
+0|press
+0|traditional
+0|roast
+0|oven
+0|skin
+0|onion
+0|invite
+0|someday
+0|feature
+0|suit
+0|jacket
+0|characteristic
+0|overseas
+0|local
+0|ink
+0|movement
+0|beauty
+0|wonderland
+0|fairy
+0|tale
+0|fable
+0|biography
+0|merchant
+0|mouse
+0|kindness
+0|ugly
+0|duckling
+0|translate
+0|translation
+0|mansion
+0|wealth
+0|handsome
+0|bully
+0|energetic
+0|friendship
+0|snowy
+0|hungry
+0|punish
+0|perhaps
+0|dead
+0|fox
+0|stork
+0|strategy
+0|preview
+0|soup
+0|beak
+0|jar
+0|neck
+0|scene
+0|regular
+0|landlord
+0|treasure
+0|weak
+0|mirror
+0|well-known
+0|couple
+0|tiring
+0|asleep
+0|ending
+0|bored
+0|scare
+0|fisherman
+0|leading
+0|depend
+0|funny
+0|poet
+0|playwright
+0|honesty
+0|slow
+0|single
+0|emotion
+0|classical
+0|romance
+0|romantic
+0|do an experiment
+0|take notes
+0|give sb. some advice
+0|go over
+0|copy down
+0|by heart
+0|set off
+0|take up
+0|fight for
+0|cultural background
+0|remind sb. of
+0|under great pressure
+0|get out of
+0|step forward
+0|the Spring and Autumn Period
+0|get down to sth.
+0|be confident about oneself
+0|in one's late years
+0|draw on
+0|pay attention to
+0|tell the truth
+0|in the digital age
+0|be able to do sth.
+0|as soon as
+0|sense of touch
+0|raise questions
+0|offer one's opinions
+0|make use of
+0|have discussions on
+0|become blind
+0|in the woods
+0|afford to do sth.
+0|borrow sth. from sb.
+0|stick to sth.
+0|be careful with
+0|personal information
+0|pay in cash
+0|in a moment
+0|by the way
+0|take ... as an example
+0|fill sth. out
+0|agree on sth.
+0|in this case
+0|a form of
+0|do business
+0|continue to do sth.
+0|make payments
+0|make a budget
+0|think twice
+0|keep a good balance
+0|be thankful for ...
+0|once upon a time
+0|after a while
+0|take away
+0|heavy rainfall
+0|burn down
+0|be stuck in
+0|in need
+0|sweep through
+0|safe and sound
+0|in great numbers
+0|fill up
+0|make preparations
+0|all the time
+0|to begin with
+0|hang on to
+0|stay away from ...
+0|keep off
+0|more often
+0|take action to do sth.
+0|fight against
+0|get over
+0|pour down
+0|clear up
+0|step out of
+0|fall on
+0|with fear
+0|in danger
+0|break down
+0|lead to
+0|run out of ...
+0|turn out
+0|take online courses
+0|search for information
+0|open an account
+0|wait a minute
+0|in seconds
+0|just like
+0|come into being
+0|be harmful to
+0|keep a record
+0|again and again
+0|report ... to ...
+0|over a long distance
+0|instead of
+0|keep an eye on
+0|keep a safe distance
+0|for a moment
+0|make a living
+0|many types of
+0|cool ... down
+0|have a pain in
+0|have a pain on
+0|come up to ...
+0|take the order
+0|have a taste of
+0|in the eyes of
+0|fairy tale
+0|make the best of
+0|translate ... into
+0|just as
+0|grow into
+0|go out
+0|leave for
+0|prevent sb. from doing sth.
+0|prevent sth. from doing sth.
+0|from all walks of life
+0|dream of
+0|be different from
+0|come out
+0|home and abroad
+0|fall asleep
+0|depend on
+0|shoot the film
+0|get into trouble
+0|in a word
+0|grow up
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 530
+# Total Entries Extracted: 530
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 530
+# -------------------------------

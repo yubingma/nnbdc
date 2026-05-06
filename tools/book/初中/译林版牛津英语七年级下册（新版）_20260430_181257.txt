@@ -1,0 +1,461 @@
+0|cottage
+0|farmhouse
+0|mobile
+0|mobile home
+0|town
+0|town house
+0|west
+0|hundred
+0|study
+0|relaxing
+0|bedroom
+0|own
+0|south
+0|balcony
+0|view
+0|mile
+0|relax
+0|living room
+0|ahlan
+0|village
+0|carpet
+0|next to
+0|yard
+0|hen
+0|collect
+0|firework
+0|BBQ
+0|barbecue
+0|zero
+0|square
+0|metre
+0|meter
+0|square metre
+0|number
+0|million
+0|calendar
+0|lunar calendar
+0|seaside
+0|east
+0|stone
+0|seagrass
+0|hold
+0|hold up
+0|wind
+0|south-west
+0|bamboo
+0|ground floor
+0|grassland
+0|north
+0|tent
+0|wood
+0|build
+0|fishing
+0|dry
+0|ride
+0|centre
+0|center
+0|bathroom
+0|smell
+0|sky
+0|neighbourhood
+0|neighborhood
+0|officer
+0|police officer
+0|station
+0|police station
+0|restaurant
+0|neighbour
+0|neighbor
+0|lawyer
+0|law
+0|community
+0|from time to time
+0|volunteer
+0|laptop
+0|engineer
+0|check
+0|broken
+0|someone
+0|somebody
+0|repair
+0|anyone
+0|anybody
+0|college
+0|willing
+0|be willing to do sth.
+0|tidy
+0|such
+0|any time
+0|pick up
+0|rubbish
+0|bench
+0|if
+0|in a hurry
+0|anything
+0|invite
+0|exchange
+0|exchange student
+0|notice
+0|information
+0|below
+0|fever
+0|sore
+0|throat
+0|trouble
+0|machine
+0|washing machine
+0|fridge
+0|refrigerator
+0|deal with
+0|wonder
+0|able
+0|post
+0|raise
+0|organize
+0|organise
+0|give away
+0|kilometre
+0|kilometer
+0|Olympic
+0|object
+0|past
+0|present
+0|shall
+0|attract
+0|capital
+0|show sb. around
+0|once
+0|palace
+0|emperor
+0|ancient
+0|treasure
+0|worth
+0|be well worth
+0|visitor
+0|raising
+0|national
+0|flag
+0|side
+0|courtyard
+0|taste
+0|opera
+0|local
+0|theatre
+0|theater
+0|interest
+0|place of interest
+0|form
+0|stadium
+0|date from
+0|shopkeeper
+0|smile
+0|sandwich
+0|above
+0|leaf
+0|leaves
+0|wave
+0|roof
+0|cage
+0|lie
+0|row
+0|high
+0|golden
+0|shape
+0|recommend
+0|tower
+0|along
+0|sunset
+0|fantastic
+0|fish and chips
+0|British
+0|tool
+0|end
+0|set
+0|everything
+0|seem
+0|folk
+0|china
+0|clay
+0|teapot
+0|woodcarving
+0|even
+0|carve
+0|scene
+0|craft
+0|quickly
+0|scissors
+0|knife
+0|knives
+0|add
+0|practice
+0|landscape
+0|paper-cut
+0|express
+0|happiness
+0|couple
+0|hand
+0|mean
+0|alive
+0|warmth
+0|still
+0|mine
+0|hers
+0|yours
+0|ours
+0|theirs
+0|his
+0|postcard
+0|Chinese knot
+0|figure
+0|mould
+0|simple
+0|outdoor
+0|ordinary
+0|everyday
+0|creative
+0|craftsperson
+0|craftspeople
+0|respect
+0|spirit
+0|handicraft
+0|basic
+0|cultural
+0|value
+0|inkstick
+0|among
+0|largely
+0|painter
+0|pine
+0|main
+0|itself
+0|quality
+0|bat
+0|butterfly
+0|ant
+0|wing
+0|awake
+0|up to
+0|insect
+0|lift
+0|times
+0|weight
+0|hole
+0|worker
+0|gram
+0|honey
+0|snail
+0|trick
+0|stick
+0|bite
+0|fight
+0|look after
+0|fur
+0|purr
+0|forget
+0|lonely
+0|parrot
+0|sound
+0|alone
+0|corner
+0|touch
+0|goldfish
+0|goldfishes
+0|afraid
+0|giraffe
+0|bone
+0|neck
+0|snake
+0|tip
+0|human
+0|radar
+0|allow
+0|safely
+0|echo
+0|cheer
+0|cheer up
+0|cheer sb. up
+0|hard-working
+0|useful
+0|save
+0|correct
+0|relationship
+0|care for
+0|guinea pig
+0|round
+0|name
+0|loud
+0|noise
+0|down
+0|ocean
+0|cover
+0|surface
+0|desert
+0|forest
+0|rock
+0|ground
+0|plain
+0|flat
+0|land
+0|rise
+0|fresh
+0|farming
+0|powerful
+0|flood
+0|destroy
+0|nothing
+0|mostly
+0|sand
+0|nobody
+0|conditions
+0|a few
+0|survive
+0|huge
+0|planet
+0|produce
+0|oxygen
+0|breathe
+0|northern
+0|Arctic char
+0|campfire
+0|camp
+0|camping
+0|corn
+0|treat
+0|landform
+0|north-west
+0|unusual
+0|sandstone
+0|strange
+0|power
+0|rainforest
+0|waterfall
+0|cloud
+0|sunrise
+0|wonderland
+0|several
+0|path
+0|step
+0|cable car
+0|overnight
+0|cycling
+0|horse riding
+0|skating
+0|break
+0|take a break
+0|balance
+0|might
+0|on one's own
+0|skiing
+0|would
+0|experience
+0|set off
+0|follow
+0|detail
+0|countryside
+0|lost
+0|none
+0|worried
+0|luckily
+0|cycle
+0|arrive
+0|app
+0|application
+0|find out
+0|enjoyable
+0|proud
+0|be proud of
+0|hiking
+0|noon
+0|later
+0|at first
+0|skate
+0|little by little
+0|picnic
+0|because of
+0|campsite
+0|childhood
+0|relaxed
+0|while
+0|ever
+0|focus
+0|mind
+0|roll out
+0|sleeping bag
+0|fall
+0|asleep
+0|chance
+0|first-time
+0|camper
+0|medicine
+0|safety
+0|birdwatching
+0|binoculars
+0|clearly
+0|had better
+0|thirsty
+0|no problem
+0|camera
+0|narrow
+0|support
+0|fisherman
+0|fishermen
+0|adventure
+0|partner
+0|magic
+0|paintbrush
+0|poor
+0|magical
+0|collection
+0|fantasy
+0|god
+0|character
+0|lend
+0|pass
+0|pass by
+0|hit
+0|herself
+0|low
+0|locked
+0|fit
+0|lock
+0|happen
+0|series
+0|factory
+0|company
+0|just
+0|be born
+0|lose
+0|publish
+0|die
+0|guide
+0|real
+0|imagined
+0|plot
+0|fairy
+0|nurse
+0|happily
+0|finally
+0|walking stick
+0|peach
+0|fill
+0|give up
+0|in the face of
+0|task
+0|goal
+0|note
+0|suddenly
+0|decide
+0|enter
+0|towards
+0|toward
+0|too ... to
+0|reach
+0|fail
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 454
+# Total Entries Extracted: 454
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 454
+# -------------------------------

@@ -1,0 +1,429 @@
+0|greet
+0|introduce
+0|each other
+0|go by
+0|glad
+0|same
+0|hobby
+0|grade
+0|classmate
+0|friendly
+0|full
+0|be full of
+0|energy
+0|be good at
+0|slim
+0|polite
+0|smart
+0|ready
+0|be ready to do sth.
+0|other
+0|interested
+0|be interested in
+0|looks
+0|character
+0|both
+0|enjoy
+0|pretty
+0|shy
+0|only
+0|stay
+0|match
+0|luck
+0|good luck
+0|chess
+0|Chinese chess
+0|problem
+0|weekend
+0|at the weekend
+0|fun
+0|make friends with
+0|jog
+0|paint
+0|paper-cutting
+0|all kinds of
+0|fit
+0|around
+0|change
+0|life
+0|lives
+0|museum
+0|thing
+0|apart
+0|take apart
+0|fix
+0|endless
+0|scientist
+0|dream
+0|true
+0|come true
+0|club
+0|member
+0|geography
+0|p.m.
+0|volleyball
+0|each
+0|once
+0|join
+0|meeting
+0|sound
+0|plan
+0|questionnaire
+0|role
+0|model
+0|role model
+0|design
+0|skill
+0|painting
+0|artist
+0|master
+0|work
+0|become
+0|designer
+0|would
+0|would like
+0|future
+0|in the future
+0|hope
+0|gym
+0|gymnasium
+0|building
+0|field
+0|sports field
+0|dining
+0|hall
+0|dining hall
+0|lab
+0|laboratory
+0|part
+0|modern
+0|as well
+0|bright
+0|everyone
+0|everybody
+0|perfect
+0|spend
+0|chat
+0|exciting
+0|take place
+0|noticeboard
+0|gate
+0|news
+0|board
+0|like
+0|more
+0|trust
+0|really
+0|soon
+0|teach
+0|team
+0|form teacher
+0|show
+0|grey
+0|gray
+0|different
+0|thousand
+0|fact
+0|in fact
+0|borrow
+0|newspaper
+0|magazine
+0|else
+0|care
+0|care about
+0|event
+0|together
+0|quite
+0|large
+0|special
+0|a.m.
+0|get up
+0|activity
+0|housework
+0|homework
+0|weekday
+0|on weekdays
+0|usually
+0|a little
+0|myself
+0|enjoy oneself
+0|first
+0|term
+0|start
+0|writer
+0|language
+0|amazing
+0|biology
+0|living
+0|nature
+0|practise
+0|practice
+0|trip
+0|field trip
+0|leave
+0|leave for
+0|pick
+0|of course
+0|seldom
+0|tennis
+0|roller skate
+0|grow
+0|tour
+0|website
+0|video
+0|outside
+0|peace
+0|quiet
+0|teamwork
+0|better
+0|tiring
+0|duty
+0|area
+0|take part in
+0|through
+0|group
+0|turn
+0|take turns
+0|empty
+0|bin
+0|take care of
+0|something
+0|lifestyle
+0|cucumber
+0|lemon
+0|watermelon
+0|pepper
+0|chocolate
+0|beef
+0|carrot
+0|pork
+0|sweet
+0|snack
+0|health
+0|delicious
+0|important
+0|diet
+0|without
+0|pancake
+0|tofu
+0|sugar
+0|tooth
+0|teeth
+0|homebody
+0|mutton
+0|have a sweet tooth
+0|stay up
+0|unhealthy
+0|need
+0|enough
+0|less
+0|cheese
+0|piece
+0|bowl
+0|salt
+0|packet
+0|kilo
+0|kilogram
+0|carton
+0|bottle
+0|maybe
+0|than
+0|almost
+0|chip
+0|smartphone
+0|tablet
+0|score
+0|point
+0|meal
+0|porridge
+0|whole
+0|miss
+0|rest
+0|pie
+0|yogurt
+0|yoghurt
+0|most
+0|style
+0|blouse
+0|jacket
+0|jeans
+0|scarf
+0|scarves
+0|scarfs
+0|tie
+0|T-shirt
+0|calm
+0|fashion
+0|choose
+0|could
+0|advice
+0|depend
+0|depend on
+0|skin
+0|such as
+0|purple
+0|similar
+0|example
+0|for example
+0|dark
+0|mix
+0|stand out
+0|suitable
+0|formal
+0|suit
+0|casual
+0|comfortable
+0|primary
+0|date
+0|traditional
+0|popular
+0|type
+0|festival
+0|wedding
+0|just
+0|culture
+0|country
+0|history
+0|loose
+0|belt
+0|close-fitting
+0|be made of
+0|silk
+0|feel
+0|smooth
+0|soft
+0|cotton
+0|agree
+0|feature
+0|material
+0|leather
+0|size
+0|wise
+0|yuan
+0|euro
+0|pound
+0|yen
+0|rouble
+0|dollar
+0|key
+0|ring
+0|baseball
+0|Russian
+0|set
+0|a set of
+0|inside
+0|another
+0|colourful
+0|colorful
+0|surprise
+0|player
+0|protect
+0|mall
+0|across
+0|cost
+0|manage
+0|budget
+0|cover
+0|education
+0|pay
+0|pay for
+0|flat
+0|daily
+0|per cent
+0|percent
+0|expensive
+0|save
+0|bank
+0|account
+0|rainy
+0|matter
+0|pocket
+0|pocket money
+0|notebook
+0|strawberry
+0|bookshop
+0|eraser
+0|as
+0|present
+0|away
+0|shell
+0|deal
+0|coin
+0|online
+0|lucky
+0|lucky money
+0|grandparent
+0|relative
+0|send
+0|red packet
+0|survey
+0|in need
+0|beginning
+0|habit
+0|celebrate
+0|Christmas
+0|remember
+0|poet
+0|dragon
+0|dragon boat
+0|race
+0|dumpling
+0|rice dumpling
+0|Scottish
+0|haggis
+0|dish
+0|poem
+0|lady
+0|gentleman
+0|gentlemen
+0|spread
+0|doorstep
+0|hang
+0|onion
+0|Greek
+0|tradition
+0|symbol
+0|midnight
+0|strike
+0|into
+0|in the hope of
+0|ahead
+0|carry
+0|suitcase
+0|block
+0|traveller
+0|traveler
+0|wherever
+0|violin
+0|lively
+0|spring roll
+0|moment
+0|at the moment
+0|tonight
+0|lantern
+0|mountain
+0|climb
+0|natural
+0|beauty
+0|respect
+0|elder
+0|double
+0|forever
+0|decorate
+0|put up
+0|Spring Festival couplets
+0|beforehand
+0|prepare
+0|meaning
+0|during
+0|last
+0|till
+0|until
+0|heart
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 422
+# Total Entries Extracted: 422
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 422
+# -------------------------------

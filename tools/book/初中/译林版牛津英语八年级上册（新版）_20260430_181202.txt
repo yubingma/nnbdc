@@ -1,0 +1,462 @@
+0|friendship
+0|honest
+0|cheerful
+0|humorous
+0|caring
+0|truth
+0|joke
+0|laugh
+0|teenager
+0|unhappy
+0|lie
+0|person
+0|thought
+0|ponytail
+0|seat
+0|schoolwork
+0|trustworthy
+0|carefully
+0|understand
+0|bit
+0|a little bit
+0|funny
+0|sense
+0|humour
+0|humor
+0|sense of humour
+0|bored
+0|energetic
+0|active
+0|encourage
+0|believe
+0|face
+0|secret
+0|keep secrets
+0|worse
+0|worst
+0|height
+0|sec.
+0|second
+0|test
+0|badminton
+0|however
+0|balloon
+0|scared
+0|fight
+0|dead
+0|attack
+0|gone
+0|danger
+0|brave
+0|get along with sb.
+0|listener
+0|nod
+0|feeling
+0|once
+0|patient
+0|thoughtful
+0|plastic
+0|cheap
+0|environment
+0|few
+0|drama
+0|foreign
+0|as
+0|as ... as ...
+0|French
+0|German
+0|forward
+0|look forward to
+0|go
+0|have a go
+0|earthquake
+0|offer
+0|programme
+0|program
+0|plenty
+0|plenty of
+0|hands-on
+0|attention
+0|pay attention to
+0|aware
+0|be aware of
+0|importance
+0|Japanese
+0|ourselves
+0|develop
+0|junior
+0|rocket
+0|lunchtime
+0|least
+0|international
+0|vacation
+0|textbook
+0|search
+0|finish
+0|American
+0|hamburger
+0|pizza
+0|fried
+0|salad
+0|chopstick
+0|movie
+0|difference
+0|cookie
+0|fork
+0|spoon
+0|boring
+0|suggestion
+0|uniform
+0|improve
+0|suggest
+0|provide
+0|moreover
+0|yours sincerely
+0|learner
+0|feed
+0|fish
+0|lifetime
+0|journey
+0|single
+0|against
+0|fall behind
+0|successful
+0|drive
+0|guide
+0|lifelong
+0|inventor
+0|talent
+0|century
+0|set ... apart
+0|print
+0|himself
+0|bookseller
+0|in order to
+0|return
+0|curious
+0|storm
+0|finding
+0|predict
+0|countless
+0|invention
+0|come as no surprise
+0|invent
+0|for free
+0|greatness
+0|further
+0|success
+0|Italian
+0|themselves
+0|conversation
+0|translate
+0|page
+0|badly
+0|yourself
+0|yourselves
+0|record
+0|printer
+0|slashie
+0|dialect
+0|besides
+0|possible
+0|as ... as possible
+0|sentence
+0|rather than
+0|pronunciation
+0|grammar
+0|text
+0|slowly
+0|whole
+0|speech
+0|aloud
+0|pronounce
+0|correctly
+0|spelling
+0|nearby
+0|to one's surprise
+0|repeat
+0|tourist
+0|mooncake
+0|shelf
+0|rose
+0|coloured paper
+0|tape
+0|glue
+0|fold
+0|complete
+0|DIY
+0|do-it-yourself
+0|crazy
+0|be crazy about
+0|born
+0|handyman
+0|mistake
+0|power cut
+0|pipe
+0|fill ... with
+0|unlucky
+0|instead
+0|course
+0|mess
+0|in a mess
+0|lamp
+0|catch one's eye
+0|surprised
+0|impossible
+0|paint
+0|can
+0|everywhere
+0|chalk
+0|mark
+0|brush
+0|instructions
+0|dangerous
+0|usual
+0|tie-dye
+0|twist
+0|cloth
+0|tie
+0|thread
+0|dye
+0|untie
+0|method
+0|product
+0|not only ... but also ...
+0|workshop
+0|dry
+0|pattern
+0|roll
+0|reduce
+0|waste
+0|joy
+0|glove
+0|finger
+0|button
+0|onto
+0|wild
+0|dolphin
+0|eagle
+0|fox
+0|shark
+0|wolf
+0|zebra
+0|king
+0|tiny
+0|birth
+0|round-the-clock
+0|weigh
+0|satisfying
+0|giant panda
+0|in the wild
+0|serious
+0|even if
+0|easily
+0|sick
+0|live on
+0|mainly
+0|result
+0|as a result
+0|government
+0|action
+0|take action
+0|nature reserve
+0|thanks to
+0|effort
+0|increase
+0|protection
+0|growth
+0|fat
+0|manage
+0|whale
+0|hunt
+0|meaningful
+0|in danger
+0|reason
+0|accept
+0|polar bear
+0|meat eater
+0|melt
+0|drop
+0|blue whale
+0|risk
+0|at risk
+0|Indian
+0|rhino
+0|horn
+0|disaster
+0|pollution
+0|certain
+0|illness
+0|foggy
+0|snowy
+0|pleasant
+0|yeah
+0|hide
+0|shower
+0|memory
+0|stream
+0|shade
+0|lazy
+0|pool
+0|pile
+0|upon
+0|harvest
+0|crop
+0|temperature
+0|sofa
+0|snowman
+0|blow
+0|shine
+0|smell
+0|heat
+0|sudden
+0|snowball
+0|fog
+0|divide
+0|divide ... into ...
+0|end
+0|beyond
+0|connect
+0|be connected with
+0|positive
+0|effect
+0|average
+0|wet
+0|daylight
+0|degree
+0|on average
+0|sunshine
+0|start
+0|snowstorm
+0|awful
+0|order
+0|take care
+0|frozen
+0|thick
+0|deep
+0|throw
+0|sculpture
+0|coral
+0|reef
+0|penguin
+0|ecosystem
+0|climate
+0|wetland
+0|include
+0|non-living
+0|pond
+0|around
+0|hold
+0|get rid of
+0|prevent
+0|store
+0|sponge
+0|act
+0|kidney
+0|nearly
+0|carbon dioxide
+0|trap
+0|harmful
+0|therefore
+0|lung
+0|slow down
+0|sadly
+0|ton
+0|harm
+0|wildlife
+0|topic
+0|quite a few
+0|noisy
+0|system
+0|cause
+0|damage
+0|north-east
+0|cover
+0|rare
+0|red-crowned crane
+0|stay
+0|daytime
+0|lead
+0|lead to
+0|mud
+0|create
+0|set up
+0|balanced
+0|knowledge
+0|wastewater
+0|environment-friendly
+0|sir
+0|madam
+0|kill
+0|solve
+0|environmental
+0|sound
+0|safe and sound
+0|emergency
+0|situation
+0|heating
+0|lightning
+0|office
+0|homeless
+0|coach
+0|road
+0|accident
+0|typhoon
+0|terrible
+0|state
+0|fireman
+0|traffic
+0|slight
+0|shake
+0|thunder
+0|bomb
+0|shout
+0|fear
+0|in fear
+0|direction
+0|in all directions
+0|brick
+0|silent
+0|nervous
+0|beat
+0|say to oneself
+0|calm
+0|calm down
+0|since
+0|weak
+0|voice
+0|except
+0|except for
+0|smoke
+0|burn
+0|put out
+0|heavily
+0|guess
+0|hat
+0|clear
+0|policeman
+0|ache
+0|postman
+0|airport
+0|passport
+0|close
+0|report
+0|bush fire
+0|so far
+0|including
+0|sign
+0|avoid
+0|wound
+0|bleed
+0|press
+0|firmly
+0|right away
+0|tidal wave
+0|warn
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 455
+# Total Entries Extracted: 455
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 455
+# -------------------------------

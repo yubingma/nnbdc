@@ -1,0 +1,249 @@
+0|encyclopaedia
+0|human
+0|dinosaur
+0|Italian
+0|inventor
+0|musician
+0|scientist
+0|born
+0|be born
+0|countryside
+0|intelligence
+0|artistic
+0|ability
+0|perhaps
+0|invention
+0|notebook
+0|include
+0|even
+0|however
+0|suddenly
+0|nobody
+0|fossil
+0|win
+0|won
+0|dollar
+0|in the countryside
+0|human being
+0|die out
+0|find out
+0|go for a walk
+0|number
+0|instructions
+0|check
+0|gram
+0|son
+0|chess
+0|India
+0|wise
+0|challenge
+0|promise
+0|prize
+0|grain
+0|chessboard
+0|double
+0|amount
+0|rest
+0|gold
+0|instead
+0|realize
+0|copy
+0|correctly
+0|traffic
+0|accident
+0|a long time ago
+0|challenge ... to ...
+0|and so on
+0|copy down
+0|order
+0|compare
+0|monitor
+0|speaker
+0|main unit
+0|keyboard
+0|mouse
+0|type
+0|brain
+0|control
+0|expensive
+0|tiny
+0|depend
+0|calculate
+0|speed
+0|operate
+0|railway
+0|company
+0|price
+0|total
+0|inch
+0|sell
+0|sold
+0|popular
+0|work as
+0|be unaware of
+0|depend on
+0|in addition
+0|grand total
+0|look forward to
+0|advertisement
+0|funny
+0|create
+0|telephone
+0|wheel
+0|comfortable
+0|carriage
+0|century
+0|passenger
+0|invent
+0|practical
+0|since
+0|distance
+0|mobile phone
+0|anytime
+0|develop
+0|lamp
+0|candle
+0|daytime
+0|dust
+0|special
+0|wing
+0|introduction
+0|instead of
+0|petrol
+0|since then
+0|keep in touch with
+0|in the daytime
+0|keep ... off
+0|at the same time
+0|educational
+0|exchange
+0|culture
+0|host
+0|local
+0|British
+0|glad
+0|guest
+0|chopstick
+0|weekday
+0|tour
+0|fantastic
+0|experience
+0|t'ai chi
+0|already
+0|introduce
+0|success
+0|yet
+0|respect
+0|at first
+0|so far
+0|a bit of
+0|introduce ... to ...
+0|come over
+0|come over to ...
+0|ancient
+0|Trojan
+0|war
+0|understand
+0|understood
+0|difference
+0|pyramid
+0|captain
+0|Greek
+0|capture
+0|soldier
+0|huge
+0|pull
+0|main
+0|celebrate
+0|stupid
+0|midnight
+0|empty
+0|except
+0|secret
+0|side
+0|quietly
+0|army
+0|enter
+0|succeed
+0|trick
+0|prince
+0|queen
+0|steal
+0|stole
+0|stolen
+0|punish
+0|scene
+0|sir
+0|act out
+0|make jokes about
+0|except for
+0|be full of
+0|in the end
+0|come on
+0|memory
+0|corner
+0|lose
+0|lost
+0|improve
+0|mention
+0|method
+0|spelling
+0|mind
+0|silly
+0|mile
+0|letter
+0|worth
+0|spell
+0|spelt
+0|unless
+0|trouble
+0|list
+0|step
+0|cycle
+0|similar
+0|note
+0|wallet
+0|basket
+0|manager
+0|take out
+0|pour out
+0|speech
+0|notice
+0|competition
+0|treasure
+0|text
+0|chance
+0|confidently
+0|topic
+0|winner
+0|advise
+0|several
+0|opinion
+0|whole
+0|suggestion
+0|communicate
+0|whenever
+0|rich
+0|poor
+0|hide
+0|hid
+0|hidden
+0|attack
+0|shy
+0|else
+0|choose
+0|chose
+0|chosen
+0|treasure hunt
+0|in public
+0|put on
+0|in my opinion
+0|above all
+0|look out
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 242
+# Total Entries Extracted: 242
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 242
+# -------------------------------

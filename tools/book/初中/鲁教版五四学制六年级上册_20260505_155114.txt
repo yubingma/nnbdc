@@ -1,0 +1,373 @@
+0|good
+0|morning
+0|Good morning!
+0|hi
+0|hello
+0|afternoon
+0|Good afternoon!
+0|evening
+0|Good evening!
+0|how
+0|are
+0|you
+0|How are you?
+0|I
+0|am
+0|fine
+0|thanks
+0|OK
+0|HB
+0|CD
+0|NBA
+0|kg
+0|P
+0|S
+0|M
+0|L
+0|UFO
+0|CCTV
+0|Alice
+0|Bob
+0|Cindy
+0|Dale
+0|Eric
+0|Frank
+0|Grace
+0|Helen
+0|what
+0|is
+0|this
+0|in
+0|English
+0|in English
+0|that
+0|map
+0|cup
+0|ruler
+0|pen
+0|orange
+0|jacket
+0|key
+0|dog
+0|it
+0|a
+0|an
+0|kite
+0|cake
+0|bike
+0|computer
+0|spell
+0|please
+0|color
+0|colour
+0|red
+0|yellow
+0|green
+0|blue
+0|black
+0|white
+0|purple
+0|brown
+0|and
+0|the
+0|my
+0|name
+0|nice
+0|to
+0|meet
+0|too
+0|your
+0|Ms.
+0|his
+0|her
+0|yes
+0|she
+0|he
+0|no
+0|not
+0|zero
+0|one
+0|two
+0|three
+0|four
+0|five
+0|six
+0|seven
+0|eight
+0|nine
+0|telephone
+0|number
+0|phone
+0|telephone number
+0|phone number
+0|first
+0|first name
+0|last
+0|last name
+0|friend
+0|China
+0|middle
+0|school
+0|middle school
+0|Gina
+0|Jenny
+0|Brown
+0|Alan
+0|Tom
+0|Mike
+0|Jack
+0|Mary
+0|Miller
+0|Linda
+0|Jane
+0|Green
+0|Smith
+0|sister
+0|mother
+0|father
+0|parent
+0|brother
+0|grandmother
+0|grandfather
+0|grandparent
+0|family
+0|those
+0|who
+0|oh
+0|these
+0|they
+0|well
+0|have
+0|day
+0|Have a good day!
+0|bye
+0|goodbye
+0|son
+0|cousin
+0|grandpa
+0|mom
+0|mum
+0|aunt
+0|grandma
+0|dad
+0|uncle
+0|daughter
+0|here
+0|photo
+0|of
+0|next
+0|picture
+0|girl
+0|Sally
+0|Kate
+0|Paul
+0|pencil
+0|book
+0|eraser
+0|box
+0|pencil box
+0|schoolbag
+0|dictionary
+0|mine
+0|hers
+0|excuse
+0|me
+0|excuse me
+0|thank
+0|teacher
+0|about
+0|What about ...?
+0|yours
+0|for
+0|thank you for ...
+0|help
+0|welcome
+0|You're welcome.
+0|baseball
+0|watch
+0|game
+0|card
+0|ID card
+0|notebook
+0|ring
+0|bag
+0|library
+0|ask
+0|ask ... for ...
+0|find
+0|some
+0|classroom
+0|e-mail
+0|email
+0|at
+0|call
+0|lost
+0|lose
+0|must
+0|set
+0|a set of
+0|Anna
+0|John
+0|David
+0|where
+0|table
+0|bed
+0|bookcase
+0|sofa
+0|chair
+0|on
+0|under
+0|come
+0|come on
+0|desk
+0|think
+0|room
+0|their
+0|hat
+0|head
+0|yeah
+0|know
+0|radio
+0|clock
+0|tape
+0|player
+0|tape player
+0|model
+0|plane
+0|model plane
+0|tidy
+0|but
+0|our
+0|everywhere
+0|always
+0|do
+0|does
+0|tennis
+0|ball
+0|ping-pong
+0|bat
+0|soccer
+0|soccer ball
+0|volleyball
+0|basketball
+0|hey
+0|let
+0|us
+0|let's
+0|let us
+0|go
+0|we
+0|late
+0|has
+0|get
+0|great
+0|play
+0|sound
+0|interesting
+0|boring
+0|fun
+0|difficult
+0|relaxing
+0|TV
+0|television
+0|watch TV
+0|same
+0|love
+0|with
+0|sport
+0|them
+0|only
+0|like
+0|easy
+0|after
+0|class
+0|classmate
+0|Bill
+0|banana
+0|hamburger
+0|tomato
+0|ice-cream
+0|salad
+0|strawberry
+0|pear
+0|milk
+0|bread
+0|birthday
+0|dinner
+0|week
+0|think about
+0|food
+0|sure
+0|How about ...?
+0|burger
+0|vegetable
+0|fruit
+0|right
+0|apple
+0|then
+0|egg
+0|carrot
+0|rice
+0|chicken
+0|so
+0|breakfast
+0|lunch
+0|star
+0|eat
+0|habit
+0|healthy
+0|really
+0|question
+0|want
+0|be
+0|fat
+0|much
+0|How much ...?
+0|sock
+0|T-shirt
+0|shorts
+0|sweater
+0|trousers
+0|shoe
+0|skirt
+0|dollar
+0|big
+0|small
+0|short
+0|long
+0|woman
+0|women
+0|can
+0|Can I help you?
+0|need
+0|look
+0|pair
+0|take
+0|Here you are.
+0|ten
+0|eleven
+0|twelve
+0|thirteen
+0|fifteen
+0|eighteen
+0|twenty
+0|thirty
+0|Mr.
+0|clothes
+0|store
+0|buy
+0|sale
+0|sell
+0|all
+0|very
+0|price
+0|boy
+0|a pair of
+0|now
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 366
+# Total Entries Extracted: 366
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 366
+# -------------------------------

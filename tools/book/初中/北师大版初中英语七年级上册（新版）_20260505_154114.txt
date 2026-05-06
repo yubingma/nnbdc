@@ -1,0 +1,269 @@
+0|grandparent
+0|husband
+0|wife
+0|wives
+0|daughter
+0|son
+0|same
+0|policeman
+0|policemen
+0|only
+0|together
+0|member
+0|sweet
+0|active
+0|caring
+0|polite
+0|noisy
+0|violin
+0|hers
+0|pilot
+0|lots of
+0|biscuit
+0|burn
+0|chess
+0|play chess
+0|really
+0|mine
+0|yours
+0|ours
+0|theirs
+0|character
+0|trait
+0|hobby
+0|activity
+0|handsome
+0|pretty
+0|smart
+0|patient
+0|model
+0|play basketball
+0|housework
+0|twin
+0|different
+0|both
+0|weekend
+0|water
+0|cleaning
+0|do the cleaning
+0|tidy
+0|Sunday
+0|spend
+0|fun
+0|usually
+0|yard
+0|dumpling
+0|delicious
+0|chat
+0|introduce
+0|number
+0|teach
+0|engineer
+0|be good at
+0|funny
+0|forward
+0|look forward to
+0|classmate
+0|pleased
+0|have a good time
+0|over there
+0|life
+0|lives
+0|history
+0|geography
+0|information
+0|communication
+0|technology
+0|ICT
+0|chemistry
+0|biology
+0|physics
+0|paint
+0|gymnastics
+0|more
+0|quite
+0|after-school
+0|break
+0|practice
+0|club
+0|start
+0|a.m.
+0|end
+0|p.m.
+0|exciting
+0|country
+0|noon
+0|until
+0|finish
+0|preparation
+0|prepare
+0|textbook
+0|notebook
+0|tape
+0|bottle
+0|snack
+0|case
+0|pencil case
+0|everything
+0|ready
+0|check
+0|dining
+0|hall
+0|dining hall
+0|lab
+0|laboratory
+0|field
+0|playing field
+0|gym
+0|gymnasium
+0|head teacher
+0|experiment
+0|skill
+0|special
+0|Monday
+0|Tuesday
+0|Friday
+0|outside
+0|during
+0|enjoy
+0|blog
+0|post
+0|how many
+0|every day
+0|tennis
+0|excuse
+0|Excuse me.
+0|carry
+0|weekday
+0|furniture
+0|equipment
+0|living room
+0|bathroom
+0|bedroom
+0|bookcase
+0|machine
+0|washing machine
+0|fridge
+0|refrigerator
+0|cooker
+0|sofa
+0|flat
+0|apartment
+0|sound
+0|thing
+0|shower
+0|comfortable
+0|cream
+0|all kinds of
+0|inside
+0|dictionary
+0|bookshelf
+0|bookshelves
+0|next to
+0|need
+0|either
+0|messy
+0|guess
+0|easily
+0|building
+0|crop
+0|mall
+0|e-pal
+0|central
+0|community
+0|around
+0|friendly
+0|neighbourhood
+0|luckily
+0|describe
+0|dream
+0|forest
+0|fresh
+0|view
+0|magic
+0|cloud
+0|fantastic
+0|office
+0|post office
+0|of course
+0|onto
+0|road
+0|opposite
+0|station
+0|police station
+0|along
+0|past
+0|bookshop
+0|block
+0|row
+0|shape
+0|practise
+0|guitar
+0|interested
+0|be interested in
+0|crazy
+0|be crazy about
+0|future
+0|ice-skate
+0|ski
+0|swimmer
+0|writer
+0|artist
+0|scientist
+0|musician
+0|singer
+0|energetic
+0|hope
+0|Olympic
+0|amazing
+0|voice
+0|relaxed
+0|curious
+0|especially
+0|nature
+0|join
+0|drama
+0|dragon
+0|matter
+0|disability
+0|type
+0|language
+0|still
+0|manage
+0|own
+0|on one's own
+0|songwriter
+0|key
+0|each
+0|other
+0|each other
+0|all over
+0|record
+0|winner
+0|talent
+0|himself
+0|just
+0|effort
+0|application
+0|app
+0|festival
+0|volunteer
+0|grade
+0|personality
+0|creative
+0|teamwork
+0|apply
+0|as
+0|consider
+0|instrument
+0|afraid
+0|Guinness Book of World Records
+0|the Olympic Games
+0|Traditional Chinese Medicine
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 262
+# Total Entries Extracted: 262
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 262
+# -------------------------------

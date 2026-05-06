@@ -1,0 +1,436 @@
+0|invite
+0|disappointed
+0|film
+0|smell
+0|seem
+0|opera
+0|excite
+0|care for
+0|lonely
+0|lively
+0|cheer up
+0|almost
+0|mainly
+0|role
+0|facial
+0|painting
+0|gesture
+0|frightened
+0|worried
+0|in the end
+0|interested
+0|upset
+0|exam
+0|strict
+0|be strict with
+0|shy
+0|take it easy
+0|fail
+0|someone
+0|feeling
+0|joke
+0|by the way
+0|yeah
+0|usual
+0|as usual
+0|either
+0|accept
+0|lovely
+0|helpful
+0|international
+0|useless
+0|deal
+0|deal with
+0|elder
+0|refuse
+0|sadness
+0|anyone
+0|unfair
+0|though
+0|even though
+0|not ... any longer
+0|no longer
+0|test
+0|nervous
+0|speech
+0|CD
+0|compact disc
+0|relaxed
+0|rich
+0|sick
+0|affect
+0|confident
+0|mood
+0|proud
+0|be proud of
+0|anyway
+0|ready
+0|passport
+0|boss
+0|grandson
+0|environment
+0|especially
+0|fill
+0|fill with sth.
+0|trouble
+0|loud
+0|noise
+0|spirit
+0|silent
+0|think over
+0|decision
+0|make a decision
+0|sense
+0|relaxing
+0|fantastic
+0|disappointment
+0|soft
+0|be in trouble
+0|fear
+0|difficulty
+0|field
+0|proper
+0|mount
+0|vehicle
+0|airline
+0|price
+0|total
+0|partner
+0|sleeper
+0|pay
+0|hotel
+0|fridge
+0|refrigerator
+0|air conditioner
+0|standard
+0|single
+0|condition
+0|comfortable
+0|raise
+0|king
+0|queen
+0|common
+0|Canadian
+0|dollar
+0|somebody
+0|forward
+0|hear from
+0|top
+0|receive
+0|postcard
+0|vacation
+0|on vacation
+0|explore
+0|camp
+0|work out
+0|seaside
+0|north
+0|east
+0|west
+0|monument
+0|rostrum
+0|chairman
+0|announce
+0|found
+0|republic
+0|meaningful
+0|wait
+0|memorial
+0|northwest
+0|northeast
+0|southeast
+0|bicycle
+0|be full of
+0|crowd
+0|tour
+0|space
+0|push
+0|direction
+0|step
+0|slowly
+0|beside
+0|sadly
+0|as soon as
+0|experience
+0|everywhere
+0|Thank goodness!
+0|passenger
+0|crazy
+0|anywhere
+0|pollution
+0|advantage
+0|disagree
+0|disagree with sb.
+0|rider
+0|careless
+0|helmet
+0|light-colored
+0|pay attention to
+0|signal
+0|safety
+0|truck
+0|notice
+0|reflector
+0|case
+0|in case of
+0|injury
+0|in a word
+0|look out
+0|stream
+0|empty
+0|Asia
+0|altitude
+0|among
+0|France
+0|mile
+0|stage
+0|central
+0|winner
+0|cyclist
+0|motorcycle
+0|broken
+0|explain
+0|pedestrian
+0|Europe
+0|French
+0|town
+0|village
+0|death
+0|sharp
+0|slow
+0|slow down
+0|opposite
+0|rush
+0|task
+0|poster
+0|touch
+0|get in touch with
+0|try one's best
+0|success
+0|imagine
+0|soup
+0|cheese
+0|cookie
+0|pancake
+0|set
+0|set the table
+0|blind
+0|western
+0|Greek
+0|Indian
+0|curry
+0|fried
+0|sushi
+0|Italian
+0|African
+0|Russian
+0|address
+0|regret
+0|gather
+0|group
+0|member
+0|roof
+0|birthplace
+0|former
+0|purpose
+0|in order to
+0|come true
+0|finely
+0|oil
+0|pan
+0|lightly
+0|add
+0|fry
+0|ingredient
+0|pot
+0|pork
+0|cut up
+0|ham
+0|onion
+0|noodle
+0|bowl
+0|junk food
+0|quick
+0|healthily
+0|snack
+0|butter
+0|pear
+0|piece
+0|slurp
+0|impolite
+0|noisily
+0|polite
+0|formal
+0|manner
+0|table manners
+0|napkin
+0|lap
+0|fork
+0|dish
+0|eat up
+0|quietly
+0|drink to sb.
+0|drink to sth.
+0|dine
+0|elbow
+0|spoon
+0|chopstick
+0|finger
+0|southern
+0|seafood
+0|pick
+0|pick up
+0|sausage
+0|lady
+0|gentleman
+0|sale
+0|for sale
+0|guest
+0|kind-hearted
+0|menu
+0|beer
+0|bill
+0|corn
+0|salad
+0|lemon
+0|tofu
+0|main course
+0|bean
+0|carrot
+0|dessert
+0|wine
+0|seat
+0|have a seat
+0|job
+0|worth
+0|effort
+0|successfully
+0|steak
+0|neatly
+0|regularly
+0|diet
+0|in short
+0|not only ... but ...
+0|not only ... but also ...
+0|conclusion
+0|education
+0|develop
+0|lamb
+0|dislike
+0|cola
+0|costume
+0|smooth
+0|so ... that ...
+0|cotton
+0|silk
+0|fashion
+0|handbag
+0|afford
+0|tie
+0|sweater
+0|scarf
+0|jeans
+0|blouse
+0|section
+0|sock
+0|pocket
+0|windbreaker
+0|size
+0|leather
+0|pretty
+0|handsome
+0|congratulation
+0|succeed
+0|suitable
+0|customer
+0|simple
+0|style
+0|contrast
+0|fancy
+0|design
+0|broad
+0|waist
+0|cold-colored
+0|slim
+0|business
+0|skin
+0|material
+0|uniform
+0|kimono
+0|sportswear
+0|easy-going
+0|saying
+0|function
+0|discuss
+0|meaning
+0|depend
+0|depend on
+0|discipline
+0|survey
+0|interview
+0|plain
+0|plain clothes
+0|carry out
+0|gatekeeper
+0|suit
+0|attendant
+0|take off
+0|enter
+0|knee
+0|occasion
+0|correctly
+0|text
+0|reason
+0|firefighter
+0|heat
+0|ceiling
+0|soldier
+0|official
+0|airport
+0|officer
+0|patient
+0|spread
+0|daily
+0|opinion
+0|in one's opinion
+0|greatly
+0|northern
+0|casual
+0|beautifully
+0|boot
+0|as well as
+0|similar
+0|dressing
+0|catwalk
+0|cheongsam
+0|traditional
+0|minority
+0|Tibetan
+0|Korean
+0|decoration
+0|knot
+0|dynasty
+0|from then on
+0|Asian
+0|personal
+0|attractive
+0|western-style
+0|express
+0|Mongolian
+0|above
+0|list
+0|well-known
+0|item
+0|choice
+0|marriage
+0|celebration
+0|saleswoman
+0|mix
+0|as a result
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 429
+# Total Entries Extracted: 429
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 429
+# -------------------------------

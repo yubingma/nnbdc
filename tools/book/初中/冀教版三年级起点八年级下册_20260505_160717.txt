@@ -1,0 +1,512 @@
+0|shower
+0|thunderstorm
+0|thunder
+0|sunrise
+0|sunset
+0|rise
+0|rose
+0|risen
+0|set
+0|exact
+0|neither
+0|nor
+0|boot
+0|jasmine
+0|blossom
+0|sunshine
+0|Tai Chi
+0|swing
+0|swung
+0|melt
+0|hillside
+0|wind
+0|gently
+0|budding
+0|nearly
+0|millimetre
+0|plenty
+0|anytime
+0|babysit
+0|babysat
+0|Debbie
+0|bar
+0|instead
+0|push
+0|soccer
+0|shall
+0|rabbit
+0|low
+0|below
+0|zero
+0|until
+0|till
+0|groundhog
+0|bush
+0|hole
+0|large
+0|root
+0|seedling
+0|cover
+0|fill
+0|dirt
+0|pack
+0|dust
+0|storm
+0|dirty
+0|northern
+0|bottom
+0|pleasant
+0|shade
+0|fulfill
+0|basic
+0|soil
+0|channel
+0|gardener
+0|log
+0|consider
+0|sunlight
+0|test
+0|compost
+0|dry
+0|nearby
+0|squirrel
+0|fence
+0|purpose
+0|egret
+0|eastern
+0|shy
+0|tightly
+0|fossil
+0|southwest
+0|living
+0|agriculture
+0|seed
+0|pot
+0|sprout
+0|stem
+0|bud
+0|carefully
+0|yard
+0|scare
+0|doorbell
+0|scream
+0|tiny
+0|sofa
+0|Zoe
+0|vacation
+0|gentle
+0|loyal
+0|long-eared
+0|jerboa
+0|mouse
+0|mice
+0|kiwi
+0|lay
+0|laid
+0|long-nosed
+0|eggplant
+0|shake
+0|shook
+0|shaken
+0|flap
+0|avoid
+0|danger
+0|dangerous
+0|mainly
+0|bamboo
+0|giraffe
+0|escape
+0|fierce
+0|protect
+0|fool
+0|century
+0|fur
+0|symbol
+0|courage
+0|brave
+0|chain
+0|balance
+0|reason
+0|disappear
+0|kill
+0|cut
+0|decrease
+0|friendship
+0|rhino
+0|skin
+0|warn
+0|insect
+0|relationship
+0|survive
+0|Owen
+0|mzee
+0|hippo
+0|tortoise
+0|truly
+0|boundary
+0|technology
+0|desktop
+0|tablet
+0|keyboard
+0|invitation
+0|industry
+0|laptop
+0|Easter
+0|enter
+0|key
+0|search
+0|topic
+0|depend
+0|bunny
+0|hide
+0|hid
+0|hidden
+0|press
+0|appear
+0|modern
+0|electronic
+0|sell
+0|sold
+0|receive
+0|cancer
+0|blessing
+0|pyramid
+0|Egypt
+0|advantage
+0|disadvantage
+0|simple
+0|coin
+0|cause
+0|less
+0|aside
+0|attack
+0|web
+0|steal
+0|stole
+0|stolen
+0|banking
+0|properly
+0|pay
+0|paid
+0|bake
+0|dollar
+0|sixteen
+0|advertising
+0|poster
+0|cheap
+0|pocket
+0|desk-cycle
+0|tie
+0|while
+0|afford
+0|cent
+0|everyday
+0|ladder
+0|position
+0|congratulate
+0|including
+0|account
+0|husband
+0|gate
+0|appreciate
+0|honesty
+0|trusting
+0|honest
+0|value
+0|motto
+0|trust
+0|battle
+0|create
+0|ad
+0|customer
+0|already
+0|similar
+0|sample
+0|offer
+0|shine
+0|shone
+0|quality
+0|surely
+0|succeed
+0|crazy
+0|baker
+0|champion
+0|relative
+0|thick
+0|photograph
+0|lift
+0|weigh
+0|kilo
+0|kilogram
+0|several
+0|BC
+0|before Christ
+0|athlete
+0|compete
+0|Olympia
+0|married
+0|host
+0|Olympic
+0|amazed
+0|spirit
+0|represent
+0|continent
+0|America
+0|torch
+0|peace
+0|slogan
+0|reflect
+0|mascot
+0|feature
+0|fairly
+0|defeat
+0|gold
+0|medal
+0|influence
+0|Brazil
+0|diving
+0|badminton
+0|coach
+0|rope
+0|sit-up
+0|push-up
+0|race
+0|result
+0|none
+0|twentieth
+0|population
+0|abroad
+0|Japan
+0|Japanese
+0|Antarctica
+0|island
+0|Pacific
+0|planet
+0|billion
+0|total
+0|increase
+0|surface
+0|Indian
+0|Atlantic
+0|Arctic
+0|British
+0|washroom
+0|bathroom
+0|spell
+0|spelled
+0|spelt
+0|pronunciation
+0|grammar
+0|translate
+0|American
+0|Australian
+0|pronounce
+0|greet
+0|European
+0|kiss
+0|cheek
+0|nod
+0|thumbs-up
+0|polite
+0|lip
+0|rude
+0|Italian
+0|prepare
+0|Mariana
+0|Amazon
+0|rainforest
+0|Akia
+0|Turkey
+0|Bosphorous
+0|Nile
+0|Sahara Desert
+0|Cairo
+0|Ahmed
+0|pride
+0|million
+0|square
+0|Rocky Mountains
+0|Spanish
+0|Mexican
+0|schoolyard
+0|attention
+0|rubbish
+0|garbage
+0|pollution
+0|explain
+0|reduce
+0|reusable
+0|least
+0|pollute
+0|skip
+0|packaging
+0|leaky
+0|waste
+0|litre
+0|sink
+0|electricity
+0|shut
+0|sort
+0|empty
+0|metal
+0|plastic
+0|recycle
+0|amount
+0|litter
+0|Katie
+0|leak
+0|tap
+0|beer
+0|truck
+0|recycling
+0|factory
+0|unlike
+0|bee
+0|ant
+0|dove
+0|die
+0|dead
+0|species
+0|respect
+0|used
+0|divide
+0|pile
+0|seat
+0|lid
+0|ton
+0|duty
+0|weather report
+0|be scared of
+0|neither ... nor ...
+0|winter jasmine
+0|play on the swing
+0|a field trip
+0|one by one
+0|long for
+0|all year round
+0|plenty of
+0|hundreds of
+0|turn around
+0|monkey bar
+0|hold on
+0|come down
+0|give ... a push
+0|as ... as ...
+0|below zero
+0|not ... until ...
+0|Groundhog Day
+0|sugar bush
+0|fill ... with ...
+0|by the way
+0|dust storm
+0|turn into
+0|for sure
+0|in the bottom of ...
+0|It's pleasant to do ...
+0|take energy from ...
+0|in a word
+0|TV channel
+0|have fun doing
+0|log onto
+0|make sure
+0|keep ... away from
+0|best of all
+0|eastern Asia
+0|close up
+0|open up
+0|When it comes to ...
+0|along with
+0|in the middle of
+0|a living fossil
+0|at the top of ...
+0|a flower bud
+0|look after
+0|on a vacation
+0|be afraid of
+0|be famous for
+0|up to
+0|instead of
+0|wait a minute
+0|You're joking, aren't you?
+0|April Fools' Day
+0|at the beginning of ...
+0|drop to
+0|food chain
+0|in balance
+0|in danger
+0|cut down
+0|as well
+0|touch one's heart
+0|search engine
+0|depend on
+0|Easter Bunny
+0|pass on
+0|by hand
+0|printing press
+0|keep on
+0|in seconds
+0|far away
+0|Every coin has two sides.
+0|aside from
+0|take up
+0|set up a time
+0|make money
+0|come up to
+0|pay for
+0|for sale
+0|go over to
+0|walk over to
+0|What is it for?
+0|I'm afraid I can't afford it.
+0|move up
+0|beef up
+0|be surprised to ...
+0|push a product
+0|stand out
+0|catch one's eye
+0|have an interest in
+0|sell out of
+0|less than
+0|stand on one foot
+0|set a new world record
+0|break a record
+0|compete against ...
+0|every four years
+0|Good point.
+0|take place
+0|be amazed at ...
+0|stand for
+0|dream team
+0|have an influence on
+0|time after time
+0|in total
+0|one third
+0|be covered with ...
+0|two thirds
+0|ring up
+0|go up
+0|in different ways
+0|shake hands
+0|be known for ...
+0|in recent years
+0|square kilometre
+0|The Great Lakes
+0|clean up
+0|draw one's attention
+0|pick up
+0|a bit of
+0|throw away
+0|shut down
+0|again and again
+0|start out
+0|live off
+0|die off
+0|divide ... into ...
+0|It's one's duty to ...
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 505
+# Total Entries Extracted: 505
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 505
+# -------------------------------

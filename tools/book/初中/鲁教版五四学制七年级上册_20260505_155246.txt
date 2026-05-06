@@ -1,0 +1,404 @@
+0|curly
+0|straight
+0|tall
+0|medium
+0|height
+0|of medium height
+0|be of medium height
+0|thin
+0|heavy
+0|build
+0|of medium build
+0|be of medium build
+0|tonight
+0|little
+0|a little
+0|cinema
+0|glasses
+0|later
+0|handsome
+0|actor
+0|actress
+0|person
+0|nose
+0|blonde
+0|blond
+0|mouth
+0|round
+0|face
+0|eye
+0|singer
+0|artist
+0|crime
+0|criminal
+0|put
+0|each
+0|way
+0|describe
+0|differently
+0|another
+0|end
+0|in the end
+0|real
+0|jeans
+0|Johnny
+0|Dean
+0|Tina
+0|Jackson
+0|noodle
+0|mutton
+0|beef
+0|cabbage
+0|potato
+0|special
+0|would
+0|would like
+0|yet
+0|large
+0|waitress
+0|order
+0|take one's order
+0|size
+0|bowl
+0|one bowl of ...
+0|one large bowl of ...
+0|tofu
+0|meat
+0|dumpling
+0|porridge
+0|onion
+0|fish
+0|pancake
+0|world
+0|around the world
+0|answer
+0|different
+0|candle
+0|age
+0|make a wish
+0|blow
+0|blow out
+0|if
+0|will
+0|the UK
+0|the United Kingdom
+0|candy
+0|lucky
+0|seaweed
+0|health
+0|popular
+0|get popular
+0|cut up
+0|idea
+0|bring good luck to ...
+0|make ... come true
+0|Brazil
+0|Korea
+0|milk
+0|cow
+0|milk a cow
+0|horse
+0|ride a horse
+0|feed
+0|feed chickens
+0|farmer
+0|else
+0|quite
+0|quite a lot
+0|quite a lot of ...
+0|anything
+0|grow
+0|show ... around
+0|farm
+0|farming
+0|pick
+0|excellent
+0|countryside
+0|in the countryside
+0|clean
+0|worry
+0|yesterday
+0|flower
+0|get
+0|luckily
+0|sun
+0|museum
+0|fire
+0|fire station
+0|painting
+0|lovely
+0|slow
+0|exciting
+0|expensive
+0|cheap
+0|fast
+0|robot
+0|guide
+0|gift
+0|all in all
+0|everything
+0|interested
+0|be interested in
+0|dark
+0|hear
+0|heard
+0|not ... at all
+0|anywhere
+0|laugh
+0|invite
+0|start
+0|give
+0|wonderful
+0|Carol
+0|camp
+0|lake
+0|beach
+0|badminton
+0|sheep
+0|as
+0|natural
+0|butterfly
+0|visitor
+0|tired
+0|stay
+0|stay up late
+0|away
+0|run away
+0|mouse
+0|mice
+0|baby
+0|shout
+0|shout at ...
+0|woof
+0|language
+0|fly
+0|fly a kite
+0|high
+0|high school
+0|ago
+0|India
+0|put up
+0|tent
+0|moon
+0|surprise
+0|get a surprise
+0|snake
+0|scared
+0|move
+0|shout to ...
+0|jump
+0|up and down
+0|wake
+0|wake ... up
+0|into
+0|forest
+0|ear
+0|Lucy
+0|anyone
+0|few
+0|quite a few
+0|most
+0|something
+0|nothing
+0|everyone
+0|of course
+0|myself
+0|yourself
+0|yourselves
+0|hen
+0|pig
+0|seem
+0|bored
+0|someone
+0|diary
+0|activity
+0|decide
+0|try
+0|paragliding
+0|feel like
+0|bird
+0|bicycle
+0|building
+0|trader
+0|wonder
+0|difference
+0|top
+0|wait
+0|umbrella
+0|wet
+0|because of
+0|below
+0|enough
+0|hungry
+0|hill
+0|duck
+0|dislike
+0|Central Park
+0|Huangguoshu Waterfall
+0|Hong Kong
+0|Malaysia
+0|Malaysian
+0|Georgetown
+0|Weld Quay
+0|Penang Hill
+0|Tian'anmen Square
+0|the Palace Museum
+0|Mark
+0|housework
+0|hardly
+0|ever
+0|hardly ever
+0|once
+0|twice
+0|Internet
+0|program
+0|programme
+0|full
+0|swing
+0|swing dance
+0|maybe
+0|least
+0|at least
+0|junk
+0|junk food
+0|coffee
+0|result
+0|percent
+0|per cent
+0|online
+0|television
+0|although
+0|through
+0|mind
+0|body
+0|such
+0|such as
+0|together
+0|die
+0|writer
+0|dentist
+0|magazine
+0|however
+0|than
+0|more than
+0|almost
+0|none
+0|less
+0|less than
+0|point
+0|Claire
+0|Sue
+0|American Teenager
+0|outgoing
+0|better
+0|good
+0|well
+0|loudly
+0|quietly
+0|hard-working
+0|competition
+0|fantastic
+0|which
+0|clearly
+0|win
+0|though
+0|talented
+0|truly
+0|care
+0|care about
+0|serious
+0|mirror
+0|kid
+0|as long as
+0|necessary
+0|be different from
+0|both
+0|bring out
+0|grade
+0|should
+0|the same as
+0|saying
+0|reach
+0|hand
+0|touch
+0|heart
+0|fact
+0|in fact
+0|break
+0|arm
+0|share
+0|loud
+0|similar
+0|be similar to
+0|primary
+0|primary school
+0|information
+0|Tara
+0|Sam
+0|Nelly
+0|Larry
+0|theater
+0|theatre
+0|comfortable
+0|seat
+0|screen
+0|close
+0|ticket
+0|worst
+0|bad
+0|badly
+0|cheaply
+0|song
+0|DJ
+0|choose
+0|chose
+0|carefully
+0|reporter
+0|so far
+0|fresh
+0|comfortably
+0|worse
+0|service
+0|pretty
+0|menu
+0|act
+0|meal
+0|creative
+0|performer
+0|talent
+0|common
+0|have ... in common
+0|magician
+0|all kinds of
+0|beautifully
+0|be up to
+0|role
+0|play a role
+0|winner
+0|prize
+0|everybody
+0|make up
+0|example
+0|for example
+0|poor
+0|seriously
+0|take ... seriously
+0|agree
+0|agree with
+0|crowded
+0|Greg
+0|Depp
+0|Danny
+0|Eliza
+0|Vera
+0|Dennis
+0|American Idol
+0|America's Got Talent
+0|China's Got Talent
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 397
+# Total Entries Extracted: 397
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 397
+# -------------------------------

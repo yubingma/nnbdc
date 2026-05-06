@@ -1,0 +1,274 @@
+0|dinosaur
+0|intelligent
+0|talented
+0|artistic
+0|perhaps
+0|notebook
+0|vehicle
+0|prehistoric
+0|completely
+0|original
+0|birth
+0|suffering
+0|artist
+0|death
+0|whole
+0|piece
+0|editor
+0|organize
+0|order
+0|record
+0|die out
+0|a type of
+0|be related to
+0|general education
+0|go back a long way
+0|be similar to
+0|alphabetical order
+0|play an important role
+0|flight
+0|schedule
+0|everywhere
+0|challenge
+0|prize
+0|promise
+0|chessboard
+0|silver
+0|reply
+0|hesitation
+0|wonder
+0|agree
+0|per cent
+0|currently
+0|check
+0|budget
+0|province
+0|sharply
+0|count
+0|system
+0|symbol
+0|represent
+0|exactly
+0|flight schedule
+0|price tag
+0|for a moment
+0|without hesitation
+0|go up
+0|go down
+0|write down
+0|instead of
+0|network
+0|flood
+0|multimedia
+0|expert
+0|mobile
+0|payment
+0|warn
+0|treatment
+0|data
+0|company
+0|traffic
+0|flow
+0|smoothly
+0|laptop
+0|screen
+0|weight
+0|digital
+0|social
+0|message
+0|interview
+0|positive
+0|negative
+0|effect
+0|opinion
+0|novel
+0|comment
+0|basis
+0|microprocessor
+0|microchip
+0|major
+0|breakthrough
+0|electronic
+0|software
+0|app
+0|application
+0|era
+0|download
+0|tiny
+0|connect to
+0|bring big changes to
+0|mobile payment
+0|take ... for example
+0|rubbish bin
+0|social media
+0|in person
+0|the general public
+0|balloon
+0|wheel
+0|central
+0|although
+0|attach
+0|pull
+0|international
+0|path
+0|technique
+0|depend
+0|doubt
+0|personally
+0|prediction
+0|statement
+0|benefit
+0|wing
+0|distance
+0|petrol
+0|avoid
+0|anywhere
+0|notice
+0|type
+0|mixture
+0|heat
+0|press
+0|metal
+0|steam locomotive
+0|crewed spacecraft
+0|on foot
+0|a number of
+0|take place
+0|for instance
+0|large amounts of
+0|international trade
+0|depend on
+0|3D printer
+0|without doubt
+0|of all time
+0|make fun of
+0|traffic jam
+0|exchange
+0|nervous
+0|grateful
+0|chopstick
+0|tour
+0|tai chi
+0|yet
+0|independent
+0|content
+0|feeling
+0|shock
+0|foreign
+0|confused
+0|anxious
+0|phase
+0|honeymoon
+0|unfamiliar
+0|homesick
+0|lonely
+0|deal
+0|expect
+0|situation
+0|accept
+0|adaptation
+0|Beijing opera
+0|host family
+0|snake its way
+0|culture shock
+0|deal with
+0|feel at home
+0|author
+0|remains
+0|locate
+0|soldier
+0|captain
+0|empty
+0|victory
+0|joke
+0|midnight
+0|except
+0|hide
+0|secretly
+0|enter
+0|succeed
+0|trick
+0|fight
+0|beat
+0|pretend
+0|enemy
+0|fail
+0|therefore
+0|within
+0|fill
+0|towards
+0|attack
+0|fog
+0|make jokes about
+0|succeed in
+0|be tired of
+0|go on board
+0|be jealous of
+0|be full of
+0|regularly
+0|repeat
+0|note
+0|visual
+0|mentally
+0|link
+0|list
+0|especially
+0|diet
+0|maintain
+0|nut
+0|relax
+0|stressed
+0|tend
+0|normal
+0|loss
+0|fork
+0|onion
+0|ant
+0|context
+0|image
+0|sense
+0|summary
+0|contain
+0|particular
+0|chemistry
+0|flash card
+0|make a point of doing something
+0|last but not least
+0|natural disaster
+0|figure out
+0|faithful
+0|hold
+0|responsible
+0|awake
+0|flat
+0|choice
+0|advise
+0|cause
+0|complain
+0|litter
+0|unlikely
+0|relieve
+0|indoors
+0|magical
+0|wealth
+0|queen
+0|servant
+0|pride
+0|among
+0|relationship
+0|grow up
+0|care for
+0|in short
+0|have no choice but to do
+0|run free
+0|lie around
+0|complain about
+0|in addition
+0|catch the eye of somebody
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 267
+# Total Entries Extracted: 267
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 267
+# -------------------------------

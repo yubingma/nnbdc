@@ -1,0 +1,240 @@
+0|person
+0|cheerful
+0|hard-working
+0|patient
+0|smart
+0|probably
+0|forget
+0|forgot
+0|smell
+0|care
+0|miss
+0|joke
+0|laugh
+0|remain
+0|strict
+0|encourage
+0|support
+0|successful
+0|member
+0|paragraph
+0|as well
+0|take care of
+0|tell jokes
+0|make fun of
+0|be strict about
+0|give up
+0|go to work
+0|all day and all night
+0|France
+0|French
+0|flag
+0|wine
+0|tick
+0|possible
+0|Europe
+0|store
+0|vineyard
+0|excellent
+0|south
+0|lie
+0|lay
+0|coast
+0|perfect
+0|prefer
+0|ski
+0|tower
+0|finish
+0|lift
+0|step
+0|stairs
+0|receiver
+0|date
+0|greeting
+0|address
+0|be famous for
+0|department store
+0|prefer to
+0|go on holiday
+0|go sightseeing
+0|blind
+0|radio
+0|programme
+0|helpful
+0|rescue
+0|mean
+0|meant
+0|receptionist
+0|allow
+0|pet
+0|anywhere
+0|apologize
+0|lead
+0|led
+0|bark
+0|wake
+0|woke
+0|towel
+0|bottom
+0|finally
+0|airport
+0|appear
+0|act
+0|climb
+0|dark
+0|nothing
+0|arrive at
+0|by oneself
+0|lead to
+0|lead sb. to
+0|fall asleep
+0|wake up
+0|get down
+0|fire engine
+0|save
+0|pine
+0|discuss
+0|branch
+0|root
+0|fight
+0|fought
+0|against
+0|example
+0|harmful
+0|gas
+0|produce
+0|oxygen
+0|major
+0|convenient
+0|furniture
+0|imagine
+0|disease
+0|dig
+0|dug
+0|hole
+0|carry
+0|container
+0|take in
+0|come from
+0|for example
+0|in fact
+0|look around
+0|be made of
+0|millions of
+0|be good for
+0|drop
+0|journey
+0|quantity
+0|experiment
+0|fresh
+0|salt
+0|on
+0|voice
+0|reservoir
+0|add
+0|chemical
+0|through
+0|pipe
+0|valuable
+0|bit
+0|bank
+0|change
+0|return
+0|vapour
+0|form
+0|stir
+0|continue
+0|crystal
+0|turn off
+0|add ... to ...
+0|a bit
+0|part of
+0|pocket money
+0|be made up of
+0|dry up
+0|electricity
+0|conversation
+0|identify
+0|rule
+0|anyone
+0|reply
+0|foolish
+0|wire
+0|connect
+0|cable
+0|moment
+0|battery
+0|cooker
+0|fridge
+0|bulb
+0|lock
+0|test
+0|tidy
+0|touch
+0|a packet of
+0|in a way
+0|be connected to
+0|power station
+0|washing machine
+0|switch off
+0|tidy up
+0|air conditioner
+0|poem
+0|ordinary
+0|feeling
+0|order
+0|advice
+0|aloud
+0|group
+0|agree
+0|disagree
+0|rhyme
+0|complete
+0|well
+0|shower
+0|site
+0|narrow
+0|height
+0|superman
+0|seller
+0|smile
+0|rush
+0|crowd
+0|at all
+0|not at all
+0|be worried about
+0|newspaper stand
+0|rush out
+0|a crowd of
+0|career
+0|planet
+0|satellite
+0|velvet
+0|diamond
+0|shoot
+0|shot
+0|host
+0|knowledge
+0|lively
+0|last
+0|actually
+0|anybody
+0|achieve
+0|sail
+0|decide
+0|train
+0|alone
+0|in the future
+0|used to
+0|go outside
+0|look like
+0|more and more
+0|grow up
+0|go sailing
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 233
+# Total Entries Extracted: 233
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 233
+# -------------------------------

@@ -1,0 +1,215 @@
+0|invite
+0|expensive
+0|talk to
+0|brochure
+0|agent
+0|soon
+0|at the end of
+0|at the end of August
+0|swan
+0|raise
+0|national
+0|brick
+0|stone
+0|mountain
+0|ancient
+0|history
+0|interest
+0|holiday
+0|wonderful
+0|another
+0|officer
+0|society
+0|prevention
+0|cruelty
+0|someone
+0|puppy
+0|thirsty
+0|lovely
+0|as
+0|prefer
+0|care
+0|take care of
+0|booklet
+0|special
+0|chew
+0|basket
+0|blanket
+0|unkind
+0|clinic
+0|vet
+0|cave
+0|guard
+0|blind
+0|safely
+0|police
+0|thief
+0|missing
+0|hunt
+0|foreigner
+0|crowded
+0|example
+0|for example
+0|Canada
+0|Canadian
+0|Australia
+0|Australian
+0|India
+0|Indian
+0|Britain
+0|Briton
+0|Japanese
+0|penfriend
+0|magazine
+0|sex
+0|nationality
+0|international
+0|British
+0|yourself
+0|male
+0|Toronto
+0|junior
+0|block
+0|architect
+0|construction
+0|company
+0|type
+0|removal
+0|ambulance
+0|rescue
+0|deliver
+0|parcel
+0|neighbour
+0|meeting
+0|manager
+0|take notes
+0|accident
+0|towards
+0|knock down
+0|catch fire
+0|both ... and ...
+0|motorcyclist
+0|hurt
+0|run away
+0|broken
+0|arm
+0|engine
+0|fire engine
+0|scene
+0|carry
+0|choose
+0|bedroom
+0|untidy
+0|tidy
+0|tidy up
+0|wardrobe
+0|living room
+0|bathroom
+0|balcony
+0|estate
+0|agency
+0|matter
+0|suburb
+0|helper
+0|sofa
+0|next to
+0|set
+0|opposite
+0|rug
+0|cupboard
+0|armchair
+0|sunshine
+0|peaceful
+0|convenient
+0|neighbourhood
+0|bottom
+0|steep
+0|step
+0|noisy
+0|exciting
+0|pleasant
+0|relaxing
+0|financial
+0|church
+0|statue
+0|fountain
+0|storybook
+0|glove
+0|hike
+0|direction
+0|warning
+0|instruction
+0|silence
+0|useful
+0|camp
+0|go camping
+0|player
+0|dice
+0|roll
+0|take turns
+0|land
+0|miss
+0|luck
+0|neither
+0|DVD
+0|cartoon
+0|war
+0|outing
+0|sheet
+0|regularly
+0|at least
+0|last
+0|crisp
+0|bar
+0|lemonade
+0|used to
+0|not ... any longer
+0|homeless
+0|pie
+0|raisin
+0|scone
+0|Thai
+0|of course
+0|firstly
+0|flour
+0|self-raising flour
+0|secondly
+0|add
+0|pour
+0|millilitre
+0|mixture
+0|dough
+0|wide
+0|baking tray
+0|sprinkle
+0|oven
+0|hear from
+0|sincerely
+0|sound
+0|forward
+0|look forward to
+0|pity
+0|karaoke
+0|chess
+0|ingredient
+0|powder
+0|icing
+0|thirdly
+0|beat
+0|add ... to ...
+0|stir
+0|spring roll
+0|soya milk
+0|battery
+0|decorate
+0|balloon
+0|fork
+0|charcoal
+0|everybody
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 208
+# Total Entries Extracted: 208
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 208
+# -------------------------------

@@ -1,0 +1,565 @@
+0|chat
+0|online
+0|introduce
+0|interested
+0|similar
+0|physics
+0|perhaps
+0|consider
+0|talented
+0|yet
+0|engineer
+0|require
+0|exactly
+0|exact
+0|few
+0|airplane
+0|pilot
+0|reunion
+0|though
+0|fear
+0|step
+0|overcome
+0|realise
+0|model
+0|design
+0|type
+0|someday
+0|wing
+0|burn
+0|fuel
+0|pea
+0|pod
+0|copy
+0|surprise
+0|lend
+0|cheat
+0|following
+0|immediately
+0|hold
+0|embarrassed
+0|break
+0|postcard
+0|volunteer
+0|guitar
+0|concert
+0|vacation
+0|super
+0|tie
+0|until
+0|score
+0|experiment
+0|wonder
+0|fantastic
+0|quite
+0|lantern
+0|mid-
+0|double
+0|research
+0|firework
+0|labour
+0|national
+0|flag
+0|ceremony
+0|believe
+0|round
+0|bright
+0|thousand
+0|celebrate
+0|harvest
+0|gain
+0|cultural
+0|symbol
+0|gratitude
+0|whole
+0|while
+0|poet
+0|mirror
+0|apart
+0|moment
+0|legend
+0|monster
+0|loud
+0|noise
+0|firecracker
+0|hang
+0|couplet
+0|drive
+0|custom
+0|prepare
+0|northern
+0|eve
+0|midnight
+0|temple
+0|fair
+0|opportunity
+0|gather
+0|local
+0|pork
+0|race
+0|colourful
+0|beat
+0|bank
+0|cheer
+0|wave
+0|admire
+0|pay
+0|respect
+0|describe
+0|bit
+0|challenging
+0|unique
+0|personal
+0|strength
+0|talent
+0|proud
+0|person
+0|musical
+0|championship
+0|perfect
+0|born
+0|nobody
+0|advantage
+0|strict
+0|shoot
+0|ability
+0|gradually
+0|shooter
+0|against
+0|basket
+0|net
+0|final
+0|Olympic
+0|continue
+0|opera
+0|organise
+0|confident
+0|nervous
+0|mistake
+0|alone
+0|encourage
+0|perform
+0|heart
+0|central
+0|stage
+0|finish
+0|performance
+0|teenage
+0|except
+0|although
+0|impossible
+0|weak
+0|flu
+0|ground
+0|challenge
+0|concept
+0|focus
+0|key
+0|gravity
+0|force
+0|pull
+0|towards
+0|centre
+0|compare
+0|related
+0|similarity
+0|reasonable
+0|mine
+0|sunflower
+0|deep
+0|remind
+0|add
+0|jasmine
+0|amaze
+0|fully
+0|comb
+0|surprised
+0|explain
+0|graduate
+0|translator
+0|confidence
+0|follow
+0|passage
+0|aloud
+0|actually
+0|newspaper
+0|magazine
+0|ad
+0|advertisement
+0|daily
+0|movie
+0|least
+0|explore
+0|task
+0|forum
+0|thought
+0|contest
+0|argue
+0|completely
+0|attention
+0|understanding
+0|respectfully
+0|disagree
+0|allow
+0|control
+0|environment
+0|prefer
+0|besides
+0|direct
+0|motivate
+0|debate
+0|reason
+0|suit
+0|leave
+0|corn
+0|bean
+0|cucumber
+0|onion
+0|chop
+0|knife
+0|knives
+0|soon
+0|porridge
+0|role
+0|mental
+0|growth
+0|overall
+0|well-being
+0|value
+0|sense
+0|responsibility
+0|beneficial
+0|muscle
+0|cooperate
+0|result
+0|character
+0|communication
+0|teenager
+0|whether
+0|household
+0|fitness
+0|sickle
+0|bend
+0|stem
+0|centimetre
+0|above
+0|patient
+0|basic
+0|shower
+0|taste
+0|combine
+0|training
+0|postman
+0|postmen
+0|county
+0|messenger
+0|mail
+0|total
+0|valley
+0|Celsius
+0|deliver
+0|package
+0|serve
+0|expect
+0|pride
+0|service
+0|touch
+0|outside
+0|natural
+0|imagine
+0|stunning
+0|explorer
+0|plateau
+0|beauty
+0|ecological
+0|importance
+0|enter
+0|heritage
+0|major
+0|headwaters
+0|breathtaking
+0|wetland
+0|heaven
+0|wolf
+0|wolves
+0|eagle
+0|antelope
+0|creature
+0|locate
+0|check
+0|minus
+0|number
+0|civilization
+0|throughout
+0|adventure
+0|playful
+0|float
+0|search
+0|hidden
+0|treasure
+0|jungle
+0|island
+0|market
+0|professional
+0|hotel
+0|expert
+0|guide
+0|transportation
+0|create
+0|valuable
+0|purpose
+0|community
+0|collect
+0|rubbish
+0|side
+0|shelter
+0|elderly
+0|nursing
+0|apply
+0|voluntary
+0|sincerely
+0|program
+0|preparation
+0|grammar
+0|vocabulary
+0|pronunciation
+0|greet
+0|donor
+0|responsible
+0|information
+0|favourable
+0|interpersonal
+0|scan
+0|characteristic
+0|garbage
+0|conversation
+0|comfortable
+0|notice
+0|host
+0|radio
+0|briefly
+0|exam
+0|senior
+0|communicate
+0|support
+0|wisdom
+0|shark
+0|plastic
+0|bottle
+0|bin
+0|recycle
+0|behaviour
+0|harmful
+0|whale
+0|gun
+0|kilo
+0|stomach
+0|situation
+0|worse
+0|global
+0|produce
+0|ton
+0|goods
+0|product
+0|waste
+0|affect
+0|kill
+0|pollute
+0|suffer
+0|cheap
+0|option
+0|reusable
+0|properly
+0|solution
+0|impact
+0|reduce
+0|miracle
+0|hardly
+0|government
+0|dead
+0|land
+0|forester
+0|beginning
+0|condition
+0|harsh
+0|generation
+0|technology
+0|survive
+0|century
+0|spirit
+0|inspire
+0|complete
+0|environmental
+0|scenery
+0|gas
+0|oil
+0|coal
+0|planet
+0|increase
+0|effect
+0|serious
+0|pole
+0|melt
+0|cause
+0|flood
+0|storm
+0|thankfully
+0|action
+0|device
+0|address
+0|introduce ... to ...
+0|stay with
+0|interested in sth.
+0|interested in sb.
+0|speak of
+0|be similar to
+0|be talented in
+0|grow up
+0|a few
+0|a fear of heights
+0|stop ... from ...
+0|take steps
+0|try one's best
+0|try one's best to do
+0|realise one's dream
+0|type of sth.
+0|two peas in a pod
+0|spend doing ...
+0|spend time doing ...
+0|to one's surprise
+0|no way
+0|come over
+0|hold out
+0|make a deal
+0|summer break
+0|play the guitar
+0|go to a concert
+0|quite a few
+0|by the way
+0|sound like
+0|date back
+0|a symbol of
+0|look up
+0|set off
+0|drive away
+0|at midnight
+0|known as
+0|turn out
+0|pay one's respects
+0|pay one's respects to sb.
+0|be supposed to
+0|come up with
+0|be proud of
+0|Well done!
+0|advantage over sb.
+0|be strict with
+0|go to university
+0|from then on
+0|dream of doing sth.
+0|feel confident to do sth.
+0|make mistakes
+0|be nervous about
+0|Practice makes perfect.
+0|believe in oneself
+0|it's one's turn
+0|wave at sb.
+0|make a list
+0|be hard on sb.
+0|be hard on sth.
+0|in one's own way
+0|have flu
+0|have the flu
+0|miss school
+0|such as
+0|share ... with
+0|focus on
+0|as the saying goes
+0|take ... as an example
+0|remind ... of ...
+0|get deep into
+0|graduate from
+0|work as
+0|be afraid to do
+0|follow one's advice
+0|last but not least
+0|be active in
+0|pay attention to
+0|allow sb. to do sth.
+0|have full control over
+0|prefer to
+0|agree with
+0|be careful with
+0|the sooner ..., the better
+0|play an important role in
+0|a sense of
+0|not only ... but also ...
+0|cooperate with
+0|as a result
+0|work with
+0|build up
+0|prepare sb. for sth.
+0|by hand
+0|bend down
+0|say to oneself
+0|take a shower
+0|combine ... with ...
+0|take pride in
+0|be born in
+0|at the age of
+0|take over
+0|in total
+0|covered with
+0|be covered with
+0|on average
+0|on time
+0|stay in touch with
+0|natural landscape
+0|have plans for
+0|thousands
+0|thousands of ...
+0|float on
+0|take a boat trip
+0|miss out
+0|miss out on sth.
+0|provide ... for ...
+0|on the side of
+0|check out
+0|try one's hand at
+0|make a difference in
+0|be responsible for
+0|be close to
+0|get close to
+0|be part of
+0|leave ... behind
+0|in the centre of
+0|pass by
+0|clean up
+0|provide sb. with sth.
+0|a little bit of
+0|make one's day
+0|That's very kind of you!
+0|go for a swim
+0|You're kidding me.
+0|be harmful to
+0|get worse
+0|agree to do
+0|the rest of
+0|millions
+0|millions of
+0|be easy to do
+0|end up
+0|have a big impact on
+0|change ... into ...
+0|carry out
+0|carry on
+0|get a fever
+0|lead to
+0|slow down
+0|turn off
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 558
+# Total Entries Extracted: 558
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 558
+# -------------------------------

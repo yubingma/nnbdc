@@ -1,0 +1,337 @@
+0|guitar
+0|honest
+0|patient
+0|improve
+0|confident
+0|courage
+0|friendship
+0|admiration
+0|respect
+0|support
+0|trust
+0|survey
+0|personal
+0|quality
+0|caring
+0|describe
+0|appearance
+0|straight
+0|dark
+0|same
+0|basic
+0|thought
+0|however
+0|glad
+0|rise
+0|end
+0|heart
+0|be good at
+0|turn to somebody for help
+0|after school
+0|be willing to do something
+0|thanks to
+0|count on
+0|medium height
+0|modern dance
+0|take care of
+0|watch over
+0|rise into
+0|cry out
+0|cry oneself to sleep
+0|wake up
+0|come and go
+0|take somebody's place
+0|come along
+0|geography
+0|corner
+0|activity
+0|club
+0|practise
+0|solve
+0|develop
+0|skill
+0|teen
+0|magazine
+0|teenager
+0|greeting
+0|grade
+0|energy
+0|drama
+0|sincerely
+0|diary
+0|project
+0|poster
+0|realize
+0|luckily
+0|just
+0|presentation
+0|mood
+0|mind
+0|pack
+0|celebrate
+0|success
+0|rocky
+0|do the dishes
+0|junior high school
+0|take part in
+0|look forward to
+0|daily life
+0|go to bed
+0|get up
+0|on foot
+0|full of energy
+0|get ... ready for
+0|put on
+0|clean up
+0|pick up
+0|footprint
+0|wet
+0|deep
+0|sandy
+0|kick
+0|town
+0|feature
+0|south
+0|clear
+0|loudly
+0|thunder
+0|lightning
+0|fresh
+0|gather
+0|peaceful
+0|snake
+0|through
+0|part
+0|article
+0|reason
+0|alive
+0|sandcastle
+0|follow
+0|divide
+0|decide
+0|crop
+0|culture
+0|local
+0|tradition
+0|continue
+0|have picnics
+0|work one's land
+0|take a trip
+0|solar term
+0|in fact
+0|be divided into
+0|be based on
+0|play an important part in
+0|system
+0|file
+0|amazing
+0|planet
+0|billion
+0|cover
+0|area
+0|freezing
+0|north
+0|pole
+0|desert
+0|metre
+0|reach
+0|grain
+0|wide
+0|whale
+0|butterfly
+0|provide
+0|explore
+0|disappear
+0|plastic
+0|pollution
+0|protect
+0|chemical
+0|groundwater
+0|burn
+0|oil
+0|gas
+0|harmful
+0|website
+0|own
+0|emperor
+0|hunt
+0|war
+0|sandstorm
+0|solution
+0|blow
+0|generation
+0|solar system
+0|fact file
+0|be covered by
+0|as far as we know
+0|sea level
+0|what's more
+0|provide ... with ...
+0|plastic pollution
+0|cut down
+0|hundreds of
+0|blow away
+0|spacesuit
+0|collect
+0|leave
+0|kilometre
+0|weak
+0|tie
+0|low
+0|weigh
+0|breathe
+0|facility
+0|adventure
+0|pass
+0|experiment
+0|prepare
+0|dream
+0|chance
+0|send
+0|introduction
+0|view
+0|someday
+0|experience
+0|lander
+0|island
+0|ancient
+0|poem
+0|express
+0|determination
+0|universe
+0|already
+0|century
+0|neighbour
+0|circle
+0|surface
+0|release
+0|kilogram
+0|programme
+0|space station
+0|do exercise
+0|take photos
+0|get into orbit
+0|thousands of
+0|guide
+0|east
+0|west
+0|mix
+0|western
+0|style
+0|popular
+0|site
+0|across
+0|adult
+0|senior
+0|customer
+0|design
+0|else
+0|suggestion
+0|tip
+0|historic
+0|list
+0|landscape
+0|memory
+0|general
+0|sight
+0|natural
+0|almost
+0|become
+0|gateway
+0|influence
+0|artwork
+0|painting
+0|scene
+0|wife
+0|stone
+0|reflection
+0|tourist spot
+0|light up
+0|in the centre of
+0|be interested in
+0|historic site
+0|in memory of
+0|literature
+0|act
+0|appreciate
+0|join
+0|definitely
+0|fair
+0|rocket
+0|launch
+0|shout
+0|power
+0|moment
+0|member
+0|shape
+0|hike
+0|recently
+0|attend
+0|charity
+0|sale
+0|snack
+0|decorate
+0|difference
+0|compete
+0|event
+0|spoon
+0|annual
+0|fantastic
+0|dollar
+0|pie
+0|equipment
+0|clubs fair
+0|solar power
+0|of course
+0|remote control
+0|turn around
+0|make a difference
+0|primary school
+0|fall off
+0|ring
+0|collection
+0|valuable
+0|handle
+0|glove
+0|add
+0|envelope
+0|absolutely
+0|seem
+0|impossible
+0|single
+0|nail
+0|explain
+0|bit
+0|similar
+0|coin
+0|soft
+0|sticker
+0|waste
+0|item
+0|result
+0|wrapper
+0|bar
+0|include
+0|size
+0|pattern
+0|produce
+0|attract
+0|insect
+0|object
+0|flat
+0|language
+0|treasure
+0|unlock
+0|real
+0|add ... to ...
+0|soft drink
+0|a waste of time
+0|pocket money
+0|all over the world
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 330
+# Total Entries Extracted: 330
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 330
+# -------------------------------

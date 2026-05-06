@@ -1,0 +1,466 @@
+0|palace
+0|next to
+0|town
+0|Canada
+0|France
+0|Japan
+0|Russia
+0|UK
+0|United Kingdom
+0|London
+0|country
+0|capital
+0|mile
+0|garden
+0|flat
+0|centre
+0|center
+0|living room
+0|share
+0|share sth. with sb.
+0|bedroom
+0|own
+0|bathroom
+0|balcony
+0|beach
+0|sea
+0|dining room
+0|zero
+0|hundred
+0|thousand
+0|million
+0|foot
+0|feet
+0|square
+0|metre
+0|meter
+0|area
+0|over
+0|fork
+0|fridge
+0|refrigerator
+0|knife
+0|knives
+0|lamp
+0|shower
+0|sofa
+0|video
+0|be full of
+0|of one's own
+0|some day
+0|may
+0|message
+0|take a message
+0|call sb. back
+0|double
+0|study
+0|machine
+0|washing machine
+0|at the foot of
+0|field
+0|football field
+0|home cinema
+0|invite
+0|stay
+0|neighbour
+0|neighbor
+0|wow
+0|will
+0|visitor
+0|like
+0|waiter
+0|neighbourhood
+0|neighborhood
+0|helpful
+0|volunteer
+0|community
+0|skill
+0|help sb. with sth.
+0|problem
+0|something
+0|engineer
+0|check
+0|broken
+0|someone
+0|fix
+0|anyone
+0|college
+0|do some shopping
+0|lucky
+0|shall
+0|the day after tomorrow
+0|fire
+0|make a fire
+0|manager
+0|office
+0|office worker
+0|policeman
+0|policemen
+0|postman
+0|postmen
+0|company
+0|station
+0|police station
+0|post
+0|post office
+0|person
+0|job
+0|elder
+0|by train
+0|by bus
+0|by ship
+0|by bike
+0|future
+0|artist
+0|sound
+0|sick
+0|notice
+0|information
+0|below
+0|better
+0|good
+0|well
+0|anything
+0|worry about
+0|design
+0|group
+0|mine
+0|nothing
+0|wait a minute
+0|yuan
+0|tin
+0|pizza
+0|exchange student
+0|quiet
+0|air
+0|fresh
+0|local
+0|jogging
+0|underground
+0|famous
+0|Western
+0|opera
+0|theatre
+0|theater
+0|miss
+0|forward
+0|look forward to
+0|soon
+0|postcard
+0|key
+0|ring
+0|key ring
+0|yours
+0|ours
+0|theirs
+0|hers
+0|all over
+0|pencil case
+0|golden throne
+0|work
+0|work of art
+0|painting
+0|row
+0|hotel
+0|hometown
+0|raise
+0|grow
+0|wheat
+0|friendly
+0|smell
+0|drive
+0|follow
+0|path
+0|have to
+0|north
+0|west
+0|south
+0|east
+0|trip
+0|kilometre
+0|km
+0|kilometer
+0|everybody
+0|straight
+0|on
+0|bamboo
+0|all day long
+0|along
+0|road
+0|king
+0|remember
+0|that
+0|dangerous
+0|forest
+0|funny
+0|laugh
+0|giraffe
+0|quite
+0|neck
+0|leaf
+0|leaves
+0|north-east
+0|bridge
+0|cross
+0|cage
+0|across
+0|inside
+0|outside
+0|above
+0|sign
+0|bench
+0|past
+0|treasure
+0|turning
+0|traffic
+0|traffic lights
+0|should
+0|crossing
+0|corner
+0|prepare
+0|prepare ... for ...
+0|plenty
+0|plenty of
+0|exit
+0|bank
+0|amazing
+0|same
+0|birth
+0|stop doing sth.
+0|times
+0|earth
+0|bone
+0|back
+0|fat
+0|fact
+0|as
+0|usual
+0|as usual
+0|sit down
+0|suddenly
+0|whisper
+0|bush
+0|turn around
+0|anybody
+0|nobody
+0|no one
+0|reply
+0|strange
+0|leave
+0|quickly
+0|on one's way
+0|on the way
+0|happen
+0|everything
+0|wonder
+0|carefully
+0|search
+0|himself
+0|say to oneself
+0|weak
+0|miaow
+0|pick
+0|pick up
+0|surprised
+0|later
+0|run away
+0|somebody
+0|ago
+0|the day before yesterday
+0|centimetre
+0|cm
+0|centimeter
+0|dodo
+0|snake
+0|camel
+0|ant
+0|little
+0|dry
+0|without
+0|be afraid of
+0|not ... any more
+0|hear of
+0|the other day
+0|at the same time
+0|3-D
+0|three-D
+0|chalk
+0|sandwich
+0|all over the world
+0|by
+0|use
+0|per
+0|at least
+0|as ... as
+0|inch
+0|ask for
+0|outdoor
+0|hurry
+0|hurry up
+0|complain
+0|camping
+0|cycling
+0|riding
+0|horse riding
+0|skating
+0|ride
+0|rabbit
+0|hole
+0|pass
+0|dear
+0|watch
+0|stand up
+0|get away
+0|fall
+0|hit
+0|herself
+0|alone
+0|low
+0|locked
+0|into
+0|side
+0|through
+0|go through
+0|surprise
+0|put up
+0|tent
+0|wood
+0|period
+0|dynasty
+0|century
+0|Italian
+0|become
+0|province
+0|from then on
+0|excited
+0|mobile phone
+0|a little
+0|sweet
+0|enough
+0|decide
+0|enter
+0|towards
+0|toward
+0|forget
+0|too ... to ...
+0|reach
+0|climb
+0|fail
+0|ability
+0|believe
+0|believe it or not
+0|look out
+0|seat
+0|send
+0|even
+0|able
+0|pay
+0|pay for
+0|notebook
+0|brave
+0|save
+0|save ... from
+0|smoke
+0|next door
+0|badly
+0|hurt
+0|could
+0|can
+0|pour
+0|protect
+0|rush
+0|wet
+0|blanket
+0|fireman
+0|firemen
+0|put out
+0|burn
+0|in hospital
+0|moment
+0|nod
+0|careful
+0|reporter
+0|news
+0|newspaper
+0|match
+0|rubbish
+0|bin
+0|by the way
+0|camera
+0|no problem
+0|X-ray
+0|term
+0|hard
+0|article
+0|do one's best
+0|try one's best
+0|careless
+0|piano
+0|do well in
+0|violin
+0|at the age of
+0|show
+0|sir
+0|madam
+0|recommend
+0|award
+0|part
+0|take part in
+0|need
+0|lose
+0|lose one's way
+0|before
+0|hear from
+0|yours faithfully
+0|pet
+0|rude
+0|goldfish
+0|mouse
+0|mice
+0|parrot
+0|knee
+0|hold
+0|feed
+0|teach
+0|poem
+0|wide
+0|hunt
+0|hide
+0|build
+0|camp
+0|stick
+0|bark
+0|bite
+0|fight
+0|look after
+0|till
+0|end
+0|trouble
+0|bubble
+0|gentle
+0|touch
+0|rhyme
+0|care
+0|take care of
+0|anywhere
+0|repeat
+0|all the time
+0|agree
+0|keep
+0|weigh
+0|gram
+0|grow up
+0|talk
+0|noise
+0|brush
+0|fur
+0|paw
+0|basket
+0|noisy
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 459
+# Total Entries Extracted: 459
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 459
+# -------------------------------

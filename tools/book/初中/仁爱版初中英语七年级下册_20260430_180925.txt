@@ -1,0 +1,506 @@
+0|gate
+0|by
+0|subway
+0|underground
+0|always
+0|come on
+0|on foot
+0|plane
+0|train
+0|ship
+0|boat
+0|weekday
+0|early
+0|bird
+0|catch
+0|worm
+0|sometimes
+0|seldom
+0|walk
+0|never
+0|ride
+0|park
+0|watch
+0|TV
+0|television
+0|watch TV
+0|soccer
+0|football
+0|movie
+0|film
+0|begin
+0|at school
+0|after
+0|bed
+0|basketball
+0|swim
+0|listen
+0|listen to
+0|music
+0|library
+0|week
+0|once
+0|twice
+0|great
+0|wall
+0|the Great Wall
+0|life
+0|American
+0|or
+0|over
+0|more
+0|talk
+0|make
+0|card
+0|boring
+0|soon
+0|classroom
+0|playground
+0|lab
+0|laboratory
+0|computer
+0|room
+0|hall
+0|dining hall
+0|gym
+0|gymnasium
+0|building
+0|pool
+0|clean
+0|do some cleaning
+0|run
+0|dance
+0|borrow
+0|workbook
+0|course
+0|of course
+0|use
+0|look for
+0|shelf
+0|keep
+0|must
+0|return
+0|on time
+0|newspaper
+0|Lost and Found
+0|money
+0|wallet
+0|around
+0|few
+0|a few
+0|game
+0|sit
+0|ping-pong
+0|lesson
+0|write
+0|aha
+0|blackboard
+0|at the back of
+0|draw
+0|picture
+0|because
+0|Japanese
+0|wonderful
+0|also
+0|Wednesday
+0|Monday
+0|Tuesday
+0|Thursday
+0|Friday
+0|physics
+0|geography
+0|P.E.
+0|physical education
+0|art
+0|history
+0|math
+0|mathematics
+0|biology
+0|politics
+0|science
+0|meeting
+0|easy
+0|interesting
+0|difficult
+0|learn
+0|which
+0|subject
+0|best
+0|outdoor
+0|activity
+0|study
+0|attention
+0|between
+0|stamp
+0|from ... to ...
+0|Saturday
+0|night
+0|sound
+0|February
+0|hard
+0|late
+0|beautiful
+0|garden
+0|bedroom
+0|second
+0|floor
+0|and so on
+0|upstairs
+0|kitchen
+0|dining room
+0|living room
+0|bathroom
+0|first
+0|lamp
+0|clock
+0|near
+0|under
+0|chair
+0|behind
+0|front
+0|in front of
+0|guitar
+0|window
+0|table
+0|key
+0|put
+0|away
+0|put away
+0|door
+0|look after
+0|thing
+0|center
+0|in the center of
+0|yard
+0|flower
+0|house
+0|large
+0|left
+0|model
+0|only
+0|townhouse
+0|farmhouse
+0|country
+0|apartment
+0|rent
+0|month
+0|for rent
+0|quiet
+0|neighbor
+0|store
+0|bank
+0|street
+0|corner
+0|post
+0|post office
+0|bookstore
+0|parking lot
+0|supermarket
+0|railway
+0|station
+0|end
+0|road
+0|such
+0|as
+0|such as
+0|community
+0|child
+0|children
+0|a lot of
+0|lots of
+0|sport
+0|close
+0|close to
+0|far
+0|far from
+0|service
+0|area
+0|colorful
+0|sleep
+0|move
+0|countryside
+0|city
+0|noisy
+0|traffic
+0|cost
+0|miss
+0|air
+0|fresh
+0|along
+0|turn
+0|crossing
+0|meter
+0|across
+0|bridge
+0|across from
+0|until
+0|kilometer
+0|should
+0|change
+0|stop
+0|sidewalk
+0|public
+0|light
+0|crosswalk
+0|danger
+0|safe
+0|hurt
+0|lose
+0|accident
+0|obey
+0|rule
+0|cross
+0|sign
+0|before
+0|both
+0|third
+0|last
+0|careful
+0|ticket
+0|speed
+0|wrong
+0|place
+0|fast
+0|down
+0|hill
+0|rest
+0|story
+0|writer
+0|novel
+0|was
+0|born
+0|July
+0|fan
+0|March
+0|April
+0|May
+0|June
+0|August
+0|September
+0|October
+0|November
+0|December
+0|January
+0|were
+0|thousand
+0|birthday
+0|date
+0|calendar
+0|plan
+0|celebrate
+0|party
+0|fourth
+0|fifth
+0|sixth
+0|seventh
+0|eighth
+0|ninth
+0|tenth
+0|twelfth
+0|twentieth
+0|present
+0|shape
+0|ball
+0|afraid
+0|star
+0|mouse
+0|mice
+0|circle
+0|square
+0|triangle
+0|rectangle
+0|oval
+0|centimeter
+0|Mrs.
+0|cake
+0|piano
+0|else
+0|disco
+0|perform
+0|ballet
+0|have a good time
+0|smart
+0|count
+0|ago
+0|London
+0|age
+0|at the age of
+0|word
+0|not ... any more
+0|magic
+0|trick
+0|enjoy
+0|himself
+0|enjoy oneself
+0|kung fu
+0|yesterday
+0|ouch
+0|matter
+0|fall
+0|autumn
+0|poor
+0|myself
+0|wash
+0|at once
+0|washroom
+0|forget
+0|bring
+0|candle
+0|wish
+0|blow
+0|blow out
+0|everyone
+0|sunny
+0|delicious
+0|musical
+0|everything
+0|minute
+0|start
+0|weather
+0|spring
+0|warm
+0|season
+0|summer
+0|hot
+0|climb
+0|winter
+0|cold
+0|rain
+0|snow
+0|rainy
+0|remember
+0|put on
+0|raincoat
+0|outside
+0|snowy
+0|windy
+0|foggy
+0|cloudy
+0|bright
+0|temperature
+0|low
+0|holiday
+0|umbrella
+0|sunglasses
+0|shorts
+0|travel
+0|wear
+0|suddenly
+0|shine
+0|better
+0|had better
+0|Australia
+0|most
+0|sun
+0|brightly
+0|later on
+0|come back to life
+0|come out
+0|heavily
+0|harvest
+0|busy
+0|leaf
+0|leaves
+0|wind
+0|strongly
+0|ice
+0|hat
+0|opera
+0|Beijing Opera
+0|right away
+0|ourselves
+0|hope
+0|trip
+0|noon
+0|together
+0|interest
+0|place of interest
+0|Germany
+0|India
+0|hometown
+0|anytime
+0|all year round
+0|all the year round
+0|camera
+0|tent
+0|prepare
+0|prepare for
+0|share
+0|fun
+0|clothing
+0|carry
+0|decide
+0|dangerous
+0|stay
+0|alone
+0|keep away from
+0|mountain
+0|arrive
+0|friendly
+0|gift
+0|festival
+0|Spring Festival
+0|dumpling
+0|dragon
+0|Christmas
+0|turkey
+0|lantern
+0|Lantern Festival
+0|lunar
+0|sweet
+0|luck
+0|riddle
+0|Thanksgiving
+0|pumpkin
+0|pie
+0|Easter
+0|believe
+0|Christ
+0|Mid-autumn Festival
+0|mooncake
+0|full
+0|moon
+0|important
+0|decorate
+0|eve
+0|church
+0|put up
+0|stocking
+0|fireplace
+0|open
+0|Santa Claus
+0|special
+0|greet
+0|merry
+0|grape
+0|Jewish
+0|honey
+0|event
+0|stay up
+0|midnight
+0|lucky
+0|lucky money
+0|Halloween
+0|scary
+0|ghost
+0|knock
+0|knock on
+0|shout
+0|treat
+0|international
+0|labor
+0|International Labor Day
+0|Dragon Boat Festival
+0|race
+0|national
+0|National Day
+0|the PRC
+0|the People's Republic of China
+0|flag
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 499
+# Total Entries Extracted: 499
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 499
+# -------------------------------

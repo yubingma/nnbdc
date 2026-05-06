@@ -1,0 +1,546 @@
+0|trip
+0|silk
+0|road
+0|lead
+0|led
+0|Martin
+0|note
+0|chance
+0|send
+0|sent
+0|news
+0|exciting
+0|along
+0|kilometre
+0|special
+0|culture
+0|arrive
+0|Terra Cotta Warrior
+0|leave
+0|left
+0|Wild Goose Pagoda
+0|hit
+0|ancient
+0|drum
+0|ring
+0|rang
+0|rung
+0|bell
+0|enjoy
+0|dish
+0|tour
+0|guide
+0|pit
+0|move
+0|sign
+0|group
+0|bridge
+0|cross
+0|wide
+0|cheese
+0|another
+0|amazing
+0|main
+0|sand
+0|cave
+0|believe
+0|Marco Polo
+0|camel
+0|sir
+0|safe
+0|fall
+0|fell
+0|fallen
+0|onto
+0|yay
+0|diary
+0|last
+0|clothing
+0|nest
+0|few
+0|building
+0|hold
+0|held
+0|Olympics
+0|thousand
+0|instrument
+0|someday
+0|project
+0|interest
+0|still
+0|anywhere
+0|joke
+0|Italy
+0|age
+0|goods
+0|Europe
+0|Asia
+0|journey
+0|king
+0|coal
+0|discover
+0|invent
+0|other
+0|describe
+0|build
+0|built
+0|ago
+0|army
+0|clay
+0|soldier
+0|important
+0|tool
+0|desert
+0|more
+0|much
+0|many
+0|Lily
+0|realize
+0|rich
+0|western
+0|violin
+0|dancer
+0|online
+0|especially
+0|treasure
+0|end
+0|product
+0|worth
+0|hand-made
+0|taste
+0|Dora
+0|Monica
+0|true
+0|supper
+0|Paul
+0|once
+0|blog
+0|experience
+0|alive
+0|own
+0|should
+0|anyone
+0|suggestion
+0|yum
+0|life
+0|term
+0|start
+0|finish
+0|twice
+0|win
+0|won
+0|yeah
+0|social
+0|shop
+0|myself
+0|Edmonton
+0|middle
+0|Greenwood Middle School
+0|grade
+0|wood
+0|print
+0|guitar
+0|fair
+0|worm
+0|silk worm
+0|difference
+0|village
+0|education
+0|yourself
+0|drop
+0|possible
+0|never
+0|future
+0|Jason Glen
+0|Riverside High School
+0|terrible
+0|happen
+0|lose
+0|lost
+0|fire
+0|raise
+0|prize
+0|video
+0|piece
+0|visitor
+0|teach
+0|taught
+0|quite
+0|nervous
+0|comfortable
+0|relaxed
+0|helpful
+0|activity
+0|Steven
+0|volleyball
+0|practice
+0|chess
+0|club
+0|volunteer
+0|bingo
+0|both
+0|nothing
+0|join
+0|improve
+0|thinking
+0|skill
+0|challenge
+0|meeting
+0|act
+0|useful
+0|role
+0|team
+0|shape
+0|level
+0|pool
+0|type
+0|following
+0|which
+0|circle
+0|add
+0|score
+0|relax
+0|free
+0|mind
+0|active
+0|quietly
+0|must
+0|without
+0|bored
+0|example
+0|hurry
+0|somewhere
+0|actually
+0|cooking
+0|surf
+0|Internet
+0|housework
+0|phone
+0|bookworm
+0|anything
+0|grocery
+0|expensive
+0|yummy
+0|everybody
+0|foreign
+0|could
+0|loudly
+0|understand
+0|understood
+0|cartoon
+0|Canadian
+0|Alicia
+0|Russia
+0|reply
+0|competition
+0|proud
+0|such
+0|letter
+0|exactly
+0|fact
+0|sentence
+0|quick
+0|fox
+0|lazy
+0|forwards
+0|forward
+0|backwards
+0|backward
+0|therein
+0|even
+0|dig
+0|dug
+0|Teresa
+0|Hong Kong
+0|storybook
+0|magazine
+0|newspaper
+0|mistake
+0|silly
+0|Susan
+0|oops
+0|article
+0|opportunity
+0|knowledge
+0|communicate
+0|connect
+0|pal
+0|Jessica
+0|introduce
+0|strange
+0|notice
+0|wild
+0|wake
+0|woke
+0|woken
+0|surprised
+0|become
+0|became
+0|dark
+0|ski
+0|snowball
+0|research
+0|website
+0|hill
+0|ice
+0|snowman
+0|clear
+0|temperature
+0|pie
+0|clap
+0|happily
+0|maple
+0|syrup
+0|goose
+0|geese
+0|honk
+0|cloud
+0|wet
+0|surfing
+0|mate
+0|Aaron
+0|reach
+0|degree
+0|sea
+0|surfboard
+0|popular
+0|surfer
+0|everywhere
+0|strawberry
+0|truth
+0|decide
+0|change
+0|habit
+0|usual
+0|health
+0|saying
+0|awful
+0|remember
+0|information
+0|keep
+0|kept
+0|brain
+0|ping-pong
+0|success
+0|event
+0|throw
+0|threw
+0|thrown
+0|winner
+0|teammate
+0|Ben
+0|Tim
+0|outdoors
+0|weight
+0|couch
+0|air
+0|lucky
+0|side
+0|Dena Morin
+0|nation
+0|hunt
+0|spend
+0|spent
+0|natural
+0|pow-wow
+0|step
+0|towards
+0|brush
+0|tooth
+0|teeth
+0|organized
+0|mess
+0|develop
+0|final
+0|exam
+0|tennis
+0|rights
+0|care
+0|pet
+0|puppy
+0|rocket
+0|alone
+0|field
+0|luckily
+0|baseball
+0|snack
+0|pop
+0|if
+0|ever
+0|root
+0|toot
+0|shame
+0|noon
+0|hamburger
+0|nature
+0|wish
+0|Germany
+0|university
+0|organize
+0|camp
+0|share
+0|guess what
+0|learn about
+0|How far is it from ... to ...?
+0|climb up
+0|No photos!
+0|go for a walk
+0|take a picture
+0|take a tour
+0|be famous as
+0|on one's way to
+0|fall off
+0|all right
+0|a few
+0|thousands of
+0|places of interest
+0|talk about
+0|make a joke
+0|work on
+0|at the age of ...
+0|be new to
+0|try one's best
+0|a long time ago
+0|Well done.
+0|a little bit
+0|make ... from ...
+0|think about
+0|can't wait to do
+0|play music
+0|I hope so.
+0|take part in
+0|get back
+0|How is ... going?
+0|sports meet
+0|twice a week
+0|twice a year
+0|long jump
+0|high jump
+0|be good at
+0|social studies
+0|by oneself
+0|on one's own
+0|make a difference
+0|give up
+0|drop out of school
+0|in the future
+0|come up with
+0|car wash
+0|cookie sale
+0|win first prize
+0|be interested in ...
+0|a piece of
+0|different kinds of
+0|move from ... to ...
+0|come over
+0|do well in ...
+0|make friends
+0|at the same time
+0|enjoy doing ...
+0|stay in shape
+0|add up ...
+0|in one's free time
+0|play an instrument
+0|go on a trip
+0|for example
+0|have lunch
+0|in a hurry to do ...
+0|surf the Internet
+0|help ... with ...
+0|I would love ...
+0|on the phone
+0|have a great weekend
+0|have a good weekend
+0|take a bus
+0|It's ... away from ...
+0|have a good talk
+0|Good for you!
+0|be proud of ...
+0|in fact
+0|dig in
+0|look up
+0|enjoy oneself
+0|in class
+0|after class
+0|be afraid to do ...
+0|make a mistake
+0|make mistakes
+0|laugh at
+0|right now
+0|a good knowledge of
+0|communicate with ...
+0|ask for
+0|connect ... with ...
+0|help ... do
+0|help ... to do
+0|play chess
+0|try to do ...
+0|look forward to ...
+0|wake up
+0|go away
+0|go swimming
+0|go skiing
+0|go skating
+0|have snowball fights
+0|Good work!
+0|Great work!
+0|wait for
+0|do some research
+0|get ... together
+0|It is a great season for ...
+0|It's one's turn to ...
+0|play catch
+0|maple syrup
+0|have a picnic
+0|G'day mates!
+0|be different from ...
+0|ride the waves
+0|to tell you the truth
+0|as usual
+0|have a dream
+0|stay healthy
+0|get some exercise
+0|get in the way
+0|used to
+0|worry about ...
+0|not ... any more
+0|put on weight
+0|couch potato
+0|get out
+0|in the sun
+0|on one's side
+0|go fishing
+0|go hunting
+0|First Nations
+0|at that time
+0|make a fire
+0|get up
+0|spend ... doing ...
+0|make one's bed
+0|lead the way to
+0|a few times
+0|take an exam
+0|play basketball
+0|play tennis
+0|play volleyball
+0|take care of
+0|move away
+0|leave ... alone
+0|walk the dog
+0|play against ...
+0|take ... out
+0|root for ...
+0|at noon
+0|have a party
+0|take lessons
+0|take classes
+0|keep doing ...
+0|summer camp
+0|share ... with ...
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 539
+# Total Entries Extracted: 539
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 539
+# -------------------------------

@@ -1,0 +1,656 @@
+0|director
+0|postman
+0|builder
+0|artist
+0|guide
+0|pilot
+0|scientist
+0|send
+0|letter
+0|paint
+0|eraser
+0|tool
+0|actor
+0|actress
+0|direction
+0|produce
+0|believe
+0|sick
+0|thanks
+0|vet
+0|excellent
+0|dancer
+0|lively
+0|news
+0|reporter
+0|maybe
+0|report
+0|blind
+0|patient
+0|railway
+0|modern
+0|future
+0|alarm
+0|receive
+0|sofa
+0|fireman
+0|uniform
+0|rush
+0|dangerous
+0|brave
+0|tiny
+0|taikonaut
+0|pioneer
+0|journey
+0|training
+0|without
+0|ready
+0|nearly
+0|chance
+0|spaceship
+0|succeed
+0|act
+0|especially
+0|quality
+0|according
+0|according to
+0|grandpa
+0|grandfather
+0|piano
+0|interested
+0|direct
+0|movie
+0|illness
+0|explorer
+0|curious
+0|secret
+0|tomorrow
+0|opinion
+0|course
+0|officer
+0|vote
+0|choose
+0|lawyer
+0|competition
+0|encourage
+0|proud
+0|success
+0|zookeeper
+0|achieve
+0|design
+0|model
+0|scientific
+0|knowledge
+0|challenge
+0|however
+0|shelf
+0|reader
+0|record
+0|dentist
+0|reason
+0|research
+0|tourist
+0|speech
+0|term
+0|waitress
+0|greet
+0|guest
+0|smile
+0|lead
+0|boring
+0|customer
+0|conversation
+0|manager
+0|noisy
+0|simple
+0|successful
+0|literature
+0|calligraphy
+0|swan
+0|west
+0|teahouse
+0|ballet
+0|century
+0|express
+0|spirit
+0|classic
+0|novel
+0|oil
+0|calligrapher
+0|ancient
+0|photography
+0|wood
+0|sand
+0|correct
+0|wow
+0|pity
+0|type
+0|musical
+0|instrument
+0|string
+0|beat
+0|keyboard
+0|violin
+0|belong
+0|drum
+0|trumpet
+0|language
+0|allow
+0|communicate
+0|feeling
+0|relax
+0|afraid
+0|medium
+0|eye
+0|pigeon
+0|opera
+0|strict
+0|perfect
+0|painter
+0|popular
+0|sentence
+0|huge
+0|gate
+0|tower
+0|value
+0|northern
+0|dynasty
+0|amazing
+0|centimetre
+0|centimeter
+0|pull
+0|shout
+0|riverside
+0|riverbank
+0|mark
+0|businessman
+0|explore
+0|crowd
+0|besides
+0|nothing
+0|anybody
+0|anyone
+0|nobody
+0|anything
+0|harm
+0|somewhere
+0|someone
+0|somebody
+0|anywhere
+0|create
+0|magical
+0|real
+0|unknown
+0|anytime
+0|magic
+0|impossible
+0|concert
+0|sweet
+0|fat
+0|awful
+0|folk
+0|shape
+0|character
+0|upside
+0|symbol
+0|clay
+0|immediately
+0|mask
+0|role
+0|style
+0|among
+0|fan
+0|pleasant
+0|stadium
+0|creative
+0|musician
+0|relaxed
+0|operate
+0|control
+0|electronic
+0|photographer
+0|sportswoman
+0|singer
+0|cough
+0|fever
+0|sore
+0|throat
+0|headache
+0|toothache
+0|stomachache
+0|temperature
+0|medicine
+0|junk food
+0|slim
+0|diet
+0|screen
+0|sugar
+0|ache
+0|examine
+0|hamburger
+0|chip
+0|fried
+0|pork
+0|pepper
+0|iced
+0|Coke
+0|pill
+0|outgoing
+0|shy
+0|snack
+0|chocolate
+0|cookie
+0|ice cream
+0|cream
+0|jogging
+0|lazy
+0|condition
+0|uncomfortable
+0|diary
+0|positive
+0|benefit
+0|mood
+0|volleyball
+0|energy
+0|glad
+0|confident
+0|absent
+0|moment
+0|oneself
+0|seem
+0|unhealthy
+0|empty
+0|stomach
+0|living
+0|nonsense
+0|improper
+0|clearly
+0|sleepy
+0|worse
+0|rid
+0|fridge
+0|refrigerator
+0|weight
+0|potato
+0|corn
+0|candy
+0|biscuit
+0|beef
+0|cucumber
+0|lifestyle
+0|prefer
+0|bean
+0|though
+0|method
+0|focus
+0|smell
+0|mostly
+0|sauce
+0|serve
+0|hobby
+0|hurry
+0|mad
+0|fit
+0|physical
+0|balanced
+0|runner
+0|spread
+0|vision
+0|touch
+0|soft
+0|calm
+0|fool
+0|regret
+0|breath
+0|upset
+0|nervous
+0|sense
+0|flu
+0|Chinatown
+0|firework
+0|keeper
+0|lonely
+0|push
+0|snake
+0|miss
+0|recommend
+0|laugh
+0|happily
+0|period
+0|teenage
+0|stage
+0|purpose
+0|teenager
+0|reach
+0|adult
+0|height
+0|hair
+0|certain
+0|area
+0|pain
+0|schoolwork
+0|stress
+0|pressure
+0|deal
+0|firstly
+0|compare
+0|shine
+0|discover
+0|memory
+0|junior
+0|junior high school
+0|trouble
+0|email
+0|detail
+0|advise
+0|congratulation
+0|disappointed
+0|honest
+0|gather
+0|courage
+0|spare
+0|cellphone
+0|boss
+0|careless
+0|joy
+0|comfortable
+0|smoke
+0|youth
+0|might
+0|bathroom
+0|jog
+0|postcard
+0|band
+0|ticket
+0|crazy
+0|surprised
+0|gain
+0|argue
+0|luckily
+0|notice
+0|relationship
+0|accept
+0|anymore
+0|review
+0|robot
+0|similar
+0|manage
+0|avoid
+0|balance
+0|nest
+0|Mount
+0|lie
+0|province
+0|east
+0|ceremony
+0|Olympics
+0|central
+0|south-east
+0|yet
+0|quite
+0|already
+0|south-west
+0|length
+0|round
+0|palace
+0|lotus
+0|rich
+0|culture
+0|cultural
+0|interest
+0|average
+0|saying
+0|heaven
+0|above
+0|below
+0|landscape
+0|broken
+0|traveler
+0|bicycle
+0|bike
+0|landmark
+0|whole
+0|material
+0|structure
+0|surely
+0|performing arts
+0|sail
+0|dining
+0|vacation
+0|field
+0|terrace
+0|pig
+0|message
+0|view
+0|countryside
+0|system
+0|unusual
+0|lean
+0|fix
+0|base
+0|firm
+0|beach
+0|hostess
+0|expect
+0|warn
+0|forward
+0|Indian
+0|enemy
+0|stone
+0|soldier
+0|quickly
+0|watchtower
+0|wisdom
+0|trade
+0|route
+0|T-shirt
+0|nation
+0|site
+0|emperor
+0|wife
+0|empress
+0|visitor
+0|tea
+0|government
+0|protection
+0|Roman
+0|northwest
+0|finish
+0|thick
+0|flat
+0|natural
+0|beyond
+0|universe
+0|rocket
+0|satellite
+0|object
+0|solar
+0|warmth
+0|man-made
+0|surface
+0|degree
+0|Celsius
+0|electricity
+0|heat
+0|spoon
+0|telescope
+0|appear
+0|ha
+0|daytime
+0|diameter
+0|asteroid
+0|belt
+0|separate
+0|inner
+0|outer
+0|Mercury
+0|Venus
+0|Mars
+0|include
+0|Jupiter
+0|Saturn
+0|Uranus
+0|Neptune
+0|rock
+0|gas
+0|inside
+0|least
+0|power
+0|mainly
+0|neither
+0|nor
+0|distance
+0|minus
+0|survive
+0|alive
+0|responsibility
+0|related
+0|exploration
+0|development
+0|industry
+0|fill
+0|due
+0|death
+0|valley
+0|rainfall
+0|low
+0|rise
+0|although
+0|common
+0|file
+0|born
+0|publish
+0|prove
+0|strange
+0|comet
+0|snowball
+0|Pluto
+0|freeze
+0|being
+0|show ... around
+0|get sick
+0|thanks to
+0|care about
+0|in one's mind
+0|be on fire
+0|put out
+0|pay off
+0|as long as
+0|be interested in
+0|become interested in
+0|at the age of ...
+0|be curious about
+0|of course
+0|take it easy
+0|encourage sb. to do sth.
+0|dream about
+0|in order to
+0|buy sb. sth.
+0|buy sth. for sb.
+0|from ... to ...
+0|check in
+0|check out
+0|no problem
+0|have to do sth.
+0|belong to
+0|allow sb. to do sth.
+0|by oneself
+0|in his twenties
+0|daily life
+0|a line of
+0|shout out
+0|go well
+0|cut out
+0|upside down
+0|a symbol of
+0|fall in love with
+0|a different type of
+0|be popular among
+0|a part of
+0|take one's temperature
+0|lose one's voice
+0|stay up late
+0|have a fever
+0|stay away from
+0|keep away from
+0|not ... at all
+0|take some pills
+0|for one thing
+0|for another
+0|a good way to do sth.
+0|do some exercise
+0|right away
+0|keep a diary
+0|in one's opinion
+0|in a good mood
+0|communicate with sb.
+0|make sure to do sth.
+0|come across
+0|live a happy life
+0|get through
+0|by chance
+0|be bad for
+0|what's worse
+0|get rid of
+0|lose weight
+0|on the other hand
+0|focus on
+0|take up
+0|stay fit
+0|keep fit
+0|regret doing sth.
+0|take a deep breath
+0|have the flu
+0|have a try
+0|give a speech
+0|come to sb.
+0|keep in touch with
+0|get along with
+0|take place
+0|deal with
+0|and so on
+0|compare ... with ...
+0|sign up for
+0|advise sb. to do sth.
+0|in public
+0|argue with sb.
+0|little by little
+0|be busy with
+0|at a loss
+0|be made of
+0|be rich in
+0|be known for
+0|make better use of
+0|feel free
+0|leave sb. any message
+0|be helpful for
+0|warn sb. to do sth.
+0|warn sb. not to do sth.
+0|be short of
+0|look forward to
+0|in shapes of
+0|millions of
+0|prefer to do sth.
+0|be popular with
+0|go around
+0|send ... into ...
+0|move around
+0|at least
+0|neither ... nor ...
+0|as well as
+0|be similar to
+0|at a distance of
+0|be alive with
+0|make up
+0|play an important role in
+0|be related to
+0|have something in common
+0|run away
+0|so ... that ...
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 649
+# Total Entries Extracted: 649
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 649
+# -------------------------------

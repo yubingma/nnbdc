@@ -1,0 +1,399 @@
+0|past
+0|present
+0|just
+0|used to
+0|since
+0|ever
+0|northern
+0|married
+0|wife
+0|wives
+0|block
+0|over
+0|turn ... into ...
+0|pollution
+0|factory
+0|waste
+0|realize
+0|realise
+0|improve
+0|situation
+0|in some ways
+0|impossible
+0|before
+0|lonely
+0|from time to time
+0|anyway
+0|husband
+0|interview
+0|all one's life
+0|yet
+0|recently
+0|environment
+0|transport
+0|condition
+0|return
+0|last
+0|abroad
+0|primary
+0|keep in touch
+0|communicate
+0|communication
+0|exactly
+0|be used to
+0|get used to
+0|narrow
+0|open space
+0|travelling
+0|traveling
+0|hey
+0|miss
+0|fantastic
+0|indoor
+0|roller coaster
+0|speed
+0|ride
+0|cartoon
+0|character
+0|such
+0|such as
+0|parade
+0|magic
+0|pie
+0|feel
+0|couple
+0|a couple of
+0|at the end of
+0|castle
+0|sand
+0|marry
+0|dead
+0|beauty
+0|seaside
+0|theme park
+0|sailing
+0|except
+0|view
+0|mountain
+0|business
+0|on business
+0|direct
+0|flight
+0|point
+0|detail
+0|delicious
+0|seafood
+0|airport
+0|relative
+0|online
+0|programme
+0|program
+0|remote control
+0|ah
+0|channel
+0|keyboard
+0|unit
+0|main unit
+0|mouse
+0|mice
+0|mouses
+0|screen
+0|word processing
+0|receive
+0|guide
+0|icon
+0|click
+0|Asia
+0|Africa
+0|Europe
+0|America
+0|world-famous
+0|trade
+0|southern
+0|international
+0|gather
+0|huge
+0|darkness
+0|island
+0|several
+0|lawn
+0|relax
+0|hard
+0|musical
+0|so much for sth.
+0|bottom
+0|pick
+0|play
+0|website
+0|dream
+0|dream of
+0|dream about
+0|passport
+0|coast
+0|sail
+0|Australian
+0|opposite
+0|mind
+0|print
+0|pleasure
+0|my pleasure
+0|book
+0|England
+0|queen
+0|ruler
+0|pound
+0|be made up of
+0|European
+0|dollar
+0|read
+0|cooking
+0|novel
+0|Germany
+0|knowledge
+0|spare
+0|French
+0|writer
+0|ugly
+0|touch
+0|against
+0|be tired out
+0|tie
+0|stomach
+0|until
+0|finger
+0|tiny
+0|fall over
+0|continue
+0|either
+0|manage
+0|lift
+0|army
+0|must
+0|unable
+0|shoulder
+0|hand
+0|hand in
+0|and so on
+0|review
+0|on time
+0|renew
+0|series
+0|publishing house
+0|refuse
+0|publish
+0|so far
+0|success
+0|translate
+0|sales
+0|copy
+0|Canadian
+0|at a time
+0|hidden
+0|confidence
+0|experience
+0|advice
+0|librarian
+0|habit
+0|classical
+0|open up
+0|manners
+0|eh
+0|cut in
+0|cut in on sb.
+0|cut in on sth.
+0|politely
+0|litter
+0|tap
+0|run
+0|obey
+0|queue
+0|turn
+0|proper
+0|greet
+0|shake sb.'s hand
+0|kiss
+0|close
+0|conversation
+0|avoid
+0|subject
+0|behave
+0|public
+0|in public
+0|push
+0|push in
+0|bump
+0|in one's way
+0|excuse
+0|excuse me
+0|till
+0|as well
+0|as well as
+0|loudly
+0|as
+0|saying
+0|Roman
+0|by accident
+0|discussion
+0|express
+0|explain
+0|keep sb. from sth.
+0|warn
+0|parking
+0|successful
+0|sometime
+0|some time
+0|soon after
+0|risk
+0|worm
+0|pain
+0|gain
+0|indeed
+0|practice
+0|candle
+0|purpose
+0|content
+0|conclusion
+0|guest
+0|host
+0|above all
+0|impolite
+0|train
+0|the Olympic Games
+0|the Olympics
+0|support
+0|meaningful
+0|blind
+0|deaf
+0|disabled
+0|elderly
+0|homeless
+0|volunteer
+0|expect
+0|adult
+0|intellectual
+0|disability
+0|chance
+0|event
+0|similar
+0|give up
+0|necessary
+0|training
+0|task
+0|athlete
+0|coach
+0|gold
+0|silver
+0|confident
+0|background
+0|closely
+0|achieve
+0|prize
+0|donate
+0|charity
+0|organization
+0|organisation
+0|one-to-one
+0|one-on-one
+0|blood
+0|south-west
+0|north-west
+0|project
+0|introduction
+0|disease
+0|operation
+0|give a helping hand
+0|survivor
+0|especially
+0|basic
+0|education
+0|equal
+0|right
+0|spread
+0|interviewer
+0|blindness
+0|mostly
+0|case
+0|cure
+0|medical
+0|treatment
+0|patient
+0|afford
+0|go to hospital
+0|on board
+0|operate
+0|proud
+0|reader
+0|medicine
+0|develop
+0|treat
+0|carry on
+0|leaflet
+0|hand out
+0|hold
+0|set
+0|set up
+0|including
+0|war
+0|organize
+0|organise
+0|pale
+0|matter
+0|check
+0|secretary
+0|make up one's mind
+0|India
+0|officer
+0|dig
+0|serious
+0|breadfruit
+0|reduce
+0|turn off
+0|recycle
+0|wise
+0|plastic
+0|separate
+0|recycling
+0|allow
+0|cut down
+0|punish
+0|fine
+0|limit
+0|depend
+0|depend on
+0|depend upon
+0|rich
+0|resource
+0|wisely
+0|run out
+0|produce
+0|difference
+0|make a difference
+0|make a difference to sb.
+0|make a difference to sth.
+0|poster
+0|display
+0|pollute
+0|harm
+0|living
+0|survey
+0|empty
+0|dust
+0|harmful
+0|soil
+0|in place
+0|coal
+0|oil
+0|gas
+0|form
+0|carelessly
+0|reuse
+0|simple
+0|step
+0|power
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 392
+# Total Entries Extracted: 392
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 392
+# -------------------------------

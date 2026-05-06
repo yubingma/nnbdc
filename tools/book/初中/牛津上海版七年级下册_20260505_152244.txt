@@ -1,0 +1,221 @@
+0|guide
+0|tour
+0|take part in
+0|pigeon
+0|reason
+0|creek
+0|bund
+0|grand
+0|theatre
+0|botanical garden
+0|oriental
+0|pearl
+0|century
+0|technology
+0|sightseeing
+0|get on with
+0|famous for
+0|be famous for
+0|view
+0|known as
+0|be known as
+0|paradise
+0|therefore
+0|surprising
+0|district
+0|Maglev
+0|state
+0|resort
+0|observatory
+0|plaza
+0|cruise
+0|floating
+0|think of
+0|take a look
+0|stupid
+0|clown
+0|action
+0|action film
+0|robber
+0|hate
+0|adventure
+0|princess
+0|prince
+0|duration
+0|circus
+0|full of
+0|laughter
+0|cowboy
+0|diary
+0|pay
+0|pay for
+0|altogether
+0|price
+0|avenue
+0|lane
+0|bookshop
+0|route
+0|since
+0|quite
+0|quite a few
+0|machine
+0|waiter
+0|coach
+0|train
+0|headmaster
+0|charge
+0|in charge of
+0|field
+0|tell the time
+0|key
+0|ring
+0|key ring
+0|cable
+0|cable car
+0|fantastic
+0|have a good time
+0|anything
+0|jeans
+0|myself
+0|kid
+0|fashion
+0|super
+0|carpet
+0|spot
+0|sweater
+0|V-neck
+0|neck
+0|check
+0|stripe
+0|try on
+0|excuse
+0|excuse me
+0|certainly
+0|changing room
+0|over there
+0|loose
+0|tight
+0|medium
+0|learn from
+0|wife
+0|long ago
+0|hut
+0|fairy
+0|hard-working
+0|although
+0|earn
+0|gold
+0|coin
+0|comfortable
+0|reply
+0|greedy
+0|happiness
+0|forever
+0|disappear
+0|vote
+0|vote for
+0|give up
+0|pocket
+0|pocket money
+0|poem
+0|end
+0|temperature
+0|drop
+0|shiver
+0|blackboard
+0|awful
+0|grasshopper
+0|ant
+0|lazy
+0|all the time
+0|silly
+0|at last
+0|everywhere
+0|nothing
+0|disappointed
+0|out of
+0|sadly
+0|talk about
+0|able
+0|able to
+0|be able to
+0|planet
+0|space station
+0|pill
+0|meal
+0|hope
+0|secret
+0|sign
+0|seal
+0|everyone
+0|enjoyable
+0|ideal
+0|conduct
+0|modern
+0|laboratory
+0|experiment
+0|organize
+0|impossible
+0|necessary
+0|unnecessary
+0|uninteresting
+0|yourselves
+0|ourselves
+0|put up
+0|themselves
+0|clean up
+0|herself
+0|himself
+0|paragraph
+0|correct
+0|order
+0|strength
+0|in the end
+0|proud
+0|show off
+0|brightly
+0|sweat
+0|take off
+0|stick
+0|coloured
+0|reel
+0|string
+0|frame
+0|onto
+0|tie
+0|rise
+0|dive
+0|flap
+0|sail
+0|sailing boat
+0|lean
+0|speed
+0|bow
+0|sway
+0|among
+0|slide
+0|dimple
+0|iced
+0|punch
+0|ice cube
+0|form
+0|freeze
+0|cool down
+0|turn into
+0|lid
+0|second
+0|straw
+0|toothpick
+0|hole
+0|side
+0|connect
+0|allow
+0|play with
+0|safety
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 214
+# Total Entries Extracted: 214
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 214
+# -------------------------------

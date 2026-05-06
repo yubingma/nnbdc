@@ -1,0 +1,262 @@
+0|golden
+0|crown
+0|Olympics
+0|agreement
+0|confirmation
+0|pot
+0|doubt
+0|real
+0|truth
+0|seem
+0|solve
+0|fill
+0|bowl
+0|displace
+0|less
+0|metal
+0|certain
+0|prison
+0|boxing
+0|racing
+0|wrestling
+0|hit
+0|brave
+0|punctuation
+0|correct
+0|mistake
+0|be happy with
+0|fill ... with ...
+0|run over
+0|send ... to prison
+0|make sure
+0|mind
+0|astronomer
+0|genius
+0|consider
+0|sense
+0|humour
+0|invitation
+0|theory
+0|university
+0|pleasure
+0|avoid
+0|lecture
+0|tonight
+0|audience
+0|trust
+0|seat
+0|applause
+0|pale
+0|achievement
+0|universe
+0|philosopher
+0|obey
+0|reduce
+0|exactly
+0|action
+0|sense of humour
+0|let ... down
+0|by heart
+0|take a seat
+0|without difficulty
+0|join in
+0|have no idea
+0|be in trouble
+0|play a joke on sb.
+0|turning point
+0|a series of
+0|meal
+0|share
+0|decision
+0|possessions
+0|expect
+0|abroad
+0|business
+0|personal
+0|set
+0|daughter
+0|fashionable
+0|fashion
+0|out of date
+0|iron
+0|event
+0|suppose
+0|either
+0|relationship
+0|invite
+0|cost
+0|type
+0|help with
+0|on business
+0|be on business
+0|have no interest in
+0|online
+0|model
+0|diet
+0|though
+0|awful
+0|regret
+0|ashamed
+0|situation
+0|braces
+0|hate
+0|advantage
+0|embarrassed
+0|suggest
+0|mad
+0|mess
+0|annoying
+0|fail
+0|careless
+0|comment
+0|request
+0|polite
+0|none
+0|exam
+0|be on a diet
+0|laugh at
+0|feel ashamed of
+0|drive sb. mad
+0|make a mess
+0|out of place
+0|none of one's business
+0|hear from
+0|praise
+0|view
+0|script
+0|director
+0|make-up
+0|artist
+0|studio
+0|contestant
+0|upon
+0|among
+0|onto
+0|forward
+0|second
+0|relaxed
+0|ahead of
+0|beat
+0|beaten
+0|still
+0|single
+0|victory
+0|England
+0|lucky
+0|news
+0|survey
+0|floor plan
+0|talent show
+0|pass out
+0|keep still
+0|emergency exit
+0|on weekdays
+0|preference
+0|review
+0|bean
+0|beef
+0|product
+0|protein
+0|hamburger
+0|cola
+0|sandwich
+0|salad
+0|medical
+0|fat
+0|sugar
+0|state
+0|necessary
+0|research
+0|plenty
+0|usual
+0|coffee
+0|treat
+0|customer
+0|title
+0|serve
+0|pound
+0|pie
+0|chip
+0|service
+0|a balanced diet
+0|dairy product
+0|stay away from
+0|fried food
+0|soft drink
+0|medical examination
+0|lose weight
+0|plenty of
+0|in general
+0|treat oneself to sth.
+0|be prepared to do sth.
+0|adventure
+0|novel
+0|frog
+0|congratulations
+0|sympathy
+0|steamboat
+0|steam
+0|writer
+0|humorous
+0|fence
+0|task
+0|yard
+0|board
+0|progress
+0|rest
+0|pity
+0|silence
+0|while
+0|careful
+0|deal
+0|coat
+0|celebrated
+0|lead
+0|plot
+0|lazy
+0|pretend
+0|have a rest
+0|think of
+0|come along
+0|what a pity
+0|go on doing
+0|in silence
+0|after a while
+0|turn sth. over
+0|trick sb. into doing sth.
+0|gift
+0|graduation
+0|cent
+0|count
+0|afford
+0|present
+0|knee
+0|sign
+0|goods
+0|search
+0|chain
+0|bill
+0|step
+0|draw
+0|drew
+0|drawn
+0|comb
+0|accuse
+0|America
+0|wife
+0|album
+0|note
+0|look for
+0|at last
+0|fix ... on
+0|hold out
+0|be accused of ...
+0|under the name ...
+0|under the name of ...
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 255
+# Total Entries Extracted: 255
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 255
+# -------------------------------

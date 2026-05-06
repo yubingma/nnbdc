@@ -1,0 +1,528 @@
+0|take place
+0|volunteer
+0|bell
+0|Africa
+0|disabled
+0|shut
+0|ever
+0|rope
+0|narrow
+0|communication
+0|various
+0|report
+0|keep in touch with ...
+0|relative
+0|telegram
+0|rapidly
+0|since
+0|reform
+0|reform and opening-up
+0|satisfy
+0|medical
+0|cellphone
+0|mobile phone
+0|fax
+0|machine
+0|rapid
+0|progress
+0|make progress
+0|already
+0|succeed in doing sth.
+0|pleased
+0|leisure
+0|hide
+0|hide-and-seek
+0|chess
+0|radio
+0|spare
+0|recent
+0|abroad
+0|yet
+0|probably
+0|neither
+0|cinema
+0|department
+0|nearby
+0|population
+0|billion
+0|increase
+0|reach
+0|policy
+0|create
+0|Russia
+0|measure
+0|social
+0|necessarily
+0|worse
+0|supply
+0|so far
+0|government
+0|take measures to do sth.
+0|thanks to
+0|natural
+0|paragraph
+0|opportunity
+0|luckily
+0|offer
+0|surround
+0|garbage
+0|discourage
+0|local
+0|capital
+0|huge
+0|market
+0|transportation
+0|excellent
+0|pollute
+0|convenient
+0|as a matter of fact
+0|block
+0|artist
+0|millions of
+0|visitor
+0|industry
+0|chemistry
+0|term
+0|program
+0|homeless
+0|manage
+0|treatment
+0|training
+0|immediately
+0|secretary
+0|helper
+0|club
+0|engineer
+0|wound
+0|basic
+0|human
+0|value
+0|period
+0|shelter
+0|homelessness
+0|earn
+0|drug
+0|mental
+0|on purpose
+0|whatever
+0|effect
+0|steal
+0|support
+0|phrase
+0|according
+0|context
+0|laborer
+0|cruel
+0|project
+0|primary
+0|contribution
+0|make a contribution to
+0|encourage
+0|moral
+0|development
+0|respect
+0|best-known
+0|importance
+0|continue
+0|college
+0|indeed
+0|method
+0|teenager
+0|plenty
+0|plenty of
+0|sunshine
+0|sunbathe
+0|beach
+0|volleyball
+0|cultural
+0|hardly
+0|surf
+0|mess
+0|several
+0|pour
+0|waste
+0|shame
+0|bee
+0|butterfly
+0|villager
+0|destroy
+0|cut down
+0|goodness
+0|pain
+0|breathe
+0|produce
+0|chest
+0|awful
+0|bear
+0|editor
+0|breath
+0|soil
+0|harmful
+0|be harmful to
+0|deaf
+0|print
+0|hearing
+0|loss
+0|recently
+0|disturb
+0|do harm to
+0|uncomfortable
+0|unpleasant
+0|sort
+0|environmental
+0|including
+0|onto
+0|sentence
+0|technology
+0|environmentally
+0|coal
+0|lead
+0|blood
+0|high blood pressure
+0|planet
+0|sandstorm
+0|sand
+0|change into
+0|desert
+0|human being
+0|although
+0|reduce
+0|completely
+0|user
+0|none
+0|rubbish
+0|here and there
+0|spit
+0|wild
+0|nobody
+0|untidy
+0|worst
+0|rude
+0|behavior
+0|situation
+0|punish
+0|perhaps
+0|everybody
+0|nowhere
+0|take away
+0|oxygen
+0|hole
+0|ozone layer
+0|radiation
+0|directly
+0|carbon dioxide
+0|form
+0|blanket
+0|escape
+0|rise
+0|the greenhouse effect
+0|refer
+0|shortage
+0|avoid
+0|resource
+0|discover
+0|reuse
+0|thirsty
+0|nearly
+0|law
+0|protection
+0|organization
+0|recycle
+0|plastic
+0|can
+0|nod
+0|agreement
+0|disagreement
+0|hurry
+0|hurry up
+0|give up
+0|battery
+0|ought to
+0|shut off
+0|electricity
+0|distance
+0|cloth
+0|action
+0|after all
+0|solar
+0|dam
+0|require
+0|electric
+0|petrol
+0|high-speed
+0|wheel
+0|inside
+0|German
+0|expert
+0|highly
+0|guide
+0|wave
+0|deep
+0|source
+0|run out
+0|renewable
+0|worldwide
+0|sunlight
+0|steam
+0|remove
+0|replace
+0|dry
+0|insect
+0|bite
+0|planter
+0|colleague
+0|motorbike
+0|gasoline
+0|anybody
+0|examine
+0|marry
+0|weight
+0|package
+0|product
+0|excessive
+0|goods
+0|seriously
+0|video
+0|allow
+0|quality
+0|cartoon
+0|character
+0|widely
+0|throughout
+0|from now on
+0|foreigner
+0|film-maker
+0|garage
+0|be pleased with ...
+0|on business
+0|tonight
+0|Spanish
+0|be similar to
+0|communicate
+0|conversation
+0|interpreter
+0|explain
+0|impossible
+0|twin
+0|divide
+0|divide ... into ...
+0|dig
+0|lay
+0|mother tongue
+0|root
+0|trader
+0|native
+0|speaker
+0|foreign
+0|base
+0|European
+0|kingdom
+0|tourism
+0|conference
+0|tourist
+0|Britain
+0|powerful
+0|leading
+0|position
+0|see ... off
+0|stranger
+0|thumb
+0|ask for a ride
+0|minibus
+0|give sb. a ride
+0|get on
+0|flight
+0|guidebook
+0|whenever
+0|board
+0|bow
+0|silence
+0|hip
+0|praise
+0|research
+0|do some research
+0|secret
+0|puzzled
+0|victory
+0|misunderstanding
+0|typical
+0|differently
+0|negative
+0|consider
+0|honest
+0|positive
+0|at times
+0|ancient
+0|magical
+0|creature
+0|emperor
+0|compare
+0|compare ... to ...
+0|courage
+0|underline
+0|difference
+0|mistake
+0|make mistakes
+0|peacock
+0|pride
+0|wisdom
+0|British
+0|kowtow
+0|expression
+0|spelling
+0|elevator
+0|pronunciation
+0|cent
+0|cookbook
+0|totally
+0|accent
+0|oral
+0|dare
+0|sleepy
+0|final
+0|real
+0|retell
+0|indirect
+0|granddaughter
+0|pronounce
+0|dialog
+0|composition
+0|copy
+0|notebook
+0|diary
+0|keep a diary
+0|tape
+0|aloud
+0|object
+0|textbook
+0|ability
+0|take a breath
+0|toothpaste
+0|preview
+0|review
+0|translate
+0|discussion
+0|exactly
+0|honor
+0|as long as
+0|stick to sth.
+0|stick to doing sth.
+0|chant
+0|achieve
+0|easily
+0|download
+0|actually
+0|effective
+0|imitate
+0|company
+0|bored
+0|concentrate
+0|pull
+0|fold
+0|mention
+0|rocket
+0|metal
+0|satellite
+0|spaceship
+0|lock
+0|laptop
+0|digital
+0|bulb
+0|airplane
+0|hard-wearing
+0|Korea
+0|invention
+0|list
+0|crayon
+0|process
+0|thought
+0|silly
+0|brainstorm
+0|evaluate
+0|detailed
+0|redesign
+0|imagination
+0|balloon
+0|gun
+0|robot
+0|keyboard
+0|explorer
+0|mark
+0|system
+0|man-made
+0|disadvantage
+0|display
+0|screen
+0|alien
+0|outer space
+0|describe
+0|astronaut
+0|admire
+0|master
+0|dancer
+0|realize
+0|realise
+0|universe
+0|solar system
+0|Roman
+0|god
+0|diameter
+0|storm
+0|gravity
+0|weigh
+0|generally
+0|journey
+0|limit
+0|excitement
+0|launch
+0|beyond
+0|prove
+0|lunar probe
+0|legend
+0|significance
+0|independently
+0|landmark
+0|spacewalk
+0|electronic
+0|spacesuit
+0|telescope
+0|entertainment
+0|doubt
+0|no doubt
+0|tiny
+0|normally
+0|brain
+0|cancel
+0|workplace
+0|connect
+0|for instance
+0|besides
+0|properly
+0|servant
+0|certain
+0|for certain
+0|on one's own
+0|warn
+0|might
+0|housework
+0|waitress
+0|magazine
+0|rooster
+0|wife
+0|chick
+0|paint
+0|struggle
+0|palace
+0|the Summer Palace
+0|tower
+0|prison
+0|prisoner
+0|vocabulary
+0|a bunch of
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 521
+# Total Entries Extracted: 521
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 521
+# -------------------------------
