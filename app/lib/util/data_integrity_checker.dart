@@ -280,7 +280,7 @@ class DataIntegrityChecker {
       for (final dict in userDicts) {
         final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
         if (dict.wordCount != actualCount) {
-          result.addIssue('单词数量不匹配', '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 'dict_word_count');
+          result.addIssue('单词数量不匹配', '词典 "${dict.name}" 元数据(Metadata)记录数: ${dict.wordCount}, 数据库实际关联单词数: $actualCount', 'dict_word_count');
         }
       }
     } catch (e, stack) {
@@ -297,7 +297,7 @@ class DataIntegrityChecker {
       for (final dict in allDicts) {
         final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
         if (dict.wordCount != actualCount) {
-          result.addIssue('单词数量不匹配', '词典 "${dict.name}" 记录数量: ${dict.wordCount}, 实际数量: $actualCount', 'dict_word_count');
+          result.addIssue('单词数量不匹配', '词典 "${dict.name}" 元数据(Metadata)记录数: ${dict.wordCount}, 数据库实际关联单词数: $actualCount', 'dict_word_count');
         }
       }
     } catch (e, stack) {
@@ -466,7 +466,7 @@ class DataIntegrityChecker {
         // 1. 检查记录数量一致性
         final actualCount = await _db.dictWordsDao.getDictWordCount(Global.commonDictId);
         if (commonDict.wordCount != actualCount) {
-          result.addIssue('系统单词数量不匹配', '通用兜底词书记录数量: ${commonDict.wordCount}, 实际数量: $actualCount', 'common_dict_integrity');
+          result.addIssue('系统单词数量不匹配', '通用兜底词书元数据(Metadata)记录数: ${commonDict.wordCount}, 数据库实际关联单词数: $actualCount', 'common_dict_integrity');
         }
 
         // 2. 检查序号连续性

@@ -250,7 +250,7 @@ public class DictWordBo extends BaseBo<DictWord> {
         createEntity(dictWord);
 
         // 更新词书单词数
-        String sql = "UPDATE dict SET word_count = word_count + 1 WHERE id = :dictId";
+        String sql = "UPDATE dict SET word_count = word_count + 1, update_time = NOW() WHERE id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dict.getId());
         namedParameterJdbcTemplate.update(sql, params);
 
@@ -289,7 +289,7 @@ public class DictWordBo extends BaseBo<DictWord> {
         namedParameterJdbcTemplate.update(sql, params);
 
         // 更新词书单词数
-        sql = "UPDATE dict SET word_count = word_count - 1 WHERE id = :dictId";
+        sql = "UPDATE dict SET word_count = word_count - 1, update_time = NOW() WHERE id = :dictId";
         params = new MapSqlParameterSource("dictId", dictId);
         namedParameterJdbcTemplate.update(sql, params);
 
@@ -472,7 +472,7 @@ public class DictWordBo extends BaseBo<DictWord> {
         }
 
         // 更新词书单词数
-        String sql = "UPDATE dict SET word_count = :cnt WHERE id = :dictId";
+        String sql = "UPDATE dict SET word_count = :cnt, update_time = NOW() WHERE id = :dictId";
         MapSqlParameterSource updateParams = new MapSqlParameterSource();
         updateParams.addValue("cnt", count);
         updateParams.addValue("dictId", rawWordDict.getId());

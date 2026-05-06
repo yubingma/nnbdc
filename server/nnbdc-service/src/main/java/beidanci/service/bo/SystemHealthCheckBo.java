@@ -250,6 +250,9 @@ public class SystemHealthCheckBo {
                     "common_dict_integrity"
                 ));
             }
+
+            // 检查单词数量一致性
+            checkDictWordCount(commonDictId, issues);
             
         } catch (Exception e) {
             errors.add("检查通用词典完整性时出错: " + e.getMessage());
@@ -736,7 +739,7 @@ public class SystemHealthCheckBo {
             if (expectedWordCount != null && actualWordCount != expectedWordCount) {
                 issues.add(new SystemHealthIssue(
                     "单词数量不匹配",
-                    String.format("词典 %s 记录数量: %d, 实际数量: %d", dictName, expectedWordCount, actualWordCount),
+                    String.format("词典 %s 元数据(Metadata)记录数: %d, 数据库实际关联单词数: %d", dictName, expectedWordCount, actualWordCount),
                     "dict_word_count"
                 ));
             }
@@ -904,7 +907,7 @@ public class SystemHealthCheckBo {
             if (!actualCount.equals(recordedCount.longValue())) {
                 issues.add(new SystemHealthIssue(
                     "单词数量不匹配",
-                    String.format("词典 %s 记录数量: %d, 实际数量: %d", 
+                    String.format("词典 %s 元数据(Metadata)记录数: %d, 数据库实际关联单词数: %d", 
                                 dict.getName(), recordedCount, actualCount),
                     "dict_word_count"
                 ));
@@ -1000,6 +1003,40 @@ public class SystemHealthCheckBo {
     private int fixCommonDictIntegrity(List<String> fixed) {
         String commonDictId = "0";
         int totalFixed = 0;
+
+        // 0. 确保所有 Word 表中的单词都在通用词典中
+        try {
+            String sqlMissing = "SELECT id FROM word WHERE id NOT IN (SELECT word_id FROM dict_word WHERE dict_id = '0')";
+            List<String> missingFromCommon = namedParameterJdbcTemplate.query(sqlMissing, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("id"));
+            if (!missingFromCommon.isEmpty()) {
+                Dict commonDict = dictBo.findById(commonDictId);
+                int maxSeq = dictWordBo.getMaxSeqNo(commonDict);
+                for (String wordId : missingFromCommon) {
+                    maxSeq++;
+                    DictWord dw0 = new DictWord();
+                    dw0.setId(new DictWordId(commonDictId, wordId));
+                    dw0.setDict(commonDict);
+                    Word word = new Word();
+                    word.setId(wordId);
+                    dw0.setWord(word);
+                    dw0.setSeq(maxSeq);
+                    dw0.setCreateTime(new java.util.Date());
+                    dictWordBo.createEntity(dw0);
+                    
+                    DictWordDto dwDto = new DictWordDto();
+                    dwDto.setDictId(commonDictId);
+                    dwDto.setWordId(wordId);
+                    dwDto.setSeq(dw0.getSeq());
+                    dwDto.setUnit(dw0.getUnit());
+                    dwDto.setCreateTime(dw0.getCreateTime());
+                    sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", commonDictId + "_" + wordId, JsonUtils.toJson(dwDto));
+                }
+                fixed.add(String.format("成功向通用词典补齐了 %d 个缺失的单词记录。", missingFromCommon.size()));
+                totalFixed += missingFromCommon.size();
+            }
+        } catch (Exception e) {
+            logger.error("向通用词典补齐单词记录时出错", e);
+        }
 
         // 1. 修复缺失的释义：从其他词库拷贝一份作为 0 库托底
         List<String> wordsWithoutMeanings = meaningItemBo.findWordsWithoutMeanings(commonDictId);
@@ -1172,8 +1209,19 @@ public class SystemHealthCheckBo {
             }
         }).start();
 
+        // 3. 修复通用词典的数量和序号 (确保即使没有新增单词，也会修复已有的数量不匹配问题)
+        try {
+            Long actualCount = dictBo.getDictWordCount(commonDictId);
+            dictBo.fixDictWordSequence(commonDictId);
+            dictBo.updateDictWordCount(commonDictId, actualCount.intValue());
+            fixed.add("已同步通用词典 (ID=0) 的单词序号与数量记录。");
+            totalFixed++;
+        } catch (Exception e) {
+            logger.error("修复通用词典序号/数量时出错", e);
+        }
+
         fixed.add("缺失例句释义项的 AI 后台补齐任务已提交，进度可在服务器日志中查看，补齐会自动同步到客户端更新。");
-        return totalFixed + meaningsWithoutSentences.size();
+        return totalFixed + (meaningsWithoutSentences != null ? meaningsWithoutSentences.size() : 0);
     }
 
     private int fixUserStudySteps(List<String> fixed) {

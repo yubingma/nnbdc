@@ -1111,17 +1111,41 @@ public class DictBo extends BaseBo<Dict> {
                 "AND dw1.dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         namedParameterJdbcTemplate.update(sql, params);
+
+        // 更新词典更新时间，触发缓存失效
+        String updateTimeSql = "UPDATE dict SET update_time = NOW() WHERE id = :dictId";
+        namedParameterJdbcTemplate.update(updateTimeSql, params);
+
+        // 记录同步日志
+        try {
+            DictDto dictDto = getDictDto(dictId);
+            if (dictDto != null) {
+                sysDbLogBo.logOperation(dictDto, "UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
+            }
+        } catch (Exception e) {
+            log.warn("修复序号后记录同步日志失败: {}", e.getMessage());
+        }
     }
 
     /**
      * 更新词典单词数量
      */
     public void updateDictWordCount(String dictId, Integer newCount) {
-        String sql = "UPDATE dict SET word_count = :newCount WHERE id = :dictId";
+        String sql = "UPDATE dict SET word_count = :newCount, update_time = NOW() WHERE id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("newCount", newCount);
         params.addValue("dictId", dictId);
         namedParameterJdbcTemplate.update(sql, params);
+
+        // 记录同步日志
+        try {
+            DictDto dictDto = getDictDto(dictId);
+            if (dictDto != null) {
+                sysDbLogBo.logOperation(dictDto, "UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
+            }
+        } catch (Exception e) {
+            log.warn("更新词典数量后记录同步日志失败: {}", e.getMessage());
+        }
     }
 
 }
