@@ -33,8 +33,8 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadData({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     try {
       final db = MyDatabase.instance;
 
@@ -310,7 +310,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
                   if (result.success) {
                     ToastUtil.success("保存成功");
                     if (context.mounted) Navigator.pop(context);
-                    _loadData();
+                    _loadData(showLoading: false);
                   } else {
                     ToastUtil.error("保存失败: ${result.msg}");
                   }
@@ -353,7 +353,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
               final result = await Api.client.deleteDictGroup(node.group.id);
               if (result.success) {
                 ToastUtil.success("删除成功");
-                _loadData();
+                _loadData(showLoading: false);
               } else {
                 ToastUtil.error("删除失败: ${result.msg}");
               }
@@ -373,7 +373,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
         group: node.group,
         currentDicts: node.dicts,
         allDicts: _allDicts,
-        onChanged: _loadData,
+        onChanged: () => _loadData(showLoading: false),
       ),
     );
   }
