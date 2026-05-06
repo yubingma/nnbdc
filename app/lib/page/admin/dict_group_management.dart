@@ -6,6 +6,8 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' hide Column;
+import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/global.dart';
 
 class DictGroupManagementPage extends StatefulWidget {
@@ -41,28 +43,66 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
         final groupsResult = await Api.client.getAllDictGroups();
         if (groupsResult.success) {
           final groups = groupsResult.data!;
-          final serverIds = groups.map((g) => g.id).toList();
+          final serverGroupIds = groups.map((g) => g.id).toList();
+
+          // 获取所有词书数据并同步
+          final dictsResult = await Api.client.getAllDicts();
+          final serverDicts = dictsResult.success ? dictsResult.data! : <DictVo>[];
+          final serverDictIds = serverDicts.map((d) => d.id).toList();
 
           await db.batch((batch) {
-            // 1. 先从本地删除那些在服务器上已经不存在的分组（清理掉已删除的数据）
-            // 注意：由于有 parentId 的自引用外键约束，需要小心处理。
-            // 更好的做法是直接执行一个 delete where id not in (...)
-            batch.deleteWhere(db.dictGroups, (tbl) => tbl.id.isNotIn(serverIds));
-
-            // 2. 更新或插入最新的数据
+            // 1. 同步分组表
+            batch.deleteWhere(db.dictGroups, (tbl) => tbl.id.isNotIn(serverGroupIds));
             batch.insertAllOnConflictUpdate(
               db.dictGroups,
-              groups
-                  .map((g) => DictGroupsCompanion(
-                        id: Value(g.id),
-                        name: Value(g.name),
-                        parentId: Value(g.parentId),
-                        displayIndex: Value(g.displayIndex ?? 0),
-                        createTime: g.createTime == null ? const Value.absent() : Value(g.createTime!),
-                        updateTime: g.updateTime == null ? const Value.absent() : Value(g.updateTime!),
-                      ))
-                  .toList(),
+              groups.map((g) => DictGroupsCompanion(
+                id: Value(g.id),
+                name: Value(g.name),
+                parentId: Value(g.parentId),
+                displayIndex: Value(g.displayIndex ?? 0),
+                createTime: g.createTime == null ? const Value.absent() : Value(g.createTime!),
+                updateTime: g.updateTime == null ? const Value.absent() : Value(g.updateTime!),
+              )).toList(),
             );
+
+            // 2. 同步词书基本信息表 (dicts)
+            if (serverDictIds.isNotEmpty) {
+              // 注意：这里只处理系统词书的清理可能比较复杂，简单起见先更新收到的
+              batch.insertAllOnConflictUpdate(
+                db.dicts,
+                serverDicts.map((d) => DictsCompanion(
+                  id: Value(d.id),
+                  name: Value(d.name ?? ''),
+                  ownerId: Value(d.owner?.id ?? '15118'), // 默认系统用户
+                  isShared: Value(d.isShared ?? false),
+                  isReady: Value(d.isReady ?? true),
+                  visible: Value(d.visible ?? true),
+                  wordCount: Value(d.wordCount ?? 0),
+                  createTime: d.createTime == null ? const Value.absent() : Value(d.createTime!),
+                  updateTime: d.updateTime == null ? const Value.absent() : Value(d.updateTime!),
+                )).toList(),
+              );
+            }
+
+            // 3. 同步关联表 (groupAndDictLinks)
+            // 先清理所有旧关联，再根据服务器返回的结构重新建立
+            batch.deleteWhere(db.groupAndDictLinks, (tbl) => const Constant(true));
+            for (var g in groups) {
+              if (g.dicts != null) {
+                for (var d in g.dicts!) {
+                  batch.insert(
+                    db.groupAndDictLinks,
+                    GroupAndDictLinksCompanion.insert(
+                      groupId: g.id,
+                      dictId: d.id,
+                      createTime: Value(AppClock.now()),
+                      updateTime: Value(AppClock.now()),
+                    ),
+                    mode: InsertMode.insertOrReplace,
+                  );
+                }
+              }
+            }
           });
         }
       } catch (e) {
