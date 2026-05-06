@@ -18,7 +18,7 @@ def generate_meta_for_existing(output_dir):
         meta["books"].append({
             "fileName": fname,
             "dictName": fname.replace(".txt", ""),
-            "domain": "多邻国",
+            "domain": "",
             "description": "",
             "targetDictGroupId": "",
             "targetGameHallIds": []
