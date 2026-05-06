@@ -424,10 +424,10 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV38ToV39DropSentenceRawFields() async {
     await transaction(() async {
       try {
-        await customStatement('ALTER TABLE sentences DROP COLUMN IF EXISTS english_raw');
-        await customStatement('ALTER TABLE sentences DROP COLUMN IF EXISTS chinese_raw');
+        await customStatement('ALTER TABLE sentences DROP COLUMN english_raw');
+        await customStatement('ALTER TABLE sentences DROP COLUMN chinese_raw');
       } catch (e) {
-        Global.logger.e('删除 sentence raw 字段失败: $e');
+        Global.logger.e('删除 sentence raw 字段失败 (可能已删除或版本不支持): $e');
       }
     });
   }
@@ -456,17 +456,24 @@ class MyDatabase extends _$MyDatabase {
 
       for (final dynamic table in tablesToUpdate) {
         final tableName = table.actualTableName;
-        // 1. 尝试添加列
+        // 1. 尝试添加列。注意：SQLite ALTER TABLE ADD COLUMN 不支持非延迟的函数默认值（如 strftime），
+        // 必须使用常量默认值，然后再通过 UPDATE 回填。
         try {
-          await m.addColumn(table, table.createTime);
+          await customStatement('ALTER TABLE "$tableName" ADD COLUMN create_time INTEGER NOT NULL DEFAULT 946656000');
+          Global.logger.i('✅ 向 $tableName 补全了 create_time 列');
         } catch (e) {
-          Global.logger.w('添加 createTime 到 $tableName 失败 (可能已存在): $e');
+          if (!e.toString().contains('duplicate column name')) {
+             Global.logger.w('添加 createTime 到 $tableName 失败: $e');
+          }
         }
         
         try {
-          await m.addColumn(table, table.updateTime);
+          await customStatement('ALTER TABLE "$tableName" ADD COLUMN update_time INTEGER NOT NULL DEFAULT 946656000');
+          Global.logger.i('✅ 向 $tableName 补全了 update_time 列');
         } catch (e) {
-          Global.logger.w('添加 updateTime 到 $tableName 失败 (可能已存在): $e');
+           if (!e.toString().contains('duplicate column name')) {
+             Global.logger.w('添加 updateTime 到 $tableName 失败: $e');
+           }
         }
 
         // 2. 回填 NULL 值 (2000-01-01 00:00:00 UTC = 946656000s)
@@ -499,7 +506,7 @@ class MyDatabase extends _$MyDatabase {
         
         // 检查并添加 create_time
         try {
-          await m.addColumn(table, table.createTime);
+          await customStatement('ALTER TABLE "$tableName" ADD COLUMN create_time INTEGER NOT NULL DEFAULT 946656000');
           Global.logger.i('✅ 向 $tableName 补全了 create_time 列');
         } catch (_) {
           // 列已存在或表结构不支持直接添加
@@ -507,7 +514,7 @@ class MyDatabase extends _$MyDatabase {
 
         // 检查并添加 update_time
         try {
-          await m.addColumn(table, table.updateTime);
+          await customStatement('ALTER TABLE "$tableName" ADD COLUMN update_time INTEGER NOT NULL DEFAULT 946656000');
           Global.logger.i('✅ 向 $tableName 补全了 update_time 列');
         } catch (_) {
           // 列已存在或表结构不支持直接添加
