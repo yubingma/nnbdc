@@ -21,6 +21,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
   
   // 树形结构
   List<_TreeNode> _rootNodes = [];
+  String? _rootGroupId;
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
     );
 
     if (rootGroup == null) return;
+    _rootGroupId = rootGroup.id;
 
     // 寻找根节点的直接子节点作为顶级分类
     final topLevelGroups = _allGroups.where((g) => g.parentId == rootGroup.id).toList();
@@ -97,7 +99,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
           IconButton(
             icon: const Icon(Icons.add_box, color: Colors.white),
             tooltip: '添加根分组',
-            onPressed: () => _showGroupEditDialog(null),
+            onPressed: () => _showGroupEditDialog(_rootGroupId),
           ),
         ],
       ),
@@ -159,44 +161,75 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
   Future<void> _showGroupEditDialog(String? parentId, {DictGroup? existingGroup}) async {
     final nameController = TextEditingController(text: existingGroup?.name ?? "");
     final indexController = TextEditingController(text: existingGroup?.displayIndex.toString() ?? "0");
+    bool isSaving = false;
 
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(existingGroup == null ? '添加分组' : '编辑分组'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: '分组名称')),
-            TextField(controller: indexController, decoration: const InputDecoration(labelText: '排序索引'), keyboardType: TextInputType.number),
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(existingGroup == null ? '添加分组' : '编辑分组'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController, 
+                decoration: const InputDecoration(labelText: '分组名称'),
+                enabled: !isSaving,
+              ),
+              TextField(
+                controller: indexController, 
+                decoration: const InputDecoration(labelText: '排序索引'), 
+                keyboardType: TextInputType.number,
+                enabled: !isSaving,
+              ),
+              if (isSaving)
+                const Padding(
+                  padding: EdgeInsets.only(top: 16.0),
+                  child: LinearProgressIndicator(),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(context), 
+              child: const Text('取消')
+            ),
+            TextButton(
+              onPressed: isSaving ? null : () async {
+                final name = nameController.text.trim();
+                if (name.isEmpty) {
+                  ToastUtil.error("请输入分组名称");
+                  return;
+                }
+                final index = int.tryParse(indexController.text) ?? 0;
+                
+                setDialogState(() => isSaving = true);
+                try {
+                  final result = await Api.client.saveDictGroup(
+                    existingGroup?.id,
+                    name,
+                    parentId,
+                    index,
+                  );
+                  
+                  if (result.success) {
+                    ToastUtil.success("保存成功");
+                    if (context.mounted) Navigator.pop(context);
+                    _loadData();
+                  } else {
+                    ToastUtil.error("保存失败: ${result.msg}");
+                  }
+                } catch (e) {
+                  ToastUtil.error("网络请求失败: $e");
+                } finally {
+                  if (context.mounted) setDialogState(() => isSaving = false);
+                }
+              },
+              child: const Text('保存'),
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
-          TextButton(
-            onPressed: () async {
-              final name = nameController.text.trim();
-              if (name.isEmpty) return;
-              final index = int.tryParse(indexController.text) ?? 0;
-              
-              Navigator.pop(context);
-              final result = await Api.client.saveDictGroup(
-                existingGroup?.id,
-                name,
-                parentId,
-                index,
-              );
-              
-              if (result.success) {
-                ToastUtil.success("保存成功");
-                _loadData();
-              } else {
-                ToastUtil.error("保存失败: ${result.msg}");
-              }
-            },
-            child: const Text('保存'),
-          ),
-        ],
       ),
     );
   }

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -28,6 +29,7 @@ import beidanci.service.util.PoVoUtils;
 import beidanci.service.po.User;
 import beidanci.service.util.CdnUtil;
 import beidanci.service.util.SysParamUtil;
+import beidanci.service.po.DictGroup;
 
 @RestController
 public class AdminController {
@@ -63,6 +65,9 @@ public class AdminController {
 
     @Autowired
     private AiBo aiBo;
+
+    @Autowired
+    private DictGroupBo dictGroupBo;
 
     @Autowired
     private SysParamUtil sysParamUtil;
@@ -117,6 +122,54 @@ public class AdminController {
     ) {
         dictBo.removeWordFromDict(dictId, wordId);
         return Result.success("单词删除成功");
+    }
+
+    // ============================================
+    // 词书分组管理API (管理员接口)
+    // ============================================
+
+    @PostMapping("/admin/saveDictGroup.do")
+    public Result<String> saveDictGroup(
+            @RequestParam(value = "id", required = false) String id,
+            @RequestParam("name") String name,
+            @RequestParam(value = "parentId", required = false) String parentId,
+            @RequestParam("displayIndex") int displayIndex
+    ) throws IllegalAccessException {
+        DictGroup dictGroup;
+        if (id != null && !id.isEmpty()) {
+            dictGroup = dictGroupBo.findById(id);
+            if (dictGroup == null) return Result.fail("分组不存在");
+        } else {
+            dictGroup = new DictGroup();
+        }
+
+        dictGroup.setName(name);
+        dictGroup.setDisplayIndex(displayIndex);
+
+        if (parentId != null && !parentId.isEmpty()) {
+            DictGroup parent = dictGroupBo.findById(parentId);
+            if (parent == null) return Result.fail("父分组不存在");
+            dictGroup.setDictGroup(parent);
+        } else {
+            dictGroup.setDictGroup(null);
+        }
+
+        if (id != null && !id.isEmpty()) {
+            dictGroupBo.updateEntity(dictGroup);
+        } else {
+            dictGroupBo.createEntity(dictGroup);
+        }
+
+        return Result.success(dictGroup.getId());
+    }
+
+    @DeleteMapping("/admin/deleteDictGroup.do")
+    public Result<String> deleteDictGroup(@RequestParam("groupId") String groupId) {
+        DictGroup dictGroup = dictGroupBo.findById(groupId);
+        if (dictGroup == null) return Result.fail("分组不存在");
+
+        dictGroupBo.deleteEntity(dictGroup);
+        return Result.success("删除成功");
     }
 
     // ============================================
