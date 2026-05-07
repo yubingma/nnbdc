@@ -10,6 +10,9 @@ class DictDownloadDialog extends StatefulWidget {
   final List<DictVo> dicts;
   final VoidCallback onComplete;
 
+  static bool _isShowing = false;
+  static bool get isShowing => _isShowing;
+
   const DictDownloadDialog({
     super.key,
     required this.dicts,
@@ -29,7 +32,14 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
   @override
   void initState() {
     super.initState();
+    DictDownloadDialog._isShowing = true;
     _loadDictNames();
+  }
+
+  @override
+  void dispose() {
+    DictDownloadDialog._isShowing = false;
+    super.dispose();
   }
 
   Future<void> _loadDictNames() async {
@@ -207,6 +217,7 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
         if (allFinished)
           TextButton(
             onPressed: () {
+              Navigator.of(context).pop();
               widget.onComplete();
             },
             child: const Text('完成', style: TextStyle(fontWeight: FontWeight.bold)),

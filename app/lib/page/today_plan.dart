@@ -62,11 +62,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 首页初始化时强制关停 ASR
     Asr().stopAsr();
     WidgetsBinding.instance.addObserver(this);
-    Timer.run(() {
-      if (mounted) {
-        loadData();
-      }
-    });
+    // 首页初始化数据由 didChangeDependencies 触发，此处不再重复调用 loadData()，避免并发加载冲突
 
     // 订阅今日计划变更事件
     _planSubscription = EventBus.onTodayPlanChanged().listen((event) {
@@ -289,13 +285,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       dictsToDownload.add(DictVo.c2(commonDictId));
     }
 
-    if (dictsToDownload.isNotEmpty && mounted) {
+    if (dictsToDownload.isNotEmpty && mounted && !DictDownloadDialog.isShowing) {
       await showDialog(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) => DictDownloadDialog(
           dicts: dictsToDownload,
-          onComplete: () => Navigator.of(dialogContext).pop(),
+          onComplete: () {},
         ),
       );
       prepareResult = await StudyBo().prepareForStudy(false);

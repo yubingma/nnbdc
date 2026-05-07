@@ -252,15 +252,13 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
         updateTime: now,
       );
 
-      if (mounted) {
+      if (mounted && !DictDownloadDialog.isShowing) {
         await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) => DictDownloadDialog(
             dicts: [commonDict],
-            onComplete: () {
-              Navigator.of(dialogContext).pop();
-            },
+            onComplete: () {},
           ),
         );
       }

@@ -941,18 +941,14 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         }
       }
 
-      if (!skipDownloadInTest && dictsToDownload.isNotEmpty && mounted) {
+      if (!skipDownloadInTest && dictsToDownload.isNotEmpty && mounted && !DictDownloadDialog.isShowing) {
         // 显示下载对话框
         await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) => DictDownloadDialog(
             dicts: dictsToDownload,
-            onComplete: () {
-              if (dialogContext.mounted) {
-                Navigator.of(dialogContext).pop();
-              }
-            },
+            onComplete: () {},
           ),
         );
       } else if (skipDownloadInTest) {
