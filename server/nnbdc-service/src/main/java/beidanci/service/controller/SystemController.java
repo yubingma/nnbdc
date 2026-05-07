@@ -106,7 +106,7 @@ public class SystemController {
         
         // 使用构造函数实例化 DictRes
         DictRes res = new DictRes(
-            null, // dict
+            dictBo.toDto(dictBo.findById(dictId)), // dict
             dictWordBo.getDictWordsOfDictBySeqRange(dictId, fromSeq, toSeq),
             wordBo.getWordsOfDictBySeqRange(dictId, fromSeq, toSeq),
             meaningItemBo.getMeaningItemsOfDictBySeqRange(dictId, fromSeq, toSeq),

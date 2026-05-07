@@ -1333,6 +1333,32 @@ class DataIntegrityChecker {
   /// 将从后端获取的 DictRes 集合静默缝合进本地数据库
   Future<void> _importDictRes(DictRes res) async {
     await _db.transaction(() async {
+      // 0. 更新词书元数据 (如果有)
+      if (res.dict != null) {
+        final d = res.dict!;
+        await _db.dictsDao.saveAll([
+          Dict(
+            id: d.id,
+            isReady: d.isReady,
+            isShared: d.isShared,
+            name: d.name,
+            wordCount: d.wordCount,
+            ownerId: d.ownerId,
+            visible: d.visible,
+            editable: d.editable ?? false,
+            deletable: d.deletable ?? true,
+            popularityLimit: d.popularityLimit,
+            domain: d.domain,
+            baseDictId: d.baseDictId,
+            coverUrl: d.coverUrl,
+            sortAlg: d.sortAlg,
+            description: d.description,
+            createTime: d.createTime,
+            updateTime: d.updateTime,
+          )
+        ]);
+      }
+
       // 1. 单词
       if (res.words != null && res.words!.isNotEmpty) {
         final List<Word> words = res.words!.map((w) => Word(

@@ -18,11 +18,13 @@ class DictDto {
   String? domain;
   String? baseDictId;
   String? sortAlg;
+  String? coverUrl;
+  String? description;
   DateTime createTime;
   DateTime updateTime;
 
   DictDto(this.id, this.isReady, this.isShared, this.name, this.wordCount, this.ownerId, this.visible, this.popularityLimit, this.createTime,
-      this.updateTime, [this.editable, this.deletable, this.domain, this.baseDictId, this.sortAlg]);
+      this.updateTime, [this.editable, this.deletable, this.domain, this.baseDictId, this.sortAlg, this.coverUrl, this.description]);
 
   factory DictDto.fromJson(Map<String, dynamic> json) {
     json['updateTime'] ??= json['createTime'];
