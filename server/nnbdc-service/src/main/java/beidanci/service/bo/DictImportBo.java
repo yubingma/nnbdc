@@ -1159,7 +1159,7 @@ public class DictImportBo {
                     .addValue("dictId", dictId);
             Integer count = namedParameterJdbcTemplate.queryForObject(checkSql, p, Integer.class);
             if (count == null || count == 0) {
-                String insertSql = "INSERT INTO group_and_dict_link (group_id, dict_id) VALUES (:groupId, :dictId)";
+                String insertSql = "INSERT INTO group_and_dict_link (group_id, dict_id, create_time, update_time) VALUES (:groupId, :dictId, NOW(), NOW())";
                 namedParameterJdbcTemplate.update(insertSql, p);
                 
                 // 记录系统同步日志，通知客户端拉取这层关系
