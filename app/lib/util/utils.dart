@@ -17,6 +17,7 @@ import 'package:uuid/uuid.dart';
 import '../api/vo.dart';
 import '../config.dart';
 import '../global.dart';
+import 'app_clock.dart';
 
 class Util {
   /// 某些文件命中含有单词拼写（如单词的声音文件，例句声音文件），所以需要对单词的一些特殊字符做处理
@@ -989,5 +990,33 @@ class Util {
   // 格式化日期为yyyyMMdd字符串
   static String formatDate(DateTime date) {
     return '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// 兼容性修复：将 JSON 中的各种日期格式转换为 ISO8601 字符串
+  static void fixJsonDates(Map<String, dynamic> json) {
+    for (var key in ['createTime', 'updateTime']) {
+      var val = json[key];
+      if (val == null) {
+        // 如果字段缺失或为null，使用当前时间
+        json[key] = AppClock.now().toIso8601String();
+      } else if (val is int) {
+        // 毫秒时间戳转换为字符串
+        json[key] = DateTime.fromMillisecondsSinceEpoch(val).toIso8601String();
+      } else if (val is String && val.isNotEmpty) {
+        // 尝试解析各种字符串格式（如 "2026-04-11 22:03:08.636"）
+        try {
+          // 如果已经是 ISO8601 (含 T)，则继续处理下一个字段
+          if (val.contains('T')) continue;
+
+          // 处理 "yyyy-MM-dd HH:mm:ss.SSS" 格式
+          String fixed = val.replaceFirst(' ', 'T');
+          DateTime.parse(fixed); // 验证格式
+          json[key] = fixed;
+        } catch (e) {
+          Global.logger.w("⚠️ 日期格式解析失败 ($key): $val");
+          json[key] = AppClock.now().toIso8601String(); // 解析失败也给个默认值，防止 crash
+        }
+      }
+    }
   }
 }

@@ -354,8 +354,9 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
             Map<String, dynamic> entityJson = jsonDecode(log.record);
             
-            // 【容错改造】在反序列化前，补全可能缺失的字段，防止由于前后端版本不一致导致的 crash
+            // 【容错改造】在反序列化前，补全可能缺失的字段，且统一修复日期格式，防止由于前后端版本不一致导致的 crash
             _sanitizeEntityJson(log.tblName, entityJson);
+            Util.fixJsonDates(entityJson);
 
             if (log.tblName == 'users') {
               User entity = User.fromJson(entityJson);

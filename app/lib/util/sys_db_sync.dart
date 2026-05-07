@@ -106,6 +106,11 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
         Map<String, dynamic> entityJson = jsonDecode(log.record);
 
         // === 静态元数据表 ===
+        // 统一修复日期格式
+        if (log.operate != 'DELETE') {
+          Util.fixJsonDates(entityJson);
+        }
+
         if (log.tblName == 'dict_group') {
           // 词典分组
           if (log.operate == 'DELETE') {
@@ -162,8 +167,6 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           if (log.operate == 'DELETE') {
             await (db.delete(db.words)..where((t) => t.id.equals(log.recordId))).go();
           } else {
-            // 兼容性修复：处理可能的时间戳格式（Jackson默认可能序列化为Long）
-            _fixJsonDates(entityJson);
             Word entity = Word.fromJson(entityJson);
             Global.logger.i("📝 同步更新单词: ${entity.spell}, UpdateTime: ${entity.updateTime}");
             await db.wordsDao.insertEntity(entity);
@@ -239,31 +242,6 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
   }
 }
 
-/// 兼容性修复：将 JSON 中的各种日期格式转换为 ISO8601 字符串
-void _fixJsonDates(Map<String, dynamic> json) {
-  for (var key in ['createTime', 'updateTime']) {
-    if (json.containsKey(key)) {
-      var val = json[key];
-      if (val is int) {
-        // 毫秒时间戳转换为字符串
-        json[key] = DateTime.fromMillisecondsSinceEpoch(val).toIso8601String();
-      } else if (val is String && val.isNotEmpty) {
-        // 尝试解析各种字符串格式（如 "2026-04-11 22:03:08.636"）
-        try {
-          // 如果已经是 ISO8601 (含 T)，则继续处理下一个字段
-          if (val.contains('T')) continue;
-
-          // 处理 "yyyy-MM-dd HH:mm:ss.SSS" 格式
-          String fixed = val.replaceFirst(' ', 'T');
-          DateTime.parse(fixed); // 验证格式
-          json[key] = fixed;
-        } catch (e) {
-          Global.logger.w("⚠️ 日期格式解析失败 ($key): $val");
-        }
-      }
-    }
-  }
-}
 
 /// 获取系统数据表的同步优先级（用于维护外键关联顺序）
 /// 数字越小优先级越高（越接近父表）
