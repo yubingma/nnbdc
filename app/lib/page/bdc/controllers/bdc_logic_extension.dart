@@ -389,7 +389,7 @@ extension BdcPageStateLogic on BdcPageState {
 
     _lastFsrsRating = rating;
 
-    if (!_autoJumpAfterCorrect && _wordWrapper != null) {
+    if (_wordWrapper != null) {
       final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
       for (var i = 0; i < meaningItems.length; i++) {
         var parts = splitMeaning2Parts(meaningItems[i].meaning!);

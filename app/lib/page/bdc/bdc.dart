@@ -819,7 +819,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             }
 
             // 同步展示所有释义
-            if (!_autoJumpAfterCorrect && _wordWrapper != null) {
+            if (_wordWrapper != null) {
               final meaningItems = _wordWrapper!.word.getMergedMeaningItems();
               for (var i = 0; i < meaningItems.length; i++) {
                 var parts = splitMeaning2Parts(meaningItems[i].meaning!);
@@ -852,8 +852,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
             'checkAsrResult: 添加提示音到列表，当前有 ${_playingCorrectSounds.length} 个提示音正在播放');
 
         // 等待音频播放完成，然后再等待短暂延迟后执行后续逻辑
+        // 核心优化：延长至 800ms，确保用户能看清自动展现的完整释义
         soundFuture.whenComplete(() {
-          Future.delayed(const Duration(milliseconds: 150)).then((_) async {
+          Future.delayed(const Duration(milliseconds: 800)).then((_) async {
             _playingCorrectSounds.remove(soundFuture);
             if (_playingCorrectSounds.isEmpty && _hasFinishedAnswering) {
               if (wasAlreadyCorrect) return;
