@@ -193,13 +193,28 @@ public class WordBo extends BaseBo<Word> {
 
 
     public List<WordDto> getWordsOfDict(String dictId) {
-        // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT id, america_pronounce, british_pronounce, group_info, long_desc, short_desc, popularity, pronounce, spell, create_time, update_time FROM word w WHERE w.id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId)";
+        return getWordsOfDictBySeqRange(dictId, null, null);
+    }
+
+    public List<WordDto> getWordsOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        StringBuilder sql = new StringBuilder("SELECT id, america_pronounce, british_pronounce, group_info, long_desc, short_desc, popularity, pronounce, spell, create_time, update_time FROM word w WHERE w.id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        if (fromSeq != null) {
+            sql.append(" AND dw.seq >= :fromSeq");
+            params.addValue("fromSeq", fromSeq);
+        }
+        if (toSeq != null) {
+            sql.append(" AND dw.seq <= :toSeq");
+            params.addValue("toSeq", toSeq);
+        }
+        sql.append(")");
         
-        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        String querySql = java.util.Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params, (rs, rowNum) -> {
             WordDto wordDto = new WordDto();
-            wordDto.setId(rs.getString("id"));
+            String idStr = rs.getString("id");
+            assert idStr != null;
+            wordDto.setId(idStr);
             wordDto.setAmericaPronounce(rs.getString("america_pronounce"));
             wordDto.setBritishPronounce(rs.getString("british_pronounce"));
             wordDto.setGroupInfo(rs.getString("group_info"));
@@ -215,16 +230,33 @@ public class WordBo extends BaseBo<Word> {
     }
 
     public List<SimilarWordDto> getSimilarWordsOfDict(String dictId) {
-        // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT sw.word_id, sw.similar_word_id, sw.distance, w.spell, sw.create_time, sw.update_time " +
+        return getSimilarWordsOfDictBySeqRange(dictId, null, null);
+    }
+
+    public List<SimilarWordDto> getSimilarWordsOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        StringBuilder sql = new StringBuilder("SELECT sw.word_id, sw.similar_word_id, sw.distance, w.spell, sw.create_time, sw.update_time " +
                      "FROM similar_word sw LEFT JOIN word w ON w.id=sw.similar_word_id " +
-                     "WHERE sw.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId)";
+                     "WHERE sw.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        if (fromSeq != null) {
+            sql.append(" AND dw.seq >= :fromSeq");
+            params.addValue("fromSeq", fromSeq);
+        }
+        if (toSeq != null) {
+            sql.append(" AND dw.seq <= :toSeq");
+            params.addValue("toSeq", toSeq);
+        }
+        sql.append(")");
         
-        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        String querySql = java.util.Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params, (rs, rowNum) -> {
             SimilarWordDto wordDto = new SimilarWordDto();
-            wordDto.setWordId(rs.getString("word_id"));
-            wordDto.setSimilarWordId(rs.getString("similar_word_id"));
+            String wordIdStr = rs.getString("word_id");
+            assert wordIdStr != null;
+            wordDto.setWordId(wordIdStr);
+            String similarWordIdStr = rs.getString("similar_word_id");
+            assert similarWordIdStr != null;
+            wordDto.setSimilarWordId(similarWordIdStr);
             wordDto.setDistance(rs.getObject("distance", Integer.class));
             wordDto.setSimilarWordSpell(rs.getString("spell"));
             wordDto.setCreateTime(rs.getTimestamp("create_time"));
@@ -234,18 +266,35 @@ public class WordBo extends BaseBo<Word> {
     }
 
     public List<WordImageDto> getWordImagesOfDict(String dictId) {
-        // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT id, foot, hand, image_file, author_id, word_id, create_time, update_time FROM word_image wi WHERE wi.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId)";
+        return getWordImagesOfDictBySeqRange(dictId, null, null);
+    }
+
+    public List<WordImageDto> getWordImagesOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        StringBuilder sql = new StringBuilder("SELECT id, foot, hand, image_file, author_id, word_id, create_time, update_time FROM word_image wi WHERE wi.word_id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        if (fromSeq != null) {
+            sql.append(" AND dw.seq >= :fromSeq");
+            params.addValue("fromSeq", fromSeq);
+        }
+        if (toSeq != null) {
+            sql.append(" AND dw.seq <= :toSeq");
+            params.addValue("toSeq", toSeq);
+        }
+        sql.append(")");
         
-        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        String querySql = java.util.Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params, (rs, rowNum) -> {
             WordImageDto wordImageDto = new WordImageDto();
-            wordImageDto.setId(rs.getString("id"));
+            String idStr = rs.getString("id");
+            assert idStr != null;
+            wordImageDto.setId(idStr);
             wordImageDto.setFoot(rs.getObject("foot", Integer.class));
             wordImageDto.setHand(rs.getObject("hand", Integer.class));
             wordImageDto.setImageFile(rs.getString("image_file"));
             wordImageDto.setAuthorId(rs.getString("author_id"));
-            wordImageDto.setWordId(rs.getString("word_id"));
+            String wordIdStr = rs.getString("word_id");
+            assert wordIdStr != null;
+            wordImageDto.setWordId(wordIdStr);
             wordImageDto.setCreateTime(rs.getTimestamp("create_time"));
             wordImageDto.setUpdateTime(rs.getTimestamp("update_time"));
             return wordImageDto;

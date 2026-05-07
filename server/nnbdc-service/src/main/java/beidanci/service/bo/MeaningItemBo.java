@@ -35,18 +35,43 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
 
     /** 获取指定词书的所有单词释义项，通用词典ID为'0' */
     public List<MeaningItemDto> getMeaningItemsOfDict(String dictId) {
-        // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE dict_id = :dictId";
-        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        return getMeaningItemsOfDictBySeqRange(dictId, null, null);
+    }
 
-        return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+    public List<MeaningItemDto> getMeaningItemsOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        StringBuilder sql = new StringBuilder("SELECT mi.id, mi.ci_xing, mi.meaning, mi.word_id, mi.dict_id, mi.owner_id, mi.popularity, mi.create_time, mi.update_time, mi.is_updating, mi.updating_start_at " +
+                     "FROM meaning_item mi ");
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        
+        if (fromSeq != null || toSeq != null) {
+            sql.append("INNER JOIN dict_word dw ON dw.dict_id = mi.dict_id AND dw.word_id = mi.word_id ");
+        }
+        
+        sql.append("WHERE mi.dict_id = :dictId");
+        
+        if (fromSeq != null) {
+            sql.append(" AND dw.seq >= :fromSeq");
+            params.addValue("fromSeq", fromSeq);
+        }
+        if (toSeq != null) {
+            sql.append(" AND dw.seq <= :toSeq");
+            params.addValue("toSeq", toSeq);
+        }
+
+        String querySql = java.util.Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params, (rs, rowNum) -> {
             MeaningItemDto meaningItemDto = new MeaningItemDto();
-            meaningItemDto.setId(rs.getString("id"));
+            String idStr = rs.getString("id");
+            assert idStr != null;
+            meaningItemDto.setId(idStr);
             meaningItemDto.setCiXing(rs.getString("ci_xing"));
             meaningItemDto.setMeaning(rs.getString("meaning"));
-            meaningItemDto.setWordId(rs.getString("word_id"));
-            meaningItemDto.setDictId(rs.getString("dict_id"));
-            // 处理 popularity 可能为 NULL 的情况，默认值为 999
+            String wordIdStr = rs.getString("word_id");
+            assert wordIdStr != null;
+            meaningItemDto.setWordId(wordIdStr);
+            String dictIdStr = rs.getString("dict_id");
+            assert dictIdStr != null;
+            meaningItemDto.setDictId(dictIdStr);
             Integer popularity = rs.getObject("popularity", Integer.class);
             meaningItemDto.setPopularity(popularity != null ? popularity : 999);
             meaningItemDto.setCreateTime(rs.getTimestamp("create_time"));

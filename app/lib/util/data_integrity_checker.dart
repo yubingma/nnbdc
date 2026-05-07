@@ -3,16 +3,15 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:nnbdc/api/api.dart';
-import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/page/select_book.dart';
-import 'package:nnbdc/services/throttled_sync_service.dart';
-import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/tts.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/socket_io.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
@@ -627,23 +626,50 @@ class DataIntegrityChecker {
       if (checkResult.hasIssue('common_dict_integrity')) {
         try {
           // 策略：不再通过同步流（Version 0）重刷，因为同步流不包含释义和例句。
-          // 而是通过专项词书下载接口（downloadADict）进行靶向修复。
-          Global.logger.i('💡 [修复] 检测到系统通用词典数据不完整，正在启动专项拉取修复...');
+          // 而是通过专项词书下载接口（downloadADict）进行靶向增量修复。
+          Global.logger.i('💡 [修复] 检测到系统通用词典数据不完整，正在启动专项增量拉取修复...');
           
-          // 通用词典固定 ID 为 "0"
-          final success = await SelectBookPageState.downloadADict(
-            DictVo.c2("0"),
-            onProgress: (p) => Global.logger.d('💡 [修复] 通用词典下载进度: ${(p * 100).toStringAsFixed(1)}%'),
-          );
+          final commonDict = await _db.dictsDao.findById(Global.commonDictId);
+          if (commonDict != null) {
+            // 找到本地实际的单词列表，计算断层位置
+            final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
+                  ..where((dw) => dw.dictId.equals(Global.commonDictId))
+                  ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
+                .get();
+            
+            int fromSeq = 1;
+            // 寻找第一个断层
+            for (int i = 0; i < wordsList.length; i++) {
+              if (wordsList[i].seq != i + 1) {
+                fromSeq = i + 1;
+                break;
+              }
+              if (i == wordsList.length - 1) {
+                fromSeq = wordsList.length + 1;
+              }
+            }
 
-          if (success) {
-            fixResult.addFixed('系统通用词典已通过专项接口成功重载并修复！');
-          } else {
-            fixResult.addError('系统通用词典专项重载失败，请检查网络。');
+            if (fromSeq <= commonDict.wordCount) {
+              Global.logger.i('💡 [修复] 通用词典缺失序号范围: $fromSeq - ${commonDict.wordCount}，开始专项增量拉取...');
+              final response = await Api.client.getDictResRange(
+                Global.commonDictId,
+                fromSeq,
+                commonDict.wordCount,
+              );
+
+              if (response.success && response.data != null) {
+                await _importDictRes(response.data!);
+                fixResult.addFixed('系统通用词典已通过专项修复接口（Range: $fromSeq - ${commonDict.wordCount}）成功修复并缝合！');
+              } else {
+                fixResult.addError('系统通用词典增量修复拉取失败: ${response.msg}');
+              }
+            } else {
+              fixResult.addFixed('系统通用词典序号检查通过，无需增量修复。');
+            }
           }
         } catch (e, stack) {
-          Global.logger.e('重载通用系统数据时发生中断性错误', error: e, stackTrace: stack);
-          fixResult.addError('强制重载通用系统数据失败: $e');
+          Global.logger.e('修复通用系统数据时发生中断性错误', error: e, stackTrace: stack);
+          fixResult.addError('修复通用系统数据失败: $e');
         }
       }
 
@@ -1302,6 +1328,119 @@ class DataIntegrityChecker {
       Global.logger.e('检查本地TTS功能时出错', error: e, stackTrace: stack);
       result.addError('检查本地TTS功能时出错: $e');
     }
+  }
+
+  /// 将从后端获取的 DictRes 集合静默缝合进本地数据库
+  Future<void> _importDictRes(DictRes res) async {
+    await _db.transaction(() async {
+      // 1. 单词
+      if (res.words != null && res.words!.isNotEmpty) {
+        final List<Word> words = res.words!.map((w) => Word(
+          id: w.id,
+          spell: w.spell,
+          pronounce: w.pronounce,
+          americaPronounce: w.americaPronounce,
+          britishPronounce: w.britishPronounce,
+          popularity: w.popularity,
+          shortDesc: w.shortDesc,
+          longDesc: w.longDesc,
+          groupInfo: w.groupInfo,
+          createTime: w.createTime,
+          updateTime: w.updateTime,
+        )).toList();
+        await _db.wordsDao.insertEntities(words);
+      }
+
+      // 2. 词书-单词关系
+      if (res.dictWords != null && res.dictWords!.isNotEmpty) {
+        final List<DictWord> dictWords = res.dictWords!.map((dw) => DictWord(
+          dictId: dw.dictId.toString(),
+          wordId: dw.wordId,
+          seq: dw.seq,
+          unit: dw.unit,
+          createTime: dw.createTime,
+          updateTime: dw.updateTime,
+        )).toList();
+        await _db.dictWordsDao.insertEntities(dictWords, false);
+      }
+
+      // 3. 释义项
+      if (res.meaningItems != null && res.meaningItems!.isNotEmpty) {
+        final List<MeaningItem> items = res.meaningItems!.map((m) => MeaningItem(
+          id: m.id,
+          wordId: m.wordId,
+          dictId: m.dictId,
+          ciXing: m.ciXing,
+          meaning: m.meaning,
+          popularity: m.popularity,
+          ownerId: m.ownerId ?? Global.sysUserId,
+          createTime: m.createTime,
+          updateTime: m.updateTime,
+        )).toList();
+        await _db.meaningItemsDao.insertEntities(items);
+      }
+
+      // 4. 例句
+      if (res.sentences != null && res.sentences!.isNotEmpty) {
+        final List<Sentence> sentences = res.sentences!.map((s) => Sentence(
+          id: s.id,
+          english: s.english,
+          chinese: s.chinese,
+          englishDigest: s.englishDigest,
+          theType: s.theType,
+          handCount: s.handCount,
+          footCount: s.footCount,
+          authorId: s.authorId ?? Global.sysUserId,
+          ownerId: s.ownerId ?? Global.sysUserId,
+          meaningItemId: s.meaningItemId,
+          wordMeaning: s.wordMeaning,
+          createTime: s.createTime,
+          updateTime: s.updateTime,
+        )).toList();
+        await _db.sentencesDao.insertEntities(sentences);
+      }
+
+      // 5. 同义词
+      if (res.synonyms != null && res.synonyms!.isNotEmpty) {
+        final List<Synonym> synonyms = res.synonyms!.map((s) => Synonym(
+          meaningItemId: s.meaningItemId,
+          wordId: s.wordId,
+          spell: s.spell,
+          createTime: s.createTime,
+          updateTime: s.updateTime,
+        )).toList();
+        await _db.synonymsDao.insertEntities(synonyms);
+      }
+
+      // 6. 形近词
+      if (res.similarWords != null && res.similarWords!.isNotEmpty) {
+        final List<SimilarWord> sws = res.similarWords!.map((sw) => SimilarWord(
+          wordId: sw.wordId,
+          similarWordId: sw.similarWordId,
+          similarWordSpell: sw.similarWordSpell,
+          distance: sw.distance,
+          createTime: sw.createTime,
+          updateTime: sw.updateTime,
+        )).toList();
+        await _db.similarWordsDao.insertEntities(sws);
+      }
+
+      // 7. 图片
+      if (res.images != null && res.images!.isNotEmpty) {
+        final List<WordImage> images = res.images!.map((im) => WordImage(
+          id: im.id,
+          wordId: im.wordId,
+          imageFile: im.imageFile,
+          foot: im.foot,
+          hand: im.hand,
+          authorId: im.authorId ?? Global.sysUserId,
+          ownerId: im.ownerId ?? Global.sysUserId,
+          createTime: im.createTime,
+          updateTime: im.updateTime,
+        )).toList();
+        await _db.wordImagesDao.insertEntities(images);
+      }
+    });
   }
 }
 

@@ -652,6 +652,12 @@ abstract class RestClient {
   @FormUrlEncoded()
   Future<Result<JsonMap>> getFallbackWordsData(@Field("wordIds") String wordIdsJson);
 
+  @GET("/api/getDictResRange.do")
+  Future<Result<DictRes>> getDictResRange(
+      @Query("dictId") String dictId,
+      @Query("fromSeq") int fromSeq,
+      @Query("toSeq") int toSeq);
+
   @GET("/admin/checkUserDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkUserDictIntegrity();
 

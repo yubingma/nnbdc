@@ -26,20 +26,45 @@ public class SynonymBo extends BaseBo<Synonym> {
     }
 
     public List<SynonymDto> getSynonymsOfDict(String dictId) {
-        // 通用词典现在是数据库中的实际记录，统一查询
-        String sql = "SELECT s.meaning_item_id, s.word_id, s.create_time, s.update_time, w.spell FROM synonym s LEFT JOIN word w ON w.id=s.word_id WHERE s.meaning_item_id IN (SELECT mi.id FROM meaning_item mi WHERE mi.dict_id=:dictId)";
+        return getSynonymsOfDictBySeqRange(dictId, null, null);
+    }
+
+    public List<SynonymDto> getSynonymsOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        StringBuilder sql = new StringBuilder("SELECT s.meaning_item_id, s.word_id, s.create_time, s.update_time, w.spell " +
+                     "FROM synonym s LEFT JOIN word w ON w.id=s.word_id " +
+                     "WHERE s.meaning_item_id IN (SELECT mi.id FROM meaning_item mi ");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
-        List<SynonymDto> synonymDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        
+        if (fromSeq != null || toSeq != null) {
+            sql.append("INNER JOIN dict_word dw ON dw.dict_id = mi.dict_id AND dw.word_id = mi.word_id ");
+        }
+        
+        sql.append("WHERE mi.dict_id = :dictId");
+
+        if (fromSeq != null) {
+            sql.append(" AND dw.seq >= :fromSeq");
+            params.addValue("fromSeq", fromSeq);
+        }
+        if (toSeq != null) {
+            sql.append(" AND dw.seq <= :toSeq");
+            params.addValue("toSeq", toSeq);
+        }
+        sql.append(")");
+
+        String querySql = java.util.Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params, (rs, rowNum) -> {
             SynonymDto synonymDto = new SynonymDto();
-            synonymDto.setMeaningItemId(rs.getString("meaning_item_id"));
-            synonymDto.setWordId(rs.getString("word_id"));
+            String meaningItemIdStr = rs.getString("meaning_item_id");
+            assert meaningItemIdStr != null;
+            synonymDto.setMeaningItemId(meaningItemIdStr);
+            String wordIdStr = rs.getString("word_id");
+            assert wordIdStr != null;
+            synonymDto.setWordId(wordIdStr);
             synonymDto.setCreateTime(rs.getTimestamp("create_time"));
             synonymDto.setUpdateTime(rs.getTimestamp("update_time"));
             synonymDto.setSpell(rs.getString("spell"));
             return synonymDto;
         });
-
-        return synonymDtos;
     }
 
     public void deleteByMeaningItem(String meaningItemId) {

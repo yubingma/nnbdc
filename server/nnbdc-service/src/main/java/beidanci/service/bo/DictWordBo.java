@@ -347,20 +347,38 @@ public class DictWordBo extends BaseBo<DictWord> {
     }
 
     public List<DictWordDto> getDictWordsOfDict(String dictId) {
-        // 通用词典现在也有dict_word记录，统一查询逻辑
-        String sql = "SELECT dict_id, word_id, seq, unit, create_time, update_time FROM dict_word WHERE dict_id = :dictId";
+        return getDictWordsOfDictBySeqRange(dictId, null, null);
+    }
+
+    public List<DictWordDto> getDictWordsOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
+        StringBuilder sql = new StringBuilder("SELECT dict_id, word_id, seq, unit, create_time, update_time FROM dict_word WHERE dict_id = :dictId");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
-        List<DictWordDto> dictWordDtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
+        
+        if (fromSeq != null) {
+            sql.append(" AND seq >= :fromSeq");
+            params.addValue("fromSeq", fromSeq);
+        }
+        if (toSeq != null) {
+            sql.append(" AND seq <= :toSeq");
+            params.addValue("toSeq", toSeq);
+        }
+        sql.append(" ORDER BY seq ASC");
+        
+        String querySql = java.util.Objects.requireNonNull(sql.toString());
+        return namedParameterJdbcTemplate.query(querySql, params, (rs, rowNum) -> {
             DictWordDto dictWordDto = new DictWordDto();
-            dictWordDto.setDictId(rs.getString("dict_id"));
-            dictWordDto.setWordId(rs.getString("word_id"));
+            String dictIdStr = rs.getString("dict_id");
+            assert dictIdStr != null;
+            dictWordDto.setDictId(dictIdStr);
+            String wordIdStr = rs.getString("word_id");
+            assert wordIdStr != null;
+            dictWordDto.setWordId(wordIdStr);
             dictWordDto.setSeq(rs.getInt("seq"));
             dictWordDto.setUnit(rs.getInt("unit"));
             dictWordDto.setCreateTime(rs.getTimestamp("create_time"));
             dictWordDto.setUpdateTime(rs.getTimestamp("update_time"));
             return dictWordDto;
         });
-        return dictWordDtos;
     }
 
     public List<DictWord> findDictWordsByDictId(String dictId) {

@@ -12,6 +12,8 @@ import beidanci.api.Result;
 import beidanci.api.model.*;
 import beidanci.service.bo.*;
 import org.springframework.web.context.request.async.DeferredResult;
+import java.io.IOException;
+import beidanci.service.exception.ParseException;
 
 @RestController
 public class SystemController {
@@ -27,6 +29,21 @@ public class SystemController {
 
     @Autowired
     private UserBo userBo;
+
+    @Autowired
+    private DictWordBo dictWordBo;
+
+    @Autowired
+    private WordBo wordBo;
+
+    @Autowired
+    private MeaningItemBo meaningItemBo;
+
+    @Autowired
+    private SynonymBo synonymBo;
+
+    @Autowired
+    private SentenceBo sentenceBo;
 
     /**
      * 获取系统词典列表及其统计信息
@@ -76,5 +93,29 @@ public class SystemController {
             userId = userBo.getSysUser_sys(false).getId();
         }
         return aiController.generateAiShortStory(wordsJson, userId);
+    }
+
+    /**
+     * 为客户端提供专项词书部分范围的资源（用于靶向修复数据断层）
+     */
+    @GetMapping("/api/getDictResRange.do")
+    public Result<DictRes> getDictResRange(
+            @RequestParam("dictId") String dictId,
+            @RequestParam("fromSeq") Integer fromSeq,
+            @RequestParam("toSeq") Integer toSeq) throws IOException, ParseException {
+        
+        // 使用构造函数实例化 DictRes
+        DictRes res = new DictRes(
+            null, // dict
+            dictWordBo.getDictWordsOfDictBySeqRange(dictId, fromSeq, toSeq),
+            wordBo.getWordsOfDictBySeqRange(dictId, fromSeq, toSeq),
+            meaningItemBo.getMeaningItemsOfDictBySeqRange(dictId, fromSeq, toSeq),
+            wordBo.getSimilarWordsOfDictBySeqRange(dictId, fromSeq, toSeq),
+            synonymBo.getSynonymsOfDictBySeqRange(dictId, fromSeq, toSeq),
+            sentenceBo.getSentencesOfDictBySeqRange(dictId, fromSeq, toSeq),
+            wordBo.getWordImagesOfDictBySeqRange(dictId, fromSeq, toSeq)
+        );
+        
+        return Result.success(res);
     }
 }
