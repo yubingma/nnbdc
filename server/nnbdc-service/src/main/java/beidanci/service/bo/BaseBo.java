@@ -32,6 +32,10 @@ public abstract class BaseBo<E extends Po> {
         return baseDao;
     }
 
+    public JdbcTemplate getJdbcTemplate() {
+        return jdbcTemplate;
+    }
+
     public PagedResults<E> pagedQuery(E preciseEntity, int pageNo, int pageSize) {
         return pagedQuery(preciseEntity, pageNo, pageSize, null, null);
     }
@@ -61,9 +65,9 @@ public abstract class BaseBo<E extends Po> {
      */
     @SafeVarargs
     public final PagedResults<E> pagedQuery(String sql, int pageNo, int pageSize, Pair<String, Object>... parameters) {
-        // 该方法委托给 BaseDao，由于方法是 final 的且不对 varargs 数组进行修改，
-        // 不会导致堆污染，因此使用 @SafeVarargs 是安全的
-        return baseDao.pagedQuery(jdbcTemplate, sql, pageNo, pageSize, parameters);
+        // 该方法委托给 BaseDao。注意：必须通过 getDao() 和 getJdbcTemplate() 访问，
+        // 否则在 Spring 代理对象上调用 final 方法时会出现字段为 null 的情况。
+        return getDao().pagedQuery(getJdbcTemplate(), sql, pageNo, pageSize, parameters);
     }
 
     /**
@@ -75,9 +79,7 @@ public abstract class BaseBo<E extends Po> {
      */
     @SafeVarargs
     public final E queryUnique(String sql, Pair<String, Object>... parameters) {
-        // 该方法委托给 BaseDao，由于方法是 final 的且不对 varargs 数组进行修改，
-        // 不会导致堆污染，因此使用 @SafeVarargs 是安全的
-        return baseDao.queryUnique(jdbcTemplate, sql, parameters);
+        return getDao().queryUnique(getJdbcTemplate(), sql, parameters);
     }
 
     /**
@@ -92,9 +94,7 @@ public abstract class BaseBo<E extends Po> {
     @SafeVarargs
     public final PagedResults<E> pagedQuery2(String sql, int fromIndex, int pageSize,
             Pair<String, Object>... parameters) {
-        // 该方法委托给 BaseDao，由于方法是 final 的且不对 varargs 数组进行修改，
-        // 不会导致堆污染，因此使用 @SafeVarargs 是安全的
-        return baseDao.pagedQuery2(jdbcTemplate, sql, fromIndex, pageSize, parameters);
+        return getDao().pagedQuery2(getJdbcTemplate(), sql, fromIndex, pageSize, parameters);
     }
 
     public List<E> queryAll(E preciseEntity, boolean newSession) {
