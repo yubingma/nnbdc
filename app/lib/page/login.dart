@@ -576,8 +576,11 @@ class LoginPageState extends State<LoginPage>
                   UserVo.fromJson(result.data as Map<String, dynamic>);
               userVo.lastLoginTime = AppClock.now();
               await MyDatabase.instance.usersDao
-                  .saveUser(userVo2User(userVo), false);
+                  .saveUser(userVo2User(userVo), true); // 开启同步信号
               await Global.setLoggedInUser(userVo);
+
+              // 记录登录操作日志
+              await MyDatabase.instance.userOpersDao.recordLogin(userVo.id, remark: "微信登录");
 
               // 微信登录成功后立即触发同步
               ThrottledDbSyncService().requestSync(immediate: true);
@@ -647,8 +650,11 @@ class LoginPageState extends State<LoginPage>
       if (result.success && result.data != null) {
         final userVo = UserVo.fromJson(result.data as Map<String, dynamic>);
         userVo.lastLoginTime = AppClock.now();
-        await MyDatabase.instance.usersDao.saveUser(userVo2User(userVo), false);
+        await MyDatabase.instance.usersDao.saveUser(userVo2User(userVo), true); // 开启同步信号
         await Global.setLoggedInUser(userVo);
+
+        // 记录登录操作日志
+        await MyDatabase.instance.userOpersDao.recordLogin(userVo.id, remark: "Apple登录");
 
         ThrottledDbSyncService().requestSync(immediate: true);
 

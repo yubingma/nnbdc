@@ -83,6 +83,10 @@ class UserBo {
 
       final now = AppClock.now();
       await db.usersDao.saveUser(user.copyWith(lastLoginTime: Value(now)), true);
+      
+      // 记录登录操作日志
+      await db.userOpersDao.recordLogin(user.id, remark: "手动登录");
+
       Global.currentUserId = user.id;
 
       final userVo = UserVo.fromUser(user);
@@ -97,6 +101,26 @@ class UserBo {
       final result = Result<UserVo>("ERROR", "登录失败: $e", false);
       result.data = null;
       return result;
+    }
+  }
+
+  /// 处理自动登录业务逻辑：更新登录时间并记录操作日志
+  Future<void> handleAutoLogin(String userId) async {
+    final db = MyDatabase.instance;
+    final user = await db.usersDao.getUserById(userId);
+    if (user != null) {
+      final now = AppClock.now();
+      // 1. 更新登录时间并产生同步日志
+      final updatedUser = user.copyWith(lastLoginTime: Value(now));
+      await db.usersDao.saveUser(updatedUser, true);
+
+      // 更新全局缓存中的用户信息
+      Global.updateUserCache(updatedUser);
+
+      // 2. 写入登录操作日志（也会触发同步）
+      await db.userOpersDao.recordLogin(userId, remark: "自动登录");
+
+      Global.logger.i('已完成自动登录业务逻辑处理: userId=$userId');
     }
   }
 
