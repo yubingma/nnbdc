@@ -5,6 +5,7 @@ import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.dao.DataAccessException;
@@ -488,7 +489,17 @@ public class UserDbSyncBo {
             UserDto userDto = JsonUtils.makeObject(recordJson, UserDto.class);
             User user = userBo.findById(userId);
             if (user != null) {
-                logger.info("收到用户同步请求: recordJson={}", recordJson);
+                String platform = MDC.get("platform");
+                String premiumStatus = getPremiumStatusString(user);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                logger.info("收到用户同步请求: 昵称={}, ID={}, 学习天数={}, 已掌握={}, 客户端={}, 创建时间={}, 会员状态={}",
+                        userDto.getNickName(),
+                        userId.substring(0, Math.min(userId.length(), 6)),
+                        userDto.getLearnedDays(),
+                        userDto.getMasteredWordsCount(),
+                        platform != null ? platform : "Unknown",
+                        userDto.getCreateTime() != null ? sdf.format(userDto.getCreateTime()) : "未知",
+                        premiumStatus);
                 User userFromClient = User.fromDto(userDto);
 
                 // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端
@@ -1463,5 +1474,28 @@ public class UserDbSyncBo {
                 throw new IllegalArgumentException(errorMsg);
             }
         }
+    }
+
+    private String getPremiumStatusString(User user) {
+        if (user == null) return "未知";
+
+        StringBuilder status = new StringBuilder();
+        boolean isIosPremium = Boolean.TRUE.equals(user.getIsPremiumIos());
+        boolean isOverrideEnabled = Boolean.TRUE.equals(user.getPremiumOverrideEnabled());
+
+        if (isIosPremium) {
+            status.append("iOS会员");
+        }
+
+        if (isOverrideEnabled) {
+            if (status.length() > 0) status.append("+");
+            if (user.getPremiumOverrideDuration() == null) {
+                status.append("永久会员(手动)");
+            } else {
+                status.append("强制会员(手动)");
+            }
+        }
+
+        return status.length() == 0 ? "免费" : status.toString();
     }
 }
