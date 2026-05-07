@@ -237,19 +237,8 @@ public class DictImportBo {
             if (dictId != null && !dictId.isEmpty()) {
                 Dict mainDict = dictBo.findById(dictId);
                 if (mainDict != null) {
-                    List<DictWord> currentWords = dictWordBo.findDictWordsByDictId(dictId);
-                    int finalCount = (currentWords != null) ? currentWords.size() : 0;
-                    mainDict.setWordCount(finalCount);
-                    dictBo.updateEntity(mainDict);
-
-                    // 即使是系统导入，在任务结束时也记一条 UPDATE 日志，确保客户端能看到正确的单词总数
-                    if (isSystemImport) {
-                        try {
-                            sysDbSyncBo.logOperation(mainDict, "UPDATE", "dict", dictId, JsonUtils.toJson(dictBo.toDto(mainDict)));
-                        } catch (Exception e) {
-                            logger.warn("生成更新词典同步日志失败", e);
-                        }
-                    }
+                    // 使用原子 SQL 进行校准并记录同步日志
+                    dictBo.syncWordCountFromActual(dictId);
                 }
             }
 
@@ -259,17 +248,8 @@ public class DictImportBo {
             if (!Constants.COMMON_DICT_ID.equals(dictId)) {
                 Dict commonDictPo = dictBo.findById(Constants.COMMON_DICT_ID);
                 if (commonDictPo != null) {
-                    try {
-                        // 针对通用词库，任务结束时进行一次全量核对并同步元数据，确保绝对一致性
-                        // 重新校准真实数量，防止增量更新过程中的并发计算偏差
-                        int realCount = dictBo.getDictWordCount(Constants.COMMON_DICT_ID).intValue();
-                        commonDictPo.setWordCount(realCount);
-                        dictBo.updateEntity(commonDictPo);
-                        
-                        sysDbSyncBo.logOperation(commonDictPo, "UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(commonDictPo)));
-                    } catch (Exception e) {
-                        logger.warn("生成通用词典汇总同步日志失败", e);
-                    }
+                    // 针对通用词库，任务结束时进行一次全量原子核对并同步元数据，确保绝对一致性
+                    dictBo.syncWordCountFromActual(Constants.COMMON_DICT_ID);
                 }
             }
 
@@ -610,32 +590,25 @@ public class DictImportBo {
                 dw0.setSeq(dictWordBo.getMaxSeqNo(commonDict) + 1);
                 dw0.setCreateTime(new Date());
                 
-                // 使用 try-catch 忽略数据库层面的触发器唯一键冲突
+                // 使用 try-catch 忽略数据库层面的唯一键冲突，确保幂等性
                 try {
                     dictWordBo.createEntity(dw0);
-                } catch (Exception ignore) {
-                }
+                    
+                    // 只有成功插入后，才记录日志和递增计数
+                    beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
+                    dwDto.setDictId(Constants.COMMON_DICT_ID);
+                    dwDto.setWordId(word.getId());
+                    dwDto.setSeq(dw0.getSeq());
+                    dwDto.setUnit(0);
+                    dwDto.setCreateTime(dw0.getCreateTime());
+                    sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
+                    stats.addSyncLog("INSERT", "dict_word");
 
-                // 必须为客户端插入一条系统同步日志，否则客户端不会拉取这条 dict_word ！
-                beidanci.api.model.DictWordDto dwDto = new beidanci.api.model.DictWordDto();
-                dwDto.setDictId(Constants.COMMON_DICT_ID);
-                dwDto.setWordId(word.getId());
-                dwDto.setSeq(dw0.getSeq());
-                dwDto.setUnit(0);
-                dwDto.setCreateTime(dw0.getCreateTime());
-                sysDbSyncBo.logOperation(dwDto, "INSERT", "dict_word", Constants.COMMON_DICT_ID + "_" + word.getId(), JsonUtils.toJson(dwDto));
-                stats.addSyncLog("INSERT", "dict_word");
-
-                // 更新 "0" 词书的 wordCount
-                Dict dict0 = dictBo.findById(Constants.COMMON_DICT_ID);
-                if (dict0 != null) {
-                    dict0.setWordCount(dict0.getWordCount() + 1);
-                    dictBo.updateEntity(dict0);
-                } else {
-                    // 回退查找，防止在未提交事务中为空
-                    dict0 = new Dict();
-                    dict0.setId(Constants.COMMON_DICT_ID);
-                    dict0.setWordCount(dictWordBo.getMaxSeqNo(commonDict)); // fallback
+                    // 原子递增 "0" 词书的 wordCount
+                    dictBo.incrementWordCount(Constants.COMMON_DICT_ID);
+                } catch (Exception e) {
+                    // 如果由于并发导致插入失败（已存在），则忽略，不需要重复记录日志和递增
+                    logger.debug("单词已存在于通用词典，跳过重复插入: " + spell);
                 }
             }
         }

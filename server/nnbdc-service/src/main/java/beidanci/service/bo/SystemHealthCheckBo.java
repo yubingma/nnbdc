@@ -1211,9 +1211,8 @@ public class SystemHealthCheckBo {
 
         // 3. 修复通用词典的数量和序号 (确保即使没有新增单词，也会修复已有的数量不匹配问题)
         try {
-            Long actualCount = dictBo.getDictWordCount(commonDictId);
             dictBo.fixDictWordSequence(commonDictId);
-            dictBo.updateDictWordCount(commonDictId, actualCount.intValue());
+            dictBo.syncWordCountFromActual(commonDictId);
             fixed.add("已同步通用词典 (ID=0) 的单词序号与数量记录。");
             totalFixed++;
         } catch (Exception e) {

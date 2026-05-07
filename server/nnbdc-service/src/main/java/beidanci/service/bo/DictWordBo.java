@@ -249,10 +249,8 @@ public class DictWordBo extends BaseBo<DictWord> {
         dictWord.setSeq(getMaxSeqNo(dict) + 1);
         createEntity(dictWord);
 
-        // 更新词书单词数
-        String sql = "UPDATE dict SET word_count = word_count + 1, update_time = NOW() WHERE id = :dictId";
-        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dict.getId());
-        namedParameterJdbcTemplate.update(sql, params);
+        // 更新词书单词数并记录同步日志
+        dictBo.syncWordCountFromActual(dict.getId());
 
         return Result.success(dictWord);
     }
@@ -288,10 +286,8 @@ public class DictWordBo extends BaseBo<DictWord> {
         params.addValue("seq", seqNo);
         namedParameterJdbcTemplate.update(sql, params);
 
-        // 更新词书单词数
-        sql = "UPDATE dict SET word_count = word_count - 1, update_time = NOW() WHERE id = :dictId";
-        params = new MapSqlParameterSource("dictId", dictId);
-        namedParameterJdbcTemplate.update(sql, params);
+        // 更新词书单词数并记录同步日志
+        dictBo.syncWordCountFromActual(dictId);
 
         // 已移除词书学习位置相关字段，此处不再需要更新
         return Result.success(null);

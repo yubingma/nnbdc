@@ -764,9 +764,8 @@ public class DictBo extends BaseBo<Dict> {
                 namedParameterJdbcTemplate.update(decreaseSeqSql, decreaseParams);
             }
 
-            // 4. 更新词典的单词数量
-            String updateCountSql = "UPDATE dict SET word_count = (SELECT COUNT(*) FROM dict_word WHERE dict_id = :dictId) WHERE id = :dictId";
-            namedParameterJdbcTemplate.update(updateCountSql, params);
+            // 4. 更新词典的单词数量并记录同步日志
+            syncWordCountFromActual(dictId);
 
                 // 6. 记录系统数据同步日志
             DictWordDto dictWordDto = new DictWordDto();
@@ -1129,7 +1128,7 @@ public class DictBo extends BaseBo<Dict> {
     }
 
     /**
-     * 更新词典单词数量
+     * 更新词典单词数量后记录同步日志失败: {}
      */
     public void updateDictWordCount(String dictId, Integer newCount) {
         String sql = "UPDATE dict SET word_count = :newCount, update_time = NOW() WHERE id = :dictId";
@@ -1139,14 +1138,42 @@ public class DictBo extends BaseBo<Dict> {
         namedParameterJdbcTemplate.update(sql, params);
 
         // 记录同步日志
+        logDictUpdate(dictId);
+    }
+
+    private void logDictUpdate(String dictId) {
         try {
             DictDto dictDto = getDictDto(dictId);
             if (dictDto != null) {
-                sysDbLogBo.logOperation(dictDto, "UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
+                if (Constants.SYS_USER_SYS_ID.equals(dictDto.getOwnerId())) {
+                    sysDbLogBo.logOperation(dictDto, "UPDATE", "dict", dictId, JsonUtils.toJson(dictDto));
+                } else {
+                    userDbSyncBo.logUserOperation(dictDto, dictDto.getOwnerId(), "dict", "UPDATE", dictId, JsonUtils.toJson(dictDto));
+                }
             }
         } catch (Exception e) {
-            log.warn("更新词典数量后记录同步日志失败: {}", e.getMessage());
+            log.warn("记录词典更新同步日志失败 [{}]: {}", dictId, e.getMessage());
         }
     }
 
+    /**
+     * 从 dict_word 表实际数量同步到 dict 表的 word_count 字段（原子操作）
+     */
+    public void syncWordCountFromActual(String dictId) {
+        String sql = "UPDATE dict SET word_count = (SELECT COUNT(*) FROM dict_word WHERE dict_id = :dictId), update_time = NOW() WHERE id = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        namedParameterJdbcTemplate.update(sql, params);
+
+        // 记录同步日志
+        logDictUpdate(dictId);
+    }
+
+    /**
+     * 原子递增词典单词数量
+     */
+    public void incrementWordCount(String dictId) {
+        String sql = "UPDATE dict SET word_count = word_count + 1, update_time = NOW() WHERE id = :dictId";
+        MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
+        namedParameterJdbcTemplate.update(sql, params);
+    }
 }
