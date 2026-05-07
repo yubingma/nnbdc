@@ -6,18 +6,18 @@
   "targetGameHallIds": [],
   "books": [
     {
-      "fileName": "上外版高中英语必修第一册_20260429_180643.txt",
-      "dictName": "上外版高中英语必修第一册",
+      "fileName": "外研版初中英语九年级下册_20260430_184525.txt",
+      "dictName": "外研版初中英语九年级下册",
       "domain": "",
-      "description": "测试用词书1",
+      "description": "测试用词书 (约129词)",
       "targetDictGroupId": "",
       "targetGameHallIds": []
     },
     {
-      "fileName": "上外版高中英语必修第二册_20260429_180113.txt",
-      "dictName": "上外版高中英语必修第二册",
+      "fileName": "牛津上海版九年级下册_20260505_153801.txt",
+      "dictName": "牛津上海版九年级下册",
       "domain": "",
-      "description": "测试用词书2",
+      "description": "测试用词书 (约167词)",
       "targetDictGroupId": "",
       "targetGameHallIds": []
     }

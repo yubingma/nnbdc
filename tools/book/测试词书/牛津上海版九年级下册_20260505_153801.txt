@@ -1,0 +1,175 @@
+0|atmosphere
+0|global
+0|global warming
+0|flood
+0|consumer
+0|various
+0|threat
+0|greenhouse
+0|the greenhouse effect
+0|writer
+0|sunlight
+0|warmth
+0|lifeless
+0|carbon dioxide
+0|fuel
+0|ozone
+0|layer
+0|ozone layer
+0|occur
+0|protective
+0|burn ... up
+0|CFC
+0|spray can
+0|destruction
+0|soil
+0|erosion
+0|flooding
+0|massive
+0|do with
+0|billion
+0|environmentally friendly
+0|coal
+0|compare
+0|compare ... to ...
+0|classical
+0|anywhere
+0|grateful
+0|recommend
+0|website
+0|tip
+0|hot tip
+0|completely
+0|mall
+0|shopping mall
+0|designer
+0|animation
+0|satisfied
+0|cabinet
+0|anyone
+0|hydrogen
+0|satellite
+0|navigation
+0|windscreen
+0|ahead
+0|ahead of
+0|feel good
+0|get a view of
+0|horrible
+0|attractive
+0|for sale
+0|serve
+0|disagree with
+0|manner
+0|native
+0|native speaker
+0|function
+0|population
+0|architecture
+0|such
+0|exhausting
+0|set out
+0|marvellous
+0|recreation
+0|ballroom dancing
+0|teenager
+0|roller skate
+0|sword
+0|while
+0|for a while
+0|couple
+0|a couple of
+0|European
+0|style
+0|nickname
+0|commercial
+0|waterfront
+0|jade
+0|trade
+0|amazed
+0|amazed at
+0|be amazed at
+0|artist
+0|pavilion
+0|zigzag
+0|pay a visit
+0|introduce
+0|request
+0|career
+0|aim
+0|industry
+0|available
+0|appreciate
+0|set
+0|movie
+0|see stars
+0|Hollywood
+0|have the time of one's life
+0|highlight
+0|studio
+0|shoot
+0|jungle
+0|humid
+0|jump out of one's skin
+0|impress
+0|awesome
+0|terrific
+0|violently
+0|at all
+0|not at all
+0|special effects
+0|extra
+0|director
+0|cut a long story short
+0|select
+0|actress
+0|envy
+0|green with envy
+0|work as
+0|a piece of cake
+0|make up
+0|dictionary
+0|speak up
+0|nervous
+0|apartment
+0|influence
+0|brilliant
+0|include
+0|fence
+0|sidewalk
+0|bucket
+0|handle
+0|depressed
+0|yard
+0|dip
+0|stand back
+0|unpainted
+0|come along
+0|make fun of
+0|just then
+0|go on doing something
+0|ignore
+0|chance
+0|properly
+0|only
+0|beg
+0|joy
+0|marble
+0|and so on
+0|gain
+0|sort
+0|trick ... into doing something
+0|fool
+0|tell the truth
+0|lecture
+0|port
+0|silver
+0|no problem
+0|come up
+
+# --- Extraction Audit Report ---
+# PDF Max Sequence Number: 168
+# Total Entries Extracted: 168
+# Duplicate Words Merged : 0
+# Final Unique Word Count: 168
+# -------------------------------
