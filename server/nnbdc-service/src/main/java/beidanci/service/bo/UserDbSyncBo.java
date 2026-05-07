@@ -270,6 +270,7 @@ public class UserDbSyncBo {
             MDC.put("clientDbVersion", String.valueOf(expectedServerDbVersion));
             MDC.put("serverDbVersion", String.valueOf(lastVersion));
 
+
             // 执行数据同步
             Date now = new Date();
             for (UserDbLogDto log : logs) {
@@ -501,7 +502,7 @@ public class UserDbSyncBo {
                 String premiumStatus = getPremiumStatusString(user);
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-                logger.info("收到用户同步请求: 昵称={}, ID={}, 学习天数={}, 已掌握={}, 会员状态={}, 数据库版本(User/Sys)={}/{}, 创建时间={}",
+                logger.info("收到用户同步请求: 昵称={}, ID={}, 学习天数={}, 已掌握={}, 会员状态={}, 数据库版本(User/Sys)={}/{}, 注册时间={}",
                         userDto.getNickName(),
                         userId.substring(0, Math.min(userId.length(), 6)),
                         userDto.getLearnedDays(),
