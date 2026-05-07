@@ -568,22 +568,20 @@ class _AdminPageState extends State<AdminPage> {
     if (confirmed != true) return;
 
     try {
-      final res = await LoadingUtils.showApiLoading(context, () async {
+      final res = await LoadingUtils.withApiLoading(operation: () async {
         return await Api.client.reGenerateSystemSyncLogs();
       });
 
+      if (!mounted) return;
+
       if (res.success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('系统同步日志重新生成成功')),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('系统同步日志重新生成成功')),
+        );
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('操作失败: ${res.msg}')),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失败: ${res.msg}')),
+        );
       }
     } catch (e) {
       if (mounted) {
