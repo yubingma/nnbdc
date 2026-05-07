@@ -20,7 +20,7 @@
             "request": "launch",
             "mainClass": "beidanci.service.NnbdcServiceApplication",
             "projectName": "nnbdc-service",
-            "vmArgs": "-Dfile.encoding=UTF-8 -Xmx2448m"
+            "vmArgs": "-Dfile.encoding=UTF-8 -Xmx3848m"
         },
         {
             "name": "App-android",
