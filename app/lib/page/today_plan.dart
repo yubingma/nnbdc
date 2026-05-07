@@ -286,14 +286,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
 
     if (dictsToDownload.isNotEmpty && mounted && !DictDownloadDialog.isShowing) {
-      await showDialog(
+      await DictDownloadDialog.show(
         context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => DictDownloadDialog(
-          dicts: dictsToDownload,
-          onComplete: () {},
-        ),
+        dicts: dictsToDownload,
+        onComplete: () {},
       );
+      // 词书下载完成后，刷新页面数据以更新学习进度显示
+      await loadData();
       prepareResult = await StudyBo().prepareForStudy(false);
     }
   }

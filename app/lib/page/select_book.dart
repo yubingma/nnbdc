@@ -943,13 +943,10 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
       if (!skipDownloadInTest && dictsToDownload.isNotEmpty && mounted && !DictDownloadDialog.isShowing) {
         // 显示下载对话框
-        await showDialog(
+        await DictDownloadDialog.show(
           context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => DictDownloadDialog(
-            dicts: dictsToDownload,
-            onComplete: () {},
-          ),
+          dicts: dictsToDownload,
+          onComplete: () {},
         );
       } else if (skipDownloadInTest) {
         Global.logger.i("跳过词书下载(测试模式)");

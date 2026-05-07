@@ -19,6 +19,27 @@ class DictDownloadDialog extends StatefulWidget {
     required this.onComplete,
   });
 
+  static Future<void> show({
+    required BuildContext context,
+    required List<DictVo> dicts,
+    required VoidCallback onComplete,
+  }) async {
+    if (_isShowing) return;
+    _isShowing = true;
+    
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => DictDownloadDialog(
+        dicts: dicts,
+        onComplete: onComplete,
+      ),
+    );
+    
+    // 确保在对话框关闭后重置状态（以防 dispose 延迟或未触发）
+    _isShowing = false;
+  }
+
   @override
   State<DictDownloadDialog> createState() => _DictDownloadDialogState();
 }
@@ -32,7 +53,6 @@ class _DictDownloadDialogState extends State<DictDownloadDialog> {
   @override
   void initState() {
     super.initState();
-    DictDownloadDialog._isShowing = true;
     _loadDictNames();
   }
 

@@ -490,16 +490,13 @@ class _MePageState extends State<MePage> {
   // 辅助方法，同步显示对话框
   Future<void> _showDictDownloadDialog(List<DictVo> dicts) async {
     if (DictDownloadDialog.isShowing) return;
-    return showDialog(
+    return DictDownloadDialog.show(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => DictDownloadDialog(
-        dicts: dicts,
-        onComplete: () {
-          // 词书下载完成后，刷新页面数据以更新学习进度显示
-          loadData();
-        },
-      ),
+      dicts: dicts,
+      onComplete: () {
+        // 词书下载完成后，刷新页面数据以更新学习进度显示
+        loadData();
+      },
     );
   }
 
