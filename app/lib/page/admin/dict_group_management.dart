@@ -155,10 +155,13 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
     final children = _allGroups.where((g) => g.parentId == group.id).toList();
     children.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
     
+    final dicts = _groupDictMap[group.id] ?? [];
+    dicts.sort((a, b) => b.createTime.compareTo(a.createTime));
+    
     return _TreeNode(
       group: group,
       children: children.map((c) => _buildNode(c)).toList(),
-      dicts: _groupDictMap[group.id] ?? [],
+      dicts: dicts,
     );
   }
 
@@ -408,7 +411,10 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
   void initState() {
     super.initState();
     _currentDicts = List.from(widget.currentDicts);
+    _currentDicts.sort((a, b) => b.createTime.compareTo(a.createTime));
     _availableDicts = widget.allDicts.where((d) => !_currentDicts.any((cd) => cd.id == d.id)).toList();
+    // 按照创建时间倒序排序
+    _availableDicts.sort((a, b) => b.createTime.compareTo(a.createTime));
   }
 
   @override
@@ -507,9 +513,11 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
             // 从当前移除
             _currentDicts.removeWhere((d) => d.id == dict.id);
             _availableDicts.add(dict);
+            _availableDicts.sort((a, b) => b.createTime.compareTo(a.createTime));
           } else {
             // 添加到当前
             _currentDicts.add(dict);
+            _currentDicts.sort((a, b) => b.createTime.compareTo(a.createTime));
             _availableDicts.removeWhere((d) => d.id == dict.id);
           }
         });
