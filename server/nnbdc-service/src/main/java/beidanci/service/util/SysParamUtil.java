@@ -96,12 +96,12 @@ public class SysParamUtil {
 
     public boolean isAiStoryEnTtsEnabled() {
         SysParam param = sysParamBO.findById("AiStoryEnTtsEnabled", false);
-        return param == null || Boolean.parseBoolean(param.getParamValue());
+        return param != null && Boolean.parseBoolean(param.getParamValue().trim());
     }
 
     public boolean isAiStoryCnTtsEnabled() {
         SysParam param = sysParamBO.findById("AiStoryCnTtsEnabled", false);
-        return param == null || Boolean.parseBoolean(param.getParamValue());
+        return param != null && Boolean.parseBoolean(param.getParamValue().trim());
     }
 
     /**
@@ -131,8 +131,8 @@ public class SysParamUtil {
         list.add(new SysParam("cdnRefreshFileUrls", "", "CDN文件刷新URL配置"));
         list.add(new SysParam("cdnRefreshDirUrls", "", "CDN目录刷新URL配置"));
         list.add(new SysParam("CowDungPerGame", "1", "每局游戏牛粪消耗"));
-        list.add(new SysParam("AiStoryEnTtsEnabled", "true", "AI短文英文朗读是否启用 (true/false)"));
-        list.add(new SysParam("AiStoryCnTtsEnabled", "true", "AI短文中文朗读是否启用 (true/false)"));
+        list.add(new SysParam("AiStoryEnTtsEnabled", "false", "AI短文英文朗读是否启用 (true/false)"));
+        list.add(new SysParam("AiStoryCnTtsEnabled", "false", "AI短文中文朗读是否启用 (true/false)"));
         return list;
     }
 

@@ -802,14 +802,18 @@ public class AiBo {
         }
 
         // 3. 生成英文配音
-        if (!enPart.isEmpty() && sysParamUtil.isAiStoryEnTtsEnabled()) {
+        boolean enEnabled = sysParamUtil.isAiStoryEnTtsEnabled();
+        logger.info("{}AI 短文英文配音启用状态: {}", formatUser(userId), enEnabled);
+        if (!enPart.isEmpty() && enEnabled) {
             byte[] enBytes = callCosyVoice(enPart, aiProperties.getVoice(), null, userId);
             Files.write(new File(dir, wordsHash + "_en.mp3").toPath(), enBytes);
             logger.info("{}AI 短文英文配音已生成: {}", formatUser(userId), wordsHash);
         }
 
         // 4. 生成中文配音
-        if (!cnPart.isEmpty() && sysParamUtil.isAiStoryCnTtsEnabled()) {
+        boolean cnEnabled = sysParamUtil.isAiStoryCnTtsEnabled();
+        logger.info("{}AI 短文中文配音启用状态: {}", formatUser(userId), cnEnabled);
+        if (!cnPart.isEmpty() && cnEnabled) {
             byte[] cnBytes = callCosyVoice(cnPart, aiProperties.getVoice(), null, userId);
             Files.write(new File(dir, wordsHash + "_cn.mp3").toPath(), cnBytes);
             logger.info("{}AI 短文中文配音已生成: {}", formatUser(userId), wordsHash);
