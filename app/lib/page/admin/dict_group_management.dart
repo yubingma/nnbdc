@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/api.dart';
-import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:drift/drift.dart' hide Column;
 import 'package:nnbdc/api/vo.dart';
-import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/global.dart';
 
 class DictGroupManagementPage extends StatefulWidget {
@@ -19,9 +16,9 @@ class DictGroupManagementPage extends StatefulWidget {
 
 class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
   bool _isLoading = true;
-  List<DictGroup> _allGroups = [];
-  List<Dict> _allDicts = [];
-  Map<String, List<Dict>> _groupDictMap = {};
+  List<DictGroupVo> _allGroups = [];
+  List<DictVo> _allDicts = [];
+  Map<String, List<DictVo>> _groupDictMap = {};
   
   // 树形结构
   List<_TreeNode> _rootNodes = [];
@@ -36,96 +33,28 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
   Future<void> _loadData({bool showLoading = true}) async {
     if (showLoading) setState(() => _isLoading = true);
     try {
-      final db = MyDatabase.instance;
+      // 直接从服务端获取最新的数据，不经过本地数据库
+      final groupsResult = await Api.client.getAllDictGroups();
+      final dictsResult = await Api.client.getAllDicts();
 
-      // 1. 先尝试从服务端获取最新的分组数据并同步到本地
-      try {
-        final groupsResult = await Api.client.getAllDictGroups();
-        if (groupsResult.success) {
-          final groups = groupsResult.data!;
-          final serverGroupIds = groups.map((g) => g.id).toList();
-
-          // 获取所有词书数据并同步
-          final dictsResult = await Api.client.getAllDicts();
-          final serverDicts = dictsResult.success ? dictsResult.data! : <DictVo>[];
-          final serverDictIds = serverDicts.map((d) => d.id).toList();
-
-          await db.batch((batch) {
-            // 1. 同步分组表
-            batch.deleteWhere(db.dictGroups, (tbl) => tbl.id.isNotIn(serverGroupIds));
-            batch.insertAllOnConflictUpdate(
-              db.dictGroups,
-              groups.map((g) => DictGroupsCompanion(
-                id: Value(g.id),
-                name: Value(g.name),
-                parentId: Value(g.parentId),
-                displayIndex: Value(g.displayIndex ?? 0),
-                createTime: g.createTime == null ? const Value.absent() : Value(g.createTime!),
-                updateTime: g.updateTime == null ? const Value.absent() : Value(g.updateTime!),
-              )).toList(),
-            );
-
-            // 2. 同步词书基本信息表 (dicts)
-            if (serverDictIds.isNotEmpty) {
-              // 注意：这里只处理系统词书的清理可能比较复杂，简单起见先更新收到的
-              batch.insertAllOnConflictUpdate(
-                db.dicts,
-                serverDicts.map((d) => DictsCompanion(
-                  id: Value(d.id),
-                  name: Value(d.name ?? ''),
-                  ownerId: Value(d.owner?.id ?? '15118'), // 默认系统用户
-                  isShared: Value(d.isShared ?? false),
-                  isReady: Value(d.isReady ?? true),
-                  visible: Value(d.visible ?? true),
-                  wordCount: Value(d.wordCount ?? 0),
-                  createTime: d.createTime == null ? const Value.absent() : Value(d.createTime!),
-                  updateTime: d.updateTime == null ? const Value.absent() : Value(d.updateTime!),
-                )).toList(),
-              );
-            }
-
-            // 3. 同步关联表 (groupAndDictLinks)
-            // 先清理所有旧关联，再根据服务器返回的结构重新建立
-            batch.deleteWhere(db.groupAndDictLinks, (tbl) => const Constant(true));
-            for (var g in groups) {
-              if (g.dicts != null) {
-                for (var d in g.dicts!) {
-                  batch.insert(
-                    db.groupAndDictLinks,
-                    GroupAndDictLinksCompanion.insert(
-                      groupId: g.id,
-                      dictId: d.id,
-                      createTime: Value(AppClock.now()),
-                      updateTime: Value(AppClock.now()),
-                    ),
-                    mode: InsertMode.insertOrReplace,
-                  );
-                }
-              }
-            }
-          });
+      if (groupsResult.success && dictsResult.success) {
+        _allGroups = groupsResult.data!;
+        _allDicts = dictsResult.data!;
+        
+        // 建立分组与词书的映射
+        _groupDictMap = {};
+        for (var group in _allGroups) {
+          if (group.dicts != null) {
+            _groupDictMap[group.id] = group.dicts!;
+          }
         }
-      } catch (e) {
-        Global.logger.e("同步分组数据失败: $e");
-        // 如果同步失败，依然可以继续加载本地数据
-      }
 
-      // 2. 从本地数据库加载
-      _allGroups = await db.select(db.dictGroups).get();
-      _allDicts = await db.select(db.dicts).get();
-      
-      final links = await db.select(db.groupAndDictLinks).get();
-      _groupDictMap = {};
-      for (var link in links) {
-        final dict = _allDicts.cast<Dict?>().firstWhere((d) => d?.id == link.dictId, orElse: () => null);
-        if (dict != null) {
-          _groupDictMap[link.groupId] ??= [];
-          _groupDictMap[link.groupId]!.add(dict);
-        }
+        _buildTree();
+      } else {
+        ToastUtil.error("获取数据失败: ${groupsResult.msg ?? dictsResult.msg}");
       }
-
-      _buildTree();
     } catch (e) {
+      Global.logger.e("同步分组数据失败: $e");
       ToastUtil.error("加载数据失败: $e");
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -134,9 +63,9 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
 
   void _buildTree() {
     _rootNodes = [];
-    final rootGroup = _allGroups.cast<DictGroup?>().firstWhere(
+    final rootGroup = _allGroups.cast<DictGroupVo?>().firstWhere(
       (g) => g?.name == 'root',
-      orElse: () => _allGroups.cast<DictGroup?>().firstWhere((g) => g?.parentId == null, orElse: () => null),
+      orElse: () => _allGroups.cast<DictGroupVo?>().firstWhere((g) => g?.parentId == null, orElse: () => null),
     );
 
     if (rootGroup == null) return;
@@ -144,19 +73,19 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
 
     // 寻找根节点的直接子节点作为顶级分类
     final topLevelGroups = _allGroups.where((g) => g.parentId == rootGroup.id).toList();
-    topLevelGroups.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
+    topLevelGroups.sort((a, b) => (a.displayIndex ?? 0).compareTo(b.displayIndex ?? 0));
 
     for (var group in topLevelGroups) {
       _rootNodes.add(_buildNode(group));
     }
   }
 
-  _TreeNode _buildNode(DictGroup group) {
+  _TreeNode _buildNode(DictGroupVo group) {
     final children = _allGroups.where((g) => g.parentId == group.id).toList();
-    children.sort((a, b) => a.displayIndex.compareTo(b.displayIndex));
+    children.sort((a, b) => (a.displayIndex ?? 0).compareTo(b.displayIndex ?? 0));
     
     final dicts = _groupDictMap[group.id] ?? [];
-    dicts.sort((a, b) => b.createTime.compareTo(a.createTime));
+    dicts.sort((a, b) => (b.createTime ?? DateTime(0)).compareTo(a.createTime ?? DateTime(0)));
     
     return _TreeNode(
       group: group,
@@ -201,6 +130,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
           node.children.isEmpty && node.dicts.isEmpty ? Icons.folder_open : Icons.folder,
           color: node.children.isEmpty && node.dicts.isEmpty ? Colors.grey : Colors.orange,
         ),
+        initiallyExpanded: depth < 1, // 默认展开第一层
         title: Text(
           "${node.group.name} (${node.dicts.length} 词书)",
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -227,8 +157,8 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
           ...node.dicts.map((dict) => ListTile(
                 contentPadding: EdgeInsets.only(left: 16.0 + ((depth + 1) * 20.0), right: 16.0),
                 leading: const Icon(Icons.book, size: 18, color: Colors.blueGrey),
-                title: Text(dict.name, style: const TextStyle(fontSize: 14)),
-                subtitle: Text("${dict.wordCount} 词", style: const TextStyle(fontSize: 12)),
+                title: Text(dict.shortName ?? dict.name ?? '未命名', style: const TextStyle(fontSize: 14)),
+                subtitle: Text("${dict.wordCount ?? 0} 词", style: const TextStyle(fontSize: 12)),
                 onTap: () {
                   // 这里以后可以添加点击词书的逻辑，比如查看详情
                 },
@@ -255,7 +185,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
     }
   }
 
-  Future<void> _showGroupEditDialog(String? parentId, {DictGroup? existingGroup}) async {
+  Future<void> _showGroupEditDialog(String? parentId, {DictGroupVo? existingGroup}) async {
     final nameController = TextEditingController(text: existingGroup?.name ?? "");
     final indexController = TextEditingController(text: existingGroup?.displayIndex.toString() ?? "0");
     bool isSaving = false;
@@ -377,17 +307,17 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
 }
 
 class _TreeNode {
-  final DictGroup group;
+  final DictGroupVo group;
   final List<_TreeNode> children;
-  final List<Dict> dicts;
+  final List<DictVo> dicts;
 
   _TreeNode({required this.group, required this.children, required this.dicts});
 }
 
 class _DictAssignmentSheet extends StatefulWidget {
-  final DictGroup group;
-  final List<Dict> currentDicts;
-  final List<Dict> allDicts;
+  final DictGroupVo group;
+  final List<DictVo> currentDicts;
+  final List<DictVo> allDicts;
   final VoidCallback onChanged;
 
   const _DictAssignmentSheet({
@@ -402,8 +332,8 @@ class _DictAssignmentSheet extends StatefulWidget {
 }
 
 class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
-  late List<Dict> _availableDicts;
-  late List<Dict> _currentDicts;
+  late List<DictVo> _availableDicts;
+  late List<DictVo> _currentDicts;
   String _searchQuery = "";
   bool _isUpdating = false;
 
@@ -411,15 +341,15 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
   void initState() {
     super.initState();
     _currentDicts = List.from(widget.currentDicts);
-    _currentDicts.sort((a, b) => b.createTime.compareTo(a.createTime));
+    _currentDicts.sort((a, b) => (b.createTime ?? DateTime(0)).compareTo(a.createTime ?? DateTime(0)));
     _availableDicts = widget.allDicts.where((d) => !_currentDicts.any((cd) => cd.id == d.id)).toList();
     // 按照创建时间倒序排序
-    _availableDicts.sort((a, b) => b.createTime.compareTo(a.createTime));
+    _availableDicts.sort((a, b) => (b.createTime ?? DateTime(0)).compareTo(a.createTime ?? DateTime(0)));
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _availableDicts.where((d) => d.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    final filtered = _availableDicts.where((d) => (d.shortName ?? d.name ?? '').toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -457,7 +387,7 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
                 Wrap(
                   spacing: 8,
                   children: _currentDicts.map((d) => Chip(
-                    label: Text(d.name),
+                    label: Text(d.shortName ?? d.name ?? '未命名'),
                     onDeleted: _isUpdating ? null : () => _updateDictGroup(d, null),
                   )).toList(),
                 ),
@@ -477,8 +407,8 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
                     final d = filtered[index];
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(d.name),
-                      subtitle: Text("${d.wordCount} 词"),
+                      title: Text(d.shortName ?? d.name ?? '未命名'),
+                      subtitle: Text("${d.wordCount ?? 0} 词"),
                       trailing: IconButton(
                         icon: const Icon(Icons.add_circle_outline, color: Colors.green),
                         onPressed: _isUpdating ? null : () => _updateDictGroup(d, widget.group.id),
@@ -494,14 +424,14 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
     );
   }
 
-  Future<void> _updateDictGroup(Dict dict, String? groupId) async {
+  Future<void> _updateDictGroup(DictVo dict, String? groupId) async {
     setState(() => _isUpdating = true);
     try {
       final result = await Api.client.updateSystemDict(
         dict.id,
-        dict.name,
-        dict.isReady,
-        dict.visible,
+        dict.name ?? '',
+        dict.isReady ?? true,
+        dict.visible ?? true,
         dict.popularityLimit,
         groupId,
         null, // gameHallIds
@@ -513,11 +443,11 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
             // 从当前移除
             _currentDicts.removeWhere((d) => d.id == dict.id);
             _availableDicts.add(dict);
-            _availableDicts.sort((a, b) => b.createTime.compareTo(a.createTime));
+            _availableDicts.sort((a, b) => (b.createTime ?? DateTime(0)).compareTo(a.createTime ?? DateTime(0)));
           } else {
             // 添加到当前
             _currentDicts.add(dict);
-            _currentDicts.sort((a, b) => b.createTime.compareTo(a.createTime));
+            _currentDicts.sort((a, b) => (b.createTime ?? DateTime(0)).compareTo(a.createTime ?? DateTime(0)));
             _availableDicts.removeWhere((d) => d.id == dict.id);
           }
         });

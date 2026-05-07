@@ -141,6 +141,7 @@ class DictVo extends Equatable {
 
   String? coverUrl;
 
+  int? popularityLimit;
   DateTime? createTime;
   DateTime? updateTime;
 
@@ -162,6 +163,7 @@ class DictVo extends Equatable {
     this.baseDictId,
     this.coverUrl,
     this.description,
+    this.popularityLimit,
     this.createTime,
     this.updateTime,
   });

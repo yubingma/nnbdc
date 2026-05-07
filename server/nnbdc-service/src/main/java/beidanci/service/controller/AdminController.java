@@ -30,6 +30,8 @@ import beidanci.service.po.User;
 import beidanci.service.util.CdnUtil;
 import beidanci.service.util.SysParamUtil;
 import beidanci.service.po.DictGroup;
+import org.apache.commons.lang3.tuple.Pair;
+import beidanci.util.Constants;
 
 @RestController
 public class AdminController {
@@ -181,8 +183,10 @@ public class AdminController {
 
     @GetMapping("/admin/getAllDicts.do")
     public Result<List<DictVo>> getAllDicts() {
-        List<beidanci.service.po.Dict> dicts = dictBo.queryAll(null, "name", "asc", false);
-        return Result.success(PoVoUtils.makeVos(dicts, DictVo.class, null));
+        // 只返回系统词书或已分享的词书，过滤掉普通用户的私有词书（如生词本、已掌握等）
+        String sql = "SELECT * FROM dict WHERE owner_id = :sysUserId OR is_shared = true ORDER BY name ASC";
+        PagedResults<beidanci.service.po.Dict> pagedResults = dictBo.pagedQuery(sql, 1, Integer.MAX_VALUE, Pair.of("sysUserId", Constants.SYS_USER_SYS_ID));
+        return Result.success(PoVoUtils.makeVos(pagedResults.getRows(), DictVo.class, null));
     }
 
     // ============================================
