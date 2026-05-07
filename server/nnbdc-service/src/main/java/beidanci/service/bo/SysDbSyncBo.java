@@ -149,6 +149,71 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     }
 
     /**
+     * 批量记录系统数据操作日志
+     * 
+     * @param logs 待记录的日志DTO列表
+     */
+    public void logOperations(List<SysDbLogDto> logs) {
+        if (logs == null || logs.isEmpty()) {
+            return;
+        }
+
+        // 在同一事务中完成：1）记录日志 2）递增版本号
+        int currentVersion = getSysDbVersion();
+        Date now = new Date();
+        
+        for (SysDbLogDto dto : logs) {
+            currentVersion++;
+            
+            SysDbLog sysDbLog = new SysDbLog();
+            sysDbLog.setId(Util.uuid());
+            sysDbLog.setVersion(currentVersion);
+            sysDbLog.setOperate(dto.getOperate());
+            sysDbLog.setTable(dto.getTblName());
+            sysDbLog.setRecordId(dto.getRecordId());
+            sysDbLog.setRecord(JsonUtils.enrichRecordJson(dto.getRecord()));
+            sysDbLog.setCreateTime(now);
+            sysDbLog.setUpdateTime(now);
+
+            log.info("Recording Bulk SysDbLog: tbl={}, recordId={}, version={}, operate={}", 
+                dto.getTblName(), dto.getRecordId(), currentVersion, dto.getOperate());
+            createEntity(sysDbLog);
+        }
+
+        // 递增版本号到最新
+        incrementSysDbVersion(currentVersion);
+        log.info("SysDbVersion incremented to: {} after bulk logging {} items", currentVersion, logs.size());
+    }
+
+    /**
+     * 重新生成所有系统词书和分组的同步日志
+     * 用于修复旧版本客户端因Bug导致的同步缺失问题
+     */
+    public void reGenerateSystemDataLogs() {
+        log.info("Starting re-generation of all system data sync logs...");
+        
+        List<SysDbLogDto> allLogs = new ArrayList<>();
+        
+        // 1. DictGroups
+        allLogs.addAll(generateDictGroupLogs(0));
+        log.info("Generated {} dict group logs", allLogs.size());
+
+        // 2. GroupAndDictLinks
+        int prevSize = allLogs.size();
+        allLogs.addAll(generateGroupAndDictLinkLogs(0));
+        log.info("Generated {} group-dict link logs", allLogs.size() - prevSize);
+
+        // 3. Dicts（只包含系统词典）
+        prevSize = allLogs.size();
+        allLogs.addAll(generateDictLogs(0));
+        log.info("Generated {} system dict logs", allLogs.size() - prevSize);
+
+        // 批量持久化
+        logOperations(allLogs);
+        log.info("Finished re-generation of system data sync logs. Total {} logs created.", allLogs.size());
+    }
+
+    /**
      * 获取增量日志（支持全量生成）
      * 
      * 判断逻辑（按优先级）：
@@ -303,7 +368,7 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
 
     private List<SysDbLogDto> generateDictLogs(int version) {
         // 只生成系统词典的日志
-        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time, editable, deletable FROM dict WHERE owner_id='15118'";
+        String sql = "SELECT id, name, owner_id, is_shared, is_ready, visible, word_count, popularity_limit, create_time, update_time, editable, deletable FROM dict WHERE owner_id='" + beidanci.util.Constants.SYS_USER_SYS_ID + "'";
         List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
                 rs.getString("id"),
                 rs.getString("name"),

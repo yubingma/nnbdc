@@ -74,6 +74,9 @@ public class AdminController {
     @Autowired
     private SysParamUtil sysParamUtil;
 
+    @Autowired
+    private SysDbSyncBo sysDbSyncBo;
+
     // ============================================
     // 系统词典管理相关API (管理员接口)
     // ============================================
@@ -423,6 +426,12 @@ public class AdminController {
     public Result<String> deleteSysParam(@RequestParam("paramName") String paramName) {
         sysParamBo.deleteById(paramName);
         return Result.success("参数删除成功");
+    }
+
+    @PostMapping("/admin/reGenerateSystemSyncLogs.do")
+    public Result<String> reGenerateSystemSyncLogs() {
+        sysDbSyncBo.reGenerateSystemDataLogs();
+        return Result.success("系统同步日志重新生成成功");
     }
 
     // ============================================

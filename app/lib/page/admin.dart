@@ -154,6 +154,12 @@ class _AdminPageState extends State<AdminPage> {
         color: Colors.orange,
         onTap: () => _navigateToPdfConvert(),
       ),
+      _buildManagementCard(
+        title: '同步日志生成',
+        icon: Icons.sync,
+        color: Colors.blueAccent,
+        onTap: () => _reGenerateSystemSyncLogs(),
+      ),
     ];
   }
 
@@ -538,6 +544,54 @@ class _AdminPageState extends State<AdminPage> {
         builder: (context) => const PdfConvertPage(),
       ),
     );
+  }
+
+  Future<void> _reGenerateSystemSyncLogs() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('生成同步日志'),
+        content: const Text('确定要重新生成所有系统词书和词书分组的同步日志吗？这将使所有新版本客户端拉取到最新的词书和分组元数据。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final res = await LoadingUtils.showApiLoading(context, () async {
+        return await Api.client.reGenerateSystemSyncLogs();
+      });
+
+      if (res.success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('系统同步日志重新生成成功')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('操作失败: ${res.msg}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('发生错误: $e')),
+        );
+      }
+    }
   }
 
   void _showComingSoon(String feature) {

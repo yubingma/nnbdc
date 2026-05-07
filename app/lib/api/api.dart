@@ -894,4 +894,7 @@ abstract class RestClient {
   @POST("/admin/pdf/extractWords.do")
   @MultiPart()
   Future<Result<String>> extractWordsFromPdf(@Part(name: "file") File file);
+
+  @POST("/admin/reGenerateSystemSyncLogs.do")
+  Future<Result<String>> reGenerateSystemSyncLogs();
 }
