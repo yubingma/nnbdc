@@ -130,7 +130,7 @@ class _DictGroupManagementPageState extends State<DictGroupManagementPage> {
           node.children.isEmpty && node.dicts.isEmpty ? Icons.folder_open : Icons.folder,
           color: node.children.isEmpty && node.dicts.isEmpty ? Colors.grey : Colors.orange,
         ),
-        initiallyExpanded: depth < 1, // 默认展开第一层
+        initiallyExpanded: false, // 默认折叠
         title: Text(
           "${node.group.name} (${node.dicts.length} 词书)",
           style: const TextStyle(fontWeight: FontWeight.bold),
