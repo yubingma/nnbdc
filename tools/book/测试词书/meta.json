@@ -1,0 +1,25 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "",
+  "targetGameHallIds": [],
+  "books": [
+    {
+      "fileName": "上外版高中英语必修第一册_20260429_180643.txt",
+      "dictName": "上外版高中英语必修第一册",
+      "domain": "",
+      "description": "测试用词书1",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "上外版高中英语必修第二册_20260429_180113.txt",
+      "dictName": "上外版高中英语必修第二册",
+      "domain": "",
+      "description": "测试用词书2",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    }
+  ]
+}
