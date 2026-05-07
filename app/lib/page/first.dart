@@ -95,6 +95,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   Future<void> _initVersion() async {
     final pi = await PackageInfo.fromPlatform();
     Global.version = pi.version;
+    Global.buildNumber = pi.buildNumber;
     if (mounted) {
       setState(() {
         _buildNumber = pi.buildNumber;

@@ -17,6 +17,7 @@ import 'api/vo.dart';
 class Global {
   static String get appName => PlatformUtils.isAndroid ? '牛牛背单词' : '泡泡单词';
   static String version = 'NONE';
+  static String buildNumber = 'NONE';
   static const Color highlight = Colors.teal;
 
   /// 启动/初始化阶段错误（用于在启动页展示，而不是toast）
