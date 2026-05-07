@@ -65,8 +65,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 首页初始化数据由 didChangeDependencies 触发，此处不再重复调用 loadData()，避免并发加载冲突
 
     // 订阅今日计划变更事件
-    _planSubscription = EventBus.onTodayPlanChanged().listen((event) {
-      Global.logger.d('TodayPlanPage received TodayPlanChangedEvent, refreshing data...');
+    _planSubscription = EventBus.onTodayStudyPlanFinished().listen((event) {
+      Global.logger.d('TodayPlanPage received TodayStudyPlanFinishedEvent, refreshing data...');
       if (mounted && !_isLoadingData) {
         loadData();
       }
@@ -772,7 +772,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             Icon(Icons.stars_rounded, color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669), size: 24),
             const SizedBox(width: 12),
             Text(
-              '今日任务已圆满达成',
+              '今日任务圆满达成',
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
                 fontSize: 16,

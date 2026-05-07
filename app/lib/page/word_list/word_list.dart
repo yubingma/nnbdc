@@ -1962,7 +1962,7 @@ class WordListPageState extends State<WordListPage>
         
         if (value) {
           // 发布事件，通知今日计划页面刷新
-          EventBus.publishTodayPlanChanged(TodayPlanChangedEvent(wordId: word.word.id.toString()));
+          EventBus.publishTodayStudyPlanFinished(TodayStudyPlanFinishedEvent(wordId: word.word.id.toString()));
           
           // 判断是否应该从UI上移除单词
         // 如果是今日学习相关的列表（包括分批次学习的阶段列表），并且今日学习已经正式开始，则不从UI移除记录，只更新状态
@@ -2032,7 +2032,7 @@ class WordListPageState extends State<WordListPage>
 
         if (value) {
           // 发布事件，通知今日计划页面刷新
-          EventBus.publishTodayPlanChanged(TodayPlanChangedEvent(wordId: word.word.id.toString()));
+          EventBus.publishTodayStudyPlanFinished(TodayStudyPlanFinishedEvent(wordId: word.word.id.toString()));
 
           final String providerType = args.wordsProvider.runtimeType.toString();
           final bool isTodayTask = providerType == 'StageWordsProvider' ||
@@ -2104,7 +2104,7 @@ class WordListPageState extends State<WordListPage>
         Global.logger.d('[Perf] onUnmasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
         if (value) {
           // 发布事件，通知今日计划页面刷新
-          EventBus.publishTodayPlanChanged(TodayPlanChangedEvent(wordId: word.word.id.toString()));
+          EventBus.publishTodayStudyPlanFinished(TodayStudyPlanFinishedEvent(wordId: word.word.id.toString()));
 
           if (initialStatus == true && !args.wordsProvider.keepWordsOnMaster) {
             setState(() {

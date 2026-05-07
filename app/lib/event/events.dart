@@ -5,7 +5,8 @@ class EventBus {
   EventBus._(); 
 
   static final _wrongWordController = StreamController<NewWrongWordEvent>.broadcast();
-  static final _todayPlanController = StreamController<TodayPlanChangedEvent>.broadcast();
+  static final _studyFinishedController = StreamController<TodayStudyPlanFinishedEvent>.broadcast();
+  static final _studyProgressController = StreamController<TodayStudyProgressChangedEvent>.broadcast();
 
   /// 产生的具体业务事件：发射与监听（新错词产生）
   static void publishNewWrongWord(NewWrongWordEvent event) {
@@ -16,13 +17,22 @@ class EventBus {
     return _wrongWordController.stream;
   }
 
-  /// 产生的具体业务事件：发射与监听（今日计划变更）
-  static void publishTodayPlanChanged(TodayPlanChangedEvent event) {
-    _todayPlanController.add(event);
+  /// 产生的具体业务事件：发射与监听（今日学习计划已完成）
+  static void publishTodayStudyPlanFinished(TodayStudyPlanFinishedEvent event) {
+    _studyFinishedController.add(event);
   }
 
-  static Stream<TodayPlanChangedEvent> onTodayPlanChanged() {
-    return _todayPlanController.stream;
+  static Stream<TodayStudyPlanFinishedEvent> onTodayStudyPlanFinished() {
+    return _studyFinishedController.stream;
+  }
+
+  /// 产生的具体业务事件：发射与监听（今日学习进度变更）
+  static void publishTodayStudyProgressChanged(TodayStudyProgressChangedEvent event) {
+    _studyProgressController.add(event);
+  }
+
+  static Stream<TodayStudyProgressChangedEvent> onTodayStudyProgressChanged() {
+    return _studyProgressController.stream;
   }
 }
 
@@ -32,10 +42,16 @@ class NewWrongWordEvent {
   NewWrongWordEvent({this.wordId});
 }
 
-/// 今日学习计划发生变更（如单词被标记为熟知、掌握等）
-class TodayPlanChangedEvent {
+/// 今日学习计划已完成
+class TodayStudyPlanFinishedEvent {
   final String? wordId;
-  TodayPlanChangedEvent({this.wordId});
+  TodayStudyPlanFinishedEvent({this.wordId});
+}
+
+/// 今日学习进度变更（例如单词被标记为掌握/删除等）
+class TodayStudyProgressChangedEvent {
+  final String? wordId;
+  TodayStudyProgressChangedEvent({this.wordId});
 }
 
 /// 受管理的刷新契约接口

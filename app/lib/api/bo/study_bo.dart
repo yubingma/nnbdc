@@ -433,6 +433,9 @@ class StudyBo {
       ThrottledDbSyncService().requestSync();
       Global.logger.d('打卡记录已保存到本地并触发同步');
 
+      // 发送事件，通知首页打卡状态已变
+      EventBus.publishTodayStudyPlanFinished(TodayStudyPlanFinishedEvent());
+
       return Result("SUCCESS", "保存成功", true)..data = 1;
     } catch (e, stackTrace) {
       Global.logger.e('保存打卡记录失败: $e', stackTrace: stackTrace);

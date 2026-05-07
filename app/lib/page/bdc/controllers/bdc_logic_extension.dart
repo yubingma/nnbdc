@@ -874,8 +874,7 @@ extension BdcPageStateLogic on BdcPageState {
       }
 
       if (getWordResult.finished) {
-        Navigator.pop(context);
-        Get.toNamed("/finish");
+        Get.offNamed("/finish");
         return;
       } else if (getWordResult.noWord) {
         Global.logger.d('getWordResult.noWord为true,跳转到选择词书页面');
