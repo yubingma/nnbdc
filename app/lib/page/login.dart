@@ -580,7 +580,7 @@ class LoginPageState extends State<LoginPage>
               await Global.setLoggedInUser(userVo);
 
               // 记录登录操作日志
-              await MyDatabase.instance.userOpersDao.recordLogin(userVo.id, remark: "微信登录");
+              await MyDatabase.instance.userOpersDao.recordLogin(userVo.id!, remark: "微信登录");
 
               // 微信登录成功后立即触发同步
               ThrottledDbSyncService().requestSync(immediate: true);
@@ -654,7 +654,7 @@ class LoginPageState extends State<LoginPage>
         await Global.setLoggedInUser(userVo);
 
         // 记录登录操作日志
-        await MyDatabase.instance.userOpersDao.recordLogin(userVo.id, remark: "Apple登录");
+        await MyDatabase.instance.userOpersDao.recordLogin(userVo.id!, remark: "Apple登录");
 
         ThrottledDbSyncService().requestSync(immediate: true);
 

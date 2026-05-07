@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/admin.dart';
 import 'package:nnbdc/page/ai_activation.dart';
