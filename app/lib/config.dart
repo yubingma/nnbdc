@@ -62,5 +62,5 @@ class Config {
   static const String umengChannel = 'AppStore';
 
   // Configuration for ThrottledDbSyncService
-  static const Duration dbSyncThrottleInterval = Duration(seconds: 300);
+  static const Duration dbSyncThrottleInterval = Duration(seconds: 600);
 }
