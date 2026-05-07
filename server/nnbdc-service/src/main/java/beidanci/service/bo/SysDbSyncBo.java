@@ -112,14 +112,13 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
      * @return 当前版本号，若不存在则返回0
      */
     public int getSysDbVersion() {
-        String sql = "SELECT * FROM sys_db_version WHERE id = 'singleton'";
-        List<SysDbVersion> versions = namedParameterJdbcTemplate.query(sql,
-                new EntityRowMapper<>(SysDbVersion.class));
+        String sql = "SELECT version FROM sys_db_version WHERE id = 'singleton' FOR UPDATE";
+        List<Integer> versions = namedParameterJdbcTemplate.query(sql,
+                (rs, rowNum) -> rs.getInt("version"));
         if (versions.isEmpty()) {
             return 0;
         }
-        Integer version = versions.get(0).getVersion();
-        return version != null ? version : 0;
+        return versions.get(0);
     }
 
     /**

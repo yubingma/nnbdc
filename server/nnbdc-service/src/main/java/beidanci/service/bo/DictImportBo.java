@@ -17,6 +17,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
 import beidanci.api.model.MeaningItemDto;
 import beidanci.api.model.WordDto;
 import beidanci.service.po.Dict;
@@ -89,6 +90,10 @@ public class DictImportBo {
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private DictImportBo self;
 
 
     public static final java.util.concurrent.ThreadPoolExecutor importThreadPool = 
@@ -255,6 +260,12 @@ public class DictImportBo {
                 Dict commonDictPo = dictBo.findById(Constants.COMMON_DICT_ID);
                 if (commonDictPo != null) {
                     try {
+                        // 针对通用词库，任务结束时进行一次全量核对并同步元数据，确保绝对一致性
+                        // 重新校准真实数量，防止增量更新过程中的并发计算偏差
+                        int realCount = dictBo.getDictWordCount(Constants.COMMON_DICT_ID).intValue();
+                        commonDictPo.setWordCount(realCount);
+                        dictBo.updateEntity(commonDictPo);
+                        
                         sysDbSyncBo.logOperation(commonDictPo, "UPDATE", "dict", Constants.COMMON_DICT_ID, JsonUtils.toJson(dictBo.toDto(commonDictPo)));
                     } catch (Exception e) {
                         logger.warn("生成通用词典汇总同步日志失败", e);
@@ -452,7 +463,7 @@ public class DictImportBo {
                 if (manualMeaning != null && manualMeaning.isEmpty()) manualMeaning = null;
             }
             try {
-                processSingleWord(task.getId(), spell, manualMeaning, unit, true, systemUser, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                self.processSingleWord(task.getId(), spell, manualMeaning, unit, true, systemUser, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
 
             } catch (Exception e) {
@@ -476,7 +487,7 @@ public class DictImportBo {
 
             String spell = words.get(i).trim();
             try {
-                processSingleWord(task.getId(), spell, null, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                self.processSingleWord(task.getId(), spell, null, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
 
             } catch (Exception e) {
@@ -502,7 +513,7 @@ public class DictImportBo {
             String spell = item.get("word").trim();
             String manualMeaning = item.get("meaning");
             try {
-                processSingleWord(task.getId(), spell, manualMeaning, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
+                self.processSingleWord(task.getId(), spell, manualMeaning, 0, false, owner, dictId, dictName, domain, generateWordImage, preferredVoices, sentenceRequirement, voiceRequirement, meaningRequirement, stats);
                 importTaskBo.updateProgress(task.getId(), i + 1, "Processed: " + spell);
 
             } catch (Exception e) {
@@ -516,7 +527,8 @@ public class DictImportBo {
     }
 
 
-    private void processSingleWord(String taskId, String spell, String manualMeaning, Integer unit, boolean isSystemDict, User user, String dictId, String dictName, String domain,
+    @Transactional(rollbackFor = Throwable.class)
+    public void processSingleWord(String taskId, String spell, String manualMeaning, Integer unit, boolean isSystemDict, User user, String dictId, String dictName, String domain,
                                    boolean generateWordImage, String preferredVoices, String sentenceRequirement, String voiceRequirement, String meaningRequirement, TaskStatistics stats) throws Exception {
         
 

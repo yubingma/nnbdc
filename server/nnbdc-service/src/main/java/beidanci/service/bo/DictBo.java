@@ -845,12 +845,13 @@ public class DictBo extends BaseBo<Dict> {
         // 强校验：核心字段必须存在，否则会导致同步后的客户端崩溃
         Assert.notNull(dict.getId(), "Dict ID must not be null");
         Assert.notNull(dict.getName(), "Dict Name must not be null");
-        Assert.notNull(dict.getOwner(), "Dict Owner must not be null");
+        
+        String ownerId = dict.getOwner() != null ? dict.getOwner().getId() : beidanci.util.Constants.SYS_USER_SYS_ID;
 
         return new DictDto(
                 dict.getId(),
                 dict.getName(),
-                dict.getOwner().getId(),
+                ownerId,
                 dict.getIsShared(),
                 dict.getIsReady(),
                 dict.getVisible(),
