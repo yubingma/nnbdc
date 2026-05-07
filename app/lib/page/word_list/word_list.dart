@@ -1961,8 +1961,8 @@ class WordListPageState extends State<WordListPage>
         Global.logger.d('[Perf] onDelBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
         
         if (value) {
-          // 发布事件，通知今日计划页面刷新
-          EventBus.publishTodayStudyPlanFinished(TodayStudyPlanFinishedEvent(wordId: word.word.id.toString()));
+          // 发布事实：从词表中删除了单词
+          EventBus.publishWordDeletedFromWordList(WordDeletedFromWordListEvent(wordId: word.word.id.toString()));
           
           // 判断是否应该从UI上移除单词
         // 如果是今日学习相关的列表（包括分批次学习的阶段列表），并且今日学习已经正式开始，则不从UI移除记录，只更新状态
@@ -2031,8 +2031,8 @@ class WordListPageState extends State<WordListPage>
         Global.logger.d('[Perf] onMasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
 
         if (value) {
-          // 发布事件，通知今日计划页面刷新
-          EventBus.publishTodayStudyPlanFinished(TodayStudyPlanFinishedEvent(wordId: word.word.id.toString()));
+          // 发布事实：标记了单词为掌握
+          EventBus.publishWordMastered(WordMasteredEvent(wordId: word.word.id.toString()));
 
           final String providerType = args.wordsProvider.runtimeType.toString();
           final bool isTodayTask = providerType == 'StageWordsProvider' ||
@@ -2103,8 +2103,8 @@ class WordListPageState extends State<WordListPage>
         final apiEnd = DateTime.now().millisecondsSinceEpoch;
         Global.logger.d('[Perf] onUnmasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
         if (value) {
-          // 发布事件，通知今日计划页面刷新
-          EventBus.publishTodayStudyPlanFinished(TodayStudyPlanFinishedEvent(wordId: word.word.id.toString()));
+          // 发布事实：取消了单词的掌握状态
+          EventBus.publishWordUnMastered(WordUnMasteredEvent(wordId: word.word.id.toString()));
 
           if (initialStatus == true && !args.wordsProvider.keepWordsOnMaster) {
             setState(() {

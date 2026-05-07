@@ -6,7 +6,9 @@ class EventBus {
 
   static final _wrongWordController = StreamController<NewWrongWordEvent>.broadcast();
   static final _studyFinishedController = StreamController<TodayStudyPlanFinishedEvent>.broadcast();
-  static final _studyProgressController = StreamController<TodayStudyProgressChangedEvent>.broadcast();
+  static final _wordDeletedController = StreamController<WordDeletedFromWordListEvent>.broadcast();
+  static final _wordMasteredController = StreamController<WordMasteredEvent>.broadcast();
+  static final _wordUnMasteredController = StreamController<WordUnMasteredEvent>.broadcast();
 
   /// 产生的具体业务事件：发射与监听（新错词产生）
   static void publishNewWrongWord(NewWrongWordEvent event) {
@@ -26,13 +28,31 @@ class EventBus {
     return _studyFinishedController.stream;
   }
 
-  /// 产生的具体业务事件：发射与监听（今日学习进度变更）
-  static void publishTodayStudyProgressChanged(TodayStudyProgressChangedEvent event) {
-    _studyProgressController.add(event);
+  /// 产生的具体业务事件：发射与监听（从词表中删除了单词）
+  static void publishWordDeletedFromWordList(WordDeletedFromWordListEvent event) {
+    _wordDeletedController.add(event);
   }
 
-  static Stream<TodayStudyProgressChangedEvent> onTodayStudyProgressChanged() {
-    return _studyProgressController.stream;
+  static Stream<WordDeletedFromWordListEvent> onWordDeletedFromWordList() {
+    return _wordDeletedController.stream;
+  }
+
+  /// 产生的具体业务事件：发射与监听（标记了单词为掌握）
+  static void publishWordMastered(WordMasteredEvent event) {
+    _wordMasteredController.add(event);
+  }
+
+  static Stream<WordMasteredEvent> onWordMastered() {
+    return _wordMasteredController.stream;
+  }
+
+  /// 产生的具体业务事件：发射与监听（取消了单词的掌握状态）
+  static void publishWordUnMastered(WordUnMasteredEvent event) {
+    _wordUnMasteredController.add(event);
+  }
+
+  static Stream<WordUnMasteredEvent> onWordUnMastered() {
+    return _wordUnMasteredController.stream;
   }
 }
 
@@ -48,10 +68,22 @@ class TodayStudyPlanFinishedEvent {
   TodayStudyPlanFinishedEvent({this.wordId});
 }
 
-/// 今日学习进度变更（例如单词被标记为掌握/删除等）
-class TodayStudyProgressChangedEvent {
+/// 从词表中删除了单词
+class WordDeletedFromWordListEvent {
   final String? wordId;
-  TodayStudyProgressChangedEvent({this.wordId});
+  WordDeletedFromWordListEvent({this.wordId});
+}
+
+/// 标记了单词为掌握
+class WordMasteredEvent {
+  final String? wordId;
+  WordMasteredEvent({this.wordId});
+}
+
+/// 取消了单词的掌握状态
+class WordUnMasteredEvent {
+  final String? wordId;
+  WordUnMasteredEvent({this.wordId});
 }
 
 /// 受管理的刷新契约接口

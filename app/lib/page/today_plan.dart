@@ -54,7 +54,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _completedStepCount = 0;
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
-  StreamSubscription? _planSubscription;
 
   @override
   void initState() {
@@ -64,19 +63,48 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     WidgetsBinding.instance.addObserver(this);
     // 首页初始化数据由 didChangeDependencies 触发，此处不再重复调用 loadData()，避免并发加载冲突
 
-    // 订阅今日计划变更事件
-    _planSubscription = EventBus.onTodayStudyPlanFinished().listen((event) {
+    // 订阅今日相关的业务事实
+    _dakaSubscription = EventBus.onTodayStudyPlanFinished().listen((event) {
       Global.logger.d('TodayPlanPage received TodayStudyPlanFinishedEvent, refreshing data...');
+      if (mounted && !_isLoadingData) {
+        loadData();
+      }
+    });
+
+    _wordDeletedSubscription = EventBus.onWordDeletedFromWordList().listen((event) {
+      Global.logger.d('TodayPlanPage received WordDeletedFromWordListEvent, refreshing data...');
+      if (mounted && !_isLoadingData) {
+        loadData();
+      }
+    });
+
+    _wordMasteredSubscription = EventBus.onWordMastered().listen((event) {
+      Global.logger.d('TodayPlanPage received WordMasteredEvent, refreshing data...');
+      if (mounted && !_isLoadingData) {
+        loadData();
+      }
+    });
+
+    _wordUnMasteredSubscription = EventBus.onWordUnMastered().listen((event) {
+      Global.logger.d('TodayPlanPage received WordUnMasteredEvent, refreshing data...');
       if (mounted && !_isLoadingData) {
         loadData();
       }
     });
   }
 
+  StreamSubscription? _dakaSubscription;
+  StreamSubscription? _wordDeletedSubscription;
+  StreamSubscription? _wordMasteredSubscription;
+  StreamSubscription? _wordUnMasteredSubscription;
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _planSubscription?.cancel();
+    _dakaSubscription?.cancel();
+    _wordDeletedSubscription?.cancel();
+    _wordMasteredSubscription?.cancel();
+    _wordUnMasteredSubscription?.cancel();
     super.dispose();
   }
 
