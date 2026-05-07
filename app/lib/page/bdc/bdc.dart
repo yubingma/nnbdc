@@ -329,11 +329,9 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
     }
 
     // 选择题tab
-    children.add(Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        _buildChoiceList(),
-      ],
+    children.add(SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: _buildChoiceList(),
     ));
 
     return children;

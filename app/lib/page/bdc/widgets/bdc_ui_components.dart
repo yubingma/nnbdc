@@ -291,20 +291,23 @@ extension BdcPageStateUIComponents on BdcPageState {
                 kTextTabBarHeight + 6.0,
                 MediaQuery.of(context).viewPadding.bottom +
                     kTextTabBarHeight)), // 预留底部TabBar空间，避免遮挡
-        child: Column(
-          children: [
-            // 英→中模式整合卡片
-            if (_studyStep == StudyStep.en2Ch.json &&
-                _currentGetWordResult?.learningWord?.word != null)
-              _buildWordStepCard(),
-            // 中→英模式整合卡片
-            if (_studyStep == StudyStep.ch2En.json &&
-                _currentGetWordResult?.learningWord?.word != null)
-              _buildMeaningStepCard(),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              // 英→中模式整合卡片
+              if (_studyStep == StudyStep.en2Ch.json &&
+                  _currentGetWordResult?.learningWord?.word != null)
+                _buildWordStepCard(),
+              // 中→英模式整合卡片
+              if (_studyStep == StudyStep.ch2En.json &&
+                  _currentGetWordResult?.learningWord?.word != null)
+                _buildMeaningStepCard(),
 
-            _buildPhoneticRow(),
-            _buildFirstSentenceRow(),
-          ],
+              _buildPhoneticRow(),
+              _buildFirstSentenceRow(),
+            ],
+          ),
         ),
       ),
     );
@@ -625,7 +628,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                             : Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  _buildChoiceList(),
+                                  Flexible(
+                                    child: SingleChildScrollView(
+                                      physics: const BouncingScrollPhysics(),
+                                      child: _buildChoiceList(),
+                                    ),
+                                  ),
                                   Expanded(child: _buildSpeakPanel()),
                                 ],
                               ),
