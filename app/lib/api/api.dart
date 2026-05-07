@@ -10,6 +10,7 @@ import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/config.dart';
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/loading_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -77,9 +78,20 @@ class Api {
     }
 
     dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
+      onRequest: (options, handler) async {
         // 注入平台信息、用户ID和昵称，供后端日志 MDC 精确显示 (避免后端查表，提高性能)
         options.headers['X-Client-Platform'] = PlatformUtils.platformLabel;
+        
+        // 注入前端当前的系统数据库版本号
+        try {
+          final sysVersionData = await MyDatabase.instance.sysDbVersionDao.getVersion();
+          if (sysVersionData != null) {
+            options.headers['X-Sys-Db-Version'] = sysVersionData.version.toString();
+          }
+        } catch (e) {
+          // 数据库未初始化或其他异常，忽略
+        }
+
         final user = Global.getLoggedInUser();
         if (user != null) {
           options.headers['X-User-Id'] = user.id;

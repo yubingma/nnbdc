@@ -266,6 +266,10 @@ public class UserDbSyncBo {
             // 使用已经加锁查询的版本号，避免重复查询数据库
             final int lastVersion = validationResult.getVersion();
 
+            // 将版本信息存入 MDC，方便后续日志输出
+            MDC.put("clientDbVersion", String.valueOf(expectedServerDbVersion));
+            MDC.put("serverDbVersion", String.valueOf(lastVersion));
+
             // 执行数据同步
             Date now = new Date();
             for (UserDbLogDto log : logs) {
@@ -323,6 +327,9 @@ public class UserDbSyncBo {
             if (e instanceof RawWordDataErrorException rawWordDataErrorException)
                 throw rawWordDataErrorException;
             throw new RuntimeException(e.getMessage(), e);
+        } finally {
+            MDC.remove("clientDbVersion");
+            MDC.remove("serverDbVersion");
         }
     }
 
@@ -489,17 +496,20 @@ public class UserDbSyncBo {
             UserDto userDto = JsonUtils.makeObject(recordJson, UserDto.class);
             User user = userBo.findById(userId);
             if (user != null) {
-                String platform = MDC.get("platform");
+                String clientDbVer = MDC.get("clientDbVersion");
+                String clientSysDbVer = MDC.get("clientSysDbVersion");
                 String premiumStatus = getPremiumStatusString(user);
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                logger.info("收到用户同步请求: 昵称={}, ID={}, 学习天数={}, 已掌握={}, 客户端={}, 创建时间={}, 会员状态={}",
+
+                logger.info("收到用户同步请求: 昵称={}, ID={}, 学习天数={}, 已掌握={}, 会员状态={}, 数据库版本(User/Sys)={}/{}, 创建时间={}",
                         userDto.getNickName(),
                         userId.substring(0, Math.min(userId.length(), 6)),
                         userDto.getLearnedDays(),
                         userDto.getMasteredWordsCount(),
-                        platform != null ? platform : "Unknown",
-                        userDto.getCreateTime() != null ? sdf.format(userDto.getCreateTime()) : "未知",
-                        premiumStatus);
+                        premiumStatus,
+                        clientDbVer != null ? clientDbVer : "Unknown",
+                        clientSysDbVer != null ? clientSysDbVer : "Unknown",
+                        userDto.getCreateTime() != null ? sdf.format(userDto.getCreateTime()) : "未知");
                 User userFromClient = User.fromDto(userDto);
 
                 // 保护敏感字段：isAdmin、isSuperAdmin、isSysUser 只允许后端同步到前端

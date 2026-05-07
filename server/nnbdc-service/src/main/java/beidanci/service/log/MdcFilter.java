@@ -76,13 +76,26 @@ public class MdcFilter extends OncePerRequestFilter {
                 platform = "Unknown";
             }
         }
-        MDC.put("platform", platform);
+        String appVersion = request.getHeader("X-Client-Version");
+        if (appVersion == null || appVersion.isEmpty()) {
+            appVersion = "Unknown";
+        }
+        MDC.put("appVersion", appVersion);
+        MDC.put("platform", platform + "/" + appVersion);
+
+        String clientSysDbVersion = request.getHeader("X-Sys-Db-Version");
+        if (clientSysDbVersion == null || clientSysDbVersion.isEmpty()) {
+            clientSysDbVersion = "Unknown";
+        }
+        MDC.put("clientSysDbVersion", clientSysDbVersion);
 
         try {
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove("userContext");
             MDC.remove("platform");
+            MDC.remove("appVersion");
+            MDC.remove("clientSysDbVersion");
         }
     }
 }
