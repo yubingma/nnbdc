@@ -63,6 +63,19 @@ public class SystemHealthCheckBo {
     @Autowired
     private SysParamUtil sysParamUtil;
 
+    // 数据规范性检查相关的 SQL 条件片段
+    private static final String DIRTY_WORD_PHONETIC_SQL_WHERE = 
+        "(pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$') " +
+        "OR (british_pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$') " +
+        "OR (america_pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$')";
+    
+    private static final String DIRTY_MEANING_SQL_WHERE = 
+        "(meaning ~ '.*[,，]$') OR (ci_xing ~ '.*[,，]$')";
+    
+    private static final String DIRTY_SENTENCE_SQL_WHERE = 
+        "(english ~ '.*[,，]$') OR (chinese ~ '.*[,，]$') " +
+        "OR (word_meaning ~ '.*[,，]$') OR (part_of_speech ~ '.*[,，]$')";
+
 
     /**
      * 检查系统词典完整性
@@ -1344,26 +1357,20 @@ public class SystemHealthCheckBo {
 
         try {
             // 1. 检查单词音标
-            String wordSql = "SELECT COUNT(*) FROM word WHERE (pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$') " +
-                             "OR (british_pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$') " +
-                             "OR (america_pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$')";
-            Integer wordCount = namedParameterJdbcTemplate.queryForObject(wordSql, new MapSqlParameterSource(), Integer.class);
-            if (wordCount != null && wordCount > 0) {
+            int wordCount = countDirtyRecords("word", DIRTY_WORD_PHONETIC_SQL_WHERE);
+            if (wordCount > 0) {
                 issues.add(new SystemHealthIssue("音标不规范", String.format("发现 %d 个单词的音标包含斜线、方括号或以逗号结尾", wordCount), "data_sanitization"));
             }
 
             // 2. 检查释义项
-            String meaningSql = "SELECT COUNT(*) FROM meaning_item WHERE (meaning ~ '.*[,，]$') OR (ci_xing ~ '.*[,，]$')";
-            Integer meaningCount = namedParameterJdbcTemplate.queryForObject(meaningSql, new MapSqlParameterSource(), Integer.class);
-            if (meaningCount != null && meaningCount > 0) {
+            int meaningCount = countDirtyRecords("meaning_item", DIRTY_MEANING_SQL_WHERE);
+            if (meaningCount > 0) {
                 issues.add(new SystemHealthIssue("释义项不规范", String.format("发现 %d 个释义项内容或词性以逗号结尾", meaningCount), "data_sanitization"));
             }
 
             // 3. 检查例句
-            String sentenceSql = "SELECT COUNT(*) FROM sentence WHERE (english ~ '.*[,，]$') OR (chinese ~ '.*[,，]$') " +
-                                 "OR (word_meaning ~ '.*[,，]$') OR (part_of_speech ~ '.*[,，]$')";
-            Integer sentenceCount = namedParameterJdbcTemplate.queryForObject(sentenceSql, new MapSqlParameterSource(), Integer.class);
-            if (sentenceCount != null && sentenceCount > 0) {
+            int sentenceCount = countDirtyRecords("sentence", DIRTY_SENTENCE_SQL_WHERE);
+            if (sentenceCount > 0) {
                 issues.add(new SystemHealthIssue("例句不规范", String.format("发现 %d 个例句文本或关联释义以逗号结尾", sentenceCount), "data_sanitization"));
             }
 
@@ -1375,13 +1382,16 @@ public class SystemHealthCheckBo {
         return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
     }
 
+    private int countDirtyRecords(String table, String where) {
+        String sql = String.format("SELECT COUNT(*) FROM %s WHERE %s", table, where);
+        Integer count = namedParameterJdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Integer.class);
+        return count != null ? count : 0;
+    }
+
     private int sanitizeWordPhonetics(List<String> fixed) throws Exception {
         int count = 0;
         // 查找可能需要修复的单词：音标包含斜线、方括号，或以逗号结尾
-        String sql = "SELECT id, spell, pronounce, british_pronounce, america_pronounce FROM word " +
-                     "WHERE (pronounce ~ '[/\\[\\]［］]|^.*/[,，]$') " +
-                     "OR (british_pronounce ~ '[/\\[\\]［］]|^.*/[,，]$') " +
-                     "OR (america_pronounce ~ '[/\\[\\]［］]|^.*/[,，]$')";
+        String sql = "SELECT id, spell, pronounce, british_pronounce, america_pronounce FROM word WHERE " + DIRTY_WORD_PHONETIC_SQL_WHERE;
         
         List<Map<String, Object>> words = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
         for (Map<String, Object> map : words) {
@@ -1413,7 +1423,7 @@ public class SystemHealthCheckBo {
     private int sanitizeMeaningItems(List<String> fixed) throws Exception {
         int count = 0;
         // 查找可能需要修复的释义项：释义或词性以逗号结尾
-        String sql = "SELECT id, meaning, ci_xing FROM meaning_item WHERE (meaning ~ '.*[,，]$') OR (ci_xing ~ '.*[,，]$')";
+        String sql = "SELECT id, meaning, ci_xing FROM meaning_item WHERE " + DIRTY_MEANING_SQL_WHERE;
         List<Map<String, Object>> items = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
         for (Map<String, Object> map : items) {
             String id = (String) map.get("id");
@@ -1443,9 +1453,7 @@ public class SystemHealthCheckBo {
     private int sanitizeSentences(List<String> fixed) throws Exception {
         int count = 0;
         // 查找可能需要修复的例句：英文、中文、单词释义或词性以逗号结尾
-        String sql = "SELECT id, english, chinese, word_meaning, part_of_speech FROM sentence " +
-                     "WHERE (english ~ '.*[,，]$') OR (chinese ~ '.*[,，]$') " +
-                     "OR (word_meaning ~ '.*[,，]$') OR (part_of_speech ~ '.*[,，]$')";
+        String sql = "SELECT id, english, chinese, word_meaning, part_of_speech FROM sentence WHERE " + DIRTY_SENTENCE_SQL_WHERE;
         List<Map<String, Object>> sentences = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
         for (Map<String, Object> map : sentences) {
             String id = (String) map.get("id");
