@@ -279,7 +279,9 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     // 退出全屏并恢复默认方向设置
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
-    SystemChrome.setPreferredOrientations([]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
 
     super.dispose();
   }
