@@ -22,7 +22,7 @@ import '../util/sound.dart';
 import '../util/tts.dart';
 import 'index.dart';
 
-class WalkmanConfig { 
+class WalkmanConfig {
   bool showSpell = true;
   bool showPronounce = false;
   bool showMeaning = false;
@@ -34,6 +34,8 @@ class WalkmanConfig {
   bool playChinese = false;
   int repeatCount = 1;
   int playInterval = 0;
+  double sentencePlaySpeed = 1.0;
+  int playSentenceCount = 1; // 1, 2, 3, 4, -1 (全部)
 
   WalkmanConfig();
 
@@ -50,6 +52,8 @@ class WalkmanConfig {
     config.playChinese = json['playChinese'] ?? false;
     config.repeatCount = json['repeatCount'] ?? 1;
     config.playInterval = json['playInterval'] ?? 0;
+    config.sentencePlaySpeed = (json['sentencePlaySpeed'] ?? 1.0).toDouble();
+    config.playSentenceCount = json['playSentenceCount'] ?? 1;
     return config;
   }
 
@@ -65,6 +69,8 @@ class WalkmanConfig {
         'playChinese': playChinese,
         'repeatCount': repeatCount,
         'playInterval': playInterval,
+        'sentencePlaySpeed': sentencePlaySpeed,
+        'playSentenceCount': playSentenceCount,
       };
 }
 
@@ -117,6 +123,8 @@ class WalkmanPageState extends State<WalkmanPage> {
   var playChinese = false;
   var repeatCount = 1;
   var playInterval = 0; // 每个单词之间的播放时间间隔（毫秒）
+  var sentencePlaySpeed = 1.0;
+  var playSentenceCount = 1;
   var currentPlayStep = ''; // 当前单词正在的播放的步骤（英文、音标、释义...）
   var currentWordPlayShouldStop = false;
   var currentWordPlayingStopped = true;
@@ -187,6 +195,8 @@ class WalkmanPageState extends State<WalkmanPage> {
           playChinese = config.playChinese;
           repeatCount = config.repeatCount;
           playInterval = config.playInterval;
+          sentencePlaySpeed = config.sentencePlaySpeed;
+          playSentenceCount = config.playSentenceCount;
         });
         }
       } catch (e) {
@@ -207,7 +217,9 @@ class WalkmanPageState extends State<WalkmanPage> {
       ..playSentence = playSentence
       ..playChinese = playChinese
       ..repeatCount = repeatCount
-      ..playInterval = playInterval;
+      ..playInterval = playInterval
+      ..sentencePlaySpeed = sentencePlaySpeed
+      ..playSentenceCount = playSentenceCount;
 
     try {
       User user = Global.getLoggedInUserNotNull();
@@ -427,28 +439,34 @@ class WalkmanPageState extends State<WalkmanPage> {
 
           // 播放已预先获取的例句
           if (sentences.isNotEmpty) {
-            if (playSentence && !currentWordPlayShouldStop && expectedSession == _playSessionId && !_audioPlayerDisposed) {
-              currentPlayStep = 'sentence';
-              try {
-                await SoundUtil.playSentenceSound2(sentences[0].englishDigest!, audioPlayer);
-              } catch (e) {
-                // 忽略 AudioPlayer 错误
-                Global.logger.d("播放例句失败: $e");
+            final int actualPlaySentenceCount = playSentenceCount == -1 ? sentences.length : (playSentenceCount > sentences.length ? sentences.length : playSentenceCount);
+            for (var j = 0; j < actualPlaySentenceCount; j++) {
+              if (playSentence && !currentWordPlayShouldStop && expectedSession == _playSessionId && !_audioPlayerDisposed) {
+                currentPlayStep = 'sentence';
+                try {
+                  await SoundUtil.playSentenceSound2(sentences[j].englishDigest!, audioPlayer, speed: sentencePlaySpeed);
+                } catch (e) {
+                  // 忽略 AudioPlayer 错误
+                  Global.logger.d("播放例句失败: $e");
+                }
+                currentPlayStep = '';
+                // 步骤之间增加微小延迟
+                await Future.delayed(const Duration(milliseconds: 100));
               }
-              currentPlayStep = '';
-              // 步骤之间增加微小延迟
-              await Future.delayed(const Duration(milliseconds: 100));
-            }
 
-            // 检查停止信号
-            if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
+              // 检查停止信号
+              if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
 
-            if (playChinese && !currentWordPlayShouldStop && expectedSession == _playSessionId) {
-              currentPlayStep = 'chinese';
-              await tts?.speak(Util.pureSentenceChinese(sentences[0].chinese!));
-              currentPlayStep = '';
-              // 步骤之间增加微小延迟
-              await Future.delayed(const Duration(milliseconds: 100));
+              if (playChinese && !currentWordPlayShouldStop && expectedSession == _playSessionId) {
+                currentPlayStep = 'chinese';
+                await tts?.speak(Util.pureSentenceChinese(sentences[j].chinese!));
+                currentPlayStep = '';
+                // 步骤之间增加微小延迟
+                await Future.delayed(const Duration(milliseconds: 100));
+              }
+
+              // 检查停止信号
+              if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
             }
           }
 
@@ -927,6 +945,72 @@ class WalkmanPageState extends State<WalkmanPage> {
                   ],
                 ),
               ),
+              if (playSentence)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '音速',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
+                      ),
+                      for (var speed in [0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+                        InkWell(
+                          child: Text(
+                            '${speed}x',
+                            style: TextStyle(color: (sentencePlaySpeed - speed).abs() < 0.01 ? selectedTextColor : normalTextColor),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              sentencePlaySpeed = speed;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                      const Text('　　'),
+                    ],
+                  ),
+                ),
+              if (playSentence)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '句数',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
+                      ),
+                      for (var count in [1, 2, 3, 4])
+                        InkWell(
+                          child: Text(
+                            '$count句',
+                            style: TextStyle(color: playSentenceCount == count ? selectedTextColor : normalTextColor),
+                          ),
+                          onTap: () {
+                            setState(() {
+                              playSentenceCount = count;
+                              saveConfig();
+                            });
+                          },
+                        ),
+                      InkWell(
+                        child: Text(
+                          '全部',
+                          style: TextStyle(color: playSentenceCount == -1 ? selectedTextColor : normalTextColor),
+                        ),
+                        onTap: () {
+                          setState(() {
+                            playSentenceCount = -1;
+                            saveConfig();
+                          });
+                        },
+                      ),
+                      const Text('　　'),
+                    ],
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
                 child: Row(

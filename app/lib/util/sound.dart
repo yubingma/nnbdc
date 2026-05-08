@@ -146,9 +146,9 @@ class SoundUtil {
   }
 
   /// 播放例句发音
-  static Future<void> playSentenceSound2(String englishDigest, AudioPlayer player) async {
+  static Future<void> playSentenceSound2(String englishDigest, AudioPlayer player, {double speed = 1.0}) async {
     var soundUrl = Util.getSentenceSoundUrl(englishDigest);
-    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 7000, playTimeoutMs: 20000);
+    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 7000, playTimeoutMs: 20000, speed: speed);
   }
 
   /// 播放 ASR 就绪提示音
@@ -164,13 +164,14 @@ class SoundUtil {
   }
 
   static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish,
-      {int loadTimeoutMs = 3000, int playTimeoutMs = 10000}) async {
+      {int loadTimeoutMs = 3000, int playTimeoutMs = 10000, double speed = 1.0}) async {
     StreamSubscription? subscription;
     try {
       if (!_audioSessionConfigured) {
         await configureAudioSession();
       }
       await player.setVolume(1.0);
+      await player.setPlaybackRate(speed);
       if (PlatformUtils.isWeb) {
         await _ensureWebAudioUnlocked();
       }
