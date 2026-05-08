@@ -849,6 +849,19 @@ class WordBo {
 
     List<LearningWord> bucketWords = [];
     for (var word in allLearningWords) {
+      final isNew = (word.learnedTimes) == 0;
+      
+      // 如果查询的是新词库 (bucketKey == 9999)
+      if (bucketKey == 9999) {
+        if (isNew) {
+          bucketWords.add(word);
+        }
+        continue;
+      }
+
+      // 如果是普通时间分布桶，排除新词
+      if (isNew) continue;
+
       final lastDateRaw = word.lastLearningDate ?? now;
       final scheduledDays = word.scheduledDays ?? 0;
       final nextDateRaw = DateTime(lastDateRaw.year, lastDateRaw.month, lastDateRaw.day).add(Duration(days: scheduledDays));
