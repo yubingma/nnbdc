@@ -1231,6 +1231,7 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
         'lastLearningDate': lw.lastLearningDate,
         'popularity': word.popularity,
         'reps': lw.reps,
+        'learnedTimes': lw.learnedTimes,
         'state': lw.state,
         'category': cigen?.description ?? '',
       };
