@@ -823,7 +823,6 @@ class WalkmanPageState extends State<WalkmanPage> {
                             });
                           },
                         ),
-                      const Text('　　'),
                     ],
                   ),
                 ),
@@ -862,7 +861,6 @@ class WalkmanPageState extends State<WalkmanPage> {
                           });
                         },
                       ),
-                      const Text('　　'),
                     ],
                   ),
                 ),
