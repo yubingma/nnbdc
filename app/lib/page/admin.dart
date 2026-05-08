@@ -9,6 +9,7 @@ import 'package:nnbdc/page/admin/feature_request_management.dart';
 import 'package:nnbdc/page/admin/feature_request_report_management.dart';
 import 'package:nnbdc/page/admin/feedback_management.dart';
 import 'package:nnbdc/page/admin/system_health_check.dart';
+import 'package:nnbdc/page/admin/data_sanitize_page.dart';
 import 'package:nnbdc/page/admin/user_management.dart';
 import 'package:nnbdc/page/admin/word_management.dart';
 import 'package:nnbdc/page/admin/dict_import_management.dart';
@@ -105,6 +106,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.health_and_safety,
         color: const Color(0xFFE91E63),
         onTap: () => _navigateToSystemHealthCheck(),
+      ),
+      _buildManagementCard(
+        title: '数据清洗',
+        icon: Icons.cleaning_services,
+        color: Colors.orange,
+        onTap: () => _navigateToDataSanitize(),
       ),
       _buildManagementCard(
         title: '用户管理',
@@ -443,6 +450,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const SystemHealthCheckPage(),
+      ),
+    );
+  }
+
+  void _navigateToDataSanitize() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DataSanitizePage(),
       ),
     );
   }
