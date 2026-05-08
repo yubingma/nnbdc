@@ -297,8 +297,8 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             const Row(
               children: [
                 Icon(Icons.done_all, color: Colors.blue),
-                const SizedBox(width: 10),
-                const Text('清洗执行报告', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+                SizedBox(width: 10),
+                Text('清洗执行报告', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
               ],
             ),
             const SizedBox(height: 15),

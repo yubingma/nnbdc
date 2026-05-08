@@ -57,6 +57,9 @@ public class AdminController {
     private SystemHealthCheckBo systemHealthCheckBo;
 
     @Autowired
+    private DataSanitizeBo dataSanitizeBo;
+
+    @Autowired
     private CdnUtil cdnUtil;
 
     @Autowired
@@ -250,12 +253,12 @@ public class AdminController {
 
     @PostMapping("/admin/sanitizeData.do")
     public Result<SystemHealthFixResult> sanitizeData() {
-        return Result.success(systemHealthCheckBo.sanitizeData());
+        return Result.success(dataSanitizeBo.sanitizeData());
     }
 
     @PostMapping("/admin/checkDataSanitization.do")
     public Result<SystemHealthCheckResult> checkDataSanitization() {
-        return Result.success(systemHealthCheckBo.checkDataSanitization());
+        return Result.success(dataSanitizeBo.checkDataSanitization());
     }
 
     // ============================================
