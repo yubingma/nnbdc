@@ -533,9 +533,10 @@ public class DictImportBo {
             
             lastAiResult = getAiResult(spell, null, null, false, null, sentenceRequirement, null);
 
-            word.setBritishPronounce(lastAiResult.phonetic);
-            word.setAmericaPronounce(lastAiResult.phonetic);
-            word.setPronounce(lastAiResult.phonetic);
+            String sanitizedPhonetic = beidanci.service.util.Util.sanitizePhonetic(lastAiResult.phonetic);
+            word.setBritishPronounce(sanitizedPhonetic);
+            word.setAmericaPronounce(sanitizedPhonetic);
+            word.setPronounce(sanitizedPhonetic);
             
             try {
                 wordBo.createEntity(word);
@@ -890,9 +891,9 @@ public class DictImportBo {
                 logger.warn("单词词性超长已被截断: [{}] -> [{}] - word: {}", pos, pos.substring(0, 10), word.getSpell());
                 pos = pos.substring(0, 10);
             }
-            meaning.setCiXing(pos);
+            meaning.setCiXing(beidanci.service.util.Util.sanitizeAiString(pos));
             
-            meaning.setMeaning(am.meaning.trim().replaceAll("[;；]", "，"));
+            meaning.setMeaning(beidanci.service.util.Util.sanitizeAiString(am.meaning.trim().replaceAll("[;；]", "，")));
             meaning.setPopularity(aiResult.popularity != null && aiResult.popularity > i ? aiResult.popularity - i : 1);
             
             User owner = new User();
@@ -922,11 +923,11 @@ public class DictImportBo {
             // 创建 Sentence
             if (am.sentenceEn != null && !am.sentenceEn.trim().isEmpty()) {
                 Sentence sentence = new Sentence();
-                sentence.setEnglish(am.sentenceEn);
-                sentence.setChinese(am.sentenceCn);
+                sentence.setEnglish(beidanci.service.util.Util.sanitizeAiString(am.sentenceEn));
+                sentence.setChinese(beidanci.service.util.Util.sanitizeAiString(am.sentenceCn));
                 
-                sentence.setWordMeaning(am.meaning.trim().replaceAll("[;；]", "，"));
-                sentence.setPartOfSpeech(pos);
+                sentence.setWordMeaning(beidanci.service.util.Util.sanitizeAiString(am.meaning.trim().replaceAll("[;；]", "，")));
+                sentence.setPartOfSpeech(beidanci.service.util.Util.sanitizeAiString(pos));
                 
                 sentence.setMeaningItem(meaning);
                 sentence.setNeedTts(true); // 标记需要生成音频

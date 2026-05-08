@@ -1189,4 +1189,26 @@ public class Util {
         return isNetworkException(e.getCause());
     }
 
+    /**
+     * 规范化AI生成的字符串（移除末尾逗号等）
+     */
+    public static String sanitizeAiString(String s) {
+        if (s == null) return null;
+        s = s.trim();
+        while (s.endsWith(",") || s.endsWith("，")) {
+            s = s.substring(0, s.length() - 1).trim();
+        }
+        return s;
+    }
+
+    /**
+     * 规范化音标（移除斜线和多余逗号）
+     */
+    public static String sanitizePhonetic(String s) {
+        if (s == null) return null;
+        s = sanitizeAiString(s);
+        while (s.startsWith("/")) s = s.substring(1).trim();
+        while (s.endsWith("/")) s = s.substring(0, s.length() - 1).trim();
+        return s;
+    }
 }

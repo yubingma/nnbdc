@@ -691,6 +691,9 @@ abstract class RestClient {
   Future<Result<SystemHealthFixResult>> autoFixSystemIssues(
       @Field("issueTypes") List<String> issueTypes);
 
+  @POST("/admin/sanitizeData.do")
+  Future<Result<SystemHealthFixResult>> sanitizeData();
+
   // AI 聊天
   @POST("/ai/chat.do")
   @FormUrlEncoded()

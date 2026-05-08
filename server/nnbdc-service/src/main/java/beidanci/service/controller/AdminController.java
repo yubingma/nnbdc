@@ -248,6 +248,11 @@ public class AdminController {
         return Result.success(systemHealthCheckBo.autoFixSystemIssues(issueTypes));
     }
 
+    @PostMapping("/admin/sanitizeData.do")
+    public Result<SystemHealthFixResult> sanitizeData() {
+        return Result.success(systemHealthCheckBo.sanitizeData());
+    }
+
     // ============================================
     // CDN管理相关API (管理员接口)
     // ============================================

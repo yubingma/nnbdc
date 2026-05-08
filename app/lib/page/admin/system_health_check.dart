@@ -21,6 +21,7 @@ class SystemHealthCheckPage extends StatefulWidget {
 
 class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   bool _isRunning = false;
+  bool _isSanitizing = false;
   SystemHealthResult? _checkResult;
 
   // 每项检查的状态：null=未开始, false=进行中, true=通过, 'failed'=失败
@@ -154,20 +155,40 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
             _buildResultSummary(isDarkMode),
           ],
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isRunning ? null : _runSystemDiagnostic,
-              icon: Icon(_isRunning ? Icons.hourglass_empty : Icons.search),
-              label: Text(_isRunning
-                  ? '检查中...'
-                  : (_checkResult == null ? '开始检查' : '重新检查')),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isRunning ? null : _runSystemDiagnostic,
+                  icon: Icon(_isRunning ? Icons.hourglass_empty : Icons.search),
+                  label: Text(_isRunning
+                      ? '检查中...'
+                      : (_checkResult == null ? '开始检查' : '重新检查')),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: (_isRunning || _isSanitizing)
+                      ? null
+                      : _runDataSanitizing,
+                  icon: Icon(_isSanitizing
+                      ? Icons.hourglass_empty
+                      : Icons.cleaning_services),
+                  label: Text(_isSanitizing ? '清洗中...' : '清洗数据'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange[800],
+                    side: BorderSide(color: Colors.orange[800]!),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1449,6 +1470,73 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
       Api.disableAutoLoading = false;
       // 在异步操作完成后处理错误
       if (mounted) _handleSystemFixError(e, stackTrace);
+    }
+  }
+
+  Future<void> _runDataSanitizing() async {
+    if (_isSanitizing) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('数据清洗'),
+        content: const Text(
+            '该操作将自动修复系统数据中不规范的格式（如末尾多余逗号、音标斜线等）。\n\n修复后的数据将产生同步日志，通知所有客户端进行更新。是否继续？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确定', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isSanitizing = true;
+    });
+
+    // 显示进度对话框
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('正在清洗系统数据...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      Api.disableAutoLoading = true;
+      final apiResult = await Api.client.sanitizeData();
+      Api.disableAutoLoading = false;
+
+      if (mounted) {
+        Navigator.pop(context); // 关闭进度对话框
+        _handleSystemFixResult(apiResult);
+      }
+    } catch (e, stackTrace) {
+      Api.disableAutoLoading = false;
+      if (mounted) {
+        Navigator.pop(context); // 关闭进度对话框
+        _handleSystemFixError(e, stackTrace);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSanitizing = false;
+        });
+      }
     }
   }
 }
