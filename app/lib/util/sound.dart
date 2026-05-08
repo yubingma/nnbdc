@@ -106,9 +106,9 @@ class SoundUtil {
   }
 
   /// 播放单词发音，使用已存在的AudioPlayer实例
-  static Future<void> playPronounceSoundBySpell2(String spell, AudioPlayer player) async {
+  static Future<void> playPronounceSoundBySpell2(String spell, AudioPlayer player, {double speed = 1.0}) async {
     var soundUrl = Util.getWordSoundUrl(spell);
-    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000);
+    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000, speed: speed);
   }
 
   /// 预取多个发音文件到缓存

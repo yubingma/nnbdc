@@ -402,7 +402,7 @@ class WalkmanPageState extends State<WalkmanPage> {
           if (playPronounce && !_audioPlayerDisposed) {
             currentPlayStep = 'pronounce';
             try {
-              await SoundUtil.playPronounceSoundBySpell2(word.word.spell, audioPlayer);
+              await SoundUtil.playPronounceSoundBySpell2(word.word.spell, audioPlayer, speed: sentencePlaySpeed);
             } catch (e) {
               // 忽略 AudioPlayer 错误
               Global.logger.d("播放发音失败: $e");
@@ -800,70 +800,80 @@ class WalkmanPageState extends State<WalkmanPage> {
                   ],
                 ),
               ),
-              if (playSentence)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '音速',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
-                      ),
-                      for (var speed in [0.5, 0.7, 0.8, 0.9, 1.0])
-                        InkWell(
-                          child: Text(
-                            '${speed}x',
-                            style: TextStyle(color: (sentencePlaySpeed - speed).abs() < 0.01 ? selectedTextColor : normalTextColor),
-                          ),
-                          onTap: () {
-                            setState(() {
-                              sentencePlaySpeed = speed;
-                              saveConfig();
-                            });
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-              if (playSentence)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '句数',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
-                      ),
-                      for (var count in [1, 2, 3, 4])
-                        InkWell(
-                          child: Text(
-                            '$count句',
-                            style: TextStyle(color: playSentenceCount == count ? selectedTextColor : normalTextColor),
-                          ),
-                          onTap: () {
-                            setState(() {
-                              playSentenceCount = count;
-                              saveConfig();
-                            });
-                          },
-                        ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '音速',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.0),
+                    ),
+                    for (var speed in [0.5, 0.7, 0.8, 0.9, 1.0])
                       InkWell(
-                        child: Text(
-                          '全部',
-                          style: TextStyle(color: playSentenceCount == -1 ? selectedTextColor : normalTextColor),
-                        ),
                         onTap: () {
                           setState(() {
-                            playSentenceCount = -1;
+                            sentencePlaySpeed = speed;
                             saveConfig();
                           });
                         },
+                        child: Text(
+                          '${speed}x',
+                          style: TextStyle(
+                            color: ((sentencePlaySpeed - speed).abs() < 0.01 ? selectedTextColor : normalTextColor),
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    const Text('　　'),
+                  ],
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '句数',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: playSentence ? Colors.white : normalTextColor.withOpacity(0.5), fontSize: 13.0),
+                    ),
+                    for (var count in [1, 2, 3, 4])
+                      InkWell(
+                        onTap: !playSentence
+                            ? null
+                            : () {
+                                setState(() {
+                                  playSentenceCount = count;
+                                  saveConfig();
+                                });
+                              },
+                        child: Text(
+                          '$count句',
+                          style: TextStyle(
+                            color: !playSentence ? normalTextColor.withOpacity(0.5) : (playSentenceCount == count ? selectedTextColor : normalTextColor),
+                          ),
+                        ),
+                      ),
+                    InkWell(
+                      onTap: !playSentence
+                          ? null
+                          : () {
+                              setState(() {
+                                playSentenceCount = -1;
+                                saveConfig();
+                              });
+                            },
+                      child: Text(
+                        '全部',
+                        style: TextStyle(
+                          color: !playSentence ? normalTextColor.withOpacity(0.5) : (playSentenceCount == -1 ? selectedTextColor : normalTextColor),
+                        ),
+                      ),
+                    ),
+                    const Text('　　'),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
                 child: Row(
