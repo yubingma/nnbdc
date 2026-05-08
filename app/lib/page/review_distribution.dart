@@ -217,14 +217,30 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                         ],
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        data.newCount > 0 
-                            ? "${data.totalCount - data.newCount} / ${data.newCount}" 
-                            : "${data.totalCount}",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: data.isToday ? AppTheme.primaryColor : (isDarkMode ? Colors.white60 : Colors.black54),
+                      RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'NotoSansSC',
+                            color: isDarkMode ? Colors.white60 : Colors.black54,
+                          ),
+                          children: [
+                            TextSpan(text: "${data.totalCount - data.newCount}"),
+                            if (data.newCount > 0) ...[
+                              TextSpan(
+                                text: " | ",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.normal,
+                                  color: isDarkMode ? Colors.white24 : Colors.black12,
+                                ),
+                              ),
+                              TextSpan(
+                                text: "${data.newCount}",
+                                style: const TextStyle(color: Color(0xFF8B5CF6)),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ],
