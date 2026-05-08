@@ -835,7 +835,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                   children: [
                     Text(
                       '句数',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: playSentence ? Colors.white : normalTextColor.withOpacity(0.5), fontSize: 13.0),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: playSentence ? Colors.white : normalTextColor.withValues(alpha: 0.5), fontSize: 13.0),
                     ),
                     for (var count in [1, 2, 3, 4])
                       InkWell(
@@ -850,7 +850,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                         child: Text(
                           '$count句',
                           style: TextStyle(
-                            color: !playSentence ? normalTextColor.withOpacity(0.5) : (playSentenceCount == count ? selectedTextColor : normalTextColor),
+                            color: !playSentence ? normalTextColor.withValues(alpha: 0.5) : (playSentenceCount == count ? selectedTextColor : normalTextColor),
                           ),
                         ),
                       ),
@@ -866,7 +866,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                       child: Text(
                         '全部',
                         style: TextStyle(
-                          color: !playSentence ? normalTextColor.withOpacity(0.5) : (playSentenceCount == -1 ? selectedTextColor : normalTextColor),
+                          color: !playSentence ? normalTextColor.withValues(alpha: 0.5) : (playSentenceCount == -1 ? selectedTextColor : normalTextColor),
                         ),
                       ),
                     ),
