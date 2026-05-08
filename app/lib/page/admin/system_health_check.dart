@@ -1496,6 +1496,7 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
     );
 
     if (confirmed != true) return;
+    if (!mounted) return;
 
     setState(() {
       _isSanitizing = true;

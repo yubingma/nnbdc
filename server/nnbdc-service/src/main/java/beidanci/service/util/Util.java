@@ -1202,13 +1202,14 @@ public class Util {
     }
 
     /**
-     * 规范化音标（移除斜线和多余逗号）
+     * 规范化音标（移除斜线、方括号和多余逗号）
      */
     public static String sanitizePhonetic(String s) {
         if (s == null) return null;
         s = sanitizeAiString(s);
-        while (s.startsWith("/")) s = s.substring(1).trim();
-        while (s.endsWith("/")) s = s.substring(0, s.length() - 1).trim();
+        // 移除斜线和方括号
+        while (s.startsWith("/") || s.startsWith("[") || s.startsWith("［")) s = s.substring(1).trim();
+        while (s.endsWith("/") || s.endsWith("]") || s.endsWith("］")) s = s.substring(0, s.length() - 1).trim();
         return s;
     }
 }

@@ -1335,13 +1335,13 @@ public class SystemHealthCheckBo {
         return new SystemHealthFixResult(totalFixedCount, errors, fixed);
     }
 
-    private int sanitizeWordPhonetics(List<String> fixed) {
+    private int sanitizeWordPhonetics(List<String> fixed) throws Exception {
         int count = 0;
-        // 查找可能需要修复的单词：音标包含斜线，或以逗号结尾
+        // 查找可能需要修复的单词：音标包含斜线、方括号，或以逗号结尾
         String sql = "SELECT id, spell, pronounce, british_pronounce, america_pronounce FROM word " +
-                     "WHERE (pronounce ~ '/|^.*/[,，]$') " +
-                     "OR (british_pronounce ~ '/|^.*/[,，]$') " +
-                     "OR (america_pronounce ~ '/|^.*/[,，]$')";
+                     "WHERE (pronounce ~ '[/\\[\\]［］]|^.*/[,，]$') " +
+                     "OR (british_pronounce ~ '[/\\[\\]［］]|^.*/[,，]$') " +
+                     "OR (america_pronounce ~ '[/\\[\\]［］]|^.*/[,，]$')";
         
         List<Map<String, Object>> words = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
         for (Map<String, Object> map : words) {
@@ -1370,7 +1370,7 @@ public class SystemHealthCheckBo {
         return count;
     }
 
-    private int sanitizeMeaningItems(List<String> fixed) {
+    private int sanitizeMeaningItems(List<String> fixed) throws Exception {
         int count = 0;
         // 查找可能需要修复的释义项：释义或词性以逗号结尾
         String sql = "SELECT id, meaning, ci_xing FROM meaning_item WHERE (meaning ~ '.*[,，]$') OR (ci_xing ~ '.*[,，]$')";
@@ -1400,7 +1400,7 @@ public class SystemHealthCheckBo {
         return count;
     }
 
-    private int sanitizeSentences(List<String> fixed) {
+    private int sanitizeSentences(List<String> fixed) throws Exception {
         int count = 0;
         // 查找可能需要修复的例句：英文、中文、单词释义或词性以逗号结尾
         String sql = "SELECT id, english, chinese, word_meaning, part_of_speech FROM sentence " +
