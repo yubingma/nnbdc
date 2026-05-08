@@ -35,6 +35,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
   bool _isLoading = true;
   int _maxCount = 0;
   int _totalWords = 0;
+  int _totalNewWords = 0;
 
   @override
   void initState() {
@@ -56,11 +57,16 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     final nowDate = DateTime(now.year, now.month, now.day);
 
     Map<int, int> dayToTotalCounts = {};
-    Map<int, int> dayToNewCounts = {};
     _totalWords = data.length;
+    _totalNewWords = 0;
 
     for (var item in data) {
       final isNew = (item['learnedTimes'] ?? 0) == 0;
+      if (isNew) {
+        _totalNewWords++;
+        continue;
+      }
+
       final lastDateRaw = item['lastLearningDate'] as DateTime? ?? now;
       final scheduledDays = item['scheduledDays'] as int? ?? 0;
       final nextDateRaw = lastDateRaw.add(Duration(days: scheduledDays));
@@ -77,17 +83,14 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
       }
 
       dayToTotalCounts[key] = (dayToTotalCounts[key] ?? 0) + 1;
-      if (isNew) {
-        dayToNewCounts[key] = (dayToNewCounts[key] ?? 0) + 1;
-      }
     }
 
+    dayToTotalCounts[0] = dayToTotalCounts[0] ?? 0;
     var sortedKeys = dayToTotalCounts.keys.toList()..sort();
 
-    _maxCount = 0;
+    _maxCount = _totalNewWords; // 初始最大值设为新词数，确保缩放一致
     _barDataList = sortedKeys.map((key) {
       final totalCount = dayToTotalCounts[key]!;
-      final newCount = dayToNewCounts[key] ?? 0;
       if (totalCount > _maxCount) _maxCount = totalCount;
 
       String label;
@@ -105,7 +108,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
       return BarChartData(
         label: label,
         totalCount: totalCount,
-        newCount: newCount,
+        newCount: 0, // 分布图中不再混入新词
         isToday: isToday,
         isOverdue: isOverdue,
         sortKey: key,
@@ -158,15 +161,113 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _barDataList.isEmpty
-              ? const Center(child: Text("暂无数据"))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                  itemCount: _barDataList.length,
-                  itemBuilder: (context, index) {
-                    return _buildBarRow(_barDataList[index], isDarkMode);
-                  },
+          : CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 24),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle("新词库 (待开始学习)", context),
+                        const SizedBox(height: 12),
+                        _buildNewWordsBar(isDarkMode),
+                        const SizedBox(height: 32),
+                        _sectionTitle("待复习分布 (已开始学习)", context),
+                        const SizedBox(height: 4),
+                      ],
+                    ),
+                  ),
                 ),
+                _barDataList.isEmpty
+                    ? const SliverFillRemaining(child: Center(child: Text("暂无复习任务")))
+                    : SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => _buildBarRow(_barDataList[index], isDarkMode),
+                            childCount: _barDataList.length,
+                          ),
+                        ),
+                      ),
+                const SliverToBoxAdapter(child: SizedBox(height: 40)),
+              ],
+            ),
+    );
+  }
+
+  Widget _sectionTitle(String title, BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: isDarkMode ? Colors.white54 : Colors.black45,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  Widget _buildNewWordsBar(bool isDarkMode) {
+    return InkWell(
+      onTap: () {
+        // 跳转到新词列表 (sortKey 为 9999 代表新词，这需要 BucketWordsListPage 支持)
+        toBucketWordsListPage(9999, "新词库")?.then((_) => _loadData());
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 80,
+              child: Text(
+                "新词",
+                style: TextStyle(fontSize: 13, color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = constraints.maxWidth - 80;
+                  final barWidth = _maxCount == 0 ? 0.0 : (_totalNewWords / _maxCount) * maxWidth;
+                  return Row(
+                    children: [
+                      Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          Container(
+                            height: 30,
+                            width: maxWidth,
+                            decoration: BoxDecoration(
+                              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+                            ),
+                          ),
+                          Container(
+                            height: 30,
+                            width: barWidth < 1 && _totalNewWords > 0 ? 1 : barWidth,
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        "$_totalNewWords",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF8B5CF6),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
