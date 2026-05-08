@@ -108,7 +108,7 @@ class SoundUtil {
   /// 播放单词发音，使用已存在的AudioPlayer实例
   static Future<void> playPronounceSoundBySpell2(String spell, AudioPlayer player, {double speed = 1.0}) async {
     var soundUrl = Util.getWordSoundUrl(spell);
-    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000, speed: speed);
+    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 10000, speed: speed);
   }
 
   /// 预取多个发音文件到缓存
@@ -171,7 +171,6 @@ class SoundUtil {
         await configureAudioSession();
       }
       await player.setVolume(1.0);
-      await player.setPlaybackRate(speed);
       if (PlatformUtils.isWeb) {
         await _ensureWebAudioUnlocked();
       }
@@ -210,6 +209,7 @@ class SoundUtil {
       try {
         if (PlatformUtils.isWeb) {
           await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
+          await player.setPlaybackRate(speed);
         } else {
           // 确保 AudioSession 仍然活跃（ASR 可能刚停）
           if (PlatformUtils.isIOS) {
@@ -232,7 +232,8 @@ class SoundUtil {
           // 直接播放
           Global.logger.d('SoundUtil: 准备调用 player.play(), source: ${source.toString()}');
           await player.play(source).timeout(Duration(milliseconds: loadTimeoutMs));
-          Global.logger.d('SoundUtil: player.play() 调用已返回（播放器已启动）');
+          await player.setPlaybackRate(speed);
+          Global.logger.d('SoundUtil: player.play() 调用已返回（播放器已启动且速率已设置）');
         }
 
         // 等待播放完成
