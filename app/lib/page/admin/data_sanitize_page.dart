@@ -16,10 +16,51 @@ class DataSanitizePage extends StatefulWidget {
 
 class _DataSanitizePageState extends State<DataSanitizePage> {
   bool _isSanitizing = false;
+  bool _isChecking = false;
   SystemHealthFixResult? _fixResult;
+  SystemHealthCheckResult? _checkResult;
+
+  Future<void> _runDataSanitizeCheck() async {
+    if (_isChecking || _isSanitizing) return;
+
+    setState(() {
+      _isChecking = true;
+      _checkResult = null;
+      _fixResult = null;
+    });
+
+    try {
+      final res = await LoadingUtils.withApiLoading(operation: () async {
+        return await Api.client.checkDataSanitization();
+      });
+
+      if (!mounted) return;
+
+      if (res.success) {
+        setState(() {
+          _checkResult = res.data;
+        });
+        if (_checkResult!.issues.isEmpty) {
+          ToastUtil.success('全库数据非常整洁，未发现格式问题！');
+        } else {
+          ToastUtil.info('扫描完成，发现一些格式不规范的数据。');
+        }
+      } else {
+        ToastUtil.error('检查失败: ${res.msg}');
+      }
+    } catch (e) {
+      if (mounted) ToastUtil.error('发生错误: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isChecking = false;
+        });
+      }
+    }
+  }
 
   Future<void> _runDataSanitizing() async {
-    if (_isSanitizing) return;
+    if (_isSanitizing || _isChecking) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -62,6 +103,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
       if (res.success) {
         setState(() {
           _fixResult = res.data;
+          _checkResult = null; // 清洗后重置检查结果
         });
         ToastUtil.success('数据清洗完成');
       } else {
@@ -99,26 +141,50 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
           children: [
             _buildIntroCard(isDarkMode),
             const SizedBox(height: 20),
-            if (_fixResult != null) _buildResultCard(isDarkMode),
+            if (_checkResult != null) _buildCheckResultCard(isDarkMode),
+            if (_fixResult != null) _buildFixResultCard(isDarkMode),
             const SizedBox(height: 30),
-            Center(
-              child: SizedBox(
-                width: 200,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _isSanitizing ? null : _runDataSanitizing,
-                  icon: Icon(_isSanitizing ? Icons.hourglass_empty : Icons.cleaning_services),
-                  label: Text(_isSanitizing ? '正在清洗...' : '立即开始清洗'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange[800],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                  ),
-                ),
-              ),
-            ),
+            _buildActionButtons(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Center(
+      child: Column(
+        children: [
+          SizedBox(
+            width: 220,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: (_isChecking || _isSanitizing) ? null : _runDataSanitizeCheck,
+              icon: Icon(_isChecking ? Icons.hourglass_empty : Icons.search),
+              label: Text(_isChecking ? '正在扫描...' : '检查数据清洁状态'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: 220,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: (_isSanitizing || _isChecking) ? null : _runDataSanitizing,
+              icon: Icon(_isSanitizing ? Icons.hourglass_empty : Icons.cleaning_services),
+              label: Text(_isSanitizing ? '正在清洗...' : '立即开始清洗'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.orange[800],
+                side: BorderSide(color: Colors.orange[800]!),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -167,13 +233,61 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     );
   }
 
-  Widget _buildResultCard(bool isDarkMode) {
+  Widget _buildCheckResultCard(bool isDarkMode) {
+    final issues = _checkResult!.issues;
+    final isClean = issues.isEmpty;
+
     return Card(
       elevation: 2,
-      color: isDarkMode ? Colors.green.withValues(alpha: 0.1) : Colors.green[50],
+      color: isClean 
+          ? (isDarkMode ? Colors.green.withValues(alpha: 0.1) : Colors.green[50])
+          : (isDarkMode ? Colors.orange.withValues(alpha: 0.1) : Colors.orange[50]),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.green.withValues(alpha: 0.3)),
+        side: BorderSide(color: isClean ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(isClean ? Icons.check_circle : Icons.warning, color: isClean ? Colors.green : Colors.orange),
+                const SizedBox(width: 10),
+                Text(isClean ? '数据非常整洁' : '扫描结果', 
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isClean ? Colors.green : Colors.orange[900])),
+              ],
+            ),
+            const SizedBox(height: 15),
+            if (isClean)
+              const Text('未发现任何格式不规范的数据，无需清洗。')
+            else ...[
+              const Text('发现以下需要优化的数据项：', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              ...issues.map((issue) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.arrow_right, size: 20),
+                    Expanded(child: Text('${issue.type}: ${issue.description}')),
+                  ],
+                ),
+              )),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFixResultCard(bool isDarkMode) {
+    return Card(
+      elevation: 2,
+      color: isDarkMode ? Colors.blue.withValues(alpha: 0.1) : Colors.blue[50],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.blue.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -182,9 +296,9 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
           children: [
             const Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green),
+                Icon(Icons.done_all, color: Colors.blue),
                 const SizedBox(width: 10),
-                const Text('清洗执行报告', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+                const Text('清洗执行报告', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
               ],
             ),
             const SizedBox(height: 15),

@@ -694,6 +694,9 @@ abstract class RestClient {
   @POST("/admin/sanitizeData.do")
   Future<Result<SystemHealthFixResult>> sanitizeData();
 
+  @POST("/admin/checkDataSanitization.do")
+  Future<Result<SystemHealthCheckResult>> checkDataSanitization();
+
   // AI 聊天
   @POST("/ai/chat.do")
   @FormUrlEncoded()

@@ -1335,6 +1335,46 @@ public class SystemHealthCheckBo {
         return new SystemHealthFixResult(totalFixedCount, errors, fixed);
     }
 
+    /**
+     * 检查系统数据规范性情况
+     */
+    public SystemHealthCheckResult checkDataSanitization() {
+        List<SystemHealthIssue> issues = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        try {
+            // 1. 检查单词音标
+            String wordSql = "SELECT COUNT(*) FROM word WHERE (pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$') " +
+                             "OR (british_pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$') " +
+                             "OR (america_pronounce ~ '[/\\\\[\\\\]［］]|^.*/[,，]$')";
+            Integer wordCount = namedParameterJdbcTemplate.queryForObject(wordSql, new MapSqlParameterSource(), Integer.class);
+            if (wordCount != null && wordCount > 0) {
+                issues.add(new SystemHealthIssue("音标不规范", String.format("发现 %d 个单词的音标包含斜线、方括号或以逗号结尾", wordCount), "data_sanitization"));
+            }
+
+            // 2. 检查释义项
+            String meaningSql = "SELECT COUNT(*) FROM meaning_item WHERE (meaning ~ '.*[,，]$') OR (ci_xing ~ '.*[,，]$')";
+            Integer meaningCount = namedParameterJdbcTemplate.queryForObject(meaningSql, new MapSqlParameterSource(), Integer.class);
+            if (meaningCount != null && meaningCount > 0) {
+                issues.add(new SystemHealthIssue("释义项不规范", String.format("发现 %d 个释义项内容或词性以逗号结尾", meaningCount), "data_sanitization"));
+            }
+
+            // 3. 检查例句
+            String sentenceSql = "SELECT COUNT(*) FROM sentence WHERE (english ~ '.*[,，]$') OR (chinese ~ '.*[,，]$') " +
+                                 "OR (word_meaning ~ '.*[,，]$') OR (part_of_speech ~ '.*[,，]$')";
+            Integer sentenceCount = namedParameterJdbcTemplate.queryForObject(sentenceSql, new MapSqlParameterSource(), Integer.class);
+            if (sentenceCount != null && sentenceCount > 0) {
+                issues.add(new SystemHealthIssue("例句不规范", String.format("发现 %d 个例句文本或关联释义以逗号结尾", sentenceCount), "data_sanitization"));
+            }
+
+        } catch (Exception e) {
+            logger.error("检查数据规范性失败", e);
+            errors.add("检查数据规范性过程中出错: " + e.getMessage());
+        }
+
+        return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
+    }
+
     private int sanitizeWordPhonetics(List<String> fixed) throws Exception {
         int count = 0;
         // 查找可能需要修复的单词：音标包含斜线、方括号，或以逗号结尾

@@ -253,6 +253,11 @@ public class AdminController {
         return Result.success(systemHealthCheckBo.sanitizeData());
     }
 
+    @PostMapping("/admin/checkDataSanitization.do")
+    public Result<SystemHealthCheckResult> checkDataSanitization() {
+        return Result.success(systemHealthCheckBo.checkDataSanitization());
+    }
+
     // ============================================
     // CDN管理相关API (管理员接口)
     // ============================================
