@@ -129,6 +129,8 @@ class WalkmanPageState extends State<WalkmanPage> {
   var currentWordPlayShouldStop = false;
   var currentWordPlayingStopped = true;
   var playEvenIfSettingPanelIsShowing = false;
+  List<SentenceVo> currSentences = [];
+  int currSentenceIndex = 0;
   static const maxIntValue = 0x7fffffff;
   int waitedTime = maxIntValue;
   bool inited = false;
@@ -395,6 +397,11 @@ class WalkmanPageState extends State<WalkmanPage> {
           return;
         }
 
+        setState(() {
+          currSentences = sentences;
+          currSentenceIndex = 0;
+        });
+
         for (var i = 0; i < repeatCount && !currentWordPlayShouldStop && expectedSession == _playSessionId; i++) {
           // 检查停止信号
           if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
@@ -443,6 +450,9 @@ class WalkmanPageState extends State<WalkmanPage> {
             for (var j = 0; j < actualPlaySentenceCount; j++) {
               if (playSentence && !currentWordPlayShouldStop && expectedSession == _playSessionId && !_audioPlayerDisposed) {
                 currentPlayStep = 'sentence';
+                setState(() {
+                  currSentenceIndex = j;
+                });
                 try {
                   await SoundUtil.playSentenceSound2(sentences[j].englishDigest!, audioPlayer, speed: sentencePlaySpeed);
                 } catch (e) {
@@ -539,6 +549,32 @@ class WalkmanPageState extends State<WalkmanPage> {
       // 释义
       showMeaning ? renderWordMeaning(word, meaningFontSize) : Container(),
 
+      // 例句
+      showSentence
+          ? Padding(
+              padding: const EdgeInsets.only(top: 16.0, left: 24, right: 24),
+              child: renderRichText(
+                currSentences.isNotEmpty
+                    ? (playSentence ? currSentences[currSentenceIndex].english! : currSentences[0].english!)
+                    : '',
+                TextStyle(fontSize: meaningFontSize, fontStyle: FontStyle.italic),
+              ),
+            )
+          : Container(),
+
+      // 翻译 (例句翻译)
+      showChinese && showSentence
+          ? Padding(
+              padding: const EdgeInsets.only(top: 8.0, left: 24, right: 24),
+              child: renderRichText(
+                currSentences.isNotEmpty
+                    ? (playSentence ? currSentences[currSentenceIndex].chinese! : currSentences[0].chinese!)
+                    : '',
+                TextStyle(fontSize: meaningFontSize * 0.9, color: normalTextColor),
+              ),
+            )
+          : Container(),
+
       // 播放/暂停按钮
       isShowingSettingPanel
           ? InkWell(
@@ -584,6 +620,35 @@ class WalkmanPageState extends State<WalkmanPage> {
             textAlign: TextAlign.center,
           ),
       ],
+    );
+  }
+
+  Widget renderRichText(String text, TextStyle baseStyle) {
+    List<TextSpan> spans = [];
+    final RegExp regExp = RegExp(r"<b>(.*?)</b>");
+    int lastMatchEnd = 0;
+
+    for (var match in regExp.allMatches(text)) {
+      // Add text before <b>
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(text: text.substring(lastMatchEnd, match.start), style: baseStyle));
+      }
+      // Add bold text
+      spans.add(TextSpan(
+        text: match.group(1),
+        style: baseStyle.copyWith(fontWeight: FontWeight.bold),
+      ));
+      lastMatchEnd = match.end;
+    }
+
+    // Add remaining text
+    if (lastMatchEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastMatchEnd), style: baseStyle));
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
+      textAlign: TextAlign.center,
     );
   }
 
@@ -732,8 +797,30 @@ class WalkmanPageState extends State<WalkmanPage> {
                         });
                       },
                     ),
-                    const Text('　　'),
-                    const Text('　　'),
+                    InkWell(
+                      child: Text(
+                        '例句',
+                        style: TextStyle(color: showSentence ? selectedTextColor : normalTextColor),
+                      ),
+                      onTap: () {
+                        setState(() {
+                          showSentence = !showSentence;
+                          saveConfig();
+                        });
+                      },
+                    ),
+                    InkWell(
+                      child: Text(
+                        '翻译',
+                        style: TextStyle(color: showChinese ? selectedTextColor : normalTextColor),
+                      ),
+                      onTap: () {
+                        setState(() {
+                          showChinese = !showChinese;
+                          saveConfig();
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
