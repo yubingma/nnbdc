@@ -299,7 +299,25 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
             const SizedBox(height: 12),
             _dialogDescItem(Icons.bar_chart, '横轴 (X轴)', '代表单词数量。柱状条越长表示该时段复习任务越重。'),
             const SizedBox(height: 12),
-            _dialogDescItem(Icons.color_lens_outlined, '颜色含义', '红色代表逾期复习，深蓝色代表今日复习，浅蓝色代表未来复习，紫色代表新词（从未开始背诵）。'),
+            _dialogDescItem(
+              Icons.color_lens_outlined, 
+              '颜色含义', 
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 13, color: Colors.grey, fontFamily: 'NotoSansSC'),
+                  children: [
+                    const TextSpan(text: '红色', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '代表逾期复习，'),
+                    TextSpan(text: '深蓝色', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '代表今日复习，'),
+                    TextSpan(text: '浅蓝色', style: TextStyle(color: AppTheme.primaryColor.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '代表未来复习，'),
+                    const TextSpan(text: '紫色', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '代表新词（从未开始背诵）。'),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -312,7 +330,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     );
   }
 
-  Widget _dialogDescItem(IconData icon, String title, String desc) {
+  Widget _dialogDescItem(IconData icon, String title, dynamic desc) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -323,7 +341,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              Text(desc, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              if (desc is Widget) desc else Text(desc.toString(), style: const TextStyle(fontSize: 13, color: Colors.grey)),
             ],
           ),
         ),
