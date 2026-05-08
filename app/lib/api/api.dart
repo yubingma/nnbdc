@@ -82,6 +82,7 @@ class Api {
         // 注入平台信息、用户ID和昵称，供后端日志 MDC 精确显示 (避免后端查表，提高性能)
         options.headers['X-Client-Platform'] = PlatformUtils.platformLabel;
         options.headers['X-Client-Version'] = Global.buildNumber;
+        options.headers['X-PPDC-CLIENT'] = Config.clientSecret;
         
         // 注入前端当前的系统数据库版本号
         try {

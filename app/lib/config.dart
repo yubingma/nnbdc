@@ -63,4 +63,7 @@ class Config {
 
   // Configuration for ThrottledDbSyncService
   static const Duration dbSyncThrottleInterval = Duration(seconds: 600);
+
+  // Client secret for Nginx interception
+  static const String clientSecret = 'ppdc-official-client-key-7788';
 }
