@@ -596,6 +596,51 @@ class WordVo {
     return sentences;
   }
 
+  /// 获取“平衡”的例句列表：尽量保证覆盖不同的释义项
+  Future<List<SentenceVo>> getBalancedSentences() async {
+    if (meaningItems == null || meaningItems!.isEmpty) {
+      return [];
+    }
+
+    // 1. 获取所有释义项的例句列表
+    List<List<SentenceVo>> sentencesPerMeaning = [];
+    for (MeaningItemVo meaningItem in meaningItems!) {
+      List<SentenceVo> ms = [];
+      if (meaningItem.sentences != null) {
+        ms = meaningItem.sentences!;
+      } else {
+        ms = await meaningItem.getSentences();
+        meaningItem.sentences = ms;
+      }
+      if (ms.isNotEmpty) {
+        sentencesPerMeaning.add(ms);
+      }
+    }
+
+    if (sentencesPerMeaning.isEmpty) {
+      return [];
+    }
+
+    // 2. 轮询提取例句 (Round-robin)
+    List<SentenceVo> result = [];
+    int maxSentencesPerMeaning = 0;
+    for (var list in sentencesPerMeaning) {
+      if (list.length > maxSentencesPerMeaning) {
+        maxSentencesPerMeaning = list.length;
+      }
+    }
+
+    for (int i = 0; i < maxSentencesPerMeaning; i++) {
+      for (var list in sentencesPerMeaning) {
+        if (i < list.length) {
+          result.add(list[i]);
+        }
+      }
+    }
+
+    return result;
+  }
+
   get mergedPronounce {
     var pron = pronounce ?? "";
     if (pron.isEmpty) {

@@ -383,7 +383,7 @@ class WalkmanPageState extends State<WalkmanPage> {
         // 提前获取例句，确保例句与当前单词匹配
         List<SentenceVo> sentences = [];
         try {
-          sentences = await word.word.getSentences();
+          sentences = await word.word.getBalancedSentences();
         } catch (e) {
           Global.logger.d("获取例句失败: $e");
           sentences = [];
