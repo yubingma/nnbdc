@@ -15,6 +15,7 @@ class ReviewDistributionPage extends StatefulWidget {
 class BarChartData {
   final String label;
   final int totalCount;
+  final int newCount;
   final bool isToday;
   final bool isOverdue;
   final int sortKey;
@@ -22,6 +23,7 @@ class BarChartData {
   BarChartData({
     required this.label,
     required this.totalCount,
+    required this.newCount,
     this.isToday = false,
     this.isOverdue = false,
     required this.sortKey,
@@ -53,10 +55,12 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     final now = AppClock.now();
     final nowDate = DateTime(now.year, now.month, now.day);
 
-    Map<int, int> dayToCounts = {};
+    Map<int, int> dayToTotalCounts = {};
+    Map<int, int> dayToNewCounts = {};
     _totalWords = data.length;
 
     for (var item in data) {
+      final isNew = (item['learnedTimes'] ?? 0) == 0;
       final lastDateRaw = item['lastLearningDate'] as DateTime? ?? now;
       final scheduledDays = item['scheduledDays'] as int? ?? 0;
       final nextDateRaw = lastDateRaw.add(Duration(days: scheduledDays));
@@ -72,15 +76,19 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
         key = -((overdueDays + 9) ~/ 10 * 10);
       }
 
-      dayToCounts[key] = (dayToCounts[key] ?? 0) + 1;
+      dayToTotalCounts[key] = (dayToTotalCounts[key] ?? 0) + 1;
+      if (isNew) {
+        dayToNewCounts[key] = (dayToNewCounts[key] ?? 0) + 1;
+      }
     }
 
-    var sortedKeys = dayToCounts.keys.toList()..sort();
+    var sortedKeys = dayToTotalCounts.keys.toList()..sort();
 
     _maxCount = 0;
     _barDataList = sortedKeys.map((key) {
-      final count = dayToCounts[key]!;
-      if (count > _maxCount) _maxCount = count;
+      final totalCount = dayToTotalCounts[key]!;
+      final newCount = dayToNewCounts[key] ?? 0;
+      if (totalCount > _maxCount) _maxCount = totalCount;
 
       String label;
       bool isToday = key == 0;
@@ -96,7 +104,8 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
       return BarChartData(
         label: label,
-        totalCount: count,
+        totalCount: totalCount,
+        newCount: newCount,
         isToday: isToday,
         isOverdue: isOverdue,
         sortKey: key,
@@ -189,7 +198,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth - 50; 
+                  final maxWidth = constraints.maxWidth - 80; 
                   final barWidth = _maxCount == 0 ? 0.0 : (data.totalCount / _maxCount) * maxWidth;
                   
                   return Row(
@@ -209,7 +218,9 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        "${data.totalCount}",
+                        data.newCount > 0 
+                            ? "${data.totalCount - data.newCount} / ${data.newCount}" 
+                            : "${data.totalCount}",
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -230,14 +241,31 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
   Widget _buildSimpleBar(BarChartData data, double totalBarWidth) {
     if (totalBarWidth <= 0) return const SizedBox.shrink();
 
-    return Container(
-      height: 30,
-      width: totalBarWidth,
-      decoration: BoxDecoration(
-        color: data.isToday 
-            ? AppTheme.primaryColor 
-            : (data.isOverdue ? Colors.redAccent : AppTheme.primaryColor.withValues(alpha: 0.5)),
-      ),
+    final reviewCount = data.totalCount - data.newCount;
+    final double reviewWidth = (reviewCount / data.totalCount) * totalBarWidth;
+    final double newWidth = (data.newCount / data.totalCount) * totalBarWidth;
+
+    return Row(
+      children: [
+        if (reviewWidth > 0)
+          Container(
+            height: 30,
+            width: reviewWidth < 1 && reviewWidth > 0 ? 1 : reviewWidth, // 确保极短的条也能看见
+            decoration: BoxDecoration(
+              color: data.isToday 
+                  ? AppTheme.primaryColor 
+                  : (data.isOverdue ? Colors.redAccent : AppTheme.primaryColor.withValues(alpha: 0.5)),
+            ),
+          ),
+        if (newWidth > 0)
+          Container(
+            height: 30,
+            width: newWidth < 1 && newWidth > 0 ? 1 : newWidth,
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B5CF6),
+            ),
+          ),
+      ],
     );
   }
 
@@ -255,7 +283,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
             const SizedBox(height: 12),
             _dialogDescItem(Icons.bar_chart, '横轴 (X轴)', '代表单词数量。柱状条越长表示该时段复习任务越重。'),
             const SizedBox(height: 12),
-            _dialogDescItem(Icons.color_lens_outlined, '颜色含义', '红色代表逾期，深蓝色代表今天，浅蓝色代表未来。'),
+            _dialogDescItem(Icons.color_lens_outlined, '颜色含义', '红色代表逾期复习，深蓝色代表今日复习，浅蓝色代表未来复习，紫色代表新词（从未开始背诵）。'),
           ],
         ),
         actions: [
