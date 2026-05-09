@@ -342,6 +342,7 @@ class BdcNotifier extends _$BdcNotifier {
     WordWrapper wordWrapper = WordWrapper(word, null);
     
     state = state.copyWith(
+      currentGetWordResult: getWordResult,
       word: word,
       wordWrapper: wordWrapper,
       studyStep: newStudyStep,

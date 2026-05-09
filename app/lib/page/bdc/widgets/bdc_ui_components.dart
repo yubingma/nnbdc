@@ -284,6 +284,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             : null,
       ),
       child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
             BdcPageState.leftPadding,
             0,
@@ -292,23 +293,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                 kTextTabBarHeight + 6.0,
                 MediaQuery.of(context).viewPadding.bottom +
                     kTextTabBarHeight)), // 预留底部TabBar空间，避免遮挡
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            children: [
-              // 英→中模式整合卡片
-              if (state.studyStep == StudyStep.en2Ch.json &&
-                  state.currentGetWordResult?.learningWord?.word != null)
-                _buildWordStepCard(),
-              // 中→英模式整合卡片
-              if (state.studyStep == StudyStep.ch2En.json &&
-                  state.currentGetWordResult?.learningWord?.word != null)
-                _buildMeaningStepCard(),
+        child: Column(
+          children: [
+            // 英→中模式整合卡片
+            if (state.studyStep == StudyStep.en2Ch.json &&
+                state.currentGetWordResult?.learningWord?.word != null)
+              _buildWordStepCard(),
+            // 中→英模式整合卡片
+            if (state.studyStep == StudyStep.ch2En.json &&
+                state.currentGetWordResult?.learningWord?.word != null)
+              _buildMeaningStepCard(),
 
-              _buildPhoneticRow(),
-              _buildFirstSentenceRow(),
-            ],
-          ),
+            _buildPhoneticRow(),
+            _buildFirstSentenceRow(),
+          ],
         ),
       ),
     );
