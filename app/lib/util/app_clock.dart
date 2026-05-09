@@ -1,3 +1,5 @@
+import 'date_utils.dart';
+
 /// 可注入的时间提供器，便于在测试中模拟时间
 abstract class Clock {
   DateTime now();
@@ -53,7 +55,6 @@ class AppClock {
   }
 
   static DateTime today() {
-    final n = now();
-    return DateTime(n.year, n.month, n.day);
+    return DateUtils.businessDate(now());
   }
 }

@@ -181,10 +181,11 @@ class LearningService {
       if (word.lastLearningDate == null) return true; // 全新词未在当前算法下学习过
 
       // FSRS 逻辑：上次学习日期 + 计划天数 <= 今天
+      final lastDateLocal = word.lastLearningDate!.toLocal();
       final nextReviewDate = DateTime(
-        word.lastLearningDate!.year,
-        word.lastLearningDate!.month,
-        word.lastLearningDate!.day,
+        lastDateLocal.year,
+        lastDateLocal.month,
+        lastDateLocal.day,
       ).add(Duration(days: word.scheduledDays ?? 0));
 
       return nextReviewDate.isBefore(today) || DateUtils.isSameDay(nextReviewDate, today);

@@ -12,6 +12,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/client_type.dart';
+import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/level_util.dart';
 import 'package:nnbdc/util/sync.dart' as dbsync;
@@ -151,13 +152,11 @@ class UserBo {
 
       if (user != null) {
         try {
-          final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
+          final today = AppClock.today();
           
           // 额外的跨天检测保护：如果今天是新的一天（基于由 lastLearningDate)，重置今日学习标记
           if (user.todayStudyStarted && user.lastLearningDate != null && 
-              (user.lastLearningDate!.year != today.year || 
-               user.lastLearningDate!.month != today.month || 
-               user.lastLearningDate!.day != today.day)) {
+              !DateUtils.isSameDay(user.lastLearningDate!, today)) {
              try {
                Global.logger.d('getLoggedInUser: 检测到持久过的今日状态已过期(跨天)，正在重置... lastLearningDate=${user.lastLearningDate}, today=$today');
                // 更新数据库中的 User 对象 state
@@ -251,7 +250,7 @@ class UserBo {
   Future<Result<bool>> hasDakaToday(String userId) async {
     try {
       final db = MyDatabase.instance;
-      final today = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
+      final today = DateUtils.pureDate(AppClock.now());
       final hasDakaToday = await db.dakasDao.findById(userId, today) != null;
       final result = Result<bool>("SUCCESS", "获取成功", true);
       result.data = hasDakaToday;

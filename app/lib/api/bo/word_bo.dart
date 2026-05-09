@@ -8,6 +8,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/level_util.dart';
@@ -870,7 +871,7 @@ class WordBo {
     }
 
     final now = AppClock.now();
-    final nowDate = DateTime(now.year, now.month, now.day);
+    final nowDate = DateUtils.pureDate(now);
 
     // 获取所有正在学习中的单词 (即：尚未毕业的候选人)
     final allLearningWords = await (db.select(db.learningWords)
@@ -894,9 +895,9 @@ class WordBo {
 
       final lastDateRaw = word.lastLearningDate ?? now;
       final scheduledDays = word.scheduledDays ?? 0;
-      final nextDateRaw = DateTime(lastDateRaw.year, lastDateRaw.month, lastDateRaw.day).add(Duration(days: scheduledDays));
+      final nextDateRaw = DateUtils.pureDate(lastDateRaw).add(Duration(days: scheduledDays));
 
-      final nextDate = DateTime(nextDateRaw.year, nextDateRaw.month, nextDateRaw.day);
+      final nextDate = DateUtils.pureDate(nextDateRaw);
       final daysDiff = nextDate.difference(nowDate).inDays;
 
       int key;

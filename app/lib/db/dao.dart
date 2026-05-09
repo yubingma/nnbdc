@@ -4,6 +4,7 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/table.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/oper_type.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -1586,8 +1587,8 @@ class UserOpersDao extends DatabaseAccessor<MyDatabase> with _$UserOpersDaoMixin
   // 根据用户ID和日期查询操作记录
   Future<List<UserOper>> getByUserIdAndDate(String userId, DateTime date, OperType operType) async {
     try {
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+      final startOfDay = DateUtils.pureDate(date);
+      final endOfDay = DateTime(startOfDay.year, startOfDay.month, startOfDay.day, 23, 59, 59);
 
       return await (select(userOpers)
             ..where((h) =>
@@ -2084,8 +2085,8 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
 
   Future<List<UserWrongWord>> getTodayWrongWords(String userId) async {
     final now = AppClock.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+    final startOfDay = DateUtils.pureDate(now);
+    final endOfDay = DateTime(startOfDay.year, startOfDay.month, startOfDay.day, 23, 59, 59, 999);
 
     return (select(userWrongWords)
           ..where((uw) => uw.userId.equals(userId) & uw.createTime.isBiggerOrEqualValue(startOfDay) & uw.createTime.isSmallerOrEqualValue(endOfDay))
