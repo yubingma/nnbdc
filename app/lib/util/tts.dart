@@ -16,6 +16,7 @@ class Tts {
   // 引入异步锁，确保串行执行
   Future? _activeSpeakFuture;
   bool _isSpeaking = false;
+  bool _stopRequested = false;
 
   bool get isSpeaking => _isSpeaking;
 
@@ -76,6 +77,8 @@ class Tts {
       return;
     }
 
+    _stopRequested = false; // 每次新的 speak 开始前，重置停止请求标记
+
     // 等待上一个播放任务结束 (简单的 Mutex 实现)
     while (_activeSpeakFuture != null) {
       await _activeSpeakFuture;
@@ -112,12 +115,17 @@ class Tts {
       await methodChannel.invokeMethod('speak', {'text': text, 'utteranceId': utteranceId, 'language': language});
       _isSpeaking = true;
 
-      // 等待播放完成
+      // 等待播放完成，结合事件回调和时间保护
       int attempts = 0;
       final maxAttempts = 1000; // 1000 × 20ms = 20s
       Global.logger.d('TTS 开始等待完成: $utteranceId, 估算时长: ${estimatedDurationMs}ms, 兜底时长: ${fallbackDurationMs}ms');
 
       while (attempts < maxAttempts) {
+        if (_stopRequested) {
+          Global.logger.d('TTS 收到停止请求，中断等待循环: $utteranceId');
+          break;
+        }
+
         await Future.delayed(const Duration(milliseconds: 20));
         attempts++;
         
@@ -200,6 +208,8 @@ class Tts {
     if (!PlatformUtils.isAndroid && !PlatformUtils.isIOS) {
       return;
     }
+
+    _stopRequested = true; // 设置停止标记，中断正在执行的 _doSpeak 循环
 
     try {
       methodChannel.invokeMethod('stop');

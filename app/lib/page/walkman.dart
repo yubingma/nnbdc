@@ -134,6 +134,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   static const maxIntValue = 0x7fffffff;
   int waitedTime = 0; // 修改初始值为0，但在进入时标记为“已等待足够久”
   bool _isFirstWord = true; // 增加标记位，识别是否为第一个单词
+  bool _forceNoWaitOnce = false; // 强制跳过单词内部的所有等待时间 (用于手动切换后的第一个词)
   bool inited = false;
   bool isLandscape = false;
   int _playSessionId = 0;
@@ -438,9 +439,9 @@ class WalkmanPageState extends State<WalkmanPage> {
 
           if (playMeaning && PlatformUtils.isTtsSupported()) {
             // 播放释义前，休眠一会儿，以便用户可以回想一下
-            // 如果是手动模式 (playInterval == maxIntValue)，则不在这里等待，因为用户已经手动切换过来了
+            // 如果是手动模式 (playInterval == maxIntValue) 或者是手动切换后的第一个词，则不在这里等待
             var sleepTime = 0;
-            final effectiveInterval = playInterval == maxIntValue ? 0 : playInterval;
+            final effectiveInterval = (playInterval == maxIntValue || _forceNoWaitOnce) ? 0 : playInterval;
             while (!currentWordPlayShouldStop && expectedSession == _playSessionId && sleepTime < effectiveInterval * 0.5) {
               await Future.delayed(const Duration(milliseconds: 10), () {}); // 减少检查间隔
               sleepTime += 10;
@@ -500,7 +501,7 @@ class WalkmanPageState extends State<WalkmanPage> {
           // 重复播放下一个单词前，等待一段时间
           if (i < repeatCount - 1) {
             var sleepTime = 0;
-            final effectiveInterval = playInterval == maxIntValue ? 500 : playInterval; // 手动模式下重复播放给 0.5 秒间隔
+            final effectiveInterval = (playInterval == maxIntValue || _forceNoWaitOnce) ? 500 : playInterval; // 手动或强制模式下重复播放给 0.5 秒间隔
             while (!currentWordPlayShouldStop && expectedSession == _playSessionId && sleepTime < effectiveInterval) {
               await Future.delayed(const Duration(milliseconds: 10), () {}); // 减少检查间隔
               sleepTime += 10;
@@ -510,10 +511,12 @@ class WalkmanPageState extends State<WalkmanPage> {
 
         if (expectedSession == _playSessionId) {
           nextWordIndex = currWordIndex + 1 < allWords.length ? currWordIndex + 1 : 0;
+          _forceNoWaitOnce = false; // 当前单词播报完毕，重置强制标记
         }
       }
       if (expectedSession == _playSessionId) {
         currentWordPlayingStopped = true;
+        _forceNoWaitOnce = false; // 确保即使异常也能重置
       }
     } catch (e) {
       // 即使出错也要更新nextWordIndex和播放状态，确保播放能继续到下一个单词
@@ -522,6 +525,7 @@ class WalkmanPageState extends State<WalkmanPage> {
       }
       if (expectedSession == _playSessionId) {
         currentWordPlayingStopped = true;
+        _forceNoWaitOnce = false;
       }
       ToastUtil.error("播放异常");
     }
@@ -1173,6 +1177,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     });
 
     // 4. 重置状态并开启新一轮播放
+    _forceNoWaitOnce = true;
     resetPlayState();
   }
 
