@@ -132,7 +132,8 @@ class WalkmanPageState extends State<WalkmanPage> {
   List<SentenceVo> currSentences = [];
   int currSentenceIndex = 0;
   static const maxIntValue = 0x7fffffff;
-  int waitedTime = maxIntValue;
+  int waitedTime = 0; // 修改初始值为0，但在进入时标记为“已等待足够久”
+  bool _isFirstWord = true; // 增加标记位，识别是否为第一个单词
   bool inited = false;
   bool isLandscape = false;
   int _playSessionId = 0;
@@ -340,9 +341,12 @@ class WalkmanPageState extends State<WalkmanPage> {
           playWordTick();
         }
       });
-    } else if (waitedTime >= playInterval && currentWordPlayingStopped) {
-      // 重置等待时间
+    } else if ((_isFirstWord || waitedTime >= playInterval) && currentWordPlayingStopped) {
+      // 如果是第一个单词，或者等待时间已到，且当前单词已停止播放
+      
+      // 重置等待时间和标记位
       waitedTime = 0;
+      _isFirstWord = false;
 
       // 开始播放
       await doPlayWord();
