@@ -795,10 +795,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               final fsrs = FSRS();
               _daysSinceLastReview = 0;
               if (lw.lastLearningDate != null) {
-                final lastDate = DateTime(lw.lastLearningDate!.year,
-                    lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-                final now = AppClock.now();
-                final todayDate = DateTime(now.year, now.month, now.day);
+                final lastDate = DateUtils.pureDate(lw.lastLearningDate!);
+                final todayDate = AppClock.today();
                 _daysSinceLastReview = todayDate.difference(lastDate).inDays;
               }
               if (lw.stability == null || lw.stability == 0.0) {
@@ -1416,10 +1414,8 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         final fsrs = FSRS();
         _daysSinceLastReview = 0;
         if (lw.lastLearningDate != null) {
-          final lastDate = DateTime(lw.lastLearningDate!.year,
-              lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-          final now = AppClock.now();
-          final todayDate = DateTime(now.year, now.month, now.day);
+          final lastDate = DateUtils.pureDate(lw.lastLearningDate!);
+          final todayDate = AppClock.today();
           _daysSinceLastReview = todayDate.difference(lastDate).inDays;
         }
         if (lw.stability == null || lw.stability == 0.0) {

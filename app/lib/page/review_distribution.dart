@@ -54,7 +54,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
     final data = await db.learningWordsDao.getLearningWordsForCloud(userId);
     final now = AppClock.now();
-    final nowDate = DateTime(now.year, now.month, now.day);
+    final nowDate = AppClock.today();
 
     Map<int, int> dayToTotalCounts = {};
     _totalWords = data.length;
@@ -69,9 +69,9 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
       final lastDateRaw = item['lastLearningDate'] as DateTime? ?? now;
       final scheduledDays = item['scheduledDays'] as int? ?? 0;
-      final nextDateRaw = lastDateRaw.add(Duration(days: scheduledDays));
+      final nextDateRaw = DateUtils.pureDate(lastDateRaw).add(Duration(days: scheduledDays));
       
-      final nextDate = DateTime(nextDateRaw.year, nextDateRaw.month, nextDateRaw.day);
+      final nextDate = DateUtils.pureDate(nextDateRaw);
       final daysDiff = nextDate.difference(nowDate).inDays;
 
       int key;

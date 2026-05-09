@@ -1630,13 +1630,13 @@ class WordBo {
         throw Exception('用户不存在');
       }
       final now = AppClock.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+      final start = DateUtils.businessDayStart(now);
+      final end = DateUtils.businessDayEnd(now);
       final wrongWordsQuery = db.select(db.userWrongWords)
         ..where((tbl) =>
             tbl.userId.equals(userId) &
-            ((tbl.createTime.isBiggerOrEqualValue(startOfDay) & tbl.createTime.isSmallerOrEqualValue(endOfDay)) |
-                (tbl.updateTime.isBiggerOrEqualValue(startOfDay) & tbl.updateTime.isSmallerOrEqualValue(endOfDay))))
+            ((tbl.createTime.isBiggerOrEqualValue(start) & tbl.createTime.isSmallerOrEqualValue(end)) |
+                (tbl.updateTime.isBiggerOrEqualValue(start) & tbl.updateTime.isSmallerOrEqualValue(end))))
         ..orderBy([
           (tbl) => OrderingTerm(expression: coalesce([tbl.updateTime, tbl.createTime]), mode: OrderingMode.desc)
         ]);
@@ -1780,13 +1780,13 @@ class WordBo {
       final db = MyDatabase.instance;
       final wordLists = <WordList>[];
       final now = AppClock.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+      final start = DateUtils.businessDayStart(now);
+      final end = DateUtils.businessDayEnd(now);
       final wrongWordsQuery = db.selectOnly(db.userWrongWords)
         ..addColumns([db.userWrongWords.wordId.count(distinct: true)])
         ..where(db.userWrongWords.userId.equals(user.id))
-        ..where((db.userWrongWords.createTime.isBiggerOrEqualValue(startOfDay) & db.userWrongWords.createTime.isSmallerOrEqualValue(endOfDay)) |
-            (db.userWrongWords.updateTime.isBiggerOrEqualValue(startOfDay) & db.userWrongWords.updateTime.isSmallerOrEqualValue(endOfDay)));
+        ..where((db.userWrongWords.createTime.isBiggerOrEqualValue(start) & db.userWrongWords.createTime.isSmallerOrEqualValue(end)) |
+            (db.userWrongWords.updateTime.isBiggerOrEqualValue(start) & db.userWrongWords.updateTime.isSmallerOrEqualValue(end)));
       final wrongWordsCount = await wrongWordsQuery.getSingle();
       wordLists.add(WordList("今日错词", wrongWordsCount.read(db.userWrongWords.wordId.count(distinct: true)) ?? 0));
       final newWordsQuery = db.selectOnly(db.learningWords)

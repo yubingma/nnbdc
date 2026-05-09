@@ -176,17 +176,13 @@ class LearningService {
     final List<LearningWord> candidateWords = allLearningWords.where((word) => !todayWordIds.contains(word.wordId)).toList();
 
     // 1. 识别到期单词 (Due Words)
-    final today = DateTime(now.year, now.month, now.day);
+    final today = AppClock.today();
     bool isDue(LearningWord word) {
       if (word.lastLearningDate == null) return true; // 全新词未在当前算法下学习过
 
       // FSRS 逻辑：上次学习日期 + 计划天数 <= 今天
-      final lastDateLocal = word.lastLearningDate!.toLocal();
-      final nextReviewDate = DateTime(
-        lastDateLocal.year,
-        lastDateLocal.month,
-        lastDateLocal.day,
-      ).add(Duration(days: word.scheduledDays ?? 0));
+      final lastDate = DateUtils.pureDate(word.lastLearningDate!);
+      final nextReviewDate = lastDate.add(Duration(days: word.scheduledDays ?? 0));
 
       return nextReviewDate.isBefore(today) || DateUtils.isSameDay(nextReviewDate, today);
     }

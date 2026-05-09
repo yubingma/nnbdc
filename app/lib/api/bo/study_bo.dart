@@ -872,15 +872,11 @@ class StudyBo {
           lapses: currWord.lapses!,
           state: FsrsStateExt.fromInt(currWord.state),
         );
-        // 计算经过的天数 (使用日历天数差)
+        // 计算经过的天数 (使用业务天数差)
         int elapsedDays = 0;
         if (currWord.lastLearningDate != null) {
-          final lastDate = DateTime(
-            currWord.lastLearningDate!.year,
-            currWord.lastLearningDate!.month,
-            currWord.lastLearningDate!.day,
-          );
-          final todayDate = DateTime(now.year, now.month, now.day);
+          final lastDate = DateUtils.pureDate(currWord.lastLearningDate!);
+          final todayDate = AppClock.today();
           elapsedDays = todayDate.difference(lastDate).inDays;
         }
         nextFsrs = fsrs.next(currentFsrs, fsrsRating, elapsedDays);

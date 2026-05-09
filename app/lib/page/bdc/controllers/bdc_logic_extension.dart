@@ -363,10 +363,8 @@ extension BdcPageStateLogic on BdcPageState {
       // 计算距离上次复习的天数
       _daysSinceLastReview = 0;
       if (lw.lastLearningDate != null) {
-        final lastDate = DateTime(lw.lastLearningDate!.year,
-            lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-        final now = AppClock.now();
-        final todayDate = DateTime(now.year, now.month, now.day);
+        final lastDate = DateUtils.pureDate(lw.lastLearningDate!);
+        final todayDate = AppClock.today();
         _daysSinceLastReview = todayDate.difference(lastDate).inDays;
       }
 
@@ -1325,10 +1323,8 @@ extension BdcPageStateLogic on BdcPageState {
         final fsrs = FSRS();
         _daysSinceLastReview = 0;
         if (lw.lastLearningDate != null) {
-          final lastDate = DateTime(lw.lastLearningDate!.year,
-              lw.lastLearningDate!.month, lw.lastLearningDate!.day);
-          final now = AppClock.now();
-          final todayDate = DateTime(now.year, now.month, now.day);
+          final lastDate = DateUtils.pureDate(lw.lastLearningDate!);
+          final todayDate = AppClock.today();
           _daysSinceLastReview = todayDate.difference(lastDate).inDays;
         }
         if (lw.stability == null || lw.stability == 0.0) {

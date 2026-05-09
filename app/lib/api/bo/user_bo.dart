@@ -221,7 +221,7 @@ class UserBo {
       await db.localParamsDao.setValue(backfillKey, 'true');
     }
 
-    final endDate = DateTime(AppClock.now().year, AppClock.now().month, AppClock.now().day);
+    final endDate = AppClock.today();
     final startDate = endDate.subtract(Duration(days: recentNDays - 1));
 
     final List<UserDayStatus> dayStatuses = List.filled(recentNDays, UserDayStatus.notLogin);
@@ -374,16 +374,15 @@ class UserBo {
     if (records.isEmpty) return 0;
 
     int continuousDays = 0;
-    final now = AppClock.now();
-    DateTime checkDate = DateTime(now.year, now.month, now.day);
+    DateTime checkDate = AppClock.today();
 
-    final hasDakaToday = records.any((r) => _isSameDay(r.forLearningDate, checkDate));
+    final hasDakaToday = records.any((r) => DateUtils.isSameDay(r.forLearningDate, checkDate));
     if (!hasDakaToday) {
       checkDate = checkDate.subtract(const Duration(days: 1));
     }
 
     for (final record in records) {
-      final recordDate = DateTime(record.forLearningDate.year, record.forLearningDate.month, record.forLearningDate.day);
+      final recordDate = DateUtils.pureDate(record.forLearningDate);
       if (recordDate.isAtSameMomentAs(checkDate)) {
         continuousDays++;
         checkDate = checkDate.subtract(const Duration(days: 1));
@@ -392,10 +391,6 @@ class UserBo {
       }
     }
     return continuousDays;
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   Future<void> updateAndSyncUserDakaStats(String userId) async {

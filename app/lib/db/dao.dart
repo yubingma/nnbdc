@@ -1587,14 +1587,14 @@ class UserOpersDao extends DatabaseAccessor<MyDatabase> with _$UserOpersDaoMixin
   // 根据用户ID和日期查询操作记录
   Future<List<UserOper>> getByUserIdAndDate(String userId, DateTime date, OperType operType) async {
     try {
-      final startOfDay = DateUtils.pureDate(date);
-      final endOfDay = DateTime(startOfDay.year, startOfDay.month, startOfDay.day, 23, 59, 59);
+      final start = DateUtils.businessDayStart(date);
+      final end = DateUtils.businessDayEnd(date);
 
       return await (select(userOpers)
             ..where((h) =>
                 h.userId.equals(userId) &
-                h.operTime.isBiggerOrEqualValue(startOfDay) &
-                h.operTime.isSmallerOrEqualValue(endOfDay) &
+                h.operTime.isBiggerOrEqualValue(start) &
+                h.operTime.isSmallerOrEqualValue(end) &
                 h.operType.equals(operType.value))
             ..orderBy([(h) => OrderingTerm(expression: h.operTime, mode: OrderingMode.desc)]))
           .get();
@@ -2085,11 +2085,11 @@ class UserWrongWordsDao extends DatabaseAccessor<MyDatabase> with _$UserWrongWor
 
   Future<List<UserWrongWord>> getTodayWrongWords(String userId) async {
     final now = AppClock.now();
-    final startOfDay = DateUtils.pureDate(now);
-    final endOfDay = DateTime(startOfDay.year, startOfDay.month, startOfDay.day, 23, 59, 59, 999);
+    final start = DateUtils.businessDayStart(now);
+    final end = DateUtils.businessDayEnd(now);
 
     return (select(userWrongWords)
-          ..where((uw) => uw.userId.equals(userId) & uw.createTime.isBiggerOrEqualValue(startOfDay) & uw.createTime.isSmallerOrEqualValue(endOfDay))
+          ..where((uw) => uw.userId.equals(userId) & uw.createTime.isBiggerOrEqualValue(start) & uw.createTime.isSmallerOrEqualValue(end))
           ..orderBy([(uw) => OrderingTerm(expression: uw.createTime, mode: OrderingMode.desc)]))
         .get();
   }
@@ -2233,8 +2233,8 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
   }
 
   Future<List<Map<String, dynamic>>> getDailyReviewCounts(String userId, int days) async {
-    final now = AppClock.now();
-    final startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
+    final endDate = AppClock.today();
+    final startDate = endDate.subtract(Duration(days: days - 1));
     final startTimestamp = startDate.millisecondsSinceEpoch ~/ 1000;
 
     // 优先从新表查询，如果没有数据则从旧表（learning_logs）查询
@@ -2285,7 +2285,7 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
   }
 
   Future<void> incrementSeconds(String userId, DateTime date, int seconds) async {
-    final pureDate = DateTime(date.year, date.month, date.day);
+    final pureDate = DateUtils.pureDate(date);
     final existing = await (select(userStudyDailyStats)
           ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
         .getSingleOrNull();
@@ -2308,7 +2308,7 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
   }
 
   Future<void> incrementReviewCount(String userId, DateTime date) async {
-    final pureDate = DateTime(date.year, date.month, date.day);
+    final pureDate = DateUtils.pureDate(date);
     final existing = await (select(userStudyDailyStats)
           ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
         .getSingleOrNull();
@@ -2331,8 +2331,7 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
   }
 
   Future<List<UserStudyDailyStat>> getRecentStats(String userId, int days) async {
-    final now = AppClock.now();
-    final startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
+    final startDate = AppClock.today().subtract(Duration(days: days - 1));
     return (select(userStudyDailyStats)
           ..where((t) => t.userId.equals(userId) & t.date.isBiggerOrEqualValue(startDate))
           ..orderBy([(t) => OrderingTerm.asc(t.date)]))
@@ -2340,7 +2339,7 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
   }
 
   Future<void> updateDayStatus(String userId, DateTime date, UserDayStatus newStatus) async {
-    final pureDate = DateTime(date.year, date.month, date.day);
+    final pureDate = DateUtils.pureDate(date);
     final existing = await (select(userStudyDailyStats)
           ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
         .getSingleOrNull();

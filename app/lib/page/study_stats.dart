@@ -164,8 +164,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
   }
 
   Widget _buildHeatmapGrid(bool isDarkMode) {
-    final now = AppClock.now();
-    final startDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 29));
+    final startDate = AppClock.today().subtract(const Duration(days: 29));
     
     return LayoutBuilder(
       builder: (context, constraints) {
