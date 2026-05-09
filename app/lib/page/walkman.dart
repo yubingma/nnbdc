@@ -700,32 +700,14 @@ class WalkmanPageState extends State<WalkmanPage> {
           onHorizontalDragEnd: (DragEndDetails details) async {
             // 向左滑动, 播放下一个单词
             if (details.velocity.pixelsPerSecond.dx <= -500) {
-              await forceFinishCurrentWord();
-              setState(() {
-                if (currWordIndex + 1 < allWords.length) {
-                  currWordIndex += 1;
-                } else {
-                  currWordIndex = 0;
-                }
-                nextWordIndex = currWordIndex;
-              });
-              // 使用新方法重置播放状态
-              resetPlayState();
+              int nextIdx = currWordIndex + 1 < allWords.length ? currWordIndex + 1 : 0;
+              _handleWordSwitch(nextIdx);
             }
 
             // 向右滑动, 播放上一个单词
             else if (details.velocity.pixelsPerSecond.dx >= 500) {
-              await forceFinishCurrentWord();
-              setState(() {
-                if (currWordIndex >= 1) {
-                  currWordIndex -= 1;
-                } else {
-                  currWordIndex = allWords.length - 1;
-                }
-                nextWordIndex = currWordIndex;
-              });
-              // 使用新方法重置播放状态
-              resetPlayState();
+              int prevIdx = currWordIndex >= 1 ? currWordIndex - 1 : allWords.length - 1;
+              _handleWordSwitch(prevIdx);
             }
           },
           child: Container(
@@ -1166,6 +1148,32 @@ class WalkmanPageState extends State<WalkmanPage> {
         ),
       ),
     );
+  }
+
+  // 统一处理单词切换，确保响应迅速
+  void _handleWordSwitch(int newIndex) {
+    // 1. 立即设置停止信号并增加 Session ID，这会瞬间阻断当前正在进行的 doPlayWord 循环
+    currentWordPlayShouldStop = true;
+    _playSessionId++;
+
+    // 2. 立即尝试停止物理播放器 (TTS 和 Just Audio)
+    try {
+      tts?.stop();
+      if (!_audioPlayerDisposed) {
+        audioPlayer.stop();
+      }
+    } catch (e) {
+      Global.logger.d("切换单词时停止播放出错: $e");
+    }
+
+    // 3. 立即更新 UI 和索引
+    setState(() {
+      currWordIndex = newIndex;
+      nextWordIndex = currWordIndex;
+    });
+
+    // 4. 重置状态并开启新一轮播放
+    resetPlayState();
   }
 
   @override
