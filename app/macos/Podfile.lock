@@ -1,6 +1,8 @@
 PODS:
   - app_settings (5.1.1):
     - FlutterMacOS
+  - audio_session (0.0.1):
+    - FlutterMacOS
   - audioplayers_darwin (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -19,6 +21,9 @@ PODS:
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
   - in_app_purchase_storekit (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - just_audio (0.0.1):
     - Flutter
     - FlutterMacOS
   - open_file_mac (1.0.3):
@@ -73,6 +78,7 @@ PODS:
 
 DEPENDENCIES:
   - app_settings (from `Flutter/ephemeral/.symlinks/plugins/app_settings/macos`)
+  - audio_session (from `Flutter/ephemeral/.symlinks/plugins/audio_session/macos`)
   - audioplayers_darwin (from `Flutter/ephemeral/.symlinks/plugins/audioplayers_darwin/darwin`)
   - connectivity_plus (from `Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos`)
   - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
@@ -82,6 +88,7 @@ DEPENDENCIES:
   - flutter_timezone (from `Flutter/ephemeral/.symlinks/plugins/flutter_timezone/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - in_app_purchase_storekit (from `Flutter/ephemeral/.symlinks/plugins/in_app_purchase_storekit/darwin`)
+  - just_audio (from `Flutter/ephemeral/.symlinks/plugins/just_audio/darwin`)
   - open_file_mac (from `Flutter/ephemeral/.symlinks/plugins/open_file_mac/macos`)
   - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
   - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
@@ -101,6 +108,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   app_settings:
     :path: Flutter/ephemeral/.symlinks/plugins/app_settings/macos
+  audio_session:
+    :path: Flutter/ephemeral/.symlinks/plugins/audio_session/macos
   audioplayers_darwin:
     :path: Flutter/ephemeral/.symlinks/plugins/audioplayers_darwin/darwin
   connectivity_plus:
@@ -119,6 +128,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral
   in_app_purchase_storekit:
     :path: Flutter/ephemeral/.symlinks/plugins/in_app_purchase_storekit/darwin
+  just_audio:
+    :path: Flutter/ephemeral/.symlinks/plugins/just_audio/darwin
   open_file_mac:
     :path: Flutter/ephemeral/.symlinks/plugins/open_file_mac/macos
   package_info_plus:
@@ -142,6 +153,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   app_settings: cd21e176b56f8172043640ade81322a98896bff4
+  audio_session: eaca2512cf2b39212d724f35d11f46180ad3a33e
   audioplayers_darwin: 4f9ca89d92d3d21cec7ec580e78ca888e5fb68bd
   connectivity_plus: 4adf20a405e25b42b9c9f87feff8f4b6fde18a4e
   file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
@@ -151,6 +163,7 @@ SPEC CHECKSUMS:
   flutter_timezone: d272288c69082ad571630e0d17140b3d6b93dc0c
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   in_app_purchase_storekit: 22cca7d08eebca9babdf4d07d0baccb73325d3c8
+  just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
   open_file_mac: 76f06c8597551249bdb5e8fd8827a98eae0f4585
   OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
   package_info_plus: f0052d280d17aa382b932f399edf32507174e870

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/services.dart';
@@ -11,6 +12,12 @@ class Tts {
   var eventChannel = const EventChannel('nnbdc/tts_events');
   bool initialized = false;
   HashSet completedUtterances = HashSet();
+  
+  // 引入异步锁，确保串行执行
+  Future? _activeSpeakFuture;
+  bool _isSpeaking = false;
+
+  bool get isSpeaking => _isSpeaking;
 
   onTtsEvent(event) {
     Global.logger.d('TTS 收到事件: $event');
@@ -21,6 +28,9 @@ class Tts {
       final utteranceId = event['data'];
       Global.logger.d('TTS 完成事件: $utteranceId');
       completedUtterances.add(utteranceId);
+      _isSpeaking = false;
+    } else if (event['type'] == 'ttsStarted') {
+      _isSpeaking = true;
     }
   }
 
@@ -66,27 +76,45 @@ class Tts {
       return;
     }
 
+    // 等待上一个播放任务结束 (简单的 Mutex 实现)
+    while (_activeSpeakFuture != null) {
+      await _activeSpeakFuture;
+    }
+
+    Completer completer = Completer();
+    _activeSpeakFuture = completer.future;
+
+    try {
+      await _doSpeak(text);
+    } finally {
+      _activeSpeakFuture = null;
+      completer.complete();
+    }
+  }
+
+  Future<void> _doSpeak(String text) async {
     // 自动判断语言
     String language = _detectLanguage(text);
-    Global.logger.d('TTS speak: $text, language: $language');
+    Global.logger.d('TTS _doSpeak: $text, language: $language');
+    
     try {
       // 文本转语音播放
       var uuid = const Uuid();
       final utteranceId = uuid.v4();
       
-      // 基于文本长度估算最小播放时间，作为安全保护
-      // 中文约 3-4 字/秒，英文约 4-5 词/秒
-      double charsPerSecond = language == 'zh-CN' ? 3.5 : 4.5;
+      // 调低估算语速，增加安全保护时间 (中文 2.5 字/秒, 英文 3.5 词/秒)
+      double charsPerSecond = language == 'zh-CN' ? 2.5 : 3.5;
       int minDurationMs = (text.length / charsPerSecond * 1000).round();
-      // 限制最小保护时间在 500ms 到 8000ms 之间
-      minDurationMs = minDurationMs.clamp(500, 8000);
+      // 允许最长 15 秒的保护
+      minDurationMs = minDurationMs.clamp(500, 15000);
       
       final startTime = DateTime.now();
       await methodChannel.invokeMethod('speak', {'text': text, 'utteranceId': utteranceId, 'language': language});
+      _isSpeaking = true;
 
       // 等待播放完成，结合事件回调和时间保护
       int attempts = 0;
-      final maxAttempts = 600; // 600 × 20ms = 12s
+      final maxAttempts = 1000; // 1000 × 20ms = 20s
       Global.logger.d('TTS 开始等待完成: $utteranceId, 最小保护时间: ${minDurationMs}ms');
 
       while (attempts < maxAttempts) {
@@ -98,14 +126,16 @@ class Tts {
         // 如果收到了完成事件，且已经过了最小保护时间，则退出
         if (completedUtterances.contains(utteranceId)) {
           if (elapsedMs >= minDurationMs) {
-            Global.logger.d('TTS 播放完成事件触发且满足最小时间: $utteranceId');
+            Global.logger.d('TTS 播放完成事件触发且满足最小时间: $utteranceId, 耗时: ${elapsedMs}ms');
             break;
-          } else {
-            // 收到事件但时间太短，可能是原生端异常触发，继续等待
-            if (attempts % 50 == 0) {
-              Global.logger.d('TTS 收到完成事件但未达最小时间，继续等待: $utteranceId, 已耗时 ${elapsedMs}ms');
-            }
           }
+        }
+
+        // 容错：如果已经远远超过了估算时间（2倍），且还没收到完成事件，可能事件丢失，强制结束
+        // 至少等待 3 秒以防万一
+        if (elapsedMs > minDurationMs * 2 + 1000 && elapsedMs > 3000) {
+          Global.logger.w('TTS 等待超时(估算倍率超限): $utteranceId, 强制结束');
+          break;
         }
 
         // 每 100 次（2秒）打印一次日志
@@ -114,15 +144,13 @@ class Tts {
         }
       }
 
-      if (attempts >= maxAttempts) {
-        Global.logger.w("TTS 播放超时，强制继续: $utteranceId");
-      }
-
       completedUtterances.remove(utteranceId);
     } on PlatformException catch (e) {
       ErrorHandler.handleError(e, null, logPrefix: 'TTS异常', showToast: false);
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: 'TTS异常', showToast: false);
+    } finally {
+      _isSpeaking = false;
     }
   }
 
@@ -176,6 +204,7 @@ class Tts {
 
     try {
       methodChannel.invokeMethod('stop');
+      _isSpeaking = false;
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace,
           logPrefix: 'TTS停止异常', showToast: false);
