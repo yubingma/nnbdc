@@ -102,20 +102,20 @@ class Tts {
       var uuid = const Uuid();
       final utteranceId = uuid.v4();
       
-      // 调低估算语速，增加安全保护时间 (中文 2.5 字/秒, 英文 3.5 词/秒)
-      double charsPerSecond = language == 'zh-CN' ? 2.5 : 3.5;
-      int minDurationMs = (text.length / charsPerSecond * 1000).round();
-      // 允许最长 15 秒的保护
-      minDurationMs = minDurationMs.clamp(500, 15000);
+      // 调整估算语速，更接近真实水平 (中文 4.5 字/秒, 英文 3.5 词/秒)
+      double charsPerSecond = language == 'zh-CN' ? 4.5 : 3.5;
+      int estimatedDurationMs = (text.length / charsPerSecond * 1000).round();
+      // 兜底保护时间：如果没收到事件，最多等估算时间的 1.5 倍
+      int fallbackDurationMs = (estimatedDurationMs * 1.5).round().clamp(1000, 15000);
       
       final startTime = DateTime.now();
       await methodChannel.invokeMethod('speak', {'text': text, 'utteranceId': utteranceId, 'language': language});
       _isSpeaking = true;
 
-      // 等待播放完成，结合事件回调和时间保护
+      // 等待播放完成
       int attempts = 0;
       final maxAttempts = 1000; // 1000 × 20ms = 20s
-      Global.logger.d('TTS 开始等待完成: $utteranceId, 最小保护时间: ${minDurationMs}ms');
+      Global.logger.d('TTS 开始等待完成: $utteranceId, 估算时长: ${estimatedDurationMs}ms, 兜底时长: ${fallbackDurationMs}ms');
 
       while (attempts < maxAttempts) {
         await Future.delayed(const Duration(milliseconds: 20));
@@ -123,24 +123,23 @@ class Tts {
         
         final elapsedMs = DateTime.now().difference(startTime).inMilliseconds;
         
-        // 如果收到了完成事件，且已经过了最小保护时间，则退出
+        // 1. 优先信任完成事件：一旦收到事件，稍微缓冲一下即退出
         if (completedUtterances.contains(utteranceId)) {
-          if (elapsedMs >= minDurationMs) {
-            Global.logger.d('TTS 播放完成事件触发且满足最小时间: $utteranceId, 耗时: ${elapsedMs}ms');
-            break;
-          }
+          // 额外等待一个极短的时间，确保硬件缓冲区播放完毕
+          await Future.delayed(const Duration(milliseconds: 100));
+          Global.logger.d('TTS 播放完成事件触发: $utteranceId, 实际耗时: ${elapsedMs + 100}ms');
+          break;
         }
 
-        // 容错：如果已经远远超过了估算时间（2倍），且还没收到完成事件，可能事件丢失，强制结束
-        // 至少等待 3 秒以防万一
-        if (elapsedMs > minDurationMs * 2 + 1000 && elapsedMs > 3000) {
-          Global.logger.w('TTS 等待超时(估算倍率超限): $utteranceId, 强制结束');
+        // 2. 兜底逻辑：如果一直没收到事件，但已经超过了合理的兜底时长
+        if (elapsedMs >= fallbackDurationMs) {
+          Global.logger.w('TTS 等待超时(触发兜底): $utteranceId, 强制结束');
           break;
         }
 
         // 每 100 次（2秒）打印一次日志
         if (attempts % 100 == 0) {
-          Global.logger.d('TTS 等待中: $utteranceId, 已等待 ${attempts * 20}ms');
+          Global.logger.d('TTS 等待中: $utteranceId, 已等待 ${elapsedMs}ms');
         }
       }
 
