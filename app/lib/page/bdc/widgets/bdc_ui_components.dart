@@ -621,7 +621,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 physics: const NeverScrollableScrollPhysics(),
                                 children: [
                                   if (_getShouldShowSpeakTab(state)) _buildSpeakPanel(),
-                                  _buildChoiceList(),
+                                  SingleChildScrollView(
+                                    physics: const BouncingScrollPhysics(),
+                                    child: _buildChoiceList(),
+                                  ),
                                 ],
                               )
                             : Column(
