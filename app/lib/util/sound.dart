@@ -189,7 +189,15 @@ class SoundUtil {
 
       // 设置倍速并播放
       await player.setSpeed(speed);
-      await player.play().timeout(Duration(milliseconds: playTimeoutMs));
+      await player.play();
+      
+      // 显式等待播放完成或被手动停止 (idle)
+      // 在某些平台或特定条件下，await player.play() 可能会提前返回
+      await player.playerStateStream
+          .firstWhere((state) => 
+              state.processingState == ja.ProcessingState.completed || 
+              state.processingState == ja.ProcessingState.idle)
+          .timeout(Duration(milliseconds: playTimeoutMs));
 
       final int elapsed = DateTime.now().difference(startTime).inMilliseconds;
       Global.logger.d('~~~~~ SoundUtil(ja): 播放完成，逻辑耗时: ${elapsed}ms');

@@ -298,12 +298,15 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     // 强制停止所有可能的播放
     try {
-      if (currentPlayStep == 'meaning') {
-        await tts?.stop();
-      } else if (currentPlayStep == 'chinese') {
+      // 停止 TTS
+      if (currentPlayStep == 'meaning' || currentPlayStep == 'chinese') {
         await tts?.stop();
       }
-      // 移除 AudioPlayer 的 stop 调用，因为可能导致 disposed 错误
+      
+      // 停止 Just Audio 播放器
+      if (!_audioPlayerDisposed) {
+        await audioPlayer.stop();
+      }
     } catch (e) {
       // 忽略停止播放时的错误
       Global.logger.d("强制停止播放时出错: $e");
