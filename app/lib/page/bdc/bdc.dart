@@ -97,9 +97,20 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     // Initialize TabController with a default length
     _tabController = TabController(length: 2, vsync: this);
 
-    // Initialize data
+    // Initialize data and listen for state changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(bdcNotifierProvider.notifier).loadData(context);
+    });
+
+    // Listen for studyStep changes to update TabController length safely
+    ref.listenManual(bdcNotifierProvider.select((s) => _getShouldShowSpeakTab(s)), (previous, next) {
+      final newLength = next ? 2 : 1;
+      if (_tabController?.length != newLength) {
+        setState(() {
+          _tabController?.dispose();
+          _tabController = TabController(length: newLength, vsync: this);
+        });
+      }
     });
 
     // Animation controllers
@@ -160,11 +171,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   Widget build(BuildContext context) {
     final state = ref.watch(bdcNotifierProvider);
     
-    // Update TabController if needed based on state
-    int expectedTabLength = _getShouldShowSpeakTab(state) ? 2 : 1;
-    if (_tabController?.length != expectedTabLength) {
-      _tabController?.dispose();
-      _tabController = TabController(length: expectedTabLength, vsync: this, initialIndex: 0);
+    if (_tabController == null) {
+      int expectedTabLength = _getShouldShowSpeakTab(state) ? 2 : 1;
+      _tabController = TabController(length: expectedTabLength, vsync: this);
     }
 
     final isDesktop = PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS;

@@ -314,11 +314,8 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildTabBar() {
-    final expectedLength = _getShouldShowSpeakTab(state) ? 2 : 1;
-    if (_tabController == null || _tabController!.length != expectedLength) {
-      // Re-initialize TabController if length mismatch
-      _tabController?.dispose();
-      _tabController = TabController(length: expectedLength, vsync: this);
+    if (_tabController == null) {
+      return const SizedBox.shrink();
     }
 
     return Container(
