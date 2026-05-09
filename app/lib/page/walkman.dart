@@ -891,6 +891,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                   ],
                 ),
               ),
+              /*
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
                 child: Row(
@@ -919,6 +920,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                   ],
                 ),
               ),
+              */
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16),
                 child: Row(
