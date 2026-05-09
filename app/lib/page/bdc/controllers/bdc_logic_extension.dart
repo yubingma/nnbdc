@@ -232,7 +232,6 @@ extension BdcPageStateLogic on BdcPageState {
         final updatedDbUser = dbUser.copyWith(
           totalLearningSeconds: drift.Value(newTotal),
           todayLearningSeconds: drift.Value(newToday),
-          lastLearningDate: drift.Value(AppClock.now()),
         );
 
         await dao.saveUser(updatedDbUser, true);
