@@ -176,28 +176,9 @@ class DictWordsProvider with WordsProvider implements WordModifier {
 
   @override
   Future<Map<String, bool?>> getWordsLearningStatus(List<String> wordIds) async {
-    final user = Global.getLoggedInUser();
-    if (user == null || wordIds.isEmpty) return {};
-
-    final db = MyDatabase.instance;
-    final Map<String, bool?> result = {};
-
-    // 批量检查已掌握
-    final masteredSet = await db.masteredWordsDao.getMasteredWordIdSetForWords(user.id, wordIds);
-    for (var id in masteredSet) {
-      result[id] = true;
-    }
-
-    // 对剩下的单词批量检查学习中
-    final remainingIds = wordIds.where((id) => !masteredSet.contains(id)).toList();
-    if (remainingIds.isNotEmpty) {
-      final learningSet = await db.learningWordsDao.getLearningWordIdSet(user.id, remainingIds);
-      for (var id in learningSet) {
-        result[id] = false;
-      }
-    }
-
-    return result;
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return {};
+    return await WordBo.getWordsLearningStatusBatch(userId, wordIds);
   }
 }
 

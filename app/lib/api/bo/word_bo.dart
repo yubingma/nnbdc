@@ -27,6 +27,36 @@ class WordBo {
   // 书签缓存，用于加速页面进入
   final Map<String, BookMarkVo> _bookmarkCache = {};
 
+  /// 批量获取单词的学习状态：null=未学习, true=已掌握, false=学习中
+  static Future<Map<String, bool?>> getWordsLearningStatusBatch(String userId, List<String> wordIds) async {
+    if (wordIds.isEmpty) return {};
+
+    final db = MyDatabase.instance;
+    final Map<String, bool?> result = {};
+
+    // 1. 批量检查已掌握
+    final masteredSet = await db.masteredWordsDao.getMasteredWordIdSetForWords(userId, wordIds);
+    for (var id in masteredSet) {
+      result[id] = true;
+    }
+
+    // 2. 对剩下的单词批量检查学习中
+    final remainingIds = wordIds.where((id) => !masteredSet.contains(id)).toList();
+    if (remainingIds.isNotEmpty) {
+      final learningSet = await db.learningWordsDao.getLearningWordIdSet(userId, remainingIds);
+      for (var id in learningSet) {
+        result[id] = false;
+      }
+    }
+
+    // 3. 补全未命中的单词为 null
+    for (final id in wordIds) {
+      result.putIfAbsent(id, () => null);
+    }
+
+    return result;
+  }
+
   Future<Dict?> getDict(String dictId) async {
     if (_dictCache.containsKey(dictId)) return _dictCache[dictId];
     final dict = await MyDatabase.instance.dictsDao.findById(dictId);
@@ -1123,24 +1153,19 @@ class WordBo {
     try {
       Global.logger.d('开始本地查询词典单词位置: dictId=$dictId, spell=$spell');
       final db = MyDatabase.instance;
-      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
-      final word = await wordQuery.getSingleOrNull();
-      if (word == null) {
-        Global.logger.d('未找到拼写为 $spell 的单词');
-        return Result("SUCCESS", "获取成功", true)..data = -1;
-      }
-      final dictWordQuery = db.select(db.dictWords)..where((tbl) => tbl.dictId.equals(dictId) & tbl.wordId.equals(word.id));
-      final dictWord = await dictWordQuery.getSingleOrNull();
-      if (dictWord == null) {
-        Global.logger.d('单词 $spell 不在词典 $dictId 中');
-        return Result("SUCCESS", "获取成功", true)..data = -1;
-      }
-      final countQuery = db.selectOnly(db.dictWords)
-        ..addColumns([countAll()])
-        ..where(db.dictWords.dictId.equals(dictId))
-        ..where(db.dictWords.unit.isSmallerThanValue(dictWord.unit) | (db.dictWords.unit.equals(dictWord.unit) & db.dictWords.seq.isSmallerOrEqualValue(dictWord.seq)));
-      final countResult = await countQuery.getSingle();
-      final order = countResult.read(countAll()) ?? 0;
+      
+      // 使用单一查询合并：查找单词 -> 查找关联 -> 计算序号
+      final query = 'SELECT (SELECT count(*) FROM dict_words dw2 WHERE dw2.dict_id = dw1.dict_id AND (dw2.unit < dw1.unit OR (dw2.unit = dw1.unit AND dw2.seq <= dw1.seq))) as word_order '
+                    'FROM dict_words dw1 '
+                    'JOIN words w ON dw1.word_id = w.id '
+                    'WHERE dw1.dict_id = ? AND w.spell = ?';
+      
+      final row = await db.customSelect(query, variables: [
+        Variable.withString(dictId),
+        Variable.withString(spell),
+      ]).getSingleOrNull();
+
+      final order = row?.read<int>('word_order') ?? -1;
       
       Global.logger.d('找到单词 $spell 在词典 $dictId 中的位置: $order');
       return Result("SUCCESS", "获取成功", true)..data = order;
@@ -1461,34 +1486,22 @@ class WordBo {
     try {
       Global.logger.d('开始本地查询今日单词位置: spell=$spell, userId=$userId');
       final db = MyDatabase.instance;
-      final user = await db.usersDao.getUserById(userId);
-      if (user == null) {
-        Global.logger.e('查询今日单词位置失败: 用户不存在 userId=$userId');
-        return Result("ERROR", "用户不存在", false);
-      }
-      final wordQuery = db.select(db.words)..where((tbl) => tbl.spell.equals(spell));
-      final word = await wordQuery.getSingleOrNull();
-      if (word == null) {
-        Global.logger.d('未找到拼写为 $spell 的单词');
-        return Result("SUCCESS", "获取成功", true)..data = -1;
-      }
-      final learningWordQuery = db.select(db.learningWords)
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.equals(word.id) & tbl.batchId.isBiggerThanValue(0));
-      final learningWord = await learningWordQuery.getSingleOrNull();
-      if (learningWord == null) {
-        Global.logger.d('单词 $spell 不在今日单词列表中');
-        return Result("SUCCESS", "获取成功", true)..data = -1;
-      }
-      final countQuery = db.selectOnly(db.learningWords)..addColumns([countAll()]);
-      final userIdCondition = db.learningWords.userId.equals(userId);
-      final wordCondition = db.learningWords.batchId.isBiggerThanValue(0);
-      final beforeOrderCondition = db.learningWords.learningOrder.isSmallerThanValue(learningWord.learningOrder);
-      countQuery.where(userIdCondition & wordCondition & beforeOrderCondition);
-      final countResult = await countQuery.getSingle();
-      int position = countResult.read(countAll()) ?? 0;
-      position += 1;
-      Global.logger.d('找到单词 $spell 在今日单词列表中的位置: $position');
-      return Result("SUCCESS", "获取成功", true)..data = position;
+
+      // 使用单一查询合并
+      final query = 'SELECT (SELECT count(*) FROM learning_words lw2 WHERE lw2.user_id = lw1.user_id AND lw2.batch_id > 0 AND lw2.learning_order <= lw1.learning_order) as word_order '
+                    'FROM learning_words lw1 '
+                    'JOIN words w ON lw1.word_id = w.id '
+                    'WHERE lw1.user_id = ? AND lw1.batch_id > 0 AND w.spell = ?';
+
+      final row = await db.customSelect(query, variables: [
+        Variable.withString(userId),
+        Variable.withString(spell),
+      ]).getSingleOrNull();
+
+      final order = row?.read<int>('word_order') ?? -1;
+      
+      Global.logger.d('找到单词 $spell 在今日单词列表中的位置: $order');
+      return Result("SUCCESS", "获取成功", true)..data = order;
     } catch (e, stackTrace) {
       Global.logger.e('查询今日单词位置失败: $e', stackTrace: stackTrace);
       return Result("ERROR", "查询单词位置失败: ${e.toString()}", false);
@@ -1846,6 +1859,7 @@ class WordBo {
   }
 
   Future<PagedResults<LearningWordVo>> getTodayWordsForAPage(int fromIndex, int pageSize, String userId) async {
+    final sw = Stopwatch()..start();
     final db = MyDatabase.instance;
     final user = await db.usersDao.getUserById(userId);
     if (user == null) {
@@ -1937,6 +1951,7 @@ class WordBo {
 
       final result = PagedResults<LearningWordVo>(total);
       result.rows = learningWordVos;
+      Global.logger.d('WordBo: getTodayWordsForAPage completed in ${sw.elapsedMilliseconds}ms');
       return result;
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, operation: '批量获取今日单词');

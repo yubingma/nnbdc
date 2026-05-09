@@ -86,11 +86,9 @@ mixin WordsProvider {
 
   /// 批量获取单词的学习状态
   Future<Map<String, bool?>> getWordsLearningStatus(List<String> wordIds) async {
-    final Map<String, bool?> results = {};
-    for (final id in wordIds) {
-      results[id] = await getWordLearningStatus(id);
-    }
-    return results;
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return {};
+    return await WordBo.getWordsLearningStatusBatch(userId, wordIds);
   }
 
   /// 当单词被标记为“掌握”时，是否保留在当前UI列表中（不自动移除）
@@ -354,52 +352,73 @@ class WordListPageState extends State<WordListPage>
     bookMark = results[1] as BookMarkVo?;
 
     if (isBookMarkValid(bookMark)) {
-      // 有书签：加载书签所在的那一页单词
-      final swIdx = Stopwatch()..start();
-      var wordIndex = await args.wordsProvider.getWordIndex(bookMark!.spell);
-      Global.logger.d('WordListPage: getWordIndex took ${swIdx.elapsedMilliseconds}ms');
+      // --- 预测并行加载优化 ---
+      final swParallel = Stopwatch()..start();
       
-      if (wordIndex == -1 && isBookMarkValid(bookMark)) {
-        // --- 容错处理：拼写定位失败，尝试使用物理位置回退 ---
-        Global.logger.w('书签单词 "${bookMark!.spell}" 在当前列表中已不存在，尝试回退到物理位置: ${bookMark!.position}');
-        wordIndex = bookMark!.position;
+      // 1. 基于缓存位置计算预测的分页参数
+      int predWordIndex = bookMark!.position;
+      int predCalculatedBase = (predWordIndex ~/ _pageSize) * _pageSize;
+      int predQueryIndex = predCalculatedBase;
+      int predQuerySize = _pageSize;
+
+      // 智能页补齐逻辑（预测版）
+      if (predWordIndex - predCalculatedBase < 10 && predCalculatedBase > 0) {
+        predQueryIndex = predCalculatedBase - _pageSize;
+        predQuerySize = _pageSize * 2;
+      } else if (predCalculatedBase + _pageSize - predWordIndex < 10) {
+        predQuerySize = _pageSize * 2;
       }
 
-      if (wordIndex != -1) {
-        // 重要：更新书签中的实时位置
-        bookMark = BookMarkVo(wordIndex, bookMark!.spell);
-        
-        // --- 智能页补齐逻辑 ---
-        // 计算基础页索引
-        int calculatedBase = (wordIndex ~/ _pageSize) * _pageSize;
-        int queryIndex = calculatedBase;
-        int querySize = _pageSize;
+      // 预设基础索引，供 doQuery 使用
+      baseIndex = predQueryIndex;
+      _initialScrollIndex = predWordIndex - baseIndex!;
+      
+      // 2. 并行执行：预测加载数据 + 获取确切序号
+      final results = await Future.wait([
+        doQuery(true, predQueryIndex, predQuerySize, false),
+        args.wordsProvider.getWordIndex(bookMark!.spell),
+      ]);
+      
+      int actualWordIndex = results[1] as int;
+      Global.logger.d('WordListPage: Parallel load & getWordIndex took ${swParallel.elapsedMilliseconds}ms');
 
-        // 如果书签靠近页首（前10个），且前面还有数据，则多加载上一页作为缓冲
-        if (wordIndex - calculatedBase < 10 && calculatedBase > 0) {
-          queryIndex = calculatedBase - _pageSize;
-          querySize = _pageSize * 2;
-        } 
-        // 如果书签靠近页尾（最后10个），则多加载下一页作为缓冲
-        else if (calculatedBase + _pageSize - wordIndex < 10) {
-          querySize = _pageSize * 2;
-        }
+      // 3. 校验预测结果
+      if (actualWordIndex == -1) {
+        // 拼写定位失败，使用书签物理位置回退
+        actualWordIndex = bookMark!.position;
+      }
+      
+      // 重新计算确切的分页参数
+      int actualCalculatedBase = (actualWordIndex ~/ _pageSize) * _pageSize;
+      int actualQueryIndex = actualCalculatedBase;
+      int actualQuerySize = _pageSize;
+      if (actualWordIndex - actualCalculatedBase < 10 && actualCalculatedBase > 0) {
+        actualQueryIndex = actualCalculatedBase - _pageSize;
+        actualQuerySize = _pageSize * 2;
+      } else if (actualCalculatedBase + _pageSize - actualWordIndex < 10) {
+        actualQuerySize = _pageSize * 2;
+      }
 
-        baseIndex = queryIndex;
-        _initialScrollIndex = wordIndex - baseIndex!; // 预设初始滚动位置
-        await doQuery(true, baseIndex!, querySize, false);
-
-        // 数据和页面都准备好后，执行一次精准跳转
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            jumpToBookMark(force: true);
-          }
-        });
+      // 4. 最终对齐：如果预测的分页区间不对，则需要执行补充加载（兜底）
+      if (actualQueryIndex != predQueryIndex || actualQuerySize != predQuerySize) {
+        Global.logger.w('书签预测命中失败（可能由于词表变动），执行补充加载: predIdx=$predQueryIndex, actualIdx=$actualQueryIndex');
+        baseIndex = actualQueryIndex;
+        _initialScrollIndex = actualWordIndex - baseIndex!; 
+        await doQuery(true, baseIndex!, actualQuerySize, false);
       } else {
-        // 完全无法定位书签，从第一页开始
-        baseIndex = 0;
-        await doQuery(true, baseIndex!, _pageSize, false);
+        // 预测成功，只需更新书签对象中的位置即可
+        baseIndex = predQueryIndex;
+        _initialScrollIndex = actualWordIndex - baseIndex!;
       }
+      
+      bookMark = BookMarkVo(actualWordIndex, bookMark!.spell);
+
+      // 数据和页面都准备好后，执行一次精准跳转
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          jumpToBookMark(force: true);
+        }
+      });
     } else {
       // 没有书签：从第一页开始
       baseIndex = 0;
