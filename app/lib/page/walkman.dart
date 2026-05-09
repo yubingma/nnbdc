@@ -447,11 +447,12 @@ class WalkmanPageState extends State<WalkmanPage> {
             if (!currentWordPlayShouldStop && expectedSession == _playSessionId) {
               currentPlayStep = 'meaning';
               if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+                // 确保 TTS 播放完成才继续
                 await tts?.speak(Util.pureMeaningStr(word.word));
               }
               currentPlayStep = '';
-              // 步骤之间增加微小延迟
-              await Future.delayed(const Duration(milliseconds: 100));
+              // 步骤之间增加微小延迟，给 TTS 引擎一点缓冲时间
+              await Future.delayed(const Duration(milliseconds: 300));
             }
           }
 
@@ -475,7 +476,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                 }
                 currentPlayStep = '';
                 // 步骤之间增加微小延迟
-                await Future.delayed(const Duration(milliseconds: 100));
+                await Future.delayed(const Duration(milliseconds: 300));
               }
 
               // 检查停止信号
@@ -486,7 +487,7 @@ class WalkmanPageState extends State<WalkmanPage> {
                 await tts?.speak(Util.pureSentenceChinese(sentences[j].chinese!));
                 currentPlayStep = '';
                 // 步骤之间增加微小延迟
-                await Future.delayed(const Duration(milliseconds: 100));
+                await Future.delayed(const Duration(milliseconds: 300));
               }
 
               // 检查停止信号

@@ -62,7 +62,7 @@ class Tts {
   }
 
   Future<void> speak(String text) async {
-    if (!PlatformUtils.isTtsSupported()) {
+    if (!PlatformUtils.isTtsSupported() || text.trim().isEmpty) {
       return;
     }
 
@@ -73,16 +73,40 @@ class Tts {
       // 文本转语音播放
       var uuid = const Uuid();
       final utteranceId = uuid.v4();
+      
+      // 基于文本长度估算最小播放时间，作为安全保护
+      // 中文约 3-4 字/秒，英文约 4-5 词/秒
+      double charsPerSecond = language == 'zh-CN' ? 3.5 : 4.5;
+      int minDurationMs = (text.length / charsPerSecond * 1000).round();
+      // 限制最小保护时间在 500ms 到 8000ms 之间
+      minDurationMs = minDurationMs.clamp(500, 8000);
+      
+      final startTime = DateTime.now();
       await methodChannel.invokeMethod('speak', {'text': text, 'utteranceId': utteranceId, 'language': language});
 
-      // 等待播放完成，最多等待 10 秒
+      // 等待播放完成，结合事件回调和时间保护
       int attempts = 0;
-      final maxAttempts = 500; // 500 × 20ms = 10s
-      Global.logger.d('TTS 开始等待完成: $utteranceId');
+      final maxAttempts = 600; // 600 × 20ms = 12s
+      Global.logger.d('TTS 开始等待完成: $utteranceId, 最小保护时间: ${minDurationMs}ms');
 
-      while (!completedUtterances.contains(utteranceId) && attempts < maxAttempts) {
-        await Future.delayed(const Duration(milliseconds: 20), () {});
+      while (attempts < maxAttempts) {
+        await Future.delayed(const Duration(milliseconds: 20));
         attempts++;
+        
+        final elapsedMs = DateTime.now().difference(startTime).inMilliseconds;
+        
+        // 如果收到了完成事件，且已经过了最小保护时间，则退出
+        if (completedUtterances.contains(utteranceId)) {
+          if (elapsedMs >= minDurationMs) {
+            Global.logger.d('TTS 播放完成事件触发且满足最小时间: $utteranceId');
+            break;
+          } else {
+            // 收到事件但时间太短，可能是原生端异常触发，继续等待
+            if (attempts % 50 == 0) {
+              Global.logger.d('TTS 收到完成事件但未达最小时间，继续等待: $utteranceId, 已耗时 ${elapsedMs}ms');
+            }
+          }
+        }
 
         // 每 100 次（2秒）打印一次日志
         if (attempts % 100 == 0) {
@@ -91,9 +115,7 @@ class Tts {
       }
 
       if (attempts >= maxAttempts) {
-        Global.logger.d("TTS 播放超时，强制继续: $utteranceId");
-      } else {
-        Global.logger.d('TTS 播放完成: $utteranceId');
+        Global.logger.w("TTS 播放超时，强制继续: $utteranceId");
       }
 
       completedUtterances.remove(utteranceId);
