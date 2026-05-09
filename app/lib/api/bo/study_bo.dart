@@ -549,10 +549,11 @@ class StudyBo {
       }
       Global.logger.d('🐛 [BDC Performance Item] 获取用户状态耗时: ${swUser.elapsedMilliseconds} ms');
 
-      // 跨天检测：直接根据用户 lastLearningDate 判断
+      // 跨天检测：比较当前业务日期与用户记录的最后学习业务日期
       final DateTime now = AppClock.now();
-      if (user.lastLearningDate != null && !DateUtils.isSameDay(now, user.lastLearningDate!)) {
-        Global.logger.d('检测到跨天：user.lastLearningDate=${user.lastLearningDate}, now=$now');
+      final DateTime today = AppClock.today();
+      if (user.lastLearningDate != null && !DateUtils.isSameBusinessDay(today, user.lastLearningDate!)) {
+        Global.logger.d('检测到跨天：user.lastLearningDate=${user.lastLearningDate}, today=$today');
         return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", false);
       }
 

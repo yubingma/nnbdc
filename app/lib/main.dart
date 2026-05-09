@@ -17,7 +17,8 @@ import 'package:nnbdc/page/admin.dart';
 import 'package:nnbdc/page/ai_activation.dart';
 import 'package:nnbdc/page/ai_diagnostic.dart';
 import 'package:nnbdc/page/bdc/bdc.dart';
-import 'package:nnbdc/page/bdc/bdc_binding.dart';
+import 'package:nnbdc/page/walkman.dart';
+
 import 'package:nnbdc/page/farm.dart';
 import 'package:nnbdc/page/finish.dart';
 import 'package:nnbdc/page/first.dart';
@@ -32,7 +33,6 @@ import 'package:nnbdc/page/protocol.dart';
 import 'package:nnbdc/page/russia.dart';
 import 'package:nnbdc/page/search.dart';
 import 'package:nnbdc/page/select_book.dart';
-import 'package:nnbdc/page/walkman.dart';
 import 'package:nnbdc/page/word_detail.dart';
 import 'package:nnbdc/page/word_lists.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
@@ -46,7 +46,7 @@ import 'package:nnbdc/services/ai_service.dart';
 import 'package:nnbdc/services/ai_model_manager.dart';
 import 'package:nnbdc/services/ai_runtime_apple.dart';
 import 'package:nnbdc/services/ai_runtime_android.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as provider;
 import 'package:toastification/toastification.dart';
 import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/util/subscription_util.dart';
@@ -54,6 +54,7 @@ import 'package:nnbdc/util/notification_util.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/page/study_stats.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config.dart';
 import 'local_word_cache.dart';
@@ -166,11 +167,13 @@ void main() async {
       await MyDatabase.initPrepopulatedDb();
 
       runApp(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider(create: (context) => DarkMode()),
-          ],
-          child: ToastificationWrapper(child: const MyApp()),
+        ProviderScope(
+          child: provider.MultiProvider(
+            providers: [
+              provider.ChangeNotifierProvider(create: (context) => DarkMode()),
+            ],
+            child: ToastificationWrapper(child: const MyApp()),
+          ),
         ),
       );
 
@@ -484,7 +487,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         GetPage(
           name: '/bdc',
           page: () => const BdcPage(),
-          binding: BdcBinding(),
         ),
         GetPage(name: '/walkman', page: () => const WalkmanPage()),
         GetPage(name: '/game', page: () => const GamePage()),

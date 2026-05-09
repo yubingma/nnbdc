@@ -55,7 +55,7 @@ class SoundUtil {
       _audioSessionConfigured = true;
       Global.logger.i('SoundUtil: 全局音频会话配置完成');
 
-      _prewarmSfx(['thud.mp3', 'correct.mp3', 'fail.mp3', 'bubble-pop.mp3', 'asr_ready_hint.mp3']);
+      _prewarmSfx(['thud.mp3', 'correct.mp3', 'failed.mp3', 'bubble-pop.mp3', 'asr_ready_hint.mp3']);
     } catch (e) {
       Global.logger.e('SoundUtil: 配置全局音频会话失败: $e');
     } finally {

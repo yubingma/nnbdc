@@ -1,6 +1,8 @@
 part of '../bdc.dart';
 
 extension BdcPageStateDialogs on BdcPageState {
+  BdcState get state => ref.watch(bdcNotifierProvider);
+  BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
   Widget _buildSettingItem(String title, bool value, Function(bool) onChanged,
       {Widget? customTrailing, String? subtitle}) {
     return ListTile(
@@ -276,10 +278,10 @@ extension BdcPageStateDialogs on BdcPageState {
                               final List<Widget> items = [
                                 _buildSettingItem(
                                   '深色模式',
-                                  _isDarkMode,
+                                  context.read<DarkMode>().isDarkMode,
                                   (value) {
                                     setState(() {
-                                      _isDarkMode = value;
+                                      context.read<DarkMode>().setIsDarkMode(value);
                                     });
                                     MyDatabase.instance.localParamsDao
                                         .saveIsDarkMode(value);
@@ -293,10 +295,10 @@ extension BdcPageStateDialogs on BdcPageState {
                                       scale: 1.8,
                                       alignment: Alignment.centerRight,
                                       child: DayNightSwitcherIcon(
-                                        isDarkModeEnabled: _isDarkMode,
+                                        isDarkModeEnabled: context.read<DarkMode>().isDarkMode,
                                         onStateChanged: (isDarkModeEnabled) {
                                           setState(() {
-                                            _isDarkMode = isDarkModeEnabled;
+                                            context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
                                           });
                                           MyDatabase.instance.localParamsDao
                                               .saveIsDarkMode(
@@ -485,11 +487,11 @@ extension BdcPageStateDialogs on BdcPageState {
 
                           // 在异步操作后检查context是否仍然有效
                           if (context.mounted) {
-                            _asrPassRuleCache = localAsrPassRule;
-                            _autoJumpAfterCorrectCh2En =
-                                localAutoJumpAfterCorrectCh2En;
-                            _autoJumpAfterCorrectEn2Ch =
-                                localAutoJumpAfterCorrectEn2Ch;
+                            notifier.updateAsrPassRuleCache(localAsrPassRule);
+                            notifier.updateAutoJumpCh2En(
+                                localAutoJumpAfterCorrectCh2En);
+                            notifier.updateAutoJumpEn2Ch(
+                                localAutoJumpAfterCorrectEn2Ch);
                             Navigator.pop(context, true);
                           }
                         },
@@ -511,8 +513,8 @@ extension BdcPageStateDialogs on BdcPageState {
       // 设置已在确定按钮中保存，这里刷新界面
       try {
         // 刷新界面，以体现最新配置
-        await asr.stopAsr();
-        handleWord(_currentGetWordResult);
+        await notifier.asr.stopAsr();
+        notifier.handleWord(state.currentGetWordResult);
       } catch (e) {
         ToastUtil.error('刷新界面失败: $e');
       }
@@ -569,7 +571,7 @@ extension BdcPageStateDialogs on BdcPageState {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '请输入单词(${_word!.spell})的报错内容',
+                        '请输入单词(${state.word!.spell})的报错内容',
                         textScaler: const TextScaler.linear(1.0),
                         style: const TextStyle(
                           fontFamily: "NotoSansSC",
@@ -634,7 +636,7 @@ extension BdcPageStateDialogs on BdcPageState {
 
     if (choice ?? false) {
       var result = await UserBo()
-          .saveErrorReport(_word!.spell, errorReportController.text);
+          .saveErrorReport(state.word!.spell, errorReportController.text);
       if (result.success) {
         ToastUtil.info('报错成功！感谢你付出宝贵时间');
       } else {
@@ -659,7 +661,6 @@ extension BdcPageStateDialogs on BdcPageState {
         },
         pageBuilder: (context, animation, secondaryAnimation) {
           return StatefulBuilder(builder: (context, dialogSetState) {
-            voteFuture ??= wordImageHasBeenVoted(wordImage);
             return Align(
               alignment: const Alignment(0, 0),
               child: Container(
@@ -767,7 +768,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   createTime: now,
                                                   updateTime: now));
                                           wordImage.hand += 1;
-                                          _wordImageEdited = true;
+                                          notifier.updateIsWordImageEdited(true);
                                           voteFuture = Future.value(true);
                                           if (mounted) {
                                             dialogSetState(() {});
@@ -821,7 +822,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   createTime: now,
                                                   updateTime: now));
                                           wordImage.foot += 1;
-                                          _wordImageEdited = true;
+                                          notifier.updateIsWordImageEdited(true);
                                           voteFuture = Future.value(true);
                                           if (mounted) {
                                             dialogSetState(() {});
@@ -854,7 +855,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                 child: const Text('删除'),
                                 onPressed: () {
                                   // 先关闭对话框，再执行异步操作
-                                  resetHighlightedWordImg();
+                                  notifier.resetHighlightedWordImg();
                                   Navigator.pop(context, false);
 
                                   // 然后执行异步删除操作
@@ -869,7 +870,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     }
 
                                     if (mounted) {
-                                      reloadWord();
+                                      notifier.reloadWord();
                                     }
                                   });
                                 },
@@ -881,10 +882,10 @@ extension BdcPageStateDialogs on BdcPageState {
                               ),
                               child: const Text('关闭'),
                               onPressed: () {
-                                resetHighlightedWordImg();
+                                notifier.resetHighlightedWordImg();
                                 Navigator.pop(context, false);
-                                if (_wordImageEdited) {
-                                  reloadWord();
+                                if (state.isWordImageEdited) {
+                                  notifier.reloadWord();
                                 }
                               },
                             ),
@@ -905,17 +906,17 @@ extension BdcPageStateDialogs on BdcPageState {
     showDialog(
       context: context,
       builder: (context) {
-        String finalReason = _lastFsrsRatingReason ?? '';
+        String finalReason = state.lastFsrsRatingReason ?? '';
         // 巩固环节中，只有当自动评分被限制（高于测评环节评分）时才显示提示
-        if (_currentGetWordResult != null &&
-            _currentGetWordResult!.stepIndex > 0 &&
-            _assessmentRating != null &&
-            _lastFsrsRating != null &&
-            _lastFsrsRating!.index > _assessmentRating!.index) {
+        if (state.currentGetWordResult != null &&
+            state.currentGetWordResult!.stepIndex > 0 &&
+            state.assessmentRating != null &&
+            state.lastFsrsRating != null &&
+            state.lastFsrsRating!.index > state.assessmentRating!.index) {
           if (finalReason.isNotEmpty) {
             finalReason += '\n';
           }
-          finalReason += '⚠️ 当前处于巩固环节，自动评分上限被限制为测评结果（${_assessmentRating!.label}）。';
+          finalReason += '⚠️ 当前处于巩固环节，自动评分上限被限制为测评结果（${state.assessmentRating!.label}）。';
         }
         return AlertDialog(
           shape:
@@ -965,7 +966,7 @@ extension BdcPageStateDialogs on BdcPageState {
                         ),
                       ),
                     ),
-                    if (_lastFsrsRatingReason != null) ...[
+                    if (state.lastFsrsRatingReason != null) ...[
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -1025,12 +1026,12 @@ extension BdcPageStateDialogs on BdcPageState {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  trailing: _lastFsrsRating == rating
+                  trailing: state.lastFsrsRating == rating
                       ? Icon(Icons.check, color: ratingColor)
                       : null,
                   onTap: () {
                     Navigator.of(context).pop();
-                    _updateFsrsRating(rating);
+                    notifier.updateFsrsRating(rating);
                   },
                 );
               }),
@@ -1044,60 +1045,11 @@ extension BdcPageStateDialogs on BdcPageState {
 
 
 
-  void _showErrorWidget(String errorMessage) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red[400]),
-            const SizedBox(width: 8),
-            const Text('出错了'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(errorMessage),
-              const SizedBox(height: 8),
-              const Text(
-                '您可以尝试重新加载或返回上一页。',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pop();
-            },
-            child: const Text('返回'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HealthCheckPage(autoStart: true),
-                ),
-              );
-            },
-            child: const Text('尝试修复'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
 
   void _showLearningHistoryDialog() async {
-    final wordId = _wordWrapper?.word.id;
+    final wordId = state.wordWrapper?.word.id;
     if (wordId == null) return;
 
     final history = await MyDatabase.instance.learningLogsDao
@@ -1247,7 +1199,7 @@ extension BdcPageStateDialogs on BdcPageState {
 
     // 获取今日所有学习单词及其状态
     final words = await LearningService.getTodayLearningWordsFromDb(user.id);
-    final activeSteps = activeUserStudySteps;
+    final activeSteps = state.activeUserStudySteps;
 
     // 获取用户已掌握的单词 ID 集，用于准确反映调度状态
     final masteredWords = await MyDatabase.instance.masteredWordsDao
@@ -1311,7 +1263,7 @@ extension BdcPageStateDialogs on BdcPageState {
 
     String? nextWordId;
     int? nextStepIndex;
-    String? currentWordId = _currentGetWordResult?.learningWord?.word.id;
+    String? currentWordId = state.currentGetWordResult?.learningWord?.word.id;
 
     if (pendingCells.isNotEmpty) {
       int currentIndex = -1;
@@ -1549,7 +1501,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                       60), // Space for step names
                                               ...batchWords.map((w) {
                                                 final isCurrentWord =
-                                                    _currentGetWordResult
+                                                    state.currentGetWordResult
                                                             ?.learningWord
                                                             ?.word
                                                             .id ==
@@ -1625,7 +1577,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   ...batchWords.map((w) {
                                                     // Is the user learning this exact word in this exact step right now?
                                                     final isCurrentStep =
-                                                        _currentGetWordResult
+                                                        state.currentGetWordResult
                                                                     ?.learningWord
                                                                     ?.word
                                                                     .id ==
