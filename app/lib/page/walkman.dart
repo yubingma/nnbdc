@@ -438,8 +438,10 @@ class WalkmanPageState extends State<WalkmanPage> {
 
           if (playMeaning && PlatformUtils.isTtsSupported()) {
             // 播放释义前，休眠一会儿，以便用户可以回想一下
+            // 如果是手动模式 (playInterval == maxIntValue)，则不在这里等待，因为用户已经手动切换过来了
             var sleepTime = 0;
-            while (!currentWordPlayShouldStop && expectedSession == _playSessionId && sleepTime < playInterval * 0.5) {
+            final effectiveInterval = playInterval == maxIntValue ? 0 : playInterval;
+            while (!currentWordPlayShouldStop && expectedSession == _playSessionId && sleepTime < effectiveInterval * 0.5) {
               await Future.delayed(const Duration(milliseconds: 10), () {}); // 减少检查间隔
               sleepTime += 10;
             }
@@ -498,7 +500,8 @@ class WalkmanPageState extends State<WalkmanPage> {
           // 重复播放下一个单词前，等待一段时间
           if (i < repeatCount - 1) {
             var sleepTime = 0;
-            while (!currentWordPlayShouldStop && expectedSession == _playSessionId && sleepTime < playInterval) {
+            final effectiveInterval = playInterval == maxIntValue ? 500 : playInterval; // 手动模式下重复播放给 0.5 秒间隔
+            while (!currentWordPlayShouldStop && expectedSession == _playSessionId && sleepTime < effectiveInterval) {
               await Future.delayed(const Duration(milliseconds: 10), () {}); // 减少检查间隔
               sleepTime += 10;
             }
@@ -1192,8 +1195,9 @@ class WalkmanPageState extends State<WalkmanPage> {
     currentWordPlayShouldStop = false;
     currentPlayStep = '';
 
-    // 重置等待时间为0，确保能立即开始新的播放
-    waitedTime = 0;
+    // 设置为 maxIntValue，确保在 playWordTick 中能立即通过 (waitedTime >= playInterval) 的检查
+    waitedTime = maxIntValue;
+    _isFirstWord = true; // 视为新的“第一个”单词，确保立即响应
 
     // 取消并重建计时器
     if (playWordTimer != null) {
@@ -1201,7 +1205,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     }
 
     // 重新启动播放循环
-    playWordTimer = Timer(const Duration(milliseconds: 100), () {
+    playWordTimer = Timer(const Duration(milliseconds: 10), () {
       playWordTick();
     });
   }
