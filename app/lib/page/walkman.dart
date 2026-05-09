@@ -160,23 +160,28 @@ class WalkmanPageState extends State<WalkmanPage> {
     tts = Tts();
     tts?.init();
 
-    loadData();
+    // 1. 异步加载配置和初始数据
+    loadData().then((_) async {
+      // 2. 只有在数据加载逻辑准备好后，才开始加载第一页单词
+      await loadAPageOfRawWords();
+      
+      // 3. 数据到位后，立即开始播放循环
+      if (mounted) {
+        playWordTick();
+      }
+    });
 
-    // 周期性加载单词
+    // 周期性加载后续单词的 Timer 保持不变
     loadWordTimer = Timer.periodic(const Duration(milliseconds: 1000), (Timer timer) {
       if (currWordIndex > allWords.length - 10 && !isAllWordsLoaded()) {
-        // 缓冲区中剩下待浏览的词不多了，从服务端加载一批
         try {
           loadAPageOfRawWords();
         } catch (e) {
-          timer.cancel(); // 直接使用参数timer而不是loadWordTimer
+          timer.cancel();
           ErrorHandler.handleError(e, null, userMessage: '加载单词失败，请稍后重试', logPrefix: 'Walkman加载单词');
         }
       }
     });
-
-    // 开始播放单词
-    playWordTick();
   }
 
   Future<void> loadConfig() async {
@@ -357,7 +362,7 @@ class WalkmanPageState extends State<WalkmanPage> {
       }
 
       // 设置下一个计时器
-      playWordTimer = Timer(const Duration(milliseconds: 100), () {
+      playWordTimer = Timer(Duration(milliseconds: _isFirstWord ? 0 : 100), () {
         if (session == _playSessionId) {
           if (waitedTime <= maxIntValue - 100) {
             waitedTime += 100;
@@ -367,7 +372,7 @@ class WalkmanPageState extends State<WalkmanPage> {
       });
     } else {
       // 更新等待时间并继续计时
-      playWordTimer = Timer(const Duration(milliseconds: 100), () {
+      playWordTimer = Timer(Duration(milliseconds: _isFirstWord ? 0 : 100), () {
         if (session == _playSessionId) {
           if (waitedTime <= maxIntValue - 100) {
             waitedTime += 100;
