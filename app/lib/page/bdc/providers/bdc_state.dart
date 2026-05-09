@@ -54,7 +54,6 @@ class BdcState extends Equatable {
   final Map<String, bool> playingStates;
   final int hintTapCount;
   final bool isWordMastered;
-  final int accumulatedSeconds;
   
   final DateTime? wordStartTime;
   final DateTime? firstMatchTime;
@@ -107,7 +106,6 @@ class BdcState extends Equatable {
     this.playingStates = const {'word': false, 'sentence': false},
     this.hintTapCount = 0,
     this.isWordMastered = false,
-    this.accumulatedSeconds = 0,
     this.wordStartTime,
     this.firstMatchTime,
     this.isUpdatingByHint = false,
@@ -166,7 +164,6 @@ class BdcState extends Equatable {
     Map<String, bool>? playingStates,
     int? hintTapCount,
     bool? isWordMastered,
-    int? accumulatedSeconds,
     DateTime? wordStartTime,
     DateTime? firstMatchTime,
     bool? isUpdatingByHint,
@@ -217,7 +214,6 @@ class BdcState extends Equatable {
       playingStates: playingStates ?? this.playingStates,
       hintTapCount: hintTapCount ?? this.hintTapCount,
       isWordMastered: isWordMastered ?? this.isWordMastered,
-      accumulatedSeconds: accumulatedSeconds ?? this.accumulatedSeconds,
       wordStartTime: wordStartTime ?? this.wordStartTime,
       firstMatchTime: firstMatchTime ?? this.firstMatchTime,
       isUpdatingByHint: isUpdatingByHint ?? this.isUpdatingByHint,
@@ -271,7 +267,6 @@ class BdcState extends Equatable {
     playingStates,
     hintTapCount,
     isWordMastered,
-    accumulatedSeconds,
     wordStartTime,
     firstMatchTime,
     isUpdatingByHint,

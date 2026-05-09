@@ -86,23 +86,25 @@ class BdcNotifier extends _$BdcNotifier {
     return const BdcState();
   }
 
+  DateTime? _lastSyncTime;
+
   void _onAsrStateChanged(AsrState asrState) {
     state = state.copyWith(asrState: asrState);
   }
 
   void _startLearningTimer() {
-    _learningTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      state = state.copyWith(accumulatedSeconds: state.accumulatedSeconds + 1);
-      if (state.accumulatedSeconds % 10 == 0) {
-        _syncLearningTimeToDb();
-      }
+    _lastSyncTime = AppClock.now();
+    _learningTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _syncLearningTimeToDb();
     });
   }
 
   Future<void> _syncLearningTimeToDb() async {
-    if (state.accumulatedSeconds <= 0) return;
-    int secsToSync = state.accumulatedSeconds;
-    state = state.copyWith(accumulatedSeconds: 0);
+    if (_lastSyncTime == null) return;
+    final now = AppClock.now();
+    int secsToSync = now.difference(_lastSyncTime!).inSeconds;
+    if (secsToSync <= 0) return;
+    _lastSyncTime = now;
 
     try {
       final user = Global.getLoggedInUser();
@@ -134,14 +136,16 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } catch (e) {
       Global.logger.e("同步学习时长失败", error: e);
-      state = state.copyWith(accumulatedSeconds: state.accumulatedSeconds + secsToSync);
     }
   }
 
   Future<void> loadData(BuildContext context) async {
+    if (state.dataLoaded) return;
     Api.setLoadingDisabled(true);
     try {
-      state = state.copyWith(dataLoaded: false);
+      if (state.word == null) {
+        state = state.copyWith(dataLoaded: false);
+      }
       
       // Get display words for loading dialog
       List<String> displayWords = await _getDisplayWords();
@@ -297,6 +301,11 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> handleWord(GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     if (getWordResult == null) return;
+    
+    // 防止处理同一个结果引发的循环
+    if (getWordResult == state.currentGetWordResult && !isFromBatchWordList) {
+      return;
+    }
     
     if (getWordResult.finished) {
       Get.offNamed("/finish");

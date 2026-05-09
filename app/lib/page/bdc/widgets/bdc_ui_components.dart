@@ -284,6 +284,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             : null,
       ),
       child: SingleChildScrollView(
+        key: const ValueKey('bdc_question_content_scroll_view'),
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.fromLTRB(
             BdcPageState.leftPadding,
@@ -542,37 +543,13 @@ extension BdcPageStateUIComponents on BdcPageState {
         Expanded(
           flex: 1,
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            switchInCurve: Curves.fastOutSlowIn,
-            switchOutCurve: Curves.fastOutSlowIn,
+            duration: const Duration(milliseconds: 400),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
             transitionBuilder: (Widget child, Animation<double> animation) {
-              final isIncoming = child.key == ValueKey('word_card_${state.word?.id}_$state.historyIndex');
-              
-              // 模拟纸张揭起的复合动画
-              return SlideTransition(
-                // 入场从侧方稍偏下的位置划入，出场向侧方稍偏上的位置滑出，模拟揭页的轨迹
-                position: Tween<Offset>(
-                  begin: isIncoming ? Offset(state.slideDirection, 0.02) : Offset(-state.slideDirection, -0.02),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: RotationTransition(
-                  // 模拟纸张边角的轻微翘起旋转 (约 3-5 度)
-                  turns: Tween<double>(
-                    begin: isIncoming ? state.slideDirection * 0.015 : -state.slideDirection * 0.01,
-                    end: 0,
-                  ).animate(animation),
-                  child: ScaleTransition(
-                    // 模拟纸张揭起时的缩放变化
-                    scale: Tween<double>(begin: 0.96, end: 1.0).animate(animation),
-                    child: FadeTransition(
-                      opacity: CurvedAnimation(
-                        parent: animation,
-                        curve: const Interval(0.4, 1.0), // 延迟淡入，让揭页感更强
-                      ),
-                      child: child,
-                    ),
-                  ),
-                ),
+              return FadeTransition(
+                opacity: animation,
+                child: child,
               );
             },
             child: Container(
@@ -612,11 +589,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                         child: (state.studyStep == StudyStep.en2Ch.json ||
                                 state.studyStep == StudyStep.ch2En.json)
                             ? TabBarView(
+                                key: ValueKey('bdc_tab_bar_view_${_tabController?.length}'),
                                 controller: _tabController,
                                 physics: const NeverScrollableScrollPhysics(),
                                 children: [
-                                  if (_getShouldShowSpeakTab(state)) _buildSpeakPanel(),
+                                  // 始终保持 Tab 数量一致性，避免抖动
+                                  if (_tabController?.length == 2) _buildSpeakPanel(),
                                   SingleChildScrollView(
+                                    key: const ValueKey('bdc_choice_list_scroll_view'),
                                     physics: const BouncingScrollPhysics(),
                                     child: _buildChoiceList(),
                                   ),
@@ -2065,8 +2045,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                         highlightedWordImg: state.highlightedWordImg?.imageFile,
                         maxImages: 2,
                         onImageTap: (image) {
-                          Global.logger
-                              .d('show dialog for image: ${image.imageFile}');
                           showImagePreviewWithContext(context, image,
                               onDeleted: () {
                             state.currentGetWordResult?.images
