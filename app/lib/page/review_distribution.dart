@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/page/word_list/bucket_words.dart';
 
@@ -69,9 +70,9 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
       final lastDateRaw = item['lastLearningDate'] as DateTime? ?? now;
       final scheduledDays = item['scheduledDays'] as int? ?? 0;
-      final nextDateRaw = DateUtils.pureDate(lastDateRaw).add(Duration(days: scheduledDays));
+      final nextDateRaw = app_date.DateUtils.pureDate(lastDateRaw).add(Duration(days: scheduledDays));
       
-      final nextDate = DateUtils.pureDate(nextDateRaw);
+      final nextDate = app_date.DateUtils.pureDate(nextDateRaw);
       final daysDiff = nextDate.difference(nowDate).inDays;
 
       int key;

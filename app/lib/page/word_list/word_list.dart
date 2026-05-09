@@ -449,7 +449,7 @@ class WordListPageState extends State<WordListPage>
     Global.logger.d('WordListPage: loadData completed in ${swTotal.elapsedMilliseconds}ms (baseIndex=$baseIndex)');
   }
 
-  doQuery(bool clearCurrent, int fromIndex, final int pageSize,
+  Future<void> doQuery(bool clearCurrent, int fromIndex, final int pageSize,
       bool jumpToTailWhenReady) async {
     /// 如果正在查询，或者当前时间和最后一次查询时间之差小于规定毫秒数，则不查询（保护服务端和UI性能）
     fromIndex = fromIndex < 0 ? 0 : fromIndex;

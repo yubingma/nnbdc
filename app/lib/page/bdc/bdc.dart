@@ -27,6 +27,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:provider/provider.dart';
 
@@ -795,7 +796,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
               final fsrs = FSRS();
               _daysSinceLastReview = 0;
               if (lw.lastLearningDate != null) {
-                final lastDate = DateUtils.pureDate(lw.lastLearningDate!);
+                final lastDate = app_date.DateUtils.pureDate(lw.lastLearningDate!);
                 final todayDate = AppClock.today();
                 _daysSinceLastReview = todayDate.difference(lastDate).inDays;
               }
@@ -1414,7 +1415,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
         final fsrs = FSRS();
         _daysSinceLastReview = 0;
         if (lw.lastLearningDate != null) {
-          final lastDate = DateUtils.pureDate(lw.lastLearningDate!);
+          final lastDate = app_date.DateUtils.pureDate(lw.lastLearningDate!);
           final todayDate = AppClock.today();
           _daysSinceLastReview = todayDate.difference(lastDate).inDays;
         }
