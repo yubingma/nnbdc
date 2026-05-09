@@ -5,7 +5,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -99,7 +99,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   static const double rightPadding = 0;
   Color selectedTextColor = Colors.white;
   Color normalTextColor = const Color(0xffaaaaaa);
-  AudioPlayer audioPlayer = AudioPlayer();
+  ja.AudioPlayer audioPlayer = ja.AudioPlayer();
   bool _audioPlayerDisposed = false;
   Timer? loadWordTimer; // 改为可空类型，避免late风险
   Timer? playWordTimer;

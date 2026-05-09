@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -90,7 +90,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   bool _isTopDrawerExpanded = true;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
-  late final AudioPlayer audioPlayer;
+  late final ja.AudioPlayer audioPlayer;
   bool _audioPlayerDisposed = false;
   var sentenceEnglishController = TextEditingController();
   var sentenceChineseController = TextEditingController();
@@ -124,7 +124,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   @override
   void initState() {
     super.initState();
-    audioPlayer = AudioPlayer();
+    audioPlayer = ja.AudioPlayer();
     _wordSoundController = AnimationController(
       duration: const Duration(milliseconds: 700),
       vsync: this,

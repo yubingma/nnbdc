@@ -12,7 +12,7 @@ import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.da
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/services.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
@@ -95,7 +95,7 @@ class BdcPageState extends State<BdcPage> with TickerProviderStateMixin {
   /// 释义输入框焦点控制
   final FocusNode _meaningFocusNode = FocusNode();
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final ja.AudioPlayer _audioPlayer = ja.AudioPlayer();
 
   /// 说意/英拼写面板的滚动控制
   final ScrollController _speakPanelScrollController = ScrollController();

@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:audio_session/audio_session.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 // Avoid direct dart:io Platform on web; use PlatformUtils instead
 import 'package:nnbdc/global.dart';
@@ -12,14 +13,14 @@ import 'package:nnbdc/util/utils.dart';
 import '../api/vo.dart';
 
 class SoundUtil {
-  static AudioPlayer? _pronouncePlayer;
+  static ja.AudioPlayer? _pronouncePlayer;
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
   static bool _audioSessionConfigured = false;
-  static final Map<String, List<AudioPlayer>> _sfxPools = {};
-
+  static final Map<String, List<ja.AudioPlayer>> _sfxPools = {};
+  
   // 核心：引入忙碌锁定，记录每个播放器最后一次被指派的时间
-  static final Map<AudioPlayer, DateTime> _playerBusyUntil = {};
+  static final Map<ja.AudioPlayer, DateTime> _playerBusyUntil = {};
 
   static const int _maxPlayersPerSfx = 6; // 6路并发通道
 
@@ -35,29 +36,22 @@ class SoundUtil {
 
   static Future<void> _doConfigureAudioSession() async {
     try {
-      final player = AudioPlayer();
-      if (PlatformUtils.isIOS) {
-        await player.setAudioContext(AudioContext(
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.playAndRecord,
-            options: {
-              AVAudioSessionOptions.defaultToSpeaker,
-              AVAudioSessionOptions.mixWithOthers,
-              AVAudioSessionOptions.allowBluetooth,
-              AVAudioSessionOptions.allowBluetoothA2DP,
-            },
-          ),
-        ));
-      } else if (PlatformUtils.isAndroid) {
-        await player.setAudioContext(AudioContext(
-          android: AudioContextAndroid(
-            usageType: AndroidUsageType.media,
-            contentType: AndroidContentType.speech,
-            audioFocus: AndroidAudioFocus.gain,
-          ),
-        ));
-      }
-      await player.dispose();
+      final session = await AudioSession.instance;
+      await session.configure(AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
+            AVAudioSessionCategoryOptions.mixWithOthers |
+            AVAudioSessionCategoryOptions.allowBluetooth,
+        avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+        androidAudioAttributes: const AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.speech,
+          flags: AndroidAudioFlags.none,
+          usage: AndroidAudioUsage.media,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: true,
+      ));
+      
       _audioSessionConfigured = true;
       Global.logger.i('SoundUtil: 全局音频会话配置完成');
 
@@ -72,16 +66,19 @@ class SoundUtil {
   static void _prewarmSfx(List<String> files) {
     for (var f in files) {
       _sfxPools.putIfAbsent(f, () {
-        final p = AudioPlayer();
-        p.setSource(AssetSource('audio/$f')).catchError((_) {});
+        final p = ja.AudioPlayer();
+        p.setAsset('assets/audio/$f').catchError((e) {
+          Global.logger.w('SoundUtil: 预热音效失败 assets/audio/$f: $e');
+          return null;
+        });
         return [p];
       });
     }
   }
 
   /// 获取单词发音播放器实例
-  static AudioPlayer get pronouncePlayer {
-    _pronouncePlayer ??= AudioPlayer();
+  static ja.AudioPlayer get pronouncePlayer {
+    _pronouncePlayer ??= ja.AudioPlayer();
     return _pronouncePlayer!;
   }
 
@@ -93,7 +90,7 @@ class SoundUtil {
   }
 
   /// 播放单词发音
-  static Future<void> playPronounceSound2(WordVo word, AudioPlayer player) async {
+  static Future<void> playPronounceSound2(WordVo word, ja.AudioPlayer player) async {
     var soundUrl = Util.getWordSoundUrl(word.spell, word: word);
     Global.logger.d('🔊 播放发音 (指定播放器) [Spell: ${word.spell}, UpdateTime: ${word.updateTime}] URL: $soundUrl');
     await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000);
@@ -102,11 +99,11 @@ class SoundUtil {
   /// 播放单词发音 (按拼写)
   static Future<void> playPronounceSoundBySpell(String spell) async {
     var soundUrl = Util.getWordSoundUrl(spell);
-    await playSoundByUrl(soundUrl, AudioPlayer(), true);
+    await playSoundByUrl(soundUrl, ja.AudioPlayer(), true);
   }
 
-  /// 播放单词发音，使用已存在的AudioPlayer实例
-  static Future<void> playPronounceSoundBySpell2(String spell, AudioPlayer player, {double speed = 1.0}) async {
+  /// 播放单词发音，使用已存在的播放器实例
+  static Future<void> playPronounceSoundBySpell2(String spell, ja.AudioPlayer player, {double speed = 1.0}) async {
     var soundUrl = Util.getWordSoundUrl(spell);
     await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 10000, speed: speed);
   }
@@ -130,23 +127,23 @@ class SoundUtil {
   /// 播放例句发音
   static Future<void> playSentenceSound(String englishDigest) async {
     var soundUrl = Util.getSentenceSoundUrl(englishDigest);
-    await playSoundByUrl(soundUrl, AudioPlayer(), true);
+    await playSoundByUrl(soundUrl, ja.AudioPlayer(), true);
   }
 
   /// 播放 AI 短文发音 (英文)
   static Future<void> playAiStoryEnSound(String wordsHash) async {
     var soundUrl = Util.getAiStoryEnSoundUrl(wordsHash);
-    await playSoundByUrl(soundUrl, AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
+    await playSoundByUrl(soundUrl, ja.AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
   }
 
   /// 播放 AI 短文发音 (中文)
   static Future<void> playAiStoryCnSound(String wordsHash) async {
     var soundUrl = Util.getAiStoryCnSoundUrl(wordsHash);
-    await playSoundByUrl(soundUrl, AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
+    await playSoundByUrl(soundUrl, ja.AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
   }
 
   /// 播放例句发音
-  static Future<void> playSentenceSound2(String englishDigest, AudioPlayer player, {double speed = 1.0}) async {
+  static Future<void> playSentenceSound2(String englishDigest, ja.AudioPlayer player, {double speed = 1.0}) async {
     var soundUrl = Util.getSentenceSoundUrl(englishDigest);
     await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 7000, playTimeoutMs: 20000, speed: speed);
   }
@@ -163,94 +160,44 @@ class SoundUtil {
     unawaited(playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.6));
   }
 
-  static Future<void> playSoundByUrl(String soundUrl, AudioPlayer player, bool disposeWhenFinish,
+  static Future<void> playSoundByUrl(String soundUrl, ja.AudioPlayer player, bool disposeWhenFinish,
       {int loadTimeoutMs = 3000, int playTimeoutMs = 10000, double speed = 1.0}) async {
-    StreamSubscription? subscription;
     try {
       if (!_audioSessionConfigured) {
         await configureAudioSession();
       }
-      await player.setVolume(1.0);
       if (PlatformUtils.isWeb) {
         await _ensureWebAudioUnlocked();
       }
 
-      if (!disposeWhenFinish) {
-        try {
-          final currentState = player.state;
-          if (currentState == PlayerState.playing || currentState == PlayerState.paused) {
-            await player.stop().timeout(const Duration(milliseconds: 500), onTimeout: () => {});
-            // 移除了 100ms 的人工延迟，现代播放器通常不需要这个间隔
-          }
-        } catch (stopError, stackTrace) {
-          ErrorHandler.handleError(stopError, stackTrace, logPrefix: '停止音频播放时出错', showToast: false);
-        }
-      }
+      final DateTime startTime = DateTime.now();
+      Global.logger.d('~~~~~ SoundUtil(ja): 开始播放 URL: $soundUrl, 倍速: $speed');
 
-      final completer = Completer<void>();
-      subscription = player.onPlayerComplete.listen((_) {
-        if (!completer.isCompleted) {
-          Global.logger.d('音频播放完成事件收到');
-          completer.complete();
-        }
-      });
-
-      // 额外监听状态变化，作为补丁，防止有些平台上 onPlayerComplete 不可靠
-      StreamSubscription? stateSubscription;
-      stateSubscription = player.onPlayerStateChanged.listen((state) {
-        if (state == PlayerState.completed || state == PlayerState.stopped) {
-          if (!completer.isCompleted) {
-            Global.logger.d('音频播放状态变化为完成/停止: $state');
-            completer.complete();
-          }
-        }
-      });
-
-      try {
-        if (PlatformUtils.isWeb) {
-          await player.play(UrlSource(soundUrl)).timeout(Duration(milliseconds: loadTimeoutMs));
-          await player.setPlaybackRate(speed);
+      // 设置源
+      if (PlatformUtils.isWeb) {
+        await player.setUrl(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+      } else {
+        final cacheManager = DefaultCacheManager();
+        FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
+        if (fileInfo != null) {
+          await player.setFilePath(fileInfo.file.path).timeout(Duration(milliseconds: loadTimeoutMs));
         } else {
-          // 确保 AudioSession 仍然活跃（ASR 可能刚停）
-          if (PlatformUtils.isIOS) {
-            await configureAudioSession();
-          }
-
-          // 优先检查缓存，避免 getSingleFile 可能带来的网络检查/下载逻辑延迟
-          final cacheManager = DefaultCacheManager();
-          FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
-          
-          Source source;
-          if (fileInfo != null) {
-            source = DeviceFileSource(fileInfo.file.path);
-          } else {
-            // 缓存未命中，则使用 getSingleFile 触发下载
-            var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-            source = DeviceFileSource(file.path);
-          }
-          
-          // 直接播放
-          Global.logger.d('SoundUtil: 准备调用 player.play(), source: ${source.toString()}');
-          await player.play(source).timeout(Duration(milliseconds: loadTimeoutMs));
-          await player.setPlaybackRate(speed);
-          Global.logger.d('SoundUtil: player.play() 调用已返回（播放器已启动且速率已设置）');
+          var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+          await player.setFilePath(file.path).timeout(Duration(milliseconds: loadTimeoutMs));
         }
-
-        // 等待播放完成
-        await completer.future.timeout(Duration(milliseconds: playTimeoutMs));
-      } finally {
-        await stateSubscription.cancel();
       }
+
+      // 设置倍速并播放
+      await player.setSpeed(speed);
+      await player.play().timeout(Duration(milliseconds: playTimeoutMs));
+
+      final int elapsed = DateTime.now().difference(startTime).inMilliseconds;
+      Global.logger.d('~~~~~ SoundUtil(ja): 播放完成，逻辑耗时: ${elapsed}ms');
     } on Exception catch (e, stackTrace) {
-      ErrorHandler.handleAudioError(e, stackTrace, audioType: 'url:$soundUrl');
+      ErrorHandler.handleAudioError(e, stackTrace, audioType: 'ja_url:$soundUrl');
     } finally {
-      await subscription?.cancel();
       if (disposeWhenFinish) {
-        try {
-          await player.dispose();
-        } catch (e, stackTrace) {
-          ErrorHandler.handleError(e, stackTrace, logPrefix: '释放音频播放器时出错', showToast: false);
-        }
+        await player.dispose();
       }
     }
   }
@@ -263,25 +210,21 @@ class SoundUtil {
     }
     
     // 获取或创建该音效对应的播放器（单例模式，避免重复创建）
-    final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
+    final pool = _sfxPools.putIfAbsent(soundFileName, () => [ja.AudioPlayer()]);
     final player = pool.first;
     
     final startTime = DateTime.now().millisecondsSinceEpoch;
     Global.logger.d("~~~~~开始播放音效: $soundFileName");
     try {
-      await player.stop(); // 确保从头播放
-      await player.setPlaybackRate(speed);
+      await player.stop(); // 确保停止
+      await player.seek(Duration.zero);
+      await player.setSpeed(speed);
       await player.setVolume(volume);
       
-      // 确保 correct.mp3 播放前尝试 resume() 播放器以防其处于暂停态
-      if (soundFileName == 'correct.mp3') {
-        await player.resume();
-      }
+      // 预热或重新设置 asset
+      await player.setAsset('assets/audio/$soundFileName').timeout(Duration(milliseconds: timeoutInMilliSeconds));
       
-      await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 2000));
-      
-      // 等待播放完成
-      await player.onPlayerComplete.first.timeout(Duration(milliseconds: timeoutInMilliSeconds));
+      await player.play().timeout(Duration(milliseconds: timeoutInMilliSeconds));
       
       if (sleepAfterPlayInMilliSeconds > 0) {
         await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
@@ -300,20 +243,21 @@ class SoundUtil {
     if (PlatformUtils.isWeb) return;
 
     final pool = _sfxPools.putIfAbsent(soundFileName, () => []);
-    AudioPlayer? player;
+    ja.AudioPlayer? player;
     final now = AppClock.now();
 
     for (int i = 0; i < pool.length; i++) {
       final p = pool[i];
       final busyUntil = _playerBusyUntil[p] ?? DateTime(0);
-      if (p.state != PlayerState.playing && now.isAfter(busyUntil)) {
+      // ja.AudioPlayer 不容易直接判断是否在 play，这里主要靠 busyUntil 逻辑
+      if (now.isAfter(busyUntil)) {
         player = p;
         break;
       }
     }
 
     if (player == null && pool.length < _maxPlayersPerSfx) {
-      player = AudioPlayer();
+      player = ja.AudioPlayer();
       pool.add(player);
     }
 
@@ -328,32 +272,19 @@ class SoundUtil {
   }
 
   static Future<void> _playAssetSoundInBackground(
-    AudioPlayer player,
+    ja.AudioPlayer player,
     String soundFileName,
     double speed,
     double volume,
   ) async {
     try {
-      if (player.state == PlayerState.playing) {
-        await player.stop().catchError((_) {});
-      }
-      await player.setPlaybackRate(speed);
+      await player.stop();
+      await player.seek(Duration.zero);
+      await player.setSpeed(speed);
       await player.setVolume(volume);
 
-      final Completer<void> playCompleter = Completer<void>();
-      StreamSubscription? sub;
-      sub = player.onPlayerComplete.listen((_) {
-        if (!playCompleter.isCompleted) playCompleter.complete();
-        sub?.cancel();
-      });
-
-      await player.play(AssetSource('audio/$soundFileName')).timeout(const Duration(milliseconds: 3000));
-      
-      await Future.any([
-        playCompleter.future,
-        Future.delayed(const Duration(milliseconds: 800)),
-      ]);
-      await sub.cancel();
+      await player.setAsset('assets/audio/$soundFileName');
+      await player.play().timeout(const Duration(milliseconds: 3000));
     } catch (e) {
       Global.logger.w('SoundUtil: 播放后台音效出错 $soundFileName: $e');
     }
@@ -364,21 +295,21 @@ class SoundUtil {
     if (!_audioSessionConfigured) {
       await configureAudioSession();
     }
-    final pool = _sfxPools.putIfAbsent(soundFileName, () => [AudioPlayer()]);
-    AudioPlayer? player;
+    final pool = _sfxPools.putIfAbsent(soundFileName, () => [ja.AudioPlayer()]);
+    ja.AudioPlayer? player;
     final now = AppClock.now();
 
     for (int i = 0; i < pool.length; i++) {
       final p = pool[i];
       final busyUntil = _playerBusyUntil[p] ?? DateTime(0);
-      if (p.state != PlayerState.playing && now.isAfter(busyUntil)) {
+      if (now.isAfter(busyUntil)) {
         player = p;
         break;
       }
     }
 
     if (player == null && pool.length < _maxPlayersPerSfx) {
-      player = AudioPlayer();
+      player = ja.AudioPlayer();
       pool.add(player);
     }
 
@@ -388,21 +319,19 @@ class SoundUtil {
     _playerBusyUntil[player] = now.add(const Duration(milliseconds: 400));
 
     try {
-      if (player.state == PlayerState.playing) {
-        player.stop();
-      }
-      player.setPlaybackRate(speed);
-      player.setVolume(volume);
+      await player.stop();
+      await player.seek(Duration.zero);
+      await player.setSpeed(speed);
+      await player.setVolume(volume);
 
-      unawaited(player.play(AssetSource('audio/$soundFileName')));
+      await player.setAsset('assets/audio/$soundFileName');
+      
+      unawaited(player.play());
 
-      await Future.any([
-        player.onPlayerComplete.first,
-        Future.delayed(maxPlay),
-      ]);
+      await Future.delayed(maxPlay);
 
-      if (player.state == PlayerState.playing) {
-        player.stop();
+      if (player.playing) {
+        await player.stop();
       }
     } on Exception catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错: $soundFileName', showToast: false);
@@ -416,16 +345,15 @@ class SoundUtil {
     if (_webUnlockInProgress) return;
     _webUnlockInProgress = true;
     try {
-      final AudioPlayer unlockPlayer = AudioPlayer();
+      final ja.AudioPlayer unlockPlayer = ja.AudioPlayer();
       try {
         await unlockPlayer.setVolume(0.0);
+        await unlockPlayer.setAsset('assets/audio/thud.mp3');
+        await unlockPlayer.play();
       } catch (_) {
         // Ignore errors when setting volume for the dummy unlock player
-      }
-      try {
-        unawaited(unlockPlayer.play(AssetSource('audio/thud.mp3')));
-        unawaited(Future.delayed(const Duration(milliseconds: 500)).then((_) => unlockPlayer.dispose()));
       } finally {
+        await unlockPlayer.dispose();
         _webAudioUnlocked = true;
       }
     } finally {

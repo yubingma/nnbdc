@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:get/get.dart';
@@ -40,8 +40,8 @@ class BdcController extends GetxController with GetTickerProviderStateMixin {
   final highlightedWordImg = Rxn<WordImageVo>();
   final playingStates = <String, bool>{}.obs;
   
-  final AudioPlayer wordSoundPlayer = AudioPlayer();
-  final AudioPlayer sentenceSoundPlayer = AudioPlayer();
+  final ja.AudioPlayer wordSoundPlayer = ja.AudioPlayer();
+  final ja.AudioPlayer sentenceSoundPlayer = ja.AudioPlayer();
   late AnimationController wordSoundController;
   late AnimationController sentenceSoundController;
   
@@ -398,18 +398,18 @@ class BdcController extends GetxController with GetTickerProviderStateMixin {
     }
   }
 
-  Future<void> playWithAnimation(String sound, AudioPlayer player, AnimationController animationController, {String? stateKey}) async {
+  Future<void> playWithAnimation(String sound, dynamic player, AnimationController animationController, {String? stateKey}) async {
     if (sound.isEmpty) return;
     final key = stateKey ?? sound;
     playingStates[key] = true;
     try {
       animationController.repeat(reverse: true);
       if (sound.contains('/') || sound.contains('\\')) {
-        await player.play(DeviceFileSource(sound));
+        await player.setFilePath(sound);
+        await player.play();
       } else {
         await SoundUtil.playPronounceSound2(word.value!, player);
       }
-      await player.onPlayerComplete.first;
     } finally {
       animationController.stop(canceled: false);
       animationController.value = 0.0;

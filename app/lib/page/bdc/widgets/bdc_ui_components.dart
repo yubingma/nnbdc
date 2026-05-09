@@ -2167,7 +2167,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget buildWordSoundButton(WordVo word, AudioPlayer audioPlayer) {
+  Widget buildWordSoundButton(WordVo word, dynamic audioPlayer) {
     // 在拼写和音标显示的情况下使用小按钮
     if (_studyStep == StudyStep.en2Ch.json) {
       return Transform.translate(

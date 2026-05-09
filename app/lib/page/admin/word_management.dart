@@ -9,10 +9,10 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/config.dart';
 import 'package:provider/provider.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/local_word_cache.dart';
+import 'package:just_audio/just_audio.dart';
 
 class WordManagementWidget extends StatefulWidget {
   const WordManagementWidget({super.key});

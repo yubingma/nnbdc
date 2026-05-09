@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -323,7 +323,7 @@ class WordListPageState extends State<WordListPage>
   final GlobalKey _overlayKey = GlobalKey();
 
   /// 音频播放器实例（测试环境下为 MockAudioPlayer）
-  final AudioPlayer audioPlayer = AudioPlayer();
+  final ja.AudioPlayer audioPlayer = ja.AudioPlayer();
 
   /// AudioPlayer 是否已被释放的标志
   bool _audioPlayerDisposed = false;
