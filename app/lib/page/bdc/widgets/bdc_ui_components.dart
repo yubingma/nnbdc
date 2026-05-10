@@ -272,11 +272,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     IconButton(
                       icon: Icon(Icons.lightbulb_outline, color: AppTheme.primaryColor),
                       onPressed: () {
-                        updateUI(() {
-                          notifier.updateIsUpdatingByHint(true);
-                          notifier.meaningController.text = state.word?.spell ?? "";
-                          notifier.updateIsUpdatingByHint(false);
-                        });
+                        notifier.giveFullHint();
                         notifier.checkAsrResult();
                       },
                     ),
@@ -344,8 +340,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                     kTextTabBarHeight)), // 预留底部TabBar空间，避免遮挡
         child: Column(
           children: [
-            // 英→中模式整合卡片
-            if (state.studyStep == StudyStep.en2Ch.json &&
+            // 英→中模式 或 列表模式 整合卡片
+            if ((state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.list.json) &&
                 state.currentGetWordResult?.learningWord?.word != null)
               _buildWordStepCard(),
             // 中→英模式整合卡片
@@ -640,7 +636,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                 padding: const EdgeInsets.fromLTRB(BdcPageState.leftPadding, 0, BdcPageState.rightPadding, 0),
                 child: (state.showAnswerButtons ||
                         state.studyStep == StudyStep.en2Ch.json ||
-                        state.studyStep == StudyStep.ch2En.json)
+                        state.studyStep == StudyStep.ch2En.json ||
+                        state.studyStep == StudyStep.list.json)
                     ? Column(
                         children: [
                           if (state.studyStep == StudyStep.en2Ch.json ||
@@ -735,85 +732,98 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  if (state.showAnswerButtons || state.studyStep == StudyStep.en2Ch.json)
-                    AbsorbPointer(
-                      absorbing: !state.buttonsEnabled,
-                      child: ElevatedButton(
-                      key: const Key('bdc_not_know_btn'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.watch<DarkMode>().isDarkMode
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFF5F5F5),
-                        foregroundColor: context.watch<DarkMode>().isDarkMode
-                            ? Colors.white70
-                            : const Color(0xFF666666),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: () => notifier.showWordDetail(state.word!, true, context,
-                          fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
-                      child: const Text('不认识',
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                    ),
-                  ),
-                  if (state.showAnswerButtons || state.studyStep == StudyStep.en2Ch.json)
-                    AbsorbPointer(
-                      absorbing: !state.buttonsEnabled,
-                      child: ElevatedButton(
-                      key: const Key('bdc_study_again'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.watch<DarkMode>().isDarkMode
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : const Color(0xFFF5F5F5),
-                        foregroundColor: context.watch<DarkMode>().isDarkMode
-                            ? Colors.white70
-                            : const Color(0xFF666666),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: () => notifier.showWordDetail(state.word!, false, context,
-                          fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
-                      child: const Text('再学学',
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                    ),
-                  ),
-                  if (state.canLeaveCurrWord)
-                    ElevatedButton(
-                      key: const Key('bdc_nextstate.word_btn'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.watch<DarkMode>().isDarkMode
-                            ? Colors.white
-                            : AppTheme.primaryColor,
-                        foregroundColor: context.watch<DarkMode>().isDarkMode
-                            ? Colors.black
-                            : Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: state.isGettingNextWord
-                          ? null
-                          : () => notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
-                      child: const Text('下一词',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                ],
-              ),
+              child: _buildRatingButtonsRow(),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRatingButtonsRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        if (state.showAnswerButtons ||
+            state.studyStep == StudyStep.en2Ch.json ||
+            state.studyStep == StudyStep.ch2En.json ||
+            state.studyStep == StudyStep.list.json)
+          AbsorbPointer(
+            absorbing: !state.buttonsEnabled,
+            child: ElevatedButton(
+              key: const Key('bdc_not_know_btn'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.watch<DarkMode>().isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : const Color(0xFFF5F5F5),
+                foregroundColor: context.watch<DarkMode>().isDarkMode
+                    ? Colors.white70
+                    : const Color(0xFF666666),
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => notifier.showWordDetail(state.word!, true, context,
+                  fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
+              child: const Text('不认识',
+                  style: TextStyle(fontWeight: FontWeight.w500)),
+            ),
+          ),
+        if (state.showAnswerButtons ||
+            state.studyStep == StudyStep.en2Ch.json ||
+            state.studyStep == StudyStep.ch2En.json ||
+            state.studyStep == StudyStep.list.json) ...[
+          const SizedBox(width: 12),
+          AbsorbPointer(
+            absorbing: !state.buttonsEnabled,
+            child: ElevatedButton(
+              key: const Key('bdc_study_again'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.watch<DarkMode>().isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : const Color(0xFFF5F5F5),
+                foregroundColor: context.watch<DarkMode>().isDarkMode
+                    ? Colors.white70
+                    : const Color(0xFF666666),
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => notifier.showWordDetail(state.word!, false, context,
+                  fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
+              child: const Text('再学学',
+                  style: TextStyle(fontWeight: FontWeight.w500)),
+            ),
+          ),
+        ],
+        if (state.canLeaveCurrWord) ...[
+          const SizedBox(width: 12),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.watch<DarkMode>().isDarkMode
+                  ? Colors.white
+                  : AppTheme.primaryColor,
+              foregroundColor: context.watch<DarkMode>().isDarkMode
+                  ? Colors.black
+                  : Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: state.isGettingNextWord
+                ? null
+                : () =>
+                    notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
+            child: const Text('下一词',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ],
     );
   }
 
@@ -1915,6 +1925,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                         _audioPlayer),
                   ],
                 ),
+                if (state.studyStep == StudyStep.list.json) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    state.word?.getMeaningStr() ?? '',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: context.watch<DarkMode>().isDarkMode
+                          ? Colors.white70
+                          : Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
                 if (state.word?.sentences != null &&
                     state.word!.sentences!.isNotEmpty) ...[
                   const SizedBox(height: 12),
