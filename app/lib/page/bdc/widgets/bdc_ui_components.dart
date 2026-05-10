@@ -924,7 +924,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 // 查词按钮
                 _buildTopActionButton(
                   icon: Icons.search_rounded,
-                  onTap: () => Get.toNamed('/search'),
+                  onTap: () => context.push('/search'),
                 ),
 
                 // 设置按钮
@@ -2104,12 +2104,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                         onPressed: () {
                           if (state.currentGetWordResult?.learningWord?.word.id !=
                               null) {
-                            Get.toNamed('/pic_search',
-                                    arguments: PicSearchPageArgs(
+                            context.push('/pic_search',
+                                    extra: PicSearchPageArgs(
                                         state.currentGetWordResult!
                                             .learningWord!.word.id!,
                                         state.currentGetWordResult!
-                                            .learningWord!.word.spell))!
+                                            .learningWord!.word.spell))
                                 .then((value) => notifier.reloadWord());
                           }
                         },

@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/db/db.dart';
@@ -56,7 +56,7 @@ class FinishPageState extends State<FinishPage> {
     */
 
     // 检查是否从页面查看器进入，如果是则模拟打卡但不入库
-    final arguments = Get.arguments;
+    final arguments = GoRouterState.of(context).extra;
     final isFromPageViewer = arguments is Map && arguments['fromPageViewer'] == true;
 
     if (!isFromPageViewer) {
@@ -454,7 +454,7 @@ class FinishPageState extends State<FinishPage> {
                   ),
                 ),
                 onPressed: () {
-                  Get.toNamed('/farm');
+                  context.push('/farm');
                 },
               ),
             ),
@@ -541,7 +541,7 @@ class FinishPageState extends State<FinishPage> {
                   ),
                 ),
                 onPressed: () {
-                  Get.toNamed('/index', arguments: IndexPageArgs(1));
+                  context.go('/index', extra: IndexPageArgs(1));
                 },
               ),
             ],

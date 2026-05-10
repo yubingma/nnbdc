@@ -4,7 +4,7 @@ import 'package:drift/drift.dart' as drift;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
@@ -140,14 +140,16 @@ class WalkmanPageState extends State<WalkmanPage> {
   int _playSessionId = 0;
 
   Future<bool> checkArgs() async {
-    if (Get.arguments == null) {
+    final extra = GoRouterState.of(context).extra;
+    if (extra == null) {
       Future.delayed(Duration.zero, () {
         // 延迟到下一个tick执行，避免导航冲突
-        Get.toNamed('/index', arguments: IndexPageArgs(4));
+        if (!mounted) return;
+        context.push('/index', extra: IndexPageArgs(4));
       });
       return false;
     }
-    params = Get.arguments;
+    params = extra as WalkmanParams?;
     return true;
   }
 

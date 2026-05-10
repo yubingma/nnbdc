@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import '../../services/dialog_service.dart';
 import '../../api/bo/word_bo.dart';
 import '../../api/vo.dart';
 import '../../db/db.dart';
@@ -169,7 +169,7 @@ class ImportFromBookPageState extends State<ImportFromBookPage> {
     }
 
     int successCount = 0;
-    Get.dialog(
+    DialogService.showDialog(
       const Center(child: CircularProgressIndicator()),
       barrierDismissible: false,
     );
@@ -180,7 +180,7 @@ class ImportFromBookPageState extends State<ImportFromBookPage> {
         if (success) successCount++;
       }
     } finally {
-      Get.back();
+      if (mounted) Navigator.of(context).pop();
     }
 
     if (alreadyInCount > 0) {
@@ -188,7 +188,7 @@ class ImportFromBookPageState extends State<ImportFromBookPage> {
     } else {
       ToastUtil.info('成功导入 $successCount 个单词');
     }
-    Get.back(result: true);
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   /// 打开带搜索功能的词书选择弹窗
@@ -366,7 +366,7 @@ class ImportFromBookPageState extends State<ImportFromBookPage> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Get.back(),
+                        onPressed: () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
                         ),

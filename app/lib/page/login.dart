@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:fluwx/fluwx.dart';
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
@@ -53,7 +53,7 @@ class LoginPageState extends State<LoginPage>
       // 检查隐私政策版本
       const int currentPrivacyVersion = 20260310;
       int acceptedVersion =
-          GetStorage().read<int>('accepted_privacy_version') ?? 0;
+          Prefs.read<int>('accepted_privacy_version') ?? 0;
       if (acceptedVersion >= currentPrivacyVersion) {
         setState(() {
           _approved = true;
@@ -370,8 +370,8 @@ class LoginPageState extends State<LoginPage>
                                 ToastUtil.error("请先同意[使用协议]和[隐私政策]");
                                 return;
                               }
-                              Get.toNamed('/email_login',
-                                  arguments: {'approved': _approved});
+                              context.push('/email_login',
+                                  extra: {'approved': _approved});
                             }),
                             Container(
                               width: 1,
@@ -393,7 +393,7 @@ class LoginPageState extends State<LoginPage>
                                 ThrottledDbSyncService()
                                     .requestSync(immediate: true);
                                 // 记录同意了当前隐私政策版本
-                                GetStorage().write(
+                                Prefs.write(
                                     'accepted_privacy_version', 20260310);
 
                                 // 访客登录后初始化统计 SDK (如果是 Android/iOS)
@@ -411,7 +411,7 @@ class LoginPageState extends State<LoginPage>
 
                                 await SubscriptionUtil.restorePurchases(
                                     showToast: false);
-                                Get.offAllNamed('/index');
+                                if (context.mounted) context.go('/index');
                               } catch (e, stackTrace) {
                                 ErrorHandler.handleNetworkError(e, stackTrace,
                                     api: 'loginAsGuest');
@@ -586,7 +586,7 @@ class LoginPageState extends State<LoginPage>
               ThrottledDbSyncService().requestSync(immediate: true);
 
               // 记录同意了当前隐私政策版本
-              GetStorage().write('accepted_privacy_version', 20260310);
+              Prefs.write('accepted_privacy_version', 20260310);
 
               // 登录成功后初始化统计 SDK (如果是 Android/iOS)
               if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
@@ -599,7 +599,7 @@ class LoginPageState extends State<LoginPage>
               }
 
               SubscriptionUtil.restorePurchases(showToast: false);
-              Get.offAllNamed('/index');
+              if (mounted) context.go('/index');
               return;
             }
             ToastUtil.error(result.msg ?? '微信登录失败');
@@ -658,7 +658,7 @@ class LoginPageState extends State<LoginPage>
 
         ThrottledDbSyncService().requestSync(immediate: true);
 
-        GetStorage().write('accepted_privacy_version', 20260310);
+        Prefs.write('accepted_privacy_version', 20260310);
 
         if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
           try {
@@ -670,7 +670,7 @@ class LoginPageState extends State<LoginPage>
         }
 
         SubscriptionUtil.restorePurchases(showToast: false);
-        Get.offAllNamed('/index');
+        if (mounted) context.go('/index');
         return;
       }
       ToastUtil.error(result.msg ?? '苹果登录失败');

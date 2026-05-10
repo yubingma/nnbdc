@@ -5,11 +5,11 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
@@ -292,7 +292,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
               child: const Text('重试'),
             ),
             TextButton(
-              onPressed: () => Get.back(),
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('返回'),
             ),
           ],

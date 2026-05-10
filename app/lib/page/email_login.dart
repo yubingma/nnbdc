@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -13,7 +13,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/analytics_util.dart';
@@ -61,7 +61,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
     // 检查隐私政策版本
     const int currentPrivacyVersion = 20260310;
-    int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+    int acceptedVersion = Prefs.read<int>('accepted_privacy_version') ?? 0;
     if (acceptedVersion >= currentPrivacyVersion) {
       setState(() {
         _approved = true;
@@ -99,10 +99,14 @@ class EmailLoginPageState extends State<EmailLoginPage> {
     super.initState();
 
     // 尝试从路由参数中获取同意状态
-    final args = Get.arguments;
-    if (args is Map && args['approved'] == true) {
-      _approved = true;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = GoRouterState.of(context).extra;
+      if (args is Map && args['approved'] == true) {
+        setState(() {
+          _approved = true;
+        });
+      }
+    });
 
     loadData();
     // 监听邮箱输入变化，检查本地是否有该邮箱
@@ -667,7 +671,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
             // 登录成功后立即触发同步，确保老用户在新设备上的数据（词书、进度）能尽快加载 
             await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
             // 登录成功后更新隐私版本并初始化统计 SDK
-            GetStorage().write('accepted_privacy_version', 20260310);
+            Prefs.write('accepted_privacy_version', 20260310);
             if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
               try {
                 UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
@@ -681,7 +685,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
             
             // 漏斗：无痛登入（邮箱登录完成）
             AnalyticsUtil.trackLogin('email', false);
-            Get.offAllNamed('/index');
+            if (mounted) context.go('/index');
           } else {
             // 如果服务器验证失败，可能需要重新验证码登录
             ToastUtil.error('登录验证失败，请使用验证码登录');
@@ -753,7 +757,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
         });
       }
       // 登录成功后更新隐私版本并初始化统计 SDK
-      GetStorage().write('accepted_privacy_version', 20260310);
+      Prefs.write('accepted_privacy_version', 20260310);
       if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
         try {
           UmengCommonSdk.initCommon(Config.umengAndroidAppKey, Config.umengIosAppKey, Config.umengChannel);
@@ -767,7 +771,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
       
       // 漏斗：无痛登入（验证码登录完成）
       AnalyticsUtil.trackLogin('email', false);
-      Get.offAllNamed('/index');
+      if (mounted) context.go('/index');
     } else {
       ToastUtil.error(codeResult.msg ?? '登录失败');
     }

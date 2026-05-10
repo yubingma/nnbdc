@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart' as drift show Value;
 import 'package:drift/drift.dart' hide Value;
-import 'package:get/get.dart';
+import 'package:nnbdc/router.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
@@ -388,8 +388,8 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
       }
     }
 
-    return Get.toNamed('/word_list',
-        arguments: WordListPageArgs(
+    return goRouter.push('/word_list',
+        extra: WordListPageArgs(
             dict.shortName!, DictWordsProvider(dict), true, showDelBtn, false, '', DictWordsProgressProvider(), DictWordsBookMarkProvider(dict), null)
           ..canAddWord = showDelBtn || (dict.editable ?? false)
           ..canEditWord = showDelBtn || (dict.editable ?? false));

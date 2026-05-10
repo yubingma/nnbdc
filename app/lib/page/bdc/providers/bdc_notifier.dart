@@ -2,40 +2,42 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' show ImageFilter;
+
+import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
-import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/global.dart';
-import 'package:nnbdc/util/asr.dart';
-import 'package:nnbdc/util/asr_util.dart';
-import 'package:nnbdc/util/error_handler.dart';
-import 'package:nnbdc/util/fsrs.dart';
-import 'package:nnbdc/util/sound.dart';
-import 'package:nnbdc/util/study_config.dart';
-import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/word_util.dart';
-import 'package:nnbdc/theme/app_theme.dart';
-import 'package:nnbdc/util/platform_util.dart';
-import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/constants.dart';
-import 'package:just_audio/just_audio.dart' as ja;
-import 'package:drift/drift.dart' as drift;
-import 'package:nnbdc/util/date_utils.dart' as app_date;
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/db/user_extensions.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_detail.dart';
 import 'package:nnbdc/page/word_list/batch_words.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
-import 'bdc_state.dart';
+import 'package:nnbdc/router.dart';
+import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/util/date_utils.dart' as app_date;
+import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/fsrs.dart';
+import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/prefs.dart';
+import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_config.dart';
+import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/word_util.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import '../models/bdc_page_args.dart';
 import '../models/word_ui_state.dart';
+import 'bdc_state.dart';
 
 part 'bdc_notifier.g.dart';
 
@@ -58,7 +60,7 @@ class BdcNotifier extends _$BdcNotifier {
     asr = Asr();
     
     // Initialize args
-    final argsJson = GetStorage().read<String>("BdcPageArgs");
+    final argsJson = Prefs.read<String>("BdcPageArgs");
     if (argsJson != null) {
       _args = BdcPageArgs.fromJson(argsJson);
     } else {
@@ -78,7 +80,7 @@ class BdcNotifier extends _$BdcNotifier {
       asr.removeStateListener(_onAsrStateChanged);
       asr.stopMicrophone();
       meaningController.dispose();
-      GetStorage().remove("BdcPageArgs");
+      Prefs.remove("BdcPageArgs");
       
       _audioPlayer.dispose();
     });
@@ -285,7 +287,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   void _restoreLastWordHistory() {
     try {
-      final lastWordDataStr = GetStorage().read<String>('last_word_history_item');
+      final lastWordDataStr = Prefs.read<String>('last_word_history_item');
       if (lastWordDataStr != null) {
         final lastWordData = json.decode(lastWordDataStr);
         final wordResult = GetWordResult.fromJson(lastWordData['wordResult']);
@@ -333,7 +335,7 @@ class BdcNotifier extends _$BdcNotifier {
         word: null,
         wordWrapper: null,
       );
-      Get.offNamed("/finish");
+      goRouter.pushReplacement("/finish");
       return false;
     } else if (getWordResult.noWord) {
       state = state.copyWith(
@@ -341,7 +343,7 @@ class BdcNotifier extends _$BdcNotifier {
         word: null,
         wordWrapper: null,
       );
-      Get.toNamed("/select_book");
+      goRouter.push("/select_book");
       return false;
     }
 
@@ -370,13 +372,13 @@ class BdcNotifier extends _$BdcNotifier {
           onPressed: () async {
             await StudyBo().completeListStepForCurrentBatch();
             // 跳转回 BDC 页面，它会自动加载下一个非 List 环节的单词
-            Get.offNamed('/bdc');
+            goRouter.pushReplacement('/bdc');
           },
           child: const Text('下一组', style: TextStyle(fontWeight: FontWeight.bold)),
         );
         
-        Get.offNamed('/word_list',
-          arguments: WordListPageArgs(
+        goRouter.pushReplacement('/word_list',
+          extra: WordListPageArgs(
             '本组单词',
             StageWordsProvider(),
             true, // showBackBtn
@@ -569,7 +571,7 @@ class BdcNotifier extends _$BdcNotifier {
       _updateFsrsPreview(fsrsRating);
     }
     
-    await Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, false, null, isAnswerWrong));
+    await goRouter.push('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong));
     _handleTabChangeForAsr();
   }
 
@@ -718,7 +720,7 @@ class BdcNotifier extends _$BdcNotifier {
             }).toList(),
           }
         };
-        GetStorage().write('last_word_history_item', json.encode(lastWordData));
+        Prefs.write('last_word_history_item', json.encode(lastWordData));
       }
     } catch (e) {
       Global.logger.e('持久化上一个单词失败: $e');
@@ -800,7 +802,7 @@ class BdcNotifier extends _$BdcNotifier {
       if (_args.fromPage == 'batch_word_list') {
         isFromBatchWordList = true;
         _args.fromPage = null;
-        await GetStorage().write("BdcPageArgs", _args.toJson());
+        await Prefs.write("BdcPageArgs", _args.toJson());
       }
 
       final result = await StudyBo().getWord(state.isWordMastered, gotoNext, fsrsRating: fsrsRating);
@@ -811,7 +813,7 @@ class BdcNotifier extends _$BdcNotifier {
         Global.logger.w('getNextWord: 获取单词失败: code=${result.code}, msg=${result.msg}');
         if (result.code == "NEW_DAY") {
           ToastUtil.info('已进入新的一天，请重新开始学习');
-          Get.offAllNamed('/today_plan'); // Redirect back to plan page
+          goRouter.go('/today_plan'); // Redirect back to plan page
         } else {
           state = state.copyWith(loadError: result.msg ?? '获取单词失败');
           ToastUtil.error(result.msg ?? '获取单词失败');
@@ -1065,7 +1067,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (asr.state == AsrState.started) return;
 
     // 添加调试日志，方便查看正确答案
-    final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.meaning;
+    final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
     Global.logger.d('~~~~~ 当前说模式正确答案: $correctAnswer');
 
     try {

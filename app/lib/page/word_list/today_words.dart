@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart' hide Value;
-import 'package:get/get.dart';
+import 'package:nnbdc/router.dart';
 import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
@@ -112,7 +112,7 @@ class TodayWordsBookMarkProvider implements BookMarkProvider {
 }
 
 Future<dynamic>? toTodayWordsListPage(bool showDelBtn) {
-  return Get.toNamed('/word_list',
-      arguments: WordListPageArgs(
+  return goRouter.push('/word_list',
+      extra: WordListPageArgs(
           '今日单词', TodayWordsProvider(), true, showDelBtn, true, '掌握度', TodayWordsProgressProvider(), TodayWordsBookMarkProvider(), null));
 }

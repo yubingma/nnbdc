@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart' as drift;
-import 'package:get/get.dart';
+import 'package:nnbdc/router.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -11,8 +11,8 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 
 import '../../constants.dart';
-import '../../util/app_clock.dart';
 import '../../util/word_util.dart';
+import '../../util/app_clock.dart';
 
 class LearningWordsProvider with WordsProvider {
   @override
@@ -231,7 +231,7 @@ class LearningWordsBookMarkProvider implements BookMarkProvider {
 }
 
 Future<dynamic>? toLearningWordsListPage(bool showDelBtn) {
-  return Get.toNamed('/word_list',
-      arguments: WordListPageArgs(
+  return goRouter.push('/word_list',
+      extra: WordListPageArgs(
           '学习中', LearningWordsProvider(), true, showDelBtn, true, '掌握度', LearningWordsProgressProvider(), LearningWordsBookMarkProvider(), null));
 }

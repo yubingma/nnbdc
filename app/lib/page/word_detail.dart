@@ -4,8 +4,8 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -147,8 +147,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     });
 
     // 同步提取参数以更新 TabController 初始状态
-    if (Get.arguments != null) {
-      args = Get.arguments;
+    if (GoRouterState.of(context).extra != null) {
+      args = GoRouterState.of(context).extra as WordDetailPageArgs;
       _canUseAiAssistant = Global.getLoggedInUser()?.isAdmin == true || SubscriptionUtil.isPremium();
       final count = calcTabsCount();
       if (count != 1) {
@@ -193,15 +193,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Future<bool> checkArgs() async {
-    if (Get.arguments == null) {
+    if (GoRouterState.of(context).extra == null) {
       Future.delayed(Duration.zero, () async {
         // 延迟到下一个tick执行，避免导航冲突
-        await GetStorage().write("BdcPageArgs", BdcPageArgs('word_detail').toJson());
-        Get.toNamed('/bdc');
+        await Prefs.write("BdcPageArgs", BdcPageArgs('word_detail').toJson());
+        if (!mounted) return;
+        context.push('/bdc');
       });
       return false;
     }
-    args = Get.arguments;
+    args = GoRouterState.of(context).extra as WordDetailPageArgs;
     return true;
   }
 
@@ -651,7 +652,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               IconButton(
-                                onPressed: () => Get.back(),
+                                onPressed: () => Navigator.of(context).pop(),
                                 icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.grey[200] : Colors.grey[700]),
                               ),
                               Container(),
@@ -792,10 +793,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                     if (args.word.images!.length < 2)
                                       InkWell(
                                         onTap: () {
-                                          Get.toNamed('/pic_search',
-                                                  arguments: PicSearchPageArgs(
+                                          context.push('/pic_search',
+                                                  extra: PicSearchPageArgs(
                                                       args.word.id!,
-                                                      args.word.spell))!
+                                                      args.word.spell))
                                               .then((value) => loadData());
                                         },
                                         child: Container(
@@ -1537,9 +1538,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           return InkWell(
             onTap: () {
               // 直接跳转到详情页，不需要中间的抽屉过渡
-              Get.toNamed('/word_detail', 
-                arguments: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
-                preventDuplicates: false,
+              context.push('/word_detail', 
+                extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
               );
             },
             borderRadius: BorderRadius.circular(12),
@@ -2197,7 +2197,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Get.back(),
+            onPressed: () => Navigator.of(context).pop(),
           ),
           title: const Text('加载失败'),
         ),
@@ -2213,7 +2213,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: () => Get.back(),
+                    onPressed: () => Navigator.of(context).pop(),
                     child: const Text('返回'),
                   ),
                   const SizedBox(width: 12),

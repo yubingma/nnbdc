@@ -1,6 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:get/get.dart';
+import '../services/dialog_service.dart';
 import '../theme/app_theme.dart';
 
 class PermissionUtil {
@@ -26,7 +27,7 @@ class PermissionUtil {
       return;
     }
 
-    if (GetPlatform.isIOS) {
+    if (Platform.isIOS) {
       final effectivePermission = _getEffectivePermission(permission);
       final newStatus = await effectivePermission.request();
       if (newStatus.isGranted) {
@@ -40,10 +41,10 @@ class PermissionUtil {
       return;
     }
 
-    final isDarkMode = Get.isDarkMode;
+    final isDarkMode = DialogService.context != null && Theme.of(DialogService.context!).brightness == Brightness.dark;
 
     // 显示符合合规要求的说明对话框
-    final result = await Get.dialog<bool>(
+    final result = await DialogService.showDialog<bool>(
       AlertDialog(
         backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -96,7 +97,7 @@ class PermissionUtil {
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(result: false),
+            onPressed: () => DialogService.pop(false),
             child: Text(
               '暂不授权',
               style: TextStyle(color: isDarkMode ? Colors.white38 : Colors.black38),
@@ -110,7 +111,7 @@ class PermissionUtil {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
-            onPressed: () => Get.back(result: true),
+            onPressed: () => DialogService.pop(true),
             child: const Text('去授权'),
           ),
         ],
@@ -136,7 +137,7 @@ class PermissionUtil {
 
   /// 针对 Android 平台处理权限映射差异
   static Permission _getEffectivePermission(Permission permission) {
-    if (GetPlatform.isAndroid) {
+    if (Platform.isAndroid) {
       if (permission == Permission.photos) {
         // 在 Android 上，Permission.storage 兼容性通常更好，且能覆盖相册访问需求
         // 或者是使用 Permission.photos，但部分设备上 manifest 识别会有问题

@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart' hide Value;
 import 'package:flutter/cupertino.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
@@ -131,8 +131,8 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
 }
 
 Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context) {
-  return Get.toNamed('/word_list',
-      arguments: WordListPageArgs(
+  return context.push('/word_list',
+      extra: WordListPageArgs(
           title,
           StageWordsProvider(),
           true,

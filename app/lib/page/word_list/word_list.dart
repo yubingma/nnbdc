@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -15,6 +14,8 @@ import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/prefs.dart';
+import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/handwriting_board.dart';
@@ -31,15 +32,12 @@ import '../../theme/app_theme.dart';
 import '../../util/app_clock.dart';
 import '../../util/phoneme_util.dart';
 import '../../util/platform_util.dart';
-import '../../util/sound.dart';
 import '../../util/word_util.dart';
 import '../index.dart';
 import '../walkman.dart';
 import '../word_detail.dart';
 import 'dict_words.dart';
 import 'edit_meaning_dialog.dart';
-import 'import_from_book_page.dart';
-import 'import_from_scan_page.dart';
 import 'word_list_actions.dart';
 import 'modes/list_mode_item.dart';
 import 'modes/speak_mode_item.dart';
@@ -246,7 +244,7 @@ class WordListPageState extends State<WordListPage>
   Timer? _handwritingPaddingTimer;
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
-  String get asrPassRule => GetStorage().read('wordListAsrPassRule') ?? 'ONE';
+  String get asrPassRule => Prefs.read<String>('wordListAsrPassRule') ?? 'ONE';
 
    late WordListPageArgs args;
   bool dataLoaded = false;
@@ -820,17 +818,16 @@ class WordListPageState extends State<WordListPage>
   /// 检查并显示新手引导
   Future<void> _checkAndShowGuide() async {
     try {
-      final storage = GetStorage();
       final cacheKey = 'wordListGuideShown_${Global.currentUserId}';
 
       // 优先从缓存读取，极快
-      bool hasShown = storage.read<bool>(cacheKey) ?? false;
+      bool hasShown = Prefs.read<bool>(cacheKey) ?? false;
 
       if (!hasShown) {
         // 只有缓存没有时才查数据库
         hasShown = await MyDatabase.instance.localParamsDao.getWordListGuideShown();
         if (hasShown) {
-          storage.write(cacheKey, true);
+          Prefs.write(cacheKey, true);
         }
       }
 
@@ -898,7 +895,7 @@ class WordListPageState extends State<WordListPage>
       _guideOverlay = null;
       // 标记为已显示
       await MyDatabase.instance.localParamsDao.setWordListGuideShown(true);
-      GetStorage().write('wordListGuideShown_${Global.currentUserId}', true);
+      Prefs.write('wordListGuideShown_${Global.currentUserId}', true);
     } catch (e) {
       Global.logger.e('关闭新手引导失败: $e');
     }
@@ -1275,14 +1272,16 @@ class WordListPageState extends State<WordListPage>
   }
 
   Future<bool> checkArgs() async {
-    if (Get.arguments == null) {
+    final extra = GoRouterState.of(context).extra;
+    if (extra == null) {
       Future.delayed(Duration.zero, () {
+        if (!mounted) return;
         // 延迟到下一个tick执行，避免导航冲突
-        Get.toNamed('/index', arguments: IndexPageArgs(4));
+        context.go('/index', extra: IndexPageArgs(4));
       });
       return false;
     }
-    args = Get.arguments;
+    args = extra as WordListPageArgs;
     // 移除冗余的数据库查询，直接信任参数。如果参数缺失，才进行兜底检查。
     if (args.canEditWord == false && args.wordsProvider is WordModifier) {
       final String? targetDictId = (args.wordsProvider as WordModifier).targetDictId;
@@ -1730,7 +1729,7 @@ class WordListPageState extends State<WordListPage>
             autofocus: true,
           ),
           actions: [
-            TextButton(onPressed: () => Get.back(), child: const Text('取消')),
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消')),
             TextButton(
               onPressed: () async {
                 final spell = controller.text.trim();
@@ -1749,7 +1748,7 @@ class WordListPageState extends State<WordListPage>
                 final success =
                     await wordModifier.addWord(searchResult.word!.id!);
                 if (success) {
-                  Get.back();
+                  Navigator.of(context).pop();
                   SoundUtil.playAddSuccessSound();
                   // 刷新列表
                   // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
@@ -2253,8 +2252,8 @@ class WordListPageState extends State<WordListPage>
   }
 
   void _handleWordLongPress(WordWrapper word, int i) {
-    Get.to(() => const WordDetailPage(),
-        arguments: WordDetailPageArgs(word.word, true, null, false));
+    context.push('/word_detail',
+        extra: WordDetailPageArgs(word.word, true, null, false));
   }
 
   List<Widget> _getSlidableActions(WordWrapper word, int i, bool isBookmarked,
@@ -3200,31 +3199,33 @@ class WordListPageState extends State<WordListPage>
                                 break;
                               case menuImportFromBook:
                                 final needRefresh =
-                                    await Get.to(() => ImportFromBookPage(
-                                          wordModifier: args.wordsProvider
-                                              as WordModifier,
-                                        ));
+                                    await context.push('/import_from_book',
+                                        extra: args.wordsProvider
+                                            as WordModifier);
+                                if (!context.mounted) return;
                                 if (needRefresh == true) {
                                   // 刷新当前页面
                                   totalWordCount = -1;
                                   baseIndex ??= 0;
                                   await doQuery(
                                       true, baseIndex!, _pageSize, false);
+                                  if (!context.mounted) return;
                                   setState(() {});
                                 }
                                 break;
                               case menuImportFromScan:
                                 final needRefresh =
-                                    await Get.to(() => ImportFromScanPage(
-                                          wordModifier: args.wordsProvider
-                                              as WordModifier,
-                                        ));
+                                    await context.push('/import_from_scan',
+                                        extra: args.wordsProvider
+                                            as WordModifier);
+                                if (!context.mounted) return;
                                 if (needRefresh == true) {
                                   // 刷新当前页面
                                   totalWordCount = -1;
                                   baseIndex ??= 0;
                                   await doQuery(
                                       true, baseIndex!, _pageSize, false);
+                                  if (!context.mounted) return;
                                   setState(() {});
                                 }
                                 break;
@@ -3347,8 +3348,8 @@ class WordListPageState extends State<WordListPage>
                                     asr.stopAsr();
                                     asr.reset();
                                   }
-                                  Get.toNamed('/walkman',
-                                      arguments:
+                                  context.push('/walkman',
+                                      extra:
                                           WalkmanParams(args.wordsProvider));
                                   break;
                                 case menuAiStory:
@@ -3725,8 +3726,7 @@ class WordListPageState extends State<WordListPage>
                           isDarkMode,
                           asrPassRule,
                           (value) async {
-                            await GetStorage()
-                                .write('wordListAsrPassRule', value);
+                            await Prefs.write('wordListAsrPassRule', value);
                             setState(() {});
                             setDialogState(() {});
                           },
@@ -4149,8 +4149,8 @@ class WordListPageState extends State<WordListPage>
               top: 10,
               child: GestureDetector(
                 onTap: () {
-                  Get.to(() => const WordDetailPage(),
-                      arguments: WordDetailPageArgs(_detectedSimilarWord!, true, null, false));
+                  context.push('/word_detail',
+                      extra: WordDetailPageArgs(_detectedSimilarWord!, true, null, false));
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/page/today_plan.dart';
 import 'package:nnbdc/page/search.dart';
 import 'package:nnbdc/page/word_lists.dart';
@@ -43,7 +43,9 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     // 进入主页时强制关闭 ASR，确保状态干净
     Asr().stopAsr();
 
-    args = Get.arguments ?? IndexPageArgs(0);
+    // 从 GoRouter extra 中提取参数
+    final extra = GoRouterState.of(context).extra;
+    args = (extra is IndexPageArgs) ? extra : IndexPageArgs(0);
     _currentIndex = args.buttonIndex;
 
     /// 初始化导航图标

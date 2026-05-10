@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import 'package:nnbdc/router.dart';
 import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
@@ -99,7 +99,7 @@ class WrongWordsBookMarkProvider implements BookMarkProvider {
 }
 
 Future<dynamic>? toWrongWordsListPage() {
-  return Get.toNamed('/word_list',
-      arguments:
+  return goRouter.push('/word_list',
+      extra:
           WordListPageArgs('今日错词', WrongWordsProvider(), true, true, false, '掌握度', WrongWordsProgressProvider(), WrongWordsBookMarkProvider(), null));
 }

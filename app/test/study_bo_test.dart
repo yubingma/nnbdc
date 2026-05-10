@@ -7,7 +7,8 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter/services.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:nnbdc/util/prefs.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nnbdc/api/enum.dart';
 
 void main() {
@@ -75,8 +76,9 @@ void main() {
     // 塞进 Global 变量缓存
     Global.currentUserId = 'test_user_id';
     Global.updateUserCache(testUser);
-    await GetStorage.init();
-    GetStorage().write('currentUserId', 'test_user_id');
+    SharedPreferences.setMockInitialValues({});
+    await Prefs.init();
+    Prefs.write('currentUserId', 'test_user_id');
 
     // 生成学习步骤配置: 1个答题环节(En2Ch) + 1个浏览环节(List)
     await db.into(db.userStudySteps).insert(UserStudyStep(

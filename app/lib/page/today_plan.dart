@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import "package:go_router/go_router.dart";
+import "package:nnbdc/util/prefs.dart";
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
@@ -881,8 +881,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             // 立刻发起非阻塞同步，确保状态尽快上传云端
             ThrottledDbSyncService().requestSync(immediate: true);
           }
-          await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
-          Get.toNamed('/bdc')?.then((value) {
+          await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
+          if (!mounted) return;
+          context.push('/bdc').then((value) {
             if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
           });
         },
@@ -930,7 +931,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: () => Get.toNamed('/select_book')?.then((v) {
+                onPressed: () => context.push('/select_book').then((v) {
                   if (mounted) loadData(forceSupplement: true);
                 }),
                 child: const Text('选择词书'),
@@ -948,8 +949,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () async {
-                    await GetStorage().write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
-                    Get.toNamed('/bdc');
+                    await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
+                    if (!mounted) return;
+                    context.push('/bdc');
                   },
                   child: const Text('就这样吧'),
                 ),

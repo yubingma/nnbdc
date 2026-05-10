@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:logger/logger.dart' as logger_pkg;
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/db/db.dart';
@@ -72,7 +72,7 @@ class Global {
   static Future<User?> loadUserFromDb() async {
     try {
       // 从local storage中获取当前登录用户ID
-      String? userId = GetStorage().read<String>("currentUserId");
+      String? userId = Prefs.read<String>("currentUserId");
       if (userId == null) {
         _currentUser = null;
         return null;
@@ -104,7 +104,7 @@ class Global {
   // 设置用户信息
   static Future<void> setLoggedInUser(UserVo user) async {
     // 保存用户ID到local storage
-    await GetStorage().write("currentUserId", user.id);
+    await Prefs.write("currentUserId", user.id);
     currentUserId = user.id; // 更新当前登录用户ID
 
     // 重新从数据库加载用户信息到缓存

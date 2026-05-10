@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
@@ -60,9 +60,9 @@ class _PageViewerPageState extends State<PageViewerPage> {
     try {
       // 如果是finish页面，传递标志表示从页面查看器进入，避免触发打卡
       if (route == '/finish') {
-        Get.toNamed(route, arguments: {'fromPageViewer': true});
+        context.push(route, extra: {'fromPageViewer': true});
       } else {
-        Get.toNamed(route);
+        context.push(route);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

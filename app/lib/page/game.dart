@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
@@ -306,7 +306,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
   // 构建匹配按钮
   Widget _buildMatchButton(GameHallVo hall) {
     return InkWell(
-      onTap: () => Get.toNamed('/russia', arguments: [hall, null]),
+      onTap: () => context.push('/russia', extra: [hall, null]),
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -358,7 +358,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
             _buildSmallActionButton(
               label: '开房间',
               icon: Icons.meeting_room_outlined,
-              onTap: () => Get.toNamed('/russia', arguments: [
+              onTap: () => context.push('/russia', extra: [
                 hall,
                 null,
                 {'mode': 'createPrivate'}
@@ -370,12 +370,13 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               label: '进房间',
               icon: Icons.vpn_key,
               onTap: () async {
-                final roomId = await _promptRoomId(context);
+                final int? roomId = await _promptRoomId(context);
                 if (roomId != null) {
-                  Get.toNamed('/russia', arguments: [
+                  if (!mounted) return;
+                  context.push('/russia', extra: [
                     hall,
                     null,
-                    {'joinRoomId': roomId}
+                    {'joinRoomId': roomId.toString()}
                   ]);
                 }
               },
@@ -703,7 +704,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => Get.toNamed('/login'),
+                onPressed: () => context.push('/login'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,

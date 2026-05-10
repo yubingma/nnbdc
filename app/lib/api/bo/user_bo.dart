@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/enum.dart';
@@ -354,7 +354,7 @@ class UserBo {
 
         // 3. 清除缓存和本地存储
         Global.clearUserCache();
-        await GetStorage().remove("currentUserId");
+        await Prefs.remove("currentUserId");
         Global.currentUserId = null;
         Global.logger.d('已清除用户缓存和本地存储');
 

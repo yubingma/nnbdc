@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import 'package:nnbdc/router.dart';
 import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
@@ -96,7 +96,7 @@ class TodayOldWordsBookMarkProvider implements BookMarkProvider {
 }
 
 Future<dynamic>? toTodayOldWordsListPage(bool showDelBtn) {
-  return Get.toNamed('/word_list',
-      arguments: WordListPageArgs(
+  return goRouter.push('/word_list',
+      extra: WordListPageArgs(
           '今日旧词', TodayOldWordsProvider(), true, showDelBtn, true, '掌握度', TodayOldWordsProgressProvider(), TodayOldWordsBookMarkProvider(), null));
 }

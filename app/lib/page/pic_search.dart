@@ -8,7 +8,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 // import 'package:http/http.dart' as http;
 // import 'package:path_provider/path_provider.dart';
 // import 'dart:io';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
 // import 'package:nnbdc/config.dart';
@@ -144,7 +144,7 @@ class PicSearchPageState extends State<PicSearchPage> {
   @override
   void initState() {
     super.initState();
-    args = Get.arguments;
+    args = GoRouterState.of(context).extra as PicSearchPageArgs;
     init();
 
     // 操作提示

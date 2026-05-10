@@ -14,8 +14,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/page/word_detail.dart'; 
-import 'package:nnbdc/page/admin/admin_image_review_page.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:nnbdc/db/db.dart'; 
@@ -228,6 +227,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
 
 
       final res = await Api.client.submitDictImportTask(request);
+      if (!mounted) return;
       if (res.success && res.data != null) {
         setState(() {
           _taskId = res.data;
@@ -503,7 +503,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
             onPressed: () async {
               final wordRes = await WordBo().searchWordLocalOnly(word);
               if (wordRes.word != null) {
-                Get.to(() => const WordDetailPage(), arguments: WordDetailPageArgs(wordRes.word!, true, null, false, priorityDictIds: currentDictId != null && currentDictId.isNotEmpty ? [currentDictId] : null));
+                if (mounted) {
+                  context.push('/word_detail', extra: WordDetailPageArgs(wordRes.word!, true, null, false, priorityDictIds: currentDictId != null && currentDictId.isNotEmpty ? [currentDictId] : null));
+                }
               } else {
                 ToastUtil.error('单词正在处理或同步中，请稍后查看');
               }
@@ -551,7 +553,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
         title: 'AI 词书资源管理',
         leading: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
         actions: [
-          IconButton(icon: const Icon(Icons.image_search, color: Colors.white), tooltip: 'AI 配图审核', onPressed: () => Get.to(() => const AdminImageReviewPage())),
+          IconButton(icon: const Icon(Icons.image_search, color: Colors.white), tooltip: 'AI 配图审核', onPressed: () => context.push('/admin_image_review')),
         ],
       ),
       body: SingleChildScrollView(
@@ -1094,7 +1096,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                                             if (spell != null && spell.isNotEmpty) {
                                               final wordRes = await WordBo().searchWordLocalOnly(spell);
                                               if (wordRes.word != null) {
-                                                Get.to(() => const WordDetailPage(), arguments: WordDetailPageArgs(wordRes.word!, true, null, false, priorityDictIds: currentDictId != null && currentDictId.isNotEmpty ? [currentDictId] : null));
+                                                if (context.mounted) {
+                                                  context.push('/word_detail', extra: WordDetailPageArgs(wordRes.word!, true, null, false, priorityDictIds: currentDictId != null && currentDictId.isNotEmpty ? [currentDictId] : null));
+                                                }
                                               } else {
                                                 ToastUtil.error('未在本地找到单词，可能同步还在进行中');
                                               }

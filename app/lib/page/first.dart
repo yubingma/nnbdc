@@ -2,8 +2,9 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../api/api.dart';
 import '../api/bo/user_bo.dart';
@@ -14,14 +15,14 @@ import '../services/update_service.dart';
 import '../util/subscription_util.dart';
 import '../page/index.dart';
 
-class FirstPage extends StatefulWidget {
+class FirstPage extends ConsumerStatefulWidget {
   const FirstPage({super.key});
 
   @override
   FirstPageState createState() => FirstPageState();
 }
 
-class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixin {
+class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMixin {
   // 版本状态
   String? _buildNumber;
   String? _versionName;
@@ -83,7 +84,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
 
   void _checkPrivacyAndProceed() async {
     const int currentPrivacyVersion = 20260310;
-    int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+    int acceptedVersion = Prefs.read<int>('accepted_privacy_version') ?? 0;
 
     if (acceptedVersion < currentPrivacyVersion) {
       _showPrivacyDialog();
@@ -107,19 +108,13 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
   void checkNewVersion() async {
     _setPreparingMessage('正在检查更新…');
     try {
-      // 防护性注册：如果 Get 还没注册过这个服务，即刻注册
-      UpdateService updateService;
-      try {
-        updateService = Get.find<UpdateService>();
-      } catch (e) {
-        updateService = Get.put(UpdateService());
-      }
+      final updateNotifier = ref.read(updateServiceProvider.notifier);
 
       // 重新获取一次 buildNumber，确保最准确
       final packageInfo = await PackageInfo.fromPlatform();
       final currentBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
       
-      final info = await updateService.checkForUpdateOnStartup(currentBuild);
+      final info = await updateNotifier.checkForUpdateOnStartup(currentBuild);
 
       if (info != null) {
         String downloadUrl = Config.apkUrl;
@@ -137,7 +132,7 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           releaseNotes: (info['changes'] as List).join('\n'),
           isForce: info['belowMinVersion'] ?? false,
         );
-        await updateService.downloadUpdate(updateInfo);
+        await updateNotifier.downloadUpdate(updateInfo);
         
         // 如果是强制更新，则不继续执行自动登录进入主页
         if (updateInfo.isForce) {
@@ -166,12 +161,12 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
         if (result.success && result.data != null) {
           await Global.setLoggedInUser(result.data!);
           SubscriptionUtil.restorePurchases(showToast: false);
-          Get.offNamed("/index", arguments: IndexPageArgs(0));
+          if (mounted) context.go("/index", extra: IndexPageArgs(0));
         } else {
-          Get.offNamed("/login");
+          if (mounted) context.go("/login");
         }
       } else {
-        Get.offNamed("/login");
+        if (mounted) context.go("/login");
       }
     } catch (e) {
       _setAutoLoginError('登录失败: $e');
@@ -197,12 +192,12 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 GestureDetector(
-                  onTap: () => Get.toNamed('/protocol'),
+                  onTap: () => context.push('/protocol'),
                   child: const Text('《用户协议》', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
                 ),
                 const Text(' 与 '),
                 GestureDetector(
-                  onTap: () => Get.toNamed('/privacy'),
+                  onTap: () => context.push('/privacy'),
                   child: const Text('《隐私政策》', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
                 ),
               ],
@@ -215,8 +210,8 @@ class FirstPageState extends State<FirstPage> with SingleTickerProviderStateMixi
           TextButton(onPressed: () => exit(0), child: const Text('不同意', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
             onPressed: () async {
-              await GetStorage().write('accepted_privacy_version', 20260310);
-              Get.back();
+              await Prefs.write('accepted_privacy_version', 20260310);
+              if (context.mounted) Navigator.of(context).pop();
               _initVersion().then((_) => checkNewVersion());
             },
             style: ElevatedButton.styleFrom(elevation: 0),

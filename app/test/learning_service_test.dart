@@ -6,7 +6,8 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/services.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:nnbdc/util/prefs.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -68,8 +69,9 @@ void main() {
     // 塞进 Global 变量缓存
     Global.currentUserId = 'test_user_id';
     Global.updateUserCache(testUser);
-    await GetStorage.init();
-    GetStorage().write('currentUserId', 'test_user_id');
+    SharedPreferences.setMockInitialValues({});
+    await Prefs.init();
+    Prefs.write('currentUserId', 'test_user_id');
 
     // 2. 生成 Mock 词书和映射
     var dictId = 'mock_dict_1';

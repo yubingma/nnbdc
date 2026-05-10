@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
@@ -69,7 +68,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
-          onPressed: () => Get.back(),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: _isLoading

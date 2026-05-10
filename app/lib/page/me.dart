@@ -8,7 +8,7 @@ import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart' hide MultipartFile, FormData;
+import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:nnbdc/api/api.dart';
@@ -738,7 +738,7 @@ class _MePageState extends State<MePage> {
                       if (loggedInUser != null) {
                         _pickAndUploadAvatar();
                       } else {
-                        Get.toNamed('/login');
+                        context.push('/login');
                       }
                     },
                     child: Container(
@@ -806,7 +806,7 @@ class _MePageState extends State<MePage> {
                   // 右上角浮动气泡/等级
                   GestureDetector(
                     onTap: () {
-                      Get.to(() => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1));
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1)));
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -840,7 +840,7 @@ class _MePageState extends State<MePage> {
               
               // 记忆云图入口
               GestureDetector(
-                onTap: () => Get.to(() => const ReviewDistributionPage()),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ReviewDistributionPage())),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
@@ -1121,7 +1121,7 @@ class _MePageState extends State<MePage> {
                   GestureDetector(
                     key: const Key('me_choose_book_btn'),
                     onTap: () {
-                      Get.toNamed("/select_book")!.then((value) {
+                      context.push("/select_book").then((value) {
                         loadData();
                       });
                     },
@@ -1316,7 +1316,7 @@ class _MePageState extends State<MePage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Get.toNamed('/study_stats');
+                      context.push('/study_stats');
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1543,7 +1543,7 @@ class _MePageState extends State<MePage> {
                       )
                     : null,
                 onTap: () {
-                  Get.toNamed('/msg');
+                  context.push('/msg');
                 },
               ),
               // 我的小天地 - 仅管理员可见
@@ -1552,7 +1552,7 @@ class _MePageState extends State<MePage> {
                   icon: Icons.eco_outlined,
                   title: '我的小天地',
                   onTap: () {
-                    Get.toNamed('/farm');
+                    context.push('/farm');
                   },
                 ),
               // AI 助教 - 仅管理员可见
@@ -1561,7 +1561,7 @@ class _MePageState extends State<MePage> {
                   icon: Icons.psychology_outlined,
                   title: 'AI 助教',
                   onTap: () {
-                    Get.toNamed('/ai_activation');
+                    context.push('/ai_activation');
                   },
                 ),
               _buildMenuTile(
@@ -1577,7 +1577,7 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.logout_rounded,
                 title: '切换账号',
-                onTap: () => Get.toNamed('/login'),
+                onTap: () => context.push('/login'),
               ),
               _buildMenuTile(
                 icon: Icons.no_accounts_outlined,
@@ -1638,7 +1638,7 @@ class _MePageState extends State<MePage> {
                 _buildMenuTile(
                   icon: Icons.admin_panel_settings_outlined,
                   title: '系统管理',
-                  onTap: () => Get.toNamed('/admin'),
+                  onTap: () => context.push('/admin'),
                 ),
                 _buildMenuTile(
                   icon: Icons.storage_rounded,
@@ -2211,7 +2211,8 @@ class _MePageState extends State<MePage> {
       UserBo().unRegister(userId).then((value) {
         if (value.success) {
           ToastUtil.info("账户已注销");
-          Get.toNamed('/login');
+          if (!mounted) return;
+          context.push('/login');
         } else {
           ToastUtil.error(value.msg!);
         }
@@ -2505,7 +2506,8 @@ class _MePageState extends State<MePage> {
 
       if (finished == true) {
         // 全量清空后，必须回到登录页
-        Get.offAllNamed('/login');
+        if (!mounted) return;
+        context.go('/login');
       }
     }
   }

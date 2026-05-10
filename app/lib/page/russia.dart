@@ -13,7 +13,7 @@ import 'package:flame/palette.dart';
 import 'package:flame/particles.dart';
 import 'package:flame/text.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -59,15 +59,16 @@ class RussiaPageState extends State<RussiaPage> {
   bool leaveGameWhenDispose = true;
 
   Future<bool> checkArgs() async {
-    if (Get.arguments == null || Get.arguments is! List || Get.arguments.length < 2) {
+    final args = GoRouterState.of(context).extra;
+    if (args == null || args is! List || args.length < 2) {
       Future.delayed(Duration.zero, () {
-        // 延迟到下一个tick执行，避免导航冲突
-        Get.toNamed('/index', arguments: IndexPageArgs(3));
+        if (!mounted) return;
+        context.push('/index', extra: IndexPageArgs(3));
       });
       return false;
     }
-    gameHall = Get.arguments[0];
-    exceptRoom = Get.arguments[1];
+    gameHall = args[0] as GameHallVo;
+    exceptRoom = args[1] as int?;
     // args[2] 可选：{'mode':'createPrivate'} 或 {'joinRoomId': 123}
     return true;
   }
@@ -84,7 +85,11 @@ class RussiaPageState extends State<RussiaPage> {
 
     // 告诉SocketIoClient当前在russia游戏页面
     SocketIoClient.instance.setInRussiaGame(true);
+  }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     loadData();
   }
 
@@ -1469,7 +1474,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     // 重新加载页面并进入新房间前，需要防止页面销毁时发送'LEAVE_HALL'命令，这是因为dispose方法执行时间不确定，有可能在进入新房间后才执行
     pageState.leaveGameWhenDispose = false;
 
-    Get.offAndToNamed('/russia', arguments: [gameHall, roomId]);
+    context.pushReplacement('/russia', extra: [gameHall, roomId]);
   }
 
   void startMatch() {
@@ -1485,7 +1490,8 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     Global.logger.d('开始尝试进入游戏大厅 - hallId: ${gameHall.id}, exceptRoom: $exceptRoom');
 
     // 解析可选参数
-    Map? extra = Get.arguments != null && Get.arguments is List && Get.arguments.length > 2 ? Get.arguments[2] as Map? : null;
+    final args = GoRouterState.of(context).extra;
+    Map? extra = args != null && args is List && args.length > 2 ? args[2] as Map? : null;
     if (extra != null && extra['mode'] == 'createPrivate') {
       Global.logger.d('创建私人房间模式');
       sendUserCmd('CREATE_PRIVATE_ROOM', [gameHall.id]);
@@ -1765,10 +1771,11 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       }
 
       // 判断是否为私房模式
-      bool isPrivateRoom = Get.arguments != null &&
-          (Get.arguments is List && Get.arguments.length > 2) &&
-          (((Get.arguments[2] as Map?)?.containsKey('mode') == true && (Get.arguments[2] as Map)['mode'] == 'createPrivate') ||
-              ((Get.arguments[2] as Map?)?.containsKey('joinRoomId') == true));
+      final args = GoRouterState.of(context).extra;
+      bool isPrivateRoom = args != null &&
+          (args is List && args.length > 2) &&
+          (((args[2] as Map?)?.containsKey('mode') == true && (args[2] as Map)['mode'] == 'createPrivate') ||
+              ((args[2] as Map?)?.containsKey('joinRoomId') == true));
 
       // 在非游戏状态且非私房模式下显示换房间按钮
       if (!isPlaying && !isShowingResult && !isPrivateRoom) {
@@ -2267,19 +2274,18 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
     // 检查是否为B玩家且没有对手
     bool isBPlayerWithoutOpponent = player.type == 'B' && !game.isPlaying && game.playerB.userGameInfo == null && game.gameState == 'waiting';
 
-    bool isPrivateRoom = Get.arguments != null &&
-        (Get.arguments is List && Get.arguments.length > 2) &&
-        (((Get.arguments[2] as Map?)?.containsKey('mode') == true && (Get.arguments[2] as Map)['mode'] == 'createPrivate') ||
-            ((Get.arguments[2] as Map?)?.containsKey('joinRoomId') == true));
+    final args = GoRouterState.of(game.context).extra;
+    bool isPrivateRoom = args != null &&
+        (args is List && args.length > 2) &&
+        (((args[2] as Map?)?.containsKey('mode') == true && (args[2] as Map)['mode'] == 'createPrivate') ||
+            ((args[2] as Map?)?.containsKey('joinRoomId') == true));
 
     if (isBPlayerWithoutOpponent) {
       // 只有通过"开房间"进入时才显示熟人约战提示
       if (isPrivateRoom &&
-          Get.arguments != null &&
-          Get.arguments is List &&
-          Get.arguments.length > 2 &&
-          (Get.arguments[2] as Map?)?.containsKey('mode') == true &&
-          (Get.arguments[2] as Map)['mode'] == 'createPrivate') {
+          args.length > 2 &&
+          (args[2] as Map?)?.containsKey('mode') == true &&
+          (args[2] as Map)['mode'] == 'createPrivate') {
         if (friendlyMatchHint.parent == null) {
           add(friendlyMatchHint);
         }

@@ -6,7 +6,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import '../services/dialog_service.dart';
 import 'dart:io' show Platform;
 import '../util/permission_util.dart';
 
@@ -252,19 +252,19 @@ class Asr {
       return false;
     }
 
-    bool? result = await Get.dialog<bool>(
+    bool? result = await DialogService.showDialog<bool>(
       AlertDialog(
         title: const Text('权限申请'),
         content: Text(
             Platform.isIOS ? '需要麦克风和语音识别权限来进行发音练习' : '需要麦克风权限来进行语音识别和发音练习'),
         actions: [
           TextButton(
-            onPressed: () => Get.back(result: false),
+            onPressed: () => DialogService.pop(false),
             child: const Text('取消'),
           ),
           TextButton(
             onPressed: () async {
-              Get.back(result: true);
+              DialogService.pop(true);
               await _openSettings();
             },
             child: const Text('去设置'),

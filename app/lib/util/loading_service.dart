@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
+import '../services/dialog_service.dart';
 
 class LoadingService {
   static final LoadingService _instance = LoadingService._internal();
@@ -115,12 +115,12 @@ class LoadingService {
     );
 
     // 添加到Overlay
-    if (Get.key.currentState?.overlay != null) {
-      Get.key.currentState?.overlay!.insert(_overlayEntry!);
-    } else if (Get.overlayContext != null) {
+    if (DialogService.navigatorKey.currentState?.overlay != null) {
+      DialogService.navigatorKey.currentState?.overlay!.insert(_overlayEntry!);
+    } else if (DialogService.context != null) {
       // 备用方案：尝试通过上下文查找
       try {
-        Overlay.of(Get.overlayContext!).insert(_overlayEntry!);
+        Overlay.of(DialogService.context!).insert(_overlayEntry!);
       } catch (e) {
         debugPrint('LoadingService: Failed to insert overlay - $e');
       }

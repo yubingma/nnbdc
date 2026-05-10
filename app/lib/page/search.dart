@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:nnbdc/global.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/local_word_cache.dart';
@@ -140,14 +140,16 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                   onTap: () async {
                     try {
                       var result = await WordBo().searchWordById(word.id!, null);
+                      if (!context.mounted) return;
                       if (result.word != null) {
-                        Get.toNamed('/word_detail', arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
+                        context.push('/word_detail', extra: WordDetailPageArgs(result.word!, false, null, false));
                       } else {
-                        Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, true, null, false), preventDuplicates: false);
+                        context.push('/word_detail', extra: WordDetailPageArgs(word, true, null, false));
                       }
                     } catch (e, st) {
                       ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
-                      Get.toNamed('/word_detail', arguments: WordDetailPageArgs(word, true, null, false), preventDuplicates: false);
+                      if (!context.mounted) return;
+                      context.push('/word_detail', extra: WordDetailPageArgs(word, true, null, false));
                     }
                   },
                   child: Padding(
@@ -356,12 +358,11 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                       } else {
                         // 使用新的根据ID查词方法，用户ID为空表示查词模式
                         var fullResult = await WordBo().searchWordById(result.word!.id!, null);
+                        if (!context.mounted) return;
                         if (fullResult.word != null) {
-                          Get.toNamed('/word_detail',
-                              arguments: WordDetailPageArgs(fullResult.word!, false, null, false), preventDuplicates: false);
+                          context.push('/word_detail', extra: WordDetailPageArgs(fullResult.word!, false, null, false));
                         } else {
-                          Get.toNamed('/word_detail',
-                              arguments: WordDetailPageArgs(result.word!, false, null, false), preventDuplicates: false);
+                          context.push('/word_detail', extra: WordDetailPageArgs(result.word!, false, null, false));
                         }
                       }
                     } catch (e, st) {

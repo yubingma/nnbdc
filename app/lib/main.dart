@@ -7,38 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 
-import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/page/admin.dart';
-import 'package:nnbdc/page/ai_activation.dart';
-import 'package:nnbdc/page/ai_diagnostic.dart';
-import 'package:nnbdc/page/bdc/bdc.dart';
-import 'package:nnbdc/page/walkman.dart';
-
-import 'package:nnbdc/page/farm.dart';
-import 'package:nnbdc/page/finish.dart';
-import 'package:nnbdc/page/first.dart';
-import 'package:nnbdc/page/game.dart';
-import 'package:nnbdc/page/index.dart';
-import 'package:nnbdc/page/login.dart';
-import 'package:nnbdc/page/email_login.dart';
-import 'package:nnbdc/page/msg.dart';
-import 'package:nnbdc/page/pic_search.dart';
-import 'package:nnbdc/page/privacy.dart';
-import 'package:nnbdc/page/protocol.dart';
-import 'package:nnbdc/page/russia.dart';
-import 'package:nnbdc/page/search.dart';
-import 'package:nnbdc/page/select_book.dart';
-import 'package:nnbdc/page/word_detail.dart';
-import 'package:nnbdc/page/word_lists.dart';
-import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/state.dart';
-import 'package:nnbdc/test.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
@@ -48,16 +22,16 @@ import 'package:nnbdc/services/ai_runtime_apple.dart';
 import 'package:nnbdc/services/ai_runtime_android.dart';
 import 'package:provider/provider.dart' as provider;
 import 'package:toastification/toastification.dart';
-import 'package:nnbdc/page/admin/golden_master_tool.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/notification_util.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
-import 'package:nnbdc/page/study_stats.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config.dart';
 import 'local_word_cache.dart';
+import 'util/prefs.dart';
+import 'router.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -75,11 +49,11 @@ void main() async {
       WidgetsFlutterBinding.ensureInitialized();
       
       // 初始化存储（必须在检查隐私版本前）
-      await GetStorage.init();
+      await Prefs.init();
 
       // 隐私政策版本检查
       const int currentPrivacyVersion = 20260310;
-      int acceptedVersion = GetStorage().read<int>('accepted_privacy_version') ?? 0;
+      int acceptedVersion = Prefs.read<int>('accepted_privacy_version') ?? 0;
       bool hasApprovedRecentPrivacy = (acceptedVersion >= currentPrivacyVersion);
 
       // 只有在 Android 或 iOS 上处理 Umeng 和 自定义分析
@@ -453,57 +427,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     var themeData = context.watch<DarkMode>().isDarkMode ? AppTheme.darkTheme() : AppTheme.lightTheme();
-    return GetMaterialApp(
+    return MaterialApp.router(
       title: Global.appName,
       debugShowCheckedModeBanner: false,
       theme: themeData,
-      initialRoute: '/first',
-      getPages: [
-        GetPage(name: '/test', page: () => TestPage()),
-        GetPage(name: '/first', page: () => const FirstPage()),
-        GetPage(name: '/login', page: () => const LoginPage()),
-        GetPage(name: '/email_login', page: () => const EmailLoginPage()),
-        GetPage(name: '/index', page: () => const IndexPage()),
-        GetPage(name: '/protocol', page: () => const ProtocolPage()),
-        GetPage(name: '/privacy', page: () => const PrivacyPage()),
-        GetPage(name: '/pic_search', page: () => const PicSearchPage()),
-        GetPage(
-          name: '/select_book',
-          page: () {
-            // 添加延迟加载以避免黑屏
-            Future.microtask(() {
-              // 确保页面过渡动画完成后再进行复杂的数据加载
-              Future.delayed(const Duration(milliseconds: 100), () {
-                Api.loadingService.init(); // 确保加载服务已初始化
-              });
-            });
-            return const SelectBookPage();
-          },
-        ),
-        GetPage(
-          name: '/bdc',
-          page: () => const BdcPage(),
-        ),
-        GetPage(name: '/walkman', page: () => const WalkmanPage()),
-        GetPage(name: '/game', page: () => const GamePage()),
-        GetPage(name: '/russia', page: () => const RussiaPage()),
-        GetPage(name: '/word_detail', page: () => const WordDetailPage()),
-        GetPage(name: '/word_list', page: () => const WordListPage()),
-        GetPage(name: '/finish', page: () => const FinishPage()),
-        GetPage(name: '/farm', page: () => const FarmPage()),
-        GetPage(name: '/word_lists', page: () => const WordListsPage()),
-        GetPage(name: '/msg', page: () => const MsgPage()),
-        GetPage(name: '/search', page: () => const SearchPage()),
-        GetPage(name: '/admin', page: () => const AdminPage()),
-        GetPage(name: '/ai_activation', page: () => const AiActivationPage()),
-        GetPage(name: '/ai_diagnostic', page: () => const AiDiagnosticPage()),
-        GetPage(name: '/golden_master', page: () => const GoldenMasterToolPage()),
-        GetPage(name: '/study_stats', page: () => const StudyStatsPage()),
-      ],
+      routerConfig: goRouter,
     );
   }
 }

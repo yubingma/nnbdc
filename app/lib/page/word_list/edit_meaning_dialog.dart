@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -222,7 +221,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Get.back(),
+          onPressed: () => Navigator.of(context).pop(),
           child: const Text('取消'),
         ),
         TextButton(
@@ -389,15 +388,16 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
       )).toList();
 
       // 同时也更新 shortDesc 以便页面列表立刻显示最新内容
-      widget.word.word.shortDesc = newMeanings.map((e) {
-        String cx = e.ciXing;
-        // 确保没有换行符
-        String m = e.meaning.replaceAll('\n', '；');
-        return cx.isNotEmpty ? "$cx $m" : m;
-      }).join("; ");
+        widget.word.word.shortDesc = newMeanings.map((e) {
+          String cx = e.ciXing;
+          // 确保没有换行符
+          String m = e.meaning.replaceAll('\n', '；');
+          return cx.isNotEmpty ? "$cx $m" : m;
+        }).join("; ");
 
-      Get.back();
-      SoundUtil.playAddSuccessSound();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        SoundUtil.playAddSuccessSound();
       widget.onSuccess();
     }
   }

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import '../../util/ocr_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -255,7 +254,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
       );
 
       if (_extractedWords.isEmpty && _invalidWords.isEmpty) {
-        Get.back(result: _successImportCount > 0);
+        if (mounted) Navigator.of(context).pop(_successImportCount > 0);
       }
     } catch (e) {
       Global.logger.e('导入失败', error: e);
@@ -296,7 +295,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        Get.back(result: _successImportCount > 0);
+        Navigator.of(context).pop(_successImportCount > 0);
       },
       child: Scaffold(
         backgroundColor:
@@ -334,7 +333,7 @@ class _ImportFromScanPageState extends State<ImportFromScanPage>
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Get.back(result: _successImportCount > 0),
+            onPressed: () => Navigator.of(context).pop(_successImportCount > 0),
           ),
         ),
         body: SafeArea(

@@ -4,7 +4,7 @@ import 'package:nnbdc/config.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/network_util.dart';
-import 'package:get/get.dart';
+import 'package:nnbdc/services/dialog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -230,7 +230,7 @@ class ThrottledDbSyncService {
         dialogTitle = '同步数据解析失败';
       }
 
-      Get.dialog(
+      DialogService.showDialog(
         AlertDialog(
           title: Row(
             children: [
@@ -267,7 +267,7 @@ class ThrottledDbSyncService {
                     );
                     if (result.success) {
                       ToastUtil.success('一键报错成功！我们会尽快排查');
-                      Get.back();
+                      DialogService.pop();
                     } else {
                       ToastUtil.error(result.msg ?? '报错失败');
                     }
@@ -278,7 +278,7 @@ class ThrottledDbSyncService {
                 child: const Text('一键报错', style: TextStyle(color: Colors.red)),
               ),
             TextButton(
-              onPressed: () => Get.back(),
+              onPressed: () => DialogService.pop(),
               child: const Text('确定'),
             ),
           ],
