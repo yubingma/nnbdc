@@ -162,10 +162,6 @@ class BdcNotifier extends _$BdcNotifier {
       await asr.preloadModels();
       await Future.delayed(const Duration(milliseconds: 50));
       
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-
       await SoundUtil.configureAudioSession();
       
       final studyConfig = StudyConfig.fromCurrentUser();
@@ -178,6 +174,9 @@ class BdcNotifier extends _$BdcNotifier {
 
       var stepsResult = await StudyBo().getActiveUserStudySteps();
       if (!stepsResult.success || stepsResult.data == null) {
+        if (context.mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
         ToastUtil.error(stepsResult.msg ?? '获取学习步骤失败');
         return;
       }
@@ -185,6 +184,10 @@ class BdcNotifier extends _$BdcNotifier {
 
       bool success = await getNextWord(false);
       
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
       if (success) {
         _restoreLastWordHistory();
       }
@@ -206,6 +209,9 @@ class BdcNotifier extends _$BdcNotifier {
         );
       }
     } catch (e, st) {
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
       state = state.copyWith(loadError: e.toString(), dataLoaded: true);
       ErrorHandler.handleError(e, st, logPrefix: 'loadData');
     } finally {
@@ -476,6 +482,8 @@ class BdcNotifier extends _$BdcNotifier {
 
     _initChoiceData(getWordResult);
 
+    state = state.copyWith(dataLoaded: true);
+
     final user = Global.getLoggedInUserNotNull();
     if (state.studyStep == StudyStep.en2Ch.json) {
       await playWordAndFirstSentence(await user.toUserVo(), false, true);
@@ -483,7 +491,6 @@ class BdcNotifier extends _$BdcNotifier {
       await playWordAndFirstSentence(await user.toUserVo(), true, true);
     }
     
-    state = state.copyWith(dataLoaded: true);
     return true;
   }
 

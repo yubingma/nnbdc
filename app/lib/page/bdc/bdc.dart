@@ -216,7 +216,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     const double maxContentWidth = 600.0;
 
     Widget pageContent = (!state.dataLoaded) 
-        ? const Center(child: CircularProgressIndicator()) 
+        ? _buildLoadingPage() 
         : renderPage();
 
     if (isDesktop) {

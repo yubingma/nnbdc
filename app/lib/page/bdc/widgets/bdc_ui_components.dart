@@ -14,6 +14,44 @@ extension BdcPageStateUIComponents on BdcPageState {
   )));
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
 
+  Widget _buildLoadingPage() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDarkMode 
+            ? [const Color(0xFF121212), const Color(0xFF1E1E1E)]
+            : [Colors.white, const Color(0xFFF8F9FA)],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "正在准备学习内容...",
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.3),
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildFullscreenImmersiveInputMode() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
