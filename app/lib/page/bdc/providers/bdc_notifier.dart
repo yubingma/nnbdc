@@ -395,9 +395,9 @@ class BdcNotifier extends _$BdcNotifier {
 
     final user = Global.getLoggedInUserNotNull();
     if (state.studyStep == StudyStep.en2Ch.json) {
-      await playWordAndFirstSentence(await user.toUserVo(), false, false);
+      await playWordAndFirstSentence(await user.toUserVo(), false, true);
     } else {
-      await playWordAndFirstSentence(await user.toUserVo(), true, false);
+      await playWordAndFirstSentence(await user.toUserVo(), true, true);
     }
     
     state = state.copyWith(dataLoaded: true);
@@ -731,6 +731,7 @@ class BdcNotifier extends _$BdcNotifier {
       ErrorHandler.handleError(e, st, logPrefix: 'getNextWord');
     } finally {
       state = state.copyWith(isGettingNextWord: false);
+      _handleTabChangeForAsr();
     }
   }
 
@@ -944,10 +945,11 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _handleTabChangeForAsr() {
-    bool isInSpeakTab = state.tabIndex == 0; 
+    // 只有在显示了“说”Tab（即 _shouldShowSpeakTab 为 true）且当前索引为 0 时，才认为是“说”模式
+    bool isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0; 
     
     if (isInSpeakTab) {
-      if (state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
+      if (state.word == null || state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
         if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
           asr.stopAsr();
         }
@@ -966,7 +968,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> _startAsrWithHint(AsrLanguage language) async {
-    if (state.showHandwritingBoard || state.isGettingNextWord) return;
+    if (state.word == null || state.showHandwritingBoard || state.isGettingNextWord) return;
     if (asr.state == AsrState.started) return;
 
     try {
@@ -982,25 +984,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void handleTabChangeForAsr() {
-    bool isInSpeakTab = state.tabIndex == 0; 
-    
-    if (isInSpeakTab) {
-      if (state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
-        if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
-          asr.stopAsr();
-        }
-        return;
-      }
-
-      if (asr.state == AsrState.started) return;
-
-      final language = state.studyStep == StudyStep.ch2En.json ? AsrLanguage.english : AsrLanguage.chinese;
-      _startAsrWithHint(language);
-    } else {
-      if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
-        asr.stopAsr();
-      }
-    }
+    _handleTabChangeForAsr();
   }
 
   void updateKeyboardVisibility(bool visible) {
