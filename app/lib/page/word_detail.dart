@@ -78,6 +78,7 @@ class WordDetailPage extends StatefulWidget {
 
 class WordDetailPageState extends State<WordDetailPage> with TickerProviderStateMixin {
   bool dataLoaded = false;
+  bool _isLoadingData = false;
   bool hasError = false;
   String? errorMessage;
   final Map<String, Future<bool>> _voteFutures = {};
@@ -215,9 +216,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Future<void> loadData() async {
-    if (!await checkArgs()) {
+    if (_isLoadingData || dataLoaded) {
       return;
     }
+    _isLoadingData = true;
+
+    if (!await checkArgs()) {
+      _isLoadingData = false;
+      return;
+    }
+    try {
     if (args.needReQueryWord) {
       try {
         // 使用新的根据ID查词方法，传入用户ID进行词书过滤，并支持优先词书
@@ -308,6 +316,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           Global.logger.d("自动播放发音失败: $e");
         }
       }, 'word');
+    }
+    } finally {
+      _isLoadingData = false;
     }
   }
 

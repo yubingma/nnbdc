@@ -201,8 +201,18 @@ class SoundUtil {
 
       final int elapsed = DateTime.now().difference(startTime).inMilliseconds;
       Global.logger.d('~~~~~ SoundUtil(ja): 播放完成，逻辑耗时: ${elapsed}ms');
-    } on Exception catch (e, stackTrace) {
-      ErrorHandler.handleAudioError(e, stackTrace, audioType: 'ja_url:$soundUrl');
+    } catch (e, stackTrace) {
+      final errorStr = e.toString();
+      // 过滤掉 "Connection aborted" 错误，这通常是因为在旧的音频还在加载时开始了新的播放
+      if (errorStr.contains('Connection aborted') || errorStr.contains('abort')) {
+        Global.logger.i('~~~~~ SoundUtil(ja): 播放被中止 (可能由于开始了新的播放): $soundUrl');
+        return;
+      }
+      if (e is Exception) {
+        ErrorHandler.handleAudioError(e, stackTrace, audioType: 'ja_url:$soundUrl');
+      } else {
+        Global.logger.e('SoundUtil: 非 Exception 类型的音频播放错误: $e', error: e, stackTrace: stackTrace);
+      }
     } finally {
       if (disposeWhenFinish) {
         await player.dispose();
