@@ -565,7 +565,7 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(selectedAnswerIndex: index);
     bool correct = index == state.correctAnswerIndex;
     if (correct) {
-      final ratingResult = _calculateRating();
+      final ratingResult = _calculateRating("选择题");
       _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
     } else {
       SoundUtil.playAssetSoundConcurrent('failed.mp3', 1.5, 1.0);
@@ -954,6 +954,14 @@ class BdcNotifier extends _$BdcNotifier {
 
     if (state.hasFinishedAnswering && !state.showHandwritingBoard) return;
 
+    String method = "键盘输入";
+    if (isVoice) {
+      method = "语音识别";
+    } else if (asrInput != null) {
+      // 只有手写板会显式传入 asrInput 且 isVoice 为 false
+      method = "手写输入";
+    }
+
     if (state.studyStep == StudyStep.en2Ch.json) {
       final isFromAsr = asrInput != null || meaningController.text == _handlingChinese;
       final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
@@ -965,7 +973,7 @@ class BdcNotifier extends _$BdcNotifier {
         state = state.copyWith(canLeaveCurrWord: true);
         if (isMatch) {
           await asr.stopAsr();
-          final ratingResult = _calculateRating();
+          final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
           SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
         }
@@ -984,7 +992,7 @@ class BdcNotifier extends _$BdcNotifier {
           meaningController.text = state.word!.spell;
         }
         await asr.stopAsr();
-        final ratingResult = _calculateRating();
+        final ratingResult = _calculateRating(method);
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       }
     }
@@ -1000,12 +1008,12 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  ({FsrsRating rating, String reason}) _calculateRating() {
-    if (state.wordStartTime == null) return (rating: FsrsRating.good, reason: "初始评分: 良好");
+  ({FsrsRating rating, String reason}) _calculateRating(String method) {
+    if (state.wordStartTime == null) return (rating: FsrsRating.good, reason: "做题方式: $method，初始评分: 良好");
     final responseTime = AppClock.now().difference(state.wordStartTime!).inSeconds;
     
     FsrsRating rating = FsrsRating.good;
-    String reason = "响应时间: ${responseTime}s";
+    String reason = "做题方式: $method，响应时间: ${responseTime}s";
     if (responseTime < 8) {
       rating = FsrsRating.easy;
       reason += "，判定为简单";
@@ -1018,7 +1026,7 @@ class BdcNotifier extends _$BdcNotifier {
     
     if (state.hintTapCount >= 2 || state.showSentenceTranslation) {
       rating = FsrsRating.again;
-      reason = "使用了大量提示或查看了翻译，评分: 忘记";
+      reason = "做题方式: $method，由于使用了大量提示或查看了翻译，评分: 忘记";
     } else if (state.hintTapCount == 1) {
       reason += "，由于使用了一次提示，评分下调一级";
       if (rating == FsrsRating.easy) {
