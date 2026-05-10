@@ -1748,9 +1748,13 @@ class WordListPageState extends State<WordListPage>
                 final success =
                     await wordModifier.addWord(searchResult.word!.id!);
                 if (success) {
-                  Navigator.of(context).pop();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
                   SoundUtil.playAddSuccessSound();
+
                   // 刷新列表
+
                   // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
                   // 会认为数据已全部加载而跳过本次查询，导致新添加的单词无法显示
                   totalWordCount = -1;
@@ -3198,12 +3202,14 @@ class WordListPageState extends State<WordListPage>
                                 });
                                 break;
                               case menuImportFromBook:
+                                if (!context.mounted) return;
                                 final needRefresh =
                                     await context.push('/import_from_book',
                                         extra: args.wordsProvider
                                             as WordModifier);
-                                if (!context.mounted) return;
+
                                 if (needRefresh == true) {
+
                                   // 刷新当前页面
                                   totalWordCount = -1;
                                   baseIndex ??= 0;
@@ -3214,12 +3220,14 @@ class WordListPageState extends State<WordListPage>
                                 }
                                 break;
                               case menuImportFromScan:
+                                if (!context.mounted) return;
                                 final needRefresh =
                                     await context.push('/import_from_scan',
                                         extra: args.wordsProvider
                                             as WordModifier);
-                                if (!context.mounted) return;
+
                                 if (needRefresh == true) {
+
                                   // 刷新当前页面
                                   totalWordCount = -1;
                                   baseIndex ??= 0;
@@ -3348,9 +3356,12 @@ class WordListPageState extends State<WordListPage>
                                     asr.stopAsr();
                                     asr.reset();
                                   }
+                                  if (!context.mounted) return;
                                   context.push('/walkman',
                                       extra:
                                           WalkmanParams(args.wordsProvider));
+
+
                                   break;
                                 case menuAiStory:
                                   _generateAiStory();
