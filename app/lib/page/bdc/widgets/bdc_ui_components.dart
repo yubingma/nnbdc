@@ -582,80 +582,88 @@ extension BdcPageStateUIComponents on BdcPageState {
         // 做题区 - 使用flex=1
         Expanded(
           flex: 1,
-          child: Container(
-            // 做题区背景色 - 浅绿色调
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: _showBorders
-                  ? Border.all(
-                      color: Colors.blue,
-                      width: 10,
-                    )
-                  : null,
-            ),
-            padding: const EdgeInsets.fromLTRB(BdcPageState.leftPadding, 0, BdcPageState.rightPadding, 0),
-            child: (state.showAnswerButtons ||
-                    state.studyStep == StudyStep.en2Ch.json ||
-                    state.studyStep == StudyStep.ch2En.json)
-                ? Column(
-                    children: [
-                      if (state.studyStep == StudyStep.en2Ch.json ||
-                          state.studyStep == StudyStep.ch2En.json) ...[
-                        _buildTabBar(),
-                        const SizedBox(height: 8),
-                      ],
-                      Expanded(
-                        child: (state.studyStep == StudyStep.en2Ch.json ||
-                                state.studyStep == StudyStep.ch2En.json)
-                            ? TabBarView(
-                                key: ValueKey('bdc_tab_bar_view_${_tabController?.length}'),
-                                controller: _tabController,
-                                physics: const NeverScrollableScrollPhysics(),
-                                children: [
-                                  // 始终保持 Tab 数量一致性，避免抖动
-                                  if (_tabController?.length == 2) _buildSpeakPanel(),
-                                  SingleChildScrollView(
-                                    key: const ValueKey('bdc_choice_list_scroll_view'),
-                                    physics: const BouncingScrollPhysics(),
-                                    child: _buildChoiceList(),
+          child: Consumer(
+            builder: (context, ref, child) {
+              final wordId = ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
+              final historyIndex = ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
+              
+              return Container(
+                key: ValueKey('bdc_choice_area_${wordId}_$historyIndex'),
+                // 做题区背景色 - 浅绿色调
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: _showBorders
+                      ? Border.all(
+                          color: Colors.blue,
+                          width: 10,
+                        )
+                      : null,
+                ),
+                padding: const EdgeInsets.fromLTRB(BdcPageState.leftPadding, 0, BdcPageState.rightPadding, 0),
+                child: (state.showAnswerButtons ||
+                        state.studyStep == StudyStep.en2Ch.json ||
+                        state.studyStep == StudyStep.ch2En.json)
+                    ? Column(
+                        children: [
+                          if (state.studyStep == StudyStep.en2Ch.json ||
+                              state.studyStep == StudyStep.ch2En.json) ...[
+                            _buildTabBar(),
+                            const SizedBox(height: 8),
+                          ],
+                          Expanded(
+                            child: (state.studyStep == StudyStep.en2Ch.json ||
+                                    state.studyStep == StudyStep.ch2En.json)
+                                ? TabBarView(
+                                    key: ValueKey('bdc_tab_bar_view_${_tabController?.length}'),
+                                    controller: _tabController,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    children: [
+                                      // 始终保持 Tab 数量一致性，避免抖动
+                                      if (_tabController?.length == 2) _buildSpeakPanel(),
+                                      SingleChildScrollView(
+                                        key: const ValueKey('bdc_choice_list_scroll_view'),
+                                        physics: const BouncingScrollPhysics(),
+                                        child: _buildChoiceList(),
+                                      ),
+                                    ],
+                                  )
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Flexible(
+                                        child: SingleChildScrollView(
+                                          physics: const BouncingScrollPhysics(),
+                                          child: _buildChoiceList(),
+                                        ),
+                                      ),
+                                      Expanded(child: _buildSpeakPanel()),
+                                    ],
                                   ),
-                                ],
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Flexible(
-                                    child: SingleChildScrollView(
-                                      physics: const BouncingScrollPhysics(),
-                                      child: _buildChoiceList(),
-                                    ),
-                                  ),
-                                  Expanded(child: _buildSpeakPanel()),
-                                ],
-                              ),
-                      ),
-                    ],
-                  )
-                : InkWell(
-                    key: const Key('bdc_do_question_btn'),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Row(
+                          ),
+                        ],
+                      )
+                    : InkWell(
+                        key: const Key('bdc_do_question_btn'),
+                        child: const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.touch_app_outlined),
-                            Text('点此做题'),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.touch_app_outlined),
+                                Text('点此做题'),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
-                    ),
-                    onTap: () {
-                      updateUI(() {
-                        notifier.updateShowAnswerButtons(true);
-                      });
-                    },
-                  ),
+                        onTap: () {
+                          updateUI(() {
+                            notifier.updateShowAnswerButtons(true);
+                          });
+                        },
+                      ),
+              );
+            },
           ),
         ),
       ],

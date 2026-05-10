@@ -358,7 +358,10 @@ class BdcNotifier extends _$BdcNotifier {
       canLeaveCurrWord: false,
       hasFinishedAnswering: false,
       selectedAnswerIndex: null,
+      correctAnswerIndex: null,
+      words: null,
       flippedAnswerIndices: {},
+      showAnswerButtons: false,
       showSentenceTranslation: false,
       currentScore: null,
       englishDigestOfFirstSentence: null,
@@ -693,7 +696,13 @@ class BdcNotifier extends _$BdcNotifier {
       }
     }
 
-    state = state.copyWith(isGettingNextWord: true);
+    state = state.copyWith(
+      isGettingNextWord: true,
+      selectedAnswerIndex: null,
+      hasFinishedAnswering: false,
+      flippedAnswerIndices: {},
+      showAnswerButtons: false,
+    );
     try {
       await asr.stopAsr();
       await asr.reset();
