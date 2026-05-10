@@ -1064,6 +1064,10 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) return;
     if (asr.state == AsrState.started) return;
 
+    // 添加调试日志，方便查看正确答案
+    final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.meaning;
+    Global.logger.d('~~~~~ 当前说模式正确答案: $correctAnswer');
+
     try {
       await asr.startAsr(language);
       if (PlatformUtils.isIOS) {
