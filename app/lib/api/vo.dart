@@ -794,47 +794,47 @@ class WordVo {
   }
 
   String getMeaningStr() {
+    if (meaningItems != null && meaningItems!.isNotEmpty) {
+      // 合并所有词性的释义
+      StringBuffer sb = StringBuffer();
+      for (MeaningItemVo item in getMergedMeaningItems()) {
+        if (item.ciXing != null && item.ciXing!.isNotEmpty) {
+          sb.write(item.ciXing);
+          sb.write(' ');
+        }
+        if (item.meaning != null && item.meaning!.isNotEmpty) {
+          // 处理多余的分号和逗号
+          String meaning = item.meaning!;
+          // 删除末尾的分号和逗号
+          while (meaning.endsWith(';') || meaning.endsWith('；') || meaning.endsWith(',') || meaning.endsWith('，')) {
+            meaning = meaning.substring(0, meaning.length - 1);
+          }
+          // 删除连续的分号
+          meaning = meaning.replaceAll(RegExp(r'[;；]+'), '；');
+          // 删除连续的逗号
+          meaning = meaning.replaceAll(RegExp(r'[,，]+'), '，');
+          // 处理分号和逗号的组合
+          meaning = meaning.replaceAll(RegExp(r'[,，]?[;；]'), '；');
+          sb.write(meaning);
+        }
+        // 在每个词性后添加换行符
+        sb.write('\n');
+      }
+
+      String result = sb.toString();
+      // 删除最后一个换行符
+      if (result.isNotEmpty && result.endsWith('\n')) {
+        result = result.substring(0, result.length - 1);
+      }
+
+      return result;
+    }
+
     if (meaningStr != null) {
       return meaningStr!;
     }
 
-    if (meaningItems == null || meaningItems!.isEmpty) {
-      return '';
-    }
-
-    // 合并所有词性的释义
-    StringBuffer sb = StringBuffer();
-    for (MeaningItemVo item in getMergedMeaningItems()) {
-      if (item.ciXing != null && item.ciXing!.isNotEmpty) {
-        sb.write(item.ciXing);
-        sb.write(' ');
-      }
-      if (item.meaning != null && item.meaning!.isNotEmpty) {
-        // 处理多余的分号和逗号
-        String meaning = item.meaning!;
-        // 删除末尾的分号和逗号
-        while (meaning.endsWith(';') || meaning.endsWith('；') || meaning.endsWith(',') || meaning.endsWith('，')) {
-          meaning = meaning.substring(0, meaning.length - 1);
-        }
-        // 删除连续的分号
-        meaning = meaning.replaceAll(RegExp(r'[;；]+'), '；');
-        // 删除连续的逗号
-        meaning = meaning.replaceAll(RegExp(r'[,，]+'), '，');
-        // 处理分号和逗号的组合
-        meaning = meaning.replaceAll(RegExp(r'[,，]?[;；]'), '；');
-        sb.write(meaning);
-      }
-      // 在每个词性后添加换行符
-      sb.write('\n');
-    }
-
-    String result = sb.toString();
-    // 删除最后一个换行符
-    if (result.isNotEmpty && result.endsWith('\n')) {
-      result = result.substring(0, result.length - 1);
-    }
-
-    return result;
+    return '';
   }
 }
 

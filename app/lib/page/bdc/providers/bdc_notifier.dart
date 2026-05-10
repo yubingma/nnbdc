@@ -480,7 +480,9 @@ class BdcNotifier extends _$BdcNotifier {
     if (sentences.isNotEmpty) englishDigest = sentences[0].englishDigest;
     state = state.copyWith(englishDigestOfFirstSentence: englishDigest);
 
-    _initChoiceData(getWordResult);
+    if (state.words == null) {
+      _initChoiceData(getWordResult);
+    }
 
     state = state.copyWith(dataLoaded: true);
 
@@ -1081,7 +1083,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     // 添加调试日志，方便查看正确答案
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
-    Global.logger.d('~~~~~ 当前说模式正确答案: $correctAnswer');
+    Global.logger.d('~~~~~ 当前说模式正确答案: ${correctAnswer?.replaceAll('\n', '; ')}');
 
     try {
       await asr.startAsr(language);
