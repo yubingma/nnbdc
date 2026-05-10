@@ -360,7 +360,7 @@ class BdcNotifier extends _$BdcNotifier {
             // 跳转回 BDC 页面，它会自动加载下一个非 List 环节的单词
             Get.offNamed('/bdc');
           },
-          child: const Text('开始复习', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: const Text('下一组', style: TextStyle(fontWeight: FontWeight.bold)),
         );
         
         Get.offNamed('/word_list',
