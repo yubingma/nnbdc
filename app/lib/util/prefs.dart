@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nnbdc/global.dart';
 
 class Prefs {
   static SharedPreferences? _prefs;
@@ -56,7 +57,7 @@ class Prefs {
       }
     } catch (e) {
       // 记录错误但不中断启动
-      print('Migration from GetStorage failed: $e');
+      Global.logger.e('Migration from GetStorage failed: $e', error: e);
     }
   }
 
