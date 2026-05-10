@@ -436,7 +436,6 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(
       currentGetWordResult: getWordResult,
-      learningGetWordResult: state.historyIndex == -1 ? getWordResult : state.learningGetWordResult,
       word: word,
       wordWrapper: wordWrapper,
       studyStep: newStudyStep,
@@ -686,6 +685,7 @@ class BdcNotifier extends _$BdcNotifier {
     int nextIndex;
     if (state.historyIndex == -1) {
       nextIndex = state.history.length - 1;
+      state = state.copyWith(reviewReturnTarget: state.currentGetWordResult);
     } else if (state.historyIndex > 0) {
       nextIndex = state.historyIndex - 1;
     } else {
@@ -699,12 +699,18 @@ class BdcNotifier extends _$BdcNotifier {
   void exitReviewMode() async {
     if (state.historyIndex == -1) return;
     
+    final target = state.reviewReturnTarget;
+    if (target == null) {
+      await getNextWord(false);
+      return;
+    }
+
     _saveCurrentWordState();
     await asr.stopAsr();
     await _audioPlayer.stop();
     
     state = state.copyWith(historyIndex: -1);
-    handleWord(state.learningGetWordResult);
+    await handleWord(target, isFromBatchWordList: true);
   }
   Future<void> reloadWord() async {
     await StudyBo().prepareForStudy(false);
@@ -793,7 +799,12 @@ class BdcNotifier extends _$BdcNotifier {
         int nextIndex = state.historyIndex + 1;
         if (nextIndex >= state.history.length) {
           state = state.copyWith(historyIndex: -1);
-          return await handleWord(state.learningGetWordResult);
+          final target = state.reviewReturnTarget;
+          if (target != null) {
+            return await handleWord(target, isFromBatchWordList: true);
+          } else {
+            return await getNextWord(false);
+          }
         } else {
           state = state.copyWith(historyIndex: nextIndex);
           return await handleWord(state.history[nextIndex]);
@@ -831,7 +842,7 @@ class BdcNotifier extends _$BdcNotifier {
 
       final result = await StudyBo().getWord(state.isWordMastered, gotoNext, fsrsRating: fsrsRating);
       if (result.success && result.data != null) {
-        state = state.copyWith(loadError: null);
+        state = state.copyWith(loadError: null, learningGetWordResult: result.data);
         return await handleWord(result.data, isFromBatchWordList: isFromBatchWordList);
       } else {
         Global.logger.w('getNextWord: 获取单词失败: code=${result.code}, msg=${result.msg}');

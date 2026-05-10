@@ -13,6 +13,7 @@ class BdcState extends Equatable {
   final bool isGettingNextWord;
   final GetWordResult? currentGetWordResult;
   final GetWordResult? learningGetWordResult;
+  final GetWordResult? reviewReturnTarget;
   final WordVo? word;
   final WordWrapper? wordWrapper;
   final String? studyStep;
@@ -78,6 +79,7 @@ class BdcState extends Equatable {
     this.isGettingNextWord = false,
     this.currentGetWordResult,
     this.learningGetWordResult,
+    this.reviewReturnTarget,
     this.word,
     this.wordWrapper,
     this.studyStep,
@@ -139,6 +141,7 @@ class BdcState extends Equatable {
     bool? isGettingNextWord,
     Object? currentGetWordResult = _sentinel,
     Object? learningGetWordResult = _sentinel,
+    Object? reviewReturnTarget = _sentinel,
     Object? word = _sentinel,
     Object? wordWrapper = _sentinel,
     Object? studyStep = _sentinel,
@@ -192,6 +195,7 @@ class BdcState extends Equatable {
       isGettingNextWord: isGettingNextWord ?? this.isGettingNextWord,
       currentGetWordResult: currentGetWordResult == _sentinel ? this.currentGetWordResult : (currentGetWordResult as GetWordResult?),
       learningGetWordResult: learningGetWordResult == _sentinel ? this.learningGetWordResult : (learningGetWordResult as GetWordResult?),
+      reviewReturnTarget: reviewReturnTarget == _sentinel ? this.reviewReturnTarget : (reviewReturnTarget as GetWordResult?),
       word: word == _sentinel ? this.word : (word as WordVo?),
       wordWrapper: wordWrapper == _sentinel ? this.wordWrapper : (wordWrapper as WordWrapper?),
       studyStep: studyStep == _sentinel ? this.studyStep : (studyStep as String?),
@@ -248,6 +252,7 @@ class BdcState extends Equatable {
     isGettingNextWord,
     currentGetWordResult,
     learningGetWordResult,
+    reviewReturnTarget,
     word,
     wordWrapper,
     studyStep,
