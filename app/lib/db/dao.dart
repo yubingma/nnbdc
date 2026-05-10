@@ -1319,7 +1319,10 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
     if (existing == null) {
       await into(userStudySteps).insert(step);
       if (genLog) {
-        await DbLogUtil.logOperation(step.userId, 'INSERT', 'userStudySteps', '${step.userId}-${step.studyStep}', step);
+        // 【关键修复】对于学习步骤表，严禁发送 INSERT 日志，因为该表记录必须由后端初始化。
+        // 此处即便是本地首次插入（通常发生在登录后同步完成前），也应使用 UPDATE 操作，
+        // 以便服务端能正确识别并处理，同时也符合“后端先行创建”的原则。
+        await DbLogUtil.logOperation(step.userId, 'UPDATE', 'userStudySteps', '${step.userId}-${step.studyStep}', step);
       }
     } else {
       // 更新

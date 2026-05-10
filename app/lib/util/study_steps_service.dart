@@ -33,7 +33,13 @@ class StudyStepsService {
     if (listStepIndex != -1) {
       listStep = voSteps.removeAt(listStepIndex);
     } else {
-      // 如果不存在则补齐
+      // 【关键修复】对于正常登录用户，严禁在前端“补齐”缺失的学习步骤。
+      // 学习步骤必须由后端权威创建并通过同步下载。
+      if (!Global.isGuest) {
+        return voSteps; 
+      }
+      
+      // 仅对游客允许补齐默认步骤（因为游客不涉及同步）
       listStep = UserStudyStepVo('List', steps.length, StudyStepState.active.json);
     }
 
@@ -75,11 +81,21 @@ class StudyStepsService {
       if (listStepIndex != -1) {
         listStep = voSteps.removeAt(listStepIndex);
       } else {
-        listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
+        // 【关键修复】保存时同样禁止为登录用户“补齐”缺失步骤
+        if (!Global.isGuest) {
+          // 如果数据库里没有且也不是 List，则不应强制添加
+          // 这里直接处理剩余步骤
+        } else {
+          listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
+          listStep.state = StudyStepState.active.json;
+          voSteps.add(listStep);
+        }
       }
 
-      listStep.state = StudyStepState.active.json;
-      voSteps.add(listStep);
+      if (listStep != null) {
+         listStep.state = StudyStepState.active.json;
+         voSteps.add(listStep);
+      }
 
       // 重新校正顺序
       for (var i = 0; i < voSteps.length; i++) {

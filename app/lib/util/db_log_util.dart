@@ -20,6 +20,11 @@ class DbLogUtil {
     String recordId,
     Object? record,
   ) async {
+    // 【关键修复】游客账户不允许产生同步日志
+    if (userId == Global.guestId) {
+      return;
+    }
+
     // 【快速失败机制】检查关键字段是否为空
     if (userId.isEmpty) {
       throw Exception('【快速失败】无法记录数据库日志：userId 为空，表: $table, 操作: $operate, recordId: $recordId');
@@ -133,6 +138,10 @@ class DbLogUtil {
     String table, {
     Map<String, dynamic>? filters,
   }) async {
+    // 【关键修复】游客账户不允许产生同步日志
+    if (userId == Global.guestId) {
+      return;
+    }
     try {
       final db = MyDatabase.instance;
 
