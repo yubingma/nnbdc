@@ -455,6 +455,8 @@ class BdcNotifier extends _$BdcNotifier {
       currentAsrCandidates: [],
       loadError: null, // Successfully loaded a word, clear error
       tabIndex: newTabIndex,
+      showHandwritingBoard: false,
+      isKeyboardVisible: false,
     );
 
     final wordId = word.id;
@@ -1102,7 +1104,8 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> _startAsrWithHint(AsrLanguage language) async {
     if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) return;
-    if (asr.state == AsrState.started) return;
+    // 移除这里的 asr.state == started 检查，交给 asr.startAsr 内部处理（支持动态切换语言）
+    // if (asr.state == AsrState.started) return;
 
     // 添加调试日志，方便查看正确答案
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
