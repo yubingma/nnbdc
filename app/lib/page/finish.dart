@@ -42,7 +42,14 @@ class FinishPageState extends State<FinishPage> {
   @override
   void initState() {
     super.initState();
-    loadData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!dataLoaded) {
+      loadData();
+    }
   }
 
   Future<void> loadData() async {

@@ -163,17 +163,6 @@ class WalkmanPageState extends State<WalkmanPage> {
     tts = Tts();
     tts?.init();
 
-    // 1. 异步加载配置和初始数据
-    loadData().then((_) async {
-      // 2. 只有在数据加载逻辑准备好后，才开始加载第一页单词
-      await loadAPageOfRawWords();
-      
-      // 3. 数据到位后，立即开始播放循环
-      if (mounted) {
-        playWordTick();
-      }
-    });
-
     // 周期性加载后续单词的 Timer 保持不变
     loadWordTimer = Timer.periodic(const Duration(milliseconds: 1000), (Timer timer) {
       if (currWordIndex > allWords.length - 10 && !isAllWordsLoaded()) {
@@ -185,6 +174,23 @@ class WalkmanPageState extends State<WalkmanPage> {
         }
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!inited) {
+      // 1. 异步加载配置和初始数据
+      loadData().then((_) async {
+        // 2. 只有在数据加载逻辑准备好后，才开始加载第一页单词
+        await loadAPageOfRawWords();
+        
+        // 3. 数据到位后，立即开始播放循环
+        if (mounted) {
+          playWordTick();
+        }
+      });
+    }
   }
 
   Future<void> loadConfig() async {

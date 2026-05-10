@@ -6,7 +6,7 @@ import 'package:nnbdc/page/word_lists.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 
-import 'game.dart'; // 如果是在同一个包的路径下，可以直接使用对应的文件名
+import 'game.dart'; 
 import 'me.dart';
 import 'nav_icon_view.dart';
 import '../global.dart';
@@ -20,21 +20,18 @@ class IndexPageArgs {
   IndexPageArgs(this.buttonIndex);
 }
 
-/// 创建一个 带有状态的 Widget Index
 class IndexPage extends StatefulWidget {
   const IndexPage({super.key});
 
-  /// 固定的写法
   @override
   State<StatefulWidget> createState() => IndexPageState();
 }
 
-/// 要让主页面 Index 支持动效，要在它的定义中附加mixin类型的对象TickerProviderStateMixin
 class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   late IndexPageArgs args;
-  int _currentIndex = 0; // 当前界面的索引值
+  int _currentIndex = 0; 
   int get currentIndex => _currentIndex;
-  List<NavigationIconView>? _navigationViews; // 底部图标按钮区域
+  List<NavigationIconView>? _navigationViews; 
   late List<Widget> _pages;
 
   @override
@@ -42,11 +39,6 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     super.initState();
     // 进入主页时强制关闭 ASR，确保状态干净
     Asr().stopAsr();
-
-    // 从 GoRouter extra 中提取参数
-    final extra = GoRouterState.of(context).extra;
-    args = (extra is IndexPageArgs) ? extra : IndexPageArgs(0);
-    _currentIndex = args.buttonIndex;
 
     /// 初始化导航图标
     _navigationViews = <NavigationIconView>[
@@ -65,28 +57,39 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       if (!Global.isGuest) const GamePage(),
       const MePage(),
     ];
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 从 GoRouter extra 中提取参数
+    final extra = GoRouterState.of(context).extra;
+    args = (extra is IndexPageArgs) ? extra : IndexPageArgs(0);
+    _currentIndex = args.buttonIndex;
 
     // 如果是游客且请求的是原本的游戏页面索引，则重定向到词表或“我”
     if (Global.isGuest && _currentIndex == 3) {
       _currentIndex = 4; // 默认为“我”
     }
     
-    // 初始化时启动选中项的动画
-    int initialActualIndex = _currentIndex;
+    // 处理动态增加/减少 Tab 后的索引映射
+    int actualIndex = _currentIndex;
     if (Global.isGuest && _currentIndex > 3) {
-      initialActualIndex = _currentIndex - 1;
+      actualIndex = _currentIndex - 1;
     }
-    _navigationViews![initialActualIndex].controller.value = 1.0;
+
+    // 初始化时启动选中项的动画
+    for (int i = 0; i < _navigationViews!.length; i++) {
+      _navigationViews![i].controller.value = (i == actualIndex) ? 1.0 : 0.0;
+    }
   }
 
-  // 创建自定义的导航栏项
   Widget _buildCustomNavItem(IconData icon, String label, int index, int actualCurrentIndex) {
     final isSelected = _currentIndex == index;
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final selectedColor = AppTheme.primaryColor;
     final unselectedColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
-    // 计算点击这个项对应的实际内部索引（用于动画和PageList访问）
     int actualNewIndex = index;
     if (Global.isGuest && index > 3) {
       actualNewIndex = index - 1;
@@ -96,8 +99,6 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       child: GestureDetector(
         onTap: () {
           if (_currentIndex == index) return;
-          
-          // 切换 Tab 时强制关闭 ASR，防止后台残留
           Asr().stopAsr();
 
           setState(() {
@@ -108,15 +109,12 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
 
           final tabState = _getTabState(index);
           if (tabState != null && tabState.isDirty) {
-            Global.logger.d('[Index Manager] 检测到目标页面(index=$index)为脏数据，触发 refreshData()');
             tabState.refreshData();
           }
         },
         child: Container(
           height: 54, 
-          decoration: const BoxDecoration(
-            color: Colors.transparent,  
-          ),
+          decoration: const BoxDecoration(color: Colors.transparent),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center, 
             children: [
@@ -126,11 +124,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
                   color: isSelected ? selectedColor.withValues(alpha: 0.1) : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: isSelected ? selectedColor : unselectedColor,
-                  size: isSelected ? 24 : 22,
-                ),
+                child: Icon(icon, color: isSelected ? selectedColor : unselectedColor, size: isSelected ? 24 : 22),
               ),
               const SizedBox(height: 2),
               Text(
@@ -152,8 +146,6 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     );
   }
 
-
-
   RefreshableTab? _getTabState(int index) {
     if (index == 1) return WordListsPageState.instance;
     return null;
@@ -161,7 +153,6 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    // 处理游客模式下的索引映射
     int actualCurrentIndex = _currentIndex;
     if (Global.isGuest && _currentIndex > 3) {
       actualCurrentIndex = _currentIndex - 1;
@@ -173,11 +164,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: backgroundColor,
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, -2)),
         ],
       ),
       child: Container(
@@ -185,44 +172,33 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           top: 2,
           bottom: MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom * 0.5 : 4,
         ),
-        child: MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.0),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildCustomNavItem(Icons.school, "学习", 0, actualCurrentIndex),
-              _buildCustomNavItem(Icons.library_books, "词表", 1, actualCurrentIndex),
-              _buildCustomNavItem(Icons.search_rounded, "查词", 2, actualCurrentIndex),
-              if (!Global.isGuest) _buildCustomNavItem(Icons.sports_esports, "比赛", 3, actualCurrentIndex),
-              _buildCustomNavItem(Icons.person_rounded, "我", 4, actualCurrentIndex),
-            ],
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildCustomNavItem(Icons.school, "学习", 0, actualCurrentIndex),
+            _buildCustomNavItem(Icons.library_books, "词表", 1, actualCurrentIndex),
+            _buildCustomNavItem(Icons.search_rounded, "查词", 2, actualCurrentIndex),
+            if (!Global.isGuest) _buildCustomNavItem(Icons.sports_esports, "比赛", 3, actualCurrentIndex),
+            _buildCustomNavItem(Icons.person_rounded, "我", 4, actualCurrentIndex),
+          ],
         ),
       ),
     );
+
     return Scaffold(
       body: Stack(
         children: [
-          IndexedStack(
-            index: actualCurrentIndex,
-            children: _pages,
-          ),
+          IndexedStack(index: actualCurrentIndex, children: _pages),
           ValueListenableBuilder<int>(
             valueListenable: Global.activeRequestCount,
             builder: (context, count, child) {
               if (count > 0) {
                 return Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
+                  top: 0, left: 0, right: 0,
                   child: LinearProgressIndicator(
                     minHeight: 2,
                     backgroundColor: Colors.transparent,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppTheme.primaryColor.withValues(alpha: 0.8),
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor.withValues(alpha: 0.8)),
                   ),
                 );
               }
@@ -231,7 +207,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
           ),
         ],
       ),
-      bottomNavigationBar: customBottomNav, // 底部工具栏
+      bottomNavigationBar: customBottomNav,
     );
   }
 }

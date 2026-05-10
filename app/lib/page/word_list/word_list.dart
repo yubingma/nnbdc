@@ -335,19 +335,19 @@ class WordListPageState extends State<WordListPage>
     final swTotal = Stopwatch()..start();
     final swInit = Stopwatch()..start();
     
-    // 并行获取书签和权限检查
-    final results = await Future.wait([
-      checkArgs(),
-      args.bookMarkProvider.getBookMark(),
-    ]);
-
-    Global.logger.d('WordListPage: checkArgs and getBookMark took ${swInit.elapsedMilliseconds}ms');
-    swInit.reset();
-
-    if (!(results[0] as bool)) {
+    // 1. 先同步提取/校验参数，确保 args 对象已就绪
+    if (!await checkArgs()) {
       return;
     }
-    bookMark = results[1] as BookMarkVo?;
+    Global.logger.d('WordListPage: checkArgs took ${swInit.elapsedMilliseconds}ms');
+    swInit.reset();
+
+    // 2. 参数就绪后，再异步加载书签
+    bookMark = await args.bookMarkProvider.getBookMark();
+    Global.logger.d('WordListPage: getBookMark took ${swInit.elapsedMilliseconds}ms');
+    swInit.reset();
+
+    _checkAndShowGuide(); // 此时 args 肯定已经 ready
 
     if (isBookMarkValid(bookMark)) {
       // --- 预测并行加载优化 ---
@@ -809,10 +809,15 @@ class WordListPageState extends State<WordListPage>
     WidgetsBinding.instance.addObserver(this);
 
     doInit();
-    loadData();
-    
-    _checkAndShowGuide();
     Global.logger.d('WordListPage: initState completed in ${sw.elapsedMilliseconds}ms');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!dataLoaded) {
+      loadData();
+    }
   }
 
   /// 检查并显示新手引导

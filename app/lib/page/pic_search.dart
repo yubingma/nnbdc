@@ -5,13 +5,9 @@ import 'package:nnbdc/global.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:path_provider/path_provider.dart';
-// import 'dart:io';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/dto.dart';
-// import 'package:nnbdc/config.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:provider/provider.dart';
 
@@ -46,13 +42,10 @@ class PicSearchPageState extends State<PicSearchPage> {
   bool _isAddPicDialogShowing = false;
   InAppWebViewSettings settings = InAppWebViewSettings(
     isInspectable: kDebugMode,
-    // 禁用系统长按菜单，避免 iOS 弹出默认菜单遮挡功能
     disableContextMenu: true,
-    // iOS 链接长按菜单也一并关闭（需 JS，默认开启）
     disableLongPressContextMenuOnLinks: true,
   );
 
-  // iOS 下通过 JS 禁用系统长按菜单（不影响我们捕获长按的 hitTest）
   static const String _disableSystemContextMenuJs = '''
     (function() {
       try {
@@ -68,7 +61,6 @@ class PicSearchPageState extends State<PicSearchPage> {
     })();
   ''';
 
-  // 通过 JS 在按住一段时间后立即回调（无需松手）
   static const String _longPressImageHandlerJs = '''
     (function() {
       if (window.__nnbdc_longpress_installed) return;
@@ -144,10 +136,8 @@ class PicSearchPageState extends State<PicSearchPage> {
   @override
   void initState() {
     super.initState();
-    args = GoRouterState.of(context).extra as PicSearchPageArgs;
     init();
 
-    // 操作提示
     Future.delayed(Duration.zero, () {
       if (mounted) {
         const snackBar = SnackBar(
@@ -157,11 +147,17 @@ class PicSearchPageState extends State<PicSearchPage> {
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
     });
-
-    // 通过 onLongPressHitTestResult 处理长按，不依赖系统菜单
   }
 
-  /// 在底部显示对话框
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final extra = GoRouterState.of(context).extra;
+    if (extra is PicSearchPageArgs) {
+      args = extra;
+    }
+  }
+
   Future<void> showAddPicDlg(BuildContext context) async {
     if (_isAddPicDialogShowing) return;
     _isAddPicDialogShowing = true;
@@ -180,7 +176,7 @@ class PicSearchPageState extends State<PicSearchPage> {
           transitionDuration: const Duration(milliseconds: 100),
           transitionBuilder: (context, animation, secondaryAnimation, child) {
             return FractionalTranslation(
-                translation: Offset(0, 1 - animation.value), // 从底部出现
+                translation: Offset(0, 1 - animation.value), 
                 child: child);
           },
           pageBuilder: (context, animation, secondaryAnimation) {
@@ -191,7 +187,6 @@ class PicSearchPageState extends State<PicSearchPage> {
                       width: MediaQuery.of(context).size.width,
                       height: 70,
                       margin: MediaQuery.of(context).viewInsets,
-                      // 当软键盘弹出时，对话框自动上移
                       padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                       color: context.read<DarkMode>().isDarkMode ? const Color(0xff333333) : Colors.white,
                       child: Column(
@@ -202,7 +197,7 @@ class PicSearchPageState extends State<PicSearchPage> {
                             children: [
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white, backgroundColor: Colors.green, // foreground
+                                  foregroundColor: Colors.white, backgroundColor: Colors.green, 
                                 ),
                                 child: const Text('取消'),
                                 onPressed: () {
@@ -211,12 +206,11 @@ class PicSearchPageState extends State<PicSearchPage> {
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white, backgroundColor: Colors.green, // foreground
+                                  foregroundColor: Colors.white, backgroundColor: Colors.green, 
                                 ),
                                 child: const Text('加为单词配图'),
                                 onPressed: () async {
                                   Navigator.pop(context, false);
-                                  // Capture navigator before async gaps to avoid using BuildContext across awaits
                                   final navigator = Navigator.of(context);
 
                                   try {
@@ -229,7 +223,6 @@ class PicSearchPageState extends State<PicSearchPage> {
                                     }
 
                                     if (imgBase64 != null) {
-                                      // 再次检查本地图片数量，防止在pic_search页面连续添加超出限制
                                       final localImages = await MyDatabase.instance.wordImagesDao.getImagesByWordId(args.wordId);
                                       if (localImages.length >= 2) {
                                         ToastUtil.error('每个单词最多只能有 2 张配图');
@@ -239,7 +232,6 @@ class PicSearchPageState extends State<PicSearchPage> {
                                       final result = await Api.client.uploadWordImg(args.wordId, imgBase64, Global.getLoggedInUser()!.id);
                                       if (result.success) {
                                         ToastUtil.info('添加配图成功');
-                                        // 写入本地 WordImages 表
                                         try {
                                           final wordImageDto = result.data as WordImageDto;
                                           await MyDatabase.instance.wordImagesDao.insertEntity(WordImage(
@@ -256,7 +248,6 @@ class PicSearchPageState extends State<PicSearchPage> {
                                         } catch (e, s) {
                                           Global.logger.e('写入本地WordImages失败', error: e, stackTrace: s);
                                         }
-                                        // Use captured navigator; no BuildContext after awaits
                                         navigator.maybePop();
                                       } else {
                                         ToastUtil.error(result.msg ?? '添加配图失败');
@@ -280,8 +271,6 @@ class PicSearchPageState extends State<PicSearchPage> {
       _isAddPicDialogShowing = false;
     }
   }
-
-  // 预取逻辑已改为写入本地DB，不再需要网络预取
 
   @override
   Widget build(BuildContext context) {

@@ -146,12 +146,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       }
     });
 
+    // 进入详情页时立即主动关闭 ASR，避免在前一页面正在倾听时进入此页导致 ASR 逻辑错误
+    Asr().stopAsr();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
     // 同步提取参数以更新 TabController 初始状态
     if (GoRouterState.of(context).extra != null) {
       args = GoRouterState.of(context).extra as WordDetailPageArgs;
       _canUseAiAssistant = Global.getLoggedInUser()?.isAdmin == true || SubscriptionUtil.isPremium();
       final count = calcTabsCount();
-      if (count != 1) {
+      if (count != _tabController.length) {
         _tabController.dispose();
         _tabController = TabController(length: count, vsync: this);
         _tabController.addListener(() {
@@ -160,10 +168,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       }
     }
 
-    // 进入详情页时立即主动关闭 ASR，避免在前一页面正在倾听时进入此页导致 ASR 逻辑错误
-    Asr().stopAsr();
-
-    loadData();
+    // 只有在数据未加载时才加载
+    if (!dataLoaded) {
+      loadData();
+    }
   }
 
   @override
