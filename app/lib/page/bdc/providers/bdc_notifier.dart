@@ -31,6 +31,8 @@ import 'package:drift/drift.dart' as drift;
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/db/user_extensions.dart';
 import 'package:nnbdc/page/word_detail.dart';
+import 'package:nnbdc/page/word_list/batch_words.dart';
+import 'package:nnbdc/page/word_list/word_list.dart';
 import 'bdc_state.dart';
 import '../models/bdc_page_args.dart';
 import '../models/word_ui_state.dart';
@@ -140,7 +142,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> loadData(BuildContext context) async {
-    if (state.dataLoaded) return;
+    if (state.dataLoaded || state.isGettingNextWord) return;
     Api.setLoadingDisabled(true);
     try {
       if (state.word == null) {
@@ -177,14 +179,26 @@ class BdcNotifier extends _$BdcNotifier {
         ToastUtil.error(stepsResult.msg ?? '获取学习步骤失败');
         return;
       }
-      state = state.copyWith(activeUserStudySteps: stepsResult.data!);
+      state = state.copyWith(activeUserStudySteps: stepsResult.data!, loadError: null);
 
-      await getNextWord(false);
+      bool success = await getNextWord(false);
       
-      _restoreLastWordHistory();
+      if (success) {
+        _restoreLastWordHistory();
+      }
       
-      state = state.copyWith(dataLoaded: true);
+      // Use this.state to get the updated state after getNextWord
+      if (this.state.word != null || this.state.loadError != null) {
+        state = state.copyWith(dataLoaded: true);
+      } else if (!success) {
+        Global.logger.e('loadData: getNextWord failed without loadError. State: word=${this.state.word}, loadError=${this.state.loadError}');
+        state = state.copyWith(
+          loadError: '获取单词失败，请检查网络后重试',
+          dataLoaded: true,
+        );
+      }
     } catch (e, st) {
+      state = state.copyWith(loadError: e.toString(), dataLoaded: true);
       ErrorHandler.handleError(e, st, logPrefix: 'loadData');
     } finally {
       Api.setLoadingDisabled(false);
@@ -299,20 +313,22 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  Future<void> handleWord(GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
-    if (getWordResult == null) return;
+  Future<bool> handleWord(GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
+    if (getWordResult == null) return false;
     
     // 防止处理同一个结果引发的循环
     if (getWordResult == state.currentGetWordResult && !isFromBatchWordList) {
-      return;
+      return true;
     }
     
     if (getWordResult.finished) {
+      state = state.copyWith(loadError: '学习已完成');
       Get.offNamed("/finish");
-      return;
+      return false;
     } else if (getWordResult.noWord) {
+      state = state.copyWith(loadError: '当前书本没有正在学习的单词');
       Get.toNamed("/select_book");
-      return;
+      return false;
     }
 
     state = state.copyWith(buttonsEnabled: false);
@@ -321,7 +337,43 @@ class BdcNotifier extends _$BdcNotifier {
     });
 
     final currentStep = state.activeUserStudySteps[getWordResult.stepIndex].studyStep;
-    if (currentStep == 'List') return;
+    if (currentStep == 'List') {
+      state = state.copyWith(loadError: '正在跳转到单词列表...');
+      
+      // Redirect to batch word list
+      Future.microtask(() {
+        final nextBtn = ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: () async {
+            await StudyBo().completeListStepForCurrentBatch();
+            // 跳转回 BDC 页面，它会自动加载下一个非 List 环节的单词
+            Get.offNamed('/bdc');
+          },
+          child: const Text('开始复习', style: TextStyle(fontWeight: FontWeight.bold)),
+        );
+        
+        Get.offNamed('/word_list',
+          arguments: WordListPageArgs(
+            '本组单词',
+            StageWordsProvider(),
+            true, // showBackBtn
+            true, // showDelBtn
+            true, // showWordProgress
+            '掌握度',
+            StageWordsProgressProvider(),
+            StageWordsBookMarkProvider(),
+            nextBtn,
+            showAiStory: true
+          )
+        );
+      });
+      return false;
+    }
 
     String? oldStudyStep = state.studyStep;
     String newStudyStep = state.activeUserStudySteps[getWordResult.stepIndex].studyStep;
@@ -369,6 +421,7 @@ class BdcNotifier extends _$BdcNotifier {
       fsrsItem: null,
       lastFsrsRating: null,
       currentAsrCandidates: [],
+      loadError: null, // Successfully loaded a word, clear error
     );
 
     if (state.historyIndex != -1) {
@@ -404,6 +457,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
     
     state = state.copyWith(dataLoaded: true);
+    return true;
   }
 
   void _initChoiceData(GetWordResult getWordResult) {
@@ -667,8 +721,8 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  Future<void> getNextWord(bool gotoNext, {FsrsRating? fsrsRating}) async {
-    if (state.isGettingNextWord) return;
+  Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating}) async {
+    if (state.isGettingNextWord) return false;
 
     _saveCurrentWordState();
 
@@ -686,12 +740,10 @@ class BdcNotifier extends _$BdcNotifier {
         int nextIndex = state.historyIndex + 1;
         if (nextIndex >= state.history.length) {
           state = state.copyWith(historyIndex: -1);
-          await handleWord(state.currentGetWordResult);
-          return;
+          return await handleWord(state.currentGetWordResult);
         } else {
           state = state.copyWith(historyIndex: nextIndex);
-          await handleWord(state.history[nextIndex]);
-          return;
+          return await handleWord(state.history[nextIndex]);
         }
       }
     }
@@ -726,18 +778,23 @@ class BdcNotifier extends _$BdcNotifier {
 
       final result = await StudyBo().getWord(state.isWordMastered, gotoNext, fsrsRating: fsrsRating);
       if (result.success && result.data != null) {
-        await handleWord(result.data, isFromBatchWordList: isFromBatchWordList);
+        state = state.copyWith(loadError: null);
+        return await handleWord(result.data, isFromBatchWordList: isFromBatchWordList);
       } else {
         Global.logger.w('getNextWord: 获取单词失败: code=${result.code}, msg=${result.msg}');
         if (result.code == "NEW_DAY") {
           ToastUtil.info('已进入新的一天，请重新开始学习');
           Get.offAllNamed('/today_plan'); // Redirect back to plan page
         } else {
+          state = state.copyWith(loadError: result.msg ?? '获取单词失败');
           ToastUtil.error(result.msg ?? '获取单词失败');
         }
+        return false;
       }
     } catch (e, st) {
+      state = state.copyWith(loadError: e.toString());
       ErrorHandler.handleError(e, st, logPrefix: 'getNextWord');
+      return false;
     } finally {
       state = state.copyWith(isGettingNextWord: false);
       _handleTabChangeForAsr();

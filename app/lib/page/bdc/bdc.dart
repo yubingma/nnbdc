@@ -232,14 +232,19 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       meaningText: '',
       hintTapCount: 0,
     )));
-    if (state.word == null) {
+
+    if (state.loadError != null || state.word == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.grey),
             const SizedBox(height: 16),
-            const Text('暂无正在学习的单词', style: TextStyle(color: Colors.grey)),
+            Text(
+              state.loadError ?? '暂无正在学习的单词',
+              style: const TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => ref.read(bdcNotifierProvider.notifier).loadData(context),

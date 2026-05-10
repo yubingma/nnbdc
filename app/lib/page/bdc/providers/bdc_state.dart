@@ -68,6 +68,8 @@ class BdcState extends Equatable {
   final WordImageVo? highlightedWordImg;
   final bool isWordImageEdited;
 
+  final String? loadError;
+
   const BdcState({
     this.dataLoaded = false,
     this.isGettingNextWord = false,
@@ -117,6 +119,7 @@ class BdcState extends Equatable {
     this.isEditMode = false,
     this.highlightedWordImg,
     this.isWordImageEdited = false,
+    this.loadError,
   });
 
   bool get autoJumpAfterCorrect {
@@ -175,6 +178,7 @@ class BdcState extends Equatable {
     bool? isEditMode,
     Object? highlightedWordImg = _sentinel,
     bool? isWordImageEdited,
+    Object? loadError = _sentinel,
   }) {
     return BdcState(
       dataLoaded: dataLoaded ?? this.dataLoaded,
@@ -225,6 +229,7 @@ class BdcState extends Equatable {
       isEditMode: isEditMode ?? this.isEditMode,
       highlightedWordImg: highlightedWordImg == _sentinel ? this.highlightedWordImg : (highlightedWordImg as WordImageVo?),
       isWordImageEdited: isWordImageEdited ?? this.isWordImageEdited,
+      loadError: loadError == _sentinel ? this.loadError : (loadError as String?),
     );
   }
 
@@ -278,5 +283,6 @@ class BdcState extends Equatable {
     isEditMode,
     highlightedWordImg,
     isWordImageEdited,
+    loadError,
   ];
 }
