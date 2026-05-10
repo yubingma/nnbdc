@@ -234,6 +234,25 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     )));
 
     if (state.loadError != null || state.word == null) {
+      final isRedirecting = state.loadError?.contains('跳转') ?? false;
+
+      if (isRedirecting) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 24),
+              Text(
+                state.loadError!,
+                style: const TextStyle(color: Colors.grey, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      }
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

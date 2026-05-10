@@ -188,10 +188,16 @@ class BdcNotifier extends _$BdcNotifier {
       }
       
       // Use this.state to get the updated state after getNextWord
-      if (this.state.word != null || this.state.loadError != null) {
+      if (this.state.word != null) {
         state = state.copyWith(dataLoaded: true);
+      } else if (this.state.loadError != null) {
+        // If it's a redirecting message, keep dataLoaded false to show spinner
+        // Otherwise, it's a real error we want to show
+        if (!this.state.loadError!.contains('跳转')) {
+          state = state.copyWith(dataLoaded: true);
+        }
       } else if (!success) {
-        Global.logger.e('loadData: getNextWord failed without loadError. State: word=${this.state.word}, loadError=${this.state.loadError}');
+        Global.logger.e('loadData: getNextWord failed without loadError. State: word=${this.state.word}');
         state = state.copyWith(
           loadError: '获取单词失败，请检查网络后重试',
           dataLoaded: true,
