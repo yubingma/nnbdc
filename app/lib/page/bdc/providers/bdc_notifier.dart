@@ -1008,7 +1008,12 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
       state.wordWrapper!.revealAllRemainingMeanings();
     }
-    state = state.copyWith(hasFinishedAnswering: true, canLeaveCurrWord: true, lastFsrsRating: rating);
+    state = state.copyWith(
+      hasFinishedAnswering: true,
+      canLeaveCurrWord: true,
+      lastFsrsRating: rating,
+      showHandwritingBoard: false,
+    );
     
     final lw = state.currentGetWordResult?.learningWord;
     if (lw != null) {

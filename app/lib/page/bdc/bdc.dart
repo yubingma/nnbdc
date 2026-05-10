@@ -109,6 +109,13 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         _tabController!.animateTo(next);
       }
     });
+    
+    // 监听答题完成状态，自动收起键盘/手写板，从而退出沉浸式拼写模式
+    ref.listenManual(bdcNotifierProvider.select((s) => s.hasFinishedAnswering), (previous, next) {
+      if (next == true) {
+        _meaningFocusNode.unfocus();
+      }
+    });
 
     // Initialize data and listen for state changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
