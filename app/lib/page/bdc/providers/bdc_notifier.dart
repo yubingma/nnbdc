@@ -328,11 +328,19 @@ class BdcNotifier extends _$BdcNotifier {
     }
     
     if (getWordResult.finished) {
-      state = state.copyWith(loadError: '学习已完成');
+      state = state.copyWith(
+        loadError: '学习已完成',
+        word: null,
+        wordWrapper: null,
+      );
       Get.offNamed("/finish");
       return false;
     } else if (getWordResult.noWord) {
-      state = state.copyWith(loadError: '当前书本没有正在学习的单词');
+      state = state.copyWith(
+        loadError: '当前书本没有正在学习的单词',
+        word: null,
+        wordWrapper: null,
+      );
       Get.toNamed("/select_book");
       return false;
     }
@@ -344,7 +352,11 @@ class BdcNotifier extends _$BdcNotifier {
 
     final currentStep = state.activeUserStudySteps[getWordResult.stepIndex].studyStep;
     if (currentStep == 'List') {
-      state = state.copyWith(loadError: '正在跳转到单词列表...');
+      state = state.copyWith(
+        loadError: '正在跳转到单词列表...',
+        word: null,
+        wordWrapper: null,
+      );
       
       // Redirect to batch word list
       Future.microtask(() {
@@ -1030,7 +1042,7 @@ class BdcNotifier extends _$BdcNotifier {
     bool isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0; 
     
     if (isInSpeakTab) {
-      if (state.word == null || state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
+      if (state.word == null || state.loadError != null || state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
         if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
           asr.stopAsr();
         }
@@ -1049,7 +1061,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> _startAsrWithHint(AsrLanguage language) async {
-    if (state.word == null || state.showHandwritingBoard || state.isGettingNextWord) return;
+    if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) return;
     if (asr.state == AsrState.started) return;
 
     try {
