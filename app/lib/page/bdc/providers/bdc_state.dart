@@ -12,6 +12,7 @@ class BdcState extends Equatable {
   final bool dataLoaded;
   final bool isGettingNextWord;
   final GetWordResult? currentGetWordResult;
+  final GetWordResult? learningGetWordResult;
   final WordVo? word;
   final WordWrapper? wordWrapper;
   final String? studyStep;
@@ -76,6 +77,7 @@ class BdcState extends Equatable {
     this.dataLoaded = false,
     this.isGettingNextWord = false,
     this.currentGetWordResult,
+    this.learningGetWordResult,
     this.word,
     this.wordWrapper,
     this.studyStep,
@@ -136,6 +138,7 @@ class BdcState extends Equatable {
     bool? dataLoaded,
     bool? isGettingNextWord,
     Object? currentGetWordResult = _sentinel,
+    Object? learningGetWordResult = _sentinel,
     Object? word = _sentinel,
     Object? wordWrapper = _sentinel,
     Object? studyStep = _sentinel,
@@ -188,6 +191,7 @@ class BdcState extends Equatable {
       dataLoaded: dataLoaded ?? this.dataLoaded,
       isGettingNextWord: isGettingNextWord ?? this.isGettingNextWord,
       currentGetWordResult: currentGetWordResult == _sentinel ? this.currentGetWordResult : (currentGetWordResult as GetWordResult?),
+      learningGetWordResult: learningGetWordResult == _sentinel ? this.learningGetWordResult : (learningGetWordResult as GetWordResult?),
       word: word == _sentinel ? this.word : (word as WordVo?),
       wordWrapper: wordWrapper == _sentinel ? this.wordWrapper : (wordWrapper as WordWrapper?),
       studyStep: studyStep == _sentinel ? this.studyStep : (studyStep as String?),
@@ -243,6 +247,7 @@ class BdcState extends Equatable {
     dataLoaded,
     isGettingNextWord,
     currentGetWordResult,
+    learningGetWordResult,
     word,
     wordWrapper,
     studyStep,

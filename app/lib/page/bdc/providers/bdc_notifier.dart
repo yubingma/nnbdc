@@ -436,6 +436,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(
       currentGetWordResult: getWordResult,
+      learningGetWordResult: state.historyIndex == -1 ? getWordResult : state.learningGetWordResult,
       word: word,
       wordWrapper: wordWrapper,
       studyStep: newStudyStep,
@@ -457,7 +458,8 @@ class BdcNotifier extends _$BdcNotifier {
       tabIndex: newTabIndex,
     );
 
-    if (state.historyIndex != -1) {
+    final wordId = word.id;
+    if (state.wordUIStates.containsKey(wordId)) {
       _restoreWordState(getWordResult);
     } else {
       meaningController.text = "";
@@ -781,7 +783,7 @@ class BdcNotifier extends _$BdcNotifier {
         int nextIndex = state.historyIndex + 1;
         if (nextIndex >= state.history.length) {
           state = state.copyWith(historyIndex: -1);
-          return await handleWord(state.currentGetWordResult);
+          return await handleWord(state.learningGetWordResult);
         } else {
           state = state.copyWith(historyIndex: nextIndex);
           return await handleWord(state.history[nextIndex]);
