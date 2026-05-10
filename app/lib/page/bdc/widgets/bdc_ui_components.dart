@@ -694,80 +694,84 @@ extension BdcPageStateUIComponents on BdcPageState {
                   : null,
             ),
             padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                if (state.showAnswerButtons || state.studyStep == StudyStep.en2Ch.json)
-                  AbsorbPointer(
-                    absorbing: !state.buttonsEnabled,
-                    child: ElevatedButton(
-                    key: const Key('bdc_not_know_btn'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.watch<DarkMode>().isDarkMode
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : const Color(0xFFF5F5F5),
-                      foregroundColor: context.watch<DarkMode>().isDarkMode
-                          ? Colors.white70
-                          : const Color(0xFF666666),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (state.showAnswerButtons || state.studyStep == StudyStep.en2Ch.json)
+                    AbsorbPointer(
+                      absorbing: !state.buttonsEnabled,
+                      child: ElevatedButton(
+                      key: const Key('bdc_not_know_btn'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.watch<DarkMode>().isDarkMode
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : const Color(0xFFF5F5F5),
+                        foregroundColor: context.watch<DarkMode>().isDarkMode
+                            ? Colors.white70
+                            : const Color(0xFF666666),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => notifier.showWordDetail(state.word!, true, context,
+                          fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
+                      child: const Text('不认识',
+                          style: TextStyle(fontWeight: FontWeight.w500)),
                     ),
-                    onPressed: () => notifier.showWordDetail(state.word!, true, context,
-                        fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
-                    child: const Text('不认识',
-                        style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
-                ),
-                if (state.showAnswerButtons || state.studyStep == StudyStep.en2Ch.json)
-                  AbsorbPointer(
-                    absorbing: !state.buttonsEnabled,
-                    child: ElevatedButton(
-                    key: const Key('bdc_study_again'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.watch<DarkMode>().isDarkMode
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : const Color(0xFFF5F5F5),
-                      foregroundColor: context.watch<DarkMode>().isDarkMode
-                          ? Colors.white70
-                          : const Color(0xFF666666),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                  if (state.showAnswerButtons || state.studyStep == StudyStep.en2Ch.json)
+                    AbsorbPointer(
+                      absorbing: !state.buttonsEnabled,
+                      child: ElevatedButton(
+                      key: const Key('bdc_study_again'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.watch<DarkMode>().isDarkMode
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : const Color(0xFFF5F5F5),
+                        foregroundColor: context.watch<DarkMode>().isDarkMode
+                            ? Colors.white70
+                            : const Color(0xFF666666),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => notifier.showWordDetail(state.word!, false, context,
+                          fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
+                      child: const Text('再学学',
+                          style: TextStyle(fontWeight: FontWeight.w500)),
                     ),
-                    onPressed: () => notifier.showWordDetail(state.word!, false, context,
-                        fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
-                    child: const Text('再学学',
-                        style: TextStyle(fontWeight: FontWeight.w500)),
                   ),
-                ),
-                if (state.canLeaveCurrWord)
-                  ElevatedButton(
-                    key: const Key('bdc_nextstate.word_btn'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.watch<DarkMode>().isDarkMode
-                          ? Colors.white
-                          : AppTheme.primaryColor,
-                      foregroundColor: context.watch<DarkMode>().isDarkMode
-                          ? Colors.black
-                          : Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                  if (state.canLeaveCurrWord)
+                    ElevatedButton(
+                      key: const Key('bdc_nextstate.word_btn'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.watch<DarkMode>().isDarkMode
+                            ? Colors.white
+                            : AppTheme.primaryColor,
+                        foregroundColor: context.watch<DarkMode>().isDarkMode
+                            ? Colors.black
+                            : Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: state.isGettingNextWord
+                          ? null
+                          : () => notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
+                      child: const Text('下一词',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                    onPressed: state.isGettingNextWord
-                        ? null
-                        : () => notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
-                    child: const Text('下一词',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -1342,28 +1346,32 @@ extension BdcPageStateUIComponents on BdcPageState {
                 snapshot.data!.isEmpty) {
               return Container(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '[巩固] 今日测评: 测评中',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: textColor,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '[巩固] 今日测评: 测评中',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: textColor,
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('|',
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: textColor.withValues(alpha: 0.3))),
-                    ),
-                    Text(
-                      '下次复习: --天后',
-                      style: TextStyle(fontSize: 11, color: textColor),
-                    ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('|',
+                            style: TextStyle(
+                                fontSize: 10,
+                                color: textColor.withValues(alpha: 0.3))),
+                      ),
+                      Text(
+                        '下次复习: --天后',
+                        style: TextStyle(fontSize: 11, color: textColor),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
@@ -1395,78 +1403,82 @@ extension BdcPageStateUIComponents on BdcPageState {
 
             return Container(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  InkWell(
-                    onTap: _showRatingModifyDialog,
-                    borderRadius: BorderRadius.circular(4),
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      child: Row(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: _showRatingModifyDialog,
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Row(
+                          children: [
+                            Text(
+                              '[巩固] 今日测评: $ratingLabel',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: ratingColor,
+                                decoration: TextDecoration.underline,
+                                decorationStyle: TextDecorationStyle.dashed,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('|',
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: textColor.withValues(alpha: 0.3))),
+                    ),
+                    Text.rich(
+                      TextSpan(
                         children: [
-                          Text(
-                            '[巩固] 今日测评: $ratingLabel',
+                          TextSpan(
+                              text: '下次复习: ',
+                              style: TextStyle(fontSize: 11, color: textColor)),
+                          TextSpan(
+                            text: '$scheduledDays',
                             style: TextStyle(
                               fontSize: 11,
-                              color: ratingColor,
-                              decoration: TextDecoration.underline,
-                              decorationStyle: TextDecorationStyle.dashed,
+                              color: isDarkMode ? Colors.white70 : Colors.black54,
+                              fontWeight: FontWeight.bold,
                             ),
+                          ),
+                          TextSpan(
+                              text: '天后',
+                              style: TextStyle(fontSize: 11, color: textColor)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    InkWell(
+                      onTap: _showLearningHistoryDialog,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.history_rounded,
+                              size: 14,
+                              color: textColor.withValues(alpha: 0.75)),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${snapshot.data!.length}',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: textColor.withValues(alpha: 0.8),
+                                height: 1.1),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('|',
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: textColor.withValues(alpha: 0.3))),
-                  ),
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                            text: '下次复习: ',
-                            style: TextStyle(fontSize: 11, color: textColor)),
-                        TextSpan(
-                          text: '$scheduledDays',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDarkMode ? Colors.white70 : Colors.black54,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        TextSpan(
-                            text: '天后',
-                            style: TextStyle(fontSize: 11, color: textColor)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  InkWell(
-                    onTap: _showLearningHistoryDialog,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.history_rounded,
-                            size: 14,
-                            color: textColor.withValues(alpha: 0.75)),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${snapshot.data!.length}',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: textColor.withValues(alpha: 0.8),
-                              height: 1.1),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -1475,27 +1487,31 @@ extension BdcPageStateUIComponents on BdcPageState {
 
       return Container(
         padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '[测评] 今日测评: 测评中',
-              style: TextStyle(
-                fontSize: 11,
-                color: textColor,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '[测评] 今日测评: 测评中',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: textColor,
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text('|',
-                  style: TextStyle(
-                      fontSize: 10, color: textColor.withValues(alpha: 0.3))),
-            ),
-            Text(
-              '下次复习: --天后',
-              style: TextStyle(fontSize: 11, color: textColor),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text('|',
+                    style: TextStyle(
+                        fontSize: 10, color: textColor.withValues(alpha: 0.3))),
+              ),
+              Text(
+                '下次复习: --天后',
+                style: TextStyle(fontSize: 11, color: textColor),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -1527,94 +1543,98 @@ extension BdcPageStateUIComponents on BdcPageState {
     String stageText = (state.currentGetWordResult != null && state.currentGetWordResult!.stepIndex > 0) ? '[巩固] ' : '[测评] ';
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          InkWell(
-            onTap: _showRatingModifyDialog,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: Row(
-                children: [
-                  Text(
-                    '$stageText今日测评: $ratingLabel',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: ratingColor,
-                      decoration: TextDecoration.underline,
-                      decorationStyle: TextDecorationStyle.dashed,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text('|',
-                style: TextStyle(
-                    fontSize: 10, color: textColor.withValues(alpha: 0.3))),
-          ),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                    text: '下次复习: ',
-                    style: TextStyle(fontSize: 11, color: textColor)),
-                TextSpan(
-                  text: '${state.fsrsItem!.scheduledDays}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDarkMode ? Colors.white70 : Colors.black54,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                TextSpan(
-                    text: '天后',
-                    style: TextStyle(fontSize: 11, color: textColor)),
-              ],
-            ),
-          ),
-          if (state.wordWrapper?.word.id != null)
-            FutureBuilder(
-              future: notifier.learningHistoryFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox();
-                }
-                final historyCount = (snapshot.data as List?)?.length ?? 0;
-                if (historyCount == 0) {
-                  return const SizedBox();
-                }
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            InkWell(
+              onTap: _showRatingModifyDialog,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
                   children: [
-                    const SizedBox(width: 4),
-                    InkWell(
-                      onTap: _showLearningHistoryDialog,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.history_rounded,
-                              size: 14,
-                              color: textColor.withValues(alpha: 0.75)),
-                          const SizedBox(width: 2),
-                          Text(
-                            '$historyCount',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: textColor.withValues(alpha: 0.8),
-                                height: 1.1),
-                          ),
-                        ],
+                    Text(
+                      '$stageText今日测评: $ratingLabel',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: ratingColor,
+                        decoration: TextDecoration.underline,
+                        decorationStyle: TextDecorationStyle.dashed,
                       ),
                     ),
                   ],
-                );
-              },
+                ),
+              ),
             ),
-        ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text('|',
+                  style: TextStyle(
+                      fontSize: 10, color: textColor.withValues(alpha: 0.3))),
+            ),
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                      text: '下次复习: ',
+                      style: TextStyle(fontSize: 11, color: textColor)),
+                  TextSpan(
+                    text: '${state.fsrsItem!.scheduledDays}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                      text: '天后',
+                      style: TextStyle(fontSize: 11, color: textColor)),
+                ],
+              ),
+            ),
+            if (state.wordWrapper?.word.id != null)
+              FutureBuilder(
+                future: notifier.learningHistoryFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox();
+                  }
+                  final historyCount = (snapshot.data as List?)?.length ?? 0;
+                  if (historyCount == 0) {
+                    return const SizedBox();
+                  }
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 4),
+                      InkWell(
+                        onTap: _showLearningHistoryDialog,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.history_rounded,
+                                size: 14,
+                                color: textColor.withValues(alpha: 0.75)),
+                            const SizedBox(width: 2),
+                            Text(
+                              '$historyCount',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: textColor.withValues(alpha: 0.8),
+                                  height: 1.1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
