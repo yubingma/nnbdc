@@ -1108,6 +1108,15 @@ class BdcNotifier extends _$BdcNotifier {
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
     Global.logger.d('~~~~~ 当前说模式正确答案: ${correctAnswer?.replaceAll('\n', '; ')}');
 
+    // 设置热词（上下文短语），显著提高识别准确率
+    List<String> phrases = [];
+    if (language == AsrLanguage.english) {
+      phrases.add(state.word!.spell);
+    } else {
+      phrases.addAll(AsrUtil.extractContextualPhrases(state.word!.meaningItems ?? []));
+    }
+    await asr.setContextualStrings(phrases);
+
     try {
       await asr.startAsr(language);
       if (PlatformUtils.isIOS) {

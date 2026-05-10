@@ -51,6 +51,9 @@ class Asr {
   /// 避免多个已失效的监听器继续处理结果，导致目标单词长期停留在旧值
   StreamSubscription? _eventSubscription;
 
+  /// 当前 ASR 使用的语言，用于在启动时判断是否需要切换语言
+  AsrLanguage? _currentLanguage;
+
   /// Meter 流订阅，使用单例模式避免重复订阅导致 iOS 端报错
   StreamSubscription<double>? _meterSubscription;
 
@@ -109,6 +112,7 @@ class Asr {
       Global.logger.i('ASR: 设置语言为: ${language.locale}');
       await asrMethodChannel.invokeMethod('setLanguage',
           {'locale': language.locale}).timeout(const Duration(seconds: 5));
+      _currentLanguage = language;
       Global.logger.i('ASR: 语言设置成功');
     } on PlatformException catch (e) {
       Global.logger.i('ASR: 设置语言失败: ${e.message}');
@@ -423,8 +427,13 @@ class Asr {
     }
 
     if (state == AsrState.started) {
-      Global.logger.w('ASR: ASR 已经处于 started 状态 (instance: $hashCode)');
-      return;
+      if (_currentLanguage == language) {
+        Global.logger.w('ASR: ASR 已经以 ${language.locale} 启动 (instance: $hashCode)');
+        return;
+      } else {
+        Global.logger.i('ASR: 正在运行中切换语言从 ${_currentLanguage?.locale} 到 ${language.locale}');
+        await stopAsr();
+      }
     }
 
     _isStarting = true;
@@ -457,11 +466,9 @@ class Asr {
               'ASR: Exception during start: ${e.message} (instance: $hashCode)');
           if (e.code == 'PERMISSION_DENIED') {
             ToastUtil.error("权限被拒绝，请在设置中开启麦克风和语音识别权限");
-          } else {
-            if (Platform.isIOS) {
-              setState(AsrState.started);
-            }
           }
+          // 不再在此处针对 iOS 强制设置 started，避免错误的状态显示
+          setState(AsrState.unknown);
         }
       }
     } finally {

@@ -629,8 +629,10 @@ import StoreKit
             print("IOS: Recognition request configured for English (dictation mode)")
         }
         if #available(iOS 13.0, *) {
-            recognitionRequest.requiresOnDeviceRecognition = true
+            // 不强制要求离线识别，允许在离线模型未下载时回退到在线识别，提高稳定性
+            recognitionRequest.requiresOnDeviceRecognition = false
         }
+
         print("IOS: Recognition request created successfully")
         
         // 检查音频引擎状态
