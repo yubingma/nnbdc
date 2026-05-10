@@ -15,10 +15,11 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' hide Consumer;
 
 import '../../api/enum.dart';
 import '../../api/vo.dart';
@@ -169,7 +170,20 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(bdcNotifierProvider);
+    // 顶级只监听加载状态，不再监听具体单词细节
+    ref.watch(bdcNotifierProvider.select((s) => s.dataLoaded));
+    
+    // 获取一份不含高频更新字段的稳定状态供主框架结构使用
+    final state = ref.watch(bdcNotifierProvider.select((s) => s.copyWith(
+      asrResult: '',
+      asrState: AsrState.unknown,
+      currentAsrCandidates: const [],
+      asrPassRuleCache: '',
+      playingStates: const {'word': false, 'sentence': false},
+      currentScore: 0,
+      meaningText: '',
+      hintTapCount: 0,
+    )));
     
     if (_tabController == null) {
       int expectedTabLength = _getShouldShowSpeakTab(state) ? 2 : 1;
@@ -207,7 +221,17 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   }
 
   Widget renderPage() {
-    final state = ref.watch(bdcNotifierProvider);
+    // 移除这里的全量监听，改用主 build 方法中已经脱敏处理好的 state
+    final state = ref.watch(bdcNotifierProvider.select((s) => s.copyWith(
+      asrResult: '',
+      asrState: AsrState.unknown,
+      currentAsrCandidates: const [],
+      asrPassRuleCache: '',
+      playingStates: const {'word': false, 'sentence': false},
+      currentScore: 0,
+      meaningText: '',
+      hintTapCount: 0,
+    )));
     if (state.word == null) {
       return Center(
         child: Column(

@@ -1,7 +1,17 @@
 part of '../bdc.dart';
 
 extension BdcPageStateUIComponents on BdcPageState {
-  BdcState get state => ref.watch(bdcNotifierProvider);
+  // 终极性能优化：UI组件库在读取全局 state 时屏蔽所有高频字段，防止题目区闪烁
+  BdcState get state => ref.watch(bdcNotifierProvider.select((s) => s.copyWith(
+    asrResult: '',
+    asrState: AsrState.unknown,
+    currentAsrCandidates: const [],
+    asrPassRuleCache: '',
+    playingStates: const {'word': false, 'sentence': false},
+    currentScore: 0,
+    meaningText: '',
+    hintTapCount: 0,
+  )));
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
 
   Widget _buildFullscreenImmersiveInputMode() {
@@ -255,7 +265,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildQuestionContent() {
+  Widget _buildQuestionContent(BdcState state) {
     return Container(
       decoration: BoxDecoration(
         color: context.watch<DarkMode>().isDarkMode
@@ -542,20 +552,29 @@ extension BdcPageStateUIComponents on BdcPageState {
         // 题目区 - 使用flex=1
         Expanded(
           flex: 1,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            transitionBuilder: (Widget child, Animation<double> animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
+          child: Consumer(
+            builder: (context, ref, child) {
+              // 物理隔离：这个 Consumer 只监听单词 ID 和历史索引
+              // 无论 ASR、播放状态如何变化，只要这两个核心值不变，这里的 AnimatedSwitcher 绝对不会重绘
+              final wordId = ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
+              final historyIndex = ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
+              
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+                child: Container(
+                  key: ValueKey('word_card_${wordId}_$historyIndex'),
+                  child: _buildQuestionContent(ref.read(bdcNotifierProvider)),
+                ),
               );
             },
-            child: Container(
-              key: ValueKey('word_card_${state.word?.id}_$state.historyIndex'),
-              child: _buildQuestionContent(),
-            ),
           ),
         ),
         // 题目区和做题区之间的统一间距
@@ -2157,12 +2176,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                       offset: Offset(_wordSoundController.value < 0.5 ? 0 : -2,
                           0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
                       child: Icon(
-                        state.playingStates['word']!
+                        ref.watch(bdcNotifierProvider.select((s) => s.playingStates['word']!))
                             ? (_wordSoundController.value < 0.5
                                 ? Icons.volume_up
                                 : Icons.volume_down)
                             : Icons.volume_up,
-                        color: state.playingStates['word']!
+                        color: ref.watch(bdcNotifierProvider.select((s) => s.playingStates['word']!))
                             ? Colors.teal[300]
                             : Colors.grey[500],
                       ),
