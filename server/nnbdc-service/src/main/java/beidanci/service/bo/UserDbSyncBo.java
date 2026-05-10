@@ -741,13 +741,12 @@ public class UserDbSyncBo {
                     throw new IllegalArgumentException(String.format("禁止通过同步创建学习步骤: step=[%s]", stepDto.getStudyStep()));
                 }
                 case "UPDATE" -> {
-                    // 检查记录是否存在，不存在则创建
-                    UserStudyStep existingForUpdate = userStudyStepBo.findById(id);
-                    if (existingForUpdate == null) {
-                        userStudyStepBo.createEntity(studyStep);
-                    } else {
-                        userStudyStepBo.updateEntity(studyStep);
+                    // 【严格模式】禁止通过同步接口变相创建学习步骤，反映前端逻辑存在 bug
+                    UserStudyStep existing = userStudyStepBo.findById(id);
+                    if (existing == null) {
+                        throw new IllegalArgumentException(String.format("禁止通过同步修改不存在的学习步骤: step=[%s]", stepDto.getStudyStep()));
                     }
+                    userStudyStepBo.updateEntity(studyStep);
                 }
                 case "DELETE" -> userStudyStepBo.deleteEntity(studyStep);
                 default -> {
