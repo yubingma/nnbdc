@@ -696,6 +696,16 @@ class BdcNotifier extends _$BdcNotifier {
     handleWord(state.history[nextIndex]);
   }
 
+  void exitReviewMode() async {
+    if (state.historyIndex == -1) return;
+    
+    _saveCurrentWordState();
+    await asr.stopAsr();
+    await _audioPlayer.stop();
+    
+    state = state.copyWith(historyIndex: -1);
+    handleWord(state.learningGetWordResult);
+  }
   Future<void> reloadWord() async {
     await StudyBo().prepareForStudy(false);
     getNextWord(false);

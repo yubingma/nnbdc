@@ -931,9 +931,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                 // 上一个按钮
                 if (state.historyIndex != -1)
                   _buildTopActionButton(
-                    icon: Icons.arrow_forward,
+                    icon: Icons.keyboard_return,
                     label: '返回',
-                    onTap: () => notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
+                    onTap: () => notifier.exitReviewMode(),
                   )
                 else if (state.history.isNotEmpty)
                   _buildTopActionButton(
