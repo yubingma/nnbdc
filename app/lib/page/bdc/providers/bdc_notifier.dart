@@ -187,17 +187,17 @@ class BdcNotifier extends _$BdcNotifier {
         _restoreLastWordHistory();
       }
       
-      // Use this.state to get the updated state after getNextWord
-      if (this.state.word != null) {
+      // Use state directly after getNextWord
+      if (state.word != null) {
         state = state.copyWith(dataLoaded: true);
-      } else if (this.state.loadError != null) {
+      } else if (state.loadError != null) {
         // If it's a redirecting message, keep dataLoaded false to show spinner
         // Otherwise, it's a real error we want to show
-        if (!this.state.loadError!.contains('跳转')) {
+        if (!state.loadError!.contains('跳转')) {
           state = state.copyWith(dataLoaded: true);
         }
       } else if (!success) {
-        Global.logger.e('loadData: getNextWord failed without loadError. State: word=${this.state.word}');
+        Global.logger.e('loadData: getNextWord failed without loadError. State: word=${state.word}');
         state = state.copyWith(
           loadError: '获取单词失败，请检查网络后重试',
           dataLoaded: true,
@@ -408,6 +408,12 @@ class BdcNotifier extends _$BdcNotifier {
 
     WordWrapper wordWrapper = WordWrapper(word, null);
     
+    bool speakTabAvailable = _getShouldShowSpeakTabFor(newStudyStep);
+    int newTabIndex = 0;
+    if (state.isSelectModePreferred) {
+      newTabIndex = speakTabAvailable ? 1 : 0;
+    }
+
     state = state.copyWith(
       currentGetWordResult: getWordResult,
       word: word,
@@ -428,6 +434,7 @@ class BdcNotifier extends _$BdcNotifier {
       lastFsrsRating: null,
       currentAsrCandidates: [],
       loadError: null, // Successfully loaded a word, clear error
+      tabIndex: newTabIndex,
     );
 
     if (state.historyIndex != -1) {
@@ -495,7 +502,9 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void updateTabIndex(int index) {
-    state = state.copyWith(tabIndex: index);
+    // Determine if the user is choosing the "Select" tab (always the last tab)
+    final isSelectTab = index == (_shouldShowSpeakTab ? 1 : 0);
+    state = state.copyWith(tabIndex: index, isSelectModePreferred: isSelectTab);
     _handleTabChangeForAsr();
   }
 
@@ -1153,12 +1162,17 @@ class BdcNotifier extends _$BdcNotifier {
     return tabs;
   }
 
-  bool get _shouldShowSpeakTab {
+  bool get _shouldShowSpeakTab => _getShouldShowSpeakTabFor(state.studyStep ?? '');
+
+  bool _getShouldShowSpeakTabFor(String studyStep) {
     if (!PlatformUtils.isAsrSupported()) return false;
-    if (state.studyStep == StudyStep.ch2En.json) {
+    if (studyStep == StudyStep.ch2En.json) {
       return PlatformUtils.isEnglishAsrSupported();
     }
-    return true;
+    if (studyStep == StudyStep.en2Ch.json) {
+      return true;
+    }
+    return false;
   }
 
   void updateIsUpdatingByHint(bool value) {

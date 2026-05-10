@@ -97,6 +97,18 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     
     // Initialize TabController with a default length
     _tabController = TabController(length: 2, vsync: this);
+    _tabController!.addListener(() {
+      if (!_tabController!.indexIsChanging) {
+        ref.read(bdcNotifierProvider.notifier).updateTabIndex(_tabController!.index);
+      }
+    });
+
+    // Sync state tabIndex to controller
+    ref.listenManual(bdcNotifierProvider.select((s) => s.tabIndex), (previous, next) {
+      if (_tabController != null && _tabController!.index != next && next < _tabController!.length) {
+        _tabController!.animateTo(next);
+      }
+    });
 
     // Initialize data and listen for state changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -110,6 +122,16 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         setState(() {
           _tabController?.dispose();
           _tabController = TabController(length: newLength, vsync: this);
+          _tabController!.addListener(() {
+            if (!_tabController!.indexIsChanging) {
+              ref.read(bdcNotifierProvider.notifier).updateTabIndex(_tabController!.index);
+            }
+          });
+          // Re-sync after recreation
+          final currentTabIndex = ref.read(bdcNotifierProvider).tabIndex;
+          if (currentTabIndex < newLength) {
+            _tabController!.index = currentTabIndex;
+          }
         });
       }
     });

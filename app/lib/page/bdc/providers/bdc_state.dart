@@ -70,6 +70,8 @@ class BdcState extends Equatable {
 
   final String? loadError;
 
+  final bool isSelectModePreferred;
+
   const BdcState({
     this.dataLoaded = false,
     this.isGettingNextWord = false,
@@ -120,6 +122,7 @@ class BdcState extends Equatable {
     this.highlightedWordImg,
     this.isWordImageEdited = false,
     this.loadError,
+    this.isSelectModePreferred = false,
   });
 
   bool get autoJumpAfterCorrect {
@@ -179,6 +182,7 @@ class BdcState extends Equatable {
     Object? highlightedWordImg = _sentinel,
     bool? isWordImageEdited,
     Object? loadError = _sentinel,
+    bool? isSelectModePreferred,
   }) {
     return BdcState(
       dataLoaded: dataLoaded ?? this.dataLoaded,
@@ -230,6 +234,7 @@ class BdcState extends Equatable {
       highlightedWordImg: highlightedWordImg == _sentinel ? this.highlightedWordImg : (highlightedWordImg as WordImageVo?),
       isWordImageEdited: isWordImageEdited ?? this.isWordImageEdited,
       loadError: loadError == _sentinel ? this.loadError : (loadError as String?),
+      isSelectModePreferred: isSelectModePreferred ?? this.isSelectModePreferred,
     );
   }
 
@@ -284,5 +289,6 @@ class BdcState extends Equatable {
     highlightedWordImg,
     isWordImageEdited,
     loadError,
+    isSelectModePreferred,
   ];
 }
