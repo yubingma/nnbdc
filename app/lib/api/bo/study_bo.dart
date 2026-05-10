@@ -278,7 +278,7 @@ class StudyBo {
       final db = MyDatabase.instance;
 
       // 获取当前登录用户
-      final user = await db.usersDao.getLastLoggedInUser();
+      final user = Global.getLoggedInUser();
       if (user == null) {
         Global.logger.e('掷骰子失败: 用户未登录');
         return Result("ERROR", "用户未登录", false);
@@ -351,7 +351,7 @@ class StudyBo {
       final db = MyDatabase.instance;
 
       // 获取当前登录用户
-      final user = await db.usersDao.getLastLoggedInUser();
+      final user = Global.getLoggedInUser();
       if (user == null) {
         Global.logger.e('保存打卡记录失败: 用户未登录');
         return Result("ERROR", "用户未登录", false);
@@ -449,7 +449,7 @@ class StudyBo {
       Global.logger.d('开始完成批次列表学习...');
       final db = MyDatabase.instance;
       // 获取当前 user
-      final user = await db.usersDao.getLastLoggedInUser();
+      final user = Global.getLoggedInUser();
       if (user == null) {
         return Result("ERROR", "用户未登录", false);
       }
@@ -542,7 +542,7 @@ class StudyBo {
 
       final swUser = Stopwatch()..start();
       // 获取当前登录用户
-      final user = await db.usersDao.getLastLoggedInUser();
+      final user = Global.getLoggedInUser();
       if (user == null) {
         Global.logger.e('获取下一个单词失败: 用户未登录');
         return Result("ERROR", "用户未登录", false);
@@ -954,7 +954,7 @@ class StudyBo {
     required FsrsRating newRating,
   }) async {
     final db = MyDatabase.instance;
-    final user = await db.usersDao.getLastLoggedInUser();
+    final user = Global.getLoggedInUser();
     if (user == null) return;
     final now = AppClock.now();
 

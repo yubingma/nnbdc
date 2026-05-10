@@ -704,7 +704,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => context.push('/login'),
+                onPressed: () => context.go('/login'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,

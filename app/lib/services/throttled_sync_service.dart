@@ -21,6 +21,18 @@ class ThrottledDbSyncService {
   int _suspendCount = 0;
   bool _syncRequestedWhileSuspended = false; // 在暂停期间是否有同步请求被记录
   final NetworkUtil _networkUtil = NetworkUtil();
+  
+  /// 重置同步服务状态（通常在用户登出时调用）
+  void reset() {
+    _syncTimer?.cancel();
+    _syncTimer = null;
+    _syncScheduled = false;
+    _needsAnotherSync = false;
+    _syncRequestedWhileSuspended = false;
+    _suspendCount = 0;
+    _waiters.clear();
+    Global.logger.d('🧹 ThrottledDbSyncService 已重置');
+  }
 
   // 同步请求计数器，用于调试
   int _syncRequestCount = 0;

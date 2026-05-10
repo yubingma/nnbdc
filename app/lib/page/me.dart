@@ -738,7 +738,7 @@ class _MePageState extends State<MePage> {
                       if (loggedInUser != null) {
                         _pickAndUploadAvatar();
                       } else {
-                        context.push('/login');
+                        context.go('/login');
                       }
                     },
                     child: Container(
@@ -1579,7 +1579,7 @@ class _MePageState extends State<MePage> {
                 title: '切换账号',
                 onTap: () async {
                   await Global.logout();
-                  if (mounted) context.push('/login');
+                  if (mounted) context.go('/login');
                 },
               ),
               _buildMenuTile(
@@ -2215,7 +2215,7 @@ class _MePageState extends State<MePage> {
         if (value.success) {
           ToastUtil.info("账户已注销");
           if (!mounted) return;
-          context.push('/login');
+          context.go('/login');
         } else {
           ToastUtil.error(value.msg!);
         }

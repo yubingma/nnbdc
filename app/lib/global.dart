@@ -13,6 +13,8 @@ import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 
 import 'api/vo.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/api/bo/study_bo.dart';
 
 
 
@@ -134,8 +136,12 @@ class Global {
     
     // 4. 重置 Socket 连接状态
     SocketIoClient.instance.reset();
+
+    // 5. 清理业务缓存与同步服务，防止旧账号任务残留
+    ThrottledDbSyncService().reset();
+    StudyBo.clearUserCaches();
     
-    Global.logger.i('用户已登出，会话已清除');
+    Global.logger.i('用户已登出，会话与业务缓存已清除');
   }
 
   // 清除用户缓存

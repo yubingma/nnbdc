@@ -134,21 +134,7 @@ class UserBo {
         user = await db.usersDao.getUserById(Global.currentUserId!);
       }
 
-      if (user == null) {
-        try {
-          final allUsers = await db.usersDao.allUsers;
-          Global.logger.d('getLoggedInUser: 数据库中共有${allUsers.length}个用户');
-          for (final u in allUsers) {
-            Global.logger.d('getLoggedInUser: 用户 ${u.id}, ${u.userName}');
-          }
-
-          user = await db.usersDao.getLastLoggedInUser();
-          Global.logger.d('getLoggedInUser: 通过lastLoggedInUser获取用户 ${user?.id}, ${user?.userName}');
-        } catch (e, stackTrace) {
-          ErrorHandler.handleDatabaseError(e, stackTrace,
-              db: MyDatabase.instance.usersDao, operation: 'getUserInfo in getLoggedInUser', showToast: false);
-        }
-      }
+      user ??= await Global.loadUserFromDb();
 
       if (user != null) {
         try {
@@ -177,7 +163,9 @@ class UserBo {
           userVo.level = LevelUtil.getLevelVoByWordCount(nonNullUser.masteredWordsCount);
           userVo.hasDakaToday = await db.dakasDao.findById(nonNullUser.id, today) != null;
           
+          // 同步更新全局状态缓存，防止 Global.getLoggedInUser() (同步版) 获取到空值
           Global.currentUserId = nonNullUser.id;
+          Global.updateUserCache(nonNullUser);
 
           final result = Result<UserVo>("SUCCESS", "获取成功", true);
           result.data = userVo;
