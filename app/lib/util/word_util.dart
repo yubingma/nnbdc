@@ -102,6 +102,24 @@ class WordWrapper {
 
   WordWrapper(this.word, this.tag);
   
+  /// 揭示所有尚未匹配的释义项（标记为自动展现）
+  void revealAllRemainingMeanings() {
+    var meaningItems = word.getMergedMeaningItems();
+    for (var i = 0; i < meaningItems.length; i++) {
+      var meaningItem = meaningItems[i];
+      if (meaningItem.meaning == null) continue;
+      var parts = splitMeaning2Parts(meaningItem.meaning!);
+      for (var j = 0; j < parts.length; j++) {
+        var pair = Pair(i, j);
+        if (!asrMatchedMeaningItemParts.contains(pair)) {
+          if (!asrRevealedMeaningItemParts.contains(pair)) {
+            asrRevealedMeaningItemParts.add(pair);
+          }
+        }
+      }
+    }
+  }
+
   /// 释放资源
   void dispose() {
     _focusNode?.dispose();
@@ -255,8 +273,8 @@ List<Widget> renderMeaningItemParts(
         part,
         style: TextStyle(
           color: isDarkMode
-              ? const Color(0xFFD1D5DB)
-              : const Color(0xFF374151), // 与标准释义颜色一致
+              ? Colors.white
+              : Colors.black, // 黑色显式呈现
           fontSize: 14,
           fontWeight: FontWeight.w400,
         ),

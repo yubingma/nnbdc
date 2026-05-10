@@ -569,6 +569,9 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext context, {FsrsRating? fsrsRating, String? reason}) async {
     if (fsrsRating != null) {
+      if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
+        state.wordWrapper!.revealAllRemainingMeanings();
+      }
       state = state.copyWith(
         lastFsrsRating: fsrsRating,
         lastFsrsRatingReason: reason,
@@ -975,6 +978,9 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _onAnswerCorrect(FsrsRating rating) async {
+    if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
+      state.wordWrapper!.revealAllRemainingMeanings();
+    }
     state = state.copyWith(hasFinishedAnswering: true, canLeaveCurrWord: true, lastFsrsRating: rating);
     
     final lw = state.currentGetWordResult?.learningWord;
