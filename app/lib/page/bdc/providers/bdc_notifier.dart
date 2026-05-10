@@ -759,26 +759,44 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+
   void _restoreWordState(GetWordResult result) {
     final wordId = result.learningWord?.word.id;
     final uiState = wordId != null ? state.wordUIStates[wordId] : null;
     if (uiState != null) {
-      state = state.copyWith(
-        hasFinishedAnswering: uiState.hasFinishedAnswering,
-        canLeaveCurrWord: uiState.canLeaveCurrWord,
-        showSentenceTranslation: uiState.showSentenceTranslation,
-        selectedAnswerIndex: uiState.selectedAnswerIndex,
-        flippedAnswerIndices: uiState.flippedAnswerIndices,
-        tabIndex: uiState.tabIndex,
-        currentScore: uiState.currentScore,
-        words: uiState.words,
-        correctAnswerIndex: uiState.correctAnswerIndex,
-        fsrsItem: uiState.fsrsItem,
-        daysSinceLastReview: uiState.daysSinceLastReview,
-        lastFsrsRating: uiState.lastFsrsRating,
-        currentAsrCandidates: uiState.currentAsrCandidates ?? [],
-      );
-      meaningController.text = uiState.meaningText;
+      // 只有在环节相同时才恢复答题状态（已选答案、是否完成等）
+      if (uiState.studyStep == state.studyStep) {
+        state = state.copyWith(
+          hasFinishedAnswering: uiState.hasFinishedAnswering,
+          canLeaveCurrWord: uiState.canLeaveCurrWord,
+          showSentenceTranslation: uiState.showSentenceTranslation,
+          selectedAnswerIndex: uiState.selectedAnswerIndex,
+          flippedAnswerIndices: uiState.flippedAnswerIndices,
+          tabIndex: uiState.tabIndex,
+          currentScore: uiState.currentScore,
+          words: uiState.words,
+          correctAnswerIndex: uiState.correctAnswerIndex,
+          fsrsItem: uiState.fsrsItem,
+          daysSinceLastReview: uiState.daysSinceLastReview,
+          lastFsrsRating: uiState.lastFsrsRating,
+          currentAsrCandidates: uiState.currentAsrCandidates ?? [],
+        );
+        meaningController.text = uiState.meaningText;
+      } else {
+        // 如果环节不同（如从英中进入中英），只恢复选项列表和正确答案索引，重置答题状态
+        state = state.copyWith(
+          words: uiState.words,
+          correctAnswerIndex: uiState.correctAnswerIndex,
+          hasFinishedAnswering: false,
+          canLeaveCurrWord: false,
+          selectedAnswerIndex: null,
+          flippedAnswerIndices: {},
+          currentScore: null,
+          lastFsrsRating: null,
+          fsrsItem: null,
+        );
+        meaningController.text = "";
+      }
     }
   }
 
