@@ -45,11 +45,26 @@ class ErrorHandler {
     dynamic error,
     StackTrace? stackTrace, {
     String? context,
+    MyDatabase? explicitDb,
   }) {
     // 强制在 Zone.root 下运行，防止继承自可能正在关闭的事务 zone
     return Zone.root.run(() async {
       try {
-        final db = MyDatabase.instance;
+        // 如果在后台 Isolate 且没有初始化 Messenger，直接跳过数据库记录，只打日志
+        // 除非显式传入了已经打开的 db
+        MyDatabase? db = explicitDb;
+        if (db == null) {
+          // 检查是否在主 Isolate 或已经初始化了 Messenger
+          // 注意：getApplicationDocumentsDirectory 依赖 BinaryMessenger
+          try {
+            db = MyDatabase.instance;
+          } catch (e) {
+            // 在某些后台 Isolate 下，MyDatabase.instance 可能会因为 path_provider 报错
+            Global.logger.w('Isolate 环境下无法获取数据库实例记录异常: $e');
+            return;
+          }
+        }
+        
         final userId = Global.getLoggedInUser()?.id; // 避免通过 Global.getLoggedInUser() 可能产生的复杂逻辑
         final now = AppClock.now();
 
@@ -80,6 +95,7 @@ class ErrorHandler {
     String? userMessage,
     String? logPrefix,
     bool showToast = true,
+    MyDatabase? db,
   }) {
     // 记录统计
     _recordErrorStats(logPrefix ?? 'general');
@@ -90,7 +106,7 @@ class ErrorHandler {
     Global.logger.e(logMessage, error: error, stackTrace: stackTrace);
 
     // 异步记录异常到数据库（不等待，避免阻塞）
-    _recordExceptionToDb(error, stackTrace, context: logPrefix);
+    _recordExceptionToDb(error, stackTrace, context: logPrefix, explicitDb: db);
 
     if (showToast) {
       final displayMessage = userMessage != null ? '$userMessage ($error)' : '操作失败: $error';
@@ -110,12 +126,25 @@ class ErrorHandler {
     _databaseErrorCount++;
     _recordErrorStats('database_${operation ?? "unknown"}');
 
+    // 数据库实例
+    MyDatabase? myDb;
+    if (db is MyDatabase) {
+      myDb = db as MyDatabase;
+    } else if (db is DatabaseAccessor<MyDatabase>) {
+      myDb = db.attachedDatabase;
+    }
+
     // 检测是否是表不存在的错误，如果是则自动重建数据库
     if (_isTableNotFoundError(error)) {
       Global.logger.w('⚠️ 检测到表不存在错误，自动重建数据库...');
       try {
         // 直接调用 wipeAllTables 来重建数据库，并在 root zone 中运行
-        await Zone.root.run(() => MyDatabase.instance.wipeAllTables());
+        if (myDb != null) {
+          final dbToWipe = myDb;
+          await Zone.root.run(() => dbToWipe.wipeAllTables());
+        } else {
+          await Zone.root.run(() => MyDatabase.instance.wipeAllTables());
+        }
         Global.logger.i('✅ 数据库自动重建完成');
         // 重建后不显示错误提示，让操作可以重试
         return;
@@ -137,7 +166,7 @@ class ErrorHandler {
     }
 
     // 4. 异步记录异常到数据库（不等待，避免阻塞）
-    _recordExceptionToDb(error, stackTrace, context: '数据库操作: ${operation ?? "未知"}');
+    _recordExceptionToDb(error, stackTrace, context: '数据库操作: ${operation ?? "未知"}', explicitDb: myDb);
 
     // 5. 用户提示
     if (showToast) {

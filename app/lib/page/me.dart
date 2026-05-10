@@ -1577,7 +1577,10 @@ class _MePageState extends State<MePage> {
               _buildMenuTile(
                 icon: Icons.logout_rounded,
                 title: '切换账号',
-                onTap: () => context.push('/login'),
+                onTap: () async {
+                  await Global.logout();
+                  if (mounted) context.push('/login');
+                },
               ),
               _buildMenuTile(
                 icon: Icons.no_accounts_outlined,

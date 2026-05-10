@@ -364,7 +364,7 @@ class DictsDao extends DatabaseAccessor<MyDatabase> with _$DictsDaoMixin {
       }
 
       // 计算实际的单词数量
-      final actualCount = await MyDatabase.instance.dictWordsDao.getDictWordCount(dictId);
+      final actualCount = await db.dictWordsDao.getDictWordCount(dictId);
 
       // 如果wordCount不一致，则更新
       if (dict.wordCount != actualCount) {
@@ -609,7 +609,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
       await into(dictWords).insert(entryToInsert);
       if (genLog) {
-        var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
+        var dict = await db.dictsDao.findById(entry.dictId);
         var owner = dict?.ownerId;
         await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', entryToInsert);
 
@@ -621,7 +621,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
   // 删除词书中的单词（单纯删除数据，不处理序号，仅供同步或已有清理逻辑的包装方法使用）
   Future<void> deleteEntity(DictWord entry, bool genLog) async {
     if (genLog) {
-      var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
+      var dict = await db.dictsDao.findById(entry.dictId);
       var owner = dict?.ownerId;
       // 先生成删除日志
       await DbLogUtil.logOperation(owner!, 'DELETE', 'dictWords', '${entry.dictId}-${entry.wordId}', entry);
@@ -646,7 +646,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     // 生成删除日志（如果需要）
     if (genLog) {
-      var dict = await MyDatabase.instance.dictsDao.findById(dictId);
+      var dict = await db.dictsDao.findById(dictId);
       var owner = dict?.ownerId;
       await DbLogUtil.logOperation(owner!, 'DELETE', 'dictWords', '$dictId-$wordId', dictWord);
     }
@@ -656,7 +656,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
 
     // 更新词书的wordCount
-    await MyDatabase.instance.dictsDao.updateWordCount(dictId, genLog);
+    await db.dictsDao.updateWordCount(dictId, genLog);
 
     // 学习进度已改为基于状态计算，不再需要维护 currentWordSeq
     Global.logger.d('已删除词典单词并完成清理: dictId=$dictId, wordId=$wordId, seqNo=$seqNo');
@@ -674,7 +674,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     // 生成日志（如果需要）
     if (genLog) {
       for (var entry in entries) {
-        var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId);
+        var dict = await db.dictsDao.findById(entry.dictId);
         var owner = dict?.ownerId;
         await DbLogUtil.logOperation(owner!, 'INSERT', 'dictWords', '${entry.dictId}-${entry.wordId}', entry);
       }
@@ -728,7 +728,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
   // 清空词书中的单词（适用于生词本）
   Future<void> clearDictWord(String dictId, bool genLog) async {
-    final dict = await MyDatabase.instance.dictsDao.findById(dictId);
+    final dict = await db.dictsDao.findById(dictId);
     if (dict == null) {
       Global.logger.w('词书不存在: dictId=$dictId');
       return;
@@ -750,7 +750,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
 
     // 更新词书的wordCount（并生成日志用于同步）
-    await MyDatabase.instance.dictsDao.updateWordCount(dictId, genLog);
+    await db.dictsDao.updateWordCount(dictId, genLog);
 
     // 如果是生词本，清空后需要重置排序
     if (dict.name == '生词本') {
@@ -767,7 +767,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     String? dictId;
     if (filters.containsKey('dictId')) {
       dictId = filters['dictId'];
-      final dict = await MyDatabase.instance.dictsDao.findById(dictId!);
+      final dict = await db.dictsDao.findById(dictId!);
       if (dict?.ownerId != userId) {
         Global.logger.w('⚠️ 词典不属于用户: dictId=$dictId, userId=$userId, ownerId=${dict?.ownerId}');
         return;
@@ -797,7 +797,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     // 批量删除后，更新词书的wordCount（并生成日志用于同步）
     final finalDictId = dictId;
     if (finalDictId != null) {
-      await MyDatabase.instance.dictsDao.updateWordCount(finalDictId, true);
+      await db.dictsDao.updateWordCount(finalDictId, true);
     }
   }
 
@@ -824,7 +824,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
         // 生成更新日志
         if (genLog) {
-          var dict = await MyDatabase.instance.dictsDao.findById(dictId);
+          var dict = await db.dictsDao.findById(dictId);
           var owner = dict?.ownerId;
           await DbLogUtil.logOperation(owner!, 'UPDATE', 'dictWords', '$dictId-${oldEntry.wordId}', newEntry);
         }
@@ -1034,7 +1034,7 @@ class MeaningItemsDao extends DatabaseAccessor<MyDatabase> with _$MeaningItemsDa
   Future<void> insertEntity(MeaningItem entry, bool genLog) async {
     await into(meaningItems).insertOnConflictUpdate(entry);
     if (genLog && entry.dictId != null) {
-      var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId!);
+      var dict = await db.dictsDao.findById(entry.dictId!);
       var owner = dict?.ownerId;
       if (owner != null) {
         await DbLogUtil.logOperation(owner, 'INSERT', 'meaningItems', entry.id, entry);
@@ -1047,7 +1047,7 @@ class MeaningItemsDao extends DatabaseAccessor<MyDatabase> with _$MeaningItemsDa
     var entry = await getById(id);
     await (delete(meaningItems)..where((mi) => mi.id.equals(id))).go();
     if (genLog && entry != null && entry.dictId != null) {
-      var dict = await MyDatabase.instance.dictsDao.findById(entry.dictId!);
+      var dict = await db.dictsDao.findById(entry.dictId!);
       var owner = dict?.ownerId;
       if (owner != null) {
         await DbLogUtil.logOperation(owner, 'DELETE', 'meaningItems', entry.id, entry);
@@ -1173,7 +1173,7 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
 
   /// 删除用户已经掌握的单词（从"已掌握"词书推导）
   Future<void> deleteMasteredWords(String userId) async {
-    final db = MyDatabase.instance;
+    final db = attachedDatabase;
     // 获取用户已掌握的所有单词ID
     final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
 
@@ -1247,7 +1247,7 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
       'WHERE user_id = ? AND stability < ? '
       'AND word_id IN (SELECT word_id FROM dict_words WHERE dict_id IN (${dictIds.map((id) => "'$id'").join(',')}))',
       variables: [Variable.withString(userId), Variable.withReal(Constants.graduationStability)],
-      readsFrom: {learningWords, MyDatabase.instance.dictWords},
+      readsFrom: {learningWords, db.dictWords},
     );
     final row = await countQuery.getSingle();
     return row.read<int>('c');
@@ -1797,7 +1797,7 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
   // 将学习中的单词标记为已掌握
   // 将学习中的单词标记为已掌握
   Future<void> setLearningWordAsMastered(String userId, String wordId, bool deleteLearningWord) async {
-    final db = MyDatabase.instance;
+    final db = attachedDatabase;
     final learningWord = await db.learningWordsDao.getById(userId, wordId);
 
     // 1. 添加到已掌握词书

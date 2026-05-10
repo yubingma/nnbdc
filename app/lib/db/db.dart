@@ -1523,66 +1523,72 @@ class MyDatabase extends _$MyDatabase {
 
   /// 确保所有表的审计字段都不为 NULL (2000-01-01 00:00:00 UTC = 946656000s)
   Future<void> _backfillAllAuditColumns() async {
+    // 只有在主 Isolate 且没有迁移过时才执行
+    final backfillDoneKey = 'audit_columns_backfilled_v42';
+    try {
+      // 检查 local_params 是否存在
+      final tables = await customSelect("SELECT name FROM sqlite_master WHERE type='table' AND name='local_params'").get();
+      if (tables.isEmpty) return;
+
+      final param = await (select(localParams)..where((p) => p.name.equals(backfillDoneKey))).getSingleOrNull();
+      if (param != null && param.value == 'true') return;
+    } catch (e) {
+      // 如果查询失败，可能表结构还不完整，跳过回填
+      return;
+    }
+
     Global.logger.i('🔍 开始扫描并回填数据库审计字段...');
     final List<dynamic> tables = [
-      users,
-      localParams,
-      userStudyDailyStats,
-      learningLogs,
-      votedSentences,
-      votedWordImages,
-      learningDicts,
-      dicts,
-      words,
-      userDbLogs,
-      userDbVersions,
-      dictWords,
-      wordImages,
-      verbTenses,
-      synonyms,
-      similarWords,
-      cigens,
-      cigenWordLinks,
-      meaningItems,
-      sentences,
-      learningWords,
-      bookMarks,
-      dictGroups,
-      groupAndDictLinks,
-      userStudySteps,
-      dakas,
-      userOpers,
-      userCowDungLogs,
-      userWrongWords,
-      sysDbVersion,
-      localExceptions,
+      users, localParams, userStudyDailyStats, learningLogs, votedSentences,
+      votedWordImages, learningDicts, dicts, words, userDbLogs, userDbVersions,
+      dictWords, wordImages, verbTenses, synonyms, similarWords, cigens,
+      cigenWordLinks, meaningItems, sentences, learningWords, bookMarks,
+      dictGroups, groupAndDictLinks, userStudySteps, dakas, userOpers,
+      userCowDungLogs, userWrongWords, sysDbVersion, localExceptions,
     ];
 
-    await transaction(() async {
-      Global.logger.d('🏗️ 启动回填事务，准备处理 ${tables.length} 个表');
-      for (final dynamic table in tables) {
-        final tableName = table.actualTableName;
-        try {
-          Global.logger.d('🔍 正在检查表: $tableName');
-          // 检查列是否存在 (PRAGMA table_info 是标准 SQLite 方法)
-          final columns = await customSelect("PRAGMA table_info('$tableName')").get();
-          final hasCreateTime = columns.any((c) => c.read<String>('name') == 'create_time');
-          final hasUpdateTime = columns.any((c) => c.read<String>('name') == 'update_time');
+    int fixedCount = 0;
+    for (final dynamic table in tables) {
+      final tableName = table.actualTableName;
+      try {
+        // 每个表独立处理，不使用大事务，避免长时间锁定 DB
+        final columns = await customSelect("PRAGMA table_info('$tableName')").get();
+        final hasCreateTime = columns.any((c) => c.read<String>('name') == 'create_time');
+        final hasUpdateTime = columns.any((c) => c.read<String>('name') == 'update_time');
 
-          // 增强回填逻辑：处理 NULL、空字符串或 0 的情况
-          if (hasCreateTime) {
-            final count = await customUpdate('UPDATE "$tableName" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = \'\' OR create_time = 0;');
-            if (count > 0) Global.logger.i('✅ 已修复 $tableName 表的 $count 条记录的 create_time 异常值');
-          }
-          if (hasUpdateTime) {
-            final count = await customUpdate('UPDATE "$tableName" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = \'\' OR update_time = 0;');
-            if (count > 0) Global.logger.i('✅ 已修复 $tableName 表的 $count 条记录的 update_time 异常值');
-          }
-        } catch (e) {
-          Global.logger.e('❌ 回填 $tableName 审计字段失败: $e');
+        if (hasCreateTime) {
+          final count = await customUpdate('UPDATE "$tableName" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = \'\' OR create_time = 0;');
+          if (count > 0) fixedCount += count;
         }
+        if (hasUpdateTime) {
+          final count = await customUpdate('UPDATE "$tableName" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = \'\' OR update_time = 0;');
+          if (count > 0) fixedCount += count;
+        }
+      } catch (e) {
+        Global.logger.w('回填 $tableName 审计字段失败 (可能正在迁移): $e');
       }
-    });
+    }
+
+    if (fixedCount > 0) {
+      Global.logger.i('✅ 已修复全局 $fixedCount 条审计字段异常值');
+    }
+
+    // 标记为已完成
+    try {
+      await (update(localParams)..where((p) => p.name.equals(backfillDoneKey))).write(LocalParamsCompanion(
+        value: const Value('true'),
+        updateTime: Value(AppClock.now()),
+      ));
+    } catch (_) {
+      // 如果写入失败，可能是表不存在或被锁定，下次打开会重试
+      try {
+        await into(localParams).insert(LocalParamsCompanion.insert(
+          name: backfillDoneKey,
+          value: 'true',
+          updateTime: Value(AppClock.now()),
+        ));
+      } catch (_) {}
+    }
   }
 
   /// 手动补全缺失的审计字段 (用于处理迁移失败的极端情况)

@@ -661,6 +661,11 @@ class EmailLoginPageState extends State<EmailLoginPage> {
           // 更新最后登录时间
           final now = AppClock.now();
           await db.usersDao.saveUser(user.copyWith(lastLoginTime: drift.Value(now)), true);
+          
+          // 如果切换了用户，清除 API 会话
+          if (Global.currentUserId != null && Global.currentUserId != user.id) {
+            Api.resetClient();
+          }
           Global.currentUserId = user.id;
 
           // 从服务器获取最新的用户信息

@@ -136,13 +136,15 @@ Future<void> _runImport({
     sendPhase('db_open');
     // 在后台 isolate 打开 sqlite（避免 path_provider）
     db = MyDatabase(NativeDatabase(File(dbPath)));
-    // 触发打开
+    
+    // 立即显式启用 WAL 和 busy_timeout，确保并发安全
+    // 注意：NativeDatabase 在打开后会自动执行 beforeOpen 回调，但 isolate 里 MyDatabase 实例独立，
+    // 需要确保这些 Pragma 被执行。
+    await db.customStatement('PRAGMA journal_mode=WAL;');
+    await db.customStatement('PRAGMA busy_timeout=5000;');
+
+    // 触发打开并检查版本
     await db.customSelect('SELECT 1', readsFrom: {}).get();
-    // 与主库保持一致：WAL + busy_timeout，避免 database is locked
-    try {
-      await db.customStatement('PRAGMA journal_mode=WAL;');
-      await db.customStatement('PRAGMA busy_timeout=5000;');
-    } catch (_) {}
 
     // 计算总记录数
     final resourceCounts = <String, int>{
@@ -365,7 +367,7 @@ Future<void> _runImport({
     sendProgress(1.0);
     sendPort.send({'type': 'done'});
   } catch (e, st) {
-    // 这里不要 throw，避免 isolate 直接崩溃导致主线程收不到错误信息
+    // 这里不要 throw，避免 isolate 直接崩溃导致主线程收收到错误信息
     Global.logger.e('后台导入失败: $e', error: e, stackTrace: st);
     sendError('后台导入失败', e, st);
   } finally {
@@ -374,3 +376,4 @@ Future<void> _runImport({
     } catch (_) {}
   }
 }
+

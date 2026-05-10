@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:logger/logger.dart' as logger_pkg;
+import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/app_clock.dart';
@@ -103,12 +105,37 @@ class Global {
 
   // 设置用户信息
   static Future<void> setLoggedInUser(UserVo user) async {
+    // 如果切换了用户，重置 API 客户端和 Socket，清除旧会话
+    if (currentUserId != null && currentUserId != user.id) {
+      Api.resetClient();
+      SocketIoClient.instance.reset();
+      Global.logger.i('检测到用户切换: $currentUserId -> ${user.id}，已重置会话');
+    }
+
     // 保存用户ID到local storage
     await Prefs.write("currentUserId", user.id);
     currentUserId = user.id; // 更新当前登录用户ID
 
     // 重新从数据库加载用户信息到缓存
     await loadUserFromDb();
+  }
+
+  // 登出并清除所有会话状态
+  static Future<void> logout() async {
+    // 1. 清除本地存储的当前用户ID
+    await Prefs.remove("currentUserId");
+    currentUserId = null;
+    
+    // 2. 清除全局用户缓存
+    _currentUser = null;
+    
+    // 3. 重置 API 客户端，清除 Cookie 和会话状态
+    Api.resetClient();
+    
+    // 4. 重置 Socket 连接状态
+    SocketIoClient.instance.reset();
+    
+    Global.logger.i('用户已登出，会话已清除');
   }
 
   // 清除用户缓存
