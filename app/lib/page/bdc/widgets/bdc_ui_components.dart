@@ -166,33 +166,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Tooltip(
-                              message: state.autoJumpAfterCorrect ? '极速模式：答对自动跳到下一词' : '极速模式：已关闭 (答对留在此词)',
-                              triggerMode: TooltipTriggerMode.tap,
-                              child: IconButton(
-                                icon: Icon(
-                                  state.autoJumpAfterCorrect ? Icons.bolt : Icons.bolt_outlined,
-                                  color: state.autoJumpAfterCorrect
-                                      ? Colors.amber
-                                      : (isDarkMode ? Colors.white38 : Colors.black38),
-                                  size: 20,
-                                ),
-                                onPressed: () async {
-                                  notifier.updateAutoJump(!state.autoJumpAfterCorrect);
-                                  ToastUtil.info(state.autoJumpAfterCorrect 
-                                    ? '极速模式：答对自动跳到下一个单词' 
-                                    : '极速模式已关闭：答对后留在当前单词');
-                                  
-                                  final config = StudyConfig.fromCurrentUser();
-                                  if (state.studyStep == StudyStep.ch2En.json) {
-                                    config.autoJumpAfterCorrectCh2En = state.autoJumpAfterCorrect;
-                                  } else {
-                                    config.autoJumpAfterCorrectEn2Ch = state.autoJumpAfterCorrect;
-                                  }
-                                  await config.saveToCurrentUser();
-                                },
-                              ),
-                            ),
                             IconButton(
                               icon: const Icon(Icons.close),
                               onPressed: () {
