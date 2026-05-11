@@ -35,6 +35,7 @@ import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -390,7 +391,10 @@ class _MePageState extends State<MePage> {
         var allDictsFinished = (learningWordsInSelectedDictsCount + masteredWordsInSelectedDictsCount) >= rawWordCount;
         LevelVo levelVo = LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
 
-        var actualDakaRatio = user.learnedDays > 0 ? user.dakaDayCount / user.learnedDays : (user.dakaDayCount > 0 ? 1.0 : 0.0);
+        // 打卡率定义改为：累计打卡天数 / 注册至今的总天数 (符合主流App定义的出勤率)
+        final totalDays = AppClock.today().difference(bdc_date.DateUtils.pureDate(user.createTime)).inDays + 1;
+        var actualDakaRatio = totalDays > 0 ? user.dakaDayCount / totalDays : (user.dakaDayCount > 0 ? 1.0 : 0.0);
+        if (actualDakaRatio > 1.0) actualDakaRatio = 1.0;
 
         studyProgressVal = StudyProgress(
           user.learnedDays,

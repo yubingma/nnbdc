@@ -389,16 +389,20 @@ class UserBo {
 
     final realCount = await db.dakasDao.getDakaCount(userId);
     final realContinuousCount = await calculateContinuousDakaDays(userId);
-
+    
     // 动态计算真实学习天数，修复可能存在的误差
     final realLearnedDays = await db.userStudyDailyStatsDao.getLearnedDaysCount(userId);
     int finalLearnedDays = math.max(user.learnedDays, realLearnedDays);
+
+    // 计算注册至今的总天数（出勤率的分母）
+    final totalDays = AppClock.today().difference(DateUtils.pureDate(user.createTime)).inDays + 1;
 
     if (user.dakaDayCount != realCount || user.continuousDakaDayCount != realContinuousCount || user.learnedDays != finalLearnedDays) {
       Global.logger.d('检测到打卡统计数据不一致，进行自我修正: userId=$userId, count: ${user.dakaDayCount} -> $realCount, continuous: ${user.continuousDakaDayCount} -> $realContinuousCount, learnedDays: ${user.learnedDays} -> $finalLearnedDays');
       
       final maxContinuousCount = math.max(user.maxContinuousDakaDayCount, realContinuousCount);
-      double dakaRatio = finalLearnedDays > 0 ? realCount / finalLearnedDays : 1.0;
+      // 打卡率定义改为：累计打卡天数 / 注册至今的总天数 (符合主流App定义的出勤率)
+      double dakaRatio = totalDays > 0 ? realCount / totalDays : 1.0;
       if (dakaRatio > 1.0) dakaRatio = 1.0;
 
       final updatedUser = user.copyWith(
