@@ -2269,6 +2269,15 @@ class LearningLogsDao extends DatabaseAccessor<MyDatabase> with _$LearningLogsDa
 class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStudyDailyStatsDaoMixin {
   UserStudyDailyStatsDao(super.db);
 
+  Future<int> getLearnedDaysCount(String userId) async {
+    final query = selectOnly(userStudyDailyStats)
+      ..addColumns([userStudyDailyStats.date.count()])
+      ..where(userStudyDailyStats.userId.equals(userId) &
+          userStudyDailyStats.dayStatus.isIn([UserDayStatus.studied.json, UserDayStatus.dakaed.json]));
+    final result = await query.getSingle();
+    return result.read(userStudyDailyStats.date.count()) ?? 0;
+  }
+
   Future<void> saveEntity(UserStudyDailyStat record, bool genLog) async {
     await (into(userStudyDailyStats).insertOnConflictUpdate(record));
     if (genLog) {
