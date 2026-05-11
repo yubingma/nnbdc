@@ -126,19 +126,22 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     ref.listenManual(bdcNotifierProvider.select((s) => _getShouldShowSpeakTab(s)), (previous, next) {
       final newLength = next ? 2 : 1;
       if (_tabController?.length != newLength) {
-        setState(() {
-          _tabController?.dispose();
-          _tabController = TabController(length: newLength, vsync: this);
-          _tabController!.addListener(() {
-            if (!_tabController!.indexIsChanging) {
-              ref.read(bdcNotifierProvider.notifier).updateTabIndex(_tabController!.index);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            _tabController?.dispose();
+            _tabController = TabController(length: newLength, vsync: this);
+            _tabController!.addListener(() {
+              if (!_tabController!.indexIsChanging) {
+                ref.read(bdcNotifierProvider.notifier).updateTabIndex(_tabController!.index);
+              }
+            });
+            // Re-sync after recreation
+            final currentTabIndex = ref.read(bdcNotifierProvider).tabIndex;
+            if (currentTabIndex < newLength) {
+              _tabController!.index = currentTabIndex;
             }
           });
-          // Re-sync after recreation
-          final currentTabIndex = ref.read(bdcNotifierProvider).tabIndex;
-          if (currentTabIndex < newLength) {
-            _tabController!.index = currentTabIndex;
-          }
         });
       }
     });
@@ -155,6 +158,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     // Meaning focus listener
     _meaningFocusNode.addListener(() {
+      if (!mounted) return;
       final notifier = ref.read(bdcNotifierProvider.notifier);
       if (_meaningFocusNode.hasFocus) {
         Global.logger.d('BDC: 输入框获取焦点，停止 ASR');
@@ -166,7 +170,12 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
           config.saveToCurrentUser();
         }
       }
-      setState(() {});
+      
+      // 使用 addPostFrameCallback 延迟 setState，避免在键盘事件处理过程中
+      // 立即改变 Widget 树导致 HardwareKeyboard 状态断言错误（如 Enter 键重复触发）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
     });
 
     // Keyboard visibility listener

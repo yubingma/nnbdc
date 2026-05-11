@@ -264,7 +264,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                           }
                         },
                         onSubmitted: (value) {
-                          _meaningFocusNode.unfocus();
                           notifier.checkAsrResult();
                         },
                       ),
