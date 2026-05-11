@@ -468,7 +468,21 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: const Text('学习日期说明'),
-                                  content: const Text('本应用以凌晨 03:00 作为学习日期的切换点。\n\n如果您在凌晨 3 点前背单词，系统仍会将其计入前一天的学习任务中，以照顾习惯熬夜学习的同学。'),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('本应用以凌晨 03:00 作为学习日期的切换点。\n\n如果您在凌晨 3 点前背单词，系统仍会将其计入前一天的学习任务中，以照顾习惯熬夜学习的同学。'),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        '当前时区: ${_now.timeZoneName} (UTC${_now.timeZoneOffset.isNegative ? '-' : '+'}${_now.timeZoneOffset.inHours.abs()})',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: isDarkMode ? Colors.white38 : Colors.black38,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
