@@ -449,14 +449,42 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ],
                         ],
                       ),
-                      Text(
-                        '${DateFormat('yyyy-MM-dd HH:mm:ss').format(_now)} (${DateFormat('yyyy-MM-dd').format(app_date.DateUtils.businessDate(_now))})',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.white38 : Colors.black38,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 1.0,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${DateFormat('yyyy-MM-dd HH:mm:ss').format(_now)} (${DateFormat('yyyy-MM-dd').format(app_date.DateUtils.businessDate(_now))})',
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.white38 : Colors.black38,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('学习日期说明'),
+                                  content: const Text('本应用以凌晨 03:00 作为学习日期的切换点。\n\n如果您在凌晨 3 点前背单词，系统仍会将其计入前一天的学习任务中，以照顾习惯熬夜学习的同学。'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('知道了'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            child: Icon(
+                              Icons.help_outline_rounded,
+                              size: 12,
+                              color: isDarkMode ? Colors.white38 : Colors.black38,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
