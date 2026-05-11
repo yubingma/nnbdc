@@ -54,6 +54,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _completedStepCount = 0;
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
+  DateTime _now = AppClock.now();
+  Timer? _timer;
 
   @override
   void initState() {
@@ -91,6 +93,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         loadData();
       }
     });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _now = AppClock.now();
+        });
+      }
+    });
   }
 
   StreamSubscription? _dakaSubscription;
@@ -100,6 +110,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   @override
   void dispose() {
+    _timer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _dakaSubscription?.cancel();
     _wordDeletedSubscription?.cancel();
@@ -408,31 +419,45 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   automaticallyImplyLeading: false,
                   centerTitle: true,
                   toolbarHeight: 56,
-                  title: Row(
+                  title: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'Today\'s Plan',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      if (_isSyncingFromCloud) ...[
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              isDarkMode ? Colors.white70 : Colors.black45,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Today\'s Plan',
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
                             ),
                           ),
+                          if (_isSyncingFromCloud) ...[
+                            const SizedBox(width: 12),
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  isDarkMode ? Colors.white70 : Colors.black45,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      Text(
+                        DateFormat('yyyy-MM-dd HH:mm:ss').format(_now),
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white38 : Colors.black38,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 1.0,
                         ),
-                      ],
+                      ),
                     ],
                   ),
                   bottom: PreferredSize(
@@ -496,7 +521,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      user?.isAdmin == true ? '今日目标 (${DateFormat('yyyy-MM-dd').format(AppClock.now())})' : '今日目标',
+                      '今日目标',
                       style: TextStyle(
                         color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
                         fontSize: 14,
