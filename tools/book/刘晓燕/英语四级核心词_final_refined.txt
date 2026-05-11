@@ -268,7 +268,7 @@ token
 signature
 signal
 assign
-fea me
+feature
 design
 despatch
 resign
@@ -819,7 +819,7 @@ apparent
 obvious
 evident
 evidence
-itt a
+little
 trace
 trail
 rail
@@ -1023,7 +1023,7 @@ workforce
 workshop
 enforce
 reinforce
-bootup
+boost
 power
 willpower
 willing
@@ -1079,8 +1079,8 @@ whole
 deadly
 factory
 mill
-abr eme
-zit
+extreme
+exit
 territory
 laboratory
 lavatory
@@ -1204,7 +1204,7 @@ prescribe
 skill
 technique
 technology
-high-techyhi-tech
+high-tech
 technician
 mechanic
 mechanism
@@ -1679,7 +1679,7 @@ religion
 saint
 holy
 solemn
-as crra
+sacred
 rouse
 church
 bless
@@ -1830,7 +1830,7 @@ licence
 diploma
 diplomat
 embassy
-ooe eeos
+overseas
 ambassador
 parcel
 wrap
@@ -1971,7 +1971,7 @@ volcano
 vague
 blur
 dim
-sr-rbre|rearaw
+severe
 district
 disgust
 disturb
@@ -2064,7 +2064,7 @@ resolve
 resolution
 dissolve
 address
-kaa fha
+alpha
 probable
 abstract
 tractor
@@ -2119,7 +2119,7 @@ attitude
 aptitude
 password
 cross
-adj mra
+admire
 regulate
 regular
 relate
@@ -2147,7 +2147,7 @@ comprehend
 drama
 dramatic
 drastic
-nee ber
+number
 ridiculous
 biography
 literature
@@ -2223,7 +2223,7 @@ aware
 alert
 conscious
 conscience
-percelve
+perceive
 deceive
 cheat
 receive
@@ -2238,7 +2238,7 @@ symbol
 badge
 likewise
 wise
-allke
+alike
 clockwise
 insane
 broad
