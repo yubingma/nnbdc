@@ -1,0 +1,17 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "",
+  "targetGameHallIds": [],
+  "books": [
+    {
+      "fileName": "英语四级核心词_with_units.txt",
+      "dictName": "英语四级核心词 (刘晓燕)",
+      "domain": "",
+      "description": "刘晓燕老师的英语四级核心词汇，带单元划分",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    }
+  ]
+}
