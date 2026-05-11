@@ -962,7 +962,38 @@ class BdcNotifier extends _$BdcNotifier {
       method = "手写输入";
     }
 
+    // 预先检查拼写（针对手写/键盘拼写练习模式，不论当前是英中还是中英）
+    bool isSpellingMatch = false;
+    if (state.word != null) {
+      String correctSpell = state.word!.spell.toLowerCase();
+      String inputLower = inputText.trim().toLowerCase();
+      
+      isSpellingMatch = inputLower.replaceAll(RegExp(r'[^a-z]'), '') == correctSpell.replaceAll(RegExp(r'[^a-z]'), '');
+      if (!isSpellingMatch && asrInput != null && (state.currentScore ?? 0) >= Constants.phonemeMatchThreshold) {
+        isSpellingMatch = true;
+      }
+    }
+
     if (state.studyStep == StudyStep.en2Ch.json) {
+      // 如果开启了手写拼写练习，且拼写正确
+      if (isSpellingMatch && state.showHandwritingBoard) {
+        if (asrInput != null) {
+          meaningController.text = state.word!.spell;
+        }
+        await asr.stopAsr();
+        
+        if (state.hasFinishedAnswering) {
+          // 已经答对了（处于查看详情时的额外练习），直接关闭
+          final ratingResult = _calculateRating(method);
+          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+        } else {
+          // 还没答对（英中模式下的拼写练习），仅关闭界面，不视为答对题目
+          state = state.copyWith(showHandwritingBoard: false);
+          SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
+        }
+        return;
+      }
+
       final isFromAsr = asrInput != null || meaningController.text == _handlingChinese;
       final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
       
@@ -979,15 +1010,7 @@ class BdcNotifier extends _$BdcNotifier {
         }
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
-      String correctSpell = state.word!.spell.toLowerCase();
-      String inputLower = inputText.trim().toLowerCase();
-      
-      bool isMatch = inputLower.replaceAll(RegExp(r'[^a-z]'), '') == correctSpell.replaceAll(RegExp(r'[^a-z]'), '');
-      if (!isMatch && asrInput != null && (state.currentScore ?? 0) >= Constants.phonemeMatchThreshold) {
-        isMatch = true;
-      }
-      
-      if (isMatch) {
+      if (isSpellingMatch) {
         if (asrInput != null) {
           meaningController.text = state.word!.spell;
         }
@@ -1039,6 +1062,11 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _onAnswerCorrect(FsrsRating rating, {String? reason}) async {
+    if (state.hasFinishedAnswering) {
+      state = state.copyWith(showHandwritingBoard: false);
+      return;
+    }
+    
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
       state.wordWrapper!.revealAllRemainingMeanings();
     }

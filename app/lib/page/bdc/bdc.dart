@@ -117,6 +117,13 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       }
     });
 
+    // 监听手写板开启状态，当手写板主动关闭时，也务必收起键盘并退出沉浸式模式
+    ref.listenManual(bdcNotifierProvider.select((s) => s.showHandwritingBoard), (previous, next) {
+      if (next == false && previous == true) {
+        _meaningFocusNode.unfocus();
+      }
+    });
+
     // Initialize data and listen for state changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(bdcNotifierProvider.notifier).loadData(context);
@@ -316,7 +323,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       );
     }
 
-    if (state.showHandwritingBoard || _meaningFocusNode.hasFocus) {
+    if (state.showHandwritingBoard || (_meaningFocusNode.hasFocus && !state.hasFinishedAnswering)) {
       return _buildFullscreenImmersiveInputMode();
     }
 
