@@ -1715,7 +1715,6 @@ extension BdcPageStateDialogs on BdcPageState {
         text: label,
         style: TextStyle(
             color: labelColors[label],
-            fontWeight: FontWeight.bold,
             fontFamily: "NotoSansSC"),
       ));
       lastIndex = match.end;
