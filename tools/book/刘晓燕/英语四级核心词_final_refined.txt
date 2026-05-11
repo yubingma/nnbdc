@@ -35,7 +35,6 @@ tight
 buckle
 watertight
 loose
-perform
 undo
 form
 formal
@@ -48,7 +47,7 @@ comply
 formulate
 formula
 program
-i
+perform
 drill
 inform
 notify
@@ -115,7 +114,6 @@ wander
 crawl
 climb
 progress
-mas adv
 congress
 aggressive
 move
@@ -231,6 +229,7 @@ surname
 namely
 empty
 realistic
+realise
 realm
 stack
 pile
@@ -241,6 +240,7 @@ assume
 resume
 consume
 consumer
+custom
 traditional
 convention
 customer
@@ -301,6 +301,7 @@ plug
 vary
 variety
 invariably
+style
 mode
 model
 modify
@@ -378,6 +379,7 @@ single
 singular
 gesture
 mortgage
+recognise
 challenge
 flag
 surge
@@ -416,6 +418,7 @@ marvel
 grand
 wonder
 miracle
+magic
 magnetic
 magnet
 parliament
@@ -427,6 +430,7 @@ bureau
 federal
 govern
 administer
+official
 officer
 minister
 ministry
@@ -481,6 +485,7 @@ suffer
 beard
 infer
 refer
+concern
 conference
 fertile
 prefer
@@ -534,6 +539,7 @@ desert
 dessert
 fan
 a
+insert
 dump
 discard
 junk
@@ -594,7 +600,7 @@ independent
 acute
 severe
 grave
-gravily
+gravity
 grieve
 relieve
 belief
@@ -662,6 +668,7 @@ strive
 effort
 accord
 record
+audio
 audience
 echo
 regard
@@ -850,6 +857,7 @@ interior
 as
 exterior
 external
+internal
 inner
 media
 medium
@@ -935,6 +943,7 @@ forecast
 cast
 toss
 circus
+circulate
 setting
 background
 context
@@ -961,8 +970,11 @@ previous
 prior
 ads
 priority
+inferior
 inferiority
 super
+superior
+superlority
 superb
 supreme
 communicate
@@ -972,6 +984,7 @@ message
 community
 commune
 commute
+neighbor
 block
 associate
 sociable
@@ -1010,9 +1023,14 @@ workforce
 workshop
 enforce
 reinforce
+bootup
+power
 willpower
 willing
+volunteer
+reluctant
 strain
+cloths
 strip
 stripe
 ribbon
@@ -1063,6 +1081,8 @@ factory
 mill
 abr eme
 zit
+territory
+laboratory
 lavatory
 laundry
 gallery
@@ -1098,6 +1118,7 @@ fingerprint
 blueprint
 pirate
 publish
+public
 republic
 edit
 version
@@ -1174,6 +1195,7 @@ provoke
 advocate
 choke
 sponsor
+spirit
 inspire
 inspiration
 describe
@@ -1238,6 +1260,7 @@ prison
 punish
 penalty
 guilt
+apologise
 sin
 kneel
 mud
@@ -1266,6 +1289,7 @@ blame
 tame
 melt
 critic
+criticise
 criticism
 critical
 criterion
@@ -1284,6 +1308,7 @@ accompany
 manage
 chair
 president
+harness
 control
 compete
 competition
@@ -1375,6 +1400,7 @@ suspect
 suspicious
 inspect
 check
+cheque
 examine
 monitor
 respect
@@ -1564,6 +1590,7 @@ specimen
 insure
 assure
 ensure
+guarantee
 promise
 compromise
 pledge
@@ -1574,6 +1601,7 @@ deliver
 cell
 organ
 organism
+organise
 function
 absorb
 suck
@@ -1652,7 +1680,6 @@ saint
 holy
 solemn
 as crra
-vikk adj
 rouse
 church
 bless
@@ -1826,6 +1853,7 @@ wave
 microwave
 tide
 tidy
+fibre
 vitamin
 protein
 nutrition
@@ -1875,6 +1903,8 @@ definite
 confine
 refine
 fine
+emphasise
+analyse
 professional
 profession
 confess
@@ -1903,7 +1933,9 @@ worship
 envy
 jealous
 apply
+utilise
 applicable
+appliance
 implement
 supply
 supplement
@@ -2022,6 +2054,7 @@ brief
 simple
 extreme
 utmost
+utter
 sheer
 absolute
 possibility
@@ -2085,6 +2118,7 @@ altitude
 attitude
 aptitude
 password
+cross
 adj mra
 regulate
 regular
@@ -2186,18 +2220,25 @@ caution
 precaution
 warning
 aware
+alert
+conscious
 conscience
+percelve
 deceive
 cheat
+receive
 receipt
 receptionist
 resemble
 assemble
 sympathy
+mercy
+symptom
 symbol
 badge
 likewise
 wise
+allke
 clockwise
 insane
 broad
@@ -2216,6 +2257,8 @@ wide
 width
 lengthen
 measure
+centimetre
+kilometre
 billion
 former
 later
