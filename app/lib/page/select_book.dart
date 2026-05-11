@@ -16,6 +16,7 @@ import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
@@ -294,7 +295,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           if (dbDict != null) {
             var vo = DictVo.c2(dbDict.id, dbDict.wordCount);
             vo.name = dbDict.name;
-            vo.shortName = getShortName(dbDict.name);
+            vo.shortName = Util.getShortName(dbDict.name);
             vo.baseDictId = dbDict.baseDictId;
             return vo;
           }

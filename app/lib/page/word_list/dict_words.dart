@@ -351,7 +351,7 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
         // 使用本地数据
         dict = DictVo.c2(dictEntry.id);
         dict.name = dictEntry.name;
-        dict.shortName = getShortName(dictEntry.name);
+        dict.shortName = Util.getShortName(dictEntry.name);
         dict.wordCount = dictEntry.wordCount;
         dict.isReady = dictEntry.isReady;
         dict.isShared = dictEntry.isShared;
@@ -390,7 +390,7 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
 
     return goRouter.push('/word_list',
         extra: WordListPageArgs(
-            dict.shortName!, DictWordsProvider(dict), true, showDelBtn, false, '', DictWordsProgressProvider(), DictWordsBookMarkProvider(dict), null)
+            dict.shortName ?? Util.getShortName(dict.name ?? "词典"), DictWordsProvider(dict), true, showDelBtn, false, '', DictWordsProgressProvider(), DictWordsBookMarkProvider(dict), null)
           ..canAddWord = showDelBtn || (dict.editable ?? false)
           ..canEditWord = showDelBtn || (dict.editable ?? false));
   } catch (e) {
@@ -399,10 +399,4 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
   }
 }
 
-String getShortName(String name) {
-  if (name.endsWith(".dict")) {
-    return name.substring(0, name.lastIndexOf("."));
-  } else {
-    return name;
-  }
-}
+

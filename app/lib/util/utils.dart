@@ -60,6 +60,14 @@ class Util {
     return nickName == '系统用户' ? '泡泡' : nickName;
   }
 
+  static String getShortName(String name) {
+    if (name.endsWith(".dict")) {
+      return name.substring(0, name.lastIndexOf("."));
+    } else {
+      return name;
+    }
+  }
+
   static String getFileNameOfWordSound(String spell) {
     spell = uniformSpellForFilename(spell);
     if (spell.codeUnitAt(0) >= 'a'.codeUnitAt(0) && spell.codeUnitAt(0) <= 'z'.codeUnitAt(0)) {

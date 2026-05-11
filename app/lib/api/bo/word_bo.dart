@@ -1200,6 +1200,7 @@ class WordBo {
 
       results.add(DictVo.c2(d.id)
         ..name = d.name
+        ..shortName = Util.getShortName(d.name)
         ..wordCount = actualCount
         ..isReady = d.isReady
         ..isShared = d.isShared
