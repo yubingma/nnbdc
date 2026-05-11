@@ -1,5 +1,18 @@
 part of '../bdc.dart';
 
+Color _getRatingColor(FsrsRating rating, bool isDarkMode) {
+  switch (rating) {
+    case FsrsRating.again:
+      return isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
+    case FsrsRating.hard:
+      return isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00);
+    case FsrsRating.easy:
+      return isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
+    case FsrsRating.good:
+      return AppTheme.primaryColor;
+  }
+}
+
 extension BdcPageStateDialogs on BdcPageState {
   BdcState get state => ref.watch(bdcNotifierProvider);
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
@@ -982,14 +995,7 @@ extension BdcPageStateDialogs on BdcPageState {
                           children: [
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
-                                finalReason,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppTheme.primaryColor,
-                                  height: 1.4,
-                                ),
-                              ),
+                              child: _buildRichReason(finalReason, context),
                             ),
                           ],
                         ),
@@ -1686,4 +1692,46 @@ extension BdcPageStateDialogs on BdcPageState {
     );
   }
 
+  Widget _buildRichReason(String text, BuildContext context) {
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final Map<String, Color> labelColors = {
+      FsrsRating.again.label: _getRatingColor(FsrsRating.again, isDarkMode),
+      FsrsRating.hard.label: _getRatingColor(FsrsRating.hard, isDarkMode),
+      FsrsRating.easy.label: _getRatingColor(FsrsRating.easy, isDarkMode),
+      FsrsRating.good.label: _getRatingColor(FsrsRating.good, isDarkMode),
+    };
+
+    List<InlineSpan> spans = [];
+    String pattern = labelColors.keys.map((l) => RegExp.escape(l)).join('|');
+    RegExp regex = RegExp(pattern);
+
+    int lastIndex = 0;
+    for (Match match in regex.allMatches(text)) {
+      if (match.start > lastIndex) {
+        spans.add(TextSpan(text: text.substring(lastIndex, match.start)));
+      }
+      String label = match.group(0)!;
+      spans.add(TextSpan(
+        text: label,
+        style: TextStyle(
+            color: labelColors[label],
+            fontWeight: FontWeight.bold,
+            fontFamily: "NotoSansSC"),
+      ));
+      lastIndex = match.end;
+    }
+    if (lastIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(lastIndex)));
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
+      style: const TextStyle(
+        fontSize: 13,
+        height: 1.4,
+        color: AppTheme.primaryColor,
+        fontFamily: "NotoSansSC",
+      ),
+    );
+  }
 }
