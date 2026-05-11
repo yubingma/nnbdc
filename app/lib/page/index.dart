@@ -28,8 +28,8 @@ class IndexPage extends StatefulWidget {
 }
 
 class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
-  late IndexPageArgs args;
   int _currentIndex = 0; 
+  int? _lastProcessedIndexFromExtra;
   int get currentIndex => _currentIndex;
   List<NavigationIconView>? _navigationViews; 
   late List<Widget> _pages;
@@ -64,23 +64,31 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     super.didChangeDependencies();
     // 从 GoRouter extra 中提取参数
     final extra = GoRouterState.of(context).extra;
-    args = (extra is IndexPageArgs) ? extra : IndexPageArgs(0);
-    _currentIndex = args.buttonIndex;
+    final indexFromExtra = (extra is IndexPageArgs) ? extra.buttonIndex : 0;
 
-    // 如果是游客且请求的是原本的游戏页面索引，则重定向到词表或“我”
-    if (Global.isGuest && _currentIndex == 3) {
-      _currentIndex = 4; // 默认为“我”
-    }
-    
-    // 处理动态增加/减少 Tab 后的索引映射
-    int actualIndex = _currentIndex;
-    if (Global.isGuest && _currentIndex > 3) {
-      actualIndex = _currentIndex - 1;
-    }
+    // 只有当 extra 中的索引发生变化时，才更新当前索引和动画
+    // 这样可以避免从子页面返回时，因为 extra 没变（或者是默认值）而导致索引被重置
+    if (_lastProcessedIndexFromExtra == null || _lastProcessedIndexFromExtra != indexFromExtra) {
+      _lastProcessedIndexFromExtra = indexFromExtra;
+      _currentIndex = indexFromExtra;
 
-    // 初始化时启动选中项的动画
-    for (int i = 0; i < _navigationViews!.length; i++) {
-      _navigationViews![i].controller.value = (i == actualIndex) ? 1.0 : 0.0;
+      // 如果是游客且请求的是原本的游戏页面索引，则重定向到词表或“我”
+      if (Global.isGuest && _currentIndex == 3) {
+        _currentIndex = 4; // 默认为“我”
+      }
+      
+      // 处理动态增加/减少 Tab 后的索引映射
+      int actualIndex = _currentIndex;
+      if (Global.isGuest && _currentIndex > 3) {
+        actualIndex = _currentIndex - 1;
+      }
+
+      // 初始化时启动选中项的动画
+      if (_navigationViews != null) {
+        for (int i = 0; i < _navigationViews!.length; i++) {
+          _navigationViews![i].controller.value = (i == actualIndex) ? 1.0 : 0.0;
+        }
+      }
     }
   }
 
