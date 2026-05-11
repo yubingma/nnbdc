@@ -450,7 +450,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         ],
                       ),
                       Text(
-                        DateFormat('yyyy-MM-dd HH:mm:ss').format(_now),
+                        '${DateFormat('yyyy-MM-dd HH:mm:ss').format(_now)} (${DateFormat('yyyy-MM-dd').format(app_date.DateUtils.businessDate(_now))})',
                         style: TextStyle(
                           color: isDarkMode ? Colors.white38 : Colors.black38,
                           fontSize: 10,
