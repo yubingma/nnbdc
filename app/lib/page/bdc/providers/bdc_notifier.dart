@@ -990,6 +990,7 @@ class BdcNotifier extends _$BdcNotifier {
           // 还没答对（英中模式下的拼写练习），仅关闭界面，不视为答对题目
           state = state.copyWith(showHandwritingBoard: false);
           SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
+          _handleTabChangeForAsr();
         }
         return;
       }
@@ -1064,6 +1065,7 @@ class BdcNotifier extends _$BdcNotifier {
   void _onAnswerCorrect(FsrsRating rating, {String? reason}) async {
     if (state.hasFinishedAnswering) {
       state = state.copyWith(showHandwritingBoard: false);
+      _handleTabChangeForAsr();
       return;
     }
     
@@ -1077,6 +1079,7 @@ class BdcNotifier extends _$BdcNotifier {
       lastFsrsRatingReason: reason,
       showHandwritingBoard: false,
     );
+    _handleTabChangeForAsr();
     
     final lw = state.currentGetWordResult?.learningWord;
     if (lw != null) {
@@ -1215,9 +1218,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   void updateShowHandwritingBoard(bool show) {
     state = state.copyWith(showHandwritingBoard: show);
-    if (!show) {
-      handleTabChangeForAsr();
-    }
+    handleTabChangeForAsr();
   }
 
   void updateShowSentenceTranslation(bool show) {

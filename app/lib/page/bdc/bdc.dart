@@ -176,6 +176,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
           config.preferKeyboardInSpelling = true;
           config.saveToCurrentUser();
         }
+      } else {
+        Global.logger.d('BDC: 输入框失去焦点，尝试恢复 ASR');
+        notifier.handleTabChangeForAsr();
       }
       
       // 使用 addPostFrameCallback 延迟 setState，避免在键盘事件处理过程中
