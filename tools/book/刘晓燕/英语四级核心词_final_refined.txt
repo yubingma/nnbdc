@@ -974,7 +974,7 @@ inferior
 inferiority
 super
 superior
-superlority
+superiority
 superb
 supreme
 communicate
