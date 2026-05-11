@@ -1009,24 +1009,22 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   ({FsrsRating rating, String reason}) _calculateRating(String method) {
-    if (state.wordStartTime == null) return (rating: FsrsRating.good, reason: "做题方式: $method，初始评分: 良好");
+    if (state.wordStartTime == null) return (rating: FsrsRating.good, reason: "做题方式: $method，初始评分: ${FsrsRating.good.label}");
     final responseTime = AppClock.now().difference(state.wordStartTime!).inSeconds;
     
-    FsrsRating rating = FsrsRating.good;
-    String reason = "做题方式: $method，响应时间: ${responseTime}s";
+    FsrsRating rating;
     if (responseTime < 8) {
       rating = FsrsRating.easy;
-      reason += "，判定为简单";
     } else if (responseTime >= 18) {
       rating = FsrsRating.hard;
-      reason += "，判定为困难";
     } else {
-      reason += "，判定为良好";
+      rating = FsrsRating.good;
     }
+    String reason = "做题方式: $method，响应时间: ${responseTime}s，判定为${rating.label}";
     
     if (state.hintTapCount >= 2 || state.showSentenceTranslation) {
       rating = FsrsRating.again;
-      reason = "做题方式: $method，由于使用了大量提示或查看了翻译，评分: 忘记";
+      reason = "做题方式: $method，由于使用了大量提示或查看了翻译，评分: ${rating.label}";
     } else if (state.hintTapCount == 1) {
       reason += "，由于使用了一次提示，评分下调一级";
       if (rating == FsrsRating.easy) {
