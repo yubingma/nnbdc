@@ -24,6 +24,7 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -153,7 +154,7 @@ class _AdminPageState extends State<AdminPage> {
         title: '制作黄金母版',
         icon: Icons.auto_fix_high,
         color: Colors.redAccent,
-        onTap: () => Navigator.pushNamed(context, '/golden_master'),
+        onTap: () => context.push('/golden_master'),
       ),
       _buildManagementCard(
         title: 'PDF 词书转换',

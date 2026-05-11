@@ -551,8 +551,8 @@ class LoginPageState extends State<LoginPage>
     );
   }
 
-  void showPrivacyPage() => Navigator.pushNamed(context, "/privacy");
-  void showProtocolPage() => Navigator.pushNamed(context, "/protocol");
+  void showPrivacyPage() => context.push("/privacy");
+  void showProtocolPage() => context.push("/protocol");
 
   void wechatLoginPressed() async {
     if (!_approved) {

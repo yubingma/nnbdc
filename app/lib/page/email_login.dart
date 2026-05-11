@@ -566,11 +566,11 @@ class EmailLoginPageState extends State<EmailLoginPage> {
   }
 
   void showPrivacyPage() {
-    Navigator.pushNamed(context, "/privacy");
+    context.push("/privacy");
   }
 
   void showProtocolPage() {
-    Navigator.pushNamed(context, "/protocol");
+    context.push("/protocol");
   }
 
   // 发送验证码

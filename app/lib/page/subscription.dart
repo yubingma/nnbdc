@@ -7,6 +7,7 @@ import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../state.dart';
 
 /// 订阅页面
@@ -450,7 +451,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                             children: [
                               GestureDetector(
                                 onTap: () {
-                                  Navigator.pushNamed(context, '/privacy');
+                                  context.push('/privacy');
                                 },
                                 child: Text(
                                   '隐私政策',
@@ -463,7 +464,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                               ),
                               GestureDetector(
                                 onTap: () {
-                                  Navigator.pushNamed(context, '/protocol');
+                                  context.push('/protocol');
                                 },
                                 child: Text(
                                   '用户协议',
