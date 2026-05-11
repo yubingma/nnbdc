@@ -2726,11 +2726,18 @@ class MyButtonTextComponent extends TextComponent {
 
   void _computeSize() {
     final double btnWidth = myGame.screenWidth - 16;
+    
+    // 强制转换为单行：将换行符替换为空格，确保只显示一行
+    if (text.contains('\n')) {
+      super.text = text.replaceAll('\n', ' ').trim();
+    }
+
     final double textW = textRenderer.getLineMetrics(text).width;
     if (textW > btnWidth) {
       String tempText = text;
-      while (textRenderer.getLineMetrics('$tempText... ').width > btnWidth && tempText.isNotEmpty) {
-        tempText = tempText.substring(0, tempText.length - 2);
+      // 优化截断逻辑，避免索引越界
+      while (tempText.isNotEmpty && textRenderer.getLineMetrics('$tempText...').width > btnWidth) {
+        tempText = tempText.substring(0, tempText.length - 1);
       }
       super.text = '$tempText...';
     }
