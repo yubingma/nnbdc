@@ -1122,7 +1122,7 @@ class BdcNotifier extends _$BdcNotifier {
       SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
     }
 
-    bool autoJump = state.studyStep == StudyStep.ch2En.json ? false : state.autoJumpAfterCorrectEn2Ch;
+    bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
       Future.delayed(const Duration(milliseconds: 800), () {
         getNextWord(true, fsrsRating: rating);
