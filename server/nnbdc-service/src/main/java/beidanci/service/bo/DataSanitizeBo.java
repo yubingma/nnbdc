@@ -34,16 +34,16 @@ public class DataSanitizeBo {
 
     // 数据规范性检查相关的 SQL 条件片段
     private static final String DIRTY_WORD_PHONETIC_SQL_WHERE = 
-        "(pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|^.*/[,，]$') " +
-        "OR (british_pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|^.*/[,，]$') " +
-        "OR (america_pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|^.*/[,，]$')";
+        "(pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|[,，]\\s*$') " +
+        "OR (british_pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|[,，]\\s*$') " +
+        "OR (america_pronounce ~ '[/\\\\\\\\[\\\\\\\\]［］]|[,，]\\s*$')";
     
     private static final String DIRTY_MEANING_SQL_WHERE = 
-        "(meaning ~ '.*[,，]$') OR (ci_xing ~ '.*[,，]$')";
+        "(meaning ~ '[,，]\\s*$') OR (ci_xing ~ '[,，]\\s*$')";
     
     private static final String DIRTY_SENTENCE_SQL_WHERE = 
-        "(english ~ '.*[,，]$') OR (chinese ~ '.*[,，]$') " +
-        "OR (word_meaning ~ '.*[,，]$') OR (part_of_speech ~ '.*[,，]$')";
+        "(english ~ '[,，]\\s*$') OR (chinese ~ '[,，]\\s*$') " +
+        "OR (word_meaning ~ '[,，]\\s*$') OR (part_of_speech ~ '[,，]\\s*$')";
 
     /**
      * 清洗系统数据（修复AI导入产生的多余逗号和斜线）

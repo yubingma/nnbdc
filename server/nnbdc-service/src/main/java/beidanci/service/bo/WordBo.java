@@ -30,7 +30,7 @@ import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.SysParamUtil;
 import beidanci.util.Constants;
-import beidanci.util.Utils;
+import beidanci.service.util.Util;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class WordBo extends BaseBo<Word> {
@@ -140,8 +140,8 @@ public class WordBo extends BaseBo<Word> {
         for (MeaningItem item : word.getMeaningItems()) {
             MeaningItemVo itemVo = getMeaningItemVoFromList(item.getId(), wordVo.getMeaningItems());
             if (itemVo != null) {
-                item.setCiXing(itemVo.getCiXing());
-                item.setMeaning(itemVo.getMeaning());
+                item.setCiXing(Util.sanitizeAiString(itemVo.getCiXing()));
+                item.setMeaning(Util.sanitizeAiString(itemVo.getMeaning()));
                 meaningItemBo.updateEntity(item);
             }
         }
@@ -150,8 +150,8 @@ public class WordBo extends BaseBo<Word> {
         for (MeaningItemVo itemVo : wordVo.getMeaningItems()) {
             if (itemVo.getId() == null) {
                 MeaningItem item = new MeaningItem();
-                item.setCiXing(itemVo.getCiXing());
-                item.setMeaning(itemVo.getMeaning());
+                item.setCiXing(Util.sanitizeAiString(itemVo.getCiXing()));
+                item.setMeaning(Util.sanitizeAiString(itemVo.getMeaning()));
                 item.setWord(word);
                 
                 // 设置所有者：优先使用 Vo 传入的，否则默认为系统管理员

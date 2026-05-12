@@ -703,12 +703,12 @@ public class DictBo extends BaseBo<Dict> {
                     "WHERE id = :wordId";
 
             MapSqlParameterSource updateParams = new MapSqlParameterSource();
-            updateParams.addValue("spell", spell);
-            updateParams.addValue("shortDesc", shortDesc);
-            updateParams.addValue("longDesc", longDesc);
-            updateParams.addValue("pronounce", pronounce);
-            updateParams.addValue("americaPronounce", americaPronounce);
-            updateParams.addValue("britishPronounce", britishPronounce);
+            updateParams.addValue("spell", spell.trim());
+            updateParams.addValue("shortDesc", Util.sanitizeAiString(shortDesc));
+            updateParams.addValue("longDesc", Util.sanitizeAiString(longDesc));
+            updateParams.addValue("pronounce", Util.sanitizePhonetic(pronounce));
+            updateParams.addValue("americaPronounce", Util.sanitizePhonetic(americaPronounce));
+            updateParams.addValue("britishPronounce", Util.sanitizePhonetic(britishPronounce));
             updateParams.addValue("popularity", popularity);
             updateParams.addValue("wordId", wordId);
             namedParameterJdbcTemplate.update(updateWordSql, updateParams);
@@ -716,12 +716,12 @@ public class DictBo extends BaseBo<Dict> {
             // 记录系统数据同步日志
             Map<String, Object> record = new HashMap<>();
             record.put("id", wordId);
-            record.put("spell", spell);
-            record.put("shortDesc", shortDesc);
-            record.put("longDesc", longDesc);
-            record.put("pronounce", pronounce);
-            record.put("americaPronounce", americaPronounce);
-            record.put("britishPronounce", britishPronounce);
+            record.put("spell", spell.trim());
+            record.put("shortDesc", Util.sanitizeAiString(shortDesc));
+            record.put("longDesc", Util.sanitizeAiString(longDesc));
+            record.put("pronounce", Util.sanitizePhonetic(pronounce));
+            record.put("americaPronounce", Util.sanitizePhonetic(americaPronounce));
+            record.put("britishPronounce", Util.sanitizePhonetic(britishPronounce));
             record.put("popularity", popularity);
             record.put("updateTime", new java.sql.Timestamp(System.currentTimeMillis()));
 
