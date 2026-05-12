@@ -156,8 +156,10 @@ class BdcNotifier extends _$BdcNotifier {
 
       // Show loading dialog only if not preloaded
       bool needPreload = !asr.isPreloaded;
+      bool dialogShown = false;
       if (context.mounted && needPreload) {
         _showLoadingDialog(context, displayWords);
+        dialogShown = true;
       }
       
       await asr.preloadModels();
@@ -177,7 +179,7 @@ class BdcNotifier extends _$BdcNotifier {
 
       var stepsResult = await StudyBo().getActiveUserStudySteps();
       if (!stepsResult.success || stepsResult.data == null) {
-        if (context.mounted) {
+        if (context.mounted && dialogShown) {
           Navigator.of(context, rootNavigator: true).pop();
         }
         ToastUtil.error(stepsResult.msg ?? '获取学习步骤失败');
@@ -187,7 +189,7 @@ class BdcNotifier extends _$BdcNotifier {
 
       bool success = await getNextWord(false);
       
-      if (context.mounted) {
+      if (context.mounted && dialogShown) {
         Navigator.of(context, rootNavigator: true).pop();
       }
 
@@ -212,7 +214,7 @@ class BdcNotifier extends _$BdcNotifier {
         );
       }
     } catch (e, st) {
-      if (context.mounted) {
+      if (context.mounted && dialogShown) {
         Navigator.of(context, rootNavigator: true).pop();
       }
       state = state.copyWith(loadError: e.toString(), dataLoaded: true);
