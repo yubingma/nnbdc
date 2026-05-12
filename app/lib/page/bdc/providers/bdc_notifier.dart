@@ -154,13 +154,16 @@ class BdcNotifier extends _$BdcNotifier {
       // Get display words for loading dialog
       List<String> displayWords = await _getDisplayWords();
 
-      // Show loading dialog
-      if (context.mounted) {
+      // Show loading dialog only if not preloaded
+      bool needPreload = !asr.isPreloaded;
+      if (context.mounted && needPreload) {
         _showLoadingDialog(context, displayWords);
       }
       
       await asr.preloadModels();
-      await Future.delayed(const Duration(milliseconds: 50));
+      if (needPreload) {
+        await Future.delayed(const Duration(milliseconds: 50));
+      }
       
       await SoundUtil.configureAudioSession();
       

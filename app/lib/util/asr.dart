@@ -121,11 +121,17 @@ class Asr {
     }
   }
 
+  bool _isPreloaded = false;
+  bool get isPreloaded => _isPreloaded;
+
   Future<void> preloadModels() async {
     if (!PlatformUtils.isAsrSupported()) return;
+    if (_isPreloaded) return;
+    
     try {
       Global.logger.i('ASR: 预加载模型');
       await asrMethodChannel.invokeMethod('preloadModels');
+      _isPreloaded = true;
     } catch (e) {
       Global.logger.e('ASR: 预加载模型失败: $e');
     }
