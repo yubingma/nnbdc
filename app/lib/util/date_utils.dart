@@ -8,6 +8,7 @@ class DateUtils {
   /// 获取业务日期（凌晨3点前归属于前一天）
   static DateTime businessDate(DateTime date) {
     final local = date.toLocal();
+
     // 幂等保护：如果已经是 0 点且没有任何时间分量，说明它已经是一个经过处理的业务日期，直接返回
     if (local.hour == 0 &&
         local.minute == 0 &&
@@ -17,11 +18,12 @@ class DateUtils {
       return DateTime(local.year, local.month, local.day);
     }
 
-    if (local.hour < 3) {
-      final yesterday = local.subtract(const Duration(days: 1));
-      return DateTime(yesterday.year, yesterday.month, yesterday.day);
-    }
-    return DateTime(local.year, local.month, local.day);
+    // 偏移映射法：统一回拨 3 小时后再取日期部分
+    // 00:00:00 -> 前一天 21:00 -> 归为前一天
+    // 02:59:59 -> 前一天 23:59 -> 归为前一天
+    // 03:00:00 -> 当天 00:00 -> 归为当天
+    final shifted = local.subtract(const Duration(hours: 3));
+    return DateTime(shifted.year, shifted.month, shifted.day);
   }
 
   /// 判断两个日期是否是同一个业务天
