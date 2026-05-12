@@ -146,6 +146,7 @@ class BdcNotifier extends _$BdcNotifier {
   Future<void> loadData(BuildContext context) async {
     if (state.dataLoaded || state.isGettingNextWord) return;
     Api.setLoadingDisabled(true);
+    bool dialogShown = false;
     try {
       if (state.word == null) {
         state = state.copyWith(dataLoaded: false);
@@ -156,7 +157,6 @@ class BdcNotifier extends _$BdcNotifier {
 
       // Show loading dialog only if not preloaded
       bool needPreload = !asr.isPreloaded;
-      bool dialogShown = false;
       if (context.mounted && needPreload) {
         _showLoadingDialog(context, displayWords);
         dialogShown = true;
