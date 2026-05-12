@@ -832,8 +832,6 @@ class StudyBo {
     FsrsRating? fsrsRating,
   }) async {
     // 停止使用 dateOnlyNow，保留完整时间戳以支持状态驱动定位
-    final DateTime learningTime = now;
-    final DateTime dateOnlyNow = DateUtils.businessDate(now);
 
     if (isWordMastered) {
       // 保存已掌握单词
@@ -841,7 +839,6 @@ class StudyBo {
         learningWord: currWord,
         user: user,
         now: now,
-        dateOnlyNow: dateOnlyNow,
         db: db,
       );
       return;
@@ -897,7 +894,6 @@ class StudyBo {
         learningWord: currWord,
         user: user,
         now: now,
-        dateOnlyNow: dateOnlyNow,
         db: db,
       );
       return;
@@ -1146,7 +1142,6 @@ class StudyBo {
     required LearningWord learningWord,
     required User user,
     required DateTime now,
-    required DateTime dateOnlyNow,
     required MyDatabase db,
   }) async {
     // 获取当前学习模式的总步骤数（用于饱和填充状态）
