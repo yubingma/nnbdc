@@ -29,7 +29,7 @@ class LearningService {
       final db = MyDatabase.instance;
 
       // 如果用户的最近学习日期不是今天，重置相关数据
-      final today = DateUtils.pureDate(AppClock.now());
+      final today = DateUtils.businessDate(AppClock.now());
       bool isNewDay = user.lastLearningDate == null || user.lastLearningDate != today;
 
       // [核心修复] 自动修复机制：即使日期没变，但如果发现"学习未开始"且"单词已有进度"这种不一致状态，也强制重置。
@@ -181,7 +181,7 @@ class LearningService {
       if (word.lastLearningDate == null) return true; // 全新词未在当前算法下学习过
 
       // FSRS 逻辑：上次学习日期 + 计划天数 <= 今天
-      final lastDate = DateUtils.pureDate(word.lastLearningDate!);
+      final lastDate = DateUtils.businessDate(word.lastLearningDate!);
       final nextReviewDate = lastDate.add(Duration(days: word.scheduledDays ?? 0));
 
       return nextReviewDate.isBefore(today) || DateUtils.isSameDay(nextReviewDate, today);

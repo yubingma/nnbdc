@@ -392,7 +392,7 @@ class _MePageState extends State<MePage> {
         LevelVo levelVo = LevelUtil.getLevelVoByWordCount(globalMasteredWordsCount);
 
         // 打卡率定义改为：累计打卡天数 / 注册至今的总天数 (符合主流App定义的出勤率)
-        final totalDays = AppClock.today().difference(bdc_date.DateUtils.pureDate(user.createTime)).inDays + 1;
+        final totalDays = AppClock.today().difference(bdc_date.DateUtils.businessDate(user.createTime)).inDays + 1;
         var actualDakaRatio = totalDays > 0 ? user.dakaDayCount / totalDays : (user.dakaDayCount > 0 ? 1.0 : 0.0);
         if (actualDakaRatio > 1.0) actualDakaRatio = 1.0;
 

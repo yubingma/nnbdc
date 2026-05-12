@@ -70,9 +70,9 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
       final lastDateRaw = item['lastLearningDate'] as DateTime? ?? now;
       final scheduledDays = item['scheduledDays'] as int? ?? 0;
-      final nextDateRaw = app_date.DateUtils.pureDate(lastDateRaw).add(Duration(days: scheduledDays));
+      final nextDateRaw = app_date.DateUtils.businessDate(lastDateRaw).add(Duration(days: scheduledDays));
       
-      final nextDate = app_date.DateUtils.pureDate(nextDateRaw);
+      final nextDate = app_date.DateUtils.businessDate(nextDateRaw);
       final daysDiff = nextDate.difference(nowDate).inDays;
 
       int key;

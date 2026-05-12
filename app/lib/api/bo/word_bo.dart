@@ -871,7 +871,7 @@ class WordBo {
     }
 
     final now = AppClock.now();
-    final nowDate = DateUtils.pureDate(now);
+    final nowDate = DateUtils.businessDate(now);
 
     // 获取所有正在学习中的单词 (即：尚未毕业的候选人)
     final allLearningWords = await (db.select(db.learningWords)
@@ -895,9 +895,9 @@ class WordBo {
 
       final lastDateRaw = word.lastLearningDate ?? now;
       final scheduledDays = word.scheduledDays ?? 0;
-      final nextDateRaw = DateUtils.pureDate(lastDateRaw).add(Duration(days: scheduledDays));
+      final nextDateRaw = DateUtils.businessDate(lastDateRaw).add(Duration(days: scheduledDays));
 
-      final nextDate = DateUtils.pureDate(nextDateRaw);
+      final nextDate = DateUtils.businessDate(nextDateRaw);
       final daysDiff = nextDate.difference(nowDate).inDays;
 
       int key;

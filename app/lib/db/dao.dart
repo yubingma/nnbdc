@@ -2297,7 +2297,7 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
   }
 
   Future<void> incrementSeconds(String userId, DateTime date, int seconds) async {
-    final pureDate = DateUtils.pureDate(date);
+    final pureDate = DateUtils.businessDate(date);
     final existing = await (select(userStudyDailyStats)
           ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
         .getSingleOrNull();
@@ -2320,7 +2320,7 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
   }
 
   Future<void> incrementReviewCount(String userId, DateTime date) async {
-    final pureDate = DateUtils.pureDate(date);
+    final pureDate = DateUtils.businessDate(date);
     final existing = await (select(userStudyDailyStats)
           ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
         .getSingleOrNull();
@@ -2351,7 +2351,7 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
   }
 
   Future<void> updateDayStatus(String userId, DateTime date, UserDayStatus newStatus) async {
-    final pureDate = DateUtils.pureDate(date);
+    final pureDate = DateUtils.businessDate(date);
     final existing = await (select(userStudyDailyStats)
           ..where((t) => t.userId.equals(userId) & t.date.equals(pureDate)))
         .getSingleOrNull();

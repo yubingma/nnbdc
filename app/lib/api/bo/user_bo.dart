@@ -239,7 +239,7 @@ class UserBo {
   Future<Result<bool>> hasDakaToday(String userId) async {
     try {
       final db = MyDatabase.instance;
-      final today = DateUtils.pureDate(AppClock.now());
+      final today = DateUtils.businessDate(AppClock.now());
       final hasDakaToday = await db.dakasDao.findById(userId, today) != null;
       final result = Result<bool>("SUCCESS", "获取成功", true);
       result.data = hasDakaToday;
@@ -371,7 +371,7 @@ class UserBo {
     }
 
     for (final record in records) {
-      final recordDate = DateUtils.pureDate(record.forLearningDate);
+      final recordDate = DateUtils.businessDate(record.forLearningDate);
       if (recordDate.isAtSameMomentAs(checkDate)) {
         continuousDays++;
         checkDate = checkDate.subtract(const Duration(days: 1));
@@ -395,7 +395,7 @@ class UserBo {
     int finalLearnedDays = math.max(user.learnedDays, realLearnedDays);
 
     // 计算注册至今的总天数（出勤率的分母）
-    final totalDays = AppClock.today().difference(DateUtils.pureDate(user.createTime)).inDays + 1;
+    final totalDays = AppClock.today().difference(DateUtils.businessDate(user.createTime)).inDays + 1;
 
     if (user.dakaDayCount != realCount || user.continuousDakaDayCount != realContinuousCount || user.learnedDays != finalLearnedDays) {
       Global.logger.d('检测到打卡统计数据不一致，进行自我修正: userId=$userId, count: ${user.dakaDayCount} -> $realCount, continuous: ${user.continuousDakaDayCount} -> $realContinuousCount, learnedDays: ${user.learnedDays} -> $finalLearnedDays');

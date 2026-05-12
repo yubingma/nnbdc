@@ -359,7 +359,7 @@ class StudyBo {
 
       // 获取当前时间
       final now = AppClock.now();
-      final today = DateUtils.pureDate(now);
+      final today = DateUtils.businessDate(now);
 
       // 检查今天是否已经打卡
       final existingDaka = await db.dakasDao.findById(user.id, today);
@@ -387,7 +387,7 @@ class StudyBo {
         int newDakaDayCount = user.dakaDayCount + 1;
         int newContinuousDakaDayCount = 1;
         if (user.lastDakaDate != null) {
-          final lastDate = DateUtils.pureDate(user.lastDakaDate!);
+          final lastDate = DateUtils.businessDate(user.lastDakaDate!);
           final yesterday = today.subtract(const Duration(days: 1));
           if (lastDate.isAtSameMomentAs(yesterday)) {
             newContinuousDakaDayCount = user.continuousDakaDayCount + 1;
@@ -833,7 +833,7 @@ class StudyBo {
   }) async {
     // 停止使用 dateOnlyNow，保留完整时间戳以支持状态驱动定位
     final DateTime learningTime = now;
-    final DateTime dateOnlyNow = DateUtils.pureDate(now);
+    final DateTime dateOnlyNow = DateUtils.businessDate(now);
 
     if (isWordMastered) {
       // 保存已掌握单词
@@ -876,7 +876,7 @@ class StudyBo {
         // 计算经过的天数 (使用业务天数差)
         int elapsedDays = 0;
         if (currWord.lastLearningDate != null) {
-          final lastDate = DateUtils.pureDate(currWord.lastLearningDate!);
+          final lastDate = DateUtils.businessDate(currWord.lastLearningDate!);
           final todayDate = AppClock.today();
           elapsedDays = todayDate.difference(lastDate).inDays;
         }

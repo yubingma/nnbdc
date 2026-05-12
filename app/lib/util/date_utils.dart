@@ -1,10 +1,5 @@
 /// 日期工具类
 class DateUtils {
-  /// 获取纯日期（去掉时分秒，凌晨3点切换业务天）
-  static DateTime pureDate(DateTime date) {
-    return businessDate(date);
-  }
-
   /// 获取业务日期（凌晨3点前归属于前一天）
   static DateTime businessDate(DateTime date) {
     final local = date.toLocal();

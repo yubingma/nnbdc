@@ -25,6 +25,21 @@ void main() {
       expect(bd3.year, 2026);
       expect(bd3.month, 5);
       expect(bd3.day, 10);
+
+      // 边界场景 4: 恰好 00:00:00 -> 由于幂等保护，归属于当天
+      // （这是为了保证 businessDate(businessDate(date)) 不变）
+      final midnight = DateTime(2026, 5, 11, 0, 0, 0);
+      final bd4 = DateUtils.businessDate(midnight);
+      expect(bd4.year, 2026);
+      expect(bd4.month, 5);
+      expect(bd4.day, 11);
+
+      // 边界场景 5: 00:00:00.001 -> 归属于前一天（偏移映射生效）
+      final justAfterMidnight = DateTime(2026, 5, 11, 0, 0, 0, 0, 1);
+      final bd5 = DateUtils.businessDate(justAfterMidnight);
+      expect(bd5.year, 2026);
+      expect(bd5.month, 5);
+      expect(bd5.day, 10);
     });
 
     test('DateUtils.isSameDay should follow business day rules', () {

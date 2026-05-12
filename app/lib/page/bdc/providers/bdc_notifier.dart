@@ -1086,7 +1086,7 @@ class BdcNotifier extends _$BdcNotifier {
       final fsrs = FSRS();
       int daysSinceLastReview = 0;
       if (lw.lastLearningDate != null) {
-        daysSinceLastReview = AppClock.today().difference(app_date.DateUtils.pureDate(lw.lastLearningDate!)).inDays;
+        daysSinceLastReview = AppClock.today().difference(app_date.DateUtils.businessDate(lw.lastLearningDate!)).inDays;
       }
       int days = state.daysSinceLastReview ?? 0;
       FSRSItem nextItem;
