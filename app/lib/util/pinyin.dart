@@ -86,7 +86,7 @@ Map<String, double> yunMuSimularityMap = {
   "e-u": 0.85,
   "i-v": 0.70, // i ~ ü
   "v-u": 0.40,
-  "i-ie": 0.70,
+  "i-ie": 0.85,
 
   // 双元音接近
   "ai-ei": 0.60,
