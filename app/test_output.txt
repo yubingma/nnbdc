@@ -1,0 +1,538 @@
+00:00 +0: loading /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart
+00:00 +0: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: (setUpAll)
+00:00 +0: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: StudyCacheManager - 缓存与数据库一致性端到端测试 首次加载：缓存内容与数据库保持一致
+[16:58:30.247] 💡 ✅ 创建所有表完成
+[16:58:30.264] 💡 ✅ 创建性能优化索引完成
+[16:58:30.480] 💡 ✅ 初始化基础数据完成
+[16:58:30.599] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:58:31.174] 🐛 词书添加单词: wordId=word_2, 新seq=1
+[16:58:31.308] 🐛 词书顺序号验证成功: 总数=1
+[16:58:31.380] 🐛 已更新词书wordCount: dictId=dict_mastered_user_unique_1, 旧值=0, 新值=1
+00:02 +1: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: StudyCacheManager - 缓存与数据库一致性端到端测试 更新单词状态：缓存与数据库同步更新
+[16:58:31.704] 💡 ✅ 创建所有表完成
+[16:58:31.757] 💡 ✅ 创建性能优化索引完成
+[16:58:31.776] 💡 ✅ 初始化基础数据完成
+[16:58:31.777] 💡 🔍 开始扫描并回填数据库审计字段...
+00:03 +2: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: StudyCacheManager - 缓存与数据库一致性端到端测试 标记为已掌握：缓存正确流转状态
+[16:58:32.188] 💡 ✅ 创建所有表完成
+[16:58:32.189] 💡 ✅ 创建性能优化索引完成
+[16:58:32.190] 💡 ✅ 初始化基础数据完成
+[16:58:32.192] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:58:32.477] 🐛 词书添加单词: wordId=word_1, 新seq=1
+[16:58:32.539] 🐛 词书顺序号验证成功: 总数=1
+[16:58:32.564] 🐛 已更新词书wordCount: dictId=dict_mastered_user_1, 旧值=0, 新值=1
+00:03 +3: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: StudyCacheManager - 缓存与数据库一致性端到端测试 删除单词：缓存与数据库同步移除
+[16:58:33.134] 💡 ✅ 创建所有表完成
+[16:58:33.144] 💡 ✅ 创建性能优化索引完成
+[16:58:33.156] 💡 ✅ 初始化基础数据完成
+[16:58:33.180] 💡 🔍 开始扫描并回填数据库审计字段...
+Shell: [16:58:33.302] 🐛 🔄 开始执行数据库同步操作
+00:04 +4: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: StudyCacheManager - 缓存与数据库一致性端到端测试 用户切换：自动清空旧用户数据并加载新用户
+[16:58:33.464] 💡 ✅ 创建所有表完成
+[16:58:33.465] 💡 ✅ 创建性能优化索引完成
+[16:58:33.479] 💡 ✅ 初始化基础数据完成
+[16:58:33.482] 💡 🔍 开始扫描并回填数据库审计字段...
+00:04 +5: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: StudyCacheManager - 缓存与数据库一致性端到端测试 强制刷新：数据同步不一致时强行覆盖
+Shell: [16:58:33.680] #0   _TimestampPrinter.log (package:nnbdc/global.dart:315:79)
+Shell: [16:58:33.680] #1   NetworkUtil.isConnected (package:nnbdc/util/network_util.dart:37:21)
+Shell: [16:58:33.680] ⛔ 🌐 网络连接检测失败: MissingPluginException(No implementation found for method check on channel dev.fluttercommunity.plus/connectivity)，跳过所有网络操作
+Shell: [16:58:33.720] 🐛 🌐 网络连接不可用，静默跳过同步操作
+[16:58:33.826] 💡 ✅ 创建所有表完成
+[16:58:33.832] 💡 ✅ 创建性能优化索引完成
+[16:58:33.833] 💡 ✅ 初始化基础数据完成
+[16:58:33.834] 💡 🔍 开始扫描并回填数据库审计字段...
+00:05 +6: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: StudyCacheManager - 缓存与数据库一致性端到端测试 StudyCacheManager - 额外一致性保障测试 数据库更新后缓存立即反映（通过缓存更新API）
+[16:58:34.038] 💡 ✅ 创建所有表完成
+[16:58:34.082] 💡 ✅ 创建性能优化索引完成
+[16:58:34.089] 💡 ✅ 初始化基础数据完成
+[16:58:34.096] 💡 🔍 开始扫描并回填数据库审计字段...
+00:05 +7: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: StudyCacheManager - 缓存与数据库一致性端到端测试 StudyCacheManager - 额外一致性保障测试 多端增量同步：高效合并数据而不销毁全局缓存
+[16:58:34.322] 💡 ✅ 创建所有表完成
+[16:58:34.333] 💡 ✅ 创建性能优化索引完成
+[16:58:34.342] 💡 ✅ 初始化基础数据完成
+[16:58:34.347] 💡 🔍 开始扫描并回填数据库审计字段...
+00:05 +8: /Volumes/ssd/ppdc/app/test/study_cache_manager_test.dart: (tearDownAll)
+00:08 +8: /Volumes/ssd/ppdc/app/test/utilities_test.dart: 表名转换测试 本地表名到远程表名
+00:08 +9: /Volumes/ssd/ppdc/app/test/utilities_test.dart: 表名转换测试 远程表名到本地表名
+00:14 +10: /Volumes/ssd/ppdc/app/test/business_day_test.dart: Business Day (3 AM Cutoff) Tests DateUtils.businessDate should handle 3 AM cutoff correctly
+00:14 +11: /Volumes/ssd/ppdc/app/test/business_day_test.dart: Business Day (3 AM Cutoff) Tests DateUtils.isSameDay should follow business day rules
+00:14 +12: /Volumes/ssd/ppdc/app/test/business_day_test.dart: Business Day (3 AM Cutoff) Tests AppClock.today() should return business date
+00:14 +13: /Volumes/ssd/ppdc/app/test/business_day_test.dart: Business Day (3 AM Cutoff) Tests Business day boundary calculation
+00:20 +14: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: (setUpAll)
+00:20 +14: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 纯新用户第一天：取满足 wordsPerDay 的全新单词
+[16:58:50.077] 💡 ✅ 创建所有表完成
+[16:58:50.105] 💡 ✅ 创建性能优化索引完成
+[16:58:50.233] 💡 ✅ 初始化基础数据完成
+[16:58:50.314] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:58:51.380] 🐛 开始重置用户每日数据（isNewDay=true, repair=false）: userId=test_user_id
+[16:58:51.472] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[16:58:51.696] 🐛 用户每日数据重置成功
+[16:58:51.708] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[16:58:51.718] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[16:58:51.718] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[16:58:51.768] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 0, 当前总数: 0
+[16:58:51.787] 🐛 [FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: 5
+[16:58:51.823] 🐛 [FETCH-NEW-WORDS] 开始抓取新词, 目标数量: 5, 针对日期序号: 1
+[16:58:51.895] 🐛 [FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 0 个, 学习中 0 个
+[16:58:51.910] 🐛 [FETCH-NEW-WORDS] 正在处理词书: mock_dict_1
+[16:58:51.919] 🐛 [FETCH-NEW-WORDS] 从词书 mock_dict_1 读取到批次 (size=10, offset=0)
+[16:58:52.191] 🐛 [FETCH-NEW-WORDS] 抓取完成，共抓取到 5 个新词
+[16:58:52.191] 🐛 [FETCH-WORD] [genTodayWords] 实际抓取到新词: 5 个
+[16:58:52.193] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 5, 计划是否枯竭: false
+[16:58:52.345] 🐛 今日学习单词全局重排完成，共更新 5 个单词
+[16:58:52.352] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 5, 关联的BatchIDs: {1}
+00:23 +15: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 包含到期复习单词的场景：先选取到期词，再补足新词
+Shell: [16:58:52.451] 🐛 🔄 开始执行数据库同步操作
+Shell: [16:58:52.458] 🐛 🌐 网络连接检测：无网络连接，静默跳过网络操作
+Shell: [16:58:52.458] 🐛 🌐 网络连接不可用，静默跳过同步操作
+[16:58:52.473] 💡 ✅ 创建所有表完成
+[16:58:52.474] 💡 ✅ 创建性能优化索引完成
+[16:58:52.475] 💡 ✅ 初始化基础数据完成
+[16:58:52.476] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:58:52.494] 🐛 开始重置用户每日数据（isNewDay=true, repair=false）: userId=test_user_id
+[16:58:52.497] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[16:58:52.499] 🐛 用户每日数据重置成功
+[16:58:52.499] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[16:58:52.499] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[16:58:52.499] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[16:58:52.502] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 1, 当前总数: 1
+[16:58:52.502] 🐛 [FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: 4
+[16:58:52.502] 🐛 [FETCH-NEW-WORDS] 开始抓取新词, 目标数量: 4, 针对日期序号: 2
+[16:58:52.505] 🐛 [FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 0 个, 学习中 2 个
+[16:58:52.505] 🐛 [FETCH-NEW-WORDS] 正在处理词书: mock_dict_1
+[16:58:52.505] 🐛 [FETCH-NEW-WORDS] 从词书 mock_dict_1 读取到批次 (size=10, offset=0)
+[16:58:52.511] 🐛 [FETCH-NEW-WORDS] 抓取完成，共抓取到 4 个新词
+[16:58:52.511] 🐛 [FETCH-WORD] [genTodayWords] 实际抓取到新词: 4 个
+[16:58:52.512] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 5, 计划是否枯竭: false
+[16:58:52.518] 🐛 今日学习单词全局重排完成，共更新 5 个单词
+[16:58:52.519] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 5, 关联的BatchIDs: {1}
+00:23 +16: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 Shrink 缩小每日单词数计划时的裁剪逻辑
+[16:58:52.537] 💡 ✅ 创建所有表完成
+[16:58:52.538] 💡 ✅ 创建性能优化索引完成
+[16:58:52.538] 💡 ✅ 初始化基础数据完成
+[16:58:52.539] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:58:52.615] 🐛 开始重置用户每日数据（isNewDay=true, repair=false）: userId=test_user_id
+[16:58:52.723] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[16:58:52.731] 🐛 ⏳ 同步任务已安排，忽略此次请求 (请求计数: 3)
+[16:58:52.737] 🐛 用户每日数据重置成功
+[16:58:52.737] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[16:58:52.749] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 3
+[16:58:52.752] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: false)
+[16:58:52.801] 🐛 [FETCH-WORD] [genTodayWords] 到期复习词已填满计划 (3)
+[16:58:52.837] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 3, 当前总数: 3
+[16:58:52.845] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 3, 计划是否枯竭: false
+[16:58:52.930] 🐛 今日学习单词全局重排完成，共更新 3 个单词
+[16:58:52.935] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 3, 关联的BatchIDs: {1}
+00:24 +17: /Volumes/ssd/ppdc/app/test/russia_disconnect_test.dart: Russia Game Disconnect Tests should show disconnect message and leave button regardless of game state
+Shell: [16:58:53.029] 🐛 🔄 开始执行数据库同步操作
+Shell: [16:58:53.029] 🐛 🌐 网络连接检测：无网络连接，静默跳过网络操作
+Shell: [16:58:53.029] 🐛 🌐 网络连接不可用，静默跳过同步操作
+00:24 +18: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 未完成的前日学习会触发跨日重置 (新的一天跨天逻辑)
+[16:58:53.256] 💡 ✅ 创建所有表完成
+00:24 +19: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 未完成的前日学习会触发跨日重置 (新的一天跨天逻辑)
+[16:58:53.256] 💡 ✅ 创建性能优化索引完成
+[16:58:53.263] 💡 ✅ 初始化基础数据完成
+[16:58:53.302] 💡 🔍 开始扫描并回填数据库审计字段...
+00:24 +20: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 未完成的前日学习会触发跨日重置 (新的一天跨天逻辑)
+00:24 +21: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 未完成的前日学习会触发跨日重置 (新的一天跨天逻辑)
+00:24 +22: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 未完成的前日学习会触发跨日重置 (新的一天跨天逻辑)
+[16:58:53.579] #0   _TimestampPrinter.log (package:nnbdc/global.dart:315:79)
+[16:58:53.579] #1   LearningService.prepareTodayStudy (package:nnbdc/util/learning_service.dart:44:25)
+[16:58:53.579] ⚠️ 检测到数据不一致：日期已对上且学习未开始，但发现存在单词进度。触发强制修复重置修复。
+[16:58:53.694] 🐛 开始重置用户每日数据（isNewDay=false, repair=true）: userId=test_user_id
+[16:58:53.702] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[16:58:53.713] 🐛 用户每日数据重置成功
+[16:58:53.724] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[16:58:53.737] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[16:58:53.744] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[16:58:53.773] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 1, 当前总数: 1
+[16:58:53.773] 🐛 [FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: 4
+[16:58:53.778] 🐛 [FETCH-NEW-WORDS] 开始抓取新词, 目标数量: 4, 针对日期序号: 2
+[16:58:53.806] 🐛 [FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 0 个, 学习中 1 个
+[16:58:53.806] 🐛 [FETCH-NEW-WORDS] 正在处理词书: mock_dict_1
+[16:58:53.806] 🐛 [FETCH-NEW-WORDS] 从词书 mock_dict_1 读取到批次 (size=10, offset=0)
+[16:58:53.834] 🐛 [FETCH-NEW-WORDS] 抓取完成，共抓取到 4 个新词
+[16:58:53.835] 🐛 [FETCH-WORD] [genTodayWords] 实际抓取到新词: 4 个
+[16:58:53.835] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 5, 计划是否枯竭: false
+[16:58:53.935] 🐛 今日学习单词全局重排完成，共更新 5 个单词
+Shell: [16:58:53.973] 🐛 🔄 开始执行数据库同步操作
+Shell: [16:58:53.974] 🐛 🌐 网络连接检测：无网络连接，静默跳过网络操作
+Shell: [16:58:53.974] 🐛 🌐 网络连接不可用，静默跳过同步操作
+00:25 +23: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 所有书桌词书都已学完的场景（词汇枯竭）
+[16:58:54.064] 💡 ✅ 创建所有表完成
+[16:58:54.064] 💡 ✅ 创建性能优化索引完成
+[16:58:54.074] 💡 ✅ 初始化基础数据完成
+[16:58:54.110] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:58:54.327] 🐛 开始重置用户每日数据（isNewDay=true, repair=false）: userId=test_user_id
+[16:58:54.329] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[16:58:54.332] 🐛 用户每日数据重置成功
+[16:58:54.333] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[16:58:54.333] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[16:58:54.333] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[16:58:54.335] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 0, 当前总数: 0
+[16:58:54.335] 🐛 [FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: 5
+[16:58:54.335] 🐛 [FETCH-NEW-WORDS] 开始抓取新词, 目标数量: 5, 针对日期序号: 1
+[16:58:54.343] 🐛 [FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 0 个, 学习中 10 个
+[16:58:54.343] 🐛 [FETCH-NEW-WORDS] 正在处理词书: mock_dict_1
+[16:58:54.350] 🐛 [FETCH-NEW-WORDS] 从词书 mock_dict_1 读取到批次 (size=10, offset=0)
+[16:58:54.350] 🐛 [FETCH-NEW-WORDS] 抓取完成，共抓取到 0 个新词
+[16:58:54.350] 🐛 [FETCH-WORD] [genTodayWords] 实际抓取到新词: 0 个
+[16:58:54.350] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 0, 计划是否枯竭: true
+[16:58:54.358] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+00:25 +24: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: LearningService - 准备当日的学习单词和取词机制 完整生命周期全景模拟：从第一天零进度直到书桌所有词书全部学完（枯竭）
+[16:58:54.405] 💡 ✅ 创建所有表完成
+[16:58:54.407] 💡 ✅ 创建性能优化索引完成
+[16:58:54.413] 💡 ✅ 初始化基础数据完成
+[16:58:54.414] 💡 🔍 开始扫描并回填数据库审计字段...
+[08:00:00.000] 🐛 开始重置用户每日数据（isNewDay=true, repair=false）: userId=test_user_id
+[08:00:00.000] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[08:00:00.000] 🐛 ⏳ 同步任务已安排，忽略此次请求 (请求计数: 6)
+[08:00:00.000] 🐛 用户每日数据重置成功
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 0, 当前总数: 0
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: 5
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 开始抓取新词, 目标数量: 5, 针对日期序号: 1
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 0 个, 学习中 0 个
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 正在处理词书: mock_dict_1
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 从词书 mock_dict_1 读取到批次 (size=10, offset=0)
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 抓取完成，共抓取到 5 个新词
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 实际抓取到新词: 5 个
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 5, 计划是否枯竭: false
+[08:00:00.000] 🐛 今日学习单词全局重排完成，共更新 5 个单词
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 5, 关联的BatchIDs: {1}
+[08:00:00.000] #0   _TimestampPrinter.log (package:nnbdc/global.dart:315:79)
+[08:00:00.000] #1   LearningService.prepareTodayStudy (package:nnbdc/util/learning_service.dart:44:25)
+[08:00:00.000] ⚠️ 检测到数据不一致：日期已对上且学习未开始，但发现存在单词进度。触发强制修复重置修复。
+[08:00:00.000] 🐛 开始重置用户每日数据（isNewDay=true, repair=true）: userId=test_user_id
+[08:00:00.000] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[08:00:00.000] 🐛 ⏳ 同步任务已安排，忽略此次请求 (请求计数: 7)
+[08:00:00.000] 🐛 用户每日数据重置成功
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 0, 当前总数: 0
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: 5
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 开始抓取新词, 目标数量: 5, 针对日期序号: 2
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 0 个, 学习中 5 个
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 正在处理词书: mock_dict_1
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 从词书 mock_dict_1 读取到批次 (size=10, offset=0)
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 抓取完成，共抓取到 5 个新词
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 实际抓取到新词: 5 个
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 5, 计划是否枯竭: false
+[08:00:00.000] 🐛 今日学习单词全局重排完成，共更新 5 个单词
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 5, 关联的BatchIDs: {1}
+[08:00:00.000] #0   _TimestampPrinter.log (package:nnbdc/global.dart:315:79)
+[08:00:00.000] #1   LearningService.prepareTodayStudy (package:nnbdc/util/learning_service.dart:44:25)
+[08:00:00.000] ⚠️ 检测到数据不一致：日期已对上且学习未开始，但发现存在单词进度。触发强制修复重置修复。
+[08:00:00.000] 🐛 开始重置用户每日数据（isNewDay=true, repair=true）: userId=test_user_id
+[08:00:00.000] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[08:00:00.000] 🐛 ⏳ 同步任务已安排，忽略此次请求 (请求计数: 8)
+[08:00:00.000] 🐛 用户每日数据重置成功
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 到期复习词已填满计划 (5)
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 5, 当前总数: 5
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 5, 计划是否枯竭: false
+[08:00:00.000] 🐛 今日学习单词全局重排完成，共更新 5 个单词
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 5, 关联的BatchIDs: {1}
+[08:00:00.000] #0   _TimestampPrinter.log (package:nnbdc/global.dart:315:79)
+[08:00:00.000] #1   LearningService.prepareTodayStudy (package:nnbdc/util/learning_service.dart:44:25)
+[08:00:00.000] ⚠️ 检测到数据不一致：日期已对上且学习未开始，但发现存在单词进度。触发强制修复重置修复。
+[08:00:00.000] 🐛 开始重置用户每日数据（isNewDay=true, repair=true）: userId=test_user_id
+[08:00:00.000] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[08:00:00.000] 🐛 ⏳ 同步任务已安排，忽略此次请求 (请求计数: 9)
+[08:00:00.000] 🐛 用户每日数据重置成功
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 5, 当前总数: 5
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 5, 计划是否枯竭: false
+[08:00:00.000] 🐛 今日学习单词全局重排完成，共更新 5 个单词
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 5, 关联的BatchIDs: {1}
+[08:00:00.000] #0   _TimestampPrinter.log (package:nnbdc/global.dart:315:79)
+[08:00:00.000] #1   LearningService.prepareTodayStudy (package:nnbdc/util/learning_service.dart:44:25)
+[08:00:00.000] ⚠️ 检测到数据不一致：日期已对上且学习未开始，但发现存在单词进度。触发强制修复重置修复。
+[08:00:00.000] 🐛 开始重置用户每日数据（isNewDay=true, repair=true）: userId=test_user_id
+[08:00:00.000] 🐛 已清空用户错词: userId=test_user_id, 清空数量=0
+[08:00:00.000] 🐛 ⏳ 同步任务已安排，忽略此次请求 (请求计数: 10)
+[08:00:00.000] 🐛 用户每日数据重置成功
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: 0, 目标计划: 5
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: true (todayWords.isEmpty: true, addNewWordsIfNotEnough: true)
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 本批次 (1) 新增复习词: 0, 当前总数: 0
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: 5
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 开始抓取新词, 目标数量: 5, 针对日期序号: 3
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 0 个, 学习中 10 个
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 正在处理词书: mock_dict_1
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 从词书 mock_dict_1 读取到批次 (size=10, offset=0)
+[08:00:00.000] 🐛 [FETCH-NEW-WORDS] 抓取完成，共抓取到 0 个新词
+[08:00:00.000] 🐛 [FETCH-WORD] [genTodayWords] 实际抓取到新词: 0 个
+[08:00:00.000] 🐛 [FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: 0, 计划是否枯竭: true
+[08:00:00.000] 🐛 [FETCH-WORD] [getTodayLearningWordsFromDb] SQL查询返回条数: 0, 关联的BatchIDs: {}
+00:27 +25: /Volumes/ssd/ppdc/app/test/learning_service_test.dart: (tearDownAll)
+Shell: [16:58:56.145] 🐛 🔄 开始执行数据库同步操作
+Shell: [16:58:56.165] 🐛 🌐 网络连接检测：无网络连接，静默跳过网络操作
+Shell: [16:58:56.165] 🐛 🌐 网络连接不可用，静默跳过同步操作
+00:32 +25: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: (setUpAll)
+00:33 +25: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 初始获取第一个单词: 进度为0，环节应为0 (En2Ch)
+[16:59:03.502] 💡 ✅ 创建所有表完成
+[16:59:03.661] 💡 ✅ 创建性能优化索引完成
+[16:59:03.724] 💡 ✅ 初始化基础数据完成
+[16:59:03.846] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:59:04.354] 🐛 开始获取单词: isWordMastered=false, gotoNext=false, fsrsRating=null
+[16:59:04.361] 🐛 🐛 [BDC Performance Item] 获取用户状态耗时: 5 ms
+[16:59:04.375] 🐛 检测到跨天：user.lastLearningDate=2026-05-12 16:59:02.082918, today=2026-05-12 00:00:00.000
+00:35 +25 -1: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 初始获取第一个单词: 进度为0，环节应为0 (En2Ch) [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/study_bo_test.dart 201:7                       main.<fn>.<fn>
+  
+00:35 +25 -1: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 推进一个环节(gotoNext=true)：正确叠加进度并跳到 List(或下一个词)
+[16:59:05.195] 💡 ✅ 创建所有表完成
+[16:59:05.221] 💡 ✅ 创建性能优化索引完成
+[16:59:05.231] 💡 ✅ 初始化基础数据完成
+[16:59:05.312] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:59:05.606] 🐛 开始获取单词: isWordMastered=false, gotoNext=true, fsrsRating=FsrsRating.good
+[16:59:05.607] 🐛 🐛 [BDC Performance Item] 获取用户状态耗时: 0 ms
+[16:59:05.607] 🐛 检测到跨天：user.lastLearningDate=2026-05-12 16:59:04.861927, today=2026-05-12 00:00:00.000
+00:36 +25 -2: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 推进一个环节(gotoNext=true)：正确叠加进度并跳到 List(或下一个词) [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/study_bo_test.dart 218:7                       main.<fn>.<fn>
+  
+00:36 +25 -2: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 标记完全掌握跳过逻辑: isWordMastered = true 时直接完成
+[16:59:05.676] 💡 ✅ 创建所有表完成
+[16:59:05.677] 💡 ✅ 创建性能优化索引完成
+[16:59:05.688] 💡 ✅ 初始化基础数据完成
+[16:59:05.690] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:59:05.769] 🐛 开始获取单词: isWordMastered=true, gotoNext=true, fsrsRating=null
+[16:59:05.792] 🐛 🐛 [BDC Performance Item] 获取用户状态耗时: 0 ms
+[16:59:05.794] 🐛 检测到跨天：user.lastLearningDate=2026-05-12 16:59:05.637691, today=2026-05-12 00:00:00.000
+00:36 +25 -3: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 标记完全掌握跳过逻辑: isWordMastered = true 时直接完成 [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/study_bo_test.dart 244:7                       main.<fn>.<fn>
+  
+00:36 +25 -3: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 答错 FsrsRating.again 时：自动加入错词表
+[16:59:05.986] 💡 ✅ 创建所有表完成
+[16:59:06.012] 💡 ✅ 创建性能优化索引完成
+[16:59:06.080] 💡 ✅ 初始化基础数据完成
+[16:59:06.085] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:59:06.319] 🐛 开始获取单词: isWordMastered=false, gotoNext=true, fsrsRating=FsrsRating.again
+[16:59:06.321] 🐛 🐛 [BDC Performance Item] 获取用户状态耗时: 0 ms
+[16:59:06.322] 🐛 检测到跨天：user.lastLearningDate=2026-05-12 16:59:05.956666, today=2026-05-12 00:00:00.000
+00:37 +25 -4: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 答错 FsrsRating.again 时：自动加入错词表 [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/study_bo_test.dart 261:7                       main.<fn>.<fn>
+  
+00:37 +25 -4: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 模拟所有单词完成学习：跨越环节和提取完成状态
+[16:59:06.350] 💡 ✅ 创建所有表完成
+[16:59:06.350] 💡 ✅ 创建性能优化索引完成
+[16:59:06.351] 💡 ✅ 初始化基础数据完成
+[16:59:06.351] 💡 🔍 开始扫描并回填数据库审计字段...
+[16:59:06.392] 🐛 开始获取单词: isWordMastered=false, gotoNext=false, fsrsRating=null
+[16:59:06.392] 🐛 🐛 [BDC Performance Item] 获取用户状态耗时: 0 ms
+[16:59:06.392] 🐛 检测到跨天：user.lastLearningDate=2026-05-12 16:59:06.335617, today=2026-05-12 00:00:00.000
+00:37 +25 -5: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: StudyBo - 取下一个单词和学习流转逻辑测试 模拟所有单词完成学习：跨越环节和提取完成状态 [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/study_bo_test.dart 280:7                       main.<fn>.<fn>
+  
+00:37 +25 -5: /Volumes/ssd/ppdc/app/test/study_bo_test.dart: (tearDownAll)
+00:40 +25 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains
+~~~~~asrResult: 牛以就发奖金右然, meaning: n. 引诱, match: true
+00:41 +26 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 引用
+~~~~~asrResult: 引用, meaning: n. 引诱, match: true
+00:41 +27 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - phonetic similarity
+~~~~~asrResult: 无穷, meaning: 无球, match: true
+00:41 +28 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - dissimilar phrases (non-match)
+~~~~~asrResult: 有意义的, meaning: 不明白的, match: false
+00:41 +29 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 没见-媒介
+~~~~~asrResult: 没见, meaning: n. 媒介, match: true
+00:42 +30 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 情况-惊慌
+~~~~~asrResult: 情况, meaning: n. 惊慌, match: true
+00:42 +31 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 这都-战斗
+~~~~~asrResult: 这都, meaning: n. 战斗, match: true
+00:42 +32 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 启禀-曲柄
+~~~~~asrResult: 启禀, meaning: n. 曲柄, match: true
+00:42 +33 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 西-吸引
+~~~~~asrResult: 西, meaning: n. 吸引, match: true
+00:42 +34 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 父也-赋予
+~~~~~asrResult: 父也, meaning: n. 赋予, match: true
+00:42 +35 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 大概-大纲
+~~~~~asrResult: 大概, meaning: n. 大纲, match: true
+00:42 +36 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 博取-夺取
+~~~~~asrResult: 博取, meaning: n. 夺取, match: true
+00:42 +37 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 白本-版本
+~~~~~asrResult: 白本, meaning: n. 版本, match: true
+00:42 +38 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 论论-论文
+~~~~~asrResult: 论论, meaning: n. 论文, match: true
+00:42 +39 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 识别人-使变软
+~~~~~asrResult: 识别人, meaning: n. 使变软, match: true
+00:42 +40 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 美润状-委任状
+~~~~~asrResult: 美润状, meaning: n. 委任状, match: true
+00:42 +41 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 爱尔兰-爱尔兰人
+~~~~~asrResult: 爱尔兰, meaning: 爱尔兰人, match: true
+00:42 +42 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 打死-打扫
+~~~~~asrResult: 打死, meaning: v. 打扫, match: true
+00:42 +43 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 巴苦-挖苦
+~~~~~asrResult: 巴苦, meaning: v. 挖苦, match: true
+00:42 +44 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 顺利-视力
+~~~~~asrResult: 顺利, meaning: n. 视力, match: true
+00:42 +45 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 下令-下列
+~~~~~asrResult: 下令, meaning: n. 下列, match: true
+00:42 +46 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 毛型-模型
+~~~~~asrResult: 毛型, meaning: n. 模型, match: true
+00:43 +47 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 此时-四十
+~~~~~asrResult: 此时, meaning: n. 四十, match: true
+00:43 +48 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 毛饭-毛发
+~~~~~asrResult: 毛饭, meaning: n. 毛发, match: true
+00:43 +49 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 大哥-大纲
+~~~~~asrResult: 大哥, meaning: n. 大纲, match: true
+00:43 +50 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 挑衅-挑选
+~~~~~asrResult: 挑衅, meaning: v. 挑选, match: true
+00:43 +51 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 那肉-嫩肉
+~~~~~asrResult: 那肉, meaning: n. 嫩肉, match: true
+00:43 +52 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 树林-数量
+~~~~~asrResult: 树林, meaning: n. 数量, match: true
+00:43 +53 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 粉-吻
+~~~~~asrResult: 粉, meaning: 吻, match: true
+00:43 +54 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 哟-药
+~~~~~asrResult: 哟, meaning: 药, match: true
+00:43 +55 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 哎哟-哎药
+~~~~~asrResult: 哎哟, meaning: 哎药, match: true
+00:43 +56 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 阿姨-牙医
+~~~~~asrResult: 阿姨, meaning: 牙医, match: true
+00:43 +57 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 此会-词汇量
+~~~~~asrResult: 此会, meaning: 词汇量, match: true
+00:43 +58 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 投放-头发
+~~~~~asrResult: 投放, meaning: n. 头发, match: true
+00:43 +59 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 洋洋-洋葱
+~~~~~asrResult: 洋洋, meaning: n. 洋葱, match: true
+00:43 +60 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 杨-洋葱
+~~~~~asrResult: 杨, meaning: n. 洋葱, match: true
+00:43 +61 -5: /Volumes/ssd/ppdc/app/test/match_cn_test.dart: Test fuzzyChineseContains - 么-幕
+~~~~~asrResult: 么, meaning: 幕, match: true
+00:46 +62 -5: /Volumes/ssd/ppdc/app/test/handwriting_fuzzy_match_test.dart: 手写 D 与 CL 连写智能容错测试 场景 A：单纯的 cl 被认作 d (如 cliff)
+00:46 +63 -5: /Volumes/ssd/ppdc/app/test/handwriting_fuzzy_match_test.dart: 手写 D 与 CL 连写智能容错测试 场景 B：既有真 D，又有 CL 的长词 (如 disclose)
+00:46 +64 -5: /Volumes/ssd/ppdc/app/test/handwriting_fuzzy_match_test.dart: 手写 D 与 CL 连写智能容错测试 场景 C：动词过去式末尾带真 D (如 closed)
+00:46 +65 -5: /Volumes/ssd/ppdc/app/test/handwriting_fuzzy_match_test.dart: 手写 D 与 CL 连写智能容错测试 场景 D：复杂连写 (如 cyclical)
+00:46 +66 -5: /Volumes/ssd/ppdc/app/test/handwriting_fuzzy_match_test.dart: 手写 D 与 CL 连写智能容错测试 场景 E：作弊与公正性防线测试
+00:46 +67 -5: /Volumes/ssd/ppdc/app/test/handwriting_fuzzy_match_test.dart: 手写 D 与 CL 连写智能容错测试 场景 F：手写 H 被误认为 N (如 hat)
+00:46 +68 -5: /Volumes/ssd/ppdc/app/test/handwriting_fuzzy_match_test.dart: 手写 D 与 CL 连写智能容错测试 场景 G：手写 N 被误认为 H (如 nice)
+00:50 +69 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 简单同步场景：没有冲突的记录
+00:51 +70 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 本地和后端都有相同记录但操作不同 - INSERT vs UPDATE
+00:51 +71 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 本地和后端都有相同记录但操作不同 - UPDATE vs DELETE
+00:51 +72 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 本地和后端都有相同记录且操作相同 - UPDATE vs UPDATE
+00:51 +73 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 本地和后端都有相同记录但操作不同 - INSERT vs INSERT
+00:51 +74 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 本地和后端都有相同记录但操作不同 - INSERT vs DELETE
+00:51 +75 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 多表同步
+00:51 +76 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 合并操作移除多余记录
+00:51 +77 -5: /Volumes/ssd/ppdc/app/test/dbsync_test.dart: 数据库同步 - mergeChanges函数 打卡记录同步
+00:55 +78 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Init init with FsrsRating.again
+00:55 +79 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Init init with FsrsRating.hard
+00:55 +80 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Init init with FsrsRating.good
+00:55 +81 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Init init with FsrsRating.easy
+00:55 +82 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Init init clamps difficulty
+00:55 +83 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Next next with FsrsRating.good increases stability
+00:55 +84 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Next next with FsrsRating.again decreases stability drastically
+00:55 +85 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Next next with FsrsRating.hard vs good vs easy
+00:55 +86 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Next difficulty remains within [1.0, 10.0]
+00:55 +87 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Algorithm Next stability minimum clamp is 0.1
+00:55 +88 -5: /Volumes/ssd/ppdc/app/test/fsrs_test.dart: FSRS Config calculate interval depends on retention
+01:00 +89 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: PinyinParser parses regular pinyin with tone
+01:00 +90 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: PinyinParser parses pinyin without tone
+01:00 +91 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: PinyinParser parses double shengmu
+01:00 +92 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: PinyinParser parses zero shengmu
+01:00 +93 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: PinyinParser parses special zero shengmu (yi, wu, yu)
+01:00 +94 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Similarity Calculators shengmu similarity
+01:00 +95 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Similarity Calculators yunmu similarity
+01:00 +96 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Similarity Calculators tone similarity
+01:00 +97 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Pinyin Similarity identical pinyin
+01:00 +98 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Pinyin Similarity different shengmu, same yunmu and tone
+01:00 +99 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Pinyin Similarity different yunmu, same shengmu and tone
+01:00 +100 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Pinyin Similarity different tone
+01:00 +101 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Pinyin Similarity both zero shengmu but different yunmu
+01:00 +102 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Pinyin Similarity special "de5" handler
+01:00 +103 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Pinyin Similarity empty string handler
+01:00 +104 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Chinese To Pinyin Utils hanziToPinyin
+01:01 +105 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Chinese To Pinyin Utils chineseToPinyin handles single word
+01:01 +106 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Fuzzy Chinese Contains exact match
+01:01 +107 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Fuzzy Chinese Contains substring match
+01:01 +108 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Fuzzy Chinese Contains ignore non-chinese characters in target
+01:01 +109 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Fuzzy Chinese Contains bracket removal works
+01:01 +110 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Fuzzy Chinese Contains handles list of candidates
+01:01 +111 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Fuzzy Chinese Contains fuzzy pronunciation match
+01:01 +112 -5: /Volumes/ssd/ppdc/app/test/pinyin_test.dart: Fuzzy Chinese Contains does not match completely different words
+01:07 +113 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: (setUpAll)
+01:08 +113 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests jope vs rope - should match
+Jope vs Rope score: 93
+01:08 +114 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests true vs chew - should match
+True vs Chew score: 80
+01:08 +115 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests insure vs ye sure - should match under relaxed threshold
+Phoneme similarity score: 75 (threshold: 60)
+01:08 +116 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests insure vs insure - exact match should be high
+01:08 +117 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests apple vs apply - should not match
+Apple vs Apply score: 62
+01:08 +118 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests confusion group: IH and Y
+Confusion IH/Y score: 75
+01:08 +119 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests cruelty vs carotti - should match
+01:08 +120 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests analytic(al) vs analatic - should match
+01:08 +121 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests deflect vs the effect - should match
+01:08 +122 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests thermal vs surmo - should match
+01:08 +123 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests ohm vs oh mo - should match
+Ohm vs Oh Mo score: 93
+01:09 +124 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests oilfield vs all your field - should match
+Oilfield vs All your field score: 81
+01:09 +125 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests later vs litre - should match
+Later vs Litre score: 90
+01:09 +126 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests centre vs center - should match
+Centre vs Center score: 100
+01:09 +127 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests range vs wrenger - should not match at higher threshold
+Range vs Wrenger score: 36
+01:09 +128 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests refuse vs repeat - should not match
+Refuse vs Repeat score: 42
+01:09 +129 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests referee vs refuse - should not match
+Referee vs Refuse score: 47
+01:09 +130 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests rhyme vs ru - should not match
+Rhyme vs Ru score: 57
+01:09 +131 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests roller vs roder - should match
+Roller vs Roder score: 96
+01:09 +132 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests do act vs act - should match despite extra noise
+Do act vs Act score: 100
+01:09 +133 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests what madelein vs watermelon - should match
+What madelein vs Watermelon score: 70
+01:09 +134 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests didn't cough vs cough - should match
+Didn't cough vs Cough score: 100
+01:09 +135 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests fate matches hate
+fate vs hate score: 75
+01:09 +136 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: English Phoneme Matching Tests colo vs clue - should match
+Colo vs Clue score: 72
+01:09 +137 -5: /Volumes/ssd/ppdc/app/test/match_en_test.dart: (tearDownAll)
+01:14 +137 -5: /Volumes/ssd/ppdc/app/test/word_util_test.dart: Word Util - Split Meanings splits meaning by both English and Chinese semicolons
+01:14 +138 -5: /Volumes/ssd/ppdc/app/test/word_util_test.dart: Word Util - Split Meanings ignores empty parts
+01:14 +139 -5: /Volumes/ssd/ppdc/app/test/word_util_test.dart: Word Util - Match Input Chinese With Meaning Items matches complete correct answer
+01:15 +140 -5: /Volumes/ssd/ppdc/app/test/word_util_test.dart: Word Util - Match Input Chinese With Meaning Items ignores bracketed items entirely
+01:15 +141 -5: /Volumes/ssd/ppdc/app/test/word_util_test.dart: Word Util - Match Input Chinese With Meaning Items multiple parts can be matched sequentially
+01:15 +142 -5: /Volumes/ssd/ppdc/app/test/word_util_test.dart: Word Util - Match Input Chinese With Meaning Items redundant correct inputs do not increase newMatchCount
+01:15 +143 -5: /Volumes/ssd/ppdc/app/test/word_util_test.dart: Word Util - Match Input Chinese With Meaning Items handles multiple inputs (ASR candidates)
+01:15 +144 -5: Some tests failed.

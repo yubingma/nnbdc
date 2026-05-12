@@ -30,7 +30,7 @@ class LearningService {
 
       // 如果用户的最近学习日期不是今天，重置相关数据
       final today = DateUtils.pureDate(AppClock.now());
-      bool isNewDay = user.lastLearningDate == null || !DateUtils.isSameDay(user.lastLearningDate!, today);
+      bool isNewDay = user.lastLearningDate == null || user.lastLearningDate != today;
 
       // [核心修复] 自动修复机制：即使日期没变，但如果发现"学习未开始"且"单词已有进度"这种不一致状态，也强制重置。
       bool needRepair = (user.todayStudyStarted == false);

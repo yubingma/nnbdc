@@ -67,7 +67,7 @@ void main() {
       todayStudyStarted: true,
       totalLearningSeconds: 0,
       todayLearningSeconds: 0,
-      lastLearningDate: now,
+      lastLearningDate: AppClock.today(),
       createTime: now,
       updateTime: now,
     );
@@ -177,7 +177,7 @@ void main() {
             addTime: now,
             addDay: 1,
             batchId: 1, // <--- 这里是重点，batchId=1 代表这五个词是今天的批次候选
-            lastLearningDate: now,
+            lastLearningDate: AppClock.today(),
             stability: 0.0,
             isTodayNewWord: true,
             learnedTimes: 0,

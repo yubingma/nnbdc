@@ -506,7 +506,7 @@ class StudyBo {
           final updatedWord = word.copyWith(
             learnedTimes: word.learnedTimes + 1,
             todayLearnedTimes: word.todayLearnedTimes + 1,
-            lastLearningDate: Value(now),
+            lastLearningDate: Value(AppClock.today()),
           );
           await StudyCacheManager().saveAndSyncWordState(db, updatedWord);
           anyUpdated = true;
@@ -552,7 +552,7 @@ class StudyBo {
       // 跨天检测：比较当前业务日期与用户记录的最后学习业务日期
       final DateTime now = AppClock.now();
       final DateTime today = AppClock.today();
-      if (user.lastLearningDate != null && !DateUtils.isSameBusinessDay(today, user.lastLearningDate!)) {
+      if (user.lastLearningDate != null && user.lastLearningDate != today) {
         Global.logger.d('检测到跨天：user.lastLearningDate=${user.lastLearningDate}, today=$today');
         return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", false);
       }
@@ -931,7 +931,7 @@ class StudyBo {
     }
 
     final updatedWord = currWord.copyWith(
-      lastLearningDate: Value(learningTime),
+      lastLearningDate: Value(AppClock.today()),
       learnedTimes: (currWord.learnedTimes) + 1,
       todayLearnedTimes: (currWord.todayLearnedTimes) + 1, // 无论对错，进度都要加1
       stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
@@ -1168,7 +1168,7 @@ class StudyBo {
       // 这样进度条的分母保持不变，分子增加，体验更平滑
       final updatedWord = learningWord.copyWith(
         stability: Value(Constants.graduationStability),
-        lastLearningDate: Value(now),
+        lastLearningDate: Value(AppClock.today()),
         learnedTimes: learningWord.learnedTimes + 1,
         todayLearnedTimes: stepCount, // 饱和今天的所有环节
       );

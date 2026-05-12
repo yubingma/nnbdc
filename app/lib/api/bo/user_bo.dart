@@ -142,7 +142,7 @@ class UserBo {
           
           // 额外的跨天检测保护：如果今天是新的一天（基于由 lastLearningDate)，重置今日学习标记
           if (user.todayStudyStarted && user.lastLearningDate != null &&
-              !DateUtils.isSameBusinessDay(today, user.lastLearningDate!)) {
+              user.lastLearningDate != today) {
 
              try {
                Global.logger.d('getLoggedInUser: 检测到持久过的今日状态已过期(跨天)，正在重置... lastLearningDate=${user.lastLearningDate}, today=$today');

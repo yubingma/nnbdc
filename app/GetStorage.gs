@@ -1,1 +1,0 @@
-{"currentUserId":"test_user_id"}

@@ -214,7 +214,7 @@ void main() {
       // 用户的词库目标突然改成了 3，并确保日期为今天 (不触发新的一天逻辑)
       testUser = testUser.copyWith(
         wordsPerDay: 3,
-        lastLearningDate: Value(now),
+        lastLearningDate: Value(AppClock.today()),
       );
       Global.updateUserCache(testUser);
 
@@ -225,7 +225,7 @@ void main() {
           addTime: now,
           addDay: 1,
           batchId: 1,
-          lastLearningDate: now,
+          lastLearningDate: AppClock.today(),
           stability: 0.0,
           isTodayNewWord: true,
           learnedTimes: 0,
@@ -307,7 +307,7 @@ void main() {
           reps: 1,
           lapses: 0,
           state: 2, // 状态2一般是Review
-          lastLearningDate: now, // 核心在于上次学习日期是今天，所以加 999 天绝对不会过期！
+          lastLearningDate: AppClock.today(), // 核心在于上次学习日期是今天，所以加 999 天绝对不会过期！
           isTodayNewWord: false,
           learnedTimes: 5,
           todayLearnedTimes: 0,
@@ -351,7 +351,7 @@ void main() {
         await db.learningWordsDao.saveEntity(lw.copyWith(
           stability: const Value(2.0), // 未达到毕业标准 (约大于8-10才毕业)
           scheduledDays: const Value(2), // FSRS 调度在 2 天后复习
-          lastLearningDate: Value(fakeClock.now()),
+          lastLearningDate: Value(AppClock.today()),
           learnedTimes: 1, // <--- MUST have learnedTimes > 0 to not be a new word!
           todayLearnedTimes: 1, // 当天产生过学习
         ), true);
@@ -377,7 +377,7 @@ void main() {
         await db.learningWordsDao.saveEntity(lw.copyWith(
           stability: const Value(1.0), 
           scheduledDays: const Value(1), // 会导致它们在明天的 "第 3 天" 全员到期
-          lastLearningDate: Value(fakeClock.now()),
+          lastLearningDate: Value(AppClock.today()),
           learnedTimes: 1,
           todayLearnedTimes: 1,
         ), true);
@@ -407,7 +407,7 @@ void main() {
         await db.learningWordsDao.saveEntity(lw.copyWith(
           stability: const Value(15.0), // 超出毕业门槛
           scheduledDays: const Value(100), // 稳若泰山
-          lastLearningDate: Value(fakeClock.now()),
+          lastLearningDate: Value(AppClock.today()),
           learnedTimes: 2, // 第二次学了
           todayLearnedTimes: 1,
         ), true);
@@ -435,7 +435,7 @@ void main() {
         await db.learningWordsDao.saveEntity(lw.copyWith(
           stability: const Value(12.0), // 毕业啦
           scheduledDays: const Value(100),
-          lastLearningDate: Value(fakeClock.now()),
+          lastLearningDate: Value(AppClock.today()),
           learnedTimes: 2, // 第二次复习
           todayLearnedTimes: 1,
         ), true);
