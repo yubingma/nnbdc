@@ -35,5 +35,6 @@
         "**/META-INF/maven/**",
         "**/pub-cache/**",
         "/Volumes/ssd/AppSupport/pub-cache/**"
-    ]
+    ],
+    "java.dependency.enableDependencyCheckup": false
 }
