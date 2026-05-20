@@ -18,6 +18,8 @@ class SoundUtil {
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
   static bool _audioSessionConfigured = false;
+  static String _currentSessionCategory = 'none';
+  static String get currentSessionCategory => _currentSessionCategory;
 
   @visibleForTesting
   static set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
@@ -40,13 +42,34 @@ class SoundUtil {
 
   static Future<void> _doConfigureAudioSession() async {
     try {
+      // 默认初始化为高保真播放模式 (playback)
+      await usePlaybackCategory();
+      
+      _audioSessionConfigured = true;
+      Global.logger.i('SoundUtil: 全局音频会话配置完成 (默认为高保真播放)');
+
+      _prewarmSfx(['thud.mp3', 'correct.mp3', 'failed.mp3', 'bubble-pop.mp3', 'asr_ready_hint.mp3']);
+    } catch (e) {
+      Global.logger.e('SoundUtil: 配置全局音频会话失败: $e');
+    } finally {
+      _configureFuture = null;
+    }
+  }
+
+  /// 切换为高保真纯播放模式 (无麦克风占用，无回声消除滤波，高动态范围，高保真度)
+  static Future<void> usePlaybackCategory() async {
+    if (PlatformUtils.isWeb) return;
+    if (_currentSessionCategory == 'playback') {
+      Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
+      debugPrint('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
+      return;
+    }
+    try {
       final session = await AudioSession.instance;
       await session.configure(AudioSessionConfiguration(
-        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
-            AVAudioSessionCategoryOptions.mixWithOthers |
-            AVAudioSessionCategoryOptions.allowBluetooth,
-        avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+        avAudioSessionCategory: AVAudioSessionCategory.playback,
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers,
+        avAudioSessionMode: AVAudioSessionMode.defaultMode,
         androidAudioAttributes: const AndroidAudioAttributes(
           contentType: AndroidAudioContentType.speech,
           flags: AndroidAudioFlags.none,
@@ -55,15 +78,44 @@ class SoundUtil {
         androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
         androidWillPauseWhenDucked: true,
       ));
-      
-      _audioSessionConfigured = true;
-      Global.logger.i('SoundUtil: 全局音频会话配置完成');
-
-      _prewarmSfx(['thud.mp3', 'correct.mp3', 'failed.mp3', 'bubble-pop.mp3', 'asr_ready_hint.mp3']);
+      _currentSessionCategory = 'playback';
+      Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
+      debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
     } catch (e) {
-      Global.logger.e('SoundUtil: 配置全局音频会话失败: $e');
-    } finally {
-      _configureFuture = null;
+      Global.logger.e('SoundUtil: 切换高保真播放模式失败: $e');
+    }
+  }
+
+  /// 切换为录音与播放并存模式 (用于 ASR 语音识别场景，匹配 iOS 原生配置，优化蓝牙高保真度)
+  static Future<void> usePlayAndRecordCategory() async {
+    if (PlatformUtils.isWeb) return;
+    if (_currentSessionCategory == 'playAndRecord') {
+      Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
+      debugPrint('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
+      return;
+    }
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
+            AVAudioSessionCategoryOptions.mixWithOthers |
+            AVAudioSessionCategoryOptions.allowBluetooth |
+            AVAudioSessionCategoryOptions.allowBluetoothA2dp, // 支持蓝牙高保真立体声
+        avAudioSessionMode: AVAudioSessionMode.defaultMode, // 使用 defaultMode 匹配原生，消除模式切换杂音且人声强过滤较温和
+        androidAudioAttributes: const AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.speech,
+          flags: AndroidAudioFlags.none,
+          usage: AndroidAudioUsage.media,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: true,
+      ));
+      _currentSessionCategory = 'playAndRecord';
+      Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
+      debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
+    } catch (e) {
+      Global.logger.e('SoundUtil: 切换为录放模式失败: $e');
     }
   }
 
@@ -175,7 +227,8 @@ class SoundUtil {
       }
 
       final DateTime startTime = DateTime.now();
-      Global.logger.d('~~~~~ SoundUtil(ja): 开始播放 URL: $soundUrl, 倍速: $speed');
+      Global.logger.i('🔊 [SoundUtil] 触发播放时的实际音频会话分类为: $_currentSessionCategory | 播放 URL: $soundUrl | 倍速: $speed');
+      debugPrint('🔊 [SoundUtil] 触发播放时的实际音频会话分类为: $_currentSessionCategory | 播放 URL: $soundUrl | 倍速: $speed');
 
       // 设置源
       if (PlatformUtils.isWeb) {
@@ -236,7 +289,8 @@ class SoundUtil {
     final player = pool.first;
     
     final startTime = DateTime.now().millisecondsSinceEpoch;
-    Global.logger.d("~~~~~开始播放音效: $soundFileName");
+    Global.logger.i("🔊 [SoundUtil] 触发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
+    debugPrint("🔊 [SoundUtil] 触发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
     try {
       await player.stop(); // 确保停止
       await player.seek(Duration.zero);
@@ -263,6 +317,8 @@ class SoundUtil {
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) async {
     await configureAudioSession();
     if (PlatformUtils.isWeb) return;
+    Global.logger.i("🔊 [SoundUtil] 触发并发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
+    debugPrint("🔊 [SoundUtil] 触发并发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
 
     final pool = _sfxPools.putIfAbsent(soundFileName, () => []);
     ja.AudioPlayer? player;
@@ -317,6 +373,8 @@ class SoundUtil {
     if (!_audioSessionConfigured) {
       await configureAudioSession();
     }
+    Global.logger.i("🔊 [SoundUtil] 触发被裁剪音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
+    debugPrint("🔊 [SoundUtil] 触发被裁剪音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [ja.AudioPlayer()]);
     ja.AudioPlayer? player;
     final now = AppClock.now();

@@ -1297,7 +1297,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               notifier.updateShowHandwritingBoard(true);
             });
             // 进入手势拼写模式前，务必强制彻底停止 ASR 会话，避免在手写时后台仍在倾听或产生提示音
-            notifier.asr.stopAsr();
+            notifier.asr.stopMicrophone();
           },
           borderRadius: BorderRadius.circular(12),
           child: Container(

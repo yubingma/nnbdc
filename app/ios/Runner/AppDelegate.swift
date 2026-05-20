@@ -388,15 +388,17 @@ import StoreKit
     }
     
     private func stopAsr(result: @escaping FlutterResult) {
-        print("IOS: stopAsr (Hot Stop) requested")
+        print("IOS: [ASR] stopAsr (Hot Stop) requested")
         // 只停止识别流水线，保留音频引擎运行
+        print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
         isAsrStopped = true
         stopSpeechRecognition()
         result(nil)
     }
     
     private func stopMicrophone(result: @escaping FlutterResult) {
-        print("IOS: stopMicrophone (Cold Stop) requested")
+        print("IOS: [ASR] stopMicrophone (Cold Stop) requested")
+        print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
         isAsrStopped = true
         stopSpeechRecognition()
         teardownAudioEngine()
@@ -458,11 +460,11 @@ import StoreKit
         // 验证音频会话配置
         let audioSession = AVAudioSession.sharedInstance()
         guard audioSession.sampleRate > 0 && audioSession.inputNumberOfChannels > 0 else {
-            print("IOS: Audio session not ready (rate: \(audioSession.sampleRate), channels: \(audioSession.inputNumberOfChannels))")
+            print("IOS: [ASR] Audio session not ready (rate: \(audioSession.sampleRate), channels: \(audioSession.inputNumberOfChannels))")
             return
         }
         
-        print("IOS: Initializing audio engine. Session sampleRate: \(audioSession.sampleRate)")
+        print("IOS: [ASR] Initializing audio engine. Session rate: \(audioSession.sampleRate), channels: \(audioSession.inputNumberOfChannels)")
         
         // 核心修复：先停止并重置引擎，确保状态干净
         if audioEngine.isRunning {
@@ -479,9 +481,9 @@ import StoreKit
         do {
             audioEngine.prepare()
             try audioEngine.start()
-            print("IOS: Audio engine started successfully")
+            print("IOS: [ASR] Audio engine started successfully")
         } catch {
-            print("IOS: Failed to start audio engine: \(error)")
+            print("IOS: [ASR] Failed to start audio engine: \(error)")
             return
         }
         
@@ -489,11 +491,11 @@ import StoreKit
         installTap()
         
         isAudioEngineInitialized = true
-        print("IOS: Audio engine initialization completed")
+        print("IOS: [ASR] Audio engine initialization completed")
     }
     
     private func resetAudioEngineAndTap() {
-        print("IOS: resetAudioEngineAndTap called")
+        print("IOS: [ASR] resetAudioEngineAndTap called")
         let inputNode = audioEngine.inputNode
         
         // 1. 停止引擎
@@ -513,9 +515,9 @@ import StoreKit
         do {
             audioEngine.prepare()
             try audioEngine.start()
-            print("IOS: Audio engine restarted successfully")
+            print("IOS: [ASR] Audio engine restarted successfully")
         } catch {
-            print("IOS: Failed to restart audio engine: \(error)")
+            print("IOS: [ASR] Failed to restart audio engine: \(error)")
             return
         }
         
@@ -523,29 +525,51 @@ import StoreKit
         installTap()
     }
     
+    private var tapBufferCount = 0
+
     private func installTap() {
         let inputNode = audioEngine.inputNode
+        let session = AVAudioSession.sharedInstance()
         
         // 彻底解决 "format mismatch" 崩溃的关键：
         // 1. 必须先 removeTap
         inputNode.removeTap(onBus: 0)
         
-        // 2. 获取当前的 native 格式
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        // 2. 获取格式并处理 sampleRate 0 的异常情况
+        var recordingFormat = inputNode.outputFormat(forBus: 0)
+        print("IOS: [ASR] Tap check - Session rate: \(session.sampleRate), Node output rate: \(recordingFormat.sampleRate)")
         
-        // 验证格式是否有效
-        guard recordingFormat.sampleRate > 0 else {
-            print("IOS: Invalid recording format (sampleRate 0), skipping tap")
-            return
+        if recordingFormat.sampleRate == 0 {
+            recordingFormat = inputNode.inputFormat(forBus: 0)
+            print("IOS: [ASR] Node output format 0, checking inputFormat: \(recordingFormat.sampleRate)")
         }
         
-        print("IOS: Installing tap with native format: \(recordingFormat)")
+        let finalFormat: AVAudioFormat
+        if recordingFormat.sampleRate > 0 {
+            finalFormat = recordingFormat
+        } else {
+            print("IOS: [ASR] WARNING: Node format invalid (0), using session fallback")
+            // 尝试使用 session 的采样率构造一个标准的单声道 PCM 格式
+            finalFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, 
+                                      sampleRate: session.sampleRate, 
+                                      channels: 1, 
+                                      interleaved: false)!
+        }
         
-        // 3. 使用 native format 安装 Tap。
+        print("IOS: [ASR] Installing tap with format: \(finalFormat)")
+        self.tapBufferCount = 0
+        
+        // 3. 使用 native/fallback format 安装 Tap。
         // SFSpeechAudioBufferRecognitionRequest 会自动处理缓冲区格式转换。
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] (buffer, when) in
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: finalFormat) { [weak self] (buffer, when) in
             guard let self = self else { return }
             
+            self.tapBufferCount += 1
+            if self.tapBufferCount % 100 == 0 {
+                let level = self.calculateLevel(from: buffer)
+                print("IOS: [ASR] Tap Heartbeat - buffers: \(self.tapBufferCount), level: \(level), stopped: \(self.isAsrStopped), hasRequest: \(self.recognitionRequest != nil)")
+            }
+
             // 始终计算音量，用于 UI 反馈
             if let sink = self.meterEventSink {
                 let now = Date().timeIntervalSince1970
@@ -565,251 +589,153 @@ import StoreKit
             
             self.recognitionRequest?.append(buffer)
         }
-        print("IOS: Audio tap installed successfully on bus 0")
+        print("IOS: [ASR] Audio tap installed successfully on bus 0")
     }
     
     private func startSpeechRecognition() {
-        print("IOS: startSpeechRecognition called, engine.isRunning: \(audioEngine.isRunning)")
+        print("IOS: [ASR] startSpeechRecognition called, engine.isRunning: \(audioEngine.isRunning)")
         
         // 1. 先确保停止旧任务，并暂时阻断数据喂入
         stopSpeechRecognition()
+        print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
         isAsrStopped = true
         
-        // 2. 优化引擎启停：如果已在运行，跳过物理重置以消除咔哒声
+        // 2. 核心机制修复：为了绝对保证识别请求的时钟锚点新鲜，每次启动识别都重新安装 Tap
+        // 即使引擎已经在运行（热启动），重新安装 Tap 也能强制重置数据流状态。
         if !audioEngine.isRunning {
-            print("IOS: Audio engine not running, performing full reset")
+            print("IOS: [ASR] Audio engine NOT running, performing full physical reset and tap installation.")
             resetAudioEngineAndTap()
-            do {
-                try audioEngine.start()
-                print("IOS: Audio engine started successfully")
-            } catch {
-                print("IOS: Audio engine couldn't start: \(error)")
-                return
-            }
         } else {
-            print("IOS: Audio engine already running, skipping physical reset")
+            print("IOS: [ASR] Audio engine ALREADY running (pre-warmed), re-installing tap only.")
+            installTap()
         }
         
         // 确保使用当前设置的语言创建识别器
         guard let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: currentLocale)) else {
-            print("Failed to create speech recognizer for \(currentLocale)")
+            print("IOS: [ASR] Failed to create speech recognizer for \(currentLocale)")
             return
         }
         guard speechRecognizer.isAvailable else {
-            print("Speech recognizer not available for \(currentLocale)")
+            print("IOS: [ASR] Speech recognizer not available for \(currentLocale)")
             return
         }
-        print("IOS: Speech recognizer created successfully for \(currentLocale)")
+        print("IOS: [ASR] Speech recognizer created successfully for \(currentLocale)")
         self.speechRecognizer = speechRecognizer
         
         // 根据语言设置任务提示
-        if currentLocale.lowercased().contains("zh") {
-            speechRecognizer.defaultTaskHint = .dictation
-            print("IOS: Speech recognizer configured for Chinese (dictation mode)")
-        } else {
-            speechRecognizer.defaultTaskHint = .dictation
-            print("IOS: Speech recognizer configured for English (dictation mode)")
-        }
+        speechRecognizer.defaultTaskHint = .dictation
         
         // 先创建新的识别请求
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
-            print("Unable to create recognition request")
+            print("IOS: [ASR] Unable to create recognition request")
             return
         }
         recognitionRequest.shouldReportPartialResults = true
         if !contextualPhrases.isEmpty {
             recognitionRequest.contextualStrings = contextualPhrases
         }
-        if currentLocale.lowercased().contains("zh") {
-            recognitionRequest.taskHint = .dictation
-            print("IOS: Recognition request configured for Chinese (dictation mode)")
-        } else {
-            recognitionRequest.taskHint = .dictation
-            print("IOS: Recognition request configured for English (dictation mode)")
-        }
+        recognitionRequest.taskHint = .dictation
+        
         if #available(iOS 13.0, *) {
-            // 不强制要求离线识别，允许在离线模型未下载时回退到在线识别，提高稳定性
             recognitionRequest.requiresOnDeviceRecognition = false
         }
 
-        print("IOS: Recognition request created successfully")
+        print("IOS: [ASR] Creating SFSpeechAudioBufferRecognitionRequest & recognitionTask synchronously...")
         
-        // 检查音频引擎状态
-        let audioSession = AVAudioSession.sharedInstance()
-        print("IOS: Audio session state - Sample rate: \(audioSession.sampleRate), Input channels: \(audioSession.inputNumberOfChannels), isRunning: \(audioEngine.isRunning)")
-        
-        // 创建新的识别任务
-        print("IOS: Creating new recognition task...")
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            print("IOS: Creating recognition task after delay (0.1s)...")
-            self.isAsrStopped = false // <- FIX: Ensure input processing resumes
-            self.recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-                guard let self = self else { return }
-                var isFinal = false
-                var shouldRestart = false
-                
-                if let error = error {
-                    let nsError = error as NSError
-                    if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 1110 {
-                        // "No speech detected" 不是错误，只是正常状态
-                        print("IOS: No speech detected (normal state)")
-                        // 不设置 shouldRestart，让识别任务继续运行
-                    } else {
-                        // 其他错误才需要重启
-                        print("IOS: Speech recognition error: \(error)")
-                        shouldRestart = true
-                    }
-                }
-                
-                if let result = result {
-                    let bestString = result.bestTranscription.formattedString
-                    let selectedString = self.selectTranscription(using: result)
-                    isFinal = result.isFinal
-                    print("~~~~~ASR RESULT: '\(selectedString)' (isFinal: \(isFinal))")
-                    print("Current locale: \(self.currentLocale)")
-                    
-                    // 打印 N-best 候选
-                    var idx = 0
-                    for t in result.transcriptions {
-                        print("IOS: NBest[\(idx)]: '\(t.formattedString)' score=NA")
-                        idx += 1
-                    }
-                    
-                    // 处理部分结果和最终结果
-                    if !selectedString.isEmpty && !self.isAsrStopped {
-                        // 如果是新的部分结果，立即发送候选结果
-                        if !isFinal {
-                            self.lastPartialResult = selectedString
-                            DispatchQueue.main.async {
-                                // 创建候选结果数组
-                                let candidates = result.transcriptions.map { $0.formattedString }
-                                print("IOS: Sending partial result with candidates to Flutter: '\(selectedString)' candidates: \(candidates)")
-                                
-                                // 发送JSON格式的候选结果
-                                let resultData: [String: Any] = [
-                                    "best": selectedString,
-                                    "candidates": candidates
-                                ]
-                                
-                                do {
-                                    let jsonData = try JSONSerialization.data(withJSONObject: resultData)
-                                    if let jsonString = String(data: jsonData, encoding: .utf8) {
-                                        self.eventSink?(jsonString)
-                                    } else {
-                                        // 如果JSON序列化失败，创建备用JSON格式
-                                        let fallbackData: [String: Any] = [
-                                            "best": selectedString,
-                                            "candidates": [selectedString]
-                                        ]
-                                        if let fallbackJson = try? JSONSerialization.data(withJSONObject: fallbackData),
-                                           let fallbackString = String(data: fallbackJson, encoding: .utf8) {
-                                            print("IOS: JSON serialization failed for partial result, sending fallback JSON")
-                                            self.eventSink?(fallbackString)
-                                        } else {
-                                            // 最后回退到单个结果
-                                            self.eventSink?(selectedString)
-                                        }
-                                    }
-                                } catch {
-                                    // 创建备用JSON格式
-                                    let fallbackData: [String: Any] = [
-                                        "best": selectedString,
-                                        "candidates": [selectedString]
-                                    ]
-                                    if let fallbackJson = try? JSONSerialization.data(withJSONObject: fallbackData),
-                                       let fallbackString = String(data: fallbackJson, encoding: .utf8) {
-                                        print("IOS: Failed to serialize partial candidates, sending fallback JSON: \(error)")
-                                        self.eventSink?(fallbackString)
-                                    } else {
-                                        // 最后回退到单个结果
-                                        self.eventSink?(selectedString)
-                                    }
-                                }
-                            }
-                        }
-                        // 如果是最终结果，发送多个候选结果
-                        else if isFinal {
-                            DispatchQueue.main.async {
-                                // 创建候选结果数组
-                                let candidates = result.transcriptions.map { $0.formattedString }
-                                print("IOS: Sending final result with candidates to Flutter: '\(selectedString)' candidates: \(candidates)")
-                                
-                                // 发送JSON格式的候选结果
-                                let resultData: [String: Any] = [
-                                    "best": selectedString,
-                                    "candidates": candidates
-                                ]
-                                
-                                do {
-                                    let jsonData = try JSONSerialization.data(withJSONObject: resultData)
-                                    if let jsonString = String(data: jsonData, encoding: .utf8) {
-                                        self.eventSink?(jsonString)
-                                    } else {
-                                        // 如果JSON序列化失败，创建备用JSON格式
-                                        let fallbackData: [String: Any] = [
-                                            "best": selectedString,
-                                            "candidates": [selectedString]
-                                        ]
-                                        if let fallbackJson = try? JSONSerialization.data(withJSONObject: fallbackData),
-                                           let fallbackString = String(data: fallbackJson, encoding: .utf8) {
-                                            print("IOS: JSON serialization failed for final result, sending fallback JSON")
-                                            self.eventSink?(fallbackString)
-                                        } else {
-                                            // 最后回退到单个结果
-                                            self.eventSink?(selectedString)
-                                        }
-                                    }
-                                } catch {
-                                    // 创建备用JSON格式
-                                    let fallbackData: [String: Any] = [
-                                        "best": selectedString,
-                                        "candidates": [selectedString]
-                                    ]
-                                    if let fallbackJson = try? JSONSerialization.data(withJSONObject: fallbackData),
-                                       let fallbackString = String(data: fallbackJson, encoding: .utf8) {
-                                        print("IOS: Failed to serialize final candidates, sending fallback JSON: \(error)")
-                                        self.eventSink?(fallbackString)
-                                    } else {
-                                        // 最后回退到单个结果
-                                        self.eventSink?(selectedString)
-                                    }
-                                }
-                            }
-                            // 重置部分结果
-                            self.lastPartialResult = ""
-                        }
-                    }
-                    
-                    // 只有在最终结果时才重启任务
-                    if isFinal {
-                        shouldRestart = true
-                    }
+        self.recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
+            guard let self = self else { return }
+            var isFinal = false
+            var shouldRestart = false
+            
+            if let error = error {
+                let nsError = error as NSError
+                // 1110: No speech detected, 1107: Speech recognition interrupted
+                if nsError.domain == "kAFAssistantErrorDomain" && (nsError.code == 1110 || nsError.code == 1107) {
+                    print("IOS: [ASR] Task callback - No speech or interrupted (code: \(nsError.code))")
                 } else {
-                    print("IOS: No speech recognition result")
+                    print("IOS: [ASR] Task callback - Error: \(error)")
+                    shouldRestart = true
+                }
+            }
+            
+            if let result = result {
+                let selectedString = self.selectTranscription(using: result)
+                isFinal = result.isFinal
+                print("~~~~~ASR RESULT: '\(selectedString)' (isFinal: \(isFinal))")
+                
+                // 处理部分结果和最终结果
+                if !selectedString.isEmpty && !self.isAsrStopped {
+                    // 如果是新的部分结果，立即发送候选结果
+                    if !isFinal {
+                        self.lastPartialResult = selectedString
+                        DispatchQueue.main.async {
+                            let candidates = result.transcriptions.map { $0.formattedString }
+                            print("IOS: [ASR] Sending partial result with candidates to Flutter: '\(selectedString)'")
+                            
+                            let resultData: [String: Any] = [
+                                "best": selectedString,
+                                "candidates": candidates
+                            ]
+                            
+                            if let jsonData = try? JSONSerialization.data(withJSONObject: resultData),
+                               let jsonString = String(data: jsonData, encoding: .utf8) {
+                                self.eventSink?(jsonString)
+                            } else {
+                                self.eventSink?(selectedString)
+                            }
+                        }
+                    }
+                    // 如果是最终结果，发送多个候选结果
+                    else if isFinal {
+                        DispatchQueue.main.async {
+                            let candidates = result.transcriptions.map { $0.formattedString }
+                            print("IOS: [ASR] Sending final result with candidates to Flutter: '\(selectedString)'")
+                            
+                            let resultData: [String: Any] = [
+                                "best": selectedString,
+                                "candidates": candidates
+                            ]
+                            
+                            if let jsonData = try? JSONSerialization.data(withJSONObject: resultData),
+                               let jsonString = String(data: jsonData, encoding: .utf8) {
+                                self.eventSink?(jsonString)
+                            } else {
+                                self.eventSink?(selectedString)
+                            }
+                        }
+                        self.lastPartialResult = ""
+                    }
                 }
                 
-                if shouldRestart || isFinal {
-                    print("IOS: Speech recognition task ending - shouldRestart: \(shouldRestart), isFinal: \(isFinal)")
-                    self.recognitionRequest = nil
-                    self.recognitionTask = nil
-                    self.lastMeterSentAt = 0
-                    if !self.isAsrStopped && shouldRestart {
-                        print("IOS: ASR not paused and should restart, creating new recognition task")
-                        DispatchQueue.main.async {
-                            self.startSpeechRecognition()
-                        }
-                    } else {
-                        print("IOS: ASR is paused or no restart needed, not creating new task")
+                // 只有在最终结果时才重启任务
+                if isFinal {
+                    shouldRestart = true
+                }
+            } else {
+                print("IOS: [ASR] No speech recognition result")
+            }
+            
+            if shouldRestart || isFinal {
+                print("IOS: [ASR] Speech recognition task ending - shouldRestart: \(shouldRestart), isFinal: \(isFinal)")
+                self.recognitionRequest = nil
+                self.recognitionTask = nil
+                self.lastMeterSentAt = 0
+                if !self.isAsrStopped && shouldRestart {
+                    print("IOS: [ASR] ASR not paused and should restart, creating new recognition task")
+                    DispatchQueue.main.async {
+                        self.startSpeechRecognition()
                     }
                 }
             }
-            print("IOS: Speech recognition task started successfully")
-            self.isAsrStopped = false
-            print("IOS: Recognition task established, ready for audio")
         }
+        
+        // 彻底移除 asyncAfter 延迟，同步开启与建立任务
+        print("IOS: [ASR] Speech recognition task started successfully! Opening data stream...")
+        self.isAsrStopped = false 
+        print("IOS: [ASR] Data stream channel OPENED (isAsrStopped = false). Tap buffers will now feed into the recognition request.")
     }
+
     
     // MARK: - Audio Meter Helper
     private func calculateLevel(from buffer: AVAudioPCMBuffer) -> Float {
@@ -841,6 +767,7 @@ import StoreKit
     
 
     private func stopSpeechRecognition() {
+        print("IOS: [ASR] stopSpeechRecognition called")
         // 只清理识别任务和请求，不停止音频引擎
         recognitionRequest?.endAudio()
         recognitionRequest = nil

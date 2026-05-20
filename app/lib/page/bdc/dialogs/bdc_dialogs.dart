@@ -526,7 +526,7 @@ extension BdcPageStateDialogs on BdcPageState {
       // 设置已在确定按钮中保存，这里刷新界面
       try {
         // 刷新界面，以体现最新配置
-        await notifier.asr.stopAsr();
+        await notifier.asr.stopMicrophone();
         notifier.handleWord(state.currentGetWordResult);
       } catch (e) {
         ToastUtil.error('刷新界面失败: $e');

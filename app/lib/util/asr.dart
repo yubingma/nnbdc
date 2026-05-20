@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import '../services/dialog_service.dart';
 import 'dart:io' show Platform;
 import '../util/permission_util.dart';
+import 'package:nnbdc/util/sound.dart';
 
 enum AsrState { unknown, initialized, started, stopping, stopped }
 
@@ -453,6 +454,7 @@ class Asr {
           await _updateLanguage(language);
 
           Global.logger.i('ASR: Starting microphone... (instance: $hashCode)');
+          await SoundUtil.usePlayAndRecordCategory();
           await asrMethodChannel
               .invokeMethod('startMicrophone')
               .timeout(const Duration(seconds: 5));
@@ -499,6 +501,7 @@ class Asr {
 
       if (permissionGranted) {
         Global.logger.i('ASR: Pre-warming microphone... (instance: $hashCode)');
+        await SoundUtil.usePlayAndRecordCategory();
         await asrMethodChannel
             .invokeMethod('startMicrophone')
             .timeout(const Duration(seconds: 5));
@@ -547,9 +550,11 @@ class Asr {
       await asrMethodChannel.invokeMethod('stopMicrophone');
       setState(AsrState.stopped);
       Global.logger.i('ASR: Microphone and engine stopped successfully');
+      await SoundUtil.usePlaybackCategory();
     } on PlatformException catch (e) {
       Global.logger.e('ASR: Exception during stopMicrophone: ${e.message}');
       setState(AsrState.stopped);
+      await SoundUtil.usePlaybackCategory();
     }
   }
 

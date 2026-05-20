@@ -254,7 +254,7 @@ class _MePageState extends State<MePage> {
   void initState() {
     super.initState();
     // 进入“我”页面时强制关闭 ASR
-    Asr().stopAsr();
+    Asr().stopMicrophone();
 
     // 连接socket服务器
     SocketIoClient.instance.connect();

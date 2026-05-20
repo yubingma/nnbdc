@@ -61,7 +61,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   void initState() {
     super.initState();
     // 首页初始化时强制关停 ASR
-    Asr().stopAsr();
+    Asr().stopMicrophone();
     WidgetsBinding.instance.addObserver(this);
     // 首页初始化数据由 didChangeDependencies 触发，此处不再重复调用 loadData()，避免并发加载冲突
 

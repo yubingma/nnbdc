@@ -48,7 +48,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     // 进入查词页时强制关停 ASR
-    Asr().stopAsr();
+    Asr().stopMicrophone();
     loadData();
     _focusNode.addListener(() {
       if (mounted) setState(() {});

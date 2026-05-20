@@ -38,7 +38,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     // 进入主页时强制关闭 ASR，确保状态干净
-    Asr().stopAsr();
+    Asr().stopMicrophone();
 
     /// 初始化导航图标
     _navigationViews = <NavigationIconView>[
@@ -107,7 +107,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       child: GestureDetector(
         onTap: () {
           if (_currentIndex == index) return;
-          Asr().stopAsr();
+          Asr().stopMicrophone();
 
           setState(() {
             _navigationViews![actualCurrentIndex].controller.reverse();

@@ -148,7 +148,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     });
 
     // 进入详情页时立即主动关闭 ASR，避免在前一页面正在倾听时进入此页导致 ASR 逻辑错误
-    Asr().stopAsr();
+    Asr().stopMicrophone();
   }
 
   @override

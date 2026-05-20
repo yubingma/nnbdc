@@ -421,7 +421,7 @@ class BdcNotifier extends _$BdcNotifier {
     String newStudyStep = state.activeUserStudySteps[getWordResult.stepIndex].studyStep;
     
     if (asr.state == AsrState.started) {
-      await asr.stopAsr();
+      await asr.stopMicrophone();
     }
 
     if (oldStudyStep != newStudyStep || isFromBatchWordList) {
@@ -698,7 +698,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.history.isEmpty) return;
 
     _saveCurrentWordState();
-    await asr.stopAsr();
+    await asr.stopMicrophone();
     await _audioPlayer.stop();
 
     int nextIndex;
@@ -725,7 +725,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     _saveCurrentWordState();
-    await asr.stopAsr();
+    await asr.stopMicrophone();
     await _audioPlayer.stop();
     
     state = state.copyWith(historyIndex: -1);
@@ -857,7 +857,7 @@ class BdcNotifier extends _$BdcNotifier {
       showAnswerButtons: false,
     );
     try {
-      await asr.stopAsr();
+      await asr.stopMicrophone();
       await asr.reset();
 
       meaningController.text = '';
@@ -996,7 +996,7 @@ class BdcNotifier extends _$BdcNotifier {
         if (asrInput != null) {
           meaningController.text = state.word!.spell;
         }
-        await asr.stopAsr();
+        await asr.stopMicrophone();
         
         if (state.hasFinishedAnswering) {
           // 已经答对了（处于查看详情时的额外练习），直接关闭
@@ -1020,7 +1020,7 @@ class BdcNotifier extends _$BdcNotifier {
       if (result.newMatchCount > 0) {
         state = state.copyWith(canLeaveCurrWord: true);
         if (isMatch) {
-          await asr.stopAsr();
+          await asr.stopMicrophone();
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
           SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
@@ -1031,7 +1031,7 @@ class BdcNotifier extends _$BdcNotifier {
         if (asrInput != null) {
           meaningController.text = state.word!.spell;
         }
-        await asr.stopAsr();
+        await asr.stopMicrophone();
         final ratingResult = _calculateRating(method);
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       }
@@ -1149,7 +1149,7 @@ class BdcNotifier extends _$BdcNotifier {
     bool willPlaySentence = state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlaySentence;
 
     if (willPlayWord || willPlaySentence) {
-      await asr.stopAsr();
+      await asr.stopMicrophone();
     }
 
     try {
@@ -1173,7 +1173,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (isInSpeakTab) {
       if (state.word == null || state.loadError != null || state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
         if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
-          asr.stopAsr();
+          asr.stopMicrophone();
         }
         return;
       }
@@ -1184,7 +1184,7 @@ class BdcNotifier extends _$BdcNotifier {
       _startAsrWithHint(language);
     } else {
       if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
-        asr.stopAsr();
+        asr.stopMicrophone();
       }
     }
   }
@@ -1289,7 +1289,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> playWithAnimation(Future<void> Function() playSound, String audioType) async {
     state = state.copyWith(playingStates: {...state.playingStates, audioType: true});
-    await asr.stopAsr();
+    await asr.stopMicrophone();
     try {
       await playSound();
     } finally {
