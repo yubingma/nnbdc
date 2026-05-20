@@ -2,14 +2,12 @@ package beidanci.api.model;
 
 import java.util.Date;
 
-public class UserOperDto implements Dto {
+public class UserOperDto extends Dto {
     private String id;
     private String userId;
     private String operType;  // 操作类型：LOGIN、START_LEARN、DAKA
     private Date operTime;    // 操作时间
     private String remark;    // 备注信息
-    private Date createTime;
-    private Date updateTime;
 
     public UserOperDto() {
     }
@@ -65,19 +63,5 @@ public class UserOperDto implements Dto {
         this.remark = remark;
     }
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
 
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 }

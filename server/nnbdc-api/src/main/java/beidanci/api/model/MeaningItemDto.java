@@ -2,10 +2,8 @@ package beidanci.api.model;
 
 import java.util.Date;
 
-public class MeaningItemDto implements Dto, Ownerable {
+public class MeaningItemDto extends Dto implements Ownerable {
     private String id;
-    private Date createTime;
-    private Date updateTime;
     private String ciXing;
     private String meaning;
     private int popularity;
@@ -50,21 +48,6 @@ public class MeaningItemDto implements Dto, Ownerable {
         this.id = id;
     }
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 
     public String getCiXing() {
         return ciXing;

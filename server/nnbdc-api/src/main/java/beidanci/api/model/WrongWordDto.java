@@ -5,12 +5,10 @@ import java.util.Date;
 /**
  * 错词DTO
  */
-public class WrongWordDto implements Dto {
+public class WrongWordDto extends Dto {
 
     private String userId;
     private String wordId;
-    private Date createTime;
-    private Date updateTime;
 
     public WrongWordDto() {
     }
@@ -38,19 +36,4 @@ public class WrongWordDto implements Dto {
         this.wordId = wordId;
     }
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 }

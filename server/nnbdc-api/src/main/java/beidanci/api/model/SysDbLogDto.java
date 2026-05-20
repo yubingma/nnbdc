@@ -5,15 +5,13 @@ import java.util.Date;
 /**
  * 系统数据日志DTO
  */
-public class SysDbLogDto implements Dto {
+public class SysDbLogDto extends Dto {
     private String id;
     private Integer version;
     private String operate;
     private String tblName;
     private String recordId;
     private String record;
-    private Date createTime;
-    private Date updateTime;
 
     public SysDbLogDto() {
     }
@@ -78,20 +76,5 @@ public class SysDbLogDto implements Dto {
         this.record = record;
     }
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 }
 

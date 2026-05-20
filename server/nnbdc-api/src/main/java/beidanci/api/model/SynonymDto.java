@@ -1,8 +1,6 @@
 package beidanci.api.model;
 
-import java.util.Date;
-
-public class SynonymDto implements Dto {
+public class SynonymDto extends Dto {
     /**
      * 本单词的一个释义项
      */
@@ -14,9 +12,6 @@ public class SynonymDto implements Dto {
     private String wordId;
 
     private String spell;
-
-    private Date createTime; // 创建时间
-    private Date updateTime; // 更新时间
 
     public String getMeaningItemId() {
         return meaningItemId;
@@ -32,22 +27,6 @@ public class SynonymDto implements Dto {
 
     public void setWordId(String wordId) {
         this.wordId = wordId;
-    }
-
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
     }
 
     public String getSpell() {

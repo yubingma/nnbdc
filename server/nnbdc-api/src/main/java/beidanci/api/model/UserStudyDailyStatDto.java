@@ -5,7 +5,7 @@ import java.util.Date;
 /**
  * 每日学习统计DTO
  */
-public class UserStudyDailyStatDto implements Dto {
+public class UserStudyDailyStatDto extends Dto {
 
     private String userId;
     private Date date;
@@ -64,22 +64,5 @@ public class UserStudyDailyStatDto implements Dto {
         this.dayStatus = dayStatus;
     }
 
-    private Date createTime;
-    private Date updateTime;
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 }

@@ -2,7 +2,7 @@ package beidanci.api.model;
 
 import java.util.Date;
 
-public class DictDto implements Dto, Ownerable {
+public class DictDto extends Dto implements Ownerable {
     private String id;
     private String name;
     private String ownerId;
@@ -22,8 +22,6 @@ public class DictDto implements Dto, Ownerable {
     private Integer popularityLimit;
     private Boolean editable;
     private Boolean deletable;
-    private Date createTime;
-    private Date updateTime;
     private String domain;
     private String baseDictId;
     private String sortAlg;
@@ -75,21 +73,6 @@ public class DictDto implements Dto, Ownerable {
         this.deletable = deletable;
     }
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 
     public String getName() {
         return name;

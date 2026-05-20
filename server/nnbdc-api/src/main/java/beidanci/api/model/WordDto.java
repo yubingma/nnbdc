@@ -1,14 +1,13 @@
 package beidanci.api.model;
 
-import java.util.Date;
-
 import beidanci.util.Utils;
 
-public class WordDto implements Dto, Ownerable {
+public class WordDto extends Dto implements Ownerable {
     @Override
     public String getOwnerId() {
         return beidanci.util.Constants.SYS_USER_SYS_ID;
     }
+
     private String id;
     private String spell;
     private String britishPronounce;
@@ -18,8 +17,6 @@ public class WordDto implements Dto, Ownerable {
     private String groupInfo;
     private String shortDesc;
     private String longDesc;
-    private Date createTime;
-    private Date updateTime;
 
     public WordDto() {
 
@@ -28,22 +25,6 @@ public class WordDto implements Dto, Ownerable {
     public WordDto(String spell) {
         this.spell = spell;
 
-    }
-
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
     }
 
     public String getId() {

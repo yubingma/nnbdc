@@ -5,7 +5,7 @@ import java.util.Date;
 /**
  * 单词短描述中文翻译DTO
  */
-public class WordShortDescChineseDto implements Dto, Ownerable {
+public class WordShortDescChineseDto extends Dto implements Ownerable {
     @Override
     public String getOwnerId() {
         return ownerId != null ? ownerId : beidanci.util.Constants.SYS_USER_SYS_ID;
@@ -21,8 +21,6 @@ public class WordShortDescChineseDto implements Dto, Ownerable {
     private Integer foot;
     private String authorId;
     private String ownerId;
-    private Date createTime;
-    private Date updateTime;
 
     public WordShortDescChineseDto() {
     }
@@ -88,20 +86,6 @@ public class WordShortDescChineseDto implements Dto, Ownerable {
         this.authorId = authorId;
     }
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
 
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 }
 

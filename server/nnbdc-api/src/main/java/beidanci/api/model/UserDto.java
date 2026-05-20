@@ -5,7 +5,7 @@ import java.util.Date;
 /**
  * 用于前后端同步的用户数据传输对象
  */
-public class UserDto {
+public class UserDto extends Dto {
     private String id;
     private String userName;
     private String nickName;
@@ -60,8 +60,7 @@ public class UserDto {
     private String premiumOverrideDuration;
     private String appleUserId;
 
-    private Date createTime;
-    private Date updateTime;
+
 
     private String studyConfig;
     
@@ -410,21 +409,7 @@ public class UserDto {
 
 
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
 
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 
     public String getStudyConfig() {
         return studyConfig;

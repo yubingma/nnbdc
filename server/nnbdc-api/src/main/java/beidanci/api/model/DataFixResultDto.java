@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * 数据修复结果DTO
  */
-public class DataFixResultDto implements Dto {
+public class DataFixResultDto extends Dto {
     private boolean hasFixed;
     private boolean hasErrors;
     private List<String> fixed;

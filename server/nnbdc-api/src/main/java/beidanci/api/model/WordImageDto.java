@@ -2,7 +2,7 @@ package beidanci.api.model;
 
 import java.util.Date;
 
-public class WordImageDto implements Dto, Ownerable {
+public class WordImageDto extends Dto implements Ownerable {
     private String id;
     private String wordId;
     private String imageFile;
@@ -15,8 +15,6 @@ public class WordImageDto implements Dto, Ownerable {
     private String ownerId;
     private String status;
     private String auditReason;
-    private Date createTime;
-    private Date updateTime;
 
     public String getStatus() {
         return status;
@@ -75,21 +73,6 @@ public class WordImageDto implements Dto, Ownerable {
     }
 
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 
     @Override
     public String getOwnerId() {

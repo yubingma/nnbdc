@@ -5,13 +5,11 @@ import java.util.Date;
 /**
  * 打卡记录DTO
  */
-public class DakaDto implements Dto {
+public class DakaDto extends Dto {
 
     private String userId;
     private Date forLearningDate;
     private String text;
-    private Date createTime;
-    private Date updateTime;
 
     public DakaDto() {
     }
@@ -48,19 +46,4 @@ public class DakaDto implements Dto {
         this.text = text;
     }
 
-    public Date getCreateTime() {
-        return createTime == null ? new Date(0) : createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 }
