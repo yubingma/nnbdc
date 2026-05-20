@@ -7,6 +7,7 @@ import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/user_extensions.dart';
+import 'package:nnbdc/services/study_cache_manager.dart';
 
 class LearningService {
   static void debugLog(String msg) {
@@ -122,6 +123,8 @@ class LearningService {
           newWordCount++;
         }
       }
+
+      StudyCacheManager().clear();
 
       final result = Result<List<int>>(wordExhausted ? 'NNBDC-0012' : '200', wordExhausted ? '未取到足够单词' : '成功', !wordExhausted);
       result.data = [newWordCount, todayWords.length - newWordCount];

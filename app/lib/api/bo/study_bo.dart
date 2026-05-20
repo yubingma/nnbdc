@@ -581,7 +581,7 @@ class StudyBo {
       var todayWords = await StudyCacheManager().getTodayWords(db, user.id);
 
       if (todayWords.isEmpty) {
-        throw Exception('未知错误: 今日学习单词数为0');
+        return _buildTodayStudyFinishedResult();
       }
       Global.logger.d('🐛 [BDC Performance Item] 查询今日单词列表耗时: ${swWords.elapsedMilliseconds} ms');
 
