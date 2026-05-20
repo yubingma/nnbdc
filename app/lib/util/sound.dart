@@ -10,6 +10,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
 
+import 'package:flutter/foundation.dart';
 import '../api/vo.dart';
 
 class SoundUtil {
@@ -17,6 +18,9 @@ class SoundUtil {
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
   static bool _audioSessionConfigured = false;
+
+  @visibleForTesting
+  static set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
   static final Map<String, List<ja.AudioPlayer>> _sfxPools = {};
   
   // 核心：引入忙碌锁定，记录每个播放器最后一次被指派的时间

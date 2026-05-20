@@ -42,10 +42,22 @@ import 'bdc_state.dart';
 part 'bdc_notifier.g.dart';
 
 @riverpod
+Asr asr(AsrRef ref) {
+  return Asr();
+}
+
+@riverpod
+ja.AudioPlayer bdcAudioPlayer(BdcAudioPlayerRef ref) {
+  final player = ja.AudioPlayer();
+  ref.onDispose(() => player.dispose());
+  return player;
+}
+
+@riverpod
 class BdcNotifier extends _$BdcNotifier {
   late Asr asr;
   late BdcPageArgs _args;
-  final ja.AudioPlayer _audioPlayer = ja.AudioPlayer();
+  late final ja.AudioPlayer _audioPlayer;
   Timer? _learningTimer;
   
   late final SpellingTextEditingController meaningController = SpellingTextEditingController(
@@ -57,7 +69,8 @@ class BdcNotifier extends _$BdcNotifier {
 
   @override
   BdcState build() {
-    asr = Asr();
+    asr = ref.read(asrProvider);
+    _audioPlayer = ref.read(bdcAudioPlayerProvider);
     
     // Initialize args
     final argsJson = Prefs.read<String>("BdcPageArgs");
@@ -81,8 +94,6 @@ class BdcNotifier extends _$BdcNotifier {
       asr.stopMicrophone();
       meaningController.dispose();
       Prefs.remove("BdcPageArgs");
-      
-      _audioPlayer.dispose();
     });
 
     _startLearningTimer();

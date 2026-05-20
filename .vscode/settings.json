@@ -4,6 +4,7 @@
     "java.debug.settings.hotCodeReplace": "auto",
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable",
+    "java.import.gradle.enabled": false,
     //"flutter.devices": ["YXDBB20628208720"],
     //"dart.flutterRunAdditionalArgs": ["-d", "YXDBB20628208720"]
     "dart.lineLength": 150,
