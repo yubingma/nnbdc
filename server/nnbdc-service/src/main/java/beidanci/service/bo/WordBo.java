@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Date;
 
 import javax.annotation.PostConstruct;
 
@@ -258,10 +259,14 @@ public class WordBo extends BaseBo<Word> {
             String similarWordIdStr = rs.getString("similar_word_id");
             assert similarWordIdStr != null;
             wordDto.setSimilarWordId(similarWordIdStr);
-            wordDto.setDistance(rs.getObject("distance", Integer.class));
-            wordDto.setSimilarWordSpell(rs.getString("spell"));
-            wordDto.setCreateTime(rs.getTimestamp("create_time"));
-            wordDto.setUpdateTime(rs.getTimestamp("update_time"));
+            Integer distance = rs.getObject("distance", Integer.class);
+            wordDto.setDistance(distance != null ? distance : 0);
+            String spell = rs.getString("spell");
+            wordDto.setSimilarWordSpell(spell != null ? spell : "");
+            Date createTime = rs.getTimestamp("create_time");
+            wordDto.setCreateTime(createTime != null ? createTime : new Date());
+            Date updateTime = rs.getTimestamp("update_time");
+            wordDto.setUpdateTime(updateTime != null ? updateTime : (createTime != null ? createTime : new Date()));
             return wordDto;
         });
     }
@@ -367,7 +372,7 @@ public class WordBo extends BaseBo<Word> {
         }
 
         // 记录同步日志，并更新数据库中的 update_time
-        word.setUpdateTime(new java.util.Date());
+        word.setUpdateTime(new Date());
         updateEntity(word);
         sysDbSyncBo.logOperation(word, "UPDATE", "word", word.getId(), beidanci.service.util.JsonUtils.toJson(toDto(word)));
     }

@@ -124,7 +124,10 @@ class SimilarWordDto {
   SimilarWordDto(this.wordId, this.similarWordId, this.similarWordSpell, this.distance, this.createTime, this.updateTime);
 
   factory SimilarWordDto.fromJson(Map<String, dynamic> json) {
-    json['updateTime'] ??= json['createTime'];
+    json['similarWordSpell'] ??= '';
+    final defaultTimeStr = DateTime.now().toIso8601String();
+    json['createTime'] ??= defaultTimeStr;
+    json['updateTime'] ??= json['createTime'] ?? defaultTimeStr;
     return _$SimilarWordDtoFromJson(json);
   }
 
