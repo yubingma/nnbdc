@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -278,7 +280,7 @@ void main() {
             wordId: wordId,
             dictId: Global.commonDictId,
             ciXing: 'n.',
-            meaning: '${spell}的含义',
+            meaning: '$spell的含义',
             popularity: 100,
             ownerId: Global.sysUserId,
             createTime: now,
