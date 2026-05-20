@@ -71,6 +71,14 @@ post_install do |installer|
       
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
       config.build_settings['ENABLE_BITCODE'] = 'NO'
+
+      # 配置 permission_handler 权限宏，使得 iOS 真机和模拟器可以正常弹出相应权限申请框
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+        '$(inherited)',
+        'PERMISSION_CAMERA=1',
+        'PERMISSION_PHOTOS=1',
+        'PERMISSION_MICROPHONE=1',
+      ]
     end
 
     # 为 fluwx 添加微信 SDK 头文件搜索路径
