@@ -79,7 +79,7 @@ public class SysDbLogDto implements Dto {
     }
 
     public Date getCreateTime() {
-        return createTime;
+        return createTime == null ? new Date(0) : createTime;
     }
 
     public void setCreateTime(Date createTime) {
@@ -87,7 +87,7 @@ public class SysDbLogDto implements Dto {
     }
 
     public Date getUpdateTime() {
-        return updateTime;
+        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
     }
 
     public void setUpdateTime(Date updateTime) {

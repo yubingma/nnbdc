@@ -38,9 +38,9 @@ public class LearningLogDto {
     public Integer getScheduledDays() { return scheduledDays; }
     public void setScheduledDays(Integer scheduledDays) { this.scheduledDays = scheduledDays; }
 
-    public Date getCreateTime() { return createTime; }
+    public Date getCreateTime() { return createTime == null ? new Date(0) : createTime; }
     public void setCreateTime(Date createTime) { this.createTime = createTime; }
 
-    public Date getUpdateTime() { return updateTime; }
+    public Date getUpdateTime() { return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime; }
     public void setUpdateTime(Date updateTime) { this.updateTime = updateTime; }
 }

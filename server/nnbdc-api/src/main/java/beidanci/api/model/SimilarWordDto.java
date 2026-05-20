@@ -1,13 +1,15 @@
 package beidanci.api.model;
 
+import java.util.Date;
+
 public class SimilarWordDto implements Dto {
 
     private String wordId;
     private String similarWordId;
     private String similarWordSpell;
     private int distance;
-    private java.util.Date createTime;
-    private java.util.Date updateTime;
+    private Date createTime;
+    private Date updateTime;
 
 
     public String getWordId() {
@@ -42,19 +44,19 @@ public class SimilarWordDto implements Dto {
         this.similarWordSpell = similarWordSpell;
     }
 
-    public java.util.Date getCreateTime() {
-        return createTime;
+    public Date getCreateTime() {
+        return createTime == null ? new Date(0) : createTime;
     }
 
-    public void setCreateTime(java.util.Date createTime) {
+    public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
 
-    public java.util.Date getUpdateTime() {
-        return updateTime;
+    public Date getUpdateTime() {
+        return updateTime == null ? (createTime == null ? new Date(0) : createTime) : updateTime;
     }
 
-    public void setUpdateTime(java.util.Date updateTime) {
+    public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
     }
 
