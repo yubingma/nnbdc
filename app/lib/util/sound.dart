@@ -68,10 +68,13 @@ class SoundUtil {
       final session = await AudioSession.instance;
       await session.configure(AudioSessionConfiguration(
         avAudioSessionCategory: AVAudioSessionCategory.playback,
-        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers,
-        avAudioSessionMode: AVAudioSessionMode.defaultMode,
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers |
+            AVAudioSessionCategoryOptions.allowBluetooth |
+            AVAudioSessionCategoryOptions.allowAirPlay |
+            AVAudioSessionCategoryOptions.allowBluetoothA2dp, 
+        avAudioSessionMode: AVAudioSessionMode.moviePlayback, // 使用 moviePlayback 获得更丰满、不尖锐的音质
         androidAudioAttributes: const AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.speech,
+          contentType: AndroidAudioContentType.music, // 改为 music 以获得更好的媒体音质
           flags: AndroidAudioFlags.none,
           usage: AndroidAudioUsage.media,
         ),
@@ -101,8 +104,9 @@ class SoundUtil {
         avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
             AVAudioSessionCategoryOptions.mixWithOthers |
             AVAudioSessionCategoryOptions.allowBluetooth |
+            AVAudioSessionCategoryOptions.allowAirPlay |
             AVAudioSessionCategoryOptions.allowBluetoothA2dp, // 支持蓝牙高保真立体声
-        avAudioSessionMode: AVAudioSessionMode.defaultMode, // 使用 defaultMode 匹配原生，消除模式切换杂音且人声强过滤较温和
+        avAudioSessionMode: AVAudioSessionMode.videoRecording, // 改用 videoRecording 获得更宽频响和更自然的音质（比 defaultMode 更厚重）
         androidAudioAttributes: const AndroidAudioAttributes(
           contentType: AndroidAudioContentType.speech,
           flags: AndroidAudioFlags.none,
