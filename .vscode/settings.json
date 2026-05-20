@@ -16,7 +16,9 @@
         "tools/llama.cpp/**": true
     },
     "files.watcherExclude": {
-        "tools/llama.cpp/**": true
+        "tools/llama.cpp/**": true,
+        "**/pub-cache/**": true,
+        "/Volumes/ssd/AppSupport/pub-cache/**": true
     },
     "C_Cpp.files.exclude": {
         "tools/llama.cpp/**": true
@@ -24,5 +26,13 @@
     "files.exclude": {
         "**/.venv": true,
         "**/__pycache__": true
-    }
+    },
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/.metadata/**",
+        "**/archetype-resources/**",
+        "**/META-INF/maven/**",
+        "**/pub-cache/**",
+        "/Volumes/ssd/AppSupport/pub-cache/**"
+    ]
 }
