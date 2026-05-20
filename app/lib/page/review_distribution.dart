@@ -71,7 +71,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
       final lastDateRaw = item['lastLearningDate'] as DateTime? ?? now;
       final scheduledDays = item['scheduledDays'] as int? ?? 0;
       final nextDateRaw = app_date.DateUtils.businessDate(lastDateRaw).add(Duration(days: scheduledDays));
-      
+
       final nextDate = app_date.DateUtils.businessDate(nextDateRaw);
       final daysDiff = nextDate.difference(nowDate).inDays;
 
@@ -101,7 +101,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
       if (isToday) {
         label = "今天";
       } else if (isOverdue) {
-        label = "已逾期${-key}天"; 
+        label = "已逾期${-key}天";
       } else {
         label = "$key天后";
       }
@@ -170,11 +170,11 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _sectionTitle("新词库 (待开始学习)", context),
+                        _sectionTitle("待学习 (已进入学习池, 但还未开始学习)", context),
                         const SizedBox(height: 12),
                         _buildNewWordsBar(isDarkMode),
                         const SizedBox(height: 32),
-                        _sectionTitle("待复习分布 (已开始学习)", context),
+                        _sectionTitle("待复习", context),
                         const SizedBox(height: 4),
                       ],
                     ),
@@ -291,18 +291,16 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: data.isToday ? FontWeight.bold : FontWeight.normal,
-                  color: data.isToday 
-                    ? AppTheme.primaryColor 
-                    : (data.isOverdue ? Colors.redAccent : (isDarkMode ? Colors.white70 : Colors.black54)),
+                  color: data.isToday ? AppTheme.primaryColor : (data.isOverdue ? Colors.redAccent : (isDarkMode ? Colors.white70 : Colors.black54)),
                 ),
               ),
             ),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth - 80; 
+                  final maxWidth = constraints.maxWidth - 80;
                   final barWidth = _maxCount == 0 ? 0.0 : (data.totalCount / _maxCount) * maxWidth;
-                  
+
                   return Row(
                     children: [
                       Stack(
@@ -370,9 +368,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
             height: 30,
             width: reviewWidth < 1 && reviewWidth > 0 ? 1 : reviewWidth, // 确保极短的条也能看见
             decoration: BoxDecoration(
-              color: data.isToday 
-                  ? AppTheme.primaryColor 
-                  : (data.isOverdue ? Colors.redAccent : AppTheme.primaryColor.withValues(alpha: 0.5)),
+              color: data.isToday ? AppTheme.primaryColor : (data.isOverdue ? Colors.redAccent : AppTheme.primaryColor.withValues(alpha: 0.5)),
             ),
           ),
         if (newWidth > 0)
@@ -402,8 +398,8 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
             _dialogDescItem(Icons.bar_chart, '横轴 (X轴)', '代表单词数量。柱状条越长表示该时段复习任务越重。'),
             const SizedBox(height: 12),
             _dialogDescItem(
-              Icons.color_lens_outlined, 
-              '颜色含义', 
+              Icons.color_lens_outlined,
+              '颜色含义',
               RichText(
                 text: TextSpan(
                   style: const TextStyle(fontSize: 13, color: Colors.grey, fontFamily: 'NotoSansSC'),
