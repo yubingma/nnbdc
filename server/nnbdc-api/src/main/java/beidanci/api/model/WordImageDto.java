@@ -1,7 +1,5 @@
 package beidanci.api.model;
 
-import java.util.Date;
-
 public class WordImageDto extends Dto implements Ownerable {
     private String id;
     private String wordId;
@@ -71,8 +69,6 @@ public class WordImageDto extends Dto implements Ownerable {
     public void setFoot(Integer foot) {
         this.foot = foot;
     }
-
-
 
     @Override
     public String getOwnerId() {
