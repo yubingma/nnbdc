@@ -81,6 +81,7 @@ class SoundUtil {
         androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
         androidWillPauseWhenDucked: true,
       ));
+      // Preferred sample rate setting removed (unsupported in audio_session)
       _currentSessionCategory = 'playback';
       Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
       debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
@@ -115,6 +116,7 @@ class SoundUtil {
         androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
         androidWillPauseWhenDucked: true,
       ));
+      // Preferred sample rate setting removed (unsupported in audio_session)
       _currentSessionCategory = 'playAndRecord';
       Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
       debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
