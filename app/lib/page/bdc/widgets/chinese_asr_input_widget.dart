@@ -100,8 +100,9 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
                     double height = 4.0;
                     double alpha = 0.2;
 
-                    // 动态聆听状态
-                    if (widget.asrState == AsrState.started) {
+                    // 动态聆听或就绪状态
+                    if (widget.asrState == AsrState.started ||
+                        widget.asrState == AsrState.initialized) {
                       // 基础呼吸扫描值（用于待机）
                       final double breath = sin(
                           (_waveController.value + (index * 0.125)) * pi * 2);
