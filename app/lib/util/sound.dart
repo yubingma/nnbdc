@@ -57,73 +57,79 @@ class SoundUtil {
     }
   }
 
+  static final _sessionLock = _Mutex();
+
   /// 切换为高保真纯播放模式 (无麦克风占用，无回声消除滤波，高动态范围，高保真度)
-  static Future<void> usePlaybackCategory() async {
-    if (PlatformUtils.isWeb) return;
-    if (_currentSessionCategory == 'playback') {
-      Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
-      debugPrint('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
-      return;
-    }
-    try {
-      final session = await AudioSession.instance;
-      await session.configure(AudioSessionConfiguration(
-        avAudioSessionCategory: AVAudioSessionCategory.playback,
-        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers |
-            AVAudioSessionCategoryOptions.allowBluetooth |
-            AVAudioSessionCategoryOptions.allowAirPlay |
-            AVAudioSessionCategoryOptions.allowBluetoothA2dp, 
-        avAudioSessionMode: AVAudioSessionMode.moviePlayback, // 使用 moviePlayback 获得更丰满、不尖锐的音质
-        androidAudioAttributes: const AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.music, // 改为 music 以获得更好的媒体音质
-          flags: AndroidAudioFlags.none,
-          usage: AndroidAudioUsage.media,
-        ),
-        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-        androidWillPauseWhenDucked: true,
-      ));
-      // Preferred sample rate setting removed (unsupported in audio_session)
-      _currentSessionCategory = 'playback';
-      Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
-      debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
-    } catch (e) {
-      Global.logger.e('SoundUtil: 切换高保真播放模式失败: $e');
-    }
+  static Future<void> usePlaybackCategory() {
+    return _sessionLock.protect(() async {
+      if (PlatformUtils.isWeb) return;
+      if (_currentSessionCategory == 'playback') {
+        Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
+        debugPrint('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
+        return;
+      }
+      try {
+        final session = await AudioSession.instance;
+        await session.configure(AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playback,
+          avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers |
+              AVAudioSessionCategoryOptions.allowBluetooth |
+              AVAudioSessionCategoryOptions.allowAirPlay |
+              AVAudioSessionCategoryOptions.allowBluetoothA2dp, 
+          avAudioSessionMode: AVAudioSessionMode.moviePlayback, // 使用 moviePlayback 获得更丰满、不尖锐的音质
+          androidAudioAttributes: const AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.music, // 改为 music 以获得更好的媒体音质
+            flags: AndroidAudioFlags.none,
+            usage: AndroidAudioUsage.media,
+          ),
+          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+          androidWillPauseWhenDucked: true,
+        )).timeout(const Duration(milliseconds: 1000));
+        // Preferred sample rate setting removed (unsupported in audio_session)
+        _currentSessionCategory = 'playback';
+        Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
+        debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
+      } catch (e) {
+        Global.logger.e('SoundUtil: 切换高保真播放模式失败: $e');
+      }
+    });
   }
 
   /// 切换为录音与播放并存模式 (用于 ASR 语音识别场景，匹配 iOS 原生配置，优化蓝牙高保真度)
-  static Future<void> usePlayAndRecordCategory() async {
-    if (PlatformUtils.isWeb) return;
-    if (_currentSessionCategory == 'playAndRecord') {
-      Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
-      debugPrint('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
-      return;
-    }
-    try {
-      final session = await AudioSession.instance;
-      await session.configure(AudioSessionConfiguration(
-        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
-            AVAudioSessionCategoryOptions.mixWithOthers |
-            AVAudioSessionCategoryOptions.allowBluetooth |
-            AVAudioSessionCategoryOptions.allowAirPlay |
-            AVAudioSessionCategoryOptions.allowBluetoothA2dp, // 支持蓝牙高保真立体声
-        avAudioSessionMode: AVAudioSessionMode.defaultMode, // 改用 defaultMode 获得平坦频响和最自然的提示音音质（避免 videoRecording 在某些 iOS 设备上触发的尖锐高频均衡滤波）
-        androidAudioAttributes: const AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.speech,
-          flags: AndroidAudioFlags.none,
-          usage: AndroidAudioUsage.media,
-        ),
-        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-        androidWillPauseWhenDucked: true,
-      ));
-      // Preferred sample rate setting removed (unsupported in audio_session)
-      _currentSessionCategory = 'playAndRecord';
-      Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
-      debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
-    } catch (e) {
-      Global.logger.e('SoundUtil: 切换为录放模式失败: $e');
-    }
+  static Future<void> usePlayAndRecordCategory() {
+    return _sessionLock.protect(() async {
+      if (PlatformUtils.isWeb) return;
+      if (_currentSessionCategory == 'playAndRecord') {
+        Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
+        debugPrint('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
+        return;
+      }
+      try {
+        final session = await AudioSession.instance;
+        await session.configure(AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+          avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
+              AVAudioSessionCategoryOptions.mixWithOthers |
+              AVAudioSessionCategoryOptions.allowBluetooth |
+              AVAudioSessionCategoryOptions.allowAirPlay |
+              AVAudioSessionCategoryOptions.allowBluetoothA2dp, // 支持蓝牙高保真立体声
+          avAudioSessionMode: AVAudioSessionMode.defaultMode, // 改用 defaultMode 获得平坦频响和最自然的提示音音质（避免 videoRecording 在某些 iOS 设备上触发的尖锐高频均衡滤波）
+          androidAudioAttributes: const AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.speech,
+            flags: AndroidAudioFlags.none,
+            usage: AndroidAudioUsage.media,
+          ),
+          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+          androidWillPauseWhenDucked: true,
+        )).timeout(const Duration(milliseconds: 1000));
+        // Preferred sample rate setting removed (unsupported in audio_session)
+        _currentSessionCategory = 'playAndRecord';
+        Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
+        debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
+      } catch (e) {
+        Global.logger.e('SoundUtil: 切换为录放模式失败: $e');
+      }
+    });
   }
 
   static void _prewarmSfx(List<String> files) {
@@ -464,5 +470,22 @@ class SoundUtil {
     } finally {
       _webUnlockInProgress = false;
     }
+  }
+}
+
+class _Mutex {
+  Future<void> _chain = Future.value();
+
+  Future<T> protect<T>(Future<T> Function() body) {
+    final completer = Completer<T>();
+    _chain = _chain.then((_) async {
+      try {
+        final result = await body();
+        completer.complete(result);
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    }).catchError((_) {}); // 避免前一个任务失败导致后一个任务无法执行
+    return completer.future;
   }
 }
