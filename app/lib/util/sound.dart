@@ -107,7 +107,7 @@ class SoundUtil {
             AVAudioSessionCategoryOptions.allowBluetooth |
             AVAudioSessionCategoryOptions.allowAirPlay |
             AVAudioSessionCategoryOptions.allowBluetoothA2dp, // 支持蓝牙高保真立体声
-        avAudioSessionMode: AVAudioSessionMode.videoRecording, // 改用 videoRecording 获得更宽频响和更自然的音质（比 defaultMode 更厚重）
+        avAudioSessionMode: AVAudioSessionMode.defaultMode, // 改用 defaultMode 获得平坦频响和最自然的提示音音质（避免 videoRecording 在某些 iOS 设备上触发的尖锐高频均衡滤波）
         androidAudioAttributes: const AndroidAudioAttributes(
           contentType: AndroidAudioContentType.speech,
           flags: AndroidAudioFlags.none,
