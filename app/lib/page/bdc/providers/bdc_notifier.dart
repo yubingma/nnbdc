@@ -885,7 +885,7 @@ class BdcNotifier extends _$BdcNotifier {
         Global.logger.w('getNextWord: 获取单词失败: code=${result.code}, msg=${result.msg}');
         if (result.code == "NEW_DAY") {
           ToastUtil.info('已进入新的一天，请重新开始学习');
-          goRouter.go('/today_plan'); // Redirect back to plan page
+          goRouter.go('/index'); // Redirect back to plan page
         } else {
           state = state.copyWith(loadError: result.msg ?? '获取单词失败');
           ToastUtil.error(result.msg ?? '获取单词失败');

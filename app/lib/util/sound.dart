@@ -322,6 +322,12 @@ class SoundUtil {
   /// 并发播放音效
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) async {
     await configureAudioSession();
+    // Ensure we are in high‑fidelity playback mode for short UI feedback sounds,
+    // but DO NOT switch if we are currently using playAndRecord (e.g. during ASR active)
+    // to prevent tearing down the iOS microphone stream/audio engine.
+    if (_currentSessionCategory != 'playAndRecord') {
+      await usePlaybackCategory();
+    }
     if (PlatformUtils.isWeb) return;
     Global.logger.i("🔊 [SoundUtil] 触发并发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
     debugPrint("🔊 [SoundUtil] 触发并发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
@@ -369,8 +375,14 @@ class SoundUtil {
 
       await player.setAsset('assets/audio/$soundFileName');
       await player.play().timeout(const Duration(milliseconds: 3000));
-    } catch (e) {
-      Global.logger.w('SoundUtil: 播放后台音效出错 $soundFileName: $e');
+      // Wait for completion or idle state
+      await player.playerStateStream.firstWhere((state) =>
+          state.processingState == ja.ProcessingState.completed ||
+          state.processingState == ja.ProcessingState.idle);
+    } catch (e, stackTrace) {
+      ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错: $soundFileName', showToast: false);
+    } finally {
+      await player.stop();
     }
   }
 

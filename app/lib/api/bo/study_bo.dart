@@ -552,8 +552,9 @@ class StudyBo {
       // 跨天检测：比较当前业务日期与用户记录的最后学习业务日期
       final DateTime now = AppClock.now();
       final DateTime today = AppClock.today();
+      Global.logger.i('getWord 跨天检测：user.lastLearningDate=${user.lastLearningDate}, today=$today, now=$now, equals=${user.lastLearningDate == today}');
       if (user.lastLearningDate != null && user.lastLearningDate != today) {
-        Global.logger.d('检测到跨天：user.lastLearningDate=${user.lastLearningDate}, today=$today');
+        Global.logger.w('检测到跨天：user.lastLearningDate=${user.lastLearningDate}, today=$today。触发 NEW_DAY 终止学习流程！');
         return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", false);
       }
 
