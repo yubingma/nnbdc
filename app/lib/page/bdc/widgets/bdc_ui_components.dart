@@ -1285,6 +1285,19 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
+  String _buildUnderlines(String targetWord, int inputLength) {
+    final buffer = StringBuffer();
+    for (int i = inputLength; i < targetWord.length; i++) {
+      final char = targetWord[i];
+      if (RegExp(r'[a-zA-Z]').hasMatch(char)) {
+        buffer.write('_');
+      } else {
+        buffer.write(char);
+      }
+    }
+    return buffer.toString();
+  }
+
   Widget _buildSpellingExerciseButton(bool isDarkMode) {
     return Column(
       children: [
@@ -1327,16 +1340,34 @@ extension BdcPageStateUIComponents on BdcPageState {
                           ),
                         )
                       : RichText(
-                          text: SpellingTextEditingController
-                              .buildSpellingTextSpan(
-                            notifier.meaningController.text,
-                            state.word?.spell ?? "",
-                            notifier.meaningController.text.trim().toLowerCase() !=
-                                    (state.word?.spell.toLowerCase() ?? "")
-                                ? Colors.red
-                                : (isDarkMode ? Colors.white : Colors.black),
-                            const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
+                          text: TextSpan(
+                            children: [
+                              SpellingTextEditingController
+                                  .buildSpellingTextSpan(
+                                notifier.meaningController.text,
+                                state.word?.spell ?? "",
+                                notifier.meaningController.text.trim().toLowerCase() !=
+                                        (state.word?.spell.toLowerCase() ?? "")
+                                    ? Colors.red
+                                    : (isDarkMode ? Colors.white : Colors.black),
+                                const TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              if (notifier.meaningController.text.length <
+                                  (state.word?.spell.length ?? 0))
+                                TextSpan(
+                                  text:
+                                      ' ${_buildUnderlines(state.word?.spell ?? "", notifier.meaningController.text.length)}',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDarkMode
+                                        ? Colors.white30
+                                        : Colors.black26,
+                                    letterSpacing: 2.0,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                 ),

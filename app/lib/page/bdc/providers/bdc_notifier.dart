@@ -644,6 +644,7 @@ class BdcNotifier extends _$BdcNotifier {
       state = state.copyWith(
         wordWrapper: wrapper,
         hintTapCount: state.hintTapCount + 1,
+        isUpdatingByHint: !state.isUpdatingByHint,
       );
       if (state.studyStep == StudyStep.ch2En.json || state.showHandwritingBoard) {
         meaningController.text = state.word!.spell.substring(0, min(wrapper.hintLetterCount, state.word!.spell.length));
@@ -658,6 +659,7 @@ class BdcNotifier extends _$BdcNotifier {
       state = state.copyWith(
         wordWrapper: wrapper,
         hintTapCount: 2,
+        isUpdatingByHint: !state.isUpdatingByHint,
       );
       if (state.studyStep == StudyStep.ch2En.json || state.showHandwritingBoard) {
         meaningController.text = state.word!.spell;
@@ -669,7 +671,10 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.wordWrapper != null) {
       final wrapper = state.wordWrapper!;
       wrapper.hintLetterCount = 0;
-      state = state.copyWith(wordWrapper: wrapper);
+      state = state.copyWith(
+        wordWrapper: wrapper,
+        isUpdatingByHint: !state.isUpdatingByHint,
+      );
       if (state.studyStep == StudyStep.ch2En.json || state.showHandwritingBoard) {
         meaningController.text = '';
       }
