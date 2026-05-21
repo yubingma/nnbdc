@@ -79,5 +79,30 @@ void main() {
       final end = DateUtils.businessDayEnd(date);
       expect(end, DateTime(2026, 5, 11, 2, 59, 59));
     });
+
+    test('DateUtils.isSameBusinessDay should correctly handle mixed UTC and Local DateTimes', () {
+      // 模拟从数据库 Drift/SQLite 取回的带 UTC 标志的日期（比如 2026-05-21 00:00:00.000Z，isUtc: true）
+      final dbUtcDate = DateTime.utc(2026, 5, 21, 0, 0, 0); 
+      
+      // 模拟通过 AppClock.today() 生成的 Local 日期（比如 2026-05-21 00:00:00.000，isUtc: false）
+      final localDate = DateTime(2026, 5, 21, 0, 0, 0);
+
+      // 【Bug 防范性断言】确保它们在 Dart 中直接直接比对或者 value 比对是绝对不相等的，用以证明为何不能直接 != / == 对比
+      expect(dbUtcDate == localDate, isFalse);
+      expect(dbUtcDate.isUtc, isTrue);
+      expect(localDate.isUtc, isFalse);
+
+      // 【安全工具方法断言】验证使用 DateUtils.isSameBusinessDay 进行对比时，它们必须是同一个业务天！
+      expect(DateUtils.isSameBusinessDay(dbUtcDate, localDate), isTrue);
+      expect(DateUtils.isSameDay(dbUtcDate, localDate), isTrue);
+
+      // 更复杂的时差偏移场景：
+      // UTC 5月21日凌晨 01:00 (isUtc = true) 对应北京时间 5月21日早上 09:00
+      final utcTime = DateTime.utc(2026, 5, 21, 1, 0, 0);
+      // Local 北京时间 5月21日下午 14:00 (isUtc = false)
+      final localTime = DateTime(2026, 5, 21, 14, 0, 0);
+      
+      expect(DateUtils.isSameBusinessDay(utcTime, localTime), isTrue);
+    });
   });
 }

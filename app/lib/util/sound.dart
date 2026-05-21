@@ -212,6 +212,10 @@ class SoundUtil {
 
   /// 播放 ASR 就绪提示音
   static Future<void> playAsrReadyHintSound() async {
+    if (PlatformUtils.isIOS) {
+      Global.logger.i("🔊 [SoundUtil] iOS 平台绕过 playAsrReadyHintSound (改为原生播放)");
+      return;
+    }
     // 使用并发播放模式，音量调低，不阻塞 ASR 启动。
     // 将速度提升至 2.5 倍，使其变得极其短促（类似清脆的“滴”），缩短时间至 ~150ms 左右
     unawaited(playAssetSoundConcurrent('asr_ready_hint.mp3', 2.5, 0.2));
