@@ -19,8 +19,7 @@ class SoundUtil {
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
   static bool _audioSessionConfigured = false;
-  static String _currentSessionCategory = 'none';
-  static String get currentSessionCategory => _currentSessionCategory;
+  static String currentSessionCategory = 'none';
 
   @visibleForTesting
   static set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
@@ -63,7 +62,7 @@ class SoundUtil {
   static Future<void> usePlaybackCategory() {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
-      if (_currentSessionCategory == 'playback') {
+      if (currentSessionCategory == 'playback') {
         Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
         debugPrint('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
         return;
@@ -86,7 +85,7 @@ class SoundUtil {
           androidWillPauseWhenDucked: true,
         )).timeout(const Duration(milliseconds: 1000));
         // Preferred sample rate setting removed (unsupported in audio_session)
-        _currentSessionCategory = 'playback';
+        currentSessionCategory = 'playback';
         Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
         debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playback (高保真播放，解除麦克风占用和回声过滤)');
       } catch (e) {
@@ -99,7 +98,7 @@ class SoundUtil {
   static Future<void> usePlayAndRecordCategory() {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
-      if (_currentSessionCategory == 'playAndRecord') {
+      if (currentSessionCategory == 'playAndRecord') {
         Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
         debugPrint('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
         return;
@@ -123,7 +122,7 @@ class SoundUtil {
           androidWillPauseWhenDucked: true,
         )).timeout(const Duration(milliseconds: 1000));
         // Preferred sample rate setting removed (unsupported in audio_session)
-        _currentSessionCategory = 'playAndRecord';
+        currentSessionCategory = 'playAndRecord';
         Global.logger.i('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
         debugPrint('🔊 [SoundUtil] 成功切换音频会话为: playAndRecord (录音与播放并存，启用 A2DP 蓝牙高保真)');
       } catch (e) {
@@ -244,8 +243,8 @@ class SoundUtil {
       }
 
       final DateTime startTime = DateTime.now();
-      Global.logger.i('🔊 [SoundUtil] 触发播放时的实际音频会话分类为: $_currentSessionCategory | 播放 URL: $soundUrl | 倍速: $speed');
-      debugPrint('🔊 [SoundUtil] 触发播放时的实际音频会话分类为: $_currentSessionCategory | 播放 URL: $soundUrl | 倍速: $speed');
+      Global.logger.i('🔊 [SoundUtil] 触发播放时的实际音频会话分类为: $currentSessionCategory | 播放 URL: $soundUrl | 倍速: $speed');
+      debugPrint('🔊 [SoundUtil] 触发播放时的实际音频会话分类为: $currentSessionCategory | 播放 URL: $soundUrl | 倍速: $speed');
 
       // 设置源
       if (PlatformUtils.isWeb) {
@@ -306,8 +305,8 @@ class SoundUtil {
     final player = pool.first;
     
     final startTime = DateTime.now().millisecondsSinceEpoch;
-    Global.logger.i("🔊 [SoundUtil] 触发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
-    debugPrint("🔊 [SoundUtil] 触发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
+    Global.logger.i("🔊 [SoundUtil] 触发播放音效时的实际音频会话分类为: $currentSessionCategory | 音效名: $soundFileName");
+    debugPrint("🔊 [SoundUtil] 触发播放音效时的实际音频会话分类为: $currentSessionCategory | 音效名: $soundFileName");
     try {
       await player.stop(); // 确保停止
       await player.seek(Duration.zero);
@@ -338,12 +337,12 @@ class SoundUtil {
     // to prevent tearing down the iOS microphone stream/audio engine.
     // 如果 ASR 当前并非活跃启动状态，则我们可以安全、坚决地切回高保真播放分类以获得悦耳的音质。
     final asrState = Asr().state;
-    if (_currentSessionCategory != 'playAndRecord' || (asrState != AsrState.started && asrState != AsrState.stopping)) {
+    if (currentSessionCategory != 'playAndRecord' || (asrState != AsrState.started && asrState != AsrState.stopping)) {
       await usePlaybackCategory();
     }
     if (PlatformUtils.isWeb) return;
-    Global.logger.i("🔊 [SoundUtil] 触发并发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
-    debugPrint("🔊 [SoundUtil] 触发并发播放音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
+    Global.logger.i("🔊 [SoundUtil] 触发并发播放音效时的实际音频会话分类为: $currentSessionCategory | 音效名: $soundFileName");
+    debugPrint("🔊 [SoundUtil] 触发并发播放音效时的实际音频会话分类为: $currentSessionCategory | 音效名: $soundFileName");
 
     final pool = _sfxPools.putIfAbsent(soundFileName, () => []);
     ja.AudioPlayer? player;
@@ -404,8 +403,8 @@ class SoundUtil {
     if (!_audioSessionConfigured) {
       await configureAudioSession();
     }
-    Global.logger.i("🔊 [SoundUtil] 触发被裁剪音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
-    debugPrint("🔊 [SoundUtil] 触发被裁剪音效时的实际音频会话分类为: $_currentSessionCategory | 音效名: $soundFileName");
+    Global.logger.i("🔊 [SoundUtil] 触发被裁剪音效时的实际音频会话分类为: $currentSessionCategory | 音效名: $soundFileName");
+    debugPrint("🔊 [SoundUtil] 触发被裁剪音效时的实际音频会话分类为: $currentSessionCategory | 音效名: $soundFileName");
     final pool = _sfxPools.putIfAbsent(soundFileName, () => [ja.AudioPlayer()]);
     ja.AudioPlayer? player;
     final now = AppClock.now();

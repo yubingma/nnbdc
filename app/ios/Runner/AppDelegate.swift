@@ -404,6 +404,21 @@ import AudioToolbox
         stopSpeechRecognition()
         teardownAudioEngine()
         isRecording = false
+        
+        // 核心原生的终极保障：在原生关停麦克风时，立刻强力在原生层将 AVAudioSession 的分类彻底还原为 .playback！
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(
+                .playback,
+                mode: .moviePlayback,
+                options: [.mixWithOthers, .allowBluetooth, .allowAirPlay, .allowBluetoothA2DP]
+            )
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            print("IOS: [ASR] Native AVAudioSession category successfully reverted to .playback")
+        } catch {
+            print("IOS: [ASR] Native AVAudioSession category revert failed: \(error)")
+        }
+        
         result(nil)
     }
     

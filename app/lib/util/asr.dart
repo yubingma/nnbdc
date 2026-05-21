@@ -549,6 +549,7 @@ class Asr {
 
     if (state == AsrState.stopped || state == AsrState.initialized || state == AsrState.unknown) {
       debugPrint('💡 [ASR] stopMicrophone() ASR 已经是停止/未启动状态 ($state)，仅确保音频分类为 playback');
+      SoundUtil.currentSessionCategory = 'playback';
       await SoundUtil.usePlaybackCategory();
       return;
     }
@@ -562,10 +563,12 @@ class Asr {
       await asrMethodChannel.invokeMethod('stopMicrophone');
       setState(AsrState.stopped);
       Global.logger.i('ASR: Microphone and engine stopped successfully');
+      SoundUtil.currentSessionCategory = 'playback';
       await SoundUtil.usePlaybackCategory();
     } on PlatformException catch (e) {
       Global.logger.e('ASR: Exception during stopMicrophone: ${e.message}');
       setState(AsrState.stopped);
+      SoundUtil.currentSessionCategory = 'playback';
       await SoundUtil.usePlaybackCategory();
     }
   }
