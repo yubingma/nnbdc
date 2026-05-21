@@ -411,9 +411,9 @@ import AudioToolbox
             try audioSession.setCategory(
                 .playback,
                 mode: .moviePlayback,
-                options: [.mixWithOthers, .allowBluetooth, .allowAirPlay, .allowBluetoothA2DP]
+                options: [.mixWithOthers]
             )
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            try audioSession.setActive(true)
             print("IOS: [ASR] Native AVAudioSession category successfully reverted to .playback")
         } catch {
             print("IOS: [ASR] Native AVAudioSession category revert failed: \(error)")
