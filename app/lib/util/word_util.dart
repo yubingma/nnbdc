@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/pinyin.dart';
+import 'package:nnbdc/global.dart';
 import '../api/vo.dart';
 
 /// 自定义 TextEditingController，实现单个字符的实时颜色反馈
@@ -154,6 +155,9 @@ MeaningMatchResult matchInputChineseWithMeaningItems(
   final List<String> inputs =
       asrInput is List<String> ? asrInput : [asrInput.toString()];
 
+  Global.logger.d('🔍 [ASR-Match] 开始中文匹配。word: ${wordWrapper.word.spell}');
+  Global.logger.d('🔍 [ASR-Match] 所有候选词列表 inputs: $inputs');
+
   for (var i = 0; i < meaningItems.length; i++) {
     // 每个元素对应一个词性
     var meaningItem = meaningItems[i];
@@ -168,9 +172,11 @@ MeaningMatchResult matchInputChineseWithMeaningItems(
       if (!wordWrapper.asrMatchedMeaningItemParts.contains(Pair(i, j))) {
         // 只要任一候选匹配上，就认为该释义项被答对
         bool isMatched = false;
+        String? matchedInput;
         for (final input in inputs) {
           if (fuzzyChineseContains(input, part)) {
             isMatched = true;
+            matchedInput = input;
             break;
           }
         }
@@ -178,10 +184,16 @@ MeaningMatchResult matchInputChineseWithMeaningItems(
         if (isMatched) {
           newMatchCount++;
           wordWrapper.asrMatchedMeaningItemParts.add(Pair(i, j));
+          Global.logger.d('✅ [ASR-Match] 成功匹配！释义项子项 part: "$part"，匹配上的候选词 input: "$matchedInput"');
+        } else {
+          Global.logger.d('❌ [ASR-Match] 无法匹配。释义项子项 part: "$part" 与所有候选词 inputs 均不匹配');
         }
+      } else {
+        Global.logger.d('ℹ️ [ASR-Match] 释义项子项 part: "$part" 之前已匹配，跳过');
       }
     }
   }
+  Global.logger.d('📊 [ASR-Match] 匹配结束。newMatchCount: $newMatchCount, matchedCount: ${wordWrapper.asrMatchedMeaningItemParts.length}/$count');
   return MeaningMatchResult(
     totalCount: count,
     matchedCount: wordWrapper.asrMatchedMeaningItemParts.length,
