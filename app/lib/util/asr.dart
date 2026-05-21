@@ -547,6 +547,16 @@ class Asr {
       return;
     }
 
+    if (state == AsrState.stopped || state == AsrState.initialized || state == AsrState.unknown) {
+      debugPrint('💡 [ASR] stopMicrophone() ASR 已经是停止/未启动状态 ($state)，仅确保音频分类为 playback');
+      await SoundUtil.usePlaybackCategory();
+      return;
+    }
+    if (state == AsrState.stopping) {
+      debugPrint('💡 [ASR] stopMicrophone() ASR 正在停止中，避免重复关停重入。');
+      return;
+    }
+
     setState(AsrState.stopping);
     try {
       await asrMethodChannel.invokeMethod('stopMicrophone');

@@ -9,6 +9,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'asr.dart';
 
 import 'package:flutter/foundation.dart';
 import '../api/vo.dart';
@@ -329,7 +330,9 @@ class SoundUtil {
     // Ensure we are in high‑fidelity playback mode for short UI feedback sounds,
     // but DO NOT switch if we are currently using playAndRecord (e.g. during ASR active)
     // to prevent tearing down the iOS microphone stream/audio engine.
-    if (_currentSessionCategory != 'playAndRecord') {
+    // 如果 ASR 当前并非活跃启动状态，则我们可以安全、坚决地切回高保真播放分类以获得悦耳的音质。
+    final asrState = Asr().state;
+    if (_currentSessionCategory != 'playAndRecord' || (asrState != AsrState.started && asrState != AsrState.stopping)) {
       await usePlaybackCategory();
     }
     if (PlatformUtils.isWeb) return;
