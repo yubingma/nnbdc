@@ -40,7 +40,6 @@ Map<String, double> shengMuSimularityMap = {
   "t-l": 0.50,
   "l-r": 0.55, // 边音/卷舌音混淆
 
-
   // 软腭与声门擦音的混淆
   "g-h": 0.35,
   "k-h": 0.70, // 常用混淆（如：看/汉，苦/胡）
@@ -152,16 +151,16 @@ Map<String, double> yunMuSimularityMap = {
   "uan-an": 0.60, // 从 0.50 略升
   "ian-ie": 0.65, // 常用混淆（如：没见/媒介）
   "ian-an": 0.60, // 新增
-  "e-an": 0.45,   // 模糊混淆（如：这都/战斗）
+  "e-an": 0.45, // 模糊混淆（如：这都/战斗）
 
-  "i-un": 0.35,   // 模糊混淆（如：顺利/视力）
-  "ie-ing": 0.40,  // 模糊混淆（如：下令/下列）
-  "ao-o": 0.60,    // 模糊混淆（如：毛型/模型）
-  "an-a": 0.60,    // 模糊混淆（如：毛饭/毛发）
-  "ang-a": 0.60,   // 模糊混淆（如：投放/头发）
-  "e-ang": 0.60,   // 模糊混淆（如：大哥/大纲）
-  "in-van": 0.60,  // 模糊混淆（如：挑衅/挑选）
-  "a-en": 0.20,    // 模糊混淆（如：那肉/嫩肉）
+  "i-un": 0.35, // 模糊混淆（如：顺利/视力）
+  "ie-ing": 0.40, // 模糊混淆（如：下令/下列）
+  "ao-o": 0.60, // 模糊混淆（如：毛型/模型）
+  "an-a": 0.60, // 模糊混淆（如：毛饭/毛发）
+  "ang-a": 0.60, // 模糊混淆（如：投放/头发）
+  "e-ang": 0.60, // 模糊混淆（如：大哥/大纲）
+  "in-van": 0.60, // 模糊混淆（如：挑衅/挑选）
+  "a-en": 0.20, // 模糊混淆（如：那肉/嫩肉）
   "in-iang": 0.80, // 模糊混淆（如：树林/数量）
   "i-yi": 0.95,
   "u-wu": 0.95,
@@ -195,21 +194,7 @@ class PinyinParser {
   /// a ai an ang ao e ê ei en eng er o ou
   ///
   /// @since 0.1.1
-  static final List<String> zeroShengMuList = [
-    "a",
-    "ai",
-    "an",
-    "ang",
-    "ao",
-    "e",
-    "ê",
-    "ei",
-    "en",
-    "eng",
-    "er",
-    "o",
-    "ou"
-  ];
+  static final List<String> zeroShengMuList = ["a", "ai", "an", "ang", "ao", "e", "ê", "ei", "en", "eng", "er", "o", "ou"];
 
   /// 双字母的声母
   /// zh
@@ -250,7 +235,7 @@ class PinyinParser {
       if (pinyinNormal.startsWith(zero)) {
         shengMu = "";
         yunMu = pinyinNormal;
-        
+
         // 特殊处理 yi, wu, yu 等，标准化韵母
         if (pinyinNormal == "wu") {
           yunMu = "u";
@@ -301,8 +286,7 @@ class PinyinParser {
     yunMu = pinyinNormal.substring(shengMu.length);
 
     // 标准拼音中，j q x y 后的 u 实际上是 ü (在这里用 v 表示)
-    if ((shengMu == "j" || shengMu == "q" || shengMu == "x" || shengMu == "y") &&
-        yunMu.startsWith("u")) {
+    if ((shengMu == "j" || shengMu == "q" || shengMu == "x" || shengMu == "y") && yunMu.startsWith("u")) {
       yunMu = "v${yunMu.substring(1)}";
     }
   }
@@ -332,7 +316,6 @@ List<String> chineseToPinyin(String chinese) {
   return pinyins;
 }
 
-
 /// 得到一个汉字的拼音（支持多音字）
 List<String> hanziToPinyin(final String hanzi) {
   // 嗯的拼音使用新的拼音规范（n2, ng2, ng3, n3, ng4, n4），会导致后面的处理出现异常，规避之。其他一些特殊汉字也如此处理
@@ -359,8 +342,7 @@ double similarityOf2ShengMu(String shengMu1, String shengMu2) {
     return 1.0;
   }
   // 零声母与半元音 y, w 的相似度（如：阿姨 - 牙医）
-  if ((shengMu1 == "" && (shengMu2 == "y" || shengMu2 == "w")) ||
-      (shengMu2 == "" && (shengMu1 == "y" || shengMu1 == "w"))) {
+  if ((shengMu1 == "" && (shengMu2 == "y" || shengMu2 == "w")) || (shengMu2 == "" && (shengMu1 == "y" || shengMu1 == "w"))) {
     return 0.6;
   }
   var sim = shengMuSimularityMap["$shengMu1-$shengMu2"];
@@ -490,8 +472,8 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
         // 例如："洋洋" 匹配 "洋葱"：第二个"洋"跳过"葱"，去匹配"洋"
         if (maxSim <= 0.3 && j >= 2) {
           // 检查前一个 user 字是否与当前 user 字相同（连续重复）
-          bool isConsecutiveDuplicate = userPinyins[j - 1].any((p1) =>
-            userPinyins[j - 2].any((p2) => p1.shengMu == p2.shengMu && p1.yunMu == p2.yunMu));
+          bool isConsecutiveDuplicate =
+              userPinyins[j - 1].any((p1) => userPinyins[j - 2].any((p2) => p1.shengMu == p2.shengMu && p1.yunMu == p2.yunMu));
           if (isConsecutiveDuplicate) {
             // 强制跳过当前 target 字，使用跳过路径
             // 因为连续重复字不应该计入低相似度匹配
@@ -515,17 +497,17 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
               // 比如：“吸引”(xi-yin, xi-in), “论文”(lun-wen, lun-uen)
               String firstVowel = pCurr.yunMu.isNotEmpty ? pCurr.yunMu.substring(0, 1) : "";
               bool isVowelBridgeStart = (pCurr.shengMu.isEmpty && (firstVowel == 'i' || firstVowel == 'u' || firstVowel == 'v')) ||
-                                       (pCurr.shengMu == 'y') || // y 相当于 i/v
-                                       (pCurr.shengMu == 'w');   // w 相当于 u
-              
+                  (pCurr.shengMu == 'y') || // y 相当于 i/v
+                  (pCurr.shengMu == 'w'); // w 相当于 u
+
               if (isVowelBridgeStart) {
                 // 确定桥接元音
                 String bridgeVowel = pCurr.shengMu == 'w' ? 'u' : (pCurr.shengMu == 'y' ? 'i' : firstVowel);
                 if (pCurr.shengMu == 'y' && pCurr.yunMu.startsWith('v')) bridgeVowel = 'v'; // 特殊处理 y+v (yu)
 
                 // 如果前一个字的韵母以该元音结尾（如 xi），或者含有该元音且紧跟鼻音（如 lun）
-                if (pPrev.yunMu.endsWith(bridgeVowel) || 
-                   (pPrev.yunMu.contains(bridgeVowel) && (pPrev.yunMu.endsWith('n') || pPrev.yunMu.endsWith('g')))) {
+                if (pPrev.yunMu.endsWith(bridgeVowel) ||
+                    (pPrev.yunMu.contains(bridgeVowel) && (pPrev.yunMu.endsWith('n') || pPrev.yunMu.endsWith('g')))) {
                   hasBridge = true;
                   break;
                 }
@@ -561,7 +543,7 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
         avgSim = (avgSim + avgSimOfMatched) / 2;
       }
     }
-    
+
     // 特殊补偿：当 ASR 结果包含连续重复字（如"洋洋"），且只匹配了目标中的部分字（如"洋-洋"只匹配了"洋"）
     // 此时使用实际匹配的字符数计算平均相似度
     if (asrCharCount >= M) {
@@ -580,7 +562,7 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
     if (avgSim > finalThreshold) {
       return true;
     }
-    
+
     // 补丁：当 ASR 结果包含连续重复字（如"洋洋"），且正常匹配失败时，
     // 尝试对 ASR 结果去重后再匹配一次
     // 例如："洋洋" 去重后变成 "洋"，然后再匹配 "洋葱"

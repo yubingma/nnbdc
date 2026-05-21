@@ -1023,7 +1023,6 @@ class BdcNotifier extends _$BdcNotifier {
           await asr.stopMicrophone();
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-          SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
         }
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
@@ -1084,6 +1083,9 @@ class BdcNotifier extends _$BdcNotifier {
       _handleTabChangeForAsr();
       return;
     }
+    
+    // 答对了，立即彻底、阻塞地关停麦克风，确保切回 playback 纯播放分类后再播放提示音
+    await asr.stopMicrophone();
     
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
       state.wordWrapper!.revealAllRemainingMeanings();
