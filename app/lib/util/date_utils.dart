@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// 日期工具类
 class DateUtils {
@@ -43,20 +42,7 @@ class DateUtils {
   static bool isSameBusinessDay(DateTime d1, DateTime d2) {
     final bd1 = businessDate(d1);
     final bd2 = businessDate(d2);
-    final isSame = bd1.year == bd2.year && bd1.month == bd2.month && bd1.day == bd2.day;
-
-    if (!isSame) {
-      debugPrint('💡 [DateUtils-CrossDay-Detect] 检测到【跨天】判定！\n'
-          '  - 输入1 (d1): $d1 (isUtc: ${d1.isUtc})\n'
-          '  - 输入2 (d2): $d2 (isUtc: ${d2.isUtc})\n'
-          '  - 业务天1 (bd1): $bd1\n'
-          '  - 业务天2 (bd2): $bd2\n'
-          '  - 调用堆栈:\n${StackTrace.current}');
-    } else {
-      debugPrint('💡 [DateUtils-CrossDay-Checked] 判定为同一业务天: bd1=$bd1, bd2=$bd2 (d1=$d1, d2=$d2)');
-    }
-
-    return isSame;
+    return bd1.year == bd2.year && bd1.month == bd2.month && bd1.day == bd2.day;
   }
 
   /// 获取业务天的开始时间（当地时区 03:00:00）

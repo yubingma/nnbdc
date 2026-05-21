@@ -556,8 +556,20 @@ class StudyBo {
       // 实时获取数据库里的最新数据，防止缓存未同步带来的误判
       final dbUser = await db.usersDao.getUserById(user.id);
       if (dbUser != null) {
-        if (user.lastLearningDate != dbUser.lastLearningDate ||
-            user.todayStudyStarted != dbUser.todayStudyStarted) {
+        bool needUpdate = false;
+        if (user.todayStudyStarted != dbUser.todayStudyStarted) {
+          needUpdate = true;
+        } else if ((user.lastLearningDate == null && dbUser.lastLearningDate != null) ||
+            (user.lastLearningDate != null && dbUser.lastLearningDate == null)) {
+          needUpdate = true;
+        } else if (user.lastLearningDate != null && dbUser.lastLearningDate != null) {
+          // 在业务日期不同的情况下才认为是不一致，防止因为 Local/UTC 标志及微秒级误差导致的误判
+          if (!DateUtils.isSameBusinessDay(user.lastLearningDate!, dbUser.lastLearningDate!)) {
+            needUpdate = true;
+          }
+        }
+
+        if (needUpdate) {
           Global.logger.w('⚠️ [StudyBo-DateCheck] [警告] 检测到全局内存缓存与数据库内容不一致！\n'
               '内存缓存：lastLearningDate=${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc}), todayStudyStarted=${user.todayStudyStarted}\n'
               'SQLite数据库：lastLearningDate=${dbUser.lastLearningDate} (isUtc: ${dbUser.lastLearningDate?.isUtc}), todayStudyStarted=${dbUser.todayStudyStarted}\n'
@@ -580,8 +592,16 @@ class StudyBo {
           '  - 时区及日期对比 (isSameDay): $isSameDay\n'
           '  - 是否触发跨天逻辑: ${currentUser.lastLearningDate != null && !isSameDay}');
 
-      if (currentUser.lastLearningDate != null && !isSameDay) {
-        Global.logger.w('🛑 [StudyBo-DateCheck] [触发跨天] 判定跨天成功：最终使用的 lastLearningDate 仍不等于今日业务日期！触发 NEW_DAY 终止学习流程！');
+      final lastDate = currentUser.lastLearningDate != null
+          ? DateUtils.businessDate(currentUser.lastLearningDate!)
+          : null;
+      // 必须是已开始今日学习，且上一次学习日期严格早于今日业务日期时，才判定为跨天
+      final bool isCrossDay = currentUser.todayStudyStarted &&
+          lastDate != null &&
+          lastDate.isBefore(today);
+
+      if (isCrossDay) {
+        Global.logger.w('🛑 [StudyBo-DateCheck] [触发跨天] 判定跨天成功：最近学习业务日期 $lastDate 早于今日业务日期 $today！触发 NEW_DAY 终止学习流程！');
         return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", false);
       }
 

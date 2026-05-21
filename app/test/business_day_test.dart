@@ -131,5 +131,42 @@ void main() {
       // 场景 3：校验 isSameBusinessDay 绝对比对一致性
       expect(DateUtils.isSameBusinessDay(utcBusinessDate, localBusinessDate), isTrue);
     });
+
+    test('DateUtils.businessDate should robustly preserve standard UTC and simulated Drift timezone transitions in US negative timezones', () {
+      // 场景 1：模拟美东时区 (UTC-5) 晚上 20:00 的跨天与超前同步校验
+      // 此时本地时间是 2026-05-20 20:00:00.000 (对应 UTC 的 2026-05-21 01:00:00.000Z)
+      final localTimeEST = DateTime(2026, 5, 20, 20, 0, 0); 
+      final todayEST = DateUtils.businessDate(localTimeEST);
+      
+      // 美东时间 20日 20点，回拨 3 小时为 17点，属于 5月20日 业务天
+      expect(todayEST.year, 2026);
+      expect(todayEST.month, 5);
+      expect(todayEST.day, 20);
+
+      // 模拟从云端同步过来的超前学习日期（例如在另一台北京设备完成的学习，记为 21日 业务天并同步为 UTC 0点）
+      final syncedUtcBusinessDate = DateTime.utc(2026, 5, 21, 0, 0, 0); 
+      final syncedBusinessDate = DateUtils.businessDate(syncedUtcBusinessDate);
+      expect(syncedBusinessDate.year, 2026);
+      expect(syncedBusinessDate.month, 5);
+      expect(syncedBusinessDate.day, 21); // 精确提取字面 21日
+
+      // 【核心验证】测试单向跨天比对演进逻辑：超前的已同步日期绝对不能被判定为早于今天！
+      final bool isCrossDayEST = syncedBusinessDate.isBefore(todayEST);
+      expect(isCrossDayEST, isFalse); // 正确判定：并未跨入未来新一天（进度超前或相等，不触发重置与报错）
+
+      // 场景 2：模拟美东时区 (UTC-5) 下从 SQLite / Drift 读写反序列化 DateTime 的真实转换
+      // 用户在本地 5月20日业务天学习，记为 DateTime(2026, 5, 20) (Local 0点)
+      // 存入 SQLite 并被 Drift 反序列化读出时，变为了对应的 UTC DateTime，即 2026-05-20 05:00:00.000Z
+      final dbUserLastLearningDate = DateTime.utc(2026, 5, 20, 5, 0, 0); 
+      final businessDateOfDb = DateUtils.businessDate(dbUserLastLearningDate);
+
+      // 数据库读出的带有时区偏移的时间，必须依然准确归入 5月20日 业务天
+      expect(businessDateOfDb.year, 2026);
+      expect(businessDateOfDb.month, 5);
+      expect(businessDateOfDb.day, 20);
+
+      // 验证在美东时区下，从数据库读出来的 lastLearningDate 与本地计算的 today 必须是同一个业务天！
+      expect(DateUtils.isSameBusinessDay(dbUserLastLearningDate, todayEST), isTrue);
+    });
   });
 }

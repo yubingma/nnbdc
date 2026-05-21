@@ -141,15 +141,19 @@ class UserBo {
           final today = AppClock.today();
           
           // 额外的跨天检测保护：如果今天是新的一天（基于由 lastLearningDate)，重置今日学习标记
-          final bool isSameDay = user.lastLearningDate != null &&
-              DateUtils.isSameBusinessDay(user.lastLearningDate!, today);
+          final lastDate = user.lastLearningDate != null
+              ? DateUtils.businessDate(user.lastLearningDate!)
+              : null;
+          final bool isCrossDay = user.todayStudyStarted &&
+              lastDate != null &&
+              lastDate.isBefore(today);
           Global.logger.i('💡 [UserBo-DateCheck] 跨天检测细节：\n'
               '  - 内存 user.lastLearningDate: ${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc})\n'
               '  - 判定使用 today: $today (isUtc: ${today.isUtc})\n'
-              '  - 时区及日期对比 (isSameDay): $isSameDay\n'
+              '  - 业务天 lastDate: $lastDate\n'
               '  - todayStudyStarted: ${user.todayStudyStarted}\n'
-              '  - 是否触发重置今日学习标记: ${user.todayStudyStarted && user.lastLearningDate != null && !isSameDay}');
-          if (user.todayStudyStarted && user.lastLearningDate != null && !isSameDay) {
+              '  - 是否触发重置今日学习标记: $isCrossDay');
+          if (isCrossDay) {
 
              try {
                Global.logger.w('getLoggedInUser: 检测到持久过的今日状态已过期(跨天)，正在重置... lastLearningDate=${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc}), today=$today (isUtc: ${today.isUtc})');
