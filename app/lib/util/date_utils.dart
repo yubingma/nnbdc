@@ -1,10 +1,23 @@
+import 'package:flutter/foundation.dart';
+
 /// 日期工具类
 class DateUtils {
   /// 获取业务日期（凌晨3点前归属于前一天）
   static DateTime businessDate(DateTime date) {
+    // 1. 前置原始对象幂等校验：如果是 0 点且没有任何时间分量，说明它已经是一个经过抹除处理的业务日期，直接返回
+    // 无论是 UTC (如 2026-05-21 00:00:00.000Z) 还是 Local (如 2026-05-21 00:00:00.000)，
+    // 我们都应该直接以它的年、月、日作为本地业务日期返回，防止在不同时区下 toLocal() 导致日期发生偏移扣天。
+    if (date.hour == 0 &&
+        date.minute == 0 &&
+        date.second == 0 &&
+        date.millisecond == 0 &&
+        date.microsecond == 0) {
+      return DateTime(date.year, date.month, date.day);
+    }
+
     final local = date.toLocal();
 
-    // 幂等保护：如果已经是 0 点且没有任何时间分量，说明它已经是一个经过处理的业务日期，直接返回
+    // 2. 本地化后幂等保护：如果已经是 0 点且没有任何时间分量，说明它已经是一个经过处理的业务日期，直接返回
     if (local.hour == 0 &&
         local.minute == 0 &&
         local.second == 0 &&
@@ -13,7 +26,7 @@ class DateUtils {
       return DateTime(local.year, local.month, local.day);
     }
 
-    // 偏移映射法：统一回拨 3 小时后再取日期部分
+    // 3. 偏移映射法：统一回拨 3 小时后再取日期部分
     // 00:00:00 -> 前一天 21:00 -> 归为前一天
     // 02:59:59 -> 前一天 23:59 -> 归为前一天
     // 03:00:00 -> 当天 00:00 -> 归为当天
@@ -30,7 +43,20 @@ class DateUtils {
   static bool isSameBusinessDay(DateTime d1, DateTime d2) {
     final bd1 = businessDate(d1);
     final bd2 = businessDate(d2);
-    return bd1.year == bd2.year && bd1.month == bd2.month && bd1.day == bd2.day;
+    final isSame = bd1.year == bd2.year && bd1.month == bd2.month && bd1.day == bd2.day;
+
+    if (!isSame) {
+      debugPrint('💡 [DateUtils-CrossDay-Detect] 检测到【跨天】判定！\n'
+          '  - 输入1 (d1): $d1 (isUtc: ${d1.isUtc})\n'
+          '  - 输入2 (d2): $d2 (isUtc: ${d2.isUtc})\n'
+          '  - 业务天1 (bd1): $bd1\n'
+          '  - 业务天2 (bd2): $bd2\n'
+          '  - 调用堆栈:\n${StackTrace.current}');
+    } else {
+      debugPrint('💡 [DateUtils-CrossDay-Checked] 判定为同一业务天: bd1=$bd1, bd2=$bd2 (d1=$d1, d2=$d2)');
+    }
+
+    return isSame;
   }
 
   /// 获取业务天的开始时间（当地时区 03:00:00）

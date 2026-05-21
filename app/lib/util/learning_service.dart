@@ -31,8 +31,13 @@ class LearningService {
 
       // 如果用户的最近学习日期不是今天，重置相关数据
       final today = DateUtils.businessDate(AppClock.now());
-      bool isNewDay = user.lastLearningDate == null || user.lastLearningDate != today;
-      Global.logger.i('prepareTodayStudy 今日学习准备：user.lastLearningDate=${user.lastLearningDate}, today=$today, isNewDay=$isNewDay, now=${AppClock.now()}');
+      final bool isSameDay = user.lastLearningDate != null &&
+          DateUtils.isSameBusinessDay(user.lastLearningDate!, today);
+      bool isNewDay = user.lastLearningDate == null || !isSameDay;
+      Global.logger.i('💡 [LearningService-DateCheck] 跨天检测细节：'
+          'user.lastLearningDate=${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc}), '
+          'today=$today (isUtc: ${today.isUtc}), '
+          'isSameDay=$isSameDay -> isNewDay=$isNewDay, now=${AppClock.now()}');
 
       // [核心修复] 自动修复机制：即使日期没变，但如果发现"学习未开始"且"单词已有进度"这种不一致状态，也强制重置。
       bool needRepair = (user.todayStudyStarted == false);

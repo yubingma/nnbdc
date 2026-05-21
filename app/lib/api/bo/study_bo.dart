@@ -552,13 +552,36 @@ class StudyBo {
       // 跨天检测：比较当前业务日期与用户记录的最后学习业务日期
       final DateTime now = AppClock.now();
       final DateTime today = AppClock.today();
-      final bool isSameDay = user.lastLearningDate != null &&
-          DateUtils.isSameBusinessDay(user.lastLearningDate!, today);
-      Global.logger.i(
-          'getWord 跨天检测：user.lastLearningDate=${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc}), today=$today (isUtc: ${today.isUtc}), isSameDay=$isSameDay');
-      if (user.lastLearningDate != null && !isSameDay) {
-        Global.logger.w(
-            '检测到跨天：user.lastLearningDate=${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc}), today=$today (isUtc: ${today.isUtc})。触发 NEW_DAY 终止学习流程！');
+
+      // 实时获取数据库里的最新数据，防止缓存未同步带来的误判
+      final dbUser = await db.usersDao.getUserById(user.id);
+      if (dbUser != null) {
+        if (user.lastLearningDate != dbUser.lastLearningDate ||
+            user.todayStudyStarted != dbUser.todayStudyStarted) {
+          Global.logger.w('⚠️ [StudyBo-DateCheck] [警告] 检测到全局内存缓存与数据库内容不一致！\n'
+              '内存缓存：lastLearningDate=${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc}), todayStudyStarted=${user.todayStudyStarted}\n'
+              'SQLite数据库：lastLearningDate=${dbUser.lastLearningDate} (isUtc: ${dbUser.lastLearningDate?.isUtc}), todayStudyStarted=${dbUser.todayStudyStarted}\n'
+              '系统已自动修正内存缓存！');
+          Global.updateUserCache(dbUser);
+        }
+      }
+
+      // 获取最终确定的用于计算的用户状态
+      final currentUser = Global.getLoggedInUser() ?? user;
+      final bool isSameDay = currentUser.lastLearningDate != null &&
+          DateUtils.isSameBusinessDay(currentUser.lastLearningDate!, today);
+
+      Global.logger.i('💡 [StudyBo-DateCheck] 跨天检测全链路详情：\n'
+          '  - 账号ID: ${currentUser.id}\n'
+          '  - 内存 user.lastLearningDate: ${user.lastLearningDate} (isUtc: ${user.lastLearningDate?.isUtc})\n'
+          '  - 数据库 dbUser.lastLearningDate: ${dbUser?.lastLearningDate} (isUtc: ${dbUser?.lastLearningDate?.isUtc})\n'
+          '  - 判定使用 lastLearningDate: ${currentUser.lastLearningDate} (isUtc: ${currentUser.lastLearningDate?.isUtc})\n'
+          '  - 判定使用 today: $today (isUtc: ${today.isUtc})\n'
+          '  - 时区及日期对比 (isSameDay): $isSameDay\n'
+          '  - 是否触发跨天逻辑: ${currentUser.lastLearningDate != null && !isSameDay}');
+
+      if (currentUser.lastLearningDate != null && !isSameDay) {
+        Global.logger.w('🛑 [StudyBo-DateCheck] [触发跨天] 判定跨天成功：最终使用的 lastLearningDate 仍不等于今日业务日期！触发 NEW_DAY 终止学习流程！');
         return Result<GetWordResult>("NEW_DAY", "已进入新的一天，今天的学习已终止", false);
       }
 

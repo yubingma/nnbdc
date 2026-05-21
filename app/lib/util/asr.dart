@@ -409,6 +409,7 @@ class Asr {
   }
 
   Future<void> startAsr(AsrLanguage language) async {
+    debugPrint('💡 [ASR] startAsr() 触发启动。目标语言: ${language.locale}，当前状态: $state。堆栈:\n${StackTrace.current}');
     if (!PlatformUtils.isAsrSupported()) {
       ToastUtil.info("当前平台暂不支持语音识别功能");
       return;
@@ -539,6 +540,7 @@ class Asr {
 
   /// 完全停止麦克风和 ASR 引擎（彻底关闭音频引擎）
   Future<void> stopMicrophone() async {
+    debugPrint('💡 [ASR] stopMicrophone() 触发关停。当前状态: $state。调用来源及堆栈:\n${StackTrace.current}');
     if (PlatformUtils.isWeb ||
         PlatformUtils.isWindows ||
         PlatformUtils.isMacOS) {

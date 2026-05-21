@@ -104,5 +104,32 @@ void main() {
       
       expect(DateUtils.isSameBusinessDay(utcTime, localTime), isTrue);
     });
+
+    test('DateUtils.businessDate should robustly preserve standard UTC business dates across all simulated timezone scenarios', () {
+      // 场景 1：传入 UTC 的纯 0 点业务日期 2026-05-21 00:00:00.000Z
+      final utcBusinessDate = DateTime.utc(2026, 5, 21, 0, 0, 0);
+      final result1 = DateUtils.businessDate(utcBusinessDate);
+      
+      // 不论测试运行在什么时区，业务天必须是 5月21日，绝不能由于时差偏移转化为前一天
+      expect(result1.year, 2026);
+      expect(result1.month, 5);
+      expect(result1.day, 21);
+      expect(result1.isUtc, isFalse); // 返回本地时间的业务日期
+      expect(result1.hour, 0);
+      expect(result1.minute, 0);
+
+      // 场景 2：双向一致性，即使已经是 Local 的纯 0 点业务日期，传入后依然幂等返回该业务天
+      final localBusinessDate = DateTime(2026, 5, 21, 0, 0, 0);
+      final result2 = DateUtils.businessDate(localBusinessDate);
+      expect(result2.year, 2026);
+      expect(result2.month, 5);
+      expect(result2.day, 21);
+      expect(result2.isUtc, isFalse);
+      expect(result2.hour, 0);
+      expect(result2.minute, 0);
+      
+      // 场景 3：校验 isSameBusinessDay 绝对比对一致性
+      expect(DateUtils.isSameBusinessDay(utcBusinessDate, localBusinessDate), isTrue);
+    });
   });
 }

@@ -1170,20 +1170,30 @@ class BdcNotifier extends _$BdcNotifier {
     // 只有在显示了“说”Tab（即 _shouldShowSpeakTab 为 true）且当前索引为 0 时，才认为是“说”模式
     bool isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0; 
     
+    debugPrint('💡 [BDC-ASR] _handleTabChangeForAsr() 触发。isInSpeakTab: $isInSpeakTab (shouldShowSpeakTab: $_shouldShowSpeakTab, tabIndex: ${state.tabIndex})');
+
     if (isInSpeakTab) {
       if (state.word == null || state.loadError != null || state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
+        debugPrint('💡 [BDC-ASR] 当前虽然在 SpeakTab，但由于条件不满足决定停止 ASR：word=${state.word?.spell}, loadError=${state.loadError}, hasFinishedAnswering=${state.hasFinishedAnswering}, showHandwritingBoard=${state.showHandwritingBoard}, isGettingNextWord=${state.isGettingNextWord}, isKeyboardVisible=${state.isKeyboardVisible}');
         if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
+          debugPrint('💡 [BDC-ASR] 条件触发 asr.stopMicrophone()');
           asr.stopMicrophone();
         }
         return;
       }
 
-      if (asr.state == AsrState.started) return;
+      if (asr.state == AsrState.started) {
+        debugPrint('💡 [BDC-ASR] ASR 已经是 started 状态，跳过重复启动。');
+        return;
+      }
 
       final language = state.studyStep == StudyStep.ch2En.json ? AsrLanguage.english : AsrLanguage.chinese;
+      debugPrint('💡 [BDC-ASR] 条件满足，准备调用 _startAsrWithHint，语言: ${language.locale}');
       _startAsrWithHint(language);
     } else {
+      debugPrint('💡 [BDC-ASR] 不在 SpeakTab，当前 asr 状态: ${asr.state}');
       if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
+        debugPrint('💡 [BDC-ASR] 不在 SpeakTab 且 ASR 运行中，触发 asr.stopMicrophone()');
         asr.stopMicrophone();
       }
     }

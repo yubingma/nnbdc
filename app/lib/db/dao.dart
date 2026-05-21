@@ -70,6 +70,12 @@ class UsersDao extends DatabaseAccessor<MyDatabase> with _$UsersDaoMixin {
           }
         }
       }
+
+      // 同步更新全局的登录用户缓存，确保内存数据和数据库的强一致性
+      if (Global.currentUserId == entry.id) {
+        Global.updateUserCache(entry);
+        Global.logger.i('💡 [UsersDao-saveUser] 已同步更新全局用户内存缓存：id=${entry.id}, lastLearningDate=${entry.lastLearningDate} (isUtc: ${entry.lastLearningDate?.isUtc})');
+      }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'saveUser', showToast: false);
       rethrow;
