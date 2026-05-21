@@ -312,4 +312,13 @@ void main() {
     debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isTrue);
   });
+
+  test('Test fuzzyChineseContains - 脾-引诱 (should not match)', () {
+    String asrResult = "脾";
+    String meaning = "引诱";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isFalse);
+  });
 }

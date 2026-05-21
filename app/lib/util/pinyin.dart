@@ -506,7 +506,8 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
         // 通用化处理：处理“元音桥接（Vowel Bridge）”情况
         // 如：“吸引”(xi-yin) 的末尾元音 i 与开头元音 i (y) 相同，在快读时极易合并
         // 如果当前字 i 与前一个字 i-1 存在元音桥接，且前一个字已经有了不错的匹配
-        if (i >= 2 && dp[i - 1][j] > dp[i - 2][j]) {
+        // 注意：单字输入（N <= 1）不存在元音桥接快读黏连的物理基础，此时直接禁用桥接，彻底防范单字误匹配多字词
+        if (N > 1 && i >= 2 && dp[i - 1][j] > dp[i - 2][j]) {
           bool hasBridge = false;
           for (var pPrev in targetPinyins[i - 2]) {
             for (var pCurr in targetPinyins[i - 1]) {
@@ -534,9 +535,10 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
           }
 
           if (hasBridge) {
-            // 如果存在桥接，允许当前字 i 借用前一个字的匹配成果，但给予 0.8 的“合并扣分”
+            // 如果存在桥接，允许当前字 i 借用前一个字的匹配成果，但给予 0.8 的“合并折价”
+            // 物理上限上：桥接属于发音黏连合并，其单点得分绝不能大于前一个字独立匹配的得分，因此必须使用乘法折价，绝不能用加法累加！
             double mergedSim = 0.8;
-            double v4 = dp[i - 1][j] + mergedSim;
+            double v4 = dp[i - 1][j] * mergedSim;
             if (v4 > v3) v3 = v4;
           }
         }
