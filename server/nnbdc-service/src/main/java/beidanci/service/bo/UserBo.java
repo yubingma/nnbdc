@@ -831,7 +831,33 @@ public class UserBo extends BaseBo<User> {
         }
     }
 
+    /**
+     * 更新用户订阅状态（原子数据库事务，保证锁定顺序为 user_db_version -> user，彻底杜绝死锁）
+     */
+    @Transactional
+    public void updateUserSubscription(String userId, boolean isActive, Date expiresDate,
+                                       String subscriptionType, String subscriptionStatus,
+                                       String receiptData) throws IllegalAccessException {
+        // 1. 确保版本记录存在（对于新用户可能不存在）
+        userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, userId);
 
+        // 2. 先锁定 user_db_version 对应的行，保证锁的获取顺序是 user_db_version -> user，与同步日志一致
+        userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
+
+        // 3. 读取用户并执行更新（锁定 user 行）
+        User user = findById(userId);
+        if (user != null) {
+            user.setIsPremiumIos(isActive);
+            user.setSubscriptionExpireDateIos(expiresDate);
+            user.setSubscriptionTypeIos(subscriptionType);
+            user.setSubscriptionStatusIos(subscriptionStatus);
+            user.setLastReceiptDataIos(receiptData);
+            updateEntity(user);
+
+            // 4. 服务端主动变更用户订阅字段后，写入 user_db_log，确保客户端同步可见
+            logUserUpdateForSync(user);
+        }
+    }
 
     @Transactional(readOnly = true)
     public UserVo getUserVoById(String userId) {

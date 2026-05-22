@@ -80,7 +80,6 @@ public class SubscriptionBo extends BaseBo<User> {
      * @param platform 平台类型：ios（仅支持iOS）
      * @return 验证结果和订阅信息
      */
-    @Transactional
     public Result<SubscriptionVo> verifySubscription(String userId, String receiptData, String productId, String transactionId, String platform, boolean updateBackend) {
         try {
             // 记录接收到的参数
@@ -126,15 +125,17 @@ public class SubscriptionBo extends BaseBo<User> {
 
             // 如果不是游客且需要更新后端，则更新用户订阅状态
             if (user != null && updateBackend) {
-                // 更新用户订阅状态（iOS平台）
-                updateUserSubscription(user, verificationResult);
-
-                // 保存收据数据（用于恢复购买）
-                user.setLastReceiptDataIos(receiptData);
+                Date expiresDate = verificationResult.expiresDate;
+                boolean isActive = expiresDate != null && expiresDate.after(new Date());
                 try {
-                    userBo.updateEntity(user);
-                    // 服务端主动变更用户订阅字段后，写入 user_db_log，确保客户端同步可见
-                    userBo.logUserUpdateForSync(user);
+                    userBo.updateUserSubscription(
+                        user.getId(),
+                        isActive,
+                        expiresDate,
+                        verificationResult.subscriptionType,
+                        isActive ? "active" : "expired",
+                        receiptData
+                    );
                 } catch (IllegalAccessException e) {
                     logger.error("更新用户订阅状态失败", e);
                     return new Result<>(false, "更新用户订阅状态失败", null);
@@ -594,29 +595,8 @@ public class SubscriptionBo extends BaseBo<User> {
     }
 
     /**
-     * 更新用户订阅状态（iOS平台）
-     */
-    private void updateUserSubscription(User user, ReceiptVerificationResult verificationResult) {
-        Date now = new Date();
-        Date expiresDate = verificationResult.expiresDate;
-
-        // 检查订阅是否过期
-        boolean isActive = expiresDate != null && expiresDate.after(now);
-
-        // 更新iOS订阅字段
-        user.setIsPremiumIos(isActive);
-        user.setSubscriptionExpireDateIos(expiresDate);
-        user.setSubscriptionTypeIos(verificationResult.subscriptionType);
-        user.setSubscriptionStatusIos(isActive ? "active" : "expired");
-
-        logger.info("更新用户订阅状态: platform=ios, isPremium={}, expireDate={}, type={}", 
-                isActive, expiresDate, verificationResult.subscriptionType);
-    }
-
-    /**
      * 恢复购买（通过用户ID查找历史订阅）
      */
-    @Transactional
     public Result<Void> restoreSubscription(String userId) {
         try {
             User user = userBo.findById(userId);
@@ -629,9 +609,17 @@ public class SubscriptionBo extends BaseBo<User> {
                 try {
                     ReceiptVerificationResult verificationResult = verifyReceiptWithApple(user.getLastReceiptDataIos());
                     if (verificationResult.isValid) {
-                        updateUserSubscription(user, verificationResult);
+                        Date expiresDate = verificationResult.expiresDate;
+                        boolean isActive = expiresDate != null && expiresDate.after(new Date());
                         try {
-                            userBo.updateEntity(user);
+                            userBo.updateUserSubscription(
+                                user.getId(),
+                                isActive,
+                                expiresDate,
+                                verificationResult.subscriptionType,
+                                isActive ? "active" : "expired",
+                                user.getLastReceiptDataIos()
+                            );
                             logger.info("iOS订阅恢复成功");
                             return new Result<>(true, "恢复购买成功", null);
                         } catch (IllegalAccessException e) {
