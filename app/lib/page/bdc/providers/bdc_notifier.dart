@@ -528,12 +528,22 @@ class BdcNotifier extends _$BdcNotifier {
 
     final user = Global.getLoggedInUserNotNull();
     final playStopwatch = Stopwatch()..start();
-    if (state.studyStep == StudyStep.en2Ch.json) {
-      await playWordAndFirstSentence(await user.toUserVo(), false, true);
-    } else {
-      await playWordAndFirstSentence(await user.toUserVo(), true, true);
-    }
-    Global.logger.d('[PERF] handleWord -> playWordAndFirstSentence cost: ${playStopwatch.elapsedMilliseconds}ms');
+    
+    // 将耗时的发音和例句播放彻底异步化，抛入后台执行，避免阻塞 handleWord/getNextWord 主加载流程
+    unawaited(() async {
+      try {
+        final userVo = await user.toUserVo();
+        if (state.studyStep == StudyStep.en2Ch.json) {
+          await playWordAndFirstSentence(userVo, false, true);
+        } else {
+          await playWordAndFirstSentence(userVo, true, true);
+        }
+      } catch (e, st) {
+        Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
+      } finally {
+        Global.logger.d('[PERF] handleWord -> playWordAndFirstSentence (background) cost: ${playStopwatch.elapsedMilliseconds}ms');
+      }
+    }());
     
     Global.logger.i('[PERF] Total handleWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
     return true;
@@ -1044,7 +1054,7 @@ class BdcNotifier extends _$BdcNotifier {
         if (asrInput != null) {
           meaningController.text = state.word!.spell;
         }
-        await asr.stopMicrophone();
+        unawaited(asr.stopMicrophone());
         
         if (state.hasFinishedAnswering) {
           // 已经答对了（处于查看详情时的额外练习），直接关闭
@@ -1071,7 +1081,7 @@ class BdcNotifier extends _$BdcNotifier {
       if (result.newMatchCount > 0) {
         state = state.copyWith(canLeaveCurrWord: true);
         if (isMatch) {
-          await asr.stopMicrophone();
+          unawaited(asr.stopMicrophone());
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         }
@@ -1081,7 +1091,7 @@ class BdcNotifier extends _$BdcNotifier {
         if (asrInput != null) {
           meaningController.text = state.word!.spell;
         }
-        await asr.stopMicrophone();
+        unawaited(asr.stopMicrophone());
         final ratingResult = _calculateRating(method);
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       }
@@ -1137,8 +1147,8 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
     
-    // 答对了，立即彻底、阻塞地关停麦克风
-    await asr.stopMicrophone();
+    // 答对了，立即彻底、非阻塞地在后台关停麦克风，绝不阻塞 UI 主帧
+    unawaited(asr.stopMicrophone());
     // 显式将音频分类切换回高保真播放分类，确保接下来的提示音或单词发音能够清晰响亮地从扬声器传出（避免通话听筒导致的音量微弱或无声）
     unawaited(SoundUtil.usePlaybackCategory());
     
