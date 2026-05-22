@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/material.dart';
@@ -1763,7 +1764,21 @@ class WordListPageState extends State<WordListPage>
                   // 此处必须重置 totalWordCount，否则 doQuery 中的优化逻辑(words.length >= totalWordCount)
                   // 会认为数据已全部加载而跳过本次查询，导致新添加的单词无法显示
                   totalWordCount = -1;
-                  await doQuery(true, baseIndex ?? 0, _pageSize, true);
+                  int queryPageSize = _pageSize;
+                  int targetBaseIndex = baseIndex ?? 0;
+                  try {
+                    final checkResult = await args.wordsProvider.getAPageOfWords(0, 1);
+                    final newTotalCount = checkResult.total;
+                    if (newTotalCount - targetBaseIndex <= 100) {
+                      queryPageSize = max(_pageSize, newTotalCount - targetBaseIndex);
+                    } else {
+                      targetBaseIndex = ((newTotalCount - 1) ~/ _pageSize) * _pageSize;
+                      baseIndex = targetBaseIndex;
+                    }
+                  } catch (e) {
+                    Global.logger.e('计算添加单词后的分页参数失败: $e');
+                  }
+                  await doQuery(true, targetBaseIndex, queryPageSize, true);
                   setState(() {}); // 强制刷新UI
                 }
               },
