@@ -1137,7 +1137,6 @@ class BdcNotifier extends _$BdcNotifier {
       SoundUtil.prefetchSounds([Util.getWordSoundUrl(state.word!.spell, word: state.word)]);
     }
 
-    await Future.delayed(const Duration(milliseconds: 100));
     if (state.studyStep != StudyStep.ch2En.json) {
       SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
     } else {
@@ -1146,9 +1145,9 @@ class BdcNotifier extends _$BdcNotifier {
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
-      // 在中英学习模式下，因需要完整播放单词正确发音以纠正和指导用户发音，将跳转延时延长至 1500ms 以避免播放被打断；在其他模式下保持 800ms 极速跳转
-      final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 1500 : 800;
-      Future.delayed(Duration(milliseconds: jumpDelayMs), () {
+      // 统一保持 800ms 极速跳转。由于中英模式已切换为独立的专用发音通道 (pronouncePlayer)，即便页面发生跳转，发音也依然会在后台完整流畅播完，绝不打断。
+      const jumpDelayMs = 800;
+      Future.delayed(const Duration(milliseconds: jumpDelayMs), () {
         getNextWord(true, fsrsRating: rating);
       });
     }
