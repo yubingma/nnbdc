@@ -1092,7 +1092,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 答对了，立即彻底、阻塞地关停麦克风
     await asr.stopMicrophone();
     // 显式将音频分类切换回高保真播放分类，确保接下来的提示音或单词发音能够清晰响亮地从扬声器传出（避免通话听筒导致的音量微弱或无声）
-    await SoundUtil.usePlaybackCategory();
+    unawaited(SoundUtil.usePlaybackCategory());
     
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
       state.wordWrapper!.revealAllRemainingMeanings();
@@ -1141,7 +1141,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.studyStep != StudyStep.ch2En.json) {
       SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
     } else {
-      SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
+      SoundUtil.playPronounceSound(state.word!);
     }
 
     bool autoJump = state.autoJumpAfterCorrect;
