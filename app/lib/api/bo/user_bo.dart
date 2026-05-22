@@ -440,8 +440,8 @@ class UserBo {
       Api.client.syncUserDb(expectedServerDbVersion, userId, logs);
 
   String _formatPureDate(DateTime dt) {
-    final local = dt.toLocal();
-    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+    final bd = DateUtils.businessDate(dt);
+    return '${bd.year}-${bd.month.toString().padLeft(2, '0')}-${bd.day.toString().padLeft(2, '0')}';
   }
 
   Future<Result<int>> getSystemDbVersion() async => Api.client.getSysDbVersion();
