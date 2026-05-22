@@ -10,7 +10,6 @@ import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
-import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/global.dart';
@@ -26,6 +25,8 @@ import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/db/learning_word_extensions.dart';
+import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -56,6 +57,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   List<LearningWord>? _todayWords;
   DateTime _now = AppClock.now();
   Timer? _timer;
+  Set<String> _masteredWordIds = {};
 
   @override
   void initState() {
@@ -224,6 +226,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       hasDakaToday = (await UserBo().hasDakaToday(user!.id!)).data!;
       _todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
       
+      final db = MyDatabase.instance;
+      _masteredWordIds = await StudyCacheManager().getMasteredWordIds(db, user!.id!);
+
       int calcNewWordCount = 0;
       for (var word in _todayWords!) {
         if (word.isTodayNewWord) calcNewWordCount++;
@@ -262,6 +267,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
 
     if (user != null) {
+      final db = MyDatabase.instance;
+      _masteredWordIds = await StudyCacheManager().getMasteredWordIds(db, user!.id!);
+
       // 检查是否为新的一天。如果是，则不加载本地已有的旧批次单词，防止 UI 闪烁旧数据
       final today = app_date.DateUtils.businessDate(AppClock.now());
       bool isNewDay = user!.lastLearningDate == null || user!.lastLearningDate != today;
@@ -348,13 +356,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     _totalStepCount = (_todayWords!.length * activeStepsCount).toInt();
     _completedStepCount = 0;
     for (final word in _todayWords!) {
-      final bool isMastered = (word.stability != null && word.stability! >= Constants.graduationStability);
-          
-      if (isMastered) {
-        _completedStepCount += activeStepsCount;
-      } else {
-        _completedStepCount += (word.todayLearnedTimes > activeStepsCount) ? activeStepsCount : word.todayLearnedTimes;
-      }
+      _completedStepCount += word.getCompletedSteps(_masteredWordIds, activeStepsCount);
     }
   }
 

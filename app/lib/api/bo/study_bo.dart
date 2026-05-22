@@ -7,6 +7,7 @@ import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
@@ -667,8 +668,8 @@ class StudyBo {
       // 添加批次状态日志
       Global.logger.d('~~~~~BDC_BATCH: startIdx=$batchStartIndex, batchSize=${batchWords.length}, activeStepCount=$activeStepCount');
       for (var w in batchWords) {
-        final bool isMastered = _isEffectivelyMastered(w, masteredWordIds);
-        final bool isFinished = isMastered || w.todayLearnedTimes >= activeStepCount;
+        final bool isMastered = w.isEffectivelyMastered(masteredWordIds);
+        final bool isFinished = w.isTodayFinished(masteredWordIds, activeStepCount);
         Global.logger.d('  - [${w.wordId}] todayTimes=${w.todayLearnedTimes}, isMastered=$isMastered, isFinished=$isFinished');
       }
 
@@ -676,8 +677,8 @@ class StudyBo {
       List<LearningWord> sortedBatchWords = List.from(batchWords);
       sortedBatchWords.sort((a, b) {
         // 状态驱动：已掌握单词视为已完成今日所有环节
-        final bool isAFinished = _isEffectivelyMastered(a, masteredWordIds);
-        final bool isBFinished = _isEffectivelyMastered(b, masteredWordIds);
+        final bool isAFinished = a.isEffectivelyMastered(masteredWordIds);
+        final bool isBFinished = b.isEffectivelyMastered(masteredWordIds);
 
         final int effA = isAFinished ? activeStepCount : a.todayLearnedTimes;
         final int effB = isBFinished ? activeStepCount : b.todayLearnedTimes;
@@ -695,7 +696,7 @@ class StudyBo {
 
       // 获取当前学习环节：由该单词今日已练习的次数推导
       // 状态驱动：已掌握单词直接视为处于最后一个环节或已越过
-      final bool currentWordFinished = _isEffectivelyMastered(currentWordForPos, masteredWordIds);
+      final bool currentWordFinished = currentWordForPos.isEffectivelyMastered(masteredWordIds);
       int currentStepIndex = currentWordFinished ? activeStepCount : currentWordForPos.todayLearnedTimes;
       if (currentStepIndex >= activeStepCount) {
         currentStepIndex = activeStepCount - 1;
@@ -766,8 +767,8 @@ class StudyBo {
 
       // 按照学习效率 (eff) 排序，找出该批次最需要学习的下一个单词
       nextBatchWords.sort((a, b) {
-        final bool isAFinished = _isEffectivelyMastered(a, masteredWordIds);
-        final bool isBFinished = _isEffectivelyMastered(b, masteredWordIds);
+        final bool isAFinished = a.isEffectivelyMastered(masteredWordIds);
+        final bool isBFinished = b.isEffectivelyMastered(masteredWordIds);
 
         final int effA = isAFinished ? activeStepCount : a.todayLearnedTimes;
         final int effB = isBFinished ? activeStepCount : b.todayLearnedTimes;
@@ -783,7 +784,7 @@ class StudyBo {
       int nextWordIndex = todayWords.indexOf(nextWordForPos);
 
       // 计算下一个单词应该展示的学习环节
-      final bool nextWordFinished = _isEffectivelyMastered(nextWordForPos, masteredWordIds);
+      final bool nextWordFinished = nextWordForPos.isEffectivelyMastered(masteredWordIds);
       int nextStepIndex = nextWordFinished ? activeStepCount : nextWordForPos.todayLearnedTimes;
       if (nextStepIndex >= activeStepCount) {
         nextStepIndex = activeStepCount - 1;
@@ -829,12 +830,7 @@ class StudyBo {
       // 计算所有单词的今日已学习次数总和
       int totalCompletedSteps = 0;
       for (final word in todayWords) {
-        // 状态驱动：已掌握单词贡献满分进度，活跃单词取 min(已学次数, 总环节数) 避免溢出
-        if (_isEffectivelyMastered(word, masteredWordIds)) {
-          totalCompletedSteps += activeStepCount;
-        } else {
-          totalCompletedSteps += min(word.todayLearnedTimes, activeStepCount);
-        }
+        totalCompletedSteps += word.getCompletedSteps(masteredWordIds, activeStepCount);
       }
 
       // 总步数 = 单词数 × 每个单词的步骤数
@@ -859,7 +855,7 @@ class StudyBo {
           [], // verbTenses
           [], // shortDescChineses
           false, // inRawWordDict
-          _isEffectivelyMastered(returnWord, masteredWordIds), // wordMastered
+          returnWord.isEffectivelyMastered(masteredWordIds), // wordMastered
         );
 
       Global.logger.d('🐛 [BDC Performance Item] getWord 内部计算总耗时: ${swTotal.elapsedMilliseconds} ms');
@@ -1149,7 +1145,7 @@ class StudyBo {
       bool batchFinished = true;
       for (int j = i; j < i + batchSize && j < todayWords.length; j++) {
         // 状态驱动：如果单词已学完（达到毕业稳定性，或者在 masteredWords 表中存在，或者今日学习次数已达到模式环节总数）
-        bool wordFinished = _isEffectivelyMastered(todayWords[j], masteredWordIds) || todayWords[j].todayLearnedTimes >= modeCount;
+        bool wordFinished = todayWords[j].isTodayFinished(masteredWordIds, modeCount);
         if (!wordFinished) {
           batchFinished = false;
           break;
@@ -1179,12 +1175,7 @@ class StudyBo {
     return batchBaseIndex + batchWordBaseIndex;
   }
 
-  /// 将单词标记为已掌握
-  static bool _isEffectivelyMastered(LearningWord lw, Set<String> masteredWordIds) {
-    if (masteredWordIds.contains(lw.wordId)) return true;
-    if (lw.stability != null && lw.stability! >= Constants.graduationStability) return true;
-    return false;
-  }
+
 
   Future<void> _saveMasteredWord({
     required LearningWord learningWord,

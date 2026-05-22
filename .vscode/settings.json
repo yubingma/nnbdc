@@ -39,5 +39,6 @@
     "java.dependency.enableDependencyCheckup": false,
     "github-actions.workflows.pinned.workflows": [
         ".github/workflows/build.yml"
-    ]
+    ],
+    "markdownlint.enable": false
 }
