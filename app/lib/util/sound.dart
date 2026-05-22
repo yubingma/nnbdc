@@ -132,17 +132,41 @@ class SoundUtil {
   }
 
   static void _prewarmSfx(List<String> files) {
-    for (var f in files) {
-      _sfxPools.putIfAbsent(f, () {
+    if (PlatformUtils.isWeb) return;
+    
+    // 使用异步队列串行预热音效，避免瞬间并发引发 Android MediaCodec OMX 解码器过载与加载打断错误
+    unawaited(() async {
+      for (var f in files) {
+        // 加载间隔 150ms，给底层音频框架和硬件解码器的分配与初始化提供充足的时间
+        await Future.delayed(const Duration(milliseconds: 150));
+        
         final p = ja.AudioPlayer();
-        p.setAsset('assets/audio/$f').catchError((e) {
-          Global.logger.w('SoundUtil: 预热音效失败 assets/audio/$f: $e');
-          return null;
+        runZonedGuarded(() async {
+          try {
+            // 加载资产，设置 3 秒超时限制，避免老旧设备长时间挂起
+            await p.setAsset('assets/audio/$f').timeout(const Duration(seconds: 3));
+            
+            // 只有成功加载的播放器才放入 SFX 池中
+            _sfxPools.putIfAbsent(f, () => []);
+            if (!_sfxPools[f]!.contains(p)) {
+              _sfxPools[f]!.add(p);
+            }
+          } catch (e) {
+            Global.logger.w('🔊 [SoundUtil] 预热音效失败 assets/audio/$f: $e，已安全释放该播放器');
+            try {
+              await p.dispose();
+            } catch (_) {}
+          }
+        }, (error, stack) {
+          Global.logger.w('🔊 [SoundUtil] 预热音效异步 Zone 拦截异常 assets/audio/$f: $error');
+          try {
+            p.dispose();
+          } catch (_) {}
         });
-        return [p];
-      });
-    }
+      }
+    }());
   }
+
 
   /// 获取单词发音播放器实例
   static ja.AudioPlayer get pronouncePlayer {
