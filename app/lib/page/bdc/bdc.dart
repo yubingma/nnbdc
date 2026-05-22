@@ -218,6 +218,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
+    final stopwatch = Stopwatch()..start();
     // 顶级只监听加载状态，不再监听具体单词细节
     ref.watch(bdcNotifierProvider.select((s) => s.dataLoaded));
     
@@ -254,7 +255,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       );
     }
 
-    return KeyboardDismissOnTap(
+    final result = KeyboardDismissOnTap(
       child: Scaffold(
         resizeToAvoidBottomInset: true,
         appBar: null,
@@ -266,9 +267,12 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         ),
       ),
     );
+    Global.logger.d('⚡ [PERF] BdcPage.build cost: ${stopwatch.elapsedMilliseconds}ms');
+    return result;
   }
 
   Widget renderPage() {
+    final stopwatch = Stopwatch()..start();
     // 移除这里的全量监听，改用主 build 方法中已经脱敏处理好的 state
     final state = ref.watch(bdcNotifierProvider.select((s) => s.copyWith(
       asrResult: '',
@@ -327,10 +331,12 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     }
 
     if (state.showHandwritingBoard || (_meaningFocusNode.hasFocus && !state.hasFinishedAnswering)) {
-      return _buildFullscreenImmersiveInputMode();
+      final res = _buildFullscreenImmersiveInputMode();
+      Global.logger.d('⚡ [PERF] BdcPage.renderPage (immersive) cost: ${stopwatch.elapsedMilliseconds}ms');
+      return res;
     }
 
-    return Stack(
+    final res = Stack(
       children: [
         Column(
           children: [
@@ -391,6 +397,8 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
           ),
       ],
     );
+    Global.logger.d('⚡ [PERF] BdcPage.renderPage cost: ${stopwatch.elapsedMilliseconds}ms');
+    return res;
   }
 
   bool _getShouldShowSpeakTab(BdcState state) {

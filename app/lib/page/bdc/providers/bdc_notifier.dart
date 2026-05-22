@@ -156,6 +156,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> loadData(BuildContext context) async {
     if (state.dataLoaded || state.isGettingNextWord) return;
+    final totalStopwatch = Stopwatch()..start();
     Api.setLoadingDisabled(true);
     bool dialogShown = false;
     try {
@@ -164,7 +165,9 @@ class BdcNotifier extends _$BdcNotifier {
       }
       
       // Get display words for loading dialog
+      final getWordsStopwatch = Stopwatch()..start();
       List<String> displayWords = await _getDisplayWords();
+      Global.logger.d('⚡ [PERF] loadData -> _getDisplayWords cost: ${getWordsStopwatch.elapsedMilliseconds}ms');
 
       // Show loading dialog only if not preloaded
       bool needPreload = !asr.isPreloaded;
@@ -173,7 +176,9 @@ class BdcNotifier extends _$BdcNotifier {
         dialogShown = true;
       }
       
+      final preloadStopwatch = Stopwatch()..start();
       await asr.preloadModels();
+      Global.logger.d('⚡ [PERF] loadData -> asr.preloadModels cost: ${preloadStopwatch.elapsedMilliseconds}ms');
       if (needPreload) {
         await Future.delayed(const Duration(milliseconds: 50));
       }
@@ -188,7 +193,9 @@ class BdcNotifier extends _$BdcNotifier {
         autoJumpAfterCorrectEn2Ch: studyConfig.autoJumpAfterCorrectEn2Ch,
       );
 
+      final stepsStopwatch = Stopwatch()..start();
       var stepsResult = await StudyBo().getActiveUserStudySteps();
+      Global.logger.d('⚡ [PERF] loadData -> getActiveUserStudySteps cost: ${stepsStopwatch.elapsedMilliseconds}ms');
       if (!stepsResult.success || stepsResult.data == null) {
         if (context.mounted && dialogShown) {
           Navigator.of(context, rootNavigator: true).pop();
@@ -198,7 +205,9 @@ class BdcNotifier extends _$BdcNotifier {
       }
       state = state.copyWith(activeUserStudySteps: stepsResult.data!, loadError: null);
 
+      final nextWordStopwatch = Stopwatch()..start();
       bool success = await getNextWord(false);
+      Global.logger.d('⚡ [PERF] loadData -> getNextWord cost: ${nextWordStopwatch.elapsedMilliseconds}ms');
       
       if (context.mounted && dialogShown) {
         Navigator.of(context, rootNavigator: true).pop();
@@ -232,10 +241,12 @@ class BdcNotifier extends _$BdcNotifier {
       ErrorHandler.handleError(e, st, logPrefix: 'loadData');
     } finally {
       Api.setLoadingDisabled(false);
+      Global.logger.i('⚡ [PERF] Total loadData cost: ${totalStopwatch.elapsedMilliseconds}ms');
     }
   }
 
   Future<List<String>> _getDisplayWords() async {
+    final stopwatch = Stopwatch()..start();
     List<String> displayWords = [];
     try {
       final db = MyDatabase.instance;
@@ -263,6 +274,7 @@ class BdcNotifier extends _$BdcNotifier {
     } catch (e) {
       Global.logger.e('获取展示单词失败: $e');
     }
+    Global.logger.d('⚡ [PERF] _getDisplayWords cost: ${stopwatch.elapsedMilliseconds}ms');
     return displayWords;
   }
 
@@ -346,6 +358,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<bool> handleWord(GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     if (getWordResult == null) return false;
+    final totalStopwatch = Stopwatch()..start();
     
     // 防止处理同一个结果引发的循环
     if (getWordResult == state.currentGetWordResult && !isFromBatchWordList) {
@@ -426,12 +439,15 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     if (oldStudyStep != newStudyStep || isFromBatchWordList) {
+      final asrInitStopwatch = Stopwatch()..start();
       await asr.initAsr(onAsrResult);
+      Global.logger.d('[PERF] handleWord -> asr.initAsr cost: ${asrInitStopwatch.elapsedMilliseconds}ms');
     }
 
     WordVo word = getWordResult.learningWord!.word;
     
     if (word.spell.isEmpty) {
+      final dbStopwatch = Stopwatch()..start();
       final local = await MyDatabase.instance.wordsDao.getWordById(word.id!);
       if (local != null) {
         word.spell = local.spell;
@@ -441,6 +457,7 @@ class BdcNotifier extends _$BdcNotifier {
       if (user != null) {
         word.meaningItems = await WordBo().getMeaningItemsForWord(word.id!, user.id);
       }
+      Global.logger.d('[PERF] handleWord -> fetch local word/meaning items cost: ${dbStopwatch.elapsedMilliseconds}ms');
     }
 
     WordWrapper wordWrapper = WordWrapper(word, null);
@@ -497,9 +514,11 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     String? englishDigest;
+    final sentenceStopwatch = Stopwatch()..start();
     final sentences = await word.getSentences();
     if (sentences.isNotEmpty) englishDigest = sentences[0].englishDigest;
     state = state.copyWith(englishDigestOfFirstSentence: englishDigest);
+    Global.logger.d('[PERF] handleWord -> getSentences cost: ${sentenceStopwatch.elapsedMilliseconds}ms');
 
     if (state.words == null) {
       _initChoiceData(getWordResult);
@@ -508,12 +527,15 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(dataLoaded: true);
 
     final user = Global.getLoggedInUserNotNull();
+    final playStopwatch = Stopwatch()..start();
     if (state.studyStep == StudyStep.en2Ch.json) {
       await playWordAndFirstSentence(await user.toUserVo(), false, true);
     } else {
       await playWordAndFirstSentence(await user.toUserVo(), true, true);
     }
+    Global.logger.d('[PERF] handleWord -> playWordAndFirstSentence cost: ${playStopwatch.elapsedMilliseconds}ms');
     
+    Global.logger.i('[PERF] Total handleWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
     return true;
   }
 
@@ -829,6 +851,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating}) async {
     if (state.isGettingNextWord) return false;
+    final totalStopwatch = Stopwatch()..start();
 
     _saveCurrentWordState();
 
@@ -848,13 +871,19 @@ class BdcNotifier extends _$BdcNotifier {
           state = state.copyWith(historyIndex: -1);
           final target = state.reviewReturnTarget;
           if (target != null) {
-            return await handleWord(target, isFromBatchWordList: true);
+            final res = await handleWord(target, isFromBatchWordList: true);
+            Global.logger.i('[PERF] Total getNextWord (history exit) cost: ${totalStopwatch.elapsedMilliseconds}ms');
+            return res;
           } else {
-            return await getNextWord(false);
+            final res = await getNextWord(false);
+            Global.logger.i('[PERF] Total getNextWord (history fallback) cost: ${totalStopwatch.elapsedMilliseconds}ms');
+            return res;
           }
         } else {
           state = state.copyWith(historyIndex: nextIndex);
-          return await handleWord(state.history[nextIndex]);
+          final res = await handleWord(state.history[nextIndex]);
+          Global.logger.i('[PERF] Total getNextWord (history next) cost: ${totalStopwatch.elapsedMilliseconds}ms');
+          return res;
         }
       }
     }
@@ -887,10 +916,16 @@ class BdcNotifier extends _$BdcNotifier {
         await Prefs.write("BdcPageArgs", _args.toJson());
       }
 
+      final apiStopwatch = Stopwatch()..start();
       final result = await StudyBo().getWord(state.isWordMastered, gotoNext, fsrsRating: fsrsRating);
+      Global.logger.d('[PERF] getNextWord -> StudyBo().getWord API cost: ${apiStopwatch.elapsedMilliseconds}ms');
+      
       if (result.success && result.data != null) {
         state = state.copyWith(loadError: null, learningGetWordResult: result.data);
-        return await handleWord(result.data, isFromBatchWordList: isFromBatchWordList);
+        final handleStopwatch = Stopwatch()..start();
+        final success = await handleWord(result.data, isFromBatchWordList: isFromBatchWordList);
+        Global.logger.d('[PERF] getNextWord -> handleWord cost: ${handleStopwatch.elapsedMilliseconds}ms');
+        return success;
       } else {
         Global.logger.w('getNextWord: 获取单词失败: code=${result.code}, msg=${result.msg}');
         if (result.code == "NEW_DAY") {
@@ -909,6 +944,7 @@ class BdcNotifier extends _$BdcNotifier {
     } finally {
       state = state.copyWith(isGettingNextWord: false);
       _handleTabChangeForAsr();
+      Global.logger.i('[PERF] Total getNextWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
     }
   }
 
@@ -975,6 +1011,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> checkAsrResult({String? asrInput, bool isVoice = false}) async {
+    final stopwatch = Stopwatch()..start();
     String inputText = asrInput ?? meaningController.text;
     if (inputText == _handlingChinese && asrInput == null) return;
     _handlingChinese = inputText;
@@ -1019,14 +1056,17 @@ class BdcNotifier extends _$BdcNotifier {
           SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
           _handleTabChangeForAsr();
         }
+        Global.logger.d('[PERF] checkAsrResult spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
         return;
       }
 
       final isFromAsr = asrInput != null || meaningController.text == _handlingChinese;
       final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
       
+      final matchStopwatch = Stopwatch()..start();
       final result = matchInputChineseWithMeaningItems(state.wordWrapper!, inputs);
       bool isMatch = _isAsrPassSync(result.totalCount, result.matchedCount);
+      Global.logger.d('[PERF] checkAsrResult -> matchInputChineseWithMeaningItems cost: ${matchStopwatch.elapsedMilliseconds}ms');
       
       if (result.newMatchCount > 0) {
         state = state.copyWith(canLeaveCurrWord: true);
@@ -1046,6 +1086,7 @@ class BdcNotifier extends _$BdcNotifier {
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       }
     }
+    Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
   bool _isAsrPassSync(int total, int matched) {
@@ -1089,6 +1130,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _onAnswerCorrect(FsrsRating rating, {String? reason}) async {
+    final stopwatch = Stopwatch()..start();
     if (state.hasFinishedAnswering) {
       state = state.copyWith(showHandwritingBoard: false);
       _handleTabChangeForAsr();
@@ -1112,6 +1154,7 @@ class BdcNotifier extends _$BdcNotifier {
     );
     _handleTabChangeForAsr();
     
+    final fsrsStopwatch = Stopwatch()..start();
     final lw = state.currentGetWordResult?.learningWord;
     if (lw != null) {
       final fsrs = FSRS();
@@ -1138,16 +1181,21 @@ class BdcNotifier extends _$BdcNotifier {
 
       state = state.copyWith(fsrsItem: nextItem, daysSinceLastReview: daysSinceLastReview);
     }
+    Global.logger.d('[PERF] _onAnswerCorrect -> FSRS calculation cost: ${fsrsStopwatch.elapsedMilliseconds}ms');
 
+    final prefetchStopwatch = Stopwatch()..start();
     if (state.studyStep == StudyStep.ch2En.json && !PlatformUtils.isWeb) {
       SoundUtil.prefetchSounds([Util.getWordSoundUrl(state.word!.spell, word: state.word)]);
     }
+    Global.logger.d('[PERF] _onAnswerCorrect -> Sound prefetch cost: ${prefetchStopwatch.elapsedMilliseconds}ms');
 
+    final playStopwatch = Stopwatch()..start();
     if (state.studyStep != StudyStep.ch2En.json) {
       SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
     } else {
       SoundUtil.playPronounceSound(state.word!);
     }
+    Global.logger.d('[PERF] _onAnswerCorrect -> Sound play trigger cost: ${playStopwatch.elapsedMilliseconds}ms');
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
@@ -1157,9 +1205,11 @@ class BdcNotifier extends _$BdcNotifier {
         getNextWord(true, fsrsRating: rating);
       });
     }
+    Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
   Future<void> playWordAndFirstSentence(UserVo user, bool forcePlayWord, bool startAsrWhenFinish) async {
+    final stopwatch = Stopwatch()..start();
     final studyConfig = StudyConfig.fromCurrentUser();
     bool willPlayWord = state.studyStep == StudyStep.en2Ch.json && (studyConfig.autoPlayWord || forcePlayWord);
     bool willPlaySentence = state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlaySentence;
@@ -1170,15 +1220,20 @@ class BdcNotifier extends _$BdcNotifier {
 
     try {
       if (willPlayWord) {
+        final playWordStopwatch = Stopwatch()..start();
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
+        Global.logger.d('[PERF] playWordAndFirstSentence -> playPronounceSound2 cost: ${playWordStopwatch.elapsedMilliseconds}ms');
       }
       if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
+        final playSentenceStopwatch = Stopwatch()..start();
         await SoundUtil.playSentenceSound2(state.englishDigestOfFirstSentence!, _audioPlayer);
+        Global.logger.d('[PERF] playWordAndFirstSentence -> playSentenceSound2 cost: ${playSentenceStopwatch.elapsedMilliseconds}ms');
       }
     } finally {
       if (startAsrWhenFinish) {
         _handleTabChangeForAsr();
       }
+      Global.logger.d('[PERF] playWordAndFirstSentence total cost: ${stopwatch.elapsedMilliseconds}ms');
     }
   }
 
@@ -1216,6 +1271,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> _startAsrWithHint(AsrLanguage language) async {
+    final stopwatch = Stopwatch()..start();
     if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) return;
     // 移除这里的 asr.state == started 检查，交给 asr.startAsr 内部处理（支持动态切换语言）
     // if (asr.state == AsrState.started) return;
@@ -1225,6 +1281,7 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('~~~~~ 当前说模式正确答案: ${correctAnswer?.replaceAll('\n', '; ')}');
 
     // 设置热词（上下文短语），显著提高识别准确率
+    final contextStopwatch = Stopwatch()..start();
     List<String> phrases = [];
     if (language == AsrLanguage.english) {
       phrases.add(state.word!.spell);
@@ -1232,9 +1289,13 @@ class BdcNotifier extends _$BdcNotifier {
       phrases.addAll(AsrUtil.extractContextualPhrases(state.word!.meaningItems ?? []));
     }
     await asr.setContextualStrings(phrases);
+    Global.logger.d('[PERF] _startAsrWithHint -> setContextualStrings cost: ${contextStopwatch.elapsedMilliseconds}ms');
 
     try {
+      final asrStartStopwatch = Stopwatch()..start();
       await asr.startAsr(language);
+      Global.logger.d('[PERF] _startAsrWithHint -> asr.startAsr cost: ${asrStartStopwatch.elapsedMilliseconds}ms');
+      
       if (PlatformUtils.isIOS) {
         await Future.delayed(const Duration(milliseconds: 150));
       }
@@ -1243,6 +1304,7 @@ class BdcNotifier extends _$BdcNotifier {
     } catch (e) {
       Global.logger.e('ASR启动失败: $e');
     }
+    Global.logger.d('[PERF] _startAsrWithHint total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
   void handleTabChangeForAsr() {
