@@ -523,11 +523,9 @@ extension BdcPageStateDialogs on BdcPageState {
         });
 
     if (choice ?? false) {
-      // 设置已在确定按钮中保存，这里刷新界面
+      // 设置已在确定按钮中保存，这里调用专属的刷新方法以重建 ASR 识别并重绘界面
       try {
-        // 刷新界面，以体现最新配置
-        await notifier.asr.stopMicrophone();
-        notifier.handleWord(state.currentGetWordResult);
+        await notifier.refreshConfigAndAsr();
       } catch (e) {
         ToastUtil.error('刷新界面失败: $e');
       }

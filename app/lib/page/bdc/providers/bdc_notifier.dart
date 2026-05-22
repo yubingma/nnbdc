@@ -1374,4 +1374,32 @@ class BdcNotifier extends _$BdcNotifier {
   void updateAsrPassRuleCache(String value) {
     state = state.copyWith(asrPassRuleCache: value);
   }
+
+  /// 当配置改变（例如设置弹窗关闭）时，安全地刷新当前配置并重建 ASR 语音识别
+  Future<void> refreshConfigAndAsr() async {
+    try {
+      // 1. 强行停止当前的麦克风，确保不会占用和通道冲突
+      await asr.stopMicrophone();
+      
+      // 2. 重新加载当前用户的 StudyConfig
+      final studyConfig = StudyConfig.fromCurrentUser();
+      
+      // 3. 重新配置 ASR 缓存参数
+      state = state.copyWith(
+        asrPassRuleCache: studyConfig.asrPassRule,
+      );
+      
+      // 4. 重置并初始化 ASR 状态
+      await asr.initAsr(onAsrResult);
+      
+      // 5. 根据当前的 Tab 状态，安全触发录音的开启或关闭
+      _handleTabChangeForAsr();
+      
+      // 6. 主动触发状态更新以重绘界面
+      state = state.copyWith();
+    } catch (e, stackTrace) {
+      Global.logger.e('🔊 [BDC-ASR] 刷新设置与重构语音识别失败: $e', error: e, stackTrace: stackTrace);
+    }
+  }
 }
+
