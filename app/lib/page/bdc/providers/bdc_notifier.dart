@@ -328,6 +328,7 @@ class BdcNotifier extends _$BdcNotifier {
           fsrsItem: stateJson['fsrsItem'] != null ? FSRSItem.fromMap(stateJson['fsrsItem']) : null,
           daysSinceLastReview: stateJson['daysSinceLastReview'],
           lastFsrsRating: stateJson['lastFsrsRating'] != null ? FsrsRating.values[stateJson['lastFsrsRating'] as int] : null,
+          hintTapCount: stateJson['hintTapCount'] ?? 0,
         );
         
         final wordId = wordResult.learningWord?.word.id;
@@ -473,6 +474,7 @@ class BdcNotifier extends _$BdcNotifier {
       tabIndex: newTabIndex,
       showHandwritingBoard: false,
       isKeyboardVisible: false,
+      hintTapCount: 0,
     );
 
     final wordId = word.id;
@@ -765,6 +767,7 @@ class BdcNotifier extends _$BdcNotifier {
             'daysSinceLastReview': uiState.daysSinceLastReview,
             'lastFsrsRating': uiState.lastFsrsRating?.index,
             'currentAsrCandidates': uiState.currentAsrCandidates,
+            'hintTapCount': uiState.hintTapCount,
             'wordsIndices': uiState.words?.map((w) {
               if (w.spell == "[ 都不对 ]") return 3;
               if (targetWord != null && w.id == targetWord.id) return 0;
@@ -802,6 +805,7 @@ class BdcNotifier extends _$BdcNotifier {
           daysSinceLastReview: uiState.daysSinceLastReview,
           lastFsrsRating: uiState.lastFsrsRating,
           currentAsrCandidates: uiState.currentAsrCandidates ?? [],
+          hintTapCount: uiState.hintTapCount,
         );
         meaningController.text = uiState.meaningText;
       } else {
@@ -816,6 +820,7 @@ class BdcNotifier extends _$BdcNotifier {
           currentScore: null,
           lastFsrsRating: null,
           fsrsItem: null,
+          hintTapCount: 0,
         );
         meaningController.text = "";
       }
@@ -927,6 +932,7 @@ class BdcNotifier extends _$BdcNotifier {
         asrMatchedMeaningItemParts: state.wordWrapper != null ? List<Pair<int, int>>.from(state.wordWrapper!.asrMatchedMeaningItemParts) : null,
         asrRevealedMeaningItemParts: state.wordWrapper != null ? List<Pair<int, int>>.from(state.wordWrapper!.asrRevealedMeaningItemParts) : null,
         currentAsrCandidates: List<String>.from(state.currentAsrCandidates),
+        hintTapCount: state.hintTapCount,
       );
       state = state.copyWith(wordUIStates: {...state.wordUIStates, state.word!.id!: uiState});
     }

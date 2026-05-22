@@ -20,6 +20,7 @@ class WordUIState {
   final List<Pair<int, int>>? asrMatchedMeaningItemParts;
   final List<Pair<int, int>>? asrRevealedMeaningItemParts;
   final List<String>? currentAsrCandidates;
+  final int hintTapCount;
 
   WordUIState({
     this.studyStep,
@@ -39,5 +40,6 @@ class WordUIState {
     this.asrMatchedMeaningItemParts,
     this.asrRevealedMeaningItemParts,
     this.currentAsrCandidates,
+    required this.hintTapCount,
   });
 }
