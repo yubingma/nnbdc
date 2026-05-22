@@ -1089,8 +1089,10 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
     
-    // 答对了，立即彻底、阻塞地关停麦克风，确保切回 playback 纯播放分类后再播放提示音
+    // 答对了，立即彻底、阻塞地关停麦克风
     await asr.stopMicrophone();
+    // 显式将音频分类切换回高保真播放分类，确保接下来的提示音或单词发音能够清晰响亮地从扬声器传出（避免通话听筒导致的音量微弱或无声）
+    await SoundUtil.usePlaybackCategory();
     
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
       state.wordWrapper!.revealAllRemainingMeanings();
@@ -1144,7 +1146,9 @@ class BdcNotifier extends _$BdcNotifier {
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
-      Future.delayed(const Duration(milliseconds: 800), () {
+      // 在中英学习模式下，因需要完整播放单词正确发音以纠正和指导用户发音，将跳转延时延长至 1500ms 以避免播放被打断；在其他模式下保持 800ms 极速跳转
+      final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 1500 : 800;
+      Future.delayed(Duration(milliseconds: jumpDelayMs), () {
         getNextWord(true, fsrsRating: rating);
       });
     }

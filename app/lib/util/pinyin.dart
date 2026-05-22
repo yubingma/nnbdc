@@ -72,6 +72,7 @@ Map<String, double> shengMuSimularityMap = {
   "f-h": 0.75, // 常用南方口音（胡/夫不分）
   "m-n": 0.60, // 鼻音混淆
   "r-y": 0.40,
+  "n-y": 0.82, // 新增：支持“n-y”声母模糊匹配 (如：牛-you)
   "b-w": 0.50, // 新增：支持“巴苦” (bā kǔ) 匹配 “挖苦” (wā kǔ)
   "z-c": 0.85,
   "z-s": 0.80,
@@ -271,6 +272,7 @@ class PinyinParser {
       shengMu = "y";
       yunMu = pinyinNormal.substring(1);
       if (yunMu.isEmpty) yunMu = "i"; // 处理 "yi" -> "y" + "i"
+      if (pinyinNormal == "you") yunMu = "iu"; // 标准化：you 的实际韵母与 iu 相同，皆为 iou
       return;
     }
 
