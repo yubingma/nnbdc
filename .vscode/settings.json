@@ -36,5 +36,8 @@
         "**/pub-cache/**",
         "/Volumes/ssd/AppSupport/pub-cache/**"
     ],
-    "java.dependency.enableDependencyCheckup": false
+    "java.dependency.enableDependencyCheckup": false,
+    "github-actions.workflows.pinned.workflows": [
+        ".github/workflows/build.yml"
+    ]
 }

@@ -97,10 +97,12 @@ void main() {
       expect(DateUtils.isSameDay(dbUtcDate, localDate), isTrue);
 
       // 更复杂的时差偏移场景：
-      // UTC 5月21日凌晨 01:00 (isUtc = true) 对应北京时间 5月21日早上 09:00
-      final utcTime = DateTime.utc(2026, 5, 21, 1, 0, 0);
-      // Local 北京时间 5月21日下午 14:00 (isUtc = false)
+      // 我们创建一个本地时间（比如下午 14:00）
       final localTime = DateTime(2026, 5, 21, 14, 0, 0);
+      // 基于该时间减去 5 个小时得到 09:00，在 3 AM 划分规则下它们依然属于同一个本地业务天
+      final anotherLocal = localTime.subtract(const Duration(hours: 5));
+      // 模拟混合 UTC 和 Local：将 anotherLocal 转换为 UTC DateTime
+      final utcTime = anotherLocal.toUtc();
       
       expect(DateUtils.isSameBusinessDay(utcTime, localTime), isTrue);
     });
@@ -154,10 +156,10 @@ void main() {
       final bool isCrossDayEST = syncedBusinessDate.isBefore(todayEST);
       expect(isCrossDayEST, isFalse); // 正确判定：并未跨入未来新一天（进度超前或相等，不触发重置与报错）
 
-      // 场景 2：模拟美东时区 (UTC-5) 下从 SQLite / Drift 读写反序列化 DateTime 的真实转换
+      // 场景 2：模拟时区下从 SQLite / Drift 读写反序列化 DateTime 的真实转换
       // 用户在本地 5月20日业务天学习，记为 DateTime(2026, 5, 20) (Local 0点)
-      // 存入 SQLite 并被 Drift 反序列化读出时，变为了对应的 UTC DateTime，即 2026-05-20 05:00:00.000Z
-      final dbUserLastLearningDate = DateTime.utc(2026, 5, 20, 5, 0, 0); 
+      // 存入 SQLite 并被 Drift 反序列化读出时，变为了对应的 UTC DateTime
+      final dbUserLastLearningDate = DateTime(2026, 5, 20).toUtc(); 
       final businessDateOfDb = DateUtils.businessDate(dbUserLastLearningDate);
 
       // 数据库读出的带有时区偏移的时间，必须依然准确归入 5月20日 业务天
