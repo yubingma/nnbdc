@@ -59,6 +59,14 @@ jobs:
             exit 1
           fi
           
+          # 验证日期不晚于明天 (防止误设太远的未来日期)
+          # 使用 Python 计算明天日期以保证跨月/年处理正确
+          TOMORROW=$(python3 -c "from datetime import datetime, timedelta; print((datetime.now() + timedelta(days=1)).strftime('%y%m%d'))")
+          if [ "$DATE_NUM" -gt "$TOMORROW" ]; then
+            echo "❌ 错误: 版本日期 ($DATE_NUM) 不能超过明天 ($TOMORROW)"
+            exit 1
+          fi
+          
           echo "✅ 版本号格式验证通过: $VERSION"
 
   build:

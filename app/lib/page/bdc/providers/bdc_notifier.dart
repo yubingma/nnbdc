@@ -1215,19 +1215,11 @@ class BdcNotifier extends _$BdcNotifier {
     }
     Global.logger.d('[PERF] _onAnswerCorrect -> FSRS calculation cost: ${fsrsStopwatch.elapsedMilliseconds}ms');
 
-    final prefetchStopwatch = Stopwatch()..start();
-    if (state.studyStep == StudyStep.ch2En.json && !PlatformUtils.isWeb) {
-      SoundUtil.prefetchSounds([Util.getWordSoundUrl(state.word!.spell, word: state.word)]);
-    }
-    Global.logger.d('[PERF] _onAnswerCorrect -> Sound prefetch cost: ${prefetchStopwatch.elapsedMilliseconds}ms');
-
     final playStopwatch = Stopwatch()..start();
-    if (state.studyStep != StudyStep.ch2En.json) {
-      SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
-    } else {
-      SoundUtil.playPronounceSound(state.word!);
-    }
-    Global.logger.d('[PERF] _onAnswerCorrect -> Sound play trigger cost: ${playStopwatch.elapsedMilliseconds}ms');
+    // 答对后，无论何种模式，都强制播放单词发音（及按配置播放例句），并开启 ASR 闭环。
+    // forcePlayWord=true 确保即便用户关闭了自动播放，在答对时也能听到正确读音。
+    unawaited(playWordAndFirstSentence(true, false, forcePlaySentence: StudyConfig.fromCurrentUser().autoPlaySentence));
+    Global.logger.d('[PERF] _onAnswerCorrect -> playWordAndFirstSentence (background) trigger cost: ${playStopwatch.elapsedMilliseconds}ms');
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
@@ -1244,11 +1236,20 @@ class BdcNotifier extends _$BdcNotifier {
     final stopwatch = Stopwatch()..start();
     final studyConfig = StudyConfig.fromCurrentUser();
     
+    // 详细记录当前配置状态
+    debugPrint('🔊 [BDC-Sound] playWordAndFirstSentence() 入口: '
+        'step=${state.studyStep}, '
+        'forcePlayWord=$forcePlayWord, '
+        'forcePlaySentence=$forcePlaySentence, '
+        'config.autoPlayWord=${studyConfig.autoPlayWord}, '
+        'config.autoPlaySentence=${studyConfig.autoPlaySentence}, '
+        'word=${state.word?.spell}');
+
     // 强制播放标志优先级最高，不受模式限制。自动播放则依然仅限英中模式。
     bool willPlayWord = forcePlayWord || (state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlayWord);
     bool willPlaySentence = forcePlaySentence || (state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlaySentence);
 
-    debugPrint('🔊 [BDC-Sound] playWordAndFirstSentence 触发: step=${state.studyStep}, forceWord=$forcePlayWord, forceSentence=$forcePlaySentence, willPlayWord=$willPlayWord, willPlaySentence=$willPlaySentence');
+    debugPrint('🔊 [BDC-Sound] 播放决策结果: willPlayWord=$willPlayWord, willPlaySentence=$willPlaySentence');
 
     if (willPlayWord || willPlaySentence) {
       await asr.stopMicrophone();
@@ -1257,18 +1258,23 @@ class BdcNotifier extends _$BdcNotifier {
     try {
       if (willPlayWord && state.word != null) {
         final playWordStopwatch = Stopwatch()..start();
-        Global.logger.d('🔊 [BDC-Sound] 正在播放单词: ${state.word!.spell}');
+        final soundUrl = Util.getWordSoundUrl(state.word!.spell, word: state.word);
+        Global.logger.d('🔊 [BDC-Sound] 准备播放单词: ${state.word!.spell}, URL: $soundUrl');
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
         Global.logger.d('[PERF] playWordAndFirstSentence -> playPronounceSound2 cost: ${playWordStopwatch.elapsedMilliseconds}ms');
       }
+      
       if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
         final playSentenceStopwatch = Stopwatch()..start();
-        Global.logger.d('🔊 [BDC-Sound] 正在播放第一句例句: ${state.englishDigestOfFirstSentence}');
+        final sentenceUrl = Util.getSentenceSoundUrl(state.englishDigestOfFirstSentence!);
+        Global.logger.d('🔊 [BDC-Sound] 准备播放第一句例句: ${state.englishDigestOfFirstSentence}, URL: $sentenceUrl');
         await SoundUtil.playSentenceSound2(state.englishDigestOfFirstSentence!, _audioPlayer);
         Global.logger.d('[PERF] playWordAndFirstSentence -> playSentenceSound2 cost: ${playSentenceStopwatch.elapsedMilliseconds}ms');
+      } else if (willPlaySentence) {
+        Global.logger.w('🔊 [BDC-Sound] 虽然 willPlaySentence=true，但 englishDigestOfFirstSentence 为 null');
       }
     } catch (e, st) {
-      Global.logger.e('🔊 [BDC-Sound] 音频播放过程中捕获到异常: $e', error: e, stackTrace: st);
+      Global.logger.e('🔊 [BDC-Sound] playWordAndFirstSentence 过程中捕获到异常: $e', error: e, stackTrace: st);
     } finally {
       if (startAsrWhenFinish) {
         _handleTabChangeForAsr();

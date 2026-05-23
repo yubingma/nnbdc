@@ -255,6 +255,17 @@ check_config() {
         print_error "日期 ($dd) 无效"
         exit 1
     fi
+
+    # 验证日期不晚于明天
+    local tomorrow=$(python3 -c "from datetime import datetime, timedelta; print((datetime.now() + timedelta(days=1)).strftime('%y%m%d'))" 2>/dev/null || \
+                     python -c "from datetime import datetime, timedelta; print((datetime.now() + timedelta(days=1)).strftime('%y%m%d'))" 2>/dev/null)
+    if [ -n "$tomorrow" ]; then
+        if [ "$date_num" -gt "$tomorrow" ]; then
+            print_error "版本日期 ($date_num) 不能超过明天 ($tomorrow)"
+            exit 1
+        fi
+    fi
+
     print_info "版本号校验通过: $version"
 
     if [ "$SKIP_UPLOAD" = false ] && [ "$BUILD_ONLY" = false ]; then

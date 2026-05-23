@@ -292,6 +292,7 @@ class SoundUtil {
       {int loadTimeoutMs = 3000, int playTimeoutMs = 10000, double speed = 1.0}) async {
     try {
       if (!_audioSessionConfigured) {
+        debugPrint('🔊 [SoundUtil] 音频会话未配置，正在触发配置...');
         await configureAudioSession();
       }
       if (PlatformUtils.isWeb) {
@@ -299,26 +300,36 @@ class SoundUtil {
       }
 
       final DateTime startTime = DateTime.now();
-      Global.logger.i('🔊 [SoundUtil] 触发播放时的实际音频会话分类为: $currentSessionCategory | 播放 URL: $soundUrl | 倍速: $speed');
-      debugPrint('🔊 [SoundUtil] 触发播放时的实际音频会话分类为: $currentSessionCategory | 播放 URL: $soundUrl | 倍速: $speed');
+      Global.logger.i('🔊 [SoundUtil] playSoundByUrl 启动: URL: $soundUrl, category: $currentSessionCategory, speed: $speed');
+      debugPrint('🔊 [SoundUtil] playSoundByUrl 启动: URL: $soundUrl, category: $currentSessionCategory, speed: $speed');
+
+      // 显式确保音量最大
+      await player.setVolume(1.0);
 
       // 设置源
       if (PlatformUtils.isWeb) {
+        debugPrint('🔊 [SoundUtil] Web 模式: player.setUrl...');
         await player.setUrl(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
       } else {
         final cacheManager = DefaultCacheManager();
         FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
         if (fileInfo != null) {
+          debugPrint('🔊 [SoundUtil] 命中缓存: ${fileInfo.file.path}');
           await player.setFilePath(fileInfo.file.path).timeout(Duration(milliseconds: loadTimeoutMs));
         } else {
+          debugPrint('🔊 [SoundUtil] 未命中缓存，开始下载: $soundUrl');
           var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+          debugPrint('🔊 [SoundUtil] 下载完成，路径: ${file.path}');
           await player.setFilePath(file.path).timeout(Duration(milliseconds: loadTimeoutMs));
         }
       }
 
+      debugPrint('🔊 [SoundUtil] 资源加载成功，准备播放 (speed: $speed)...');
       // 设置倍速并播放
       await player.setSpeed(speed);
       await player.play();
+      
+      debugPrint('🔊 [SoundUtil] player.play() 已触发，等待完成或空闲状态...');
       
       // 显式等待播放完成或被手动停止 (idle)
       // 在某些平台或特定条件下，await player.play() 可能会提前返回
@@ -329,21 +340,23 @@ class SoundUtil {
           .timeout(Duration(milliseconds: playTimeoutMs));
 
       final int elapsed = DateTime.now().difference(startTime).inMilliseconds;
-      Global.logger.d('~~~~~ SoundUtil(ja): 播放完成，逻辑耗时: ${elapsed}ms');
+      Global.logger.d('🔊 [SoundUtil] 播放完成，总逻辑耗时: ${elapsed}ms');
+      debugPrint('🔊 [SoundUtil] 播放完成，总逻辑耗时: ${elapsed}ms');
     } catch (e, stackTrace) {
       final errorStr = e.toString();
-      // 过滤掉 "Connection aborted" 错误，这通常是因为在旧的音频还在加载时开始了新的播放
+      Global.logger.e('🔊 [SoundUtil] playSoundByUrl 捕获异常: $e', error: e, stackTrace: stackTrace);
+      debugPrint('🔊 [SoundUtil] playSoundByUrl 捕获异常: $e');
+
       if (errorStr.contains('Connection aborted') || errorStr.contains('abort')) {
-        Global.logger.i('~~~~~ SoundUtil(ja): 播放被中止 (可能由于开始了新的播放): $soundUrl');
+        Global.logger.i('🔊 [SoundUtil] 播放被中止: $soundUrl');
         return;
       }
       if (e is Exception) {
         ErrorHandler.handleAudioError(e, stackTrace, audioType: 'ja_url:$soundUrl');
-      } else {
-        Global.logger.e('SoundUtil: 非 Exception 类型的音频播放错误: $e', error: e, stackTrace: stackTrace);
       }
     } finally {
       if (disposeWhenFinish) {
+        debugPrint('🔊 [SoundUtil] 正在销毁临时播放器...');
         await player.dispose();
       }
     }

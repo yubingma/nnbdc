@@ -56,6 +56,16 @@ validate_version() {
         exit 1
     fi
 
+    # 验证日期不晚于明天
+    TOMORROW=$(python3 -c "from datetime import datetime, timedelta; print((datetime.now() + timedelta(days=1)).strftime('%y%m%d'))" 2>/dev/null || \
+               python -c "from datetime import datetime, timedelta; print((datetime.now() + timedelta(days=1)).strftime('%y%m%d'))" 2>/dev/null)
+    if [ -n "$TOMORROW" ]; then
+        if [ "$DATE_NUM" -gt "$TOMORROW" ]; then
+            echo "❌ 错误: 版本日期 ($DATE_NUM) 不能超过明天 ($TOMORROW)"
+            exit 1
+        fi
+    fi
+
     echo "✅ 版本号校验通过: $VERSION"
 }
 
