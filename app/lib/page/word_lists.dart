@@ -160,7 +160,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               toLearningWordsListPage(true)!.then((value) => loadData());
             } else if (wordList.name == '生词本') {
               var dict = await WordBo().getRawWordDict();
-              toDictWordsListPage(dict.id, true)!.then((value) => loadData());
+              toDictWordsListPage(dict, true)!.then((value) => loadData());
             } else if (wordList.name == '已掌握') {
               toMasteredWordsListPage(true)!.then((value) => loadData());
             }

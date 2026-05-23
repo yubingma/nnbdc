@@ -373,14 +373,26 @@ class WordListPageState extends State<WordListPage>
       baseIndex = predQueryIndex;
       _initialScrollIndex = predWordIndex - baseIndex!;
       
-      // 2. 并行执行：预测加载数据 + 获取确切序号
-      final results = await Future.wait([
-        doQuery(true, predQueryIndex, predQuerySize, false),
-        args.wordsProvider.getWordIndex(bookMark!.spell),
-      ]);
+      // --- 串行化与精准验证优化 ---
+      // 1. 先进行极其快速的预测分页数据加载
+      final swQuery = Stopwatch()..start();
+      await doQuery(true, predQueryIndex, predQuerySize, false);
+      final queryMs = swQuery.elapsedMilliseconds;
+
+      int actualWordIndex = -1;
+      int localOffset = predWordIndex - predQueryIndex;
       
-      int actualWordIndex = results[1] as int;
-      Global.logger.d('WordListPage: Parallel load & getWordIndex took ${swParallel.elapsedMilliseconds}ms');
+      // 2. 检查加载出来的数据在对应位置是否正好是该书签的单词（预测完美命中）
+      if (localOffset >= 0 && localOffset < words.length && words[localOffset].word.spell == bookMark!.spell) {
+        actualWordIndex = predWordIndex;
+        Global.logger.d('WordListPage: 书签预测完美命中！成功跳过 getWordIndex 数据库慢查询！(doQuery 耗时: ${queryMs}ms)');
+      } else {
+        // 预测不命中（说明词表由于单词增删等发生了变动），再回退到数据库查询进行重定位
+        final swIndex = Stopwatch()..start();
+        actualWordIndex = await args.wordsProvider.getWordIndex(bookMark!.spell);
+        Global.logger.w('WordListPage: 书签预测未命中或越界，回退查询 getWordIndex 耗时: ${swIndex.elapsedMilliseconds}ms, spell: ${bookMark!.spell}');
+      }
+      Global.logger.d('WordListPage: LoadData sequence matching completed in ${swParallel.elapsedMilliseconds}ms');
 
       // 3. 校验预测结果
       if (actualWordIndex == -1) {
