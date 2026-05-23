@@ -550,6 +550,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 将耗时的发音和例句播放彻底异步化，抛入后台执行，避免阻塞 handleWord/getNextWord 主加载流程
     unawaited(() async {
       try {
+        debugPrint('⏱️ [Latency-BDC] handleWord -> playWordAndFirstSentence 触发 (background)...');
         // 无论何种模式，加载新词时都只按自动播放配置执行（forcePlayWord=false），确保中英模式不泄密
         await playWordAndFirstSentence(false, true);
       } catch (e, st) {
@@ -1232,14 +1233,7 @@ class BdcNotifier extends _$BdcNotifier {
     final stopwatch = Stopwatch()..start();
     final studyConfig = StudyConfig.fromCurrentUser();
     
-    // 详细记录当前配置状态
-    debugPrint('🔊 [BDC-Sound] playWordAndFirstSentence() 入口: '
-        'step=${state.studyStep}, '
-        'forcePlayWord=$forcePlayWord, '
-        'forcePlaySentence=$forcePlaySentence, '
-        'config.autoPlayWord=${studyConfig.autoPlayWord}, '
-        'config.autoPlaySentence=${studyConfig.autoPlaySentence}, '
-        'word=${state.word?.spell}');
+    debugPrint('⏱️ [Latency-BDC] playWordAndFirstSentence() 启动');
 
     // 强制播放标志优先级最高，不受模式限制。自动播放则依然仅限英中模式。
     bool willPlayWord = forcePlayWord || (state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlayWord);
@@ -1247,18 +1241,16 @@ class BdcNotifier extends _$BdcNotifier {
 
     debugPrint('🔊 [BDC-Sound] 播放决策结果: willPlayWord=$willPlayWord, willPlaySentence=$willPlaySentence');
 
+    Future<void>? sessionFuture;
     if (willPlayWord || willPlaySentence) {
       try {
-        debugPrint('🔊 [BDC-Sound] 准备停用 ASR 并切换音频会话以进行纯净发音...');
+        debugPrint('⏱️ [Latency-BDC] 准备停用 ASR 并并行切换音频会话...');
         await asr.stopMicrophone();
-        
-        // 关键：将当前播放器加入观察名单，确保 ASR 初始化时会等待其播完
         SoundUtil.watchPlayer(_audioPlayer);
-
-        // 关键：发音前强制重新配置音频会话为 pure playback，排除 native 层的潜在分类错误
-        await SoundUtil.usePlaybackCategory(force: true);
+        // 关键优化：发起切换请求但不立即 await，允许后续的单词资源加载（下载/读取缓存）并行执行
+        sessionFuture = SoundUtil.usePlaybackCategory();
       } catch (e) {
-        Global.logger.e('🔊 [BDC-Sound] stopMicrophone/usePlaybackCategory 失败 (不影响后续播放): $e');
+        Global.logger.e('🔊 [BDC-Sound] stopMicrophone 失败: $e');
       }
     }
 
@@ -1266,9 +1258,10 @@ class BdcNotifier extends _$BdcNotifier {
       if (willPlayWord && state.word != null) {
         final playWordStopwatch = Stopwatch()..start();
         final soundUrl = Util.getWordSoundUrl(state.word!.spell, word: state.word);
-        Global.logger.d('🔊 [BDC-Sound] 准备播放单词: ${state.word!.spell}, URL: $soundUrl');
-        await SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
-        Global.logger.d('[PERF] playWordAndFirstSentence -> playPronounceSound2 cost: ${playWordStopwatch.elapsedMilliseconds}ms');
+        
+        // 关键优化：在调用 play 之前，必须确保并行发起的 sessionFuture 已完成
+        await SoundUtil.playPronounceSound2(state.word!, _audioPlayer, preWaitFuture: sessionFuture);
+        debugPrint('⏱️ [Latency-BDC] 单词播完，耗时: ${playWordStopwatch.elapsedMilliseconds}ms');
         
         // 如果后面还要播放例句，增加 50ms 物理缓冲（从 200ms 缩减），防止 MediaCodec 底层切换过快，同时保持连贯性
         if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
@@ -1281,7 +1274,7 @@ class BdcNotifier extends _$BdcNotifier {
         final sentenceUrl = Util.getSentenceSoundUrl(state.englishDigestOfFirstSentence!);
         Global.logger.d('🔊 [BDC-Sound] 准备播放第一句例句: ${state.englishDigestOfFirstSentence}, URL: $sentenceUrl');
         await SoundUtil.playSentenceSound2(state.englishDigestOfFirstSentence!, _audioPlayer);
-        Global.logger.d('[PERF] playWordAndFirstSentence -> playSentenceSound2 cost: ${playSentenceStopwatch.elapsedMilliseconds}ms');
+        debugPrint('⏱️ [Latency-BDC] 例句播完，耗时: ${playSentenceStopwatch.elapsedMilliseconds}ms');
       } else if (willPlaySentence) {
         Global.logger.w('🔊 [BDC-Sound] 虽然 willPlaySentence=true，但 englishDigestOfFirstSentence 为 null');
       }
@@ -1289,11 +1282,9 @@ class BdcNotifier extends _$BdcNotifier {
       Global.logger.e('🔊 [BDC-Sound] playWordAndFirstSentence 过程中捕获到异常: $e', error: e, stackTrace: st);
     } finally {
       if (startAsrWhenFinish) {
-        // 降低为 10ms。底层硬件隔离已由 SoundUtil.waitForAllPlayers 的 100ms 缓冲完全接管
-        // 这里仅用极短延迟让出微任务队列，确保 UI 帧平滑，极大提升跟手感和连贯性
-        Future.delayed(const Duration(milliseconds: 10), () {
-          _handleTabChangeForAsr();
-        });
+        // 彻底移除延迟。底层硬件隔离已由 SoundUtil.waitForAllPlayers 完全接管
+        debugPrint('⏱️ [Latency-BDC] 正在立即触发 ASR 衔接...');
+        _handleTabChangeForAsr();
       }
       Global.logger.d('[PERF] playWordAndFirstSentence total cost: ${stopwatch.elapsedMilliseconds}ms');
     }
@@ -1355,9 +1346,10 @@ class BdcNotifier extends _$BdcNotifier {
       await asr.startAsr(language, phrases: phrases);
       Global.logger.d('[PERF] _startAsrWithHint -> asr.startAsr cost: ${asrStartStopwatch.elapsedMilliseconds}ms');
       
-      // 给底层音频框架和 AudioSession 切换留出充足的时间稳定状态，避免立即播放音效被打断
-      await Future.delayed(const Duration(milliseconds: 200));
-      await SoundUtil.playAsrReadyHintSound();
+      // 极致响应优化：将延迟缩减为 20ms (从 200ms 缩减)。
+      // 在零延迟架构的保护下，硬件隔离已足够完美，不再需要长达 200ms 的人工等待来规避爆音。
+      await Future.delayed(const Duration(milliseconds: 20));
+      SoundUtil.playAsrReadyHintSound();
       state = state.copyWith(wordStartTime: AppClock.now());
     } catch (e) {
       Global.logger.e('ASR启动失败: $e');
