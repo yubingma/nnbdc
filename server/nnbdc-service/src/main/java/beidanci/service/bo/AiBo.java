@@ -660,6 +660,10 @@ public class AiBo {
      * @return 生成结果的 Future
      */
     public java.util.concurrent.CompletableFuture<Result<AiStoryVo>> generateShortStory(List<String> words, String userId) {
+        return generateShortStory(words, userId, false);
+    }
+
+    public java.util.concurrent.CompletableFuture<Result<AiStoryVo>> generateShortStory(List<String> words, String userId, boolean lazyAudio) {
         if (words == null || words.isEmpty()) {
             return java.util.concurrent.CompletableFuture.completedFuture(Result.fail("没有单词可以生成短文。"));
         }
@@ -680,8 +684,10 @@ public class AiBo {
         AiStory cachedStory = aiStoryBo.findByWordsHash(wordsHash);
         if (cachedStory != null) {
             logger.info("{}命中 AI 短文缓存: {}", formatUser(userId), wordsHash);
-            // 异步检查并补全缺失的配音文件
-            checkAndGenerateAudioAsync(cachedStory.getStoryContent(), wordsHash, userId);
+            if (!lazyAudio) {
+                // 如果是老版本前端（非延迟模式），异步检查并补全缺失的配音文件
+                checkAndGenerateAudioAsync(cachedStory.getStoryContent(), wordsHash, userId);
+            }
             return java.util.concurrent.CompletableFuture.completedFuture(Result.success(new AiStoryVo(cachedStory.getStoryContent(), wordsHash, sysParamUtil.isAiStoryEnTtsEnabled(), sysParamUtil.isAiStoryCnTtsEnabled())));
         }
 
@@ -689,7 +695,7 @@ public class AiBo {
         return inFlightStories.computeIfAbsent(wordsHash, k -> {
             return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {
-                    Result<String> textResult = doGenerateShortStory(words, wordsHash, wordsJsonForHash, userId);
+                    Result<String> textResult = doGenerateShortStory(words, wordsHash, wordsJsonForHash, userId, lazyAudio);
                     if (textResult.isSuccess()) {
                         return Result.success(new AiStoryVo(textResult.getData(), wordsHash, sysParamUtil.isAiStoryEnTtsEnabled(), sysParamUtil.isAiStoryCnTtsEnabled()));
                     } else {
@@ -702,7 +708,7 @@ public class AiBo {
         });
     }
 
-    private Result<String> doGenerateShortStory(List<String> words, String wordsHash, String wordsJsonForHash, String userId) {
+    private Result<String> doGenerateShortStory(List<String> words, String wordsHash, String wordsJsonForHash, String userId, boolean lazyAudio) {
         // 限制并发量，防止瞬间大量请求冲垮服务器
         int limit = sysParamUtil.getAiStoryConcurrencyLimit();
         if (activeAiStoryRequests.get() >= limit) {
@@ -734,14 +740,16 @@ public class AiBo {
                 logger.error("{}保存 AI 短文缓存失败: {}", formatUser(userId), wordsHash, e);
             }
 
-            // 异步生成配音
-            new Thread(() -> {
-                try {
-                    generateShortStoryAudio(storyContent, wordsHash, userId);
-                } catch (Exception e) {
-                    logger.error("{}异步生成 AI 短文配音失败: {}", formatUser(userId), wordsHash, e);
-                }
-            }).start();
+            if (!lazyAudio) {
+                // 如果是老版本前端（非延迟模式），在后台异步触发配音生成
+                new Thread(() -> {
+                    try {
+                        generateShortStoryAudio(storyContent, wordsHash, userId);
+                    } catch (Exception e) {
+                        logger.error("{}异步生成 AI 短文配音失败: {}", formatUser(userId), wordsHash, e);
+                    }
+                }).start();
+            }
 
             return Result.success(storyContent);
         } catch (Exception e) {
@@ -1090,5 +1098,78 @@ public class AiBo {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * 按需生成单个语种的配音文件
+     * @param wordsHash 短文哈希
+     * @param lang 语种 ("en" 或 "cn")
+     * @param userId 用户ID
+     * @return 音频文件的相对路径，如 "ai_story/xxx_en.mp3"
+     */
+    public String getOrGenerateAudioOnDemand(String wordsHash, String lang, String userId) throws Exception {
+        // 1. 检查文件是否已存在
+        String soundPath = sysParamUtil.getSoundPath();
+        String relativePath = "ai_story/" + wordsHash + "_" + lang + ".mp3";
+        File audioFile = new File(soundPath, relativePath);
+        if (audioFile.exists()) {
+            logger.info("{}配音文件已存在，直接返回: {}", formatUser(userId), relativePath);
+            return relativePath;
+        }
+
+        // 2. 从数据库查询短文文本
+        AiStory cachedStory = aiStoryBo.findByWordsHash(wordsHash);
+        if (cachedStory == null) {
+            throw new RuntimeException("未找到对应的短文文本，无法生成配音");
+        }
+        String storyContent = cachedStory.getStoryContent();
+
+        // 3. 拆分中英文内容
+        String enPart = "";
+        String cnPart = "";
+        int firstChineseCharIndex = -1;
+        for (int i = 0; i < storyContent.length(); i++) {
+            char c = storyContent.charAt(i);
+            if (c >= '\u4e00' && c <= '\u9fa5') {
+                firstChineseCharIndex = i;
+                break;
+            }
+        }
+        if (firstChineseCharIndex != -1) {
+            enPart = storyContent.substring(0, firstChineseCharIndex).trim();
+            cnPart = storyContent.substring(firstChineseCharIndex).trim();
+        } else {
+            enPart = storyContent.trim();
+        }
+
+        enPart = enPart.replace("**", "");
+        cnPart = cnPart.replace("**", "");
+
+        // 确保目录存在
+        File dir = new File(soundPath, "ai_story");
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("无法创建 AI 短文配音目录: " + dir.getAbsolutePath());
+        }
+
+        // 4. 根据语种调用 TTS
+        if (lang.equalsIgnoreCase("en")) {
+            if (enPart.isEmpty()) {
+                throw new RuntimeException("英文内容为空，无法生成配音");
+            }
+            byte[] enBytes = callCosyVoice(enPart, aiProperties.getVoice(), null, userId);
+            Files.write(audioFile.toPath(), enBytes);
+            logger.info("{}AI 短文英文配音已按需生成: {}", formatUser(userId), wordsHash);
+        } else if (lang.equalsIgnoreCase("cn")) {
+            if (cnPart.isEmpty()) {
+                throw new RuntimeException("中文内容为空，无法生成配音");
+            }
+            byte[] cnBytes = callCosyVoice(cnPart, aiProperties.getVoice(), null, userId);
+            Files.write(audioFile.toPath(), cnBytes);
+            logger.info("{}AI 短文中文配音已按需生成: {}", formatUser(userId), wordsHash);
+        } else {
+            throw new IllegalArgumentException("不支持的语种类型: " + lang);
+        }
+
+        return relativePath;
     }
 }

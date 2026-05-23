@@ -59,10 +59,20 @@ public class AiController {
      * @param wordsJson JSON array of word spells
      * @return 生成的小短文
      */
+    /**
+     * 根据单词列表生成小短文（保留两个参数的重载，完美兼容 Java 内部的直接方法调用）
+     */
+    public DeferredResult<Result<AiStoryVo>> generateAiShortStory(
+            String wordsJson,
+            String userId) {
+        return generateAiShortStory(wordsJson, userId, false);
+    }
+
     @PostMapping("/ai/generateAiShortStory.do")
     public DeferredResult<Result<AiStoryVo>> generateAiShortStory(
             @RequestParam("wordsJson") String wordsJson,
-            @RequestParam("userId") String userId) {
+            @RequestParam("userId") String userId,
+            @RequestParam(value = "lazyAudio", required = false, defaultValue = "false") boolean lazyAudio) {
         DeferredResult<Result<AiStoryVo>> deferredResult = new DeferredResult<>(60000L); // 60秒超时
         deferredResult.onTimeout(() -> deferredResult.setErrorResult(Result.fail("生成 AI 短文超时")));
 
@@ -74,7 +84,7 @@ public class AiController {
             }
 
             List<String> words = mapper.readValue(wordsJson, mapper.getTypeFactory().constructCollectionType(List.class, String.class));
-            CompletableFuture<Result<AiStoryVo>> future = aiBo.generateShortStory(words, userId);
+            CompletableFuture<Result<AiStoryVo>> future = aiBo.generateShortStory(words, userId, lazyAudio);
             
             future.thenAccept(result -> deferredResult.setResult(result))
                   .exceptionally(ex -> {
@@ -237,6 +247,37 @@ public class AiController {
         } else {
             param.setParamValue(value);
             sysParamBo.updateEntity(param);
+        }
+    }
+
+    /**
+     * 按需生成并获取短文配音文件路径
+     * @param wordsHash 短文散列值
+     * @param lang 语种 ("en" 或 "cn")
+     * @param userId 用户 ID
+     * @return 配音文件的 URL 路径
+     */
+    @PostMapping("/ai/getOrGenerateStoryAudio.do")
+    public Result<String> getOrGenerateStoryAudio(
+            @RequestParam("wordsHash") String wordsHash,
+            @RequestParam("lang") String lang,
+            @RequestParam("userId") String userId) {
+        try {
+            // 验证用户身份
+            if (userBo.findById(userId) == null) {
+                return Result.fail("用户身份验证失败");
+            }
+
+            if (wordsHash == null || wordsHash.isEmpty() || lang == null || lang.isEmpty()) {
+                return Result.fail("参数不完整");
+            }
+
+            String relativePath = aiBo.getOrGenerateAudioOnDemand(wordsHash, lang, userId);
+            // 返回相对静态路径，以便前端直接播放，比如 /sound/ai_story/xxx_en.mp3
+            return Result.success("/sound/" + relativePath);
+        } catch (Exception e) {
+            log.error("按需生成配音失败, hash=" + wordsHash + ", lang=" + lang, e);
+            return Result.fail("生成配音失败: " + e.getMessage());
         }
     }
 }
