@@ -1066,10 +1066,11 @@ class BdcNotifier extends _$BdcNotifier {
           // 已经答对了（处于查看详情时的额外练习），直接关闭
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+          SoundUtil.playPronounceSound(state.word!);
         } else {
           // 还没答对（英中模式下的拼写练习），仅关闭界面，不视为答对题目
           state = state.copyWith(showHandwritingBoard: false);
-          SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
+          SoundUtil.playPronounceSound(state.word!);
           _handleTabChangeForAsr();
         }
         Global.logger.d('[PERF] checkAsrResult spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
@@ -1100,6 +1101,9 @@ class BdcNotifier extends _$BdcNotifier {
         unawaited(asr.stopMicrophone());
         final ratingResult = _calculateRating(method);
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+        if (state.hasFinishedAnswering && state.showHandwritingBoard) {
+          SoundUtil.playPronounceSound(state.word!);
+        }
       }
     }
     Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
