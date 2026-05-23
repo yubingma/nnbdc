@@ -932,24 +932,37 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               return;
             }
 
-            // [二次校验] 开始学习前，强制断言所有今日单词进度为 0
-            final checkWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
-            for (var w in checkWords) {
-              assert(w.todayLearnedTimes == 0, '数据不一致：点击开始学习时，发现单词 ${w.wordId} 已有今日进度 (${w.todayLearnedTimes})');
-            }
+            // 将二次断言校验异步化，决不在主线程阻塞路由转场
+            unawaited(() async {
+              try {
+                final checkWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
+                for (var w in checkWords) {
+                  assert(w.todayLearnedTimes == 0, '数据不一致：点击开始学习时，发现单词 ${w.wordId} 已有今日进度 (${w.todayLearnedTimes})');
+                }
+              } catch (e, st) {
+                Global.logger.e('开始学习断言校验失败', error: e, stackTrace: st);
+              }
+            }());
           }
 
           if (user != null) {
-            await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
-            final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
-            if (dbUser != null) {
-              await MyDatabase.instance.usersDao.saveUser(
-                  dbUser.copyWith(todayStudyStarted: true, lastLearningDate: drift.Value(AppClock.today())), true);
-            }
-            await Global.loadUserFromDb();
-            // 立刻发起非阻塞同步，确保状态尽快上传云端
-            ThrottledDbSyncService().requestSync(immediate: true);
+            // 将耗时的数据库读写、状态同步与全局缓存加载彻底异步化到后台，零阻塞转场
+            unawaited(() async {
+              try {
+                await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
+                final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
+                if (dbUser != null) {
+                  await MyDatabase.instance.usersDao.saveUser(
+                      dbUser.copyWith(todayStudyStarted: true, lastLearningDate: drift.Value(AppClock.today())), true);
+                }
+                await Global.loadUserFromDb();
+                ThrottledDbSyncService().requestSync(immediate: true);
+              } catch (e, st) {
+                Global.logger.e('记录开始学习状态失败', error: e, stackTrace: st);
+              }
+            }());
           }
+          // Prefs 内存写入几乎为 0ms (只做本地 Map 修改)，可以直接 await 确保页面接收，也可不 await
           await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
           if (!mounted) return;
           context.push('/bdc').then((value) {

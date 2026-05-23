@@ -188,7 +188,8 @@ class BdcNotifier extends _$BdcNotifier {
         }
       }
       
-      await SoundUtil.configureAudioSession();
+      // 彻底将音频会话配置异步化抛入后台，避免页面转场滑出期间音频硬件重新配置导致丢帧
+      unawaited(SoundUtil.configureAudioSession());
       
       final studyConfig = StudyConfig.fromCurrentUser();
       
