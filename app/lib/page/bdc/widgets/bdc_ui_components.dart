@@ -315,14 +315,14 @@ extension BdcPageStateUIComponents on BdcPageState {
             // 英→中模式 或 列表模式 整合卡片
             if ((state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.list.json) &&
                 state.currentGetWordResult?.learningWord?.word != null)
-              _buildWordStepCard(),
+              _buildWordStepCard(state),
             // 中→英模式整合卡片
             if (state.studyStep == StudyStep.ch2En.json &&
                 state.currentGetWordResult?.learningWord?.word != null)
-              _buildMeaningStepCard(),
+              _buildMeaningStepCard(state),
 
-            _buildPhoneticRow(),
-            _buildFirstSentenceRow(),
+            _buildPhoneticRow(state),
+            _buildFirstSentenceRow(state),
           ],
         ),
       ),
@@ -560,10 +560,23 @@ extension BdcPageStateUIComponents on BdcPageState {
           flex: 1,
           child: Consumer(
             builder: (context, ref, child) {
-              // 物理隔离：这个 Consumer 只监听单词 ID 和历史索引
-              // 无论 ASR、播放状态如何变化，只要这两个核心值不变，这里的 AnimatedSwitcher 绝对不会重绘
+              // 物理隔离：只监听会影响卡片渲染的核心状态
               final wordId = ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
               final historyIndex = ref.watch(bdcNotifierProvider.select((s) => s.historyIndex));
+              final showSentenceTranslation = ref.watch(bdcNotifierProvider.select((s) => s.showSentenceTranslation));
+              final isEditMode = ref.watch(bdcNotifierProvider.select((s) => s.isEditMode));
+              final wordPlaying = ref.watch(bdcNotifierProvider.select((s) => s.playingStates['word'] ?? false));
+              final sentencePlaying = ref.watch(bdcNotifierProvider.select((s) => s.playingStates['sentence'] ?? false));
+              final imagesLength = ref.watch(bdcNotifierProvider.select((s) => s.currentGetWordResult?.images?.length ?? 0));
+              final highlightedWordImg = ref.watch(bdcNotifierProvider.select((s) => s.highlightedWordImg));
+
+              // 获取当前最新脱敏 state 传给卡片渲染，以确保 state 中的其他字段也是最新的，但不会被其改变触发不必要的 rebuild
+              final currentState = ref.read(bdcNotifierProvider);
+              
+              // 确保 imagesLength 被显式使用以消除编译器警告并保持监听状态
+              if (imagesLength < 0) {
+                Global.logger.d('imagesLength: $imagesLength');
+              }
               
               return AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
@@ -577,7 +590,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                 },
                 child: Container(
                   key: ValueKey('word_card_${wordId}_$historyIndex'),
-                  child: _buildQuestionContent(ref.read(bdcNotifierProvider)),
+                  child: _buildQuestionContent(currentState.copyWith(
+                    showSentenceTranslation: showSentenceTranslation,
+                    isEditMode: isEditMode,
+                    playingStates: {'word': wordPlaying, 'sentence': sentencePlaying},
+                    highlightedWordImg: highlightedWordImg,
+                  )),
                 ),
               );
             },
@@ -1744,7 +1762,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildPhoneticRow() {
+  Widget _buildPhoneticRow(BdcState state) {
     if (!(state.currentGetWordResult?.learningWord?.word != null &&
         state.studyStep != StudyStep.en2Ch.json)) {
       return const SizedBox.shrink();
@@ -1782,20 +1800,22 @@ extension BdcPageStateUIComponents on BdcPageState {
             ),
           if (state.studyStep != StudyStep.ch2En.json)
             buildWordSoundButton(
-                state.currentGetWordResult!.learningWord!.word, _audioPlayer),
+                state.currentGetWordResult!.learningWord!.word, _audioPlayer, state),
         ],
       ),
     );
   }
 
 
-  Widget _buildFirstSentenceRow() {
+  Widget _buildFirstSentenceRow(BdcState state) {
     if (!(state.word?.sentences != null &&
         state.word!.sentences!.isNotEmpty &&
         state.studyStep != StudyStep.ch2En.json &&
         state.studyStep != StudyStep.en2Ch.json)) {
       return const SizedBox.shrink();
     }
+
+    final sentencePlaying = state.playingStates['sentence'] ?? false;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1826,12 +1846,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                     offset: Offset(
                         _sentenceSoundController.value < 0.5 ? 0 : -2, 0),
                     child: Icon(
-                      state.playingStates['sentence']!
+                      sentencePlaying
                           ? (_sentenceSoundController.value < 0.5
                               ? Icons.volume_up
                               : Icons.volume_down)
                           : Icons.volume_up,
-                      color: state.playingStates['sentence']!
+                      color: sentencePlaying
                           ? Colors.teal[300]
                           : Colors.grey[500],
                       size: 24,
@@ -1840,7 +1860,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 },
               ),
               onTap: () {
-                if (!state.playingStates['sentence']! &&
+                if (!sentencePlaying &&
                     state.englishDigestOfFirstSentence != null) {
                   notifier.playWithAnimation(
                       () => SoundUtil.playSentenceSound2(
@@ -1867,7 +1887,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildWordStepCard() {
+  Widget _buildWordStepCard(BdcState state) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.transparent,
@@ -1925,7 +1945,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                     const SizedBox(width: 4),
                     buildWordSoundButton(
                         state.currentGetWordResult!.learningWord!.word,
-                        _audioPlayer),
+                        _audioPlayer,
+                        state),
                   ],
                 ),
                 if (state.studyStep == StudyStep.list.json) ...[
@@ -2060,7 +2081,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget _buildMeaningStepCard() {
+  Widget _buildMeaningStepCard(BdcState state) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.transparent,
@@ -2254,7 +2275,8 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget buildWordSoundButton(WordVo word, dynamic audioPlayer) {
+  Widget buildWordSoundButton(WordVo word, dynamic audioPlayer, BdcState state) {
+    final wordPlaying = state.playingStates['word'] ?? false;
     // 在拼写和音标显示的情况下使用小按钮
     if (state.studyStep == StudyStep.en2Ch.json) {
       return Transform.translate(
@@ -2269,12 +2291,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                       offset: Offset(_wordSoundController.value < 0.5 ? 0 : -2,
                           0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
                       child: Icon(
-                        ref.watch(bdcNotifierProvider.select((s) => s.playingStates['word']!))
+                        wordPlaying
                             ? (_wordSoundController.value < 0.5
                                 ? Icons.volume_up
                                 : Icons.volume_down)
                             : Icons.volume_up,
-                        color: ref.watch(bdcNotifierProvider.select((s) => s.playingStates['word']!))
+                        color: wordPlaying
                             ? Colors.teal[300]
                             : Colors.grey[500],
                       ),
@@ -2284,7 +2306,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               ],
             ),
             onTap: () {
-              if (!state.playingStates['word']!) {
+              if (!wordPlaying) {
                 notifier.playWithAnimation(
                     () => SoundUtil.playPronounceSound2(word, audioPlayer),
                     'word');
@@ -2300,7 +2322,7 @@ extension BdcPageStateUIComponents on BdcPageState {
       margin: const EdgeInsets.only(left: 8),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: state.playingStates['word']!
+        color: wordPlaying
             ? const Color(0xFF1A1A1A)
             : Colors.grey[200],
         boxShadow: [
@@ -2317,7 +2339,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: () {
-            if (!state.playingStates['word']!) {
+            if (!wordPlaying) {
               notifier.playWithAnimation(
                   () => SoundUtil.playPronounceSound2(word, audioPlayer),
                   'word');
@@ -2328,13 +2350,13 @@ extension BdcPageStateUIComponents on BdcPageState {
               animation: _wordSoundController,
               builder: (context, child) {
                 return Icon(
-                  state.playingStates['word']!
+                  wordPlaying
                       ? (_wordSoundController.value < 0.5
                           ? Icons.volume_up
                           : Icons.volume_down)
                       : Icons.volume_up,
                   color:
-                      state.playingStates['word']! ? Colors.white : Colors.grey[600],
+                      wordPlaying ? Colors.white : Colors.grey[600],
                   size: 28,
                 );
               },
@@ -2346,7 +2368,8 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
-  Widget buildSentenceSoundButton() {
+  Widget buildSentenceSoundButton(BdcState state) {
+    final sentencePlaying = state.playingStates['sentence'] ?? false;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -2364,12 +2387,12 @@ extension BdcPageStateUIComponents on BdcPageState {
               offset: Offset(_sentenceSoundController.value < 0.5 ? 0 : -2,
                   0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
               child: Icon(
-                state.playingStates['sentence']!
+                sentencePlaying
                     ? (_sentenceSoundController.value < 0.5
                         ? Icons.volume_up
                         : Icons.volume_down)
                     : Icons.volume_up,
-                color: state.playingStates['sentence']!
+                color: sentencePlaying
                     ? Colors.teal[300]
                     : Colors.grey[500],
                 size: 18,
@@ -2378,7 +2401,7 @@ extension BdcPageStateUIComponents on BdcPageState {
           },
         ),
         onTap: () {
-          if (!state.playingStates['sentence']! &&
+          if (!sentencePlaying &&
               state.englishDigestOfFirstSentence != null) {
             notifier.playWithAnimation(
                 () => SoundUtil.playSentenceSound2(
