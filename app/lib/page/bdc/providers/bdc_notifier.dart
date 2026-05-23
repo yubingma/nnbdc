@@ -431,6 +431,8 @@ class BdcNotifier extends _$BdcNotifier {
         );
         
         final batchId = getWordResult.learningWord?.batchId;
+        final learningOrder = getWordResult.learningWord?.learningOrder;
+        final startIndex = learningOrder != null ? learningOrder - 1 : 0;
         goRouter.pushReplacement('/word_list',
           extra: WordListPageArgs(
             '本组单词',
@@ -440,7 +442,7 @@ class BdcNotifier extends _$BdcNotifier {
             true, // showWordProgress
             '掌握度',
             StageWordsProgressProvider(),
-            StageWordsBookMarkProvider(batchId: batchId),
+            StageWordsBookMarkProvider(batchId: batchId, batchStartIndex: startIndex),
             nextBtn,
             showAiStory: true
           )

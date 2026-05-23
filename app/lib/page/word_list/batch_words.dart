@@ -105,23 +105,32 @@ class StageWordsProgressProvider implements WordProgressProvider {
 
 class StageWordsBookMarkProvider implements BookMarkProvider {
   final int? batchId;
+  final int? batchStartIndex;
 
-  StageWordsBookMarkProvider({this.batchId});
+  StageWordsBookMarkProvider({this.batchId, this.batchStartIndex});
 
   Future<String> _getBookMarkName() async {
-    if (batchId != null) {
-      return 'batch_word_list_$batchId';
-    }
-    try {
-      final words = await StudyBo().getCurrentBatchCache();
-      if (words.isNotEmpty) {
-        final id = words.first.batchId;
-        if (id != null) {
-          return 'batch_word_list_$id';
+    int? finalBatchId = batchId;
+    int? finalStartIndex = batchStartIndex;
+
+    if (finalBatchId == null || finalStartIndex == null) {
+      try {
+        final words = await StudyBo().getCurrentBatchCache();
+        if (words.isNotEmpty) {
+          finalBatchId ??= words.first.batchId;
+          final learningOrder = words.first.learningOrder;
+          if (learningOrder != null) {
+            finalStartIndex ??= learningOrder - 1;
+          }
         }
+      } catch (e) {
+        Global.logger.e('获取当前批次信息失败: $e');
       }
-    } catch (e) {
-      Global.logger.e('获取当前批次ID失败，使用默认书签名称: $e');
+    }
+
+    if (finalBatchId != null) {
+      final startIndexStr = finalStartIndex != null ? '_$finalStartIndex' : '';
+      return 'batch_word_list_$finalBatchId$startIndexStr';
     }
     return 'batch_word_list';
   }
@@ -152,7 +161,7 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
   }
 }
 
-Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context, {int? batchId}) {
+Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context, {int? batchId, int? batchStartIndex}) {
   return context.push('/word_list',
       extra: WordListPageArgs(
           title,
@@ -162,7 +171,7 @@ Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget next
           true,
           '掌握度',
           StageWordsProgressProvider(),
-          StageWordsBookMarkProvider(batchId: batchId),
+          StageWordsBookMarkProvider(batchId: batchId, batchStartIndex: batchStartIndex),
           nextWorkBtn,
           showAiStory: true));
 }
