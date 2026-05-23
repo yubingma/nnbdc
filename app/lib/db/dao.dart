@@ -1923,6 +1923,13 @@ class BookmarksDao extends DatabaseAccessor<MyDatabase> with _$BookmarksDaoMixin
     return (select(bookMarks)..where((b) => b.userId.equals(userId))).get();
   }
 
+  // 删除阶段复习的所有旧书签，防止跨天数据污染
+  Future<void> deleteBatchWordListBookmarks(String userId) async {
+    final query = delete(bookMarks)
+      ..where((b) => b.userId.equals(userId) & b.bookMarkName.like('batch_word_list%'));
+    await query.go();
+  }
+
   // 保存书签（新增或更新）
   Future<void> saveBookmark(BookMark entity, bool genLog) async {
     // 优先通过逻辑唯一键（用户ID + 书签名称）进行查找，避免 UUID 冲突导致的唯一性约束失败

@@ -81,6 +81,8 @@ class LearningService {
           await db.learningWordsDao.deleteMasteredLearningWords(user.id); // 删除已掌握的学习中单词
           await db.learningWordsDao.deleteMasteredWords(user.id); // 删除已经在 mastered_words 表中的学习单词
           await db.userWrongWordsDao.clearUserWrongWords(user.id, true); // 清空错词
+          // 清空旧的阶段复习书签，防止跨天数据污染
+          await db.bookmarksDao.deleteBatchWordListBookmarks(user.id);
 
           // 3. 最后一步：更新用户信息，并标记重置已完成 (这一步完成后，下次重入将不再进入重置逻辑)
           final upgradedUser = user.copyWith(
