@@ -45,6 +45,8 @@ class PlatformUtils {
 
   static bool get isLinux => _isLinux();
 
+  static bool get isTesting => kDebugMode && Platform.environment.containsKey('FLUTTER_TEST');
+
   /// 判断当前平台是否支持ASR（语音识别）
   /// 目前只有iOS和Android平台支持ASR
   /// Web、Windows、macOS不支持

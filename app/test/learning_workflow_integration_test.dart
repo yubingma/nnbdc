@@ -74,7 +74,34 @@ class MockAsr implements Asr {
 // 手写 MockAudioPlayer，捕获并拦截原生语音的方法
 class MockAudioPlayer implements ja.AudioPlayer {
   @override
+  bool get playing => false;
+
+  @override
+  ja.ProcessingState get processingState => ja.ProcessingState.idle;
+
+  @override
+  Stream<ja.PlayerState> get playerStateStream => Stream.value(ja.PlayerState(false, ja.ProcessingState.idle));
+
+  @override
+  Duration? get duration => null;
+
+  @override
+  Duration get position => Duration.zero;
+
+  @override
+  Stream<Duration> get positionStream => Stream.value(Duration.zero);
+
+  @override
   Future<void> stop() async {}
+
+  @override
+  Future<void> seek(Duration? position, {int? index}) async {}
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<void> setSpeed(double speed) async {}
 
   @override
   Future<void> dispose() async {}

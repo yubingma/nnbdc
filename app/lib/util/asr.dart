@@ -447,7 +447,10 @@ class Asr {
 
     if (state == AsrState.started) {
       if (_currentLanguage == language) {
-        Global.logger.w('ASR: ASR 已经以 ${language.locale} 启动 (instance: $hashCode)');
+        Global.logger.i('ASR: ASR 已经以 ${language.locale} 启动，仅执行 Phrases 增量更新 (instance: $hashCode)');
+        if (phrases != null) {
+          await setContextualStrings(phrases);
+        }
         return;
       } else {
         Global.logger.i('ASR: 正在运行中切换语言从 ${_currentLanguage?.locale} 到 ${language.locale}');

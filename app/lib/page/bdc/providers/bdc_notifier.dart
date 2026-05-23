@@ -1246,13 +1246,23 @@ class BdcNotifier extends _$BdcNotifier {
     debugPrint('🔊 [BDC-Sound] 播放决策结果: willPlayWord=$willPlayWord, willPlaySentence=$willPlaySentence');
 
     Future<void>? sessionFuture;
-    if (willPlayWord || willPlaySentence) {
+    // 关键优化：如果需要播放声音，或者后续需要开启 ASR，则必须先停用旧的 ASR 以释放硬件焦点并同步 Session
+    if (willPlayWord || willPlaySentence || startAsrWhenFinish) {
       try {
-        debugPrint('⏱️ [Latency-BDC] 准备停用 ASR 并并行切换音频会话...');
+        debugPrint('⏱️ [Latency-BDC] 准备释放旧 ASR 并切换音频会话...');
         await asr.stopMicrophone();
+        
+        // 关键：将当前播放器加入观察名单，确保 ASR 初始化时会等待其播完
         SoundUtil.watchPlayer(_audioPlayer);
-        // 关键优化：发起切换请求但不立即 await，允许后续的单词资源加载（下载/读取缓存）并行执行
-        sessionFuture = SoundUtil.usePlaybackCategory();
+
+        // 关键：发音前切换音频会话。
+        // 如果是要播放（willPlayWord=true），切到 playback；
+        // 如果是不播放直接进 ASR（willPlayWord=false && startAsrWhenFinish=true），则提前切到 playAndRecord。
+        if (willPlayWord || willPlaySentence) {
+          sessionFuture = SoundUtil.usePlaybackCategory();
+        } else {
+          sessionFuture = SoundUtil.usePlayAndRecordCategory();
+        }
       } catch (e) {
         Global.logger.e('🔊 [BDC-Sound] stopMicrophone 失败: $e');
       }
@@ -1316,11 +1326,10 @@ class BdcNotifier extends _$BdcNotifier {
         return;
       }
 
-      if (asr.state == AsrState.started || asr.isStarting) {
-        debugPrint('💡 [BDC-ASR] ASR 已经是 started 状态或正在启动中，跳过重复启动。');
-        return;
-      }
-
+      // 为了确保每一个新词都能正确更新热词（Phrases）并播放“叮”声，
+      // 我们不再在这里拦截 started 状态，而是统一进入 _startAsrWithHint。
+      // asr.startAsr 内部会处理具体的增量更新逻辑。
+      
       final language = state.studyStep == StudyStep.ch2En.json ? AsrLanguage.english : AsrLanguage.chinese;
       debugPrint('💡 [BDC-ASR] 条件满足，准备调用 _startAsrWithHint，语言: ${language.locale}');
       _startAsrWithHint(language);
@@ -1334,16 +1343,19 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> _startAsrWithHint(AsrLanguage language) async {
-    final stopwatch = Stopwatch()..start();
     if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) return;
-    // 移除这里的 asr.state == started 检查，交给 asr.startAsr 内部处理（支持动态切换语言）
-    // if (asr.state == AsrState.started) return;
 
+    // 1. 极致响应优化：第一优先级！确保音频会话处于录放模式，这是唯一的同步阻塞点
+    await SoundUtil.usePlayAndRecordCategory();
+
+    // 2. 并发爆发：此时通道已就绪，立即触发叮声和引擎启动
+    unawaited(SoundUtil.playAsrReadyHintSound());
+    
     // 添加调试日志，方便查看正确答案
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
     Global.logger.d('~~~~~ 当前说模式正确答案: ${correctAnswer?.replaceAll('\n', '; ')}');
 
-    // 提取热词（上下文短语），显著提高识别准确率
+    // 3. 提取热词（Phrases）并启动
     List<String> phrases = [];
     if (language == AsrLanguage.english) {
       phrases.add(state.word!.spell);
@@ -1352,19 +1364,11 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     try {
-      final asrStartStopwatch = Stopwatch()..start();
-      
-      // 终极并行化：提示音不再等待 ASR，两者完全同步爆发，配合 250ms 的抢跑机制，
-      // 实现发音落、叮声起的“绝对同步”体感。
-      unawaited(SoundUtil.playAsrReadyHintSound());
-      await asr.startAsr(language, phrases: phrases);
-      
-      Global.logger.d('[PERF] _startAsrWithHint -> asr.startAsr (parallel) cost: ${asrStartStopwatch.elapsedMilliseconds}ms');
+      unawaited(asr.startAsr(language, phrases: phrases));
       state = state.copyWith(wordStartTime: AppClock.now());
     } catch (e) {
-      Global.logger.e('ASR启动失败: $e');
+      Global.logger.e('ASR启动指令下发失败: $e');
     }
-    Global.logger.d('[PERF] _startAsrWithHint total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
   void handleTabChangeForAsr() {
