@@ -357,4 +357,13 @@ void main() {
     debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isFalse);
   });
+
+  test('Test fuzzyChineseContains - 春眠不觉晓处处闻其鸟-树枝 (should not match)', () {
+    String asrResult = "春眠不觉晓处处闻其鸟";
+    String meaning = "树枝";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isFalse);
+  });
 }

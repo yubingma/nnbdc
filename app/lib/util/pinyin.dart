@@ -333,7 +333,12 @@ List<String> hanziToPinyin(final String hanzi) {
     return ['yo1', 'yao1', 'you1'];
   }
 
-  return PinyinHelper.convertToPinyinArray(hanzi2, PinyinFormat.WITH_TONE_NUMBER);
+  var pinyins = PinyinHelper.convertToPinyinArray(hanzi2, PinyinFormat.WITH_TONE_NUMBER);
+  // 过滤在现代汉语中极罕见/已不使用的古音、异读音，防范 ASR 错配
+  if (hanzi2 == '枝') {
+    pinyins = pinyins.where((p) => p != 'qi2').toList();
+  }
+  return pinyins;
 }
 
 /// 计算两个声母的发音相似度
@@ -560,10 +565,13 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
     }
 
     // 乘性惩罚：当输入字数 asrCharCount > 目标字数 M 时，进行字数差惩罚，防止在无关长句/长噪声中拼凑出微弱发音相似的字。
-    // 字数差每多 1 个字，相似度折减 2.5%。设定下限最低折减至 75%，确保真正的长口语化回答（如“我觉得是XX吧”）不会被误拦截。
+    // 对于 1-2 个字的短词（更易发生噪声中的散落拼凑），采用稍严厉的扣分系数（每个多余字扣 3.0%），且下限降至 70%；
+    // 在不影响长口语化答题（如“我觉得是XX吧”）通过的同时，大幅度压低大段无关噪声的错配率。
     if (asrCharCount > M) {
-      double penalty = 1.0 - 0.025 * (asrCharCount - M);
-      if (penalty < 0.75) penalty = 0.75;
+      double factor = M <= 2 ? 0.03 : 0.025;
+      double penalty = 1.0 - factor * (asrCharCount - M);
+      double minPenalty = M <= 2 ? 0.70 : 0.75;
+      if (penalty < minPenalty) penalty = minPenalty;
       avgSim *= penalty;
     }
 
