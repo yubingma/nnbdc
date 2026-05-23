@@ -718,7 +718,7 @@ public class AiBo {
 
         activeAiStoryRequests.incrementAndGet();
         try {
-            logger.info("{}开始为用户生成 AI 短文: {}", formatUser(userId), wordsHash);
+            logger.info("{}开始为用户生成 AI 短文: {}, 使用文本模型: {}", formatUser(userId), wordsHash, aiProperties.getTextModel());
             String systemPrompt = "你是一位出色的创意作家和英语老师。请使用用户提供的英文单词列表，创作一篇短小精悍、语言精练且富有逻辑的小故事（约 60-100 词）。\n" +
                     "要求：\n" +
                     "1. 必须使用列表中所有的单词（忽略大小写差异）。\n" +

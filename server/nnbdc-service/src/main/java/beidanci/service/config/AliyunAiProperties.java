@@ -16,9 +16,9 @@ public class AliyunAiProperties {
     private String apiKey;
 
     /**
-     * 文本生成使用的模型 (如 qwen-max, qwen-plus, qwen-turbo)
+     * 文本生成使用的模型 (如 qwen-max, qwen-plus, qwen3.5-flash)
      */
-    private String textModel = "qwen-turbo";
+    private String textModel = "qwen3.5-flash";
 
     /**
      * 语音合成使用的模型 (如 cosyvoice-v1)
