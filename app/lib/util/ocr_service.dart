@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// 调用 iOS 原生 Vision 框架进行 OCR 文字识别
@@ -30,4 +31,15 @@ class OcrService {
       throw Exception('手写识别失败: ${e.message}');
     }
   }
+
+  /// 提前下载/准备手写识别模型 (Digital Ink Recognition Model)
+  static Future<void> prepareModel() async {
+    try {
+      await _channel.invokeMethod<void>('prepareModel');
+    } on PlatformException catch (e) {
+      // 仅仅是静默下载，出错无需影响主业务流程，只打印日志即可
+      debugPrint('准备手写识别模型失败: ${e.message}');
+    }
+  }
 }
+

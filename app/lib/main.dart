@@ -25,6 +25,7 @@ import 'package:toastification/toastification.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/notification_util.dart';
 import 'package:nnbdc/util/analytics_util.dart';
+import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -194,6 +195,13 @@ void main() async {
           // 初始化 AI 运行时（Apple 平台，如果已下载模型且用户是管理员）
           if ((PlatformUtils.isMacOS || PlatformUtils.isIOS) && Global.getLoggedInUser()?.isAdmin == true) {
             _initializeAppleAiRuntimeIfReady();
+          }
+
+          // 静默下载手写识别语言模型（仅限移动端平台）
+          if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+            unawaited(OcrService.prepareModel().catchError((e) {
+              Global.logger.w('后台准备手写识别模型失败: $e');
+            }));
           }
         } catch (e, stackTrace) {
           // 初始化过程中的错误

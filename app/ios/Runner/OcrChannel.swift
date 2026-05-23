@@ -43,6 +43,9 @@ class OcrChannel {
                 }
                 recognizeHandwriting(strokesData: strokes, result: result)
                 
+            case "prepareModel":
+                prepareModel(result: result)
+                
             default:
                 result(FlutterMethodNotImplemented)
             }
@@ -173,6 +176,42 @@ class OcrChannel {
             }
             
             modelManager.download(model, conditions: ModelDownloadConditions())
+        }
+    }
+
+    private static func prepareModel(result: @escaping FlutterResult) {
+        let languageTag = "en-US"
+        guard let modelIdentifier = DigitalInkRecognitionModelIdentifier(forLanguageTag: languageTag) else {
+            result(FlutterError(code: "MODEL_ERROR", message: "无法识别语言模型: \(languageTag)", details: nil))
+            return
+        }
+        
+        let model = DigitalInkRecognitionModel(modelIdentifier: modelIdentifier)
+        let modelManager = ModelManager.modelManager()
+        
+        if modelManager.isModelDownloaded(model) {
+            print("OcrChannel: en-US handwriting model already downloaded")
+            result(nil)
+        } else {
+            print("OcrChannel: en-US handwriting model is downloading...")
+            NotificationCenter.default.addObserver(
+                forName: .mlkitModelDownloadDidSucceed,
+                object: nil,
+                queue: nil
+            ) { notification in
+                print("OcrChannel: en-US handwriting model downloaded successfully")
+            }
+            
+            NotificationCenter.default.addObserver(
+                forName: .mlkitModelDownloadDidFail,
+                object: nil,
+                queue: nil
+            ) { notification in
+                print("OcrChannel: en-US handwriting model download failed")
+            }
+            
+            modelManager.download(model, conditions: ModelDownloadConditions())
+            result(nil)
         }
     }
     

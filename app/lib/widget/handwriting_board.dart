@@ -60,6 +60,13 @@ class HandwritingBoardState extends State<HandwritingBoard> {
   bool _isRecognizing = false;
   int _recognitionVersion = 0;
   final GlobalKey<_HandwritingCanvasState> _canvasKey = GlobalKey<_HandwritingCanvasState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // 异步静默加载手写识别模型，避免用户在写完第一笔时因模型下载引发卡顿
+    OcrService.prepareModel();
+  }
   
   void hideRightZone() {
     widget.rightZoneVisibleNotifier?.value = false;

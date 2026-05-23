@@ -42,6 +42,9 @@ class OcrChannel(private val context: Context) {
                         result.error("INVALID_ARGUMENTS", "Missing strokes parameter", null)
                     }
                 }
+                "prepareModel" -> {
+                    prepareModel(result)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -126,6 +129,38 @@ class OcrChannel(private val context: Context) {
                             result.error("MODEL_DOWNLOAD_ERROR", "语言模型下载失败: ${e.message}", null)
                         }
                 }
+            }
+    }
+
+    private fun prepareModel(result: MethodChannel.Result) {
+        val modelIdentifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag("en-US")
+        if (modelIdentifier == null) {
+            result.error("MODEL_ERROR", "无法识别语言模型: en-US", null)
+            return
+        }
+        
+        val model = DigitalInkRecognitionModel.builder(modelIdentifier).build()
+        val remoteModelManager = RemoteModelManager.getInstance()
+
+        remoteModelManager.isModelDownloaded(model)
+            .addOnSuccessListener { isDownloaded ->
+                if (isDownloaded) {
+                    android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model already downloaded")
+                    result.success(null)
+                } else {
+                    android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model is downloading...")
+                    remoteModelManager.download(model, DownloadConditions.Builder().build())
+                        .addOnSuccessListener {
+                            android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model downloaded successfully")
+                        }
+                        .addOnFailureListener { e ->
+                            android.util.Log.e("OcrChannel", "OcrChannel: en-US handwriting model download failed", e)
+                        }
+                    result.success(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                result.error("MODEL_CHECK_ERROR", "检查语言模型失败: ${e.message}", null)
             }
     }
 
