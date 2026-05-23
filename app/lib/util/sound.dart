@@ -105,6 +105,25 @@ class SoundUtil {
         debugPrint('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
         return;
       }
+
+      // 在配置全局 AudioSession 切换之前，优雅等待可能正在播放的单词发音播完，防止尾音截断
+      if (_pronouncePlayer != null && _pronouncePlayer!.playing) {
+        final p = _pronouncePlayer!;
+        Global.logger.i('🔊 [SoundUtil] 检测到 pronouncePlayer 正在播放，等待其播放完毕再切换音频会话类型...');
+        try {
+          await p.playerStateStream
+              .firstWhere((state) => 
+                  !state.playing || 
+                  state.processingState == ja.ProcessingState.completed || 
+                  state.processingState == ja.ProcessingState.idle)
+              .timeout(const Duration(milliseconds: 2500));
+          await Future.delayed(const Duration(milliseconds: 100)); // 额外延迟 100ms 保证硬件缓冲区完全播放完
+          Global.logger.i('🔊 [SoundUtil] pronouncePlayer 播放完毕，开始切换音频会话...');
+        } catch (e) {
+          Global.logger.w('🔊 [SoundUtil] 等待 pronouncePlayer 播放完毕超时或异常: $e');
+        }
+      }
+
       try {
         final session = await AudioSession.instance;
         await session.configure(AudioSessionConfiguration(
