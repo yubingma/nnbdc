@@ -223,6 +223,40 @@ check_tools() {
 
 # 检查配置
 check_config() {
+    # 校验版本号格式
+    print_step "校验版本号格式..."
+    local pubspec_path="$APP_DIR/pubspec.yaml"
+    if [ ! -f "$pubspec_path" ]; then
+        print_error "找不到 pubspec.yaml: $pubspec_path"
+        exit 1
+    fi
+    
+    local version=$(grep "^version:" "$pubspec_path" | awk '{print $2}')
+    if [[ ! $version =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}\+[0-9]{6}[0-9]{2}$ ]]; then
+        print_error "版本号格式必须为 YY.MM.DD+YYMMDDXX (例如: 26.05.23+26052301)"
+        print_info "当前版本号: $version"
+        exit 1
+    fi
+    
+    local date_dots=$(echo $version | cut -d'+' -f1)
+    local date_num=$(echo $version | cut -d'+' -f2 | cut -c1-6)
+    if [ "${date_dots//./}" != "$date_num" ]; then
+        print_error "版本名称中的日期 ($date_dots) 与构建号中的日期 ($date_num) 不一致"
+        exit 1
+    fi
+    
+    local mm=$(echo $date_dots | cut -d'.' -f2)
+    local dd=$(echo $date_dots | cut -d'.' -f3)
+    if [ $((10#$mm)) -lt 1 ] || [ $((10#$mm)) -gt 12 ]; then
+        print_error "月份 ($mm) 无效"
+        exit 1
+    fi
+    if [ $((10#$dd)) -lt 1 ] || [ $((10#$dd)) -gt 31 ]; then
+        print_error "日期 ($dd) 无效"
+        exit 1
+    fi
+    print_info "版本号校验通过: $version"
+
     if [ "$SKIP_UPLOAD" = false ] && [ "$BUILD_ONLY" = false ]; then
         print_step "检查上传配置..."
         

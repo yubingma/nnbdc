@@ -13,7 +13,6 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/db/user_extensions.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_detail.dart';
 import 'package:nnbdc/page/word_list/batch_words.dart';
@@ -546,18 +545,13 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(dataLoaded: true);
 
-    final user = Global.getLoggedInUserNotNull();
     final playStopwatch = Stopwatch()..start();
     
     // 将耗时的发音和例句播放彻底异步化，抛入后台执行，避免阻塞 handleWord/getNextWord 主加载流程
     unawaited(() async {
       try {
-        final userVo = await user.toUserVo();
-        if (state.studyStep == StudyStep.en2Ch.json) {
-          await playWordAndFirstSentence(userVo, false, true);
-        } else {
-          await playWordAndFirstSentence(userVo, true, true);
-        }
+        // 无论何种模式，加载新词时都只按自动播放配置执行（forcePlayWord=false），确保中英模式不泄密
+        await playWordAndFirstSentence(false, true);
       } catch (e, st) {
         Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
       } finally {
@@ -978,7 +972,6 @@ class BdcNotifier extends _$BdcNotifier {
       return false;
     } finally {
       state = state.copyWith(isGettingNextWord: false);
-      _handleTabChangeForAsr();
       Global.logger.i('[PERF] Total getNextWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
     }
   }
@@ -1247,27 +1240,35 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
-  Future<void> playWordAndFirstSentence(UserVo user, bool forcePlayWord, bool startAsrWhenFinish) async {
+  Future<void> playWordAndFirstSentence(bool forcePlayWord, bool startAsrWhenFinish, {bool forcePlaySentence = false}) async {
     final stopwatch = Stopwatch()..start();
     final studyConfig = StudyConfig.fromCurrentUser();
-    bool willPlayWord = state.studyStep == StudyStep.en2Ch.json && (studyConfig.autoPlayWord || forcePlayWord);
-    bool willPlaySentence = state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlaySentence;
+    
+    // 强制播放标志优先级最高，不受模式限制。自动播放则依然仅限英中模式。
+    bool willPlayWord = forcePlayWord || (state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlayWord);
+    bool willPlaySentence = forcePlaySentence || (state.studyStep == StudyStep.en2Ch.json && studyConfig.autoPlaySentence);
+
+    debugPrint('🔊 [BDC-Sound] playWordAndFirstSentence 触发: step=${state.studyStep}, forceWord=$forcePlayWord, forceSentence=$forcePlaySentence, willPlayWord=$willPlayWord, willPlaySentence=$willPlaySentence');
 
     if (willPlayWord || willPlaySentence) {
       await asr.stopMicrophone();
     }
 
     try {
-      if (willPlayWord) {
+      if (willPlayWord && state.word != null) {
         final playWordStopwatch = Stopwatch()..start();
+        Global.logger.d('🔊 [BDC-Sound] 正在播放单词: ${state.word!.spell}');
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
         Global.logger.d('[PERF] playWordAndFirstSentence -> playPronounceSound2 cost: ${playWordStopwatch.elapsedMilliseconds}ms');
       }
       if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
         final playSentenceStopwatch = Stopwatch()..start();
+        Global.logger.d('🔊 [BDC-Sound] 正在播放第一句例句: ${state.englishDigestOfFirstSentence}');
         await SoundUtil.playSentenceSound2(state.englishDigestOfFirstSentence!, _audioPlayer);
         Global.logger.d('[PERF] playWordAndFirstSentence -> playSentenceSound2 cost: ${playSentenceStopwatch.elapsedMilliseconds}ms');
       }
+    } catch (e, st) {
+      Global.logger.e('🔊 [BDC-Sound] 音频播放过程中捕获到异常: $e', error: e, stackTrace: st);
     } finally {
       if (startAsrWhenFinish) {
         _handleTabChangeForAsr();

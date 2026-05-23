@@ -10,6 +10,57 @@
 # 拦截所有错误
 set -e
 
+#=========================================================
+# 校验版本号格式 (YY.MM.DD+YYMMDDXX)
+#=========================================================
+validate_version() {
+    local PUBSPEC_PATH="pubspec.yaml"
+    if [ ! -f "$PUBSPEC_PATH" ]; then
+        echo "⚠️  未在当前目录找到 pubspec.yaml，尝试在 app/ 目录下查找..."
+        PUBSPEC_PATH="app/pubspec.yaml"
+    fi
+    
+    if [ ! -f "$PUBSPEC_PATH" ]; then
+        echo "❌ 错误: 找不到 pubspec.yaml"
+        return 1
+    fi
+
+    local VERSION=$(grep "^version:" "$PUBSPEC_PATH" | awk '{print $2}')
+    
+    # 正则表达式验证: YY.MM.DD+YYMMDDXX
+    if [[ ! $VERSION =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}\+[0-9]{6}[0-9]{2}$ ]]; then
+        echo "❌ 错误: $PUBSPEC_PATH 中的版本号格式必须为 YY.MM.DD+YYMMDDXX (例如: 26.05.23+26052301)"
+        echo "当前版本号: $VERSION"
+        exit 1
+    fi
+    
+    # 验证日期一致性
+    local DATE_DOTS=$(echo $VERSION | cut -d'+' -f1)
+    local DATE_NUM=$(echo $VERSION | cut -d'+' -f2 | cut -c1-6)
+    local DATE_DOTS_STRIPPED=$(echo $DATE_DOTS | tr -d '.')
+    
+    if [ "$DATE_DOTS_STRIPPED" != "$DATE_NUM" ]; then
+        echo "❌ 错误: 版本名称中的日期 ($DATE_DOTS) 与构建号中的日期 ($DATE_NUM) 不一致"
+        exit 1
+    fi
+
+    # 验证月份和日期范围
+    local MM=$(echo $DATE_DOTS | cut -d'.' -f2)
+    local DD=$(echo $DATE_DOTS | cut -d'.' -f3)
+    if [ $((10#$MM)) -lt 1 ] || [ $((10#$MM)) -gt 12 ]; then
+        echo "❌ 错误: 月份 ($MM) 无效"
+        exit 1
+    fi
+    if [ $((10#$DD)) -lt 1 ] || [ $((10#$DD)) -gt 31 ]; then
+        echo "❌ 错误: 日期 ($DD) 无效"
+        exit 1
+    fi
+
+    echo "✅ 版本号校验通过: $VERSION"
+}
+
+validate_version
+
 echo "=================================================="
 echo " 🧪 [1/2] 正在运行单元测试 (flutter test)..."
 echo "=================================================="

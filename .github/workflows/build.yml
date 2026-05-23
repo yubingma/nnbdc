@@ -11,7 +11,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Version Format
+        run: |
+          VERSION=$(grep "^version:" app/pubspec.yaml | awk '{print $2}')
+          echo "Detected version: $VERSION"
+          
+          if [ -z "$VERSION" ]; then
+            echo "❌ 错误: 无法在 app/pubspec.yaml 中找到 version"
+            exit 1
+          fi
+          
+          # 正则表达式验证: YY.MM.DD+YYMMDDXX
+          if [[ ! $VERSION =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}\+[0-9]{6}[0-9]{2}$ ]]; then
+            echo "❌ 错误: 版本号格式必须为 YY.MM.DD+YYMMDDXX (例如: 26.05.23+26052301)"
+            exit 1
+          fi
+          
+          # 验证日期一致性
+          DATE_DOTS=$(echo $VERSION | cut -d'+' -f1)
+          DATE_NUM=$(echo $VERSION | cut -d'+' -f2 | cut -c1-6)
+          DATE_DOTS_STRIPPED=$(echo $DATE_DOTS | tr -d '.')
+          
+          if [ "$DATE_DOTS_STRIPPED" != "$DATE_NUM" ]; then
+            echo "❌ 错误: 版本名称中的日期 ($DATE_DOTS) 与构建号中的日期 ($DATE_NUM) 不一致"
+            exit 1
+          fi
+          
+          # 验证 YY, MM, DD 的合法性 (简单范围检查)
+          MM=$(echo $DATE_DOTS | cut -d'.' -f2)
+          DD=$(echo $DATE_DOTS | cut -d'.' -f3)
+          
+          # 使用 10# 强制按十进制解析，避免 08, 09 被误认为无效八进制
+          MM_VAL=$((10#$MM))
+          DD_VAL=$((10#$DD))
+          
+          if [ "$MM_VAL" -lt 1 ] || [ "$MM_VAL" -gt 12 ]; then
+            echo "❌ 错误: 月份 ($MM) 无效"
+            exit 1
+          fi
+          
+          if [ "$DD_VAL" -lt 1 ] || [ "$DD_VAL" -gt 31 ]; then
+            echo "❌ 错误: 日期 ($DD) 无效"
+            exit 1
+          fi
+          
+          echo "✅ 版本号格式验证通过: $VERSION"
+
   build:
+    needs: validate-version
     timeout-minutes: 60
     strategy:
       # 即使某个平台失败，其他平台继续构建
