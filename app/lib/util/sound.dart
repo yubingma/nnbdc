@@ -140,27 +140,38 @@ class SoundUtil {
         // 加载间隔 150ms，给底层音频框架和硬件解码器的分配与初始化提供充足的时间
         await Future.delayed(const Duration(milliseconds: 150));
         
-        final p = ja.AudioPlayer();
+        ja.AudioPlayer? p;
         runZonedGuarded(() async {
+          p = ja.AudioPlayer();
           try {
             // 加载资产，设置 3 秒超时限制，避免老旧设备长时间挂起
-            await p.setAsset('assets/audio/$f').timeout(const Duration(seconds: 3));
+            await p!.setAsset('assets/audio/$f').timeout(const Duration(seconds: 3));
             
             // 只有成功加载的播放器才放入 SFX 池中
             _sfxPools.putIfAbsent(f, () => []);
-            if (!_sfxPools[f]!.contains(p)) {
-              _sfxPools[f]!.add(p);
+            if (!_sfxPools[f]!.contains(p!)) {
+              _sfxPools[f]!.add(p!);
             }
           } catch (e) {
-            Global.logger.w('🔊 [SoundUtil] 预热音效失败 assets/audio/$f: $e，已安全释放该播放器');
+            final errorStr = e.toString();
+            if (errorStr.contains('Connection aborted') || errorStr.contains('abort') || errorStr.contains('Loading interrupted')) {
+              Global.logger.i('🔊 [SoundUtil] 预热音效被中止/中断 (属于预期行为): $f');
+            } else {
+              Global.logger.w('🔊 [SoundUtil] 预热音效失败 assets/audio/$f: $e，已安全释放该播放器');
+            }
             try {
-              await p.dispose();
+              await p?.dispose();
             } catch (_) {}
           }
         }, (error, stack) {
-          Global.logger.w('🔊 [SoundUtil] 预热音效异步 Zone 拦截异常 assets/audio/$f: $error');
+          final errorStr = error.toString();
+          if (errorStr.contains('Connection aborted') || errorStr.contains('abort') || errorStr.contains('Loading interrupted')) {
+            Global.logger.i('🔊 [SoundUtil] 预热音效 Zone 拦截中止/中断 (属于预期行为): $f');
+          } else {
+            Global.logger.w('🔊 [SoundUtil] 预热音效异步 Zone 拦截异常 assets/audio/$f: $error');
+          }
           try {
-            p.dispose();
+            p?.dispose();
           } catch (_) {}
         });
       }
@@ -349,6 +360,11 @@ class SoundUtil {
     } on TimeoutException catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效超时: $soundFileName', showToast: false);
     } catch (e, st) {
+      final errorStr = e.toString();
+      if (errorStr.contains('Connection aborted') || errorStr.contains('abort') || errorStr.contains('Loading interrupted')) {
+        Global.logger.i('🔊 [SoundUtil] 音效播放被中止/中断 (属于预期行为): $soundFileName');
+        return;
+      }
       ErrorHandler.handleError(e, st, logPrefix: '播放音效出错: $soundFileName', showToast: false);
     }
   }
@@ -416,9 +432,16 @@ class SoundUtil {
           state.processingState == ja.ProcessingState.completed ||
           state.processingState == ja.ProcessingState.idle);
     } catch (e, stackTrace) {
+      final errorStr = e.toString();
+      if (errorStr.contains('Connection aborted') || errorStr.contains('abort') || errorStr.contains('Loading interrupted')) {
+        Global.logger.i('🔊 [SoundUtil] 音效播放被中止/中断 (属于预期行为): $soundFileName');
+        return;
+      }
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错: $soundFileName', showToast: false);
     } finally {
-      await player.stop();
+      try {
+        await player.stop();
+      } catch (_) {}
     }
   }
 
@@ -468,6 +491,11 @@ class SoundUtil {
         await player.stop();
       }
     } on Exception catch (e, stackTrace) {
+      final errorStr = e.toString();
+      if (errorStr.contains('Connection aborted') || errorStr.contains('abort') || errorStr.contains('Loading interrupted')) {
+        Global.logger.i('🔊 [SoundUtil] 音效播放被中止/中断 (属于预期行为): $soundFileName');
+        return;
+      }
       ErrorHandler.handleError(e, stackTrace, logPrefix: '播放音效出错: $soundFileName', showToast: false);
     }
   }

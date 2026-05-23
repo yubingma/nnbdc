@@ -119,6 +119,11 @@ void main() async {
 
       // 捕获平台层和异步错误
       PlatformDispatcher.instance.onError = (error, stack) {
+        final errorStr = error.toString();
+        if (errorStr.contains('Connection aborted') || errorStr.contains('abort') || errorStr.contains('Loading interrupted')) {
+          Global.logger.i('🔊 [SoundUtil] PlatformDispatcher 拦截已中止/中断的音频加载 (安全忽略): $error');
+          return true;
+        }
         Global.logger.e(
           '【未捕获的平台/异步错误】',
           error: error,
@@ -206,6 +211,11 @@ void main() async {
     },
     (error, stack) {
       // Zone中捕获的未处理异常
+      final errorStr = error.toString();
+      if (errorStr.contains('Connection aborted') || errorStr.contains('abort') || errorStr.contains('Loading interrupted')) {
+        Global.logger.i('🔊 [SoundUtil] Zone 拦截已中止/中断的音频加载 (属于预期行为，安全忽略): $error');
+        return;
+      }
       Global.logger.e(
         '【Zone捕获的未处理异常】',
         error: error,

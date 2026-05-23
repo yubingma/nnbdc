@@ -1311,9 +1311,8 @@ class BdcNotifier extends _$BdcNotifier {
       await asr.startAsr(language);
       Global.logger.d('[PERF] _startAsrWithHint -> asr.startAsr cost: ${asrStartStopwatch.elapsedMilliseconds}ms');
       
-      if (PlatformUtils.isIOS) {
-        await Future.delayed(const Duration(milliseconds: 150));
-      }
+      // 给底层音频框架和 AudioSession 切换留出充足的时间稳定状态，避免立即播放音效被打断
+      await Future.delayed(const Duration(milliseconds: 200));
       await SoundUtil.playAsrReadyHintSound();
       state = state.copyWith(wordStartTime: AppClock.now());
     } catch (e) {
