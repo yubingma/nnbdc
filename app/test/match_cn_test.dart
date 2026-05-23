@@ -330,4 +330,31 @@ void main() {
     debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isTrue);
   });
+
+  test('Test fuzzyChineseContains - 春眠不觉想处处-认出 (should not match)', () {
+    String asrResult = "春眠不觉想处处";
+    String meaning = "认出";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isFalse);
+  });
+
+  test('Test fuzzyChineseContains - 好的那么就加上乘法机-提神 (should not match)', () {
+    String asrResult = "好的那么就加上乘法机";
+    String meaning = "提神";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isFalse);
+  });
+
+  test('Test fuzzyChineseContains - 好的那么就加上乘法机-补充 (should not match)', () {
+    String asrResult = "好的那么就加上乘法机";
+    String meaning = "补充";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isFalse);
+  });
 }

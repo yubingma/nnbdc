@@ -10,6 +10,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'asr.dart';
+import 'pinyin.dart';
 
 import 'package:flutter/foundation.dart';
 import '../api/vo.dart';
@@ -49,6 +50,7 @@ class SoundUtil {
       Global.logger.i('SoundUtil: 全局音频会话配置完成 (默认为高保真播放)');
 
       _prewarmSfx(['thud.mp3', 'correct.mp3', 'failed.mp3', 'bubble-pop.mp3', 'asr_ready_hint.mp3']);
+      prewarmPinyin();
     } catch (e) {
       Global.logger.e('SoundUtil: 配置全局音频会话失败: $e');
     } finally {

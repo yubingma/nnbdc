@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:lpinyin/lpinyin.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/utils.dart';
 
 import 'cartesian_product.dart';
@@ -557,6 +559,14 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
       }
     }
 
+    // 乘性惩罚：当输入字数 asrCharCount > 目标字数 M 时，进行字数差惩罚，防止在无关长句/长噪声中拼凑出微弱发音相似的字。
+    // 字数差每多 1 个字，相似度折减 2.5%。设定下限最低折减至 75%，确保真正的长口语化回答（如“我觉得是XX吧”）不会被误拦截。
+    if (asrCharCount > M) {
+      double penalty = 1.0 - 0.025 * (asrCharCount - M);
+      if (penalty < 0.75) penalty = 0.75;
+      avgSim *= penalty;
+    }
+
     // 对于短句（1-2个字），提高匹配门槛，防止被发音接近但完全不同的常用字干扰（误判）
     // 【优化】：针对 2 字目标（如对账），适当降低门槛至 0.72，以支持单字识别后的补偿匹配
     double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.72 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch)));
@@ -595,4 +605,18 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
   }
 
   return false;
+}
+
+/// 异步预热拼音词典，避免首次匹配时加载词典文件引发的数秒卡顿
+void prewarmPinyin() {
+  unawaited(() async {
+    try {
+      final stopwatch = Stopwatch()..start();
+      // 触发一次简单的拼音转换，迫使 lpinyin 加载并解析其内部的大型字典数据
+      hanziToPinyin('热');
+      Global.logger.i('🔊 [Pinyin] 拼音词典预热完成，耗时: ${stopwatch.elapsedMilliseconds}ms');
+    } catch (e) {
+      Global.logger.w('🔊 [Pinyin] 预热拼音词典失败: $e');
+    }
+  }());
 }
