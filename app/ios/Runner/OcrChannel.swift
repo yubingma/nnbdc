@@ -191,6 +191,7 @@ class OcrChannel {
         
         if modelManager.isModelDownloaded(model) {
             print("OcrChannel: en-US handwriting model already downloaded")
+            warmupRecognizer(model: model)
             result(nil)
         } else {
             print("OcrChannel: en-US handwriting model is downloading...")
@@ -200,6 +201,7 @@ class OcrChannel {
                 queue: nil
             ) { notification in
                 print("OcrChannel: en-US handwriting model downloaded successfully")
+                warmupRecognizer(model: model)
             }
             
             NotificationCenter.default.addObserver(
@@ -214,6 +216,39 @@ class OcrChannel {
             result(nil)
         }
     }
+
+    private static func warmupRecognizer(model: DigitalInkRecognitionModel) {
+        print("OcrChannel: Warming up DigitalInkRecognizer...")
+        if currentModel != model || recognizer == nil {
+            let options = DigitalInkRecognizerOptions(model: model)
+            recognizer = DigitalInkRecognizer.digitalInkRecognizer(options: options)
+            currentModel = model
+        }
+        
+        guard let activeRecognizer = recognizer else {
+            print("OcrChannel: Warmup failed, recognizer is nil")
+            return
+        }
+        
+        // 构造一个超级简单的 Dummy 轨迹来触发模型加载和首次推理
+        let points = [
+            StrokePoint(x: 0, y: 0, t: 0),
+            StrokePoint(x: 1, y: 1, t: 10)
+        ]
+        let stroke = Stroke(points: points)
+        let dummyInk = Ink(strokes: [stroke])
+        
+        let startTime = CACurrentMediaTime()
+        activeRecognizer.recognize(ink: dummyInk) { _, error in
+            let duration = (CACurrentMediaTime() - startTime) * 1000
+            if let error = error {
+                print("OcrChannel: Warmup recognition finished with error: \(error.localizedDescription) (took \(String(format: "%.1f", duration))ms)")
+            } else {
+                print("OcrChannel: Warmup recognition completed successfully (took \(String(format: "%.1f", duration))ms)")
+            }
+        }
+    }
+
     
     private static func performHandwritingRecognition(ink: Ink, model: DigitalInkRecognitionModel, result: @escaping FlutterResult) {
         // 缓存 model 和 recognizer，防止被 ARC 释放

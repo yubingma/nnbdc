@@ -17,6 +17,8 @@ import java.io.File
  * Android 平台 OCR 识别通道，使用 Google ML Kit
  */
 class OcrChannel(private val context: Context) {
+    private var recognizer: DigitalInkRecognizer? = null
+    private var currentModel: DigitalInkRecognitionModel? = null
 
     fun initChannel(flutterEngine: FlutterEngine) {
         val methodChannel = MethodChannel(
@@ -132,6 +134,38 @@ class OcrChannel(private val context: Context) {
             }
     }
 
+    private fun warmupRecognizer(model: DigitalInkRecognitionModel) {
+        android.util.Log.d("OcrChannel", "OcrChannel: Warming up DigitalInkRecognizer...")
+        try {
+            if (currentModel != model || recognizer == null) {
+                recognizer = DigitalInkRecognition.getClient(
+                    DigitalInkRecognizerOptions.builder(model).build()
+                )
+                currentModel = model
+            }
+            
+            // 构造极简 dummy Ink 进行一次推理，触发底层 TensorFlow Lite 加载与热身
+            val inkBuilder = Ink.builder()
+            val strokeBuilder = Ink.Stroke.builder()
+            strokeBuilder.addPoint(Ink.Point.create(0f, 0f, 0L))
+            strokeBuilder.addPoint(Ink.Point.create(1f, 1f, 10L))
+            inkBuilder.addStroke(strokeBuilder.build())
+            val dummyInk = inkBuilder.build()
+            
+            val startTime = System.currentTimeMillis()
+            recognizer?.recognize(dummyInk)
+                ?.addOnSuccessListener {
+                    val duration = System.currentTimeMillis() - startTime
+                    android.util.Log.d("OcrChannel", "OcrChannel: Warmup completed in ${duration}ms")
+                }
+                ?.addOnFailureListener { e ->
+                    android.util.Log.e("OcrChannel", "OcrChannel: Warmup failed: ${e.message}", e)
+                }
+        } catch (e: Exception) {
+            android.util.Log.e("OcrChannel", "OcrChannel: Error during warmup: ${e.message}", e)
+        }
+    }
+
     private fun prepareModel(result: MethodChannel.Result) {
         val modelIdentifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag("en-US")
         if (modelIdentifier == null) {
@@ -146,12 +180,14 @@ class OcrChannel(private val context: Context) {
             .addOnSuccessListener { isDownloaded ->
                 if (isDownloaded) {
                     android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model already downloaded")
+                    warmupRecognizer(model)
                     result.success(null)
                 } else {
                     android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model is downloading...")
                     remoteModelManager.download(model, DownloadConditions.Builder().build())
                         .addOnSuccessListener {
                             android.util.Log.d("OcrChannel", "OcrChannel: en-US handwriting model downloaded successfully")
+                            warmupRecognizer(model)
                         }
                         .addOnFailureListener { e ->
                             android.util.Log.e("OcrChannel", "OcrChannel: en-US handwriting model download failed", e)
@@ -165,11 +201,14 @@ class OcrChannel(private val context: Context) {
     }
 
     private fun performRecognition(ink: Ink, model: DigitalInkRecognitionModel, result: MethodChannel.Result) {
-        val recognizer = DigitalInkRecognition.getClient(
-            DigitalInkRecognizerOptions.builder(model).build()
-        )
-        recognizer.recognize(ink)
-            .addOnSuccessListener { recognitionResult ->
+        if (currentModel != model || recognizer == null) {
+            recognizer = DigitalInkRecognition.getClient(
+                DigitalInkRecognizerOptions.builder(model).build()
+            )
+            currentModel = model
+        }
+        recognizer?.recognize(ink)
+            ?.addOnSuccessListener { recognitionResult ->
                 if (recognitionResult.candidates.isNotEmpty()) {
                     // 返回置信度最高的候选结果
                     result.success(recognitionResult.candidates[0].text)
@@ -177,7 +216,7 @@ class OcrChannel(private val context: Context) {
                     result.success("")
                 }
             }
-            .addOnFailureListener { e ->
+            ?.addOnFailureListener { e ->
                 result.error("RECOGNITION_ERROR", "识别失败: ${e.message}", null)
             }
     }

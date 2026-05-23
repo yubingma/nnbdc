@@ -19,6 +19,7 @@ import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/widget/handwriting_board.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -799,6 +800,8 @@ class WordListPageState extends State<WordListPage>
     Asr().stopMicrophone();
     // 异步预加载音素字典，避免用户说话时才开始解析导致的延迟
     unawaited(PhonemeUtil.load());
+    // 异步加载并预热手写识别模型，避免进入手写板写完第一笔后产生延迟
+    OcrService.prepareModel();
     _asrModelLoadingController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),

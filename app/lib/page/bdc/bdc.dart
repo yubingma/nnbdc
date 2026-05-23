@@ -19,6 +19,7 @@ import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:nnbdc/util/ocr_service.dart';
 import 'package:provider/provider.dart' hide Consumer;
 
 import '../../api/enum.dart';
@@ -94,6 +95,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   @override
   void initState() {
     super.initState();
+    
+    // 静默加载并预热手写识别模型，避免进入手写板写完第一笔后产生首次识别延迟
+    OcrService.prepareModel();
     
     // Initialize TabController with a default length
     _tabController = TabController(length: 2, vsync: this);
