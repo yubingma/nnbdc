@@ -268,6 +268,34 @@ check_config() {
 
     print_info "版本号校验通过: $version"
 
+    # 校验 min_ver_code 格式
+    local min_ver_code=$(grep "^min_ver_code:" "$pubspec_path" | awk '{print $2}')
+    if [ -n "$min_ver_code" ]; then
+        if [[ ! $min_ver_code =~ ^[0-9]{8}$ ]]; then
+            print_error "min_ver_code 格式必须为 YYMMDDXX (例如: 26051101)"
+            print_info "当前 min_ver_code: $min_ver_code"
+            exit 1
+        fi
+
+        local build_number=$(echo $version | cut -d'+' -f2)
+        if [ "$min_ver_code" -gt "$build_number" ]; then
+            print_error "min_ver_code ($min_ver_code) 不能大于当前构建号 ($build_number)"
+            exit 1
+        fi
+
+        local min_mm=$(echo $min_ver_code | cut -c3-4)
+        local min_dd=$(echo $min_ver_code | cut -c5-6)
+        if [ $((10#$min_mm)) -lt 1 ] || [ $((10#$min_mm)) -gt 12 ]; then
+            print_error "min_ver_code 中的月份 ($min_mm) 无效"
+            exit 1
+        fi
+        if [ $((10#$min_dd)) -lt 1 ] || [ $((10#$min_dd)) -gt 31 ]; then
+            print_error "min_ver_code 中的日期 ($min_dd) 无效"
+            exit 1
+        fi
+        print_info "min_ver_code 校验通过: $min_ver_code"
+    fi
+
     if [ "$SKIP_UPLOAD" = false ] && [ "$BUILD_ONLY" = false ]; then
         print_step "检查上传配置..."
         

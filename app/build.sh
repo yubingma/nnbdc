@@ -67,6 +67,40 @@ validate_version() {
     fi
 
     echo "✅ 版本号校验通过: $VERSION"
+
+    #=========================================================
+    # 校验 min_ver_code 格式 (YYMMDDXX)
+    #=========================================================
+    local MIN_VER_CODE=$(grep "^min_ver_code:" "$PUBSPEC_PATH" | awk '{print $2}')
+    if [ -n "$MIN_VER_CODE" ]; then
+        # 正则表达式验证: YYMMDDXX
+        if [[ ! $MIN_VER_CODE =~ ^[0-9]{8}$ ]]; then
+            echo "❌ 错误: $PUBSPEC_PATH 中的 min_ver_code 格式必须为 YYMMDDXX (例如: 26051101)"
+            echo "当前 min_ver_code: $MIN_VER_CODE"
+            exit 1
+        fi
+
+        # 验证 min_ver_code 不大于当前 build number
+        local BUILD_NUMBER=$(echo $VERSION | cut -d'+' -f2)
+        if [ "$MIN_VER_CODE" -gt "$BUILD_NUMBER" ]; then
+            echo "❌ 错误: min_ver_code ($MIN_VER_CODE) 不能大于当前构建号 ($BUILD_NUMBER)"
+            exit 1
+        fi
+        
+        # 验证 min_ver_code 的日期部分合法性
+        local MIN_MM=$(echo $MIN_VER_CODE | cut -c3-4)
+        local MIN_DD=$(echo $MIN_VER_CODE | cut -c5-6)
+        if [ $((10#$MIN_MM)) -lt 1 ] || [ $((10#$MIN_MM)) -gt 12 ]; then
+            echo "❌ 错误: min_ver_code 中的月份 ($MIN_MM) 无效"
+            exit 1
+        fi
+        if [ $((10#$MIN_DD)) -lt 1 ] || [ $((10#$MIN_DD)) -gt 31 ]; then
+            echo "❌ 错误: min_ver_code 中的日期 ($MIN_DD) 无效"
+            exit 1
+        fi
+        
+        echo "✅ min_ver_code 校验通过: $MIN_VER_CODE"
+    fi
 }
 
 validate_version

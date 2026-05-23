@@ -69,6 +69,42 @@ jobs:
           
           echo "✅ 版本号格式验证通过: $VERSION"
 
+          # 校验 min_ver_code 格式 (YYMMDDXX)
+          MIN_VER_CODE=$(grep "^min_ver_code:" app/pubspec.yaml | awk '{print $2}')
+          if [ -n "$MIN_VER_CODE" ]; then
+            # 正则表达式验证: YYMMDDXX
+            if [[ ! $MIN_VER_CODE =~ ^[0-9]{8}$ ]]; then
+              echo "❌ 错误: app/pubspec.yaml 中的 min_ver_code 格式必须为 YYMMDDXX (例如: 26051101)"
+              echo "当前 min_ver_code: $MIN_VER_CODE"
+              exit 1
+            fi
+
+            # 验证 min_ver_code 不大于当前 build number
+            BUILD_NUMBER=$(echo $VERSION | cut -d'+' -f2)
+            if [ "$MIN_VER_CODE" -gt "$BUILD_NUMBER" ]; then
+              echo "❌ 错误: min_ver_code ($MIN_VER_CODE) 不能大于当前构建号 ($BUILD_NUMBER)"
+              exit 1
+            fi
+            
+            # 验证 min_ver_code 的日期部分合法性
+            MIN_MM=$(echo $MIN_VER_CODE | cut -c3-4)
+            MIN_DD=$(echo $MIN_VER_CODE | cut -c5-6)
+            MIN_MM_VAL=$((10#$MIN_MM))
+            MIN_DD_VAL=$((10#$MIN_DD))
+            
+            if [ "$MIN_MM_VAL" -lt 1 ] || [ "$MIN_MM_VAL" -gt 12 ]; then
+              echo "❌ 错误: min_ver_code 中的月份 ($MIN_MM) 无效"
+              exit 1
+            fi
+            
+            if [ "$MIN_DD_VAL" -lt 1 ] || [ "$MIN_DD_VAL" -gt 31 ]; then
+              echo "❌ 错误: min_ver_code 中的日期 ($MIN_DD) 无效"
+              exit 1
+            fi
+            
+            echo "✅ min_ver_code 校验通过: $MIN_VER_CODE"
+          fi
+
   build:
     needs: validate-version
     timeout-minutes: 60
