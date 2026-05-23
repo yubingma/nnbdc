@@ -125,18 +125,28 @@ class Asr {
 
   bool _isPreloaded = false;
   bool get isPreloaded => _isPreloaded;
+  Future<void>? _preloadFuture;
 
   Future<void> preloadModels() async {
     if (!PlatformUtils.isAsrSupported()) return;
     if (_isPreloaded) return;
     
-    try {
-      Global.logger.i('ASR: 预加载模型');
-      await asrMethodChannel.invokeMethod('preloadModels');
-      _isPreloaded = true;
-    } catch (e) {
-      Global.logger.e('ASR: 预加载模型失败: $e');
+    if (_preloadFuture != null) {
+      return _preloadFuture;
     }
+
+    _preloadFuture = () async {
+      try {
+        Global.logger.i('ASR: 预加载模型');
+        await asrMethodChannel.invokeMethod('preloadModels');
+        _isPreloaded = true;
+      } catch (e) {
+        Global.logger.e('ASR: 预加载模型失败: $e');
+        _preloadFuture = null; // 发生异常时清空缓存，以便下次可以重试
+      }
+    }();
+
+    return _preloadFuture;
   }
 
   /// 检查是否授予了麦克风和语音识别权限

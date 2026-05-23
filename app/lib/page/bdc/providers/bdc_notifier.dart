@@ -159,6 +159,7 @@ class BdcNotifier extends _$BdcNotifier {
     final totalStopwatch = Stopwatch()..start();
     Api.setLoadingDisabled(true);
     bool dialogShown = false;
+    Timer? dialogTimer;
     try {
       if (state.word == null) {
         state = state.copyWith(dataLoaded: false);
@@ -167,22 +168,31 @@ class BdcNotifier extends _$BdcNotifier {
       // 仅在非预加载且非 iOS (iPhone) 平台时展示加载弹窗。
       // iOS 端使用的是系统内置引擎，无预加载耗时，直接跳过弹窗以提供最流畅的进入体验。
       bool needPreload = !asr.isPreloaded && !PlatformUtils.isIOS;
-      if (context.mounted && needPreload) {
-        // 仅在确实需要显示预加载弹窗时，才去耗时获取展示词，避免无谓的数据库查询阻塞渲染转场
-        final getWordsStopwatch = Stopwatch()..start();
-        List<String> displayWords = await _getDisplayWords();
-        Global.logger.d('⚡ [PERF] loadData -> _getDisplayWords cost: ${getWordsStopwatch.elapsedMilliseconds}ms');
-        
-        if (context.mounted) {
-          _showLoadingDialog(context, displayWords);
-          dialogShown = true;
-        }
+      Future<void>? preloadFuture;
+      if (!PlatformUtils.isIOS) {
+        preloadFuture = asr.preloadModels();
+      }
+
+      if (context.mounted && needPreload && preloadFuture != null) {
+        // 延迟 150ms 显示加载弹窗，如果在这期间模型预载完成了，就完全不弹窗，给用户最极致的流畅体验！
+        dialogTimer = Timer(const Duration(milliseconds: 150), () async {
+          if (context.mounted && !asr.isPreloaded) {
+            final getWordsStopwatch = Stopwatch()..start();
+            List<String> displayWords = await _getDisplayWords();
+            Global.logger.d('⚡ [PERF] loadData -> _getDisplayWords cost: ${getWordsStopwatch.elapsedMilliseconds}ms');
+            if (context.mounted && !asr.isPreloaded && !dialogShown) {
+              _showLoadingDialog(context, displayWords);
+              dialogShown = true;
+            }
+          }
+        });
       }
       
-      if (!PlatformUtils.isIOS) {
+      if (preloadFuture != null) {
         final preloadStopwatch = Stopwatch()..start();
-        await asr.preloadModels();
+        await preloadFuture;
         Global.logger.d('⚡ [PERF] loadData -> asr.preloadModels cost: ${preloadStopwatch.elapsedMilliseconds}ms');
+        dialogTimer?.cancel(); // 模型加载完成后，立即取消弹窗定时器
         if (needPreload) {
           await Future.delayed(const Duration(milliseconds: 50));
         }
@@ -246,6 +256,7 @@ class BdcNotifier extends _$BdcNotifier {
       state = state.copyWith(loadError: e.toString(), dataLoaded: true);
       ErrorHandler.handleError(e, st, logPrefix: 'loadData');
     } finally {
+      dialogTimer?.cancel(); // 兜底取消定时器，防止泄露或延迟弹窗
       Api.setLoadingDisabled(false);
       Global.logger.i('⚡ [PERF] Total loadData cost: ${totalStopwatch.elapsedMilliseconds}ms');
     }

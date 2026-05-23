@@ -47,7 +47,9 @@ final goRouter = GoRouter(
     ),
     GoRoute(
       path: '/bdc',
-      builder: (context, state) => const BdcPage(),
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: BdcPage(),
+      ),
     ),
     GoRoute(path: '/walkman', builder: (context, state) => const WalkmanPage()),
     GoRoute(path: '/game', builder: (context, state) => const GamePage()),

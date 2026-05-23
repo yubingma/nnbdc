@@ -21,6 +21,7 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/subscription_util.dart';
@@ -62,8 +63,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   @override
   void initState() {
     super.initState();
-    // 首页初始化时强制关停 ASR
+    // 首页初始化时强制关停 ASR，同时在后台静默预加载语音识别模型，避免点击“开始学习”进入单词页面时因加载模型而产生阻塞卡顿
     Asr().stopMicrophone();
+    unawaited(Asr().preloadModels());
+    // 后台静默预加载并激活手写识别模型，避免后续使用手写板时产生冷启动延迟
+    unawaited(OcrService.prepareModel());
     WidgetsBinding.instance.addObserver(this);
     // 首页初始化数据由 didChangeDependencies 触发，此处不再重复调用 loadData()，避免并发加载冲突
 
