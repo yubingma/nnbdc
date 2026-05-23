@@ -69,7 +69,8 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   /// 释义输入框焦点控制
   final FocusNode _meaningFocusNode = FocusNode();
 
-  final ja.AudioPlayer _audioPlayer = ja.AudioPlayer();
+  /// 顶级音频播放器，委托给 Notifier 维护的 Provider 实例
+  ja.AudioPlayer get _audioPlayer => ref.read(bdcAudioPlayerProvider);
 
   /// 说意/英拼写面板的滚动控制
   final ScrollController _speakPanelScrollController = ScrollController();
@@ -214,12 +215,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     _soundController.dispose();
     _wordSoundController.dispose();
     _sentenceSoundController.dispose();
-    
-    _audioPlayer.dispose();
-    
-    super.dispose();
-  }
 
+    super.dispose();
+    }
   @override
   Widget build(BuildContext context) {
     final stopwatch = Stopwatch()..start();

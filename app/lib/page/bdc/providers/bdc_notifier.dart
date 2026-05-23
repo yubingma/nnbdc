@@ -68,8 +68,8 @@ class BdcNotifier extends _$BdcNotifier {
 
   @override
   BdcState build() {
-    asr = ref.read(asrProvider);
-    _audioPlayer = ref.read(bdcAudioPlayerProvider);
+    asr = ref.watch(asrProvider);
+    _audioPlayer = ref.watch(bdcAudioPlayerProvider);
     
     // Initialize args
     final argsJson = Prefs.read<String>("BdcPageArgs");
@@ -1113,9 +1113,6 @@ class BdcNotifier extends _$BdcNotifier {
         unawaited(asr.stopMicrophone());
         final ratingResult = _calculateRating(method);
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-        if (state.hasFinishedAnswering && state.showHandwritingBoard) {
-          SoundUtil.playPronounceSound(state.word!);
-        }
       }
     }
     Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
@@ -1216,10 +1213,9 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('[PERF] _onAnswerCorrect -> FSRS calculation cost: ${fsrsStopwatch.elapsedMilliseconds}ms');
 
     final playStopwatch = Stopwatch()..start();
-    // 答对后，无论何种模式，都强制播放单词发音（及按配置播放例句），并开启 ASR 闭环。
-    // forcePlayWord=true 确保即便用户关闭了自动播放，在答对时也能听到正确读音。
-    unawaited(playWordAndFirstSentence(true, false, forcePlaySentence: StudyConfig.fromCurrentUser().autoPlaySentence));
-    Global.logger.d('[PERF] _onAnswerCorrect -> playWordAndFirstSentence (background) trigger cost: ${playStopwatch.elapsedMilliseconds}ms');
+    // 答对后，不再自动重播单词/例句发音（避免冗余感），仅播放轻快的正确提示音
+    SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
+    Global.logger.d('[PERF] _onAnswerCorrect -> play correct sound effect cost: ${playStopwatch.elapsedMilliseconds}ms');
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
@@ -1252,7 +1248,18 @@ class BdcNotifier extends _$BdcNotifier {
     debugPrint('🔊 [BDC-Sound] 播放决策结果: willPlayWord=$willPlayWord, willPlaySentence=$willPlaySentence');
 
     if (willPlayWord || willPlaySentence) {
-      await asr.stopMicrophone();
+      try {
+        debugPrint('🔊 [BDC-Sound] 准备停用 ASR 并切换音频会话以进行纯净发音...');
+        await asr.stopMicrophone();
+        
+        // 关键：将当前播放器加入观察名单，确保 ASR 初始化时会等待其播完
+        SoundUtil.watchPlayer(_audioPlayer);
+
+        // 关键：发音前强制重新配置音频会话为 pure playback，排除 native 层的潜在分类错误
+        await SoundUtil.usePlaybackCategory(force: true);
+      } catch (e) {
+        Global.logger.e('🔊 [BDC-Sound] stopMicrophone/usePlaybackCategory 失败 (不影响后续播放): $e');
+      }
     }
 
     try {
@@ -1262,6 +1269,11 @@ class BdcNotifier extends _$BdcNotifier {
         Global.logger.d('🔊 [BDC-Sound] 准备播放单词: ${state.word!.spell}, URL: $soundUrl');
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
         Global.logger.d('[PERF] playWordAndFirstSentence -> playPronounceSound2 cost: ${playWordStopwatch.elapsedMilliseconds}ms');
+        
+        // 如果后面还要播放例句，增加 200ms 物理缓冲，防止 MediaCodec 底层切换过快导致崩溃
+        if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
+          await Future.delayed(const Duration(milliseconds: 200));
+        }
       }
       
       if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
@@ -1277,7 +1289,11 @@ class BdcNotifier extends _$BdcNotifier {
       Global.logger.e('🔊 [BDC-Sound] playWordAndFirstSentence 过程中捕获到异常: $e', error: e, stackTrace: st);
     } finally {
       if (startAsrWhenFinish) {
-        _handleTabChangeForAsr();
+        // 增加 400ms 延迟，确保 just_audio 的 ExoPlayer 实例完全释放音频焦点和硬件资源
+        // 避免 ASR 引擎在 ExoPlayer 关闭的瞬间抢占硬件导致的底层 Crash (MediaCodec shutdown in ExecutingState)
+        Future.delayed(const Duration(milliseconds: 400), () {
+          _handleTabChangeForAsr();
+        });
       }
       Global.logger.d('[PERF] playWordAndFirstSentence total cost: ${stopwatch.elapsedMilliseconds}ms');
     }

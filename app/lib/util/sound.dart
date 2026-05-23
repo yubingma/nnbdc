@@ -61,15 +61,18 @@ class SoundUtil {
   static final _sessionLock = _Mutex();
 
   /// 切换为高保真纯播放模式 (无麦克风占用，无回声消除滤波，高动态范围，高保真度)
-  static Future<void> usePlaybackCategory() {
+  static Future<void> usePlaybackCategory({bool force = false}) {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
-      if (currentSessionCategory == 'playback') {
+      if (currentSessionCategory == 'playback' && !force) {
         Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
         debugPrint('🔊 [SoundUtil] 当前音频分类已是 playback，无须重复配置');
         return;
       }
       try {
+        if (force) {
+          debugPrint('🔊 [SoundUtil] 正在强制重新配置音频会话为 playback...');
+        }
         final session = await AudioSession.instance;
         await session.configure(AudioSessionConfiguration(
           avAudioSessionCategory: AVAudioSessionCategory.playback,
@@ -95,19 +98,50 @@ class SoundUtil {
       }
     });
   }
+/// 全局观察的播放器列表，用于在切换音频会话前确保它们都已播完
+static final List<ja.AudioPlayer> _watchedPlayers = [];
 
-  /// 切换为录音与播放并存模式 (用于 ASR 语音识别场景，匹配 iOS 原生配置，优化蓝牙高保真度)
-  static Future<void> usePlayAndRecordCategory() {
-    return _sessionLock.protect(() async {
-      if (PlatformUtils.isWeb) return;
-      if (currentSessionCategory == 'playAndRecord') {
-        Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
-        debugPrint('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
-        return;
+/// 将一个播放器加入全局观察名单
+static void watchPlayer(ja.AudioPlayer player) {
+  if (!_watchedPlayers.contains(player)) {
+    _watchedPlayers.add(player);
+  }
+}
+
+/// 等待名单中所有播放器停止播放
+static Future<void> waitForAllPlayers() async {
+  for (var player in _watchedPlayers) {
+    if (player.playing) {
+      debugPrint('🔊 [SoundUtil] 检测到观察名单中的播放器正在播放，正在等待其结束...');
+      try {
+        await player.playerStateStream.firstWhere((state) => 
+            !state.playing || 
+            state.processingState == ja.ProcessingState.completed || 
+            state.processingState == ja.ProcessingState.idle)
+        .timeout(const Duration(milliseconds: 3000));
+      } catch (e) {
+        debugPrint('🔊 [SoundUtil] 等待播放器结束超时: $e');
       }
+    }
+  }
+  await Future.delayed(const Duration(milliseconds: 100)); // 额外缓冲，确保硬件通道完全清理
+}
 
-      // 在配置全局 AudioSession 切换之前，优雅等待可能正在播放的单词发音播完，防止尾音截断
-      if (_pronouncePlayer != null && _pronouncePlayer!.playing) {
+/// 切换为录音与播放并存模式 (用于 ASR 语音识别场景，匹配 iOS 原生配置，优化蓝牙高保真度)
+static Future<void> usePlayAndRecordCategory() {
+  return _sessionLock.protect(() async {
+    if (PlatformUtils.isWeb) return;
+    if (currentSessionCategory == 'playAndRecord') {
+      Global.logger.d('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
+      debugPrint('🔊 [SoundUtil] 当前音频分类已是 playAndRecord，无须重复配置');
+      return;
+    }
+
+    // 在配置全局 AudioSession 切换之前，优雅等待所有观察中的播放器播完，防止尾音截断
+    await waitForAllPlayers();
+
+    // 原有的 pronouncePlayer 独立判断保留作为双重保险
+    if (_pronouncePlayer != null && _pronouncePlayer!.playing) {
         final p = _pronouncePlayer!;
         Global.logger.i('🔊 [SoundUtil] 检测到 pronouncePlayer 正在播放，等待其播放完毕再切换音频会话类型...');
         try {
@@ -217,7 +251,7 @@ class SoundUtil {
   static Future<void> playPronounceSound2(WordVo word, ja.AudioPlayer player) async {
     var soundUrl = Util.getWordSoundUrl(word.spell, word: word);
     Global.logger.d('🔊 播放发音 (指定播放器) [Spell: ${word.spell}, UpdateTime: ${word.updateTime}] URL: $soundUrl');
-    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 5000);
+    await playSoundByUrl(soundUrl, player, false);
   }
 
   /// 播放单词发音 (按拼写)
@@ -229,7 +263,7 @@ class SoundUtil {
   /// 播放单词发音，使用已存在的播放器实例
   static Future<void> playPronounceSoundBySpell2(String spell, ja.AudioPlayer player, {double speed = 1.0}) async {
     var soundUrl = Util.getWordSoundUrl(spell);
-    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 3000, playTimeoutMs: 10000, speed: speed);
+    await playSoundByUrl(soundUrl, player, false, speed: speed);
   }
 
   /// 预取多个发音文件到缓存
@@ -269,7 +303,7 @@ class SoundUtil {
   /// 播放例句发音
   static Future<void> playSentenceSound2(String englishDigest, ja.AudioPlayer player, {double speed = 1.0}) async {
     var soundUrl = Util.getSentenceSoundUrl(englishDigest);
-    await playSoundByUrl(soundUrl, player, false, loadTimeoutMs: 7000, playTimeoutMs: 20000, speed: speed);
+    await playSoundByUrl(soundUrl, player, false, speed: speed);
   }
 
   /// 播放 ASR 就绪提示音
@@ -289,7 +323,7 @@ class SoundUtil {
   }
 
   static Future<void> playSoundByUrl(String soundUrl, ja.AudioPlayer player, bool disposeWhenFinish,
-      {int loadTimeoutMs = 3000, int playTimeoutMs = 10000, double speed = 1.0}) async {
+      {int loadTimeoutMs = 10000, int playTimeoutMs = 20000, double speed = 1.0}) async {
     try {
       if (!_audioSessionConfigured) {
         debugPrint('🔊 [SoundUtil] 音频会话未配置，正在触发配置...');
@@ -303,6 +337,13 @@ class SoundUtil {
       Global.logger.i('🔊 [SoundUtil] playSoundByUrl 启动: URL: $soundUrl, category: $currentSessionCategory, speed: $speed');
       debugPrint('🔊 [SoundUtil] playSoundByUrl 启动: URL: $soundUrl, category: $currentSessionCategory, speed: $speed');
 
+      // 1. 先停止当前播放器，彻底清空并重置其内部状态，释放硬件资源，并确保 BehaviorSubject 状态干净
+      try {
+        await player.stop();
+      } catch (e) {
+        debugPrint('🔊 [SoundUtil] 停止播放器时出现非致命错误: $e');
+      }
+
       // 显式确保音量最大
       await player.setVolume(1.0);
 
@@ -314,30 +355,54 @@ class SoundUtil {
         final cacheManager = DefaultCacheManager();
         FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
         if (fileInfo != null) {
-          debugPrint('🔊 [SoundUtil] 命中缓存: ${fileInfo.file.path}');
-          await player.setFilePath(fileInfo.file.path).timeout(Duration(milliseconds: loadTimeoutMs));
+          final file = fileInfo.file;
+          if (await file.exists()) {
+            final size = await file.length();
+            debugPrint('🔊 [SoundUtil] 命中缓存: ${file.path}, 大小: ${size} 字节');
+            
+            if (size < 2048) {
+              Global.logger.w('⚠️ [SoundUtil] 警告：音频文件大小过小 (${size} 字节)，可能已损坏或为错误页面: $soundUrl');
+              debugPrint('⚠️ [SoundUtil] 警告：音频文件大小过小 (${size} 字节)，可能已损坏或为错误页面: $soundUrl');
+            }
+
+            // 使用 AudioSource.uri 而不是 setFilePath，这通常能让 ExoPlayer 在底层选择更稳定的提取器路径
+            await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
+          } else {
+            debugPrint('🔊 [SoundUtil] 缓存记录存在但文件已丢失: ${fileInfo.file.path}，重新下载...');
+            var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+            debugPrint('🔊 [SoundUtil] 下载完成，路径: ${file.path}');
+            await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
+          }
         } else {
           debugPrint('🔊 [SoundUtil] 未命中缓存，开始下载: $soundUrl');
           var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
           debugPrint('🔊 [SoundUtil] 下载完成，路径: ${file.path}');
-          await player.setFilePath(file.path).timeout(Duration(milliseconds: loadTimeoutMs));
+          await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
         }
       }
 
       debugPrint('🔊 [SoundUtil] 资源加载成功，准备播放 (speed: $speed)...');
-      // 设置倍速并播放
+      // 设置倍速
       await player.setSpeed(speed);
-      await player.play();
       
-      debugPrint('🔊 [SoundUtil] player.play() 已触发，等待完成或空闲状态...');
-      
-      // 显式等待播放完成或被手动停止 (idle)
-      // 在某些平台或特定条件下，await player.play() 可能会提前返回
-      await player.playerStateStream
+      // 2. 预先建立双重保险状态等待 Future (使用 skip(1) 过滤掉当前 BehaviorSubject 的初始残留状态)
+      final playCompletedFuture = player.playerStateStream
+          .skip(1)
           .firstWhere((state) => 
               state.processingState == ja.ProcessingState.completed || 
               state.processingState == ja.ProcessingState.idle)
           .timeout(Duration(milliseconds: playTimeoutMs));
+
+      debugPrint('🔊 [SoundUtil] player.play() 已触发，进行等待...');
+      // 3. 执行播放。注意：在某些平台上 play() 的 Future 会在触发播放时立刻返回，而不等播完
+      await player.play();
+
+      // 4. 双重保险：检查当前状态。若由于平台特性导致 play() 提前完成，则通过 Future 继续等待物理播放真正结束
+      if (player.processingState != ja.ProcessingState.completed && 
+          player.processingState != ja.ProcessingState.idle) {
+        debugPrint('🔊 [SoundUtil] 检测到 player.play() 提前返回 (当前状态: ${player.processingState})，启动二次保险状态等待...');
+        await playCompletedFuture;
+      }
 
       final int elapsed = DateTime.now().difference(startTime).inMilliseconds;
       Global.logger.d('🔊 [SoundUtil] 播放完成，总逻辑耗时: ${elapsed}ms');
