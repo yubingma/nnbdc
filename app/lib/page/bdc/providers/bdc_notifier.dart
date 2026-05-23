@@ -157,6 +157,10 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.dataLoaded || state.isGettingNextWord) return;
     final totalStopwatch = Stopwatch()..start();
     Api.setLoadingDisabled(true);
+    
+    // 后台异步预热核心音效，消除首次播放延迟
+    unawaited(SoundUtil.prewarmCoreSounds());
+
     bool dialogShown = false;
     Timer? dialogTimer;
     try {
@@ -1274,6 +1278,12 @@ class BdcNotifier extends _$BdcNotifier {
         final sentenceUrl = Util.getSentenceSoundUrl(state.englishDigestOfFirstSentence!);
         Global.logger.d('🔊 [BDC-Sound] 准备播放第一句例句: ${state.englishDigestOfFirstSentence}, URL: $sentenceUrl');
         await SoundUtil.playSentenceSound2(state.englishDigestOfFirstSentence!, _audioPlayer);
+        
+        // 极致优化：播完例句后立即抢跑触发 ASR，不等 finally 块，节省微任务调度和硬件释放开销
+        if (startAsrWhenFinish) {
+          _handleTabChangeForAsr();
+          startAsrWhenFinish = false; // 防止 finally 块再次触发逻辑
+        }
         debugPrint('⏱️ [Latency-BDC] 例句播完，耗时: ${playSentenceStopwatch.elapsedMilliseconds}ms');
       } else if (willPlaySentence) {
         Global.logger.w('🔊 [BDC-Sound] 虽然 willPlaySentence=true，但 englishDigestOfFirstSentence 为 null');
@@ -1343,13 +1353,13 @@ class BdcNotifier extends _$BdcNotifier {
 
     try {
       final asrStartStopwatch = Stopwatch()..start();
-      await asr.startAsr(language, phrases: phrases);
-      Global.logger.d('[PERF] _startAsrWithHint -> asr.startAsr cost: ${asrStartStopwatch.elapsedMilliseconds}ms');
       
-      // 极致响应优化：将延迟缩减为 20ms (从 200ms 缩减)。
-      // 在零延迟架构的保护下，硬件隔离已足够完美，不再需要长达 200ms 的人工等待来规避爆音。
-      await Future.delayed(const Duration(milliseconds: 20));
-      SoundUtil.playAsrReadyHintSound();
+      // 终极并行化：提示音不再等待 ASR，两者完全同步爆发，配合 250ms 的抢跑机制，
+      // 实现发音落、叮声起的“绝对同步”体感。
+      unawaited(SoundUtil.playAsrReadyHintSound());
+      await asr.startAsr(language, phrases: phrases);
+      
+      Global.logger.d('[PERF] _startAsrWithHint -> asr.startAsr (parallel) cost: ${asrStartStopwatch.elapsedMilliseconds}ms');
       state = state.copyWith(wordStartTime: AppClock.now());
     } catch (e) {
       Global.logger.e('ASR启动失败: $e');
