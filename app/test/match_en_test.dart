@@ -61,6 +61,7 @@ DIDN'T D IH1 D AH0 N T
 COUGH K AA1 F
 COLO K OW1 L OW0
 CLUE K L UW1
+CHOICE CH OY1 S
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -70,6 +71,16 @@ CLUE K L UW1
   });
 
   group('English Phoneme Matching Tests', () {
+    test('choias vs choice - should match', () async {
+      const String target = "choice";
+      const String asrResult = "choias";
+
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Choias vs Choice score: $score');
+
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+
     test('jope vs rope - should match', () async {
       const String target = "rope";
       const String asrResult = "jope";

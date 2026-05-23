@@ -8,7 +8,7 @@ class PhonemeUtil {
   static Completer<void>? _loadCompleter;
   static bool _loaded = false;
   static final Map<String, List<List<String>>> _wordToPhonemeVariants = {};
-  static final RegExp _digitRegExp = RegExp(r'\d+'), _cRegExp = RegExp(r'ce|ci|cy'), _lowerAlphaRegExp = RegExp(r'[a-z]');
+  static final RegExp _digitRegExp = RegExp(r'\d+'), _lowerAlphaRegExp = RegExp(r'[a-z]');
 
   static Future<void> load() async {
     if (_loaded) return;
@@ -136,15 +136,48 @@ class PhonemeUtil {
     final w = word.toLowerCase(); List<String> res = [];
     for (int i = 0; i < w.length; i++) {
       final c = w[i];
-      if ("aeiouy".contains(c)) {
+      // 1. 优先匹配英文常用双字母组合 (Consonant Digraphs)
+      if (c == 'c' && i + 1 < w.length && w[i + 1] == 'h') {
+        res.add("CH");
+        i++;
+      } else if (c == 's' && i + 1 < w.length && w[i + 1] == 'h') {
+        res.add("SH");
+        i++;
+      } else if (c == 't' && i + 1 < w.length && w[i + 1] == 'h') {
+        res.add("TH");
+        i++;
+      } else if (c == 'p' && i + 1 < w.length && w[i + 1] == 'h') {
+        res.add("F");
+        i++;
+      } else if (c == 'c' && i + 1 < w.length && w[i + 1] == 'k') {
+        res.add("K");
+        i++;
+      } else if (c == 'n' && i + 1 < w.length && w[i + 1] == 'g') {
+        res.add("NG");
+        i++;
+      } else if (c == 'q' && i + 1 < w.length && w[i + 1] == 'u') {
+        res.add("K");
+        res.add("W");
+        i++;
+      }
+      // 2. 元音处理
+      else if ("aeiouy".contains(c)) {
         res.add("@");
-      } else if ("rmnpbtdszfvkwy".contains(c)) {
+      }
+      // 3. 常见辅音字母处理
+      else if ("rmnpbtdszfvkwy".contains(c)) {
         res.add(c.toUpperCase());
-      } else if (c == 'g' && i + 1 < w.length && _cRegExp.hasMatch(w[i + 1])) {
+      }
+      // 4. 软音变化 (Soft c & Soft g, 如 gem/cell) - 修正原先匹配下一个字符的 Bug
+      else if (c == 'g' && i + 1 < w.length && "eiy".contains(w[i + 1])) {
         res.add("JH");
-      } else if (c == 'c' && i + 1 < w.length && _cRegExp.hasMatch(w[i + 1])) {
+      } else if (c == 'c' && i + 1 < w.length && "eiy".contains(w[i + 1])) {
         res.add("S");
-      } else if (c == 'x') { res.add("K"); res.add("S"); }
+      } else if (c == 'x') {
+        res.add("K");
+        res.add("S");
+      }
+      // 5. 其他字母降级处理
       else if (_lowerAlphaRegExp.hasMatch(c)) {
         if ("rl".contains(c) && i > 0 && i == w.length - 1 && !"aeiouy".contains(w[i - 1])) res.add("@");
         res.add(c.toUpperCase());
