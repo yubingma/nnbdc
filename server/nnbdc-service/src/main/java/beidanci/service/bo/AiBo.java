@@ -717,6 +717,7 @@ public class AiBo {
         }
 
         activeAiStoryRequests.incrementAndGet();
+        long startTime = System.currentTimeMillis();
         try {
             logger.info("{}开始为用户生成 AI 短文: {}, 使用文本模型: {}", formatUser(userId), wordsHash, aiProperties.getTextModel());
             String systemPrompt = "你是一位出色的创意作家和英语老师。请使用用户提供的英文单词列表，创作一篇短小精悍、语言精练且富有逻辑的小故事（约 60-100 词）。\n" +
@@ -729,6 +730,8 @@ public class AiBo {
 
             String userPrompt = "单词列表：" + String.join(", ", words);
             String storyContent = generateText(systemPrompt, userPrompt);
+            long costTime = System.currentTimeMillis() - startTime;
+            logger.info("{}生成 AI 短文成功，耗时: {}ms", formatUser(userId), costTime);
 
             // 存入持久化缓存
             try {
