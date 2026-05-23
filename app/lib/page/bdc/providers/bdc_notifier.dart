@@ -164,23 +164,28 @@ class BdcNotifier extends _$BdcNotifier {
         state = state.copyWith(dataLoaded: false);
       }
       
-      // Get display words for loading dialog
-      final getWordsStopwatch = Stopwatch()..start();
-      List<String> displayWords = await _getDisplayWords();
-      Global.logger.d('⚡ [PERF] loadData -> _getDisplayWords cost: ${getWordsStopwatch.elapsedMilliseconds}ms');
-
-      // Show loading dialog only if not preloaded
-      bool needPreload = !asr.isPreloaded;
+      // 仅在非预加载且非 iOS (iPhone) 平台时展示加载弹窗。
+      // iOS 端使用的是系统内置引擎，无预加载耗时，直接跳过弹窗以提供最流畅的进入体验。
+      bool needPreload = !asr.isPreloaded && !PlatformUtils.isIOS;
       if (context.mounted && needPreload) {
-        _showLoadingDialog(context, displayWords);
-        dialogShown = true;
+        // 仅在确实需要显示预加载弹窗时，才去耗时获取展示词，避免无谓的数据库查询阻塞渲染转场
+        final getWordsStopwatch = Stopwatch()..start();
+        List<String> displayWords = await _getDisplayWords();
+        Global.logger.d('⚡ [PERF] loadData -> _getDisplayWords cost: ${getWordsStopwatch.elapsedMilliseconds}ms');
+        
+        if (context.mounted) {
+          _showLoadingDialog(context, displayWords);
+          dialogShown = true;
+        }
       }
       
-      final preloadStopwatch = Stopwatch()..start();
-      await asr.preloadModels();
-      Global.logger.d('⚡ [PERF] loadData -> asr.preloadModels cost: ${preloadStopwatch.elapsedMilliseconds}ms');
-      if (needPreload) {
-        await Future.delayed(const Duration(milliseconds: 50));
+      if (!PlatformUtils.isIOS) {
+        final preloadStopwatch = Stopwatch()..start();
+        await asr.preloadModels();
+        Global.logger.d('⚡ [PERF] loadData -> asr.preloadModels cost: ${preloadStopwatch.elapsedMilliseconds}ms');
+        if (needPreload) {
+          await Future.delayed(const Duration(milliseconds: 50));
+        }
       }
       
       await SoundUtil.configureAudioSession();
