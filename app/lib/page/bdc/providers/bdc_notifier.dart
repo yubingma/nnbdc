@@ -1295,20 +1295,17 @@ class BdcNotifier extends _$BdcNotifier {
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
     Global.logger.d('~~~~~ 当前说模式正确答案: ${correctAnswer?.replaceAll('\n', '; ')}');
 
-    // 设置热词（上下文短语），显著提高识别准确率
-    final contextStopwatch = Stopwatch()..start();
+    // 提取热词（上下文短语），显著提高识别准确率
     List<String> phrases = [];
     if (language == AsrLanguage.english) {
       phrases.add(state.word!.spell);
     } else {
       phrases.addAll(AsrUtil.extractContextualPhrases(state.word!.meaningItems ?? []));
     }
-    await asr.setContextualStrings(phrases);
-    Global.logger.d('[PERF] _startAsrWithHint -> setContextualStrings cost: ${contextStopwatch.elapsedMilliseconds}ms');
 
     try {
       final asrStartStopwatch = Stopwatch()..start();
-      await asr.startAsr(language);
+      await asr.startAsr(language, phrases: phrases);
       Global.logger.d('[PERF] _startAsrWithHint -> asr.startAsr cost: ${asrStartStopwatch.elapsedMilliseconds}ms');
       
       // 给底层音频框架和 AudioSession 切换留出充足的时间稳定状态，避免立即播放音效被打断

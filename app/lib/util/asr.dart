@@ -409,7 +409,7 @@ class Asr {
     }
   }
 
-  Future<void> startAsr(AsrLanguage language) async {
+  Future<void> startAsr(AsrLanguage language, {List<String>? phrases}) async {
     debugPrint('💡 [ASR] startAsr() 触发启动。目标语言: ${language.locale}，当前状态: $state。');
     if (!PlatformUtils.isAsrSupported()) {
       ToastUtil.info("当前平台暂不支持语音识别功能");
@@ -451,6 +451,11 @@ class Asr {
 
       if (permissionGranted) {
         try {
+          if (phrases != null) {
+            Global.logger.i('ASR: Setting contextual strings... (instance: $hashCode)');
+            await setContextualStrings(phrases);
+          }
+
           Global.logger
               .i('ASR: Updating language first... (instance: $hashCode)');
           await _updateLanguage(language);
