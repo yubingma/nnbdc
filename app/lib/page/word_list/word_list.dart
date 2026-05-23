@@ -349,7 +349,9 @@ class WordListPageState extends State<WordListPage>
     Global.logger.d('WordListPage: getBookMark took ${swInit.elapsedMilliseconds}ms');
     swInit.reset();
 
+    final swGuide = Stopwatch()..start();
     _checkAndShowGuide(); // 此时 args 肯定已经 ready
+    Global.logger.d('WordListPage: _checkAndShowGuide took ${swGuide.elapsedMilliseconds}ms');
 
     if (isBookMarkValid(bookMark)) {
       // --- 预测并行加载优化 ---
@@ -426,11 +428,15 @@ class WordListPageState extends State<WordListPage>
       bookMark = BookMarkVo(actualWordIndex, bookMark!.spell);
 
       // 数据和页面都准备好后，执行一次精准跳转
+      final swJump = Stopwatch()..start();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          final swJumpExec = Stopwatch()..start();
           jumpToBookMark(force: true);
+          Global.logger.d('WordListPage: jumpToBookMark execution took ${swJumpExec.elapsedMilliseconds}ms');
         }
       });
+      Global.logger.d('WordListPage: jumpToBookMark post frame callback registered in ${swJump.elapsedMilliseconds}ms');
     } else {
       // 没有书签：从第一页开始
       baseIndex = 0;
@@ -442,10 +448,12 @@ class WordListPageState extends State<WordListPage>
       }
     }
 
+    final swSetState = Stopwatch()..start();
     setState(() {
       dataLoaded = true;
       _showList = true; // 数据加载完直接允许显示列表
     });
+    Global.logger.d('WordListPage: setState load finish took ${swSetState.elapsedMilliseconds}ms');
     
     Global.logger.d('WordListPage: loadData total completed in ${swTotal.elapsedMilliseconds}ms');
 
@@ -454,7 +462,9 @@ class WordListPageState extends State<WordListPage>
         studyMode == WordListStudyMode.speakEnglish) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          final swAsr = Stopwatch()..start();
           _restoreAsrIfNeeded('loadData');
+          Global.logger.d('WordListPage: _restoreAsrIfNeeded took ${swAsr.elapsedMilliseconds}ms');
         }
       });
     }
@@ -492,7 +502,9 @@ class WordListPageState extends State<WordListPage>
     }
 
     //查询
+    final swLoad = Stopwatch()..start();
     await loadAPageOfWords(fromIndex, pageSize, jumpToTailWhenReady);
+    Global.logger.d('WordListPage: doQuery loadAPageOfWords took ${swLoad.elapsedMilliseconds}ms');
 
     // 标记结束查询
     isQuerying = false;
@@ -502,8 +514,10 @@ class WordListPageState extends State<WordListPage>
       final int fromIndex, final int pageSize, bool jumpToTailWhenReady) async {
     try {
       // 获取一页单词
+      final swGetAPage = Stopwatch()..start();
       final result =
           await args.wordsProvider.getAPageOfWords(fromIndex, pageSize);
+      Global.logger.d('WordListPage: getAPageOfWords DB query took ${swGetAPage.elapsedMilliseconds}ms (fromIndex=$fromIndex, pageSize=$pageSize)');
 
       // 即使没有单词，也要更新totalWordCount
       if (result.rows.isEmpty) {
@@ -559,6 +573,7 @@ class WordListPageState extends State<WordListPage>
       }
 
       // 更新状态
+      final swSetState = Stopwatch()..start();
       setState(() {
         totalWordCount = newTotalWordCount;
         words = newWords;
@@ -572,10 +587,13 @@ class WordListPageState extends State<WordListPage>
                   alignment: _handwritingScrollAlignment)); // 显示在屏幕偏上部
         }
       });
+      Global.logger.d('WordListPage: loadAPageOfWords setState took ${swSetState.elapsedMilliseconds}ms');
 
       // 异步加载学习状态和预取音频
+      final swAsync = Stopwatch()..start();
       _loadLearningStatusForWords(result.rows);
       _prefetchAudioForWords(result.rows);
+      Global.logger.d('WordListPage: loadAPageOfWords async trigger took ${swAsync.elapsedMilliseconds}ms');
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace,
           logPrefix: '加载单词失败', showToast: false);
@@ -583,6 +601,7 @@ class WordListPageState extends State<WordListPage>
   }
 
   Future<void> _loadLearningStatusForWords(List<WordWrapper> newWords) async {
+    final swLearning = Stopwatch()..start();
     final wordIds = newWords
         .where((w) => w.word.id != null && w.initialLearningStatus == null)
         .map((w) => w.word.id!)
@@ -608,13 +627,16 @@ class WordListPageState extends State<WordListPage>
     if (mounted && hasUpdates) {
       setState(() {});
     }
+    Global.logger.d('WordListPage: _loadLearningStatusForWords for ${wordIds.length} words took ${swLearning.elapsedMilliseconds}ms');
   }
 
   void _prefetchAudioForWords(List<WordWrapper> newWords) {
     if (newWords.isEmpty) return;
     try {
+      final swPrefetch = Stopwatch()..start();
       final urls = newWords.map((w) => Util.getWordSoundUrl(w.word.spell, word: w.word)).toList();
       SoundUtil.prefetchSounds(urls);
+      Global.logger.d('WordListPage: _prefetchAudioForWords for ${newWords.length} words took ${swPrefetch.elapsedMilliseconds}ms');
     } catch (e) {
       Global.logger.w('预取音频失败: $e');
     }
@@ -1293,7 +1315,10 @@ class WordListPageState extends State<WordListPage>
   }
 
   Future<bool> checkArgs() async {
+    final sw = Stopwatch()..start();
     final extra = GoRouterState.of(context).extra;
+    final routerMs = sw.elapsedMilliseconds;
+    sw.reset();
     if (extra == null) {
       Future.delayed(Duration.zero, () {
         if (!mounted) return;
@@ -1303,8 +1328,11 @@ class WordListPageState extends State<WordListPage>
       return false;
     }
     args = extra as WordListPageArgs;
+    
+    int dbMs = 0;
     // 移除冗余的数据库查询，直接信任参数。如果参数缺失，才进行兜底检查。
     if (args.canEditWord == false && args.wordsProvider is WordModifier) {
+      final swDb = Stopwatch()..start();
       final String? targetDictId = (args.wordsProvider as WordModifier).targetDictId;
       if (targetDictId != null) {
         final dict = await WordBo().getDict(targetDictId);
@@ -1314,8 +1342,9 @@ class WordListPageState extends State<WordListPage>
           args.canAddWord = true;
         }
       }
+      dbMs = swDb.elapsedMilliseconds;
     }
-
+    Global.logger.d('WordListPage: checkArgs inner breakdown (routerMs=${routerMs}ms, dbMs=${dbMs}ms)');
     return true;
   }
 

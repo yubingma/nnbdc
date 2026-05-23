@@ -1013,7 +1013,7 @@ class WordBo {
     }
   }
 
-  Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize) async {
+  Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize, {bool loadSentences = false}) async {
     final sw = Stopwatch()..start();
     try {
       final results = PagedResults<DictWordVo>(0);
@@ -1092,14 +1092,18 @@ class WordBo {
         }
       }
 
-      // 3) 批量查询被选中释义的例句
-      final selectedMeaningItemIds = <String>[];
-      for (final list in meaningItemsMap.values) {
-        for (final mi in list) {
-          selectedMeaningItemIds.add(mi.id);
+      final Map<String, List<Sentence>> sentencesMap;
+      if (loadSentences) {
+        final selectedMeaningItemIds = <String>[];
+        for (final list in meaningItemsMap.values) {
+          for (final mi in list) {
+            selectedMeaningItemIds.add(mi.id);
+          }
         }
+        sentencesMap = await _loadSentencesMap(selectedMeaningItemIds);
+      } else {
+        sentencesMap = <String, List<Sentence>>{};
       }
-      final sentencesMap = await _loadSentencesMap(selectedMeaningItemIds);
       for (final dictWord in dictWordEntries) {
         final wordEntry = wordMap[dictWord.wordId];
         if (wordEntry != null) {
