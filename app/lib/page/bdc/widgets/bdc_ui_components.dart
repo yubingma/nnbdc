@@ -1194,22 +1194,31 @@ extension BdcPageStateUIComponents on BdcPageState {
             children: [
               // 语音波形反馈
               Expanded(
-                child: state.studyStep == StudyStep.en2Ch.json
-                    ? ChineseAsrInputWidget(
-                        controller: notifier.meaningController,
-                        asrState: notifier.asr.state,
-                        onStartAsr: (language) => notifier.asr.startAsr(language),
-                        isKeyboardVisible: state.isKeyboardVisible,
-                        focusNode: _meaningFocusNode,
-                      )
-                    : EnglishAsrInputWidget(
-                        controller: notifier.meaningController,
-                        asrState: notifier.asr.state,
-                        onStartAsr: (language) => notifier.asr.startAsr(language),
-                        isKeyboardVisible: state.isKeyboardVisible,
-                        focusNode: _meaningFocusNode,
-                        score: state.currentScore,
-                      ),
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final currentAsrState = ref.watch(bdcNotifierProvider.select((s) => s.asrState));
+                    final currentScore = ref.watch(bdcNotifierProvider.select((s) => s.currentScore));
+                    
+                    return state.studyStep == StudyStep.en2Ch.json
+                        ? ChineseAsrInputWidget(
+                            controller: notifier.meaningController,
+                            asrState: currentAsrState,
+                            onStartAsr: (language) =>
+                                notifier.asr.startAsr(language),
+                            isKeyboardVisible: state.isKeyboardVisible,
+                            focusNode: _meaningFocusNode,
+                          )
+                        : EnglishAsrInputWidget(
+                            controller: notifier.meaningController,
+                            asrState: currentAsrState,
+                            onStartAsr: (language) =>
+                                notifier.asr.startAsr(language),
+                            isKeyboardVisible: state.isKeyboardVisible,
+                            focusNode: _meaningFocusNode,
+                            score: currentScore,
+                          );
+                  },
+                ),
               ),
 
               const SizedBox(width: 8),
