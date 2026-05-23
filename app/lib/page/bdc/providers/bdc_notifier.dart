@@ -865,6 +865,11 @@ class BdcNotifier extends _$BdcNotifier {
 
     _saveCurrentWordState();
 
+    // 答对单词后切换下一词前，哪怕是快速闪电模式，也强制留出 100ms 视觉驻留延迟，以便用户看清底下的评测结果
+    if (gotoNext && state.word != null) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
     if (state.historyIndex != -1) {
       if (gotoNext) {
         final lw = state.currentGetWordResult?.learningWord;
