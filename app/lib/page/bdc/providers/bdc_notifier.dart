@@ -1268,8 +1268,8 @@ class BdcNotifier extends _$BdcNotifier {
         return;
       }
 
-      if (asr.state == AsrState.started) {
-        debugPrint('💡 [BDC-ASR] ASR 已经是 started 状态，跳过重复启动。');
+      if (asr.state == AsrState.started || asr.isStarting) {
+        debugPrint('💡 [BDC-ASR] ASR 已经是 started 状态或正在启动中，跳过重复启动。');
         return;
       }
 

@@ -59,6 +59,7 @@ class Asr {
   StreamSubscription<double>? _meterSubscription;
 
   AsrState get state => _state;
+  bool get isStarting => _isStarting;
   setState(AsrState newState) {
     Global.logger.i('ASR: State change: $_state => $newState');
     if (_state != newState) {
