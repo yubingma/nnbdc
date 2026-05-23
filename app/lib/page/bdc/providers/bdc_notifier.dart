@@ -1270,9 +1270,9 @@ class BdcNotifier extends _$BdcNotifier {
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
         Global.logger.d('[PERF] playWordAndFirstSentence -> playPronounceSound2 cost: ${playWordStopwatch.elapsedMilliseconds}ms');
         
-        // 如果后面还要播放例句，增加 200ms 物理缓冲，防止 MediaCodec 底层切换过快导致崩溃
+        // 如果后面还要播放例句，增加 50ms 物理缓冲（从 200ms 缩减），防止 MediaCodec 底层切换过快，同时保持连贯性
         if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
-          await Future.delayed(const Duration(milliseconds: 200));
+          await Future.delayed(const Duration(milliseconds: 50));
         }
       }
       
@@ -1289,9 +1289,9 @@ class BdcNotifier extends _$BdcNotifier {
       Global.logger.e('🔊 [BDC-Sound] playWordAndFirstSentence 过程中捕获到异常: $e', error: e, stackTrace: st);
     } finally {
       if (startAsrWhenFinish) {
-        // 增加 400ms 延迟，确保 just_audio 的 ExoPlayer 实例完全释放音频焦点和硬件资源
-        // 避免 ASR 引擎在 ExoPlayer 关闭的瞬间抢占硬件导致的底层 Crash (MediaCodec shutdown in ExecutingState)
-        Future.delayed(const Duration(milliseconds: 400), () {
+        // 降低为 10ms。底层硬件隔离已由 SoundUtil.waitForAllPlayers 的 100ms 缓冲完全接管
+        // 这里仅用极短延迟让出微任务队列，确保 UI 帧平滑，极大提升跟手感和连贯性
+        Future.delayed(const Duration(milliseconds: 10), () {
           _handleTabChangeForAsr();
         });
       }

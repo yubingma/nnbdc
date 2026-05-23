@@ -122,11 +122,10 @@ static Future<void> waitForAllPlayers() async {
       } catch (e) {
         debugPrint('🔊 [SoundUtil] 等待播放器结束超时: $e');
       }
-    }
-  }
-  await Future.delayed(const Duration(milliseconds: 100)); // 额外缓冲，确保硬件通道完全清理
-}
-
+      }
+      }
+      await Future.delayed(const Duration(milliseconds: 30)); // 缩减为 30ms 缓冲，确保硬件通道清理的同时极致追求流畅度
+      }
 /// 切换为录音与播放并存模式 (用于 ASR 语音识别场景，匹配 iOS 原生配置，优化蓝牙高保真度)
 static Future<void> usePlayAndRecordCategory() {
   return _sessionLock.protect(() async {
