@@ -413,6 +413,7 @@ class BdcNotifier extends _$BdcNotifier {
           child: const Text('下一组', style: TextStyle(fontWeight: FontWeight.bold)),
         );
         
+        final batchId = getWordResult.learningWord?.batchId;
         goRouter.pushReplacement('/word_list',
           extra: WordListPageArgs(
             '本组单词',
@@ -422,7 +423,7 @@ class BdcNotifier extends _$BdcNotifier {
             true, // showWordProgress
             '掌握度',
             StageWordsProgressProvider(),
-            StageWordsBookMarkProvider(),
+            StageWordsBookMarkProvider(batchId: batchId),
             nextBtn,
             showAiStory: true
           )

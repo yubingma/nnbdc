@@ -104,11 +104,32 @@ class StageWordsProgressProvider implements WordProgressProvider {
 }
 
 class StageWordsBookMarkProvider implements BookMarkProvider {
-  static const String bookMarkName = 'batch_word_list';
+  final int? batchId;
+
+  StageWordsBookMarkProvider({this.batchId});
+
+  Future<String> _getBookMarkName() async {
+    if (batchId != null) {
+      return 'batch_word_list_$batchId';
+    }
+    try {
+      final words = await StudyBo().getCurrentBatchCache();
+      if (words.isNotEmpty) {
+        final id = words.first.batchId;
+        if (id != null) {
+          return 'batch_word_list_$id';
+        }
+      }
+    } catch (e) {
+      Global.logger.e('获取当前批次ID失败，使用默认书签名称: $e');
+    }
+    return 'batch_word_list';
+  }
 
   @override
   Future<BookMarkVo?> getBookMark() async {
-    var result = await BookmarkBo().getBookMark(bookMarkName);
+    final name = await _getBookMarkName();
+    var result = await BookmarkBo().getBookMark(name);
     return result.data;
   }
 
@@ -121,7 +142,8 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
         return false;
       }
 
-      var result = await BookmarkBo().saveBookMark(bookMarkName, bookMark.spell, bookMark.position, userId);
+      final name = await _getBookMarkName();
+      var result = await BookmarkBo().saveBookMark(name, bookMark.spell, bookMark.position, userId);
       return result.success;
     } catch (e) {
       Global.logger.e('保存书签异常: $e');
@@ -130,7 +152,7 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
   }
 }
 
-Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context) {
+Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget nextWorkBtn, BuildContext context, {int? batchId}) {
   return context.push('/word_list',
       extra: WordListPageArgs(
           title,
@@ -140,7 +162,7 @@ Future<dynamic>? toBatchWordsListPage(String title, bool showDelBtn, Widget next
           true,
           '掌握度',
           StageWordsProgressProvider(),
-          StageWordsBookMarkProvider(),
+          StageWordsBookMarkProvider(batchId: batchId),
           nextWorkBtn,
           showAiStory: true));
 }
