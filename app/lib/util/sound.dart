@@ -236,26 +236,31 @@ class SoundUtil {
       
       final playSw = Stopwatch()..start();
       unawaited(player.play().catchError((_) {}));
+// 物理进度监听：如果进度接近时长，则提前完成
+if (player.duration != null) {
+  posSub = player.positionStream.listen((pos) {
+    // 修正优化：提前 100ms 返回（从 250ms 缩减）。
+    // 大多数 MP3 末尾有 50-100ms 的空白采样，这能确保听感完整且衔接极速。
+    if (pos >= (player.duration! - const Duration(milliseconds: 100))) {
+      if (!positionExitFuture.isCompleted) positionExitFuture.complete();
+    }
+  });
+}
 
-      if (player.duration != null) {
-        posSub = player.positionStream.listen((pos) {
-          if (pos >= (player.duration! - const Duration(milliseconds: 250))) {
-            if (!positionExitFuture.isCompleted) positionExitFuture.complete();
-          }
-        });
-      }
+// 4. 三重保险：OS 事件 OR 物理进度监听
+if (player.processingState != ja.ProcessingState.completed && 
+    player.processingState != ja.ProcessingState.idle) {
+  await Future.any([playCompletedFuture, positionExitFuture.future]);
+}
 
-      if (player.processingState != ja.ProcessingState.completed && 
-          player.processingState != ja.ProcessingState.idle) {
-        await Future.any([playCompletedFuture, positionExitFuture.future]);
-      }
-      
-      await posSub?.cancel();
-      _logicallyFinishedPlayers.add(player);
-      debugPrint('⏱️ [Latency-Sound] 物理播放完成 (Aggressive EarlyExit), 耗时: ${playSw.elapsedMilliseconds}ms');
+await posSub?.cancel();
+_logicallyFinishedPlayers.add(player);
+debugPrint('⏱️ [Latency-Sound] 物理播放完成 (Balanced EarlyExit), 耗时: ${playSw.elapsedMilliseconds}ms');
 
-      unawaited(player.stop().catchError((_) {}));
-      Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${totalSw.elapsedMilliseconds}ms');
+// 注意：这里绝不能调用 player.stop()，否则会立即掐断 Native 层的剩余尾音。
+// 我们让硬件自然播完最后 100ms，而 Dart 逻辑此时已经去启动 ASR 了。
+
+Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${totalSw.elapsedMilliseconds}ms');
     } catch (e, st) {
       _logicallyFinishedPlayers.add(player);
       Global.logger.e('播放异常: $soundUrl', error: e, stackTrace: st);

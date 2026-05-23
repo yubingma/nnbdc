@@ -1218,9 +1218,16 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('[PERF] _onAnswerCorrect -> FSRS calculation cost: ${fsrsStopwatch.elapsedMilliseconds}ms');
 
     final playStopwatch = Stopwatch()..start();
-    // 答对后，不再自动重播单词/例句发音（避免冗余感），仅播放轻快的正确提示音
-    SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
-    Global.logger.d('[PERF] _onAnswerCorrect -> play correct sound effect cost: ${playStopwatch.elapsedMilliseconds}ms');
+    // 答对后的反馈逻辑：
+    // 1. 中英模式 (Ch2En)：用户通过识别/拼写回答正确。此时播放单词发音，帮助用户纠正发音并加深印象。
+    // 2. 其他模式 (如 En2Ch)：用户已经听过发音。此时仅播放轻快的正确提示音，避免冗余感。
+    if (state.studyStep == StudyStep.ch2En.json) {
+      unawaited(playWordAndFirstSentence(true, false));
+      Global.logger.d('[PERF] _onAnswerCorrect -> play word pronunciation (Ch2En feedback) cost: ${playStopwatch.elapsedMilliseconds}ms');
+    } else {
+      SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
+      Global.logger.d('[PERF] _onAnswerCorrect -> play correct sound effect cost: ${playStopwatch.elapsedMilliseconds}ms');
+    }
 
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
