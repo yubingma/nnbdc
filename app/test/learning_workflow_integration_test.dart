@@ -370,7 +370,8 @@ void main() {
 
     // 此时第一批次的所有词均已完成 En2Ch(步骤0)，下一步应该自动进入 List(步骤1)
     getWordRes = await studyBo.getWord(false, false);
-    expect(getWordRes.data!.learningWord, null);
+    expect(getWordRes.data!.learningWord, isNotNull);
+    expect(getWordRes.data!.learningWord!.batchId, isNotNull);
     expect(getWordRes.data!.stepIndex, 1); // 步骤 1: List
 
     // 3. 完成批量列表浏览 (completeListStepForCurrentBatch)
@@ -445,7 +446,8 @@ void main() {
     
     // 批次完成 En2Ch，应自动进入 List 步骤 (stepIndex == 1)
     getWordRes = await studyBo.getWord(false, false);
-    expect(getWordRes.data!.learningWord, null);
+    expect(getWordRes.data!.learningWord, isNotNull);
+    expect(getWordRes.data!.learningWord!.batchId, isNotNull);
     expect(getWordRes.data!.stepIndex, 1);
 
     await studyBo.completeListStepForCurrentBatch();

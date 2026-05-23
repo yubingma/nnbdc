@@ -732,9 +732,30 @@ class StudyBo {
       bool isListStep = currentStepIndex < steps.length && steps[currentStepIndex].studyStep == 'List';
       if (isListStep) {
         Global.logger.d('当前为列表模式，显示批次单词列表');
+        // 构建当前批次第一个单词的 LearningWordVo 以携带当前批次正确的 batchId
+        final returnWord = todayWords[batchStartIndex];
+        final userVo = UserVo.fromUser(user);
+        final wordVo = WordVo.c2('')..id = returnWord.wordId;
+        final learningWordVo = LearningWordVo(
+            userVo,
+            returnWord.addTime,
+            returnWord.addDay,
+            returnWord.lastLearningDate,
+            returnWord.learningOrder,
+            returnWord.learnedTimes,
+            wordVo,
+            returnWord.batchId,
+            returnWord.stability,
+            returnWord.difficulty,
+            returnWord.elapsedDays,
+            returnWord.scheduledDays,
+            returnWord.reps,
+            returnWord.lapses,
+            returnWord.state);
+
         return Result<GetWordResult>("SUCCESS", "获取成功", true)
           ..data = GetWordResult(
-            null,
+            learningWordVo,
             currentStepIndex,
             null,
             [0, 0],
