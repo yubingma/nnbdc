@@ -1048,6 +1048,8 @@ class _ReplyDialogState extends State<_ReplyDialog> {
           _isLoading = false;
         });
       }
+
+      await _markConversationAdviceAsViewed(messages);
     } catch (e) {
       if (mounted) {
         setState(() {
