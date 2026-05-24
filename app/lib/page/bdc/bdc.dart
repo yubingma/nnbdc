@@ -236,9 +236,12 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       hintTapCount: 0,
     )));
     
-    if (_tabController == null) {
+    {
       int expectedTabLength = _getShouldShowSpeakTab(state) ? 2 : 1;
-      _tabController = TabController(length: expectedTabLength, vsync: this);
+      if (_tabController == null || _tabController!.length != expectedTabLength) {
+        _tabController?.dispose();
+        _tabController = TabController(length: expectedTabLength, vsync: this);
+      }
     }
 
     final isDesktop = PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS;

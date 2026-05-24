@@ -3,7 +3,7 @@ import FlutterMacOS
 import Vision
 
 /// 使用 Apple Vision 框架进行本地 OCR 文字识别（macOS 版本）
-/// 注意：ML Kit 数字墨水识别为 iOS-only，macOS 上暂不支持手写识别
+/// 手写识别：将笔画渲染为位图后使用 Vision 文字识别
 class OcrChannel {
     
     static func register(with messenger: FlutterBinaryMessenger) {
@@ -27,15 +27,18 @@ class OcrChannel {
                 recognizeText(imagePath: imagePath, result: result)
                 
             case "recognizeHandwriting":
-                // macOS 不支持 ML Kit 数字墨水识别
-                result(FlutterError(
-                    code: "UNSUPPORTED_ON_MACOS",
-                    message: "手写识别在 macOS 上暂不支持",
-                    details: nil
-                ))
+                guard let args = call.arguments as? [String: Any],
+                      let strokes = args["strokes"] as? [[[String: Any]]] else {
+                    result(FlutterError(
+                        code: "INVALID_ARGUMENTS",
+                        message: "Missing strokes parameter",
+                        details: nil
+                    ))
+                    return
+                }
+                recognizeHandwriting(strokesData: strokes, result: result)
                 
             case "prepareModel":
-                // ML Kit 模型下载为 iOS-only，macOS 上无需操作
                 result(nil)
                 
             default:
@@ -43,6 +46,8 @@ class OcrChannel {
             }
         }
     }
+    
+    // MARK: - Text Recognition (from image file)
     
     private static func recognizeText(imagePath: String, result: @escaping FlutterResult) {
         guard let image = NSImage(contentsOfFile: imagePath),
@@ -55,6 +60,110 @@ class OcrChannel {
             return
         }
         
+        performVisionRecognition(cgImage: cgImage, result: result)
+    }
+    
+    // MARK: - Handwriting Recognition (from digital ink strokes)
+    
+    private static func recognizeHandwriting(strokesData: [[[String: Any]]], result: @escaping FlutterResult) {
+        guard let cgImage = renderStrokesToImage(strokesData: strokesData) else {
+            result(FlutterError(
+                code: "RENDER_ERROR",
+                message: "无法渲染笔画图像",
+                details: nil
+            ))
+            return
+        }
+        
+        performVisionRecognition(cgImage: cgImage, result: result)
+    }
+    
+    /// 将数字墨水的笔画数据渲染为灰度位图
+    private static func renderStrokesToImage(strokesData: [[[String: Any]]]) -> CGImage? {
+        var allPoints: [(CGFloat, CGFloat)] = []
+        for stroke in strokesData {
+            for point in stroke {
+                if let x = (point["x"] as? NSNumber)?.doubleValue,
+                   let y = (point["y"] as? NSNumber)?.doubleValue {
+                    allPoints.append((CGFloat(x), CGFloat(y)))
+                }
+            }
+        }
+        
+        guard !allPoints.isEmpty else { return nil }
+        
+        let minX = allPoints.map { $0.0 }.min()!
+        let minY = allPoints.map { $0.1 }.min()!
+        let maxX = allPoints.map { $0.0 }.max()!
+        let maxY = allPoints.map { $0.1 }.max()!
+        
+        let strokeWidth = maxX - minX
+        let strokeHeight = maxY - minY
+        
+        guard strokeWidth > 0 && strokeHeight > 0 else { return nil }
+        
+        // 目标画布尺寸
+        let canvasWidth: CGFloat = 512
+        let canvasHeight: CGFloat = 256
+        let padding: CGFloat = 24
+        
+        // 计算缩放，使笔画刚好在画布内并居中
+        let availableW = canvasWidth - padding * 2
+        let availableH = canvasHeight - padding * 2
+        let scale = min(availableW / strokeWidth, availableH / strokeHeight) * 0.85
+        
+        // 居中偏移
+        let offsetX = (canvasWidth - strokeWidth * scale) / 2 - minX * scale
+        let offsetY = (canvasHeight - strokeHeight * scale) / 2 - minY * scale
+        
+        // 创建位图上下文
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(
+            data: nil,
+            width: Int(canvasWidth),
+            height: Int(canvasHeight),
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
+        ) else { return nil }
+        
+        // 白色背景
+        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight))
+        
+        // 绘制笔画（深色线条）
+        context.setStrokeColor(CGColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1))
+        context.setLineWidth(5.0)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+        
+        // CoreGraphics 的 Y 轴向上，Flutter 的 Y 轴向下，需要翻转
+        for stroke in strokesData {
+            guard stroke.count >= 1 else { continue }
+            context.beginPath()
+            var first = true
+            for point in stroke {
+                guard let x = (point["x"] as? NSNumber)?.doubleValue,
+                      let y = (point["y"] as? NSNumber)?.doubleValue else { continue }
+                let px = CGFloat(x) * scale + offsetX
+                let py = canvasHeight - (CGFloat(y) * scale + offsetY)
+                if first {
+                    context.move(to: CGPoint(x: px, y: py))
+                    first = false
+                } else {
+                    context.addLine(to: CGPoint(x: px, y: py))
+                }
+            }
+            context.strokePath()
+        }
+        
+        return context.makeImage()
+    }
+    
+    // MARK: - Vision Recognition
+    
+    private static func performVisionRecognition(cgImage: CGImage, result: @escaping FlutterResult) {
         let request = VNRecognizeTextRequest { (request, error) in
             if let error = error {
                 DispatchQueue.main.async {
