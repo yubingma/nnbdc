@@ -50,15 +50,32 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     return const [];
   }
 
+  /// 从内容中提取文本部分和图片列表。
+  /// 支持两种标记：
+  ///   【报错图片】["a.jpg"] — 新格式，直接解析图片
+  ///   【报错ID】uuid — 旧格式，只剥离标记，不解析图片
+  (String, List<String>) _extractContentAndImages(String content) {
+    const imgMarker = '【报错图片】';
+    final imgIdx = content.indexOf(imgMarker);
+    if (imgIdx != -1) {
+      return (
+        content.substring(0, imgIdx).trim(),
+        _parseImageFiles(content),
+      );
+    }
+    const idMarker = '【报错ID】';
+    final idIdx = content.indexOf(idMarker);
+    if (idIdx != -1) {
+      return (content.substring(0, idIdx).trim(), const <String>[]);
+    }
+    return (content, const <String>[]);
+  }
+
   Widget _buildMessageContent(String content, Color textColor) {
-    const marker = '【报错图片】';
-    final idx = content.indexOf(marker);
-    if (idx == -1) {
+    final (textPart, imageFiles) = _extractContentAndImages(content);
+    if (textPart == content && imageFiles.isEmpty) {
       return Text(content, style: TextStyle(color: textColor, fontSize: 16));
     }
-
-    final textPart = content.substring(0, idx).trim();
-    final imageFiles = _parseImageFiles(content);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -947,14 +964,24 @@ class _ReplyDialogState extends State<_ReplyDialog> {
   }
 
   Widget _buildDialogContent(String content, Color textColor, bool isAdmin) {
-    const marker = '【报错图片】';
-    final idx = content.indexOf(marker);
-    if (idx == -1) {
-      return Text(content, style: TextStyle(color: textColor, fontSize: 14));
-    }
+    String textPart;
+    List<String> imageFiles;
 
-    final textPart = content.substring(0, idx).trim();
-    final imageFiles = _dialogParseImageFiles(content);
+    const imgMarker = '【报错图片】';
+    final imgIdx = content.indexOf(imgMarker);
+    if (imgIdx != -1) {
+      textPart = content.substring(0, imgIdx).trim();
+      imageFiles = _dialogParseImageFiles(content);
+    } else {
+      const idMarker = '【报错ID】';
+      final idIdx = content.indexOf(idMarker);
+      if (idIdx != -1) {
+        textPart = content.substring(0, idIdx).trim();
+        imageFiles = const [];
+      } else {
+        return Text(content, style: TextStyle(color: textColor, fontSize: 14));
+      }
+    }
 
     return Column(
       crossAxisAlignment: isAdmin ? CrossAxisAlignment.end : CrossAxisAlignment.start,
