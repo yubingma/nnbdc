@@ -1229,10 +1229,10 @@ class ErrorReportVo {
   String content;
   String word;
   bool fixed;
-  String? imageFile;
+  String? imageFiles;
 
   ErrorReportVo(this.id, this.createdBy, this.createdByNickName, this.content, this.word, this.fixed,
-      {this.imageFile});
+      {this.imageFiles});
 
   factory ErrorReportVo.fromJson(Map<String, dynamic> json) => _$ErrorReportVoFromJson(json);
 

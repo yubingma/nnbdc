@@ -428,9 +428,9 @@ class UserBo {
     }
   }
 
-  Future<Result<String>> saveErrorReport(String word, String content, {String? imageFile}) async {
+  Future<Result<String>> saveErrorReport(String word, String content, {String? imageFiles}) async {
     final userId = await getUserId();
-    return await Api.client.saveErrorReport(word, content, getClientType().name, userId, imageFile);
+    return await Api.client.saveErrorReport(word, content, getClientType().name, userId, imageFiles);
   }
 
   Future<Result<List<UserDbLogDto>>> getDbLogsFromVersion(int fromVersion, String userId) async =>

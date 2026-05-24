@@ -497,7 +497,7 @@ abstract class RestClient {
       @Field("content") String content,
       @Field("clientType") String clientType,
       @Query("userId") String? userId,
-      @Field("imageFile") String? imageFile);
+      @Field("imageFiles") String? imageFiles);
 
   @POST("/saveSentence.do")
   @FormUrlEncoded()
