@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/config.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -27,10 +30,87 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   bool _isSearching = false;
   String _membershipFilter = "all"; // all, premium, normal
 
-  @override
-  void initState() {
-    super.initState();
-    _loadMessages();
+  List<String> _parseImageFiles(String content) {
+    const marker = '【报错图片】';
+    final idx = content.indexOf(marker);
+    if (idx == -1) return const [];
+    final jsonPart = content.substring(idx + marker.length).trim();
+    try {
+      final parsed = jsonDecode(jsonPart);
+      if (parsed is List) {
+        return parsed.map((e) => e.toString()).toList();
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+  Widget _buildMessageContent(String content, Color textColor) {
+    const marker = '【报错图片】';
+    final idx = content.indexOf(marker);
+    if (idx == -1) {
+      return Text(content, style: TextStyle(color: textColor, fontSize: 16));
+    }
+
+    final textPart = content.substring(0, idx).trim();
+    final imageFiles = _parseImageFiles(content);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (textPart.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(textPart, style: TextStyle(color: textColor, fontSize: 16)),
+          ),
+        if (imageFiles.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('截图 (${imageFiles.length}张):',
+                    style: TextStyle(fontSize: 13, color: textColor.withValues(alpha: 0.6))),
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 120,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: imageFiles.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          '${Config.wordImageBaseUrl}${imageFiles[index]}',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 120,
+                            height: 120,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, color: Colors.grey),
+                          ),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 120,
+                              height: 120,
+                              color: Colors.grey[100],
+                              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -567,13 +647,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                message.content,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 16,
-                ),
-              ),
+              _buildMessageContent(message.content, textColor),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -846,10 +920,76 @@ class _ReplyDialogState extends State<_ReplyDialog> {
   bool _isSettingPremium = false;
   bool _isMarkingViewed = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadConversationHistory();
+  List<String> _dialogParseImageFiles(String content) {
+    const marker = '【报错图片】';
+    final idx = content.indexOf(marker);
+    if (idx == -1) return const [];
+    final jsonPart = content.substring(idx + marker.length).trim();
+    try {
+      final parsed = jsonDecode(jsonPart);
+      if (parsed is List) {
+        return parsed.map((e) => e.toString()).toList();
+      }
+    } catch (_) {}
+    return const [];
+  }
+
+  Widget _buildDialogContent(String content, Color textColor, bool isAdmin) {
+    const marker = '【报错图片】';
+    final idx = content.indexOf(marker);
+    if (idx == -1) {
+      return Text(content, style: TextStyle(color: textColor, fontSize: 14));
+    }
+
+    final textPart = content.substring(0, idx).trim();
+    final imageFiles = _dialogParseImageFiles(content);
+
+    return Column(
+      crossAxisAlignment: isAdmin ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        if (textPart.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(textPart, style: TextStyle(color: textColor, fontSize: 14)),
+          ),
+        if (imageFiles.isNotEmpty) ...[
+          SizedBox(
+            height: 100,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: imageFiles.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 6),
+              itemBuilder: (context, index) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    '${Config.wordImageBaseUrl}${imageFiles[index]}',
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 100,
+                      height: 100,
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: 100,
+                        height: 100,
+                        color: Colors.grey[100],
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -869,9 +1009,6 @@ class _ReplyDialogState extends State<_ReplyDialog> {
           _isLoading = false;
         });
       }
-
-      // 将相关的未读消息标记为已读
-      await _markConversationAdviceAsViewed(messages);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -1063,22 +1200,19 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                       color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          msg.content,
-                                          style: TextStyle(color: textColor, fontSize: 14),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()),
-                                          style: TextStyle(
-                                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ],
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _buildDialogContent(msg.content, textColor, false),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()),
+                                              style: TextStyle(
+                                                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          ],
                                     ),
                                   ),
                                 ),
@@ -1091,19 +1225,16 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                       color: AppTheme.primaryColor,
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          msg.content,
-                                          style: const TextStyle(color: Colors.white, fontSize: 14),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()),
-                                          style: const TextStyle(color: Colors.white70, fontSize: 10),
-                                        ),
-                                      ],
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            _buildDialogContent(msg.content, Colors.white, true),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()),
+                                              style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                            ),
+                                          ],
                                     ),
                                   ),
                                 ),

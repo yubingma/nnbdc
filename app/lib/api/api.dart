@@ -499,6 +499,9 @@ abstract class RestClient {
       @Query("userId") String? userId,
       @Field("imageFiles") String? imageFiles);
 
+  @GET("/getErrorReport.do")
+  Future<Result<ErrorReportVo>> getErrorReport(@Query("id") String id);
+
   @POST("/saveSentence.do")
   @FormUrlEncoded()
   Future<Result<SentenceVo>> saveSentence(

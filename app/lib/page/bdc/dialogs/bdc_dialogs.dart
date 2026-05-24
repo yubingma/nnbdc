@@ -538,10 +538,15 @@ extension BdcPageStateDialogs on BdcPageState {
     final pickedImages = <XFile>[];
     final imagePreviewBytesList = <Uint8List>[];
 
-    bool? choice = await showDialog<bool>(
+    await showDialog<bool>(
         barrierDismissible: false,
         context: context,
         builder: (BuildContext context) {
+          // 这些变量在 showDialog builder 作用域内（仅创建一次），
+          // StatefulBuilder 的 closure 可以读写它们，且不会因 dialogSetState 重建而被重置
+          var isSubmitting = false;
+          String? submitError;
+
           return StatefulBuilder(builder: (context, dialogSetState) {
             final isDark = context.watch<DarkMode>().isDarkMode;
 
@@ -586,7 +591,6 @@ extension BdcPageStateDialogs on BdcPageState {
                 if (source == null) return;
 
                 if (source == ImageSource.gallery) {
-                  // Multi-pick from gallery
                   final files = await picker.pickMultiImage(
                     imageQuality: 85,
                     maxWidth: 1920,
@@ -602,7 +606,6 @@ extension BdcPageStateDialogs on BdcPageState {
                     }
                   }
                 } else {
-                  // Single shot from camera
                   final XFile? file = await picker.pickImage(
                     source: source,
                     maxWidth: 1920,
@@ -629,6 +632,72 @@ extension BdcPageStateDialogs on BdcPageState {
                 pickedImages.removeAt(index);
                 imagePreviewBytesList.removeAt(index);
               });
+            }
+
+            Future<void> handleSubmit() async {
+              if (errorReportController.text.trim().isEmpty) {
+                dialogSetState(() {
+                  submitError = '请填写报错内容';
+                });
+                return;
+              }
+
+              dialogSetState(() {
+                isSubmitting = true;
+                submitError = null;
+              });
+
+              try {
+                final imageFileNames = <String>[];
+                for (int i = 0; i < pickedImages.length; i++) {
+                  final bytes = imagePreviewBytesList[i];
+                  if (bytes.length > 1024 * 1024) {
+                    dialogSetState(() {
+                      submitError = '图片 "${pickedImages[i].name}" 过大，请选择较小的图片';
+                      isSubmitting = false;
+                    });
+                    return;
+                  }
+                  final formData = FormData.fromMap({
+                    'file': MultipartFile.fromBytes(bytes,
+                        filename: pickedImages[i].name),
+                    'userId': Global.getLoggedInUser()?.id ?? '',
+                  });
+                  final uploadResult = await Api.client.uploadImg(formData);
+                  if (uploadResult.success && uploadResult.data != null) {
+                    imageFileNames.add(uploadResult.data!);
+                  } else {
+                    dialogSetState(() {
+                      submitError = '图片上传失败: ${uploadResult.msg}';
+                      isSubmitting = false;
+                    });
+                    return;
+                  }
+                }
+
+                final imageFilesJson = imageFileNames.isNotEmpty
+                    ? jsonEncode(imageFileNames)
+                    : null;
+                var result = await UserBo().saveErrorReport(
+                    state.word!.spell, errorReportController.text,
+                    imageFiles: imageFilesJson);
+                if (result.success) {
+                  if (context.mounted) {
+                    Navigator.pop(context, true);
+                    ToastUtil.info('报错成功！感谢你付出宝贵时间');
+                  }
+                } else {
+                  dialogSetState(() {
+                    submitError = result.msg ?? '提交失败，请稍后重试';
+                    isSubmitting = false;
+                  });
+                }
+              } catch (e) {
+                dialogSetState(() {
+                  submitError = '提交失败，请稍后重试';
+                  isSubmitting = false;
+                });
+              }
             }
 
             return AlertDialog(
@@ -755,7 +824,7 @@ extension BdcPageStateDialogs on BdcPageState {
                       ],
                       // Add image button
                       OutlinedButton.icon(
-                        onPressed: pickImages,
+                        onPressed: isSubmitting ? null : pickImages,
                         icon: const Icon(
                           Icons.add_photo_alternate_outlined,
                           size: 18,
@@ -776,13 +845,47 @@ extension BdcPageStateDialogs on BdcPageState {
                           ),
                         ),
                       ),
+                      // Submit error text
+                      if (submitError != null) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.red.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline,
+                                  size: 16, color: Colors.red),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  submitError!,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.red,
+                                    fontFamily: 'NotoSansSC',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context, false),
+                  onPressed: isSubmitting
+                      ? null
+                      : () => Navigator.pop(context, false),
                   child: const Text(
                     '取消',
                     textScaler: TextScaler.linear(1.0),
@@ -794,57 +897,26 @@ extension BdcPageStateDialogs on BdcPageState {
                     foregroundColor: Colors.white,
                     backgroundColor: Global.highlight,
                   ),
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text(
-                    '提交',
-                    textScaler: TextScaler.linear(1.0),
-                    style: TextStyle(fontFamily: "NotoSansSC"),
-                  ),
+                  onPressed: isSubmitting ? null : handleSubmit,
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          '提交',
+                          textScaler: TextScaler.linear(1.0),
+                          style: TextStyle(fontFamily: "NotoSansSC"),
+                        ),
                 ),
               ],
             );
           });
         });
-
-    if (choice ?? false) {
-      final imageFileNames = <String>[];
-      if (pickedImages.isNotEmpty) {
-        try {
-          for (int i = 0; i < pickedImages.length; i++) {
-            final bytes = imagePreviewBytesList[i];
-            if (bytes.length > 1024 * 1024) {
-              ToastUtil.error('图片 "${pickedImages[i].name}" 过大，请选择较小的图片');
-              return;
-            }
-            final formData = FormData.fromMap({
-              'file': MultipartFile.fromBytes(bytes, filename: pickedImages[i].name),
-              'userId': Global.getLoggedInUser()?.id ?? '',
-            });
-            final uploadResult = await Api.client.uploadImg(formData);
-            if (uploadResult.success && uploadResult.data != null) {
-              imageFileNames.add(uploadResult.data!);
-            } else {
-              ToastUtil.error('图片上传失败: ${uploadResult.msg}');
-              return;
-            }
-          }
-        } catch (e) {
-          ToastUtil.error('图片上传失败，请稍后重试');
-          return;
-        }
-      }
-
-      final imageFilesJson =
-          imageFileNames.isNotEmpty ? jsonEncode(imageFileNames) : null;
-      var result = await UserBo()
-          .saveErrorReport(state.word!.spell, errorReportController.text,
-              imageFiles: imageFilesJson);
-      if (result.success) {
-        ToastUtil.info('报错成功！感谢你付出宝贵时间');
-      } else {
-        ToastUtil.error((result.msg!));
-      }
-    }
   }
 
 
