@@ -1118,10 +1118,11 @@ class BdcNotifier extends _$BdcNotifier {
 
         // 如果提示已经显示了所有字母，则不应自动提交为用户完成做题，
         // 也不应关闭语音识别。用户应继续手动拼写输入，自主确认答案。
+        // （语音输入 isVoice=true 不受此限制——用户是在主动说出答案，而非被动看到字母填充）
         final hintRevealedAll =
             (state.wordWrapper?.hintLetterCount ?? 0) >= (state.word?.spell.length ?? 0);
-        if (!state.hasFinishedAnswering && hintRevealedAll) {
-          // 提示已展示全部字母，仅关闭手写板，让用户继续手动答题
+        if (!state.hasFinishedAnswering && hintRevealedAll && !isVoice) {
+          // 提示已展示全部字母，不自动提交、不播放发音，用户应继续手动答题
           if (state.showHandwritingBoard) {
             state = state.copyWith(showHandwritingBoard: false);
             _handleTabChangeForAsr();
