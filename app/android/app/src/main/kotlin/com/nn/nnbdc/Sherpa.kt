@@ -171,7 +171,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     // 运行时语言配置（由 init 阶段根据语言决定，实现物理隔离）
-    private var activeGain: Float = 2.0f
+    private var activeGain: Float = 1.5f
 
     private fun loadModel(type: String) {
         synchronized(this) {
@@ -191,7 +191,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     setupChineseModel()
                 }
                 currentModel = modelZh
-                activeGain = 2.0f
+                activeGain = 1.5f
             }
             
             currentModelType = type
@@ -234,9 +234,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(12) // 针对 66M 模型，恢复搜索范围至 12，提供更好的路径选择
-                .setHotwordsScore(10.0f) // 【关键优化】：大幅降低热词权重，防止在长词识别时出现吞词或叠词。
-                .setBlankPenalty(0.5f) // 增加轻微惩罚，减少乱码和幻觉
+                .setMaxActivePaths(8) // 适度降低搜索范围，平衡准确度与稳定性
+                .setHotwordsScore(2.0f) // 【关键优化】：大幅降低热词权重，防止在长词识别时出现吞词或叠词。
+                .setBlankPenalty(0.5f) // 增加惩罚，减少乱码和幻觉
                 .build()
 
             modelEn = OnlineRecognizer(config)
@@ -280,9 +280,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEndpointConfig(endpointConfig)
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
-                .setMaxActivePaths(16)
-                .setHotwordsScore(12.0f)
-                .setBlankPenalty(0.0f)
+                .setMaxActivePaths(8) // 统一降低到 8
+                .setHotwordsScore(2.0f) // 大幅降低热词权重
+                .setBlankPenalty(0.5f) // 增加惩罚
                 .build()
 
             modelZh = OnlineRecognizer(config)
