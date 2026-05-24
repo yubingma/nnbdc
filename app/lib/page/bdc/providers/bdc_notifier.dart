@@ -506,7 +506,7 @@ class BdcNotifier extends _$BdcNotifier {
       showSentenceTranslation: false,
       currentScore: null,
       englishDigestOfFirstSentence: null,
-      wordStartTime: (newStudyStep != StudyStep.en2Ch.json) ? AppClock.now() : null,
+      wordStartTime: AppClock.now(),
       fsrsItem: null,
       lastFsrsRating: null,
       currentAsrCandidates: [],
