@@ -216,7 +216,7 @@ class _MePageState extends State<MePage> {
           'userId': userId,
           'fileName': pickedFile.name,
         });
-        final result = await Api.client.uploadImg(formData, null, null);
+        final result = await Api.client.uploadImg(formData, null, "avatar");
 
         if (result.success && result.data != null) {
           final newAvatarFilename = result.data!;
@@ -225,7 +225,7 @@ class _MePageState extends State<MePage> {
           if (user != null) {
             String finalAvatar = newAvatarFilename;
             if (!newAvatarFilename.startsWith('http')) {
-              finalAvatar = "${Config.imgBaseUrl}word/$newAvatarFilename";
+                      finalAvatar = '${Config.imgBaseUrl}$newAvatarFilename';
             }
 
             final updatedUser = user.copyWith(wechatAvatar: drift.Value(finalAvatar));
