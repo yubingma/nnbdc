@@ -1116,6 +1116,25 @@ class BdcNotifier extends _$BdcNotifier {
           meaningController.text = state.word!.spell;
         }
         unawaited(asr.stopMicrophone());
+
+        // 如果提示已经显示了所有字母，则不应自动提交为用户完成做题。
+        // 用户应继续手动拼写输入，自主确认答案。
+        final hintRevealedAll =
+            (state.wordWrapper?.hintLetterCount ?? 0) >= (state.word?.spell.length ?? 0);
+        if (!state.hasFinishedAnswering && hintRevealedAll) {
+          // 提示已展示全部字母，仅关闭手写板，让用户继续手动答题
+          if (state.showHandwritingBoard) {
+            state = state.copyWith(showHandwritingBoard: false);
+            _handleTabChangeForAsr();
+          }
+          return;
+        }
+
+        // 如果已经答过题（hasFinishedAnswering=true），_onAnswerCorrect 会直接返回，
+        // 不会播放发音。因此在这里手动播放单词正确发音作为反馈。
+        if (state.hasFinishedAnswering) {
+          SoundUtil.playPronounceSound(state.word!);
+        }
         final ratingResult = _calculateRating(method);
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       }
@@ -1278,7 +1297,6 @@ class BdcNotifier extends _$BdcNotifier {
     try {
       if (willPlayWord && state.word != null) {
         final playWordStopwatch = Stopwatch()..start();
-        final soundUrl = Util.getWordSoundUrl(state.word!.spell, word: state.word);
         
         // 关键优化：在调用 play 之前，必须确保并行发起的 sessionFuture 已完成
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer, preWaitFuture: sessionFuture);

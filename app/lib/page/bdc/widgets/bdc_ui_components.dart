@@ -232,7 +232,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                           updateUI(() {});
                           if (value.isNotEmpty && state.word?.spell != null) {
                             if (Util.equalsIgnoreCase(value, state.word!.spell)) {
-                              notifier.checkAsrResult();
+                              // 提示已经显示了全部字母时不应自动提交，用户应继续手动答题
+                              final allRevealedByHint =
+                                  (state.wordWrapper?.hintLetterCount ?? 0) >= state.word!.spell.length;
+                              if (!allRevealedByHint) {
+                                notifier.checkAsrResult();
+                              }
                             }
                           }
                         },
@@ -245,7 +250,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       icon: Icon(Icons.lightbulb_outline, color: AppTheme.primaryColor),
                       onPressed: () {
                         notifier.giveFullHint();
-                        notifier.checkAsrResult();
+                        // 不自动提交，用户应继续手动拼写答题
                       },
                     ),
                   ],
