@@ -3,6 +3,7 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/fsrs.dart';
 
 class WordUIState {
+  final int? stepIndex;
   final String? studyStep;
   final bool hasFinishedAnswering;
   final bool canLeaveCurrWord;
@@ -23,6 +24,7 @@ class WordUIState {
   final int hintTapCount;
 
   WordUIState({
+    this.stepIndex,
     this.studyStep,
     required this.hasFinishedAnswering,
     required this.canLeaveCurrWord,

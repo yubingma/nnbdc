@@ -1424,40 +1424,87 @@ extension BdcPageStateUIComponents on BdcPageState {
         return FutureBuilder<List<LearningLog>>(
           future: notifier.learningHistoryFuture,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting ||
-                !snapshot.hasData ||
-                snapshot.data!.isEmpty) {
-              return Container(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '[巩固] 今日测评: 测评中',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: textColor,
+              if (snapshot.connectionState == ConnectionState.waiting ||
+                  !snapshot.hasData ||
+                  snapshot.data!.isEmpty) {
+                // 巩固阶段：如果当前词已有本场测评结果，直接展示测评数据
+                if (state.assessmentRating != null) {
+                  final assRating = state.assessmentRating!;
+                  String assLabel = assRating.label;
+                  Color assColor;
+                  switch (assRating) {
+                    case FsrsRating.again:
+                      assColor = isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
+                      break;
+                    case FsrsRating.hard:
+                      assColor = isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00);
+                      break;
+                    case FsrsRating.easy:
+                      assColor = isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
+                      break;
+                    case FsrsRating.good:
+                      assColor = isDarkMode ? AppTheme.primaryColor : AppTheme.primaryColor;
+                      break;
+                  }
+                  return Container(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '[巩固] 今日测评: $assLabel',
+                            style: TextStyle(fontSize: 11, color: assColor),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text('|',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: textColor.withValues(alpha: 0.3))),
+                          ),
+                          Text(
+                            '下次复习: ${state.assessmentScheduledDays ?? "--"}天后',
+                            style: TextStyle(fontSize: 11, color: textColor),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return Container(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '[巩固] 今日测评: 测评中',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: textColor,
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text('|',
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: textColor.withValues(alpha: 0.3))),
-                      ),
-                      Text(
-                        '下次复习: --天后',
-                        style: TextStyle(fontSize: 11, color: textColor),
-                      ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text('|',
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: textColor.withValues(alpha: 0.3))),
+                        ),
+                        Text(
+                          '下次复习: --天后',
+                          style: TextStyle(fontSize: 11, color: textColor),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }
+                );
+              }
 
             final latestLog = snapshot.data!.first;
             final rating = FsrsRatingExt.fromInt(latestLog.rating);

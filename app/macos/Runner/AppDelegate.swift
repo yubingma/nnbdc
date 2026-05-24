@@ -11,6 +11,11 @@ class AppDelegate: FlutterAppDelegate {
       AiInferenceChannel.register(with: registrar)
     }
     
+    // Register OCR channel
+    if let controller = mainFlutterWindow?.contentViewController as? FlutterViewController {
+      OcrChannel.register(with: controller.engine.binaryMessenger)
+    }
+    
     // 设置应用评分 MethodChannel
     if let controller = mainFlutterWindow?.contentViewController as? FlutterViewController {
       let reviewChannel = FlutterMethodChannel(

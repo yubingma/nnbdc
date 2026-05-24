@@ -840,8 +840,9 @@ class BdcNotifier extends _$BdcNotifier {
     final wordId = result.learningWord?.word.id;
     final uiState = wordId != null ? state.wordUIStates[wordId] : null;
     if (uiState != null) {
-      // 只有在环节相同时才恢复答题状态（已选答案、是否完成等）
-      if (uiState.studyStep == state.studyStep) {
+      // 按环节索引比较：相同 stepIndex 视为同环节，恢复完整答题状态
+      // 不同 stepIndex（如测评→巩固）只恢复选项，重置答题状态，并将旧评分提取为测评参考
+      if (uiState.stepIndex == result.stepIndex) {
         state = state.copyWith(
           hasFinishedAnswering: uiState.hasFinishedAnswering,
           canLeaveCurrWord: uiState.canLeaveCurrWord,
@@ -860,7 +861,7 @@ class BdcNotifier extends _$BdcNotifier {
         );
         meaningController.text = uiState.meaningText;
       } else {
-        // 如果环节不同（如从英中进入中英），只恢复选项列表和正确答案索引，重置答题状态
+        // 环节不同（如测评→巩固），重置答题状态，将旧评分提取为测评参考
         state = state.copyWith(
           words: uiState.words,
           correctAnswerIndex: uiState.correctAnswerIndex,
@@ -872,6 +873,8 @@ class BdcNotifier extends _$BdcNotifier {
           lastFsrsRating: null,
           fsrsItem: null,
           hintTapCount: 0,
+          assessmentRating: uiState.lastFsrsRating,
+          assessmentScheduledDays: uiState.fsrsItem?.scheduledDays,
         );
         meaningController.text = "";
       }
@@ -984,6 +987,7 @@ class BdcNotifier extends _$BdcNotifier {
   void _saveCurrentWordState() {
     if (state.word?.id != null) {
       final uiState = WordUIState(
+        stepIndex: state.currentGetWordResult?.stepIndex,
         studyStep: state.studyStep,
         hasFinishedAnswering: state.hasFinishedAnswering,
         canLeaveCurrWord: state.canLeaveCurrWord,
@@ -1191,6 +1195,15 @@ class BdcNotifier extends _$BdcNotifier {
       state = state.copyWith(showHandwritingBoard: false);
       _handleTabChangeForAsr();
       return;
+    }
+    
+    // 巩固阶段：巩固评分不得优于之前的测评评分。
+    // 如果用户答得比测评时好（评分档次更高），则以测评评分为准，
+    // 防止因测评阶段已掌握评分较高而导致巩固阶段重复降难度。
+    if ((state.currentGetWordResult?.stepIndex ?? 0) > 0 && state.assessmentRating != null) {
+      if (rating.index > state.assessmentRating!.index) {
+        rating = state.assessmentRating!;
+      }
     }
     
     // 答对了，立即彻底、非阻塞地在后台关停麦克风，绝不阻塞 UI 主帧

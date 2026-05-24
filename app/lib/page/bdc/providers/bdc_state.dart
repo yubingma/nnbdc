@@ -53,6 +53,7 @@ class BdcState extends Equatable {
   final String asrPassRuleCache;
   final FsrsRating? lowestRatingForCurrentWord;
   final FsrsRating? assessmentRating;
+  final int? assessmentScheduledDays;
   final String? englishDigestOfFirstSentence;
 
   final Map<String, bool> playingStates;
@@ -112,6 +113,7 @@ class BdcState extends Equatable {
     this.asrPassRuleCache = 'ONE',
     this.lowestRatingForCurrentWord,
     this.assessmentRating,
+    this.assessmentScheduledDays,
     this.englishDigestOfFirstSentence,
     this.playingStates = const {'word': false, 'sentence': false},
     this.hintTapCount = 0,
@@ -174,6 +176,7 @@ class BdcState extends Equatable {
     String? asrPassRuleCache,
     Object? lowestRatingForCurrentWord = _sentinel,
     Object? assessmentRating = _sentinel,
+    Object? assessmentScheduledDays = _sentinel,
     Object? englishDigestOfFirstSentence = _sentinel,
     Map<String, bool>? playingStates,
     int? hintTapCount,
@@ -228,6 +231,7 @@ class BdcState extends Equatable {
       asrPassRuleCache: asrPassRuleCache ?? this.asrPassRuleCache,
       lowestRatingForCurrentWord: lowestRatingForCurrentWord == _sentinel ? this.lowestRatingForCurrentWord : (lowestRatingForCurrentWord as FsrsRating?),
       assessmentRating: assessmentRating == _sentinel ? this.assessmentRating : (assessmentRating as FsrsRating?),
+      assessmentScheduledDays: assessmentScheduledDays == _sentinel ? this.assessmentScheduledDays : (assessmentScheduledDays as int?),
       englishDigestOfFirstSentence: englishDigestOfFirstSentence == _sentinel ? this.englishDigestOfFirstSentence : (englishDigestOfFirstSentence as String?),
       playingStates: playingStates ?? this.playingStates,
       hintTapCount: hintTapCount ?? this.hintTapCount,
@@ -285,6 +289,7 @@ class BdcState extends Equatable {
     asrPassRuleCache,
     lowestRatingForCurrentWord,
     assessmentRating,
+    assessmentScheduledDays,
     englishDigestOfFirstSentence,
     playingStates,
     hintTapCount,
