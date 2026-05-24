@@ -1066,7 +1066,8 @@ class BdcNotifier extends _$BdcNotifier {
       String inputLower = inputText.trim().toLowerCase();
       
       isSpellingMatch = inputLower.replaceAll(RegExp(r'[^a-z]'), '') == correctSpell.replaceAll(RegExp(r'[^a-z]'), '');
-      if (!isSpellingMatch && asrInput != null && (state.currentScore ?? 0) >= Constants.phonemeMatchThreshold) {
+      // 音素相似度阈值仅适用于语音输入 (isVoice=true)，不用于手写或键盘输入
+      if (!isSpellingMatch && isVoice && asrInput != null && (state.currentScore ?? 0) >= Constants.phonemeMatchThreshold) {
         isSpellingMatch = true;
       }
     }
