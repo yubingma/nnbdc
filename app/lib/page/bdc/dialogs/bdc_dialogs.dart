@@ -535,12 +535,46 @@ extension BdcPageStateDialogs on BdcPageState {
 
   Future<void> showErrorReportDlg() async {
     errorReportController.text = '';
+    XFile? pickedImage;
+    Uint8List? imagePreviewBytes;
+
     bool? choice = await showDialog<bool>(
         barrierDismissible: false,
         context: context,
         builder: (BuildContext context) {
-          return StatefulBuilder(builder: (context, setState) {
+          return StatefulBuilder(builder: (context, dialogSetState) {
             final isDark = context.watch<DarkMode>().isDarkMode;
+
+            Future<void> pickImage(ImageSource source) async {
+              try {
+                final picker = ImagePicker();
+                final XFile? file = await picker.pickImage(
+                  source: source,
+                  maxWidth: 1920,
+                  maxHeight: 1920,
+                  imageQuality: 85,
+                );
+                if (file != null) {
+                  final bytes = await file.readAsBytes();
+                  if (context.mounted) {
+                    dialogSetState(() {
+                      pickedImage = file;
+                      imagePreviewBytes = bytes;
+                    });
+                  }
+                }
+              } catch (e) {
+                ToastUtil.error('选择图片失败: $e');
+              }
+            }
+
+            void removeImage() {
+              dialogSetState(() {
+                pickedImage = null;
+                imagePreviewBytes = null;
+              });
+            }
+
             return AlertDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -576,7 +610,7 @@ extension BdcPageStateDialogs on BdcPageState {
                 ),
               ),
               content: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 280),
+                constraints: const BoxConstraints(maxHeight: 380),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,6 +649,107 @@ extension BdcPageStateDialogs on BdcPageState {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      // Image section
+                      if (imagePreviewBytes != null) ...[
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.memory(
+                                imagePreviewBytes!,
+                                width: double.infinity,
+                                height: 160,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: removeImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      // Add image button
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final source = await showModalBottomSheet<ImageSource>(
+                            context: context,
+                            backgroundColor: isDark
+                                ? const Color(0xFF1E1E1E)
+                                : Colors.white,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(20)),
+                            ),
+                            builder: (context) => SafeArea(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(height: 8),
+                                  ListTile(
+                                    leading: Icon(Icons.camera_alt_rounded,
+                                        color: Global.highlight),
+                                    title: const Text('拍照',
+                                        style: TextStyle(
+                                            fontFamily: 'NotoSansSC')),
+                                    onTap: () => Navigator.pop(
+                                        context, ImageSource.camera),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(Icons.photo_library_rounded,
+                                        color: Global.highlight),
+                                    title: const Text('从相册选择',
+                                        style: TextStyle(
+                                            fontFamily: 'NotoSansSC')),
+                                    onTap: () => Navigator.pop(
+                                        context, ImageSource.gallery),
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            ),
+                          );
+                          if (source != null) {
+                            await pickImage(source);
+                          }
+                        },
+                        icon: Icon(
+                          pickedImage != null
+                              ? Icons.image
+                              : Icons.add_photo_alternate_outlined,
+                          size: 18,
+                        ),
+                        label: Text(
+                          pickedImage != null ? '更换图片' : '添加截图',
+                          style: const TextStyle(fontFamily: 'NotoSansSC'),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Global.highlight,
+                          side: BorderSide(
+                            color: Global.highlight.withValues(alpha: 0.4),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -646,8 +781,35 @@ extension BdcPageStateDialogs on BdcPageState {
         });
 
     if (choice ?? false) {
+      String? imageFileName;
+      if (pickedImage != null && imagePreviewBytes != null) {
+        try {
+          // Upload image first
+          final bytes = imagePreviewBytes!;
+          if (bytes.length > 1024 * 1024) {
+            ToastUtil.error('图片文件过大，请选择较小的图片');
+            return;
+          }
+          final formData = FormData.fromMap({
+            'file': MultipartFile.fromBytes(bytes, filename: pickedImage!.name),
+            'userId': Global.getLoggedInUser()?.id ?? '',
+          });
+          final uploadResult = await Api.client.uploadImg(formData);
+          if (uploadResult.success && uploadResult.data != null) {
+            imageFileName = uploadResult.data;
+          } else {
+            ToastUtil.error('图片上传失败: ${uploadResult.msg}');
+            return;
+          }
+        } catch (e) {
+          ToastUtil.error('图片上传失败，请稍后重试');
+          return;
+        }
+      }
+
       var result = await UserBo()
-          .saveErrorReport(state.word!.spell, errorReportController.text);
+          .saveErrorReport(state.word!.spell, errorReportController.text,
+              imageFile: imageFileName);
       if (result.success) {
         ToastUtil.info('报错成功！感谢你付出宝贵时间');
       } else {

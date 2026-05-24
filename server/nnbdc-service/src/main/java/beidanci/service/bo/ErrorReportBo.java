@@ -36,6 +36,10 @@ public class ErrorReportBo extends BaseBo<ErrorReport> {
     }
 
     public Result<String> saveErrorReport(String spell, String content, String userId, String clientType) {
+        return saveErrorReport(spell, content, userId, clientType, null);
+    }
+
+    public Result<String> saveErrorReport(String spell, String content, String userId, String clientType, String imageFile) {
         // 检查 userId 是否为空
         if (userId == null || userId.trim().isEmpty()) {
             return Result.fail("用户ID不能为空");
@@ -54,6 +58,7 @@ public class ErrorReportBo extends BaseBo<ErrorReport> {
         ErrorReport errorReport = new ErrorReport();
         errorReport.setWord(spell);
         errorReport.setContent(content);
+        errorReport.setImageFile(imageFile);
         errorReport.setCreateTime(new Timestamp(new Date().getTime()));
         errorReport.setUser(user);
         errorReport.setFixed(false);

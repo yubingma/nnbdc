@@ -4,22 +4,24 @@ import 'dart:math';
 import 'dart:ui' show ImageFilter;
 
 import 'package:day_night_switcher/day_night_switcher.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/page/pic_search.dart';
-import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/util/ocr_service.dart';
+import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
-import 'package:nnbdc/util/ocr_service.dart';
 import 'package:provider/provider.dart' hide Consumer;
 
 import '../../api/enum.dart';

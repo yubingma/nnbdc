@@ -17,6 +17,9 @@ public class ErrorReport extends UuidPo  {
     @Column(name = "word", length = 100, nullable = false)
     private String word;
 
+    @Column(name = "image_file", length = 500)
+    private String imageFile;
+
     @Column(name = "fixed", nullable = false)
     private Boolean fixed;
 
@@ -58,6 +61,14 @@ public class ErrorReport extends UuidPo  {
 
     public void setWord(String word) {
         this.word = word;
+    }
+
+    public String getImageFile() {
+        return imageFile;
+    }
+
+    public void setImageFile(String imageFile) {
+        this.imageFile = imageFile;
     }
 
 }

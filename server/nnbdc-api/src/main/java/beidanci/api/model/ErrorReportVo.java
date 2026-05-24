@@ -2,7 +2,7 @@ package beidanci.api.model;
 
 public class ErrorReportVo extends UuidVo {
     public ErrorReportVo(String id, String createdBy, String createdByNickname, String content, String spell,
-            boolean fixed) {
+            boolean fixed, String imageFile) {
         super();
         this.id = id;
         this.createdBy = createdBy;
@@ -10,6 +10,7 @@ public class ErrorReportVo extends UuidVo {
         this.content = content;
         this.word = spell;
         this.fixed = fixed;
+        this.imageFile = imageFile;
     }
 
     private final String createdBy;
@@ -17,6 +18,7 @@ public class ErrorReportVo extends UuidVo {
     private final String content;
     private String word;
     private Boolean fixed;
+    private String imageFile;
 
     public Boolean getFixed() {
         return fixed;
@@ -49,5 +51,9 @@ public class ErrorReportVo extends UuidVo {
 
     public void setWord(String word) {
         this.word = word;
+    }
+
+    public String getImageFile() {
+        return imageFile;
     }
 }
