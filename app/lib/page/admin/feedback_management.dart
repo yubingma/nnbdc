@@ -12,6 +12,11 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
+String _resolveImgUrl(String path) {
+  if (path.contains('/')) return '${Config.imgBaseUrl}$path';
+  return '${Config.imgBaseUrl}word/$path';
+}
+
 // 意见建议管理组件
 class FeedbackManagementWidget extends StatefulWidget {
   const FeedbackManagementWidget({super.key});
@@ -101,28 +106,32 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                     itemCount: imageFiles.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          '${Config.wordImageBaseUrl}${imageFiles[index]}',
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                      return GestureDetector(
+                        onTap: () => _showImagePreview(context,
+                            '${_resolveImgUrl(imageFiles[index])}'),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            _resolveImgUrl(imageFiles[index]),
                             width: 120,
                             height: 120,
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.broken_image, color: Colors.grey),
-                          ),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
                               width: 120,
                               height: 120,
-                              color: Colors.grey[100],
-                              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                            );
-                          },
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.broken_image, color: Colors.grey),
+                            ),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: 120,
+                                height: 120,
+                                color: Colors.grey[100],
+                                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              );
+                            },
+                          ),
                         ),
                       );
                     },
@@ -714,6 +723,22 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     );
   }
 
+  void _showImagePreview(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: InteractiveViewer(
+            child: Image.network(url, fit: BoxFit.contain),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _replyToMessage(MsgVo message) {
     showDialog(
       context: context,
@@ -999,10 +1024,24 @@ class _ReplyDialogState extends State<_ReplyDialog> {
               itemCount: imageFiles.length,
               separatorBuilder: (_, __) => const SizedBox(width: 6),
               itemBuilder: (context, index) {
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    '${Config.wordImageBaseUrl}${imageFiles[index]}',
+                final url = _resolveImgUrl(imageFiles[index]);
+                return GestureDetector(
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      backgroundColor: Colors.transparent,
+                      insetPadding: const EdgeInsets.all(16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: InteractiveViewer(
+                          child: Image.network(url, fit: BoxFit.contain),
+                        ),
+                      ),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(url,
                     width: 100,
                     height: 100,
                     fit: BoxFit.cover,
@@ -1021,6 +1060,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                       );
                     },
+                  ),
                   ),
                 );
               },

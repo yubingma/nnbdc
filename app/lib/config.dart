@@ -16,6 +16,7 @@ class Config {
       "linuxUrl": "https://www.nnbdc.com/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'https://www.nnbdc.com/img/word/',
+      "imgBaseUrl": 'https://www.nnbdc.com/img/',
     },
     "dev": {
       "service_url": "http://192.168.1.230:5200",
@@ -28,6 +29,7 @@ class Config {
       "linuxUrl": "http://192.168.1.230:80/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'http://192.168.1.230:80/img/word/',
+      "imgBaseUrl": 'http://192.168.1.230:80/img/',
     },
     "dev_web": {
       "service_url": "http://localhost:5200",
@@ -40,6 +42,7 @@ class Config {
       "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "wordImageBaseUrl": 'http://localhost:80/img/word/',
+      "imgBaseUrl": 'http://localhost:80/img/',
     }
   };
 
@@ -55,6 +58,7 @@ class Config {
   static String get linuxUrl => profile["linuxUrl"];
   static String get aiModelUrl => profile["aiModelUrl"];
   static String get wordImageBaseUrl => profile["wordImageBaseUrl"];
+  static String get imgBaseUrl => profile["imgBaseUrl"];
   
   // Umeng Configuration
   static const String umengAndroidAppKey = '69b011176f259537c773e1f0';

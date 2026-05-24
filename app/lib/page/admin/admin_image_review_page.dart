@@ -304,7 +304,7 @@ class _AdminImageReviewPageState extends State<AdminImageReviewPage> {
                     borderRadius: BorderRadius.circular(8),
                     child: Builder(
                       builder: (context) {
-                        final imageUrl = Uri.encodeFull('${Config.wordImageBaseUrl}${img['imageFile']}');
+                        final imageUrl = Uri.encodeFull('${"${Config.imgBaseUrl}word/"}${img['imageFile']}');
                         Global.logger.d('加载单词图片 [审核页]: $imageUrl');
                         return Image.network(
                           imageUrl,

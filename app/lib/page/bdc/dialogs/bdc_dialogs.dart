@@ -663,7 +663,7 @@ extension BdcPageStateDialogs on BdcPageState {
                         filename: pickedImages[i].name),
                     'userId': Global.getLoggedInUser()?.id ?? '',
                   });
-                  final uploadResult = await Api.client.uploadImg(formData, 800);
+                  final uploadResult = await Api.client.uploadImg(formData, 800, "error_report");
                   if (uploadResult.success && uploadResult.data != null) {
                     imageFileNames.add(uploadResult.data!);
                   } else {
@@ -958,7 +958,7 @@ extension BdcPageStateDialogs on BdcPageState {
                           Container(
                             margin: const EdgeInsets.fromLTRB(0, 8, 0, 0),
                             child: Image.network(
-                                Uri.encodeFull('${Config.wordImageBaseUrl}${wordImage.imageFile}'),
+                                Uri.encodeFull('${"${Config.imgBaseUrl}word/"}${wordImage.imageFile}'),
                                 width: PlatformUtils.isWeb ? 400 : 200,
                                 height: PlatformUtils.isWeb ? 300 : 150,
                                 fit: BoxFit.contain, loadingBuilder:

@@ -761,7 +761,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                           ),
                                           child: Builder(
                                             builder: (context) {
-                                              final imageUrl = Uri.encodeFull('${Config.wordImageBaseUrl}${image.imageFile}');
+                                              final imageUrl = Uri.encodeFull('${"${Config.imgBaseUrl}word/"}${image.imageFile}');
                                               Global.logger.d('加载单词图片 [详情页]: $imageUrl');
                                               return Image.network(
                                                 imageUrl,

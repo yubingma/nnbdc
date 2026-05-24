@@ -316,8 +316,9 @@ public class ResController {
 
     @PostMapping(value = "/uploadImg.do")
     public Result<String> uploadImg(@RequestParam("file") MultipartFile file, @RequestParam("userId") String userId,
-            @RequestParam(value = "size", required = false, defaultValue = "200") int size) throws Exception {
-        logger.info("收到图片上传请求, userId: {}, 文件名: {}, 大小: {}, 目标尺寸: {}", userId, file.getOriginalFilename(), file.getSize(), size);
+            @RequestParam(value = "size", required = false, defaultValue = "200") int size,
+            @RequestParam(value = "dir", required = false, defaultValue = "word") String dir) throws Exception {
+        logger.info("收到图片上传请求, userId: {}, 文件名: {}, 大小: {}, 目标尺寸: {}, 目录: {}", userId, file.getOriginalFilename(), file.getSize(), size, dir);
 
         if (file.getSize() > 1024 * 1024) {
             return Result.fail("图片大小不能超过 1MB");
@@ -347,7 +348,7 @@ public class ResController {
         } catch (IOException ignore) { }
         String ext = MyImage.normalizeExtByFormat(fmt);
         String fileName = baseName + "." + ext;
-        File targetFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + fileName);
+        File targetFile = new File(sysParamUtil.getImageBaseDir() + "/" + dir + "/" + fileName);
 
         // 通过图像缩放生成大图
         int targetWidth = size;
@@ -367,6 +368,6 @@ public class ResController {
             tempTargetFile.deleteOnExit();
         }
 
-        return Result.success(fileName);
+        return Result.success(dir + "/" + fileName);
     }
 }
