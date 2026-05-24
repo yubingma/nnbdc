@@ -78,7 +78,6 @@ class OcrChannel {
         performVisionRecognition(cgImage: cgImage, result: result)
     }
     
-    /// 将数字墨水的笔画数据渲染为灰度位图
     private static func renderStrokesToImage(strokesData: [[[String: Any]]]) -> CGImage? {
         var allPoints: [(CGFloat, CGFloat)] = []
         for stroke in strokesData {
@@ -96,27 +95,21 @@ class OcrChannel {
         let minY = allPoints.map { $0.1 }.min()!
         let maxX = allPoints.map { $0.0 }.max()!
         let maxY = allPoints.map { $0.1 }.max()!
-        
         let strokeWidth = maxX - minX
         let strokeHeight = maxY - minY
         
         guard strokeWidth > 0 && strokeHeight > 0 else { return nil }
         
-        // 目标画布尺寸
         let canvasWidth: CGFloat = 512
         let canvasHeight: CGFloat = 256
         let padding: CGFloat = 24
         
-        // 计算缩放，使笔画刚好在画布内并居中
         let availableW = canvasWidth - padding * 2
         let availableH = canvasHeight - padding * 2
         let scale = min(availableW / strokeWidth, availableH / strokeHeight) * 0.85
-        
-        // 居中偏移
         let offsetX = (canvasWidth - strokeWidth * scale) / 2 - minX * scale
         let offsetY = (canvasHeight - strokeHeight * scale) / 2 - minY * scale
         
-        // 创建位图上下文
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         guard let context = CGContext(
             data: nil,
@@ -128,17 +121,15 @@ class OcrChannel {
             bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
         ) else { return nil }
         
-        // 白色背景
         context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
         context.fill(CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight))
         
-        // 绘制笔画（深色线条）
         context.setStrokeColor(CGColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1))
         context.setLineWidth(5.0)
         context.setLineCap(.round)
         context.setLineJoin(.round)
         
-        // CoreGraphics 的 Y 轴向上，Flutter 的 Y 轴向下，需要翻转
+        // CoreGraphics Y 轴向上，Flutter Y 轴向下，需要翻转
         for stroke in strokesData {
             guard stroke.count >= 1 else { continue }
             context.beginPath()
