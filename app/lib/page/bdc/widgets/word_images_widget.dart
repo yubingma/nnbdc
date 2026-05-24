@@ -68,7 +68,7 @@ class _WordImagesWidgetState extends State<WordImagesWidget> {
                       ignoring: true,
                       child: Builder(
                         builder: (context) {
-                          final imageUrl = Uri.encodeFull('${"${Config.imgBaseUrl}word/"}${image.imageFile}');
+                          final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${image.imageFile}');
                           Global.logger.d('加载单词图片 [做题区]: $imageUrl');
                           return Image.network(
                             imageUrl,
@@ -161,7 +161,7 @@ void showImagePreviewWithContext(BuildContext context, WordImageVo image,
                     // 大图
                     Builder(
                       builder: (context) {
-                        final imageUrl = Uri.encodeFull('${"${Config.imgBaseUrl}word/"}${image.imageFile}');
+                        final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${image.imageFile}');
                         Global.logger.d('加载单词图片 [预览弹窗]: $imageUrl');
                         return Image.network(
                           imageUrl,

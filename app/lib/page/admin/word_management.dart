@@ -505,7 +505,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                                         Expanded(
                                           child: Builder(
                                             builder: (context) {
-                                              final imageUrl = Uri.encodeFull('${"${Config.imgBaseUrl}word/"}${img.imageFile}');
+                                              final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${img.imageFile}');
                                               Global.logger.d('加载单词图片 [管理后台]: $imageUrl');
                                               return Image.network(
                                                 imageUrl,

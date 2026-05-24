@@ -15,7 +15,6 @@ class Config {
       "windowsUrl": "https://www.nnbdc.com/app/nnbdc-windows.zip",
       "linuxUrl": "https://www.nnbdc.com/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
-      "wordImageBaseUrl": 'https://www.nnbdc.com/img/word/',
       "imgBaseUrl": 'https://www.nnbdc.com/img/',
     },
     "dev": {
@@ -28,7 +27,6 @@ class Config {
       "windowsUrl": "http://192.168.1.230:80/app/nnbdc-windows.zip",
       "linuxUrl": "http://192.168.1.230:80/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
-      "wordImageBaseUrl": 'http://192.168.1.230:80/img/word/',
       "imgBaseUrl": 'http://192.168.1.230:80/img/',
     },
     "dev_web": {
@@ -41,7 +39,6 @@ class Config {
       "windowsUrl": "http://localhost:80/app/nnbdc-windows.zip",
       "linuxUrl": "http://localhost:80/app/nnbdc-linux.AppImage",
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
-      "wordImageBaseUrl": 'http://localhost:80/img/word/',
       "imgBaseUrl": 'http://localhost:80/img/',
     }
   };
@@ -57,7 +54,6 @@ class Config {
   static String get windowsUrl => profile["windowsUrl"];
   static String get linuxUrl => profile["linuxUrl"];
   static String get aiModelUrl => profile["aiModelUrl"];
-  static String get wordImageBaseUrl => profile["wordImageBaseUrl"];
   static String get imgBaseUrl => profile["imgBaseUrl"];
   
   // Umeng Configuration

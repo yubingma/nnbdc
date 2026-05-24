@@ -958,7 +958,7 @@ extension BdcPageStateDialogs on BdcPageState {
                           Container(
                             margin: const EdgeInsets.fromLTRB(0, 8, 0, 0),
                             child: Image.network(
-                                Uri.encodeFull('${"${Config.imgBaseUrl}word/"}${wordImage.imageFile}'),
+                                Uri.encodeFull('${Config.imgBaseUrl}word/${wordImage.imageFile}'),
                                 width: PlatformUtils.isWeb ? 400 : 200,
                                 height: PlatformUtils.isWeb ? 300 : 150,
                                 fit: BoxFit.contain, loadingBuilder:
