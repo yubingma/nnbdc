@@ -108,7 +108,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () => _showImagePreview(context,
-                            '${_resolveImgUrl(imageFiles[index])}'),
+                            _resolveImgUrl(imageFiles[index])),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
