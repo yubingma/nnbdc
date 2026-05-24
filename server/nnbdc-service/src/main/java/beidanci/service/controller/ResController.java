@@ -315,8 +315,9 @@ public class ResController {
     }
 
     @PostMapping(value = "/uploadImg.do")
-    public Result<String> uploadImg(@RequestParam("file") MultipartFile file, @RequestParam("userId") String userId) throws Exception {
-        logger.info("收到图片上传请求, userId: {}, 文件名: {}, 大小: {}", userId, file.getOriginalFilename(), file.getSize());
+    public Result<String> uploadImg(@RequestParam("file") MultipartFile file, @RequestParam("userId") String userId,
+            @RequestParam(value = "size", required = false, defaultValue = "200") int size) throws Exception {
+        logger.info("收到图片上传请求, userId: {}, 文件名: {}, 大小: {}, 目标尺寸: {}", userId, file.getOriginalFilename(), file.getSize(), size);
 
         if (file.getSize() > 1024 * 1024) {
             return Result.fail("图片大小不能超过 1MB");
@@ -349,8 +350,8 @@ public class ResController {
         File targetFile = new File(sysParamUtil.getImageBaseDir() + "/word/" + fileName);
 
         // 通过图像缩放生成大图
-        int targetWidth = 200;
-        int targetHeight = 200;
+        int targetWidth = size;
+        int targetHeight = size;
         try {
             if (fmt != null && MyImage.canWriteFormat(fmt)) {
                 MyImage.resizeImage(tempTargetFile, targetFile, targetWidth, targetHeight, fmt, true);

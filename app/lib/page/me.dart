@@ -216,7 +216,7 @@ class _MePageState extends State<MePage> {
           'userId': userId,
           'fileName': pickedFile.name,
         });
-        final result = await Api.client.uploadImg(formData);
+        final result = await Api.client.uploadImg(formData, null);
 
         if (result.success && result.data != null) {
           final newAvatarFilename = result.data!;

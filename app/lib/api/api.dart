@@ -488,7 +488,7 @@ abstract class RestClient {
       @Field("userId") String userId);
 
   @POST("/uploadImg.do")
-  Future<Result<String>> uploadImg(@Body() FormData data);
+  Future<Result<String>> uploadImg(@Body() FormData data, @Query("size") int? size);
 
   @POST("/saveErrorReport.do")
   @FormUrlEncoded()

@@ -663,7 +663,7 @@ extension BdcPageStateDialogs on BdcPageState {
                         filename: pickedImages[i].name),
                     'userId': Global.getLoggedInUser()?.id ?? '',
                   });
-                  final uploadResult = await Api.client.uploadImg(formData);
+                  final uploadResult = await Api.client.uploadImg(formData, 800);
                   if (uploadResult.success && uploadResult.data != null) {
                     imageFileNames.add(uploadResult.data!);
                   } else {
