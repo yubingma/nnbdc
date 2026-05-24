@@ -926,6 +926,12 @@ class _ReplyDialogState extends State<_ReplyDialog> {
   bool _isSettingPremium = false;
   bool _isMarkingViewed = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadConversationHistory();
+  }
+
   List<String> _dialogParseImageFiles(String content) {
     const marker = '【报错图片】';
     final idx = content.indexOf(marker);
