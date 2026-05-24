@@ -30,6 +30,12 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
   bool _isSearching = false;
   String _membershipFilter = "all"; // all, premium, normal
 
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+  }
+
   List<String> _parseImageFiles(String content) {
     const marker = '【报错图片】';
     final idx = content.indexOf(marker);

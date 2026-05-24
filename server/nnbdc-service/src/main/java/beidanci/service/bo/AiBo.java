@@ -46,7 +46,6 @@ import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisResult;
 import com.alibaba.dashscope.audio.tts.SpeechSynthesisParam;
 import com.alibaba.dashscope.audio.tts.SpeechSynthesizer;
 import com.alibaba.dashscope.common.Message;
-import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 
@@ -241,27 +240,56 @@ public class AiBo {
             throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
         }
 
+        // 使用 OpenAI 兼容模式调用，以支持 qwen3.5-flash 等新出的原生多模态模型 (兼容模式更稳定)
         try {
-            Generation gen = new Generation();
-            Message systemMsg = Message.builder()
-                    .role(Role.SYSTEM.getValue())
-                    .content(systemPrompt)
-                    .build();
-            Message userMsg = Message.builder()
-                    .role(Role.USER.getValue())
-                    .content(userPrompt)
-                    .build();
-            GenerationParam param = GenerationParam.builder()
-                    .apiKey(apiKey)
-                    .model(aiProperties.getTextModel())
-                    .messages(Arrays.asList(systemMsg, userMsg))
-                    .resultFormat(GenerationParam.ResultFormat.MESSAGE)
-                    .build();
-            GenerationResult result = gen.call(param);
-            return result.getOutput().getChoices().get(0).getMessage().getContent();
-        } catch (NoApiKeyException | InputRequiredException e) {
-            logger.error("阿里云 AI 调用失败: 缺少 API Key 或输入错误", e);
-            throw new RuntimeException("AI 调用失败", e);
+            OkHttp3ClientHttpRequestFactory factory = new OkHttp3ClientHttpRequestFactory();
+            factory.setConnectTimeout(60000);
+            factory.setReadTimeout(60000);
+            RestTemplate restTemplate = new RestTemplate(factory);
+
+            String url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("model", aiProperties.getTextModel());
+
+            List<Map<String, String>> messages = new ArrayList<>();
+            Map<String, String> systemMsg = new HashMap<>();
+            systemMsg.put("role", "system");
+            systemMsg.put("content", systemPrompt);
+            messages.add(systemMsg);
+
+            Map<String, String> userMsg = new HashMap<>();
+            userMsg.put("role", "user");
+            userMsg.put("content", userPrompt);
+            messages.add(userMsg);
+
+            body.put("messages", messages);
+
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map<String, Object>> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            requestEntity,
+                            new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+
+            Map<String, Object> responseBody = response.getBody();
+            if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
+                logger.error("阿里云 AI 调用失败: HTTP {} - {}", response.getStatusCode(), responseBody);
+                throw new RuntimeException("AI 系统响应异常");
+            }
+
+            List<?> choices = (List<?>) responseBody.get("choices");
+            if (choices == null || choices.isEmpty()) {
+                throw new RuntimeException("AI 未返回有效内容");
+            }
+
+            Map<?, ?> choice = (Map<?, ?>) choices.get(0);
+            Map<?, ?> message = (Map<?, ?>) choice.get("message");
+            return (String) message.get("content");
         } catch (Exception e) {
             logger.error("阿里云 AI 调用发生未知异常", e);
             throw new RuntimeException("AI 系统异常", e);
@@ -282,18 +310,50 @@ public class AiBo {
         }
 
         try {
-            Generation gen = new Generation();
-            GenerationParam param = GenerationParam.builder()
-                    .apiKey(apiKey)
-                    .model("qwen-plus") // 或者使用 aiProperties.getTextModel()，在此场景中 qwen-plus 最合适
-                    .messages(messages)
-                    .resultFormat(GenerationParam.ResultFormat.MESSAGE)
-                    .build();
-            GenerationResult result = gen.call(param);
-            return result.getOutput().getChoices().get(0).getMessage().getContent();
-        } catch (NoApiKeyException | InputRequiredException e) {
-            logger.error("阿里云 AI 调用失败: 缺少 API Key 或输入错误", e);
-            throw new RuntimeException("AI 调用失败", e);
+            OkHttp3ClientHttpRequestFactory factory = new OkHttp3ClientHttpRequestFactory();
+            factory.setConnectTimeout(60000);
+            factory.setReadTimeout(60000);
+            RestTemplate restTemplate = new RestTemplate(factory);
+
+            String url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("model", "qwen-plus"); // 或者使用 aiProperties.getTextModel()
+
+            List<Map<String, String>> compatibleMessages = new ArrayList<>();
+            for (Message msg : messages) {
+                Map<String, String> m = new HashMap<>();
+                m.put("role", msg.getRole());
+                m.put("content", msg.getContent());
+                compatibleMessages.add(m);
+            }
+            body.put("messages", compatibleMessages);
+
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            ResponseEntity<Map<String, Object>> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            requestEntity,
+                            new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
+
+            Map<String, Object> responseBody = response.getBody();
+            if (!response.getStatusCode().is2xxSuccessful() || responseBody == null) {
+                logger.error("阿里云 AI 聊天失败: HTTP {} - {}", response.getStatusCode(), responseBody);
+                throw new RuntimeException("AI 系统响应异常");
+            }
+
+            List<?> choices = (List<?>) responseBody.get("choices");
+            if (choices == null || choices.isEmpty()) {
+                throw new RuntimeException("AI 未返回有效内容");
+            }
+
+            Map<?, ?> choice = (Map<?, ?>) choices.get(0);
+            Map<?, ?> message = (Map<?, ?>) choice.get("message");
+            return (String) message.get("content");
         } catch (Exception e) {
             logger.error("阿里云 AI 调用发生未知异常", e);
             throw new RuntimeException("AI 系统异常", e);
