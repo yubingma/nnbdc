@@ -1115,10 +1115,9 @@ class BdcNotifier extends _$BdcNotifier {
         if (asrInput != null) {
           meaningController.text = state.word!.spell;
         }
-        unawaited(asr.stopMicrophone());
 
-        // 如果提示已经显示了所有字母，则不应自动提交为用户完成做题。
-        // 用户应继续手动拼写输入，自主确认答案。
+        // 如果提示已经显示了所有字母，则不应自动提交为用户完成做题，
+        // 也不应关闭语音识别。用户应继续手动拼写输入，自主确认答案。
         final hintRevealedAll =
             (state.wordWrapper?.hintLetterCount ?? 0) >= (state.word?.spell.length ?? 0);
         if (!state.hasFinishedAnswering && hintRevealedAll) {
@@ -1129,6 +1128,8 @@ class BdcNotifier extends _$BdcNotifier {
           }
           return;
         }
+
+        unawaited(asr.stopMicrophone());
 
         // 如果已经答过题（hasFinishedAnswering=true），_onAnswerCorrect 会直接返回，
         // 不会播放发音。因此在这里手动播放单词正确发音作为反馈。
