@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 显式保留凭据，以便在构建阶段（如果需要拉取子模块）能够使用
+          persist-credentials: true
       - name: Validate Version Format
         run: |
           VERSION=$(grep "^version:" app/pubspec.yaml | awk '{print $2}')
@@ -126,7 +129,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          # 改为 true (非递归) 并增加 fetch-depth 以提高拉取子模块的成功率
+          submodules: true
+          # 必须显式设置凭据，以防子模块拉取失败（尤其是在 windows/macos 上）
+          persist-credentials: true
+          token: ${{ github.token }}
+          fetch-depth: 1
 
       - name: Compute pubspec.lock hash
         id: pubspec-hash
@@ -167,13 +175,14 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update -y
+          # 显式安装 libunwind-dev 以解决 libgstreamer1.0-dev 的依赖冲突
+          # 增加 --fix-broken 尝试修复潜在的依赖问题
+          sudo apt-get install -y libunwind-dev liblzma-dev || echo "继续安装..."
+          sudo apt-get install -y --fix-broken
           sudo apt-get install -y ninja-build libgtk-3-dev \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
-            libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev
-          
-          # 特殊处理 libfuse2 (AppImage 依赖)
-          # 在 ubuntu-22.04 中 libfuse2 是可用的，但在更高版本中可能需要 libfuse2t64 或 universe 仓库
-          sudo apt-get install -y libfuse2 || sudo apt-get install -y libfuse2t64 || echo "警告：无法安装 libfuse2"
+            libgstreamer-plugins-good1.0-dev libgstreamer-plugins-bad1.0-dev \
+            libfuse2
 
       # 安装依赖
       - name: Flutter Pub Get
