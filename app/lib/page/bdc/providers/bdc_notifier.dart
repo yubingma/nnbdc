@@ -862,6 +862,8 @@ class BdcNotifier extends _$BdcNotifier {
         meaningController.text = uiState.meaningText;
       } else {
         // 环节不同（如测评→巩固），重置答题状态，将旧评分提取为测评参考
+        // 同时将测评的评分和 fsrsItem 作为巩固环节的默认值带出，
+        // 让评分修正对话框默认选中测评评分，并用测评的下次复习天数做预览
         state = state.copyWith(
           words: uiState.words,
           correctAnswerIndex: uiState.correctAnswerIndex,
@@ -870,8 +872,8 @@ class BdcNotifier extends _$BdcNotifier {
           selectedAnswerIndex: null,
           flippedAnswerIndices: {},
           currentScore: null,
-          lastFsrsRating: null,
-          fsrsItem: null,
+          lastFsrsRating: uiState.lastFsrsRating,
+          fsrsItem: uiState.fsrsItem,
           hintTapCount: 0,
           assessmentRating: uiState.lastFsrsRating,
           assessmentScheduledDays: uiState.fsrsItem?.scheduledDays,
