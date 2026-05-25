@@ -43,11 +43,15 @@ class WordDetailPageArgs {
   /// 优先展示这些词库的资源
   List<String>? priorityDictIds;
 
-  WordDetailPageArgs(this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong, {this.priorityDictIds});
+  /// 是否在底部显示"下一词"按钮（从背单词页面进入时设置为 true）
+  bool showNextWordButton;
+
+  WordDetailPageArgs(this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong,
+      {this.priorityDictIds, this.showNextWordButton = false});
 
   @override
   String toString() {
-    return 'WordDetailPageParams{word: $word, needReQueryWord: $needReQueryWord, isThisAnswerWrong: $isThisAnswerWrong, priorityDictIds: $priorityDictIds}';
+    return 'WordDetailPageParams{word: $word, needReQueryWord: $needReQueryWord, isThisAnswerWrong: $isThisAnswerWrong, priorityDictIds: $priorityDictIds, showNextWordButton: $showNextWordButton}';
   }
 }
 
@@ -1029,6 +1033,31 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 24.0),
               child: args.bottomBtn!,
+            ),
+
+          // 从背单词页面进入时，显示"下一词"按钮
+          if (args.showNextWordButton && args.bottomBtn == null
+              && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 24.0),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.watch<DarkMode>().isDarkMode
+                      ? Colors.white
+                      : AppTheme.primaryColor,
+                  foregroundColor: context.watch<DarkMode>().isDarkMode
+                      ? Colors.black
+                      : Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () => context.pop(true),
+                child: const Text('下一词',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
             ),
         ],
       ),

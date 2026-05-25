@@ -656,8 +656,14 @@ class BdcNotifier extends _$BdcNotifier {
       _updateFsrsPreview(fsrsRating);
     }
     
-    await goRouter.push('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong));
-    _handleTabChangeForAsr();
+    final result = await goRouter.push<bool>('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong,
+        showNextWordButton: true));
+    
+    if (result == true && state.canLeaveCurrWord) {
+      getNextWord(true, fsrsRating: state.lastFsrsRating);
+    } else {
+      _handleTabChangeForAsr();
+    }
   }
 
   void _updateFsrsPreview(FsrsRating rating) {
