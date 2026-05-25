@@ -21,7 +21,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.context.request.async.DeferredResult;
 import java.util.concurrent.CompletableFuture;
 
-import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.common.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -143,10 +142,10 @@ public class AiController {
                             .build());
                 }
 
-                Flowable<GenerationResult> resultFlowable = aiBo.chatStream(messages);
-                resultFlowable.blockingSubscribe(
-                    result -> {
-                        String content = result.getOutput().getChoices().get(0).getMessage().getContent();
+                Flowable<String> resultFlowable = aiBo.chatStream(messages);
+                final Result<Runnable> finalAdmission = admissionResult;
+                resultFlowable.subscribe(
+                    content -> {
                         if (content != null) {
                             Result<String> rs = Result.success(content);
                             emitter.send(Objects.requireNonNull(rs));
@@ -157,9 +156,17 @@ public class AiController {
                         Result<String> failRs = Result.fail(error.getMessage());
                         try { emitter.send(Objects.requireNonNull(failRs)); } catch (Exception ignore) {}
                         emitter.complete();
+                        if (finalAdmission != null && finalAdmission.isSuccess() && finalAdmission.getData() != null) {
+                            finalAdmission.getData().run();
+                        }
+                        MDC.clear();
                     },
                     () -> {
                         emitter.complete();
+                        if (finalAdmission != null && finalAdmission.isSuccess() && finalAdmission.getData() != null) {
+                            finalAdmission.getData().run();
+                        }
+                        MDC.clear();
                     }
                 );
             } catch (Exception e) {
@@ -169,11 +176,11 @@ public class AiController {
                     emitter.send(Objects.requireNonNull(failRs));
                     emitter.complete();
                 } catch (Exception ignore) {}
-            } finally {
                 if (admissionResult != null && admissionResult.isSuccess() && admissionResult.getData() != null) {
                     admissionResult.getData().run();
                 }
-                MDC.clear();
+            } finally {
+                // MDC 已在 onComplete/onError 中清理
             }
         });
         return emitter;

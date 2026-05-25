@@ -1,9 +1,11 @@
 package beidanci.service.bo;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -24,6 +26,8 @@ import java.util.function.Consumer;
 import javax.imageio.ImageIO;
 
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -40,9 +44,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import com.alibaba.dashscope.aigc.generation.Generation;
-import com.alibaba.dashscope.aigc.generation.GenerationParam;
-import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesis;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisParam;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisResult;
@@ -50,15 +51,14 @@ import com.alibaba.dashscope.audio.ttsv2.SpeechSynthesisAudioFormat;
 import com.alibaba.dashscope.audio.ttsv2.SpeechSynthesisParam;
 import com.alibaba.dashscope.audio.ttsv2.SpeechSynthesizer;
 import com.alibaba.dashscope.common.Message;
-import com.alibaba.dashscope.exception.InputRequiredException;
-import com.alibaba.dashscope.exception.NoApiKeyException;
-
 import beidanci.api.Result;
 import beidanci.api.model.AiStoryVo;
 import beidanci.service.config.AliyunAiProperties;
 import beidanci.service.po.AiStory;
 import beidanci.service.po.User;
+import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 /**
@@ -337,7 +337,7 @@ public class AiBo {
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             Map<String, Object> body = new HashMap<>();
-            body.put("model", "qwen-plus"); // 或者使用 aiProperties.getTextModel()
+            body.put("model", aiProperties.getTextModel());
 
             List<Map<String, String>> compatibleMessages = new ArrayList<>();
             for (Message msg : messages) {
@@ -445,35 +445,101 @@ public class AiBo {
     }
 
     /**
-     * 调用通义千问进行多轮对话 (流式输出)
+     * 调用通义千问进行多轮对话 (流式输出，使用兼容模式 SSE)
      *
      * @param messages 用户和系统消息列表
-     * @return AI 生成的文本结果流
+     * @return AI 生成的文本结果流 (每次发射一个 delta 文本片段)
      */
-    public Flowable<GenerationResult> chatStream(List<Message> messages) {
+    public Flowable<String> chatStream(List<Message> messages) {
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
             logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
             throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
         }
 
-        try {
-            Generation gen = new Generation();
-            GenerationParam param = GenerationParam.builder()
-                    .apiKey(apiKey)
-                    .model("qwen-plus")
-                    .messages(messages)
-                    .resultFormat(GenerationParam.ResultFormat.MESSAGE)
-                    .incrementalOutput(true)
+        return Flowable.create(emitter -> {
+            List<Map<String, String>> cm = new ArrayList<>();
+            for (Message msg : messages) {
+                Map<String, String> m = new HashMap<>();
+                m.put("role", msg.getRole());
+                m.put("content", msg.getContent());
+                cm.add(m);
+            }
+
+            Map<String, Object> req = new HashMap<>();
+            req.put("model", aiProperties.getTextModel());
+            req.put("messages", cm);
+            req.put("stream", true);
+            req.put("enable_thinking", false);
+
+            String jsonBody = JsonUtils.toJson(req);
+            RequestBody body = RequestBody.create(okhttp3.MediaType.parse("application/json"), jsonBody);
+
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(60, TimeUnit.SECONDS)
+                    .readTimeout(300, TimeUnit.SECONDS)
                     .build();
-            return gen.streamCall(param);
-        } catch (NoApiKeyException | InputRequiredException e) {
-            logger.error("阿里云 AI 调用失败: 缺少 API Key 或输入错误", e);
-            throw new RuntimeException("AI 调用失败", e);
-        } catch (Exception e) {
-            logger.error("阿里云 AI 调用发生未知异常", e);
-            throw new RuntimeException("AI 系统异常", e);
-        }
+
+            Request request = new Request.Builder()
+                    .url("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions")
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Content-Type", "application/json")
+                    .post(body)
+                    .build();
+
+            okhttp3.Call call = client.newCall(request);
+            emitter.setCancellable(call::cancel);
+
+            call.enqueue(new okhttp3.Callback() {
+                @Override
+                public void onFailure(okhttp3.Call call, java.io.IOException e) {
+                    logger.error("阿里云 AI 流式调用网络异常", e);
+                    if (!emitter.isCancelled()) emitter.onError(e);
+                }
+
+                @Override
+                public void onResponse(okhttp3.Call call, okhttp3.Response response) {
+                    try (response) {
+                        if (!response.isSuccessful()) {
+                            if (!emitter.isCancelled()) {
+                                emitter.onError(new RuntimeException("AI 调用失败: HTTP " + response.code()));
+                            }
+                            return;
+                        }
+
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(response.body().byteStream()));
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            if (emitter.isCancelled()) break;
+                            if (!line.startsWith("data: ")) continue;
+                            String data = line.substring(6).trim();
+                            if ("[DONE]".equals(data)) break;
+
+                            try {
+                                Map<String, Object> chunk = JsonUtils.parseMap(data);
+                                @SuppressWarnings("unchecked")
+                                List<Map<String, Object>> choices = (List<Map<String, Object>>) chunk.get("choices");
+                                if (choices != null && !choices.isEmpty()) {
+                                    Map<String, Object> delta = (Map<String, Object>) choices.get(0).get("delta");
+                                    if (delta != null) {
+                                        String content = (String) delta.get("content");
+                                        if (content != null && !content.isEmpty()) {
+                                            emitter.onNext(content);
+                                        }
+                                    }
+                                }
+                            } catch (Exception parseErr) {
+                                logger.warn("解析 SSE 数据片段失败: {}", data, parseErr);
+                            }
+                        }
+                        if (!emitter.isCancelled()) emitter.onComplete();
+                    } catch (Exception e) {
+                        logger.error("处理 SSE 流时发生异常", e);
+                        if (!emitter.isCancelled()) emitter.onError(e);
+                    }
+                }
+            });
+        }, BackpressureStrategy.BUFFER);
     }
 
     public int getStoryConcurrencyLimit() {
