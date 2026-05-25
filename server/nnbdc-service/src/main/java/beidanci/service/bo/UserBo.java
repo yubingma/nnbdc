@@ -438,7 +438,7 @@ public class UserBo extends BaseBo<User> {
     }
 
     public List<User> findByEmail(String email) {
-        String sql = "SELECT * FROM \"user\" WHERE email = :email";
+        String sql = "SELECT * FROM \"user\" WHERE LOWER(email) = LOWER(:email)";
         MapSqlParameterSource params = new MapSqlParameterSource("email", email);
         return namedParameterJdbcTemplate.query(sql, params,
                 new EntityRowMapper<>(User.class));
@@ -952,7 +952,7 @@ public class UserBo extends BaseBo<User> {
         user.setUserName(userName.toLowerCase());
         user.setPassword(password);
         user.setNickName(EmojiFilter.filterEmoji(nickName));
-        user.setEmail(email);
+        user.setEmail(email != null ? email.toLowerCase() : null);
         user.setAppleUserId(appleUserId);
 
         // wordsPerDay 从系统参数读取默认值
