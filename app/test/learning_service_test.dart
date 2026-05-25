@@ -459,5 +459,156 @@ void main() {
       // 恢复系统时钟，以免影响以后的普通环境运行
       AppClock.reset();
     });
+
+    test('已掌握单词（在mastered_words中）的学习记录残留不应被选入今日计划', () async {
+      // 1. 创建用户的"已掌握"词书（masteredWords 表的底层依赖）
+      var masteredDictId = 'mock_dict_mastered';
+      await db.into(db.dicts).insert(Dict(
+        id: masteredDictId,
+        name: '已掌握',
+        wordCount: 0,
+        isShared: false,
+        isReady: true,
+        ownerId: testUser.id,
+        visible: true,
+        editable: false,
+        deletable: false,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 2. 将 word_1 添加到 learning_words（模拟"已掌握但学习记录残留"：stability 为 null，learnedTimes 为 0）
+      await db.into(db.learningWords).insert(LearningWord(
+        userId: testUser.id,
+        wordId: 'word_1',
+        addTime: now,
+        addDay: 1,
+        stability: null, // 关键：stability 为 null → 旧的查询条件会把它选出来
+        isTodayNewWord: true,
+        learnedTimes: 0,  // 关键：从未学习过 → 被判定为"新词"
+        todayLearnedTimes: 0,
+        learningOrder: 0,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 3. 将 word_3 也加入 learning_words（没有 mastered 的正常新词，应正常被选取）
+      await db.into(db.learningWords).insert(LearningWord(
+        userId: testUser.id,
+        wordId: 'word_3',
+        addTime: now,
+        addDay: 1,
+        stability: null,
+        isTodayNewWord: true,
+        learnedTimes: 0,
+        todayLearnedTimes: 0,
+        learningOrder: 0,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 4. 将 word_1 标记为已掌握（加入 mastered_words）
+      await db.masteredWordsDao.saveMasteredWord(testUser.id, 'word_1', false, false);
+
+      // 验证 word_1 确在 mastered 中
+      final masteredIds = await db.masteredWordsDao.getMasteredWordIdSet(testUser.id);
+      expect(masteredIds.contains('word_1'), true);
+      expect(masteredIds.contains('word_3'), false);
+
+      // 5. 执行今日计划生成
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+
+      // 6. 核心断言：word_1（已掌握但有残留学习记录）不应出现在今日计划中
+      final word1InPlan = todayWords.any((w) => w.wordId == 'word_1');
+      expect(word1InPlan, false,
+          reason: '已掌握的单词（在mastered_words中）不应因其learning_words残留记录而被选入今日计划');
+
+      // 7. word_3（正常待学习的新词）应该正常出现在今日计划中
+      final word3InPlan = todayWords.any((w) => w.wordId == 'word_3');
+      expect(word3InPlan, true,
+          reason: '未掌握的普通新词应正常被选入今日计划，修复不应误杀正常单词');
+    });
+
+    test('genTodayWords 过滤逻辑：同日非跨天场景下排除已在mastered_words中的单词', () async {
+      // 此测试验证：即使没有触发跨天清理，genTodayWords 自身也能过滤掉已掌握的单词
+
+      // 1. 创建"已掌握"词书
+      var masteredDictId = 'mock_dict_mastered_v2';
+      await db.into(db.dicts).insert(Dict(
+        id: masteredDictId,
+        name: '已掌握',
+        wordCount: 0,
+        isShared: false,
+        isReady: true,
+        ownerId: testUser.id,
+        visible: true,
+        editable: false,
+        deletable: false,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 2. 将 lastLearningDate 设为今天，避免触发跨天重置（这样 deleteMasteredWords 不会先清理）
+      testUser = testUser.copyWith(lastLearningDate: Value(AppClock.today()));
+      Global.updateUserCache(testUser);
+
+      // 3. 插入 word_2 到 learning_words（残留记录：stability=null, learnedTimes=0, batchId=0）
+      await db.into(db.learningWords).insert(LearningWord(
+        userId: testUser.id,
+        wordId: 'word_2',
+        addTime: now,
+        addDay: 1,
+        stability: null,
+        isTodayNewWord: true,
+        learnedTimes: 0,
+        todayLearnedTimes: 0,
+        batchId: 0,
+        learningOrder: 0,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 4. 插入 word_4 到 learning_words（正常未掌握的新词，也 batchId=0）
+      await db.into(db.learningWords).insert(LearningWord(
+        userId: testUser.id,
+        wordId: 'word_4',
+        addTime: now,
+        addDay: 1,
+        stability: null,
+        isTodayNewWord: true,
+        learnedTimes: 0,
+        todayLearnedTimes: 0,
+        batchId: 0,
+        learningOrder: 0,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 5. 将 word_2 标记为已掌握
+      await db.masteredWordsDao.saveMasteredWord(testUser.id, 'word_2', false, false);
+
+      final masteredIds = await db.masteredWordsDao.getMasteredWordIdSet(testUser.id);
+      expect(masteredIds.contains('word_2'), true);
+      expect(masteredIds.contains('word_4'), false);
+
+      // 6. 执行今日计划生成（batchId=0 的不会被 getTodayLearningWordsFromDb 查到，所以会进入 genTodayWords 补充）
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+
+      // 7. 核心断言：word_2（已掌握）不应出现
+      final word2InPlan = todayWords.any((w) => w.wordId == 'word_2');
+      expect(word2InPlan, false,
+          reason: 'genTodayWords 应主动排除已在mastered_words中的单词，即使跨天清理未触发');
+
+      // 8. 核心断言：word_4（正常新词）应该出现
+      final word4InPlan = todayWords.any((w) => w.wordId == 'word_4');
+      expect(word4InPlan, true,
+          reason: '未掌握的普通新词应正常被选取，修复不应误杀');
+    });
   });
 }
