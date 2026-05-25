@@ -60,7 +60,7 @@ class BdcNotifier extends _$BdcNotifier {
     _stateChangeCount++;
     state = newState;
     if (tag.isNotEmpty) {
-      Global.logger.d('⚡ [PERF] BdcNotifier.state #$_stateChangeCount tag=$tag');
+      debugPrint('⚡ [PERF] BdcNotifier.state #$_stateChangeCount tag=$tag');
     }
   }
 
@@ -192,7 +192,7 @@ class BdcNotifier extends _$BdcNotifier {
           if (context.mounted && !asr.isPreloaded) {
             final getWordsStopwatch = Stopwatch()..start();
             List<String> displayWords = await _getDisplayWords();
-            Global.logger.d('⚡ [PERF] loadData -> _getDisplayWords cost: ${getWordsStopwatch.elapsedMilliseconds}ms');
+            debugPrint('⚡ [PERF] loadData -> _getDisplayWords cost: ${getWordsStopwatch.elapsedMilliseconds}ms');
             if (context.mounted && !asr.isPreloaded && !dialogShown) {
               _showLoadingDialog(context, displayWords);
               dialogShown = true;
@@ -204,7 +204,7 @@ class BdcNotifier extends _$BdcNotifier {
       if (preloadFuture != null) {
         final preloadStopwatch = Stopwatch()..start();
         await preloadFuture;
-        Global.logger.d('⚡ [PERF] loadData -> asr.preloadModels cost: ${preloadStopwatch.elapsedMilliseconds}ms');
+        debugPrint('⚡ [PERF] loadData -> asr.preloadModels cost: ${preloadStopwatch.elapsedMilliseconds}ms');
         dialogTimer?.cancel(); // 模型加载完成后，立即取消弹窗定时器
         if (needPreload) {
           await Future.delayed(const Duration(milliseconds: 50));
@@ -224,7 +224,7 @@ class BdcNotifier extends _$BdcNotifier {
 
       final stepsStopwatch = Stopwatch()..start();
       var stepsResult = await StudyBo().getActiveUserStudySteps();
-      Global.logger.d('⚡ [PERF] loadData -> getActiveUserStudySteps cost: ${stepsStopwatch.elapsedMilliseconds}ms');
+      debugPrint('⚡ [PERF] loadData -> getActiveUserStudySteps cost: ${stepsStopwatch.elapsedMilliseconds}ms');
       if (!stepsResult.success || stepsResult.data == null) {
         if (context.mounted && dialogShown) {
           Navigator.of(context, rootNavigator: true).pop();
@@ -236,7 +236,7 @@ class BdcNotifier extends _$BdcNotifier {
 
       final nextWordStopwatch = Stopwatch()..start();
       bool success = await getNextWord(false);
-      Global.logger.d('⚡ [PERF] loadData -> getNextWord cost: ${nextWordStopwatch.elapsedMilliseconds}ms');
+      debugPrint('⚡ [PERF] loadData -> getNextWord cost: ${nextWordStopwatch.elapsedMilliseconds}ms');
       
       if (context.mounted && dialogShown) {
         Navigator.of(context, rootNavigator: true).pop();
@@ -304,7 +304,7 @@ class BdcNotifier extends _$BdcNotifier {
     } catch (e) {
       Global.logger.e('获取展示单词失败: $e');
     }
-    Global.logger.d('⚡ [PERF] _getDisplayWords cost: ${stopwatch.elapsedMilliseconds}ms');
+    debugPrint('⚡ [PERF] _getDisplayWords cost: ${stopwatch.elapsedMilliseconds}ms');
     return displayWords;
   }
 
@@ -1416,10 +1416,16 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> _startAsrWithHint(AsrLanguage language) async {
-    if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) return;
+    if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) {
+      debugPrint('⚡ [PERF] _startAsrWithHint SKIPPED: word=${state.word != null} loadErr=${state.loadError != null} hw=${state.showHandwritingBoard} getting=${state.isGettingNextWord}');
+      return;
+    }
+
+    debugPrint('⚡ [PERF] _startAsrWithHint START lang=${language.locale}');
 
     // 1. 切换到录放模式（唯一的同步阻塞点）
     await SoundUtil.usePlayAndRecordCategory();
+    debugPrint('⚡ [PERF] _startAsrWithHint session=playAndRecord');
 
     // 添加调试日志，方便查看正确答案
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
@@ -1436,11 +1442,14 @@ class BdcNotifier extends _$BdcNotifier {
     try {
       await asr.startAsr(language, phrases: phrases);
       state = state.copyWith(wordStartTime: AppClock.now());
+      debugPrint('⚡ [PERF] _startAsrWithHint ASR_READY → playing hint sound');
 
       // 3. ASR 就绪后播放提示音——告诉用户可以开始说话
       unawaited(SoundUtil.playAsrReadyHintSound());
+      debugPrint('⚡ [PERF] _startAsrWithHint DONE');
     } catch (e) {
       Global.logger.e('ASR启动指令下发失败: $e');
+      debugPrint('⚡ [PERF] _startAsrWithHint FAILED: $e');
     }
   }
 

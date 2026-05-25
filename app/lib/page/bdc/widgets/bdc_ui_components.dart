@@ -699,7 +699,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
       ],
     );
-    Global.logger.d('⚡ [PERF] _buildMainContent cost: ${sw.elapsedMilliseconds}ms');
+    debugPrint('⚡ [PERF] _buildMainContent cost: ${sw.elapsedMilliseconds}ms');
     return result;
   }
 
@@ -737,7 +737,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         ],
       ),
     );
-    Global.logger.d('⚡ [PERF] _buildBottomButtons cost: ${sw.elapsedMilliseconds}ms');
+    debugPrint('⚡ [PERF] _buildBottomButtons cost: ${sw.elapsedMilliseconds}ms');
     return result;
   }
 

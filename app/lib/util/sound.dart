@@ -112,7 +112,7 @@ class SoundUtil {
               AVAudioSessionCategoryOptions.allowBluetooth |
               AVAudioSessionCategoryOptions.allowAirPlay |
               AVAudioSessionCategoryOptions.allowBluetoothA2dp,
-          avAudioSessionMode: AVAudioSessionMode.measurement,
+          avAudioSessionMode: AVAudioSessionMode.spokenAudio,
           avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
           avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
           androidAudioAttributes: const AndroidAudioAttributes(
@@ -282,7 +282,7 @@ Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${tot
     final startTime = DateTime.now().millisecondsSinceEpoch;
     try {
       if (isPrewarmed) {
-        unawaited(player.stop().catchError((_) {}));
+        await player.stop();
         await player.seek(Duration.zero);
       } else {
         await player.setAsset('assets/audio/$soundFileName').timeout(Duration(milliseconds: timeoutInMilliSeconds));
@@ -297,14 +297,16 @@ Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${tot
       }
       Global.logger.d("⏱️ [Latency-SFX] 音效完成: $soundFileName (预热: $isPrewarmed, 耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
     } catch (e) {
-      debugPrint('音效出错: $soundFileName, $e');
+      debugPrint('🔊 [PERF] 音效出错: $soundFileName, $e');
     } finally {
       if (!isPrewarmed) unawaited(player.dispose());
     }
   }
 
   static Future<void> playAsrReadyHintSound() async {
+    debugPrint('🔊 [PERF] playAsrReadyHintSound START');
     unawaited(playAssetSound('asr_ready_hint.mp3', 1.5, 0.2, 1000, 150));
+    debugPrint('🔊 [PERF] playAsrReadyHintSound DISPATCHED');
   }
 
   static Future<void> playAddSuccessSound() async {

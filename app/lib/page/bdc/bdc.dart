@@ -285,9 +285,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     );
     _buildCount++;
     final buildNum = _buildCount;
-    Global.logger.d('⚡ [PERF] BdcPage.build #$buildNum (trigger: $_lastSetStateTag) cost: ${stopwatch.elapsedMilliseconds}ms');
+    debugPrint('⚡ [PERF] BdcPage.build #$buildNum (trigger: $_lastSetStateTag) cost: ${stopwatch.elapsedMilliseconds}ms');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Global.logger.d('⚡ [PERF] BdcPage.frame #$buildNum painted');
+      debugPrint('⚡ [PERF] BdcPage.frame #$buildNum painted');
     });
     return result;
   }
@@ -342,7 +342,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     if (state.showHandwritingBoard || (_meaningFocusNode.hasFocus && !state.hasFinishedAnswering)) {
       final res = _buildFullscreenImmersiveInputMode();
-      Global.logger.d('⚡ [PERF] BdcPage.renderPage (immersive) cost: ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint('⚡ [PERF] BdcPage.renderPage (immersive) cost: ${stopwatch.elapsedMilliseconds}ms');
       return res;
     }
 
@@ -411,7 +411,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
           ),
       ],
     );
-    Global.logger.d('⚡ [PERF] BdcPage.renderPage cost: ${stopwatch.elapsedMilliseconds}ms');
+    debugPrint('⚡ [PERF] BdcPage.renderPage cost: ${stopwatch.elapsedMilliseconds}ms');
     return res;
   }
 
