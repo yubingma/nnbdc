@@ -18,6 +18,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/widget/handwriting_board.dart';
@@ -3901,9 +3902,10 @@ class WordListPageState extends State<WordListPage>
       final wordSpells = words.map((w) => w.word.spell).toList();
       final wordsJson = jsonEncode(wordSpells);
 
-      // 显示加载中
-      Api.setLoadingDisabled(false);
-      final result = await Api.client.generateAiShortStory(wordsJson, Global.currentUserId!);
+      final result = await LoadingUtils.withApiLoading(
+        loadingText: 'AI 正在为你创作小短文...',
+        operation: () => Api.client.generateAiShortStory(wordsJson, Global.currentUserId!),
+      );
 
       if (result.success) {
         _aiStory = result.data;
