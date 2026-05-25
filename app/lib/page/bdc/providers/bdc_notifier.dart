@@ -1052,7 +1052,20 @@ class BdcNotifier extends _$BdcNotifier {
   Future<void> checkAsrResult({String? asrInput, bool isVoice = false}) async {
     final stopwatch = Stopwatch()..start();
     String inputText = asrInput ?? meaningController.text;
-    if (inputText.toLowerCase() == _handlingChinese.toLowerCase() && asrInput == null) return;
+    if (asrInput == null) {
+      if (state.studyStep == StudyStep.ch2En.json) {
+        // Ch2En 模式：ASR 识别结果可能包含标点（如 "hello."），而
+        // meaningController.text 是纯拼写（如 "hello"）。对两者归一化处理
+        //（去除所有非字母字符）后再比较，防止 text listener 触发 re-entry
+        // 导致 _pronouncePlayer 与 _audioPlayer 同时播放同一发音（回声 bug）。
+        if (inputText.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '') ==
+            _handlingChinese.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '')) {
+          return;
+        }
+      } else {
+        if (inputText.toLowerCase() == _handlingChinese.toLowerCase()) return;
+      }
+    }
     _handlingChinese = inputText;
 
     if (state.hasFinishedAnswering && !state.showHandwritingBoard) return;
@@ -1141,8 +1154,10 @@ class BdcNotifier extends _$BdcNotifier {
 
         // 如果已经答过题（hasFinishedAnswering=true），_onAnswerCorrect 会直接返回，
         // 不会播放发音。因此在这里手动播放单词正确发音作为反馈。
+        // 使用 _audioPlayer 而非 _pronouncePlayer，确保与 playWordAndFirstSentence
+        // 共享同一播放器，避免两个播放器同时播放导致回声。
         if (state.hasFinishedAnswering) {
-          SoundUtil.playPronounceSound(state.word!);
+          SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
         }
         final ratingResult = _calculateRating(method);
         _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);

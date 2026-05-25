@@ -16,11 +16,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
+
+import okhttp3.OkHttpClient;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -43,8 +46,9 @@ import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesis;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisParam;
 import com.alibaba.dashscope.aigc.imagesynthesis.ImageSynthesisResult;
-import com.alibaba.dashscope.audio.tts.SpeechSynthesisParam;
-import com.alibaba.dashscope.audio.tts.SpeechSynthesizer;
+import com.alibaba.dashscope.audio.ttsv2.SpeechSynthesisAudioFormat;
+import com.alibaba.dashscope.audio.ttsv2.SpeechSynthesisParam;
+import com.alibaba.dashscope.audio.ttsv2.SpeechSynthesizer;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
@@ -83,6 +87,23 @@ public class AiBo {
     private final ConcurrentHashMap<String, AtomicInteger> userAiChatRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicInteger> userDailyAiChatRequests = new ConcurrentHashMap<>();
     private final Map<String, java.util.concurrent.CompletableFuture<Result<AiStoryVo>>> inFlightStories = new ConcurrentHashMap<>();
+
+    private volatile RestTemplate sharedRestTemplate;
+
+    private RestTemplate getRestTemplate() {
+        if (sharedRestTemplate == null) {
+            synchronized (this) {
+                if (sharedRestTemplate == null) {
+                    OkHttpClient client = new OkHttpClient.Builder()
+                            .connectTimeout(60, TimeUnit.SECONDS)
+                            .readTimeout(60, TimeUnit.SECONDS)
+                            .build();
+                    sharedRestTemplate = new RestTemplate(new OkHttp3ClientHttpRequestFactory(client));
+                }
+            }
+        }
+        return sharedRestTemplate;
+    }
 
     public static class ExtractionTask {
         public final String taskId;
@@ -240,12 +261,9 @@ public class AiBo {
             throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
         }
 
-        // 使用 OpenAI 兼容模式调用，以支持 qwen3.5-flash 等新出的原生多模态模型 (兼容模式更稳定)
+        // 使用 OpenAI 兼容模式调用
         try {
-            OkHttp3ClientHttpRequestFactory factory = new OkHttp3ClientHttpRequestFactory();
-            factory.setConnectTimeout(60000);
-            factory.setReadTimeout(60000);
-            RestTemplate restTemplate = new RestTemplate(factory);
+            RestTemplate restTemplate = getRestTemplate();
 
             String url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
             HttpHeaders headers = new HttpHeaders();
@@ -254,6 +272,7 @@ public class AiBo {
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", aiProperties.getTextModel());
+            body.put("enable_thinking", false);
 
             List<Map<String, String>> messages = new ArrayList<>();
             Map<String, String> systemMsg = new HashMap<>();
@@ -310,10 +329,7 @@ public class AiBo {
         }
 
         try {
-            OkHttp3ClientHttpRequestFactory factory = new OkHttp3ClientHttpRequestFactory();
-            factory.setConnectTimeout(60000);
-            factory.setReadTimeout(60000);
-            RestTemplate restTemplate = new RestTemplate(factory);
+            RestTemplate restTemplate = getRestTemplate();
 
             String url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
             HttpHeaders headers = new HttpHeaders();
@@ -485,7 +501,7 @@ public class AiBo {
      * @return 合成后的音频信息和字节流
      */
     public TtsResult generateSpeech(String text, String preferredVoicesStr, String voiceInstruction) {
-        String[] voices = {"longanyang", "longanhuan", "longxiaochun_v3", "longxiaoxia_v3"};
+        String[] voices = {"longxiu_v3", "longsanshu_v3", "longanyang", "longxiaoxia_v3", "longxiaochun_v3", "longanhuan"};
         if (preferredVoicesStr != null && !preferredVoicesStr.trim().isEmpty()) {
             voices = preferredVoicesStr.split(",");
             for (int i = 0; i < voices.length; i++) voices[i] = voices[i].trim();
@@ -538,18 +554,15 @@ public class AiBo {
             throw new RuntimeException("AI 调用失败: 请设置 dashscope_api_key");
         }
 
-        SpeechSynthesizer synthesizer = new SpeechSynthesizer();
-        var paramBuilder = SpeechSynthesisParam.builder()
+        SpeechSynthesisParam param = SpeechSynthesisParam.builder()
                 .apiKey(apiKey)
                 .model(aiProperties.getTtsModel())
-                .parameter("voice", voice)
-                .parameter("format", "mp3")
-                .text(text);
+                .voice(voice)
+                .format(SpeechSynthesisAudioFormat.MP3_16000HZ_MONO_128KBPS)
+                .build();
         
-        // 移除语气指令 (instruction) 以避免 cosyvoice-v3-flash 报错 (428 InvalidParameter)
-        
-        SpeechSynthesisParam param = (SpeechSynthesisParam) paramBuilder.build();
-        ByteBuffer buffer = synthesizer.call(param);
+        SpeechSynthesizer synthesizer = new SpeechSynthesizer(param, null);
+        ByteBuffer buffer = synthesizer.call(text);
         
         byte[] audioBytes = new byte[buffer.remaining()];
         buffer.get(audioBytes);
@@ -876,7 +889,7 @@ public class AiBo {
         boolean enEnabled = sysParamUtil.isAiStoryEnTtsEnabled();
         logger.info("{}AI 短文英文配音启用状态: {}", formatUser(userId), enEnabled);
         if (!enPart.isEmpty() && enEnabled) {
-            byte[] enBytes = callCosyVoice(enPart, aiProperties.getVoice(), null, userId);
+            byte[] enBytes = generateSpeech(enPart, null, null).audioData;
             Files.write(new File(dir, wordsHash + "_en.mp3").toPath(), enBytes);
             logger.info("{}AI 短文英文配音已生成: {}", formatUser(userId), wordsHash);
         }
@@ -885,7 +898,7 @@ public class AiBo {
         boolean cnEnabled = sysParamUtil.isAiStoryCnTtsEnabled();
         logger.info("{}AI 短文中文配音启用状态: {}", formatUser(userId), cnEnabled);
         if (!cnPart.isEmpty() && cnEnabled) {
-            byte[] cnBytes = callCosyVoice(cnPart, aiProperties.getVoice(), null, userId);
+            byte[] cnBytes = generateSpeech(cnPart, null, null).audioData;
             Files.write(new File(dir, wordsHash + "_cn.mp3").toPath(), cnBytes);
             logger.info("{}AI 短文中文配音已生成: {}", formatUser(userId), wordsHash);
         }
@@ -1219,14 +1232,14 @@ public class AiBo {
             if (enPart.isEmpty()) {
                 throw new RuntimeException("英文内容为空，无法生成配音");
             }
-            byte[] enBytes = callCosyVoice(enPart, aiProperties.getVoice(), null, userId);
+            byte[] enBytes = generateSpeech(enPart, null, null).audioData;
             Files.write(audioFile.toPath(), enBytes);
             logger.info("{}AI 短文英文配音已按需生成: {}", formatUser(userId), wordsHash);
         } else if (lang.equalsIgnoreCase("cn")) {
             if (cnPart.isEmpty()) {
                 throw new RuntimeException("中文内容为空，无法生成配音");
             }
-            byte[] cnBytes = callCosyVoice(cnPart, aiProperties.getVoice(), null, userId);
+            byte[] cnBytes = generateSpeech(cnPart, null, null).audioData;
             Files.write(audioFile.toPath(), cnBytes);
             logger.info("{}AI 短文中文配音已按需生成: {}", formatUser(userId), wordsHash);
         } else {
