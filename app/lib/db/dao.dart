@@ -1232,6 +1232,7 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
 
       return {
         'word': word.spell,
+        'wordId': lw.wordId,
         'stability': lw.stability,
         'difficulty': lw.difficulty,
         'scheduledDays': lw.scheduledDays,

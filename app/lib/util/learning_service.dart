@@ -183,9 +183,18 @@ class LearningService {
           ..where((lw) => lw.userId.equals(userId) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability))))
         .get();
 
-    // 排除今天已经选取要学的单词
+    // 排除今天已经选取要学的单词 AND 已掌握的单词（防御：防止已掌握单词的学习记录残留导致每日重复出现）
     final Set<String> todayWordIds = todayLearningWords.map((e) => e.wordId).toSet();
-    final List<LearningWord> candidateWords = allLearningWords.where((word) => !todayWordIds.contains(word.wordId)).toList();
+    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
+    final List<LearningWord> candidateWords = allLearningWords
+        .where((word) => !todayWordIds.contains(word.wordId) && !masteredWordIds.contains(word.wordId))
+        .toList();
+    if (masteredWordIds.isNotEmpty) {
+      final excludedCount = allLearningWords.where((w) => masteredWordIds.contains(w.wordId) && !todayWordIds.contains(w.wordId)).length;
+      if (excludedCount > 0) {
+        Global.logger.w('[FETCH-WORD] [genTodayWords] 排除了 $excludedCount 个已在"已掌握"中的单词（数据残留清理）');
+      }
+    }
 
     // 1. 识别到期单词 (Due Words)
     final today = AppClock.today();

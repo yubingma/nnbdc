@@ -874,9 +874,19 @@ class WordBo {
     final nowDate = DateUtils.businessDate(now);
 
     // 获取所有正在学习中的单词 (即：尚未毕业的候选人)
-    final allLearningWords = await (db.select(db.learningWords)
+    var allLearningWords = await (db.select(db.learningWords)
           ..where((lw) => lw.userId.equals(userId) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability))))
         .get();
+
+    // 排除已掌握的单词（防御：防止已掌握单词的学习记录残留导致在阶段复习列表中反复出现）
+    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
+    if (masteredWordIds.isNotEmpty) {
+      final beforeCount = allLearningWords.length;
+      allLearningWords = allLearningWords.where((w) => !masteredWordIds.contains(w.wordId)).toList();
+      if (beforeCount > allLearningWords.length) {
+        Global.logger.w('getLearningWordsByBucketForAPage: 排除了 ${beforeCount - allLearningWords.length} 个已在"已掌握"中的单词');
+      }
+    }
 
     List<LearningWord> bucketWords = [];
     for (var word in allLearningWords) {

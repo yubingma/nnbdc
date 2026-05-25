@@ -54,14 +54,24 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     if (userId == null) return;
 
     final data = await db.learningWordsDao.getLearningWordsForCloud(userId);
+
+    // 排除已掌握的单词（防御：防止已掌握单词的学习记录残留导致在复习分布图中反复出现）
+    final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
+    final filteredData = masteredWordIds.isEmpty
+        ? data
+        : data.where((item) => !masteredWordIds.contains(item['wordId'] as String?)).toList();
+    if (data.length > filteredData.length) {
+      Global.logger.w('review_distribution: 排除了 ${data.length - filteredData.length} 个已在"已掌握"中的单词');
+    }
+
     final now = AppClock.now();
     final nowDate = AppClock.today();
 
     Map<int, int> dayToTotalCounts = {};
-    _totalWords = data.length;
+    _totalWords = filteredData.length;
     _totalNewWords = 0;
 
-    for (var item in data) {
+    for (var item in filteredData) {
       final isNew = (item['learnedTimes'] ?? 0) == 0;
       if (isNew) {
         _totalNewWords++;
