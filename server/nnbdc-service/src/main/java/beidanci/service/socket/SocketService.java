@@ -35,28 +35,37 @@ public class SocketService {
     UserBo userBo;
 
 
+    private boolean isInitialized = false;
+
     public static SocketService getInstance() {
         return instance;
     }
 
-    @SuppressWarnings("this-escape")
     public SocketService(SocketIONamespace namespace, SocketServer socketServer, Map<String, MySystem> systems, MsgBo msgBo,
                          UserBo userBo) {
         if (instance != null) {
             throw new RuntimeException("SocketService has been created more than once.");
         }
-        
+
         this.namespace = namespace;
         this.socketServer = socketServer;
         this.systems = systems;
         this.msgBo = msgBo;
         this.userBo = userBo;
 
-        initListeners();
-
         // 将instance赋值移到构造函数最后，避免this逃逸
         instance = this;
+    }
 
+    /**
+     * 初始化监听器（在构造函数之后调用，避免 this-escape 问题）
+     */
+    public void init() {
+        if (isInitialized) {
+            return;
+        }
+        isInitialized = true;
+        initListeners();
     }
 
     protected void onUserLogout(UserVo user) throws IllegalAccessException {

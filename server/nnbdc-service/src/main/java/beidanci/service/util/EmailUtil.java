@@ -181,7 +181,6 @@ public class EmailUtil {
      * @param templateParam 模板参数（JSON格式）
      * @return 发送结果
      */
-    @SuppressWarnings("unchecked")
     private String sendTemplatedEmail(String toEmail, String subject, String templateId, String templateParam) {
         try {
             if (client == null) {
@@ -203,16 +202,16 @@ public class EmailUtil {
             request.setSysDomain("dm.aliyuncs.com");
             request.setSysVersion("2015-11-23");
             request.setSysAction("SingleSendMail");
-            
+
             // 确保 TemplateParam 是有效的 JSON 字符串
             String finalTemplateParam = templateParam;
             if (finalTemplateParam == null || finalTemplateParam.trim().isEmpty()) {
                 finalTemplateParam = "{}";
             }
-            
+
             // Subject 参数是必需的
             String finalSubject = isBlank(subject) ? "邮件通知" : subject;
-            
+
             // 设置请求参数
             request.putQueryParameter("AccountName", fromAddress);
             if (!isBlank(fromAlias)) {
@@ -221,12 +220,13 @@ public class EmailUtil {
             request.putQueryParameter("AddressType", "1"); // 1表示发信地址
             request.putQueryParameter("ToAddress", toEmail != null ? toEmail.trim() : "");
             request.putQueryParameter("Subject", finalSubject);
-            
+
             // 使用模板发送邮件时，恢复之前的 Template JSON 结构
             try {
                 Map<String, Object> templateMap = new HashMap<>();
                 templateMap.put("TemplateId", templateId);
                 // TemplateData 需要是对象，将 JSON 字符串解析为对象
+                @SuppressWarnings("unchecked")
                 Map<String, Object> templateDataMap = objectMapper.readValue(finalTemplateParam, Map.class);
                 templateMap.put("TemplateData", templateDataMap);
                 String templateJson = objectMapper.writeValueAsString(templateMap);

@@ -100,7 +100,7 @@ public class PoVoUtils {
         return result2;
     }
 
-    @SuppressWarnings({"deprecation", "unchecked"})
+    @SuppressWarnings("unchecked")
     private static <T extends Vo> T doMakeVo(Po po, Class<T> voClass, HashSet<String> excludeFields, String fullFieldName) {
         if (po == null) {
             return null;
@@ -114,8 +114,8 @@ public class PoVoUtils {
 
         T vo;
         try {
-            vo = voClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            vo = voClass.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
 

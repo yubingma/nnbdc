@@ -29,7 +29,7 @@ public class AliyunResourceUtil {
     private AliyunCdnProperties properties;
 
     private IAcsClient client;
-    
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private void initClient() {
@@ -61,7 +61,6 @@ public class AliyunResourceUtil {
      * 查询账户余额
      * @return 账户余额信息
      */
-    @SuppressWarnings("deprecation")
     public AccountBalanceInfo queryAccountBalance() {
         try {
             if (client == null) {
@@ -72,14 +71,14 @@ public class AliyunResourceUtil {
             }
 
             CommonRequest request = new CommonRequest();
-            request.setMethod(MethodType.POST);
-            request.setDomain("business.aliyuncs.com");
-            request.setVersion("2017-12-14");
-            request.setAction("QueryAccountBalance");
+            request.setSysMethod(MethodType.POST);
+            request.setSysDomain("business.aliyuncs.com");
+            request.setSysVersion("2017-12-14");
+            request.setSysAction("QueryAccountBalance");
 
             CommonResponse response = client.getCommonResponse(request);
             JsonNode responseObj = objectMapper.readTree(response.getData());
-            
+
             logger.info("阿里云API原始响应：{}", response.getData());
 
             String code = responseObj.get("Code").asText();
@@ -107,7 +106,6 @@ public class AliyunResourceUtil {
      * 查询资源包使用情况
      * @return 资源包使用情况
      */
-    @SuppressWarnings("deprecation")
     public String queryResourcePackageInstances() {
         try {
             if (client == null) {
@@ -118,14 +116,14 @@ public class AliyunResourceUtil {
             }
 
             CommonRequest request = new CommonRequest();
-            request.setMethod(MethodType.POST);
-            request.setDomain("business.aliyuncs.com");
-            request.setVersion("2017-12-14");
-            request.setAction("QueryResourcePackageInstances");
+            request.setSysMethod(MethodType.POST);
+            request.setSysDomain("business.aliyuncs.com");
+            request.setSysVersion("2017-12-14");
+            request.setSysAction("QueryResourcePackageInstances");
 
             CommonResponse response = client.getCommonResponse(request);
             JsonNode responseObj = objectMapper.readTree(response.getData());
-            
+
             logger.info("资源包API原始响应：{}", response.getData());
 
             String code = responseObj.get("Code").asText();
@@ -155,7 +153,7 @@ public class AliyunResourceUtil {
         private String creditAmount; // 信用额度
         private String currency; // 币种
 
-        public AccountBalanceInfo(String message, String availableAmount, String availableCashAmount, 
+        public AccountBalanceInfo(String message, String availableAmount, String availableCashAmount,
                                  String creditAmount, String currency) {
             this.message = message;
             this.availableAmount = availableAmount;
@@ -205,4 +203,3 @@ public class AliyunResourceUtil {
         }
     }
 }
-

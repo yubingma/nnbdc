@@ -25,6 +25,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -104,9 +105,11 @@ public class Util {
         mapper.configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, true);
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         StringWriter sw = new StringWriter();
-        try (@SuppressWarnings("deprecation")
-        JsonGenerator gen = new JsonFactory().createJsonGenerator(sw)) {
+        JsonGenerator gen = new JsonFactory().createGenerator(sw);
+        try {
             mapper.writeValue(gen, data);
+        } finally {
+            gen.close();
         }
         String json = sw.toString();
         // System.out.println(json);
@@ -303,14 +306,17 @@ public class Util {
         return sessionData;
     }
 
-    @SuppressWarnings("deprecation")
     public static boolean isSameDay(Date date1, Date date2) {
         if (date1 == null || date2 == null) {
             return false;
-        } else {
-            return (date1.getMonth() == date2.getMonth() && date1.getYear() == date2.getYear()
-                    && date1.getDate() == date2.getDate());
         }
+        Calendar cal1 = Calendar.getInstance();
+        cal1.setTime(date1);
+        Calendar cal2 = Calendar.getInstance();
+        cal2.setTime(date2);
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)
+                && cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH)
+                && cal1.get(Calendar.DAY_OF_MONTH) == cal2.get(Calendar.DAY_OF_MONTH);
     }
 
     public static void downloadFile(URL url, File saveToFile) throws IOException {
@@ -620,11 +626,10 @@ public class Util {
         }
         return params;
     }
-
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> parseJsonToMap(String response) {
         JSONObject jsonObject = JSONObject.fromObject(response);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = jsonObject;
+        Map<String, Object> map = (Map<String, Object>) jsonObject;
         return map;
 
     }

@@ -144,6 +144,7 @@ public class SocketServer {
         systems.put(chat.getName(), chat);
         final SocketIONamespace socketIONamespace = server.addNamespace("/all");
         socketService = new SocketService(socketIONamespace, this, systems, msgBo, userBo);
+        socketService.init();
 
         server.start();
         isStarted = true;
