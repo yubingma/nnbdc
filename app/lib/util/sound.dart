@@ -103,6 +103,19 @@ class SoundUtil {
       await waitForAllPlayers();
       debugPrint('⏱️ [Latency-Sound] waitForAllPlayers 结束，耗时: ${sw.elapsedMilliseconds}ms');
 
+      // EarlyExit 播放器：事件驱动等 playing 变 false（音频硬件排空），最多等 200ms
+      final earlyExitPlayers = _watchedPlayers.where((p) => _logicallyFinishedPlayers.contains(p)).toList();
+      if (earlyExitPlayers.isNotEmpty) {
+        final pending = earlyExitPlayers.where((p) => p.playing);
+        if (pending.isNotEmpty) {
+          await Future.wait(
+            pending.map((p) => p.playingStream.firstWhere((playing) => !playing)),
+          ).timeout(const Duration(milliseconds: 200), onTimeout: () => []);
+        }
+        _logicallyFinishedPlayers.removeAll(_watchedPlayers);
+        debugPrint('⏱️ [Latency-Sound] EarlyExit buffer flush done');
+      }
+
       try {
         final session = await AudioSession.instance;
         await session.configure(AudioSessionConfiguration(
@@ -157,6 +170,10 @@ class SoundUtil {
 
   static Future<void> waitForAllPlayers() async {
     for (var player in _watchedPlayers) {
+      // EarlyExit 播放器：跳过流等待，改用 buffer delay 兜底（见 usePlayAndRecordCategory）
+      if (_logicallyFinishedPlayers.contains(player)) {
+        continue;
+      }
       if (player.playing && 
           player.processingState != ja.ProcessingState.completed && 
           player.processingState != ja.ProcessingState.idle) {
