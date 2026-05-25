@@ -305,7 +305,6 @@ Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${tot
   }
 
   static Future<void> playAsrReadyHintSound() async {
-    if (PlatformUtils.isIOS) return;
     unawaited(playAssetSound('asr_ready_hint.mp3', 2.5, 0.2, 1000, 150));
   }
 

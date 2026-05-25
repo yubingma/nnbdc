@@ -4,8 +4,6 @@ import Speech
 import AVFoundation
 import AVFAudio
 import StoreKit
-import AudioToolbox
-
 @main
 @objc class AppDelegate: FlutterAppDelegate {
     
@@ -749,7 +747,6 @@ import AudioToolbox
         // 彻底移除 asyncAfter 延迟，同步开启与建立任务
         print("IOS: [ASR] Speech recognition task started successfully! Opening data stream...")
         self.isAsrStopped = false 
-        AudioServicesPlaySystemSound(1113) // 播放原生 Tink 提示音，不触碰/不影响 AVAudioEngine 节点
         print("IOS: [ASR] Data stream channel OPENED (isAsrStopped = false). Tap buffers will now feed into the recognition request.")
     }
 

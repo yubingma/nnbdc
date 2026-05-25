@@ -1408,17 +1408,18 @@ class BdcNotifier extends _$BdcNotifier {
   Future<void> _startAsrWithHint(AsrLanguage language) async {
     if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) return;
 
-    // 1. 极致响应优化：第一优先级！确保音频会话处于录放模式，这是唯一的同步阻塞点
-    await SoundUtil.usePlayAndRecordCategory();
+    // 1. 先播放提示音「叮」——此时 session 仍为 .playback（刚播完单词/例句），
+    //    避免在 .playAndRecord + AVAudioEngine 运行状态下播放导致爆音
+    await SoundUtil.playAsrReadyHintSound();
 
-    // 2. 并发爆发：此时通道已就绪，立即触发叮声和引擎启动
-    unawaited(SoundUtil.playAsrReadyHintSound());
+    // 2. 提示音播完后，切换到录放模式（唯一的同步阻塞点）
+    await SoundUtil.usePlayAndRecordCategory();
     
     // 添加调试日志，方便查看正确答案
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
     Global.logger.d('~~~~~ 当前说模式正确答案: ${correctAnswer?.replaceAll('\n', '; ')}');
 
-    // 3. 提取热词（Phrases）并启动
+    // 3. 提取热词（Phrases）并启动 ASR
     List<String> phrases = [];
     if (language == AsrLanguage.english) {
       phrases.add(state.word!.spell);
