@@ -1408,18 +1408,14 @@ class BdcNotifier extends _$BdcNotifier {
   Future<void> _startAsrWithHint(AsrLanguage language) async {
     if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) return;
 
-    // 1. 先播放提示音「叮」——此时 session 仍为 .playback（刚播完单词/例句），
-    //    避免在 .playAndRecord + AVAudioEngine 运行状态下播放导致爆音
-    await SoundUtil.playAsrReadyHintSound();
-
-    // 2. 提示音播完后，切换到录放模式（唯一的同步阻塞点）
+    // 1. 切换到录放模式（唯一的同步阻塞点）
     await SoundUtil.usePlayAndRecordCategory();
-    
+
     // 添加调试日志，方便查看正确答案
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
     Global.logger.d('~~~~~ 当前说模式正确答案: ${correctAnswer?.replaceAll('\n', '; ')}');
 
-    // 3. 提取热词（Phrases）并启动 ASR
+    // 2. 提取热词（Phrases）并启动 ASR，等就绪
     List<String> phrases = [];
     if (language == AsrLanguage.english) {
       phrases.add(state.word!.spell);
@@ -1428,8 +1424,11 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     try {
-      unawaited(asr.startAsr(language, phrases: phrases));
+      await asr.startAsr(language, phrases: phrases);
       state = state.copyWith(wordStartTime: AppClock.now());
+
+      // 3. ASR 就绪后播放提示音——告诉用户可以开始说话
+      unawaited(SoundUtil.playAsrReadyHintSound());
     } catch (e) {
       Global.logger.e('ASR启动指令下发失败: $e');
     }

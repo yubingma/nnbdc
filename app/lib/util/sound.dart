@@ -158,7 +158,6 @@ class SoundUtil {
   static Future<void> waitForAllPlayers() async {
     for (var player in _watchedPlayers) {
       if (player.playing && 
-          !_logicallyFinishedPlayers.contains(player) &&
           player.processingState != ja.ProcessingState.completed && 
           player.processingState != ja.ProcessingState.idle) {
         debugPrint('⏱️ [Latency-Sound] 检查到活跃播放器，进行物理级等待...');
