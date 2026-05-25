@@ -1040,7 +1040,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 24.0),
+              padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 24.0),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.watch<DarkMode>().isDarkMode
