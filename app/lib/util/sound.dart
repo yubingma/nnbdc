@@ -65,8 +65,12 @@ class SoundUtil {
       if (currentSessionCategory == 'playback' && !force) return;
       
       final sw = Stopwatch()..start();
+      debugPrint('⏱️ [Latency-Sound] 开始切换 Session 到 playback...');
+
+      await waitForAllPlayers();
+      debugPrint('⏱️ [Latency-Sound] waitForAllPlayers 结束，耗时: ${sw.elapsedMilliseconds}ms');
+
       try {
-        debugPrint('⏱️ [Latency-Sound] 开始切换 Session 到 playback...');
         final session = await AudioSession.instance;
         await session.configure(AudioSessionConfiguration(
           avAudioSessionCategory: AVAudioSessionCategory.playback,
