@@ -59,7 +59,10 @@ class BdcPage extends ConsumerStatefulWidget {
 
 class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin {
   /// 用于给 extension 中的方法调用，避免使用 setState 时出现 lint错误
-  void updateUI(VoidCallback fn) {
+  int _buildCount = 0;
+  String _lastSetStateTag = 'init';
+  void updateUI(VoidCallback fn, {String tag = 'unknown'}) {
+    _lastSetStateTag = tag;
     if (mounted) setState(fn);
   }
 
@@ -146,7 +149,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       if (_tabController?.length != newLength) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          setState(() {
+          updateUI(() {
             _tabController?.dispose();
             _tabController = TabController(length: newLength, vsync: this);
             _tabController!.addListener(() {
@@ -159,7 +162,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
             if (currentTabIndex < newLength) {
               _tabController!.index = currentTabIndex;
             }
-          });
+          }, tag: 'tab-recreate');
         });
       }
     });
@@ -195,7 +198,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       // 使用 addPostFrameCallback 延迟 setState，避免在键盘事件处理过程中
       // 立即改变 Widget 树导致 HardwareKeyboard 状态断言错误（如 Enter 键重复触发）
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() {});
+        if (mounted) updateUI(() {}, tag: 'focus-change');
       });
     });
 
@@ -203,7 +206,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     var keyboardVisibilityController = KeyboardVisibilityController();
     _keyboardSubscription = keyboardVisibilityController.onChange.listen((bool visible) {
       ref.read(bdcNotifierProvider.notifier).updateKeyboardVisibility(visible);
-      setState(() {});
+      updateUI(() {}, tag: 'keyboard-vis');
     });
 
     _soundController = AnimationController(
@@ -280,7 +283,12 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         ),
       ),
     );
-    Global.logger.d('⚡ [PERF] BdcPage.build cost: ${stopwatch.elapsedMilliseconds}ms');
+    _buildCount++;
+    final buildNum = _buildCount;
+    Global.logger.d('⚡ [PERF] BdcPage.build #$buildNum (trigger: $_lastSetStateTag) cost: ${stopwatch.elapsedMilliseconds}ms');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Global.logger.d('⚡ [PERF] BdcPage.frame #$buildNum painted');
+    });
     return result;
   }
 

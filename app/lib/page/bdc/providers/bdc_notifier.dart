@@ -54,6 +54,16 @@ ja.AudioPlayer bdcAudioPlayer(BdcAudioPlayerRef ref) {
 
 @riverpod
 class BdcNotifier extends _$BdcNotifier {
+  int _stateChangeCount = 0;
+
+  void _updateState(BdcState newState, {String tag = ''}) {
+    _stateChangeCount++;
+    state = newState;
+    if (tag.isNotEmpty) {
+      Global.logger.d('⚡ [PERF] BdcNotifier.state #$_stateChangeCount tag=$tag');
+    }
+  }
+
   late Asr asr;
   late BdcPageArgs _args;
   late final ja.AudioPlayer _audioPlayer;
@@ -103,7 +113,7 @@ class BdcNotifier extends _$BdcNotifier {
   DateTime? _lastSyncTime;
 
   void _onAsrStateChanged(AsrState asrState) {
-    state = state.copyWith(asrState: asrState);
+    _updateState(state.copyWith(asrState: asrState), tag: 'asr-state');
   }
 
   void _startLearningTimer() {
@@ -1037,7 +1047,7 @@ class BdcNotifier extends _$BdcNotifier {
         
         if (state.studyStep == StudyStep.ch2En.json) {
           final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidates, state.word!.spell);
-          state = state.copyWith(currentScore: result.score);
+          _updateState(state.copyWith(currentScore: result.score), tag: 'asr-score');
           processedResult = AsrUtil.preprocessEnglish(result.text, state.word!.spell);
         } else {
           processedResult = AsrUtil.preprocess(best);
@@ -1051,7 +1061,7 @@ class BdcNotifier extends _$BdcNotifier {
       candidates = [event.toString()];
     }
 
-    state = state.copyWith(currentAsrCandidates: candidates);
+    _updateState(state.copyWith(currentAsrCandidates: candidates), tag: 'asr-candidate');
     checkAsrResult(asrInput: processedResult, isVoice: true);
   }
 
@@ -1503,12 +1513,12 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> playWithAnimation(Future<void> Function() playSound, String audioType) async {
-    state = state.copyWith(playingStates: {...state.playingStates, audioType: true});
+    _updateState(state.copyWith(playingStates: {...state.playingStates, audioType: true}), tag: 'play-start');
     await asr.stopMicrophone();
     try {
       await playSound();
     } finally {
-      state = state.copyWith(playingStates: {...state.playingStates, audioType: false});
+      _updateState(state.copyWith(playingStates: {...state.playingStates, audioType: false}), tag: 'play-end');
       _handleTabChangeForAsr();
     }
   }

@@ -100,12 +100,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                       notifier.meaningController.text = text;
                       await notifier.checkAsrResult(asrInput: text, isVoice: false);
                     },
-                    onCancel: () {
-                      _meaningFocusNode.unfocus();
-                      updateUI(() {
-                        notifier.updateShowHandwritingBoard(false);
-                      });
-                      notifier.handleTabChangeForAsr();
+                      onCancel: () {
+                        _meaningFocusNode.unfocus();
+                        updateUI(() {
+                          notifier.updateShowHandwritingBoard(false);
+                        }, tag: 'hw-cancel');
+                        notifier.handleTabChangeForAsr();
                     },
                   ),
                 ),
@@ -172,7 +172,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 _meaningFocusNode.unfocus();
                                 updateUI(() {
                                   notifier.updateShowHandwritingBoard(false);
-                                });
+                                }, tag: 'hw-close');
                                 notifier.handleTabChangeForAsr();
                               },
                             ),
@@ -229,7 +229,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         textInputAction: TextInputAction.done,
                         onChanged: (value) {
                           notifier.updateIsUpdatingByHint(false);
-                          updateUI(() {});
+                          updateUI(() {}, tag: 'text-changed');
                           if (value.isNotEmpty && state.word?.spell != null) {
                             if (Util.equalsIgnoreCase(value, state.word!.spell)) {
                               // 提示已经显示了全部字母时不应自动提交，用户应继续手动答题
@@ -379,7 +379,8 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildMainContent() {
-    return Column(
+    final sw = Stopwatch()..start();
+    final result = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 顶部学习进度条
@@ -686,10 +687,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                             ),
                           ],
                         ),
-                        onTap: () {
-                          updateUI(() {
-                            notifier.updateShowAnswerButtons(true);
-                          });
+                      onTap: () {
+                        updateUI(() {
+                          notifier.updateShowAnswerButtons(true);
+                        }, tag: 'show-answer');
                         },
                       ),
               );
@@ -698,11 +699,14 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
       ],
     );
+    Global.logger.d('⚡ [PERF] _buildMainContent cost: ${sw.elapsedMilliseconds}ms');
+    return result;
   }
 
 
   Widget _buildBottomButtons() {
-    return Container(
+    final sw = Stopwatch()..start();
+    final result = Container(
       key: _bottomButtonsKey,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Column(
@@ -733,6 +737,8 @@ extension BdcPageStateUIComponents on BdcPageState {
         ],
       ),
     );
+    Global.logger.d('⚡ [PERF] _buildBottomButtons cost: ${sw.elapsedMilliseconds}ms');
+    return result;
   }
 
   Widget _buildRatingButtonsRow() {
@@ -1340,7 +1346,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             notifier.updateIsUpdatingByHint(false);
             updateUI(() {
               notifier.updateShowHandwritingBoard(true);
-            });
+            }, tag: 'hw-open');
             // 进入手势拼写模式前，务必强制彻底停止 ASR 会话，避免在手写时后台仍在倾听或产生提示音
             notifier.asr.stopMicrophone();
           },
@@ -2050,7 +2056,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   onTap: () {
                                     updateUI(() {
                                       notifier.updateShowSentenceTranslation(true);
-                                    });
+                                    }, tag: 'sentence-trans');
                                   },
                                   borderRadius: BorderRadius.circular(4),
                                   child: const Padding(
@@ -2243,7 +2249,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                               onDeleted: () {
                             state.currentGetWordResult?.images
                                 ?.removeWhere((e) => e.id == image.id);
-                            updateUI(() {});
+                            updateUI(() {}, tag: 'img-delete');
                           });
                         },
                       ),
@@ -2328,7 +2334,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             SoundUtil.playPronounceSound(state.word!);
             Util.closeIme();
           }
-          updateUI(() {});
+          updateUI(() {}, tag: 'spell-submit');
         },
         style: textStyle,
       ),
