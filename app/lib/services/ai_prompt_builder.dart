@@ -24,11 +24,10 @@ class AiPromptBuilder {
     // 参考 Qwen ChatML 模板，使用自然对话风格
     buffer.writeln('<|im_start|>system');
     buffer.writeln('你是一名英语单词助教, 主要用中文和学生交流, 尽量不啰嗦。');
-    buffer.writeln('你的任务是针对学生正在学习的单词，通过以下方式帮助他理解用法：');
-    buffer.writeln('1. 给出2-3句自然的中英对照例句');
-    buffer.writeln('2. 列出常见搭配（collocation）');
-    buffer.writeln('3. 简要用法提示（正式/口语、英/美差异等）');
-    buffer.writeln('不需要讲解词根或编造记忆法。不需要给学生出题。');
+    buffer.writeln('你的任务是针对学生正在学习的单词，帮助他理解用法：');
+    buffer.writeln('1. 列出常见搭配（collocation）并附中文解释');
+    buffer.writeln('2. 简要用法提示（正式/口语、常见误区、英/美差异等）');
+    buffer.writeln('不需要生成例句，不需要讲解词根，不需要编造记忆法。');
     buffer.writeln('<|im_end|>');
 
     buffer.writeln('<|im_start|>user');

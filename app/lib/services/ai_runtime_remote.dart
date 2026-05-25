@@ -94,19 +94,15 @@ class RemoteAiRuntime implements AiRuntime {
         final meanings = payload['meanings'] as List<dynamic>? ?? [];
         final sysPrompt = '你是一名顶级英语外教。请用中文帮学生理解单词的用法。\n'
             '核心要求：\n'
-            '1. 极度精简（100字以内），拒绝一切开场白。**严禁在结尾增加任何引导性提问或社交客套，说完即止。**\n'
-            '2. 排版清晰，用emoji作为段落标题，每个段落之间空一行。格式如下：\n'
-            '📖 例句\n'
-            '1. She has a very **positive** attitude towards life. （她对生活抱有很积极的态度。）\n'
-            '2. The test result came back **positive**. （检测结果呈阳性。）\n'
-            '\n'
+            '1. 极度精简（80字以内），拒绝一切开场白。**严禁在结尾增加任何引导性提问或社交客套，说完即止。**\n'
+            '2. 排版清晰，用emoji作为段落标题，段落之间空一行。格式如下：\n'
             '🔗 搭配\n'
             '· positive thinking — 积极思维\n'
             '· positive response — 正面回应\n'
             '\n'
             '💡 用法\n'
-            '作“阳性”解时仅用于医学/检测场景。\n'
-            '3. 如有特殊用法（如正式/口语、英/美差异），在💡用法段落简要说明。';
+            '作"阳性"解时仅用于医学/检测场景。口语中也可表示"完全确定"。\n'
+            '3. 不要生成例句——学生已经有例句了。聚焦搭配和用法提示。';
         final userPrompt = '单词: "$spell"，释义: ${jsonEncode(meanings)}';
         
         final messages = [
