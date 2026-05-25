@@ -15,7 +15,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
 
   Widget _buildLoadingPage() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = _cachedIsDarkMode;
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -53,7 +53,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildFullscreenImmersiveInputMode() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = _cachedIsDarkMode;
 
     // 获取合并后的所有释义项
     final meaningItems = state.word?.getMergedMeaningItems() ?? [];
@@ -279,7 +279,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   Widget _buildQuestionContent(BdcState state) {
     return Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: _cachedIsDarkMode
             ? const Color(0xFF1E1E1E)
             : const Color(0xFFF8F9FA),
         borderRadius: const BorderRadius.only(
@@ -290,7 +290,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
         boxShadow: [
           BoxShadow(
-            color: context.watch<DarkMode>().isDarkMode
+            color: _cachedIsDarkMode
                 ? Colors.black.withValues(alpha: 0.4)
                 : Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
@@ -342,14 +342,14 @@ extension BdcPageStateUIComponents on BdcPageState {
 
     return Container(
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: _cachedIsDarkMode
             ? const Color(0xFF1E1E1E)
             : const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(8),
       ),
       child: TabBar(
         controller: _tabController,
-        indicatorColor: context.watch<DarkMode>().isDarkMode
+        indicatorColor: _cachedIsDarkMode
             ? Colors.white
             : Colors.black,
         indicatorWeight: 2,
@@ -357,10 +357,10 @@ extension BdcPageStateUIComponents on BdcPageState {
         dividerHeight: 0,
         overlayColor: WidgetStateProperty.all(Colors.transparent),
         splashFactory: NoSplash.splashFactory,
-        labelColor: context.watch<DarkMode>().isDarkMode
+        labelColor: _cachedIsDarkMode
             ? Colors.white
             : Colors.black,
-        unselectedLabelColor: context.watch<DarkMode>().isDarkMode
+        unselectedLabelColor: _cachedIsDarkMode
             ? Colors.white54
             : Colors.grey.shade400,
         labelStyle: const TextStyle(
@@ -413,7 +413,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               width: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(1.5), // 从 3 改为 1.5
-                color: context.watch<DarkMode>().isDarkMode
+                color: _cachedIsDarkMode
                     ? const Color(0xFF2C2C2C)
                     : const Color(0xFFF0F2F5),
               ),
@@ -427,7 +427,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         // 计算批次颜色：从红色(0) -> 蓝色(0.5) -> 绿色(1.0) 渐变
                         // 根据白天/黑夜模式调整基础透明度
                         final bool isDarkMode =
-                            context.watch<DarkMode>().isDarkMode;
+                            _cachedIsDarkMode;
                         final double baseAlpha =
                             isDarkMode ? 0.25 : 0.15; // 黑夜模式稍明显一点，白天模式更淡
 
@@ -716,7 +716,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               borderRadius: BorderRadius.circular(12),
               border: _showBorders
                   ? Border.all(
-                      color: context.watch<DarkMode>().isDarkMode
+                      color: _cachedIsDarkMode
                           ? const Color(0xFF9C27B0) // 深色模式：紫色边框
                           : const Color(0xFF7B1FA2), // 浅色模式：深紫色边框
                       width: 2,
@@ -748,10 +748,10 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_not_know_btn'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.watch<DarkMode>().isDarkMode
+                backgroundColor: _cachedIsDarkMode
                     ? Colors.white.withValues(alpha: 0.1)
                     : const Color(0xFFF5F5F5),
-                foregroundColor: context.watch<DarkMode>().isDarkMode
+                foregroundColor: _cachedIsDarkMode
                     ? Colors.white70
                     : const Color(0xFF666666),
                 elevation: 0,
@@ -776,10 +776,10 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_study_again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.watch<DarkMode>().isDarkMode
+                backgroundColor: _cachedIsDarkMode
                     ? Colors.white.withValues(alpha: 0.1)
                     : const Color(0xFFF5F5F5),
-                foregroundColor: context.watch<DarkMode>().isDarkMode
+                foregroundColor: _cachedIsDarkMode
                     ? Colors.white70
                     : const Color(0xFF666666),
                 elevation: 0,
@@ -799,10 +799,10 @@ extension BdcPageStateUIComponents on BdcPageState {
           const SizedBox(width: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.watch<DarkMode>().isDarkMode
+              backgroundColor: _cachedIsDarkMode
                   ? Colors.white
                   : AppTheme.primaryColor,
-              foregroundColor: context.watch<DarkMode>().isDarkMode
+              foregroundColor: _cachedIsDarkMode
                   ? Colors.black
                   : Colors.white,
               elevation: 0,
@@ -828,7 +828,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     String? label,
     required VoidCallback onTap,
   }) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = _cachedIsDarkMode;
 
     return Container(
       height: 32, // 恢复原高度
@@ -893,12 +893,12 @@ extension BdcPageStateUIComponents on BdcPageState {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode
+              color: _cachedIsDarkMode
                   ? const Color(0xFF2C2C2C)
                   : const Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: context.watch<DarkMode>().isDarkMode
+                color: _cachedIsDarkMode
                     ? Colors.white10
                     : Colors.black.withValues(alpha: 0.05),
                 width: 1,
@@ -918,7 +918,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 },
                 child: Icon(
                   Icons.arrow_back_ios_new,
-                  color: context.watch<DarkMode>().isDarkMode
+                  color: _cachedIsDarkMode
                       ? Colors.white70
                       : const Color(0xFF333333),
                   size: 18,
@@ -991,7 +991,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   Widget _buildAnswerContent(String text) {
     if (text.isEmpty) return const SizedBox();
 
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = _cachedIsDarkMode;
     final lines = text.split('\n');
     List<Widget> widgets = [];
 
@@ -1079,7 +1079,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             builder: (context) {
               Color bgColor;
               Color borderColor;
-              final isDarkMode = context.watch<DarkMode>().isDarkMode;
+              final isDarkMode = _cachedIsDarkMode;
 
               if (state.selectedAnswerIndex != null) {
                 if ((index + 1) == state.correctAnswerIndex) {
@@ -1174,7 +1174,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         state.word != null)) {
       return const SizedBox.shrink();
     }
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = _cachedIsDarkMode;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1183,12 +1183,12 @@ extension BdcPageStateUIComponents on BdcPageState {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: context.watch<DarkMode>().isDarkMode
+            color: _cachedIsDarkMode
                 ? const Color(0xFF1E1E1E)
                 : const Color(0xFFF8F9FA),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             border: Border.all(
-              color: context.watch<DarkMode>().isDarkMode
+              color: _cachedIsDarkMode
                   ? Colors.white10
                   : Colors.black.withValues(alpha: 0.03),
               width: 1,
@@ -1255,22 +1255,22 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode
+              color: _cachedIsDarkMode
                   ? const Color(0xFF1E1E1E).withValues(alpha: 0.8)
                   : const Color(0xFFF8F9FA).withValues(alpha: 0.8),
               borderRadius:
                   const BorderRadius.vertical(bottom: Radius.circular(16)),
               border: Border(
                 left: BorderSide(
-                    color: context.watch<DarkMode>().isDarkMode
+                    color: _cachedIsDarkMode
                         ? Colors.white10
                         : Colors.black.withValues(alpha: 0.03)),
                 right: BorderSide(
-                    color: context.watch<DarkMode>().isDarkMode
+                    color: _cachedIsDarkMode
                         ? Colors.white10
                         : Colors.black.withValues(alpha: 0.03)),
                 bottom: BorderSide(
-                    color: context.watch<DarkMode>().isDarkMode
+                    color: _cachedIsDarkMode
                         ? Colors.white10
                         : Colors.black.withValues(alpha: 0.03)),
               ),
@@ -1299,7 +1299,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: context.watch<DarkMode>().isDarkMode
+                            color: _cachedIsDarkMode
                                 ? const Color(0xFFD1D5DB)
                                 : const Color(0xFF4B5563),
                           ),
@@ -1350,7 +1350,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                    color: context.watch<DarkMode>().isDarkMode
+                    color: _cachedIsDarkMode
                         ? Colors.white10
                         : Colors.black.withValues(alpha: 0.05)),
               ),
@@ -1414,7 +1414,7 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildFsrsResultPanel() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
     if (!state.hasFinishedAnswering || state.fsrsItem == null) {
@@ -1776,7 +1776,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     required VoidCallback onTap,
     VoidCallback? onLongPress,
   }) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = _cachedIsDarkMode;
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
@@ -1832,7 +1832,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: _cachedIsDarkMode
             ? const Color(0xFF2C2C2C)
             : const Color(0xFFF8F9FB),
         borderRadius: BorderRadius.circular(12),
@@ -1850,7 +1850,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ? ''
                     : '[${Util.getWordDefaultPronounce(state.currentGetWordResult!.learningWord!.word)}]',
                 style: TextStyle(
-                  color: context.watch<DarkMode>().isDarkMode
+                  color: _cachedIsDarkMode
                       ? const Color(0xFFD1D5DB)
                       : const Color(0xFF4B5563),
                   fontFamily: "NotoSans",
@@ -1881,7 +1881,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: _cachedIsDarkMode
             ? Colors.white.withValues(alpha: 0.03)
             : const Color(0xFFF8FAFF),
         borderRadius: BorderRadius.circular(12),
@@ -1893,7 +1893,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             padding: const EdgeInsets.all(4),
             margin: const EdgeInsets.only(right: 8, top: 2),
             decoration: BoxDecoration(
-              color: context.watch<DarkMode>().isDarkMode
+              color: _cachedIsDarkMode
                   ? const Color(0xFF1E1E1E).withValues(alpha: 0.5)
                   : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(6),
@@ -1971,7 +1971,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 36,
-                      color: context.watch<DarkMode>().isDarkMode
+                      color: _cachedIsDarkMode
                           ? Colors.white
                           : const Color(0xFF1A1A1A),
                       fontFamily: 'Roboto',
@@ -1992,7 +1992,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             ? ''
                             : '[${Util.getWordDefaultPronounce(state.currentGetWordResult!.learningWord!.word)}]',
                         style: TextStyle(
-                          color: context.watch<DarkMode>().isDarkMode
+                          color: _cachedIsDarkMode
                               ? const Color(0xFFD1D5DB)
                               : const Color(0xFF4B5563),
                           fontFamily: "NotoSans",
@@ -2016,7 +2016,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     state.word?.getMeaningStr() ?? '',
                     style: TextStyle(
                       fontSize: 16,
-                      color: context.watch<DarkMode>().isDarkMode
+                      color: _cachedIsDarkMode
                           ? Colors.white70
                           : Colors.black87,
                       fontWeight: FontWeight.w500,
@@ -2073,7 +2073,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   context,
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: context.watch<DarkMode>().isDarkMode
+                                    color: _cachedIsDarkMode
                                         ? Colors.white70
                                         : Colors.black54,
                                   ),
@@ -2086,7 +2086,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         padding: const EdgeInsets.all(4),
                         margin: const EdgeInsets.only(left: 8, top: 2),
                         decoration: BoxDecoration(
-                          color: context.watch<DarkMode>().isDarkMode
+                          color: _cachedIsDarkMode
                               ? Colors.white.withValues(alpha: 0.08)
                               : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(6),
@@ -2109,7 +2109,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                           : Icons.volume_down)
                                       : Icons.volume_up,
                                   color: state.playingStates['sentence']!
-                                      ? (context.watch<DarkMode>().isDarkMode
+                                      ? (_cachedIsDarkMode
                                           ? Colors.white
                                           : const Color(0xFF1A1A1A))
                                       : Colors.grey[500],
@@ -2204,7 +2204,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: context.watch<DarkMode>().isDarkMode
+                                  color: _cachedIsDarkMode
                                       ? Colors.white
                                       : const Color(0xFF2D3748),
                                 ),
@@ -2257,10 +2257,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.add, size: 24.0),
                         style: ElevatedButton.styleFrom(
-                          foregroundColor: context.watch<DarkMode>().isDarkMode
+                          foregroundColor: _cachedIsDarkMode
                               ? Colors.black
                               : Colors.white,
-                          backgroundColor: context.watch<DarkMode>().isDarkMode
+                          backgroundColor: _cachedIsDarkMode
                               ? Colors.white
                               : AppTheme.primaryColor,
                           elevation: 0,
@@ -2434,7 +2434,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: context.watch<DarkMode>().isDarkMode
+        color: _cachedIsDarkMode
             ? Colors.white.withValues(alpha: 0.08)
             : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(6),

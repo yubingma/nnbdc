@@ -63,6 +63,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     if (mounted) setState(fn);
   }
 
+  /// 缓存当前主题模式，避免 48 处 `DarkMode` watch 重复注册
+  late bool _cachedIsDarkMode;
+
   static const double leftPadding = 16;
   static const double rightPadding = 16;
   static const int batchSize = 10;
@@ -224,9 +227,11 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   @override
   Widget build(BuildContext context) {
     final stopwatch = Stopwatch()..start();
+    // 缓存当前主题，子组件直接用缓存值，避免 48 处 context.watch
+    _cachedIsDarkMode = context.watch<DarkMode>().isDarkMode;
     // 顶级只监听加载状态，不再监听具体单词细节
     ref.watch(bdcNotifierProvider.select((s) => s.dataLoaded));
-    
+
     // 获取一份不含高频更新字段的稳定状态供主框架结构使用
     final state = ref.watch(bdcNotifierProvider.select((s) => s.copyWith(
       asrResult: '',
@@ -238,7 +243,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       meaningText: '',
       hintTapCount: 0,
     )));
-    
+
     {
       int expectedTabLength = _getShouldShowSpeakTab(state) ? 2 : 1;
       if (_tabController == null || _tabController!.length != expectedTabLength) {
@@ -252,7 +257,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
 
     Widget pageContent = (!state.dataLoaded) 
         ? _buildLoadingPage() 
-        : renderPage();
+        : renderPage(state);
 
     if (isDesktop) {
       pageContent = Center(
@@ -268,7 +273,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         resizeToAvoidBottomInset: true,
         appBar: null,
         body: Container(
-          color: context.watch<DarkMode>().isDarkMode
+          color: _cachedIsDarkMode
               ? const Color(0xFF121212)
               : Colors.white,
           child: pageContent,
@@ -279,19 +284,8 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     return result;
   }
 
-  Widget renderPage() {
+  Widget renderPage(BdcState state) {
     final stopwatch = Stopwatch()..start();
-    // 移除这里的全量监听，改用主 build 方法中已经脱敏处理好的 state
-    final state = ref.watch(bdcNotifierProvider.select((s) => s.copyWith(
-      asrResult: '',
-      asrState: AsrState.unknown,
-      currentAsrCandidates: const [],
-      asrPassRuleCache: '',
-      playingStates: const {'word': false, 'sentence': false},
-      currentScore: 0,
-      meaningText: '',
-      hintTapCount: 0,
-    )));
 
     if (state.loadError != null || state.word == null) {
       final isRedirecting = state.loadError?.contains('跳转') ?? false;
@@ -354,10 +348,14 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
                 onHorizontalDragStart: (_) {},
                 onHorizontalDragUpdate: (details) {},
                 onHorizontalDragEnd: (details) {},
-                child: _buildMainContent(),
+                child: RepaintBoundary(
+                  child: _buildMainContent(),
+                ),
               ),
             ),
-            _buildBottomButtons(),
+            RepaintBoundary(
+              child: _buildBottomButtons(),
+            ),
           ],
         ),
         if (state.historyIndex != -1)

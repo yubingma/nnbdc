@@ -548,7 +548,7 @@ extension BdcPageStateDialogs on BdcPageState {
           String? submitError;
 
           return StatefulBuilder(builder: (context, dialogSetState) {
-            final isDark = context.watch<DarkMode>().isDarkMode;
+            final isDark = _cachedIsDarkMode;
 
             Future<void> pickImages() async {
               try {
@@ -1327,7 +1327,7 @@ extension BdcPageStateDialogs on BdcPageState {
     showDialog(
       context: context,
       builder: (context) {
-        final isDarkMode = context.watch<DarkMode>().isDarkMode;
+        final isDarkMode = _cachedIsDarkMode;
         final bgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
         final textColor = isDarkMode ? Colors.white70 : Colors.black87;
 
@@ -1557,7 +1557,7 @@ extension BdcPageStateDialogs on BdcPageState {
         return const SizedBox.shrink();
       },
       transitionBuilder: (context, anim1, anim2, child) {
-        final bool isDark = context.watch<DarkMode>().isDarkMode;
+        final bool isDark = _cachedIsDarkMode;
         final Color textColor = isDark ? Colors.white : Colors.black87;
         final Color subTextColor = isDark ? Colors.white70 : Colors.black54;
 
