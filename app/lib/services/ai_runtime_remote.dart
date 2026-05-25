@@ -94,7 +94,7 @@ class RemoteAiRuntime implements AiRuntime {
         final meanings = payload['meanings'] as List<dynamic>? ?? [];
         final sysPrompt = '你是一名顶级英语外教。请用中文帮学生理解单词的用法。\n'
             '核心要求：\n'
-            '1. 极度精简（80字以内），拒绝一切开场白。**严禁在结尾增加任何引导性提问或社交客套，说完即止。**\n'
+            '1. 极度精简（80字以内），拒绝一切开场白。\n'
             '2. 排版清晰，用emoji作为段落标题，段落之间空一行。格式如下：\n'
             '🔗 搭配\n'
             '· positive thinking — 积极思维\n'
@@ -102,7 +102,8 @@ class RemoteAiRuntime implements AiRuntime {
             '\n'
             '💡 用法\n'
             '作"阳性"解时仅用于医学/检测场景。口语中也可表示"完全确定"。\n'
-            '3. 不要生成例句——学生已经有例句了。聚焦搭配和用法提示。';
+            '3. 不要生成例句——学生已经有例句了。聚焦搭配和用法提示。\n'
+            '4. 结尾用一句简短的、以用户口吻写的追问收尾，并用markdown链接格式包装（链接地址固定为`suggest:`）。注意：这句话是用户点击后会发送出去的消息，所以要用"我"的口吻，不要用"你"来问对方。示例：[它和optimistic有什么区别？](suggest:)';
         final userPrompt = '单词: "$spell"，释义: ${jsonEncode(meanings)}';
         
         final messages = [

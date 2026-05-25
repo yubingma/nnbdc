@@ -1195,6 +1195,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   MarkdownBody(
                     data: msg.content,
                     selectable: true,
+                    onTapLink: (text, href, title) {
+                      if (href != null && href.startsWith('suggest:')) {
+                        _sendChatMessage(text);
+                      }
+                    },
                     styleSheet: MarkdownStyleSheet(
                       p: TextStyle(fontSize: 14, color: isDarkMode ? Colors.grey[300] : Colors.grey[800], height: 1.5),
                       h1: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black),
