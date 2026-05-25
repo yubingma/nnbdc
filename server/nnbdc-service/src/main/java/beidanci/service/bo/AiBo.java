@@ -450,6 +450,7 @@ public class AiBo {
      * @param messages 用户和系统消息列表
      * @return AI 生成的文本结果流 (每次发射一个 delta 文本片段)
      */
+    @SuppressWarnings("unchecked")
     public Flowable<String> chatStream(List<Message> messages) {
         String apiKey = aiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
@@ -517,7 +518,6 @@ public class AiBo {
 
                             try {
                                 Map<String, Object> chunk = JsonUtils.parseMap(data);
-                                @SuppressWarnings("unchecked")
                                 List<Map<String, Object>> choices = (List<Map<String, Object>>) chunk.get("choices");
                                 if (choices != null && !choices.isEmpty()) {
                                     Map<String, Object> delta = (Map<String, Object>) choices.get(0).get("delta");
