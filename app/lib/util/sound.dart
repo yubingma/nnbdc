@@ -108,7 +108,7 @@ class SoundUtil {
         final pending = earlyExitPlayers.where((p) => p.playing);
         if (pending.isNotEmpty) {
           await Future.wait(
-            pending.map((p) => p.playingStream.firstWhere((playing) => !playing)),
+            pending.map((p) => p.playingStream.firstWhere((playing) => !playing, orElse: () => false)),
           ).timeout(const Duration(milliseconds: 200), onTimeout: () => []);
         }
         _logicallyFinishedPlayers.removeAll(_watchedPlayers);
@@ -224,7 +224,8 @@ class SoundUtil {
           await player.playerStateStream.firstWhere((state) => 
               !state.playing || 
               state.processingState == ja.ProcessingState.completed || 
-              state.processingState == ja.ProcessingState.idle)
+              state.processingState == ja.ProcessingState.idle,
+              orElse: () => player.playerState)
           .timeout(const Duration(milliseconds: 1000));
         } catch (e) {
           debugPrint('🔊 [SoundUtil] 等待播放器结束超时: $e');
