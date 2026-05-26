@@ -400,6 +400,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               // 提示还差几次
               ref.read(bdcNotifierProvider.notifier).progressBarTapTimer =
                   Timer(const Duration(milliseconds: 3000), () {
+                if (!mounted) return;
                 notifier.updateProgressBarTapCount(0);
               });
             }

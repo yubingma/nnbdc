@@ -98,6 +98,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     ref.onDispose(() {
       _learningTimer?.cancel();
+      progressBarTapTimer?.cancel();
       _syncLearningTimeToDb();
       asr.removeStateListener(_onAsrStateChanged);
       asr.stopMicrophone();
