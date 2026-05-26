@@ -625,20 +625,71 @@ class DataIntegrityChecker {
       // 系统级字典（主要是通用词典 ID=0）如果有数据不完整的问题
       if (checkResult.hasIssue('common_dict_integrity')) {
         try {
-          // 策略：不再通过同步流（Version 0）重刷，因为同步流不包含释义和例句。
-          // 而是通过专项词书下载接口（downloadADict）进行靶向增量修复。
-          Global.logger.i('💡 [修复] 检测到系统通用词典数据不完整，正在启动专项增量拉取修复...');
-          
+          Global.logger.i('💡 [修复] 检测到系统通用词典数据不完整，正在启动专项修复流程...');
+
+          // 1. 物理清理本地同步或导入残留的“幽灵关联”（在 words 表中该 word_id 已经不存在的 dict_words 关联）
+          await _db.customStatement(
+            'DELETE FROM dict_words WHERE dict_id = ? AND word_id NOT IN (SELECT id FROM words)',
+            [Global.commonDictId],
+          );
+          Global.logger.i('💡 [修复] 已物理清除本地通用词典中的幽灵单词关联记录');
+
+          // 2. 靶向查找通用词典中“名存实亡”缺少释义项的单词，并向云端靶向补全
+          final selectMissingQuery = 'SELECT word_id FROM dict_words dw WHERE dw.dict_id = ? AND NOT EXISTS (SELECT 1 FROM meaning_items mi WHERE mi.word_id = dw.word_id AND mi.dict_id = ?)';
+          final missingRows = await _db.customSelect(selectMissingQuery, variables: [
+            Variable.withString(Global.commonDictId),
+            Variable.withString(Global.commonDictId),
+          ]).get();
+          final missingWordIds = missingRows.map((r) => r.read<String>('word_id')).toList();
+
+          if (missingWordIds.isNotEmpty) {
+            Global.logger.i('💡 [修复] 发现通用词典有 ${missingWordIds.length} 个单词缺少释义项，开始点对点云端补件...');
+            String jsonStr = jsonEncode(missingWordIds);
+            final response = await Api.client.getFallbackWordsData(jsonStr);
+            if (response.success && response.data != null) {
+              final data = response.data!.data;
+              int mCount = 0, sCount = 0;
+
+              await _db.transaction(() async {
+                // 恢复 MeaningItem
+                final mList = data['meaningItems'] as List<dynamic>? ?? [];
+                for (final item in mList) {
+                  final Map<String, dynamic> mMap = Map<String, dynamic>.from(item as Map);
+                  final m = MeaningItem.fromJson(mMap);
+                  await _db.meaningItemsDao.insertEntity(m, false);
+                  mCount++;
+                }
+
+                // 恢复 Sentence
+                final sList = data['sentences'] as List<dynamic>? ?? [];
+                for (final item in sList) {
+                  final Map<String, dynamic> sMap = Map<String, dynamic>.from(item as Map);
+                  final s = Sentence.fromJson(sMap);
+                  await _db.sentencesDao.insertEntity(s);
+                  sCount++;
+                }
+              });
+              fixResult.addFixed('成功靶向缝合了 ${missingWordIds.length} 个通用词典缺失单词的释义数据！(包含 $mCount 条释义，$sCount 条例句)');
+            } else {
+              fixResult.addError('请求云端补全通用词典释义数据失败: ${response.msg}');
+            }
+          }
+
+          // 3. 校准更新本地词书的 wordCount 元数据
+          final actualCount = await _db.dictWordsDao.getDictWordCount(Global.commonDictId);
+          await _db.dictsDao.updateWordCount(Global.commonDictId, true);
+          Global.logger.i('💡 [修复] 通用词典 wordCount 元数据已成功核准对齐为：$actualCount');
+
           final commonDict = await _db.dictsDao.findById(Global.commonDictId);
           if (commonDict != null) {
-            // 找到本地实际的单词列表，计算断层位置
+            // 重新获取关联列表，核准真正的序号连续性
             final wordsList = await (_db.dictWordsDao.select(_db.dictWords)
                   ..where((dw) => dw.dictId.equals(Global.commonDictId))
                   ..orderBy([(dw) => OrderingTerm.asc(dw.seq)]))
                 .get();
-            
+
             int fromSeq = 1;
-            // 寻找第一个断层
+            // 寻找第一个真实的断层
             for (int i = 0; i < wordsList.length; i++) {
               if (wordsList[i].seq != i + 1) {
                 fromSeq = i + 1;
@@ -650,7 +701,7 @@ class DataIntegrityChecker {
             }
 
             if (fromSeq <= commonDict.wordCount) {
-              Global.logger.i('💡 [修复] 通用词典缺失序号范围: $fromSeq - ${commonDict.wordCount}，开始专项增量拉取...');
+              Global.logger.i('💡 [修复] 通用词典缺失序号范围: $fromSeq - ${commonDict.wordCount}，开始增量拉取修复...');
               final response = await Api.client.getDictResRange(
                 Global.commonDictId,
                 fromSeq,
@@ -659,12 +710,12 @@ class DataIntegrityChecker {
 
               if (response.success && response.data != null) {
                 await _importDictRes(response.data!);
-                fixResult.addFixed('系统通用词典已通过专项修复接口（Range: $fromSeq - ${commonDict.wordCount}）成功修复并缝合！');
+                fixResult.addFixed('系统通用词典已通过增量修复（Range: $fromSeq - ${commonDict.wordCount}）成功修复！');
               } else {
                 fixResult.addError('系统通用词典增量修复拉取失败: ${response.msg}');
               }
             } else {
-              fixResult.addFixed('系统通用词典序号检查通过，无需增量修复。');
+              fixResult.addFixed('系统通用词典序号检查与元数据对齐全部通过。');
             }
           }
         } catch (e, stack) {
