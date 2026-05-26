@@ -562,20 +562,21 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(dataLoaded: true);
 
-    final playStopwatch = Stopwatch()..start();
-    
-    // 将耗时的发音和例句播放彻底异步化，抛入后台执行，避免阻塞 handleWord/getNextWord 主加载流程
-    unawaited(() async {
-      try {
-        debugPrint('⏱️ [Latency-BDC] handleWord -> playWordAndFirstSentence 触发 (background)...');
-        // 无论何种模式，加载新词时都只按自动播放配置执行（forcePlayWord=false），确保中英模式不泄密
-        await playWordAndFirstSentence(false, true);
-      } catch (e, st) {
-        Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
-      } finally {
-        Global.logger.d('[PERF] handleWord -> playWordAndFirstSentence (background) cost: ${playStopwatch.elapsedMilliseconds}ms');
-      }
-    }());
+    // 将发音播放和 ASR 启动延迟 400ms 执行，完美物理避开卡片滑入/切入过渡期的高帧率渲染时间窗，根治切词瞬间的视觉掉帧卡顿
+    Future.delayed(const Duration(milliseconds: 400), () {
+      final playStopwatch = Stopwatch()..start();
+      unawaited(() async {
+        try {
+          debugPrint('⏱️ [Latency-BDC] handleWord -> playWordAndFirstSentence 触发 (background)...');
+          // 无论何种模式，加载新词时都只按自动播放配置执行（forcePlayWord=false），确保中英模式不泄密
+          await playWordAndFirstSentence(false, true);
+        } catch (e, st) {
+          Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
+        } finally {
+          Global.logger.d('[PERF] handleWord -> playWordAndFirstSentence (background) cost: ${playStopwatch.elapsedMilliseconds}ms');
+        }
+      }());
+    });
     
     Global.logger.i('[PERF] Total handleWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
     return true;
@@ -978,7 +979,7 @@ class BdcNotifier extends _$BdcNotifier {
       showAnswerButtons: false,
     );
     try {
-      await asr.stopMicrophone();
+      await asr.stopAsr();
       await asr.reset();
 
       meaningController.text = '';
@@ -1268,11 +1269,8 @@ class BdcNotifier extends _$BdcNotifier {
       }
     }
     
-    // 答对了，立即彻底、非阻塞地在后台关停麦克风，绝不阻塞 UI 主帧
-    unawaited(asr.stopMicrophone());
-    // 显式将音频分类切换回高保真播放分类，确保接下来的提示音或单词发音能够清晰响亮地从扬声器传出（避免通话听筒导致的音量微弱或无声）
-    final sessionSw = Stopwatch()..start();
-    final sessionFuture = SoundUtil.usePlaybackCategory();
+    // 答对了，轻量级停止识别任务本身，保持麦克风与 Category 通道保温，绝不阻塞 UI 主帧
+    unawaited(asr.stopAsr());
     
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
       state.wordWrapper!.revealAllRemainingMeanings();
@@ -1324,10 +1322,6 @@ class BdcNotifier extends _$BdcNotifier {
       await playWordAndFirstSentence(true, false);
       debugPrint('⚡ [PERF] _onAnswerCorrect -> playWordAndFirstSentence cost: ${playSw.elapsedMilliseconds}ms');
     } else {
-      // 显式等待音频 Session 切换回 playback 高保真纯播放分类，根治 iOS playAndRecord 模式下硬件滤波导致的尖锐、干瘪电话音
-      final waitSw = Stopwatch()..start();
-      await sessionFuture;
-      debugPrint('⚡ [PERF] _onAnswerCorrect -> await usePlaybackCategory future cost: ${waitSw.elapsedMilliseconds}ms, trigger Category config took: ${sessionSw.elapsedMilliseconds}ms');
       if (PlatformUtils.isIOS) {
         SoundUtil.playAssetSoundConcurrent('correct_ios.wav', 1.0, 0.3);
       } else {
@@ -1464,10 +1458,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     debugPrint('⚡ [PERF] _startAsrWithHint START lang=${language.locale}');
 
-    // 1. 切换到录放模式（唯一的同步阻塞点）
-    final sessionSw = Stopwatch()..start();
-    await SoundUtil.usePlayAndRecordCategory();
-    debugPrint('⚡ [PERF] _startAsrWithHint session=playAndRecord cost: ${sessionSw.elapsedMilliseconds}ms');
+
 
     // 添加调试日志，方便查看正确答案
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
