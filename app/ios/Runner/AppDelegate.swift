@@ -450,13 +450,22 @@ import StoreKit
     private func setupAudioSession() {
         do {
             let audioSession = AVAudioSession.sharedInstance()
-            // 模式改为 .default 以匹配 audioplayers，减少切换模式产生的咔哒声
-            // 选项增加 .allowBluetoothA2DP 以支持更高质量的蓝牙音频
-            try audioSession.setCategory(
-                .playAndRecord,
-                mode: .default,
-                options: [.defaultToSpeaker, .mixWithOthers, .allowBluetooth, .allowBluetoothA2DP]
-            )
+            let targetCategory = AVAudioSession.Category.playAndRecord
+            let targetMode = AVAudioSession.Mode.default
+            let targetOptions: AVAudioSession.CategoryOptions = [.defaultToSpeaker, .mixWithOthers, .allowBluetooth, .allowBluetoothA2DP]
+            
+            if audioSession.category == targetCategory &&
+               audioSession.mode == targetMode &&
+               audioSession.categoryOptions == targetOptions {
+                print("IOS: [ASR] setupAudioSession: AVAudioSession is already correctly configured, skipping setCategory.")
+            } else {
+                print("IOS: [ASR] setupAudioSession: Reconfiguring AVAudioSession from \(audioSession.category) (mode: \(audioSession.mode)) to playAndRecord (mode: default)")
+                try audioSession.setCategory(
+                    targetCategory,
+                    mode: targetMode,
+                    options: targetOptions
+                )
+            }
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             print("IOS: setupAudioSession error: \(error)")

@@ -47,7 +47,7 @@ class MockAsr implements Asr {
   Future<void> preloadModels() async {}
 
   @override
-  Future<void> startAsr(AsrLanguage language, {List<String>? phrases}) async {}
+  Future<void> startAsr(AsrLanguage language, {List<String>? phrases, bool playHintSound = true}) async {}
 
   @override
   Future<void> stopAsr() async {}

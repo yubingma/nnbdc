@@ -1479,12 +1479,10 @@ class BdcNotifier extends _$BdcNotifier {
 
     try {
       final asrSw = Stopwatch()..start();
+      // startAsr 内部会并行触发就绪提示音的播放，消除串行阻塞延迟
       await asr.startAsr(language, phrases: phrases);
       state = state.copyWith(wordStartTime: AppClock.now());
-      debugPrint('⚡ [PERF] _startAsrWithHint ASR_READY → playing hint sound cost: ${asrSw.elapsedMilliseconds}ms');
-
-      // 3. ASR 就绪后播放提示音——告诉用户可以开始说话
-      unawaited(SoundUtil.playAsrReadyHintSound());
+      debugPrint('⚡ [PERF] _startAsrWithHint ASR_READY & Hint Sound Dispatched, cost: ${asrSw.elapsedMilliseconds}ms');
       debugPrint('⚡ [PERF] _startAsrWithHint DONE total: ${sw.elapsedMilliseconds}ms');
     } catch (e) {
       Global.logger.e('ASR启动指令下发失败: $e');

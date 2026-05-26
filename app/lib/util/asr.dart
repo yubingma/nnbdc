@@ -109,6 +109,10 @@ class Asr {
     if (!PlatformUtils.isAsrSupported()) {
       return;
     }
+    if (_currentLanguage == language) {
+      Global.logger.i('ASR: 语言已是 ${language.locale}，无需重复设置');
+      return;
+    }
 
     try {
       Global.logger.i('ASR: 设置语言为: ${language.locale}');
@@ -419,8 +423,8 @@ class Asr {
     }
   }
 
-  Future<void> startAsr(AsrLanguage language, {List<String>? phrases}) async {
-    debugPrint('💡 [ASR] startAsr() 触发启动。目标语言: ${language.locale}，当前状态: $state。');
+  Future<void> startAsr(AsrLanguage language, {List<String>? phrases, bool playHintSound = true}) async {
+    debugPrint('💡 [ASR] startAsr() 触发启动。目标语言: ${language.locale}，当前状态: $state，播放提示音: $playHintSound。');
     if (!PlatformUtils.isAsrSupported()) {
       ToastUtil.info("当前平台暂不支持语音识别功能");
       return;
@@ -475,6 +479,13 @@ class Asr {
 
           Global.logger.i('ASR: Starting microphone... (instance: $hashCode)');
           await SoundUtil.usePlayAndRecordCategory();
+          
+          Future<void>? hintFuture;
+          if (playHintSound) {
+            // 音频会话已准备好（切换完成），在启动麦克风和 ASR 识别任务的同时，并行播放提示音以消除延迟
+            hintFuture = SoundUtil.playAsrReadyHintSound();
+          }
+
           await asrMethodChannel
               .invokeMethod('startMicrophone')
               .timeout(const Duration(seconds: 5));
@@ -485,6 +496,10 @@ class Asr {
               .invokeMethod('startAsr')
               .timeout(const Duration(seconds: 5));
           final endTime = AppClock.now();
+
+          if (hintFuture != null) {
+            await hintFuture;
+          }
 
           setState(AsrState.started);
           Global.logger.i(
