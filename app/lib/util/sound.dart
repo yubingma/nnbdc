@@ -148,7 +148,7 @@ class SoundUtil {
   /// 预热核心高频音效，彻底消除首次分配 ExoPlayer 的延迟
   static Future<void> prewarmCoreSounds() async {
     if (PlatformUtils.isWeb || PlatformUtils.isTesting) return;
-    final sounds = ['asr_ready_hint.wav', 'asr_ready_hint_a.wav', 'asr_ready_hint_b.wav', 'asr_ready_hint_c.wav', 'asr_ready_hint_d.wav', 'correct.mp3', 'failed.mp3', 'bubble-pop.wav', 'thud.mp3'];
+    final sounds = ['asr_ready_hint.wav', 'correct.mp3', 'failed.mp3', 'bubble-pop.wav', 'thud.mp3', 'victory.mp3', 'magic.mp3', 'door.mp3'];
     for (var sound in sounds) {
       if (!_prewarmedSfxPlayers.containsKey(sound)) {
         try {
@@ -317,7 +317,11 @@ Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${tot
     } catch (e) {
       debugPrint('🔊 [PERF] 音效出错: $soundFileName, $e');
     } finally {
-      if (!isPrewarmed) unawaited(player.dispose());
+      if (!isPrewarmed) {
+        Future.delayed(const Duration(seconds: 3), () {
+          player.dispose().catchError((_) {});
+        });
+      }
     }
   }
 
