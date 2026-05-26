@@ -1296,7 +1296,7 @@ class BdcNotifier extends _$BdcNotifier {
       // 显式等待音频 Session 切换回 playback 高保真纯播放分类，根治 iOS playAndRecord 模式下硬件滤波导致的尖锐、干瘪电话音
       await sessionFuture;
       if (PlatformUtils.isIOS) {
-        SoundUtil.playAssetSoundConcurrent('correct_ios.wav', 1.0, 1.0);
+        SoundUtil.playAssetSoundConcurrent('correct_ios.wav', 1.0, 0.3);
       } else {
         SoundUtil.playAssetSoundConcurrent('correct.wav', 1.0, 1.0);
       }
