@@ -429,13 +429,6 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
   String asrText = chinese1.toString().replaceAll(_nonChineseRegExp, "");
   if (asrText.isEmpty) return false;
 
-  List<List<PinyinParser>> userPinyins = [];
-  for (var i = 0; i < asrText.length; i++) {
-    var hanzi = asrText[i];
-    var pinyins = hanziToPinyin(hanzi);
-    userPinyins.add(pinyins.map((p) => PinyinParser(p)).toList());
-  }
-
   var meaning = chinese2;
   meaning = meaning.replaceAll(_bracketRegExp1, "").replaceAll(_bracketRegExp2, ""); //去掉释义中包含在括号中的内容
   meaning = meaning.toLowerCase().replaceAll(_nonChineseRegExp, "").trim(); // 去掉释义中的非汉字字符
@@ -444,170 +437,176 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
   for (var unit in meaningUnits) {
     if (unit.isEmpty) continue;
 
-    // 获取 target 的每一个字的可能拼音
-    List<List<PinyinParser>> targetPinyins = [];
-    for (var i = 0; i < unit.length; i++) {
-      var hanzi = unit[i];
-      var pinyins = hanziToPinyin(hanzi);
-      var cleans = pinyins.map((p) => p.toLowerCase().replaceAll(_nonPinyinRegExp, "").trim()).where((p) => p.isNotEmpty).toList();
-      if (cleans.isEmpty) cleans = [hanzi.toLowerCase()];
-      targetPinyins.add(cleans.map((p) => PinyinParser(p)).toList());
-    }
-
-    // DP 求最大分值。这是一个顺序包含的匹配关系，也就是我们需要在 user 识别出的若干发音中，找出和 target按顺序匹配得最好的子集。
-    int M = targetPinyins.length;
-    int N = userPinyins.length;
-
-    // dp[i][j] 为 target前i个字匹配 user前j个syllable 的最大分值
-    List<List<double>> dp = List.generate(M + 1, (_) => List.filled(N + 1, 0.0));
-
-    for (int i = 1; i <= M; i++) {
-      for (int j = 1; j <= N; j++) {
-        // 计算 target的第i个字和 user的第j个字的最大相似度（双方都可能有多个发音）
-        double maxSim = 0.0;
-        for (var pTarget in targetPinyins[i - 1]) {
-          for (var pUser in userPinyins[j - 1]) {
-            double sim = similarityOf2ParsedPinyin(pUser, pTarget);
-            if (sim > maxSim) maxSim = sim;
-          }
+    int M = unit.length;
+    
+    // 核心优化：为了防止 ASR 长期累积的长句或背景噪声导致字数惩罚过重，
+    // 我们从 ASR 文本（特别是最近说出的末尾部分）中提取长度为 M 到 M+3 的滑动窗口子串作为候选。
+    List<String> subCandidates = [asrText];
+    int startIdx = asrText.length > 12 ? asrText.length - 12 : 0;
+    String recentText = asrText.substring(startIdx);
+    for (int len = M; len <= M + 3; len++) {
+      for (int i = 0; i <= recentText.length - len; i++) {
+        String sub = recentText.substring(i, i + len);
+        if (!subCandidates.contains(sub)) {
+          subCandidates.add(sub);
         }
-
-        double v1 = dp[i - 1][j];
-        double v2 = dp[i][j - 1];
-        double v3 = dp[i - 1][j - 1] + maxSim;
-
-        // 特殊处理：连续重复字匹配。当 ASR 结果包含连续重复字（如"洋洋"），且当前 target 字匹配度很低时，
-        // 允许跳过当前 target 字，让重复字去匹配下一个 target 字
-        // 例如："洋洋" 匹配 "洋葱"：第二个"洋"跳过"葱"，去匹配"洋"
-        if (maxSim <= 0.3 && j >= 2) {
-          // 检查前一个 user 字是否与当前 user 字相同（连续重复）
-          bool isConsecutiveDuplicate =
-              userPinyins[j - 1].any((p1) => userPinyins[j - 2].any((p2) => p1.shengMu == p2.shengMu && p1.yunMu == p2.yunMu));
-          if (isConsecutiveDuplicate) {
-            // 强制跳过当前 target 字，使用跳过路径
-            // 因为连续重复字不应该计入低相似度匹配
-            double vSkip = dp[i - 1][j];
-            if (maxSim < 0.31 && vSkip > 0.9) {
-              // 当匹配度很低且跳过路径已有不错分数时，选择跳过
-              v3 = vSkip;
-            }
-          }
-        }
-
-        // 通用化处理：处理“元音桥接（Vowel Bridge）”情况
-        // 如：“吸引”(xi-yin) 的末尾元音 i 与开头元音 i (y) 相同，在快读时极易合并
-        // 如果当前字 i 与前一个字 i-1 存在元音桥接，且前一个字已经有了不错的匹配
-        // 注意：单字输入（N <= 1）不存在元音桥接快读黏连的物理基础，此时直接禁用桥接，彻底防范单字误匹配多字词
-        if (N > 1 && i >= 2 && dp[i - 1][j] > dp[i - 2][j]) {
-          bool hasBridge = false;
-          for (var pPrev in targetPinyins[i - 2]) {
-            for (var pCurr in targetPinyins[i - 1]) {
-              // 检查当前提议的零声母开头元音能否与前一个字形成音频合并（桥接）
-              // 比如：“吸引”(xi-yin, xi-in), “论文”(lun-wen, lun-uen)
-              String firstVowel = pCurr.yunMu.isNotEmpty ? pCurr.yunMu.substring(0, 1) : "";
-              bool isVowelBridgeStart = (pCurr.shengMu.isEmpty && (firstVowel == 'i' || firstVowel == 'u' || firstVowel == 'v')) ||
-                  (pCurr.shengMu == 'y') || // y 相当于 i/v
-                  (pCurr.shengMu == 'w'); // w 相当于 u
-
-              if (isVowelBridgeStart) {
-                // 确定桥接元音
-                String bridgeVowel = pCurr.shengMu == 'w' ? 'u' : (pCurr.shengMu == 'y' ? 'i' : firstVowel);
-                if (pCurr.shengMu == 'y' && pCurr.yunMu.startsWith('v')) bridgeVowel = 'v'; // 特殊处理 y+v (yu)
-
-                // 如果前一个字的韵母以该元音结尾（如 xi），或者含有该元音且紧跟鼻音（如 lun）
-                if (pPrev.yunMu.endsWith(bridgeVowel) ||
-                    (pPrev.yunMu.contains(bridgeVowel) && (pPrev.yunMu.endsWith('n') || pPrev.yunMu.endsWith('g')))) {
-                  hasBridge = true;
-                  break;
-                }
-              }
-            }
-            if (hasBridge) break;
-          }
-
-          if (hasBridge) {
-            // 如果存在桥接，允许当前字 i 借用前一个字的匹配成果，但给予 0.8 的“合并折价”
-            // 物理上限上：桥接属于发音黏连合并，其单点得分绝不能大于前一个字独立匹配的得分，因此必须使用乘法折价，绝不能用加法累加！
-            double mergedSim = 0.8;
-            double v4 = dp[i - 1][j] * mergedSim;
-            if (v4 > v3) v3 = v4;
-          }
-        }
-
-        double maxV = v1 > v2 ? v1 : v2;
-        maxV = maxV > v3 ? maxV : v3;
-        dp[i][j] = maxV;
       }
     }
 
-    double maxSimSum = dp[M][N];
-    double avgSim = maxSimSum / M;
-
-// 补偿：如果 ASR 结果比目标短，但已匹配的部分相似度极高（>0.92），说明可能是漏读了后缀或尾音
-    // 允许单字 ASR 结果参与补偿（如"对"匹配"对账"），增强软件层面的"热词"效果
-    int asrCharCount = asrText.length;
-    if (asrCharCount < M && asrCharCount >= 1) {
-      double avgSimOfMatched = maxSimSum / asrCharCount;
-      if (avgSimOfMatched > 0.92) {
-        avgSim = (avgSim + avgSimOfMatched) / 2;
+    // 对每个候选子串进行 DP 匹配，只要有一个通过，该 unit 即匹配成功
+    bool unitMatched = false;
+    for (var cand in subCandidates) {
+      if (_matchSingleCandidate(cand, unit)) {
+        unitMatched = true;
+        break;
       }
     }
-
-    // 特殊补偿：当 ASR 结果包含连续重复字（如"洋洋"），且只匹配了目标中的部分字（如"洋-洋"只匹配了"洋"）
-    // 此时使用实际匹配的字符数计算平均相似度
-    if (asrCharCount >= M) {
-      // 计算实际有效匹配的平均相似度（使用ASR字符数作为分母）
-      double avgSimOfMatched = maxSimSum / asrCharCount;
-      if (avgSimOfMatched > 0.92) {
-        // 重复字模式：直接用平均相似度替代整体平均
-        avgSim = avgSimOfMatched;
-      }
-    }
-
-    // 乘性惩罚：当输入字数 asrCharCount > 目标字数 M 时，进行字数差惩罚，防止在无关长句/长噪声中拼凑出微弱发音相似的字。
-    // 对于 1-2 个字的短词（更易发生噪声中的散落拼凑），采用稍严厉的扣分系数（每个多余字扣 3.0%），且下限降至 70%；
-    // 在不影响长口语化答题（如“我觉得是XX吧”）通过的同时，大幅度压低大段无关噪声的错配率。
-    if (asrCharCount > M) {
-      double factor = M <= 2 ? 0.03 : 0.025;
-      double penalty = 1.0 - factor * (asrCharCount - M);
-      double minPenalty = M <= 2 ? 0.70 : 0.75;
-      if (penalty < minPenalty) penalty = minPenalty;
-      avgSim *= penalty;
-    }
-
-    // 对于短句（1-2个字），提高匹配门槛，防止被发音接近但完全不同的常用字干扰（误判）
-    // 【优化】：针对 2 字目标（如对账），适当降低门槛至 0.72，以支持单字识别后的补偿匹配
-    double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.72 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch)));
-
-    if (avgSim > finalThreshold) {
+    
+    if (unitMatched) {
       return true;
     }
+  }
 
-    // 补丁：当 ASR 结果包含连续重复字（如"洋洋"），且正常匹配失败时，
-    // 尝试对 ASR 结果去重后再匹配一次
-    // 例如："洋洋" 去重后变成 "洋"，然后再匹配 "洋葱"
-    if (asrCharCount >= 2) {
-      // 检查是否包含连续重复字
-      bool hasConsecutiveDuplicate = false;
-      for (int i = 1; i < asrText.length; i++) {
-        if (asrText[i] == asrText[i - 1]) {
-          hasConsecutiveDuplicate = true;
-          break;
+  return false;
+}
+
+/// 针对单个候选文本的拼音模糊匹配（核心 DP 算法）
+bool _matchSingleCandidate(String asrText, String unit) {
+  if (asrText.isEmpty) return false;
+
+  List<List<PinyinParser>> userPinyins = [];
+  for (var i = 0; i < asrText.length; i++) {
+    var hanzi = asrText[i];
+    var pinyins = hanziToPinyin(hanzi);
+    userPinyins.add(pinyins.map((p) => PinyinParser(p)).toList());
+  }
+
+  // 获取 target 的每一个字的可能拼音
+  List<List<PinyinParser>> targetPinyins = [];
+  for (var i = 0; i < unit.length; i++) {
+    var hanzi = unit[i];
+    var pinyins = hanziToPinyin(hanzi);
+    var cleans = pinyins.map((p) => p.toLowerCase().replaceAll(_nonPinyinRegExp, "").trim()).where((p) => p.isNotEmpty).toList();
+    if (cleans.isEmpty) cleans = [hanzi.toLowerCase()];
+    targetPinyins.add(cleans.map((p) => PinyinParser(p)).toList());
+  }
+
+  int M = targetPinyins.length;
+  int N = userPinyins.length;
+
+  List<List<double>> dp = List.generate(M + 1, (_) => List.filled(N + 1, 0.0));
+
+  for (int i = 1; i <= M; i++) {
+    for (int j = 1; j <= N; j++) {
+      double maxSim = 0.0;
+      for (var pTarget in targetPinyins[i - 1]) {
+        for (var pUser in userPinyins[j - 1]) {
+          double sim = similarityOf2ParsedPinyin(pUser, pTarget);
+          if (sim > maxSim) maxSim = sim;
         }
       }
-      if (hasConsecutiveDuplicate) {
-        // 去重：保留每个连续重复块中的第一个字
-        StringBuffer deduped = StringBuffer();
-        for (int i = 0; i < asrText.length; i++) {
-          if (i == 0 || asrText[i] != asrText[i - 1]) {
-            deduped.write(asrText[i]);
+
+      double v1 = dp[i - 1][j];
+      double v2 = dp[i][j - 1];
+      double v3 = dp[i - 1][j - 1] + maxSim;
+
+      if (maxSim <= 0.3 && j >= 2) {
+        bool isConsecutiveDuplicate =
+            userPinyins[j - 1].any((p1) => userPinyins[j - 2].any((p2) => p1.shengMu == p2.shengMu && p1.yunMu == p2.yunMu));
+        if (isConsecutiveDuplicate) {
+          double vSkip = dp[i - 1][j];
+          if (maxSim < 0.31 && vSkip > 0.9) {
+            v3 = vSkip;
           }
         }
-        String dedupedText = deduped.toString();
-        if (dedupedText.length < asrCharCount) {
-          // 递归调用去重后的结果
-          return fuzzyChineseContains(dedupedText, chinese2);
+      }
+
+      if (N > 1 && i >= 2 && dp[i - 1][j] > dp[i - 2][j]) {
+        bool hasBridge = false;
+        for (var pPrev in targetPinyins[i - 2]) {
+          for (var pCurr in targetPinyins[i - 1]) {
+            String firstVowel = pCurr.yunMu.isNotEmpty ? pCurr.yunMu.substring(0, 1) : "";
+            bool isVowelBridgeStart = (pCurr.shengMu.isEmpty && (firstVowel == 'i' || firstVowel == 'u' || firstVowel == 'v')) ||
+                (pCurr.shengMu == 'y') ||
+                (pCurr.shengMu == 'w');
+
+            if (isVowelBridgeStart) {
+              String bridgeVowel = pCurr.shengMu == 'w' ? 'u' : (pCurr.shengMu == 'y' ? 'i' : firstVowel);
+              if (pCurr.shengMu == 'y' && pCurr.yunMu.startsWith('v')) bridgeVowel = 'v';
+
+              if (pPrev.yunMu.endsWith(bridgeVowel) ||
+                  (pPrev.yunMu.contains(bridgeVowel) && (pPrev.yunMu.endsWith('n') || pPrev.yunMu.endsWith('g')))) {
+                hasBridge = true;
+                break;
+              }
+            }
+          }
+          if (hasBridge) break;
         }
+
+        if (hasBridge) {
+          double mergedSim = 0.8;
+          double v4 = dp[i - 1][j] * mergedSim;
+          if (v4 > v3) v3 = v4;
+        }
+      }
+
+      double maxV = v1 > v2 ? v1 : v2;
+      maxV = maxV > v3 ? maxV : v3;
+      dp[i][j] = maxV;
+    }
+  }
+
+  double maxSimSum = dp[M][N];
+  double avgSim = maxSimSum / M;
+
+  int asrCharCount = asrText.length;
+  if (asrCharCount < M && asrCharCount >= 1) {
+    double avgSimOfMatched = maxSimSum / asrCharCount;
+    if (avgSimOfMatched > 0.92) {
+      avgSim = (avgSim + avgSimOfMatched) / 2;
+    }
+  }
+
+  if (asrCharCount >= M) {
+    double avgSimOfMatched = maxSimSum / asrCharCount;
+    if (avgSimOfMatched > 0.92) {
+      avgSim = avgSimOfMatched;
+    }
+  }
+
+  if (asrCharCount > M) {
+    double factor = M <= 2 ? 0.03 : 0.025;
+    double penalty = 1.0 - factor * (asrCharCount - M);
+    double minPenalty = M <= 2 ? 0.70 : 0.75;
+    if (penalty < minPenalty) penalty = minPenalty;
+    avgSim *= penalty;
+  }
+
+  double finalThreshold = M == 1 ? 0.82 : (M == 2 ? 0.72 : (M == 3 ? 0.76 : (M == 4 ? 0.74 : minSimularityForMatch)));
+
+  if (avgSim > finalThreshold) {
+    return true;
+  }
+
+  if (asrCharCount >= 2) {
+    bool hasConsecutiveDuplicate = false;
+    for (int i = 1; i < asrText.length; i++) {
+      if (asrText[i] == asrText[i - 1]) {
+        hasConsecutiveDuplicate = true;
+        break;
+      }
+    }
+    if (hasConsecutiveDuplicate) {
+      StringBuffer deduped = StringBuffer();
+      for (int i = 0; i < asrText.length; i++) {
+        if (i == 0 || asrText[i] != asrText[i - 1]) {
+          deduped.write(asrText[i]);
+        }
+      }
+      String dedupedText = deduped.toString();
+      if (dedupedText.length < asrCharCount) {
+        return _matchSingleCandidate(dedupedText, unit);
       }
     }
   }

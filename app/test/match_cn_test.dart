@@ -366,4 +366,13 @@ void main() {
     debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
     expect(match, isFalse);
   });
+
+  test('Test fuzzyChineseContains - sliding window for long accumulated ASR result', () {
+    String asrResult = "PS R提示音不用改就用刚才你第一次生成的吧安全的安全的";
+    String meaning = "adj. 安全的";
+    
+    bool match = fuzzyChineseContains(asrResult, meaning);
+    debugPrint('~~~~~asrResult: $asrResult, meaning: $meaning, match: $match');
+    expect(match, isTrue);
+  });
 }
