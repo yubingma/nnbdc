@@ -434,7 +434,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
               ..americaPronounce = wordDetails.americaPronounce
               ..britishPronounce = wordDetails.britishPronounce
               ..popularity = wordDetails.popularity
-              ..meaningItems = similarMeaningResults.firstWhere((e) => e.key.id == wordDetails.id).value.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+              ..meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
             otherWords.add(otherWordVo);
           }
         }
