@@ -1518,27 +1518,33 @@ class WordListPageState extends State<WordListPage>
       return;
     }
 
-    // 检查当前单词是否已经在合适的位置
+    // 优化滚动策略：
+    // 1. 如果是第一个单词，直接将它对齐到顶部 0.0 即可
+    // 2. 如果是后续单词，为了让用户能继续看到前一个单词（刚刚拼对的词）加深印象，
+    //    我们将前一个单词 (wordUiIndex - 1) 对齐到顶部 0.0，使当前活动单词自然展现在它下方。
+    // 这样两个单词在屏幕上方均清晰可见，且对齐 0.0 完美避免了列表向下越界过卷而引起的 iOS 晃动。
+    int targetIndex = wordUiIndex > 0 ? wordUiIndex - 1 : 0;
+    double finalAlignment = 0.0;
+
+    // 检查当前目标单词是否已经在顶部对齐
     var positions = itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
-      // 找到当前单词的位置信息
       var currentPosition =
-          positions.where((pos) => pos.index == wordUiIndex).firstOrNull;
+          positions.where((pos) => pos.index == targetIndex).firstOrNull;
       if (currentPosition != null) {
-        // 如果单词已经在合适位置附近（误差在5%以内），不需要滚动
-        if (currentPosition.itemLeadingEdge >= _handwritingScrollAlignment - 0.05 &&
-            currentPosition.itemLeadingEdge <= _handwritingScrollAlignment + 0.05) {
+        // 如果前一个单词已经在顶部附近（误差在5%以内），不需要滚动
+        if (currentPosition.itemLeadingEdge >= finalAlignment - 0.05 &&
+            currentPosition.itemLeadingEdge <= finalAlignment + 0.05) {
           return;
         }
       }
     }
 
-    // 让目标单词的上沿显示在屏幕偏上部（约 35% 处），为底部手写板留出更多视觉空间
     if (itemScrollController.isAttached) {
       itemScrollController.scrollTo(
-          index: wordUiIndex,
+          index: targetIndex,
           duration: const Duration(milliseconds: 300),
-          alignment: _handwritingScrollAlignment); // 稍微偏上
+          alignment: finalAlignment);
     }
   }
 
@@ -2870,7 +2876,7 @@ class WordListPageState extends State<WordListPage>
                                 itemScrollController.scrollTo(
                                     index: 0,
                                     duration: const Duration(milliseconds: 300),
-                                    alignment: _handwritingScrollAlignment); // 显示在屏幕偏上部
+                                    alignment: 0.0); // 顶部对齐，避免在最上方无法居中导致的晃动
                               });
                             });
                           });
