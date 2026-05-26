@@ -68,6 +68,7 @@ class BdcNotifier extends _$BdcNotifier {
   late BdcPageArgs _args;
   late final ja.AudioPlayer _audioPlayer;
   Timer? _learningTimer;
+  Timer? _persistTimer;
   
   late final SpellingTextEditingController meaningController = SpellingTextEditingController(
     getTargetSpell: () => state.word?.spell,
@@ -98,6 +99,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     ref.onDispose(() {
       _learningTimer?.cancel();
+      _persistTimer?.cancel();
       progressBarTapTimer?.cancel();
       _syncLearningTimeToDb();
       asr.removeStateListener(_onAsrStateChanged);
@@ -812,6 +814,13 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _persistLastWordHistoryItem() {
+    _persistTimer?.cancel();
+    _persistTimer = Timer(const Duration(seconds: 1), () {
+      _executePersistLastWordHistoryItem();
+    });
+  }
+
+  void _executePersistLastWordHistoryItem() {
     final sw = Stopwatch()..start();
     try {
       final wordId = state.word?.id;

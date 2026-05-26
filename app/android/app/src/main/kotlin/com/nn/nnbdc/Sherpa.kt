@@ -224,7 +224,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             // 英文识别配方：放宽末端静音检测，给犹豫的发音留时间
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
-                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.6f).build())
                 .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(30f).build())
                 .build()
 
@@ -270,7 +270,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
-                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.6f).build())
                 .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(20f).build())
                 .build()
 

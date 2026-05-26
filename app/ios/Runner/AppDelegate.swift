@@ -652,7 +652,13 @@ import StoreKit
         recognitionRequest.taskHint = .dictation
         
         if #available(iOS 13.0, *) {
-            recognitionRequest.requiresOnDeviceRecognition = false
+            if speechRecognizer.supportsOnDeviceRecognition {
+                recognitionRequest.requiresOnDeviceRecognition = true
+                print("IOS: [ASR] supportsOnDeviceRecognition = true, enabled offline ASR.")
+            } else {
+                recognitionRequest.requiresOnDeviceRecognition = false
+                print("IOS: [ASR] supportsOnDeviceRecognition = false, falling back to online ASR.")
+            }
         }
 
         print("IOS: [ASR] Creating SFSpeechAudioBufferRecognitionRequest & recognitionTask synchronously...")
