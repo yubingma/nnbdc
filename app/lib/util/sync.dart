@@ -180,6 +180,10 @@ Future<void> _validateCoreData(String userId) async {
 /// 全局网络同步锁，确保同一个前端在任何时刻绝对不会并发往后端发送同步数据请求
 bool _isSyncingToServer = false;
 
+// 全局同步流程锁，防止同一个实例并发执行同步操作
+bool _isSyncDbRunning = false;
+bool _isSyncUserDbRunning = false;
+
 // 同步用户的本地数据库和后端数据库
 Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backendChanges, int backendDbVersion, String userId) async {
   final stopwatch = Stopwatch()..start();
@@ -801,6 +805,12 @@ void printFormattedChanges(String label, List<Map<String, dynamic>> changes) {
 
 // 同步指定用户的用户数据库
 Future<void> syncUserDb(String userId) async {
+  if (_isSyncUserDbRunning) {
+    Global.logger.w("⚠️ [CONCURRENCY SHIELD] 拦截到并发的 syncUserDb 请求，用户: $userId 的同步已在运行中");
+    return;
+  }
+  _isSyncUserDbRunning = true;
+
   final stopwatch = Stopwatch()..start();
   try {
     // 获取本地数据库版本
@@ -882,11 +892,19 @@ Future<void> syncUserDb(String userId) async {
     // 不再调用 ErrorHandler 显示错误提示，只抛出异常让上层处理
     // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncUserDb', showToast: true);
     rethrow;
+  } finally {
+    _isSyncUserDbRunning = false;
   }
 }
 
 // 同步当前登录用户的用户数据库和系统数据库
 Future<void> syncDb() async {
+  if (_isSyncDbRunning) {
+    Global.logger.w("⚠️ [CONCURRENCY SHIELD] 拦截到并发的 syncDb 请求，同步已在运行中");
+    return;
+  }
+  _isSyncDbRunning = true;
+
   final stopwatch = Stopwatch()..start();
   String? syncLogId;
   UserVo? loggedInUser;
@@ -960,6 +978,8 @@ Future<void> syncDb() async {
     // 不再调用 ErrorHandler 显示错误提示
     // await ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: 'syncDb', showToast: true);
     rethrow;
+  } finally {
+    _isSyncDbRunning = false;
   }
 }
 
