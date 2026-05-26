@@ -177,6 +177,9 @@ Future<void> _validateCoreData(String userId) async {
   Global.logger.d('✓ [IntegrityCheck] 核心数据验证通过: userId=$userId');
 }
 
+/// 全局网络同步锁，确保同一个前端在任何时刻绝对不会并发往后端发送同步数据请求
+bool _isSyncingToServer = false;
+
 // 同步用户的本地数据库和后端数据库
 Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backendChanges, int backendDbVersion, String userId) async {
   final stopwatch = Stopwatch()..start();
@@ -506,8 +509,16 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
 
         // 保存后端数据库，返回后端数据库版本
         if (localToBackend.isNotEmpty) {
-          Result<int> result = await Api.client.syncUserDb(backendDbVersion, userId, localToBackend);
-          if (!result.success) {
+          assert(!_isSyncingToServer, "⚠️ [CONCURRENCY ERROR] 检测到同一个客户端正在并发向网络发送同步上传请求！");
+          if (_isSyncingToServer) {
+            Global.logger.e("⚠️ [CONCURRENCY SHIELD] 拦截到并发的网络同步请求，userId: $userId, 期望版本: $backendDbVersion");
+            throw Exception("同步操作已在进行中，请勿重复发起");
+          }
+
+          _isSyncingToServer = true;
+          try {
+            Result<int> result = await Api.client.syncUserDb(backendDbVersion, userId, localToBackend);
+            if (!result.success) {
               // 若是后端特殊应答，要求进行全量修改日志”，由下次同步自然覆盖
               if ((result.code).contains('DICT_WORD_ORDER_INVALID')) {
                 // message 格式可能是: DICT_WORD_ORDER_INVALID: dictId|具体错误信息
@@ -543,23 +554,26 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
                   await MyDatabase.instance.dictWordsDao.generateFullDictRewriteLogs(userId, dictId);
                 }
 
-              // 记录特定异常，使其能被捕获为警告状态。我们在这里不直接抛出以免回滚前面的成功操作（特别是已经写入的日志记录修复）
-              warningExcept = DictWordOrderInvalidWarningException("下次修复");
-              
-              // 更新本地数据库版本（虽然本地未成功提交给后端，但我们已经接收了后端的变动应当更新本地的后端进度）
-              final now = AppClock.now();
-              await db.userDbVersionsDao
-                  .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
-              
-              // 提前退出此事务处理过程：保留其余所有待上传的日志，不要走到最后的清空环节, 等待下次重推
-              return;
+                // 记录特定异常，使其能被捕获为警告状态。我们在这里不直接抛出以免回滚前面的成功操作（特别是已经写入的日志记录修复）
+                warningExcept = DictWordOrderInvalidWarningException("下次修复");
+
+                // 更新本地数据库版本（虽然本地未成功提交给后端，但我们已经接收了后端的变动应当更新本地的后端进度）
+                final now = AppClock.now();
+                await db.userDbVersionsDao
+                    .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
+
+                // 提前退出此事务处理过程：保留其余所有待上传的日志，不要走到最后的清空环节, 等待下次重推
+                return;
+              } else {
+                Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}");
+                // 不弹出错误提示，只记录日志
+                throw Exception(result.msg);
+              }
             } else {
-              Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}");
-              // 不弹出错误提示，只记录日志
-              throw Exception(result.msg);
+              backendDbVersion = result.data!;
             }
-          } else {
-            backendDbVersion = result.data!;
+          } finally {
+            _isSyncingToServer = false;
           }
         }
 

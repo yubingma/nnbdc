@@ -7,7 +7,6 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
-import 'asr.dart';
 import 'pinyin.dart';
 
 import 'package:flutter/foundation.dart';
@@ -23,11 +22,10 @@ class SoundUtil {
   @visibleForTesting
   static set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
   
-  static final Map<String, List<ja.AudioPlayer>> _sfxPools = {};
-  static final Map<String, ja.AudioPlayer> _prewarmedSfxPlayers = {};
+  static final List<ja.AudioPlayer> _sfxPool = [];
+  static const int _sfxPoolSize = 3;
   static final Set<ja.AudioPlayer> _logicallyFinishedPlayers = {};
   static final Map<ja.AudioPlayer, DateTime> _playerBusyUntil = {};
-  static const int _maxPlayersPerSfx = 6;
   
   /// 全局观察的播放器列表，用于在切换音频会话前确保它们都已播完
   static final List<ja.AudioPlayer> _watchedPlayers = [];
@@ -148,19 +146,62 @@ class SoundUtil {
   /// 预热核心高频音效，彻底消除首次分配 ExoPlayer 的延迟
   static Future<void> prewarmCoreSounds() async {
     if (PlatformUtils.isWeb || PlatformUtils.isTesting) return;
-    final sounds = ['asr_ready_hint.wav', 'correct.mp3', 'failed.mp3', 'bubble-pop.wav', 'thud.mp3', 'victory.mp3', 'magic.mp3', 'door.mp3'];
-    for (var sound in sounds) {
-      if (!_prewarmedSfxPlayers.containsKey(sound)) {
+    for (int i = 0; i < _sfxPoolSize; i++) {
+      if (_sfxPool.length <= i) {
         try {
+          // 在连续创建 AudioPlayer 之间加入 50ms 延迟，给底层平台分配音频资源和通信时间，根治并发引起的冲突
+          await Future.delayed(const Duration(milliseconds: 50));
           final player = ja.AudioPlayer();
-          await player.setAsset('assets/audio/$sound').timeout(const Duration(seconds: 3));
-          _prewarmedSfxPlayers[sound] = player;
-          debugPrint('🔊 [SoundUtil] 核心音效预热成功: $sound');
+          _sfxPool.add(player);
+          watchPlayer(player);
+          debugPrint('🔊 [SoundUtil] 音效池播放器 $i 初始化成功');
         } catch (e) {
-          debugPrint('🔊 [SoundUtil] 音效预热失败: $sound, $e');
+          debugPrint('🔊 [SoundUtil] 音效池播放器 $i 初始化失败: $e');
         }
       }
     }
+  }
+
+  /// 获取音效池中当前可用的播放器实例（支持状态轮询与旧资源抢占）
+  static Future<ja.AudioPlayer?> _getAvailableSfxPlayer() async {
+    if (!_audioSessionConfigured) {
+      await configureAudioSession();
+    }
+    if (_sfxPool.length < _sfxPoolSize) {
+      await prewarmCoreSounds();
+    }
+    if (_sfxPool.isEmpty) return null;
+    
+    final now = AppClock.now();
+    ja.AudioPlayer? bestPlayer;
+    
+    // 1. 优先寻找未在播放，且 busy 状态已过期的播放器
+    for (var player in _sfxPool) {
+      final busyUntil = _playerBusyUntil[player];
+      if (!player.playing && (busyUntil == null || now.isAfter(busyUntil))) {
+        return player;
+      }
+    }
+    
+    // 2. 次优寻找 busy 状态已过期的播放器
+    for (var player in _sfxPool) {
+      final busyUntil = _playerBusyUntil[player];
+      if (busyUntil == null || now.isAfter(busyUntil)) {
+        return player;
+      }
+    }
+    
+    // 3. 兜底策略：如果都在忙，选择最先开始忙（忙碌状态最久远）的那个播放器进行抢占/复用
+    DateTime oldestBusy = DateTime(3000);
+    for (var player in _sfxPool) {
+      final busyUntil = _playerBusyUntil[player] ?? DateTime(0);
+      if (busyUntil.isBefore(oldestBusy)) {
+        oldestBusy = busyUntil;
+        bestPlayer = player;
+      }
+    }
+    
+    return bestPlayer ?? _sfxPool[0];
   }
 
   static void watchPlayer(ja.AudioPlayer player) {
@@ -291,37 +332,26 @@ Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${tot
 
   static Future<void> playAssetSound(
       String soundFileName, double speed, double volume, int timeoutInMilliSeconds, int sleepAfterPlayInMilliSeconds) async {
-    if (!_audioSessionConfigured) await configureAudioSession();
-    
-    ja.AudioPlayer player;
-    bool isPrewarmed = _prewarmedSfxPlayers.containsKey(soundFileName);
-    player = isPrewarmed ? _prewarmedSfxPlayers[soundFileName]! : ja.AudioPlayer();
-
-    final startTime = DateTime.now().millisecondsSinceEpoch;
     try {
-      if (isPrewarmed) {
-        await player.stop();
-        await player.seek(Duration.zero);
-      } else {
-        await player.setAsset('assets/audio/$soundFileName').timeout(Duration(milliseconds: timeoutInMilliSeconds));
-      }
+      final player = await _getAvailableSfxPlayer();
+      if (player == null) return;
       
+      final now = AppClock.now();
+      final busyDuration = Duration(milliseconds: sleepAfterPlayInMilliSeconds > 0 ? sleepAfterPlayInMilliSeconds : 3500);
+      _playerBusyUntil[player] = now.add(busyDuration);
+      
+      await player.stop();
+      await player.seek(Duration.zero);
       await player.setSpeed(speed);
       await player.setVolume(volume);
+      await player.setAsset('assets/audio/$soundFileName').timeout(Duration(milliseconds: timeoutInMilliSeconds));
       unawaited(player.play().catchError((_) {}));
       
       if (sleepAfterPlayInMilliSeconds > 0) {
         await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
       }
-      Global.logger.d("⏱️ [Latency-SFX] 音效完成: $soundFileName (预热: $isPrewarmed, 耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
     } catch (e) {
-      debugPrint('🔊 [PERF] 音效出错: $soundFileName, $e');
-    } finally {
-      if (!isPrewarmed) {
-        Future.delayed(const Duration(seconds: 3), () {
-          player.dispose().catchError((_) {});
-        });
-      }
+      debugPrint('🔊 playAssetSound 出错: $soundFileName, $e');
     }
   }
 
@@ -336,42 +366,7 @@ Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${tot
   }
 
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) async {
-    await configureAudioSession();
-    final asrState = Asr().state;
-    if (currentSessionCategory != 'playAndRecord' || (asrState != AsrState.started && asrState != AsrState.stopping)) {
-      await usePlaybackCategory();
-    }
-    if (PlatformUtils.isWeb) return;
-
-    final pool = _sfxPools.putIfAbsent(soundFileName, () => []);
-    ja.AudioPlayer? player;
-    final now = AppClock.now();
-
-    for (var p in pool) {
-      if (now.isAfter(_playerBusyUntil[p] ?? DateTime(0))) {
-        player = p;
-        break;
-      }
-    }
-
-    if (player == null && pool.length < _maxPlayersPerSfx) {
-      player = ja.AudioPlayer();
-      pool.add(player);
-    }
-
-    player ??= pool[0];
-    _playerBusyUntil[player] = now.add(const Duration(milliseconds: 300));
-
-    try {
-      await player.stop();
-      await player.seek(Duration.zero);
-      await player.setSpeed(speed);
-      await player.setVolume(volume);
-      await player.setAsset('assets/audio/$soundFileName');
-      unawaited(player.play());
-    } catch (e) {
-      debugPrint('并发音效出错: $soundFileName, $e');
-    }
+    await playAssetSound(soundFileName, speed, volume, 4000, 0);
   }
 
   static Future<void> playPronounceSound2(WordVo word, ja.AudioPlayer player, {Future<void>? preWaitFuture}) async {
@@ -416,28 +411,31 @@ Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${tot
   }
 
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
-    if (!_audioSessionConfigured) await configureAudioSession();
-    final pool = _sfxPools.putIfAbsent(soundFileName, () => [ja.AudioPlayer()]);
-    ja.AudioPlayer? player;
-    final now = AppClock.now();
-    for (var p in pool) {
-      if (now.isAfter(_playerBusyUntil[p] ?? DateTime(0))) {
-        player = p;
-        break;
-      }
-    }
-    player ??= pool[0];
-    _playerBusyUntil[player] = now.add(const Duration(milliseconds: 400));
     try {
+      final player = await _getAvailableSfxPlayer();
+      if (player == null) return;
+      
+      final now = AppClock.now();
+      _playerBusyUntil[player] = now.add(maxPlay + const Duration(milliseconds: 100));
+      
       await player.stop();
       await player.seek(Duration.zero);
       await player.setSpeed(speed);
       await player.setVolume(volume);
       await player.setAsset('assets/audio/$soundFileName');
       unawaited(player.play());
-      await Future.delayed(maxPlay);
-      if (player.playing) await player.stop();
-    } catch (_) {}
+      
+      // 延迟 maxPlay 后自动停止播放以实现 cut 效果
+      Future.delayed(maxPlay, () async {
+        try {
+          if (player.playing) {
+            await player.stop();
+          }
+        } catch (_) {}
+      });
+    } catch (e) {
+      Global.logger.w('playAssetSoundCut 播放失败: $soundFileName, $e');
+    }
   }
 
   static Future<void> _ensureWebAudioUnlocked() async {

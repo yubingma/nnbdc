@@ -933,61 +933,62 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     if (!tryBeginLanding(player)) {
       return;
     }
-    var y = getDeadWordsTopY(player);
-    final sprite = player.droppingWordSprite;
-    if (sprite != null) {
-      // 已经处理过落地，直接返回（幂等保护）
-      if (sprite.isDead || sprite.skipCollision || (sprite as dynamic).hasLanded == true) {
-        endLanding(player);
-        return;
-      }
-      // 标记跳过碰撞落地逻辑，避免重复触发落地
-      sprite.skipCollision = true;
-      sprite.y = y - sprite.height;
-      // 手动完成一次落地堆叠
-      sprite.isDead = true;
-      // 立即切换为红色样式，并清空轨迹，避免残留绿边
-      sprite._trailYs.clear();
-      final TextStyle base = DroppingWordSprite.makeDeadPaint().style;
-      sprite.textRenderer = TextPaint(style: base.copyWith(fontSize: sprite._fixedFontSize));
-      sprite.text = sprite.text;
-      sprite.hasLanded = true;
-      if (player == playerA) {
-        if (!playerA.deadWords.contains(sprite)) {
-          playerA.deadWords.add(sprite);
+    try {
+      var y = getDeadWordsTopY(player);
+      final sprite = player.droppingWordSprite;
+      if (sprite != null) {
+        // 已经处理过落地，直接返回（幂等保护）
+        if (sprite.isDead || sprite.skipCollision || (sprite as dynamic).hasLanded == true) {
+          return;
         }
-        if (playerA.droppingWordSprite == sprite) playerA.droppingWordSprite = null;
-      } else {
-        if (!playerB.deadWords.contains(sprite)) {
-          playerB.deadWords.add(sprite);
+        // 标记跳过碰撞落地逻辑，避免重复触发落地
+        sprite.skipCollision = true;
+        sprite.y = y - sprite.height;
+        // 手动完成一次落地堆叠
+        sprite.isDead = true;
+        // 立即切换为红色样式，并清空轨迹，避免残留绿边
+        sprite._trailYs.clear();
+        final TextStyle base = DroppingWordSprite.makeDeadPaint().style;
+        sprite.textRenderer = TextPaint(style: base.copyWith(fontSize: sprite._fixedFontSize));
+        sprite.text = sprite.text;
+        sprite.hasLanded = true;
+        if (player == playerA) {
+          if (!playerA.deadWords.contains(sprite)) {
+            playerA.deadWords.add(sprite);
+          }
+          if (playerA.droppingWordSprite == sprite) playerA.droppingWordSprite = null;
+        } else {
+          if (!playerB.deadWords.contains(sprite)) {
+            playerB.deadWords.add(sprite);
+          }
+          if (playerB.droppingWordSprite == sprite) playerB.droppingWordSprite = null;
         }
-        if (playerB.droppingWordSprite == sprite) playerB.droppingWordSprite = null;
-      }
-      // 上报当前堆叠行数（仅 A 玩家上报）
-      if (player == playerA) {
-        final int rowsNow = playerA.deadWords.length;
-        sendUserCmd('REPORT_STACK_ROWS', [rowsNow]);
-      }
-      // 播放落地音效（与碰撞保持一致的体验）
-      final double thudVolume = (player == playerA) ? 1.0 : bSideSfxVolume;
-      SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
+        // 上报当前堆叠行数（仅 A 玩家上报）
+        if (player == playerA) {
+          final int rowsNow = playerA.deadWords.length;
+          sendUserCmd('REPORT_STACK_ROWS', [rowsNow]);
+        }
+        // 播放落地音效（与碰撞保持一致的体验）
+        final double thudVolume = (player == playerA) ? 1.0 : bSideSfxVolume;
+        SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
 
-      // 触顶判负：单词落地后，操场剩余高度不足以再容纳一个单词
-      final double playgroundTop = player.playGround.y;
-      final double remaining = sprite.y - playgroundTop; // 顶部到操场顶的剩余高度
-      if (remaining < sprite.height) {
-        isPlaying = false;
-        sendGameOverCmd(player.type);
-        endLanding(player);
-        return;
-      }
+        // 触顶判负：单词落地后，操场剩余高度不足以再容纳一个单词
+        final double playgroundTop = player.playGround.y;
+        final double remaining = sprite.y - playgroundTop; // 顶部到操场顶的剩余高度
+        if (remaining < sprite.height) {
+          isPlaying = false;
+          sendGameOverCmd(player.type);
+          return;
+        }
 
-      // A方落地后立即请求下一个单词，不再等待任何逻辑
-      if (player == playerA) {
-        sendUserCmd('GET_NEXT_WORD', [playerA.wordIndex++, 'false', playerA.currWord!.spell]);
+        // A方落地后立即请求下一个单词，不再等待任何逻辑
+        if (player == playerA) {
+          sendUserCmd('GET_NEXT_WORD', [playerA.wordIndex++, 'false', playerA.currWord!.spell]);
+        }
       }
-      endLanding(player);
-    } else {
+    } catch (e, st) {
+      Global.logger.e('dropWord2Bottom 发生异常: $e', error: e, stackTrace: st);
+    } finally {
       endLanding(player);
     }
   }
@@ -2610,56 +2611,60 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
       if (!game.tryBeginLanding(player)) {
         return;
       }
-      hasLanded = true;
-      isDead = true;
-      _trailYs.clear();
-      // 即刻切换到红色文本，刷新文本内容以触发重绘
-      textRenderer = makeDeadPaint();
-      final style = (textRenderer as TextPaint).style;
-      textRenderer = TextPaint(style: style.copyWith(fontSize: _fixedFontSize));
-      
-      // 优化：落地后将碰撞体积设为 passive，减少碰撞计算量
-      children.query<RectangleHitbox>().forEach((h) => h.collisionType = CollisionType.passive);
-      
-      text = text;
-      if (player == game.playerA) {
-        // 第一块贴紧地板，后续在其之上逐行堆叠，确保 7 行布局对齐
-        y = game.getDeadWordsTopY(game.playerA) - height;
-        if (!game.playerA.deadWords.contains(this)) {
-          game.playerA.deadWords.add(this);
-        }
-        if (game.playerA.droppingWordSprite == this) {
-          game.playerA.droppingWordSprite = null;
-        }
-      } else {
-        y = game.getDeadWordsTopY(game.playerB) - height;
-        if (!game.playerB.deadWords.contains(this)) {
-          game.playerB.deadWords.add(this);
-        }
-        if (game.playerB.droppingWordSprite == this) {
-          game.playerB.droppingWordSprite = null;
-        }
-      }
-
-      // 播放落地音效：B方音量为A方的1/4
-      final double thudVolume = (player == game.playerA) ? 1.0 : bSideSfxVolume;
-      SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
-
-      // 触顶条件：落地后剩余高度不足以再容纳一个单词
-      final double playgroundTop = game.playerA.playGround.y; // 同侧均可用其 y 作为操场顶部
-      final double remaining = y - playgroundTop;
-      if (remaining < height) {
-        game.isPlaying = false;
-        game.sendGameOverCmd(player.type);
-        game.endLanding(player);
-      } else {
+      try {
+        hasLanded = true;
+        isDead = true;
+        _trailYs.clear();
+        // 即刻切换到红色文本，刷新文本内容以触发重绘
+        textRenderer = makeDeadPaint();
+        final style = (textRenderer as TextPaint).style;
+        textRenderer = TextPaint(style: style.copyWith(fontSize: _fixedFontSize));
+        
+        // 优化：落地后将碰撞体积设为 passive，减少碰撞计算量
+        children.query<RectangleHitbox>().forEach((h) => h.collisionType = CollisionType.passive);
+        
+        text = text;
         if (player == game.playerA) {
-          game.sendUserCmd('GET_NEXT_WORD', [game.playerA.wordIndex++, 'false', game.playerA.currWord!.spell]);
+          // 第一块贴紧地板，后续在其之上逐行堆叠，确保 7 行布局对齐
+          y = game.getDeadWordsTopY(game.playerA) - height;
+          if (!game.playerA.deadWords.contains(this)) {
+            game.playerA.deadWords.add(this);
+          }
+          if (game.playerA.droppingWordSprite == this) {
+            game.playerA.droppingWordSprite = null;
+          }
+        } else {
+          y = game.getDeadWordsTopY(game.playerB) - height;
+          if (!game.playerB.deadWords.contains(this)) {
+            game.playerB.deadWords.add(this);
+          }
+          if (game.playerB.droppingWordSprite == this) {
+            game.playerB.droppingWordSprite = null;
+          }
         }
-        if (player == game.playerB) {
-          // B 侧(通常为机器人)在本地触底后，立即上报 ETA=0，强制 server 端结束等待并下发下一词，消除高叠时的延迟
-          game.sendUserCmd('REPORT_FALL_B', [0]);
+
+        // 播放落地音效：B方音量为A方的1/4
+        final double thudVolume = (player == game.playerA) ? 1.0 : bSideSfxVolume;
+        SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
+
+        // 触顶条件：落地后剩余高度不足以再容纳一个单词
+        final double playgroundTop = game.playerA.playGround.y; // 同侧均可用其 y 作为操场顶部
+        final double remaining = y - playgroundTop;
+        if (remaining < height) {
+          game.isPlaying = false;
+          game.sendGameOverCmd(player.type);
+        } else {
+          if (player == game.playerA) {
+            game.sendUserCmd('GET_NEXT_WORD', [game.playerA.wordIndex++, 'false', game.playerA.currWord!.spell]);
+          }
+          if (player == game.playerB) {
+            // B 侧(通常为机器人)在本地触底后，立即上报 ETA=0，强制 server 端结束等待并下发下一词，消除高叠时的延迟
+            game.sendUserCmd('REPORT_FALL_B', [0]);
+          }
         }
+      } catch (e, st) {
+        Global.logger.e('DroppingWordSprite.onCollision 发生异常: $e', error: e, stackTrace: st);
+      } finally {
         game.endLanding(player);
       }
     }
