@@ -764,8 +764,8 @@ import StoreKit
         }
         let meanSquare = sum / Float(frameLength)
         let rms = sqrtf(meanSquare)
-        // 转换为分贝并归一到 0..1
-        let minDb: Float = -60.0
+        // 转换为分贝并归一到 0..1。调整 minDb 过滤门槛（从 -60.0 调整到 -40.0），过滤微弱的环境噪音，解决 iPhone 等设备上波形图过于灵敏的问题
+        let minDb: Float = -40.0
         var db = 20.0 * log10f(max(rms, 1e-6))
         if db < minDb { db = minDb }
         if db > 0 { db = 0 }
