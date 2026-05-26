@@ -1303,8 +1303,11 @@ class WordListPageState extends State<WordListPage>
     
     asr.addStateListener((state) {
       if (!mounted) return;
-      setState(() {
-        // 触发 UI 重绘以更新 ASR 状态指示器
+      Future.microtask(() {
+        if (!mounted) return;
+        setState(() {
+          // 触发 UI 重绘以更新 ASR 状态指示器
+        });
       });
       if (state == AsrState.started) {
         // 恢复识别后，确保重新订阅电平流

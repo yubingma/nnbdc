@@ -55,6 +55,7 @@ ja.AudioPlayer bdcAudioPlayer(BdcAudioPlayerRef ref) {
 @riverpod
 class BdcNotifier extends _$BdcNotifier {
   int _stateChangeCount = 0;
+  bool _isDisposed = false;
 
   void _updateState(BdcState newState, {String tag = ''}) {
     _stateChangeCount++;
@@ -98,6 +99,7 @@ class BdcNotifier extends _$BdcNotifier {
     });
 
     ref.onDispose(() {
+      _isDisposed = true;
       _learningTimer?.cancel();
       _persistTimer?.cancel();
       progressBarTapTimer?.cancel();
@@ -116,7 +118,10 @@ class BdcNotifier extends _$BdcNotifier {
   DateTime? _lastSyncTime;
 
   void _onAsrStateChanged(AsrState asrState) {
-    _updateState(state.copyWith(asrState: asrState), tag: 'asr-state');
+    Future.microtask(() {
+      if (_isDisposed) return;
+      _updateState(state.copyWith(asrState: asrState), tag: 'asr-state');
+    });
   }
 
   void _startLearningTimer() {
