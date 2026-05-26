@@ -470,9 +470,11 @@ class SubscriptionUtil {
       // 重新从数据库加载用户信息到缓存，确保UI能获取到最新订阅状态
       await Global.loadUserFromDb();
 
-      // 触发一次同步（不等待结果）
-      ThrottledDbSyncService().requestSync();
-      Global.logger.i('订阅验证成功，本地数据已更新，缓存已刷新，后台同步已触发');
+      // 延迟 500 毫秒再触发同步，给服务端的订阅写事务和网络响应收尾预留充裕时间，彻底消除并发错位造成的临界版本冲突
+      Future.delayed(const Duration(milliseconds: 500), () {
+        ThrottledDbSyncService().requestSync();
+      });
+      Global.logger.i('订阅验证成功，本地数据已更新，缓存已刷新，后台同步已在 500ms 后安排触发');
     } catch (e, stackTrace) {
       Global.logger.e('刷新用户信息失败', error: e, stackTrace: stackTrace);
     }

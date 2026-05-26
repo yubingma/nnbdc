@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
 
+import beidanci.service.exception.DbVersionNotMatchException;
 import beidanci.service.util.Util;
 
 @Component
@@ -30,7 +31,11 @@ public class GlobalExceptionHandler implements HandlerExceptionResolver {
             return new ModelAndView();
         }
 
-        log.error(String.format("访问[%s]时出现异常", request.getRequestURI()), e);
+        if (e instanceof DbVersionNotMatchException) {
+            log.warn("访问[{}]时发生数据库版本不匹配（属于良性并发哨兵拦截，客户端会自动重试自愈）: {}", request.getRequestURI(), e.getMessage());
+        } else {
+            log.error(String.format("访问[%s]时出现异常", request.getRequestURI()), e);
+        }
 
         try {
             if (!response.isCommitted()) {
