@@ -812,6 +812,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _persistLastWordHistoryItem() {
+    final sw = Stopwatch()..start();
     try {
       final wordId = state.word?.id;
       final uiState = wordId != null ? state.wordUIStates[wordId] : null;
@@ -845,7 +846,15 @@ class BdcNotifier extends _$BdcNotifier {
             }).toList(),
           }
         };
-        Prefs.write('last_word_history_item', json.encode(lastWordData));
+        final encodeSw = Stopwatch()..start();
+        final jsonStr = json.encode(lastWordData);
+        final encodeCost = encodeSw.elapsedMilliseconds;
+        
+        final writeSw = Stopwatch()..start();
+        Prefs.write('last_word_history_item', jsonStr).then((_) {
+          debugPrint('⚡ [PERF] _persistLastWordHistoryItem -> Prefs.write cost: ${writeSw.elapsedMilliseconds}ms');
+        });
+        debugPrint('⚡ [PERF] _persistLastWordHistoryItem -> JSON encode cost: ${encodeCost}ms, total dispatch sync cost: ${sw.elapsedMilliseconds}ms');
       }
     } catch (e) {
       Global.logger.e('持久化上一个单词失败: $e');
@@ -854,6 +863,7 @@ class BdcNotifier extends _$BdcNotifier {
 
 
   void _restoreWordState(GetWordResult result) {
+    final sw = Stopwatch()..start();
     final wordId = result.learningWord?.word.id;
     final uiState = wordId != null ? state.wordUIStates[wordId] : null;
     if (uiState != null) {
@@ -897,6 +907,7 @@ class BdcNotifier extends _$BdcNotifier {
         );
         meaningController.text = "";
       }
+      debugPrint('⚡ [PERF] _restoreWordState cost: ${sw.elapsedMilliseconds}ms');
     }
   }
 
@@ -1010,6 +1021,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _saveCurrentWordState() {
+    final sw = Stopwatch()..start();
     if (state.word?.id != null) {
       final uiState = WordUIState(
         stepIndex: state.currentGetWordResult?.stepIndex,
@@ -1033,6 +1045,7 @@ class BdcNotifier extends _$BdcNotifier {
         hintTapCount: state.hintTapCount,
       );
       state = state.copyWith(wordUIStates: {...state.wordUIStates, state.word!.id!: uiState});
+      debugPrint('⚡ [PERF] _saveCurrentWordState cost: ${sw.elapsedMilliseconds}ms');
     }
   }
 
@@ -1249,6 +1262,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 答对了，立即彻底、非阻塞地在后台关停麦克风，绝不阻塞 UI 主帧
     unawaited(asr.stopMicrophone());
     // 显式将音频分类切换回高保真播放分类，确保接下来的提示音或单词发音能够清晰响亮地从扬声器传出（避免通话听筒导致的音量微弱或无声）
+    final sessionSw = Stopwatch()..start();
     final sessionFuture = SoundUtil.usePlaybackCategory();
     
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
@@ -1297,10 +1311,14 @@ class BdcNotifier extends _$BdcNotifier {
     //    await 等待发音播完，使用户完整听到后再跳转，避免突兀感。
     // 2. 其他模式 (如 En2Ch)：用户已经听过发音。此时仅播放轻快的正确提示音，避免冗余感。
     if (state.studyStep == StudyStep.ch2En.json) {
+      final playSw = Stopwatch()..start();
       await playWordAndFirstSentence(true, false);
+      debugPrint('⚡ [PERF] _onAnswerCorrect -> playWordAndFirstSentence cost: ${playSw.elapsedMilliseconds}ms');
     } else {
       // 显式等待音频 Session 切换回 playback 高保真纯播放分类，根治 iOS playAndRecord 模式下硬件滤波导致的尖锐、干瘪电话音
+      final waitSw = Stopwatch()..start();
       await sessionFuture;
+      debugPrint('⚡ [PERF] _onAnswerCorrect -> await usePlaybackCategory future cost: ${waitSw.elapsedMilliseconds}ms, trigger Category config took: ${sessionSw.elapsedMilliseconds}ms');
       if (PlatformUtils.isIOS) {
         SoundUtil.playAssetSoundConcurrent('correct_ios.wav', 1.0, 0.3);
       } else {
@@ -1429,6 +1447,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> _startAsrWithHint(AsrLanguage language) async {
+    final sw = Stopwatch()..start();
     if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) {
       debugPrint('⚡ [PERF] _startAsrWithHint SKIPPED: word=${state.word != null} loadErr=${state.loadError != null} hw=${state.showHandwritingBoard} getting=${state.isGettingNextWord}');
       return;
@@ -1437,8 +1456,9 @@ class BdcNotifier extends _$BdcNotifier {
     debugPrint('⚡ [PERF] _startAsrWithHint START lang=${language.locale}');
 
     // 1. 切换到录放模式（唯一的同步阻塞点）
+    final sessionSw = Stopwatch()..start();
     await SoundUtil.usePlayAndRecordCategory();
-    debugPrint('⚡ [PERF] _startAsrWithHint session=playAndRecord');
+    debugPrint('⚡ [PERF] _startAsrWithHint session=playAndRecord cost: ${sessionSw.elapsedMilliseconds}ms');
 
     // 添加调试日志，方便查看正确答案
     final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
@@ -1453,13 +1473,14 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     try {
+      final asrSw = Stopwatch()..start();
       await asr.startAsr(language, phrases: phrases);
       state = state.copyWith(wordStartTime: AppClock.now());
-      debugPrint('⚡ [PERF] _startAsrWithHint ASR_READY → playing hint sound');
+      debugPrint('⚡ [PERF] _startAsrWithHint ASR_READY → playing hint sound cost: ${asrSw.elapsedMilliseconds}ms');
 
       // 3. ASR 就绪后播放提示音——告诉用户可以开始说话
       unawaited(SoundUtil.playAsrReadyHintSound());
-      debugPrint('⚡ [PERF] _startAsrWithHint DONE');
+      debugPrint('⚡ [PERF] _startAsrWithHint DONE total: ${sw.elapsedMilliseconds}ms');
     } catch (e) {
       Global.logger.e('ASR启动指令下发失败: $e');
       debugPrint('⚡ [PERF] _startAsrWithHint FAILED: $e');
