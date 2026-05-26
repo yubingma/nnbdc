@@ -1362,22 +1362,26 @@ class BdcNotifier extends _$BdcNotifier {
     // 关键优化：如果需要播放声音，或者后续需要开启 ASR，则必须先停用旧的 ASR 以释放硬件焦点并同步 Session
     if (willPlayWord || willPlaySentence || startAsrWhenFinish) {
       try {
-        debugPrint('⏱️ [Latency-BDC] 准备释放旧 ASR 并切换音频会话...');
-        await asr.stopMicrophone();
+        debugPrint('⏱️ [Latency-BDC] 准备释放旧 ASR 并切换音频会话... (startAsrWhenFinish: $startAsrWhenFinish)');
+        
+        if (startAsrWhenFinish) {
+          // 热衔接：如果播放完需要开启 ASR，仅执行热停止 (stopAsr)，保留麦克风和原生 AVAudioEngine 运行！
+          await asr.stopAsr();
+          sessionFuture = SoundUtil.usePlayAndRecordCategory();
+        } else {
+          // 冷切换：如果后面不立刻进 ASR，或者没有 ASR 任务，冷关停麦克风并切换音频分类
+          await asr.stopMicrophone();
+          if (willPlayWord || willPlaySentence) {
+            sessionFuture = SoundUtil.usePlaybackCategory();
+          } else {
+            sessionFuture = SoundUtil.usePlayAndRecordCategory();
+          }
+        }
         
         // 关键：将当前播放器加入观察名单，确保 ASR 初始化时会等待其播完
         SoundUtil.watchPlayer(_audioPlayer);
-
-        // 关键：发音前切换音频会话。
-        // 如果是要播放（willPlayWord=true），切到 playback；
-        // 如果是不播放直接进 ASR（willPlayWord=false && startAsrWhenFinish=true），则提前切到 playAndRecord。
-        if (willPlayWord || willPlaySentence) {
-          sessionFuture = SoundUtil.usePlaybackCategory();
-        } else {
-          sessionFuture = SoundUtil.usePlayAndRecordCategory();
-        }
       } catch (e) {
-        Global.logger.e('🔊 [BDC-Sound] stopMicrophone 失败: $e');
+        Global.logger.e('🔊 [BDC-Sound] ASR 准备停用失败: $e');
       }
     }
 

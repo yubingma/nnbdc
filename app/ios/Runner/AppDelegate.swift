@@ -629,8 +629,7 @@ import StoreKit
             print("IOS: [ASR] Audio engine NOT running, performing full physical reset and tap installation.")
             resetAudioEngineAndTap()
         } else {
-            print("IOS: [ASR] Audio engine ALREADY running (pre-warmed), re-installing tap only.")
-            installTap()
+            print("IOS: [ASR] Audio engine ALREADY running (pre-warmed), reuse active Tap and skip re-installation to avoid pop sounds.")
         }
         
         // 确保使用当前设置的语言创建识别器
