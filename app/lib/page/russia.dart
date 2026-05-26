@@ -1021,7 +1021,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     );
     add(particle);
     // 音效：使用 bubble-pop，增加时长到 1.5s 以确保播放完整
-    await SoundUtil.playAssetSoundCut('bubble-pop.mp3', 1.0, volume, const Duration(milliseconds: 1500));
+    await SoundUtil.playAssetSoundCut('bubble-pop.wav', 1.0, volume, const Duration(milliseconds: 1500));
   }
 
   void initSocket() {

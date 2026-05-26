@@ -148,7 +148,7 @@ class SoundUtil {
   /// 预热核心高频音效，彻底消除首次分配 ExoPlayer 的延迟
   static Future<void> prewarmCoreSounds() async {
     if (PlatformUtils.isWeb || PlatformUtils.isTesting) return;
-    final sounds = ['asr_ready_hint.wav', 'correct.mp3', 'failed.mp3', 'bubble-pop.mp3', 'thud.mp3'];
+    final sounds = ['asr_ready_hint.wav', 'asr_ready_hint_a.wav', 'asr_ready_hint_b.wav', 'asr_ready_hint_c.wav', 'asr_ready_hint_d.wav', 'correct.mp3', 'failed.mp3', 'bubble-pop.wav', 'thud.mp3'];
     for (var sound in sounds) {
       if (!_prewarmedSfxPlayers.containsKey(sound)) {
         try {
@@ -328,7 +328,7 @@ Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${tot
   }
 
   static Future<void> playAddSuccessSound() async {
-    unawaited(playAssetSoundConcurrent('bubble-pop.mp3', 1.0, 0.6));
+    unawaited(playAssetSoundConcurrent('bubble-pop.wav', 1.0, 0.6));
   }
 
   static Future<void> playAssetSoundConcurrent(String soundFileName, double speed, double volume) async {
