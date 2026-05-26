@@ -150,7 +150,7 @@ jobs:
 
       # 设置 Flutter
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@v2.18.0
         with:
           flutter-version: "3.38.5"
 
