@@ -185,7 +185,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                      setupEnglishModel()
                 }
                 currentModel = modelEn
-                activeGain = 2.5f
+                activeGain = 1.8f
             } else {
                 if (modelZh == null) {
                     setupChineseModel()
@@ -420,7 +420,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             
                             val isEndpoint = m.isEndpoint(s)
                             val result = m.getResult(s)
-                            val text = result.text.trim().lowercase() // 转小写
+                            // ⚡ 优化：在物理输入音量极小（norm < 0.008）且用户尚未有效发声（lastSentResult.isEmpty()）的静息状态下，
+                            // 强行拦截识别结果并判定为 ""（静音），防止背景空气噪声被误判为 "and" 等幻觉词
+                            val rawText = result.text.trim().lowercase()
+                            val text = if (norm < 0.008 && lastSentResult.isEmpty()) "" else rawText
                             
                             // 【关键修复】：如果检测到端点（静音切断），必须重置流状态
                             // 否则旧的特征残余会导致后续识别出现“叠词”（如 限限）或无法开启新词识别

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/api/enum.dart';
@@ -84,14 +86,42 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
 
         // 4. 如果仍然没有，就去通用词典找（words 全局表）
         if (candidateIds.length < 15) {
-          final wordsQuery = db.select(db.words)
-            ..orderBy([(t) => drift.OrderingTerm.random()])
-            ..limit(15);
-          final globalWords = await wordsQuery.get();
-          for (final w in globalWords) {
-            if (!selectedWordIds.contains(w.id)) {
-              candidateIds.add(w.id);
-              selectedWordIds.add(w.id);
+          try {
+            final countQuery = db.customSelect('SELECT COUNT(*) as c FROM words');
+            final countRow = await countQuery.getSingle();
+            final count = countRow.read<int>('c');
+            if (count > 15) {
+              final randomOffset = Random().nextInt(count - 15);
+              final wordsQuery = db.select(db.words)
+                ..limit(15, offset: randomOffset);
+              final globalWords = await wordsQuery.get();
+              for (final w in globalWords) {
+                if (!selectedWordIds.contains(w.id)) {
+                  candidateIds.add(w.id);
+                  selectedWordIds.add(w.id);
+                }
+              }
+            } else {
+              final wordsQuery = db.select(db.words)..limit(15);
+              final globalWords = await wordsQuery.get();
+              for (final w in globalWords) {
+                if (!selectedWordIds.contains(w.id)) {
+                  candidateIds.add(w.id);
+                  selectedWordIds.add(w.id);
+                }
+              }
+            }
+          } catch (e) {
+            // 降级原 random 排序，确保容错性
+            final wordsQuery = db.select(db.words)
+              ..orderBy([(t) => drift.OrderingTerm.random()])
+              ..limit(15);
+            final globalWords = await wordsQuery.get();
+            for (final w in globalWords) {
+              if (!selectedWordIds.contains(w.id)) {
+                candidateIds.add(w.id);
+                selectedWordIds.add(w.id);
+              }
             }
           }
         }
@@ -128,19 +158,33 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
           unmatchedWords.shuffle();
           final List<Word> finalCandidates = [...matchedWords, ...unmatchedWords];
           
+          // ⚡ 优化：不再使用 N+1 串行加载，而是提取最多 2 个目标候选词，并行进行加载
+          final chosenCandidates = <Word>[];
           for (final wordDetails in finalCandidates) {
-            final otherWordVo = WordVo.c2(wordDetails.spell);
-            otherWordVo.id = wordDetails.id;
-            otherWordVo.shortDesc = wordDetails.shortDesc;
-            otherWordVo.longDesc = wordDetails.longDesc;
-            otherWordVo.pronounce = wordDetails.pronounce;
-            otherWordVo.americaPronounce = wordDetails.americaPronounce;
-            otherWordVo.britishPronounce = wordDetails.britishPronounce;
-            otherWordVo.popularity = wordDetails.popularity;
-            final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-            otherWordVo.meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();            
-            otherWords.add(otherWordVo);
-            if (otherWords.length >= 2) break;
+            chosenCandidates.add(wordDetails);
+            if (chosenCandidates.length >= 2) break;
+          }
+
+          if (chosenCandidates.isNotEmpty) {
+            final meaningResults = await Future.wait(chosenCandidates.map((wordDetails) async {
+              final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
+              return MapEntry(wordDetails, realMeaningItems);
+            }));
+
+            for (final entry in meaningResults) {
+              final wordDetails = entry.key;
+              final realMeaningItems = entry.value;
+              final otherWordVo = WordVo.c2(wordDetails.spell)
+                ..id = wordDetails.id
+                ..shortDesc = wordDetails.shortDesc
+                ..longDesc = wordDetails.longDesc
+                ..pronounce = wordDetails.pronounce
+                ..americaPronounce = wordDetails.americaPronounce
+                ..britishPronounce = wordDetails.britishPronounce
+                ..popularity = wordDetails.popularity
+                ..meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+              otherWords.add(otherWordVo);
+            }
           }
         }
 
@@ -149,29 +193,42 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
           final int needed = 2 - otherWords.length;
           final excludeIds = selectedWordIds.toList()..add(targetWordLearningData.wordId);
 
+          // ⚡ 优化：不再使用低效的数据库 ORDER BY random()，而是只加载前 50 个不重复单词，在内存中进行随机打乱
           final wordsQuery = db.select(db.words)
             ..where((tbl) => tbl.id.isNotIn(excludeIds))
-            ..orderBy([(t) => drift.OrderingTerm.random()])
-            ..limit(needed);
+            ..limit(50);
 
           final globalWords = await wordsQuery.get();
+          final shufflableWords = List<Word>.from(globalWords)..shuffle();
 
-          for (final wordDetails in globalWords) {
-            final otherWordVo = WordVo.c2(wordDetails.spell);
-            otherWordVo.id = wordDetails.id;
-            otherWordVo.shortDesc = wordDetails.shortDesc;
-            otherWordVo.longDesc = wordDetails.longDesc;
-            otherWordVo.pronounce = wordDetails.pronounce;
-            otherWordVo.americaPronounce = wordDetails.americaPronounce;
-            otherWordVo.britishPronounce = wordDetails.britishPronounce;
-            otherWordVo.popularity = wordDetails.popularity;
-
-            final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-            otherWordVo.meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-
-            otherWords.add(otherWordVo);
+          // 并行加载兜底单词的释义
+          final chosenGlobalDetailsList = <Word>[];
+          for (final wordDetails in shufflableWords) {
+            chosenGlobalDetailsList.add(wordDetails);
             selectedWordIds.add(wordDetails.id);
-            if (otherWords.length >= 2) break;
+            if (chosenGlobalDetailsList.length >= needed) break;
+          }
+
+          if (chosenGlobalDetailsList.isNotEmpty) {
+            final globalMeaningResults = await Future.wait(chosenGlobalDetailsList.map((wordDetails) async {
+              final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
+              return MapEntry(wordDetails, realMeaningItems);
+            }));
+
+            for (final entry in globalMeaningResults) {
+              final wordDetails = entry.key;
+              final realMeaningItems = entry.value;
+              final otherWordVo = WordVo.c2(wordDetails.spell)
+                ..id = wordDetails.id
+                ..shortDesc = wordDetails.shortDesc
+                ..longDesc = wordDetails.longDesc
+                ..pronounce = wordDetails.pronounce
+                ..americaPronounce = wordDetails.americaPronounce
+                ..britishPronounce = wordDetails.britishPronounce
+                ..popularity = wordDetails.popularity
+                ..meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+              otherWords.add(otherWordVo);
+            }
           }
         }
       }
@@ -353,20 +410,33 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
 
         final List<Word> finalWordsList = [...prefixDifferentWords, ...prefixSameWords];
 
+        // ⚡ 优化：ShapeSimilarDistractorStrategy 中的释义加载也使用 Future.wait 并行异步化
+        final chosenSimilarCandidates = <Word>[];
         for (final wordDetails in finalWordsList) {
-          final otherWordVo = WordVo.c2(wordDetails.spell);
-          otherWordVo.id = wordDetails.id;
-          otherWordVo.shortDesc = wordDetails.shortDesc;
-          otherWordVo.longDesc = wordDetails.longDesc;
-          otherWordVo.pronounce = wordDetails.pronounce;
-          otherWordVo.americaPronounce = wordDetails.americaPronounce;
-          otherWordVo.britishPronounce = wordDetails.britishPronounce;
-          otherWordVo.popularity = wordDetails.popularity;
-          final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
-          otherWordVo.meaningItems = realMeaningItems.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
-          
-          otherWords.add(otherWordVo);
-          if (otherWords.length >= 2) break;
+          chosenSimilarCandidates.add(wordDetails);
+          if (chosenSimilarCandidates.length >= 2) break;
+        }
+
+        if (chosenSimilarCandidates.isNotEmpty) {
+          final similarMeaningResults = await Future.wait(chosenSimilarCandidates.map((wordDetails) async {
+            final realMeaningItems = await WordBo().getWordMeaningItems(wordDetails.id, targetWordLearningData.userId);
+            return MapEntry(wordDetails, realMeaningItems);
+          }));
+
+          for (final entry in similarMeaningResults) {
+            final wordDetails = entry.key;
+            final realMeaningItems = entry.value;
+            final otherWordVo = WordVo.c2(wordDetails.spell)
+              ..id = wordDetails.id
+              ..shortDesc = wordDetails.shortDesc
+              ..longDesc = wordDetails.longDesc
+              ..pronounce = wordDetails.pronounce
+              ..americaPronounce = wordDetails.americaPronounce
+              ..britishPronounce = wordDetails.britishPronounce
+              ..popularity = wordDetails.popularity
+              ..meaningItems = similarMeaningResults.firstWhere((e) => e.key.id == wordDetails.id).value.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+            otherWords.add(otherWordVo);
+          }
         }
       }
 
