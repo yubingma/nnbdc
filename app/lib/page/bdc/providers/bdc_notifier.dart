@@ -1243,7 +1243,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 答对了，立即彻底、非阻塞地在后台关停麦克风，绝不阻塞 UI 主帧
     unawaited(asr.stopMicrophone());
     // 显式将音频分类切换回高保真播放分类，确保接下来的提示音或单词发音能够清晰响亮地从扬声器传出（避免通话听筒导致的音量微弱或无声）
-    unawaited(SoundUtil.usePlaybackCategory());
+    final sessionFuture = SoundUtil.usePlaybackCategory();
     
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
       state.wordWrapper!.revealAllRemainingMeanings();
@@ -1293,6 +1293,8 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.studyStep == StudyStep.ch2En.json) {
       await playWordAndFirstSentence(true, false);
     } else {
+      // 显式等待音频 Session 切换回 playback 高保真纯播放分类，根治 iOS playAndRecord 模式下硬件滤波导致的尖锐、干瘪电话音
+      await sessionFuture;
       SoundUtil.playAssetSoundConcurrent('correct.mp3', 1.0, 1.0);
     }
 

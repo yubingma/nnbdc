@@ -1087,7 +1087,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           buildDefaultDragHandles: false,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          onReorderItem: reorderData,
+          // ignore: deprecated_member_use
+          onReorder: reorderData,
           children: [
             for (int i = 0; i < studySteps!.length; i++) _buildStepTile(studySteps![i], i),
           ],
