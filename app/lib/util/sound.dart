@@ -74,10 +74,7 @@ class SoundUtil {
         final session = await AudioSession.instance;
         await session.configure(AudioSessionConfiguration(
           avAudioSessionCategory: AVAudioSessionCategory.playback,
-          avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers |
-              AVAudioSessionCategoryOptions.allowBluetooth |
-              AVAudioSessionCategoryOptions.allowAirPlay |
-              AVAudioSessionCategoryOptions.allowBluetoothA2dp, 
+          avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers, 
           avAudioSessionMode: AVAudioSessionMode.moviePlayback,
           androidAudioAttributes: const AndroidAudioAttributes(
             contentType: AndroidAudioContentType.music,
