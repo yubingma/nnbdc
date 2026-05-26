@@ -119,6 +119,12 @@ public class UserBo extends BaseBo<User> {
         return userDbVersionDao.getUserDbVersion(jdbcTemplate, userId);
     }
 
+    @Transactional
+    public int getUserDbVersionWithLock(String userId) {
+        userDbVersionDao.ensureUserDbVersionExists(jdbcTemplate, userId);
+        return userDbVersionDao.getUserDbVersionWithLock(jdbcTemplate, userId);
+    }
+
     /**
      * 覆盖用户生词本
      */

@@ -69,7 +69,7 @@ public class SyncController {
 
     @GetMapping("/getUserDbVersion.do")
     public Result<Integer> getUserDbVersion(String userId) {
-        int version = userBo.getUserDbVersion(userId);
+        int version = userBo.getUserDbVersionWithLock(userId);
         return Result.success(version);
     }
 
