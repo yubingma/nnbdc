@@ -24,6 +24,7 @@ class SubscriptionUtil {
   static bool _isAvailable = false;
   static bool _initialized = false;
   static bool _showToasts = true; // 控制是否显示 Toast 提示
+  static Future<bool>? _currentVerifyFuture;
 
   /// 订阅更新流，用于通知UI刷新
   static Stream<List<PurchaseDetails>> get purchaseUpdatedStream => _purchaseUpdatedController.stream;
@@ -356,7 +357,24 @@ class SubscriptionUtil {
   }
 
   /// 验证收据
-  static Future<bool> _verifyReceipt(PurchaseDetails purchaseDetails) async {
+  static Future<bool> _verifyReceipt(PurchaseDetails purchaseDetails) {
+    if (_currentVerifyFuture != null) {
+      Global.logger.i('📥 收据验证正在进行中，合并并发请求');
+      return _currentVerifyFuture!;
+    }
+
+    _currentVerifyFuture = _doVerifyReceipt(purchaseDetails);
+
+    // 当完成后，不管成功还是失败，都将其重置为 null
+    _currentVerifyFuture!.whenComplete(() {
+      _currentVerifyFuture = null;
+    });
+
+    return _currentVerifyFuture!;
+  }
+
+  /// 实际执行收据验证
+  static Future<bool> _doVerifyReceipt(PurchaseDetails purchaseDetails) async {
     try {
       // 获取收据数据
       String receiptData = '';

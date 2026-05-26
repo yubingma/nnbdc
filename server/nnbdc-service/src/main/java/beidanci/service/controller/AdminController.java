@@ -516,6 +516,7 @@ public class AdminController {
     // PDF 单词提取相关 API (管理员接口)
     // ============================================
 
+    @SuppressWarnings("null")
     @PostMapping(value = "/admin/pdf/extractWords.do", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
     public org.springframework.web.servlet.mvc.method.annotation.SseEmitter extractWordsFromPdf(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
@@ -563,6 +564,7 @@ public class AdminController {
         return attachToTask(task);
     }
 
+    @SuppressWarnings("null")
     private org.springframework.web.servlet.mvc.method.annotation.SseEmitter attachToTask(final beidanci.service.bo.AiBo.ExtractionTask finalTask) {
         final org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = 
                 new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(3600000L * 12); // 12 hours timeout

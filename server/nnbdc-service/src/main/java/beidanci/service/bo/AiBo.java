@@ -90,6 +90,7 @@ public class AiBo {
 
     private volatile RestTemplate sharedRestTemplate;
 
+    @SuppressWarnings("null")
     private RestTemplate getRestTemplate() {
         if (sharedRestTemplate == null) {
             synchronized (this) {

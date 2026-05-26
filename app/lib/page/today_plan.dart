@@ -367,9 +367,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   void reorderData(int oldIndex, int newIndex) {
     if (!mounted) return;
     setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
       final items = studySteps!.removeAt(oldIndex);
       studySteps!.insert(newIndex, items);
       for (var i = 0; i < studySteps!.length; i++) {
@@ -1090,7 +1087,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           buildDefaultDragHandles: false,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          onReorder: reorderData,
+          onReorderItem: reorderData,
           children: [
             for (int i = 0; i < studySteps!.length; i++) _buildStepTile(studySteps![i], i),
           ],

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:nnbdc/global.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -392,7 +393,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                 itemCount: matchedWords.length,
                 itemBuilder: (context, index) => renderWord(index),
                 // 性能优化设置
-                cacheExtent: 1000, // 预缓存范围
+                scrollCacheExtent: const ScrollCacheExtent.pixels(1000.0), // 预缓存范围
                 addAutomaticKeepAlives: false, // 不自动保持状态
                 addRepaintBoundaries: true, // 添加重绘边界
               ),

@@ -110,6 +110,7 @@ public class DataSanitizeBo {
         return new SystemHealthCheckResult(issues.isEmpty() && errors.isEmpty(), issues, errors);
     }
 
+    @SuppressWarnings("null")
     private int countDirtyRecords(String table, String where) {
         String sql = String.format("SELECT COUNT(*) FROM %s WHERE %s", table, where);
         Integer count = namedParameterJdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Integer.class);
