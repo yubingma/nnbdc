@@ -2441,36 +2441,39 @@ class _MePageState extends State<MePage> {
     // 如果没有指定颜色，则使用一个更克制的次级文字颜色，避免“花花绿绿”
     final effectiveIconColor = iconColor ?? (isDestructive ? Colors.redAccent : subtitleColor);
 
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: effectiveIconColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          icon,
-          color: effectiveIconColor,
-          size: 22, // 略微调大图标，提升精致感
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isDestructive ? Colors.redAccent : textColor,
-          fontWeight: FontWeight.w500, // 降低字重，避免过重
-          fontSize: 15,
-          fontFamily: 'NotoSansSC',
-        ),
-      ),
-      trailing: trailing ??
-          Icon(
-            Icons.chevron_right_rounded,
-            color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
-            size: 18,
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: effectiveIconColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Icon(
+            icon,
+            color: effectiveIconColor,
+            size: 22, // 略微调大图标，提升精致感
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isDestructive ? Colors.redAccent : textColor,
+            fontWeight: FontWeight.w500, // 降低字重，避免过重
+            fontSize: 15,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
+        trailing: trailing ??
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
+              size: 18,
+            ),
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      ),
     );
   }
 
