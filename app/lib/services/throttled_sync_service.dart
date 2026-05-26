@@ -157,12 +157,11 @@ class ThrottledDbSyncService {
       // 核心异常：弹出对话框提示用户
       if (e is dbsync.SyncCoreException) {
         _showCoreDataErrorDialog(e);
+        rethrow;
       }
 
       // 同步失败后的重试策略
       _handleSyncFailure(e);
-
-      rethrow;
     } finally {
       _isPerformingSync = false;
       _syncScheduled = false;

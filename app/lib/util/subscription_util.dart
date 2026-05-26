@@ -261,6 +261,32 @@ class SubscriptionUtil {
 
   /// 处理购买更新
   static void _onPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
+    if (purchaseDetailsList.isEmpty) return;
+
+    // 【核心优化】App Store 的收据是全量历史收据，验证任意一条记录都会把该用户的所有订阅历史更新到最新状态。
+    // 在恢复购买时，系统会派发多条历史订单记录（purchaseDetailsList 长度可能达到 10 以上），
+    // 此时绝对不能为每条订单都并发发送 verifySubscription.do 请求，这会造成后端的严重并发冲突和版本覆盖错乱！
+    // 我们仅筛选出最重要（新购买或最新的恢复记录）的一条订单进行校验，从源头消灭高并发 Race Condition。
+    if (purchaseDetailsList.length > 1) {
+      Global.logger.i('📥 收到批量购买/恢复记录，长度: ${purchaseDetailsList.length}，执行降噪去重过滤');
+      
+      // 优先寻找正在购买中的 purchased 记录
+      final purchasedList = purchaseDetailsList.where((p) => p.status == PurchaseStatus.purchased).toList();
+      if (purchasedList.isNotEmpty) {
+        Global.logger.i('📥 存在新购买记录，仅验证最新的那一条新购买记录');
+        _handlePurchase(purchasedList.last);
+        return;
+      }
+
+      // 如果全是 restored 状态，只验证最新的一条即可
+      final restoredList = purchaseDetailsList.where((p) => p.status == PurchaseStatus.restored).toList();
+      if (restoredList.isNotEmpty) {
+        Global.logger.i('📥 均是恢复购买记录，仅处理最新的那一条恢复记录');
+        _handlePurchase(restoredList.last);
+        return;
+      }
+    }
+
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
       _handlePurchase(purchaseDetails);
     }

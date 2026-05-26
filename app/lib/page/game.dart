@@ -593,26 +593,29 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
           ),
         ],
       ),
-      child: ExpansionTile(
-        initiallyExpanded: _expandedGroups[group.groupName]!,
-        onExpansionChanged: (expanded) {
-          setState(() {
-            _expandedGroups[group.groupName] = expanded;
-          });
-        },
-        backgroundColor: Colors.transparent,
-        collapsedBackgroundColor: Colors.transparent,
-        iconColor: accentColor,
-        collapsedIconColor: accentColor,
-        title: _buildGroupTitle(group, textColor, accentColor),
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
-            child: Column(
-              children: group.gameHalls.map((hall) => _buildHallCard(hall, isDarkMode)).toList(),
+      child: Material(
+        color: Colors.transparent,
+        child: ExpansionTile(
+          initiallyExpanded: _expandedGroups[group.groupName]!,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _expandedGroups[group.groupName] = expanded;
+            });
+          },
+          backgroundColor: Colors.transparent,
+          collapsedBackgroundColor: Colors.transparent,
+          iconColor: accentColor,
+          collapsedIconColor: accentColor,
+          title: _buildGroupTitle(group, textColor, accentColor),
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
+              child: Column(
+                children: group.gameHalls.map((hall) => _buildHallCard(hall, isDarkMode)).toList(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
