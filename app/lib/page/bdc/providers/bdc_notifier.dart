@@ -22,6 +22,7 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/fsrs.dart';
@@ -196,6 +197,8 @@ class BdcNotifier extends _$BdcNotifier {
       if (!PlatformUtils.isIOS) {
         preloadFuture = asr.preloadModels();
       }
+      // 预加载音素字典，避免首次 ASR 事件触发时阻塞 5 秒
+      PhonemeUtil.load();
 
       if (context.mounted && needPreload && preloadFuture != null) {
         // 延迟 150ms 显示加载弹窗，如果在这期间模型预载完成了，就完全不弹窗，给用户最极致的流畅体验！

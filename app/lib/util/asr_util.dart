@@ -146,6 +146,13 @@ class AsrUtil {
     if (candidates.isEmpty) return AsrCandidateResult('', 0);
     final lowerTarget = targetWord.toLowerCase().trim();
 
+    // 快速路径：精确匹配时跳过音素加载和计算，避免 3.5MB cmudict 加载阻塞 ASR 响应
+    for (final c in candidates) {
+      if (c.toLowerCase().trim() == lowerTarget) {
+        return AsrCandidateResult(c, 100);
+      }
+    }
+
     // 预加载音素库（以防万一）
     await PhonemeUtil.load();
 
