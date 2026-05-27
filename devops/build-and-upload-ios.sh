@@ -80,7 +80,8 @@ SKIP_UPLOAD=false
 BUILD_ONLY=false
 UPLOAD_ONLY=false
 CLEAN_BUILD=true
-CONFIG_BACKUP_FILE=""  # 配置文件备份路径
+TAG_REPO=true           # 默认打 tag，--no-tag 关闭
+CONFIG_BACKUP_FILE=""   # 配置文件备份路径
 INFOPLIST_BACKUP_FILE="" # Info.plist 备份路径
 
 # 显示使用说明
@@ -99,6 +100,8 @@ show_usage() {
   --skip-upload         跳过上传步骤（仅构建）
   --build-only          仅构建，不上传
   --upload-only         仅上传已有构建，不重新构建
+  --no-tag              跳过 Git 打标签
+  --tag-name NAME       自定义 Git 标签名（默认: ios/v{VERSION}）
   --help                显示此帮助信息
 
 环境变量:
@@ -178,6 +181,14 @@ parse_args() {
                 UPLOAD_ONLY=true
                 SKIP_BUILD=true
                 shift
+                ;;
+            --no-tag)
+                TAG_REPO=false
+                shift
+                ;;
+            --tag-name)
+                TAG_NAME="$2"
+                shift 2
                 ;;
             --help|-h)
                 show_usage
@@ -511,6 +522,33 @@ restore_config() {
     fi
 }
 
+# Git 打标签
+tag_repo() {
+    if [ "$TAG_REPO" = false ]; then
+        print_info "跳过 Git 打标签"
+        return
+    fi
+
+    local version=$(grep "^version:" "$APP_DIR/pubspec.yaml" | awk '{print $2}')
+    local tag_name="${TAG_NAME:-ios/v${version}}"
+
+    # 检查是否有未提交的变更
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+        print_warn "工作区有未提交的变更，标签将指向当前 HEAD（可能不包含这些变更）"
+    fi
+
+    # 检查标签是否已存在
+    if git rev-parse "$tag_name" >/dev/null 2>&1; then
+        print_warn "标签 $tag_name 已存在，跳过"
+        return
+    fi
+
+    print_step "创建 Git 标签: $tag_name"
+    git tag -a "$tag_name" -m "iOS build $version"
+    print_info "标签 $tag_name 已创建（本地）"
+    print_info "推送到远程: git push origin $tag_name"
+}
+
 # 构建 iOS App（使用 flutter build ipa）
 build_ipa() {
     print_step "构建 iOS App (IPA)..."
@@ -704,6 +742,8 @@ main() {
             echo ""
         fi
     fi
+    
+    tag_repo
     
     # 确保配置文件已恢复
     restore_all_backups
