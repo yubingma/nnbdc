@@ -681,6 +681,8 @@ import StoreKit
                 // 1110: No speech detected, 1107: Speech recognition interrupted
                 if nsError.domain == "kAFAssistantErrorDomain" && (nsError.code == 1110 || nsError.code == 1107) {
                     print("IOS: [ASR] Task callback - No speech or interrupted (code: \(nsError.code))")
+                } else if nsError.code == 301 {
+                    print("IOS: [ASR] Task callback - Recognition request was canceled (code: 301)")
                 } else {
                     print("IOS: [ASR] Task callback - Error: \(error)")
                     shouldRestart = true
