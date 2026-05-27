@@ -185,13 +185,13 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                      setupEnglishModel()
                 }
                 currentModel = modelEn
-                activeGain = 1.8f
+                activeGain = 2.5f
             } else {
                 if (modelZh == null) {
                     setupChineseModel()
                 }
                 currentModel = modelZh
-                activeGain = 1.5f
+                activeGain = 2.0f
             }
             
             currentModelType = type
@@ -225,7 +225,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
                 .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.6f).build())
-                .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(30f).build())
+                .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(15.0f).build())
                 .build()
 
             val config = OnlineRecognizerConfig.builder()
@@ -271,7 +271,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
                 .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.6f).build())
-                .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(20f).build())
+                .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(15.0f).build())
                 .build()
 
             val config = OnlineRecognizerConfig.builder()
@@ -423,14 +423,21 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             // ⚡ 优化：在物理输入音量极小（norm < 0.008）且用户尚未有效发声（lastSentResult.isEmpty()）的静息状态下，
                             // 强行拦截识别结果并判定为 ""（静音），防止背景空气噪声被误判为 "and" 等幻觉词
                             val rawText = result.text.trim().lowercase()
-                            val text = if (norm < 0.008 && lastSentResult.isEmpty()) "" else rawText
+                            // 使用增益调整后的有效电平做噪声门判断
+                            // 阈值 0.002（增益后等效约 -54 dBFS），适应低增益 Android 设备
+                            val effectiveNorm = (norm * gain).coerceIn(0.0, 1.0)
+                            val text = if (effectiveNorm < 0.002 && lastSentResult.isEmpty()) "" else rawText
                             
-                            // 【关键修复】：如果检测到端点（静音切断），必须重置流状态
-                            // 否则旧的特征残余会导致后续识别出现“叠词”（如 限限）或无法开启新词识别
+                            // 仅在用户实际说过话后才在端点时重置流
+                            // 纯静音端点（用户还没开口）不重置，避免打断即将开始的识别
                             if (isEndpoint) {
-                                m.reset(s)
-                                lastSentResult = "" // 端点后重置去重，确保新的一句话能发出
-                                Log.i(TAG, "ASR Endpoint detected: Stream reset.")
+                                if (lastSentResult.isNotEmpty()) {
+                                    m.reset(s)
+                                    lastSentResult = ""
+                                    Log.i(TAG, "ASR Endpoint detected: Stream reset.")
+                                } else {
+                                    Log.v(TAG, "ASR Endpoint suppressed (no speech yet).")
+                                }
                             }
                             
                             val tokens = result.tokens
