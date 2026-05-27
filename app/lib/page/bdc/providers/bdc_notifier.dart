@@ -573,12 +573,18 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(dataLoaded: true);
 
-    // 针对 iOS 平台，在 400ms 静音转场过渡期内提前超前预热麦克风和音频引擎，
-    // 将 AVAudioEngine 冷启动延迟和硬件切换完全塞入静音期，彻底消除后续发音与提示音并发的爆音
+    // 针对 iOS 平台，在转场过渡期内提前预热麦克风和音频引擎。
+    // 但若即将播放单词/例句发音，则跳过预热——否则发音播放时的
+    // 音频会话切换会触发 AVAudioEngine 被动重启，与 AVPlayer 并发抢占硬件，产生杂音。
     bool isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0;
     if (PlatformUtils.isIOS && isInSpeakTab && asr.state != AsrState.started) {
-      debugPrint('⏱️ [Latency-BDC] 检测到将进入说模式且 ASR 未预热，在静音过渡期提前 Pre-warm 麦克风...');
-      unawaited(asr.startMicrophone());
+      final studyConfig = StudyConfig.fromCurrentUser();
+      final willPlayAudio = state.studyStep == StudyStep.en2Ch.json &&
+          (studyConfig.autoPlayWord || studyConfig.autoPlaySentence);
+      if (!willPlayAudio) {
+        debugPrint('⏱️ [Latency-BDC] 检测到将进入说模式且 ASR 未预热，在静音过渡期提前 Pre-warm 麦克风...');
+        unawaited(asr.startMicrophone());
+      }
     }
 
     // 将发音播放和 ASR 启动延迟 200ms 执行，在卡片过渡动画结束前不抢占渲染资源
