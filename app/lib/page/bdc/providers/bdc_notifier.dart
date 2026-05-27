@@ -581,8 +581,8 @@ class BdcNotifier extends _$BdcNotifier {
       unawaited(asr.startMicrophone());
     }
 
-    // 将发音播放和 ASR 启动延迟 400ms 执行，完美物理避开卡片滑入/切入过渡期的高帧率渲染时间窗，根治切词瞬间的视觉掉帧卡顿
-    Future.delayed(const Duration(milliseconds: 400), () {
+    // 将发音播放和 ASR 启动延迟 200ms 执行，在卡片过渡动画结束前不抢占渲染资源
+    Future.delayed(const Duration(milliseconds: 200), () {
       final playStopwatch = Stopwatch()..start();
       unawaited(() async {
         try {
@@ -954,7 +954,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     // 答对单词后切换下一词前，哪怕是快速闪电模式，也强制留出 100ms 视觉驻留延迟，以便用户看清底下的评测结果
     if (gotoNext && state.word != null) {
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 50));
     }
 
     if (state.historyIndex != -1) {
@@ -1096,10 +1096,11 @@ class BdcNotifier extends _$BdcNotifier {
         
         if (state.studyStep == StudyStep.ch2En.json) {
           final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidates, state.word!.spell);
-          _updateState(state.copyWith(currentScore: result.score), tag: 'asr-score');
           processedResult = AsrUtil.preprocessEnglish(result.text, state.word!.spell);
+          _updateState(state.copyWith(currentScore: result.score, currentAsrCandidates: candidates), tag: 'asr-result');
         } else {
           processedResult = AsrUtil.preprocess(best);
+          _updateState(state.copyWith(currentAsrCandidates: candidates), tag: 'asr-candidate');
         }
       } else {
         candidates = [event.toString()];
@@ -1110,7 +1111,6 @@ class BdcNotifier extends _$BdcNotifier {
       candidates = [event.toString()];
     }
 
-    _updateState(state.copyWith(currentAsrCandidates: candidates), tag: 'asr-candidate');
     checkAsrResult(asrInput: processedResult, isVoice: true);
   }
 
@@ -1352,7 +1352,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (autoJump && state.historyIndex == -1) {
       // 中英模式发音已完整播完，仅需 400ms 短暂缓冲即可舒适跳转；
       // 其他模式保留原有 800ms 延迟。
-      final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 200 : 800;
+      final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 500 : 400;
       Future.delayed(Duration(milliseconds: jumpDelayMs), () {
         getNextWord(true, fsrsRating: rating);
       });
@@ -1479,7 +1479,7 @@ class BdcNotifier extends _$BdcNotifier {
       
       final language = state.studyStep == StudyStep.ch2En.json ? AsrLanguage.english : AsrLanguage.chinese;
       debugPrint('💡 [BDC-ASR] 条件满足，准备调用 _startAsrWithHint，语言: ${language.locale}');
-      _startAsrWithHint(language);
+      unawaited(_startAsrWithHint(language));
     } else {
       debugPrint('💡 [BDC-ASR] 不在 SpeakTab，当前 asr 状态: ${asr.state}');
       if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
