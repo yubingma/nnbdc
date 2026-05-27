@@ -191,7 +191,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     setupChineseModel()
                 }
                 currentModel = modelZh
-                activeGain = 2.0f
+                activeGain = 2.5f
             }
             
             currentModelType = type
@@ -428,16 +428,11 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             val effectiveNorm = (norm * gain).coerceIn(0.0, 1.0)
                             val text = if (effectiveNorm < 0.002 && lastSentResult.isEmpty()) "" else rawText
                             
-                            // 仅在用户实际说过话后才在端点时重置流
-                            // 纯静音端点（用户还没开口）不重置，避免打断即将开始的识别
+                            // 端点检测后必须重置流，防止旧特征累积导致识别延迟或串词
                             if (isEndpoint) {
-                                if (lastSentResult.isNotEmpty()) {
-                                    m.reset(s)
-                                    lastSentResult = ""
-                                    Log.i(TAG, "ASR Endpoint detected: Stream reset.")
-                                } else {
-                                    Log.v(TAG, "ASR Endpoint suppressed (no speech yet).")
-                                }
+                                m.reset(s)
+                                lastSentResult = ""
+                                Log.i(TAG, "ASR Endpoint detected: Stream reset.")
                             }
                             
                             val tokens = result.tokens
