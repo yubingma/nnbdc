@@ -39,6 +39,10 @@ class Asr {
   final List<Function(AsrState)> _stateListeners = [];
   bool _disposed = false;
 
+  /// 标记 AVAudioEngine 是否曾经被启动过，用于区分首次冷启动（硬件完全冷态）
+  /// 和后续冷启动（硬件已 warm），只在首次时给引擎稳定延迟。
+  bool _engineEverStarted = false;
+
   /// 标记是否正在执行 startAsr，避免并发的 start/stop 调用打架
   bool _isStarting = false;
 
@@ -494,8 +498,13 @@ class Asr {
               .timeout(const Duration(seconds: 5));
 
           if (playHintSound && !isWarmStart) {
-            // 冷启动：必须等待 startMicrophone 物理就绪后，再触发就绪提示音，
-            // 彻底避免在 AVAudioEngine 激活瞬间并发播放音频产生的物理破音
+            // 首次冷启动：AVAudioEngine 硬件首次激活需要稳定窗口，延迟 150ms
+            // 避免提示音在音频 pipeline 未完全就绪时播放而不稳定。
+            // 后续冷启动硬件已 warm，无需延迟。
+            if (!_engineEverStarted) {
+              await Future.delayed(const Duration(milliseconds: 150));
+              _engineEverStarted = true;
+            }
             hintFuture = SoundUtil.playAsrReadyHintSound();
           }
 
