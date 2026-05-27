@@ -222,6 +222,14 @@ class SoundUtil {
     }
   }
 
+  /// 从全局监视列表和逻辑完成列表中彻底移除指定的播放器，防止 dispose 后的残留超时
+  static void unwatchPlayer(ja.AudioPlayer player) {
+    _watchedPlayers.remove(player);
+    _logicallyFinishedPlayers.remove(player);
+    _playerBusyUntil.remove(player);
+    debugPrint('🔊 [SoundUtil] 已从监视名单安全移除播放器: ${player.hashCode}');
+  }
+
   static Future<void> waitForAllPlayers() async {
     for (var player in _watchedPlayers) {
       // EarlyExit 播放器：跳过流等待，改用 buffer delay 兜底（见 usePlayAndRecordCategory）

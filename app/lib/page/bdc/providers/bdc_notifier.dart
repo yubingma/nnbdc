@@ -48,7 +48,10 @@ Asr asr(AsrRef ref) {
 @riverpod
 ja.AudioPlayer bdcAudioPlayer(BdcAudioPlayerRef ref) {
   final player = ja.AudioPlayer();
-  ref.onDispose(() => player.dispose());
+  ref.onDispose(() {
+    SoundUtil.unwatchPlayer(player);
+    player.dispose();
+  });
   return player;
 }
 
@@ -1355,6 +1358,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> playWordAndFirstSentence(bool forcePlayWord, bool startAsrWhenFinish, {bool forcePlaySentence = false}) async {
+    if (_isDisposed) return;
     final stopwatch = Stopwatch()..start();
     final studyConfig = StudyConfig.fromCurrentUser();
     
@@ -1370,6 +1374,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 关键优化：如果需要播放声音，或者后续需要开启 ASR，则必须先停用旧的 ASR 以释放硬件焦点并同步 Session
     if (willPlayWord || willPlaySentence || startAsrWhenFinish) {
       try {
+        if (_isDisposed) return;
         debugPrint('⏱️ [Latency-BDC] 准备释放旧 ASR 并切换音频会话... (startAsrWhenFinish: $startAsrWhenFinish)');
         
         if (startAsrWhenFinish) {
@@ -1395,6 +1400,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     try {
       if (willPlayWord && state.word != null) {
+        if (_isDisposed) return;
         final playWordStopwatch = Stopwatch()..start();
         
         // 关键优化：在调用 play 之前，必须确保并行发起的 sessionFuture 已完成
@@ -1408,6 +1414,7 @@ class BdcNotifier extends _$BdcNotifier {
       }
       
       if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
+        if (_isDisposed) return;
         final playSentenceStopwatch = Stopwatch()..start();
         final sentenceUrl = Util.getSentenceSoundUrl(state.englishDigestOfFirstSentence!);
         Global.logger.d('🔊 [BDC-Sound] 准备播放第一句例句: ${state.englishDigestOfFirstSentence}, URL: $sentenceUrl');
@@ -1415,6 +1422,7 @@ class BdcNotifier extends _$BdcNotifier {
         
         // 极致优化：播完例句后立即抢跑触发 ASR，不等 finally 块，节省微任务调度和硬件释放开销
         if (startAsrWhenFinish) {
+          if (_isDisposed) return;
           _handleTabChangeForAsr();
           startAsrWhenFinish = false; // 防止 finally 块再次触发逻辑
         }
@@ -1425,12 +1433,14 @@ class BdcNotifier extends _$BdcNotifier {
     } catch (e, st) {
       Global.logger.e('🔊 [BDC-Sound] playWordAndFirstSentence 过程中捕获到异常: $e', error: e, stackTrace: st);
     } finally {
-      if (startAsrWhenFinish) {
-        // 彻底移除延迟。底层硬件隔离已由 SoundUtil.waitForAllPlayers 完全接管
-        debugPrint('⏱️ [Latency-BDC] 正在立即触发 ASR 衔接...');
-        _handleTabChangeForAsr();
+      if (!_isDisposed) {
+        if (startAsrWhenFinish) {
+          // 彻底移除延迟。底层硬件隔离已由 SoundUtil.waitForAllPlayers 完全接管
+          debugPrint('⏱️ [Latency-BDC] 正在立即触发 ASR 衔接...');
+          _handleTabChangeForAsr();
+        }
+        Global.logger.d('[PERF] playWordAndFirstSentence total cost: ${stopwatch.elapsedMilliseconds}ms');
       }
-      Global.logger.d('[PERF] playWordAndFirstSentence total cost: ${stopwatch.elapsedMilliseconds}ms');
     }
   }
 
