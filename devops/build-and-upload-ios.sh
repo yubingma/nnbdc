@@ -545,8 +545,11 @@ tag_repo() {
 
     print_step "创建 Git 标签: $tag_name"
     git tag -a "$tag_name" -m "iOS build $version"
-    print_info "标签 $tag_name 已创建（本地）"
-    print_info "推送到远程: git push origin $tag_name"
+    print_info "标签 $tag_name 已创建"
+
+    print_step "推送标签到远程仓库..."
+    git push origin "$tag_name"
+    print_info "标签已推送至远程: $tag_name"
 }
 
 # 构建 iOS App（使用 flutter build ipa）
