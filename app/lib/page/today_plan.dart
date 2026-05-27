@@ -933,35 +933,31 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               return;
             }
 
-            // 将二次断言校验异步化，决不在主线程阻塞路由转场
-            unawaited(() async {
-              try {
-                final checkWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
-                for (var w in checkWords) {
-                  assert(w.todayLearnedTimes == 0, '数据不一致：点击开始学习时，发现单词 ${w.wordId} 已有今日进度 (${w.todayLearnedTimes})');
-                }
-              } catch (e, st) {
-                Global.logger.e('开始学习断言校验失败', error: e, stackTrace: st);
-              }
-            }());
+
           }
 
           if (user != null) {
-            // 将耗时的数据库读写、状态同步与全局缓存加载彻底异步化到后台，零阻塞转场
-            unawaited(() async {
-              try {
-                await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
-                final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
-                if (dbUser != null) {
-                  await MyDatabase.instance.usersDao.saveUser(
-                      dbUser.copyWith(todayStudyStarted: true, lastLearningDate: drift.Value(AppClock.today())), true);
-                }
-                await Global.loadUserFromDb();
-                ThrottledDbSyncService().requestSync(immediate: true);
-              } catch (e, st) {
-                Global.logger.e('记录开始学习状态失败', error: e, stackTrace: st);
+            // 本地数据库和全局缓存必须 await 确保在跳转前更新完成，彻底杜绝转场竞态；而网络同步仍可通过 unawaited 异步执行以防阻塞转场
+            try {
+              await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
+              final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
+              if (dbUser != null) {
+                await MyDatabase.instance.usersDao.saveUser(
+                    dbUser.copyWith(todayStudyStarted: true, lastLearningDate: drift.Value(AppClock.today())), true);
               }
-            }());
+              await Global.loadUserFromDb();
+              
+              // 在转场后台发起增量同步
+              unawaited(() async {
+                try {
+                  ThrottledDbSyncService().requestSync(immediate: true);
+                } catch (e) {
+                  Global.logger.e('开始学习发起网络同步失败: $e');
+                }
+              }());
+            } catch (e, st) {
+              Global.logger.e('记录开始学习状态失败', error: e, stackTrace: st);
+            }
           }
           // Prefs 内存写入几乎为 0ms (只做本地 Map 修改)，可以直接 await 确保页面接收，也可不 await
           await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());

@@ -40,16 +40,27 @@ class LearningService {
           'today=$today (isUtc: ${today.isUtc}), '
           'lastDate=$lastDate -> isNewDay=$isNewDay, now=${AppClock.now()}');
 
-      // [核心修复] 自动修复机制：即使日期没变，但如果发现"学习未开始"且"单词已有进度"这种不一致状态，也强制重置。
-      bool needRepair = (user.todayStudyStarted == false);
-      if (needRepair) {
+      // [核心修复] 自动修复机制：即使日期没变，但如果检测到“今天有单词背词进度”且“用户开始学习标记却为 false”这种状态，
+      // 说明真实情况绝对是已经开始学习了。我们应该自动将 todayStudyStarted 设为 true 予以正面纠正，完美保护用户的背词进度不被清空！
+      bool needRepair = false; // 绝不再为了这个情况去重置用户数据
+      if (user.todayStudyStarted == false) {
         final inconsistencyCheck = await (db.select(db.learningWords)
               ..where((lw) => lw.userId.equals(user.id) & lw.todayLearnedTimes.isBiggerThanValue(0))
               ..limit(1))
             .get();
-        needRepair = inconsistencyCheck.isNotEmpty;
-        if (needRepair) {
-          Global.logger.w('检测到数据不一致：日期已对上且学习未开始，但发现存在单词进度。触发强制修复重置修复。');
+        if (inconsistencyCheck.isNotEmpty) {
+          Global.logger.w('⚠️ [LearningService] 检测到状态不一致：日期已对上且状态记录为未开始学习，但发现实际已存在单词进度！');
+          Global.logger.i('💡 [LearningService] 自动正面纠正：将 user.todayStudyStarted 修正为 true，完美保全今日学习进度！');
+          
+          final upgradedUser = user.copyWith(
+              todayStudyStarted: true,
+              lastLearningDate: Value(today),
+          );
+          await db.usersDao.saveUser(upgradedUser, true);
+          
+          // 同步刷新全局缓存
+          Global.clearUserCache();
+          await Global.loadUserFromDb();
         }
       }
 
