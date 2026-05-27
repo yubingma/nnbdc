@@ -1352,7 +1352,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (autoJump && state.historyIndex == -1) {
       // 中英模式发音已完整播完，仅需 400ms 短暂缓冲即可舒适跳转；
       // 其他模式保留原有 800ms 延迟。
-      final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 500 : 400;
+      final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 0 : 1000;
       Future.delayed(Duration(milliseconds: jumpDelayMs), () {
         getNextWord(true, fsrsRating: rating);
       });
