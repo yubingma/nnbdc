@@ -115,6 +115,26 @@ class LearningService {
       List<LearningWord> todayWords = await getTodayLearningWordsFromDb(user.id);
       Global.logger.d('[FETCH-WORD] [prepareTodayStudy] 初始从DB获取到今日单词数: ${todayWords.length}, 目标计划: ${user.effectiveWordsPerDay}');
 
+      // 清理：学习未开始时，移除批次中已掌握的单词
+      // 场景：同日更新 app 后，旧版生成的批次可能包含已掌握单词，需要在此清理
+      if (todayWords.isNotEmpty) {
+        final freshUser = Global.getLoggedInUser();
+        if (freshUser?.todayStudyStarted != true) {
+          final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
+          if (masteredWordIds.isNotEmpty) {
+            final toClean = todayWords.where((w) => masteredWordIds.contains(w.wordId)).toList();
+            if (toClean.isNotEmpty) {
+              Global.logger.w('[FETCH-WORD] [prepareTodayStudy] 学习未开始，清理批次中 ${toClean.length} 个已掌握单词');
+              for (var word in toClean) {
+                await db.learningWordsDao.saveEntity(
+                    word.copyWith(batchId: const Value(0), learningOrder: 0), true);
+              }
+              todayWords.removeWhere((w) => masteredWordIds.contains(w.wordId));
+            }
+          }
+        }
+      }
+
       // 生成(或补充)今日要学习的单词列表
       bool needAddNewWords = todayWords.isEmpty || (todayWords.length < (user.effectiveWordsPerDay) && addNewWordsIfNotEnough);
       Global.logger.d(
