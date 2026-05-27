@@ -126,6 +126,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   late WordDetailPageArgs args;
   Future<List<SentenceVo>>? _sentencesFuture;
 
+  int _lastTabIndex = 0;
+
+  void _onTabControllerChanged() {
+    if (!mounted) return;
+    final index = _tabController.index;
+    if (index == _lastTabIndex) return;
+    _lastTabIndex = index;
+    // 切换到 AI 助教 Tab 时自动收起抽屉
+    if (_canUseAiAssistant && index == calcTabsCount() - 1 && _isTopDrawerExpanded) {
+      _isTopDrawerExpanded = false;
+    }
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -137,19 +151,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     // 初始化 TabController，提供默认长度以免在异常退出 dispose 时报 LateInitializationError
     _tabController = TabController(length: 1, vsync: this);
-    _tabController.addListener(() {
-      if (!mounted) return;
-      // 当切换到 AI 助教 Tab (通常是最后一个) 时，自动收起抽屉
-      if (_canUseAiAssistant && _tabController.index == calcTabsCount() - 1) {
-        if (_isTopDrawerExpanded) {
-          setState(() { _isTopDrawerExpanded = false; });
-        } else {
-          setState(() {});
-        }
-      } else {
-        setState(() {});
-      }
-    });
+    _tabController.addListener(_onTabControllerChanged);
 
     // 进入详情页时立即主动关闭 ASR，避免在前一页面正在倾听时进入此页导致 ASR 逻辑错误
     Asr().stopMicrophone();
@@ -167,9 +169,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       if (count != _tabController.length) {
         _tabController.dispose();
         _tabController = TabController(length: count, vsync: this);
-        _tabController.addListener(() {
-          if (mounted) setState(() {});
-        });
+        _tabController.addListener(_onTabControllerChanged);
       }
     }
 
@@ -289,19 +289,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       if (_tabController.length != newLength) {
         _tabController.dispose();
         _tabController = TabController(length: newLength, vsync: this);
-        _tabController.addListener(() {
-          if (!mounted) return;
-          // 当切换到 AI 助教 Tab (通常是最后一个) 时，自动收起抽屉
-          if (_canUseAiAssistant && _tabController.index == calcTabsCount() - 1) {
-            if (_isTopDrawerExpanded) {
-              setState(() { _isTopDrawerExpanded = false; });
-            } else {
-              setState(() {});
-            }
-          } else {
-            setState(() {});
-          }
-        });
+        _tabController.addListener(_onTabControllerChanged);
       }
       dataLoaded = true;
     });
