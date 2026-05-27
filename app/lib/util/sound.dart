@@ -56,7 +56,7 @@ class SoundUtil {
 
   static final _sessionLock = _Mutex();
 
-  /// 切换为高保真纯播放模式
+  /// 切换为纯播放模式
   static Future<void> usePlaybackCategory({bool force = false}) {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
@@ -73,7 +73,7 @@ class SoundUtil {
         await session.configure(AudioSessionConfiguration(
           avAudioSessionCategory: AVAudioSessionCategory.playback,
           avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers, 
-          avAudioSessionMode: AVAudioSessionMode.moviePlayback,
+          avAudioSessionMode: AVAudioSessionMode.defaultMode,
           androidAudioAttributes: const AndroidAudioAttributes(
             contentType: AndroidAudioContentType.music,
             flags: AndroidAudioFlags.none,
@@ -85,7 +85,7 @@ class SoundUtil {
         currentSessionCategory = 'playback';
         debugPrint('⏱️ [Latency-Sound] Session 切换到 playback 完成，耗时: ${sw.elapsedMilliseconds}ms');
       } catch (e) {
-        Global.logger.e('SoundUtil: 切换高保真播放模式失败: $e');
+        Global.logger.e('SoundUtil: 切换播放模式失败: $e');
       }
     });
   }

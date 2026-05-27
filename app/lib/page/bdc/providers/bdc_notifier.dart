@@ -1190,7 +1190,9 @@ class BdcNotifier extends _$BdcNotifier {
       if (result.newMatchCount > 0) {
         state = state.copyWith(canLeaveCurrWord: true);
         if (isMatch) {
-          unawaited(asr.stopMicrophone());
+          // 先等待麦克风完全关停（含原生侧 AVAudioSession 切换至 playback），
+          // 再播放提示音，避免音频会话切换导致 just_audio AVPlayer 中断并重放缓冲区尾部，产生回声。
+          await asr.stopMicrophone();
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         }
@@ -1215,7 +1217,9 @@ class BdcNotifier extends _$BdcNotifier {
           return;
         }
 
-        unawaited(asr.stopMicrophone());
+        // 先等待麦克风完全关停（含原生侧 AVAudioSession 切换至 playback），
+        // 再播放发音，避免音频会话切换导致 AVPlayer 中断并产生回声。
+        await asr.stopMicrophone();
 
         // 如果已经答过题（hasFinishedAnswering=true），_onAnswerCorrect 会直接返回，
         // 不会播放发音。因此在这里手动播放单词正确发音作为反馈。
@@ -1381,9 +1385,19 @@ class BdcNotifier extends _$BdcNotifier {
         debugPrint('⏱️ [Latency-BDC] 准备释放旧 ASR 并切换音频会话... (startAsrWhenFinish: $startAsrWhenFinish)');
         
         if (startAsrWhenFinish) {
-          // 热衔接：如果播放完需要开启 ASR，仅执行热停止 (stopAsr)，保留麦克风和原生 AVAudioEngine 运行！
+          // 热衔接：如果播放完需要开启 ASR
           await asr.stopAsr();
-          sessionFuture = SoundUtil.usePlayAndRecordCategory();
+          if (willPlayWord || willPlaySentence) {
+            // 有发音需要播放：先冷关停麦克风释放 AVAudioEngine，再切换到 playback
+            // 确保发音不受 playAndRecord 模式下的音频处理影响而断续，
+            // 播放完成后 finally 块的
+            // _handleTabChangeForAsr 会自动切回 playAndRecord 并重启 ASR
+            await asr.stopMicrophone();
+            sessionFuture = SoundUtil.usePlaybackCategory();
+          } else {
+            // 无发音需要播放：保留麦克风和引擎运行，直接切换到 playAndRecord 准备 ASR
+            sessionFuture = SoundUtil.usePlayAndRecordCategory();
+          }
         } else {
           // 冷切换：如果后面不立刻进 ASR，或者没有 ASR 任务，冷关停麦克风并切换音频分类
           await asr.stopMicrophone();
