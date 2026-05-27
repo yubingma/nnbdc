@@ -480,15 +480,24 @@ class Asr {
           Global.logger.i('ASR: Starting microphone... (instance: $hashCode)');
           await SoundUtil.usePlayAndRecordCategory();
           
+          // 判断是否为热启动：若当前已是 started 状态，说明音频引擎已经在稳定运行
+          final isWarmStart = state == AsrState.started;
+
           Future<void>? hintFuture;
-          if (playHintSound) {
-            // 音频会话已准备好（切换完成），在启动麦克风和 ASR 识别任务的同时，并行播放提示音以消除延迟
+          if (playHintSound && isWarmStart) {
+            // 热启动：音频引擎已处于工作状态，可以直接并行播放提示音，实现零延迟秒开
             hintFuture = SoundUtil.playAsrReadyHintSound();
           }
 
           await asrMethodChannel
               .invokeMethod('startMicrophone')
               .timeout(const Duration(seconds: 5));
+
+          if (playHintSound && !isWarmStart) {
+            // 冷启动：必须等待 startMicrophone 物理就绪后，再触发就绪提示音，
+            // 彻底避免在 AVAudioEngine 激活瞬间并发播放音频产生的物理破音
+            hintFuture = SoundUtil.playAsrReadyHintSound();
+          }
 
           Global.logger.i('ASR: Starting ASR... (instance: $hashCode)');
           final startTime = AppClock.now();
