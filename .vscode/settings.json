@@ -40,5 +40,9 @@
     "github-actions.workflows.pinned.workflows": [
         ".github/workflows/build.yml"
     ],
-    "markdownlint.enable": false
+    "markdownlint.enable": false,
+    "markdownlint.config": {
+        "default": false
+    },
+    "markdown.validate.enabled": false
 }

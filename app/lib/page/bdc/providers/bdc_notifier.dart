@@ -1453,9 +1453,19 @@ class BdcNotifier extends _$BdcNotifier {
     if (isInSpeakTab) {
       if (state.word == null || state.loadError != null || state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
         debugPrint('💡 [BDC-ASR] 当前虽然在 SpeakTab，但由于条件不满足决定停止 ASR：word=${state.word?.spell}, loadError=${state.loadError}, hasFinishedAnswering=${state.hasFinishedAnswering}, showHandwritingBoard=${state.showHandwritingBoard}, isGettingNextWord=${state.isGettingNextWord}, isKeyboardVisible=${state.isKeyboardVisible}');
-        if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
-          debugPrint('💡 [BDC-ASR] 条件触发 asr.stopMicrophone()');
-          asr.stopMicrophone();
+        
+        // 极致优化：如果处于 SpeakTab，但只是因为换词中、已答对、手写板展开等暂时的非答题状态，只执行热停止 (stopAsr) 以暂停识别，保持麦克风与 playAndRecord 会话 Category 稳定，避免高频冷切换
+        final shouldOnlyStopAsr = state.isGettingNextWord || state.hasFinishedAnswering || state.showHandwritingBoard;
+        if (shouldOnlyStopAsr) {
+          if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
+            debugPrint('💡 [BDC-ASR] 优化：在 SpeakTab 仅热停止 ASR，保留麦克风和 Audio Category 保温');
+            asr.stopAsr();
+          }
+        } else {
+          if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
+            debugPrint('💡 [BDC-ASR] 条件触发 asr.stopMicrophone()');
+            asr.stopMicrophone();
+          }
         }
         return;
       }

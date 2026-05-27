@@ -232,6 +232,10 @@ class SoundUtil {
 
   static Future<void> waitForAllPlayers() async {
     for (var player in _watchedPlayers) {
+      // 优化：音效池播放器主要播放交互音效，无需在切换音频 Session 时强行等待它们播完，直接跳过，避免引入不必要的延时
+      if (_sfxPool.contains(player)) {
+        continue;
+      }
       // EarlyExit 播放器：跳过流等待，改用 buffer delay 兜底（见 usePlayAndRecordCategory）
       if (_logicallyFinishedPlayers.contains(player)) {
         continue;
