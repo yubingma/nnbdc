@@ -958,9 +958,12 @@ class BdcNotifier extends _$BdcNotifier {
       await _audioPlayer.stop();
     } catch (_) {}
 
-    // 答对单词后切换下一词前，哪怕是快速闪电模式，也强制留出 100ms 视觉驻留延迟，以便用户看清底下的评测结果
+    // 答对单词后切换下一词前的视觉驻留延迟。
+    // Ch2En 模式（说英文）发音已播完提供充足的驻留时长，无需额外等待；
+    // 其他模式（如 En2Ch）仅播短促提示音，保留 50ms 缓冲让用户看一眼评分。
     if (gotoNext && state.word != null) {
-      await Future.delayed(const Duration(milliseconds: 50));
+      final dwellMs = state.studyStep == StudyStep.ch2En.json ? 0 : 50;
+      if (dwellMs > 0) await Future.delayed(Duration(milliseconds: dwellMs));
     }
 
     if (state.historyIndex != -1) {
