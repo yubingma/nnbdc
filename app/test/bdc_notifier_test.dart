@@ -12,6 +12,7 @@ import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // 手写 MockAsr，捕获并拦截所有的原生方法
 class MockAsr implements Asr {
@@ -120,6 +121,8 @@ void main() {
   final now = AppClock.now();
 
   setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
       (MethodCall methodCall) async {

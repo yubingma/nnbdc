@@ -53,3 +53,6 @@ app.*.map.json
 # /pubspec.lock  # 注释掉，确保版本一致性
 /android/app/local.properties
 /android/app/.gradle/config.properties
+
+# 忽略本地测试或桌面端运行产生的图片缓存数据库
+/libCachedImageData*

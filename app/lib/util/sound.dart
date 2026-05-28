@@ -30,6 +30,9 @@ class SoundUtil {
   
   /// 全局观察的播放器列表，用于在切换音频会话前确保它们都已播完
   static final List<ja.AudioPlayer> _watchedPlayers = [];
+  
+  /// 音效池分配互斥锁，防止两个音效并发抢同一播放器导致爆音/中断
+  static final _sfxLock = _Mutex();
 
   static Future<void>? _configureFuture;
 
@@ -45,6 +48,8 @@ class SoundUtil {
     try {
       await usePlaybackCategory();
       _audioSessionConfigured = true;
+      // 启动时清理 _logicallyFinishedPlayers 中可能残留的旧引用
+      _logicallyFinishedPlayers.clear();
       Global.logger.i('SoundUtil: 全局音频会话配置完成');
       unawaited(prewarmCoreSounds());
       prewarmPinyin();
@@ -98,27 +103,7 @@ class SoundUtil {
 
       // 无论当前会话类别是否已经是 playAndRecord，只要发起切换/更新，都必须优先物理排空逻辑上已播完的 EarlyExit 播放器，
       // 确保发音尾音彻底自然淡出并物理释放硬件，根治单词发音与随后的 ASR 提示音/麦克风录音启动瞬间音频重采样或引擎并发冲突产生的爆音
-      final earlyExitPlayers = _watchedPlayers.where((p) => _logicallyFinishedPlayers.contains(p)).toList();
-      if (earlyExitPlayers.isNotEmpty) {
-        bool hasStoppedAny = false;
-        for (var p in earlyExitPlayers) {
-          if (p.playing) {
-            try {
-              debugPrint('⏱️ [Latency-Sound] 强制 stop() 逻辑完成但物理仍活跃的播放器，彻底释放硬件资源，防止 ASR 爆音...');
-              await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
-              hasStoppedAny = true;
-            } catch (e) {
-              debugPrint('🔊 [SoundUtil] 物理排空 stop() 播放器异常: $e');
-            }
-          }
-        }
-        _logicallyFinishedPlayers.removeAll(earlyExitPlayers);
-        
-        // 如果确实执行了 stop 物理关停，给 Native 混音器 30ms 的物理排空与平滑过渡缓冲期，消除任何可能残留的硬件切音爆音
-        if (hasStoppedAny) {
-          await Future.delayed(const Duration(milliseconds: 30));
-        }
-      }
+      _cleanupEarlyExitPlayers();
 
       if (_currentSessionCategory == 'playAndRecord') return;
 
@@ -156,6 +141,33 @@ class SoundUtil {
     });
   }
 
+  /// 物理排空逻辑上已播完的 EarlyExit 播放器，确保发音尾音彻底释放硬件。
+  /// 提取为独立方法，供 usePlaybackCategory 和 usePlayAndRecordCategory 共用，
+  /// 避免 _logicallyFinishedPlayers 仅在录放切换时清理导致内存/引用泄漏。
+  static Future<void> _cleanupEarlyExitPlayers() async {
+    final earlyExitPlayers = _watchedPlayers.where((p) => _logicallyFinishedPlayers.contains(p)).toList();
+    if (earlyExitPlayers.isEmpty) return;
+
+    bool hasStoppedAny = false;
+    for (var p in earlyExitPlayers) {
+      if (p.playing) {
+        try {
+          debugPrint('⏱️ [Latency-Sound] 强制 stop() 逻辑完成但物理仍活跃的播放器，彻底释放硬件资源...');
+          await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
+          hasStoppedAny = true;
+        } catch (e) {
+          debugPrint('🔊 [SoundUtil] 物理排空 stop() 播放器异常: $e');
+        }
+      }
+    }
+    _logicallyFinishedPlayers.removeAll(earlyExitPlayers);
+    
+    // 如果确实执行了 stop 物理关停，给 Native 混音器 30ms 的物理排空与平滑过渡缓冲期，消除任何可能残留的硬件切音爆音
+    if (hasStoppedAny) {
+      await Future.delayed(const Duration(milliseconds: 30));
+    }
+  }
+
   /// 预热核心高频音效，彻底消除首次分配 ExoPlayer 的延迟
   static Future<void> prewarmCoreSounds() async {
     if (PlatformUtils.isWeb || PlatformUtils.isTesting) return;
@@ -176,45 +188,48 @@ class SoundUtil {
   }
 
   /// 获取音效池中当前可用的播放器实例（支持状态轮询与旧资源抢占）
-  static Future<ja.AudioPlayer?> _getAvailableSfxPlayer() async {
-    if (!_audioSessionConfigured) {
-      await configureAudioSession();
-    }
-    if (_sfxPool.length < _sfxPoolSize) {
-      await prewarmCoreSounds();
-    }
-    if (_sfxPool.isEmpty) return null;
-    
-    final now = AppClock.now();
-    ja.AudioPlayer? bestPlayer;
-    
-    // 1. 优先寻找未在播放，且 busy 状态已过期的播放器
-    for (var player in _sfxPool) {
-      final busyUntil = _playerBusyUntil[player];
-      if (!player.playing && (busyUntil == null || now.isAfter(busyUntil))) {
-        return player;
+  /// 使用互斥锁确保并发安全，防止两个音效抢同一播放器产生爆音。
+  static Future<ja.AudioPlayer?> _getAvailableSfxPlayer() {
+    return _sfxLock.protect(() async {
+      if (!_audioSessionConfigured) {
+        await configureAudioSession();
       }
-    }
-    
-    // 2. 次优寻找 busy 状态已过期的播放器
-    for (var player in _sfxPool) {
-      final busyUntil = _playerBusyUntil[player];
-      if (busyUntil == null || now.isAfter(busyUntil)) {
-        return player;
+      if (_sfxPool.length < _sfxPoolSize) {
+        await prewarmCoreSounds();
       }
-    }
-    
-    // 3. 兜底策略：如果都在忙，选择最先开始忙（忙碌状态最久远）的那个播放器进行抢占/复用
-    DateTime oldestBusy = DateTime(3000);
-    for (var player in _sfxPool) {
-      final busyUntil = _playerBusyUntil[player] ?? DateTime(0);
-      if (busyUntil.isBefore(oldestBusy)) {
-        oldestBusy = busyUntil;
-        bestPlayer = player;
+      if (_sfxPool.isEmpty) return null;
+      
+      final now = AppClock.now();
+      ja.AudioPlayer? bestPlayer;
+      
+      // 1. 优先寻找未在播放，且 busy 状态已过期的播放器
+      for (var player in _sfxPool) {
+        final busyUntil = _playerBusyUntil[player];
+        if (!player.playing && (busyUntil == null || now.isAfter(busyUntil))) {
+          return player;
+        }
       }
-    }
-    
-    return bestPlayer ?? _sfxPool[0];
+      
+      // 2. 次优寻找 busy 状态已过期的播放器
+      for (var player in _sfxPool) {
+        final busyUntil = _playerBusyUntil[player];
+        if (busyUntil == null || now.isAfter(busyUntil)) {
+          return player;
+        }
+      }
+      
+      // 3. 兜底策略：如果都在忙，选择最先开始忙（忙碌状态最久远）的那个播放器进行抢占/复用
+      DateTime oldestBusy = DateTime(3000);
+      for (var player in _sfxPool) {
+        final busyUntil = _playerBusyUntil[player] ?? DateTime(0);
+        if (busyUntil.isBefore(oldestBusy)) {
+          oldestBusy = busyUntil;
+          bestPlayer = player;
+        }
+      }
+      
+      return bestPlayer ?? _sfxPool[0];
+    });
   }
 
   static void watchPlayer(ja.AudioPlayer player) {
@@ -238,7 +253,7 @@ class SoundUtil {
       if (_sfxPool.contains(player)) {
         continue;
       }
-      // EarlyExit 播放器：跳过流等待，改用 buffer delay 兜底（见 usePlayAndRecordCategory）
+      // EarlyExit 播放器：跳过流等待，改用 buffer delay 兜底（见 _cleanupEarlyExitPlayers）
       if (_logicallyFinishedPlayers.contains(player)) {
         continue;
       }

@@ -75,6 +75,8 @@ class BdcNotifier extends _$BdcNotifier {
   Timer? _learningTimer;
   Timer? _persistTimer;
   Future<void>? _audioPreloadFuture;
+  /// 播放取消令牌：每次换词或用户手动操作时递增，使旧延迟 callback 失效。
+  int _playToken = 0;
   
   late final SpellingTextEditingController meaningController = SpellingTextEditingController(
     getTargetSpell: () => state.word?.spell,
@@ -594,7 +596,10 @@ class BdcNotifier extends _$BdcNotifier {
 
     // 将发音播放和 ASR 启动延迟 200ms 执行，在卡片过渡动画结束前不抢占渲染资源。
     // 延迟结束后等待引擎预热完成（若正在进行），确保 startAsr 能瞬间复用已初始化的引擎。
+    // 使用 _playToken 防止快速切词时旧 callback 使用过期 state。
+    final token = ++_playToken;
     Future.delayed(const Duration(milliseconds: 200), () async {
+      if (_playToken != token || _isDisposed) return;
       final playStopwatch = Stopwatch()..start();
       try {
         debugPrint('⏱️ [Latency-BDC] handleWord -> playWordAndFirstSentence 触发 (background)...');
@@ -961,6 +966,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     _saveCurrentWordState();
     _audioPreloadFuture = null; // 切换单词，废弃旧的预加载 future
+    _playToken++; // 取消任何待执行的自动播放延迟 callback
 
     // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
     // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
@@ -1637,13 +1643,22 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> playWithAnimation(Future<void> Function() playSound, String audioType) async {
+    // 用户手动触发播放，废除所有待执行的自动播放回调
+    _playToken++;
     _updateState(state.copyWith(playingStates: {...state.playingStates, audioType: true}), tag: 'play-start');
-    await asr.stopMicrophone();
+    // 仅当 ASR 正在运行时才关停麦克风（释放硬件焦点），避免在"选"模式做无意义的 AudioSession 切换
+    final wasAsrRunning = asr.state == AsrState.started;
+    if (wasAsrRunning) {
+      await asr.stopAsr();
+    }
     try {
       await playSound();
     } finally {
       _updateState(state.copyWith(playingStates: {...state.playingStates, audioType: false}), tag: 'play-end');
-      _handleTabChangeForAsr();
+      // 仅在之前开着 ASR 时才恢复，避免非说模式下的无效 AudioSession 切换
+      if (wasAsrRunning) {
+        _handleTabChangeForAsr();
+      }
     }
   }
 
