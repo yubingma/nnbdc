@@ -1217,17 +1217,9 @@ class WordListPageState extends State<WordListPage>
 
         debugPrint('跳转到下一个单词：$nextWordIndex');
         jumpToNextWord(nextWordIndex - 1, true, () {
-          debugPrint('已切换到下一个单词：$nextWordIndex');
           asrResult = "";
           handlingAsrChinese = "";
-          // 增加 50ms 极短延迟
-          Future.delayed(const Duration(milliseconds: 50), () {
-            try {
-              _startAsr(decideAsrLanguage());
-            } catch (e) {
-              Global.logger.e("启动ASR失败: $e");
-            }
-          });
+          // _startAsr 由 onWordPressed 统一调用，此处不再重复触发
         });
       }
     } catch (e) {
