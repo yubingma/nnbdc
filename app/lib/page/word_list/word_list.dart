@@ -848,6 +848,8 @@ class WordListPageState extends State<WordListPage>
     WidgetsBinding.instance.addObserver(this);
 
     doInit();
+    // 注册页级播放器到 SoundUtil 监视列表，确保音频会话切换时正确等待/排空
+    SoundUtil.watchPlayer(audioPlayer);
     Global.logger.d('WordListPage: initState completed in ${sw.elapsedMilliseconds}ms');
   }
 
@@ -1374,6 +1376,7 @@ class WordListPageState extends State<WordListPage>
     asr.disposeMeter();
 
     _audioPlayerDisposed = true; // 标记为已释放
+    SoundUtil.unwatchPlayer(audioPlayer);
     _meterLevelNotifier.dispose();
     _asrModelLoadingController.dispose();
     _glowController.dispose();

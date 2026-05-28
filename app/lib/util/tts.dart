@@ -203,7 +203,7 @@ class Tts {
     }
   }
 
-  stop() {
+  Future<void> stop() async {
     // 在 Android 和 iOS 平台上使用 TTS，Web 不支持
     if (!PlatformUtils.isAndroid && !PlatformUtils.isIOS) {
       return;
@@ -212,7 +212,7 @@ class Tts {
     _stopRequested = true; // 设置停止标记，中断正在执行的 _doSpeak 循环
 
     try {
-      methodChannel.invokeMethod('stop');
+      await methodChannel.invokeMethod('stop');
       _isSpeaking = false;
     } catch (e, stackTrace) {
       ErrorHandler.handleError(e, stackTrace,

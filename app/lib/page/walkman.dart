@@ -1172,7 +1172,7 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     // 2. 立即尝试停止物理播放器 (TTS 和 Just Audio)
     try {
-      tts?.stop();
+      unawaited(tts?.stop());
       if (!_audioPlayerDisposed) {
         audioPlayer.stop();
       }

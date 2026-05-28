@@ -26,6 +26,7 @@ class SoundUtil {
   static const int _sfxPoolSize = 3;
   static final Set<ja.AudioPlayer> _logicallyFinishedPlayers = {};
   static final Map<ja.AudioPlayer, DateTime> _playerBusyUntil = {};
+  static final Map<ja.AudioPlayer, Object> _activeCutToken = {};
   
   /// 全局观察的播放器列表，用于在切换音频会话前确保它们都已播完
   static final List<ja.AudioPlayer> _watchedPlayers = [];
@@ -45,7 +46,7 @@ class SoundUtil {
       await usePlaybackCategory();
       _audioSessionConfigured = true;
       Global.logger.i('SoundUtil: 全局音频会话配置完成');
-      prewarmCoreSounds();
+      unawaited(prewarmCoreSounds());
       prewarmPinyin();
     } catch (e) {
       Global.logger.e('SoundUtil: 配置全局音频会话失败: $e');
@@ -111,7 +112,7 @@ class SoundUtil {
             }
           }
         }
-        _logicallyFinishedPlayers.removeAll(_watchedPlayers);
+        _logicallyFinishedPlayers.removeAll(earlyExitPlayers);
         
         // 如果确实执行了 stop 物理关停，给 Native 混音器 30ms 的物理排空与平滑过渡缓冲期，消除任何可能残留的硬件切音爆音
         if (hasStoppedAny) {
@@ -227,6 +228,7 @@ class SoundUtil {
     _watchedPlayers.remove(player);
     _logicallyFinishedPlayers.remove(player);
     _playerBusyUntil.remove(player);
+    _activeCutToken.remove(player);
     debugPrint('🔊 [SoundUtil] 已从监视名单安全移除播放器: ${player.hashCode}');
   }
 
@@ -259,7 +261,10 @@ class SoundUtil {
   }
 
   static ja.AudioPlayer get pronouncePlayer {
-    _pronouncePlayer ??= ja.AudioPlayer();
+    if (_pronouncePlayer == null) {
+      _pronouncePlayer = ja.AudioPlayer();
+      watchPlayer(_pronouncePlayer!);
+    }
     return _pronouncePlayer!;
   }
 
@@ -343,7 +348,7 @@ class SoundUtil {
       if (player == null) return;
       
       final now = AppClock.now();
-      final busyDuration = Duration(milliseconds: sleepAfterPlayInMilliSeconds > 0 ? sleepAfterPlayInMilliSeconds : 3500);
+      final busyDuration = Duration(milliseconds: sleepAfterPlayInMilliSeconds > 0 ? sleepAfterPlayInMilliSeconds : 1000);
       _playerBusyUntil[player] = now.add(busyDuration);
       
       await player.stop();
@@ -431,10 +436,12 @@ class SoundUtil {
       await player.setAsset('assets/audio/$soundFileName');
       unawaited(player.play());
       
-      // 延迟 maxPlay 后自动停止播放以实现 cut 效果
+      // 使用 token 防止误杀：如果播放器在延迟期间被复用了，不 kill 新声音
+      final token = Object();
+      _activeCutToken[player] = token;
       Future.delayed(maxPlay, () async {
         try {
-          if (player.playing) {
+          if (_activeCutToken[player] == token && player.playing) {
             await player.stop();
           }
         } catch (_) {}

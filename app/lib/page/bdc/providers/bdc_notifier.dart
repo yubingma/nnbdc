@@ -1168,17 +1168,17 @@ class BdcNotifier extends _$BdcNotifier {
         if (asrInput != null) {
           meaningController.text = state.word!.spell;
         }
-        unawaited(asr.stopMicrophone());
+        await asr.stopMicrophone();
         
         if (state.hasFinishedAnswering) {
           // 已经答对了（处于查看详情时的额外练习），直接关闭
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-          SoundUtil.playPronounceSound(state.word!);
+          SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
         } else {
           // 还没答对（英中模式下的拼写练习），仅关闭界面，不视为答对题目
           state = state.copyWith(showHandwritingBoard: false);
-          SoundUtil.playPronounceSound(state.word!);
+          SoundUtil.playPronounceSound2(state.word!, _audioPlayer);
           _handleTabChangeForAsr();
         }
         Global.logger.d('[PERF] checkAsrResult spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
