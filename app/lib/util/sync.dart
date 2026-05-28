@@ -337,277 +337,274 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     });
 
     // 分别保存本地数据库和后端数据库(用事务保证一致性)
+    // 【重要改进】拆分为两个独立事务：
+    //   事务A：将服务端数据保存到本地 → 提交（即使上传失败，数据也不会丢失）
+    //   事务B：将本地数据上传到服务端 → 提交（独立于事务A）
     DictWordOrderInvalidWarningException? warningExcept;
     var db = MyDatabase.instance;
     int successCount = 0;
     int failCount = 0;
 
+    // 事务A：将服务端数据写入本地数据库
+    final List<LearningWord> updatedLearningWords = [];
+    final List<String> newMasteredWordIds = [];
+    final List<String> removedLearningWordIds = [];
+
     await db.transaction(() async {
-      try {
-        final List<LearningWord> updatedLearningWords = [];
-        final List<String> newMasteredWordIds = [];
-        final List<String> removedLearningWordIds = [];
-        
-        final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
+      final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
 
-        for (var log in backendToLocal) {
-          try {
-            // 处理BATCH_DELETE操作类型
-            if (log.operate == 'BATCH_DELETE') {
-              await _handleBatchDeleteUserRecords(log, userId);
-              successCount++;
-              continue;
-            }
-
-            Map<String, dynamic> entityJson = jsonDecode(log.record);
-            
-            // 【容错改造】在反序列化前，补全可能缺失的字段，且统一修复日期格式，防止由于前后端版本不一致导致的 crash
-            _sanitizeEntityJson(log.tblName, entityJson);
-            Util.fixJsonDates(entityJson);
-
-            if (log.tblName == 'users') {
-              User entity = User.fromJson(entityJson);
-              Global.logger.d('📥 [Sync-User] 接收到用户同步: id=${entity.id}, userName=${entity.userName}, '
-                  'todayStudyStarted=${entity.todayStudyStarted}, lastLearningDate=${entity.lastLearningDate}, '
-                  'totalLearning={${entity.totalLearningSeconds}}, todayLearning={${entity.todayLearningSeconds}}');
-                  
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.usersDao.saveUser(entity, false);
-                
-                // 只要同步到当前用户的修改，立即应用到内存缓存
-                if (Global.currentUserId == entity.id) {
-                  Global.logger.d('📥 [Sync-User] 更新内存缓存: ${entity.userName}');
-                  Global.updateUserCache(entity);
-                }
-              }
-            } else if (log.tblName == 'dicts') {
-              Dict entity = Dict.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.dictsDao.saveEntity(entity, false);
-              } else if (log.operate == 'DELETE') {
-                await db.dictsDao.deleteEntity(entity, false);
-              }
-            } else if (log.tblName == 'words') {
-              Word entity = Word.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.wordsDao.insertEntity(entity);
-              }
-            } else if (log.tblName == 'learningDicts') {
-              LearningDict entity = LearningDict.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.learningDictsDao.saveEntity(entity, false);
-              } else if (log.operate == 'DELETE') {
-                await db.learningDictsDao.deleteEntity(entity, false);
-              }
-            } else if (log.tblName == 'learningWords') {
-              LearningWord entity = LearningWord.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.learningWordsDao.saveEntity(entity, false);
-                updatedLearningWords.add(entity);
-              } else if (log.operate == 'DELETE') {
-                await db.learningWordsDao.deleteEntity(entity, false);
-                removedLearningWordIds.add(entity.wordId);
-              }
-            } else if (log.tblName == 'masteredWords') {
-              // 已废弃：mastered_word 已迁移到 dict + dict_word 体系
-              // 忽略来自后端的旧格式日志
-              Global.logger.i('忽略已废弃的 masteredWords 同步日志: operate=${log.operate}');
-            } else if (log.tblName == 'userWrongWords') {
-              final entity = UserWrongWord.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.userWrongWordsDao.saveEntity(entity, false);
-              } else if (log.operate == 'DELETE') {
-                await db.userWrongWordsDao.deleteEntity(entity, false);
-              }
-            } else if (log.tblName == 'dictWords') {
-              final entity = DictWord.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.dictWordsDao.insertEntity(entity, false);
-                if (masteredDict != null && entity.dictId == masteredDict.id) {
-                  newMasteredWordIds.add(entity.wordId);
-                }
-              } else if (log.operate == 'DELETE') {
-                await db.dictWordsDao.deleteEntity(entity, false);
-              }
-            } else if (log.tblName == 'dakas') {
-              Daka entity = Daka.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.dakasDao.saveDaka(entity, false);
-              } else if (log.operate == 'DELETE') {
-                await db.dakasDao.deleteDaka(entity, false);
-              }
-            } else if (log.tblName == 'userOpers') {
-              UserOper entity = UserOper.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.userOpersDao.saveUserOper(entity, false);
-              }
-            } else if (log.tblName == 'bookMarks') {
-              BookMark entity = BookMark.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.bookmarksDao.saveBookmark(entity, false);
-              } else if (log.operate == 'DELETE') {
-                await db.bookmarksDao.deleteBookmark(entity.id, false);
-              }
-            } else if (log.tblName == 'userStudySteps') {
-              UserStudyStep entity = UserStudyStep.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.userStudyStepsDao.saveUserStudyStep(entity, false);
-              } else if (log.operate == 'DELETE') {
-                await db.userStudyStepsDao.deleteUserStudyStep(entity.userId, entity.studyStep, false);
-              }
-            } else if (log.tblName == 'userCowDungLogs') {
-              UserCowDungLog entity = UserCowDungLog.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.userCowDungLogsDao.insertEntity(entity, false);
-              }
-            } else if (log.tblName == 'meaningItems') {
-              MeaningItem entity = MeaningItem.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.meaningItemsDao.insertEntity(entity, false);
-              } else if (log.operate == 'DELETE') {
-                await db.meaningItemsDao.deleteEntity(entity.id, false);
-              }
-            } else if (log.tblName == 'learningLogs') {
-              LearningLog entity = LearningLog.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.learningLogsDao.saveEntity(entity, false);
-              }
-            } else if (log.tblName == 'userStudyDailyStats') {
-              final entity = UserStudyDailyStat.fromJson(entityJson);
-              if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
-                await db.userStudyDailyStatsDao.saveEntity(entity, false);
-              } else if (log.operate == 'DELETE') {
-                await db.userStudyDailyStatsDao.batchDeleteUserRecords(userId, filters: entityJson);
-              }
-            } else if (log.tblName != 'users' &&
-                log.tblName != 'dicts' &&
-                log.tblName != 'words' &&
-                log.tblName != 'learningDicts' &&
-                log.tblName != 'learningWords' &&
-                log.tblName != 'masteredWords' &&
-                log.tblName != 'userWrongWords' &&
-                log.tblName != 'dictWords' &&
-                log.tblName != 'dakas' &&
-                log.tblName != 'userOpers' &&
-                log.tblName != 'bookMarks' &&
-                log.tblName != 'userStudySteps' &&
-                log.tblName != 'userCowDungLogs' &&
-                log.tblName != 'meaningItems' &&
-                log.tblName != 'learningLogs' &&
-                log.tblName != 'userStudyDailyStats') {
-              Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
-              // 不弹出错误提示，只记录日志
-            }
+      for (var log in backendToLocal) {
+        try {
+          // 处理BATCH_DELETE操作类型
+          if (log.operate == 'BATCH_DELETE') {
+            await _handleBatchDeleteUserRecords(log, userId);
             successCount++;
-          } catch (e) {
-            failCount++;
-            Global.logger.e("❌ 处理单条同步记录失败 (已跳过): 表=${log.tblName}, ID=${log.recordId}, 错误=$e");
-            // 对于严重的数据解析错误，我们仅在开发/调试模式下抛出，生产环境选择跳过损坏记录以保证同步流程不中断
-            if (kDebugMode) {
-               // ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: '处理表数据失败: ${log.tblName}', showToast: false);
-               // throw SyncDataParseException(...); 
-               // 暂时统一不抛出，改为记录日志并继续，实现生产级容错
-            }
-          }
-        }
-
-        // 保存后端数据库，返回后端数据库版本
-        if (localToBackend.isNotEmpty) {
-          assert(!_isSyncingToServer, "⚠️ [CONCURRENCY ERROR] 检测到同一个客户端正在并发向网络发送同步上传请求！");
-          if (_isSyncingToServer) {
-            Global.logger.e("⚠️ [CONCURRENCY SHIELD] 拦截到并发的网络同步请求，userId: $userId, 期望版本: $backendDbVersion");
-            throw Exception("同步操作已在进行中，请勿重复发起");
+            continue;
           }
 
-          _isSyncingToServer = true;
-          try {
-            Result<int> result = await Api.client.syncUserDb(backendDbVersion, userId, localToBackend);
-            if (!result.success) {
-              // 若是后端特殊应答，要求进行全量修改日志”，由下次同步自然覆盖
-              if ((result.code).contains('DICT_WORD_ORDER_INVALID')) {
-                // message 格式可能是: DICT_WORD_ORDER_INVALID: dictId|具体错误信息
-                String dictId = '';
-                final msg = result.msg ?? '';
-                final parts = msg.split('|');
-                if (parts.length > 1) {
-                  final prefixParts = parts[0].split(':');
-                  if (prefixParts.length > 1) {
-                    dictId = prefixParts[1].trim();
-                  } else {
-                    dictId = parts[0].trim();
-                  }
-                }
+          Map<String, dynamic> entityJson = jsonDecode(log.record);
+          
+          // 【容错改造】在反序列化前，补全可能缺失的字段，且统一修复日期格式，防止由于前后端版本不一致导致的 crash
+          _sanitizeEntityJson(log.tblName, entityJson);
+          Util.fixJsonDates(entityJson);
 
-                if (dictId.isNotEmpty) {
-                  Global.logger.w('⚠️ 服务端检测到词书($dictId)顺序异常，生成本地全量修改日志，等待下次同步覆盖');
-
-                  // 清理掉所有关于这个字典的单词的旧同步日志，包括可能存在的过旧的 BATCH_DELETE
-                  await (MyDatabase.instance.delete(MyDatabase.instance.userDbLogs)
-                        ..where((l) => l.userId.equals(userId) & l.tblName.equals('dictWords') & (l.recordId.like('$dictId-%') | l.operate.equals('BATCH_DELETE'))))
-                      .go();
-
-                  await DbLogUtil.logDeleteAllTableRecords(userId, 'dictWords', filters: {'dictId': dictId});
-
-                  // 休眠以确保时间戳先后顺序，避免排序时全量修改的 UPDATE 日志先于 BATCH_DELETE 执行而导致后端数据被清空
-                  await Future.delayed(const Duration(milliseconds: 100));
-
-                  // 修复本地词书顺序
-                  await MyDatabase.instance.dictWordsDao.fixDictOrder(dictId, false);
-
-                  // 生成本地词书全量修改日志, 使得在下次同步到服务端时, 能够让服务端和本地词书完全一致
-                  await MyDatabase.instance.dictWordsDao.generateFullDictRewriteLogs(userId, dictId);
-                }
-
-                // 记录特定异常，使其能被捕获为警告状态。我们在这里不直接抛出以免回滚前面的成功操作（特别是已经写入的日志记录修复）
-                warningExcept = DictWordOrderInvalidWarningException("下次修复");
-
-                // 更新本地数据库版本（虽然本地未成功提交给后端，但我们已经接收了后端的变动应当更新本地的后端进度）
-                final now = AppClock.now();
-                await db.userDbVersionsDao
-                    .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
-
-                // 提前退出此事务处理过程：保留其余所有待上传的日志，不要走到最后的清空环节, 等待下次重推
-                return;
-              } else {
-                Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}");
-                // 不弹出错误提示，只记录日志
-                throw Exception(result.msg);
+          if (log.tblName == 'users') {
+            User entity = User.fromJson(entityJson);
+            Global.logger.d('📥 [Sync-User] 接收到用户同步: id=${entity.id}, userName=${entity.userName}, '
+                'todayStudyStarted=${entity.todayStudyStarted}, lastLearningDate=${entity.lastLearningDate}, '
+                'totalLearning={${entity.totalLearningSeconds}}, todayLearning={${entity.todayLearningSeconds}}');
+                
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.usersDao.saveUser(entity, false);
+              
+              // 只要同步到当前用户的修改，立即应用到内存缓存
+              if (Global.currentUserId == entity.id) {
+                Global.logger.d('📥 [Sync-User] 更新内存缓存: ${entity.userName}');
+                Global.updateUserCache(entity);
               }
-            } else {
-              backendDbVersion = result.data!;
             }
-          } finally {
-            _isSyncingToServer = false;
+          } else if (log.tblName == 'dicts') {
+            Dict entity = Dict.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.dictsDao.saveEntity(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.dictsDao.deleteEntity(entity, false);
+            }
+          } else if (log.tblName == 'words') {
+            Word entity = Word.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.wordsDao.insertEntity(entity);
+            }
+          } else if (log.tblName == 'learningDicts') {
+            LearningDict entity = LearningDict.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.learningDictsDao.saveEntity(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.learningDictsDao.deleteEntity(entity, false);
+            }
+          } else if (log.tblName == 'learningWords') {
+            LearningWord entity = LearningWord.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.learningWordsDao.saveEntity(entity, false);
+              updatedLearningWords.add(entity);
+            } else if (log.operate == 'DELETE') {
+              await db.learningWordsDao.deleteEntity(entity, false);
+              removedLearningWordIds.add(entity.wordId);
+            }
+          } else if (log.tblName == 'masteredWords') {
+            // 已废弃：mastered_word 已迁移到 dict + dict_word 体系
+            // 忽略来自后端的旧格式日志
+            Global.logger.i('忽略已废弃的 masteredWords 同步日志: operate=${log.operate}');
+          } else if (log.tblName == 'userWrongWords') {
+            final entity = UserWrongWord.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.userWrongWordsDao.saveEntity(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.userWrongWordsDao.deleteEntity(entity, false);
+            }
+          } else if (log.tblName == 'dictWords') {
+            final entity = DictWord.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.dictWordsDao.insertEntity(entity, false);
+              if (masteredDict != null && entity.dictId == masteredDict.id) {
+                newMasteredWordIds.add(entity.wordId);
+              }
+            } else if (log.operate == 'DELETE') {
+              await db.dictWordsDao.deleteEntity(entity, false);
+            }
+          } else if (log.tblName == 'dakas') {
+            Daka entity = Daka.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.dakasDao.saveDaka(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.dakasDao.deleteDaka(entity, false);
+            }
+          } else if (log.tblName == 'userOpers') {
+            UserOper entity = UserOper.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.userOpersDao.saveUserOper(entity, false);
+            }
+          } else if (log.tblName == 'bookMarks') {
+            BookMark entity = BookMark.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.bookmarksDao.saveBookmark(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.bookmarksDao.deleteBookmark(entity.id, false);
+            }
+          } else if (log.tblName == 'userStudySteps') {
+            UserStudyStep entity = UserStudyStep.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.userStudyStepsDao.saveUserStudyStep(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.userStudyStepsDao.deleteUserStudyStep(entity.userId, entity.studyStep, false);
+            }
+          } else if (log.tblName == 'userCowDungLogs') {
+            UserCowDungLog entity = UserCowDungLog.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.userCowDungLogsDao.insertEntity(entity, false);
+            }
+          } else if (log.tblName == 'meaningItems') {
+            MeaningItem entity = MeaningItem.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.meaningItemsDao.insertEntity(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.meaningItemsDao.deleteEntity(entity.id, false);
+            }
+          } else if (log.tblName == 'learningLogs') {
+            LearningLog entity = LearningLog.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.learningLogsDao.saveEntity(entity, false);
+            }
+          } else if (log.tblName == 'userStudyDailyStats') {
+            final entity = UserStudyDailyStat.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.userStudyDailyStatsDao.saveEntity(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.userStudyDailyStatsDao.batchDeleteUserRecords(userId, filters: entityJson);
+            }
+          } else if (log.tblName != 'users' &&
+              log.tblName != 'dicts' &&
+              log.tblName != 'words' &&
+              log.tblName != 'learningDicts' &&
+              log.tblName != 'learningWords' &&
+              log.tblName != 'masteredWords' &&
+              log.tblName != 'userWrongWords' &&
+              log.tblName != 'dictWords' &&
+              log.tblName != 'dakas' &&
+              log.tblName != 'userOpers' &&
+              log.tblName != 'bookMarks' &&
+              log.tblName != 'userStudySteps' &&
+              log.tblName != 'userCowDungLogs' &&
+              log.tblName != 'meaningItems' &&
+              log.tblName != 'learningLogs' &&
+              log.tblName != 'userStudyDailyStats') {
+            Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
+            // 不弹出错误提示，只记录日志
+          }
+          successCount++;
+        } catch (e) {
+          failCount++;
+          Global.logger.e("❌ 处理单条同步记录失败 (已跳过): 表=${log.tblName}, ID=${log.recordId}, 错误=$e");
+          // 对于严重的数据解析错误，我们仅在开发/调试模式下抛出，生产环境选择跳过损坏记录以保证同步流程不中断
+          if (kDebugMode) {
+             // ErrorHandler.handleDatabaseError(e, stackTrace, db: MyDatabase.instance.usersDao, operation: '处理表数据失败: ${log.tblName}', showToast: false);
+             // throw SyncDataParseException(...); 
+             // 暂时统一不抛出，改为记录日志并继续，实现生产级容错
           }
         }
-
-        // 更新本地数据库版本，使其与后端数据库版本一致
-        final now = AppClock.now();
-        await db.userDbVersionsDao
-            .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
-
-        // 清空本地日志
-        await db.userDbLogsDao.deleteUserDbLogs(userId);
-
-        // 多端增量同步内存缓存更新
-        if (updatedLearningWords.isNotEmpty || newMasteredWordIds.isNotEmpty || removedLearningWordIds.isNotEmpty) {
-          StudyCacheManager().mergeSyncData(db, userId,
-            updatedLearningWords: updatedLearningWords,
-            newMasteredWordIds: newMasteredWordIds,
-            removedLearningWordIds: removedLearningWordIds,
-          );
-          Global.logger.d('📥 [Sync-Cache] 已将多端同步增量数据合并至 StudyCacheManager');
-        }
-
-        // 同步完成后，再次验证核心数据完整性
-        await _validateCoreData(userId);
-      } catch (e) {
-        rethrow; // 重新抛出异常，让事务回滚
       }
+
+      // 更新本地数据库版本为服务端版本（此时已成功写入服务端数据，即使后续上传失败，数据也保住了）
+      final now = AppClock.now();
+      await db.userDbVersionsDao
+          .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
+
+      // 多端增量同步内存缓存更新
+      if (updatedLearningWords.isNotEmpty || newMasteredWordIds.isNotEmpty || removedLearningWordIds.isNotEmpty) {
+        StudyCacheManager().mergeSyncData(db, userId,
+          updatedLearningWords: updatedLearningWords,
+          newMasteredWordIds: newMasteredWordIds,
+          removedLearningWordIds: removedLearningWordIds,
+        );
+        Global.logger.d('📥 [Sync-Cache] 已将多端同步增量数据合并至 StudyCacheManager');
+      }
+
+      // 同步完成后，再次验证核心数据完整性
+      await _validateCoreData(userId);
     });
 
+    // 事务B：将本地变更上传到服务端（独立于事务A，失败不影响已保存的数据）
+    if (localToBackend.isNotEmpty) {
+      assert(!_isSyncingToServer, "⚠️ [CONCURRENCY ERROR] 检测到同一个客户端正在并发向网络发送同步上传请求！");
+      if (_isSyncingToServer) {
+        Global.logger.e("⚠️ [CONCURRENCY SHIELD] 拦截到并发的网络同步请求，userId: $userId, 期望版本: $backendDbVersion");
+        throw Exception("同步操作已在进行中，请勿重复发起");
+      }
+
+      _isSyncingToServer = true;
+      try {
+        Result<int> result = await Api.client.syncUserDb(backendDbVersion, userId, localToBackend);
+        if (!result.success) {
+          // 若是后端特殊应答，要求进行全量修改日志，由下次同步自然覆盖
+          if ((result.code).contains('DICT_WORD_ORDER_INVALID')) {
+            // message 格式可能是: DICT_WORD_ORDER_INVALID: dictId|具体错误信息
+            String dictId = '';
+            final msg = result.msg ?? '';
+            final parts = msg.split('|');
+            if (parts.length > 1) {
+              final prefixParts = parts[0].split(':');
+              if (prefixParts.length > 1) {
+                dictId = prefixParts[1].trim();
+              } else {
+                dictId = parts[0].trim();
+              }
+            }
+
+            if (dictId.isNotEmpty) {
+              Global.logger.w('⚠️ 服务端检测到词书($dictId)顺序异常，生成本地全量修改日志，等待下次同步覆盖');
+
+              // 清理掉所有关于这个字典的单词的旧同步日志，包括可能存在的过旧的 BATCH_DELETE
+              await (MyDatabase.instance.delete(MyDatabase.instance.userDbLogs)
+                    ..where((l) => l.userId.equals(userId) & l.tblName.equals('dictWords') & (l.recordId.like('$dictId-%') | l.operate.equals('BATCH_DELETE'))))
+                  .go();
+
+              await DbLogUtil.logDeleteAllTableRecords(userId, 'dictWords', filters: {'dictId': dictId});
+
+              // 休眠以确保时间戳先后顺序，避免排序时全量修改的 UPDATE 日志先于 BATCH_DELETE 执行而导致后端数据被清空
+              await Future.delayed(const Duration(milliseconds: 100));
+
+              // 修复本地词书顺序
+              await MyDatabase.instance.dictWordsDao.fixDictOrder(dictId, false);
+
+              // 生成本地词书全量修改日志, 使得在下次同步到服务端时, 能够让服务端和本地词书完全一致
+              await MyDatabase.instance.dictWordsDao.generateFullDictRewriteLogs(userId, dictId);
+            }
+
+            // 记录特定异常，数据已保存在阶段A中，下次同步会重试
+            warningExcept = DictWordOrderInvalidWarningException("下次修复");
+          } else {
+            Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}（本地数据已保存，将在下次同步时重试）");
+          }
+        } else {
+          // 上传成功，更新本地版本号 + 清空本地日志
+          backendDbVersion = result.data!;
+          await db.transaction(() async {
+            final now = AppClock.now();
+            await db.userDbVersionsDao
+                .saveEntity(UserDbVersion(userId: userId, version: backendDbVersion, createTime: now, updateTime: now));
+            await db.userDbLogsDao.deleteUserDbLogs(userId);
+          });
+        }
+      } finally {
+        _isSyncingToServer = false;
+      }
+    } else {
+      // 没有本地变更需要上传，直接清空本地日志
+      await db.userDbLogsDao.deleteUserDbLogs(userId);
+    }
+
     if (warningExcept != null) {
-      throw warningExcept!;
+      throw warningExcept;
     }
 
     stopwatch.stop();

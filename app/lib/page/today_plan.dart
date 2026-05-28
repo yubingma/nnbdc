@@ -18,6 +18,7 @@ import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
+import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
@@ -962,6 +963,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           // Prefs 内存写入几乎为 0ms (只做本地 Map 修改)，可以直接 await 确保页面接收，也可不 await
           await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
           if (!mounted) return;
+          // 在页面跳转前启动 iOS 麦克风引擎预热，与导航过渡动画(~300ms)和 BDC 初始化(~250ms)并行。
+          // 预热完成时 startAsr 可直接复用已初始化的引擎，消除首次单词 2.3s 冷启动延迟。
+          if (PlatformUtils.isIOS) {
+            unawaited(Asr().warmupMicrophone());
+          }
           context.push('/bdc').then((value) {
             if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
           });
@@ -1030,6 +1036,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   onPressed: () async {
                     await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
                     if (!mounted) return;
+                    if (PlatformUtils.isIOS) {
+                      unawaited(Asr().warmupMicrophone());
+                    }
                     context.push('/bdc');
                   },
                   child: const Text('就这样吧'),

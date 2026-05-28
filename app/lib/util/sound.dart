@@ -400,6 +400,32 @@ class SoundUtil {
     await playSoundByUrl(Util.getWordSoundUrl(spell), player, false, speed: speed);
   }
 
+  /// 预热 AudioPlayer：查找缓存并调用 setAudioSource 以触发底层平台播放器初始化。
+  /// 不播放任何声音，仅用于消除首次 setAudioSource 的冷启动延迟（iOS AVQueuePlayer 初始化 ~2s）。
+  /// 缓存未命中时不降级下载——下载是 playSoundByUrl 的职责。
+  static Future<void> preloadAudioFromUrl(String soundUrl, ja.AudioPlayer player) async {
+    if (PlatformUtils.isWeb) return;
+    try {
+      try {
+        _logicallyFinishedPlayers.remove(player);
+        await player.stop();
+      } catch (_) {}
+
+      await player.setVolume(1.0);
+
+      final cacheManager = DefaultCacheManager();
+      final fileInfo = await cacheManager.getFileFromCache(soundUrl);
+      if (fileInfo != null && await fileInfo.file.exists()) {
+        await player.setAudioSource(
+          ja.AudioSource.uri(Uri.file(fileInfo.file.path)),
+        ).timeout(const Duration(milliseconds: 10000));
+        debugPrint('⚡ [SoundUtil] AudioPlayer 预热完成: $soundUrl');
+      }
+    } catch (e) {
+      debugPrint('⚡ [SoundUtil] AudioPlayer 预热失败 (非关键): $e');
+    }
+  }
+
   static void prefetchSounds(List<String> urls) {
     if (PlatformUtils.isWeb) return;
     for (var url in urls) {

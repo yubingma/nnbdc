@@ -26,6 +26,9 @@ class SubscriptionUtil {
   static bool _showToasts = true; // 控制是否显示 Toast 提示
   static Future<bool>? _currentVerifyFuture;
 
+  /// 已成功处理的 purchaseID 集合，防止 StoreKit 重复派发导致的洪水调用
+  static final Set<String> _processedPurchaseIds = {};
+
   /// 订阅更新流，用于通知UI刷新
   static Stream<List<PurchaseDetails>> get purchaseUpdatedStream => _purchaseUpdatedController.stream;
 
@@ -295,6 +298,13 @@ class SubscriptionUtil {
 
   /// 处理单个购买
   static Future<void> _handlePurchase(PurchaseDetails purchaseDetails) async {
+    // 已成功处理的交易跳过，防止 StoreKit 重复派发
+    final purchaseId = purchaseDetails.purchaseID;
+    if (purchaseId != null && _processedPurchaseIds.contains(purchaseId)) {
+      Global.logger.d('跳过已处理的购买: $purchaseId (${purchaseDetails.productID})');
+      return;
+    }
+
     if (purchaseDetails.status == PurchaseStatus.pending) {
       Global.logger.i('购买待处理: ${purchaseDetails.productID}');
       if (_showToasts) ToastUtil.info('购买处理中...');
@@ -317,6 +327,10 @@ class SubscriptionUtil {
       final bool verified = await _verifyReceipt(purchaseDetails);
 
       if (verified) {
+        // 记录已处理，防止重复
+        if (purchaseId != null) {
+          _processedPurchaseIds.add(purchaseId);
+        }
         if (_showToasts) {
           // 区分是新订阅还是恢复订阅
           if (purchaseDetails.status == PurchaseStatus.restored) {

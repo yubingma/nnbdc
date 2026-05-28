@@ -46,6 +46,9 @@ class Asr {
   /// 标记是否正在执行 startAsr，避免并发的 start/stop 调用打架
   bool _isStarting = false;
 
+  /// 跟踪麦克风引擎预热状态。非 null 表示预热正在进行中。
+  Completer<void>? _micWarmupCompleter;
+
   /// 标记是否正在初始化事件监听，避免并发初始化
   bool _isInitializing = false;
 
@@ -474,6 +477,9 @@ class Asr {
           await _updateLanguage(language);
 
           Global.logger.i('ASR: Starting microphone... (instance: $hashCode)');
+          // 等待 loadData 中启动的引擎预热完成。若引擎已就绪（之前会话保活），
+          // 此调用立即返回；若预热进行中，等待其完成以避免重复初始化。
+          await awaitMicWarmup();
           await SoundUtil.usePlayAndRecordCategory();
           debugPrint('⏱️ [Latency-ASR] usePlayAndRecordCategory 完成: +${swStart.elapsedMilliseconds}ms');
            
@@ -544,10 +550,47 @@ class Asr {
         await asrMethodChannel
             .invokeMethod('startMicrophone')
             .timeout(const Duration(seconds: 5));
+        _engineEverStarted = true;
       }
     } catch (e) {
       Global.logger
           .e('ASR: Pre-warm microphone failed: $e (instance: $hashCode)');
+    }
+  }
+
+  /// 启动麦克风引擎预热并跟踪完成状态。若引擎已在预热中，返回已有的 Future；
+  /// 若引擎已启动，直接返回。调用方应在 startAsr 前 await 以确保引擎就绪。
+  Future<void> warmupMicrophone() async {
+    if (_micWarmupCompleter != null && !_micWarmupCompleter!.isCompleted) {
+      return _micWarmupCompleter!.future;
+    }
+    if (state == AsrState.started) return;
+
+    _micWarmupCompleter = Completer<void>();
+    try {
+      await startMicrophone();
+      if (!_micWarmupCompleter!.isCompleted) {
+        _micWarmupCompleter!.complete();
+      }
+    } catch (e) {
+      if (!_micWarmupCompleter!.isCompleted) {
+        _micWarmupCompleter!.completeError(e);
+      }
+      _micWarmupCompleter = null;
+    }
+  }
+
+  /// 等待引擎预热完成（若正在进行中）。
+  /// 在 startAsr 调用 startMicrophone 前调用，确保引擎已就绪。
+  /// 预热失败时不抛异常——startAsr 会走冷启动路径兜底。
+  Future<void> awaitMicWarmup() async {
+    if (_micWarmupCompleter != null && !_micWarmupCompleter!.isCompleted) {
+      try {
+        await _micWarmupCompleter!.future;
+      } catch (_) {
+        // warmup failed, engine will cold-start normally in startAsr
+      }
+      _micWarmupCompleter = null;
     }
   }
 

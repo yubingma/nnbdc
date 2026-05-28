@@ -74,6 +74,7 @@ class BdcNotifier extends _$BdcNotifier {
   late final ja.AudioPlayer _audioPlayer;
   Timer? _learningTimer;
   Timer? _persistTimer;
+  Future<void>? _audioPreloadFuture;
   
   late final SpellingTextEditingController meaningController = SpellingTextEditingController(
     getTargetSpell: () => state.word?.spell,
@@ -109,7 +110,9 @@ class BdcNotifier extends _$BdcNotifier {
       progressBarTapTimer?.cancel();
       _syncLearningTimeToDb();
       asr.removeStateListener(_onAsrStateChanged);
-      asr.stopMicrophone();
+      // 仅停止 ASR 识别任务，不销毁原生音频引擎。
+      // 引擎保持存活可在后续 BDC 页面访问时消除 2.3s 的冷启动延迟。
+      asr.stopAsr();
       meaningController.dispose();
       Prefs.remove("BdcPageArgs");
     });
@@ -573,34 +576,40 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(dataLoaded: true);
 
-    // 针对 iOS 平台，在转场过渡期内提前预热麦克风和音频引擎。
-    // 但若即将播放单词/例句发音，则跳过预热——否则发音播放时的
-    // 音频会话切换会触发 AVAudioEngine 被动重启，与 AVPlayer 并发抢占硬件，产生杂音。
-    bool isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0;
-    if (PlatformUtils.isIOS && isInSpeakTab && asr.state != AsrState.started) {
-      final studyConfig = StudyConfig.fromCurrentUser();
-      final willPlayAudio = state.studyStep == StudyStep.en2Ch.json &&
-          (studyConfig.autoPlayWord || studyConfig.autoPlaySentence);
-      if (!willPlayAudio) {
-        debugPrint('⏱️ [Latency-BDC] 检测到将进入说模式且 ASR 未预热，在静音过渡期提前 Pre-warm 麦克风...');
-        unawaited(asr.startMicrophone());
-      }
+    // 预热单词音频播放器：在后台触发 setAudioSource，初始化底层 AVQueuePlayer，
+    // 避免 playWordAndFirstSentence 中首次 setAudioSource 产生 ~2s 冷启动延迟
+    final wordSpell = word.spell;
+    _audioPreloadFuture = SoundUtil.preloadAudioFromUrl(
+      Util.getWordSoundUrl(wordSpell, word: word),
+      _audioPlayer,
+    );
+
+    // iOS 说模式引擎预热：在 dataLoaded 之后、200ms delay 之前启动。
+    // 此时 ASR 状态已稳定（initialized），不会被 loadData 中的 stopAsr 干扰。
+    // 预热与音频预加载、200ms 延迟并行运行。
+    final bool shouldSpeak = _shouldShowSpeakTab && state.tabIndex == 0;
+    if (PlatformUtils.isIOS && shouldSpeak) {
+      unawaited(asr.warmupMicrophone());
     }
 
-    // 将发音播放和 ASR 启动延迟 200ms 执行，在卡片过渡动画结束前不抢占渲染资源
-    Future.delayed(const Duration(milliseconds: 200), () {
+    // 将发音播放和 ASR 启动延迟 200ms 执行，在卡片过渡动画结束前不抢占渲染资源。
+    // 延迟结束后等待引擎预热完成（若正在进行），确保 startAsr 能瞬间复用已初始化的引擎。
+    Future.delayed(const Duration(milliseconds: 200), () async {
       final playStopwatch = Stopwatch()..start();
-      unawaited(() async {
-        try {
-          debugPrint('⏱️ [Latency-BDC] handleWord -> playWordAndFirstSentence 触发 (background)...');
-          // 无论何种模式，加载新词时都只按自动播放配置执行（forcePlayWord=false），确保中英模式不泄密
-          await playWordAndFirstSentence(false, true);
-        } catch (e, st) {
-          Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
-        } finally {
-          Global.logger.d('[PERF] handleWord -> playWordAndFirstSentence (background) cost: ${playStopwatch.elapsedMilliseconds}ms');
+      try {
+        debugPrint('⏱️ [Latency-BDC] handleWord -> playWordAndFirstSentence 触发 (background)...');
+        if (PlatformUtils.isIOS && shouldSpeak) {
+          final warmupWaitSw = Stopwatch()..start();
+          await asr.awaitMicWarmup();
+          debugPrint('⚡ [PERF] Engine warmup done before playWordAndFirstSentence: ${warmupWaitSw.elapsedMilliseconds}ms');
         }
-      }());
+        // 无论何种模式，加载新词时都只按自动播放配置执行（forcePlayWord=false），确保中英模式不泄密
+        await playWordAndFirstSentence(false, true);
+      } catch (e, st) {
+        Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
+      } finally {
+        Global.logger.d('[PERF] handleWord -> playWordAndFirstSentence (background) cost: ${playStopwatch.elapsedMilliseconds}ms');
+      }
     });
     
     Global.logger.i('[PERF] Total handleWord cost: ${totalStopwatch.elapsedMilliseconds}ms');
@@ -951,6 +960,7 @@ class BdcNotifier extends _$BdcNotifier {
     final totalStopwatch = Stopwatch()..start();
 
     _saveCurrentWordState();
+    _audioPreloadFuture = null; // 切换单词，废弃旧的预加载 future
 
     // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
     // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
@@ -1428,6 +1438,16 @@ class BdcNotifier extends _$BdcNotifier {
       if (willPlayWord && state.word != null) {
         if (_isDisposed) return;
         final playWordStopwatch = Stopwatch()..start();
+
+        // 等待 handleWord 中启动的音频预加载完成，确保平台播放器（AVQueuePlayer）已初始化。
+        // 此后 playPronounceSound2 → playSoundByUrl 中的 setAudioSource 仅需 ~200ms 的 AVPlayerItem 替换，
+        // 而非 ~2s 的冷启动初始化。
+        if (_audioPreloadFuture != null) {
+          final preloadWaitSw = Stopwatch()..start();
+          await _audioPreloadFuture;
+          _audioPreloadFuture = null;
+          debugPrint('⚡ [PERF] Audio preload awaited: ${preloadWaitSw.elapsedMilliseconds}ms');
+        }
         
         // 关键优化：在调用 play 之前，必须确保并行发起的 sessionFuture 已完成
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer, preWaitFuture: sessionFuture);
