@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:flutter/services.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -11,7 +10,7 @@ class Tts {
   var methodChannel = const MethodChannel('nnbdc/tts_commands');
   var eventChannel = const EventChannel('nnbdc/tts_events');
   bool initialized = false;
-  HashSet completedUtterances = HashSet();
+  final completedUtterances = <String>{};
   
   // 引入异步锁，确保串行执行
   Future? _activeSpeakFuture;
@@ -158,38 +157,6 @@ class Tts {
       ErrorHandler.handleError(e, stackTrace, logPrefix: 'TTS异常', showToast: false);
     } finally {
       _isSpeaking = false;
-    }
-  }
-
-  // 基于文本长度估算 TTS 播放时间的备选方案
-  Future<void> speakWithTimeout(String text) async {
-    if (!PlatformUtils.isTtsSupported()) {
-      return;
-    }
-
-    // 自动判断语言
-    String language = _detectLanguage(text);
-    Global.logger.d('TTS speakWithTimeout: $text, language: $language');
-    try {
-      // 文本转语音播放
-      var uuid = const Uuid();
-      final utteranceId = uuid.v4();
-      await methodChannel.invokeMethod('speak', {'text': text, 'utteranceId': utteranceId, 'language': language});
-
-      // 基于文本长度估算播放时间（中文约 3 字/秒，英文约 5 字/秒）
-      double charsPerSecond = language == 'zh-CN' ? 3.0 : 5.0;
-      int estimatedDuration = (text.length / charsPerSecond * 1000).round();
-
-      // 等待估算的播放时间，最少 1 秒，最多 5 秒
-      int waitTime = estimatedDuration.clamp(1000, 5000);
-      Global.logger.d('TTS 估算播放时间: ${waitTime}ms (文本长度: ${text.length})');
-
-      await Future.delayed(Duration(milliseconds: waitTime));
-      Global.logger.d('TTS 播放完成（基于时间估算）: $utteranceId');
-    } on PlatformException catch (e) {
-      ErrorHandler.handleError(e, null, logPrefix: 'TTS异常', showToast: false);
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: 'TTS异常', showToast: false);
     }
   }
 

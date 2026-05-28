@@ -17,7 +17,7 @@ class SoundUtil {
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
   static bool _audioSessionConfigured = false;
-  static String currentSessionCategory = 'none';
+  static String _currentSessionCategory = 'none';
 
   @visibleForTesting
   static set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
@@ -61,7 +61,7 @@ class SoundUtil {
   static Future<void> usePlaybackCategory({bool force = false}) {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
-      if (currentSessionCategory == 'playback' && !force) return;
+      if (_currentSessionCategory == 'playback' && !force) return;
       
       final sw = Stopwatch()..start();
       debugPrint('⏱️ [Latency-Sound] 开始切换 Session 到 playback...');
@@ -83,7 +83,7 @@ class SoundUtil {
           androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
           androidWillPauseWhenDucked: true,
         )).timeout(const Duration(milliseconds: 1000));
-        currentSessionCategory = 'playback';
+        _currentSessionCategory = 'playback';
         debugPrint('⏱️ [Latency-Sound] Session 切换到 playback 完成，耗时: ${sw.elapsedMilliseconds}ms');
       } catch (e) {
         Global.logger.e('SoundUtil: 切换播放模式失败: $e');
@@ -120,7 +120,7 @@ class SoundUtil {
         }
       }
 
-      if (currentSessionCategory == 'playAndRecord') return;
+      if (_currentSessionCategory == 'playAndRecord') return;
 
       final sw = Stopwatch()..start();
       debugPrint('⏱️ [Latency-Sound] 开始执行 usePlayAndRecordCategory (ASR 准备)...');
@@ -148,7 +148,7 @@ class SoundUtil {
           androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
           androidWillPauseWhenDucked: true,
         )).timeout(const Duration(milliseconds: 1000));
-        currentSessionCategory = 'playAndRecord';
+        _currentSessionCategory = 'playAndRecord';
         debugPrint('⏱️ [Latency-Sound] Session 切换到 playAndRecord 完成，总耗时: ${sw.elapsedMilliseconds}ms');
       } catch (e) {
         Global.logger.e('SoundUtil: 切换为录放模式失败: $e');
@@ -347,6 +347,8 @@ class SoundUtil {
       final player = await _getAvailableSfxPlayer();
       if (player == null) return;
       
+      _activeCutToken.remove(player); // 清除旧 cut token，防止误杀新声音
+
       final now = AppClock.now();
       final busyDuration = Duration(milliseconds: sleepAfterPlayInMilliSeconds > 0 ? sleepAfterPlayInMilliSeconds : 1000);
       _playerBusyUntil[player] = now.add(busyDuration);

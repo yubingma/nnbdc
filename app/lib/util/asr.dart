@@ -49,9 +49,6 @@ class Asr {
   /// 标记是否正在初始化事件监听，避免并发初始化
   bool _isInitializing = false;
 
-  /// 标记订阅是否应该被保护，防止在初始化后立即被取消
-  bool _subscriptionProtected = false;
-
   /// ASR 结果事件订阅，用于在页面销毁或重新初始化时正确取消订阅，
   /// 避免多个已失效的监听器继续处理结果，导致目标单词长期停留在旧值
   StreamSubscription? _eventSubscription;
@@ -84,7 +81,7 @@ class Asr {
     _stateListeners.remove(listener);
   }
 
-  void dispose() {
+  Future<void> dispose() async {
     Global.logger.d('ASR: dispose() 被调用，取消事件订阅');
     // 如果正在初始化，等待初始化完成
     if (_isInitializing) {
@@ -92,16 +89,12 @@ class Asr {
       // 等待初始化完成（最多等待 1 秒）
       int waitCount = 0;
       while (_isInitializing && waitCount < 20) {
-        Future.delayed(const Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 50));
         waitCount++;
       }
     }
     _disposed = true;
     _stateListeners.clear();
-    _subscriptionProtected = false; // 清除保护标记
-    if (_subscriptionProtected) {
-      Global.logger.w('ASR: 警告：在订阅保护期内调用 dispose()');
-    }
     _eventSubscription?.cancel();
     _eventSubscription = null;
 
@@ -319,8 +312,7 @@ class Asr {
     _meterStreamCache ??= asrMeterChannel
         .receiveBroadcastStream('nnbdc/asr_meter')
         .map((event) => (event as num).toDouble())
-        .handleError((e) => Global.logger.i('ASR meter error: $e'))
-        .asBroadcastStream(); // 确保它作为广播流可以被多次监听
+        .handleError((e) => Global.logger.i('ASR meter error: $e'));
     return _meterStreamCache!;
   }
 
@@ -375,8 +367,6 @@ class Asr {
       Global.logger.i('ASR: 重新初始化事件监听，取消旧订阅');
       final oldSubscription = _eventSubscription;
       _eventSubscription = null;
-      _subscriptionProtected = false;
-
       if (oldSubscription != null) {
         await oldSubscription.cancel();
       }
@@ -483,24 +473,15 @@ class Asr {
 
           Global.logger.i('ASR: Starting microphone... (instance: $hashCode)');
           await SoundUtil.usePlayAndRecordCategory();
-          
-          // 判断是否为热启动：若当前已是 started 状态，说明音频引擎已经在稳定运行
-          final isWarmStart = state == AsrState.started;
-
-          Future<void>? hintFuture;
-          if (playHintSound && isWarmStart) {
-            // 热启动：音频引擎已处于工作状态，可以直接并行播放提示音，实现零延迟秒开
-            hintFuture = SoundUtil.playAsrReadyHintSound();
-          }
-
+           
           await asrMethodChannel
               .invokeMethod('startMicrophone')
               .timeout(const Duration(seconds: 5));
 
-          if (playHintSound && !isWarmStart) {
+          Future<void>? hintFuture;
+          if (playHintSound) {
             // 首次冷启动：AVAudioEngine 硬件首次激活需要稳定窗口，延迟 150ms
             // 避免提示音在音频 pipeline 未完全就绪时播放而不稳定。
-            // 后续冷启动硬件已 warm，无需延迟。
             if (!_engineEverStarted) {
               await Future.delayed(const Duration(milliseconds: 150));
               _engineEverStarted = true;
@@ -601,7 +582,6 @@ class Asr {
 
     if (state == AsrState.stopped || state == AsrState.initialized || state == AsrState.unknown) {
       debugPrint('💡 [ASR] stopMicrophone() ASR 已经是停止/未启动状态 ($state)，仅确保音频分类为 playback');
-      SoundUtil.currentSessionCategory = 'playback';
       await SoundUtil.usePlaybackCategory();
       return;
     }
@@ -615,12 +595,10 @@ class Asr {
       await asrMethodChannel.invokeMethod('stopMicrophone');
       setState(AsrState.stopped);
       Global.logger.i('ASR: Microphone and engine stopped successfully');
-      SoundUtil.currentSessionCategory = 'playback';
       await SoundUtil.usePlaybackCategory();
     } on PlatformException catch (e) {
       Global.logger.e('ASR: Exception during stopMicrophone: ${e.message}');
       setState(AsrState.stopped);
-      SoundUtil.currentSessionCategory = 'playback';
       await SoundUtil.usePlaybackCategory();
     }
   }

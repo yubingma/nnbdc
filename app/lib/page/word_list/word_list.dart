@@ -1814,7 +1814,7 @@ class WordListPageState extends State<WordListPage>
                   if (context.mounted) {
                     Navigator.of(context).pop();
                   }
-                  SoundUtil.playAddSuccessSound();
+                  unawaited(SoundUtil.playAddSuccessSound());
 
                   // 刷新列表
 
