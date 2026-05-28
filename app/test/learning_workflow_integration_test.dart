@@ -65,7 +65,7 @@ class MockAsr implements Asr {
   Future<void> reset() async {}
 
   @override
-  void dispose() {}
+  Future<void> dispose() async {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
