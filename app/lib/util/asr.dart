@@ -457,6 +457,8 @@ class Asr {
     }
 
     _isStarting = true;
+    final swStart = Stopwatch()..start();
+    debugPrint('⏱️ [Latency-ASR] startAsr 入口 (语言: ${language.locale})');
     try {
       await _checkAndRequestPermissions();
 
@@ -473,10 +475,12 @@ class Asr {
 
           Global.logger.i('ASR: Starting microphone... (instance: $hashCode)');
           await SoundUtil.usePlayAndRecordCategory();
+          debugPrint('⏱️ [Latency-ASR] usePlayAndRecordCategory 完成: +${swStart.elapsedMilliseconds}ms');
            
           await asrMethodChannel
               .invokeMethod('startMicrophone')
               .timeout(const Duration(seconds: 5));
+          debugPrint('⏱️ [Latency-ASR] startMicrophone 完成: +${swStart.elapsedMilliseconds}ms');
 
           Future<void>? hintFuture;
           if (playHintSound) {
@@ -494,6 +498,7 @@ class Asr {
           await asrMethodChannel
               .invokeMethod('startAsr')
               .timeout(const Duration(seconds: 5));
+          debugPrint('⏱️ [Latency-ASR] native startAsr 完成: +${swStart.elapsedMilliseconds}ms');
           final endTime = AppClock.now();
 
           if (hintFuture != null) {

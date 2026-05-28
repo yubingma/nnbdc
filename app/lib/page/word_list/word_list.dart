@@ -1082,7 +1082,6 @@ class WordListPageState extends State<WordListPage>
 
   /// 检查语音识别结果是否匹配单词的意思
   checkAsrResult(String asrResult) async {
-    final startTime = DateTime.now().millisecondsSinceEpoch;
     Global.logger.d("~~~~~开始检查识别结果: $asrResult");
 
     final currWordIndex = getBookMarkUiPosition();
@@ -1184,13 +1183,15 @@ class WordListPageState extends State<WordListPage>
           return;
         }
 
-        Global.logger.d("~~~~~满足跳转条件，准备跳转 (当前任务检查耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
+        final swJump = Stopwatch()..start();
+        debugPrint('⏱️ [Latency] 答对！开始跳转流程...');
         // 立即重置标志位，防止重复跳转 (防抖)
         canLeaveCurrWord = false;
 
         try {
           await asr.stopMicrophone();
           await asr.reset(); // 清除缓冲区
+          debugPrint('⏱️ [Latency] stopMicrophone+reset 完成: +${swJump.elapsedMilliseconds}ms');
         } catch (e) {
           Global.logger.d("停止ASR失败: $e");
         }
@@ -1701,7 +1702,8 @@ class WordListPageState extends State<WordListPage>
 
   /// 带加载动画的 ASR 启动封装
   Future<void> _startAsr(AsrLanguage language) async {
-    Global.logger.d("~~~~~正在启动 ASR (${language.name})...");
+    final sw = Stopwatch()..start();
+    debugPrint('⏱️ [Latency-ASR] _startAsr 入口 (语言: ${language.locale})');
     if (!mounted) return;
 
     // 确保监听器已初始化
@@ -1735,10 +1737,10 @@ class WordListPageState extends State<WordListPage>
     }
 
     try {
-      Global.logger.d('开始启动ASR，语言: ${language.locale}');
       _setAsrContextualPhrases();
+      debugPrint('⏱️ [Latency-ASR] 热词设置完成，开始 asr.startAsr: +${sw.elapsedMilliseconds}ms');
       await asr.startAsr(language);
-      Global.logger.d('ASR启动成功，开始播放提示音');
+      debugPrint('⏱️ [Latency-ASR] ASR 启动成功: +${sw.elapsedMilliseconds}ms');
 
       // 播放提示音, 提醒用户可以开始说话
       Global.logger.d('播放ASR启动提示音 (已禁用)');
@@ -1872,7 +1874,8 @@ class WordListPageState extends State<WordListPage>
 
   onWordPressed(WordWrapper word, int index, bool playSound,
       Function? soundFinishListener) async {
-    Global.logger.d("~~~~~onWordPressed 被调用: ${word.word.spell}");
+    final sw = Stopwatch()..start();
+    debugPrint('⏱️ [Latency] onWordPressed 入口: ${word.word.spell}');
 
     // 如果是切换单词，且处于听说/拼写模式，则先播放当前正在离开的那个词的发音
     if (bookMark != null && bookMark!.position != baseIndex! + index) {
@@ -1957,6 +1960,7 @@ class WordListPageState extends State<WordListPage>
         studyMode == WordListStudyMode.speakEnglish) {
       await asr.stopMicrophone();
       await asr.reset(); // 清除缓冲区
+      debugPrint('⏱️ [Latency] stopMicrophone+reset 完成: +${sw.elapsedMilliseconds}ms');
     }
 
     // 播放单词发音（背英文模式/默写模式进入时不播放由调用者控制，避免泄露答案）
@@ -1964,17 +1968,16 @@ class WordListPageState extends State<WordListPage>
         studyMode != WordListStudyMode.speakEnglish &&
         studyMode != WordListStudyMode.hideEnglish;
     if (shouldPlaySound) {
-      debugPrint('播放单词发音: ${word.word.spell}');
+      debugPrint('⏱️ [Latency] 开始播放发音: +${sw.elapsedMilliseconds}ms');
       if (studyMode == WordListStudyMode.speakChinese) {
         // 在说中文模式下，为了防止 ASR 识别到手机自身发出的发音，改为等待播放完成后再启动 ASR
         await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+        debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms');
         soundFinishListener?.call();
       } else {
         final stopwatch = Stopwatch()..start();
         await SoundUtil.playPronounceSound2(word.word, audioPlayer);
-        stopwatch.stop();
-        Global.logger.d(
-            '~~~~~单词发音播放完成: ${word.word.spell}, 耗时 ${stopwatch.elapsedMilliseconds}ms');
+        debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms (文件耗时 ${stopwatch.elapsedMilliseconds}ms)');
         soundFinishListener?.call();
       }
     } else {
@@ -1985,6 +1988,7 @@ class WordListPageState extends State<WordListPage>
     // 在语音模式下，播放完成后启动语音识别
     if (studyMode == WordListStudyMode.speakChinese ||
         studyMode == WordListStudyMode.speakEnglish) {
+      debugPrint('⏱️ [Latency] 开始 _startAsr: +${sw.elapsedMilliseconds}ms');
       _startAsr(decideAsrLanguage());
       _subscribeMeterIfNeeded();
     }
