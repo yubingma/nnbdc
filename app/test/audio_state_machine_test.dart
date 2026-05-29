@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/util/sound.dart';
@@ -106,9 +105,8 @@ void main() {
     });
 
     test('setState 触发状态监听器', () {
-      AsrState? receivedState;
       asr.addStateListener((state) {
-        receivedState = state;
+        // 间接测试，通过 state 变化
       });
 
       // 注意：setState 是 private，通过 initAsr 间接测试
@@ -122,6 +120,9 @@ void main() {
       });
 
       await asr.dispose();
+
+      // 验证未被意外回调并消除编译警告
+      expect(listenerCalled, isFalse);
 
       // 验证第二次 dispose 不崩溃
       await asr.dispose();
