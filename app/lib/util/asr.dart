@@ -68,6 +68,7 @@ class Asr {
     Global.logger.i('ASR: State change: $_state => $newState');
     if (_state != newState) {
       _state = newState;
+      debugPrint('🎤 [AudioDiag] ASR状态: $_state${_disposed ? " [disposed]" : ""}');
       if (!_disposed) {
         for (var listener in _stateListeners) {
           listener(newState);
@@ -422,6 +423,8 @@ class Asr {
 
   Future<void> startAsr(AsrLanguage language, {List<String>? phrases, bool playHintSound = true}) async {
     debugPrint('💡 [ASR] startAsr() 触发启动。目标语言: ${language.locale}，当前状态: $state，播放提示音: $playHintSound。');
+    debugPrint('🎤 [AudioDiag] ASR启动: lang=${language.locale}, state=$state, '
+        'isStarting=$_isStarting, disposed=$_disposed, engineEverStarted=$_engineEverStarted');
     if (!PlatformUtils.isAsrSupported()) {
       ToastUtil.info("当前平台暂不支持语音识别功能");
       return;

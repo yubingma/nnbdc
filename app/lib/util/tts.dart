@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/global.dart';
@@ -113,6 +114,7 @@ class Tts {
       final startTime = DateTime.now();
       await methodChannel.invokeMethod('speak', {'text': text, 'utteranceId': utteranceId, 'language': language});
       _isSpeaking = true;
+      debugPrint('🗣️ [AudioDiag] TTS开始: id=$utteranceId, text="$text", lang=$language, 估算=${estimatedDurationMs}ms');
 
       // 等待播放完成，结合事件回调和时间保护
       int attempts = 0;
@@ -134,12 +136,14 @@ class Tts {
         if (completedUtterances.contains(utteranceId)) {
           // 额外等待一个极短的时间，确保硬件缓冲区播放完毕
           await Future.delayed(const Duration(milliseconds: 100));
+          debugPrint('🗣️ [AudioDiag] TTS完成(事件): id=$utteranceId, 实际=${elapsedMs + 100}ms');
           Global.logger.d('TTS 播放完成事件触发: $utteranceId, 实际耗时: ${elapsedMs + 100}ms');
           break;
         }
 
         // 2. 兜底逻辑：如果一直没收到事件，但已经超过了合理的兜底时长
         if (elapsedMs >= fallbackDurationMs) {
+          debugPrint('🗣️ [AudioDiag] TTS超时(兜底): id=$utteranceId, 已等待=${elapsedMs}ms');
           Global.logger.w('TTS 等待超时(触发兜底): $utteranceId, 强制结束');
           break;
         }

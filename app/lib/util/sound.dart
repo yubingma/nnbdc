@@ -21,7 +21,29 @@ class SoundUtil {
 
   @visibleForTesting
   static set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
-  
+
+  /// 输出所有播放器的当前状态，供诊断音频问题使用
+  static void _logAudioState(String label) {
+    final sfxStates = _sfxPool.map((p) {
+      final busy = _playerBusyUntil[p];
+      return 'p:${p.playing ? '▶' : '■'}'
+          '${busy != null ? "[busy]" : ""}'
+          '${_logicallyFinishedPlayers.contains(p) ? "[done]" : ""}';
+    }).join(', ');
+    final pp = _pronouncePlayer;
+    final ppState = pp != null
+        ? 'p:${pp.playing ? '▶' : '■'}'
+            '${_logicallyFinishedPlayers.contains(pp) ? "[done]" : ""}'
+        : 'null';
+    debugPrint('🔊 [AudioDiag] $label | session=$_currentSessionCategory '
+        '| 发音=$ppState | 池=[$sfxStates]');
+  }
+
+  static void _logSfxAlloc(String strategy, ja.AudioPlayer player) {
+    debugPrint('🔊 [AudioDiag] 音效池分配: 策略=$strategy, player=${player.hashCode}'
+        ', 池状态=${_sfxPool.map((p) => '${p.hashCode}:${p.playing ? "▶" : "■"}').join(",")}');
+  }
+
   static final List<ja.AudioPlayer> _sfxPool = [];
   static const int _sfxPoolSize = 3;
   static final Set<ja.AudioPlayer> _logicallyFinishedPlayers = {};
@@ -67,8 +89,9 @@ class SoundUtil {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
       if (_currentSessionCategory == 'playback' && !force) return;
-      
+
       final sw = Stopwatch()..start();
+      _logAudioState('会话切换前(→playback)');
       debugPrint('⏱️ [Latency-Sound] 开始切换 Session 到 playback...');
 
       await waitForAllPlayers();
@@ -90,6 +113,7 @@ class SoundUtil {
         )).timeout(const Duration(milliseconds: 1000));
         _currentSessionCategory = 'playback';
         debugPrint('⏱️ [Latency-Sound] Session 切换到 playback 完成，耗时: ${sw.elapsedMilliseconds}ms');
+        _logAudioState('会话切换完成(→playback ${sw.elapsedMilliseconds}ms)');
       } catch (e) {
         Global.logger.e('SoundUtil: 切换播放模式失败: $e');
       }
@@ -108,6 +132,7 @@ class SoundUtil {
       if (_currentSessionCategory == 'playAndRecord') return;
 
       final sw = Stopwatch()..start();
+      _logAudioState('会话切换前(→playAndRecord)');
       debugPrint('⏱️ [Latency-Sound] 开始执行 usePlayAndRecordCategory (ASR 准备)...');
 
       await waitForAllPlayers();
@@ -135,6 +160,7 @@ class SoundUtil {
         )).timeout(const Duration(milliseconds: 1000));
         _currentSessionCategory = 'playAndRecord';
         debugPrint('⏱️ [Latency-Sound] Session 切换到 playAndRecord 完成，总耗时: ${sw.elapsedMilliseconds}ms');
+        _logAudioState('会话切换完成(→playAndRecord ${sw.elapsedMilliseconds}ms)');
       } catch (e) {
         Global.logger.e('SoundUtil: 切换为录放模式失败: $e');
       }
@@ -152,6 +178,7 @@ class SoundUtil {
     for (var p in earlyExitPlayers) {
       if (p.playing) {
         try {
+          debugPrint('🔊 [AudioDiag] EarlyExit 强制stop: player=${p.hashCode}, pos=${p.position.inMilliseconds}ms');
           debugPrint('⏱️ [Latency-Sound] 强制 stop() 逻辑完成但物理仍活跃的播放器，彻底释放硬件资源...');
           await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
           hasStoppedAny = true;
@@ -206,14 +233,16 @@ class SoundUtil {
       for (var player in _sfxPool) {
         final busyUntil = _playerBusyUntil[player];
         if (!player.playing && (busyUntil == null || now.isAfter(busyUntil))) {
+          _logSfxAlloc('空闲优先', player);
           return player;
         }
       }
-      
+
       // 2. 次优寻找 busy 状态已过期的播放器
       for (var player in _sfxPool) {
         final busyUntil = _playerBusyUntil[player];
         if (busyUntil == null || now.isAfter(busyUntil)) {
+          _logSfxAlloc('busy过期', player);
           return player;
         }
       }
@@ -227,8 +256,10 @@ class SoundUtil {
           bestPlayer = player;
         }
       }
-      
-      return bestPlayer ?? _sfxPool[0];
+
+      final fallback = bestPlayer ?? _sfxPool[0];
+      _logSfxAlloc('兜底(池满)', fallback);
+      return fallback;
     });
   }
 
