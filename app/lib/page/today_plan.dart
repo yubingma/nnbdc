@@ -277,7 +277,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
       // 检查是否为新的一天。如果是，则不加载本地已有的旧批次单词，防止 UI 闪烁旧数据
       final today = app_date.DateUtils.businessDate(AppClock.now());
-      bool isNewDay = user!.lastLearningDate == null || user!.lastLearningDate != today;
+      bool isNewDay = user!.lastLearningDate == null ||
+          !app_date.DateUtils.isSameBusinessDay(user!.lastLearningDate!, today);
       
       if (isNewDay) {
         Global.logger.d('Detecting new day in local load, clearing stale data');

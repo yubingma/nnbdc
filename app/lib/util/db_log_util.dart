@@ -79,7 +79,8 @@ class DbLogUtil {
       final db = MyDatabase.instance;
 
       // 创建日志记录，version 字段为空，由服务端在同步时设置
-      var now = AppClock.now();
+      // 使用 UTC 时间戳避免时区歧义：服务端与客户端统一用 UTC 比较，防止 8 小时时差导致旧数据覆盖新数据
+      var now = DateTime.now().toUtc();
       try {
         // 【智能合并日志】如果是 UPDATE 操作，检查之前是否有未同步的对应的 INSERT/UPDATE 日志
         if (operate == 'UPDATE') {
