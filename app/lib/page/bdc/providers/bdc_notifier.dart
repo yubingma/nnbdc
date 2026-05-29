@@ -185,8 +185,13 @@ class BdcNotifier extends _$BdcNotifier {
     final totalStopwatch = Stopwatch()..start();
     Api.setLoadingDisabled(true);
     
-    // 后台异步预热核心音效，消除首次播放延迟
-    unawaited(SoundUtil.prewarmCoreSounds());
+    // 极致优化：为了绝对保障批次第一个单词的发音稳定与流畅，我们将音效池的预热延后 2 秒（用户看词阶段）执行，
+    // 彻底避开首词加载与发音播放的硬件黄金窗口，根治并发硬件抢占导致的破音。
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!_isDisposed) {
+        unawaited(SoundUtil.prewarmCoreSounds());
+      }
+    });
 
     bool dialogShown = false;
     Timer? dialogTimer;
@@ -608,8 +613,8 @@ class BdcNotifier extends _$BdcNotifier {
           await asr.awaitMicWarmup();
           debugPrint('⚡ [PERF] Engine warmup done before playWordAndFirstSentence: ${warmupWaitSw.elapsedMilliseconds}ms');
         }
-        // 无论何种模式，加载新词时都只按自动播放配置执行（forcePlayWord=false），确保中英模式不泄密
-        await playWordAndFirstSentence(false, true);
+        // 关键重构：仅在说模式（shouldSpeak为true）时才在播放后衔接启动 ASR，非说模式（如英中模式）下彻底解耦 ASR 释放重启开销，确保发音播放链路纯净、无任何麦克风占用和爆音
+        await playWordAndFirstSentence(false, shouldSpeak);
       } catch (e, st) {
         Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
       } finally {

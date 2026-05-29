@@ -487,12 +487,9 @@ class SoundUtil {
   static Future<void> preloadAudioFromUrl(String soundUrl, ja.AudioPlayer player) async {
     if (PlatformUtils.isWeb) return;
     try {
-      // 架构设计优化 3：预热时必须确保全局音频会话已配置就绪，
-      // 尤其是批次第 1 个单词（首次进入学习），防止后台预热挂载与 AVAudioSession 硬件重构并发撞车引发爆音。
-      if (!_audioSessionConfigured) {
-        debugPrint('⚡ [SoundUtil] 预热时音频会话尚未配置，安全排队等待就绪...');
-        await configureAudioSession();
-      }
+      // 架构设计优化 3：预热挂载音源（setAudioSource）与后续正式播放必须在相同的已配置就绪的 playback 模式下进行。
+      // 在此强行先确保音频会话类别已切换为 playback 模式，防止预热加载中途因 AVAudioSession 物理重置产生破音。
+      await usePlaybackCategory();
 
       try {
         _logicallyFinishedPlayers.remove(player);
