@@ -1459,9 +1459,9 @@ class BdcNotifier extends _$BdcNotifier {
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer, preWaitFuture: sessionFuture);
         debugPrint('⏱️ [Latency-BDC] 单词播完，耗时: ${playWordStopwatch.elapsedMilliseconds}ms');
         
-        // 如果后面还要播放例句，增加 50ms 物理缓冲（从 200ms 缩减），防止 MediaCodec 底层切换过快，同时保持连贯性
+        // 如果后面还要播放例句，增加 100ms 物理缓冲（从 50ms 调宽），给底层硬件和蓝牙缓冲区充分的排空重置时间，根治连续播放产生的爆音
         if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
-          await Future.delayed(const Duration(milliseconds: 50));
+          await Future.delayed(const Duration(milliseconds: 100));
         }
       }
       

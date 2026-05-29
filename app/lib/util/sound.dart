@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart' as ja;
@@ -327,6 +328,14 @@ class SoundUtil {
       if (!_audioSessionConfigured) await configureAudioSession();
       if (PlatformUtils.isWeb) await _ensureWebAudioUnlocked();
 
+      // 架构设计优化 1：优先且必须确保 AVAudioSession 并行切换彻底完成，
+      // 然后再对播放器执行 stop、挂载和播放核心操作，防止切换中硬件参数突变导致瞬间爆音或发音丢失。
+      if (preWaitFuture != null) {
+        final waitSw = Stopwatch()..start();
+        await preWaitFuture;
+        debugPrint('⏱️ [Latency-Sound] 等待并行 Session 切换完成，实耗: ${waitSw.elapsedMilliseconds}ms');
+      }
+
       try {
         _logicallyFinishedPlayers.remove(player);
         await player.stop();
@@ -340,20 +349,46 @@ class SoundUtil {
       } else {
         final cacheManager = DefaultCacheManager();
         FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
-        if (fileInfo != null && await fileInfo.file.exists()) {
-          await player.setAudioSource(ja.AudioSource.uri(Uri.file(fileInfo.file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
+        final String targetFilePath = fileInfo?.file.path ?? '';
+
+        bool sourceChanged = true;
+
+        // 架构设计优化 2：若播放器非 idle，且当前挂载的本地音频源与要播放的一致，
+        // 彻底跳过极为昂贵的 setAudioSource，改用 0ms seek(zero) 重放，消除硬件流重建爆音。
+        if (player.processingState != ja.ProcessingState.idle &&
+            player.audioSource is ja.UriAudioSource) {
+          final currentUri = (player.audioSource as ja.UriAudioSource).uri;
+          if (currentUri.isScheme('file') &&
+              targetFilePath.isNotEmpty &&
+              currentUri.toFilePath() == targetFilePath) {
+            sourceChanged = false;
+          }
+        }
+
+        if (sourceChanged) {
+          if (targetFilePath.isNotEmpty && await File(targetFilePath).exists()) {
+            await player.setAudioSource(ja.AudioSource.uri(Uri.file(targetFilePath))).timeout(Duration(milliseconds: loadTimeoutMs));
+          } else {
+            var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+            await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
+          }
         } else {
-          var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-          await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
+          try {
+            debugPrint('⚡ [SoundUtil] 检测到相同的音频源，跳过 setAudioSource，直接闪电 seek(zero) 重放');
+            await player.seek(Duration.zero);
+          } catch (e) {
+            // 防御式兜底 Fallback：一旦物理/系统级 seek 异常，自动降级至正常的 setAudioSource 重新挂载，确保 100% 能发声
+            debugPrint('⚠️ [SoundUtil] 闪电复用 seek 失败: $e，触发安全 fallback 重新挂载');
+            if (targetFilePath.isNotEmpty && await File(targetFilePath).exists()) {
+              await player.setAudioSource(ja.AudioSource.uri(Uri.file(targetFilePath))).timeout(Duration(milliseconds: loadTimeoutMs));
+            } else {
+              var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+              await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
+            }
+          }
         }
       }
-      debugPrint('⏱️ [Latency-Sound] 资源加载耗时: ${loadSw.elapsedMilliseconds}ms');
-
-      if (preWaitFuture != null) {
-        final waitSw = Stopwatch()..start();
-        await preWaitFuture;
-        debugPrint('⏱️ [Latency-Sound] 等待并行 Session 切换完成，实耗: ${waitSw.elapsedMilliseconds}ms');
-      }
+      debugPrint('⏱️ [Latency-Sound] 资源加载与对齐耗时: ${loadSw.elapsedMilliseconds}ms');
 
       await player.setSpeed(speed);
       
@@ -452,6 +487,13 @@ class SoundUtil {
   static Future<void> preloadAudioFromUrl(String soundUrl, ja.AudioPlayer player) async {
     if (PlatformUtils.isWeb) return;
     try {
+      // 架构设计优化 3：预热时必须确保全局音频会话已配置就绪，
+      // 尤其是批次第 1 个单词（首次进入学习），防止后台预热挂载与 AVAudioSession 硬件重构并发撞车引发爆音。
+      if (!_audioSessionConfigured) {
+        debugPrint('⚡ [SoundUtil] 预热时音频会话尚未配置，安全排队等待就绪...');
+        await configureAudioSession();
+      }
+
       try {
         _logicallyFinishedPlayers.remove(player);
         await player.stop();
