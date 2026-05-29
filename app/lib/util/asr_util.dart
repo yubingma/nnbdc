@@ -16,6 +16,26 @@ class AsrCandidateResult {
 /// 语音识别结果预处理工具类
 /// 主要用于处理发音相似的中英文替换问题
 class AsrUtil {
+  /// 标点符号与其英文发音的映射关系
+  static const Map<String, List<String>> _symbolToSpokenWords = {
+    '-': ['dash', 'hyphen', 'minus'],
+    '–': ['dash', 'hyphen', 'minus'],
+    '—': ['dash', 'hyphen', 'minus'],
+    '.': ['dot', 'period', 'point'],
+    ',': ['comma'],
+    '?': ['question mark'],
+    '!': ['exclamation mark'],
+    '&': ['and'],
+    '@': ['at'],
+    '/': ['slash'],
+    '_': ['underscore'],
+    '~': ['tilde'],
+    '%': ['percent'],
+    '*': ['star', 'asterisk'],
+    '+': ['plus'],
+    '=': ['equal', 'equals'],
+  };
+
   /// 将阿拉伯数字转换为中文数字（支持0-9999）
   /// 例如：12 -> 十二，123 -> 一百二十三
   static String _convertArabicToChinese(int num) {
@@ -125,6 +145,13 @@ class AsrUtil {
 
   /// 计算综合相似度 (仅基于发音)
   static Future<int> calculateOverallSimilarity(String input, String target) async {
+    final lowerInput = input.toLowerCase().trim();
+    final lowerTarget = target.toLowerCase().trim();
+    final spokenWords = _symbolToSpokenWords[lowerInput];
+    if (spokenWords != null && spokenWords.contains(lowerTarget)) {
+      return 100;
+    }
+
     try {
       // 用户要求独立的计算方式，只考虑发音相似度
       return await PhonemeUtil.similarity(input, target);
@@ -148,7 +175,13 @@ class AsrUtil {
 
     // 快速路径：精确匹配时跳过音素加载和计算，避免 3.5MB cmudict 加载阻塞 ASR 响应
     for (final c in candidates) {
-      if (c.toLowerCase().trim() == lowerTarget) {
+      final trimmedCandidate = c.toLowerCase().trim();
+      if (trimmedCandidate == lowerTarget) {
+        return AsrCandidateResult(c, 100);
+      }
+      // 符号映射匹配：如果候选词是一个符号，且目标词是该符号的发音之一
+      final spokenWords = _symbolToSpokenWords[trimmedCandidate];
+      if (spokenWords != null && spokenWords.contains(lowerTarget)) {
         return AsrCandidateResult(c, 100);
       }
     }
@@ -214,6 +247,12 @@ class AsrUtil {
 
     // 完全匹配
     if (lowerCandidate == lowerTarget) {
+      return 100;
+    }
+
+    // 符号映射匹配
+    final spokenWords = _symbolToSpokenWords[lowerCandidate];
+    if (spokenWords != null && spokenWords.contains(lowerTarget)) {
       return 100;
     }
 

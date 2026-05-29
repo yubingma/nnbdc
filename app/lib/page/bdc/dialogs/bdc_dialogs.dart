@@ -270,162 +270,166 @@ extension BdcPageStateDialogs on BdcPageState {
                         maxHeight: MediaQuery.of(context).size.height * 0.5,
                       ),
                       child: SingleChildScrollView(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? const Color(0xFF1C1C1E)
-                                    : const Color(0xFFF9F9F9),
+                        child: Material(
+                          color:
+                              Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF1C1C1E)
+                                  : const Color(0xFFF9F9F9),
+                          borderRadius: BorderRadius.circular(16),
+                          clipBehavior: Clip.antiAlias,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
+                            side: BorderSide(
                                 color: Theme.of(context).brightness ==
                                         Brightness.dark
                                     ? Colors.white.withValues(alpha: 0.05)
                                     : Colors.black.withValues(alpha: 0.05),
                                 width: 0.5),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 2, horizontal: 0),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final List<Widget> items = [
-                                _buildSettingItem(
-                                  '深色模式',
-                                  context.read<DarkMode>().isDarkMode,
-                                  (value) {
-                                    setState(() {
-                                      context.read<DarkMode>().setIsDarkMode(value);
-                                    });
-                                    MyDatabase.instance.localParamsDao
-                                        .saveIsDarkMode(value);
-                                    context
-                                        .read<DarkMode>()
-                                        .setIsDarkMode(value);
-                                  },
-                                  customTrailing: Transform.translate(
-                                    offset: const Offset(20, 0),
-                                    child: Transform.scale(
-                                      scale: 1.8,
-                                      alignment: Alignment.centerRight,
-                                      child: DayNightSwitcherIcon(
-                                        isDarkModeEnabled: context.read<DarkMode>().isDarkMode,
-                                        onStateChanged: (isDarkModeEnabled) {
-                                          setState(() {
-                                            context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
-                                          });
-                                          MyDatabase.instance.localParamsDao
-                                              .saveIsDarkMode(
-                                                  isDarkModeEnabled);
-                                          context
-                                              .read<DarkMode>()
-                                              .setIsDarkMode(isDarkModeEnabled);
-                                        },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 2, horizontal: 0),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final List<Widget> items = [
+                                  _buildSettingItem(
+                                    '深色模式',
+                                    context.read<DarkMode>().isDarkMode,
+                                    (value) {
+                                      setState(() {
+                                        context.read<DarkMode>().setIsDarkMode(value);
+                                      });
+                                      MyDatabase.instance.localParamsDao
+                                          .saveIsDarkMode(value);
+                                      context
+                                          .read<DarkMode>()
+                                          .setIsDarkMode(value);
+                                    },
+                                    customTrailing: Transform.translate(
+                                      offset: const Offset(20, 0),
+                                      child: Transform.scale(
+                                        scale: 1.8,
+                                        alignment: Alignment.centerRight,
+                                        child: DayNightSwitcherIcon(
+                                          isDarkModeEnabled: context.read<DarkMode>().isDarkMode,
+                                          onStateChanged: (isDarkModeEnabled) {
+                                            setState(() {
+                                              context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
+                                            });
+                                            MyDatabase.instance.localParamsDao
+                                                .saveIsDarkMode(
+                                                    isDarkModeEnabled);
+                                            context
+                                                .read<DarkMode>()
+                                                .setIsDarkMode(isDarkModeEnabled);
+                                          },
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                _buildAsrPassRuleSelector(
-                                  localAsrPassRule,
-                                  (value) {
-                                    setState(() {
-                                      localAsrPassRule = value;
-                                    });
-                                  },
-                                ),
-                                _buildDistractorStrategySelector(
-                                  localDistractorStrategy,
-                                  (value) {
-                                    setState(() {
-                                      localDistractorStrategy = value;
-                                    });
-                                  },
-                                ),
-                                _buildSettingItem(
-                                  '自动播放单词发音',
-                                  localAutoPlayWord,
-                                  (value) {
-                                    setState(() {
-                                      localAutoPlayWord = value;
-                                    });
-                                  },
-                                ),
-                                _buildSettingItem(
-                                  '自动播放例句',
-                                  localAutoPlaySentence,
-                                  (value) {
-                                    setState(() {
-                                      localAutoPlaySentence = value;
-                                    });
-                                  },
-                                ),
-                                _buildSettingItem(
-                                  '直接显示备选答案',
-                                  localShowAnswersDirectly,
-                                  (value) {
-                                    setState(() {
-                                      localShowAnswersDirectly = value;
-                                    });
-                                  },
-                                ),
-                                _buildSettingItem(
-                                  '备选答案含[都不对]选项',
-                                  localEnableAllWrong,
-                                  (value) {
-                                    setState(() {
-                                      localEnableAllWrong = value;
-                                    });
-                                  },
-                                ),
-                                _buildSettingItem(
-                                  '显示单词配图',
-                                  localEnableWordImage,
-                                  (value) {
-                                    setState(() {
-                                      localEnableWordImage = value;
-                                    });
-                                  },
-                                ),
-                                _buildSettingItem(
-                                  '中英极速：答对后直接下一词',
-                                  localAutoJumpAfterCorrectCh2En,
-                                  (value) {
-                                    setState(() {
-                                      localAutoJumpAfterCorrectCh2En = value;
-                                    });
-                                  },
-                                ),
-                                _buildSettingItem(
-                                  '英中极速：答对后直接下一词',
-                                  localAutoJumpAfterCorrectEn2Ch,
-                                  (value) {
-                                    setState(() {
-                                      localAutoJumpAfterCorrectEn2Ch = value;
-                                    });
-                                  },
-                                ),
-                              ];
+                                  _buildAsrPassRuleSelector(
+                                    localAsrPassRule,
+                                    (value) {
+                                      setState(() {
+                                        localAsrPassRule = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildDistractorStrategySelector(
+                                    localDistractorStrategy,
+                                    (value) {
+                                      setState(() {
+                                        localDistractorStrategy = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '自动播放单词发音',
+                                    localAutoPlayWord,
+                                    (value) {
+                                      setState(() {
+                                        localAutoPlayWord = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '自动播放例句',
+                                    localAutoPlaySentence,
+                                    (value) {
+                                      setState(() {
+                                        localAutoPlaySentence = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '直接显示备选答案',
+                                    localShowAnswersDirectly,
+                                    (value) {
+                                      setState(() {
+                                        localShowAnswersDirectly = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '备选答案含[都不对]选项',
+                                    localEnableAllWrong,
+                                    (value) {
+                                      setState(() {
+                                        localEnableAllWrong = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '显示单词配图',
+                                    localEnableWordImage,
+                                    (value) {
+                                      setState(() {
+                                        localEnableWordImage = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '中英极速：答对后直接下一词',
+                                    localAutoJumpAfterCorrectCh2En,
+                                    (value) {
+                                      setState(() {
+                                        localAutoJumpAfterCorrectCh2En = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '英中极速：答对后直接下一词',
+                                    localAutoJumpAfterCorrectEn2Ch,
+                                    (value) {
+                                      setState(() {
+                                        localAutoJumpAfterCorrectEn2Ch = value;
+                                      });
+                                    },
+                                  ),
+                                ];
 
-                              return Column(
-                                children: [
-                                  for (int i = 0; i < items.length; i++) ...[
-                                    if (i > 0)
-                                      Divider(
-                                        height: 1,
-                                        thickness: 0.5,
-                                        indent: 16,
-                                        endIndent: 16,
-                                        color: Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.white
-                                                .withValues(alpha: 0.08)
-                                            : Colors.grey
-                                                .withValues(alpha: 0.2),
-                                      ),
-                                    items[i],
-                                  ]
-                                ],
-                              );
-                            },
+                                return Column(
+                                  children: [
+                                    for (int i = 0; i < items.length; i++) ...[
+                                      if (i > 0)
+                                        Divider(
+                                          height: 1,
+                                          thickness: 0.5,
+                                          indent: 16,
+                                          endIndent: 16,
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.08)
+                                              : Colors.grey
+                                                  .withValues(alpha: 0.2),
+                                        ),
+                                      items[i],
+                                    ]
+                                  ],
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
