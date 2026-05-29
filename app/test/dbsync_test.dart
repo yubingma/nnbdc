@@ -349,5 +349,56 @@ void main() {
       expect(result.second.length, 1);
       expect(result.second[0]['recordId'], yesterdayId);
     });
+
+    test('时区时差冲突校验（防止时光倒流式覆盖）', () {
+      // 1. 构造一个绝对物理时刻
+      // 本地发生修改是在北京时间 20:01:43
+      // 其绝对毫秒数为 1780056103000
+      var localUpdateTime = DateTime.fromMillisecondsSinceEpoch(1780056103000); // 对应 20:01:43 Local
+      
+      // 2. 构造本地用户的修改日志 (UPDATE)
+      List<Map<String, dynamic>> localChanges = [
+        createChange('users', '1', 'UPDATE', localUpdateTime, {
+          'id': '1',
+          'lastLearningDate': '2026-05-29T00:00:00.000', // 设为今天
+          'todayStudyStarted': true,
+        }),
+      ];
+
+      // 3. 场景A：服务端由于 Bug 丢失了 UTC 时区配置，导致本该是稍早前 20:00:00 的旧数据，
+      // 被错误反序列化为 UTC 的 20:00:00.000Z（物理上变成了北京时间次日 04:00:00，比本地晚了 8 小时）
+      var buggyBackendUpdateTime = DateTime.parse('2026-05-29T20:00:00.000Z'); // 绝对物理上对应北京时间次日 04:00
+      List<Map<String, dynamic>> buggyBackendChanges = [
+        createChange('users', '1', 'UPDATE', buggyBackendUpdateTime, {
+          'id': '1',
+          'lastLearningDate': '2026-05-28T00:00:00.000', // 昨天（旧数据）
+          'todayStudyStarted': true,
+        }),
+      ];
+
+      var buggyResult = mergeChanges(localChanges, buggyBackendChanges);
+      
+      // 漏洞展现：由于时区时差误判，错误的“未来”旧数据把本地最新数据无情覆盖了！
+      // 验证在没有时区对齐时，确实会发生“时光倒流式覆盖”，把本地上传拦截，并把后端旧数据强加到本地！
+      expect(buggyResult.first.length, 0); // 本地修改被阻止上传
+      expect(buggyResult.second.length, 1); // 强制把服务端的旧数据同步到本地覆盖！
+      expect(buggyResult.second[0]['record']['lastLearningDate'], '2026-05-28T00:00:00.000'); // 覆盖为了昨天
+
+      // 4. 场景B：当服务端根治了时区 Bug 后，服务端的旧记录被正确表示为 UTC 的 12:00:00.000Z（即北京时间 20:00:00）
+      var correctBackendUpdateTime = DateTime.parse('2026-05-29T12:00:00.000Z'); // 物理上早于本地 1 分 43 秒
+      List<Map<String, dynamic>> correctBackendChanges = [
+        createChange('users', '1', 'UPDATE', correctBackendUpdateTime, {
+          'id': '1',
+          'lastLearningDate': '2026-05-28T00:00:00.000', // 昨天（旧数据）
+          'todayStudyStarted': true,
+        }),
+      ];
+      var correctResult = mergeChanges(localChanges, correctBackendChanges);
+
+      // 根治验证：当后端时区修复后，本地最新修改理所应当被保留并上传，后端旧记录被安全抛弃！
+      expect(correctResult.first.length, 1); // 本地修改顺利上传到后端
+      expect(correctResult.first[0]['record']['lastLearningDate'], '2026-05-29T00:00:00.000'); // 保持为今天
+      expect(correctResult.second.length, 0); // 服务端旧记录被安全阻断，没有同步到本地覆盖！
+    });
   });
 }

@@ -112,7 +112,9 @@ public class SyncController {
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         // 配置日期序列化为 ISO-8601 字符串格式，而不是时间戳
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.setDateFormat(new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        mapper.setDateFormat(sdf);
 
         // 先计算原始JSON大小
         String originalJson = mapper.writeValueAsString(result);
