@@ -1200,23 +1200,24 @@ class WordListPageState extends State<WordListPage>
         }
 
         var nextWordIndex = currWordIndex + 1;
-        if (nextWordIndex == words.length) {
-          nextWordIndex = 0;
-        }
-        var count = 0;
         while (nextWordIndex < words.length) {
           if (!words[nextWordIndex].answeredAllMeanings) {
             break;
           }
           nextWordIndex += 1;
-          if (nextWordIndex == words.length) {
-            nextWordIndex = 0;
-          }
-          count += 1;
-          if (count > words.length) {
-            ToastUtil.info("恭喜，你答对了所有单词");
-            return;
-          }
+        }
+
+        // 检查是否全部答对
+        bool allFinished = words.every((w) => w.answeredAllMeanings);
+        if (allFinished) {
+          ToastUtil.info("恭喜，你答对了所有单词");
+          return;
+        }
+
+        // 如果在当前词之后没有未答词了，由于不要向上找，我们就不继续向下跳
+        if (nextWordIndex == words.length) {
+          debugPrint('⏱️ [ASR] 当前词之后已无未答词，由于不环回机制，停止跳转');
+          return;
         }
 
         debugPrint('跳转到下一个单词：$nextWordIndex');
@@ -2702,18 +2703,6 @@ class WordListPageState extends State<WordListPage>
           studyMode == WordListStudyMode.dictation ||
           studyMode == WordListStudyMode.dictationHandwriting) {
         scrollToWord(currWordIndex + 1);
-      }
-    } else {
-      // 到达最后一个单词
-      // 跳回第一个单词
-      if (studyMode == WordListStudyMode.speakChinese ||
-          studyMode == WordListStudyMode.speakEnglish) {
-        // 确保书签更新到第一个单词
-        if (words.isNotEmpty) {
-          onWordPressed(words[0], 0, playPronounce, soundFinishListener);
-        }
-        jumpToNextWord(-1, playPronounce, soundFinishListener);
-        scrollToWord(0);
       }
     }
   }
