@@ -1461,17 +1461,7 @@ class WordListPageState extends State<WordListPage>
     }
 
     if (itemScrollController.isAttached) {
-      // 拼写模式用 scrollTo 带动画，避免 jumpTo 瞬时跳转导致输入框失去焦点、键盘关闭
-      final bool isDictation = studyMode == WordListStudyMode.dictation ||
-          studyMode == WordListStudyMode.dictationHandwriting;
-      if (isDictation) {
-        itemScrollController.scrollTo(
-            index: targetIndex,
-            duration: const Duration(milliseconds: 200),
-            alignment: 0.0);
-      } else {
-        itemScrollController.jumpTo(index: targetIndex, alignment: 0.0);
-      }
+      itemScrollController.jumpTo(index: targetIndex, alignment: 0.0);
     }
   }
 
@@ -1893,12 +1883,14 @@ class WordListPageState extends State<WordListPage>
 
     // 在默写（dictation）或手写默写模式下，点击单词后让输入框获得焦点（用以触发大字号显示）
     if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
-      try {
-        word.focusNode.requestFocus();
-      } catch (e, stackTrace) {
-        // 焦点请求失败不影响主流程，但需要记录
-        Global.logger.w('请求焦点失败', error: e, stackTrace: stackTrace);
-      }
+      // 延迟到下一帧：scrollToWord 触发的 jumpTo 布局完成后焦点才有效
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          word.focusNode.requestFocus();
+        } catch (e, stackTrace) {
+          Global.logger.w('请求焦点失败', error: e, stackTrace: stackTrace);
+        }
+      });
     }
 
     // 在背中文或背英文模式下，手动切换单词时也清空语音识别缓存
@@ -2625,7 +2617,9 @@ class WordListPageState extends State<WordListPage>
       onWordPressed(
           nextWord, currWordIndex + 1, playPronounce, soundFinishListener);
       if (studyMode == WordListStudyMode.dictation) {
-        nextWord.focusNode.requestFocus();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          nextWord.focusNode.requestFocus();
+        });
       }
       if (studyMode == WordListStudyMode.speakChinese ||
           studyMode == WordListStudyMode.speakEnglish ||
@@ -2641,7 +2635,9 @@ class WordListPageState extends State<WordListPage>
       var prevWord = words[currWordIndex - 1];
       onWordPressed(prevWord, currWordIndex - 1, playPronounce, null);
       if (studyMode == WordListStudyMode.dictation) {
-        prevWord.focusNode.requestFocus();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          prevWord.focusNode.requestFocus();
+        });
       }
       if (studyMode == WordListStudyMode.speakChinese ||
           studyMode == WordListStudyMode.speakEnglish ||

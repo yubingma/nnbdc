@@ -77,6 +77,7 @@ class TypingModeItem extends StatelessWidget {
           enableInteractiveSelection: true,
           controller: word.spellController,
           focusNode: word.focusNode,
+          scrollPadding: EdgeInsets.zero,
           keyboardType: TextInputType.visiblePassword,
           decoration: InputDecoration(
             isCollapsed: true,
