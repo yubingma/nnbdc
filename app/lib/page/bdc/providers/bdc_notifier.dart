@@ -1499,9 +1499,9 @@ class BdcNotifier extends _$BdcNotifier {
 
     Future<void>? sessionFuture;
     if (willPlayWord || willPlaySentence) {
-      // 架构优化 1：播放前无条件将全局音频引擎状态机切换为 playback 纯播放状态，
+      // 架构优化 1：播放前无条件将全局音频引擎状态机切换为 playback 纯播放状态（若后置需要立即启动 ASR 则使用热保温播放，避免物理硬件切换重构开销），
       // 所有麦克风拆卸、ASR 冷关停完全由状态机内部串行原子化执行，根治硬件时钟冲突爆音
-      sessionFuture = SoundUtil.transitTo(AudioMode.playback, asrInstance: asr);
+      sessionFuture = SoundUtil.transitTo(AudioMode.playback, asrInstance: asr, hotPlayback: startAsrWhenFinish);
       SoundUtil.watchPlayer(_audioPlayer);
     }
 
@@ -1524,9 +1524,16 @@ class BdcNotifier extends _$BdcNotifier {
         await SoundUtil.playPronounceSound2(state.word!, _audioPlayer, preWaitFuture: sessionFuture);
         debugPrint('⏱️ [Latency-BDC] 单词播完，耗时: ${playWordStopwatch.elapsedMilliseconds}ms');
         
-        // 如果后面还要播放例句，增加 100ms 物理缓冲（从 50ms 调宽），给底层硬件和蓝牙缓冲区充分的排空重置时间，根治连续播放产生的爆音
+        // 如果后面还要播放例句，增加 100ms 物理缓冲（从 50ms 调宽），给底层硬件 and 蓝牙缓冲区充分的排空重置时间，根治连续播放产生的爆音
         if (willPlaySentence && state.englishDigestOfFirstSentence != null) {
           await Future.delayed(const Duration(milliseconds: 100));
+        }
+
+        // 极致优化：只播放单词（无例句播放）时，播完后立即抢跑触发 ASR，节省微任务调度和硬件释放开销
+        if (!willPlaySentence && startAsrWhenFinish) {
+          if (_isDisposed) return;
+          _handleTabChangeForAsr();
+          startAsrWhenFinish = false; // 防止 finally 块再次触发逻辑
         }
       }
       
@@ -1596,8 +1603,9 @@ class BdcNotifier extends _$BdcNotifier {
       unawaited(_startAsrWithHint(language));
     } else {
       debugPrint('💡 [BDC-ASR] 不在 SpeakTab，当前 asr 状态: ${asr.state}');
-      if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
-        debugPrint('💡 [BDC-ASR] 不在 SpeakTab 且 ASR 运行中，触发状态机跃迁到 idle');
+      // 如果不在说模式下，且当前 ASR 仍在运行或音频 Category 依然是录放通道，强制触发冷关停以释放麦克风和硬件资源
+      if (asr.state != AsrState.stopped || SoundUtil.currentSessionCategory == 'playAndRecord') {
+        debugPrint('💡 [BDC-ASR] 不在 SpeakTab 且 ASR 运行或麦克风未释放，触发状态机物理跃迁到 idle');
         unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: asr));
       }
     }

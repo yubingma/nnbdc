@@ -87,7 +87,7 @@ class SoundUtil {
   static Future<void>? _configureFuture;
  
   /// 全局唯一的音频工作状态机转换网关（原子化、串行化、硬件防撞车）
-  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance}) {
+  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance, bool hotPlayback = false}) {
     return _stateTransitionLock.protect(() async {
       // 1. 跨平台防挂起卫士：若不支持 ASR，录音模式自动无缝降级为纯播放模式
       var finalTargetMode = targetMode;
@@ -97,21 +97,30 @@ class SoundUtil {
  
       if (_activeMode == finalTargetMode) {
         // 若状态一致，瞬间 0ms 返回，无任何性能损耗
+        // 特殊情况：如果当前是 record，但我们要物理强制退回 playback (比如 hotPlayback 降级到物理 idle)
+        // 这一步因为 finalTargetMode 与 _activeMode 还是符合正常转换流的，所以会正确生效。
         return;
       }
  
       final sw = Stopwatch()..start();
-      debugPrint('🔊 [AudioEngine] 状态机开始转换: $_activeMode ➔ $finalTargetMode');
+      debugPrint('🔊 [AudioEngine] 状态机开始转换: $_activeMode ➔ $finalTargetMode (hotPlayback: $hotPlayback)');
  
       try {
         switch (finalTargetMode) {
           case AudioMode.playback:
-            // a. 物理关闭麦克风（不再越权修改 Category）
-            await asrInstance.stopMicrophone();
-            // b. 强行平滑淡出（Soft-Mute）所有当前活跃的临时/音效播放器，彻底排空声卡缓冲区
-            await _cleanupEarlyExitPlayers();
-            // c. 物理配置 AudioSession 为高品质 playback 模式并强行等待切换彻底确认
-            await usePlaybackCategory(force: true);
+            if (hotPlayback) {
+              // a. 软件层热关停 ASR 识别输入流，保留麦克风物理流与 Audio Category 通道保温
+              await asrInstance.stopAsr();
+              // b. 强行平滑淡出（Soft-Mute）所有当前活跃的临时/音效播放器，彻底排空声卡缓冲区
+              await _cleanupEarlyExitPlayers();
+            } else {
+              // a. 物理关闭麦克风（冷关停）
+              await asrInstance.stopMicrophone();
+              // b. 强行平滑淡出（Soft-Mute）所有当前活跃 of 临时/音效播放器，彻底排空声卡缓冲区
+              await _cleanupEarlyExitPlayers();
+              // c. 物理配置 AudioSession 为高品质 playback 模式并强行等待切换彻底确认
+              await usePlaybackCategory(force: true);
+            }
             break;
  
           case AudioMode.record:
