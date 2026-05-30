@@ -2630,6 +2630,10 @@ class WordListPageState extends State<WordListPage>
           studyMode == WordListStudyMode.dictationHandwriting) {
         scrollToWord(currWordIndex + 1);
       }
+    } else {
+      // 最后一个单词：播放发音，关闭输入法键盘
+      SoundUtil.playPronounceSound2(words[currWordIndex].word, audioPlayer);
+      FocusScope.of(context).unfocus();
     }
   }
 
