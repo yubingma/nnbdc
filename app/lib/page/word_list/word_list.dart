@@ -1439,12 +1439,11 @@ class WordListPageState extends State<WordListPage>
       return;
     }
 
-    // 始终将前一个单词对齐到顶部 0.0，使当前单词保持在第二个位置
+    // 将前一个单词对齐到顶部 0.0，使当前单词保持在第二个位置
     final int targetIndex = wordUiIndex > 0 ? wordUiIndex - 1 : 0;
 
-    var positions = itemPositionsListener.itemPositions.value;
-
     // 防抖：如果目标单词已经在顶部，无需滚动
+    var positions = itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
       var targetPos =
           positions.where((pos) => pos.index == targetIndex).firstOrNull;
@@ -1453,25 +1452,8 @@ class WordListPageState extends State<WordListPage>
       }
     }
 
-    // 判断是否已触底：最后一个单词完全在视口内（无法再往下滚）
-    bool atBottom = false;
-    if (positions.isNotEmpty) {
-      final lastPos = positions
-          .where((pos) => pos.index == words.length - 1)
-          .firstOrNull;
-      atBottom = lastPos != null && lastPos.itemTrailingEdge <= 1.0;
-    }
-
-    if (!itemScrollController.isAttached) return;
-
-    if (atBottom) {
-      // 触底时用 jumpTo 瞬间到位，避免 scrollTo 动画在边界反弹引起晃动
+    if (itemScrollController.isAttached) {
       itemScrollController.jumpTo(index: targetIndex, alignment: 0.0);
-    } else {
-      itemScrollController.scrollTo(
-          index: targetIndex,
-          duration: const Duration(milliseconds: 300),
-          alignment: 0.0);
     }
   }
 
