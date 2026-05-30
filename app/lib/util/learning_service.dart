@@ -255,6 +255,12 @@ class LearningService {
       }
     }
 
+    Global.logger.i('[DIAGNOSTIC] === 今日学习计划生成诊断 ===');
+    Global.logger.i('[DIAGNOSTIC] 1. 用户 ID: $userId, 计划每日单词量: ${user.effectiveWordsPerDay}');
+    Global.logger.i('[DIAGNOSTIC] 2. 数据库 learning_words 中尚未毕业的候选人总数 (allLearningWords.length): ${allLearningWords.length}');
+    Global.logger.i('[DIAGNOSTIC] 3. 排除项过滤: 今天已选单词数: ${todayWordIds.length}, 用户已掌握单词数: ${masteredWordIds.length}');
+    Global.logger.i('[DIAGNOSTIC] 4. 剩余待评估候选词数 (candidateWords.length): ${candidateWords.length}');
+
     // 1. 识别到期单词 (Due Words)
     final today = AppClock.today();
     bool isDue(LearningWord word) {
@@ -268,6 +274,25 @@ class LearningService {
     }
 
     final List<LearningWord> dueWords = candidateWords.where(isDue).toList();
+
+    int totalNewDue = candidateWords.where((w) => w.lastLearningDate == null).length;
+    int totalOldDue = candidateWords.where((w) => w.lastLearningDate != null && isDue(w)).length;
+    int totalNotDue = candidateWords.where((w) => w.lastLearningDate != null && !isDue(w)).length;
+    
+    Global.logger.i('[DIAGNOSTIC] 5. 到期单词判定结果:');
+    Global.logger.i('   - 从未背过的新词 (lastLearningDate == null) [直接到期]: $totalNewDue 个');
+    Global.logger.i('   - 已背过且到期的复习词 [到期]: $totalOldDue 个');
+    Global.logger.i('   - 已背过但今天未到期的复习词 [未到期]: $totalNotDue 个');
+
+    if (totalNotDue > 0) {
+      final sample = candidateWords.where((w) => w.lastLearningDate != null && !isDue(w)).take(3).toList();
+      for (int i = 0; i < sample.length; i++) {
+        final w = sample[i];
+        final lastDate = DateUtils.businessDate(w.lastLearningDate!);
+        final nextReviewDate = lastDate.add(Duration(days: w.scheduledDays ?? 0));
+        Global.logger.i('     [未到期抽样 $i] 单词: ${w.wordId}, 稳定性: ${w.stability}, 间隔天数: ${w.scheduledDays}, 上次学习日: ${w.lastLearningDate}, 预测下次复习日: $nextReviewDate, 今日为: $today');
+      }
+    }
 
     // 到期单词内部排序逻辑：
     // - 处于 Review 状态的优先于新词，稳定性越低的单词越需要优先复习
@@ -326,7 +351,12 @@ class LearningService {
       int needNewCount = user.effectiveWordsPerDay - todayLearningWords.length;
       Global.logger.d('[FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: $needNewCount');
 
-      final newWords = await fetchNewWordsToLearn(userId, todayDayNumber, needNewCount);
+      final newWords = await fetchNewWordsToLearn(
+        userId,
+        todayDayNumber,
+        needNewCount,
+        excludeWordIds: todayLearningWords.map((e) => e.wordId).toSet(),
+      );
       Global.logger.d('[FETCH-WORD] [genTodayWords] 实际抓取到新词: ${newWords.length} 个');
       for (var word in newWords) {
         todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId), learningOrder: 0));
@@ -479,7 +509,8 @@ class LearningService {
   }
 
   /// 从词书取新词（支持优先级和已掌握过滤）
-  static Future<List<LearningWord>> fetchNewWordsToLearn(String userId, int todayDayNumber, int countToFetch) async {
+  static Future<List<LearningWord>> fetchNewWordsToLearn(
+      String userId, int todayDayNumber, int countToFetch, {Set<String>? excludeWordIds}) async {
     if (countToFetch <= 0) {
       return [];
     }
@@ -509,8 +540,13 @@ class LearningService {
               (db.learningWords.learnedTimes.isBiggerThanValue(0) | db.learningWords.lastLearningDate.isNotNull())))
         .get();
     final existingWordIdsSet = rows.map((row) => row.read(db.learningWords.wordId)!).toSet();
+    if (excludeWordIds != null) {
+      existingWordIdsSet.addAll(excludeWordIds);
+    }
 
-    Global.logger.d('[FETCH-NEW-WORDS] 排除项准备完毕: 已掌握 ${masteredWordIdsSet.length} 个, 学习中 ${existingWordIdsSet.length} 个');
+    Global.logger.i('[DIAGNOSTIC-FETCH] === 抓取全新词过程诊断 ===');
+    Global.logger.i('[DIAGNOSTIC-FETCH] 1. 激活词书数: ${learningDicts.length}, 列表: ${learningDicts.map((d) => d.dictId).toList()}');
+    Global.logger.i('[DIAGNOSTIC-FETCH] 2. 内存排除集: 已掌握 ${masteredWordIdsSet.length} 个, 学习中/额外排除单词数: ${existingWordIdsSet.length} 个 (含今日已选排除 ${excludeWordIds?.length ?? 0} 个)');
 
     // 按优先级顺序处理词书
     List<LearningWord> learningWords = [];
@@ -519,6 +555,10 @@ class LearningService {
       if (learningWords.length >= countToFetch) break;
 
       Global.logger.d('[FETCH-NEW-WORDS] 正在处理词书: ${learningDict.dictId}');
+
+      int totalScanned = 0;
+      int skippedByExisting = 0;
+      int skippedByMastered = 0;
 
       // 查询词书单词，按 seq 顺序批量处理
       const int batchSize = 1000;
@@ -543,12 +583,19 @@ class LearningService {
           if (learningWords.length >= countToFetch) break;
 
           final wordId = dictWord.wordId;
+          totalScanned++;
 
           // 判断该单词是否已经在学习中 (O(1) lookup in Set)
-          if (existingWordIdsSet.contains(wordId)) continue;
+          if (existingWordIdsSet.contains(wordId)) {
+            skippedByExisting++;
+            continue;
+          }
 
           // 判断该单词是否已经掌握 (O(1) lookup in Set)
-          if (!learningDict.fetchMastered && masteredWordIdsSet.contains(wordId)) continue;
+          if (!learningDict.fetchMastered && masteredWordIdsSet.contains(wordId)) {
+            skippedByMastered++;
+            continue;
+          }
 
           // 创建新的LearningWord
           final now = AppClock.now();
@@ -583,6 +630,8 @@ class LearningService {
           hasMoreInDict = false;
         }
       }
+
+      Global.logger.i('[DIAGNOSTIC-FETCH] 词书 ${learningDict.dictId} 扫描统计: 共扫描单词数: $totalScanned, 被[学习中/已有进度]排除: $skippedByExisting, 被[已掌握]排除: $skippedByMastered, 成功装入: ${learningWords.length}');
     }
 
     Global.logger.d('[FETCH-NEW-WORDS] 抓取完成，共抓取到 ${learningWords.length} 个新词');
