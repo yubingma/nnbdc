@@ -1529,6 +1529,14 @@ class WordListPageState extends State<WordListPage>
     // 检查当前目标单词是否已经在顶部对齐
     var positions = itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
+      // 特殊优化：如果最后一个单词已经完全在屏幕内显示（即列表已触底或一屏能完全装下），
+      // 强行滚动会导致列表越界向上过卷，引起回弹或晃动。此时我们直接跳过滚动。
+      final lastPosition = positions.where((pos) => pos.index == words.length - 1).firstOrNull;
+      if (lastPosition != null && lastPosition.itemTrailingEdge <= 1.0) {
+        debugPrint('⏱️ [Scroll] 最后一个单词已完全可见（触底/不足一屏），跳过滚动以防止越界拉扯晃动');
+        return;
+      }
+
       var currentPosition =
           positions.where((pos) => pos.index == targetIndex).firstOrNull;
       if (currentPosition != null) {
@@ -1740,9 +1748,17 @@ class WordListPageState extends State<WordListPage>
     try {
       _setAsrContextualPhrases();
       debugPrint('⏱️ [Latency-ASR] 热词设置完成，触发状态机跃迁到 record 并自动稳定时钟与播放提示音: +${sw.elapsedMilliseconds}ms');
-      // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、强制延迟 150ms 并播放高保真就绪提示音！
-      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr, forcePlayHint: true);
-      // 2. 正式向 native 下发开启 ASR 识别任务 (playHintSound: false)
+      final bool isAlreadyRecord = SoundUtil.activeMode == AudioMode.record;
+      // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、冷启动时自动播放就绪音！
+      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr);
+      
+      // 2. 如果本来已经是 record 保温态，通过统一状态机没有执行切换和播放，这里显式手动调用物理排空和播放就绪音
+      if (isAlreadyRecord) {
+        debugPrint('🔊 [WordList] 状态机已处于 record，执行手动热复用就绪提示音播放...');
+        await SoundUtil.playAsrReadyHintSoundWithCleanup();
+      }
+      
+      // 3. 正式向 native 下发开启 ASR 识别任务 (playHintSound: false)
       await asr.startAsr(language, playHintSound: false);
       debugPrint('⏱️ [Latency-ASR] ASR 启动成功: +${sw.elapsedMilliseconds}ms');
     } catch (e, stackTrace) {

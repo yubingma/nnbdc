@@ -19,6 +19,10 @@ enum AudioMode { playback, record, idle }
 class SoundUtil {
   static final _stateTransitionLock = _Mutex();
   static AudioMode _activeMode = AudioMode.idle;
+
+  /// 获取当前音频状态机活跃状态
+  static AudioMode get activeMode => _activeMode;
+
   static ja.AudioPlayer? _pronouncePlayer;
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
@@ -90,7 +94,7 @@ class SoundUtil {
   static Future<void>? _configureFuture;
  
   /// 全局唯一的音频工作状态机转换网关（原子化、串行化、硬件防撞车）
-  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance, bool hotPlayback = false, bool forcePlayHint = false}) {
+  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance, bool hotPlayback = false}) {
     return _stateTransitionLock.protect(() async {
       // 1. 跨平台防挂起卫士：若不支持 ASR，录音模式自动无缝降级为纯播放模式
       var finalTargetMode = targetMode;
@@ -100,13 +104,6 @@ class SoundUtil {
  
       if (_activeMode == finalTargetMode) {
         // 若状态一致，瞬间 0ms 返回，无任何性能损耗
-        // 特殊优化：如果已是 record 保温态但强制播放就绪音（用于说英文发音不播放热切词场景）
-        if (finalTargetMode == AudioMode.record && forcePlayHint) {
-          debugPrint('🔊 [AudioEngine] 状态机已处于 record，执行强制热复用就绪提示音播放...');
-          await _cleanupEarlyExitPlayers();
-          await Future.delayed(const Duration(milliseconds: 10));
-          await playAsrReadyHintSound();
-        }
         return;
       }
  
@@ -637,6 +634,12 @@ class SoundUtil {
     debugPrint('🔊 [PERF] playAsrReadyHintSound START');
     await playAssetSound('asr_ready_hint.wav', 1.0, 0.2, 1000, 150);
     debugPrint('🔊 [PERF] playAsrReadyHintSound FINISHED');
+  }
+
+  /// 保温状态下，安全清理并重新播放 ASR 就绪提示音
+  static Future<void> playAsrReadyHintSoundWithCleanup() async {
+    await _cleanupEarlyExitPlayers();
+    await playAsrReadyHintSound();
   }
 
   static Future<void> playAddSuccessSound() async {
