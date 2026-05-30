@@ -117,9 +117,11 @@ class SpeakModeItem extends StatelessWidget {
             ),
             child: Text(
               isBookmarked
-                  ? (word.hintLetterCount > 0
-                      ? word.word.spell.substring(0, word.hintLetterCount)
-                      : '请说出单词发音')
+                  ? ((word.lastAsrResult != null && word.lastAsrResult!.isNotEmpty)
+                      ? word.lastAsrResult!
+                      : (word.hintLetterCount > 0
+                          ? word.word.spell.substring(0, word.hintLetterCount)
+                          : '请说出单词发音'))
                   : (word.lastAsrResult != null && word.lastAsrResult!.isNotEmpty
                       ? word.lastAsrResult!
                       : (word.hintLetterCount > 0

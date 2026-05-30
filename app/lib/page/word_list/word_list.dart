@@ -792,12 +792,13 @@ class WordListPageState extends State<WordListPage>
 
   /// 订阅音量计数据
   void _subscribeMeterIfNeeded() {
-    // 使用 ASR 单例的 meter 订阅管理，避免重复订阅
-    _meterSub ??= asr.getOrCreateMeterSubscription((level) {
+    _unsubscribeMeter(); // 无条件先彻底释放清理任何可能残留的旧电平订阅和 Timer，根治多态切换下的订阅死锁
+    
+    _meterSub = asr.getOrCreateMeterSubscription((level) {
       _lastMeterLevel = level.clamp(0.0, 1.0);
       _lastMeterAt = AppClock.now();
     });
-    _meterTimer ??= Timer.periodic(const Duration(milliseconds: 30), (_) {
+    _meterTimer = Timer.periodic(const Duration(milliseconds: 30), (_) {
       if (isMenuOpen) return; // 菜单打开时暂停更新，避免UI重绘
       final now = AppClock.now();
       final active = _lastMeterAt != null &&
