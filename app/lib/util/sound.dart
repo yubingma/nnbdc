@@ -368,15 +368,32 @@ class SoundUtil {
     bool hasStoppedAny = false;
     final List<ja.AudioPlayer> successfullyCleaned = [];
     for (var p in earlyExitPlayers) {
+      // 判定是否属于自然放完（或物理已完成静默）的播放器：
+      // 1. 已由 playCompletedFuture 登记在已播完列表 (_logicallyFinishedPlayers)
+      // 2. 底层物理处理状态已经是 completed 或 idle
+      final bool isLogicallyFinished = _logicallyFinishedPlayers.contains(p);
+      final bool isPhysicallyCompleted = 
+          p.processingState == ja.ProcessingState.completed ||
+          p.processingState == ja.ProcessingState.idle;
+
+      final bool shouldSkipStop = isLogicallyFinished || isPhysicallyCompleted;
+
       if (p.playing) {
-        try {
-          debugPrint('🔊 [AudioDiag] EarlyExit 强制stop: player=${p.hashCode}, pos=${p.position.inMilliseconds}ms');
-          debugPrint('⏱️ [Latency-Sound] 强制 stop() 逻辑完成但物理仍活跃的播放器，彻底释放硬件资源...');
-          await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
-          hasStoppedAny = true;
+        if (shouldSkipStop) {
+          // 自然播放完毕的播放器，保持物理静默，跳过物理 stop() 截断，根除 Category 切换时的切音电流爆音
+          debugPrint('🔊 [AudioDiag] Skip Physical Stop: player=${p.hashCode}, logicallyFinished=$isLogicallyFinished, physicallyCompleted=$isPhysicallyCompleted');
           successfullyCleaned.add(p);
-        } catch (e) {
-          debugPrint('🔊 [SoundUtil] 物理排空 stop() 播放器异常: $e');
+        } else {
+          try {
+            debugPrint('🔊 [AudioDiag] EarlyExit 强制stop: player=${p.hashCode}');
+            // 物理打断软静音防护 (Soft-Mute Teardown)：在强制 stop 前拉低音量，消除电平非零截断产生的电流爆音
+            await p.setVolume(0.0);
+            await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
+            hasStoppedAny = true;
+            successfullyCleaned.add(p);
+          } catch (e) {
+            debugPrint('🔊 [SoundUtil] 物理排空 stop() 播放器异常: $e');
+          }
         }
       } else {
         successfullyCleaned.add(p);
