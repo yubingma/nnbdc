@@ -90,7 +90,7 @@ class SoundUtil {
   static Future<void>? _configureFuture;
  
   /// 全局唯一的音频工作状态机转换网关（原子化、串行化、硬件防撞车）
-  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance, bool hotPlayback = false}) {
+  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance, bool hotPlayback = false, bool forcePlayHint = false}) {
     return _stateTransitionLock.protect(() async {
       // 1. 跨平台防挂起卫士：若不支持 ASR，录音模式自动无缝降级为纯播放模式
       var finalTargetMode = targetMode;
@@ -100,8 +100,13 @@ class SoundUtil {
  
       if (_activeMode == finalTargetMode) {
         // 若状态一致，瞬间 0ms 返回，无任何性能损耗
-        // 特殊情况：如果当前是 record，但我们要物理强制退回 playback (比如 hotPlayback 降级到物理 idle)
-        // 这一步因为 finalTargetMode 与 _activeMode 还是符合正常转换流的，所以会正确生效。
+        // 特殊优化：如果已是 record 保温态但强制播放就绪音（用于说英文发音不播放热切词场景）
+        if (finalTargetMode == AudioMode.record && forcePlayHint) {
+          debugPrint('🔊 [AudioEngine] 状态机已处于 record，执行强制热复用就绪提示音播放...');
+          await _cleanupEarlyExitPlayers();
+          await Future.delayed(const Duration(milliseconds: 10));
+          await playAsrReadyHintSound();
+        }
         return;
       }
  

@@ -1641,7 +1641,7 @@ class BdcNotifier extends _$BdcNotifier {
     try {
       final asrSw = Stopwatch()..start();
       // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、强制延迟 150ms 并播放就绪提示音！
-      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr);
+      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr, forcePlayHint: true);
       
       // 2. 正式向 native 下发开启 ASR 识别任务 (playHintSound: false，因为状态机已经以高标准错峰播放过了)
       await asr.startAsr(language, phrases: phrases, playHintSound: false);

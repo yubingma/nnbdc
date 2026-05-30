@@ -1715,9 +1715,9 @@ class WordListPageState extends State<WordListPage>
       return;
     }
 
-    // 如果ASR已经在运行，也不需要重复启动
-    if (asr.state == AsrState.started) {
-      Global.logger.d('✅ ASR已经在运行中，无需重复启动');
+    // 如果ASR已经在运行且语言一致，也不需要重复启动
+    if (asr.state == AsrState.started && asr.currentLanguage == language) {
+      Global.logger.d('✅ ASR已经在运行中且语言一致，无需重复启动');
       return;
     }
 
@@ -1740,7 +1740,7 @@ class WordListPageState extends State<WordListPage>
       _setAsrContextualPhrases();
       debugPrint('⏱️ [Latency-ASR] 热词设置完成，触发状态机跃迁到 record 并自动稳定时钟与播放提示音: +${sw.elapsedMilliseconds}ms');
       // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、强制延迟 150ms 并播放高保真就绪提示音！
-      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr);
+      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr, forcePlayHint: true);
       // 2. 正式向 native 下发开启 ASR 识别任务 (playHintSound: false)
       await asr.startAsr(language, playHintSound: false);
       debugPrint('⏱️ [Latency-ASR] ASR 启动成功: +${sw.elapsedMilliseconds}ms');
@@ -3402,15 +3402,15 @@ class WordListPageState extends State<WordListPage>
 
                               case menuSpeakChinese:
                                 if (studyMode != WordListStudyMode.speakChinese) {
-                                  asr.stopMicrophone();
-                                  asr.reset();
+                                  await asr.stopMicrophone();
+                                  await asr.reset();
                                   setState(() {
                                     clearWordStates();
                                     asrResult = "";
                                     handlingAsrChinese = "";
                                     studyMode = WordListStudyMode.speakChinese;
                                   });
-                                  _startAsr(decideAsrLanguage());
+                                  await _startAsr(decideAsrLanguage());
                                   _subscribeMeterIfNeeded();
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3419,15 +3419,15 @@ class WordListPageState extends State<WordListPage>
                                 break;
                               case menuSpeakEnglish:
                                 if (studyMode != WordListStudyMode.speakEnglish) {
-                                  asr.stopMicrophone();
-                                  asr.reset();
+                                  await asr.stopMicrophone();
+                                  await asr.reset();
                                   setState(() {
                                     clearWordStates();
                                     asrResult = "";
                                     handlingAsrChinese = "";
                                     studyMode = WordListStudyMode.speakEnglish;
                                   });
-                                  _startAsr(decideAsrLanguage());
+                                  await _startAsr(decideAsrLanguage());
                                   _subscribeMeterIfNeeded();
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -56,6 +56,7 @@ class Asr {
 
   AsrState get state => _state;
   bool get isStarting => _isStarting;
+  AsrLanguage? get currentLanguage => _currentLanguage;
   setState(AsrState newState) {
     Global.logger.i('ASR: State change: $_state => $newState');
     if (_state != newState) {
