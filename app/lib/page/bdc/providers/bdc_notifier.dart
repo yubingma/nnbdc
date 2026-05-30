@@ -269,7 +269,7 @@ class BdcNotifier extends _$BdcNotifier {
       }
 
       if (success) {
-        _restoreLastWordHistory();
+        await _restoreLastWordHistory();
       }
       
       // Use state directly after getNextWord
@@ -375,14 +375,14 @@ class BdcNotifier extends _$BdcNotifier {
     );
   }
 
-  void _restoreLastWordHistory() {
+  Future<void> _restoreLastWordHistory() async {
     try {
       final lastWordDataStr = Prefs.read<String>('last_word_history_item');
       if (lastWordDataStr != null) {
         final lastWordData = json.decode(lastWordDataStr);
         final wordResult = GetWordResult.fromJson(lastWordData['wordResult']);
         final stateJson = lastWordData['state'];
-        
+
         final wordUIState = WordUIState(
           hasFinishedAnswering: stateJson['hasFinishedAnswering'] ?? false,
           canLeaveCurrWord: stateJson['canLeaveCurrWord'] ?? false,
@@ -398,9 +398,18 @@ class BdcNotifier extends _$BdcNotifier {
           lastFsrsRating: stateJson['lastFsrsRating'] != null ? FsrsRating.values[stateJson['lastFsrsRating'] as int] : null,
           hintTapCount: stateJson['hintTapCount'] ?? 0,
         );
-        
+
         final wordId = wordResult.learningWord?.word.id;
         if (wordId != null) {
+          // 检查该词是否已被掌握，若是则跳过恢复，避免已掌握单词重新出现在回看历史中
+          final user = Global.getLoggedInUser();
+          if (user != null) {
+            final isMastered = await MyDatabase.instance.masteredWordsDao.isWordMastered(user.id, wordId);
+            if (isMastered) {
+              Global.logger.d('💡 _restoreLastWordHistory: 跳过已掌握单词 $wordId');
+              return;
+            }
+          }
           state = state.copyWith(
             history: [...state.history, wordResult],
             wordUIStates: {...state.wordUIStates, wordId: wordUIState},
@@ -877,6 +886,45 @@ class BdcNotifier extends _$BdcNotifier {
     });
   }
 
+  /// 直接持久化指定的历史条目（不经过定时器），用于掌握操作后同步更新
+  void _persistLastWordHistoryItemWith(GetWordResult wordResult, WordUIState uiState) {
+    try {
+      final targetWord = wordResult.learningWord?.word;
+      final others = wordResult.otherWords;
+
+      final lastWordData = {
+        'wordResult': wordResult.toJson(),
+        'state': {
+          'hasFinishedAnswering': uiState.hasFinishedAnswering,
+          'canLeaveCurrWord': uiState.canLeaveCurrWord,
+          'showSentenceTranslation': uiState.showSentenceTranslation,
+          'selectedAnswerIndex': uiState.selectedAnswerIndex,
+          'flippedAnswerIndices': uiState.flippedAnswerIndices.toList(),
+          'tabIndex': uiState.tabIndex,
+          'currentScore': uiState.currentScore,
+          'meaningText': uiState.meaningText,
+          'correctAnswerIndex': uiState.correctAnswerIndex,
+          'fsrsItem': uiState.fsrsItem?.toMap(),
+          'daysSinceLastReview': uiState.daysSinceLastReview,
+          'lastFsrsRating': uiState.lastFsrsRating?.index,
+          'currentAsrCandidates': uiState.currentAsrCandidates,
+          'hintTapCount': uiState.hintTapCount,
+          'wordsIndices': uiState.words?.map((w) {
+            if (w.spell == "[ 都不对 ]") return 3;
+            if (targetWord != null && w.id == targetWord.id) return 0;
+            if (others != null && others.isNotEmpty && w.id == others[0].id) return 1;
+            if (others != null && others.length > 1 && w.id == others[1].id) return 2;
+            return -1;
+          }).toList(),
+        }
+      };
+      final jsonStr = json.encode(lastWordData);
+      Prefs.write('last_word_history_item', jsonStr);
+    } catch (e) {
+      Global.logger.e('_persistLastWordHistoryItemWith 失败: $e');
+    }
+  }
+
   void _executePersistLastWordHistoryItem() {
     final sw = Stopwatch()..start();
     try {
@@ -1003,9 +1051,31 @@ class BdcNotifier extends _$BdcNotifier {
       if (gotoNext) {
         final lw = state.currentGetWordResult?.learningWord;
 
-        // 回看模式下点击掌握：需要先保存已掌握状态再导航
+        // 回看模式下点击掌握：保存已掌握状态，并从历史中移除以避免回看时再次出现
+        bool didMaster = false;
         if (state.isWordMastered && lw != null) {
           await StudyBo().markWordAsMastered(lw);
+          final filteredHistory = state.history
+              .where((item) => item.learningWord?.word.id != lw.word.id)
+              .toList();
+          state = state.copyWith(history: filteredHistory);
+
+          // 同步更新持久化的历史记录：取消待执行定时器，用过滤后的最后一项替换或清除
+          _persistTimer?.cancel();
+          if (filteredHistory.isNotEmpty) {
+            final lastItem = filteredHistory.last;
+            final lastWordId = lastItem.learningWord?.word.id;
+            final lastUiState = lastWordId != null ? state.wordUIStates[lastWordId] : null;
+            if (lastUiState != null) {
+              _persistLastWordHistoryItemWith(lastItem, lastUiState);
+            } else {
+              Prefs.remove('last_word_history_item');
+            }
+          } else {
+            Prefs.remove('last_word_history_item');
+          }
+
+          didMaster = true;
         }
 
         if (lw != null && state.fsrsItem != null && state.lastFsrsRating != null) {
@@ -1016,7 +1086,8 @@ class BdcNotifier extends _$BdcNotifier {
           );
         }
 
-        int nextIndex = state.historyIndex + 1;
+        // 若本次掌握了当前词，该词已从 history 中移除，后续词前移一位，nextIndex 不 +1
+        int nextIndex = didMaster ? state.historyIndex : state.historyIndex + 1;
         if (nextIndex >= state.history.length) {
           state = state.copyWith(historyIndex: -1);
           final target = state.reviewReturnTarget;
