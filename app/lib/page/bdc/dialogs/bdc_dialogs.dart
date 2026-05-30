@@ -275,7 +275,6 @@ extension BdcPageStateDialogs on BdcPageState {
                               Theme.of(context).brightness == Brightness.dark
                                   ? const Color(0xFF1C1C1E)
                                   : const Color(0xFFF9F9F9),
-                          borderRadius: BorderRadius.circular(16),
                           clipBehavior: Clip.antiAlias,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),

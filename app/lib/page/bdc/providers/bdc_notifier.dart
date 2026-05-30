@@ -1717,8 +1717,8 @@ class BdcNotifier extends _$BdcNotifier {
   /// 当配置改变（例如设置弹窗关闭）时，安全地刷新当前配置并重建 ASR 语音识别
   Future<void> refreshConfigAndAsr() async {
     try {
-      // 1. 强行停止当前的麦克风，确保不会占用和通道冲突
-      await asr.stopMicrophone();
+      // 1. 通过状态机强行停止当前的麦克风，确保不会占用和通道冲突，同时更新 _activeMode
+      await SoundUtil.transitTo(AudioMode.idle, asrInstance: asr);
       
       // 2. 重新加载当前用户的 StudyConfig
       final studyConfig = StudyConfig.fromCurrentUser();
