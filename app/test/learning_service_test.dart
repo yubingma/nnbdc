@@ -736,5 +736,116 @@ void main() {
       final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       expect(todayWords.length, 2, reason: '今日计划应当正常分配 2 个到期词');
     });
+
+    test('【补充取词去重固化验证】当今日计划中已包含某些未学新词时，强制补充也绝对不应发生二次抓取和主键覆写', () async {
+      // 1. 设置每日计划为 2
+      final testTime = AppClock.now();
+      final updatedUser = testUser.copyWith(wordsPerDay: 2);
+      await db.usersDao.saveUser(updatedUser, false);
+      Global.updateUserCache(updatedUser);
+
+      // 2. 生成第一版今日计划，这会把 word_1 和 word_2 抓取为今日新词 (batchId = 1)
+      var result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+      
+      var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 2);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2']);
+
+      // 3. 用户将每日计划调整到 5 个，并尝试强制“补充”
+      final userWith5 = testUser.copyWith(wordsPerDay: 5);
+      await db.usersDao.saveUser(userWith5, false);
+      Global.updateUserCache(userWith5);
+
+      // 执行强制补充计划！
+      // 期待行为：由于 word_1 和 word_2 已经在今日计划中，补充引擎决不能二次抓取它们。
+      // 应该抓取剩余的新词（word_3, word_4, word_5），最终今日计划共包含 5 个去重词，无覆写发生！
+      result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      
+      // 精准校验：必须刚好是 5 个词，且 word_1 和 word_2 仅出现了一次，没有被覆写！
+      expect(todayWords.length, 5);
+      final wordIds = todayWords.map((w) => w.wordId).toList();
+      expect(wordIds, ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
+    });
+
+    test('【池内新词优先捞取契约验证】生成计划时，必须优先捞取池子里现存的未背过新词，只有池内可学词不足时才允许去外部词书抓取', () async {
+      // 1. 设置每日计划为 3
+      final testTime = AppClock.now();
+      final updatedUser = testUser.copyWith(wordsPerDay: 3);
+      await db.usersDao.saveUser(updatedUser, false);
+      Global.updateUserCache(updatedUser);
+
+      // 2. 模拟【学习中池子】(learningWords) 中已经躺着 2 个从未背过的新词 (word_1, word_2)
+      // 此时它们虽然在池子里，但处于挂起状态 (batchId = 0)
+      await db.into(db.learningWords).insert(LearningWord(
+        userId: testUser.id,
+        wordId: 'word_1',
+        addTime: testTime.subtract(const Duration(days: 1)),
+        addDay: 1,
+        stability: null, // 未学习状态
+        difficulty: null,
+        elapsedDays: null,
+        scheduledDays: null,
+        reps: null,
+        lapses: null,
+        state: 0,
+        batchId: 0, // 挂起，不在今日计划
+        lastLearningDate: null,
+        learningOrder: 0,
+        isTodayNewWord: true,
+        learnedTimes: 0,
+        todayLearnedTimes: 0,
+        createTime: testTime,
+        updateTime: testTime,
+      ));
+
+      await db.into(db.learningWords).insert(LearningWord(
+        userId: testUser.id,
+        wordId: 'word_2',
+        addTime: testTime.subtract(const Duration(days: 1)),
+        addDay: 1,
+        stability: null,
+        difficulty: null,
+        elapsedDays: null,
+        scheduledDays: null,
+        reps: null,
+        lapses: null,
+        state: 0,
+        batchId: 0,
+        lastLearningDate: null,
+        learningOrder: 0,
+        isTodayNewWord: true,
+        learnedTimes: 0,
+        todayLearnedTimes: 0,
+        createTime: testTime,
+        updateTime: testTime,
+      ));
+
+      // 3. 执行今日计划生成！
+      // 期待行为：
+      // - 计划需要 3 个词。
+      // - 阶段 A 判定到期词时，必须优先把池子里的这 2 个未背过新词 (word_1, word_2) 捞出来塞入计划。
+      // - 此时还差 1 个，系统才被允许在阶段 B 去外部词书 (mock_dict_1) 抓取 1 个全新词 (跳过已在计划的1和2，只能抓 word_3)。
+      // - 最终今日计划刚好包含 [word_1, word_2, word_3]，没有重复，且优先消化了池内旧货。
+      var result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      
+      // 精准校验：长度必须刚好为 3
+      expect(todayWords.length, 3);
+      final wordIds = todayWords.map((w) => w.wordId).toList();
+      
+      // 验证这三个词是否完全去重，且前两个是池子里的旧词，最后一个是外部抓取的新词
+      expect(wordIds, ['word_1', 'word_2', 'word_3']);
+      
+      // 验证这三个词在数据库中全都成功分配到了 batchId = 1
+      for (var word in todayWords) {
+        expect(word.batchId, 1);
+      }
+    });
   });
 }
