@@ -318,12 +318,11 @@ void main() {
       }
 
       // 2. 然后执行取词，由于这10个词虽然在书里，但都毕业了/不需复习。且词书没有其他新词供抓。
+      // 此时今日无任何待学习/待复习单词，应视为完全枯竭状态，需要正常报错引导用户换新词书。
       final result = await LearningService.prepareTodayStudy(true);
 
-      // 业务层返回成功状态为否，并附带错误码
       expect(result.success, false);
       expect(result.code, 'NNBDC-0012');
-      expect(result.msg, '未取到足够单词');
 
       var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       expect(todayWords.length, 0); // 绝对抽不到任何词
@@ -447,11 +446,11 @@ void main() {
       fakeClock.advanceDays(1);
 
       // 第五天备考：现在全服没有任何符合复习资格的词（10个全都进入毕业池被隐形删除或不再进入待办池），所有新词库也早榨干。
+      // 此时无任何复习词及新词，大结局时应正常报错 NNBDC-0012 提示换新书。
       result = await LearningService.prepareTodayStudy(true);
 
       expect(result.success, false);
-      expect(result.code, 'NNBDC-0012'); // 词书彻底刷穿
-      expect(result.msg, '未取到足够单词');
+      expect(result.code, 'NNBDC-0012');
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       expect(todayWords.length, 0); // 光秃秃的一片！恭喜结课！
@@ -609,6 +608,133 @@ void main() {
       final word4InPlan = todayWords.any((w) => w.wordId == 'word_4');
       expect(word4InPlan, true,
           reason: '未掌握的普通新词应正常被选取，修复不应误杀');
+    });
+
+    test('【统计漏计修复验证】即使稳定性 stability 为 NULL，也将被正确统计为学习中', () async {
+      // 往 learningWords 插入 3 个稳定度为空的新词
+      final testTime = AppClock.now();
+      for (int i = 8; i <= 10; i++) {
+        await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_$i',
+          addTime: testTime,
+          addDay: 1,
+          stability: null,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          batchId: 0,
+          learningOrder: 0,
+          createTime: testTime,
+          updateTime: testTime,
+        ));
+      }
+
+      // 统计这本词书 'mock_dict_1' 内的学习中单词数
+      final learnedCount = await db.learningWordsDao.getLearningWordsCountInDicts(testUser.id, ['mock_dict_1']);
+      expect(learnedCount, 3, reason: 'stability 为 NULL 的未学新词应当正常计入学习中单词总数');
+    });
+
+    test('【幽灵新词死锁解锁验证】在学习库中但从未背过的幽灵新词能够被重新挑选并正常挑入今日计划', () async {
+      // 1. 手动向 learning_words 中插入 3 个从未背过的"幽灵新词"
+      // 设定为：stability 为 null, learnedTimes 为 0, lastLearningDate 为 null, batchId 为 0
+      final testTime = AppClock.now();
+      for (int i = 5; i <= 7; i++) {
+        await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_$i',
+          addTime: testTime,
+          addDay: 1,
+          stability: null,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          batchId: 0,
+          learningOrder: 0,
+          createTime: testTime,
+          updateTime: testTime,
+        ));
+      }
+
+      // 将每日学习计划设为 3 个
+      final updatedUser = testUser.copyWith(wordsPerDay: 3);
+      await db.usersDao.saveUser(updatedUser, false);
+      Global.updateUserCache(updatedUser);
+
+      // 2. 执行今日计划生成（测试如果已经有行但没学过，fetchNewWordsToLearn 仍应当能够成功分配 3 个词，不抛出枯竭错误）
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true, reason: '幽灵新词不应导致取词量枯竭，今日计划必须生成成功');
+
+      // 3. 从 DB 重新获取今日学习单词
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 3, reason: '今日计划必须刚好分配 3 个词');
+
+      // 4. 校验这三个幽灵词是否正确进入今日计划，且其 isTodayNewWord 依然为 true
+      for (var word in todayWords) {
+        expect(word.isTodayNewWord, true, reason: '未学过的幽灵新词在今日计划中应保持为新词身份');
+        expect(word.batchId, 1);
+      }
+    });
+
+    test('【词书取空学完免报警验证】当所有选中词书全部学完入库后，完全枯竭应当报错，有待复习词时即使数量不足也不应报错', () async {
+      // 1. 将词书的所有 10 个单词都模拟导入到 learningWords 中，且设为很久以后才到期
+      final testTime = AppClock.now();
+      for (int i = 1; i <= 10; i++) {
+        await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_$i',
+          addTime: testTime.subtract(const Duration(days: 10)),
+          addDay: 1,
+          stability: 3.0,
+          difficulty: 5.0,
+          elapsedDays: 10,
+          scheduledDays: 100, // 100天后到期，说明今天绝不到期复习
+          reps: 1,
+          lapses: 0,
+          state: 2,
+          lastLearningDate: testTime.subtract(const Duration(days: 10)),
+          isTodayNewWord: false,
+          learnedTimes: 1,
+          todayLearnedTimes: 0,
+          batchId: 0,
+          learningOrder: 0,
+          createTime: testTime,
+          updateTime: testTime,
+        ));
+      }
+
+      // 将每日计划设为 5
+      final updatedUser = testUser.copyWith(wordsPerDay: 5);
+      await db.usersDao.saveUser(updatedUser, false);
+      Global.updateUserCache(updatedUser);
+
+      // 2. 执行今日计划生成
+      // 此时：今日复习词到期为 0 个，而新词因为全部在库中也无法抓取。今日实际分配单词量为 0。
+      // 由于没有可学单词，应当正常报错
+      var result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, false, reason: '无可复习词且新词全部学完时应正常报错枯竭');
+      expect(result.code, 'NNBDC-0012');
+
+      // 3. 修改其中 2 个词为今天到期（1天到期，2天前学习的）
+      final word1 = await (db.select(db.learningWords)..where((lw) => lw.wordId.equals('word_1'))).getSingle();
+      final word2 = await (db.select(db.learningWords)..where((lw) => lw.wordId.equals('word_2'))).getSingle();
+      await db.learningWordsDao.saveEntity(word1.copyWith(
+        scheduledDays: const Value(1),
+        lastLearningDate: Value(testTime.subtract(const Duration(days: 2))),
+      ), true);
+      await db.learningWordsDao.saveEntity(word2.copyWith(
+        scheduledDays: const Value(1),
+        lastLearningDate: Value(testTime.subtract(const Duration(days: 2))),
+      ), true);
+
+      // 4. 再次执行今日计划生成
+      // 此时分配量为 2 < 5，但因为有 2 个可复习词，应当免除报错，允许用户背这 2 个词
+      result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true, reason: '有到期复习词时，即使达不到每日计划的 5 个目标，也决不能报错');
+      expect(result.code, '200');
+
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 2, reason: '今日计划应当正常分配 2 个到期词');
     });
   });
 }

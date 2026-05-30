@@ -367,7 +367,7 @@ class _MePageState extends State<MePage> {
         var globalLearningWordsCount = await (db.selectOnly(db.learningWords)
               ..addColumns([db.learningWords.wordId.count()])
               ..where(db.learningWords.userId.equals(userId))
-              ..where(db.learningWords.stability.isSmallerThanValue(Constants.graduationStability)))
+              ..where(db.learningWords.stability.isNull() | db.learningWords.stability.isSmallerThanValue(Constants.graduationStability)))
             .getSingle()
             .then((r) => r.read(db.learningWords.wordId.count()) ?? 0);
 
@@ -2827,7 +2827,7 @@ class _DictCardState extends State<DictCard> {
 
     // 2. 查询用户所有学习中的单词（stability < graduationStability）
     final learningWords = await (db.select(db.learningWords)
-          ..where((lw) => lw.userId.equals(user.id) & lw.stability.isSmallerThanValue(Constants.graduationStability)))
+          ..where((lw) => lw.userId.equals(user.id) & (lw.stability.isNull() | lw.stability.isSmallerThanValue(Constants.graduationStability))))
         .get();
 
     if (!mounted) return;

@@ -115,6 +115,8 @@ class BdcNotifier extends _$BdcNotifier {
       // 仅停止 ASR 识别任务，不销毁原生音频引擎。
       // 引擎保持存活可在后续 BDC 页面访问时消除 2.3s 的冷启动延迟。
       asr.stopAsr();
+      // 物理释放麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源，防止退出页面后麦克风占用指示灯持续亮起
+      unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: asr));
       meaningController.dispose();
       Prefs.remove("BdcPageArgs");
     });
@@ -1145,6 +1147,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> checkAsrResult({String? asrInput, bool isVoice = false}) async {
+    if (_isDisposed) return;
     final stopwatch = Stopwatch()..start();
     String inputText = asrInput ?? meaningController.text;
     if (asrInput == null) {
@@ -1408,41 +1411,11 @@ class BdcNotifier extends _$BdcNotifier {
     debugPrint('🔊 [BDC-Sound] 播放决策结果: willPlayWord=$willPlayWord, willPlaySentence=$willPlaySentence');
 
     Future<void>? sessionFuture;
-    // 关键优化：如果需要播放声音，或者后续需要开启 ASR，则必须先停用旧的 ASR 以释放硬件焦点并同步 Session
-    if (willPlayWord || willPlaySentence || startAsrWhenFinish) {
-      try {
-        if (_isDisposed) return;
-        debugPrint('⏱️ [Latency-BDC] 准备释放旧 ASR 并切换音频会话... (startAsrWhenFinish: $startAsrWhenFinish)');
-        
-        if (startAsrWhenFinish) {
-          // 热衔接：如果播放完需要开启 ASR
-          await asr.stopAsr();
-          if (willPlayWord || willPlaySentence) {
-            // 有发音需要播放：先冷关停麦克风释放 AVAudioEngine，再切换到 playback
-            // 确保发音不受 playAndRecord 模式下的音频处理影响而断续，
-            // 播放完成后 finally 块的
-            // _handleTabChangeForAsr 会自动切回 playAndRecord 并重启 ASR
-            await asr.stopMicrophone();
-            sessionFuture = SoundUtil.usePlaybackCategory();
-          } else {
-            // 无发音需要播放：保留麦克风和引擎运行，直接切换到 playAndRecord 准备 ASR
-            sessionFuture = SoundUtil.usePlayAndRecordCategory();
-          }
-        } else {
-          // 冷切换：如果后面不立刻进 ASR，或者没有 ASR 任务，冷关停麦克风并切换音频分类
-          await asr.stopMicrophone();
-          if (willPlayWord || willPlaySentence) {
-            sessionFuture = SoundUtil.usePlaybackCategory();
-          } else {
-            sessionFuture = SoundUtil.usePlayAndRecordCategory();
-          }
-        }
-        
-        // 关键：将当前播放器加入观察名单，确保 ASR 初始化时会等待其播完
-        SoundUtil.watchPlayer(_audioPlayer);
-      } catch (e) {
-        Global.logger.e('🔊 [BDC-Sound] ASR 准备停用失败: $e');
-      }
+    if (willPlayWord || willPlaySentence) {
+      // 架构优化 1：播放前无条件将全局音频引擎状态机切换为 playback 纯播放状态，
+      // 所有麦克风拆卸、ASR 冷关停完全由状态机内部串行原子化执行，根治硬件时钟冲突爆音
+      sessionFuture = SoundUtil.transitTo(AudioMode.playback, asrInstance: asr);
+      SoundUtil.watchPlayer(_audioPlayer);
     }
 
     try {
@@ -1537,8 +1510,8 @@ class BdcNotifier extends _$BdcNotifier {
     } else {
       debugPrint('💡 [BDC-ASR] 不在 SpeakTab，当前 asr 状态: ${asr.state}');
       if (asr.state != AsrState.stopped && asr.state != AsrState.initialized) {
-        debugPrint('💡 [BDC-ASR] 不在 SpeakTab 且 ASR 运行中，触发 asr.stopMicrophone()');
-        asr.stopMicrophone();
+        debugPrint('💡 [BDC-ASR] 不在 SpeakTab 且 ASR 运行中，触发状态机跃迁到 idle');
+        unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: asr));
       }
     }
   }
@@ -1568,8 +1541,12 @@ class BdcNotifier extends _$BdcNotifier {
 
     try {
       final asrSw = Stopwatch()..start();
-      // startAsr 内部会并行触发就绪提示音的播放，消除串行阻塞延迟
-      await asr.startAsr(language, phrases: phrases);
+      // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、强制延迟 150ms 并播放就绪提示音！
+      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr);
+      
+      // 2. 正式向 native 下发开启 ASR 识别任务 (playHintSound: false，因为状态机已经以高标准错峰播放过了)
+      await asr.startAsr(language, phrases: phrases, playHintSound: false);
+      
       state = state.copyWith(wordStartTime: AppClock.now());
       debugPrint('⚡ [PERF] _startAsrWithHint ASR_READY & Hint Sound Dispatched, cost: ${asrSw.elapsedMilliseconds}ms');
       debugPrint('⚡ [PERF] _startAsrWithHint DONE total: ${sw.elapsedMilliseconds}ms');

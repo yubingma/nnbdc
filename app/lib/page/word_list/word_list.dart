@@ -831,8 +831,8 @@ class WordListPageState extends State<WordListPage>
   void initState() {
     final sw = Stopwatch()..start();
     super.initState();
-    // 进门先关 ASR，确保状态干净
-    Asr().stopMicrophone();
+    // 进门先将音频状态机转换到 idle 状态，确保状态干净，关停麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源
+    unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: Asr()));
     // 异步预加载音素字典，避免用户说话时才开始解析导致的延迟
     unawaited(PhonemeUtil.load());
     // 异步加载并预热手写识别模型，避免进入手写板写完第一笔后产生延迟
@@ -1353,12 +1353,10 @@ class WordListPageState extends State<WordListPage>
     _handwritingPaddingTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
-    // 停止 ASR：不再检查 studyMode，只要页面销毁就尝试停止识别引擎
-    // 因为 WordListPage 在本项目中始终作为独立路由页面使用
+    // 停止 ASR：不再检查 studyMode，只要页面销毁就无条件尝试停止识别引擎并转换状态机到 idle
+    // 平滑物理淡出所有活跃音频流并物理释放硬件资源，防止麦克风占用指示灯常亮
     try {
-      if (asr.state == AsrState.started || asr.state == AsrState.initialized) {
-        asr.stopMicrophone();
-      }
+      unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: asr));
     } catch (e) {
       Global.logger.d("dispose: 停止 ASR 失败：$e");
     }
@@ -1738,13 +1736,12 @@ class WordListPageState extends State<WordListPage>
 
     try {
       _setAsrContextualPhrases();
-      debugPrint('⏱️ [Latency-ASR] 热词设置完成，开始 asr.startAsr: +${sw.elapsedMilliseconds}ms');
-      await asr.startAsr(language);
+      debugPrint('⏱️ [Latency-ASR] 热词设置完成，触发状态机跃迁到 record 并自动稳定时钟与播放提示音: +${sw.elapsedMilliseconds}ms');
+      // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、强制延迟 150ms 并播放高保真就绪提示音！
+      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr);
+      // 2. 正式向 native 下发开启 ASR 识别任务 (playHintSound: false)
+      await asr.startAsr(language, playHintSound: false);
       debugPrint('⏱️ [Latency-ASR] ASR 启动成功: +${sw.elapsedMilliseconds}ms');
-
-      // 播放提示音, 提醒用户可以开始说话
-      Global.logger.d('播放ASR启动提示音 (已禁用)');
-      // SoundUtil.playAsrReadyHintSound();
     } catch (e, stackTrace) {
       Global.logger.e('❌ ASR启动失败', error: e, stackTrace: stackTrace);
     } finally {

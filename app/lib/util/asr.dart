@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import '../services/dialog_service.dart';
 import 'dart:io' show Platform;
 import '../util/permission_util.dart';
-import 'package:nnbdc/util/sound.dart';
 
 enum AsrState { unknown, initialized, started, stopping, stopped }
 
@@ -39,15 +38,8 @@ class Asr {
   final List<Function(AsrState)> _stateListeners = [];
   bool _disposed = false;
 
-  /// 标记 AVAudioEngine 是否曾经被启动过，用于区分首次冷启动（硬件完全冷态）
-  /// 和后续冷启动（硬件已 warm），只在首次时给引擎稳定延迟。
-  bool _engineEverStarted = false;
-
   /// 标记是否正在执行 startAsr，避免并发的 start/stop 调用打架
   bool _isStarting = false;
-
-  /// 跟踪麦克风引擎预热状态。非 null 表示预热正在进行中。
-  Completer<void>? _micWarmupCompleter;
 
   /// 标记是否正在初始化事件监听，避免并发初始化
   bool _isInitializing = false;
@@ -422,9 +414,7 @@ class Asr {
   }
 
   Future<void> startAsr(AsrLanguage language, {List<String>? phrases, bool playHintSound = true}) async {
-    debugPrint('💡 [ASR] startAsr() 触发启动。目标语言: ${language.locale}，当前状态: $state，播放提示音: $playHintSound。');
-    debugPrint('🎤 [AudioDiag] ASR启动: lang=${language.locale}, state=$state, '
-        'isStarting=$_isStarting, disposed=$_disposed, engineEverStarted=$_engineEverStarted');
+    debugPrint('💡 [ASR] startAsr() 触发启动。目标语言: ${language.locale}，当前状态: $state。');
     if (!PlatformUtils.isAsrSupported()) {
       ToastUtil.info("当前平台暂不支持语音识别功能");
       return;
@@ -479,40 +469,13 @@ class Asr {
               .i('ASR: Updating language first... (instance: $hashCode)');
           await _updateLanguage(language);
 
-          Global.logger.i('ASR: Starting microphone... (instance: $hashCode)');
-          // 等待 loadData 中启动的引擎预热完成。若引擎已就绪（之前会话保活），
-          // 此调用立即返回；若预热进行中，等待其完成以避免重复初始化。
-          await awaitMicWarmup();
-          await SoundUtil.usePlayAndRecordCategory();
-          debugPrint('⏱️ [Latency-ASR] usePlayAndRecordCategory 完成: +${swStart.elapsedMilliseconds}ms');
-           
-          await asrMethodChannel
-              .invokeMethod('startMicrophone')
-              .timeout(const Duration(seconds: 5));
-          debugPrint('⏱️ [Latency-ASR] startMicrophone 完成: +${swStart.elapsedMilliseconds}ms');
-
-          Future<void>? hintFuture;
-          if (playHintSound) {
-            // 首次冷启动：AVAudioEngine 硬件首次激活需要稳定窗口，延迟 150ms
-            // 避免提示音在音频 pipeline 未完全就绪时播放而不稳定。
-            if (!_engineEverStarted) {
-              await Future.delayed(const Duration(milliseconds: 150));
-              _engineEverStarted = true;
-            }
-            hintFuture = SoundUtil.playAsrReadyHintSound();
-          }
-
           Global.logger.i('ASR: Starting ASR... (instance: $hashCode)');
           final startTime = AppClock.now();
           await asrMethodChannel
-              .invokeMethod('startAsr')
+              .invokeMethod('startAsr', {'playHintSound': playHintSound})
               .timeout(const Duration(seconds: 5));
           debugPrint('⏱️ [Latency-ASR] native startAsr 完成: +${swStart.elapsedMilliseconds}ms');
           final endTime = AppClock.now();
-
-          if (hintFuture != null) {
-            await hintFuture;
-          }
 
           setState(AsrState.started);
           Global.logger.i(
@@ -523,7 +486,6 @@ class Asr {
           if (e.code == 'PERMISSION_DENIED') {
             ToastUtil.error("权限被拒绝，请在设置中开启麦克风和语音识别权限");
           }
-          // 不再在此处针对 iOS 强制设置 started，避免错误的状态显示
           setState(AsrState.unknown);
         }
       }
@@ -532,69 +494,21 @@ class Asr {
     }
   }
 
-  /// 仅启动麦克风和音频引擎（Pre-warm），不启动 ASR 识别任务。
-  /// 用于在进入学习页面时提前启动硬件，消除后续识别任务启动时的切换噪音。
-  Future<void> startMicrophone() async {
-    if (!PlatformUtils.isAsrSupported()) return;
-    if (_isStarting ||
-        state == AsrState.started ||
-        state == AsrState.stopping) {
-      return;
-    }
-
-    try {
-      if (!permissionGranted) {
-        await _checkAndRequestPermissions();
-      }
-
-      if (permissionGranted) {
-        Global.logger.i('ASR: Pre-warming microphone... (instance: $hashCode)');
-        await SoundUtil.usePlayAndRecordCategory();
-        await asrMethodChannel
-            .invokeMethod('startMicrophone')
-            .timeout(const Duration(seconds: 5));
-        _engineEverStarted = true;
-      }
-    } catch (e) {
-      Global.logger
-          .e('ASR: Pre-warm microphone failed: $e (instance: $hashCode)');
-    }
-  }
-
-  /// 启动麦克风引擎预热并跟踪完成状态。若引擎已在预热中，返回已有的 Future；
-  /// 若引擎已启动，直接返回。调用方应在 startAsr 前 await 以确保引擎就绪。
+  /// iOS 麦克风预热机制：已由 SoundUtil 状态机在 record 状态切换时统一安全处理。
+  /// 为了兼容旧调用，此方法仅触发 native 模型预热，绝不配置 Category，无任何副作用。
   Future<void> warmupMicrophone() async {
-    if (_micWarmupCompleter != null && !_micWarmupCompleter!.isCompleted) {
-      return _micWarmupCompleter!.future;
-    }
-    if (state == AsrState.started) return;
-
-    _micWarmupCompleter = Completer<void>();
+    if (!PlatformUtils.isAsrSupported()) return;
     try {
-      await startMicrophone();
-      if (!_micWarmupCompleter!.isCompleted) {
-        _micWarmupCompleter!.complete();
-      }
-    } catch (e) {
-      if (!_micWarmupCompleter!.isCompleted) {
-        _micWarmupCompleter!.completeError(e);
-      }
-      _micWarmupCompleter = null;
-    }
+      // 仅触发原生预热，绝不配置全局音频 Session Category
+      await asrMethodChannel
+          .invokeMethod('startMicrophone')
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {}
   }
 
-  /// 等待引擎预热完成（若正在进行中）。
-  /// 在 startAsr 调用 startMicrophone 前调用，确保引擎已就绪。
-  /// 预热失败时不抛异常——startAsr 会走冷启动路径兜底。
+  /// 等待预热完成：已由 SoundUtil 全局状态机时钟对齐接管，此方法直接返回以兼容旧调用
   Future<void> awaitMicWarmup() async {
-    if (_micWarmupCompleter != null && !_micWarmupCompleter!.isCompleted) {
-      try {
-        await _micWarmupCompleter!.future;
-      } catch (_) {
-        // warmup failed, engine will cold-start normally in startAsr
-      }
-      _micWarmupCompleter = null;
-    }
+    return;
   }
 
   Future<void> stopAsr() async {
@@ -610,19 +524,41 @@ class Asr {
     setState(AsrState.stopping);
     final startTime = AppClock.now();
     try {
-      await asrMethodChannel.invokeMethod('stopAsr');
+      await asrMethodChannel
+          .invokeMethod('stopAsr')
+          .timeout(const Duration(seconds: 3));
       final endTime = AppClock.now();
       setState(AsrState.stopped);
       Global.logger.i(
           'ASR: ASR stopped successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');
-    } on PlatformException catch (e) {
+    } catch (e) {
       Global.logger
-          .e('ASR: Exception during stop: ${e.message} (instance: $hashCode)');
+          .e('ASR: Exception during stop: $e (instance: $hashCode)');
       setState(AsrState.stopped);
     }
   }
 
-  /// 完全停止麦克风和 ASR 引擎（彻底关闭音频引擎）
+  /// 物理启动麦克风输入流（独立纯净接口）
+  Future<void> startMicrophone() async {
+    if (PlatformUtils.isWeb ||
+        PlatformUtils.isWindows ||
+        PlatformUtils.isMacOS) {
+      return;
+    }
+    
+    if (!permissionGranted) {
+      await _checkAndRequestPermissions();
+    }
+    
+    if (permissionGranted) {
+      Global.logger.i('ASR: startMicrophone() 触发物理启动... (instance: $hashCode)');
+      await asrMethodChannel
+          .invokeMethod('startMicrophone')
+          .timeout(const Duration(seconds: 5));
+    }
+  }
+
+  /// 物理关停麦克风与 ASR 引擎，不再越权配置全局音频会话
   Future<void> stopMicrophone() async {
     debugPrint('💡 [ASR] stopMicrophone() 触发关停。当前状态: $state。');
     if (PlatformUtils.isWeb ||
@@ -632,8 +568,7 @@ class Asr {
     }
 
     if (state == AsrState.stopped || state == AsrState.initialized || state == AsrState.unknown) {
-      debugPrint('💡 [ASR] stopMicrophone() ASR 已经是停止/未启动状态 ($state)，仅确保音频分类为 playback');
-      await SoundUtil.usePlaybackCategory();
+      debugPrint('💡 [ASR] stopMicrophone() ASR 已经是停止/未启动状态 ($state)。');
       return;
     }
     if (state == AsrState.stopping) {
@@ -643,14 +578,14 @@ class Asr {
 
     setState(AsrState.stopping);
     try {
-      await asrMethodChannel.invokeMethod('stopMicrophone');
+      await asrMethodChannel
+          .invokeMethod('stopMicrophone')
+          .timeout(const Duration(seconds: 3));
       setState(AsrState.stopped);
       Global.logger.i('ASR: Microphone and engine stopped successfully');
-      await SoundUtil.usePlaybackCategory();
-    } on PlatformException catch (e) {
-      Global.logger.e('ASR: Exception during stopMicrophone: ${e.message}');
+    } catch (e) {
+      Global.logger.e('ASR: Exception during stopMicrophone: $e');
       setState(AsrState.stopped);
-      await SoundUtil.usePlaybackCategory();
     }
   }
 

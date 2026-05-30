@@ -1251,7 +1251,7 @@ class LearningWordsDao extends DatabaseAccessor<MyDatabase> with _$LearningWords
     if (dictIds.isEmpty) return 0;
     final countQuery = customSelect(
       'SELECT count(DISTINCT word_id) as c FROM learning_words '
-      'WHERE user_id = ? AND stability < ? '
+      'WHERE user_id = ? AND (stability IS NULL OR stability < ?) '
       'AND word_id IN (SELECT word_id FROM dict_words WHERE dict_id IN (${dictIds.map((id) => "'$id'").join(',')}))',
       variables: [Variable.withString(userId), Variable.withReal(Constants.graduationStability)],
       readsFrom: {learningWords, db.dictWords},

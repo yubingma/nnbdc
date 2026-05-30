@@ -147,6 +147,31 @@ class LearningService {
       if (needAddNewWords) {
         todayWords = await genTodayWords(user.id, AppClock.now(), todayWords);
         wordExhausted = todayWords.length < (user.effectiveWordsPerDay);
+        
+        if (wordExhausted) {
+          // 检查所有激活的词书中，是否还有任何“纯新词”（即既不在 learningWords 也不在 masteredWords 中的词书单词）
+          final learningDicts = await (db.select(db.learningDicts)..where((ld) => ld.userId.equals(user.id))).get();
+          if (learningDicts.isNotEmpty) {
+            final dictIds = learningDicts.map((d) => d.dictId).toList();
+            
+            // 查出这些词书里所有的单词 ID 数量
+            final totalDictWordsQuery = db.selectOnly(db.dictWords)
+              ..addColumns([db.dictWords.wordId.count(distinct: true)])
+              ..where(db.dictWords.dictId.isIn(dictIds));
+            final totalDictWordsCount = await totalDictWordsQuery.getSingle().then((r) => r.read(db.dictWords.wordId.count(distinct: true)) ?? 0);
+            
+            // 查出已经在 learningWords 和 masteredWords 里的选中词书去重单词数量
+            final learningWordsInDictsCount = await db.learningWordsDao.getLearningWordsCountInDicts(user.id, dictIds);
+            final masteredWordsInDictsCount = await db.masteredWordsDao.getMasteredWordsCountInDicts(user.id, dictIds);
+            
+            final totalUsedWords = learningWordsInDictsCount + masteredWordsInDictsCount;
+            if (totalUsedWords >= totalDictWordsCount && todayWords.isNotEmpty) {
+              // 外部已经没有任何未学的新词了！这意味着词书已被全部背完入库，但因为还有待复习的单词，所以分配不足不是异常，强制取消 wordExhausted 报警
+              Global.logger.i('[FETCH-WORD] [prepareTodayStudy] 检测到当前所有选中词书已被全部学完入库 (已用数 $totalUsedWords >= 总数 $totalDictWordsCount)，且今日有复习内容，自动免除单词不足报错！');
+              wordExhausted = false;
+            }
+          }
+        }
         Global.logger.d('[FETCH-WORD] [prepareTodayStudy] genTodayWords执行后，内存中单词总数: ${todayWords.length}, 计划是否枯竭: $wordExhausted');
       }
 
@@ -477,10 +502,11 @@ class LearningService {
     // 获取用户已掌握的单词 ID（作为排除项）
     final masteredWordIdsSet = await db.masteredWordsDao.getMasteredWordIdSet(userId);
 
-    // 获取用户已学习的单词 ID（作为排除项）
+    // 获取用户已学习的单词 ID（作为排除项，只排除有学习记录的单词，未学习的“幽灵新词”不计入排除集以便重新提取）
     final rows = await (db.selectOnly(db.learningWords)
           ..addColumns([db.learningWords.wordId])
-          ..where(db.learningWords.userId.equals(userId)))
+          ..where(db.learningWords.userId.equals(userId) &
+              (db.learningWords.learnedTimes.isBiggerThanValue(0) | db.learningWords.lastLearningDate.isNotNull())))
         .get();
     final existingWordIdsSet = rows.map((row) => row.read(db.learningWords.wordId)!).toSet();
 

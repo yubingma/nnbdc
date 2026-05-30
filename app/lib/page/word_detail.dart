@@ -144,6 +144,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   void initState() {
     super.initState();
     audioPlayer = ja.AudioPlayer();
+    SoundUtil.watchPlayer(audioPlayer);
     _wordSoundController = AnimationController(
       duration: const Duration(milliseconds: 700),
       vsync: this,
@@ -153,8 +154,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _tabController = TabController(length: 1, vsync: this);
     _tabController.addListener(_onTabControllerChanged);
 
-    // 进入详情页时立即主动关闭 ASR，避免在前一页面正在倾听时进入此页导致 ASR 逻辑错误
-    Asr().stopMicrophone();
+    // 进入详情页时，统一将音频状态机转换到 idle 状态，优雅关闭麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源
+    unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: Asr()));
   }
 
   @override
@@ -189,8 +190,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _chatInputController.dispose();
     _chatScrollController.dispose();
 
-    // 标记 AudioPlayer 为已释放
+    // 标记 AudioPlayer 为已释放，先无条件从全局状态机监视列表中摘除，彻底消灭任何内存泄露和 disposed 状态机崩溃风险
     _audioPlayerDisposed = true;
+    SoundUtil.unwatchPlayer(audioPlayer);
 
     // 延迟释放 AudioPlayer，确保所有操作完成
     Future.delayed(const Duration(milliseconds: 100), () {

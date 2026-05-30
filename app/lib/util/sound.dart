@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-
+ 
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -9,11 +9,16 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'pinyin.dart';
-
+import 'asr.dart';
+ 
 import 'package:flutter/foundation.dart';
 import '../api/vo.dart';
-
+ 
+enum AudioMode { playback, record, idle }
+ 
 class SoundUtil {
+  static final _stateTransitionLock = _Mutex();
+  static AudioMode _activeMode = AudioMode.idle;
   static ja.AudioPlayer? _pronouncePlayer;
   static bool _webAudioUnlocked = false;
   static bool _webUnlockInProgress = false;
@@ -58,7 +63,71 @@ class SoundUtil {
   static final _sfxLock = _Mutex();
 
   static Future<void>? _configureFuture;
-
+ 
+  /// 全局唯一的音频工作状态机转换网关（原子化、串行化、硬件防撞车）
+  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance}) {
+    return _stateTransitionLock.protect(() async {
+      // 1. 跨平台防挂起卫士：若不支持 ASR，录音模式自动无缝降级为纯播放模式
+      var finalTargetMode = targetMode;
+      if (targetMode == AudioMode.record && !PlatformUtils.isAsrSupported()) {
+        finalTargetMode = AudioMode.playback;
+      }
+ 
+      if (_activeMode == finalTargetMode) {
+        // 若状态一致，瞬间 0ms 返回，无任何性能损耗
+        return;
+      }
+ 
+      final sw = Stopwatch()..start();
+      debugPrint('🔊 [AudioEngine] 状态机开始转换: $_activeMode ➔ $finalTargetMode');
+ 
+      try {
+        switch (finalTargetMode) {
+          case AudioMode.playback:
+            // a. 物理关闭麦克风（不再越权修改 Category）
+            await asrInstance.stopMicrophone();
+            // b. 强行平滑淡出（Soft-Mute）所有当前活跃的临时/音效播放器，彻底排空声卡缓冲区
+            await _cleanupEarlyExitPlayers();
+            // c. 物理配置 AudioSession 为高品质 playback 模式并强行等待切换彻底确认
+            await usePlaybackCategory(force: true);
+            break;
+ 
+          case AudioMode.record:
+            // a. 确保所有播放器处于 Soft-Mute 静音输出，防止尾音与就绪提示音/麦克风并发撞车
+            await _cleanupEarlyExitPlayers();
+            // b. 物理配置 AudioSession 为 playAndRecord
+            await usePlayAndRecordCategory();
+            // c. 调用底层驱动启动麦克风物理流，等待 Mic 预热完毕
+            await asrInstance.startMicrophone();
+            // d. 【物理错峰阻断】：强制挂起 150ms 黄金静默期，给予 ASR 重采样缓冲区绝对的平滑稳定窗口，彻底根治提示音颤音
+            debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活，强制错峰延迟 150ms 稳定时钟...');
+            await Future.delayed(const Duration(milliseconds: 150));
+            // e. 稳定窗口结束后，正式播放“叮”的就绪提示音
+            await playAsrReadyHintSound();
+            break;
+ 
+          case AudioMode.idle:
+            await asrInstance.stopMicrophone();
+            await _cleanupEarlyExitPlayers();
+            break;
+        }
+        
+        _activeMode = finalTargetMode;
+        debugPrint('🔊 [AudioEngine] 状态机转换成功: ➔ $_activeMode，总耗时: ${sw.elapsedMilliseconds}ms');
+      } catch (e, st) {
+        // 超时与异常防御卫士：一旦由于硬件突变或通道冻结抛出异常，优雅物理熔断降级，防止整个 Dart 异步协程池死锁并掐灭麦克风悬空泄漏风险
+        Global.logger.e('🔊 [AudioEngine] 状态机转换发生异常，执行防死锁与防麦克风泄露终极物理熔断降级: $e', error: e, stackTrace: st);
+        try {
+          await asrInstance.stopMicrophone();
+        } catch (_) {}
+        try {
+          await _cleanupEarlyExitPlayers();
+        } catch (_) {}
+        _activeMode = AudioMode.idle;
+      }
+    });
+  }
+ 
   /// 配置全局音频会话
   static Future<void> configureAudioSession() {
     if (_audioSessionConfigured) return Future.value();
@@ -128,7 +197,7 @@ class SoundUtil {
 
       // 无论当前会话类别是否已经是 playAndRecord，只要发起切换/更新，都必须优先物理排空逻辑上已播完的 EarlyExit 播放器，
       // 确保发音尾音彻底自然淡出并物理释放硬件，根治单词发音与随后的 ASR 提示音/麦克风录音启动瞬间音频重采样或引擎并发冲突产生的爆音
-      _cleanupEarlyExitPlayers();
+      await _cleanupEarlyExitPlayers();
 
       if (_currentSessionCategory == 'playAndRecord') return;
 
@@ -176,6 +245,7 @@ class SoundUtil {
     if (earlyExitPlayers.isEmpty) return;
 
     bool hasStoppedAny = false;
+    final List<ja.AudioPlayer> successfullyCleaned = [];
     for (var p in earlyExitPlayers) {
       if (p.playing) {
         try {
@@ -183,12 +253,15 @@ class SoundUtil {
           debugPrint('⏱️ [Latency-Sound] 强制 stop() 逻辑完成但物理仍活跃的播放器，彻底释放硬件资源...');
           await p.stop().timeout(const Duration(milliseconds: 100), onTimeout: () {});
           hasStoppedAny = true;
+          successfullyCleaned.add(p);
         } catch (e) {
           debugPrint('🔊 [SoundUtil] 物理排空 stop() 播放器异常: $e');
         }
+      } else {
+        successfullyCleaned.add(p);
       }
     }
-    _logicallyFinishedPlayers.removeAll(earlyExitPlayers);
+    _logicallyFinishedPlayers.removeAll(successfullyCleaned);
     
     // 如果确实执行了 stop 物理关停，给 Native 混音器 30ms 的物理排空与平滑过渡缓冲期，消除任何可能残留的硬件切音爆音
     if (hasStoppedAny) {
@@ -338,6 +411,11 @@ class SoundUtil {
 
       try {
         _logicallyFinishedPlayers.remove(player);
+        // 软静音防护 (Soft-Mute Teardown)：如果前一个单词发音仍未播完就切词/打断，
+        // 在 stop 前将音量拉到 0，消除 Native 音频流因半空拦腰截断（非零截断）产生的电流爆音
+        if (player.playing) {
+          await player.setVolume(0.0);
+        }
         await player.stop();
       } catch (_) {}
 
@@ -416,7 +494,11 @@ class SoundUtil {
     } finally {
       if (disposeWhenFinish) {
         Future.delayed(const Duration(seconds: 2), () {
-          player.dispose().catchError((_) {});
+          try {
+            // 在 dispose 前，必须先无条件从全局监视名单中彻底移除，防止 disposed 后的 player 残留导致 waitForAllPlayers 访问崩溃
+            unwatchPlayer(player);
+            player.dispose().catchError((_) {});
+          } catch (_) {}
         });
       }
     }
@@ -434,6 +516,11 @@ class SoundUtil {
       final busyDuration = Duration(milliseconds: sleepAfterPlayInMilliSeconds > 0 ? sleepAfterPlayInMilliSeconds : 1000);
       _playerBusyUntil[player] = now.add(busyDuration);
       
+      // 软静音防护 (Soft-Mute Teardown)：如果该播放器正处于活跃播放状态（例如被抢占或强行重放），
+      // 在 stop 前将音量设为 0，防止由于音频流拦腰截断产生瞬时电压阶跃带来的爆音
+      if (player.playing) {
+        await player.setVolume(0.0);
+      }
       await player.stop();
       await player.seek(Duration.zero);
       await player.setSpeed(speed);
@@ -451,8 +538,8 @@ class SoundUtil {
 
   static Future<void> playAsrReadyHintSound() async {
     debugPrint('🔊 [PERF] playAsrReadyHintSound START');
-    unawaited(playAssetSound('asr_ready_hint.wav', 1.0, 0.2, 1000, 150));
-    debugPrint('🔊 [PERF] playAsrReadyHintSound DISPATCHED');
+    await playAssetSound('asr_ready_hint.wav', 1.0, 0.2, 1000, 150);
+    debugPrint('🔊 [PERF] playAsrReadyHintSound FINISHED');
   }
 
   static Future<void> playAddSuccessSound() async {
@@ -487,12 +574,14 @@ class SoundUtil {
   static Future<void> preloadAudioFromUrl(String soundUrl, ja.AudioPlayer player) async {
     if (PlatformUtils.isWeb) return;
     try {
-      // 架构设计优化 3：预热挂载音源（setAudioSource）与后续正式播放必须在相同的已配置就绪的 playback 模式下进行。
-      // 在此强行先确保音频会话类别已切换为 playback 模式，防止预热加载中途因 AVAudioSession 物理重置产生破音。
-      await usePlaybackCategory();
 
       try {
         _logicallyFinishedPlayers.remove(player);
+        // 软静音防护 (Soft-Mute Teardown)：如果前一个单词发音仍未播完就切词/预热，
+        // 在 stop 前将音量拉到 0，消除 Native 音频流因半空瞬间切断产生的电流爆音
+        if (player.playing) {
+          await player.setVolume(0.0);
+        }
         await player.stop();
       } catch (_) {}
 
@@ -542,6 +631,10 @@ class SoundUtil {
       final now = AppClock.now();
       _playerBusyUntil[player] = now.add(maxPlay + const Duration(milliseconds: 100));
       
+      // 软静音防护 (Soft-Mute Teardown)
+      if (player.playing) {
+        await player.setVolume(0.0);
+      }
       await player.stop();
       await player.seek(Duration.zero);
       await player.setSpeed(speed);
@@ -555,6 +648,7 @@ class SoundUtil {
       Future.delayed(maxPlay, () async {
         try {
           if (_activeCutToken[player] == token && player.playing) {
+            await player.setVolume(0.0);
             await player.stop();
           }
         } catch (_) {}
