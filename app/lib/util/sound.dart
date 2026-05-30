@@ -126,13 +126,19 @@ class SoundUtil {
           case AudioMode.record:
             // a. 确保所有播放器处于 Soft-Mute 静音输出，防止尾音与就绪提示音/麦克风并发撞车
             await _cleanupEarlyExitPlayers();
+            
+            // 判断是否是物理冷启动：如果当前分类并非 playAndRecord，说明经历了物理级别的硬件重构切换
+            final bool isColdStart = _currentSessionCategory != 'playAndRecord';
+            
             // b. 物理配置 AudioSession 为 playAndRecord
             await usePlayAndRecordCategory();
             // c. 调用底层驱动启动麦克风物理流，等待 Mic 预热完毕
             await asrInstance.startMicrophone();
-            // d. 【物理错峰阻断】：10ms 稳定窗口，给予 ASR 重采样缓冲区平滑过渡，防止提示音颤音
-            debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活，错峰延迟 10ms 稳定时钟...');
-            await Future.delayed(const Duration(milliseconds: 10));
+            // d. 【物理错峰阻断】：如果是物理冷启动，给底层声卡和重采样驱动留出充足的 150ms 稳定窗口以物理根除爆音；
+            //    若是本已保温的热复用路径，则仅保留 10ms 极限物理时间阻断以实现瞬时就绪。
+            final delayMs = isColdStart ? 150 : 10;
+            debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活 (${isColdStart ? "冷启动" : "热复用"})，错峰延迟 ${delayMs}ms 稳定时钟...');
+            await Future.delayed(Duration(milliseconds: delayMs));
             // e. 稳定窗口结束后，正式播放“叮”的就绪提示音
             await playAsrReadyHintSound();
             break;
