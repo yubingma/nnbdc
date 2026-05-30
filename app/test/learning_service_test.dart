@@ -739,7 +739,7 @@ void main() {
 
     test('【补充取词去重固化验证】当今日计划中已包含某些未学新词时，强制补充也绝对不应发生二次抓取和主键覆写', () async {
       // 1. 设置每日计划为 2
-      final testTime = AppClock.now();
+      AppClock.now();
       final updatedUser = testUser.copyWith(wordsPerDay: 2);
       await db.usersDao.saveUser(updatedUser, false);
       Global.updateUserCache(updatedUser);
