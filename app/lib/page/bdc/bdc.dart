@@ -37,6 +37,7 @@ import '../../util/analytics_util.dart';
 import '../../util/app_clock.dart';
 import '../../util/learning_service.dart';
 import '../../util/study_config.dart';
+import '../../util/performance_watchdog.dart';
 import '../../util/utils.dart';
 import '../../widget/handwriting_board.dart';
 import 'providers/bdc_notifier.dart';

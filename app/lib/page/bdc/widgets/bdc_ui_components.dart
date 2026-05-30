@@ -405,6 +405,11 @@ extension BdcPageStateUIComponents on BdcPageState {
               });
             }
           },
+          onDoubleTap: () {
+            // 双击进度条切换 FPS 气泡状态，并给予震动回馈
+            PerformanceWatchdog.toggleFpsOverlay();
+            HapticFeedback.mediumImpact();
+          },
           child: Container(
             margin: EdgeInsets.fromLTRB(
                 0, MediaQuery.of(context).padding.top + 8, 0, 0),
@@ -511,19 +516,25 @@ extension BdcPageStateUIComponents on BdcPageState {
                             ClipRRect(
                               borderRadius:
                                   const BorderRadius.all(Radius.circular(1.5)),
-                              child: FAProgressBar(
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(1.5)),
-                                currentValue: currentProgress,
-                                maxValue: maxValue,
-                                displayText: '',
-                                direction: Axis.horizontal,
-                                displayTextStyle: const TextStyle(
-                                    color: Color(0x00000000), fontSize: 0),
-                                backgroundColor: Colors.transparent,
-                                progressColor: progressColor,
-                                animatedDuration:
-                                    const Duration(milliseconds: 300),
+                              child: ValueListenableBuilder<double>(
+                                valueListenable: PerformanceWatchdog.jankHeat,
+                                builder: (context, heat, child) {
+                                  final actualColor = Color.lerp(progressColor, Colors.red, heat)!;
+                                  return FAProgressBar(
+                                    borderRadius:
+                                        const BorderRadius.all(Radius.circular(1.5)),
+                                    currentValue: currentProgress,
+                                    maxValue: maxValue,
+                                    displayText: '',
+                                    direction: Axis.horizontal,
+                                    displayTextStyle: const TextStyle(
+                                        color: Color(0x00000000), fontSize: 0),
+                                    backgroundColor: Colors.transparent,
+                                    progressColor: actualColor,
+                                    animatedDuration:
+                                        const Duration(milliseconds: 300),
+                                  );
+                                },
                               ),
                             ),
                             // 批次分隔线（只在批次边界处显示）
@@ -556,6 +567,41 @@ extension BdcPageStateUIComponents on BdcPageState {
                   : const SizedBox.shrink(),
             ),
           ),
+        ),
+
+        // 实时 FPS 指示气泡：当双击进度条激活彩蛋时渲染
+        ValueListenableBuilder<bool>(
+          valueListenable: PerformanceWatchdog.showFpsOverlay,
+          builder: (context, show, child) {
+            if (!show) return const SizedBox.shrink();
+            return ValueListenableBuilder<double>(
+              valueListenable: PerformanceWatchdog.currentFps,
+              builder: (context, fps, child) {
+                final isLowFps = fps < 45.0;
+                final themeColor = isLowFps 
+                    ? Colors.red.withValues(alpha: 0.85) 
+                    : (_cachedIsDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.08));
+                final textColor = isLowFps ? Colors.white : (_cachedIsDarkMode ? Colors.white60 : Colors.black54);
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: themeColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'FPS: ${fps.toStringAsFixed(1)}',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 10,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         ),
 
         // 顶部按钮

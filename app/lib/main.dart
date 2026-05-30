@@ -30,6 +30,7 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config.dart';
+import 'util/performance_watchdog.dart';
 import 'local_word_cache.dart';
 import 'util/prefs.dart';
 import 'router.dart';
@@ -48,6 +49,9 @@ void main() async {
     () async {
       // 确保Flutter绑定已初始化（在同一个zone中）
       WidgetsFlutterBinding.ensureInitialized();
+      
+      // 初始化开发期性能哨兵
+      PerformanceWatchdog.init();
       
       // 初始化存储（必须在检查隐私版本前）
       await Prefs.init();
