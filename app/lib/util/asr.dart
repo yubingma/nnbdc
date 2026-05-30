@@ -567,23 +567,18 @@ class Asr {
       return;
     }
 
-    if (state == AsrState.stopped || state == AsrState.unknown) {
-      debugPrint('💡 [ASR] stopMicrophone() ASR 已经是停止/未启动状态 ($state)。');
-      return;
-    }
-    // initialized 状态不能直接 return：原生层可能因为 pre-warm 优化仍然保有
-    // 活跃的 audio engine tap，导致后续 playback 模式切换永远触发 !pri。必须穿透调用
-    // 原生 teardownAudioEngine() 确保物理释放。
-    if (state == AsrState.initialized) {
-      debugPrint('💡 [ASR] stopMicrophone() ASR 处于 initialized，穿透调用原生确保引擎物理释放。');
-      // 穿透到底层，不修改 Dart 状态（avoid unnecessary state transitions）
+    // stopped/initialized/unknown 不能直接 return：原生层可能因为 pre-warm 优化
+    // 仍然保有活跃的 audio engine tap，导致后续 playback 模式切换永远触发 !pri。
+    // 必须穿透调用原生 teardownAudioEngine() 确保物理释放。
+    if (state == AsrState.stopped || state == AsrState.initialized || state == AsrState.unknown) {
+      debugPrint('💡 [ASR] stopMicrophone() ASR 处于 $state，穿透调用原生确保引擎物理释放。');
       try {
         await asrMethodChannel
             .invokeMethod('stopMicrophone')
             .timeout(const Duration(seconds: 3));
         debugPrint('💡 [ASR] stopMicrophone() 穿透调用完成，原生引擎已释放。');
       } catch (e) {
-        Global.logger.e('ASR: Exception during stopMicrophone (initialized passthrough): $e');
+        Global.logger.e('ASR: Exception during stopMicrophone ($state passthrough): $e');
       }
       return;
     }
