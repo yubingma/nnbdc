@@ -1123,7 +1123,8 @@ class WordListPageState extends State<WordListPage>
           words[currWordIndex].speakEnglishPassed = true;
           
           try {
-            await asr.stopMicrophone().timeout(
+            // 答对时，使用 stopAsr 进行热停止以维持麦克风保温状态，完全消除高频物理切流延迟与设备假死
+            await asr.stopAsr().timeout(
               const Duration(milliseconds: 500),
               onTimeout: () {
                 Global.logger.w('停止ASR超时，继续播放单词发音');
@@ -1189,9 +1190,10 @@ class WordListPageState extends State<WordListPage>
         canLeaveCurrWord = false;
 
         try {
-          await asr.stopMicrophone();
+          // 跳转前，使用 stopAsr 进行热停止以维持麦克风保温状态，消除高频冷启动重构与设备假死
+          await asr.stopAsr();
           await asr.reset(); // 清除缓冲区
-          debugPrint('⏱️ [Latency] stopMicrophone+reset 完成: +${swJump.elapsedMilliseconds}ms');
+          debugPrint('⏱️ [Latency] stopAsr+reset 完成: +${swJump.elapsedMilliseconds}ms');
         } catch (e) {
           Global.logger.d("停止ASR失败: $e");
         }
@@ -1952,28 +1954,38 @@ class WordListPageState extends State<WordListPage>
     }
 
     // 在背中文或背英文模式下，手动切换单词时也清空语音识别缓存
-    // 强制停止ASR将导致状态变化，从而触发 listener 更新 context strings (热词)
+    // 使用 stopAsr 进行热停止以维持麦克风保温状态，完全消除高频物理切流延迟
     if (studyMode == WordListStudyMode.speakChinese ||
         studyMode == WordListStudyMode.speakEnglish) {
-      await asr.stopMicrophone();
+      await asr.stopAsr();
       await asr.reset(); // 清除缓冲区
-      debugPrint('⏱️ [Latency] stopMicrophone+reset 完成: +${sw.elapsedMilliseconds}ms');
+      debugPrint('⏱️ [Latency] stopAsr+reset 完成: +${sw.elapsedMilliseconds}ms');
     }
 
     // 播放单词发音（背英文模式/默写模式进入时不播放由调用者控制，避免泄露答案）
     final bool shouldPlaySound = playSound &&
         studyMode != WordListStudyMode.speakEnglish &&
         studyMode != WordListStudyMode.hideEnglish;
+
+    final bool isSpeakMode = studyMode == WordListStudyMode.speakChinese ||
+        studyMode == WordListStudyMode.speakEnglish;
+
+    Future<void>? sessionFuture;
+    if (shouldPlaySound) {
+      sessionFuture = SoundUtil.transitTo(AudioMode.playback, asrInstance: asr, hotPlayback: isSpeakMode);
+      SoundUtil.watchPlayer(audioPlayer);
+    }
+
     if (shouldPlaySound) {
       debugPrint('⏱️ [Latency] 开始播放发音: +${sw.elapsedMilliseconds}ms');
       if (studyMode == WordListStudyMode.speakChinese) {
         // 在说中文模式下，为了防止 ASR 识别到手机自身发出的发音，改为等待播放完成后再启动 ASR
-        await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+        await SoundUtil.playPronounceSound2(word.word, audioPlayer, preWaitFuture: sessionFuture);
         debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms');
         soundFinishListener?.call();
       } else {
         final stopwatch = Stopwatch()..start();
-        await SoundUtil.playPronounceSound2(word.word, audioPlayer);
+        await SoundUtil.playPronounceSound2(word.word, audioPlayer, preWaitFuture: sessionFuture);
         debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms (文件耗时 ${stopwatch.elapsedMilliseconds}ms)');
         soundFinishListener?.call();
       }
