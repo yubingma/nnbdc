@@ -221,6 +221,13 @@ class SoundUtil {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
 
+      // 竞态防御：若 ASR 录音物理流或识别任务仍未彻底关闭，禁止强行切换音频 Category 为 playback，
+      // 否则 iOS 底层会因独占流冲突强行判定优先级不足（InsufficientPriority - OSStatus 561017449）并导致 UI 线程卡死。
+      if (Asr().state == AsrState.started || Asr().state == AsrState.stopping) {
+        debugPrint('⚠️ [SoundUtil] 拦截 usePlaybackCategory：ASR 仍处于活动/注销中，跳过 Category 切换以防 iOS 优先级死锁。');
+        return;
+      }
+
       // 与 usePlayAndRecordCategory 对等：无论当前会话类别是否已经是 playback，
       // 只要发起切换/更新，都必须优先物理排空逻辑上已播完的 EarlyExit 播放器，
       // 确保发音尾音彻底自然淡出并物理释放硬件，根治单词发音与后续音频爆音
