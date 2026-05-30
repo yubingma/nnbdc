@@ -143,7 +143,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   @override
   void initState() {
     super.initState();
-    audioPlayer = ja.AudioPlayer();
+    audioPlayer = SoundUtil.createAudioPlayer();
     SoundUtil.watchPlayer(audioPlayer);
     _wordSoundController = AnimationController(
       duration: const Duration(milliseconds: 700),

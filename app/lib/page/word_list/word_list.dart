@@ -320,7 +320,7 @@ class WordListPageState extends State<WordListPage>
   final GlobalKey _overlayKey = GlobalKey();
 
   /// 音频播放器实例（测试环境下为 MockAudioPlayer）
-  final ja.AudioPlayer audioPlayer = ja.AudioPlayer();
+  final ja.AudioPlayer audioPlayer = SoundUtil.createAudioPlayer();
 
   /// AudioPlayer 是否已被释放的标志
   bool _audioPlayerDisposed = false;

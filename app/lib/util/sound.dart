@@ -17,6 +17,22 @@ import '../api/vo.dart';
 enum AudioMode { playback, record, idle }
  
 class SoundUtil {
+  /// 安全创建 AudioPlayer 实例，通过子 Zone 守卫优雅拦截并消化底层可能因 uuid 冲突抛出的 PlatformException
+  static ja.AudioPlayer createAudioPlayer() {
+    late final ja.AudioPlayer player;
+    runZonedGuarded(() {
+      player = ja.AudioPlayer();
+    }, (error, stack) {
+      final errStr = error.toString();
+      if (errStr.contains('already exists') || errStr.contains('Platform player')) {
+        debugPrint('🔊 [SoundUtil] Zone 拦截到 ja.AudioPlayer() 底层重复 ID 注册异常 (安全忽略): $error');
+      } else {
+        throw error;
+      }
+    });
+    return player;
+  }
+
   static final _stateTransitionLock = _Mutex();
   static AudioMode _activeMode = AudioMode.idle;
 
@@ -373,9 +389,9 @@ class SoundUtil {
     for (int i = 0; i < _sfxPoolSize; i++) {
       if (_sfxPool.length <= i) {
         try {
-          // 在连续创建 AudioPlayer 之间加入 50ms 延迟，给底层平台分配音频资源和通信时间，根治并发引起的冲突
+          // 在连续创建 AudioPlayer 之间加入 50ms 延迟，给底层平台分配音频资源 and 通信时间，根治并发引起的冲突
           await Future.delayed(const Duration(milliseconds: 50));
-          final player = ja.AudioPlayer();
+          final player = createAudioPlayer();
           _sfxPool.add(player);
           watchPlayer(player);
           debugPrint('🔊 [SoundUtil] 音效池播放器 $i 初始化成功');
@@ -480,7 +496,7 @@ class SoundUtil {
 
   static ja.AudioPlayer get pronouncePlayer {
     if (_pronouncePlayer == null) {
-      _pronouncePlayer = ja.AudioPlayer();
+      _pronouncePlayer = createAudioPlayer();
       watchPlayer(_pronouncePlayer!);
     }
     return _pronouncePlayer!;
@@ -588,7 +604,16 @@ class SoundUtil {
       Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${totalSw.elapsedMilliseconds}ms');
     } catch (e, st) {
       _logicallyFinishedPlayers.add(player);
-      Global.logger.e('播放异常: $soundUrl', error: e, stackTrace: st);
+      final errStr = e.toString();
+      final isAbortError = errStr.contains('Connection aborted') || 
+          errStr.contains('abort') || 
+          errStr.contains('Loading interrupted');
+      
+      if (isAbortError) {
+        Global.logger.i('🔊 [SoundUtil] 播放被中止/中断 (属于预期行为，安全忽略): $soundUrl');
+      } else {
+        Global.logger.e('播放异常: $soundUrl', error: e, stackTrace: st);
+      }
     } finally {
       if (disposeWhenFinish) {
         Future.delayed(const Duration(seconds: 2), () {
@@ -665,7 +690,7 @@ class SoundUtil {
   }
 
   static Future<void> playPronounceSoundBySpell(String spell) async {
-    await playSoundByUrl(Util.getWordSoundUrl(spell), ja.AudioPlayer(), true);
+    await playSoundByUrl(Util.getWordSoundUrl(spell), createAudioPlayer(), true);
   }
 
   static Future<void> playPronounceSoundBySpell2(String spell, ja.AudioPlayer player, {double speed = 1.0}) async {
@@ -716,15 +741,15 @@ class SoundUtil {
   }
 
   static Future<void> playSentenceSound(String englishDigest) async {
-    await playSoundByUrl(Util.getSentenceSoundUrl(englishDigest), ja.AudioPlayer(), true);
+    await playSoundByUrl(Util.getSentenceSoundUrl(englishDigest), createAudioPlayer(), true);
   }
 
   static Future<void> playAiStoryEnSound(String wordsHash) async {
-    await playSoundByUrl(Util.getAiStoryEnSoundUrl(wordsHash), ja.AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
+    await playSoundByUrl(Util.getAiStoryEnSoundUrl(wordsHash), createAudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
   }
 
   static Future<void> playAiStoryCnSound(String wordsHash) async {
-    await playSoundByUrl(Util.getAiStoryCnSoundUrl(wordsHash), ja.AudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
+    await playSoundByUrl(Util.getAiStoryCnSoundUrl(wordsHash), createAudioPlayer(), true, loadTimeoutMs: 10000, playTimeoutMs: 120000);
   }
 
   static Future<void> playAssetSoundCut(String soundFileName, double speed, double volume, Duration maxPlay) async {
@@ -766,7 +791,7 @@ class SoundUtil {
     if (!PlatformUtils.isWeb || _webAudioUnlocked || _webUnlockInProgress) return;
     _webUnlockInProgress = true;
     try {
-      final player = ja.AudioPlayer();
+      final player = createAudioPlayer();
       await player.setVolume(0.0);
       await player.setAsset('assets/audio/thud.mp3');
       await player.play();

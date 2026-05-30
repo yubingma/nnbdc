@@ -28,7 +28,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
   WordVo? _currentWord;
   List<WordImage> _wordImages = [];
   List<SentenceVo> _sentences = [];
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _audioPlayer = SoundUtil.createAudioPlayer();
 
   List<WordVo> _candidates = [];
   bool _isSearchingCandidates = false;

@@ -99,7 +99,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   static const double rightPadding = 0;
   Color selectedTextColor = Colors.white;
   Color normalTextColor = const Color(0xffaaaaaa);
-  ja.AudioPlayer audioPlayer = ja.AudioPlayer();
+  ja.AudioPlayer audioPlayer = SoundUtil.createAudioPlayer();
   bool _audioPlayerDisposed = false;
   Timer? loadWordTimer; // 改为可空类型，避免late风险
   Timer? playWordTimer;

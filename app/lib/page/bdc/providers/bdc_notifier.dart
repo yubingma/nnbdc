@@ -49,7 +49,7 @@ Asr asr(AsrRef ref) {
 
 @riverpod
 ja.AudioPlayer bdcAudioPlayer(BdcAudioPlayerRef ref) {
-  final player = ja.AudioPlayer();
+  final player = SoundUtil.createAudioPlayer();
   ref.onDispose(() {
     SoundUtil.unwatchPlayer(player);
     player.dispose();

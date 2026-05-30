@@ -1,4 +1,6 @@
 {
+    "dart.debugSdkLibraries": false,
+    "dart.debugExternalPackageLibraries": false,
     "python.defaultInterpreterPath": ".venv/bin/python",
     "java.compile.nullAnalysis.mode": "automatic",
     "java.debug.settings.hotCodeReplace": "auto",
