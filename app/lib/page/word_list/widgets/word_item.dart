@@ -204,7 +204,7 @@ class _WordItemState extends State<WordItem> {
               style: TextStyle(
                 fontSize: 9,
                 height: 1.1,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w600,
                 fontFamily: 'RobotoCondensed',
                 color: widget.word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
               ),
@@ -499,36 +499,7 @@ class _WordItemState extends State<WordItem> {
               ),
             ),
           ),
-          if (widget.isBookmarked && widget.word.pronunciationScore != null && widget.word.pronunciationScore! > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: widget.word.pronunciationScore! >= 60 ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.record_voice_over,
-                      size: 14,
-                      color: widget.word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '发音: ${widget.word.pronunciationScore}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: widget.word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+
         ] else ...[
           _buildPassedWordAndPronounce(isDarkMode),
         ],

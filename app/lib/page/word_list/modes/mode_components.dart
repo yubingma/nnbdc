@@ -91,7 +91,7 @@ class ModeComponents {
           style: TextStyle(
             fontSize: 9,
             height: 1.1,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w600,
             fontFamily: 'RobotoCondensed',
             color:
                 word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,

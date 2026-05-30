@@ -135,40 +135,7 @@ class SpeakModeItem extends StatelessWidget {
             ),
           ),
         ),
-        if (isBookmarked &&
-            word.pronunciationScore != null &&
-            word.pronunciationScore! > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: word.pronunciationScore! >= 60
-                    ? Colors.green.withValues(alpha: 0.1)
-                    : Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.record_voice_over,
-                    size: 14,
-                    color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '发音: ${word.pronunciationScore}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+
       ],
     );
   }
@@ -180,25 +147,6 @@ class SpeakModeItem extends StatelessWidget {
         Flexible(
           child: ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode),
         ),
-        const SizedBox(width: 8),
-        if (word.pronunciationScore != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            decoration: BoxDecoration(
-              color: word.pronunciationScore! >= 60
-                  ? Colors.green.withValues(alpha: 0.15)
-                  : Colors.orange.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '${word.pronunciationScore}',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: word.pronunciationScore! >= 60 ? Colors.green : Colors.orange,
-              ),
-            ),
-          ),
       ],
     );
   }
