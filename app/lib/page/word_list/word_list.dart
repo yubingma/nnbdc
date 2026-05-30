@@ -1439,41 +1439,39 @@ class WordListPageState extends State<WordListPage>
       return;
     }
 
-    // 优化滚动策略：
-    // 1. 如果是第一个单词，直接将它对齐到顶部 0.0 即可
-    // 2. 如果是后续单词，为了让用户能继续看到前一个单词（刚刚拼对的词）加深印象，
-    //    我们将前一个单词 (wordUiIndex - 1) 对齐到顶部 0.0，使当前活动单词自然展现在它下方。
-    // 这样两个单词在屏幕上方均清晰可见，且对齐 0.0 完美避免了列表向下越界过卷而引起的 iOS 晃动。
-    int targetIndex = wordUiIndex > 0 ? wordUiIndex - 1 : 0;
-    double finalAlignment = 0.0;
+    // 始终将前一个单词对齐到顶部 0.0，使当前单词保持在第二个位置
+    final int targetIndex = wordUiIndex > 0 ? wordUiIndex - 1 : 0;
 
-    // 检查当前目标单词是否已经在顶部对齐
     var positions = itemPositionsListener.itemPositions.value;
-    if (positions.isNotEmpty) {
-      // 特殊优化：如果最后一个单词已经完全在屏幕内显示（即列表已触底或一屏能完全装下），
-      // 强行滚动会导致列表越界向上过卷，引起回弹或晃动。此时我们直接跳过滚动。
-      final lastPosition = positions.where((pos) => pos.index == words.length - 1).firstOrNull;
-      if (lastPosition != null && lastPosition.itemTrailingEdge <= 1.0) {
-        debugPrint('⏱️ [Scroll] 最后一个单词已完全可见（触底/不足一屏），跳过滚动以防止越界拉扯晃动');
-        return;
-      }
 
-      var currentPosition =
+    // 防抖：如果目标单词已经在顶部，无需滚动
+    if (positions.isNotEmpty) {
+      var targetPos =
           positions.where((pos) => pos.index == targetIndex).firstOrNull;
-      if (currentPosition != null) {
-        // 如果前一个单词已经在顶部附近（误差在5%以内），不需要滚动
-        if (currentPosition.itemLeadingEdge >= finalAlignment - 0.05 &&
-            currentPosition.itemLeadingEdge <= finalAlignment + 0.05) {
-          return;
-        }
+      if (targetPos != null && targetPos.itemLeadingEdge.abs() < 0.05) {
+        return;
       }
     }
 
-    if (itemScrollController.isAttached) {
+    // 判断是否已触底：最后一个单词完全在视口内（无法再往下滚）
+    bool atBottom = false;
+    if (positions.isNotEmpty) {
+      final lastPos = positions
+          .where((pos) => pos.index == words.length - 1)
+          .firstOrNull;
+      atBottom = lastPos != null && lastPos.itemTrailingEdge <= 1.0;
+    }
+
+    if (!itemScrollController.isAttached) return;
+
+    if (atBottom) {
+      // 触底时用 jumpTo 瞬间到位，避免 scrollTo 动画在边界反弹引起晃动
+      itemScrollController.jumpTo(index: targetIndex, alignment: 0.0);
+    } else {
       itemScrollController.scrollTo(
           index: targetIndex,
           duration: const Duration(milliseconds: 300),
-          alignment: finalAlignment);
+          alignment: 0.0);
     }
   }
 
