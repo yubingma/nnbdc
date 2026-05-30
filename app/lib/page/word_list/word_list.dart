@@ -264,6 +264,9 @@ class WordListPageState extends State<WordListPage>
   final ItemPositionsListener itemPositionsListener =
       ItemPositionsListener.create();
 
+  /// 上一次滚动通知的 extentAfter，用于判断是否已触底无法再滚
+  double _lastExtentAfter = double.infinity;
+
   /// 单词列表界面最上方那个单词在所有单词中（包括那些在服务端，还未加载的）的序号（需要这个值是为了支持从中间某个位置加载单词列表）
   int? baseIndex;
 
@@ -1439,6 +1442,11 @@ class WordListPageState extends State<WordListPage>
       return;
     }
 
+    // 已经触底（extentAfter ≈ 0），无法再往下滚，强行滚会与物理边界冲突导致晃动
+    if (_lastExtentAfter <= 1) {
+      return;
+    }
+
     // 将前一个单词对齐到顶部 0.0，使当前单词保持在第二个位置
     final int targetIndex = wordUiIndex > 0 ? wordUiIndex - 1 : 0;
 
@@ -1453,7 +1461,17 @@ class WordListPageState extends State<WordListPage>
     }
 
     if (itemScrollController.isAttached) {
-      itemScrollController.jumpTo(index: targetIndex, alignment: 0.0);
+      // 拼写模式用 scrollTo 带动画，避免 jumpTo 瞬时跳转导致输入框失去焦点、键盘关闭
+      final bool isDictation = studyMode == WordListStudyMode.dictation ||
+          studyMode == WordListStudyMode.dictationHandwriting;
+      if (isDictation) {
+        itemScrollController.scrollTo(
+            index: targetIndex,
+            duration: const Duration(milliseconds: 200),
+            alignment: 0.0);
+      } else {
+        itemScrollController.jumpTo(index: targetIndex, alignment: 0.0);
+      }
     }
   }
 
@@ -1471,6 +1489,7 @@ class WordListPageState extends State<WordListPage>
       children: [
         NotificationListener<ScrollUpdateNotification>(
           onNotification: (ScrollUpdateNotification notification) {
+            _lastExtentAfter = notification.metrics.extentAfter;
             // 如果设置了"请勿查询"标志，直接返回
             if (doNotQueryPlease) {
               return false;
