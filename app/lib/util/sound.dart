@@ -180,7 +180,11 @@ class SoundUtil {
 
   static Future<void> _doConfigureAudioSession() async {
     try {
-      await usePlaybackCategory();
+      // 若当前已在 playAndRecord 模式（如 hot playback 保温的麦克风），
+      // 跳过 playback session 切换，避免 !pri。音频在 playAndRecord 下播放正常。
+      if (_currentSessionCategory != 'playAndRecord') {
+        await usePlaybackCategory();
+      }
       _audioSessionConfigured = true;
       // 启动时清理 _logicallyFinishedPlayers 中可能残留的旧引用
       _logicallyFinishedPlayers.clear();
