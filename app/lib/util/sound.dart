@@ -28,6 +28,28 @@ class SoundUtil {
   @visibleForTesting
   static set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
 
+  @visibleForTesting
+  static String get currentSessionCategory => _currentSessionCategory;
+
+  @visibleForTesting
+  static List<ja.AudioPlayer> get watchedPlayers => _watchedPlayers;
+
+  @visibleForTesting
+  static Set<ja.AudioPlayer> get logicallyFinishedPlayers => _logicallyFinishedPlayers;
+
+  /// 重置所有静态状态，仅用于测试（不 dispose 音效池播放器以避免影响其他测试）
+  @visibleForTesting
+  static void resetForTesting() {
+    _currentSessionCategory = 'none';
+    _audioSessionConfigured = false;
+    _activeMode = AudioMode.idle;
+    _watchedPlayers.clear();
+    _logicallyFinishedPlayers.clear();
+    _playerBusyUntil.clear();
+    _activeCutToken.clear();
+    _configureFuture = null;
+  }
+
   /// 输出所有播放器的当前状态，供诊断音频问题使用
   static void _logAudioState(String label) {
     final sfxStates = _sfxPool.map((p) {
@@ -158,6 +180,12 @@ class SoundUtil {
   static Future<void> usePlaybackCategory({bool force = false}) {
     return _sessionLock.protect(() async {
       if (PlatformUtils.isWeb) return;
+
+      // 与 usePlayAndRecordCategory 对等：无论当前会话类别是否已经是 playback，
+      // 只要发起切换/更新，都必须优先物理排空逻辑上已播完的 EarlyExit 播放器，
+      // 确保发音尾音彻底自然淡出并物理释放硬件，根治单词发音与后续音频爆音
+      await _cleanupEarlyExitPlayers();
+
       if (_currentSessionCategory == 'playback' && !force) return;
 
       final sw = Stopwatch()..start();
@@ -167,27 +195,53 @@ class SoundUtil {
       await waitForAllPlayers();
       debugPrint('⏱️ [Latency-Sound] waitForAllPlayers 结束，耗时: ${sw.elapsedMilliseconds}ms');
 
-      try {
-        final session = await AudioSession.instance;
-        await session.configure(AudioSessionConfiguration(
-          avAudioSessionCategory: AVAudioSessionCategory.playback,
-          avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers, 
-          avAudioSessionMode: AVAudioSessionMode.defaultMode,
-          androidAudioAttributes: const AndroidAudioAttributes(
-            contentType: AndroidAudioContentType.music,
-            flags: AndroidAudioFlags.none,
-            usage: AndroidAudioUsage.media,
-          ),
-          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-          androidWillPauseWhenDucked: true,
-        )).timeout(const Duration(milliseconds: 1000));
-        _currentSessionCategory = 'playback';
-        debugPrint('⏱️ [Latency-Sound] Session 切换到 playback 完成，耗时: ${sw.elapsedMilliseconds}ms');
-        _logAudioState('会话切换完成(→playback ${sw.elapsedMilliseconds}ms)');
-      } catch (e) {
-        Global.logger.e('SoundUtil: 切换播放模式失败: $e');
-      }
+      await _configurePlaybackSession(retryCount: 0, totalSw: sw);
     });
+  }
+
+  /// 配置 playback 音频会话，带固定间隔重试以处理瞬时 InsufficientPriority 错误。
+  static Future<void> _configurePlaybackSession({required int retryCount, required Stopwatch totalSw}) async {
+    try {
+      // 给原生层 (AppDelegate.stopMicrophone) 的 deactivate → setCategory → activate
+      // 序列留出完成时间，避免与 audio_session 插件的 configure 产生竞态。
+      if (retryCount > 0) {
+        final delayMs = 50; // 固定 50ms 重试间隔，快速恢复瞬时 InsufficientPriority
+        debugPrint('⏱️ [Latency-Sound] 重试 #$retryCount，等待 ${delayMs}ms...');
+        await Future.delayed(Duration(milliseconds: delayMs));
+      }
+
+      final session = await AudioSession.instance;
+      await session.configure(AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playback,
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers,
+        avAudioSessionMode: AVAudioSessionMode.defaultMode,
+        androidAudioAttributes: const AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.music,
+          flags: AndroidAudioFlags.none,
+          usage: AndroidAudioUsage.media,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: true,
+      )).timeout(const Duration(milliseconds: 1000));
+      _currentSessionCategory = 'playback';
+      debugPrint('⏱️ [Latency-Sound] Session 切换到 playback 完成，耗时: ${totalSw.elapsedMilliseconds}ms');
+      _logAudioState('会话切换完成(→playback ${totalSw.elapsedMilliseconds}ms)');
+    } catch (e) {
+      // AVAudioSessionErrorCodeInsufficientPriority (OSStatus 561017449) 是瞬时错误，
+      // 通常在原生层音频会话尚未完全释放时出现。固定间隔重试最多 3 次。
+      final errStr = e.toString();
+      final isPriorityError = errStr.contains('561017449') ||
+          errStr.contains('InsufficientPriority') ||
+          errStr.contains('!pri');
+      if (isPriorityError && retryCount < 3) {
+        debugPrint('🔊 [SoundUtil] 切换 playback 遇到 InsufficientPriority，将重试 (${retryCount + 1}/3)');
+        return _configurePlaybackSession(retryCount: retryCount + 1, totalSw: totalSw);
+      }
+      Global.logger.e('SoundUtil: 切换播放模式失败 (retryCount=$retryCount): $e');
+      // 重试耗尽后必须重新抛出，让上层（transitTo/configureAudioSession）感知失败，
+      // 否则 AudioEngine 会误以为切换成功，导致后续发音播放卡死（20s 超时）。
+      rethrow;
+    }
   }
 
   /// 切换为录音与播放并存模式
@@ -208,33 +262,53 @@ class SoundUtil {
       await waitForAllPlayers();
       debugPrint('⏱️ [Latency-Sound] waitForAllPlayers 结束，耗时: ${sw.elapsedMilliseconds}ms');
 
-      try {
-        final session = await AudioSession.instance;
-        await session.configure(AudioSessionConfiguration(
-          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
-          avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
-              AVAudioSessionCategoryOptions.mixWithOthers |
-              AVAudioSessionCategoryOptions.allowBluetooth |
-              AVAudioSessionCategoryOptions.allowAirPlay |
-              AVAudioSessionCategoryOptions.allowBluetoothA2dp,
-          avAudioSessionMode: AVAudioSessionMode.defaultMode,
-          avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
-          avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
-          androidAudioAttributes: const AndroidAudioAttributes(
-            contentType: AndroidAudioContentType.speech,
-            flags: AndroidAudioFlags.none,
-            usage: AndroidAudioUsage.media,
-          ),
-          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-          androidWillPauseWhenDucked: true,
-        )).timeout(const Duration(milliseconds: 1000));
-        _currentSessionCategory = 'playAndRecord';
-        debugPrint('⏱️ [Latency-Sound] Session 切换到 playAndRecord 完成，总耗时: ${sw.elapsedMilliseconds}ms');
-        _logAudioState('会话切换完成(→playAndRecord ${sw.elapsedMilliseconds}ms)');
-      } catch (e) {
-        Global.logger.e('SoundUtil: 切换为录放模式失败: $e');
-      }
+      await _configurePlayAndRecordSession(retryCount: 0, totalSw: sw);
     });
+  }
+
+  /// 配置 playAndRecord 音频会话，带固定间隔重试以处理瞬时 InsufficientPriority 错误。
+  static Future<void> _configurePlayAndRecordSession({required int retryCount, required Stopwatch totalSw}) async {
+    try {
+      if (retryCount > 0) {
+        final delayMs = 50; // 固定 50ms 重试间隔，快速恢复瞬时 InsufficientPriority
+        debugPrint('⏱️ [Latency-Sound] 重试 #$retryCount (playAndRecord)，等待 ${delayMs}ms...');
+        await Future.delayed(Duration(milliseconds: delayMs));
+      }
+
+      final session = await AudioSession.instance;
+      await session.configure(AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
+            AVAudioSessionCategoryOptions.mixWithOthers |
+            AVAudioSessionCategoryOptions.allowBluetooth |
+            AVAudioSessionCategoryOptions.allowAirPlay |
+            AVAudioSessionCategoryOptions.allowBluetoothA2dp,
+        avAudioSessionMode: AVAudioSessionMode.defaultMode,
+        avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
+        avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+        androidAudioAttributes: const AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.speech,
+          flags: AndroidAudioFlags.none,
+          usage: AndroidAudioUsage.media,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+        androidWillPauseWhenDucked: true,
+      )).timeout(const Duration(milliseconds: 1000));
+      _currentSessionCategory = 'playAndRecord';
+      debugPrint('⏱️ [Latency-Sound] Session 切换到 playAndRecord 完成，总耗时: ${totalSw.elapsedMilliseconds}ms');
+      _logAudioState('会话切换完成(→playAndRecord ${totalSw.elapsedMilliseconds}ms)');
+    } catch (e) {
+      final errStr = e.toString();
+      final isPriorityError = errStr.contains('561017449') ||
+          errStr.contains('InsufficientPriority') ||
+          errStr.contains('!pri');
+      if (isPriorityError && retryCount < 3) {
+        debugPrint('🔊 [SoundUtil] 切换 playAndRecord 遇到 InsufficientPriority，将重试 (${retryCount + 1}/3)');
+        return _configurePlayAndRecordSession(retryCount: retryCount + 1, totalSw: totalSw);
+      }
+      Global.logger.e('SoundUtil: 切换为录放模式失败 (retryCount=$retryCount): $e');
+      rethrow;
+    }
   }
 
   /// 物理排空逻辑上已播完的 EarlyExit 播放器，确保发音尾音彻底释放硬件。

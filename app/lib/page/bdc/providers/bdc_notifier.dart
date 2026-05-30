@@ -812,7 +812,7 @@ class BdcNotifier extends _$BdcNotifier {
   void updateIsKeyboardVisible(bool visible) {
     state = state.copyWith(isKeyboardVisible: visible);
     if (visible) {
-      asr.stopMicrophone();
+      unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: asr));
     } else {
       _handleTabChangeForAsr();
     }
@@ -823,7 +823,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     _saveCurrentWordState();
     await asr.stopMicrophone();
-    await _audioPlayer.stop();
+    await _safeStopAudioPlayer();
 
     int nextIndex;
     if (state.historyIndex == -1) {
@@ -850,7 +850,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     _saveCurrentWordState();
     await asr.stopMicrophone();
-    await _audioPlayer.stop();
+    await _safeStopAudioPlayer();
     
     state = state.copyWith(historyIndex: -1);
     await handleWord(target, isFromBatchWordList: true);
@@ -858,6 +858,16 @@ class BdcNotifier extends _$BdcNotifier {
   Future<void> reloadWord() async {
     await StudyBo().prepareForStudy(false);
     getNextWord(false);
+  }
+
+  /// Safely stop the BDC audio player with a Soft-Mute to prevent popping.
+  /// Mirrors the pattern in SoundUtil.playSoundByUrl (sound.dart:486-489):
+  /// set volume to 0 before stopping to avoid an instant voltage step.
+  Future<void> _safeStopAudioPlayer() async {
+    if (_audioPlayer.playing) {
+      await _audioPlayer.setVolume(0.0);
+    }
+    await _audioPlayer.stop();
   }
 
   void _persistLastWordHistoryItem() {
@@ -978,7 +988,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
     // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
     try {
-      await _audioPlayer.stop();
+      await _safeStopAudioPlayer();
     } catch (_) {}
 
     // 答对单词后切换下一词前的视觉驻留延迟。
@@ -1563,7 +1573,7 @@ class BdcNotifier extends _$BdcNotifier {
   void updateKeyboardVisibility(bool visible) {
     state = state.copyWith(isKeyboardVisible: visible);
     if (visible) {
-      asr.stopMicrophone();
+      unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: asr));
     } else {
       handleTabChangeForAsr();
     }

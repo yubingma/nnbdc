@@ -403,18 +403,28 @@ import StoreKit
         teardownAudioEngine()
         isRecording = false
         
-        // 核心原生的终极保障：在原生关停麦克风时，立刻强力在原生层将 AVAudioSession 的分类彻底还原为 .playback！
+        // 核心修复：先停用音频会话，再切换分类，最后重新激活。
+        // 直接从 playAndRecord 切换到 playback 并 setActive(true) 会触发
+        // AVAudioSessionErrorCodeInsufficientPriority (OSStatus 561017449 / '!pri')。
+        // 正确的 iOS 音频会话切换顺序：deactivate → setCategory → activate。
         do {
             let audioSession = AVAudioSession.sharedInstance()
+            // 1. 停用当前会话，释放音频硬件给系统
+            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+            print("IOS: [ASR] Audio session deactivated")
+            // 2. 切换分类到 playback
             try audioSession.setCategory(
                 .playback,
                 mode: .default,
                 options: [.mixWithOthers]
             )
+            print("IOS: [ASR] Audio session category set to .playback")
+            // 3. 重新激活
             try audioSession.setActive(true)
             print("IOS: [ASR] Native AVAudioSession category successfully reverted to .playback")
         } catch {
-            print("IOS: [ASR] Native AVAudioSession category revert failed: \(error)")
+            let nsError = error as NSError
+            print("IOS: [ASR] Native AVAudioSession category revert failed: \(error) (domain: \(nsError.domain), code: \(nsError.code))")
         }
         
         result(nil)
