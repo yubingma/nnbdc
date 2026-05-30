@@ -121,9 +121,9 @@ class SoundUtil {
             await usePlayAndRecordCategory();
             // c. 调用底层驱动启动麦克风物理流，等待 Mic 预热完毕
             await asrInstance.startMicrophone();
-            // d. 【物理错峰阻断】：50ms 稳定窗口，给予 ASR 重采样缓冲区平滑过渡，防止提示音颤音
-            debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活，错峰延迟 50ms 稳定时钟...');
-            await Future.delayed(const Duration(milliseconds: 50));
+            // d. 【物理错峰阻断】：10ms 稳定窗口，给予 ASR 重采样缓冲区平滑过渡，防止提示音颤音
+            debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活，错峰延迟 10ms 稳定时钟...');
+            await Future.delayed(const Duration(milliseconds: 10));
             // e. 稳定窗口结束后，正式播放“叮”的就绪提示音
             await playAsrReadyHintSound();
             break;
