@@ -1002,6 +1002,12 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.historyIndex != -1) {
       if (gotoNext) {
         final lw = state.currentGetWordResult?.learningWord;
+
+        // 回看模式下点击掌握：需要先保存已掌握状态再导航
+        if (state.isWordMastered && lw != null) {
+          await StudyBo().markWordAsMastered(lw);
+        }
+
         if (lw != null && state.fsrsItem != null && state.lastFsrsRating != null) {
           StudyBo().saveHistoryFSRSUpdate(
             currWord: lw,

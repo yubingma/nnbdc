@@ -1155,6 +1155,27 @@ class StudyBo {
 
 
 
+  /// 将指定单词标记为已掌握（用于回看模式等特殊场景下直接保存）
+  Future<void> markWordAsMastered(LearningWordVo learningWordVo) async {
+    final db = MyDatabase.instance;
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+
+    final lwQuery = db.select(db.learningWords)
+      ..where((tbl) => tbl.wordId.equals(learningWordVo.word.id!) & tbl.userId.equals(user.id));
+    final lwList = await lwQuery.get();
+    if (lwList.isEmpty) return;
+    final lw = lwList.first;
+
+    await _saveMasteredWord(
+      learningWord: lw,
+      user: user,
+      now: AppClock.now(),
+      db: db,
+    );
+  }
+
+
   Future<void> _saveMasteredWord({
     required LearningWord learningWord,
     required User user,
