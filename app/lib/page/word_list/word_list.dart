@@ -2273,8 +2273,8 @@ class WordListPageState extends State<WordListPage>
   void _handleWordTap(WordWrapper word, int index) {
     if (studyMode == WordListStudyMode.dictation ||
         studyMode == WordListStudyMode.dictationHandwriting) {
-      // 揭晓答案：如果是切换单词，onWordPressed 会负责播放当前正在离开的那个词
-      onWordPressed(word, index, getBookMarkUiPosition() == index, null);
+      // 拼写模式点击不发音，避免泄题
+      onWordPressed(word, index, false, null);
     } else {
       onWordPressed(word, index, true, null);
     }
