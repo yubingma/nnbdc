@@ -99,6 +99,11 @@ class Asr {
     disposeMeter();
   }
 
+  /// 公开的更新语言接口，确保可以在麦克风拉起前提前配置 Locale
+  Future<void> updateLanguage(AsrLanguage language) async {
+    await _updateLanguage(language);
+  }
+
   Future<void> _updateLanguage(AsrLanguage language) async {
     if (!PlatformUtils.isAsrSupported()) {
       return;

@@ -1290,7 +1290,6 @@ class WordListPageState extends State<WordListPage>
       if (studyMode == WordListStudyMode.speakChinese ||
           studyMode == WordListStudyMode.speakEnglish) {
         asr.initAsr(onAsrResult);
-        _subscribeMeterIfNeeded();
       } else {
         // 如果是普通列表或默写等非语音模式，确保 ASR 是停止的（防止从上个页面残留）
         if (asr.state == AsrState.started) {
@@ -1458,7 +1457,6 @@ class WordListPageState extends State<WordListPage>
     asr.initAsr(onAsrResult);
     // 然后启动ASR（内部会加载模型、启动麦克风、设置热词、播放提示音）
     _startAsr(decideAsrLanguage());
-    _subscribeMeterIfNeeded();
   }
 
   void jumpToBookMark({bool force = false}) {
@@ -1748,6 +1746,14 @@ class WordListPageState extends State<WordListPage>
 
     try {
       _setAsrContextualPhrases();
+      
+      // 特殊优化：在启动麦克风物理流（transitTo）之前，若语言发生切换，
+      // 必须先在原生层静默更新好语言。这彻底避免了在麦克风运行中动态更新 Locale 导致的原生引擎死锁。
+      if (asr.currentLanguage != language) {
+        debugPrint('⏱️ [ASR] 检测到语言发生切换 (${asr.currentLanguage?.locale} ➔ ${language.locale})，提前静默更新语言');
+        await asr.updateLanguage(language);
+      }
+
       debugPrint('⏱️ [Latency-ASR] 热词设置完成，触发状态机跃迁到 record 并自动稳定时钟与播放提示音: +${sw.elapsedMilliseconds}ms');
       final bool isAlreadyRecord = SoundUtil.activeMode == AudioMode.record;
       // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、冷启动时自动播放就绪音！
@@ -2021,7 +2027,6 @@ class WordListPageState extends State<WordListPage>
         studyMode == WordListStudyMode.speakEnglish) {
       debugPrint('⏱️ [Latency] 开始 _startAsr: +${sw.elapsedMilliseconds}ms');
       _startAsr(decideAsrLanguage());
-      _subscribeMeterIfNeeded();
     }
   }
 
@@ -3417,7 +3422,6 @@ class WordListPageState extends State<WordListPage>
                                     studyMode = WordListStudyMode.speakChinese;
                                   });
                                   await _startAsr(decideAsrLanguage());
-                                  _subscribeMeterIfNeeded();
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   jumpToBookMark(force: true);
@@ -3434,7 +3438,6 @@ class WordListPageState extends State<WordListPage>
                                     studyMode = WordListStudyMode.speakEnglish;
                                   });
                                   await _startAsr(decideAsrLanguage());
-                                  _subscribeMeterIfNeeded();
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   jumpToBookMark(force: true);

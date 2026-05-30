@@ -1640,6 +1640,14 @@ class BdcNotifier extends _$BdcNotifier {
 
     try {
       final asrSw = Stopwatch()..start();
+      
+      // 特殊优化：在启动麦克风物理流（transitTo）之前，若语言发生切换，
+      // 必须先在原生层静默更新好语言。这彻底避免了在麦克风运行中动态更新 Locale 导致的原生引擎死锁。
+      if (asr.currentLanguage != language) {
+        debugPrint('⏱️ [ASR] 检测到语言发生切换 (${asr.currentLanguage?.locale} ➔ ${language.locale})，提前静默更新语言');
+        await asr.updateLanguage(language);
+      }
+
       final bool isAlreadyRecord = SoundUtil.activeMode == AudioMode.record;
       // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、冷启动时自动播放就绪音！
       await SoundUtil.transitTo(AudioMode.record, asrInstance: asr);
