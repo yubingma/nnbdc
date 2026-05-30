@@ -14,6 +14,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/sound.dart';
@@ -279,16 +280,10 @@ class WordListPageState extends State<WordListPage>
   dynamic asrResult;
 
   late Asr asr;
-  // 音量电平（0..1）通知器与订阅
+  late final StudyAudioSessionController _sessionController;
   final ValueNotifier<double> _meterLevelNotifier = ValueNotifier<double>(0.0);
-  StreamSubscription<double>? _meterSub;
   static const int _waveCapacity = 16; // 更短窗口，提升实时感（~0.35s）
   final List<double> _waveLevels = <double>[];
-
-  Timer? _meterTimer;
-  double _lastMeterLevel = 0.0;
-  DateTime? _lastMeterAt;
-  bool _meterTickFlip = false;
 
   // ASR模型加载状态与动画控制器
   bool _isAsrModelLoading = false; // 控制UI显示（大脑动画）
@@ -790,41 +785,7 @@ class WordListPageState extends State<WordListPage>
     return max ?? -1;
   }
 
-  /// 订阅音量计数据
-  void _subscribeMeterIfNeeded() {
-    _unsubscribeMeter(); // 无条件先彻底释放清理任何可能残留的旧电平订阅和 Timer，根治多态切换下的订阅死锁
-    
-    _meterSub = asr.getOrCreateMeterSubscription((level) {
-      _lastMeterLevel = level.clamp(0.0, 1.0);
-      _lastMeterAt = AppClock.now();
-    });
-    _meterTimer = Timer.periodic(const Duration(milliseconds: 30), (_) {
-      if (isMenuOpen) return; // 菜单打开时暂停更新，避免UI重绘
-      final now = AppClock.now();
-      final active = _lastMeterAt != null &&
-          now.difference(_lastMeterAt!).inMilliseconds < 150;
-      final v = (active ? _lastMeterLevel : 0.0).clamp(0.0, 1.0);
-      _waveLevels.add(v);
-      if (_waveLevels.length > _waveCapacity) {
-        _waveLevels.removeRange(0, _waveLevels.length - _waveCapacity);
-      }
-      // 强制触发重绘：在数值附近加入极小扰动，避免相等不通知
-      _meterTickFlip = !_meterTickFlip;
-      final bump = _meterTickFlip ? 1e-6 : -1e-6;
-      _meterLevelNotifier.value = (v + bump).clamp(0.0, 1.0);
-    });
-  }
 
-  void _unsubscribeMeter() {
-    _meterSub?.cancel();
-    _meterSub = null;
-    _meterTimer?.cancel();
-    _meterTimer = null;
-    _meterLevelNotifier.value = 0.0;
-    _waveLevels.clear();
-    _lastMeterLevel = 0.0;
-    _lastMeterAt = null;
-  }
 
   int? _initialScrollIndex;
   
@@ -847,6 +808,18 @@ class WordListPageState extends State<WordListPage>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
     WidgetsBinding.instance.addObserver(this);
+
+    _sessionController = StudyAudioSessionController(audioPlayer);
+    _sessionController.meterLevelNotifier.addListener(() {
+      if (!mounted) return;
+      if (isMenuOpen) return;
+      final v = _sessionController.meterLevelNotifier.value;
+      _waveLevels.add(v);
+      if (_waveLevels.length > _waveCapacity) {
+        _waveLevels.removeRange(0, _waveLevels.length - _waveCapacity);
+      }
+      _meterLevelNotifier.value = v;
+    });
 
     doInit();
     // 注册页级播放器到 SoundUtil 监视列表，确保音频会话切换时正确等待/排空
@@ -1125,15 +1098,12 @@ class WordListPageState extends State<WordListPage>
           
           try {
             // 答对时，使用 stopAsr 进行热停止以维持麦克风保温状态，完全消除高频物理切流延迟与设备假死
-            await asr.stopAsr().timeout(
+            await _sessionController.stopSession(forceStopMicrophone: false).timeout(
               const Duration(milliseconds: 500),
               onTimeout: () {
                 Global.logger.w('停止ASR超时，继续播放单词发音');
               },
             );
-            await asr.reset().catchError((e) {
-              Global.logger.d("重置ASR失败: $e");
-            });
           } catch (e) {
             Global.logger.d("停止ASR失败: $e");
           }
@@ -1192,9 +1162,8 @@ class WordListPageState extends State<WordListPage>
 
         try {
           // 跳转前，使用 stopAsr 进行热停止以维持麦克风保温状态，消除高频冷启动重构与设备假死
-          await asr.stopAsr();
-          await asr.reset(); // 清除缓冲区
-          debugPrint('⏱️ [Latency] stopAsr+reset 完成: +${swJump.elapsedMilliseconds}ms');
+          await _sessionController.stopSession(forceStopMicrophone: false);
+          debugPrint('⏱️ [Latency] stopAsr 完成: +${swJump.elapsedMilliseconds}ms');
         } catch (e) {
           Global.logger.d("停止ASR失败: $e");
         }
@@ -1243,44 +1212,6 @@ class WordListPageState extends State<WordListPage>
     return AsrLanguage.chinese;
   }
 
-  /// 设置ASR上下文短语（热词机制）
-  /// 必须在 startAsr 之前调用，否则只能等到下一次 startAsr 生效
-  void _setAsrContextualPhrases([WordVo? word]) {
-    try {
-      WordVo? targetWord = word;
-      if (targetWord == null) {
-        int idx = getBookMarkUiPosition();
-        if (idx >= 0 && idx < words.length) {
-          targetWord = words[idx].word;
-        }
-      }
-
-      if (targetWord == null) {
-        asr.setContextualStrings([]);
-        return;
-      }
-
-      List<String> phrases = [];
-      if (studyMode == WordListStudyMode.speakEnglish) {
-        // 说英文模式：热词设为英文拼写
-        phrases.add(targetWord.spell);
-      } else if (studyMode == WordListStudyMode.speakChinese) {
-        // 说中文模式：热词设为该词的所有可能释义项
-        phrases.addAll(
-            AsrUtil.extractContextualPhrases(targetWord.meaningItems ?? []));
-      }
-
-      if (phrases.isNotEmpty) {
-        Global.logger.d('~~~~~WordList: 设置 ASR 上下文热词: $phrases');
-        asr.setContextualStrings(phrases);
-      } else {
-        asr.setContextualStrings([]);
-      }
-    } catch (e) {
-      Global.logger.d('WordList: 设置 ASR 上下文短语失败: $e');
-    }
-  }
-
   doInit() {
     asr = Asr();
     // 延迟初始化 ASR，避免阻塞页面进入动画
@@ -1294,7 +1225,7 @@ class WordListPageState extends State<WordListPage>
         // 如果是普通列表或默写等非语音模式，确保 ASR 是停止的（防止从上个页面残留）
         if (asr.state == AsrState.started) {
           Global.logger.d('WordList: 非语音模式，确保停止残留的 ASR 引擎');
-          asr.stopMicrophone();
+          _sessionController.stopSession(forceStopMicrophone: true);
         }
       }
     });
@@ -1307,12 +1238,6 @@ class WordListPageState extends State<WordListPage>
           // 触发 UI 重绘以更新 ASR 状态指示器
         });
       });
-      if (state == AsrState.started) {
-        // 恢复识别后，确保重新订阅电平流
-        _subscribeMeterIfNeeded();
-      } else if (state == AsrState.stopped) {
-        _unsubscribeMeter();
-      }
     });
   }
 
@@ -1356,6 +1281,7 @@ class WordListPageState extends State<WordListPage>
     _handwritingPaddingTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
+    _sessionController.dispose();
     // 停止 ASR：不再检查 studyMode，只要页面销毁就无条件尝试停止识别引擎并转换状态机到 idle
     // 平滑物理淡出所有活跃音频流并物理释放硬件资源，防止麦克风占用指示灯常亮
     try {
@@ -1364,10 +1290,7 @@ class WordListPageState extends State<WordListPage>
       Global.logger.d("dispose: 停止 ASR 失败：$e");
     }
 
-    // 清理 meter 订阅（通过 ASR 单例统一管理）
-    _unsubscribeMeter();
-    // 确保调用 ASR 的 disposeMeter 来彻底清理
-    asr.disposeMeter();
+    _waveLevels.clear();
 
     _audioPlayerDisposed = true; // 标记为已释放
     SoundUtil.unwatchPlayer(audioPlayer);
@@ -1415,7 +1338,7 @@ class WordListPageState extends State<WordListPage>
       _restoreAsrIfNeeded('didChangeAppLifecycleState');
     } else if (state == AppLifecycleState.paused) {
       // 应用进入后台时，停止ASR以节省资源
-      asr.stopMicrophone();
+      _sessionController.stopSession(forceStopMicrophone: true);
     }
   }
 
@@ -1433,8 +1356,7 @@ class WordListPageState extends State<WordListPage>
           // 如果ASR卡在initialized状态，先强制停止以清除内部状态
           if (asr.state == AsrState.initialized) {
             Global.logger.d('ASR卡在initialized状态，强制停止后重新启动');
-            asr.stopMicrophone();
-            asr.reset();
+            _sessionController.stopSession(forceStopMicrophone: true);
             // 短暂延迟确保清理完成
             Future.delayed(const Duration(milliseconds: 100), () {
               if (mounted) {
@@ -1709,7 +1631,7 @@ class WordListPageState extends State<WordListPage>
   }
 
   /// 带加载动画的 ASR 启动封装
-  Future<void> _startAsr(AsrLanguage language) async {
+  Future<void> _startAsr(AsrLanguage language, [WordVo? word]) async {
     final sw = Stopwatch()..start();
     debugPrint('⏱️ [Latency-ASR] _startAsr 入口 (语言: ${language.locale})');
     if (!mounted) return;
@@ -1745,28 +1667,31 @@ class WordListPageState extends State<WordListPage>
     }
 
     try {
-      _setAsrContextualPhrases();
-      
-      // 特殊优化：在启动麦克风物理流（transitTo）之前，若语言发生切换，
-      // 必须先在原生层静默更新好语言。这彻底避免了在麦克风运行中动态更新 Locale 导致的原生引擎死锁。
-      if (asr.currentLanguage != language) {
-        debugPrint('⏱️ [ASR] 检测到语言发生切换 (${asr.currentLanguage?.locale} ➔ ${language.locale})，提前静默更新语言');
-        await asr.updateLanguage(language);
+      // 提取 phrases 热词列表
+      WordVo? targetWord = word;
+      if (targetWord == null) {
+        int idx = getBookMarkUiPosition();
+        if (idx >= 0 && idx < words.length) {
+          targetWord = words[idx].word;
+        }
       }
 
-      debugPrint('⏱️ [Latency-ASR] 热词设置完成，触发状态机跃迁到 record 并自动稳定时钟与播放提示音: +${sw.elapsedMilliseconds}ms');
-      final bool isAlreadyRecord = SoundUtil.activeMode == AudioMode.record;
-      // 1. 通过统一状态机切换到 record 状态。这会自动配置音频会话为录放、启动麦克风、冷启动时自动播放就绪音！
-      await SoundUtil.transitTo(AudioMode.record, asrInstance: asr);
-      
-      // 2. 如果本来已经是 record 保温态，通过统一状态机没有执行切换和播放，这里显式手动调用物理排空和播放就绪音
-      if (isAlreadyRecord) {
-        debugPrint('🔊 [WordList] 状态机已处于 record，执行手动热复用就绪提示音播放...');
-        await SoundUtil.playAsrReadyHintSoundWithCleanup();
+      List<String> phrases = [];
+      if (studyMode == WordListStudyMode.speakEnglish) {
+        if (targetWord != null) phrases.add(targetWord.spell);
+      } else if (studyMode == WordListStudyMode.speakChinese) {
+        if (targetWord != null) phrases.addAll(AsrUtil.extractContextualPhrases(targetWord.meaningItems ?? []));
       }
-      
-      // 3. 正式向 native 下发开启 ASR 识别任务 (playHintSound: false)
-      await asr.startAsr(language, playHintSound: false);
+
+      if (phrases.isNotEmpty) {
+        Global.logger.d('~~~~~WordList: 设置 ASR 上下文热词: $phrases');
+      }
+
+      await _sessionController.startSession(
+        language: language,
+        phrases: phrases,
+        isSpeakMode: true,
+      );
       debugPrint('⏱️ [Latency-ASR] ASR 启动成功: +${sw.elapsedMilliseconds}ms');
     } catch (e, stackTrace) {
       Global.logger.e('❌ ASR启动失败', error: e, stackTrace: stackTrace);
@@ -3292,8 +3217,7 @@ class WordListPageState extends State<WordListPage>
                                 setState(() {
                                   studyMode = WordListStudyMode.list;
                                 });
-                                _unsubscribeMeter();
-                                asr.stopMicrophone();
+                                await _sessionController.stopSession(forceStopMicrophone: true);
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   jumpToBookMark(force: true);
                                 });
@@ -3344,8 +3268,7 @@ class WordListPageState extends State<WordListPage>
                                       w.hintLetterCount = 0;
                                     }
                                   });
-                                  _unsubscribeMeter();
-                                  asr.stopMicrophone();
+                                  await _sessionController.stopSession(forceStopMicrophone: true);
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   jumpToBookMark(force: true);
@@ -3379,8 +3302,7 @@ class WordListPageState extends State<WordListPage>
                                   jumpToBookMark(force: true);
                                 });
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
-                                _unsubscribeMeter();
-                                asr.stopMicrophone();
+                                await _sessionController.stopSession(forceStopMicrophone: true);
                                 swOpen.stop();
                                 Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [2. 彻底退出事件体] 耗时: ${swOpen.elapsedMilliseconds}ms');
                                 break;
@@ -3391,8 +3313,7 @@ class WordListPageState extends State<WordListPage>
                                     w.isAnswerRevealed = false;
                                   }
                                 });
-                                _unsubscribeMeter();
-                                asr.stopMicrophone();
+                                await _sessionController.stopSession(forceStopMicrophone: true);
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   jumpToBookMark(force: true);
                                 });
@@ -3404,8 +3325,7 @@ class WordListPageState extends State<WordListPage>
                                     w.isAnswerRevealed = false;
                                   }
                                 });
-                                _unsubscribeMeter();
-                                asr.stopMicrophone();
+                                await _sessionController.stopSession(forceStopMicrophone: true);
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   jumpToBookMark(force: true);
                                 });
@@ -3413,8 +3333,7 @@ class WordListPageState extends State<WordListPage>
 
                               case menuSpeakChinese:
                                 if (studyMode != WordListStudyMode.speakChinese) {
-                                  await asr.stopMicrophone();
-                                  await asr.reset();
+                                  await _sessionController.stopSession(forceStopMicrophone: true);
                                   setState(() {
                                     clearWordStates();
                                     asrResult = "";
@@ -3429,8 +3348,7 @@ class WordListPageState extends State<WordListPage>
                                 break;
                               case menuSpeakEnglish:
                                 if (studyMode != WordListStudyMode.speakEnglish) {
-                                  await asr.stopMicrophone();
-                                  await asr.reset();
+                                  await _sessionController.stopSession(forceStopMicrophone: true);
                                   setState(() {
                                     clearWordStates();
                                     asrResult = "";
