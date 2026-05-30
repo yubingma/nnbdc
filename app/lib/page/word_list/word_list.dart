@@ -1972,7 +1972,11 @@ class WordListPageState extends State<WordListPage>
 
     Future<void>? sessionFuture;
     if (shouldPlaySound) {
-      sessionFuture = SoundUtil.transitTo(AudioMode.playback, asrInstance: asr, hotPlayback: isSpeakMode);
+      sessionFuture = SoundUtil.transitTo(
+        AudioMode.playback, 
+        asrInstance: asr, 
+        hotPlayback: isSpeakMode && SoundUtil.activeSessionCategory == 'playAndRecord'
+      );
       SoundUtil.watchPlayer(audioPlayer);
     }
 

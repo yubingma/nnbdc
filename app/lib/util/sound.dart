@@ -28,6 +28,9 @@ class SoundUtil {
   @visibleForTesting
   static set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
 
+  /// 获取当前活跃的音频会话 Category（供业务层做冷热分轨状态智能判断）
+  static String get activeSessionCategory => _currentSessionCategory;
+
   @visibleForTesting
   static String get currentSessionCategory => _currentSessionCategory;
 

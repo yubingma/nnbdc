@@ -1499,9 +1499,13 @@ class BdcNotifier extends _$BdcNotifier {
 
     Future<void>? sessionFuture;
     if (willPlayWord || willPlaySentence) {
-      // 架构优化 1：播放前无条件将全局音频引擎状态机切换为 playback 纯播放状态（若后置需要立即启动 ASR 则使用热保温播放，避免物理硬件切换重构开销），
+      // 架构优化 1：播放前无条件将全局音频引擎状态机切换为 playback 纯播放状态（只有当设备已物理保温在 playAndRecord 模式下才走热播放，若是冷态则走高品质物理 playback 播放，物理隔绝背景预热 Category 切换的硬件竞争和开头爆音），
       // 所有麦克风拆卸、ASR 冷关停完全由状态机内部串行原子化执行，根治硬件时钟冲突爆音
-      sessionFuture = SoundUtil.transitTo(AudioMode.playback, asrInstance: asr, hotPlayback: startAsrWhenFinish);
+      sessionFuture = SoundUtil.transitTo(
+        AudioMode.playback, 
+        asrInstance: asr, 
+        hotPlayback: startAsrWhenFinish && SoundUtil.activeSessionCategory == 'playAndRecord'
+      );
       SoundUtil.watchPlayer(_audioPlayer);
     }
 
@@ -1604,7 +1608,7 @@ class BdcNotifier extends _$BdcNotifier {
     } else {
       debugPrint('💡 [BDC-ASR] 不在 SpeakTab，当前 asr 状态: ${asr.state}');
       // 如果不在说模式下，且当前 ASR 仍在运行或音频 Category 依然是录放通道，强制触发冷关停以释放麦克风和硬件资源
-      if (asr.state != AsrState.stopped || SoundUtil.currentSessionCategory == 'playAndRecord') {
+      if (asr.state != AsrState.stopped || SoundUtil.activeSessionCategory == 'playAndRecord') {
         debugPrint('💡 [BDC-ASR] 不在 SpeakTab 且 ASR 运行或麦克风未释放，触发状态机物理跃迁到 idle');
         unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: asr));
       }
