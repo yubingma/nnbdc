@@ -771,6 +771,92 @@ void main() {
       expect(wordIds, ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
     });
 
+    test('【多词书优先级验证】高优先级词书的新词先被取，低优先级词书后补；且新词被正确写入learning_words池子', () async {
+      // 1. 清理 setUp 中创建的默认词书绑定，构造双词书场景
+      final defaultDict = await (db.select(db.learningDicts)
+            ..where((ld) => ld.userId.equals(testUser.id) & ld.dictId.equals('mock_dict_1')))
+          .getSingle();
+      await db.learningDictsDao.deleteEntity(defaultDict, true);
+
+      // 2. 创建高优先级词书 mock_dict_high (2 个词: word_high_1, word_high_2)
+      final dictHighId = 'mock_dict_high';
+      await db.into(db.dicts).insert(Dict(
+        id: dictHighId, name: '高优先级词书', wordCount: 2,
+        isShared: false, isReady: true, ownerId: 'sys',
+        visible: true, editable: false, deletable: false,
+        createTime: now, updateTime: now,
+      ));
+      await db.into(db.learningDicts).insert(LearningDict(
+        userId: testUser.id, dictId: dictHighId,
+        isPrivileged: true, fetchMastered: false,
+        createTime: now, updateTime: now,
+      ));
+      for (int i = 1; i <= 2; i++) {
+        final wordId = 'word_high_$i';
+        await db.into(db.words).insert(Word(
+          id: wordId, spell: 'high_$i', popularity: 100,
+          createTime: now, updateTime: now,
+        ));
+        await db.into(db.dictWords).insert(DictWord(
+          dictId: dictHighId, wordId: wordId, seq: i, unit: 0,
+          createTime: now, updateTime: now,
+        ));
+      }
+
+      // 3. 创建低优先级词书 mock_dict_low (3 个词: word_low_1, word_low_2, word_low_3)
+      final dictLowId = 'mock_dict_low';
+      await db.into(db.dicts).insert(Dict(
+        id: dictLowId, name: '低优先级词书', wordCount: 3,
+        isShared: false, isReady: true, ownerId: 'sys',
+        visible: true, editable: false, deletable: false,
+        createTime: now, updateTime: now,
+      ));
+      await db.into(db.learningDicts).insert(LearningDict(
+        userId: testUser.id, dictId: dictLowId,
+        isPrivileged: false, fetchMastered: false,
+        createTime: now, updateTime: now,
+      ));
+      for (int i = 1; i <= 3; i++) {
+        final wordId = 'word_low_$i';
+        await db.into(db.words).insert(Word(
+          id: wordId, spell: 'low_$i', popularity: 100,
+          createTime: now, updateTime: now,
+        ));
+        await db.into(db.dictWords).insert(DictWord(
+          dictId: dictLowId, wordId: wordId, seq: i, unit: 0,
+          createTime: now, updateTime: now,
+        ));
+      }
+
+      // 4. 设置每日目标为 5（正好是两个词书的词数之和），无任何到期复习词
+      final updatedUser = testUser.copyWith(wordsPerDay: 5);
+      await db.usersDao.saveUser(updatedUser, false);
+      Global.updateUserCache(updatedUser);
+
+      // 5. 执行今日计划生成
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 5);
+
+      // 6. 核心断言：高优先级词书的 2 个词在前，低优先级词书的 3 个词在后
+      final wordIds = todayWords.map((w) => w.wordId).toList();
+      expect(wordIds, [
+        'word_high_1', 'word_high_2',   // 高优先级先
+        'word_low_1', 'word_low_2', 'word_low_3', // 低优先级后补
+      ]);
+
+      // 7. 验证这些新词确实被写入了 learning_words 表（池子），且 batchId > 0
+      for (final wordId in wordIds) {
+        final inPool = await (db.select(db.learningWords)
+              ..where((lw) => lw.userId.equals(testUser.id) & lw.wordId.equals(wordId)))
+            .getSingle();
+        expect(inPool.batchId, 1, reason: '新词 $wordId 应被写入池子并分配 batchId');
+        expect(inPool.isTodayNewWord, true, reason: '全新词应标记为今日新词');
+      }
+    });
+
     test('【池内新词优先捞取契约验证】生成计划时，必须优先捞取池子里现存的未背过新词，只有池内可学词不足时才允许去外部词书抓取', () async {
       // 1. 设置每日计划为 3
       final testTime = AppClock.now();
