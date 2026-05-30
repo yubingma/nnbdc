@@ -22,17 +22,16 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
-import 'package:nnbdc/util/study_audio_session_controller.dart';
-import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/fsrs.dart';
+import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -76,7 +75,6 @@ class BdcNotifier extends _$BdcNotifier {
   late final StudyAudioSessionController _sessionController;
   Timer? _learningTimer;
   Timer? _persistTimer;
-  Future<void>? _audioPreloadFuture;
   /// 播放取消令牌：每次换词或用户手动操作时递增，使旧延迟 callback 失效。
   int _playToken = 0;
   
@@ -598,13 +596,8 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(dataLoaded: true);
 
-    // 预热单词音频播放器：在后台触发 setAudioSource，初始化底层 AVQueuePlayer，
-    // 避免 playWordAndFirstSentence 中首次 setAudioSource 产生 ~2s 冷启动延迟
-    final wordSpell = word.spell;
-    _audioPreloadFuture = SoundUtil.preloadAudioFromUrl(
-      Util.getWordSoundUrl(wordSpell, word: word),
-      _audioPlayer,
-    );
+    // 优化：彻底取消在切词时针对每个单词的后台 setAudioSource 预热，
+    // 根治预热任务与后续播放任务高频并发撞车导致的 Loading interrupted 调试断点异常
 
     // iOS 说模式引擎预热：在 dataLoaded 之后、200ms delay 之前启动。
     // 此时 ASR 状态已稳定（initialized），不会被 loadData 中的 stopAsr 干扰。
@@ -1034,7 +1027,6 @@ class BdcNotifier extends _$BdcNotifier {
     final totalStopwatch = Stopwatch()..start();
 
     _saveCurrentWordState();
-    _audioPreloadFuture = null; // 切换单词，废弃旧的预加载 future
     _playToken++; // 取消任何待执行的自动播放延迟 callback
 
     // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
@@ -1503,12 +1495,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     if (willPlayWord || willPlaySentence) {
       if (state.word != null) {
-        if (_audioPreloadFuture != null) {
-          final preloadWaitSw = Stopwatch()..start();
-          await _audioPreloadFuture;
-          _audioPreloadFuture = null;
-          debugPrint('⚡ [PERF] Audio preload awaited: ${preloadWaitSw.elapsedMilliseconds}ms');
-        }
+
         
         await _sessionController.playWordAndSentence(
           state.word!,
