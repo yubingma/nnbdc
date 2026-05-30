@@ -57,8 +57,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _completedStepCount = 0;
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
-  DateTime _now = AppClock.now();
-  Timer? _timer;
+  final DateTime _now = AppClock.now();
   Set<String> _masteredWordIds = {};
 
   @override
@@ -100,14 +99,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         loadData();
       }
     });
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _now = AppClock.now();
-        });
-      }
-    });
   }
 
   StreamSubscription? _dakaSubscription;
@@ -117,7 +108,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   @override
   void dispose() {
-    _timer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _dakaSubscription?.cancel();
     _wordDeletedSubscription?.cancel();

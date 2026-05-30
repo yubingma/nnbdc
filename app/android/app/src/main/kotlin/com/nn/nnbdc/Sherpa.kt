@@ -61,6 +61,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var currentLocale: String = "zh-CN"
     private var pendingHotwords: String = ""
 
+    // 跨平台音量计发送限频时间戳 (治理跨界通道拥堵)
+    private var lastMeterSentTime = 0L
+
     fun initChannel(flutterEngine: FlutterEngine) {
         eventChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "nnbdc/asr_events")
         eventChannel!!.setStreamHandler(this)
@@ -215,8 +218,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setTransducer(OnlineTransducerModelConfig.builder()
                     .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
                 .setTokens(tokensPath)
-                .setNumThreads(4)
-                .setDebug(true)
+                .setNumThreads(2)
+                .setDebug(false)
                 .build()
 
             val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
@@ -263,8 +266,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setTransducer(OnlineTransducerModelConfig.builder()
                     .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
                 .setTokens(tokensPath)
-                .setNumThreads(4)
-                .setDebug(true)
+                .setNumThreads(2)
+                .setDebug(false)
                 .build()
 
             val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
@@ -366,6 +369,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         lastSentResult = ""
         
         recordingThread = thread(true) {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
             processSamples(minBufferSize)
         }
         Log.i(TAG, "Started recording")
@@ -390,8 +394,12 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 val rms = sqrt(sumSquares / ret)
                 val norm = (rms / 32768.0).coerceIn(0.0, 1.0)
                 
-                activity.runOnUiThread {
-                     meterEvents?.success(norm)
+                val now = System.currentTimeMillis()
+                if (now - lastMeterSentTime >= 60) {
+                    lastMeterSentTime = now
+                    activity.runOnUiThread {
+                        meterEvents?.success(norm)
+                    }
                 }
 
                 // 2. 识别

@@ -68,11 +68,11 @@ class PerformanceWatchdog {
           reportJank(((uiTimeMs - 16) / 32).clamp(0.0, 0.5));
         }
 
-        if (rasterTimeMs > 16) {
+        if (rasterTimeMs > 24) {
           if (!kReleaseMode) {
             Global.logger.w('⚠️ [Performance] 帧率警告：GPU 渲染卡顿！耗时: ${rasterTimeMs}ms');
           }
-          reportJank(((rasterTimeMs - 16) / 32).clamp(0.0, 0.5));
+          reportJank(((rasterTimeMs - 24) / 32).clamp(0.0, 0.5));
         }
       }
     });
