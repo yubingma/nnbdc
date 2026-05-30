@@ -77,7 +77,7 @@ class PhonemeUtil {
 
     final wA = aC.split(RegExp(r'[\s\-]+')).where((w) => w.isNotEmpty).toList(), wB = bC.split(RegExp(r'[\s\-]+')).where((w) => w.isNotEmpty).toList();
     final sA = ' ${wA.join(' ')} ', sB = ' ${wB.join(' ')} ';
-    bool isContained = wA.length != wB.length && (sA.contains(sB) || sB.contains(sA));
+    bool isContained = wA.length != wB.length && sA.contains(sB);
     bool useSubstring = wA.length != wB.length;
     
     int finalScore = 0, baseBest = 0;
@@ -102,7 +102,7 @@ class PhonemeUtil {
       baseBest = finalScore;
     }
 
-    double penaltyMult = isContained ? 0.3 : (baseBest > 75 ? 0.5 : 1.0);
+    double penaltyMult = isContained ? 0.3 : ((baseBest > 75 && wA.length >= wB.length) ? 0.5 : 1.0);
     
     if (isContained) finalScore += 10;
     finalScore -= ((wA.length - wB.length).abs() * 5 * penaltyMult).round();

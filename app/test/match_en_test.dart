@@ -27,6 +27,8 @@ CRUELTY  K R UW1 L T IY0
 ANALYTIC  AE0 N AH0 L IH1 T IH0 K
 ANALYTICAL  AE0 N AH0 L IH1 T IH0 K AH0 L
 THE  DH AH0
+ATLANTIC AE0 T L AE1 N T IH0 K
+OCEAN OW1 SH AH0 N
 EFFECT  IH0 F EH1 K T
 DEFLECT  D IH0 F L EH1 K T
 THERMAL  TH ER1 M AH0 L
@@ -302,6 +304,16 @@ CHOICE CH OY1 S
       debugPrint('Colo vs Clue score: $score');
       
       expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
+    });
+
+    test('the vs the Atlantic Ocean - should NOT match (intercept partial read)', () async {
+      const String target = "the Atlantic Ocean";
+      const String asrResult = "the";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('the vs the Atlantic Ocean score: $score');
+      
+      expect(score, lessThan(Constants.phonemeMatchThreshold));
     });
   });
 }
