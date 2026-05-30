@@ -345,34 +345,77 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             }
         }
 
-        val minBufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat)
-        audioRecord = AudioRecord(
-            audioSource,
-            sampleRateInHz,
-            channelConfig,
-            audioFormat,
-            minBufferSize * 2
-        )
-        
-        audioRecord?.startRecording()
+        // 1. 立即在主线程把状态标志置为启动，供 MethodChannel 极速返回
         isRecording = true
         isAsrStopped = false
-        
-        // 使用当前活动模型创建流
-        Log.i(TAG, "Creating stream with hotwords: $pendingHotwords")
-        val hotwords = pendingHotwords
-        synchronized(this) {
-            currentStream = currentModel?.createStream(hotwords)
-        }
-        
-        // 重置去重标记
         lastSentResult = ""
         
+        // 2. 异步下沉耗时录音硬件启动与 ONNX 流创建到专属后台工作线程
         recordingThread = thread(true) {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
-            processSamples(minBufferSize)
+            
+            val minBufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat)
+            if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
+                Log.e(TAG, "Invalid buffer size for AudioRecord")
+                isRecording = false
+                return@thread
+            }
+
+            try {
+                // 3. 竞态防御：若在此极短的启动间隙里，主线程下发了 stopMicrophone()，则优雅退出
+                if (!isRecording) {
+                    Log.i(TAG, "ASR start interrupted by stop command during thread launch.")
+                    return@thread
+                }
+
+                val record = AudioRecord(
+                    audioSource,
+                    sampleRateInHz,
+                    channelConfig,
+                    audioFormat,
+                    minBufferSize * 2
+                )
+                
+                if (record.state != AudioRecord.STATE_INITIALIZED) {
+                    Log.e(TAG, "Failed to initialize AudioRecord instance")
+                    isRecording = false
+                    return@thread
+                }
+
+                audioRecord = record
+                
+                if (!isRecording) {
+                    Log.i(TAG, "ASR stop requested right after AudioRecord creation, releasing record.")
+                    record.release()
+                    audioRecord = null
+                    return@thread
+                }
+                
+                record.startRecording()
+
+                if (!isRecording) {
+                    Log.i(TAG, "ASR stop requested right after startRecording, stopping and releasing.")
+                    record.stop()
+                    record.release()
+                    audioRecord = null
+                    return@thread
+                }
+
+                // 4. 异步在子线程完成 C++ ONNX 模型流的创建，规避主线程阻塞
+                Log.i(TAG, "Creating stream with hotwords (in background): $pendingHotwords")
+                val hotwords = pendingHotwords
+                synchronized(this@Sherpa) {
+                    currentStream = currentModel?.createStream(hotwords)
+                }
+
+                Log.i(TAG, "Started recording and ASR decoder in background thread successfully.")
+                processSamples(minBufferSize)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start microphone in background: ${e.message}", e)
+                isRecording = false
+                stopMicrophone()
+            }
         }
-        Log.i(TAG, "Started recording")
     }
 
     private fun processSamples(bufferSize: Int) {
