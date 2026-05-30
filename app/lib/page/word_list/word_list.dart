@@ -1547,7 +1547,10 @@ class WordListPageState extends State<WordListPage>
                   initialScrollIndex: _initialScrollIndex ?? 0,
                   itemScrollController: itemScrollController,
                   itemPositionsListener: itemPositionsListener,
-                  padding: const EdgeInsets.only(top: 20, bottom: 120),
+                  padding: EdgeInsets.only(
+                      top: 20,
+                      bottom: 120 + MediaQuery.of(context).viewInsets.bottom,
+                  ),
                 ),
               ),
               // 底部的按钮，固定在页面底部
