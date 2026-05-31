@@ -506,7 +506,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       final userId = Global.getLoggedInUser()?.id;
       final words = await WordBo().getCigenExpandedWords(
         cigenId, userId,
-        excludeWordId: args.word.id,
+        currentWordId: args.word.id,
       );
       _expandedCigenWords[cigenId] = words;
     } catch (e) {
@@ -1291,44 +1291,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 ),
                 const SizedBox(height: 12),
                 
-                // 拆解详细卡片
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDarkMode 
-                        ? Colors.black.withValues(alpha: 0.15) 
-                        : Colors.black.withValues(alpha: 0.02),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Icon(
-                          Icons.lightbulb_outline_rounded,
-                          size: 16,
-                          color: tagTextColor.withValues(alpha: 0.8),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          link.theExplain,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 相同词根/词缀的单词拓展区域
-                const SizedBox(height: 10),
+                const SizedBox(height: 4),
                 InkWell(
                   onTap: () {
                     final expanded = _cigenExpandedState[cigen.id] ?? false;

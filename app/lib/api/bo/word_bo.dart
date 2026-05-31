@@ -2147,12 +2147,12 @@ class WordBo {
 
   /// 获取指定 cigen (词根/词缀) 下的单词列表。
   /// 优先展示在用户词书范围内的单词，之后展示词书范围外的单词。
-  /// [excludeWordId] 可排除当前单词自身。
+  /// [currentWordId] 当前学习的单词 ID，强制排序到最首位。
   /// [maxCount] 最大返回数量，默认 20，按 inDict 优先、popularity 升序取词。
   Future<List<CigenExpandedWord>> getCigenExpandedWords(
     String cigenId,
     String? userId, {
-    String? excludeWordId,
+    String? currentWordId,
     int maxCount = 20,
   }) async {
     final db = MyDatabase.instance;
@@ -2162,7 +2162,6 @@ class WordBo {
     if (links.isEmpty) return [];
 
     var wordIds = links.map((l) => l.wordId).toSet();
-    if (excludeWordId != null) wordIds.remove(excludeWordId);
     if (wordIds.isEmpty) return [];
 
     // 2. 获取单词基础信息
@@ -2211,9 +2210,11 @@ class WordBo {
         ? await getWordsLearningStatusBatch(userId, words.map((w) => w.id).toList())
         : <String, bool?>{};
 
-    // 5. 排序：(在当前词书内 或 已有学习记录) 优先，其次按 popularity 升序
+    // 5. 排序：当前学习单词绝对优先，其次 (在当前词书内 或 已有学习记录) 优先，再次按 popularity 升序
     var sortedWords = words.toList();
     sortedWords.sort((a, b) {
+      if (a.id == currentWordId) return -1;
+      if (b.id == currentWordId) return 1;
       final aHasRecord = learningStatusMap[a.id] != null;
       final bHasRecord = learningStatusMap[b.id] != null;
       final aInDict = inDictWordIds.contains(a.id) || aHasRecord;
