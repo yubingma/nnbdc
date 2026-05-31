@@ -1025,22 +1025,52 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       ),
                     ),
                     Expanded( 
-                      child: NotificationListener<ScrollUpdateNotification>(
-                        onNotification: (ScrollUpdateNotification notification) {
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (ScrollNotification notification) {
                           if (notification.metrics.axis == Axis.horizontal) return false;
                           
-                          // 只有当用户往下看内容（上滑手指）时，且滚动超过 180 像素（提供顶部极其稳厚、明显的停顿阻尼感），收起抽屉
-                          if (notification.dragDetails != null && notification.scrollDelta != null) {
-                            if (notification.scrollDelta! > 0.0 && _isTopDrawerExpanded) {
-                              if (notification.metrics.pixels > 180.0) {
-                                setState(() { _isTopDrawerExpanded = false; });
+                          if (notification is ScrollUpdateNotification) {
+                            final scrollDelta = notification.scrollDelta;
+                            if (scrollDelta != null) {
+                              if (scrollDelta > 0.0) {
+                                // 用户往下滚动内容（上滑手指）：重置累计值
+                                _cumulativeScroll = 0.0;
+                                
+                                // 如果抽屉处于展开状态，且用户确实向下滚动了一小段距离（避开回弹及微小抖动），则立刻收起
+                                if (_isTopDrawerExpanded && notification.metrics.pixels > 10.0) {
+                                  setState(() {
+                                    _isTopDrawerExpanded = false;
+                                  });
+                                }
+                              } else if (scrollDelta < 0.0) {
+                                // 用户往上回看内容（下滑手指）且已到达或接近最顶部
+                                if (notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded) {
+                                  _cumulativeScroll += scrollDelta.abs();
+                                  if (_cumulativeScroll >= 100.0) {
+                                    setState(() {
+                                      _isTopDrawerExpanded = true;
+                                    });
+                                    _cumulativeScroll = 0.0;
+                                  }
+                                } else {
+                                  _cumulativeScroll = 0.0;
+                                }
                               }
                             }
-                          }
-                          
-                          // 当用户往上回看内容（下滑手指），且接近最顶部时，极易展开启抽屉（取消速度限制，只要回滑即开）
-                          if (notification.scrollDelta != null && notification.scrollDelta! < 0.0 && notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded) {
-                            setState(() { _isTopDrawerExpanded = true; });
+                          } else if (notification is OverscrollNotification) {
+                            // 当在最顶部继续往下拉时触发 overscroll
+                            if (notification.overscroll < 0.0 && !_isTopDrawerExpanded) {
+                              _cumulativeScroll += notification.overscroll.abs();
+                              if (_cumulativeScroll >= 100.0) {
+                                setState(() {
+                                  _isTopDrawerExpanded = true;
+                                });
+                                _cumulativeScroll = 0.0;
+                              }
+                            }
+                          } else if (notification is ScrollEndNotification) {
+                            // 手指放开或滚动结束时重置累计值
+                            _cumulativeScroll = 0.0;
                           }
                           
                           return false;
