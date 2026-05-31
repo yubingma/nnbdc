@@ -466,7 +466,7 @@ class BdcNotifier extends _$BdcNotifier {
       );
       
       // Redirect to batch word list
-      Future.microtask(() {
+      Future.delayed(Duration.zero, () {
         final nextBtn = ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
