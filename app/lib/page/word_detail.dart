@@ -1186,27 +1186,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           final link = links[index];
           final cigen = link.cigen;
 
-          String categoryText = '关联';
-          Color tagBgColor;
           Color tagTextColor;
           if (cigen.category == 'PREFIX') {
-            categoryText = '前缀';
-            tagBgColor = isDarkMode ? const Color(0xFF0C4A6E) : const Color(0xFFE0F2FE);
             tagTextColor = isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0369A1);
           } else if (cigen.category == 'SUFFIX') {
-            categoryText = '后缀';
-            tagBgColor = isDarkMode ? const Color(0xFF581C87) : const Color(0xFFF3E8FF);
             tagTextColor = isDarkMode ? const Color(0xFFC084FC) : const Color(0xFF6B21A8);
           } else if (cigen.category == 'ROOT') {
-            categoryText = '词根';
-            tagBgColor = isDarkMode ? const Color(0xFF78350F) : const Color(0xFFFEF3C7);
             tagTextColor = isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
           } else {
-            tagBgColor = isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
             tagTextColor = isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
           }
-
-          final String mainSpell = cigen.spell ?? cigen.description;
 
           return Container(
             padding: const EdgeInsets.all(16),
@@ -1230,109 +1219,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 词根/词缀 头部栏 (拼写 + 词性Chip + 释义) - 已做防溢出包裹升级
-                Row(
-                  children: [
-                    Flexible(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              mainSpell,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'monospace',
-                                color: isDarkMode ? Colors.white : Colors.black87,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: tagBgColor,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: tagTextColor.withValues(alpha: 0.2),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Text(
-                              categoryText,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: tagTextColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    if (cigen.meaningCn != null && cigen.meaningCn!.isNotEmpty)
-                      Flexible(
-                        child: Text(
-                          cigen.meaningCn!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: tagTextColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                
-                const SizedBox(height: 4),
-                InkWell(
-                  onTap: () {
-                    final expanded = _cigenExpandedState[cigen.id] ?? false;
-                    setState(() {
-                      _cigenExpandedState[cigen.id] = !expanded;
-                    });
-                    if (!expanded) {
-                      _loadCigenExpandedWords(cigen.id);
-                    }
-                  },
-                  child: Row(
-                    children: [
-                      Icon(
-                        (_cigenExpandedState[cigen.id] ?? false)
-                            ? Icons.expand_less
-                            : Icons.expand_more,
-                        size: 18,
-                        color: tagTextColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Builder(
-                        builder: (context) {
-                          final expandedWords = _expandedCigenWords[cigen.id];
-                          final countSuffix = expandedWords != null && expandedWords.isNotEmpty
-                              ? ' (共 ${expandedWords.length} 个)'
-                              : '';
-                          return Text(
-                            '同根词$countSuffix',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: tagTextColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                if (_cigenExpandedState[cigen.id] == true)
-                  _buildCigenExpandedWords(cigen.id, isDarkMode, tagTextColor),
+                _buildCigenExpandedWords(cigen.id, isDarkMode, tagTextColor),
               ],
             ),
           );
@@ -1414,8 +1301,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(height: 1),
-          const SizedBox(height: 4),
           for (final cat in categoriesOrder)
             if (groupedWords.containsKey(cat)) ...[
               Builder(
