@@ -136,6 +136,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   final Map<String, List<CigenExpandedWord>?> _expandedCigenWords = {};
   final Map<String, bool> _cigenExpandedState = {};
   final Map<String, bool> _cigenLoadingState = {};
+  bool _showCigenTip = true;
 
   void _onTabControllerChanged() {
     if (!mounted) return;
@@ -152,6 +153,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   @override
   void initState() {
     super.initState();
+    _showCigenTip = Prefs.read<bool>('show_cigen_tip') ?? true;
     sessionController = StudyAudioSessionController();
     _wordSoundController = AnimationController(
       duration: const Duration(milliseconds: 700),
@@ -1178,14 +1180,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final links = args.word.cigenWordLinks;
     if (links != null && links.isNotEmpty) {
+    final showTip = _showCigenTip;
+    if (links != null && links.isNotEmpty) {
       return ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: links.length + 1,
+        itemCount: showTip ? links.length + 1 : links.length,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          if (index == 0) {
+          if (showTip && index == 0) {
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
               decoration: BoxDecoration(
                 color: isDarkMode 
                     ? const Color(0xFF1E293B).withValues(alpha: 0.5) 
@@ -1214,12 +1218,25 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       ),
                     ),
                   ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 14),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+                    onPressed: () async {
+                      setState(() {
+                        _showCigenTip = false;
+                      });
+                      await Prefs.write('show_cigen_tip', false);
+                    },
+                  ),
                 ],
               ),
             );
           }
 
-          final link = links[index - 1];
+          final link = showTip ? links[index - 1] : links[index];
           final cigen = link.cigen;
 
           Color tagTextColor;
