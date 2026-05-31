@@ -407,24 +407,30 @@ import StoreKit
         // 直接从 playAndRecord 切换到 playback 并 setActive(true) 会触发
         // AVAudioSessionErrorCodeInsufficientPriority (OSStatus 561017449 / '!pri')。
         // 正确的 iOS 音频会话切换顺序：deactivate → setCategory → activate。
-        do {
-            let audioSession = AVAudioSession.sharedInstance()
-            // 1. 停用当前会话，释放音频硬件给系统
-            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
-            print("IOS: [ASR] Audio session deactivated")
-            // 2. 切换分类到 playback
-            try audioSession.setCategory(
-                .playback,
-                mode: .default,
-                options: [.mixWithOthers]
-            )
-            print("IOS: [ASR] Audio session category set to .playback")
-            // 3. 重新激活
-            try audioSession.setActive(true)
-            print("IOS: [ASR] Native AVAudioSession category successfully reverted to .playback")
-        } catch {
-            let nsError = error as NSError
-            print("IOS: [ASR] Native AVAudioSession category revert failed: \(error) (domain: \(nsError.domain), code: \(nsError.code))")
+        // 若当前分类已经是 .playback，跳过整个 deactivate/reactivate 循环，
+        // 根除不必要的会话切换导致的爆音。
+        let audioSession = AVAudioSession.sharedInstance()
+        if audioSession.category != .playback {
+            do {
+                // 1. 停用当前会话，释放音频硬件给系统
+                try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+                print("IOS: [ASR] Audio session deactivated")
+                // 2. 切换分类到 playback
+                try audioSession.setCategory(
+                    .playback,
+                    mode: .default,
+                    options: [.mixWithOthers]
+                )
+                print("IOS: [ASR] Audio session category set to .playback")
+                // 3. 重新激活
+                try audioSession.setActive(true)
+                print("IOS: [ASR] Native AVAudioSession category successfully reverted to .playback")
+            } catch {
+                let nsError = error as NSError
+                print("IOS: [ASR] Native AVAudioSession category revert failed: \(error) (domain: \(nsError.domain), code: \(nsError.code))")
+            }
+        } else {
+            print("IOS: [ASR] Audio session already .playback, skipping deactivate/reactivate cycle to prevent pop")
         }
         
         result(nil)

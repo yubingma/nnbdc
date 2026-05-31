@@ -553,13 +553,21 @@ class SoundUtil {
         _logicallyFinishedPlayers.remove(player);
         // 软静音防护 (Soft-Mute Teardown)：如果前一个单词发音仍未播完就切词/打断，
         // 在 stop 前将音量拉到 0，消除 Native 音频流因半空拦腰截断（非零截断）产生的电流爆音
+        //
+        // 若播放器已完成播放（非 playing 且状态为 completed/idle），
+        // 跳过 stop() 避免因强制重置播放器内部状态机（AVPlayer pause+seek）产生爆音。
         if (player.playing) {
           await player.setVolume(0.0);
+          await player.stop();
+        } else if (player.processingState != ja.ProcessingState.completed &&
+            player.processingState != ja.ProcessingState.idle) {
+          await player.stop();
         }
-        await player.stop();
       } catch (_) {}
 
-      await player.setVolume(1.0);
+      // 物理错峰：给原生音频管线留出 30ms 稳定窗口，消除因连续操作（stop → setAudioSource → play）
+      // 导致的 iOS AVPlayer 内部状态机切换瞬态爆音。
+      await Future.delayed(const Duration(milliseconds: 30));
 
       final loadSw = Stopwatch()..start();
       if (PlatformUtils.isWeb) {
@@ -606,6 +614,10 @@ class SoundUtil {
           }
         }
       }
+      // 音量恢复：必须在音频源完全挂载完毕（setAudioSource/seek 完成）后才恢复，
+      // 避免音量返回 1.0 动作与音频管线初始化阶段重叠产生瞬态爆音。
+      await player.setVolume(1.0);
+
       debugPrint('⏱️ [Latency-Sound] 资源加载与对齐耗时: ${loadSw.elapsedMilliseconds}ms');
 
       await player.setSpeed(speed);
