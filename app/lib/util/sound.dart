@@ -156,8 +156,8 @@ class SoundUtil {
             // c. 调用底层驱动启动麦克风物理流，等待 Mic 预热完毕
             await asrInstance.startMicrophone();
             // d. 【物理错峰阻断】：如果是物理冷启动，给底层声卡和重采样驱动留出充足的 150ms 稳定窗口以物理根除爆音；
-            //    若是本已保温的热复用路径，则仅保留 10ms 极限物理时间阻断以实现瞬时就绪。
-            final delayMs = isColdStart ? 150 : 10;
+            //    若是本已保温的热复用路径，提供 80ms 的平滑缓冲区释放与错峰时间，根除提示音与播放器冲突爆音。
+            final delayMs = isColdStart ? 150 : 80;
             debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活 (${isColdStart ? "冷启动" : "热复用"})，错峰延迟 ${delayMs}ms 稳定时钟...');
             await Future.delayed(Duration(milliseconds: delayMs));
             // e. 稳定窗口结束后，正式播放“叮”的就绪提示音
