@@ -2388,6 +2388,19 @@ class WordListPageState extends State<WordListPage>
       }
     }
 
+    // 4. 详情按钮
+    actions.add(CustomSlidableAction(
+      onPressed: (_) => _handleWordLongPress(word, i),
+      backgroundColor: const Color(0xFF2196F3),
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.info_outline, color: Colors.white, size: 20),
+          Text('详情', style: TextStyle(color: Colors.white, fontSize: 10)),
+        ],
+      ),
+    ));
+
     return actions;
   }
 
