@@ -491,7 +491,9 @@ class SoundUtil {
   }
 
   static Future<void> waitForAllPlayers() async {
-    for (var player in _watchedPlayers) {
+    // 使用 List.from 创建快照，防止异步等待期间 _watchedPlayers 被并发修改引发 Concurrent modification during iteration 异常
+    final playersSnapshot = List<ja.AudioPlayer>.from(_watchedPlayers);
+    for (var player in playersSnapshot) {
       // 优化：音效池播放器主要播放交互音效，无需在切换音频 Session 时强行等待它们播完，直接跳过，避免引入不必要的延时
       if (_sfxPool.contains(player)) {
         continue;
