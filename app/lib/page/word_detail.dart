@@ -138,6 +138,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   final Map<String, bool> _cigenLoadingState = {};
   bool _showCigenTip = true;
   double _cumulativeScroll = 0.0;
+  int _totalCigenWordsCount = 0;
 
   void _onTabControllerChanged() {
     if (!mounted) return;
@@ -286,6 +287,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     isWrongWord = args.isThisAnswerWrong;
 
     _sentencesFuture = args.word.getSentences();
+
+    int totalCount = 0;
+    final cigenLinks = args.word.cigenWordLinks;
+    if (cigenLinks != null && cigenLinks.isNotEmpty) {
+      final cigenIds = cigenLinks.map((l) => l.cigen.id).toList();
+      final db = MyDatabase.instance;
+      final query = db.selectOnly(db.cigenWordLinks)
+        ..addColumns([db.cigenWordLinks.wordId])
+        ..where(db.cigenWordLinks.cigenId.isIn(cigenIds));
+      final results = await query.get();
+      final uniqueWordIds = results.map((r) => r.read(db.cigenWordLinks.wordId)).toSet();
+      totalCount = uniqueWordIds.length;
+    }
+    _totalCigenWordsCount = totalCount;
 
     setState(() {
       final newLength = calcTabsCount();
@@ -1009,7 +1024,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           const Tab(text: '详情'),
                           if (hasSimilarWords()) Tab(text: '形近词(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义词(${calcSynonymCount()})"),
-                          if (hasCigen()) Tab(text: '同根词(${args.word.cigenWordLinks!.length})'),
+                          if (hasCigen()) Tab(text: '同根词($_totalCigenWordsCount)'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
