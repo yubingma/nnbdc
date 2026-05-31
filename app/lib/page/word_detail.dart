@@ -1415,18 +1415,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 }
               ),
               ...groupedWords[cat]!.take(20).map((item) {
-                final status = item.learningStatus;
-
-                Color? chipColor;
-                String? chipText;
-                if (status == true) {
-                  chipColor = Colors.green;
-                  chipText = '已掌握';
-                } else if (status == false) {
-                  chipColor = Colors.orange;
-                  chipText = '学习中';
-                }
-
                 final spell = item.word.spell;
                 final desc = item.word.shortDesc ?? '';
                 final lowerDesc = desc.toLowerCase().trim();
@@ -1535,21 +1523,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           Expanded(
                             child: contentWidget,
                           ),
-                          if (chipText != null) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color: chipColor!.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: chipColor.withValues(alpha: 0.3), width: 0.5),
-                              ),
-                              child: Text(
-                                chipText,
-                                style: TextStyle(fontSize: 9, color: chipColor, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
