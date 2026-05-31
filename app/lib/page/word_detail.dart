@@ -1046,7 +1046,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 // 用户往上回看内容（下滑手指）且已到达或接近最顶部
                                 if (notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded) {
                                   _cumulativeScroll += scrollDelta.abs();
-                                  if (_cumulativeScroll >= 100.0) {
+                                  if (_cumulativeScroll >= 60.0) {
                                     setState(() {
                                       _isTopDrawerExpanded = true;
                                     });
@@ -1061,7 +1061,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             // 当在最顶部继续往下拉时触发 overscroll
                             if (notification.overscroll < 0.0 && !_isTopDrawerExpanded) {
                               _cumulativeScroll += notification.overscroll.abs();
-                              if (_cumulativeScroll >= 100.0) {
+                              if (_cumulativeScroll >= 60.0) {
                                 setState(() {
                                   _isTopDrawerExpanded = true;
                                 });
