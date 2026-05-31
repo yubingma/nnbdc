@@ -714,6 +714,11 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext context, {FsrsRating? fsrsRating, String? reason}) async {
+    // 强制并平滑地关闭正在播放的主发音/例句音频，彻底根除打开详情页瞬间因两路音频流冲突产生的爆音
+    try {
+      await _safeStopAudioPlayer();
+    } catch (_) {}
+
     if (fsrsRating != null) {
       if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
         state.wordWrapper!.revealAllRemainingMeanings();

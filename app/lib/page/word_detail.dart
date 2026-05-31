@@ -192,6 +192,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
     // 标记 AudioPlayer 为已释放，先无条件从全局状态机监视列表中摘除，彻底消灭任何内存泄露和 disposed 状态机崩溃风险
     _audioPlayerDisposed = true;
+    try {
+      if (audioPlayer.playing) {
+        audioPlayer.setVolume(0.0);
+        audioPlayer.stop();
+      }
+    } catch (_) {}
     SoundUtil.unwatchPlayer(audioPlayer);
 
     // 延迟释放 AudioPlayer，确保所有操作完成
