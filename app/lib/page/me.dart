@@ -16,6 +16,7 @@ import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/page/admin/health_check.dart';
 import 'package:nnbdc/page/admin/sync_log_viewer.dart';
 import 'package:nnbdc/page/feature_request_wall.dart';
@@ -79,6 +80,7 @@ class _MePageState extends State<MePage> {
   final bool _isSyncing = false;
   late Function(String event, List args) _socketEventListener;
   StreamSubscription<List<PurchaseDetails>>? _subscriptionStreamSubscription;
+  StreamSubscription<DictDownloadCompletedEvent>? _dictDownloadCompletedSub;
 
   /// 最近一次同步是否失败
   bool _isLastSyncFailed = false;
@@ -307,6 +309,14 @@ class _MePageState extends State<MePage> {
       }
     });
 
+    // 监听词书下载完成事件（跨页面同步：比如从今日计划页面触发下载后，"我"页面也要刷新）
+    _dictDownloadCompletedSub = EventBus.onDictDownloadCompleted().listen((event) {
+      if (mounted) {
+        Global.logger.i("📥 MePage 收到词书下载完成事件，刷新数据");
+        loadData();
+      }
+    });
+
     // 异步执行loadData，避免阻塞UI
     WidgetsBinding.instance.addPostFrameCallback((_) {
       loadData();
@@ -323,6 +333,9 @@ class _MePageState extends State<MePage> {
 
     // 取消订阅更新监听
     _subscriptionStreamSubscription?.cancel();
+
+    // 取消词书下载完成事件监听
+    _dictDownloadCompletedSub?.cancel();
 
     super.dispose();
   }
@@ -524,6 +537,10 @@ class _MePageState extends State<MePage> {
       onComplete: () {
         // 标记这些词书为已尝试下载，防止短时间内重复下载循环
         _markDictsDownloaded(dicts);
+        // 通知其他页面词书下载完成
+        EventBus.publishDictDownloadCompleted(DictDownloadCompletedEvent(
+          dictIds: dicts.map((d) => d.id).toList(),
+        ));
         // 词书下载完成后，刷新页面数据以更新学习进度显示
         loadData();
       },

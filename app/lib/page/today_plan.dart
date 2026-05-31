@@ -362,6 +362,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         dicts: dictsToDownload,
         onComplete: () {
           _markDictsDownloaded(dictsToDownload);
+          // 通知其他页面（如"我"页面）词书下载完成，以便刷新数据
+          EventBus.publishDictDownloadCompleted(DictDownloadCompletedEvent(
+            dictIds: dictsToDownload.map((d) => d.id).toList(),
+          ));
         },
       );
       // 词书下载完成后，刷新页面数据以更新学习进度显示

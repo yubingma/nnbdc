@@ -9,6 +9,7 @@ class EventBus {
   static final _wordDeletedController = StreamController<WordDeletedFromWordListEvent>.broadcast();
   static final _wordMasteredController = StreamController<WordMasteredEvent>.broadcast();
   static final _wordUnMasteredController = StreamController<WordUnMasteredEvent>.broadcast();
+  static final _dictDownloadCompletedController = StreamController<DictDownloadCompletedEvent>.broadcast();
 
   /// 产生的具体业务事件：发射与监听（新错词产生）
   static void publishNewWrongWord(NewWrongWordEvent event) {
@@ -54,6 +55,15 @@ class EventBus {
   static Stream<WordUnMasteredEvent> onWordUnMastered() {
     return _wordUnMasteredController.stream;
   }
+
+  /// 词书下载完成事件：发射与监听（用于跨页面刷新，如今日计划下载后通知"我"页面刷新）
+  static void publishDictDownloadCompleted(DictDownloadCompletedEvent event) {
+    _dictDownloadCompletedController.add(event);
+  }
+
+  static Stream<DictDownloadCompletedEvent> onDictDownloadCompleted() {
+    return _dictDownloadCompletedController.stream;
+  }
 }
 
 /// 产生了新错词的具体业务事件
@@ -95,8 +105,8 @@ abstract class RefreshableTab {
   void refreshData();
 }
 
-
-
-
-
-
+/// 词书下载完成事件（无论成功/失败都会被触发，用于跨页面同步刷新）
+class DictDownloadCompletedEvent {
+  final List<String> dictIds;
+  DictDownloadCompletedEvent({required this.dictIds});
+}

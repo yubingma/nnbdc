@@ -1150,6 +1150,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
   int calcSynonymCount() {
     var count = 0;
+    if (args.word.meaningItems == null) {
+      return 0;
+    }
     for (var meaningItem in args.word.meaningItems!) {
       if (meaningItem.synonyms != null && meaningItem.synonyms!.isNotEmpty) {
         count += meaningItem.synonyms!.length;
