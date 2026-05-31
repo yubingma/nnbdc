@@ -922,6 +922,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           // 详情/形近词
           Expanded(
             child: Container(
+                key: ValueKey('detail_tabs_${calcTabsCount()}_${args.word.id}'),
                 margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 decoration: BoxDecoration(
                   color: isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
@@ -966,6 +967,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           const Tab(text: '详情'),
                           if (hasSimilarWords()) Tab(text: '形近词(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义词(${calcSynonymCount()})"),
+                          if (hasCigen()) Tab(text: '词根词缀(${args.word.cigenWordLinks!.length})'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
@@ -1007,6 +1009,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             renderDetail(),
                             if (hasSimilarWords()) renderSimilarWords(),
                             if (hasSynonyms()) renderSynonyms(),
+                            if (hasCigen()) renderCigenAffix(),
                             if (_canUseAiAssistant) renderAiExplanation(),
                           ],
                         ),
@@ -1062,11 +1065,29 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (hasSynonyms()) {
       count++;
     }
+    if (hasCigen()) {
+      count++;
+    }
     // AI 解释 Tab 仅管理员可见
     if (_canUseAiAssistant) {
       count++;
     }
     return count;
+  }
+
+  bool hasCigen() {
+    return args.word.cigenWordLinks != null && args.word.cigenWordLinks!.isNotEmpty;
+  }
+
+  int getCigenTabIndex() {
+    int index = 1; // 详情 Tab 是 0
+    if (hasSimilarWords()) {
+      index++;
+    }
+    if (hasSynonyms()) {
+      index++;
+    }
+    return index;
   }
 
   bool hasSimilarWords() {
@@ -1085,6 +1106,188 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
   bool hasSynonyms() {
     return calcSynonymCount() > 0;
+  }
+
+  Widget renderCigenAffix() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final links = args.word.cigenWordLinks;
+    if (links != null && links.isNotEmpty) {
+      return ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: links.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final link = links[index];
+          final cigen = link.cigen;
+
+          String categoryText = '关联';
+          Color tagBgColor;
+          Color tagTextColor;
+          if (cigen.category == 'PREFIX') {
+            categoryText = '前缀';
+            tagBgColor = isDarkMode ? const Color(0xFF0C4A6E) : const Color(0xFFE0F2FE);
+            tagTextColor = isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0369A1);
+          } else if (cigen.category == 'SUFFIX') {
+            categoryText = '后缀';
+            tagBgColor = isDarkMode ? const Color(0xFF581C87) : const Color(0xFFF3E8FF);
+            tagTextColor = isDarkMode ? const Color(0xFFC084FC) : const Color(0xFF6B21A8);
+          } else if (cigen.category == 'ROOT') {
+            categoryText = '词根';
+            tagBgColor = isDarkMode ? const Color(0xFF78350F) : const Color(0xFFFEF3C7);
+            tagTextColor = isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFB45309);
+          } else {
+            tagBgColor = isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC);
+            tagTextColor = isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
+          }
+
+          final String mainSpell = cigen.spell ?? cigen.description;
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDarkMode 
+                  ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) 
+                  : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 词根/词缀 头部栏 (拼写 + 词性Chip + 释义)
+                Row(
+                  children: [
+                    Text(
+                      mainSpell,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                        color: isDarkMode ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: tagBgColor,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: tagTextColor.withValues(alpha: 0.2),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Text(
+                        categoryText,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: tagTextColor,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (cigen.meaningCn != null && cigen.meaningCn!.isNotEmpty)
+                      Text(
+                        '含义: ${cigen.meaningCn}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: tagTextColor,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                // 拆解详细卡片
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDarkMode 
+                        ? Colors.black.withValues(alpha: 0.15) 
+                        : Colors.black.withValues(alpha: 0.02),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.lightbulb_outline_rounded,
+                          size: 16,
+                          color: tagTextColor.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          link.theExplain,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } else {
+      // 备用空状态渲染
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[300]!.withValues(alpha: 0.3),
+                width: 0.5,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.account_tree_outlined,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '暂无词根数据',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget renderAiExplanation() {
@@ -1334,49 +1537,74 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 词根解析
+                // 词根解析 (已精简为精美跳转条，点击一键平滑跳转到专属 Tab)
                 if (args.word.cigenWordLinks != null && args.word.cigenWordLinks!.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.account_tree_outlined, size: 16, color: Color(0xFF4A90E2)),
-                            const SizedBox(width: 8),
-                            const Text('词根助记',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
-                          ],
+                  InkWell(
+                    onTap: () {
+                      _tabController.animateTo(getCigenTabIndex());
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDarkMode 
+                            ? const Color(0xFF1E1E2D).withValues(alpha: 0.8) 
+                            : const Color(0xFFF3F4F6).withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                          width: 0.8,
                         ),
-                        const SizedBox(height: 8),
-                        Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline_rounded,
+                            size: 15,
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '词根助记: ',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              args.word.cigenWordLinks!.first.theExplain,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              for (var link in args.word.cigenWordLinks!)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Text(
-                                    link.theExplain,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
-                                      height: 1.5,
-                                    ),
-                                  ),
+                              Text(
+                                '查看',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDarkMode ? Colors.grey[500] : Colors.grey[500],
                                 ),
-                            ]
-                        )
-                      ],
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 10,
+                                color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
