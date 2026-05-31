@@ -1323,11 +1323,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 InkWell(
                   onTap: () {
                     final expanded = _cigenExpandedState[cigen.id] ?? false;
-                    _cigenExpandedState[cigen.id] = !expanded;
+                    setState(() {
+                      _cigenExpandedState[cigen.id] = !expanded;
+                    });
                     if (!expanded) {
                       _loadCigenExpandedWords(cigen.id);
-                    } else {
-                      setState(() {});
                     }
                   },
                   child: Row(

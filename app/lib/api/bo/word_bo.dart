@@ -2206,11 +2206,18 @@ class WordBo {
       inDictWordIds = wordIds;
     }
 
-    // 4. 排序：词书范围内优先，其次按 popularity 升序
+    // 4. 批量获取学习状态 (针对所有候选单词，以在排序前获取学习状态)
+    final learningStatusMap = (userId != null && userId.isNotEmpty)
+        ? await getWordsLearningStatusBatch(userId, words.map((w) => w.id).toList())
+        : <String, bool?>{};
+
+    // 5. 排序：(在当前词书内 或 已有学习记录) 优先，其次按 popularity 升序
     var sortedWords = words.toList();
     sortedWords.sort((a, b) {
-      final aInDict = inDictWordIds.contains(a.id);
-      final bInDict = inDictWordIds.contains(b.id);
+      final aHasRecord = learningStatusMap[a.id] != null;
+      final bHasRecord = learningStatusMap[b.id] != null;
+      final aInDict = inDictWordIds.contains(a.id) || aHasRecord;
+      final bInDict = inDictWordIds.contains(b.id) || bHasRecord;
       if (aInDict && !bInDict) return -1;
       if (!aInDict && bInDict) return 1;
       return a.popularity.compareTo(b.popularity);
@@ -2218,18 +2225,14 @@ class WordBo {
 
     final targetWords = sortedWords.take(maxCount).toList();
 
-    // 5. 批量获取学习状态 (仅针对最终展示的单词)
-    final learningStatusMap = (userId != null && userId.isNotEmpty)
-        ? await getWordsLearningStatusBatch(userId, targetWords.map((w) => w.id).toList())
-        : <String, bool?>{};
-
     // 6. 组装结果
     return targetWords.map((w) {
       final wordVo = WordVo.c2(w.spell)
         ..id = w.id
         ..shortDesc = w.shortDesc
         ..popularity = w.popularity;
-      final inDict = inDictWordIds.contains(w.id);
+      final hasRecord = learningStatusMap[w.id] != null;
+      final inDict = inDictWordIds.contains(w.id) || hasRecord;
       return CigenExpandedWord(wordVo, learningStatusMap[w.id], inDict: inDict);
     }).toList();
   }
