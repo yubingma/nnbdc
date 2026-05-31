@@ -627,6 +627,13 @@ class BdcNotifier extends _$BdcNotifier {
           debugPrint('⚡ [PERF] Engine warmup done before playWordAndFirstSentence: ${warmupWaitSw.elapsedMilliseconds}ms');
         }
         // 关键重构：仅在说模式（shouldSpeak为true）时才在播放后衔接启动 ASR，非说模式（如英中模式）下彻底解耦 ASR 释放重启开销，确保发音播放链路纯净、无任何麦克风占用和爆音
+        //
+        // 统一停用共享播放器：fastPath（详情页下一词）跳过了 getNextWord 中的
+        // _safeStopAudioPlayer，导致播放器处于 completed 而非 idle 状态。
+        // 在此处提前停用，使播放器状态与正常 BDC 切词一致，消除 iOS AVPlayer
+        // 在 completed 态直接加载新音源时可能产生的瞬态爆音。同时 ~200ms 的
+        // 空闲时间给原生音频管线更充分的稳定窗口。
+        try { await _safeStopAudioPlayer(); } catch (_) {}
         await playWordAndFirstSentence(false, shouldSpeak);
       } catch (e, st) {
         Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
@@ -737,7 +744,7 @@ class BdcNotifier extends _$BdcNotifier {
     final result = await goRouter.push<bool>('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong,
         showNextWordButton: true,
         sessionController: _sessionController,
-        onNextWord: () => getNextWord(true, fsrsRating: state.lastFsrsRating, fastPath: true)));
+        onNextWord: () => getNextWord(true, fsrsRating: state.lastFsrsRating, fastPath: false)));
     
     if (_isDisposed) return;
 
@@ -884,13 +891,16 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   /// Safely stop the BDC audio player with a Soft-Mute to prevent popping.
-  /// Mirrors the pattern in SoundUtil.playSoundByUrl (sound.dart:486-489):
-  /// set volume to 0 before stopping to avoid an instant voltage step.
+  /// Uses pause+seek(0) instead of stop() to avoid tearing down the native
+  /// AVQueuePlayer (just_audio's stop() calls _setPlatformActive(false) which
+  /// disposes the native player on iOS, causing an audible pop when it's
+  /// recreated on the next play).
   Future<void> _safeStopAudioPlayer() async {
     if (_audioPlayer.playing) {
       await _audioPlayer.setVolume(0.0);
     }
-    await _audioPlayer.stop();
+    await _audioPlayer.pause();
+    await _audioPlayer.seek(Duration.zero);
   }
 
   void _persistLastWordHistoryItem() {
@@ -1517,8 +1527,6 @@ class BdcNotifier extends _$BdcNotifier {
 
     if (willPlayWord || willPlaySentence) {
       if (state.word != null) {
-
-        
         await _sessionController.playWordAndSentence(
           state.word!,
           sentenceDigest: state.englishDigestOfFirstSentence,

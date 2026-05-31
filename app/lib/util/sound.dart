@@ -541,8 +541,6 @@ class SoundUtil {
       if (!_audioSessionConfigured) await configureAudioSession();
       if (PlatformUtils.isWeb) await _ensureWebAudioUnlocked();
 
-      // 架构设计优化 1：优先且必须确保 AVAudioSession 并行切换彻底完成，
-      // 然后再对播放器执行 stop、挂载和播放核心操作，防止切换中硬件参数突变导致瞬间爆音或发音丢失。
       if (preWaitFuture != null) {
         final waitSw = Stopwatch()..start();
         await preWaitFuture;
@@ -551,23 +549,18 @@ class SoundUtil {
 
       try {
         _logicallyFinishedPlayers.remove(player);
-        // 软静音防护 (Soft-Mute Teardown)：如果前一个单词发音仍未播完就切词/打断，
-        // 在 stop 前将音量拉到 0，消除 Native 音频流因半空拦腰截断（非零截断）产生的电流爆音
-        //
-        // 若播放器已完成播放（非 playing 且状态为 completed/idle），
-        // 跳过 stop() 避免因强制重置播放器内部状态机（AVPlayer pause+seek）产生爆音。
+        // 使用 pause+seek(0) 替代 stop()：stop() 在 iOS 上会销毁原生
+        // AVQueuePlayer（_setPlatformActive(false)），导致下次播放时重建产生爆音。
+        // pause() 保持播放器存活，setAudioSource 可平滑过渡到新音源。
         if (player.playing) {
           await player.setVolume(0.0);
-          await player.stop();
-        } else if (player.processingState != ja.ProcessingState.completed &&
-            player.processingState != ja.ProcessingState.idle) {
-          await player.stop();
         }
+        await player.pause();
+        await player.seek(Duration.zero);
       } catch (_) {}
 
-      // 物理错峰：给原生音频管线留出 30ms 稳定窗口，消除因连续操作（stop → setAudioSource → play）
-      // 导致的 iOS AVPlayer 内部状态机切换瞬态爆音。
-      await Future.delayed(const Duration(milliseconds: 30));
+      // 恢复音量为 1.0：_safeStopAudioPlayer 可能在播放中断时将音量设为 0
+      await player.setVolume(1.0);
 
       final loadSw = Stopwatch()..start();
       if (PlatformUtils.isWeb) {
@@ -577,62 +570,28 @@ class SoundUtil {
         FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
         final String targetFilePath = fileInfo?.file.path ?? '';
 
-        bool sourceChanged = true;
-
-        // 架构设计优化 2：若播放器非 idle，且当前挂载的本地音频源与要播放的一致，
-        // 彻底跳过极为昂贵的 setAudioSource，改用 0ms seek(zero) 重放，消除硬件流重建爆音。
-        if (player.processingState != ja.ProcessingState.idle &&
-            player.audioSource is ja.UriAudioSource) {
-          final currentUri = (player.audioSource as ja.UriAudioSource).uri;
-          if (currentUri.isScheme('file') &&
-              targetFilePath.isNotEmpty &&
-              currentUri.toFilePath() == targetFilePath) {
-            sourceChanged = false;
-          }
-        }
-
-        if (sourceChanged) {
-          if (targetFilePath.isNotEmpty && await File(targetFilePath).exists()) {
-            await player.setAudioSource(ja.AudioSource.uri(Uri.file(targetFilePath))).timeout(Duration(milliseconds: loadTimeoutMs));
-          } else {
-            var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-            await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
-          }
+        if (targetFilePath.isNotEmpty && await File(targetFilePath).exists()) {
+          await player.setAudioSource(ja.AudioSource.uri(Uri.file(targetFilePath))).timeout(Duration(milliseconds: loadTimeoutMs));
         } else {
-          try {
-            debugPrint('⚡ [SoundUtil] 检测到相同的音频源，跳过 setAudioSource，直接闪电 seek(zero) 重放');
-            await player.seek(Duration.zero);
-          } catch (e) {
-            // 防御式兜底 Fallback：一旦物理/系统级 seek 异常，自动降级至正常的 setAudioSource 重新挂载，确保 100% 能发声
-            debugPrint('⚠️ [SoundUtil] 闪电复用 seek 失败: $e，触发安全 fallback 重新挂载');
-            if (targetFilePath.isNotEmpty && await File(targetFilePath).exists()) {
-              await player.setAudioSource(ja.AudioSource.uri(Uri.file(targetFilePath))).timeout(Duration(milliseconds: loadTimeoutMs));
-            } else {
-              var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-              await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
-            }
-          }
+          var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+          await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
         }
       }
-      // 音量恢复：必须在音频源完全挂载完毕（setAudioSource/seek 完成）后才恢复，
-      // 避免音量返回 1.0 动作与音频管线初始化阶段重叠产生瞬态爆音。
-      await player.setVolume(1.0);
-
       debugPrint('⏱️ [Latency-Sound] 资源加载与对齐耗时: ${loadSw.elapsedMilliseconds}ms');
 
       await player.setSpeed(speed);
-      
+
       final playCompletedFuture = player.playerStateStream
           .skip(1)
-          .firstWhere((state) => 
-              state.processingState == ja.ProcessingState.completed || 
+          .firstWhere((state) =>
+              state.processingState == ja.ProcessingState.completed ||
               state.processingState == ja.ProcessingState.idle)
           .timeout(Duration(milliseconds: playTimeoutMs));
-      
+
       final playSw = Stopwatch()..start();
       unawaited(player.play().catchError((_) {}));
 
-      if (player.processingState != ja.ProcessingState.completed && 
+      if (player.processingState != ja.ProcessingState.completed &&
           player.processingState != ja.ProcessingState.idle) {
         await playCompletedFuture;
       }
@@ -643,10 +602,10 @@ class SoundUtil {
     } catch (e, st) {
       _logicallyFinishedPlayers.add(player);
       final errStr = e.toString();
-      final isAbortError = errStr.contains('Connection aborted') || 
-          errStr.contains('abort') || 
+      final isAbortError = errStr.contains('Connection aborted') ||
+          errStr.contains('abort') ||
           errStr.contains('Loading interrupted');
-      
+
       if (isAbortError) {
         Global.logger.i('🔊 [SoundUtil] 播放被中止/中断 (属于预期行为，安全忽略): $soundUrl');
       } else {
@@ -656,7 +615,6 @@ class SoundUtil {
       if (disposeWhenFinish) {
         Future.delayed(const Duration(seconds: 2), () {
           try {
-            // 在 dispose 前，必须先无条件从全局监视名单中彻底移除，防止 disposed 后的 player 残留导致 waitForAllPlayers 访问崩溃
             unwatchPlayer(player);
             player.dispose().catchError((_) {});
           } catch (_) {}
