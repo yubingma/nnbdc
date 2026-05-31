@@ -139,8 +139,8 @@ class SoundUtil {
               await asrInstance.stopMicrophone();
               // b. 强行平滑淡出（Soft-Mute）所有当前活跃 of 临时/音效播放器，彻底排空声卡缓冲区
               await _cleanupEarlyExitPlayers();
-              // c. 物理配置 AudioSession 为高品质 playback 模式并强行等待切换彻底确认
-              await usePlaybackCategory(force: true);
+              // c. 物理配置 AudioSession 为高品质 playback 模式；若已是 playback 则跳过重配置以根除不必要会话切换导致的爆音
+              await usePlaybackCategory(force: false);
             }
             break;
  
