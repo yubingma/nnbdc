@@ -1024,6 +1024,10 @@ class CigenWordLinksDao extends DatabaseAccessor<MyDatabase> with _$CigenWordLin
     return (select(cigenWordLinks)..where((link) => link.wordId.equals(wordId))).get();
   }
 
+  Future<List<CigenWordLink>> getLinksByCigenId(String cigenId) {
+    return (select(cigenWordLinks)..where((link) => link.cigenId.equals(cigenId))).get();
+  }
+
   Future<void> saveEntity(CigenWordLink entry) async {
     await into(cigenWordLinks).insertOnConflictUpdate(entry);
   }

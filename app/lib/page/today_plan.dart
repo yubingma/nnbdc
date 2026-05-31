@@ -60,6 +60,27 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   List<LearningWord>? _todayWords;
   Set<String> _masteredWordIds = {};
 
+  /// 近期已下载/尝试下载的词书 ID 集合（防止导入后异步可见性延迟导致的循环）
+  static final Map<String, DateTime> _recentlyDownloadedAt = {};
+  static const Duration _reDownloadCooldown = Duration(seconds: 30);
+
+  bool _isRecentlyDownloaded(String dictId) {
+    final lastAt = _recentlyDownloadedAt[dictId];
+    if (lastAt == null) return false;
+    if (AppClock.now().difference(lastAt) > _reDownloadCooldown) {
+      _recentlyDownloadedAt.remove(dictId);
+      return false;
+    }
+    return true;
+  }
+
+  void _markDictsDownloaded(List<DictVo> dicts) {
+    final now = AppClock.now();
+    for (final d in dicts) {
+      _recentlyDownloadedAt[d.id] = now;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -306,6 +327,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     List<DictVo> dictsToDownload = [];
     
     for (var ld in learningDicts) {
+      // 跳过近期刚下载过的词书（防止导入后数据库延迟可见导致的循环）
+      if (_isRecentlyDownloaded(ld.dictId)) continue;
+
       Dict? existing = await db.dictsDao.findById(ld.dictId);
       if (existing == null) {
         dictsToDownload.add(DictVo.c2(ld.dictId));
@@ -323,16 +347,22 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
 
     final commonDictId = Global.commonDictId;
-    Dict? commonDictExisting = await db.dictsDao.findById(commonDictId);
-    if (commonDictExisting == null || !(await db.dictWordsDao.hasDictWords(commonDictId))) {
-      dictsToDownload.add(DictVo.c2(commonDictId));
+    if (!_isRecentlyDownloaded(commonDictId)) {
+      Dict? commonDictExisting = await db.dictsDao.findById(commonDictId);
+      if (commonDictExisting == null || !(await db.dictWordsDao.hasDictWords(commonDictId))) {
+        dictsToDownload.add(DictVo.c2(commonDictId));
+      }
     }
 
     if (dictsToDownload.isNotEmpty && mounted && !DictDownloadDialog.isShowing) {
+      // 预标记：在对话框显示前标记为"已尝试下载"，防止对话框被其他页面弹窗拦截时漏标记
+      _markDictsDownloaded(dictsToDownload);
       await DictDownloadDialog.show(
         context: context,
         dicts: dictsToDownload,
-        onComplete: () {},
+        onComplete: () {
+          _markDictsDownloaded(dictsToDownload);
+        },
       );
       // 词书下载完成后，刷新页面数据以更新学习进度显示
       await loadData();

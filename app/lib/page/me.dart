@@ -87,6 +87,30 @@ class _MePageState extends State<MePage> {
   bool _isCheckingDicts = false;
   Future<Widget>? _learningDictsFuture;
 
+  /// 近期已下载/尝试下载的词书 ID 集合（用于防止导入后异步可见性延迟导致的循环）
+  /// key: dictId, value: 下载完成时间
+  static final Map<String, DateTime> _recentlyDownloadedAt = {};
+  static const Duration _reDownloadCooldown = Duration(seconds: 30);
+
+  /// 检查指定词书是否在近期已下载过（冷却期内不重复下载）
+  bool _isRecentlyDownloaded(String dictId) {
+    final lastAt = _recentlyDownloadedAt[dictId];
+    if (lastAt == null) return false;
+    if (AppClock.now().difference(lastAt) > _reDownloadCooldown) {
+      _recentlyDownloadedAt.remove(dictId);
+      return false;
+    }
+    return true;
+  }
+
+  /// 标记词书为已尝试下载（无论成功/失败），防止冷却期内重复下载
+  void _markDictsDownloaded(List<DictVo> dicts) {
+    final now = AppClock.now();
+    for (final d in dicts) {
+      _recentlyDownloadedAt[d.id] = now;
+    }
+  }
+
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
@@ -494,10 +518,12 @@ class _MePageState extends State<MePage> {
   // 辅助方法，同步显示对话框
   Future<void> _showDictDownloadDialog(List<DictVo> dicts) async {
     if (DictDownloadDialog.isShowing) return;
-    return DictDownloadDialog.show(
+    await DictDownloadDialog.show(
       context: context,
       dicts: dicts,
       onComplete: () {
+        // 标记这些词书为已尝试下载，防止短时间内重复下载循环
+        _markDictsDownloaded(dicts);
         // 词书下载完成后，刷新页面数据以更新学习进度显示
         loadData();
       },
@@ -550,7 +576,7 @@ class _MePageState extends State<MePage> {
       List<DictVo> dictsToDownload = [];
 
       // 1. 检查通用词典
-      if (!dictsWithWordsSet.contains(Global.commonDictId)) {
+      if (!dictsWithWordsSet.contains(Global.commonDictId) && !_isRecentlyDownloaded(Global.commonDictId)) {
         Global.logger.i("通用词典内容为空，准备下载");
         dictsToDownload.add(DictVo(
           id: Global.commonDictId,
@@ -611,7 +637,11 @@ class _MePageState extends State<MePage> {
             updateTime: now,
           ));
         } else if (existing.ownerId == Global.sysUserId && !dictsWithWordsSet.contains(learningDict.dictId)) {
-          // 系统词书缺失内容
+          // 系统词书缺失内容，但近期刚下载过 → 跳过（防止导入后数据库延迟可见导致的循环）
+          if (_isRecentlyDownloaded(learningDict.dictId)) {
+            Global.logger.i("系统词书内容缺失但近期刚下载，跳过: ${learningDict.dictId}");
+            continue;
+          }
           Global.logger.i("系统词书内容缺失，准备下载: ${learningDict.dictId}");
           
           if (!dictsToDownload.any((d) => d.id == learningDict.dictId)) {
@@ -634,7 +664,7 @@ class _MePageState extends State<MePage> {
 
           // 衍生词书依赖检查
           if (existing.baseDictId != null && existing.baseDictId!.isNotEmpty) {
-            if (!dictsWithWordsSet.contains(existing.baseDictId!) && !dictsToDownload.any((d) => d.id == existing.baseDictId)) {
+            if (!dictsWithWordsSet.contains(existing.baseDictId!) && !dictsToDownload.any((d) => d.id == existing.baseDictId) && !_isRecentlyDownloaded(existing.baseDictId!)) {
               String baseName = '基础词书';
               try {
                 final baseResult = await Api.client.getDictInfo(existing.baseDictId!);
@@ -661,6 +691,8 @@ class _MePageState extends State<MePage> {
       }
 
       if (dictsToDownload.isNotEmpty && mounted) {
+        // 预标记：在对话框显示前标记为"已尝试下载"，防止对话框被其他页面弹窗拦截时漏标记
+        _markDictsDownloaded(dictsToDownload);
         await _showDictDownloadDialog(dictsToDownload);
       }
     } catch (e, stackTrace) {

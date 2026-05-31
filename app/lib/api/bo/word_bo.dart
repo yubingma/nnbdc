@@ -2144,4 +2144,101 @@ class WordBo {
     }
     return Result("ERROR", "未找到单词", false);
   }
+
+  /// 获取指定 cigen (词根/词缀) 下的单词列表。
+  /// 优先展示在用户词书范围内的单词，之后展示词书范围外的单词。
+  /// [excludeWordId] 可排除当前单词自身。
+  /// [maxCount] 最大返回数量，默认 20，按 inDict 优先、popularity 升序取词。
+  Future<List<CigenExpandedWord>> getCigenExpandedWords(
+    String cigenId,
+    String? userId, {
+    String? excludeWordId,
+    int maxCount = 20,
+  }) async {
+    final db = MyDatabase.instance;
+
+    // 1. 获取该 cigen 下所有关联 word_id
+    final links = await db.cigenWordLinksDao.getLinksByCigenId(cigenId);
+    if (links.isEmpty) return [];
+
+    var wordIds = links.map((l) => l.wordId).toSet();
+    if (excludeWordId != null) wordIds.remove(excludeWordId);
+    if (wordIds.isEmpty) return [];
+
+    // 2. 获取单词基础信息
+    final words = await (db.select(db.words)..where((w) => w.id.isIn(wordIds))).get();
+    if (words.isEmpty) return [];
+
+    // 3. 批量查询词书范围
+    Set<String> inDictWordIds = {};
+    if (userId != null && userId.isNotEmpty) {
+      final learningDicts = await (db.select(db.learningDicts)
+        ..where((tbl) => tbl.userId.equals(userId))).get();
+      final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
+
+      if (selectedDictIds.isNotEmpty) {
+        // 展开父级词库
+        final expandedDictIds = <String>{...selectedDictIds};
+        final dbDicts = await (db.select(db.dicts)
+          ..where((d) => d.id.isIn(selectedDictIds))).get();
+        for (final d in dbDicts) {
+          if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
+            expandedDictIds.add(d.baseDictId!);
+          }
+        }
+
+        // 一次查出所有 wordId 在用户词书范围内的 meaning_items
+        final miQuery = db.selectOnly(db.meaningItems)
+          ..addColumns([db.meaningItems.wordId])
+          ..where(db.meaningItems.wordId.isIn(wordIds))
+          ..where(db.meaningItems.dictId.isIn(expandedDictIds));
+        final miResults = await miQuery.get();
+
+        inDictWordIds = miResults
+            .map((r) => r.read(db.meaningItems.wordId)!)
+            .toSet();
+      } else {
+        // 用户没有选择词书，全部视为在词书内
+        inDictWordIds = wordIds;
+      }
+    } else {
+      // 用户未登录，全部视为在词书内
+      inDictWordIds = wordIds;
+    }
+
+    // 4. 排序：词书范围内优先，其次按 popularity 升序
+    var sortedWords = words.toList();
+    sortedWords.sort((a, b) {
+      final aInDict = inDictWordIds.contains(a.id);
+      final bInDict = inDictWordIds.contains(b.id);
+      if (aInDict && !bInDict) return -1;
+      if (!aInDict && bInDict) return 1;
+      return a.popularity.compareTo(b.popularity);
+    });
+
+    final targetWords = sortedWords.take(maxCount).toList();
+
+    // 5. 批量获取学习状态 (仅针对最终展示的单词)
+    final learningStatusMap = (userId != null && userId.isNotEmpty)
+        ? await getWordsLearningStatusBatch(userId, targetWords.map((w) => w.id).toList())
+        : <String, bool?>{};
+
+    // 6. 组装结果
+    return targetWords.map((w) {
+      final wordVo = WordVo.c2(w.spell)
+        ..id = w.id
+        ..shortDesc = w.shortDesc
+        ..popularity = w.popularity;
+      final inDict = inDictWordIds.contains(w.id);
+      return CigenExpandedWord(wordVo, learningStatusMap[w.id], inDict: inDict);
+    }).toList();
+  }
+}
+
+/// 词根/词缀拓展单词数据类
+class CigenExpandedWord {
+  final WordVo word;
+  final bool? learningStatus; // true=已掌握, false=学习中, null=未学
+  final bool inDict;
+  CigenExpandedWord(this.word, this.learningStatus, {this.inDict = true});
 }

@@ -132,6 +132,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
   int _lastTabIndex = 0;
 
+  // 词根/词缀拓展单词相关状态
+  final Map<String, List<CigenExpandedWord>?> _expandedCigenWords = {};
+  final Map<String, bool> _cigenExpandedState = {};
+  final Map<String, bool> _cigenLoadingState = {};
+
   void _onTabControllerChanged() {
     if (!mounted) return;
     final index = _tabController.index;
@@ -481,6 +486,26 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         _aiError = e.toString();
         _aiLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadCigenExpandedWords(String cigenId) async {
+    if (_expandedCigenWords.containsKey(cigenId)) return;
+    _cigenLoadingState[cigenId] = true;
+    setState(() {});
+    try {
+      final userId = Global.getLoggedInUser()?.id;
+      final words = await WordBo().getCigenExpandedWords(
+        cigenId, userId,
+        excludeWordId: args.word.id,
+      );
+      _expandedCigenWords[cigenId] = words;
+    } catch (e) {
+      Global.logger.e('加载词根拓展词失败: $e');
+      _expandedCigenWords[cigenId] = [];
+    } finally {
+      _cigenLoadingState[cigenId] = false;
+      if (mounted) setState(() {});
     }
   }
 
@@ -1289,6 +1314,42 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     ],
                   ),
                 ),
+
+                // 相同词根/词缀的单词拓展区域
+                const SizedBox(height: 10),
+                InkWell(
+                  onTap: () {
+                    final expanded = _cigenExpandedState[cigen.id] ?? false;
+                    _cigenExpandedState[cigen.id] = !expanded;
+                    if (!expanded) {
+                      _loadCigenExpandedWords(cigen.id);
+                    } else {
+                      setState(() {});
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        (_cigenExpandedState[cigen.id] ?? false)
+                            ? Icons.expand_less
+                            : Icons.expand_more,
+                        size: 18,
+                        color: tagTextColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '相同$categoryText的单词',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: tagTextColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_cigenExpandedState[cigen.id] == true)
+                  _buildCigenExpandedWords(cigen.id, isDarkMode, tagTextColor),
               ],
             ),
           );
@@ -1332,6 +1393,115 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         ],
       );
     }
+  }
+
+  Widget _buildCigenExpandedWords(String cigenId, bool isDarkMode, Color tagTextColor) {
+    final isLoading = _cigenLoadingState[cigenId] ?? false;
+    final words = _expandedCigenWords[cigenId];
+
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 8),
+        child: Center(
+          child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      );
+    }
+
+    if (words == null || words.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          '暂无其他相同词根/词缀的单词',
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(height: 1),
+          const SizedBox(height: 6),
+          Text(
+            '共 ${words.length} 个',
+            style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+          ),
+          const SizedBox(height: 4),
+          ...words.take(20).map((item) {
+            final status = item.learningStatus;
+
+            Color? chipColor;
+            String? chipText;
+            if (status == true) {
+              chipColor = Colors.green;
+              chipText = '已掌握';
+            } else if (status == false) {
+              chipColor = Colors.orange;
+              chipText = '学习中';
+            }
+
+            return InkWell(
+              onTap: () {
+                context.push('/word_detail',
+                  extra: WordDetailPageArgs(
+                    item.word, true, null, false,
+                    priorityDictIds: args.priorityDictIds,
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  children: [
+                    Text(
+                      item.word.spell,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: isDarkMode ? Colors.white : Colors.black87,
+                        fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (item.word.shortDesc != null && item.word.shortDesc!.isNotEmpty)
+                      Expanded(
+                        child: Text(
+                          item.word.shortDesc!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    if (chipText != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: chipColor!.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: chipColor.withValues(alpha: 0.3), width: 0.5),
+                        ),
+                        child: Text(
+                          chipText,
+                          style: TextStyle(fontSize: 9, color: chipColor, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
 
   Widget renderAiExplanation() {
