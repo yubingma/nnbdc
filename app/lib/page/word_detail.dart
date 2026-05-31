@@ -1340,13 +1340,21 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         color: tagTextColor,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        '相同$categoryText的单词',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: tagTextColor,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final expandedWords = _expandedCigenWords[cigen.id];
+                          final countSuffix = expandedWords != null && expandedWords.isNotEmpty
+                              ? ' (共 ${expandedWords.length} 个)'
+                              : '';
+                          return Text(
+                            '相同$categoryText的单词$countSuffix',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: tagTextColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -1427,11 +1435,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Divider(height: 1),
-          const SizedBox(height: 6),
-          Text(
-            '共 ${words.length} 个',
-            style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-          ),
           const SizedBox(height: 4),
           ...words.take(20).map((item) {
             final status = item.learningStatus;
