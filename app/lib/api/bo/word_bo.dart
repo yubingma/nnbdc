@@ -2225,11 +2225,30 @@ class WordBo {
 
     final targetWords = sortedWords.take(maxCount).toList();
 
-    // 6. 组装结果
+    // 6. 批量获取这些 targetWords 的中文释义 (从 meaning_items 表中批量查询)
+    final targetWordIds = targetWords.map((w) => w.id).toList();
+    final Map<String, List<MeaningItem>> meaningsByWordId = {};
+    if (targetWordIds.isNotEmpty) {
+      final targetMeanings = await (db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.isIn(targetWordIds))).get();
+      for (final mi in targetMeanings) {
+        meaningsByWordId.putIfAbsent(mi.wordId, () => []).add(mi);
+      }
+    }
+
+    // 7. 组装结果
     return targetWords.map((w) {
+      final meanings = meaningsByWordId[w.id] ?? [];
+      meanings.sort((a, b) => a.popularity.compareTo(b.popularity));
+      final meaningStr = meanings.take(3).map((mi) {
+        final cx = mi.ciXing.trim();
+        final mn = mi.meaning.trim();
+        return cx.isNotEmpty ? "$cx $mn" : mn;
+      }).join('; ');
+
       final wordVo = WordVo.c2(w.spell)
         ..id = w.id
-        ..shortDesc = w.shortDesc
+        ..shortDesc = meaningStr.isNotEmpty ? meaningStr : w.shortDesc
         ..popularity = w.popularity;
       final hasRecord = learningStatusMap[w.id] != null;
       final inDict = inDictWordIds.contains(w.id) || hasRecord;
