@@ -2236,7 +2236,29 @@ class WordBo {
       }
     }
 
-    // 7. 组装结果
+    // 7. 获取当前词根/词缀的拼写，并拉取所有同拼写词根/词缀以映射其具体的拼写变体 (确定该单词是作为哪个具体的词缀或词根变体，如 A 变体还是 B 变体)
+    final currentCigen = await (db.select(db.cigens)..where((c) => c.id.equals(cigenId))).getSingleOrNull();
+    final Map<String, String> wordCategoryMap = {};
+    final Map<String, String> wordExplainMap = {};
+    String cigenSpell = '关联';
+    if (currentCigen != null && targetWordIds.isNotEmpty) {
+      cigenSpell = currentCigen.spell ?? currentCigen.description;
+      final matchingCigens = await (db.select(db.cigens)
+        ..where((c) => c.spell.equals(cigenSpell) | c.description.equals(cigenSpell))).get();
+      final matchingCigenIds = matchingCigens.map((c) => c.id).toList();
+      final Map<String, String> cigenSpellMap = {
+        for (var c in matchingCigens) c.id: c.spell ?? c.description
+      };
+
+      final targetLinks = await (db.select(db.cigenWordLinks)
+        ..where((l) => l.wordId.isIn(targetWordIds) & l.cigenId.isIn(matchingCigenIds))).get();
+      for (var link in targetLinks) {
+        wordCategoryMap[link.wordId] = cigenSpellMap[link.cigenId] ?? cigenSpell;
+        wordExplainMap[link.wordId] = link.theExplain;
+      }
+    }
+
+    // 8. 组装结果
     return targetWords.map((w) {
       final meanings = meaningsByWordId[w.id] ?? [];
       meanings.sort((a, b) => a.popularity.compareTo(b.popularity));
@@ -2246,13 +2268,14 @@ class WordBo {
         return cx.isNotEmpty ? "$cx $mn" : mn;
       }).join('; ');
 
+      final explain = wordExplainMap[w.id];
       final wordVo = WordVo.c2(w.spell)
         ..id = w.id
-        ..shortDesc = meaningStr.isNotEmpty ? meaningStr : w.shortDesc
+        ..shortDesc = (explain != null && explain.isNotEmpty) ? explain : (meaningStr.isNotEmpty ? meaningStr : w.shortDesc)
         ..popularity = w.popularity;
       final hasRecord = learningStatusMap[w.id] != null;
       final inDict = inDictWordIds.contains(w.id) || hasRecord;
-      return CigenExpandedWord(wordVo, learningStatusMap[w.id], inDict: inDict);
+      return CigenExpandedWord(wordVo, learningStatusMap[w.id], inDict: inDict, category: wordCategoryMap[w.id] ?? cigenSpell);
     }).toList();
   }
 }
@@ -2262,5 +2285,6 @@ class CigenExpandedWord {
   final WordVo word;
   final bool? learningStatus; // true=已掌握, false=学习中, null=未学
   final bool inDict;
-  CigenExpandedWord(this.word, this.learningStatus, {this.inDict = true});
+  final String category; // 具体的词根或词缀拼写/变体名称，如 'A' 或 'B'
+  CigenExpandedWord(this.word, this.learningStatus, {this.inDict = true, this.category = 'ROOT'});
 }

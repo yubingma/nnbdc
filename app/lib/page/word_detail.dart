@@ -293,6 +293,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       dataLoaded = true;
     });
 
+    final links = args.word.cigenWordLinks;
+    if (links != null) {
+      for (final link in links) {
+        final cigen = link.cigen;
+        _cigenExpandedState[cigen.id] = true;
+        _loadCigenExpandedWords(cigen.id);
+      }
+    }
+
 
     if (_canUseAiAssistant) {
       _prefetchAiExplanation();
@@ -1429,6 +1438,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       );
     }
 
+    // 按具体的词根/词缀拼写分组
+    final Map<String, List<CigenExpandedWord>> groupedWords = {};
+    for (final item in words) {
+      final cat = item.category;
+      groupedWords.putIfAbsent(cat, () => []).add(item);
+    }
+    final categoriesOrder = groupedWords.keys.toList()..sort();
+
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Column(
@@ -1436,75 +1453,168 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         children: [
           const Divider(height: 1),
           const SizedBox(height: 4),
-          ...words.take(20).map((item) {
-            final status = item.learningStatus;
-
-            Color? chipColor;
-            String? chipText;
-            if (status == true) {
-              chipColor = Colors.green;
-              chipText = '已掌握';
-            } else if (status == false) {
-              chipColor = Colors.orange;
-              chipText = '学习中';
-            }
-
-            return InkWell(
-              onTap: () {
-                context.push('/word_detail',
-                  extra: WordDetailPageArgs(
-                    item.word, true, null, false,
-                    priorityDictIds: args.priorityDictIds,
-                  ),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
+          for (final cat in categoriesOrder)
+            if (groupedWords.containsKey(cat)) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
                 child: Row(
                   children: [
-                    Text(
-                      item.word.spell,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isDarkMode ? Colors.white : Colors.black87,
-                        fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
+                    Container(
+                      width: 3,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: tagTextColor,
+                        borderRadius: BorderRadius.circular(1.5),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    if (item.word.shortDesc != null && item.word.shortDesc!.isNotEmpty)
-                      Expanded(
-                        child: Text(
-                          item.word.shortDesc!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                            fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                    const SizedBox(width: 6),
+                    Text(
+                      cat,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: tagTextColor.withValues(alpha: 0.85),
                       ),
-                    if (chipText != null) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: chipColor!.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: chipColor.withValues(alpha: 0.3), width: 0.5),
-                        ),
-                        child: Text(
-                          chipText,
-                          style: TextStyle(fontSize: 9, color: chipColor, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                    ],
+                    ),
                   ],
                 ),
               ),
-            );
-          }),
+              ...groupedWords[cat]!.take(20).map((item) {
+                final status = item.learningStatus;
+
+                Color? chipColor;
+                String? chipText;
+                if (status == true) {
+                  chipColor = Colors.green;
+                  chipText = '已掌握';
+                } else if (status == false) {
+                  chipColor = Colors.orange;
+                  chipText = '学习中';
+                }
+
+                final spell = item.word.spell;
+                final desc = item.word.shortDesc ?? '';
+                final lowerDesc = desc.toLowerCase().trim();
+                final lowerSpell = spell.toLowerCase().trim();
+
+                Widget contentWidget;
+                if (desc.isNotEmpty && lowerDesc.startsWith(lowerSpell)) {
+                  int matchLength = spell.length;
+                  while (matchLength < desc.length && (desc[matchLength] == ' ' || desc[matchLength] == ':' || desc[matchLength] == '：')) {
+                    matchLength++;
+                  }
+                  final matchedSpell = desc.substring(0, matchLength);
+                  final remaining = desc.substring(matchLength);
+
+                  contentWidget = RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                        height: 1.45,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: matchedSpell,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.5,
+                            color: isDarkMode ? Colors.white : Colors.black87,
+                            fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
+                          ),
+                        ),
+                        TextSpan(
+                          text: remaining,
+                          style: TextStyle(
+                            fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  contentWidget = RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                        height: 1.45,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: '$spell ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.5,
+                            color: isDarkMode ? Colors.white : Colors.black87,
+                            fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
+                          ),
+                        ),
+                        TextSpan(
+                          text: desc,
+                          style: TextStyle(
+                            fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDarkMode 
+                        ? Colors.white.withValues(alpha: 0.03) 
+                        : Colors.black.withValues(alpha: 0.015),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDarkMode 
+                          ? Colors.white.withValues(alpha: 0.06) 
+                          : Colors.black.withValues(alpha: 0.05),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () {
+                      context.push('/word_detail',
+                        extra: WordDetailPageArgs(
+                          item.word, true, null, false,
+                          priorityDictIds: args.priorityDictIds,
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: contentWidget,
+                          ),
+                          if (chipText != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: chipColor!.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: chipColor.withValues(alpha: 0.3), width: 0.5),
+                              ),
+                              child: Text(
+                                chipText,
+                                style: TextStyle(fontSize: 9, color: chipColor, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
         ],
       ),
     );
