@@ -737,7 +737,14 @@ class BdcNotifier extends _$BdcNotifier {
     final result = await goRouter.push<bool>('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong,
         showNextWordButton: true));
     
+    if (_isDisposed) return;
+
     if (result == true && state.canLeaveCurrWord) {
+      // 延迟 300ms 以等待详情页的 Pop 路由过渡动画完全结束，
+      // 彻底消除在过渡动画期间执行切词的 DB 查询、ASR 重启、音频初始化等重度 CPU 运算对渲染主线程的抢占，
+      // 从而根治切换下一个单词时的视觉卡顿与延迟感，确保跳转体验如丝般顺滑。
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (_isDisposed) return;
       getNextWord(true, fsrsRating: state.lastFsrsRating);
     } else {
       _handleTabChangeForAsr();
