@@ -1936,8 +1936,6 @@ extension BdcPageStateUIComponents on BdcPageState {
       return const SizedBox.shrink();
     }
 
-    final sentencePlaying = state.playingStates['sentence'] ?? false;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1949,58 +1947,22 @@ extension BdcPageStateUIComponents on BdcPageState {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            margin: const EdgeInsets.only(right: 8, top: 2),
-            decoration: BoxDecoration(
-              color: _cachedIsDarkMode
-                  ? const Color(0xFF1E1E1E).withValues(alpha: 0.5)
-                  : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(6),
-              child: AnimatedBuilder(
-                animation: _sentenceSoundController,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(
-                        _sentenceSoundController.value < 0.5 ? 0 : -2, 0),
-                    child: Icon(
-                      sentencePlaying
-                          ? (_sentenceSoundController.value < 0.5
-                              ? Icons.volume_up
-                              : Icons.volume_down)
-                          : Icons.volume_up,
-                      color: sentencePlaying
-                          ? Colors.teal[300]
-                          : Colors.grey[500],
-                      size: 24,
-                    ),
-                  );
-                },
-              ),
-              onTap: () {
-                if (!sentencePlaying &&
-                    state.englishDigestOfFirstSentence != null) {
-                  notifier.playWithAnimation(
-                      () => SoundUtil.playSentenceSound2(
-                          state.englishDigestOfFirstSentence!, _audioPlayer),
-                      'sentence');
-                }
-              },
-            ),
-          ),
+          // 左侧极简播放前缀按钮
+          buildSentenceSoundButton(state),
+          const SizedBox(width: 8),
           Expanded(
-            child: Util.makeEnglishSpanText(
-                state.word!.sentences![0].english!,
-                state.word!.spell,
-                true,
-                context,
-                false,
-                null,
-                true,
-                FontWeight.w300),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 3), // 微调使文本与左侧图标对齐
+              child: Util.makeEnglishSpanText(
+                  state.word!.sentences![0].english!,
+                  state.word!.spell,
+                  true,
+                  context,
+                  false,
+                  null,
+                  true,
+                  FontWeight.w300),
+            ),
           ),
         ],
       ),
@@ -2090,19 +2052,25 @@ extension BdcPageStateUIComponents on BdcPageState {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // 左侧极简播放前缀按钮
+                      buildSentenceSoundButton(state),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Util.makeEnglishSpanText(
-                                state.word!.sentences![0].english!,
-                                state.word!.spell,
-                                true,
-                                context,
-                                false,
-                                null,
-                                true,
-                                FontWeight.w300),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 3), // 微调使第一行文本与左侧图标对齐
+                              child: Util.makeEnglishSpanText(
+                                  state.word!.sentences![0].english!,
+                                  state.word!.spell,
+                                  true,
+                                  context,
+                                  false,
+                                  null,
+                                  true,
+                                  FontWeight.w300),
+                            ),
                             if (!state.showSentenceTranslation)
                               Align(
                                 alignment: Alignment.centerRight,
@@ -2140,54 +2108,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 ),
                               ),
                           ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        margin: const EdgeInsets.only(left: 8, top: 2),
-                        decoration: BoxDecoration(
-                          color: _cachedIsDarkMode
-                              ? Colors.white.withValues(alpha: 0.08)
-                              : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(6),
-                          child: AnimatedBuilder(
-                            animation: _sentenceSoundController,
-                            builder: (context, child) {
-                              return Transform.translate(
-                                offset: Offset(
-                                    _sentenceSoundController.value < 0.5
-                                        ? 0
-                                        : -2,
-                                    0),
-                                child: Icon(
-                                  state.playingStates['sentence']!
-                                      ? (_sentenceSoundController.value < 0.5
-                                          ? Icons.volume_up
-                                          : Icons.volume_down)
-                                      : Icons.volume_up,
-                                  color: state.playingStates['sentence']!
-                                      ? (_cachedIsDarkMode
-                                          ? Colors.white
-                                          : const Color(0xFF1A1A1A))
-                                      : Colors.grey[500],
-                                  size: 24,
-                                ),
-                              );
-                            },
-                          ),
-                          onTap: () {
-                            if (!state.playingStates['sentence']! &&
-                                state.englishDigestOfFirstSentence != null) {
-                              notifier.playWithAnimation(
-                                  () => SoundUtil.playSentenceSound2(
-                                      state.englishDigestOfFirstSentence!,
-                                      _audioPlayer),
-                                  'sentence');
-                            }
-                          },
                         ),
                       ),
                     ],
@@ -2398,90 +2318,39 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget buildWordSoundButton(WordVo word, dynamic audioPlayer, BdcState state) {
     final wordPlaying = state.playingStates['word'] ?? false;
-    // 在拼写和音标显示的情况下使用小按钮
-    if (state.studyStep == StudyStep.en2Ch.json) {
-      return Transform.translate(
-          offset: Offset(6.0, 1.0),
-          child: InkWell(
-            child: Row(
-              children: [
-                AnimatedBuilder(
-                  animation: _wordSoundController,
-                  builder: (context, child) {
-                    return Transform.translate(
-                      offset: Offset(_wordSoundController.value < 0.5 ? 0 : -2,
-                          0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
-                      child: Icon(
-                        wordPlaying
-                            ? (_wordSoundController.value < 0.5
-                                ? Icons.volume_up
-                                : Icons.volume_down)
-                            : Icons.volume_up,
-                        color: wordPlaying
-                            ? Colors.teal[300]
-                            : Colors.grey[500],
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            onTap: () {
-              if (!wordPlaying) {
-                notifier.playWithAnimation(
-                    () => SoundUtil.playPronounceSound2(word, audioPlayer),
-                    'word');
-              }
-            },
-          ));
-    }
 
-    // 其他情况下使用中等大小的圆形按钮
-    return Container(
-      width: 48,
-      height: 48,
-      margin: const EdgeInsets.only(left: 8),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: wordPlaying
-            ? const Color(0xFF1A1A1A)
-            : Colors.grey[200],
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: () {
-            if (!wordPlaying) {
-              notifier.playWithAnimation(
-                  () => SoundUtil.playPronounceSound2(word, audioPlayer),
-                  'word');
-            }
-          },
-          child: Center(
-            child: AnimatedBuilder(
-              animation: _wordSoundController,
-              builder: (context, child) {
-                return Icon(
+    // 统一使用极简扁平无边框设计
+    return Transform.translate(
+      offset: const Offset(2.0, 0.0), // 适度右移微调，优化视觉对齐
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          if (!wordPlaying) {
+            notifier.playWithAnimation(
+                () => SoundUtil.playPronounceSound2(word, audioPlayer),
+                'word');
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: AnimatedBuilder(
+            animation: _wordSoundController,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(_wordSoundController.value < 0.5 ? 0 : -2, 0), // 发音波纹微晃动位移
+                child: Icon(
                   wordPlaying
                       ? (_wordSoundController.value < 0.5
                           ? Icons.volume_up
                           : Icons.volume_down)
                       : Icons.volume_up,
-                  color:
-                      wordPlaying ? Colors.white : Colors.grey[600],
-                  size: 28,
-                );
-              },
-            ),
+                  color: wordPlaying
+                      ? Colors.teal[300]
+                      : Colors.grey[500],
+                  size: 22,
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -2491,45 +2360,38 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget buildSentenceSoundButton(BdcState state) {
     final sentencePlaying = state.playingStates['sentence'] ?? false;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: _cachedIsDarkMode
-            ? Colors.white.withValues(alpha: 0.08)
-            : const Color(0xFFF0F0F0).withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(6),
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        if (!sentencePlaying &&
+            state.englishDigestOfFirstSentence != null) {
+          notifier.playWithAnimation(
+              () => SoundUtil.playSentenceSound2(
+                  state.englishDigestOfFirstSentence!, _audioPlayer),
+              'sentence');
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: AnimatedBuilder(
           animation: _sentenceSoundController,
           builder: (context, child) {
             return Transform.translate(
-              offset: Offset(_sentenceSoundController.value < 0.5 ? 0 : -2,
-                  0), // 位移, 因为一个波纹的图标较小，所以需要通过位移，消除轮播的左右晃动
+              offset: Offset(_sentenceSoundController.value < 0.5 ? 0 : -2, 0), // 发音微晃动动画位移
               child: Icon(
                 sentencePlaying
                     ? (_sentenceSoundController.value < 0.5
                         ? Icons.volume_up
                         : Icons.volume_down)
-                    : Icons.volume_up,
+                    : Icons.volume_up_outlined, // 默认使用更精致的空心发音图标
                 color: sentencePlaying
                     ? Colors.teal[300]
                     : Colors.grey[500],
-                size: 18,
+                size: 20,
               ),
             );
           },
         ),
-        onTap: () {
-          if (!sentencePlaying &&
-              state.englishDigestOfFirstSentence != null) {
-            notifier.playWithAnimation(
-                () => SoundUtil.playSentenceSound2(
-                    state.englishDigestOfFirstSentence!, _audioPlayer),
-                'sentence');
-          }
-        },
       ),
     );
   }

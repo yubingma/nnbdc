@@ -524,6 +524,9 @@ class BdcNotifier extends _$BdcNotifier {
       if (local != null) {
         word.spell = local.spell;
         word.shortDesc = local.shortDesc;
+        word.pronounce = local.pronounce;
+        word.britishPronounce = local.britishPronounce;
+        word.americaPronounce = local.americaPronounce;
       }
       final user = Global.getLoggedInUser();
       if (user != null) {
