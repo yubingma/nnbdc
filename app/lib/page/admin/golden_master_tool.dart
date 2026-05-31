@@ -261,6 +261,10 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
         );
       }
 
+      // 3.5 强行同步系统共享静态数据，确保词根、词缀及关联数据全部写入黄金母版
+      setState(() => _statusMessage = '正在同步词根/词缀等系统元数据...');
+      await syncSysDb();
+
       // 4. 执行 VACUUM 压缩数据库
       setState(() => _statusMessage = '正在压缩数据库 (VACUUM)...');
       await MyDatabase.instance.customStatement('VACUUM');

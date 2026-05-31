@@ -208,6 +208,16 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         allLogs.addAll(generateDictLogs(0));
         log.info("Generated {} system dict logs", allLogs.size() - prevSize);
 
+        // 4. Cigens
+        prevSize = allLogs.size();
+        allLogs.addAll(generateCigenLogs(0));
+        log.info("Generated {} system cigen logs", allLogs.size() - prevSize);
+
+        // 5. CigenWordLinks
+        prevSize = allLogs.size();
+        allLogs.addAll(generateCigenWordLinkLogs(0));
+        log.info("Generated {} system cigen_word_link logs", allLogs.size() - prevSize);
+
         // 批量持久化
         logOperations(allLogs);
         log.info("Finished re-generation of system data sync logs. Total {} logs created.", allLogs.size());
@@ -283,6 +293,12 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
 
         // 4. Dicts（只包含系统词典）
         logs.addAll(generateDictLogs(currentVersion));
+
+        // 5. Cigens
+        logs.addAll(generateCigenLogs(currentVersion));
+
+        // 6. CigenWordLinks
+        logs.addAll(generateCigenWordLinkLogs(currentVersion));
 
         // sentence/word_image/word_shortdesc_chinese的数据, 不需要全量同步, 因为数据量太大,
         // 而且用户下载所需词书的时候, 已经包含所需的这些数据了
@@ -476,5 +492,87 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void vacuumAnalyze() {
         jdbcTemplate.execute("VACUUM ANALYZE sys_db_log");
+    }
+
+    private List<SysDbLogDto> generateCigenLogs(int version) {
+        String sql = "SELECT id, description, spell, category, meaning_cn, meaning_en, create_time, update_time FROM cigen";
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
+                rs.getString("id"),
+                rs.getString("description"),
+                rs.getString("spell"),
+                rs.getString("category"),
+                rs.getString("meaning_cn"),
+                rs.getString("meaning_en"),
+                rs.getTimestamp("create_time"),
+                rs.getTimestamp("update_time")
+        });
+
+        List<SysDbLogDto> logs = new ArrayList<>();
+        for (Object result : results) {
+            Object[] tuple = (Object[]) result;
+            SysDbLogDto logObj = new SysDbLogDto();
+            logObj.setId(Util.uuid());
+            logObj.setVersion(version);
+            logObj.setOperate("INSERT");
+            logObj.setTblName("cigen");
+            logObj.setRecordId((String) tuple[0]);
+
+            Map<String, Object> record = buildRecordMap(tuple, 6,
+                "id", "0",
+                "description", "1",
+                "spell", "2",
+                "category", "3",
+                "meaningCn", "4",
+                "meaningEn", "5"
+            );
+
+            Assert.notNull(tuple[0], "Cigen ID must not be null");
+            Assert.notNull(tuple[1], "Cigen Description must not be null");
+
+            logObj.setRecord(JsonUtils.toJson(record));
+            Date now = new Date();
+            logObj.setCreateTime(now);
+            logObj.setUpdateTime(now);
+            logs.add(logObj);
+        }
+        return logs;
+    }
+
+    private List<SysDbLogDto> generateCigenWordLinkLogs(int version) {
+        String sql = "SELECT cigen_id, word_id, the_explain, create_time, update_time FROM cigen_word_link";
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
+                rs.getString("cigen_id"),
+                rs.getString("word_id"),
+                rs.getString("the_explain"),
+                rs.getTimestamp("create_time"),
+                rs.getTimestamp("update_time")
+        });
+
+        List<SysDbLogDto> logs = new ArrayList<>();
+        for (Object result : results) {
+            Object[] tuple = (Object[]) result;
+            SysDbLogDto logObj = new SysDbLogDto();
+            logObj.setId(Util.uuid());
+            logObj.setVersion(version);
+            logObj.setOperate("INSERT");
+            logObj.setTblName("cigen_word_link");
+            logObj.setRecordId(tuple[0] + "_" + tuple[1]);
+
+            Map<String, Object> record = buildRecordMap(tuple, 3,
+                "cigenId", "0",
+                "wordId", "1",
+                "theExplain", "2"
+            );
+
+            Assert.notNull(tuple[0], "CigenWordLink cigenId must not be null");
+            Assert.notNull(tuple[1], "CigenWordLink wordId must not be null");
+
+            logObj.setRecord(JsonUtils.toJson(record));
+            Date now = new Date();
+            logObj.setCreateTime(now);
+            logObj.setUpdateTime(now);
+            logs.add(logObj);
+        }
+        return logs;
     }
 }

@@ -537,7 +537,14 @@ class WordBo {
       for (final link in links) {
         final cigen = await db.cigensDao.getById(link.cigenId);
         if (cigen != null) {
-          final cigenVo = CigenVo(cigen.id, cigen.description);
+          final cigenVo = CigenVo(
+            cigen.id,
+            cigen.description,
+            spell: cigen.spell,
+            category: cigen.category,
+            meaningCn: cigen.meaningCn,
+            meaningEn: cigen.meaningEn,
+          );
           linkVos.add(CigenWordLinkVo(cigenVo, link.theExplain));
         }
       }

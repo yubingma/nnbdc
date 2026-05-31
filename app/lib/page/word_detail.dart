@@ -1164,46 +1164,61 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 词根/词缀 头部栏 (拼写 + 词性Chip + 释义)
+                // 词根/词缀 头部栏 (拼写 + 词性Chip + 释义) - 已做防溢出包裹升级
                 Row(
                   children: [
-                    Text(
-                      mainSpell,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace',
-                        color: isDarkMode ? Colors.white : Colors.black87,
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              mainSpell,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'monospace',
+                                color: isDarkMode ? Colors.white : Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: tagBgColor,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: tagTextColor.withValues(alpha: 0.2),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Text(
+                              categoryText,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: tagTextColor,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: tagBgColor,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: tagTextColor.withValues(alpha: 0.2),
-                          width: 0.5,
-                        ),
-                      ),
-                      child: Text(
-                        categoryText,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: tagTextColor,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
+                    const SizedBox(width: 12),
                     if (cigen.meaningCn != null && cigen.meaningCn!.isNotEmpty)
-                      Text(
-                        '含义: ${cigen.meaningCn}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: tagTextColor,
+                      Flexible(
+                        child: Text(
+                          '含义: ${cigen.meaningCn}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: tagTextColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                   ],
