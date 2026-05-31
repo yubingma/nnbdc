@@ -4,7 +4,6 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import "package:go_router/go_router.dart";
 import "package:nnbdc/util/prefs.dart";
-import 'package:intl/intl.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/api/enum.dart';
@@ -30,6 +29,7 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/widget/dynamic_clock_text.dart';
 import 'package:provider/provider.dart';
 
 class TodayPlanPage extends StatefulWidget {
@@ -57,7 +57,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _completedStepCount = 0;
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
-  final DateTime _now = AppClock.now();
   Set<String> _masteredWordIds = {};
 
   @override
@@ -447,8 +446,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            '${DateFormat('yyyy-MM-dd HH:mm:ss').format(_now)} (${DateFormat('yyyy-MM-dd').format(app_date.DateUtils.businessDate(_now))})',
+                          DynamicClockText(
                             style: TextStyle(
                               color: isDarkMode ? Colors.white38 : Colors.black38,
                               fontSize: 10,
@@ -470,7 +468,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                       const Text('本应用以凌晨 03:00 作为学习日期的切换点。\n\n如果您在凌晨 3 点前背单词，系统仍会将其计入前一天的学习任务中，以照顾习惯熬夜学习的同学。'),
                                       const SizedBox(height: 16),
                                       Text(
-                                        '当前时区: ${_now.timeZoneName} (UTC${_now.timeZoneOffset.isNegative ? '-' : '+'}${_now.timeZoneOffset.inHours.abs()})',
+                                        '当前时区: ${AppClock.now().timeZoneName} (UTC${AppClock.now().timeZoneOffset.isNegative ? '-' : '+'}${AppClock.now().timeZoneOffset.inHours.abs()})',
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: isDarkMode ? Colors.white38 : Colors.black38,
