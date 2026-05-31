@@ -12,6 +12,7 @@ import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
+import 'package:nnbdc/util/sys_db_sync.dart';
 
 class GoldenMasterToolPage extends StatefulWidget {
   const GoldenMasterToolPage({super.key});
