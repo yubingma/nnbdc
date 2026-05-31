@@ -45,8 +45,12 @@ class WordDetailPageArgs {
   /// 是否在底部显示"下一词"按钮（从背单词页面进入时设置为 true）
   bool showNextWordButton;
 
+  /// "下一词"按钮点击时的预拉取回调：在详情页 Pop 之前静默执行切词，
+  /// 消除 Pop 后主页的旧词停留和二次卡片淡入。
+  final Future<void> Function()? onNextWord;
+
   WordDetailPageArgs(this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong,
-      {this.priorityDictIds, this.showNextWordButton = false});
+      {this.priorityDictIds, this.showNextWordButton = false, this.onNextWord});
 
   @override
   String toString() {
@@ -82,6 +86,7 @@ class WordDetailPage extends StatefulWidget {
 class WordDetailPageState extends State<WordDetailPage> with TickerProviderStateMixin {
   bool dataLoaded = false;
   bool _isLoadingData = false;
+  bool _isLoadingNextWord = false;
   bool hasError = false;
   String? errorMessage;
   final Map<String, Future<bool>> _voteFutures = {};
@@ -1045,9 +1050,35 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: () => context.pop(true),
-                child: const Text('下一词',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                onPressed: _isLoadingNextWord
+                    ? null
+                    : () async {
+                        if (args.onNextWord != null) {
+                          setState(() => _isLoadingNextWord = true);
+                          try {
+                            await args.onNextWord!();
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isLoadingNextWord = false);
+                              context.pop(true);
+                            }
+                          }
+                        } else {
+                          context.pop(true);
+                        }
+                      },
+                child: _isLoadingNextWord
+                    ? SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: context.watch<DarkMode>().isDarkMode
+                              ? AppTheme.primaryColor
+                              : Colors.white,
+                        ),
+                      )
+                    : const Text('下一词',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
         ],

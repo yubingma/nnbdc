@@ -735,17 +735,14 @@ class BdcNotifier extends _$BdcNotifier {
     }
     
     final result = await goRouter.push<bool>('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong,
-        showNextWordButton: true));
+        showNextWordButton: true,
+        onNextWord: () => getNextWord(true, fsrsRating: state.lastFsrsRating, fastPath: true)));
     
     if (_isDisposed) return;
 
-    if (result == true && state.canLeaveCurrWord) {
-      // 延迟 300ms 以等待详情页的 Pop 路由过渡动画完全结束，
-      // 彻底消除在过渡动画期间执行切词的 DB 查询、ASR 重启、音频初始化等重度 CPU 运算对渲染主线程的抢占，
-      // 从而根治切换下一个单词时的视觉卡顿与延迟感，确保跳转体验如丝般顺滑。
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (_isDisposed) return;
-      getNextWord(true, fsrsRating: state.lastFsrsRating);
+    if (result == true) {
+      // onNextWord 回调已在详情页 Pop 前静默执行了 getNextWord，
+      // 主页切词已完成，无需在此重复执行，消除双重过渡延迟。
     } else {
       _handleTabChangeForAsr();
     }
@@ -1041,25 +1038,28 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating}) async {
+  Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating, bool fastPath = false}) async {
     if (state.isGettingNextWord) return false;
     final totalStopwatch = Stopwatch()..start();
 
     _saveCurrentWordState();
     _playToken++; // 取消任何待执行的自动播放延迟 callback
 
-    // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
-    // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
-    try {
-      await _safeStopAudioPlayer();
-    } catch (_) {}
+    // 快速通道（详情页预拉取）：跳过音频/ASR 清理和视觉驻留，仅做数据加载。
+    if (!fastPath) {
+      // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
+      // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
+      try {
+        await _safeStopAudioPlayer();
+      } catch (_) {}
 
-    // 答对单词后切换下一词前的视觉驻留延迟。
-    // Ch2En 模式（说英文）发音已播完提供充足的驻留时长，无需额外等待；
-    // 其他模式（如 En2Ch）仅播短促提示音，保留 50ms 缓冲让用户看一眼评分。
-    if (gotoNext && state.word != null) {
-      final dwellMs = state.studyStep == StudyStep.ch2En.json ? 0 : 50;
-      if (dwellMs > 0) await Future.delayed(Duration(milliseconds: dwellMs));
+      // 答对单词后切换下一词前的视觉驻留延迟。
+      // Ch2En 模式（说英文）发音已播完提供充足的驻留时长，无需额外等待；
+      // 其他模式（如 En2Ch）仅播短促提示音，保留 50ms 缓冲让用户看一眼评分。
+      if (gotoNext && state.word != null) {
+        final dwellMs = state.studyStep == StudyStep.ch2En.json ? 0 : 50;
+        if (dwellMs > 0) await Future.delayed(Duration(milliseconds: dwellMs));
+      }
     }
 
     if (state.historyIndex != -1) {
@@ -1132,8 +1132,10 @@ class BdcNotifier extends _$BdcNotifier {
       showAnswerButtons: false,
     );
     try {
-      await asr.stopAsr();
-      await asr.reset();
+      if (!fastPath) {
+        await asr.stopAsr();
+        await asr.reset();
+      }
 
       meaningController.text = '';
       _handlingChinese = '';
