@@ -1180,10 +1180,46 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (links != null && links.isNotEmpty) {
       return ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: links.length,
+        itemCount: links.length + 1,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final link = links[index];
+          if (index == 0) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isDarkMode 
+                    ? const Color(0xFF1E293B).withValues(alpha: 0.5) 
+                    : const Color(0xFFF3F4F6).withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 14,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '注：正常字体单词在当前学习范围内；浅色斜体单词在学习范围外。',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final link = links[index - 1];
           final cigen = link.cigen;
 
           Color tagTextColor;
@@ -1355,6 +1391,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 final lowerDesc = desc.toLowerCase().trim();
                 final lowerSpell = spell.toLowerCase().trim();
 
+                final Color spellColor = item.inDict
+                    ? (isDarkMode ? Colors.white : Colors.black87)
+                    : (isDarkMode ? Colors.grey[500]! : Colors.grey[600]!);
+                final Color descColor = item.inDict
+                    ? (isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563))
+                    : (isDarkMode ? Colors.grey[500]!.withValues(alpha: 0.85) : Colors.grey[600]!.withValues(alpha: 0.85));
+
                 Widget contentWidget;
                 if (desc.isNotEmpty && lowerDesc.startsWith(lowerSpell)) {
                   int matchLength = spell.length;
@@ -1368,7 +1411,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     text: TextSpan(
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                        color: descColor,
                         height: 1.45,
                       ),
                       children: [
@@ -1377,7 +1420,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14.5,
-                            color: isDarkMode ? Colors.white : Colors.black87,
+                            color: spellColor,
                             fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
                           ),
                         ),
@@ -1395,7 +1438,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     text: TextSpan(
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563),
+                        color: descColor,
                         height: 1.45,
                       ),
                       children: [
@@ -1404,7 +1447,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14.5,
-                            color: isDarkMode ? Colors.white : Colors.black87,
+                            color: spellColor,
                             fontStyle: item.inDict ? FontStyle.normal : FontStyle.italic,
                           ),
                         ),
@@ -1725,76 +1768,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 词根解析 (已精简为精美跳转条，点击一键平滑跳转到专属 Tab)
-                if (args.word.cigenWordLinks != null && args.word.cigenWordLinks!.isNotEmpty)
-                  InkWell(
-                    onTap: () {
-                      _tabController.animateTo(getCigenTabIndex());
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isDarkMode 
-                            ? const Color(0xFF1E1E2D).withValues(alpha: 0.8) 
-                            : const Color(0xFFF3F4F6).withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.25),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.lightbulb_outline_rounded,
-                            size: 15,
-                            color: AppTheme.primaryColor,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '词根助记: ',
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              args.word.cigenWordLinks!.first.theExplain,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '查看',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDarkMode ? Colors.grey[500] : Colors.grey[500],
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 10,
-                                color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
                 // 单词讲解
                 if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty)
