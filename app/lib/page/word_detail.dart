@@ -137,6 +137,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   final Map<String, bool> _cigenExpandedState = {};
   final Map<String, bool> _cigenLoadingState = {};
   bool _showCigenTip = true;
+  double _cumulativeScroll = 0.0;
 
   void _onTabControllerChanged() {
     if (!mounted) return;
@@ -146,6 +147,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 切换到 AI 助教 Tab 时自动收起抽屉
     if (_canUseAiAssistant && index == calcTabsCount() - 1 && _isTopDrawerExpanded) {
       _isTopDrawerExpanded = false;
+      _cumulativeScroll = 0.0;
     }
     setState(() {});
   }
@@ -933,6 +935,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     onTap: () {
                       setState(() {
                         _isTopDrawerExpanded = !_isTopDrawerExpanded;
+                        _cumulativeScroll = 0.0;
                       });
                     },
                     child: Container(
@@ -1026,17 +1029,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         onNotification: (ScrollUpdateNotification notification) {
                           if (notification.metrics.axis == Axis.horizontal) return false;
                           
-                          // 只有当用户往下看内容（上滑手指）时，且滚动超过 120 像素（提供顶部明显的停顿感），收起抽屉
+                          // 只有当用户往下看内容（上滑手指）时，且滚动超过 180 像素（提供顶部极其稳厚、明显的停顿阻尼感），收起抽屉
                           if (notification.dragDetails != null && notification.scrollDelta != null) {
                             if (notification.scrollDelta! > 0.0 && _isTopDrawerExpanded) {
-                              if (notification.metrics.pixels > 120.0) {
+                              if (notification.metrics.pixels > 180.0) {
                                 setState(() { _isTopDrawerExpanded = false; });
                               }
                             }
                           }
                           
-                          // 当用户往上回看内容（下滑手指），且接近最顶部时，展开启抽屉
-                          if (notification.scrollDelta != null && notification.scrollDelta! < -1.0 && notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded) {
+                          // 当用户往上回看内容（下滑手指），且接近最顶部时，极易展开启抽屉（取消速度限制，只要回滑即开）
+                          if (notification.scrollDelta != null && notification.scrollDelta! < 0.0 && notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded) {
                             setState(() { _isTopDrawerExpanded = true; });
                           }
                           
