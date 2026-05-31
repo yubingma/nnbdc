@@ -1180,8 +1180,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final links = args.word.cigenWordLinks;
     if (links != null && links.isNotEmpty) {
-    final showTip = _showCigenTip;
-    if (links != null && links.isNotEmpty) {
+      final showTip = _showCigenTip;
       return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: showTip ? links.length + 1 : links.length,
@@ -1210,7 +1209,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：正常字体单词在当前学习范围内；浅色斜体单词在学习范围外。',
+                      '注：浅色斜体单词不在你当前选择的词书内，请酌情学习。',
                       style: TextStyle(
                         fontSize: 11.5,
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -1250,32 +1249,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             tagTextColor = isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
           }
 
-          return Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDarkMode 
-                  ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) 
-                  : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCigenExpandedWords(cigen.id, isDarkMode, tagTextColor),
-              ],
-            ),
-          );
+          return _buildCigenExpandedWords(cigen.id, isDarkMode, tagTextColor);
         },
       );
     } else {
