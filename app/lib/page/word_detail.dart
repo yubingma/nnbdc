@@ -1026,10 +1026,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         onNotification: (ScrollUpdateNotification notification) {
                           if (notification.metrics.axis == Axis.horizontal) return false;
                           
-                          // 只有当用户往下看内容（上滑手指）时，收起抽屉
+                          // 只有当用户往下看内容（上滑手指）时，且滚动超过 120 像素（提供顶部明显的停顿感），收起抽屉
                           if (notification.dragDetails != null && notification.scrollDelta != null) {
                             if (notification.scrollDelta! > 0.0 && _isTopDrawerExpanded) {
-                              setState(() { _isTopDrawerExpanded = false; });
+                              if (notification.metrics.pixels > 120.0) {
+                                setState(() { _isTopDrawerExpanded = false; });
+                              }
                             }
                           }
                           
