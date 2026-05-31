@@ -719,6 +719,8 @@ class BdcNotifier extends _$BdcNotifier {
       await _safeStopAudioPlayer();
     } catch (_) {}
 
+    _playToken++; // 取消任何待执行的自动播放延迟 callback，防止详情页与主页延迟自动播放并发撞车
+
     if (fsrsRating != null) {
       if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
         state.wordWrapper!.revealAllRemainingMeanings();
