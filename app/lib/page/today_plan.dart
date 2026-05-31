@@ -455,13 +455,16 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               letterSpacing: 1.0,
                             ),
                           ),
-                          const SizedBox(width: 4),
                           GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () => StudyDateExplanationDialog.show(context),
-                            child: Icon(
-                              Icons.help_outline_rounded,
-                              size: 12,
-                              color: isDarkMode ? Colors.white38 : Colors.black38,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(4, 8, 12, 8),
+                              child: Icon(
+                                Icons.help_outline_rounded,
+                                size: 12,
+                                color: isDarkMode ? Colors.white38 : Colors.black38,
+                              ),
                             ),
                           ),
                         ],
