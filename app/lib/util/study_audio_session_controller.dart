@@ -12,6 +12,7 @@ import 'package:nnbdc/util/app_clock.dart';
 class StudyAudioSessionController {
   final Asr _asr = Asr();
   final ja.AudioPlayer _audioPlayer;
+  final bool _ownsPlayer;
 
   /// 唯一的串行化任务队列锁，杜绝所有物理时序竞态
   final _SessionMutex _queueLock = _SessionMutex();
@@ -24,10 +25,15 @@ class StudyAudioSessionController {
   DateTime? _lastMeterAt;
   bool _meterTickFlip = false;
 
-  StudyAudioSessionController(this._audioPlayer) {
+  StudyAudioSessionController([ja.AudioPlayer? player])
+      : _audioPlayer = player ?? SoundUtil.createAudioPlayer(),
+        _ownsPlayer = player == null {
     // 监听 ASR 状态广播：只有当 ASR 切实状态变成 started 时，才安全、延迟地建立电平订阅，
     // 彻底杜绝由于 ASR 尚未拉起而导致的电平流哑火和死锁问题。
     _asr.addStateListener(_onAsrStateChange);
+    if (_ownsPlayer) {
+      SoundUtil.watchPlayer(_audioPlayer);
+    }
   }
 
   void _onAsrStateChange(AsrState state) {
@@ -122,6 +128,20 @@ class StudyAudioSessionController {
     _asr.removeStateListener(_onAsrStateChange);
     _unsubscribeMeter();
     meterLevelNotifier.dispose();
+
+    if (_ownsPlayer) {
+      SoundUtil.unwatchPlayer(_audioPlayer);
+      try {
+        if (_audioPlayer.playing) {
+          await _audioPlayer.setVolume(0.0);
+          await _audioPlayer.stop();
+        }
+      } catch (_) {}
+      await Future.delayed(const Duration(milliseconds: 100));
+      try {
+        await _audioPlayer.dispose();
+      } catch (_) {}
+    }
   }
 
   /// 内部电平流订阅维护

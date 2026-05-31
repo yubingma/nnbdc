@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -18,11 +17,11 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:provider/provider.dart';
 
 import '../global.dart';
 import '../state.dart';
-import '../util/asr.dart';
 import '../util/study_config.dart';
 import '../util/subscription_util.dart';
 import '../util/utils.dart';
@@ -95,8 +94,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   bool _isTopDrawerExpanded = true;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
-  late final ja.AudioPlayer audioPlayer;
-  bool _audioPlayerDisposed = false;
+  late final StudyAudioSessionController sessionController;
+  bool _sessionDisposed = false;
   var sentenceEnglishController = TextEditingController();
   var sentenceChineseController = TextEditingController();
   var isEditMode = false;
@@ -143,8 +142,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   @override
   void initState() {
     super.initState();
-    audioPlayer = SoundUtil.createAudioPlayer();
-    SoundUtil.watchPlayer(audioPlayer);
+    sessionController = StudyAudioSessionController();
     _wordSoundController = AnimationController(
       duration: const Duration(milliseconds: 700),
       vsync: this,
@@ -155,7 +153,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _tabController.addListener(_onTabControllerChanged);
 
     // 进入详情页时，统一将音频状态机转换到 idle 状态，优雅关闭麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源
-    unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: Asr()));
+    unawaited(sessionController.stopSession(forceStopMicrophone: true));
   }
 
   @override
@@ -190,25 +188,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _chatInputController.dispose();
     _chatScrollController.dispose();
 
-    // 标记 AudioPlayer 为已释放，先无条件从全局状态机监视列表中摘除，彻底消灭任何内存泄露和 disposed 状态机崩溃风险
-    _audioPlayerDisposed = true;
-    try {
-      if (audioPlayer.playing) {
-        audioPlayer.setVolume(0.0);
-        audioPlayer.stop();
-      }
-    } catch (_) {}
-    SoundUtil.unwatchPlayer(audioPlayer);
-
-    // 延迟释放 AudioPlayer，确保所有操作完成
-    Future.delayed(const Duration(milliseconds: 100), () {
-      try {
-        audioPlayer.dispose();
-      } catch (e) {
-        // 忽略释放时的错误
-        Global.logger.d("释放 AudioPlayer 时出错: $e");
-      }
-    });
+    _sessionDisposed = true;
+    sessionController.dispose();
 
     super.dispose();
   }
@@ -308,10 +289,16 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
 
     // 自动播放单词发音
-    if (!_audioPlayerDisposed) {
+    if (!_sessionDisposed) {
       _playWithAnimation(() async {
         try {
-          await SoundUtil.playPronounceSound2(args.word, audioPlayer);
+          await sessionController.playWordAndSentence(
+            args.word,
+            sentenceDigest: null,
+            playWord: true,
+            playSentence: false,
+            isSpeakMode: false,
+          );
         } catch (e) {
           Global.logger.d("自动播放发音失败: $e");
         }
@@ -709,12 +696,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   },
                                 ),
                                 onTap: () {
-                                  if (!_playingStates['word']!.value && !_audioPlayerDisposed) {
+                                  if (!_playingStates['word']!.value && !_sessionDisposed) {
                                     _playWithAnimation(() async {
                                       try {
-                                        await SoundUtil.playPronounceSound2(args.word, audioPlayer);
+                                        await sessionController.playWordAndSentence(
+                                          args.word,
+                                          sentenceDigest: null,
+                                          playWord: true,
+                                          playSentence: false,
+                                          isSpeakMode: false,
+                                        );
                                       } catch (e) {
-                                        // 忽略 AudioPlayer 错误
                                         Global.logger.d("播放发音失败: $e");
                                       }
                                     }, 'word');
@@ -1712,7 +1704,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   InkWell(
                                     onTap: () {
                                       if (!(_playingStates[sent.id]!.value)) {
-                                        _playWithAnimation(() => SoundUtil.playSentenceSound2(sent.englishDigest!, audioPlayer), sent.id);
+                                        _playWithAnimation(() => sessionController.playWordAndSentence(
+                                          args.word,
+                                          sentenceDigest: sent.englishDigest,
+                                          playWord: false,
+                                          playSentence: true,
+                                          isSpeakMode: false,
+                                        ), sent.id);
                                       }
                                     },
                                     borderRadius: BorderRadius.circular(12),
