@@ -387,28 +387,35 @@ extension BdcPageStateUIComponents on BdcPageState {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            notifier.updateProgressBarTapCount(state.progressBarTapCount + 1);
-            ref.read(bdcNotifierProvider.notifier).progressBarTapTimer?.cancel();
+            final notifierInstance = ref.read(bdcNotifierProvider.notifier);
+            final currentCount = state.progressBarTapCount + 1;
 
-            // 添加震动反馈
+            // 每次点击都给予轻微反馈
             HapticFeedback.lightImpact();
 
-            if (state.progressBarTapCount >= 5) {
+            // 取消之前的计时器
+            notifierInstance.progressBarTapTimer?.cancel();
+
+            if (currentCount >= 5) {
+              // 达到 5 次，立即触发五击事件，不需要等待
               notifier.updateProgressBarTapCount(0);
               _showDebugOverlay();
             } else {
-              // 提示还差几次
-              ref.read(bdcNotifierProvider.notifier).progressBarTapTimer =
-                  Timer(const Duration(milliseconds: 3000), () {
+              notifier.updateProgressBarTapCount(currentCount);
+              // 开启一个短的计时器（300ms），在没有新点击时触发
+              notifierInstance.progressBarTapTimer = Timer(const Duration(milliseconds: 300), () {
                 if (!mounted) return;
+
+                // 300ms 后如果点击次数刚好为 2，说明是双击，触发双击逻辑
+                if (ref.read(bdcNotifierProvider).progressBarTapCount == 2) {
+                  PerformanceWatchdog.toggleFpsOverlay();
+                  HapticFeedback.mediumImpact();
+                }
+
+                // 触发完成后清零计数器
                 notifier.updateProgressBarTapCount(0);
               });
             }
-          },
-          onDoubleTap: () {
-            // 双击进度条切换 FPS 气泡状态，并给予震动回馈
-            PerformanceWatchdog.toggleFpsOverlay();
-            HapticFeedback.mediumImpact();
           },
           child: Container(
             margin: EdgeInsets.fromLTRB(
