@@ -49,8 +49,11 @@ class WordDetailPageArgs {
   /// 消除 Pop 后主页的旧词停留和二次卡片淡入。
   final Future<void> Function()? onNextWord;
 
+  /// 共享的音频会话控制器
+  final StudyAudioSessionController? sessionController;
+
   WordDetailPageArgs(this.word, this.needReQueryWord, this.bottomBtn, this.isThisAnswerWrong,
-      {this.priorityDictIds, this.showNextWordButton = false, this.onNextWord});
+      {this.priorityDictIds, this.showNextWordButton = false, this.onNextWord, this.sessionController});
 
   @override
   String toString() {
@@ -99,7 +102,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   bool _isTopDrawerExpanded = true;
   static const double leftPadding = 16;
   static const double rightPadding = 16;
-  late final StudyAudioSessionController sessionController;
+  StudyAudioSessionController? _sessionController;
+  bool _ownsSessionController = true;
+
+  StudyAudioSessionController get sessionController => _sessionController!;
   bool _sessionDisposed = false;
   var sentenceEnglishController = TextEditingController();
   var sentenceChineseController = TextEditingController();
@@ -157,7 +163,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   void initState() {
     super.initState();
     _showCigenTip = Prefs.read<bool>('show_cigen_tip') ?? true;
-    sessionController = StudyAudioSessionController();
     _wordSoundController = AnimationController(
       duration: const Duration(milliseconds: 700),
       vsync: this,
@@ -166,9 +171,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 初始化 TabController，提供默认长度以免在异常退出 dispose 时报 LateInitializationError
     _tabController = TabController(length: 1, vsync: this);
     _tabController.addListener(_onTabControllerChanged);
-
-    // 进入详情页时，统一将音频状态机转换到 idle 状态，优雅关闭麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源
-    unawaited(sessionController.stopSession(forceStopMicrophone: true));
   }
 
   @override
@@ -178,6 +180,19 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     // 同步提取参数以更新 TabController 初始状态
     if (GoRouterState.of(context).extra != null) {
       args = GoRouterState.of(context).extra as WordDetailPageArgs;
+
+      if (_sessionController == null) {
+        if (args.sessionController != null) {
+          _sessionController = args.sessionController;
+          _ownsSessionController = false;
+        } else {
+          _sessionController = StudyAudioSessionController();
+          _ownsSessionController = true;
+          // 进入详情页时，统一将音频状态机转换到 idle 状态，优雅关闭麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源
+          unawaited(_sessionController!.stopSession(forceStopMicrophone: true));
+        }
+      }
+
       _canUseAiAssistant = Global.getLoggedInUser()?.isAdmin == true || SubscriptionUtil.isPremium();
       final count = calcTabsCount();
       if (count != _tabController.length) {
@@ -204,7 +219,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _chatScrollController.dispose();
 
     _sessionDisposed = true;
-    sessionController.dispose();
+    if (_ownsSessionController) {
+      _sessionController?.dispose();
+    }
 
     super.dispose();
   }

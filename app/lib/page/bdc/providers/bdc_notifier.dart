@@ -736,6 +736,7 @@ class BdcNotifier extends _$BdcNotifier {
     
     final result = await goRouter.push<bool>('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong,
         showNextWordButton: true,
+        sessionController: _sessionController,
         onNextWord: () => getNextWord(true, fsrsRating: state.lastFsrsRating, fastPath: true)));
     
     if (_isDisposed) return;
