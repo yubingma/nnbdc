@@ -1277,7 +1277,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     if (cigen.meaningCn != null && cigen.meaningCn!.isNotEmpty)
                       Flexible(
                         child: Text(
-                          '含义: ${cigen.meaningCn}',
+                          cigen.meaningCn!,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
