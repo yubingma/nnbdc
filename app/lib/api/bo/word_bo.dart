@@ -2240,6 +2240,7 @@ class WordBo {
     final currentCigen = await (db.select(db.cigens)..where((c) => c.id.equals(cigenId))).getSingleOrNull();
     final Map<String, String> wordCategoryMap = {};
     final Map<String, String> wordExplainMap = {};
+    final Map<String, String> wordCigenMeaningMap = {};
     String cigenSpell = '关联';
     if (currentCigen != null && targetWordIds.isNotEmpty) {
       cigenSpell = currentCigen.spell ?? currentCigen.description;
@@ -2249,12 +2250,16 @@ class WordBo {
       final Map<String, String> cigenSpellMap = {
         for (var c in matchingCigens) c.id: c.spell ?? c.description
       };
+      final Map<String, String> cigenMeaningMap = {
+        for (var c in matchingCigens) c.id: c.meaningCn ?? ''
+      };
 
       final targetLinks = await (db.select(db.cigenWordLinks)
         ..where((l) => l.wordId.isIn(targetWordIds) & l.cigenId.isIn(matchingCigenIds))).get();
       for (var link in targetLinks) {
         wordCategoryMap[link.wordId] = cigenSpellMap[link.cigenId] ?? cigenSpell;
         wordExplainMap[link.wordId] = link.theExplain;
+        wordCigenMeaningMap[link.wordId] = cigenMeaningMap[link.cigenId] ?? '';
       }
     }
 
@@ -2275,7 +2280,13 @@ class WordBo {
         ..popularity = w.popularity;
       final hasRecord = learningStatusMap[w.id] != null;
       final inDict = inDictWordIds.contains(w.id) || hasRecord;
-      return CigenExpandedWord(wordVo, learningStatusMap[w.id], inDict: inDict, category: wordCategoryMap[w.id] ?? cigenSpell);
+      return CigenExpandedWord(
+        wordVo, 
+        learningStatusMap[w.id], 
+        inDict: inDict, 
+        category: wordCategoryMap[w.id] ?? cigenSpell,
+        cigenMeaning: wordCigenMeaningMap[w.id] ?? (currentCigen?.meaningCn ?? ''),
+      );
     }).toList();
   }
 }
@@ -2286,5 +2297,6 @@ class CigenExpandedWord {
   final bool? learningStatus; // true=已掌握, false=学习中, null=未学
   final bool inDict;
   final String category; // 具体的词根或词缀拼写/变体名称，如 'A' 或 'B'
-  CigenExpandedWord(this.word, this.learningStatus, {this.inDict = true, this.category = 'ROOT'});
+  final String? cigenMeaning; // 词根/词缀中文含义
+  CigenExpandedWord(this.word, this.learningStatus, {this.inDict = true, this.category = 'ROOT', this.cigenMeaning});
 }

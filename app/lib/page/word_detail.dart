@@ -1356,7 +1356,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               ? ' (共 ${expandedWords.length} 个)'
                               : '';
                           return Text(
-                            '相同$categoryText的单词$countSuffix',
+                            '同根词$countSuffix',
                             style: TextStyle(
                               fontSize: 13,
                               color: tagTextColor,
@@ -1455,29 +1455,39 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           const SizedBox(height: 4),
           for (final cat in categoriesOrder)
             if (groupedWords.containsKey(cat)) ...[
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 3,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: tagTextColor,
-                        borderRadius: BorderRadius.circular(1.5),
-                      ),
+              Builder(
+                builder: (context) {
+                  final firstItem = groupedWords[cat]!.first;
+                  final cigenMeaning = firstItem.cigenMeaning;
+                  final meaningText = (cigenMeaning != null && cigenMeaning.isNotEmpty) 
+                      ? ' ($cigenMeaning)' 
+                      : '';
+
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 3,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: tagTextColor,
+                            borderRadius: BorderRadius.circular(1.5),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$cat$meaningText',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: tagTextColor.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      cat,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: tagTextColor.withValues(alpha: 0.85),
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                }
               ),
               ...groupedWords[cat]!.take(20).map((item) {
                 final status = item.learningStatus;
