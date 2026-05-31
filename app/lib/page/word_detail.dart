@@ -1004,7 +1004,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           const Tab(text: '详情'),
                           if (hasSimilarWords()) Tab(text: '形近词(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义词(${calcSynonymCount()})"),
-                          if (hasCigen()) Tab(text: '词根词缀(${args.word.cigenWordLinks!.length})'),
+                          if (hasCigen()) Tab(text: '同根词(${args.word.cigenWordLinks!.length})'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
