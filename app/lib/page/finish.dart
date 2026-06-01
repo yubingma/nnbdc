@@ -664,7 +664,7 @@ class FinishPageState extends State<FinishPage> {
               size: 20,
             ),
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
