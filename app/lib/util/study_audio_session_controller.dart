@@ -120,15 +120,16 @@ class StudyAudioSessionController {
       if (!playWord && !playSentence) return;
       _unsubscribeMeter();
 
-      // 软复位播放器：静音 → pause → seek(0)，避免 stop() 触发
-      // _setPlatformActive(false) 导致音频会话被 deactivated。若播放器处于
-      // buffering 状态，pause 无法清除，但后续 playSoundByUrl 的 reset 块会
-      // 检测到 buffering 并用 stop() 硬复位，此处统一用 pause 以保持会话活跃。
+      // 硬复位播放器：静音 → stop → seek(0) — 彻底清除前次音频源与内部缓冲
+      // 状态，为新 URL 的 setAudioSource/setUrl 提供干净的 idle 起点。
+      // stop() 虽然会触发 _setPlatformActive(false) 导致会话被 deactivated，
+      // 但后续 transitTo(playback) 现已通过 force:true 强制重新激活会话，
+      // 因此不会出现无音频会话的情况。
       try {
         if (_audioPlayer.playing) {
           await _audioPlayer.setVolume(0.0);
         }
-        await _audioPlayer.pause();
+        await _audioPlayer.stop();
         await _audioPlayer.seek(Duration.zero);
       } catch (_) {}
 
