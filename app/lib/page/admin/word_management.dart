@@ -9,10 +9,9 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/config.dart';
 import 'package:provider/provider.dart';
-import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/local_word_cache.dart';
-import 'package:just_audio/just_audio.dart';
 
 class WordManagementWidget extends StatefulWidget {
   const WordManagementWidget({super.key});
@@ -28,7 +27,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
   WordVo? _currentWord;
   List<WordImage> _wordImages = [];
   List<SentenceVo> _sentences = [];
-  final AudioPlayer _audioPlayer = SoundUtil.createAudioPlayer();
+
 
   List<WordVo> _candidates = [];
   bool _isSearchingCandidates = false;
@@ -37,7 +36,6 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
   @override
   void dispose() {
     _searchController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -136,7 +134,7 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
   Future<void> _playPronunciation() async {
     if (_currentWord == null) return;
     try {
-      await SoundUtil.playPronounceSound2(_currentWord!, _audioPlayer);
+      await StudyAudioSessionController().playWordSound(_currentWord!);
     } catch (e) {
       ToastUtil.error("播放失败: $e");
     }

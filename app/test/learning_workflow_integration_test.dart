@@ -332,12 +332,10 @@ void main() {
 
   test('多天端到端全词书学习流集成测试', () async {
     final mockAsr = MockAsr();
-    final mockAudioPlayer = MockAudioPlayer();
 
     final container = ProviderContainer(
       overrides: [
         asrProvider.overrideWithValue(mockAsr),
-        bdcAudioPlayerProvider.overrideWithValue(mockAudioPlayer),
       ],
     );
     addTearDown(container.dispose);

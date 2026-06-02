@@ -24,7 +24,7 @@ import '../db/db.dart';
 import '../global.dart';
 import '../services/throttled_sync_service.dart';
 import '../util/app_clock.dart';
-import '../util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'index.dart';
 
 const brickHeight = 14.0;
@@ -504,7 +504,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     warmUpPaint.getLineMetrics(warmUpText.text);
 
     // 性能预热：提前配置音频会话
-    async.unawaited(SoundUtil.configureAudioSession());
+    async.unawaited(StudyAudioSessionController.instance.configureSession());
 
     // 基于屏幕宽度计算缩放后的布局尺寸
     const basePlayGroundWidth = 160.0;
@@ -970,7 +970,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         }
         // 播放落地音效（与碰撞保持一致的体验）
         final double thudVolume = (player == playerA) ? 1.0 : bSideSfxVolume;
-        SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
+        StudyAudioSessionController.instance.playSoundWithCut('thud.mp3', speed: 1.0, volume: thudVolume, maxPlay: const Duration(milliseconds: 1500));
 
         // 触顶判负：单词落地后，操场剩余高度不足以再容纳一个单词
         final double playgroundTop = player.playGround.y;
@@ -1022,7 +1022,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
     );
     add(particle);
     // 音效：使用 bubble-pop，增加时长到 1.5s 以确保播放完整
-    await SoundUtil.playAssetSoundCut('bubble-pop.wav', 1.0, volume, const Duration(milliseconds: 1500));
+    await StudyAudioSessionController.instance.playSoundWithCut('bubble-pop.wav', speed: 1.0, volume: volume, maxPlay: const Duration(milliseconds: 1500));
   }
 
   void initSocket() {
@@ -1079,7 +1079,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       // 新单词生成需要处理 UI 组件挂载，延迟 50ms 播放发音能避开瞬间 CPU 峰值。
       Future.delayed(const Duration(milliseconds: 50), () {
         if (isPlaying) {
-          SoundUtil.playPronounceSound(playerA.currWord!);
+          StudyAudioSessionController.instance.playWordSound(playerA.currWord!);
         }
       });
     });
@@ -1147,7 +1147,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       player.scoreAdjust = 0;
       player.cowdungAdjust = 0;
       player.started = false;
-      SoundUtil.playAssetSound('door.mp3', 2.5, 0.5, 2000, 0);
+      StudyAudioSessionController.instance.playBlockingSound('door.mp3', speed: 2.5, volume: 0.5, timeoutMs: 2000);
       appendMsg(0, '牛牛', '$nickName进来了');
     });
 
@@ -1163,7 +1163,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       player.scoreAdjust = 0;
       player.cowdungAdjust = 0;
       player.started = false;
-      SoundUtil.playAssetSound('door.mp3', 2.5, 0.5, 2000, 0);
+      StudyAudioSessionController.instance.playBlockingSound('door.mp3', speed: 2.5, volume: 0.5, timeoutMs: 2000);
       appendMsg(0, '牛牛', '$nickName离开了');
     });
 
@@ -1206,12 +1206,12 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         if (!isExercise) {
           appendMsg(0, '牛牛', '失败了，别灰心，继续努力！');
         }
-        SoundUtil.playAssetSound('failed.mp3', 1, 1, 2000, 0);
+        StudyAudioSessionController.instance.playBlockingSound('failed.mp3', speed: 1, volume: 1, timeoutMs: 2000);
       } else {
         if (!isExercise) {
           appendMsg(0, '牛牛', '胜利啦！');
         }
-        SoundUtil.playAssetSound('victory.mp3', 1, 1, 2000, 0);
+        StudyAudioSessionController.instance.playBlockingSound('victory.mp3', speed: 1, volume: 1, timeoutMs: 2000);
       }
     });
 
@@ -1227,7 +1227,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
         appendMsg(0, "牛牛", "恭喜！连续答对5次，获得道具【$propsName】");
 
         // 播放道具获得音效（A方音效音量）
-        SoundUtil.playAssetSound('magic.mp3', 1.0, 1.0, 2000, 0);
+        StudyAudioSessionController.instance.playBlockingSound('magic.mp3', speed: 1.0, volume: 1.0, timeoutMs: 2000);
       }
     });
 
@@ -1685,7 +1685,7 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       }
 
       // 播放断连音效
-      SoundUtil.playAssetSound('failed.mp3', 1.0, 1.0, 2000, 0);
+      StudyAudioSessionController.instance.playBlockingSound('failed.mp3', speed: 1.0, volume: 1.0, timeoutMs: 2000);
 
       // 显示离开按钮
       if (exitBtn.parent == null) {
@@ -2645,7 +2645,7 @@ class DroppingWordSprite extends TextComponent with HasGameReference<MyGame>, Co
 
         // 播放落地音效：B方音量为A方的1/4
         final double thudVolume = (player == game.playerA) ? 1.0 : bSideSfxVolume;
-        SoundUtil.playAssetSoundCut('thud.mp3', 1.0, thudVolume, const Duration(milliseconds: 1500));
+        StudyAudioSessionController.instance.playSoundWithCut('thud.mp3', speed: 1.0, volume: thudVolume, maxPlay: const Duration(milliseconds: 1500));
 
         // 触顶条件：落地后剩余高度不足以再容纳一个单词
         final double playgroundTop = game.playerA.playGround.y; // 同侧均可用其 y 作为操场顶部

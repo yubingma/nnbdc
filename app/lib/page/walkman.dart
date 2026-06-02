@@ -5,7 +5,6 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -18,7 +17,7 @@ import 'package:provider/provider.dart';
 import '../db/db.dart';
 import '../global.dart';
 import '../state.dart';
-import '../util/sound.dart';
+import '../util/study_audio_session_controller.dart';
 import '../util/tts.dart';
 import 'index.dart';
 
@@ -99,8 +98,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   static const double rightPadding = 0;
   Color selectedTextColor = Colors.white;
   Color normalTextColor = const Color(0xffaaaaaa);
-  ja.AudioPlayer audioPlayer = SoundUtil.createAudioPlayer();
-  bool _audioPlayerDisposed = false;
+
   Timer? loadWordTimer; // 改为可空类型，避免late风险
   Timer? playWordTimer;
   bool dataLoaded = false;
@@ -276,21 +274,10 @@ class WalkmanPageState extends State<WalkmanPage> {
   void dispose() {
     // 设置停止标志
     currentWordPlayShouldStop = true;
-    _audioPlayerDisposed = true; // 立即标记为已释放，防止后续使用
 
     // 取消所有计时器
     loadWordTimer?.cancel();
     playWordTimer?.cancel();
-
-    // 延迟释放 AudioPlayer，确保所有操作完成
-    Future.delayed(const Duration(milliseconds: 100), () {
-      try {
-        audioPlayer.dispose();
-      } catch (e) {
-        // 忽略释放时的错误
-        Global.logger.d("释放 AudioPlayer 时出错: $e");
-      }
-    });
 
     // 退出全屏并恢复默认方向设置
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
@@ -302,13 +289,6 @@ class WalkmanPageState extends State<WalkmanPage> {
   }
 
   Future<void> forceFinishCurrentWord() async {
-    // 如果 AudioPlayer 已经被释放，直接返回
-    if (_audioPlayerDisposed) {
-      currentWordPlayShouldStop = true;
-      currentWordPlayingStopped = true;
-      return;
-    }
-
     currentWordPlayShouldStop = true;
 
     // 强制停止所有可能的播放
@@ -319,9 +299,7 @@ class WalkmanPageState extends State<WalkmanPage> {
       }
       
       // 停止 Just Audio 播放器
-      if (!_audioPlayerDisposed) {
-        await audioPlayer.stop();
-      }
+      await StudyAudioSessionController().cancelPlayback();
     } catch (e) {
       // 忽略停止播放时的错误
       Global.logger.d("强制停止播放时出错: $e");
@@ -429,10 +407,10 @@ class WalkmanPageState extends State<WalkmanPage> {
           // 检查停止信号
           if (currentWordPlayShouldStop || expectedSession != _playSessionId) break;
 
-          if (playPronounce && !_audioPlayerDisposed) {
+          if (playPronounce && mounted) {
             currentPlayStep = 'pronounce';
             try {
-              await SoundUtil.playPronounceSoundBySpell2(word.word.spell, audioPlayer, speed: sentencePlaySpeed);
+              await StudyAudioSessionController().playWordSoundBySpell(word.word.spell);
             } catch (e) {
               // 忽略 AudioPlayer 错误
               Global.logger.d("播放发音失败: $e");
@@ -474,13 +452,13 @@ class WalkmanPageState extends State<WalkmanPage> {
           if (sentences.isNotEmpty) {
             final int actualPlaySentenceCount = playSentenceCount == -1 ? sentences.length : (playSentenceCount > sentences.length ? sentences.length : playSentenceCount);
             for (var j = 0; j < actualPlaySentenceCount; j++) {
-              if (playSentence && !currentWordPlayShouldStop && expectedSession == _playSessionId && !_audioPlayerDisposed) {
+              if (playSentence && !currentWordPlayShouldStop && expectedSession == _playSessionId && mounted) {
                 currentPlayStep = 'sentence';
                 setState(() {
                   currSentenceIndex = j;
                 });
                 try {
-                  await SoundUtil.playSentenceSound2(sentences[j].englishDigest!, audioPlayer, speed: sentencePlaySpeed);
+                  await StudyAudioSessionController().playSentenceSound(sentences[j].englishDigest!, speed: sentencePlaySpeed);
                 } catch (e) {
                   // 忽略 AudioPlayer 错误
                   Global.logger.d("播放例句失败: $e");
@@ -1165,7 +1143,7 @@ class WalkmanPageState extends State<WalkmanPage> {
   }
 
   // 统一处理单词切换，确保响应迅速
-  void _handleWordSwitch(int newIndex) {
+  Future<void> _handleWordSwitch(int newIndex) async {
     // 1. 立即设置停止信号并增加 Session ID，这会瞬间阻断当前正在进行的 doPlayWord 循环
     currentWordPlayShouldStop = true;
     _playSessionId++;
@@ -1173,9 +1151,7 @@ class WalkmanPageState extends State<WalkmanPage> {
     // 2. 立即尝试停止物理播放器 (TTS 和 Just Audio)
     try {
       unawaited(tts?.stop());
-      if (!_audioPlayerDisposed) {
-        audioPlayer.stop();
-      }
+      await StudyAudioSessionController().cancelPlayback();
     } catch (e) {
       Global.logger.d("切换单词时停止播放出错: $e");
     }

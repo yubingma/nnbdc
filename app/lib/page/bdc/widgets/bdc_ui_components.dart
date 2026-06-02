@@ -2305,7 +2305,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         onChanged: (value) {
           // 拼写正确，播放发音并关闭输入法
           if (Util.equalsIgnoreCase(state.word!.spell, value)) {
-            SoundUtil.playPronounceSound(state.word!);
+            StudyAudioSessionController().playWordSound(state.word!);
             Util.closeIme();
           }
           updateUI(() {}, tag: 'spell-submit');
@@ -2327,7 +2327,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         onTap: () {
           if (!wordPlaying) {
             notifier.playWithAnimation(
-                () => SoundUtil.playPronounceSound2(word, audioPlayer),
+                () => StudyAudioSessionController().playWordSound(word),
                 'word');
           }
         },
@@ -2366,8 +2366,8 @@ extension BdcPageStateUIComponents on BdcPageState {
         if (!sentencePlaying &&
             state.englishDigestOfFirstSentence != null) {
           notifier.playWithAnimation(
-              () => SoundUtil.playSentenceSound2(
-                  state.englishDigestOfFirstSentence!, _audioPlayer),
+              () => StudyAudioSessionController().playSentenceSound(
+                  state.englishDigestOfFirstSentence!),
               'sentence');
         }
       },

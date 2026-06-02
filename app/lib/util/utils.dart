@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/state.dart';
-import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -515,7 +515,7 @@ class Util {
                       ToastUtil.info("查不到单词: $token");
                     } else if (searchResult.word != null) {
                       // 播放单词发音
-                      SoundUtil.playPronounceSound(searchResult.word!);
+                      StudyAudioSessionController().playWordSound(searchResult.word!);
 
                       // 在底部显示单词详情对话框
                       showGeneralDialog(
@@ -574,7 +574,7 @@ class Util {
                                         GestureDetector(
                                           onTap: () {
                                             // 使用持久的 AudioPlayer 实例
-                                            SoundUtil.playPronounceSound2(searchResult.word!, SoundUtil.pronouncePlayer);
+                                            StudyAudioSessionController().playWordSound(searchResult.word!);
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -709,7 +709,7 @@ class Util {
                                                   var res = await WordBo().addRawWord(searchResult.word!.spell, '手工添加');
                                                   if (!dialogContext.mounted) return;
                                                   if (res.success) {
-                                                    SoundUtil.playAddSuccessSound();
+                                                    StudyAudioSessionController().playAddSuccessSound();
                                                   } else {
                                                     ToastUtil.error(res.msg!);
                                                   }

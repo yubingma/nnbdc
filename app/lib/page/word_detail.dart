@@ -15,7 +15,6 @@ import 'package:nnbdc/services/ai_service.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
-import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:provider/provider.dart';
@@ -2167,7 +2166,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       for (var synonym in meaningItem.synonyms!)
                         InkWell(
                           onTap: () {
-                            SoundUtil.playPronounceSoundBySpell(synonym.spell);
+                            StudyAudioSessionController().playWordSoundBySpell(synonym.spell);
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

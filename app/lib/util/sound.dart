@@ -124,16 +124,24 @@ class SoundUtil {
       }
  
       final sw = Stopwatch()..start();
-      debugPrint('🔊 [AudioEngine] 状态机开始转换: $_activeMode ➔ $finalTargetMode (hotPlayback: $hotPlayback)');
- 
+      // 热切换仅在当前处于 record 模式时才有意义（保留麦克风保温）。
+      // 当从 idle 切换到 playback 时必须走冷路径以调用 usePlaybackCategory() 激活音频会话。
+      // 注意：_currentSessionCategory 可能已过时（如 idle 后仍为 'playAndRecord'），
+      // 因此以 _activeMode 为准判断是否真的处于录音模式。
+      final bool isActuallyRecording = _activeMode == AudioMode.record;
+      final bool effectiveHotPlayback = hotPlayback && isActuallyRecording;
+      debugPrint('🔊 [AudioEngine] 状态机开始转换: $_activeMode ➔ $finalTargetMode (hotPlayback: $hotPlayback, effective: $effectiveHotPlayback)');
+
       try {
         switch (finalTargetMode) {
           case AudioMode.playback:
-            if (hotPlayback) {
+            if (effectiveHotPlayback) {
               // a. 软件层热关停 ASR 识别输入流，保留麦克风物理流与 Audio Category 通道保温
               await asrInstance.stopAsr();
               // b. 强行平滑淡出（Soft-Mute）所有当前活跃的临时/音效播放器，彻底排空声卡缓冲区
               await _cleanupEarlyExitPlayers();
+              // c. 原生 ASR 引擎停止后硬件稳定窗口，消除残余瞬态
+              await Future.delayed(const Duration(milliseconds: 50));
             } else {
               // a. 物理关闭麦克风（冷关停）
               await asrInstance.stopMicrophone();
@@ -141,6 +149,8 @@ class SoundUtil {
               await _cleanupEarlyExitPlayers();
               // c. 物理配置 AudioSession 为高品质 playback 模式；若已是 playback 则跳过重配置以根除不必要会话切换导致的爆音
               await usePlaybackCategory(force: false);
+              // d. Session 切换后硬件稳定窗口，消除 deactivate/reactivate 瞬态
+              await Future.delayed(const Duration(milliseconds: 80));
             }
             break;
  
@@ -167,6 +177,11 @@ class SoundUtil {
           case AudioMode.idle:
             await asrInstance.stopMicrophone();
             await _cleanupEarlyExitPlayers();
+            // 进入 idle 后音频会话可能已被 ASR 关麦时 deactivated。重置
+            // _currentSessionCategory 到初始值 'none'，使后续
+            // usePlaybackCategory(force:false) 不走 "分类相同跳过激活" 路径，
+            // 保证音频会话被完整重新配置。
+            _currentSessionCategory = 'none';
             break;
         }
         
@@ -537,6 +552,12 @@ class SoundUtil {
   static Future<void> playSoundByUrl(String soundUrl, ja.AudioPlayer player, bool disposeWhenFinish,
       {int loadTimeoutMs = 10000, int playTimeoutMs = 20000, double speed = 1.0, Future<void>? preWaitFuture}) async {
     final totalSw = Stopwatch()..start();
+    debugPrint(
+      '🕵️ [AudioDiag] playSoundByUrl.enter | '
+      'url=$soundUrl disposeWhenFinish=$disposeWhenFinish '
+      'processingState=${player.processingState} playing=${player.playing} '
+      'volume=${player.volume} speed=${player.speed}'
+    );
     try {
       if (!_audioSessionConfigured) await configureAudioSession();
       if (PlatformUtils.isWeb) await _ensureWebAudioUnlocked();
@@ -549,37 +570,94 @@ class SoundUtil {
 
       try {
         _logicallyFinishedPlayers.remove(player);
-        // 使用 pause+seek(0) 替代 stop()：stop() 在 iOS 上会销毁原生
-        // AVQueuePlayer（_setPlatformActive(false)），导致下次播放时重建产生爆音。
-        // pause() 保持播放器存活，setAudioSource 可平滑过渡到新音源。
-        if (player.playing) {
+        // 复位播放器状态以确保能正确加载新音源。
+        // - 如果正在播放中 → 静音 + stop（防爆音）
+        // - 如果处于 buffering（前次 setUrl 仍在加载）→ stop 取消缓冲
+        // - 其他状态 → pause + seek(0) 软复位，保持原生播放器存活
+        final needHardStop = player.playing ||
+            player.processingState == ja.ProcessingState.buffering ||
+            player.processingState == ja.ProcessingState.loading;
+        if (needHardStop) {
           await player.setVolume(0.0);
+          await player.stop();
+        } else {
+          await player.pause();
         }
-        await player.pause();
         await player.seek(Duration.zero);
       } catch (_) {}
 
-      // 恢复音量为 1.0：_safeStopAudioPlayer 可能在播放中断时将音量设为 0
-      await player.setVolume(1.0);
+      debugPrint(
+        '🕵️ [AudioDiag] playSoundByUrl.afterReset | '
+        'processingState=${player.processingState} playing=${player.playing}'
+      );
 
       final loadSw = Stopwatch()..start();
       if (PlatformUtils.isWeb) {
         await player.setUrl(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
       } else {
         final cacheManager = DefaultCacheManager();
+
+        /// 从本地缓存文件加载音频源。
+        Future<bool> _tryLoadFromCache(String filePath) async {
+          try {
+            await player.setAudioSource(ja.AudioSource.uri(Uri.file(filePath)))
+                .timeout(Duration(milliseconds: loadTimeoutMs));
+            if (player.processingState == ja.ProcessingState.ready ||
+                player.processingState == ja.ProcessingState.loading) {
+              return true;
+            }
+            debugPrint('🔍 [AudioDiag] setAudioSource 后 state=${player.processingState}，尝试 setUrl 兜底');
+          } catch (e) {
+            debugPrint('🔍 [AudioDiag] setAudioSource 异常: $e');
+          }
+          return false;
+        }
+
+        /// 从 HTTP URL 流式加载音频源（兜底方案）。
+        Future<bool> _tryLoadFromUrl(String url) async {
+          try {
+            await player.setUrl(url).timeout(Duration(milliseconds: loadTimeoutMs));
+            // setUrl 对远程 URL 会进入 buffering（缓冲）状态，这是正常的加载中状态
+            if (player.processingState == ja.ProcessingState.ready ||
+                player.processingState == ja.ProcessingState.loading ||
+                player.processingState == ja.ProcessingState.buffering) {
+              return true;
+            }
+            debugPrint('🔍 [AudioDiag] setUrl 后 state=${player.processingState}');
+          } catch (e) {
+            debugPrint('🔍 [AudioDiag] setUrl 异常: $e');
+          }
+          return false;
+        }
+
         FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
         final String targetFilePath = fileInfo?.file.path ?? '';
+        debugPrint('🔍 [AudioDiag] targetFilePath="$targetFilePath"');
 
+        bool loaded = false;
         if (targetFilePath.isNotEmpty && await File(targetFilePath).exists()) {
-          await player.setAudioSource(ja.AudioSource.uri(Uri.file(targetFilePath))).timeout(Duration(milliseconds: loadTimeoutMs));
-        } else {
-          var file = await cacheManager.getSingleFile(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
-          await player.setAudioSource(ja.AudioSource.uri(Uri.file(file.path))).timeout(Duration(milliseconds: loadTimeoutMs));
+          debugPrint('🔍 [AudioDiag] 尝试缓存文件: $targetFilePath');
+          loaded = await _tryLoadFromCache(targetFilePath);
+        }
+        if (!loaded) {
+          debugPrint('🔍 [AudioDiag] 缓存加载失败，尝试 setUrl: $soundUrl');
+          loaded = await _tryLoadFromUrl(soundUrl);
+        }
+        if (!loaded) {
+          debugPrint('🔍 [AudioDiag] 所有加载途径均失败');
         }
       }
       debugPrint('⏱️ [Latency-Sound] 资源加载与对齐耗时: ${loadSw.elapsedMilliseconds}ms');
+      debugPrint(
+        '🕵️ [AudioDiag] playSoundByUrl.afterSetAudioSource | '
+        'processingState=${player.processingState} playing=${player.playing}'
+      );
 
       await player.setSpeed(speed);
+
+      // 提前将音量升至淡入起始值，使 AVPlayer 启动时已处于非零音量，
+      // 避免 play() 后 0→0.015 阶跃产生瞬态爆音。
+      await player.setVolume(0.015);
 
       final playCompletedFuture = player.playerStateStream
           .skip(1)
@@ -588,8 +666,39 @@ class SoundUtil {
               state.processingState == ja.ProcessingState.idle)
           .timeout(Duration(milliseconds: playTimeoutMs));
 
+      // 僵尸防护：当 playCompletedFuture 不在下面 await（因 player 已处于
+      // completed/idle）时，其 timeout 异常会成为未处理的 zone 错误。
+      // catchError 作为安全网，防止异常泄漏到 runZonedGuarded。
+      playCompletedFuture.catchError((_) {});
+
       final playSw = Stopwatch()..start();
       unawaited(player.play().catchError((_) {}));
+      debugPrint(
+        '🕵️ [AudioDiag] playSoundByUrl.afterPlay | '
+        'processingState=${player.processingState} playing=${player.playing}'
+      );
+
+      // 音量继续淡入（0.015 已在 play 前设置）
+      Future(() async {
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(0.04);
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(0.08);
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(0.15);
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(0.25);
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(0.4);
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(0.55);
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(0.7);
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(0.85);
+        await Future.delayed(const Duration(milliseconds: 6));
+        player.setVolume(1.0);
+      });
 
       if (player.processingState != ja.ProcessingState.completed &&
           player.processingState != ja.ProcessingState.idle) {
@@ -598,6 +707,10 @@ class SoundUtil {
 
       _logicallyFinishedPlayers.add(player);
       debugPrint('⏱️ [Latency-Sound] 物理播放自然完成，耗时: ${playSw.elapsedMilliseconds}ms');
+      debugPrint(
+        '🕵️ [AudioDiag] playSoundByUrl.end | '
+        'processingState=${player.processingState} playing=${player.playing} volume=${player.volume}'
+      );
       Global.logger.d('🔊 [SoundUtil] playSoundByUrl 结束，总逻辑耗时: ${totalSw.elapsedMilliseconds}ms');
     } catch (e, st) {
       _logicallyFinishedPlayers.add(player);

@@ -6,35 +6,308 @@ import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/app_clock.dart';
 
-/// 听说评测唯一会话控制器 (StudyAudioSessionController)
-/// 它高内聚地捏合了 SoundUtil 和 Asr 的底层细节，并通过内部串行队列锁（_SessionMutex）
-/// 确保所有音频播放、ASR 启停和电平流管理都在单轨下串行运行，彻底阻断 Race Condition 造成的物理死锁与爆音。
+/// 全局唯一的音频会话控制器。
+///
+/// **所有音频相关操作都必须通过此控制器**，包括：
+/// - 单词/例句发音播放
+/// - 音效播放（正确/错误提示音等）
+/// - ASR 启停与音频状态机切换
+///
+/// ## 设计原则
+///
+/// 1. **Singleton** — 全局唯一实例，消除多实例间的播放器冲突
+/// 2. **串行队列锁** — 全部异步操作经 [_queueLock] 串行化，根除竞态
+/// 3. **统一播放器管理** — 控制器持有一个主播放器供发音/例句使用，
+///    音效播放器由 SoundUtil 内部音效池管理
+/// 4. **不直接暴露 SoundUtil** — 外部代码通过控制器方法间接使用 SoundUtil，
+///    避免音频操作散落在各处
 class StudyAudioSessionController {
-  final Asr _asr = Asr();
-  final ja.AudioPlayer _audioPlayer;
-  final bool _ownsPlayer;
+  // ============================================================
+  // Singleton
+  // ============================================================
 
-  /// 唯一的串行化任务队列锁，杜绝所有物理时序竞态
+  static final StudyAudioSessionController _instance =
+      StudyAudioSessionController._internal();
+
+  /// 公开的单例访问器。
+  static StudyAudioSessionController get instance => _instance;
+
+  factory StudyAudioSessionController([ja.AudioPlayer? _]) => _instance;
+
+  StudyAudioSessionController._internal()
+      : _asr = Asr(),
+        _audioPlayer = SoundUtil.createAudioPlayer() {
+    SoundUtil.watchPlayer(_audioPlayer);
+    _asr.addStateListener(_onAsrStateChange);
+  }
+
+  // ============================================================
+  // Dependencies
+  // ============================================================
+
+  final Asr _asr;
+  final ja.AudioPlayer _audioPlayer;
   final _SessionMutex _queueLock = _SessionMutex();
 
-  /// 暴露给 UI 渲染的音量计电平值（0.0 ~ 1.0）
-  final ValueNotifier<double> meterLevelNotifier = ValueNotifier<double>(0.0);
+  // ============================================================
+  // Meter / Level（用于 ASR 录音音量可视化）
+  // ============================================================
+
+  final ValueNotifier<double> meterLevelNotifier =
+      ValueNotifier<double>(0.0);
   StreamSubscription<double>? _meterSub;
   Timer? _meterTimer;
   double _lastMeterLevel = 0.0;
   DateTime? _lastMeterAt;
   bool _meterTickFlip = false;
 
-  StudyAudioSessionController([ja.AudioPlayer? player])
-      : _audioPlayer = player ?? SoundUtil.createAudioPlayer(),
-        _ownsPlayer = player == null {
-    // 监听 ASR 状态广播：只有当 ASR 切实状态变成 started 时，才安全、延迟地建立电平订阅，
-    // 彻底杜绝由于 ASR 尚未拉起而导致的电平流哑火和死锁问题。
-    _asr.addStateListener(_onAsrStateChange);
-    if (_ownsPlayer) {
-      SoundUtil.watchPlayer(_audioPlayer);
-    }
+  // ============================================================
+  // Public API — 状态查询
+  // ============================================================
+
+  AudioMode get activeMode => SoundUtil.activeMode;
+  String get activeSessionCategory => SoundUtil.activeSessionCategory;
+
+  /// 主播放器引用。仅用于极少数需要直接操作播放器的场景。
+  ja.AudioPlayer get primaryPlayer => _audioPlayer;
+
+  // ============================================================
+  // Public API — 发音/例句播放（串行化）
+  // ============================================================
+
+  /// 播放单词发音。
+  Future<void> playWordSound(WordVo word,
+      {Future<void>? preWaitFuture}) {
+    return _queueLock.protect(() async {
+      _unsubscribeMeter();
+      await SoundUtil.playPronounceSound2(word, _audioPlayer,
+          preWaitFuture: preWaitFuture);
+    });
   }
+
+  /// 播放例句发音。
+  Future<void> playSentenceSound(String digest,
+      {double speed = 1.0, Future<void>? preWaitFuture}) {
+    return _queueLock.protect(() async {
+      _unsubscribeMeter();
+      await SoundUtil.playSentenceSound2(digest, _audioPlayer,
+          speed: speed, preWaitFuture: preWaitFuture);
+    });
+  }
+
+  /// 通过拼写播放发音（内部使用一次性播放器，播放后自动释放）。
+  Future<void> playWordSoundBySpell(String spell) {
+    return _queueLock.protect(() async {
+      await SoundUtil.playPronounceSoundBySpell(spell);
+    });
+  }
+
+  /// 原子化地播放单词发音 + 例句。
+  Future<void> playWordAndSentence(
+    WordVo word, {
+    required String? sentenceDigest,
+    required bool playWord,
+    required bool playSentence,
+    required bool isSpeakMode,
+  }) async {
+    _logPlayerState('playWordAndSentence.enter');
+    debugPrint(
+      '🕵️ [AudioDiag] playWordAndSentence | '
+      'word=${word.spell} playWord=$playWord playSentence=$playSentence '
+      'isSpeakMode=$isSpeakMode'
+    );
+    return _queueLock.protect(() async {
+      if (!playWord && !playSentence) return;
+      _unsubscribeMeter();
+
+      // 彻底复位播放器：静音 → stop → seek(0)，取消任何进行中的加载/缓冲。
+      // 使用 stop() 而非 pause() 是因为如果播放器处于 buffering 状态（前次
+      // setUrl 仍在加载），pause() + seek(0) 无法清除缓冲队列，导致后续
+      // setAudioSource/setUrl 无法正确加载新音源。stop() 才能真正让播放器
+      // 回到 idle 态，后续 load 在干净状态下进行。
+      try {
+        if (_audioPlayer.playing) {
+          await _audioPlayer.setVolume(0.0);
+        }
+        await _audioPlayer.stop();
+        await _audioPlayer.seek(Duration.zero);
+      } catch (_) {}
+
+      final sessionFuture = SoundUtil.transitTo(
+        AudioMode.playback,
+        asrInstance: _asr,
+        hotPlayback:
+            isSpeakMode &&
+                SoundUtil.activeSessionCategory == 'playAndRecord',
+      );
+      SoundUtil.watchPlayer(_audioPlayer);
+
+      if (playWord) {
+        await SoundUtil.playPronounceSound2(word, _audioPlayer,
+            preWaitFuture: sessionFuture);
+        if (playSentence && sentenceDigest != null) {
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
+      }
+      if (playSentence && sentenceDigest != null) {
+        await SoundUtil.playSentenceSound2(sentenceDigest, _audioPlayer);
+      }
+      _logPlayerState('playWordAndSentence.end');
+    });
+  }
+
+  // ============================================================
+  // Public API — 音效（不阻塞队列，使用独立音效池）
+  // ============================================================
+
+  /// 播放音效（异步、非阻塞、使用内部音效池）。
+  void playSoundEffect(String fileName,
+      {double speed = 1.0, double volume = 1.0}) {
+    SoundUtil.playAssetSoundConcurrent(fileName, speed, volume);
+  }
+
+  void playAddSuccessSound() {
+    SoundUtil.playAddSuccessSound();
+  }
+
+  /// 阻塞式播放音效（等待播放完成，使用独立音效池）。
+  Future<void> playBlockingSound(String fileName,
+      {double speed = 1.0, double volume = 1.0,
+       int timeoutMs = 2000, int sleepAfterMs = 0}) {
+    return SoundUtil.playAssetSound(fileName, speed, volume, timeoutMs, sleepAfterMs);
+  }
+
+  /// 播放音效（带最长播放时间截断）。
+  Future<void> playSoundWithCut(String fileName,
+      {double speed = 1.0, double volume = 1.0,
+       required Duration maxPlay}) {
+    return SoundUtil.playAssetSoundCut(fileName, speed, volume, maxPlay);
+  }
+
+  // ============================================================
+  // Public API — ASR 会话管理（串行化）
+  // ============================================================
+
+  Future<void> startSession({
+    required AsrLanguage language,
+    required List<String> phrases,
+    required bool isSpeakMode,
+  }) async {
+    return _queueLock.protect(() async {
+      if (_asr.currentLanguage != language) {
+        debugPrint(
+          '⏱️ [SessionController] 检测到语言发生切换 (${_asr.currentLanguage?.locale} ➔ ${language.locale})，提前静默配置 Locale',
+        );
+        await _asr.updateLanguage(language);
+      }
+      if (isSpeakMode) {
+        final bool isAlreadyRecord =
+            SoundUtil.activeMode == AudioMode.record;
+        await SoundUtil.transitTo(AudioMode.record, asrInstance: _asr);
+        if (isAlreadyRecord) {
+          debugPrint(
+            '🔊 [SessionController] 状态机本来已是 record 保温态，执行手动热复用就绪提示音播放...',
+          );
+          await SoundUtil.playAsrReadyHintSoundWithCleanup();
+        }
+        await _asr
+            .startAsr(language, phrases: phrases, playHintSound: false);
+      }
+    });
+  }
+
+  Future<void> stopSession({bool forceStopMicrophone = false}) async {
+    return _queueLock.protect(() async {
+      _unsubscribeMeter();
+      if (forceStopMicrophone) {
+        debugPrint(
+          '⏱️ [SessionController] 强制释放麦克风与原生识别流...',
+        );
+        await SoundUtil.transitTo(AudioMode.idle, asrInstance: _asr);
+      } else {
+        debugPrint(
+          '⏱️ [SessionController] 热停止 ASR 任务并保留麦克风保温...',
+        );
+        await _asr.stopAsr();
+      }
+      await _asr.reset();
+    });
+  }
+
+  /// 取消当前排队中的播放任务。
+  ///
+  /// 1. 主播放器静音 —— 消除当前播放的输出
+  /// 2. `stop()` 彻底复位播放器（取消任何进行中的加载/缓冲，恢复到 idle 态）
+  /// 3. 取消串行队列锁 —— 使下一次播放可立即执行
+  Future<void> cancelPlayback() async {
+    _logPlayerState('cancelPlayback.enter');
+    _queueLock.cancel();
+    try {
+      await _audioPlayer.setVolume(0.0);
+      _logPlayerState('cancelPlayback.afterMute');
+      await _audioPlayer.stop();
+      await _audioPlayer.seek(Duration.zero);
+      _logPlayerState('cancelPlayback.afterStop');
+    } catch (_) {}
+  }
+
+  void _logPlayerState(String tag) {
+    debugPrint(
+      '🕵️ [AudioDiag] $tag | '
+      'processingState=${_audioPlayer.processingState} '
+      'playing=${_audioPlayer.playing} '
+      'volume=${_audioPlayer.volume} '
+      'speed=${_audioPlayer.speed} '
+      'playerId=${_audioPlayer.hashCode}'
+    );
+  }
+
+  // ============================================================
+  // Public API — 生命周期与初始化
+  // ============================================================
+
+  /// 配置音频会话（应用启动时调用一次即可）。
+  Future<void> configureSession() {
+    return _queueLock.protect(() => SoundUtil.configureAudioSession());
+  }
+
+  /// 预热音效池。
+  Future<void> prewarm() {
+    return _queueLock.protect(() => SoundUtil.prewarmCoreSounds());
+  }
+
+  /// 预拉取音频 URL 到缓存。
+  void prefetchSounds(List<String> urls) {
+    SoundUtil.prefetchSounds(urls);
+  }
+
+  /// 播放 AI 故事英文配音。
+  Future<void> playAiStoryEnSound(String wordsHash) {
+    return _queueLock.protect(() => SoundUtil.playAiStoryEnSound(wordsHash));
+  }
+
+  /// 播放 AI 故事中文配音。
+  Future<void> playAiStoryCnSound(String wordsHash) {
+    return _queueLock.protect(() => SoundUtil.playAiStoryCnSound(wordsHash));
+  }
+
+  /// 销毁控制器（应用退出时调用）。
+  Future<void> dispose() {
+    _asr.removeStateListener(_onAsrStateChange);
+    _unsubscribeMeter();
+    meterLevelNotifier.dispose();
+    SoundUtil.unwatchPlayer(_audioPlayer);
+    try {
+      _audioPlayer.setVolume(0.0);
+      _audioPlayer.stop();
+      // ignore: empty_catches
+    } catch (_) {}
+    return _audioPlayer.dispose();
+  }
+
+  // ============================================================
+  // Private
+  // ============================================================
 
   void _onAsrStateChange(AsrState state) {
     if (state == AsrState.started) {
@@ -44,127 +317,22 @@ class StudyAudioSessionController {
     }
   }
 
-  /// 1. 开启一个听说评测会话，完成前置的语言 Locale 配置、麦克风和 Category 稳定激活
-  Future<void> startSession({
-    required AsrLanguage language,
-    required List<String> phrases,
-    required bool isSpeakMode,
-  }) async {
-    return _queueLock.protect(() async {
-      // a. 特殊优化：在启动麦克风物理流（transitTo）之前，若语言发生切换，
-      //    必须先在原生层静默更新好语言。这彻底避免了在麦克风运行中动态更新 Locale 导致的原生引擎死锁。
-      if (_asr.currentLanguage != language) {
-        debugPrint('⏱️ [SessionController] 检测到语言发生切换 (${_asr.currentLanguage?.locale} ➔ ${language.locale})，提前静默配置 Locale');
-        await _asr.updateLanguage(language);
-      }
-
-      if (isSpeakMode) {
-        final bool isAlreadyRecord = SoundUtil.activeMode == AudioMode.record;
-        // b. 统一状态机切换到 record 录音模式
-        await SoundUtil.transitTo(AudioMode.record, asrInstance: _asr);
-        if (isAlreadyRecord) {
-          debugPrint('🔊 [SessionController] 状态机本来已是 record 保温态，执行手动热复用就绪提示音播放...');
-          await SoundUtil.playAsrReadyHintSoundWithCleanup();
-        }
-
-        // c. 正式向 native 发起 ASR 识别指令 (playHintSound: false，因为提示音已经错峰播放过了)
-        await _asr.startAsr(language, phrases: phrases, playHintSound: false);
-      }
-    });
-  }
-
-  /// 2. 平滑停止/暂停当前 ASR 识别任务或物理关停麦克风，释放硬件焦点
-  Future<void> stopSession({bool forceStopMicrophone = false}) async {
-    return _queueLock.protect(() async {
-      _unsubscribeMeter();
-      if (forceStopMicrophone) {
-        debugPrint('⏱️ [SessionController] 强制释放麦克风与原生识别流...');
-        await SoundUtil.transitTo(AudioMode.idle, asrInstance: _asr);
-      } else {
-        debugPrint('⏱️ [SessionController] 热停止 ASR 任务并保留麦克风保温...');
-        await _asr.stopAsr();
-      }
-      await _asr.reset();
-    });
-  }
-
-  /// 3. 安全、原子化地播放单词发音和第一句例句（自动处理 AudioMode 切换与排空）
-  Future<void> playWordAndSentence(
-    WordVo word, {
-    required String? sentenceDigest,
-    required bool playWord,
-    required bool playSentence,
-    required bool isSpeakMode,
-  }) async {
-    return _queueLock.protect(() async {
-      if (!playWord && !playSentence) return;
-
-      // 播放声音前无条件取消电平流订阅，确保通道干净
-      _unsubscribeMeter();
-
-      // a. 切换到 playback 纯播放状态
-      final sessionFuture = SoundUtil.transitTo(
-        AudioMode.playback,
-        asrInstance: _asr,
-        hotPlayback: isSpeakMode && SoundUtil.activeSessionCategory == 'playAndRecord',
-      );
-      SoundUtil.watchPlayer(_audioPlayer);
-
-      if (playWord) {
-        await SoundUtil.playPronounceSound2(word, _audioPlayer, preWaitFuture: sessionFuture);
-        if (playSentence && sentenceDigest != null) {
-          await Future.delayed(const Duration(milliseconds: 100)); // 物理错峰排空
-        }
-      }
-
-      if (playSentence && sentenceDigest != null) {
-        await SoundUtil.playSentenceSound2(sentenceDigest, _audioPlayer);
-      }
-    });
-  }
-
-  /// 4. 彻底销毁控制器，释放所有订阅和资源
-  Future<void> dispose() async {
-    _asr.removeStateListener(_onAsrStateChange);
-    _unsubscribeMeter();
-    meterLevelNotifier.dispose();
-
-    if (_ownsPlayer) {
-      SoundUtil.unwatchPlayer(_audioPlayer);
-      try {
-        if (_audioPlayer.playing) {
-          await _audioPlayer.setVolume(0.0);
-          await _audioPlayer.stop();
-        }
-      } catch (_) {}
-      await Future.delayed(const Duration(milliseconds: 100));
-      try {
-        await _audioPlayer.dispose();
-      } catch (_) {}
-    }
-  }
-
-  /// 内部电平流订阅维护
   void _subscribeMeter() {
-    _unsubscribeMeter(); // 无条件先彻底释放任何可能残留的旧电平订阅和 Timer
-
+    _unsubscribeMeter();
     _meterSub = _asr.getOrCreateMeterSubscription((level) {
       _lastMeterLevel = level.clamp(0.0, 1.0);
       _lastMeterAt = AppClock.now();
     });
-
     _meterTimer = Timer.periodic(const Duration(milliseconds: 30), (_) {
       final now = AppClock.now();
-      final active = _lastMeterAt != null &&
+      final active =
+          _lastMeterAt != null &&
           now.difference(_lastMeterAt!).inMilliseconds < 150;
       final v = (active ? _lastMeterLevel : 0.0).clamp(0.0, 1.0);
-
-      // 强制触发重绘：在数值附近加入极小扰动，避免相等不通知
       _meterTickFlip = !_meterTickFlip;
       final bump = _meterTickFlip ? 1e-6 : -1e-6;
       meterLevelNotifier.value = (v + bump).clamp(0.0, 1.0);
     });
-    debugPrint('⏱️ [SessionController] 物理电平计流订阅成功建立');
   }
 
   void _unsubscribeMeter() {
@@ -178,9 +346,10 @@ class StudyAudioSessionController {
   }
 }
 
-/// 内部轻量级串行互斥队列锁
+/// 内部轻量级串行互斥队列锁。
 class _SessionMutex {
   Future<void> _chain = Future.value();
+
   Future<T> protect<T>(Future<T> Function() body) {
     final completer = Completer<T>();
     _chain = _chain.then((_) async {
@@ -192,5 +361,10 @@ class _SessionMutex {
       }
     }).catchError((_) {});
     return completer.future;
+  }
+
+  /// 取消当前队列链，后续 [protect] 调用将在一个新链上立即执行。
+  void cancel() {
+    _chain = Future.value();
   }
 }

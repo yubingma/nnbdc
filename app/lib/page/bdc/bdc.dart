@@ -20,7 +20,7 @@ import 'package:nnbdc/page/pic_search.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
-import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:provider/provider.dart' hide Consumer;
@@ -79,8 +79,8 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   /// 释义输入框焦点控制
   final FocusNode _meaningFocusNode = FocusNode();
 
-  /// 顶级音频播放器，委托给 Notifier 维护的 Provider 实例
-  ja.AudioPlayer get _audioPlayer => ref.read(bdcAudioPlayerProvider);
+  /// 顶级音频播放器，委托给全局控制器维护的单例实例
+  ja.AudioPlayer get _audioPlayer => StudyAudioSessionController.instance.primaryPlayer;
 
   /// 说意/英拼写面板的滚动控制
   final ScrollController _speakPanelScrollController = ScrollController();

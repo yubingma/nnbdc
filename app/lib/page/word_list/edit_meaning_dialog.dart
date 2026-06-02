@@ -7,7 +7,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 
 /// 改进的编辑释义对话框
 /// 显示所有词性的完整释义，每个词性有独立的下拉选择框和编辑框 
@@ -397,7 +397,7 @@ class _EditMeaningDialogState extends State<EditMeaningDialog> {
 
         if (!mounted) return;
         Navigator.of(context).pop();
-        SoundUtil.playAddSuccessSound();
+        StudyAudioSessionController().playAddSuccessSound();
       widget.onSuccess();
     }
   }

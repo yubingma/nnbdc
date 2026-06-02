@@ -664,7 +664,7 @@ class FinishPageState extends State<FinishPage> {
               size: 20,
             ),
             onPressed: () {
-              context.pop();
+              context.go('/index');
             },
           ),
         ),

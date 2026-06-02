@@ -282,12 +282,10 @@ void main() {
 
   test('BdcNotifier - loadData 和提示词状态变更单元测试', () async {
     final mockAsr = MockAsr();
-    final mockAudioPlayer = MockAudioPlayer();
 
     final container = ProviderContainer(
       overrides: [
         asrProvider.overrideWithValue(mockAsr),
-        bdcAudioPlayerProvider.overrideWithValue(mockAudioPlayer),
       ],
     );
     addTearDown(container.dispose);

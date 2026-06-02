@@ -8,7 +8,7 @@ import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/db_log_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/utils.dart';
 
 import '../../api/bo/word_bo.dart';
@@ -129,7 +129,7 @@ class DictWordsProvider with WordsProvider implements WordModifier {
       // 触发同步
       ThrottledDbSyncService().requestSync();
 
-      SoundUtil.playAssetSoundConcurrent('delete.mp3', 1.0, 0.5);
+      StudyAudioSessionController().playSoundEffect('delete.mp3', speed: 1.0, volume: 0.5);
       return true;
     } catch (e) {
       ToastUtil.error("删除失败: $e");

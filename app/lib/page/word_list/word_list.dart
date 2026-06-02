@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +16,6 @@ import 'package:nnbdc/util/asr_util.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/prefs.dart';
-import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -194,7 +192,7 @@ class WordListPageState extends State<WordListPage>
     });
 
     if (word.isAnswerRevealed && studyMode == WordListStudyMode.hideEnglish) {
-      SoundUtil.playPronounceSound2(word.word, audioPlayer);
+      unawaited(_sessionController.playWordSound(word.word));
     }
 
     if (getBookMarkUiPosition() != index) {
@@ -318,12 +316,6 @@ class WordListPageState extends State<WordListPage>
   OverlayEntry? _guideOverlay;
   Rect? _menuRect;
   final GlobalKey _overlayKey = GlobalKey();
-
-  /// 音频播放器实例（测试环境下为 MockAudioPlayer）
-  final ja.AudioPlayer audioPlayer = SoundUtil.createAudioPlayer();
-
-  /// AudioPlayer 是否已被释放的标志
-  bool _audioPlayerDisposed = false;
 
   clearQueryResult() {
     //清空当前查询结果
@@ -634,7 +626,7 @@ class WordListPageState extends State<WordListPage>
     try {
       final swPrefetch = Stopwatch()..start();
       final urls = newWords.map((w) => Util.getWordSoundUrl(w.word.spell, word: w.word)).toList();
-      SoundUtil.prefetchSounds(urls);
+      _sessionController.prefetchSounds(urls);
       Global.logger.d('WordListPage: _prefetchAudioForWords for ${newWords.length} words took ${swPrefetch.elapsedMilliseconds}ms');
     } catch (e) {
       Global.logger.w('预取音频失败: $e');
@@ -796,8 +788,6 @@ class WordListPageState extends State<WordListPage>
   void initState() {
     final sw = Stopwatch()..start();
     super.initState();
-    // 进门先将音频状态机转换到 idle 状态，确保状态干净，关停麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源
-    unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: Asr()));
     // 异步预加载音素字典，避免用户说话时才开始解析导致的延迟
     unawaited(PhonemeUtil.load());
     // 异步加载并预热手写识别模型，避免进入手写板写完第一笔后产生延迟
@@ -812,7 +802,7 @@ class WordListPageState extends State<WordListPage>
     )..repeat(reverse: true);
     WidgetsBinding.instance.addObserver(this);
 
-    _sessionController = StudyAudioSessionController(audioPlayer);
+    _sessionController = StudyAudioSessionController();
     _sessionController.meterLevelNotifier.addListener(() {
       if (!mounted) return;
       if (isMenuOpen) return;
@@ -825,8 +815,6 @@ class WordListPageState extends State<WordListPage>
     });
 
     doInit();
-    // 注册页级播放器到 SoundUtil 监视列表，确保音频会话切换时正确等待/排空
-    SoundUtil.watchPlayer(audioPlayer);
     Global.logger.d('WordListPage: initState completed in ${sw.elapsedMilliseconds}ms');
   }
 
@@ -1112,10 +1100,7 @@ class WordListPageState extends State<WordListPage>
           }
           
           try {
-            if (!_audioPlayerDisposed) {
-              await SoundUtil.playPronounceSound2(
-                  words[currWordIndex].word, audioPlayer);
-            }
+            await _sessionController.playWordSound(words[currWordIndex].word);
           } catch (e) {
             Global.logger.d("播放发音失败: $e");
           }
@@ -1288,15 +1273,12 @@ class WordListPageState extends State<WordListPage>
     // 停止 ASR：不再检查 studyMode，只要页面销毁就无条件尝试停止识别引擎并转换状态机到 idle
     // 平滑物理淡出所有活跃音频流并物理释放硬件资源，防止麦克风占用指示灯常亮
     try {
-      unawaited(SoundUtil.transitTo(AudioMode.idle, asrInstance: asr));
+      unawaited(_sessionController.stopSession(forceStopMicrophone: true));
     } catch (e) {
       Global.logger.d("dispose: 停止 ASR 失败：$e");
     }
 
     _waveLevels.clear();
-
-    _audioPlayerDisposed = true; // 标记为已释放
-    SoundUtil.unwatchPlayer(audioPlayer);
     _meterLevelNotifier.dispose();
     _asrModelLoadingController.dispose();
     _glowController.dispose();
@@ -1317,15 +1299,6 @@ class WordListPageState extends State<WordListPage>
 
     // 清空单词列表，帮助 GC
     words.clear();
-
-    // 延迟释放 AudioPlayer，确保所有操作完成
-    Future.delayed(const Duration(milliseconds: 100), () {
-      try {
-        audioPlayer.dispose();
-      } catch (e) {
-        Global.logger.d("释放 AudioPlayer 时出错: $e");
-      }
-    });
 
     super.dispose();
     Global.logger.d('WordListPage: dispose synchronous part completed in ${sw.elapsedMilliseconds}ms');
@@ -1748,7 +1721,7 @@ class WordListPageState extends State<WordListPage>
                   if (context.mounted) {
                     Navigator.of(context).pop();
                   }
-                  unawaited(SoundUtil.playAddSuccessSound());
+                  _sessionController.playAddSuccessSound();
 
                   // 刷新列表
 
@@ -1828,7 +1801,7 @@ class WordListPageState extends State<WordListPage>
           if (words[oldIndex].speakEnglishPassed) {
             Global.logger.d("onWordPressed: 单词已答对/已揭晓且已播放过，跳过离开时的重复播放");
           } else {
-            await SoundUtil.playPronounceSound2(words[oldIndex].word, audioPlayer);
+            await _sessionController.playWordSound(words[oldIndex].word);
           }
         }
       }
@@ -1908,34 +1881,14 @@ class WordListPageState extends State<WordListPage>
     // 播放单词发音（背英文模式/默写模式进入时不播放由调用者控制，避免泄露答案）
     final bool shouldPlaySound = playSound &&
         studyMode != WordListStudyMode.speakEnglish &&
-        studyMode != WordListStudyMode.hideEnglish;
+        studyMode != WordListStudyMode.hideEnglish; 
 
-    final bool isSpeakMode = studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish;
-
-    Future<void>? sessionFuture;
-    if (shouldPlaySound) {
-      sessionFuture = SoundUtil.transitTo(
-        AudioMode.playback, 
-        asrInstance: asr, 
-        hotPlayback: isSpeakMode && SoundUtil.activeSessionCategory == 'playAndRecord'
-      );
-      SoundUtil.watchPlayer(audioPlayer);
-    }
 
     if (shouldPlaySound) {
       debugPrint('⏱️ [Latency] 开始播放发音: +${sw.elapsedMilliseconds}ms');
-      if (studyMode == WordListStudyMode.speakChinese) {
-        // 在说中文模式下，为了防止 ASR 识别到手机自身发出的发音，改为等待播放完成后再启动 ASR
-        await SoundUtil.playPronounceSound2(word.word, audioPlayer, preWaitFuture: sessionFuture);
-        debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms');
-        soundFinishListener?.call();
-      } else {
-        final stopwatch = Stopwatch()..start();
-        await SoundUtil.playPronounceSound2(word.word, audioPlayer, preWaitFuture: sessionFuture);
-        debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms (文件耗时 ${stopwatch.elapsedMilliseconds}ms)');
-        soundFinishListener?.call();
-      }
+      await _sessionController.playWordSound(word.word);
+      debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms');
+      soundFinishListener?.call();
     } else {
       // 未播放发音时（如背英文模式），也要触发回调以继续流程（启动ASR等）
       soundFinishListener?.call();
@@ -2645,7 +2598,7 @@ class WordListPageState extends State<WordListPage>
       }
     } else {
       // 最后一个单词：播放发音，关闭输入法键盘
-      SoundUtil.playPronounceSound2(words[currWordIndex].word, audioPlayer);
+      unawaited(_sessionController.playWordSound(words[currWordIndex].word));
       FocusScope.of(context).unfocus();
     }
   }
@@ -3901,7 +3854,7 @@ class WordListPageState extends State<WordListPage>
                   ),
                   tooltip: '播放英文配音',
                   onPressed: () {
-                    SoundUtil.playAiStoryEnSound(storyVo.wordsHash);
+                    _sessionController.playAiStoryEnSound(storyVo.wordsHash);
                   },
                 ),
               if (storyVo.cnTtsEnabled)
@@ -3915,7 +3868,7 @@ class WordListPageState extends State<WordListPage>
                   ),
                   tooltip: '播放中文配音',
                   onPressed: () {
-                    SoundUtil.playAiStoryCnSound(storyVo.wordsHash);
+                    _sessionController.playAiStoryCnSound(storyVo.wordsHash);
                   },
                 ),
               IconButton(
@@ -4119,8 +4072,8 @@ class WordListPageState extends State<WordListPage>
                        WidgetsBinding.instance.addPostFrameCallback((_) async {
                          // 写对了，播放当前单词（揭晓答案/确认）
                          try {
-                           targetWord.speakEnglishPassed = true;
-                           await SoundUtil.playPronounceSound2(targetWord.word, audioPlayer);
+                            targetWord.speakEnglishPassed = true;
+                            await _sessionController.playWordSound(targetWord.word);
                          } catch (_) {}
                          
                          _handwritingBoardKey.currentState?.clearBoardSilently();
@@ -4157,7 +4110,7 @@ class WordListPageState extends State<WordListPage>
                   if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
                     try {
                       words[bookmarkedIndex].speakEnglishPassed = true;
-                      await SoundUtil.playPronounceSound2(words[bookmarkedIndex].word, audioPlayer);
+                      await _sessionController.playWordSound(words[bookmarkedIndex].word);
                     } catch (_) {}
                   }
                   jumpToNextWord(bookmarkedIndex, false, () {});
@@ -4167,7 +4120,7 @@ class WordListPageState extends State<WordListPage>
                   // 揭晓答案：离开当前词时播放
                   if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
                     try {
-                      await SoundUtil.playPronounceSound2(words[bookmarkedIndex].word, audioPlayer);
+                      await _sessionController.playWordSound(words[bookmarkedIndex].word);
                     } catch (_) {}
                   }
                   jumpToPreviousWord(bookmarkedIndex, false);
