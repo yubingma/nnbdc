@@ -120,16 +120,15 @@ class StudyAudioSessionController {
       if (!playWord && !playSentence) return;
       _unsubscribeMeter();
 
-      // 彻底复位播放器：静音 → stop → seek(0)，取消任何进行中的加载/缓冲。
-      // 使用 stop() 而非 pause() 是因为如果播放器处于 buffering 状态（前次
-      // setUrl 仍在加载），pause() + seek(0) 无法清除缓冲队列，导致后续
-      // setAudioSource/setUrl 无法正确加载新音源。stop() 才能真正让播放器
-      // 回到 idle 态，后续 load 在干净状态下进行。
+      // 软复位播放器：静音 → pause → seek(0)，避免 stop() 触发
+      // _setPlatformActive(false) 导致音频会话被 deactivated。若播放器处于
+      // buffering 状态，pause 无法清除，但后续 playSoundByUrl 的 reset 块会
+      // 检测到 buffering 并用 stop() 硬复位，此处统一用 pause 以保持会话活跃。
       try {
         if (_audioPlayer.playing) {
           await _audioPlayer.setVolume(0.0);
         }
-        await _audioPlayer.stop();
+        await _audioPlayer.pause();
         await _audioPlayer.seek(Duration.zero);
       } catch (_) {}
 
@@ -237,7 +236,7 @@ class StudyAudioSessionController {
   /// 取消当前排队中的播放任务。
   ///
   /// 1. 主播放器静音 —— 消除当前播放的输出
-  /// 2. `stop()` 彻底复位播放器（取消任何进行中的加载/缓冲，恢复到 idle 态）
+  /// 2. `pause() + seek(0)` 软复位播放器，避免 stop() 触发音频会话 deactivation
   /// 3. 取消串行队列锁 —— 使下一次播放可立即执行
   Future<void> cancelPlayback() async {
     _logPlayerState('cancelPlayback.enter');
@@ -245,7 +244,7 @@ class StudyAudioSessionController {
     try {
       await _audioPlayer.setVolume(0.0);
       _logPlayerState('cancelPlayback.afterMute');
-      await _audioPlayer.stop();
+      await _audioPlayer.pause();
       await _audioPlayer.seek(Duration.zero);
       _logPlayerState('cancelPlayback.afterStop');
     } catch (_) {}

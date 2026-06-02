@@ -662,8 +662,7 @@ class SoundUtil {
       final playCompletedFuture = player.playerStateStream
           .skip(1)
           .firstWhere((state) =>
-              state.processingState == ja.ProcessingState.completed ||
-              state.processingState == ja.ProcessingState.idle)
+              state.processingState == ja.ProcessingState.completed)
           .timeout(Duration(milliseconds: playTimeoutMs));
 
       // 僵尸防护：当 playCompletedFuture 不在下面 await（因 player 已处于
