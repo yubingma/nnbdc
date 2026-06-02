@@ -119,7 +119,12 @@ class SoundUtil {
       }
  
       if (_activeMode == finalTargetMode) {
-        // 若状态一致，瞬间 0ms 返回，无任何性能损耗
+        // 即使状态一致，playback 模式仍需确保 native AVAudioSession 处于活跃。
+        // iOS 会在两次播放之间 deactivate 会话，导致后续 setUrl 永远卡在
+        // buffering 状态（20s 超时后无声）。force:true 强制执行会话重配置。
+        if (finalTargetMode == AudioMode.playback) {
+          await usePlaybackCategory(force: true);
+        }
         return;
       }
  
@@ -668,7 +673,8 @@ class SoundUtil {
       // 僵尸防护：当 playCompletedFuture 不在下面 await（因 player 已处于
       // completed/idle）时，其 timeout 异常会成为未处理的 zone 错误。
       // catchError 作为安全网，防止异常泄漏到 runZonedGuarded。
-      playCompletedFuture.catchError((_) {});
+      // 回调必须返回 PlayerState 类型（Future 的类型参数），避免 runtime 断言。
+      playCompletedFuture.catchError((_) => player.playerState);
 
       final playSw = Stopwatch()..start();
       unawaited(player.play().catchError((_) {}));
