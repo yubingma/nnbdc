@@ -126,9 +126,12 @@ class SoundUtil {
         // 防止未停稳时加载新音源导致的切音爆音。
         if (finalTargetMode == AudioMode.playback) {
           await waitForAllPlayers();
-          if (_currentSessionCategory != 'playback') {
+          final bool isCategoryChanged = _currentSessionCategory != 'playback';
+          if (isCategoryChanged) {
             await usePlaybackCategory(force: true);
           }
+          final delayMs = isCategoryChanged ? 150 : 80;
+          await Future.delayed(Duration(milliseconds: delayMs));
         }
         return;
       }
@@ -153,6 +156,9 @@ class SoundUtil {
               // c. 原生 ASR 引擎停止后硬件稳定窗口，消除残余瞬态
               await Future.delayed(const Duration(milliseconds: 50));
             } else {
+              // 判断是否因 Category 转换发生了硬件重构（在执行任何关麦/重配置前先判定）
+              final bool isCategoryChanged = _currentSessionCategory != 'playback';
+
               // a. 物理关闭麦克风（冷关停）
               if (_activeMode != AudioMode.idle) {
                 await asrInstance.stopMicrophone();
@@ -165,9 +171,6 @@ class SoundUtil {
               }
               // b. 强行平滑淡出（Soft-Mute）所有当前活跃 of 临时/音效播放器，彻底排空声卡缓冲区
               await _cleanupEarlyExitPlayers();
-              
-              // 判断是否因 Category 转换发生了硬件重构
-              final bool isCategoryChanged = _currentSessionCategory != 'playback';
               
               // c. 物理配置 AudioSession 为高品质 playback 模式；若已是 playback 则跳过重配置以根除不必要会话切换导致的爆音
               await usePlaybackCategory(force: false);
