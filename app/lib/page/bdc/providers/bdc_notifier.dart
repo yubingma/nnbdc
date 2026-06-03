@@ -28,6 +28,7 @@ import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
@@ -1303,7 +1304,10 @@ class BdcNotifier extends _$BdcNotifier {
         if (asrInput != null) {
           meaningController.text = state.word!.spell;
         }
-        await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
+        // 仅在麦克风处于开启状态时才进行物理关麦
+        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+          await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
+        }
         
         if (state.hasFinishedAnswering) {
           // 已经答对了（处于查看详情时的额外练习），直接关闭
@@ -1331,9 +1335,10 @@ class BdcNotifier extends _$BdcNotifier {
       if (result.newMatchCount > 0) {
         state = state.copyWith(canLeaveCurrWord: true);
         if (isMatch) {
-          // 先等待麦克风完全关停（含原生侧 AVAudioSession 切换至 playback），
-          // 再播放提示音，避免音频会话切换导致 just_audio AVPlayer 中断并重放缓冲区尾部，产生回声。
-          await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
+          // 仅在麦克风处于开启状态时才进行物理关麦，避免冗余硬件操作导致 Session 被重置为 'none' 并产生爆音
+          if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+            await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
+          }
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         }
@@ -1358,19 +1363,16 @@ class BdcNotifier extends _$BdcNotifier {
           return;
         }
 
-        // 先等待麦克风完全关停（含原生侧 AVAudioSession 切换至 playback），
-        // 再播放发音，避免音频会话切换导致 AVPlayer 中断并产生回声。
-        await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
-
-        // 如果已经答过题（hasFinishedAnswering=true），_onAnswerCorrect 会直接返回，
-        // 不会播放发音。因此在这里手动播放单词正确发音作为反馈。
-        // 使用 _audioPlayer 而非 _pronouncePlayer，确保与 playWordAndFirstSentence
-        // 共享同一播放器，避免两个播放器同时播放导致回声。
         if (state.hasFinishedAnswering) {
+          // 若已答完，需先等待麦克风关停（含切换至 playback），再播放发音防止回声
+          await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
           StudyAudioSessionController().playWordSound(state.word!);
+        } else {
+          // 若未答完，后续 _onAnswerCorrect -> playWordAndFirstSentence 内部会进行原子关麦与播音，
+          // 此处无需重复 stopSession 以防底层硬件频繁配置冲突产生轻微爆音
+          final ratingResult = _calculateRating(method);
+          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         }
-        final ratingResult = _calculateRating(method);
-        _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       }
     }
     Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
