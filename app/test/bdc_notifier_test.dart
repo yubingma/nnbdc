@@ -13,6 +13,7 @@ import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:nnbdc/services/study_cache_manager.dart';
 
 // 手写 MockAsr，捕获并拦截所有的原生方法
 class MockAsr implements Asr {
@@ -323,6 +324,108 @@ void main() {
     expect(state.showHandwritingBoard, true);
 
     // 等待所有后台异步任务（例如 StudyBo 里的单词拼写预获取）在数据库关闭前执行完毕，防止出现 Can't re-open database 警告
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('BdcNotifier - isWordMastered 在切换下一个词时应重置为 false', () async {
+    // 清除 StudyCacheManager 单例缓存，防止上一条测试的缓存干扰该测试
+    StudyCacheManager().clear();
+
+    // 1. 在数据库中为 test_user 插入已掌握词书
+    var masteredDictId = 'mock_mastered_dict';
+    await db.into(db.dicts).insert(Dict(
+          id: masteredDictId,
+          name: '已掌握',
+          wordCount: 0,
+          isShared: false,
+          isReady: true,
+          ownerId: testUser.id,
+          visible: true,
+          editable: false,
+          deletable: false,
+          createTime: now,
+          updateTime: now,
+        ));
+
+    // 2. 在数据库中为 test_user 插入第 2 个单词以供切换
+    var wordId2 = 'word_2';
+    await db.into(db.words).insert(Word(
+          id: wordId2,
+          spell: 'banana',
+          popularity: 90,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.meaningItems).insert(MeaningItem(
+          id: 'mim_2',
+          wordId: wordId2,
+          dictId: Global.commonDictId,
+          ciXing: 'n.',
+          meaning: '香蕉',
+          popularity: 90,
+          ownerId: Global.sysUserId,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.dictWords).insert(DictWord(
+          dictId: 'mock_dict_1',
+          wordId: wordId2,
+          seq: 2,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: wordId2,
+          addTime: now,
+          addDay: 1,
+          batchId: 1,
+          lastLearningDate: AppClock.today(),
+          stability: 0.0,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          learningOrder: 2,
+          createTime: now,
+          updateTime: now,
+        ));
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+    expect(state.isWordMastered, false);
+
+    // 3. 将当前词 'apple' 的掌握状态设为 true
+    notifier.updateIsWordMastered(true);
+    state = container.read(bdcNotifierProvider);
+    expect(state.isWordMastered, true);
+
+    // 3. 切换到下一个词
+    final success = await notifier.getNextWord(true);
+    state = container.read(bdcNotifierProvider);
+    
+    expect(success, true);
+
+    // 4. 验证新载入的词 'banana'，其 isWordMastered 已经重置为 false
+    expect(state.word!.spell, 'banana');
+    expect(state.isWordMastered, false); // 核心保护性断言
+
     await Future.delayed(const Duration(milliseconds: 100));
   });
 }
