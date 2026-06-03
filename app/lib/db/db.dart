@@ -139,25 +139,38 @@ class MyDatabase extends _$MyDatabase {
 
         // 如果查询返回结果，说明表存在，数据库完整
         if (tables.isNotEmpty) {
-        // 4. 再次确保核心表的审计字段没有 NULL (双重保险)
+        // 4. 再次确保核心表的审计字段没有 NULL (双重保险，改为先用只读检测，避免每次启动执行无谓 UPDATE 造成 locked 冲突)
         try {
           final fixTables = ["users", "local_params", "user_study_daily_stats", "learning_logs", "similar_words", "user_cow_dung_logs"];
+          bool hasMissingColumn = false;
           for (var t in fixTables) {
-            await db.customUpdate('UPDATE "$t" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = \'\' OR create_time = 0;');
-            await db.customUpdate('UPDATE "$t" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = \'\' OR update_time = 0;');
+            try {
+              // 极轻量的只读查询检测列是否存在，不获取写锁
+              await db.customSelect('SELECT create_time, update_time FROM "$t" LIMIT 1', readsFrom: {}).get();
+            } catch (e) {
+              final errorStr = e.toString();
+              if (errorStr.contains('no such column: create_time') || errorStr.contains('no such column: update_time')) {
+                hasMissingColumn = true;
+                break;
+              }
+            }
           }
-        } catch (e) {
-          final errorStr = e.toString();
-          if (errorStr.contains('no such column: create_time') || errorStr.contains('no such column: update_time')) {
+
+          if (hasMissingColumn) {
              Global.logger.w('检测到数据库审计字段缺失，尝试手动补全...');
              await _manuallyAddAuditColumns(db);
-             // 补全后再试一次
-             try {
-               await db.customUpdate('UPDATE "users" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = \'\' OR create_time = 0;');
-             } catch (_) {}
-          } else {
-             Global.logger.w('初始化强制修复失败: $e');
+             // 补全后统一回填默认值
+             await db.transaction(() async {
+               for (var t in fixTables) {
+                 try {
+                   await db.customUpdate('UPDATE "$t" SET create_time = 946656000 WHERE create_time IS NULL OR create_time = \'\' OR create_time = 0;');
+                   await db.customUpdate('UPDATE "$t" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = \'\' OR update_time = 0;');
+                 } catch (_) {}
+               }
+             });
           }
+        } catch (e) {
+          Global.logger.w('初始化强制修复失败: $e');
         }
 
         Global.logger.d('✅ 数据库完整性检查通过');
