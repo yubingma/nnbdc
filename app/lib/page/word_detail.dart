@@ -102,7 +102,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   static const double leftPadding = 16;
   static const double rightPadding = 16;
   StudyAudioSessionController? _sessionController;
-  bool _ownsSessionController = true;
 
   StudyAudioSessionController get sessionController => _sessionController!;
   bool _sessionDisposed = false;
@@ -183,10 +182,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       if (_sessionController == null) {
         if (args.sessionController != null) {
           _sessionController = args.sessionController;
-          _ownsSessionController = false;
         } else {
           _sessionController = StudyAudioSessionController();
-          _ownsSessionController = true;
           // 进入详情页时，统一将音频状态机转换到 idle 状态，优雅关闭麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源
           unawaited(_sessionController!.stopSession(forceStopMicrophone: true));
         }
@@ -218,9 +215,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     _chatScrollController.dispose();
 
     _sessionDisposed = true;
-    if (_ownsSessionController) {
-      _sessionController?.dispose();
-    }
 
     super.dispose();
   }

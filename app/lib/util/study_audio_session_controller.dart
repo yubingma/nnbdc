@@ -48,6 +48,23 @@ class StudyAudioSessionController {
   final Asr _asr;
   final ja.AudioPlayer _audioPlayer;
   final _SessionMutex _queueLock = _SessionMutex();
+  Timer? _idleTimer;
+
+  @visibleForTesting
+  Timer? get idleTimerForTesting => _idleTimer;
+
+  /// 是否保留麦克风保温状态（即使页面销毁或调用 stopSession，也只执行 ASR 停止而不断开麦克风物理流）
+  bool keepMicrophoneWarm = false;
+
+  /// 取消待执行的延迟释放麦克风任务
+  void cancelIdleTimer() {
+    keepMicrophoneWarm = false;
+    if (_idleTimer != null) {
+      debugPrint('⏱️ [SessionController] 取消待执行的延迟释放麦克风任务');
+      _idleTimer!.cancel();
+      _idleTimer = null;
+    }
+  }
 
   // ============================================================
   // Meter / Level（用于 ASR 录音音量可视化）
@@ -78,6 +95,7 @@ class StudyAudioSessionController {
   /// 播放单词发音。
   Future<void> playWordSound(WordVo word,
       {Future<void>? preWaitFuture}) {
+    cancelIdleTimer();
     return _queueLock.protect(() async {
       _unsubscribeMeter();
       await SoundUtil.playPronounceSound2(word, _audioPlayer,
@@ -88,6 +106,7 @@ class StudyAudioSessionController {
   /// 播放例句发音。
   Future<void> playSentenceSound(String digest,
       {double speed = 1.0, Future<void>? preWaitFuture}) {
+    cancelIdleTimer();
     return _queueLock.protect(() async {
       _unsubscribeMeter();
       await SoundUtil.playSentenceSound2(digest, _audioPlayer,
@@ -97,6 +116,7 @@ class StudyAudioSessionController {
 
   /// 通过拼写播放发音（内部使用一次性播放器，播放后自动释放）。
   Future<void> playWordSoundBySpell(String spell) {
+    cancelIdleTimer();
     return _queueLock.protect(() async {
       await SoundUtil.playPronounceSoundBySpell(spell);
     });
@@ -110,6 +130,7 @@ class StudyAudioSessionController {
     required bool playSentence,
     required bool isSpeakMode,
   }) async {
+    cancelIdleTimer();
     _logPlayerState('playWordAndSentence.enter');
     debugPrint(
       '🕵️ [AudioDiag] playWordAndSentence | '
@@ -194,6 +215,7 @@ class StudyAudioSessionController {
     required List<String> phrases,
     required bool isSpeakMode,
   }) async {
+    cancelIdleTimer();
     return _queueLock.protect(() async {
       if (_asr.currentLanguage != language) {
         debugPrint(
@@ -217,12 +239,45 @@ class StudyAudioSessionController {
     });
   }
 
-  Future<void> stopSession({bool forceStopMicrophone = false}) async {
+  Future<void> stopSession({
+    bool forceStopMicrophone = false,
+  }) async {
+    if (forceStopMicrophone && keepMicrophoneWarm) {
+      if (_idleTimer != null) {
+        debugPrint('⏱️ [SessionController] 重新刷新麦克风保温计时器，取消之前的任务');
+        _idleTimer!.cancel();
+        _idleTimer = null;
+      }
+
+      debugPrint('⏱️ [SessionController] 收到麦克风保温释放请求，延迟 10 秒物理释放...');
+      final completer = Completer<void>();
+      _idleTimer = Timer(const Duration(seconds: 10), () async {
+        _idleTimer = null;
+        keepMicrophoneWarm = false;
+        try {
+          await _queueLock.protect(() async {
+            _unsubscribeMeter();
+            debugPrint('⏱️ [SessionController] 保温延迟时间已到，开始物理释放麦克风...');
+            await SoundUtil.transitTo(AudioMode.idle, asrInstance: _asr);
+            await _asr.reset();
+          });
+          completer.complete();
+        } catch (e, st) {
+          completer.completeError(e, st);
+        }
+      });
+      return completer.future;
+    }
+
+    if (forceStopMicrophone) {
+      cancelIdleTimer();
+    }
+
     return _queueLock.protect(() async {
       _unsubscribeMeter();
       if (forceStopMicrophone) {
         debugPrint(
-          '⏱️ [SessionController] 强制释放麦克风与原生识别流...',
+          '⏱️ [SessionController] 物理释放麦克风与原生识别流...',
         );
         await SoundUtil.transitTo(AudioMode.idle, asrInstance: _asr);
       } else {
@@ -269,6 +324,7 @@ class StudyAudioSessionController {
 
   /// 配置音频会话（应用启动时调用一次即可）。
   Future<void> configureSession() {
+    cancelIdleTimer();
     return _queueLock.protect(() => SoundUtil.configureAudioSession());
   }
 
@@ -284,16 +340,19 @@ class StudyAudioSessionController {
 
   /// 播放 AI 故事英文配音。
   Future<void> playAiStoryEnSound(String wordsHash) {
+    cancelIdleTimer();
     return _queueLock.protect(() => SoundUtil.playAiStoryEnSound(wordsHash));
   }
 
   /// 播放 AI 故事中文配音。
   Future<void> playAiStoryCnSound(String wordsHash) {
+    cancelIdleTimer();
     return _queueLock.protect(() => SoundUtil.playAiStoryCnSound(wordsHash));
   }
 
   /// 销毁控制器（应用退出时调用）。
   Future<void> dispose() {
+    cancelIdleTimer();
     _asr.removeStateListener(_onAsrStateChange);
     _unsubscribeMeter();
     meterLevelNotifier.dispose();

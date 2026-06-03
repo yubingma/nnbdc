@@ -452,6 +452,9 @@ class BdcNotifier extends _$BdcNotifier {
         wordWrapper: null,
       );
       
+      // 开启麦克风保温以跨越列表页
+      StudyAudioSessionController.instance.keepMicrophoneWarm = true;
+      
       // Redirect to batch word list
       Future.delayed(Duration.zero, () {
         final nextBtn = ElevatedButton(
@@ -462,6 +465,7 @@ class BdcNotifier extends _$BdcNotifier {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           onPressed: () async {
+            StudyAudioSessionController.instance.keepMicrophoneWarm = true;
             await StudyBo().completeListStepForCurrentBatch();
             // 跳转回 BDC 页面，它会自动加载下一个非 List 环节的单词
             goRouter.pushReplacement('/bdc');

@@ -149,7 +149,9 @@ class SoundUtil {
               await Future.delayed(const Duration(milliseconds: 50));
             } else {
               // a. 物理关闭麦克风（冷关停）
-              await asrInstance.stopMicrophone();
+              if (_activeMode != AudioMode.idle) {
+                await asrInstance.stopMicrophone();
+              }
               // b. 强行平滑淡出（Soft-Mute）所有当前活跃 of 临时/音效播放器，彻底排空声卡缓冲区
               await _cleanupEarlyExitPlayers();
               // c. 物理配置 AudioSession 为高品质 playback 模式；若已是 playback 则跳过重配置以根除不必要会话切换导致的爆音

@@ -1269,7 +1269,6 @@ class WordListPageState extends State<WordListPage>
     _handwritingPaddingTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
-    _sessionController.dispose();
     // 停止 ASR：不再检查 studyMode，只要页面销毁就无条件尝试停止识别引擎并转换状态机到 idle
     // 平滑物理淡出所有活跃音频流并物理释放硬件资源，防止麦克风占用指示灯常亮
     try {

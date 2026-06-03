@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/asr.dart';
 
 /// SoundUtil 音频会话切换单元测试
 /// 覆盖五大测试目标：
@@ -338,6 +340,71 @@ void main() {
       // 重试时保持同一个 Stopwatch 实例，所以最终日志中的耗时是
       // 从第一次尝试开始的总时间（包含所有退避延迟）。
       // 这确保日志中的 "耗时: Xms" 反映真实的用户等待时间。
+      //
+      // 同样逻辑在 _configurePlayAndRecordSession 中重复。
+    });
+  });
+
+  // ============================================================
+  // StudyAudioSessionController 延迟释放与重入
+  // ============================================================
+  group('StudyAudioSessionController 延迟释放与重入', () {
+    setUp(() {
+      SoundUtil.resetForTesting();
+      setupDefaultMocks();
+    });
+
+    tearDown(() {
+      StudyAudioSessionController.instance.cancelIdleTimer();
+      SoundUtil.resetForTesting();
+    });
+
+    test('stopSession 在 keepMicrophoneWarm 为 true 时会启动延迟释放 Timer', () async {
+      final controller = StudyAudioSessionController.instance;
+      expect(controller.idleTimerForTesting, isNull);
+
+      // 开启麦克风保温
+      controller.keepMicrophoneWarm = true;
+
+      // 调用 stopSession（不 await 以便立即检查 Timer 状态）
+      final future = controller.stopSession(forceStopMicrophone: true);
+
+      // Timer 应该被创建且处于活跃状态
+      expect(controller.idleTimerForTesting, isNotNull);
+      expect(controller.idleTimerForTesting!.isActive, isTrue);
+
+      controller.cancelIdleTimer();
+      expect(controller.idleTimerForTesting, isNull);
+      expect(controller.keepMicrophoneWarm, isFalse);
+      
+      // 避免 unhandled future error
+      future.catchError((_) {});
+    });
+
+    test('任何音频调用都会主动取消延迟释放 Timer 并重置 keepMicrophoneWarm', () async {
+      final controller = StudyAudioSessionController.instance;
+
+      // 1. 测试 configureSession 触发取消
+      controller.keepMicrophoneWarm = true;
+      final f1 = controller.stopSession(forceStopMicrophone: true);
+      expect(controller.idleTimerForTesting, isNotNull);
+      await controller.configureSession();
+      expect(controller.idleTimerForTesting, isNull);
+      expect(controller.keepMicrophoneWarm, isFalse);
+      f1.catchError((_) {});
+
+      // 2. 测试 startSession 触发取消
+      controller.keepMicrophoneWarm = true;
+      final f2 = controller.stopSession(forceStopMicrophone: true);
+      expect(controller.idleTimerForTesting, isNotNull);
+      await controller.startSession(
+        language: AsrLanguage.english,
+        phrases: const [],
+        isSpeakMode: false,
+      );
+      expect(controller.idleTimerForTesting, isNull);
+      expect(controller.keepMicrophoneWarm, isFalse);
+      f2.catchError((_) {});
     });
   });
 }
