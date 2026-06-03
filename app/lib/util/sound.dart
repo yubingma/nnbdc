@@ -159,10 +159,15 @@ class SoundUtil {
               }
               // b. 强行平滑淡出（Soft-Mute）所有当前活跃 of 临时/音效播放器，彻底排空声卡缓冲区
               await _cleanupEarlyExitPlayers();
+              
+              // 判断是否因 Category 转换发生了硬件重构
+              final bool isCategoryChanged = _currentSessionCategory != 'playback';
+              
               // c. 物理配置 AudioSession 为高品质 playback 模式；若已是 playback 则跳过重配置以根除不必要会话切换导致的爆音
               await usePlaybackCategory(force: false);
               // d. Session 切换后硬件稳定窗口，消除 deactivate/reactivate 瞬态
-              await Future.delayed(const Duration(milliseconds: 80));
+              final delayMs = isCategoryChanged ? 150 : 80;
+              await Future.delayed(Duration(milliseconds: delayMs));
             }
             break;
  
