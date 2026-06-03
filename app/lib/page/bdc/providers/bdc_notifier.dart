@@ -62,6 +62,7 @@ class BdcNotifier extends _$BdcNotifier {
   late BdcPageArgs _args;
   Timer? _learningTimer;
   Timer? _persistTimer;
+  Timer? _checkAsrDebounceTimer;
   /// 播放取消令牌：每次换词或用户手动操作时递增，使旧延迟 callback 失效。
   int _playToken = 0;
   /// 页面过渡屏障：详情页弹出时，让音频播放等待页面动画完成再启动，
@@ -91,13 +92,17 @@ class BdcNotifier extends _$BdcNotifier {
     asr.addStateListener(_onAsrStateChanged);
     
     meaningController.addListener(() {
-      checkAsrResult();
+      _checkAsrDebounceTimer?.cancel();
+      _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
+        checkAsrResult();
+      });
     });
 
     ref.onDispose(() {
       _isDisposed = true;
       _learningTimer?.cancel();
       _persistTimer?.cancel();
+      _checkAsrDebounceTimer?.cancel();
       progressBarTapTimer?.cancel();
       _syncLearningTimeToDb();
       asr.removeStateListener(_onAsrStateChanged);

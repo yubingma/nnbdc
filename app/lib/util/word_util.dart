@@ -76,6 +76,9 @@ class WordWrapper {
   /// 仅因为单词通过而在UI上自动呈现出的未匹配释义项（以便做颜色区分）
   List<Pair<int, int>> asrRevealedMeaningItemParts = [];
 
+  /// 释义子项的拼音缓存，避免高频打字/手写匹配时重复解析拼音
+  final Map<String, List<List<PinyinParser>>> targetPinyinsCache = {};
+
   /// 说中文 的学习模式下，用户是否已经答出了单词的所有意思
   bool answeredAllMeanings = false;
 
@@ -174,7 +177,7 @@ MeaningMatchResult matchInputChineseWithMeaningItems(
         bool isMatched = false;
         String? matchedInput;
         for (final input in inputs) {
-          if (fuzzyChineseContains(input, part)) {
+          if (fuzzyChineseContains(input, part, targetPinyinsCache: wordWrapper.targetPinyinsCache)) {
             isMatched = true;
             matchedInput = input;
             break;

@@ -416,10 +416,10 @@ double similarityOf2Pinyin(String pinyin1, String pinyin2) {
   return similarityOf2ParsedPinyin(parts1, parts2);
 }
 
-bool fuzzyChineseContains(Object chinese1, String chinese2) {
+bool fuzzyChineseContains(Object chinese1, String chinese2, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
   if (chinese1 is List<String>) {
     for (final item in chinese1) {
-      if (fuzzyChineseContains(item, chinese2)) {
+      if (fuzzyChineseContains(item, chinese2, targetPinyinsCache: targetPinyinsCache)) {
         return true;
       }
     }
@@ -456,7 +456,7 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
     // 对每个候选子串进行 DP 匹配，只要有一个通过，该 unit 即匹配成功
     bool unitMatched = false;
     for (var cand in subCandidates) {
-      if (_matchSingleCandidate(cand, unit)) {
+      if (_matchSingleCandidate(cand, unit, targetPinyinsCache: targetPinyinsCache)) {
         unitMatched = true;
         break;
       }
@@ -471,7 +471,7 @@ bool fuzzyChineseContains(Object chinese1, String chinese2) {
 }
 
 /// 针对单个候选文本的拼音模糊匹配（核心 DP 算法）
-bool _matchSingleCandidate(String asrText, String unit) {
+bool _matchSingleCandidate(String asrText, String unit, {Map<String, List<List<PinyinParser>>>? targetPinyinsCache}) {
   if (asrText.isEmpty) return false;
 
   List<List<PinyinParser>> userPinyins = [];
@@ -481,14 +481,22 @@ bool _matchSingleCandidate(String asrText, String unit) {
     userPinyins.add(pinyins.map((p) => PinyinParser(p)).toList());
   }
 
-  // 获取 target 的每一个字的可能拼音
-  List<List<PinyinParser>> targetPinyins = [];
-  for (var i = 0; i < unit.length; i++) {
-    var hanzi = unit[i];
-    var pinyins = hanziToPinyin(hanzi);
-    var cleans = pinyins.map((p) => p.toLowerCase().replaceAll(_nonPinyinRegExp, "").trim()).where((p) => p.isNotEmpty).toList();
-    if (cleans.isEmpty) cleans = [hanzi.toLowerCase()];
-    targetPinyins.add(cleans.map((p) => PinyinParser(p)).toList());
+  // 获取 target 的每一个字的可能拼音（优先从缓存中获取）
+  List<List<PinyinParser>> targetPinyins;
+  if (targetPinyinsCache != null && targetPinyinsCache.containsKey(unit)) {
+    targetPinyins = targetPinyinsCache[unit]!;
+  } else {
+    targetPinyins = [];
+    for (var i = 0; i < unit.length; i++) {
+      var hanzi = unit[i];
+      var pinyins = hanziToPinyin(hanzi);
+      var cleans = pinyins.map((p) => p.toLowerCase().replaceAll(_nonPinyinRegExp, "").trim()).where((p) => p.isNotEmpty).toList();
+      if (cleans.isEmpty) cleans = [hanzi.toLowerCase()];
+      targetPinyins.add(cleans.map((p) => PinyinParser(p)).toList());
+    }
+    if (targetPinyinsCache != null) {
+      targetPinyinsCache[unit] = targetPinyins;
+    }
   }
 
   int M = targetPinyins.length;
@@ -606,7 +614,7 @@ bool _matchSingleCandidate(String asrText, String unit) {
       }
       String dedupedText = deduped.toString();
       if (dedupedText.length < asrCharCount) {
-        return _matchSingleCandidate(dedupedText, unit);
+        return _matchSingleCandidate(dedupedText, unit, targetPinyinsCache: targetPinyinsCache);
       }
     }
   }

@@ -1,17 +1,8 @@
 part of '../bdc.dart';
 
 extension BdcPageStateUIComponents on BdcPageState {
-  // 终极性能优化：UI组件库在读取全局 state 时屏蔽所有高频字段，防止题目区闪烁
-  BdcState get state => ref.watch(bdcNotifierProvider.select((s) => s.copyWith(
-    asrResult: '',
-    asrState: AsrState.unknown,
-    currentAsrCandidates: const [],
-    asrPassRuleCache: '',
-    playingStates: const {'word': false, 'sentence': false},
-    currentScore: 0,
-    meaningText: '',
-    hintTapCount: 0,
-  )));
+  // 终极性能优化：UI组件库在读取全局 state 时屏蔽所有高频字段，防止题目区闪烁，并在回调中安全读取
+  BdcState get state => _activeState ?? ref.read(bdcNotifierProvider);
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
 
   Widget _buildLoadingPage() {
@@ -229,7 +220,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                         textInputAction: TextInputAction.done,
                         onChanged: (value) {
                           notifier.updateIsUpdatingByHint(false);
-                          updateUI(() {}, tag: 'text-changed');
                           if (value.isNotEmpty && state.word?.spell != null) {
                             if (Util.equalsIgnoreCase(value, state.word!.spell)) {
                               // 提示已经显示了全部字母时不应自动提交，用户应继续手动答题
@@ -1421,47 +1411,52 @@ extension BdcPageStateUIComponents on BdcPageState {
                     color: AppTheme.primaryColor.withValues(alpha: 0.5)),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: notifier.meaningController.text.isEmpty
-                      ? Text(
-                          '拼写练习',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: (isDarkMode ? Colors.white : Colors.black)
-                                .withValues(alpha: 0.2),
-                            fontWeight: FontWeight.normal,
-                          ),
-                        )
-                      : RichText(
-                          text: TextSpan(
-                            children: [
-                              SpellingTextEditingController
-                                  .buildSpellingTextSpan(
-                                notifier.meaningController.text,
-                                state.word?.spell ?? "",
-                                notifier.meaningController.text.trim().toLowerCase() !=
-                                        (state.word?.spell.toLowerCase() ?? "")
-                                    ? Colors.red
-                                    : (isDarkMode ? Colors.white : Colors.black),
-                                const TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: notifier.meaningController,
+                    builder: (context, value, child) {
+                      final text = value.text;
+                      return text.isEmpty
+                          ? Text(
+                              '拼写练习',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: (isDarkMode ? Colors.white : Colors.black)
+                                    .withValues(alpha: 0.2),
+                                fontWeight: FontWeight.normal,
                               ),
-                              if (notifier.meaningController.text.length <
-                                  (state.word?.spell.length ?? 0))
-                                TextSpan(
-                                  text:
-                                      ' ${_buildUnderlines(state.word?.spell ?? "", notifier.meaningController.text.length)}',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDarkMode
-                                        ? Colors.white30
-                                        : Colors.black26,
-                                    letterSpacing: 2.0,
+                            )
+                          : RichText(
+                              text: TextSpan(
+                                children: [
+                                  SpellingTextEditingController
+                                      .buildSpellingTextSpan(
+                                    text,
+                                    state.word?.spell ?? "",
+                                    text.trim().toLowerCase() !=
+                                            (state.word?.spell.toLowerCase() ?? "")
+                                        ? Colors.red
+                                        : (isDarkMode ? Colors.white : Colors.black),
+                                    const TextStyle(
+                                        fontSize: 18, fontWeight: FontWeight.bold),
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
+                                  if (text.length < (state.word?.spell.length ?? 0))
+                                    TextSpan(
+                                      text:
+                                          ' ${_buildUnderlines(state.word?.spell ?? "", text.length)}',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDarkMode
+                                            ? Colors.white30
+                                            : Colors.black26,
+                                        letterSpacing: 2.0,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                    },
+                  ),
                 ),
               ],
             ),

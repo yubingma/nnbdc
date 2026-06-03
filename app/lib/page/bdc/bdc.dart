@@ -59,6 +59,9 @@ class BdcPage extends ConsumerStatefulWidget {
 }
 
 class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin {
+  /// 缓存当前渲染帧的状态快照，供非 build 期的事件回调安全读取，消除非 build 期 ref.watch 隐患
+  BdcState? _activeState;
+
   /// 用于给 extension 中的方法调用，避免使用 setState 时出现 lint错误
   int _buildCount = 0;
   String _lastSetStateTag = 'init';
@@ -247,6 +250,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
       meaningText: '',
       hintTapCount: 0,
     )));
+    _activeState = state;
 
     {
       int expectedTabLength = _getShouldShowSpeakTab(state) ? 2 : 1;
