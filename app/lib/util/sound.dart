@@ -156,6 +156,12 @@ class SoundUtil {
               // a. 物理关闭麦克风（冷关停）
               if (_activeMode != AudioMode.idle) {
                 await asrInstance.stopMicrophone();
+                // 核心发现：在原生 stopMicrophone 执行完后，原生层已经自动将
+                // AVAudioSession 的 Category 切换为 .playback 并且重新激活了。
+                // 此时，我们在 Dart 层将 _currentSessionCategory 同步更新为 'playback'，
+                // 使得下面的 usePlaybackCategory(force: false) 能够直接短路跳过，
+                // 避免了在 Dart 层重复配置 Category，彻底根持了轻微爆音！
+                _currentSessionCategory = 'playback';
               }
               // b. 强行平滑淡出（Soft-Mute）所有当前活跃 of 临时/音效播放器，彻底排空声卡缓冲区
               await _cleanupEarlyExitPlayers();
