@@ -559,6 +559,7 @@ class BdcNotifier extends _$BdcNotifier {
       showHandwritingBoard: false,
       isKeyboardVisible: false,
       hintTapCount: 0,
+      isWordMastered: false,
     );
 
     final wordId = word.id;
@@ -1016,6 +1017,7 @@ class BdcNotifier extends _$BdcNotifier {
           lastFsrsRating: uiState.lastFsrsRating,
           currentAsrCandidates: uiState.currentAsrCandidates ?? [],
           hintTapCount: uiState.hintTapCount,
+          isWordMastered: false,
         );
         meaningController.text = uiState.meaningText;
       } else {
@@ -1035,6 +1037,7 @@ class BdcNotifier extends _$BdcNotifier {
           hintTapCount: 0,
           assessmentRating: uiState.lastFsrsRating,
           assessmentScheduledDays: uiState.fsrsItem?.scheduledDays,
+          isWordMastered: false,
         );
         meaningController.text = "";
       }
