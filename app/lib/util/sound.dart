@@ -122,8 +122,10 @@ class SoundUtil {
         // 即使状态一致，playback 模式仍需确保 native AVAudioSession 处于活跃。
         // iOS 会在两次播放之间 deactivate 会话，导致后续 setUrl 永远卡在
         // buffering 状态。但只有在底层 Category 确实不是 playback 时，才需要强制重配置，
-        // 避免在连续播放时频繁重置硬件导致爆音。
+        // 避免在连续播放时频繁重置硬件导致爆音。同时需确保等待所有活跃播放器停稳，
+        // 防止未停稳时加载新音源导致的切音爆音。
         if (finalTargetMode == AudioMode.playback) {
+          await waitForAllPlayers();
           if (_currentSessionCategory != 'playback') {
             await usePlaybackCategory(force: true);
           }
