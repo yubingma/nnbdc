@@ -70,6 +70,7 @@ class SoundUtil {
     _logicallyFinishedPlayers.clear();
     _playerBusyUntil.clear();
     _activeCutToken.clear();
+    _playerLoadedAsset.clear();
     _configureFuture = null;
   }
 
@@ -100,6 +101,7 @@ class SoundUtil {
   static final Set<ja.AudioPlayer> _logicallyFinishedPlayers = {};
   static final Map<ja.AudioPlayer, DateTime> _playerBusyUntil = {};
   static final Map<ja.AudioPlayer, Object> _activeCutToken = {};
+  static final Map<ja.AudioPlayer, String> _playerLoadedAsset = {};
   
   /// 全局观察的播放器列表，用于在切换音频会话前确保它们都已播完
   static final List<ja.AudioPlayer> _watchedPlayers = [];
@@ -528,6 +530,7 @@ class SoundUtil {
     _logicallyFinishedPlayers.remove(player);
     _playerBusyUntil.remove(player);
     _activeCutToken.remove(player);
+    _playerLoadedAsset.remove(player);
     debugPrint('🔊 [SoundUtil] 已从监视名单安全移除播放器: ${player.hashCode}');
   }
 
@@ -783,7 +786,13 @@ class SoundUtil {
       await player.seek(Duration.zero);
       await player.setSpeed(speed);
       await player.setVolume(volume);
-      await player.setAsset('assets/audio/$soundFileName').timeout(Duration(milliseconds: timeoutInMilliSeconds));
+      
+      final assetPath = 'assets/audio/$soundFileName';
+      final bool isSameAsset = _playerLoadedAsset[player] == assetPath;
+      if (!isSameAsset) {
+        await player.setAsset(assetPath).timeout(Duration(milliseconds: timeoutInMilliSeconds));
+        _playerLoadedAsset[player] = assetPath;
+      }
       unawaited(player.play().catchError((_) {}));
       
       if (sleepAfterPlayInMilliSeconds > 0) {
@@ -903,7 +912,13 @@ class SoundUtil {
       await player.seek(Duration.zero);
       await player.setSpeed(speed);
       await player.setVolume(volume);
-      await player.setAsset('assets/audio/$soundFileName');
+      
+      final assetPath = 'assets/audio/$soundFileName';
+      final bool isSameAsset = _playerLoadedAsset[player] == assetPath;
+      if (!isSameAsset) {
+        await player.setAsset(assetPath);
+        _playerLoadedAsset[player] = assetPath;
+      }
       unawaited(player.play());
       
       // 使用 token 防止误杀：如果播放器在延迟期间被复用了，不 kill 新声音

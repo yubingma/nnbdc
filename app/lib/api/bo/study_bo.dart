@@ -24,6 +24,7 @@ import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/util/sound.dart';
 
 /// 业务对象（BO）：承载本地实现逻辑
 class StudyBo {
@@ -620,6 +621,22 @@ class StudyBo {
       List<LearningWord> batchWords = [];
       for (int i = batchStartIndex; i < todayWords.length && i < batchStartIndex + batchSize; i++) {
         batchWords.add(todayWords[i]);
+      }
+
+      // 异步在后台线程加载拼写并执行音频预取，不阻塞 getWord 的返回
+      if (batchWords.isNotEmpty) {
+        unawaited(() async {
+          try {
+            final wordIds = batchWords.map((bw) => bw.wordId).toList();
+            final wordsList = await db.wordsDao.getWordsByIds(wordIds);
+            final urls = wordsList.map((w) => Util.getWordSoundUrl(w.spell, word: WordVo.c2(w.spell)..id = w.id)).toList();
+            if (urls.isNotEmpty) {
+              SoundUtil.prefetchSounds(urls);
+            }
+          } catch (e) {
+            Global.logger.w('StudyBo: 后台预取音频失败: $e');
+          }
+        }());
       }
 
       // 添加批次状态日志

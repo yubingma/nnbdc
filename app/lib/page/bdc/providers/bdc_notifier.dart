@@ -1063,7 +1063,7 @@ class BdcNotifier extends _$BdcNotifier {
       // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
       // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
       try {
-        await StudyAudioSessionController().cancelPlayback();
+        unawaited(StudyAudioSessionController().cancelPlayback());
       } catch (_) {}
 
       // 答对单词后切换下一词前的视觉驻留延迟。
