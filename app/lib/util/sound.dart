@@ -580,6 +580,7 @@ class SoundUtil {
 
   static Future<void> playSoundByUrl(String soundUrl, ja.AudioPlayer player, bool disposeWhenFinish,
       {int loadTimeoutMs = 10000, int playTimeoutMs = 20000, double speed = 1.0, Future<void>? preWaitFuture}) async {
+    if (PlatformUtils.isTesting) return;
     final totalSw = Stopwatch()..start();
     debugPrint(
       '🕵️ [AudioDiag] playSoundByUrl.enter | '
@@ -627,7 +628,7 @@ class SoundUtil {
         final cacheManager = DefaultCacheManager();
 
         /// 从本地缓存文件加载音频源。
-        Future<bool> _tryLoadFromCache(String filePath) async {
+        Future<bool> tryLoadFromCache(String filePath) async {
           try {
             await player.setAudioSource(ja.AudioSource.uri(Uri.file(filePath)))
                 .timeout(Duration(milliseconds: loadTimeoutMs));
@@ -643,7 +644,7 @@ class SoundUtil {
         }
 
         /// 从 HTTP URL 流式加载音频源（兜底方案）。
-        Future<bool> _tryLoadFromUrl(String url) async {
+        Future<bool> tryLoadFromUrl(String url) async {
           try {
             await player.setUrl(url).timeout(Duration(milliseconds: loadTimeoutMs));
             // setUrl 对远程 URL 会进入 buffering（缓冲）状态，这是正常的加载中状态
@@ -666,11 +667,11 @@ class SoundUtil {
         bool loaded = false;
         if (targetFilePath.isNotEmpty && await File(targetFilePath).exists()) {
           debugPrint('🔍 [AudioDiag] 尝试缓存文件: $targetFilePath');
-          loaded = await _tryLoadFromCache(targetFilePath);
+          loaded = await tryLoadFromCache(targetFilePath);
         }
         if (!loaded) {
           debugPrint('🔍 [AudioDiag] 缓存加载失败，尝试 setUrl: $soundUrl');
-          loaded = await _tryLoadFromUrl(soundUrl);
+          loaded = await tryLoadFromUrl(soundUrl);
         }
         if (!loaded) {
           debugPrint('🔍 [AudioDiag] 所有加载途径均失败');
@@ -845,7 +846,7 @@ class SoundUtil {
   /// 不播放任何声音，仅用于消除首次 setAudioSource 的冷启动延迟（iOS AVQueuePlayer 初始化 ~2s）。
   /// 缓存未命中时不降级下载——下载是 playSoundByUrl 的职责。
   static Future<void> preloadAudioFromUrl(String soundUrl, ja.AudioPlayer player) async {
-    if (PlatformUtils.isWeb) return;
+    if (PlatformUtils.isWeb || PlatformUtils.isTesting) return;
     try {
 
       try {
@@ -874,7 +875,7 @@ class SoundUtil {
   }
 
   static void prefetchSounds(List<String> urls) {
-    if (PlatformUtils.isWeb) return;
+    if (PlatformUtils.isWeb || PlatformUtils.isTesting) return;
     for (var url in urls) {
       unawaited(() async {
         try {
