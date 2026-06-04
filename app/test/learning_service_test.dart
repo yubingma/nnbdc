@@ -8,6 +8,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/services.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -951,7 +952,7 @@ void main() {
         updateTime: now,
       ));
 
-      // 2. 清理默认词书绑定，创建专门的临时词书，并设置 fetchMastered 为 true
+      // 2. 清理默认词书绑定，创建用户的生词本，并设置 fetchMastered 为 true
       final defaultDict = await (db.select(db.learningDicts)
             ..where((ld) => ld.userId.equals(testUser.id) & ld.dictId.equals('mock_dict_1')))
           .getSingle();
@@ -960,11 +961,11 @@ void main() {
       final dictTestId = 'mock_dict_test_mastered';
       await db.into(db.dicts).insert(Dict(
         id: dictTestId,
-        name: '测试生词本',
-        wordCount: 2,
+        name: '生词本', // 将名字设为 '生词本'，让 WordBo 查词添加时能够定位
+        wordCount: 0, // 初始没有单词
         isShared: false,
         isReady: true,
-        ownerId: testUser.id,
+        ownerId: testUser.id, // 设置 owner 为 testUser
         visible: true,
         editable: true,
         deletable: false,
@@ -981,36 +982,52 @@ void main() {
         updateTime: now,
       ));
 
-      // 往该词书中加入 2 个单词 (word_test_1, word_test_2)
+      // 往系统词库里加入 2 个单词 (用于 WordBo 查词定位)
       for (int i = 1; i <= 2; i++) {
         final wordId = 'word_test_$i';
         await db.into(db.words).insert(Word(
           id: wordId, spell: 'test_$i', popularity: 100,
           createTime: now, updateTime: now,
         ));
-        await db.into(db.dictWords).insert(DictWord(
-          dictId: dictTestId, wordId: wordId, seq: i, unit: 0,
-          createTime: now, updateTime: now,
-        ));
       }
 
-      // 3. 将 word_test_1 加入用户的已掌握列表中
+      // 3. 将 word_test_1 标记为已掌握（加入已掌握词书）
       await db.masteredWordsDao.saveMasteredWord(testUser.id, 'word_test_1', false, false);
+      
+      // 验证此时 word_test_1 确为已掌握状态
+      var isMastered = await db.masteredWordsDao.isWordMastered(testUser.id, 'word_test_1');
+      expect(isMastered, true);
 
-      // 4. 设置计划每日单词量为 2，执行备课
+      // 4. 用户在背词卡片/查词时，将已掌握单词 'test_1' 重新加入“生词本”
+      // 期待联动行为：在事务内自动将其移出已掌握状态
+      final addResult = await WordBo().addRawWord('test_1', 'manner');
+      expect(addResult.success, true);
+
+      // 5. 核心断言：联动生效，该词被自动取消掌握，脱离了已掌握词书
+      isMastered = await db.masteredWordsDao.isWordMastered(testUser.id, 'word_test_1');
+      expect(isMastered, false, reason: '加入生词本后，已掌握状态必须被自动清除，支持退火重新学');
+
+      // 另外，将 word_test_2 手动也加入生词本（它是未掌握单词）
+      final addResult2 = await WordBo().addRawWord('test_2', 'manner');
+      expect(addResult2.success, true);
+
+      // 6. 设置计划每日单词量为 2，执行备课
       final updatedUser = testUser.copyWith(wordsPerDay: 2);
       await db.usersDao.saveUser(updatedUser, false);
       Global.updateUserCache(updatedUser);
 
-      // 期待行为：虽然 fetchMastered 为 true，但由于已掌握无条件过滤，word_test_1 绝对不会被捞出，只捞出 word_test_2
+      // 此时生词本中有 word_test_1 (原本是已掌握，但已被自动移出) 和 word_test_2。
+      // 期待行为：由于都没有已掌握限制，2 个词都应当被正常捞出来学习
       final result = await LearningService.prepareTodayStudy(true);
       expect(result.success, true);
 
       final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       
-      // 验证最终分配中仅有 1 个词（即非掌握的 word_test_2），且已过滤掉已掌握的 word_test_1
-      expect(todayWords.length, 1);
-      expect(todayWords[0].wordId, 'word_test_2');
+      // 验证最终生词本补充了 2 个词，且没有任何词被已掌握排除
+      expect(todayWords.length, 2);
+      final wordIds = todayWords.map((w) => w.wordId).toList();
+      expect(wordIds.contains('word_test_1'), true);
+      expect(wordIds.contains('word_test_2'), true);
     });
   });
 }

@@ -589,6 +589,23 @@ class WordBo {
       // 2. 更新生词本的wordCount（并生成日志用于同步）
       await db.dictsDao.updateWordCount(rawWordDict.id, true);
 
+      // 3. 【联动重学】如果该单词当前在用户的"已掌握"词书中，自动将其移出"已掌握"
+      final masteredDict = await db.dictsDao.findUserMasteredDict(user.id);
+      if (masteredDict != null) {
+        final masteredDictWord = await (db.select(db.dictWords)
+              ..where((dw) => dw.dictId.equals(masteredDict.id) & dw.wordId.equals(word.id)))
+            .getSingleOrNull();
+        if (masteredDictWord != null) {
+          // 物理移出已掌握词书
+          await db.dictWordsDao.deleteEntity(masteredDictWord, true);
+          // 更新已掌握词书的单词计数
+          await db.dictsDao.updateWordCount(masteredDict.id, true);
+          // 更新用户已掌握总数
+          await db.masteredWordsDao.updateUserMasteredWordCount(user.id);
+          Global.logger.i('💡 [WordBo] 发现添加单词 ${word.spell} 是已掌握单词，已自动将其从已掌握中移除（退火重学）。');
+        }
+      }
+
       Global.logger.d('单词已添加到生词本: spell=$spell, wordId=${word.id}');
     });
 
