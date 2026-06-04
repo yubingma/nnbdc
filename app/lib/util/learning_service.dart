@@ -534,10 +534,13 @@ class LearningService {
     final masteredWordIdsSet = await db.masteredWordsDao.getMasteredWordIdSet(userId);
 
     // 获取用户已学习的单词 ID（作为排除项，只排除有学习记录的单词，未学习的“幽灵新词”不计入排除集以便重新提取）
+    // 【双重防御】同时排除本地 learningWords 表中已毕业的单词 ID
     final rows = await (db.selectOnly(db.learningWords)
           ..addColumns([db.learningWords.wordId])
           ..where(db.learningWords.userId.equals(userId) &
-              (db.learningWords.learnedTimes.isBiggerThanValue(0) | db.learningWords.lastLearningDate.isNotNull())))
+              (db.learningWords.learnedTimes.isBiggerThanValue(0) | 
+               db.learningWords.lastLearningDate.isNotNull() |
+               db.learningWords.stability.isBiggerOrEqualValue(Constants.graduationStability))))
         .get();
     final existingWordIdsSet = rows.map((row) => row.read(db.learningWords.wordId)!).toSet();
     if (excludeWordIds != null) {
@@ -592,7 +595,8 @@ class LearningService {
           }
 
           // 判断该单词是否已经掌握 (O(1) lookup in Set)
-          if (!learningDict.fetchMastered && masteredWordIdsSet.contains(wordId)) {
+          // 【根治】即使该词书的 fetchMastered 在数据库被异常置为 true（如生词本），在抓取新词时也必须严格过滤掉已掌握的单词
+          if (masteredWordIdsSet.contains(wordId)) {
             skippedByMastered++;
             continue;
           }

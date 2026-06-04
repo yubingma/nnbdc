@@ -933,5 +933,84 @@ void main() {
         expect(word.batchId, 1);
       }
     });
+
+    test('【生词本取词已掌握过滤验证】当词书设置 fetchMastered 为 true 时，补充提取新词也必须严格过滤已掌握单词', () async {
+      // 1. 创建用户的"已掌握"词书（确保 mastered_words 查询可以工作）
+      var masteredDictId = 'mock_dict_mastered_v3';
+      await db.into(db.dicts).insert(Dict(
+        id: masteredDictId,
+        name: '已掌握',
+        wordCount: 0,
+        isShared: false,
+        isReady: true,
+        ownerId: testUser.id,
+        visible: true,
+        editable: false,
+        deletable: false,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 2. 清理默认词书绑定，创建专门的临时词书，并设置 fetchMastered 为 true
+      final defaultDict = await (db.select(db.learningDicts)
+            ..where((ld) => ld.userId.equals(testUser.id) & ld.dictId.equals('mock_dict_1')))
+          .getSingle();
+      await db.learningDictsDao.deleteEntity(defaultDict, true);
+
+      final dictTestId = 'mock_dict_test_mastered';
+      await db.into(db.dicts).insert(Dict(
+        id: dictTestId,
+        name: '测试生词本',
+        wordCount: 2,
+        isShared: false,
+        isReady: true,
+        ownerId: testUser.id,
+        visible: true,
+        editable: true,
+        deletable: false,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      await db.into(db.learningDicts).insert(LearningDict(
+        userId: testUser.id,
+        dictId: dictTestId,
+        isPrivileged: false,
+        fetchMastered: true, // 模拟生词本的 fetchMastered = true
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 往该词书中加入 2 个单词 (word_test_1, word_test_2)
+      for (int i = 1; i <= 2; i++) {
+        final wordId = 'word_test_$i';
+        await db.into(db.words).insert(Word(
+          id: wordId, spell: 'test_$i', popularity: 100,
+          createTime: now, updateTime: now,
+        ));
+        await db.into(db.dictWords).insert(DictWord(
+          dictId: dictTestId, wordId: wordId, seq: i, unit: 0,
+          createTime: now, updateTime: now,
+        ));
+      }
+
+      // 3. 将 word_test_1 加入用户的已掌握列表中
+      await db.masteredWordsDao.saveMasteredWord(testUser.id, 'word_test_1', false, false);
+
+      // 4. 设置计划每日单词量为 2，执行备课
+      final updatedUser = testUser.copyWith(wordsPerDay: 2);
+      await db.usersDao.saveUser(updatedUser, false);
+      Global.updateUserCache(updatedUser);
+
+      // 期待行为：虽然 fetchMastered 为 true，但由于已掌握无条件过滤，word_test_1 绝对不会被捞出，只捞出 word_test_2
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      
+      // 验证最终分配中仅有 1 个词（即非掌握的 word_test_2），且已过滤掉已掌握的 word_test_1
+      expect(todayWords.length, 1);
+      expect(todayWords[0].wordId, 'word_test_2');
+    });
   });
 }
