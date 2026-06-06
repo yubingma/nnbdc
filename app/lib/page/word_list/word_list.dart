@@ -389,8 +389,17 @@ class WordListPageState extends State<WordListPage>
 
       // 3. 校验预测结果
       if (actualWordIndex == -1) {
-        // 拼写定位失败，使用书签物理位置回退
-        actualWordIndex = bookMark!.position;
+        // 拼写定位失败，检查书签物理位置是否越界
+        if (totalWordCount > 0 && bookMark!.position >= totalWordCount) {
+          Global.logger.w('WordListPage: 书签位置 ${bookMark!.position} 超过了总词数 $totalWordCount，重置为 0');
+          actualWordIndex = 0;
+        } else {
+          // 使用书签物理位置回退
+          actualWordIndex = bookMark!.position;
+        }
+      } else if (totalWordCount > 0 && actualWordIndex >= totalWordCount) {
+        Global.logger.w('WordListPage: 实际书签位置 $actualWordIndex 超过了总词数 $totalWordCount，重置为 0');
+        actualWordIndex = 0;
       }
       
       // 重新计算确切的分页参数
