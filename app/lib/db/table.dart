@@ -451,6 +451,7 @@ class MeaningItems extends Table {
   TextColumn get meaning => text()();
 
   IntColumn get popularity => integer().withDefault(const Constant(999))();
+  IntColumn get popularityPercent => integer().nullable()();
 
   DateTimeColumn get createTime => dateTime()();
   TextColumn get ownerId => text().withDefault(const Constant('15118'))();

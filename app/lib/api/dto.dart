@@ -97,11 +97,12 @@ class MeaningItemDto {
   final String ciXing;
   final String meaning;
   final int popularity;
+  final int? popularityPercent;
   final String? ownerId;
   final DateTime createTime;
   final DateTime updateTime;
 
-  MeaningItemDto(this.id, this.wordId, this.dictId, this.ciXing, this.meaning, this.popularity, this.ownerId, this.createTime, this.updateTime);
+  MeaningItemDto(this.id, this.wordId, this.dictId, this.ciXing, this.meaning, this.popularity, this.ownerId, this.createTime, this.updateTime, [this.popularityPercent]);
 
   factory MeaningItemDto.fromJson(Map<String, dynamic> json) {
     json['updateTime'] ??= json['createTime'];

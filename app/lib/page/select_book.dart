@@ -1313,6 +1313,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       final List<MeaningItem> meaningItems = <MeaningItem>[];
       for (int i = 0; i < srcMeaningItems.length; i++) {
         final meaningItem = srcMeaningItems[i];
+        // MeaningItem 实体构造器接收新参数 popularityPercent
         meaningItems.add(MeaningItem(
             id: meaningItem.id,
             wordId: meaningItem.wordId,
@@ -1320,6 +1321,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             ciXing: meaningItem.ciXing,
             meaning: meaningItem.meaning,
             popularity: meaningItem.popularity,
+            popularityPercent: meaningItem.popularityPercent,
             ownerId: meaningItem.ownerId ?? "",
             createTime: meaningItem.createTime,
             updateTime: meaningItem.updateTime));

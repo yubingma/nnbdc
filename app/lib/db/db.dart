@@ -250,7 +250,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 42;
+  int get schemaVersion => 43;
 
   @override
   MigrationStrategy get migration {
@@ -390,6 +390,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 42) {
             await _migrateFromV41ToV42AddMissingAuditColumns(m);
+          }
+          if (from < 43) {
+            await _migrateFromV42ToV43AddPopularityPercent(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -539,6 +542,14 @@ class MyDatabase extends _$MyDatabase {
           await customStatement('UPDATE "$tableName" SET update_time = 946656000 WHERE update_time IS NULL OR update_time = 0;');
         } catch (_) {}
       }
+    });
+  }
+
+  /// 从版本 42 升级到版本 43：在 meaning_items 表中添加 popularity_percent 字段
+  Future<void> _migrateFromV42ToV43AddPopularityPercent(Migrator m) async {
+    await transaction(() async {
+      // 这里的 popularityPercent 字段是由 build_runner 自动在 $MeaningItemsTable 中生成的 GeneratedColumn
+      await m.addColumn(meaningItems, meaningItems.popularityPercent);
     });
   }
 

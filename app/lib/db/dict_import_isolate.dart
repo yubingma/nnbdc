@@ -246,6 +246,7 @@ Future<void> _runImport({
         final List<MeaningItem> meaningItems = <MeaningItem>[];
         for (int i = 0; i < srcMeaningItems.length; i++) {
           final m = srcMeaningItems[i];
+          // MeaningItem 实体构造器由 Drift 自动生成，通过命名参数接收各属性（包含新属性 popularityPercent）
           meaningItems.add(MeaningItem(
               id: m.id,
               wordId: m.wordId,
@@ -253,6 +254,7 @@ Future<void> _runImport({
               ciXing: m.ciXing,
               meaning: m.meaning,
               popularity: m.popularity,
+              popularityPercent: m.popularityPercent,
               ownerId: m.ownerId ?? "",
               createTime: m.createTime,
               updateTime: m.updateTime));

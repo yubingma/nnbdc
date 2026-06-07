@@ -846,8 +846,9 @@ class MeaningItemVo {
   DictVo? dict;
   List<SynonymVo>? synonyms;
   List<SentenceVo>? sentences;
+  int? popularityPercent;
 
-  MeaningItemVo(this.id, this.ciXing, this.meaning, this.dict, this.synonyms, this.sentences);
+  MeaningItemVo(this.id, this.ciXing, this.meaning, this.dict, this.synonyms, this.sentences, [this.popularityPercent]);
 
   MeaningItemVo.from(this.ciXing, this.meaning);
 
