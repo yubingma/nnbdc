@@ -113,6 +113,9 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        profile {
+            signingConfig signingConfigs.release
+        }
         debug {
             signingConfig signingConfigs.release
             // 减少调试构建体积与安装时间
