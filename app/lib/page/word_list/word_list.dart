@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
@@ -14,7 +13,6 @@ import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
-import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -23,8 +21,6 @@ import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/widget/handwriting_board.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-
-import 'package:nnbdc/event/events.dart';
 import '../../api/api.dart';
 import '../../api/bo/word_bo.dart';
 import '../../db/db.dart';
@@ -46,6 +42,10 @@ import 'modes/speak_mode_item.dart';
 import 'modes/typing_mode_item.dart';
 import 'modes/handwriting_mode_item.dart';
 import 'modes/hide_mode_item.dart';
+import 'word_list_controller.dart';
+import 'word_list_asr_controller.dart';
+import 'widgets/handwriting_overlay.dart';
+import 'widgets/guide_overlay.dart';
 
 const String menuWordList = '浏览词表';
 const String menuWalkman = '随身听';
@@ -242,18 +242,13 @@ class WordListPageState extends State<WordListPage>
   int _renderWordCallCount = 0;
   final ValueNotifier<int> activeWordIndexNotifier = ValueNotifier<int>(-1);
   final ValueNotifier<bool> _rightZoneVisible = ValueNotifier<bool>(true);
-  double _handwritingRightPadding = 60.0;
-  Timer? _handwritingPaddingTimer;
 
   /// 语音识别通过规则：'ONE' (说出一个), 'HALF' (说出半数), 'ALL' (说出全部)
   String get asrPassRule => Prefs.read<String>('wordListAsrPassRule') ?? 'ONE';
 
-   late WordListPageArgs args;
+  late WordListPageArgs args;
   bool dataLoaded = false;
-  bool _showList = false; // 用于延迟渲染列表，提升进入动画流畅度
-  bool isQuerying = false;
   int totalWordCount = -1;
-  BookMarkVo? bookMark;
 
   /// 是否可以离开当前单词（用户回答正确的释义数量达到要求）
   bool canLeaveCurrWord = false;
@@ -262,39 +257,19 @@ class WordListPageState extends State<WordListPage>
   final ItemPositionsListener itemPositionsListener =
       ItemPositionsListener.create();
 
-  /// 上一次滚动通知的 extentAfter，用于判断是否已触底无法再滚
-  double _lastExtentAfter = double.infinity;
-
-  /// 单词列表界面最上方那个单词在所有单词中（包括那些在服务端，还未加载的）的序号（需要这个值是为了支持从中间某个位置加载单词列表）
   int? baseIndex;
-
-  /// 加载到界面的单词列表（其中第一个单词在所有单词中的序号为 baseIndex)
   List<WordWrapper> words = [];
 
-
-  /// 是否显示返回到顶部按钮
-
-  DateTime? lastQueryTime;
-
   Offset floatBtnPosition = const Offset(20.0, 20.0);
+  bool _controllerInitialized = false;
 
-  dynamic asrResult;
-
-  late Asr asr;
+  late final WordListController controller;
+  late final WordListAsrController asrController;
   late final StudyAudioSessionController _sessionController;
-  final ValueNotifier<double> _meterLevelNotifier = ValueNotifier<double>(0.0);
-  static const int _waveCapacity = 16; // 更短窗口，提升实时感（~0.35s）
-  final List<double> _waveLevels = <double>[];
 
   // ASR模型加载状态与动画控制器
-  bool _isAsrModelLoading = false; // 控制UI显示（大脑动画）
-  bool _isAsrProcessing = false; // 逻辑锁，防止重复启动（无论是否显示动画）
   late AnimationController _asrModelLoadingController;
   late AnimationController _glowController;
-  AsrLanguage? _lastAsrLanguage;
-
-  /// "请勿查询"标志，当此标志为true时，如果本来有查询动作（比如滚动到顶部或底部），该动作也不再执行
-  bool doNotQueryPlease = false;
 
   /// 是否显示新手引导
   bool showGuide = false;
@@ -302,11 +277,47 @@ class WordListPageState extends State<WordListPage>
   /// 菜单是否打开（用于控制iPad上的弹出菜单稳定性）
   bool isMenuOpen = false;
 
-  /// 已生成的 AI 短文缓存
-  AiStoryVo? _aiStory;
+  // 映射属性到控制器以保持原逻辑引用正常
+  AiStoryVo? get _aiStory => _controllerInitialized ? controller.aiStory : null;
+  set _aiStory(AiStoryVo? val) { if (_controllerInitialized) controller.aiStory = val; }
 
-  /// 识别出的“写错但合法”的单词，用于显示释义提示
-  WordVo? _detectedSimilarWord;
+  BookMarkVo? get bookMark => _controllerInitialized ? controller.bookMark : null;
+  set bookMark(BookMarkVo? val) { if (_controllerInitialized) controller.bookMark = val; }
+
+  set _lastExtentAfter(double val) { if (_controllerInitialized) controller.lastExtentAfter = val; }
+
+  bool get isQuerying => _controllerInitialized ? controller.isQuerying : false;
+  set isQuerying(bool val) { if (_controllerInitialized) controller.isQuerying = val; }
+
+  DateTime? get lastQueryTime => _controllerInitialized ? controller.lastQueryTime : null;
+  set lastQueryTime(DateTime? val) { if (_controllerInitialized) controller.lastQueryTime = val; }
+
+  bool get doNotQueryPlease => _controllerInitialized ? controller.doNotQueryPlease : false;
+  set doNotQueryPlease(bool val) { if (_controllerInitialized) controller.doNotQueryPlease = val; }
+
+  int? get _initialScrollIndex => _controllerInitialized ? controller.initialScrollIndex : null;
+
+  Asr get asr => asrController.asr;
+
+  String get asrResult => asrController.asrResult;
+  set asrResult(String val) { asrController.asrResult = val; }
+
+  String get handlingAsrChinese => asrController.handlingAsrChinese;
+  set handlingAsrChinese(String val) { asrController.handlingAsrChinese = val; }
+
+  bool get _isAsrModelLoading => asrController.isAsrModelLoading;
+  set _isAsrModelLoading(bool val) { asrController.isAsrModelLoading = val; }
+
+  bool get _isAsrProcessing => asrController.isAsrProcessing;
+  set _isAsrProcessing(bool val) { asrController.isAsrProcessing = val; }
+
+  AsrLanguage? get _lastAsrLanguage => asrController.lastAsrLanguage;
+  set _lastAsrLanguage(AsrLanguage? val) { asrController.lastAsrLanguage = val; }
+
+  List<double> get _waveLevels => asrController.waveLevels;
+  ValueNotifier<double> get _meterLevelNotifier => asrController.meterLevelNotifier;
+
+  set _detectedSimilarWord(WordVo? val) { asrController.detectedSimilarWord = val; }
 
   @override
   bool get wantKeepAlive => true; // 保持状态，避免页面重建
@@ -317,347 +328,47 @@ class WordListPageState extends State<WordListPage>
   Rect? _menuRect;
   final GlobalKey _overlayKey = GlobalKey();
 
-  clearQueryResult() {
-    //清空当前查询结果
-    words.clear();
-    // baseIndex = null;
-    _aiStory = null; // 刷新时也清空已缓存的 AI 短文
-  }
-
-  Future<void> loadData() async {
-    final swTotal = Stopwatch()..start();
-    final swInit = Stopwatch()..start();
-    
-    // 1. 先同步提取/校验参数，确保 args 对象已就绪
-    if (!await checkArgs()) {
-      return;
+  void clearQueryResult() {
+    if (_controllerInitialized) {
+      controller.clearQueryResult();
     }
-    Global.logger.d('WordListPage: checkArgs took ${swInit.elapsedMilliseconds}ms');
-    swInit.reset();
-
-    // 2. 参数就绪后，再异步加载书签
-    bookMark = await args.bookMarkProvider.getBookMark();
-    Global.logger.d('WordListPage: getBookMark took ${swInit.elapsedMilliseconds}ms');
-    swInit.reset();
-
-    final swGuide = Stopwatch()..start();
-    _checkAndShowGuide(); // 此时 args 肯定已经 ready
-    Global.logger.d('WordListPage: _checkAndShowGuide took ${swGuide.elapsedMilliseconds}ms');
-
-    if (isBookMarkValid(bookMark)) {
-      // --- 预测并行加载优化 ---
-      final swParallel = Stopwatch()..start();
-      
-      // 1. 基于缓存位置计算预测的分页参数
-      int predWordIndex = bookMark!.position;
-      int predCalculatedBase = (predWordIndex ~/ _pageSize) * _pageSize;
-      int predQueryIndex = predCalculatedBase;
-      int predQuerySize = _pageSize;
-
-      // 智能页补齐逻辑（预测版）
-      if (predWordIndex - predCalculatedBase < 10 && predCalculatedBase > 0) {
-        predQueryIndex = predCalculatedBase - _pageSize;
-        predQuerySize = _pageSize * 2;
-      } else if (predCalculatedBase + _pageSize - predWordIndex < 10) {
-        predQuerySize = _pageSize * 2;
-      }
-
-      // 预设基础索引，供 doQuery 使用
-      baseIndex = predQueryIndex;
-      _initialScrollIndex = predWordIndex - baseIndex!;
-      
-      // --- 串行化与精准验证优化 ---
-      // 1. 先进行极其快速的预测分页数据加载
-      final swQuery = Stopwatch()..start();
-      await doQuery(true, predQueryIndex, predQuerySize, false);
-      final queryMs = swQuery.elapsedMilliseconds;
-
-      int actualWordIndex = -1;
-      int localOffset = predWordIndex - predQueryIndex;
-      
-      // 2. 检查加载出来的数据在对应位置是否正好是该书签的单词（预测完美命中）
-      if (localOffset >= 0 && localOffset < words.length && words[localOffset].word.spell == bookMark!.spell) {
-        actualWordIndex = predWordIndex;
-        Global.logger.d('WordListPage: 书签预测完美命中！成功跳过 getWordIndex 数据库慢查询！(doQuery 耗时: ${queryMs}ms)');
-      } else {
-        // 预测不命中（说明词表由于单词增删等发生了变动），再回退到数据库查询进行重定位
-        final swIndex = Stopwatch()..start();
-        actualWordIndex = await args.wordsProvider.getWordIndex(bookMark!.spell);
-        Global.logger.w('WordListPage: 书签预测未命中或越界，回退查询 getWordIndex 耗时: ${swIndex.elapsedMilliseconds}ms, spell: ${bookMark!.spell}');
-      }
-      Global.logger.d('WordListPage: LoadData sequence matching completed in ${swParallel.elapsedMilliseconds}ms');
-
-      // 3. 校验预测结果
-      if (actualWordIndex == -1) {
-        // 拼写定位失败，检查书签物理位置是否越界
-        if (totalWordCount > 0 && bookMark!.position >= totalWordCount) {
-          Global.logger.w('WordListPage: 书签位置 ${bookMark!.position} 超过了总词数 $totalWordCount，重置为 0');
-          actualWordIndex = 0;
-        } else {
-          // 使用书签物理位置回退
-          actualWordIndex = bookMark!.position;
-        }
-      } else if (totalWordCount > 0 && actualWordIndex >= totalWordCount) {
-        Global.logger.w('WordListPage: 实际书签位置 $actualWordIndex 超过了总词数 $totalWordCount，重置为 0');
-        actualWordIndex = 0;
-      }
-      
-      // 重新计算确切的分页参数
-      int actualCalculatedBase = (actualWordIndex ~/ _pageSize) * _pageSize;
-      int actualQueryIndex = actualCalculatedBase;
-      int actualQuerySize = _pageSize;
-      if (actualWordIndex - actualCalculatedBase < 10 && actualCalculatedBase > 0) {
-        actualQueryIndex = actualCalculatedBase - _pageSize;
-        actualQuerySize = _pageSize * 2;
-      } else if (actualCalculatedBase + _pageSize - actualWordIndex < 10) {
-        actualQuerySize = _pageSize * 2;
-      }
-
-      // 4. 最终对齐：如果预测的分页区间不对，则需要执行补充加载（兜底）
-      if (actualQueryIndex != predQueryIndex || actualQuerySize != predQuerySize) {
-        Global.logger.w('书签预测命中失败（可能由于词表变动），执行补充加载: predIdx=$predQueryIndex, actualIdx=$actualQueryIndex');
-        baseIndex = actualQueryIndex;
-        _initialScrollIndex = actualWordIndex - baseIndex!; 
-        await doQuery(true, baseIndex!, actualQuerySize, false);
-      } else {
-        // 预测成功，只需更新书签对象中的位置即可
-        baseIndex = predQueryIndex;
-        _initialScrollIndex = actualWordIndex - baseIndex!;
-      }
-      
-      bookMark = BookMarkVo(actualWordIndex, bookMark!.spell);
-
-      // 数据和页面都准备好后，执行一次精准跳转
-      final swJump = Stopwatch()..start();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final swJumpExec = Stopwatch()..start();
-          jumpToBookMark(force: true);
-          Global.logger.d('WordListPage: jumpToBookMark execution took ${swJumpExec.elapsedMilliseconds}ms');
-        }
-      });
-      Global.logger.d('WordListPage: jumpToBookMark post frame callback registered in ${swJump.elapsedMilliseconds}ms');
-    } else {
-      // 没有书签：从第一页开始
-      baseIndex = 0;
-      await doQuery(true, baseIndex!, _pageSize, false);
-      // 自动设置首位书签：如果词表不为空且当前确实没有书签
-      if (words.isNotEmpty && bookMark == null) {
-        bookMark = BookMarkVo(0, words[0].word.spell);
-        args.bookMarkProvider.saveBookMark(bookMark!);
-      }
-    }
-
-    final swSetState = Stopwatch()..start();
-    setState(() {
-      dataLoaded = true;
-      _showList = true; // 数据加载完直接允许显示列表
-    });
-    Global.logger.d('WordListPage: setState load finish took ${swSetState.elapsedMilliseconds}ms');
-    
-    Global.logger.d('WordListPage: loadData total completed in ${swTotal.elapsedMilliseconds}ms');
-
-    // 数据加载完成后，如果当前是语音模式，启动ASR
-    if (studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final swAsr = Stopwatch()..start();
-          _restoreAsrIfNeeded('loadData');
-          Global.logger.d('WordListPage: _restoreAsrIfNeeded took ${swAsr.elapsedMilliseconds}ms');
-        }
-      });
-    }
-    Global.logger.d('WordListPage: loadData completed in ${swTotal.elapsedMilliseconds}ms (baseIndex=$baseIndex)');
   }
 
   Future<void> doQuery(bool clearCurrent, int fromIndex, final int pageSize,
       bool jumpToTailWhenReady) async {
-    /// 如果正在查询，或者当前时间和最后一次查询时间之差小于规定毫秒数，则不查询（保护服务端和UI性能）
-    fromIndex = fromIndex < 0 ? 0 : fromIndex;
-
-    if (isQuerying ||
-        doNotQueryPlease ||
-        (totalWordCount >= 0 && fromIndex >= totalWordCount) ||
-        (!clearCurrent &&
-            totalWordCount >= 0 &&
-            words.length >= totalWordCount &&
-            words.isNotEmpty) ||
-        fromIndex < 0 ||
-        (lastQueryTime != null &&
-            AppClock.now().difference(lastQueryTime!).inMilliseconds <
-                minQueryInterval)) {
-      return;
-    }
-
-    // 标记开始查询
-    isQuerying = true;
-
-    // 更新最后查询时间
-    lastQueryTime = AppClock.now();
-
-    //清除当前的查询结果
-    if (clearCurrent) {
-      clearQueryResult();
-    }
-
-    //查询
-    final swLoad = Stopwatch()..start();
-    await loadAPageOfWords(fromIndex, pageSize, jumpToTailWhenReady);
-    Global.logger.d('WordListPage: doQuery loadAPageOfWords took ${swLoad.elapsedMilliseconds}ms');
-
-    // 标记结束查询
-    isQuerying = false;
-  }
-
-  loadAPageOfWords(
-      final int fromIndex, final int pageSize, bool jumpToTailWhenReady) async {
-    try {
-      // 获取一页单词
-      final swGetAPage = Stopwatch()..start();
-      final result =
-          await args.wordsProvider.getAPageOfWords(fromIndex, pageSize);
-      Global.logger.d('WordListPage: getAPageOfWords DB query took ${swGetAPage.elapsedMilliseconds}ms (fromIndex=$fromIndex, pageSize=$pageSize)');
-
-      // 即使没有单词，也要更新totalWordCount
-      if (result.rows.isEmpty) {
-        setState(() {
-          totalWordCount = result.total;
-        });
-        return;
-      }
-
-      // 在setState之前计算所有需要的值，减少setState中的计算工作
-      int newTotalWordCount = result.total;
-      List<WordWrapper> newWords = List.from(words); // 创建新列表以避免直接修改原列表
-      int? newBaseIndex = baseIndex;
-
-      if (fromIndex < baseIndex!) {
-        // 向上滚动加载，从头部插入新数据
-        Global.logger.d(
-            '向上加载数据: fromIndex=$fromIndex, baseIndex=$baseIndex, 当前words长度=${words.length}');
-        var beforeLen = newWords.length;
-        var newData =
-            result.rows.where((element) => !words.contains(element)).toList();
-        for (var w in newData) {
-          w.currentProgress = args.wordProgressProvider.getWordProgress(w.tag);
-          w.maxProgress = args.wordProgressProvider.getWordProgressMax(w.tag);
-        }
-        Global.logger.d('向上加载新数据: 新数据数量=${newData.length}');
-        newWords.insertAll(0, newData);
-        // 更新baseIndex
-        var lenDelta = newWords.length - beforeLen;
-        newBaseIndex = baseIndex! - lenDelta;
-        Global.logger
-            .d('向上加载完成: 新baseIndex=$newBaseIndex, 新words长度=${newWords.length}');
-
-        // 向上加载后，需要调整滚动位置，避免连续触发向上加载
-        if (jumpToTailWhenReady == false) {
-          // 延迟调整滚动位置，确保UI更新完成
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            // 滚动到新插入数据的末尾位置，保持用户当前查看的内容在相同位置
-            itemScrollController.scrollTo(
-                index: lenDelta,
-                duration: const Duration(milliseconds: 100),
-                alignment: 0.5); // 显示在屏幕中部
-          });
-        }
-      } else {
-        // 向下滚动加载，从尾部添加新数据
-        final loadedRows = result.rows.where((element) => !words.contains(element)).toList();
-        for (var w in loadedRows) {
-          w.currentProgress = args.wordProgressProvider.getWordProgress(w.tag);
-          w.maxProgress = args.wordProgressProvider.getWordProgressMax(w.tag);
-        }
-        newWords.addAll(loadedRows);
-      }
-
-      // 更新状态
-      final swSetState = Stopwatch()..start();
-      setState(() {
-        totalWordCount = newTotalWordCount;
-        words = newWords;
-        baseIndex = newBaseIndex;
-
-        if (jumpToTailWhenReady) {
-          SchedulerBinding.instance.addPostFrameCallback((_) =>
-              itemScrollController.scrollTo(
-                  index: (words.length - 1),
-                  duration: const Duration(milliseconds: 300),
-                  alignment: _handwritingScrollAlignment)); // 显示在屏幕偏上部
-        }
-      });
-      Global.logger.d('WordListPage: loadAPageOfWords setState took ${swSetState.elapsedMilliseconds}ms');
-
-      // 异步加载学习状态和预取音频
-      final swAsync = Stopwatch()..start();
-      _loadLearningStatusForWords(result.rows);
-      _prefetchAudioForWords(result.rows);
-      Global.logger.d('WordListPage: loadAPageOfWords async trigger took ${swAsync.elapsedMilliseconds}ms');
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace,
-          logPrefix: '加载单词失败', showToast: false);
+    if (_controllerInitialized) {
+      await controller.doQuery(clearCurrent, fromIndex, pageSize, jumpToTailWhenReady);
     }
   }
 
-  Future<void> _loadLearningStatusForWords(List<WordWrapper> newWords) async {
-    final swLearning = Stopwatch()..start();
-    final wordIds = newWords
-        .where((w) => w.word.id != null && w.initialLearningStatus == null)
-        .map((w) => w.word.id!)
-        .toList();
-    if (wordIds.isEmpty) return;
-
-    final statusMap = await args.wordsProvider.getWordsLearningStatus(wordIds);
-    if (statusMap.isEmpty) return;
-
-    bool hasUpdates = false;
-    for (var wordWrapper in newWords) {
-      final wordId = wordWrapper.word.id;
-      if (wordId != null && statusMap.containsKey(wordId)) {
-        final status = statusMap[wordId];
-        if (status != null) {
-          wordWrapper.initialLearningStatus = status;
-          wordWrapper.currentLearningStatus = status;
-          hasUpdates = true;
-        }
-      }
-    }
-
-    if (mounted && hasUpdates) {
-      setState(() {});
-    }
-    Global.logger.d('WordListPage: _loadLearningStatusForWords for ${wordIds.length} words took ${swLearning.elapsedMilliseconds}ms');
-  }
-
-  void _prefetchAudioForWords(List<WordWrapper> newWords) {
-    if (newWords.isEmpty) return;
-    try {
-      final swPrefetch = Stopwatch()..start();
-      final urls = newWords.map((w) => Util.getWordSoundUrl(w.word.spell, word: w.word)).toList();
-      _sessionController.prefetchSounds(urls);
-      Global.logger.d('WordListPage: _prefetchAudioForWords for ${newWords.length} words took ${swPrefetch.elapsedMilliseconds}ms');
-    } catch (e) {
-      Global.logger.w('预取音频失败: $e');
+  void jumpToBookMark({bool force = false}) {
+    if (_controllerInitialized) {
+      controller.jumpToBookMark(force: force);
     }
   }
 
-  /// 获取第一个（最上方）可见的元素，没有则返回-1
+  scrollToWord(int wordUiIndex) {
+    if (_controllerInitialized) {
+      controller.scrollToWord(wordUiIndex);
+    }
+  }
+
+  int getBookMarkUiPosition() {
+    if (!_controllerInitialized) return -1;
+    return controller.getBookMarkUiPosition();
+  }
+
   int getFirstVisibleListItem() {
-    int? min;
-    var positions = itemPositionsListener.itemPositions.value;
-    if (positions.isNotEmpty) {
-      // Determine the first visible item by finding the item with the
-      // smallest trailing edge that is greater than 0.  i.e. the first
-      // item whose trailing edge in visible in the viewport.
-      min = positions
-          .where((ItemPosition position) => position.itemTrailingEdge > 0)
-          .reduce((ItemPosition min, ItemPosition position) =>
-              position.itemTrailingEdge < min.itemTrailingEdge ? position : min)
-          .index;
-    }
-    return min ?? -1;
+    if (!_controllerInitialized) return -1;
+    return controller.getFirstVisibleListItem();
   }
+
+  int getLastVisibleListItem() {
+    if (!_controllerInitialized) return -1;
+    return controller.getLastVisibleListItem();
+  }
+
+
 
   Widget _audioLevelBar({bool showDebugValue = false}) {
     final isDarkMode = context.read<DarkMode>().isDarkMode;
@@ -772,27 +483,10 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
-  /// 获取最后一个（最下方）可见的元素，没有则返回-1
-  int getLastVisibleListItem() {
-    int? max;
-    var positions = itemPositionsListener.itemPositions.value;
-    if (positions.isNotEmpty) {
-      // Determine the last visible item by finding the item with the
-      // greatest leading edge that is less than 1.  i.e. the last
-      // item whose leading edge in visible in the viewport.
-      max = positions
-          .where((ItemPosition position) => position.itemLeadingEdge < 1)
-          .reduce((ItemPosition max, ItemPosition position) =>
-              position.itemLeadingEdge > max.itemLeadingEdge ? position : max)
-          .index;
-    }
-    return max ?? -1;
-  }
 
 
 
-  int? _initialScrollIndex;
-  
+
   @override
   void initState() {
     final sw = Stopwatch()..start();
@@ -812,18 +506,12 @@ class WordListPageState extends State<WordListPage>
     WidgetsBinding.instance.addObserver(this);
 
     _sessionController = StudyAudioSessionController();
-    _sessionController.meterLevelNotifier.addListener(() {
+    asrController = WordListAsrController();
+    asrController.asr.addStateListener((state) {
       if (!mounted) return;
-      if (isMenuOpen) return;
-      final v = _sessionController.meterLevelNotifier.value;
-      _waveLevels.add(v);
-      if (_waveLevels.length > _waveCapacity) {
-        _waveLevels.removeRange(0, _waveLevels.length - _waveCapacity);
-      }
-      _meterLevelNotifier.value = v;
+      setState(() {});
     });
 
-    doInit();
     Global.logger.d('WordListPage: initState completed in ${sw.elapsedMilliseconds}ms');
   }
 
@@ -831,8 +519,41 @@ class WordListPageState extends State<WordListPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!dataLoaded) {
-      loadData();
+      _initAndLoadData();
     }
+  }
+
+  Future<void> _initAndLoadData() async {
+    if (!await checkArgs()) return;
+    
+    controller = WordListController(
+      args: args,
+      itemScrollController: itemScrollController,
+      itemPositionsListener: itemPositionsListener,
+      sessionController: _sessionController,
+    );
+    _controllerInitialized = true;
+    
+    controller.addListener(() {
+      if (mounted) {
+        setState(() {
+          dataLoaded = controller.dataLoaded;
+          words = controller.words;
+          totalWordCount = controller.totalWordCount;
+          baseIndex = controller.baseIndex;
+          bookMark = controller.bookMark;
+        });
+      }
+    });
+
+    asrController.asr.initAsr(_unifiedOnAsrResult);
+
+    await controller.loadData(
+      checkAndShowGuide: _checkAndShowGuide,
+      restoreAsrIfNeeded: (caller) {
+        _restoreAsrIfNeeded(caller);
+      },
+    );
   }
 
   /// 检查并显示新手引导
@@ -868,7 +589,7 @@ class WordListPageState extends State<WordListPage>
                     topLeft.dx, topLeft.dy, rb.size.width, rb.size.height);
                 Global.logger.d('菜单按钮位置: $_menuRect');
               } else {
-                Global.logger.w('未能获取菜单按钮位置: rb=$rb, topLeft=$topLeft');
+                Global.logger.w('未能获取菜单按钮位置');
               }
             } catch (e) {
               Global.logger.e('获取菜单按钮位置失败: $e');
@@ -921,137 +642,25 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
-  /// 正在进行匹配的asr输入，防止重复处理，影响性能
-  var handlingAsrChinese = "";
-
-  onAsrResult(event) async {
-    final startTime = DateTime.now().millisecondsSinceEpoch;
-    Global.logger.d("~~~~~收到语音识别原始结果: $event");
+  void _unifiedOnAsrResult(dynamic event) {
     if (!mounted) return;
-
-    // 解析逻辑移出 setState
-    String processedEvent = "";
-    try {
-      // 尝试解析JSON格式的候选结果
-      Map<String, dynamic>? resultData;
-      try {
-        resultData = jsonDecode(event);
-      } catch (e) {
-        // 如果不是JSON格式，当作单个结果处理
-        resultData = null;
-      }
-
-      if (studyMode == WordListStudyMode.speakEnglish) {
-        // ===== 背英文模式：启用音素模糊匹配 =====
-        final curr = getBookMarkUiPosition();
-        final target =
-            (curr >= 0 && curr < words.length) ? words[curr].word.spell : '';
-
-        if (resultData != null && resultData.containsKey('candidates')) {
-          // 处理多个候选结果
-          List<dynamic> candidates = resultData['candidates'];
-          List<String> candidateStrings =
-              candidates.map((e) => e.toString()).toList();
-
-          // 结合拼写相似度和音素相似度的智能选择 (Async)
-          // 结合拼写相似度和音素相似度的智能选择 (Async)
-          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
-              candidateStrings, target);
-          // 记录评分到当前单词
-          if (curr >= 0 && curr < words.length) {
-            words[curr].pronunciationScore = result.score;
-          }
-          // 进一步进行英文预处理
-          processedEvent = AsrUtil.preprocessEnglish(result.text, target);
-          Global.logger.d(
-              '~~~~~ASR (Phoneme): Selected & Preprocessed: "$processedEvent" (candidates: ${candidateStrings.length}, target: $target, score: ${result.score})');
-        } else {
-          // 单个结果处理
-          // 即使是单结果，也尝试与目标词进行音素匹配 check
-          // 先做一次预处理
-          final pre = AsrUtil.preprocessEnglish(event, target);
-          // 再通过音素匹配确认（把预处理结果作为唯一候选传进去）
-          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(
-              [pre], target);
-          processedEvent = result.text;
-          if (curr >= 0 && curr < words.length) {
-            words[curr].pronunciationScore = result.score;
-          }
-          Global.logger.d(
-              '~~~~~ASR (Phoneme): Single result: "$event" -> "$processedEvent" (target: $target, score: ${result.score})');
-        }
-
-        // 最后确保做一次标准英文预处理（通常上面的步骤已经覆盖，但为了保险再做一次）
-        processedEvent = AsrUtil.preprocessEnglish(processedEvent, target);
-      } else {
-        // ===== 其他模式 (背中文等) =====
-        // 直接使用最高排名的候选词，追求极致响应速度，不做二次筛选
-        if (resultData != null && resultData.containsKey('candidates')) {
-          List<dynamic> candidates = resultData['candidates'];
-          processedEvent = resultData['best'] ?? candidates.first.toString();
-        } else {
-          processedEvent = event;
-        }
-      }
-    } catch (e) {
-      Global.logger.e("语音识别结果处理错误: $e");
-      processedEvent = event;
-    }
-
-    if (!mounted) return;
-
-    // 如果当前有弹出层（如菜单、对话框）或新手引导正在显示，忽略语音结果，
-    // 避免频繁的 setState 导致 iPad 上的 Popover (弹出菜单) 失去锚点并关闭。
-    if (isMenuOpen || showGuide) {
-      return;
-    }
-
-    // 计算新的 asrResult
-    String newAsrResult = "";
-    if (studyMode == WordListStudyMode.speakEnglish) {
-      newAsrResult = processedEvent;
-    } else {
-      // 背中文等模式：进行中文预处理
-      newAsrResult = AsrUtil.preprocess(processedEvent);
-    }
-
-    Global.logger.d("~~~~~语音识别最终结果: $newAsrResult (耗时: ${DateTime.now().millisecondsSinceEpoch - startTime}ms)");
+    if (isMenuOpen || showGuide) return;
     
-    // 仅当结果变化时才触发 setState，减少UI重建
-    if (newAsrResult != asrResult) {
-      setState(() {
-        asrResult = newAsrResult;
-        int activeIdx = getBookMarkUiPosition();
-        if (activeIdx >= 0 && activeIdx < words.length) {
-          words[activeIdx].lastAsrResult = asrResult;
-        }
-        if (asrResult.isNotEmpty) {
-          if (asrResult != handlingAsrChinese) {
-            handlingAsrChinese = asrResult;
-            checkAsrResult(asrResult);
-          }
-        }
-      });
-    } else {
-      // 结果未变化，通过逻辑检查是否需要处理（不触发UI更新）
-      if (newAsrResult.isNotEmpty && newAsrResult != handlingAsrChinese) {
-        handlingAsrChinese = newAsrResult;
-        checkAsrResult(newAsrResult);
-      }
-    }
-  }
+    final bookmarkedIndex = getBookMarkUiPosition();
+    final targetWord = (bookmarkedIndex >= 0 && bookmarkedIndex < words.length)
+        ? words[bookmarkedIndex]
+        : null;
+    final targetSpell = targetWord?.word.spell ?? "";
 
-  /// 当前并行的asr任务数量（由于协程，并发是可能的）
-  int runningAsrTaskCount = 0;
-
-  _incRunningAsrTaskCount() {
-    runningAsrTaskCount++;
-    Global.logger.d('runningAsrTaskCount增加至$runningAsrTaskCount');
-  }
-
-  _decRunningAsrTaskCount() {
-    runningAsrTaskCount--;
-    Global.logger.d('runningAsrTaskCount减少至$runningAsrTaskCount');
+    asrController.onAsrResult(
+      event,
+      studyMode: studyMode,
+      targetSpell: targetSpell,
+      activeWord: targetWord,
+      onMatchChecked: (matchedResult) {
+        checkAsrResult(matchedResult);
+      },
+    );
   }
 
   /// 检查语音识别结果是否匹配单词的意思
@@ -1068,7 +677,6 @@ class WordListPageState extends State<WordListPage>
       return;
     }
 
-    _incRunningAsrTaskCount();
     try {
       if (studyMode == WordListStudyMode.speakEnglish) {
         // 背英文模式：检查英文拼写
@@ -1195,8 +803,6 @@ class WordListPageState extends State<WordListPage>
       }
     } catch (e) {
       Global.logger.e("检查语音识别结果时出错: $e");
-    } finally {
-      _decRunningAsrTaskCount();
     }
   }
 
@@ -1207,35 +813,6 @@ class WordListPageState extends State<WordListPage>
       return AsrLanguage.english;
     }
     return AsrLanguage.chinese;
-  }
-
-  doInit() {
-    asr = Asr();
-    // 延迟初始化 ASR，避免阻塞页面进入动画
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (!mounted) return;
-      // 只有在语音学习模式下才初始化监听器并尝试恢复 ASR
-      if (studyMode == WordListStudyMode.speakChinese ||
-          studyMode == WordListStudyMode.speakEnglish) {
-        asr.initAsr(onAsrResult);
-      } else {
-        // 如果是普通列表或默写等非语音模式，确保 ASR 是停止的（防止从上个页面残留）
-        if (asr.state == AsrState.started) {
-          Global.logger.d('WordList: 非语音模式，确保停止残留的 ASR 引擎');
-          _sessionController.stopSession(forceStopMicrophone: true);
-        }
-      }
-    });
-    
-    asr.addStateListener((state) {
-      if (!mounted) return;
-      Future.microtask(() {
-        if (!mounted) return;
-        setState(() {
-          // 触发 UI 重绘以更新 ASR 状态指示器
-        });
-      });
-    });
   }
 
   Future<bool> checkArgs() async {
@@ -1275,7 +852,6 @@ class WordListPageState extends State<WordListPage>
   @override
   void dispose() {
     final sw = Stopwatch()..start();
-    _handwritingPaddingTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
     // 停止 ASR：不再检查 studyMode，只要页面销毁就无条件尝试停止识别引擎并转换状态机到 idle
@@ -1286,10 +862,10 @@ class WordListPageState extends State<WordListPage>
       Global.logger.d("dispose: 停止 ASR 失败：$e");
     }
 
-    _waveLevels.clear();
-    _meterLevelNotifier.dispose();
     _asrModelLoadingController.dispose();
     _glowController.dispose();
+    controller.dispose();
+    asrController.dispose();
 
     // 释放所有 WordWrapper 中的资源，移至下一个 Event Loop 执行，避免阻塞 Pop 动画和主页面
     final wordsToDispose = List<WordWrapper>.from(words);
@@ -1360,100 +936,12 @@ class WordListPageState extends State<WordListPage>
   /// 初始化并启动ASR的通用方法
   void _initializeAndStartAsr() {
     // 重新初始化事件监听，确保事件订阅有效（类似bdc.dart中的处理）
-    asr.initAsr(onAsrResult);
+    asr.initAsr(_unifiedOnAsrResult);
     // 然后启动ASR（内部会加载模型、启动麦克风、设置热词、播放提示音）
     _startAsr(decideAsrLanguage());
   }
 
-  void jumpToBookMark({bool force = false}) {
-    if (isBookMarkValid(bookMark)) {
-      final bookMarkUiPos = getBookMarkUiPosition();
-      if (bookMarkUiPos == -1 || bookMarkUiPos >= words.length) {
-        return;
-      }
 
-      // 确保数据已加载完成且控制器已挂载
-      if (!dataLoaded || words.isEmpty || !itemScrollController.isAttached) {
-        return;
-      }
-
-      // 执行滚动
-      // 优化：针对短列表或页首单词，避免 alignment 导致的上方大面积空白
-      double finalAlignment = _handwritingScrollAlignment;
-      if (totalWordCount < 8 || (baseIndex == 0 && bookMarkUiPos < 3)) {
-        finalAlignment = 0.0;
-      }
-
-      if (force) {
-        // 使用 jumpTo 替代 scrollTo 实现“瞬时成功”，避免进入页面时的滚动过程干扰
-        itemScrollController.jumpTo(
-            index: bookMarkUiPos, alignment: finalAlignment);
-        _initialScrollIndex = null; // 清除标志，防止重复跳转
-        return;
-      }
-
-      // 正常模式下的位置检查逻辑（防抖）
-      var positions = itemPositionsListener.itemPositions.value;
-      if (positions.isNotEmpty) {
-        // 找到当前单词的位置信息
-        var currentPosition =
-            positions.where((pos) => pos.index == bookMarkUiPos).firstOrNull;
-        if (currentPosition != null) {
-          // 如果单词已经在合适位置附近（误差在5%以内），不需要滚动
-          if (currentPosition.itemLeadingEdge >= finalAlignment - 0.05 &&
-              currentPosition.itemLeadingEdge <= finalAlignment + 0.05) {
-            return;
-          }
-        }
-      }
-
-      // 正常运行时的滚动（带动画，提升视觉连续性）
-      itemScrollController.scrollTo(
-          index: bookMarkUiPos,
-          duration: const Duration(milliseconds: 300),
-          alignment: finalAlignment);
-    }
-  }
-
-  scrollToWord(int wordUiIndex) {
-    if (wordUiIndex < 0 || wordUiIndex >= words.length) return;
-
-    // 确保数据已加载完成
-    if (!dataLoaded || words.isEmpty) {
-      return;
-    }
-
-    // 已经触底（extentAfter ≈ 0），无法再往下滚，强行滚会与物理边界冲突导致晃动
-    if (_lastExtentAfter <= 1) {
-      return;
-    }
-
-    // 将前一个单词对齐到顶部 0.0，使当前单词保持在第二个位置
-    final int targetIndex = wordUiIndex > 0 ? wordUiIndex - 1 : 0;
-
-    // 防抖：如果目标单词已经在顶部，无需滚动
-    var positions = itemPositionsListener.itemPositions.value;
-    if (positions.isNotEmpty) {
-      var targetPos =
-          positions.where((pos) => pos.index == targetIndex).firstOrNull;
-      if (targetPos != null && targetPos.itemLeadingEdge.abs() < 0.05) {
-        return;
-      }
-    }
-
-    if (itemScrollController.isAttached) {
-      itemScrollController.jumpTo(index: targetIndex, alignment: 0.0);
-    }
-  }
-
-  int getBookMarkUiPosition() {
-    if (isBookMarkValid(bookMark)) {
-      int position = bookMark!.position - baseIndex!;
-      return position >= 0 ? position : -1; // 防止返回负值
-    } else {
-      return -1;
-    }
-  }
 
   Widget renderPage() {
     return Stack(
@@ -1610,7 +1098,7 @@ class WordListPageState extends State<WordListPage>
     if (!mounted) return;
 
     // 确保监听器已初始化
-    asr.initAsr(onAsrResult);
+    asr.initAsr(_unifiedOnAsrResult);
 
     // 如果已经在处理中（无论是否显示动画），都不再重复启动
     if (_isAsrProcessing) {
@@ -1959,197 +1447,17 @@ class WordListPageState extends State<WordListPage>
 
   @override
   onDelBtnPressed(WordWrapper word, int index) {
-    final start = DateTime.now().millisecondsSinceEpoch;
-    Global.logger.d('[Perf] onDelBtnPressed START: word=${word.word.spell}, index=$index');
-    
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (!mounted) return;
-      final apiStart = DateTime.now().millisecondsSinceEpoch;
-      Global.logger.d('[Perf] onDelBtnPressed API_START: delay=${apiStart - start}ms');
-
-      args.wordsProvider.deleteWord(word).then((value) {
-        final apiEnd = DateTime.now().millisecondsSinceEpoch;
-        Global.logger.d('[Perf] onDelBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
-        
-        if (value) {
-          // 发布事实：从词表中删除了单词
-          EventBus.publishWordDeletedFromWordList(WordDeletedFromWordListEvent(wordId: word.word.id.toString()));
-          
-          // 判断是否应该从UI上移除单词
-        // 如果是今日学习相关的列表（包括分批次学习的阶段列表），并且今日学习已经正式开始，则不从UI移除记录，只更新状态
-        // 这样可以保持今日学习单词表的记录总数不变，符合已经开始后的预期
-        final String providerType = args.wordsProvider.runtimeType.toString();
-        final bool isTodayTask = providerType == 'StageWordsProvider' ||
-            ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表']
-                .contains(args.appBarTitle);
-        final bool todayStudyStarted =
-            Global.getLoggedInUser()?.todayStudyStarted ?? false;
-
-        if (todayStudyStarted && isTodayTask) {
-          // 仅更新状态，不从UI移除
-          setState(() {
-            word.currentLearningStatus = true;
-            // 同时更新进度条显示逻辑所依赖的 tag 数据
-            if (word.tag is LearningWordVo) {
-              (word.tag as LearningWordVo).stability = 180.0;
-            }
-          });
-          Global.logger.d('[Perf] onDelBtnPressed STATE_UPDATED (todayTask)');
-          return;
-        }
-
-        // 默认行为：从UI移除单词并更新书签
-        setState(() {
-          words.remove(word);
-          totalWordCount--;
-        });
-        Global.logger.d('[Perf] onDelBtnPressed STATE_UPDATED (removed)');
-
-        // 更新书签
-        if (isBookMarkValid(bookMark)) {
-          final bookMarkPosition = getBookMarkRawPosition(bookMark);
-          if (index + baseIndex! < bookMarkPosition &&
-              bookMarkPosition <= words.length + baseIndex!) {
-            var word = words[bookMarkPosition - baseIndex! - 1];
-            setState(() {
-              bookMark = BookMarkVo(bookMarkPosition - 1, word.word.spell);
-            });
-
-              args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
-                Global.logger.d('[Perf] onDelBtnPressed BOOKMARK_UPDATED: success=$success');
-              });
-            }
-          }
-
-          if (words.length < minWordCount) {
-            doQuery(false, baseIndex! + words.length, _pageSize, false);
-          }
-        }
-      });
-    });
+    controller.deleteWord(word, index);
   }
 
   @override
   onMasterBtnPressed(WordWrapper word, int index) {
-    Global.logger.d('[Perf] onMasterBtnPressed START: word=${word.word.spell}');
-
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (!mounted) return;
-      final apiStart = DateTime.now().millisecondsSinceEpoch;
-
-      args.wordsProvider.masterWord(word).then((value) {
-        final apiEnd = DateTime.now().millisecondsSinceEpoch;
-        Global.logger.d('[Perf] onMasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
-
-        if (value) {
-          // 发布事实：标记了单词为掌握
-          EventBus.publishWordMastered(WordMasteredEvent(wordId: word.word.id.toString()));
-
-          final String providerType = args.wordsProvider.runtimeType.toString();
-          final bool isTodayTask = providerType == 'StageWordsProvider' ||
-              ['学习中', '今日错词', '今日新词', '今日旧词', '今日单词', '单词列表']
-                  .contains(args.appBarTitle);
-          final bool todayStudyStarted =
-              Global.getLoggedInUser()?.todayStudyStarted ?? false;
-
-          if ((todayStudyStarted && isTodayTask) ||
-              args.wordsProvider.keepWordsOnMaster) {
-            setState(() {
-              word.currentLearningStatus = true;
-              if (word.tag is LearningWordVo) {
-                (word.tag as LearningWordVo).stability = 180.0;
-              }
-              // 同步更新进度条
-              word.currentProgress = word.maxProgress;
-            });
-            Global.logger.d('[Perf] onMasterBtnPressed STATE_UPDATED (keep)');
-            return;
-          }
-
-          setState(() {
-            word.currentLearningStatus = true;
-            if (word.tag is LearningWordVo) {
-              (word.tag as LearningWordVo).stability = 180.0;
-            }
-            // 同步更新进度条
-            word.currentProgress = word.maxProgress;
-            words.remove(word);
-            totalWordCount--;
-          });
-          Global.logger.d('[Perf] onMasterBtnPressed STATE_UPDATED (removed)');
-
-          if (isBookMarkValid(bookMark)) {
-            final bookMarkPosition = getBookMarkRawPosition(bookMark);
-            if (index + baseIndex! < bookMarkPosition &&
-                bookMarkPosition <= words.length + baseIndex!) {
-              var word = words[bookMarkPosition - baseIndex! - 1];
-              setState(() {
-                bookMark = BookMarkVo(bookMarkPosition - 1, word.word.spell);
-              });
-              args.bookMarkProvider.saveBookMark(bookMark!).then((success) {
-                Global.logger.d('[Perf] onMasterBtnPressed BOOKMARK_UPDATED: success=$success');
-              });
-            }
-          }
-
-          if (words.length < minWordCount) {
-            doQuery(false, baseIndex! + words.length, _pageSize, false);
-          }
-        }
-      });
-    });
+    controller.masterWord(word, index);
   }
 
   @override
   onUnmasterBtnPressed(WordWrapper word, int index) {
-    Global.logger.d('[Perf] onUnmasterBtnPressed START: word=${word.word.spell}');
-
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (!mounted) return;
-      final initialStatus = word.initialLearningStatus;
-      final apiStart = DateTime.now().millisecondsSinceEpoch;
-      Global.logger.d('[Perf] onUnmasterBtnPressed PATH: initialStatus=$initialStatus');
-
-      args.wordsProvider.unmasterWord(word).then((value) {
-        final apiEnd = DateTime.now().millisecondsSinceEpoch;
-        Global.logger.d('[Perf] onUnmasterBtnPressed API_END: duration=${apiEnd - apiStart}ms, success=$value');
-        if (value) {
-          // 发布事实：取消了单词的掌握状态
-          EventBus.publishWordUnMastered(WordUnMasteredEvent(wordId: word.word.id.toString()));
-
-          if (initialStatus == true && !args.wordsProvider.keepWordsOnMaster) {
-            setState(() {
-              words.remove(word);
-              totalWordCount--;
-            });
-            if (isBookMarkValid(bookMark)) {
-              final bookMarkPosition = getBookMarkRawPosition(bookMark);
-              if (index + baseIndex! < bookMarkPosition &&
-                  bookMarkPosition <= words.length + baseIndex!) {
-                var prevWord = words[bookMarkPosition - baseIndex! - 1];
-                setState(() {
-                  bookMark = BookMarkVo(bookMarkPosition - 1, prevWord.word.spell);
-                });
-                args.bookMarkProvider.saveBookMark(bookMark!).then((success) {});
-              }
-            }
-            if (words.length < minWordCount) {
-              doQuery(false, baseIndex! + words.length, _pageSize, false);
-            }
-          } else {
-            setState(() {
-              word.currentLearningStatus = initialStatus;
-              if (word.tag is LearningWordVo) {
-                (word.tag as LearningWordVo).stability = 0.0;
-              }
-              // 同步更新进度条
-              word.currentProgress = 0.0;
-            });
-            Global.logger.d('[Perf] onUnmasterBtnPressed STATE_UPDATED');
-          }
-        }
-      });
-    });
+    controller.unmasterWord(word, index);
   }
 
   Color progressColor(WordWrapper word) {
@@ -2669,16 +1977,7 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
-  void _clearHandwritingHints(WordWrapper? word) {
-    if (_detectedSimilarWord != null || (word?.hintLetterCount ?? 0) > 0) {
-      setState(() {
-        _detectedSimilarWord = null;
-        if (word != null) {
-          word.hintLetterCount = 0;
-        }
-      });
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -3401,7 +2700,7 @@ class WordListPageState extends State<WordListPage>
                       end: Alignment.bottomCenter,
                     ),
                   ),
-                  child: (!dataLoaded || !_showList)
+                  child: (!dataLoaded)
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -3441,8 +2740,33 @@ class WordListPageState extends State<WordListPage>
         ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar
         if (showGuide) _buildGuideOverlay(),
+        if (_isSwitchingMode) _buildSwitchingModeOverlay(isDarkMode),
         if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)
-          _buildHandwritingOverlay(isDarkMode),
+          HandwritingOverlay(
+            isDarkMode: isDarkMode,
+            appBarHeight: MediaQuery.of(context).padding.top + kToolbarHeight,
+            activeWord: (getBookMarkUiPosition() >= 0 && getBookMarkUiPosition() < words.length)
+                ? words[getBookMarkUiPosition()]
+                : null,
+            bookmarkedIndex: getBookMarkUiPosition(),
+            words: words,
+            studyMode: studyMode,
+            rightZoneVisible: _rightZoneVisible,
+            handwritingBoardKey: _handwritingBoardKey,
+            giveALittleHint: giveALittleHint,
+            clearHint: clearHint,
+            onCancel: () {
+              setState(() {
+                _isHandwritingOverlayOpen = false;
+              });
+            },
+            onWordAnswered: (idx) {
+              jumpToNextWord(idx, false, () {});
+            },
+            onWordPrevious: (idx) {
+              jumpToPreviousWord(idx, false);
+            },
+          ),
       ],
       ),
     );
@@ -3454,226 +2778,48 @@ class WordListPageState extends State<WordListPage>
 
   /// 构建新手引导覆盖层
   Widget _buildGuideOverlay() {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final safePadding = MediaQuery.of(context).padding;
-
-    final double defaultTop = safePadding.top + kToolbarHeight + 8;
-
-    // 覆盖层现在在Stack顶层，和AppBar同一坐标系，直接使用全局坐标
-    final double appBarTotalHeight = safePadding.top + kToolbarHeight;
-
-    // 箭头组件的顶部位置：让箭头尖端对齐到图标底部
-    // PopupMenuButton的Container高56px，实际图标约24px在中心，所以图标底部约在中心+12
-    final double columnTop = _menuRect != null
-        ? _menuRect!.center.dy + 12 // 直接使用全局坐标，不需要转换
-        : defaultTop;
-
-    // 箭头长度：固定值
-    const double arrowHeight = 30.0;
-
-    Global.logger.d('构建引导覆盖层详细信息:');
-    Global.logger.d('  _menuRect: $_menuRect');
-    Global.logger.d('  图标顶部: ${_menuRect?.top}');
-    Global.logger.d('  图标底部: ${_menuRect?.bottom}');
-    Global.logger.d('  图标中心: ${_menuRect?.center}');
-    Global.logger.d('  safePadding.top: ${safePadding.top}');
-    Global.logger.d('  kToolbarHeight: $kToolbarHeight');
-    Global.logger.d('  appBarTotalHeight: $appBarTotalHeight');
-    Global.logger.d('  columnTop (箭头Y in body): $columnTop');
-    Global.logger.d('  屏幕宽度: $screenWidth');
-
-    return GestureDetector(
-      onTap: () {
-        // 点击遮罩层只关闭，不标记为已显示
-        _closeGuide();
-      },
-      child: Container(
-        key: _overlayKey,
-        color: Colors.black.withValues(alpha: 0.7),
-        child: Stack(
-          children: [
-            // 箭头 - 单独定位
-            Positioned(
-              top: columnTop,
-              left: _menuRect != null ? _menuRect!.center.dx - 1.5 : null,
-              right: _menuRect == null ? 24.0 : null,
-              child: CustomPaint(
-                size: const Size(3, arrowHeight),
-                painter: _ArrowPainter(isDarkMode),
-              ),
-            ),
-            // 提示气泡 - 单独定位
-            Positioned(
-              top: columnTop + arrowHeight + 2,
-              right: 16.0,
-              child: GestureDetector(
-                onTap: () {
-                  // 阻止事件冒泡，避免点击气泡内容时关闭
-                },
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 280),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        AppTheme.gradientStartColor,
-                        AppTheme.gradientEndColor,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.lightbulb,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            '新手提示',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              decoration: TextDecoration.none,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '这里有一些有趣的功能，你可以试试看:',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          height: 1.5,
-                          fontWeight: FontWeight.w400,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildMenuItem(Icons.list_alt, '词表浏览'),
-                      _buildMenuItem(Icons.headphones, '随身听'),
-                      // 根据平台支持情况动态显示功能
-                      if (PlatformUtils.isAsrSupported())
-                        _buildMenuItem(Icons.record_voice_over, '背中文'),
-                      if (PlatformUtils.isEnglishAsrSupported())
-                        _buildMenuItem(Icons.record_voice_over, '背英文'),
-                      _buildMenuItem(Icons.edit, '默写'),
-                      const SizedBox(height: 16),
-                      // 不再显示按钮
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // 点击按钮标记为不再显示
-                            _dismissGuideForever();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: const Text(
-                            '不再显示',
-                            style: TextStyle(
-                              fontSize: 14,
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            if (_isSwitchingMode)
-              Container(
-                color: Colors.black.withValues(alpha: 0.3),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? Colors.grey[850] : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '模式切换中...',
-                          style: TextStyle(
-                            color: isDarkMode ? Colors.white70 : Colors.black87,
-                            fontSize: 14,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+    return GuideOverlay(
+      onClose: _closeGuide,
+      onDismissForever: _dismissGuideForever,
+      menuRect: _menuRect,
+      overlayKey: _overlayKey,
     );
   }
 
-  /// 构建菜单项
-  Widget _buildMenuItem(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, top: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: Colors.white70,
-            size: 16,
+  Widget _buildSwitchingModeOverlay(bool isDarkMode) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.3),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.grey[850] : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+              )
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              height: 1.3,
-              fontWeight: FontWeight.w400,
-              decoration: TextDecoration.none,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '模式切换中...',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white70 : Colors.black87,
+                  fontSize: 14,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -3949,324 +3095,6 @@ class WordListPageState extends State<WordListPage>
   }
 
 
-  Widget _buildHandwritingOverlay(bool isDarkMode) {
-    final swOverlay = Stopwatch()..start();
-    Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [_buildHandwritingOverlay 开始构造]');
-    final double appBarHeight = MediaQuery.of(context).padding.top + kToolbarHeight;
-    
-    final bookmarkedIndex = getBookMarkUiPosition();
-    WordWrapper? activeWord;
-    if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
-      activeWord = words[bookmarkedIndex];
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      swOverlay.stop();
-      Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [_buildHandwritingOverlay 组件渲染挂载完毕] 耗时: ${swOverlay.elapsedMilliseconds}ms');
-      if (Global.openPencilStopwatch.isRunning) {
-        Global.openPencilStopwatch.stop();
-        Global.logger.d('🔥 [超级大盘点] 从菜单点击到手写物理像素上屏，用户肉眼经历的真实总耗时：${Global.openPencilStopwatch.elapsedMilliseconds}ms');
-      }
-    });
-
-    return Positioned(
-      top: appBarHeight,
-      left: 0,
-      right: 0, // 占满全宽
-      bottom: 0,
-      child: Stack(
-        children: [
-          // 1. 左侧手写画板区域
-          Positioned(
-            left: 0,
-            right: _handwritingRightPadding,
-            top: 0,
-            bottom: 0,
-            child: Container(
-              color: Colors.transparent,
-              child: HandwritingBoard(
-                key: _handwritingBoardKey,
-                showHeader: false,
-                showCloseButton: false, 
-                useBoxDecoration: false,
-                showCanvasButtons: true, 
-                enableNavigationGestures: false,
-                smartRightZoneWidth: 0, 
-                rightZoneVisibleNotifier: _rightZoneVisible, 
-                onHint: () {
-                  if (activeWord != null) {
-                    giveALittleHint(activeWord);
-                  }
-                },
-                onUndo: () => _clearHandwritingHints(activeWord),
-                onRewrite: () => _clearHandwritingHints(activeWord),
-                onStartWriting: () {
-                  _handwritingPaddingTimer?.cancel();
-                  _clearHandwritingHints(activeWord);
-                  if (_handwritingRightPadding != 0) {
-                    setState(() {
-                      _handwritingRightPadding = 0;
-                    });
-                  }
-                },
-                onPointerUp: () {
-                  _handwritingPaddingTimer?.cancel();
-                  _handwritingPaddingTimer = Timer(const Duration(milliseconds: 500), () {
-                    if (mounted && _handwritingRightPadding != 60) {
-                      setState(() {
-                        _handwritingRightPadding = 60;
-                      });
-                    }
-                  });
-                },
-                onRecognized: (text) async {
-                  final targetWord = activeWord;
-                  if (targetWord != null) { 
-                    // 智能容错：处理 Google ML Kit 经常将手写 c/l 识别为 d 的物理误判
-                    // 智能容错：终极 NLP 锚点距离感知算法 (USER 构想之神级实现)
-                    String processedText = "";
-                    final String lowerTarget = targetWord.word.spell.toLowerCase();
-                    
-                    // 1. 提取正确单词中所有 D、CL 的【物理锚点序列】
-                    List<Map<String, dynamic>> anchors = [];
-                    for (int i = 0; i < lowerTarget.length; i++) {
-                      if (lowerTarget[i] == 'd') {
-                        anchors.add({'idx': i, 'type': 'd'});
-                      } else if (lowerTarget[i] == 'c' && (i + 1) < lowerTarget.length && lowerTarget[i + 1] == 'l') {
-                        anchors.add({'idx': i, 'type': 'cl'});
-                      }
-                    }
-                    
-                    // 2. 遍历用户输入的 text，基于“物理距离最近”判定真伪
-                    for (int idx = 0; idx < text.length; idx++) {
-                      final iChar = text[idx].toLowerCase();
-                      if ((iChar == 'd' || iChar == 'c') && anchors.isNotEmpty) {
-                        Map<String, dynamic> nearestAnchor = anchors[0];
-                        int minDistance = (idx - (anchors[0]['idx'] as int)).abs();
-                        
-                        for (final anchor in anchors) {
-                          final int dist = (idx - (anchor['idx'] as int)).abs();
-                          // 如果在同样的距离内发现类型匹配的锚点，优先选择匹配的类型，防止“误纠正”
-                          if (dist < minDistance || (dist == minDistance && anchor['type'] == iChar)) {
-                            minDistance = dist;
-                            nearestAnchor = anchor;
-                          }
-                        }
-                        
-                        // D 与 CL 连写容错
-                        if (iChar == 'd' && nearestAnchor['type'] == 'cl') {
-                          processedText += (text[idx] == 'D') ? 'CL' : 'cl';
-                          continue;
-                        }
-                      }
-                      processedText += text[idx];
-                    }
-                    
-                    setState(() {
-                      targetWord.spellController.text = processedText;
-                    });
-                    
-                    // 模糊匹配逻辑：忽略非英文字符（如空格、连字符、点等），提升手写容错率
-                    final String normalizedTarget = targetWord.word.spell.replaceAll(RegExp(r'[^a-zA-Z]'), '').toLowerCase();
-                    final String normalizedInput = processedText.replaceAll(RegExp(r'[^a-zA-Z]'), '').toLowerCase();
-                    
-                    // 超级模糊容错：如果单词本就既包含 D 又包含 CL (如 disclose)，后台自动为 'd' 视为 'cl' 的笔画放行
-                    final String fuzzyTarget = normalizedTarget.replaceAll('cl', 'd');
-                    
-                    if (normalizedTarget == normalizedInput || fuzzyTarget == normalizedInput) {
-                       setState(() {
-                         _detectedSimilarWord = null;
-                       });
-                       WidgetsBinding.instance.addPostFrameCallback((_) async {
-                         // 写对了，播放当前单词（揭晓答案/确认）
-                         try {
-                            targetWord.speakEnglishPassed = true;
-                            await _sessionController.playWordSound(targetWord.word);
-                         } catch (_) {}
-                         
-                         _handwritingBoardKey.currentState?.clearBoardSilently();
-                         jumpToNextWord(bookmarkedIndex, false, () {});
-                       });
-                    } else if (normalizedInput.length >= 2) {
-                       // 如果输入不正确，但输入长度大于2，则尝试查词看是不是写成了别的合法单词
-                       final result = await WordBo().searchWordLocalOnly(normalizedInput);
-                       if (result.word != null && result.word!.spell.toLowerCase() == normalizedInput) {
-                         if (mounted) {
-                           setState(() {
-                             _detectedSimilarWord = result.word;
-                           });
-                         }
-                       } else {
-                         if (mounted) {
-                           setState(() {
-                             _detectedSimilarWord = null;
-                           });
-                         }
-                       }
-                    } else {
-                       if (mounted) {
-                         setState(() {
-                           _detectedSimilarWord = null;
-                         });
-                       }
-                    }
-                  }
-                },
-                onSwipeUp: () async {
-                  _handwritingBoardKey.currentState?.clearBoardSilently();
-                  // 揭晓答案：离开当前词时播放
-                  if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
-                    try {
-                      words[bookmarkedIndex].speakEnglishPassed = true;
-                      await _sessionController.playWordSound(words[bookmarkedIndex].word);
-                    } catch (_) {}
-                  }
-                  jumpToNextWord(bookmarkedIndex, false, () {});
-                },
-                onSwipeDown: () async {
-                  _handwritingBoardKey.currentState?.clearBoardSilently();
-                  // 揭晓答案：离开当前词时播放
-                  if (bookmarkedIndex >= 0 && bookmarkedIndex < words.length) {
-                    try {
-                      await _sessionController.playWordSound(words[bookmarkedIndex].word);
-                    } catch (_) {}
-                  }
-                  jumpToPreviousWord(bookmarkedIndex, false);
-                },
-                onCancel: () {
-                  setState(() {
-                    _isHandwritingOverlayOpen = false;
-                  });
-                },
-              ),
-            ),
-          ),
-
-          // 2. 相似词提示框
-          if (_detectedSimilarWord != null)
-            Positioned(
-              left: 12,
-              right: 12 + _handwritingRightPadding,
-              top: 10,
-              child: GestureDetector(
-                onTap: () {
-                  context.push('/word_detail',
-                      extra: WordDetailPageArgs(_detectedSimilarWord!, true, null, false));
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.5), width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.info_outline, color: Colors.orangeAccent, size: 16),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              '注意，你写成了另一个单词: ${_detectedSimilarWord!.spell}',
-                              style: const TextStyle(
-                                color: Colors.orangeAccent, 
-                                fontSize: 13, 
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.none,
-                              ),
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 12),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 22),
-                        child: Text(
-                          _detectedSimilarWord!.getMeaningStr().replaceAll('\n', ' '),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9), 
-                            fontSize: 12,
-                            decoration: TextDecoration.none,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          Positioned(
-            right: _handwritingRightPadding > 0 ? _handwritingRightPadding - 1 : -1,
-            top: 0,
-            bottom: 0,
-            width: 1,
-            child: IgnorePointer(
-              child: Container(
-                color: isDarkMode 
-                    ? Colors.white.withValues(alpha: 0.06) 
-                    : Colors.black.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
-
-        ],
-      ),
-    );
-  }
 }
 
-/// 箭头绘制器 - 简单的向上箭头，从气泡指向菜单按钮
-class _ArrowPainter extends CustomPainter {
-  final bool isDarkMode;
 
-  _ArrowPainter(this.isDarkMode);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    // 绘制垂直向上的线
-    canvas.drawLine(
-      Offset(size.width / 2, size.height),
-      Offset(size.width / 2, 0),
-      paint,
-    );
-
-    // 绘制箭头头部（指向上方）
-    // 左侧线
-    canvas.drawLine(
-      Offset(size.width / 2, 0),
-      Offset(size.width / 2 - 8, 10),
-      paint,
-    );
-
-    // 右侧线
-    canvas.drawLine(
-      Offset(size.width / 2, 0),
-      Offset(size.width / 2 + 8, 10),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
