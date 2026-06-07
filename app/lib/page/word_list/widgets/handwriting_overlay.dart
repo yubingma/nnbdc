@@ -298,6 +298,19 @@ class HandwritingOverlayState extends State<HandwritingOverlay> {
                             ),
                           ),
                           const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 12),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              setState(() {
+                                _detectedSimilarWord = null;
+                              });
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: Icon(Icons.close, color: Colors.white70, size: 16),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
