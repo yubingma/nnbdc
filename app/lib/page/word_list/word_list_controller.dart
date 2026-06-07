@@ -366,7 +366,7 @@ class WordListController extends ChangeNotifier {
       return;
     }
 
-    final int targetIndex = wordUiIndex > 0 ? wordUiIndex - 1 : 0;
+    final int targetIndex = wordUiIndex > 1 ? wordUiIndex - 2 : 0;
 
     var positions = itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
