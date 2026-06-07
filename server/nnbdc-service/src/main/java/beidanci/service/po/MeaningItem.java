@@ -51,6 +51,10 @@ public class MeaningItem extends UuidPo implements Ownerable {
     @Column(name = "popularity", length = 10)
     private Integer popularity;
 
+    /** 常用度百分比 */
+    @Column(name = "popularity_percent")
+    private Integer popularityPercent;
+
     /**
      * 近义词
      */
@@ -165,6 +169,14 @@ public class MeaningItem extends UuidPo implements Ownerable {
 
     public void setPopularity(Integer popularity) {
         this.popularity = popularity;
+    }
+
+    public Integer getPopularityPercent() {
+        return popularityPercent;
+    }
+
+    public void setPopularityPercent(Integer popularityPercent) {
+        this.popularityPercent = popularityPercent;
     }
 
     public User getOwner() {

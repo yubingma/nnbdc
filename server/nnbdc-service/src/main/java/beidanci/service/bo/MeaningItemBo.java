@@ -39,7 +39,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     public List<MeaningItemDto> getMeaningItemsOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
-        StringBuilder sql = new StringBuilder("SELECT mi.id, mi.ci_xing, mi.meaning, mi.word_id, mi.dict_id, mi.owner_id, mi.popularity, mi.create_time, mi.update_time, mi.is_updating, mi.updating_start_at " +
+        StringBuilder sql = new StringBuilder("SELECT mi.id, mi.ci_xing, mi.meaning, mi.word_id, mi.dict_id, mi.owner_id, mi.popularity, mi.popularity_percent, mi.create_time, mi.update_time, mi.is_updating, mi.updating_start_at " +
                      "FROM meaning_item mi ");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         
@@ -74,6 +74,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             meaningItemDto.setDictId(dictIdStr);
             Integer popularity = rs.getObject("popularity", Integer.class);
             meaningItemDto.setPopularity(popularity != null ? popularity : 999);
+            meaningItemDto.setPopularityPercent(rs.getObject("popularity_percent", Integer.class));
             meaningItemDto.setCreateTime(rs.getTimestamp("create_time"));
             meaningItemDto.setUpdateTime(rs.getTimestamp("update_time"));
             meaningItemDto.setOwnerId(rs.getString("owner_id"));
@@ -84,7 +85,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     public List<MeaningItemDto> findMeaningsByWord(String wordId) {
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId";
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, popularity_percent, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId";
         MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
 
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -96,6 +97,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setDictId(rs.getString("dict_id"));
             Integer popularity = rs.getObject("popularity", Integer.class);
             dto.setPopularity(popularity != null ? popularity : 999);
+            dto.setPopularityPercent(rs.getObject("popularity_percent", Integer.class));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             dto.setOwnerId(rs.getString("owner_id"));
@@ -106,7 +108,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     public List<MeaningItemDto> findMeaningsByWordAndDict(String wordId, String dictId) {
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId AND dict_id = :dictId";
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, popularity_percent, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId AND dict_id = :dictId";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("wordId", wordId);
         params.addValue("dictId", dictId);
@@ -120,6 +122,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setDictId(rs.getString("dict_id"));
             Integer popularity = rs.getObject("popularity", Integer.class);
             dto.setPopularity(popularity != null ? popularity : 999);
+            dto.setPopularityPercent(rs.getObject("popularity_percent", Integer.class));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             dto.setOwnerId(rs.getString("owner_id"));
@@ -138,7 +141,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         }
 
         // 使用原生SQL一次性取回所有候选，按 word 聚合取最后更新的那条
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, create_time, update_time, is_updating, updating_start_at FROM meaning_item "
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, popularity_percent, create_time, update_time, is_updating, updating_start_at FROM meaning_item "
                 + "WHERE word_id IN (:ids) ORDER BY update_time DESC";
         MapSqlParameterSource params = new MapSqlParameterSource("ids", wordIds);
         List<MeaningItemDto> allResults = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -150,6 +153,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setDictId(rs.getString("dict_id"));
             Integer popularity = rs.getObject("popularity", Integer.class);
             dto.setPopularity(popularity != null ? popularity : 999);
+            dto.setPopularityPercent(rs.getObject("popularity_percent", Integer.class));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             dto.setOwnerId(rs.getString("owner_id"));
@@ -229,9 +233,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
 
         // 2. 插入新释义
         if (meanings != null) {
-            String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, owner_id, ci_xing, meaning, popularity, create_time, update_time, is_updating) "
+            String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, owner_id, ci_xing, meaning, popularity, popularity_percent, create_time, update_time, is_updating) "
                     +
-                    "VALUES (:id, :wordId, :dictId, :ownerId, :ciXing, :meaning, :popularity, :createTime, :updateTime, false)";
+                    "VALUES (:id, :wordId, :dictId, :ownerId, :ciXing, :meaning, :popularity, :popularityPercent, :createTime, :updateTime, false)";
             Timestamp now = new Timestamp(System.currentTimeMillis());
             for (int i = 0; i < meanings.size(); i++) {
                 Map<String, String> meaning = meanings.get(i);
@@ -243,6 +247,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
                 insertParams.addValue("ciXing", meaning.get("cixing") != null ? meaning.get("cixing") : "");
                 insertParams.addValue("meaning", meaning.get("meaning") != null ? meaning.get("meaning") : "");
                 insertParams.addValue("popularity", i + 1);
+                insertParams.addValue("popularityPercent", null);
                 insertParams.addValue("createTime", now);
                 insertParams.addValue("updateTime", now);
                 namedParameterJdbcTemplate.update(insertSql, insertParams);
@@ -251,9 +256,9 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     public void createMeaningItem(MeaningItemDto dto) {
-        String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, owner_id, ci_xing, meaning, popularity, create_time, update_time, is_updating) "
+        String insertSql = "INSERT INTO meaning_item (id, word_id, dict_id, owner_id, ci_xing, meaning, popularity, popularity_percent, create_time, update_time, is_updating) "
                 +
-                "VALUES (:id, :wordId, :dictId, :ownerId, :ciXing, :meaning, :popularity, :createTime, :updateTime, false)";
+                "VALUES (:id, :wordId, :dictId, :ownerId, :ciXing, :meaning, :popularity, :popularityPercent, :createTime, :updateTime, false)";
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", dto.getId());
         params.addValue("wordId", dto.getWordId());
@@ -262,6 +267,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         params.addValue("ciXing", dto.getCiXing() != null ? dto.getCiXing() : "");
         params.addValue("meaning", dto.getMeaning() != null ? dto.getMeaning() : "");
         params.addValue("popularity", dto.getPopularity());
+        params.addValue("popularityPercent", dto.getPopularityPercent());
         params.addValue("createTime", dto.getCreateTime() != null ? new Timestamp(dto.getCreateTime().getTime()) : new Timestamp(System.currentTimeMillis()));
         params.addValue("updateTime", dto.getUpdateTime() != null ? new Timestamp(dto.getUpdateTime().getTime()) : new Timestamp(System.currentTimeMillis()));
         namedParameterJdbcTemplate.update(insertSql, params);
@@ -279,6 +285,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
         dto.setCiXing(meaningItem.getCiXing());
         dto.setMeaning(meaningItem.getMeaning());
         dto.setPopularity(meaningItem.getPopularity() != null ? meaningItem.getPopularity() : 999);
+        dto.setPopularityPercent(meaningItem.getPopularityPercent());
         dto.setWordId(meaningItem.getWord() != null ? meaningItem.getWord().getId() : null);
         dto.setDictId(meaningItem.getDict() != null ? meaningItem.getDict().getId() : null);
         dto.setOwnerId(meaningItem.getOwner() != null ? meaningItem.getOwner().getId() : null);

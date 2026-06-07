@@ -7,6 +7,7 @@ public class MeaningItemDto extends Dto implements Ownerable {
     private String ciXing;
     private String meaning;
     private int popularity;
+    private Integer popularityPercent;
     private boolean isUpdating;
     private Date updatingStartAt;
 
@@ -71,6 +72,14 @@ public class MeaningItemDto extends Dto implements Ownerable {
 
     public void setPopularity(int popularity) {
         this.popularity = popularity;
+    }
+
+    public Integer getPopularityPercent() {
+        return popularityPercent;
+    }
+
+    public void setPopularityPercent(Integer popularityPercent) {
+        this.popularityPercent = popularityPercent;
     }
 
     public String getWordId() {

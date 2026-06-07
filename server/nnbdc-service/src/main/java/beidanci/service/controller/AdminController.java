@@ -256,6 +256,16 @@ public class AdminController {
         return Result.success(dataSanitizeBo.sanitizeData());
     }
 
+    @PostMapping("/admin/sanitizeWordPopularity.do")
+    public Result<SystemHealthFixResult> sanitizeWordPopularity() {
+        return Result.success(dataSanitizeBo.sanitizeWordPopularity());
+    }
+
+    @GetMapping("/admin/getWordPopularitySanitizeStatus.do")
+    public Result<SystemHealthFixResult> getWordPopularitySanitizeStatus() {
+        return Result.success(dataSanitizeBo.getWordPopularitySanitizeStatus());
+    }
+
     @PostMapping("/admin/checkDataSanitization.do")
     public Result<SystemHealthCheckResult> checkDataSanitization() {
         return Result.success(dataSanitizeBo.checkDataSanitization());
