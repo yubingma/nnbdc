@@ -1,25 +1,5 @@
 package beidanci.service.bo;
 
-import beidanci.api.model.WordDto;
-import beidanci.service.config.AliyunAiProperties;
-import beidanci.service.po.Word;
-import beidanci.service.po.WordEmbedding;
-import beidanci.service.util.JsonUtils;
-import beidanci.util.Constants;
-import com.google.gson.Gson;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
-import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
-
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -29,7 +9,36 @@ import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+
+import com.google.gson.Gson;
+
+import beidanci.api.model.WordDto;
+import beidanci.service.config.AliyunAiProperties;
+import beidanci.service.po.WordEmbedding;
+import beidanci.service.util.JsonUtils;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)

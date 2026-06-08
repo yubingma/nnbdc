@@ -19,6 +19,7 @@ import 'package:nnbdc/page/admin/system_settings_page.dart';
 import 'package:nnbdc/page/admin/dict_group_management.dart';
 import 'package:nnbdc/page/admin/pdf_convert_page.dart';
 import 'package:nnbdc/page/admin/batch_import_management.dart';
+import 'package:nnbdc/page/admin/word_starfield_page.dart';
 import 'package:nnbdc/state.dart';
 
 import 'package:nnbdc/theme/app_theme.dart';
@@ -167,6 +168,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.sync,
         color: Colors.blueAccent,
         onTap: () => _reGenerateSystemSyncLogs(),
+      ),
+      _buildManagementCard(
+        title: '3D 词星空',
+        icon: Icons.blur_on,
+        color: const Color(0xFF3F51B5),
+        onTap: () => _navigateToWordStarfield(),
       ),
     ];
   }
@@ -607,6 +614,15 @@ class _AdminPageState extends State<AdminPage> {
         );
       }
     }
+  }
+
+  void _navigateToWordStarfield() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const WordStarfieldPage(),
+      ),
+    );
   }
 
   void _showComingSoon(String feature) {

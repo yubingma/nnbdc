@@ -529,6 +529,14 @@ class WordsDao extends DatabaseAccessor<MyDatabase> with _$WordsDaoMixin {
   Future<List<Word>> getWordsByIds(List<String> wordIds) {
     return (select(words)..where((w) => w.id.isIn(wordIds))).get();
   }
+
+  Future<List<Word>> getWordsWithCoordinates({int? limit}) {
+    var query = select(words)..where((w) => w.vecX.isNotNull() & w.vecY.isNotNull() & w.vecZ.isNotNull());
+    if (limit != null) {
+      query = query..limit(limit);
+    }
+    return query.get();
+  }
 }
 
 @DriftAccessor(tables: [UserDbLogs])
@@ -1074,6 +1082,13 @@ class MeaningItemsDao extends DatabaseAccessor<MyDatabase> with _$MeaningItemsDa
     });
 
     Global.logger.d('✅ 释义项插入完成, 总数: ${entries.length}');
+  }
+
+  Future<List<MeaningItem>> getMeaningsByWordId(String wordId) {
+    return (select(meaningItems)
+          ..where((mi) => mi.wordId.equals(wordId))
+          ..orderBy([(mi) => OrderingTerm(expression: mi.popularity, mode: OrderingMode.asc)]))
+        .get();
   }
 }
 
