@@ -29,6 +29,20 @@
 - **后端（Server）**：在系统词书导入时（如 `DictImportBo`），如果单词在库中尚无 Embedding，通过调用大模型 API (如 DashScope/Qwen 的 Embedding 接口) 获取并持久化到数据库。
 - **前端（Client）**：随词书同步 Embedding 坐标数据，或者在客户端内置一个精简的英文常用词嵌入矩阵（如 100 维 GloVe，裁剪到常用 2 万词），以便在本地离线对用户的“生词本”进行实时排序。
 
+#### 2.1.1 向量模型的升级与不可混用性 (Model Upgrades & Non-mixability)
+
+在更换或升级后端使用的 Embedding 模型时，必须注意以下核心逻辑与注意事项：
+
+1. **向量空间的不可混用性**
+   * **原理**：不同模型（如阿里 `text-embedding-v3` 与 OpenAI `text-embedding-3-small`）所投射的向量空间在数学上是完全不同的。就像在不同投影坐标系下的地图，两者的数值特征不可互相比较。
+   * **影响**：如果数据库中混用了不同模型生成的向量，它们之间的余弦相似度计算将彻底失效。因此，**所有参与排序与空间计算的单词，必须使用同一个嵌入模型生成的向量**。
+2. **平滑升级与静默迁移策略**
+   * **设计**：在 `word_embedding` 表中引入 `model_name`（或 `model_version`）字段，显式记录每个单词向量所使用的模型。
+   * **增量迁移**：当系统配置文件中的嵌入模型从 `model-A` 切换为 `model-B` 时，系统无需中断。后台扫描任务或导入任务在运行过程中，一旦发现某个单词的 `model_name` 与当前配置不符，就会自动为该单词重新请求新模型，实现增量、静默的平滑过渡。
+3. **低成本的一键重构**
+   * **可行性分析**：英文词典库是一个大小相对固定（一般在 2 万到 8 万词之间）的闭环集合。
+   * **费用与时间**：调用大模型 Embedding API 的成本极低（如 DashScope $0.0001/1000 tokens）。重构 5 万个常用单词的向量，总 API 费用仅需几元钱人民币，且在几分钟内即可通过并发请求全部完成。因此，**升级模型在架构上具有极高的可行性与低经济负担**。
+
 ---
 
 ### 2.2 排序算法设计 (Sorting Algorithms)
@@ -59,6 +73,54 @@
 * **原理**：用户输入一个“锚点词”或“主题概念”（如 *technology* 或 *medical*），计算单词书中所有词到该锚点向量的距离，按相似度由高到低排列。
 * **特点**：适合阶段性复习，如用户想优先背诵与当前工作/专业相关的词汇。
 
+#### 2.3 降维与压缩算法：从 1024 维到 3 维 (Dimensionality Reduction to 3D)
+
+为了让高维度的词向量在客户端（手机、电脑）上高效使用，我们需要通过降维算法将大模型的 1024 维（或 1536 维）Embedding 压缩为 3 维空间坐标 $(x, y, z)$。
+
+##### 2.3.1 降维数学原理与算法
+1. **线性降维：PCA（主成分分析 - Principal Component Analysis）**
+   * **原理**：在线性空间中旋转坐标轴，寻找单词特征方差最大的前三个正交方向（主成分），作为新的 $X, Y, Z$ 轴。
+   * **特点**：计算极其迅速，能很好地保留高维数据的全局方差结构。
+2. **非线性降维：UMAP / t-SNE（流形学习）**
+   * **原理**：通过概率分布或流形近似，在低维空间重建高维空间中的“邻近关系”。若两个词在高维中语义接近（如 *cat* 和 *dog*），在 3 维空间里也会被紧密拉在一起；若不相关，则推得很远。
+   * **特点**：局部语义关系保留极佳，能自动聚合成形态各异的“语义星云”，非常适合聚类展示。
+
+##### 2.3.2 降维的多重技术优势
+* **极低的存储开销**：原 1024 维 float 向量每个词需占 4KB；降至 3 维只需 3 个 float 值（12 字节），2 万个词的总大小仅为 **240KB**。客户端数据库可以非常轻松地同步并常驻内存。
+* **毫秒级的本地排序（TSP）**：在 3 维空间下计算欧氏距离极其迅速。在手机端，对数百个生词进行语义最短路径（TSP）重排可在 **1-2 毫秒**内瞬间完成。
+* **完美支持离线运行**：前端只需要获取并存储这 3 维坐标，即可在无网状态下随时随地进行生词本的智能语义重排。
+
+##### 2.3.3 降维矩阵的维护与更新策略
+降维模型（如 PCA 投影矩阵 $W$ 或 UMAP 模型）的更新分为两种模式以保证系统性能和用户体验的一致性：
+1. **日常增量更新（应用投影）**：日常新增少量词汇时，**不更新降维矩阵**。直接利用现有的投影矩阵对新词的 1024 维向量进行线性变换计算得到 $(x, y, z)$ 坐标。这样可以保证已有单词的 3D 星空坐标绝对静止，避免用户记忆的“星云”位置天天漂移。
+2. **大版本系统维护（重构矩阵）**：当系统更换底层嵌入模型、或新增了超过 30% 以上的全新领域词汇时，在服务端执行一键重构脚本。利用数据库中留存的所有 1024 维向量，在本地重新拟合训练 PCA/UMAP 降维模型，更新降维矩阵，并刷新所有单词的 3D 坐标下发给前端。由于这是纯本地数学计算，不产生任何 API 费用，且计算在秒级完成。
+
+#### 2.4 前端 3D 语义星空交互设计 (3D Semantic Starfield UI Concept)
+
+利用 3D 坐标 $(x, y, z)$，可以在 Flutter 端构建极具视觉冲击力的背单词交互界面：
+
+```text
++---------------------------------------------------+
+|               [ 3D 语义词汇宇宙 ]                  |
+|                                                   |
+|          .  * (technology cluster)  .             |
+|        *   *  Computer *                          |
+|         .   /  \   .                              |
+|            /    \   * Internet                    |
+|           *------*                                |
+|           Software                                |
+|                                                   |
+|                       .   * (medical cluster)     |
+|                         *   * Doctor              |
+|                          .   * Medicine           |
+|                                                   |
+|  [ 整理生词 ]   [ 聚焦当前主题 ]   [ 3D视角切换 ]  |
++---------------------------------------------------+
+```
+* **视觉冲击（WOW 效果）**：用户背过的所有单词在 3D 空间里呈现为繁星点点的宇宙星空。语义相近的词汇自动聚集为“科技星云”、“动植物星云”、“学术抽象星云”。
+* **沉浸式交互**：用户可以通过滑动手势自由旋转、缩放 3D 词汇宇宙。双击某片星云可以聚焦并生成对应主题的背单词计划。
+* **语义连线**：背单词过程中，界面可以用微弱的星光连线，指示下一个将要学习的词与当前词在 3D 宇宙中的路径和语义过渡。
+
 ---
 
 ## 3. 系统架构与技术实现路线 (System Architecture)
@@ -68,16 +130,17 @@
 ```mermaid
 graph TD
     A[后端: DictImportBo] -->|AI 补全阶段| B[调用 DashScope Embedding API]
-    B -->|保存 Embedding 向量| C[(PostgreSQL: word_embedding 表)]
-    C -->|增量同步| D[客户端: drift 本地 DB]
-    D -->|本地生成衍生词书| E[WordBo.generateEmbeddedDictLocally]
-    E -->|运行 TSP / K-Means| F[更新本地 dict_word 的 seq 和 unit]
+    B -->|保存 1024D 向量| C[(PostgreSQL: word_embedding 表)]
+    C -->|服务端运行降维算法| H[生成每个单词的 3D 坐标 x, y, z]
+    H -->|增量同步 3D 坐标| D[客户端: drift 本地 DB]
+    D -->|本地生成衍生词书/重排生词本| E[WordBo.generateEmbeddedDictLocally]
+    E -->|运行极速 3D-TSP / 3D-KMeans| F[更新本地 dict_word 的 seq 和 unit]
 ```
 
 ### 3.1 数据库设计 (Database Schema)
 
 #### 后端 PostgreSQL 变更：
-新增 `word_embedding` 表，用于存储每个单词的稠密向量（或者利用 PostgreSQL 的 `pgvector` 扩展支持）：
+1. 新增 `word_embedding` 表，用于存储每个单词的**完整高维稠密向量**（为未来大模型语义计算、搜索做准备）：
 ```sql
 CREATE TABLE word_embedding (
     word_id VARCHAR(50) PRIMARY KEY REFERENCES word(id) ON DELETE CASCADE,
@@ -86,12 +149,28 @@ CREATE TABLE word_embedding (
     update_time TIMESTAMP NOT NULL
 );
 ```
+2. 在 `word` 表中新增 3 维坐标字段（或新建 `word_vector_3d` 表），专门用于下发给前端进行快速计算与渲染：
+```sql
+ALTER TABLE word ADD COLUMN vec_x REAL;
+ALTER TABLE word ADD COLUMN vec_y REAL;
+ALTER TABLE word ADD COLUMN vec_z REAL;
+```
 
 #### 客户端 SQLite (Drift) 变更：
-为了支持本地对“生词本”或“自定义词书”的排序，可以将降维后的低维特征同步至本地，或增量同步核心词汇的 Embedding。
+在客户端本地 `words` 表中扩展这 3 维坐标，同步机制只需增量下载这三个浮点数：
+```dart
+// app/lib/db/table.dart 扩展
+class Words extends Table {
+  // ... 现有字段
+  RealColumn get vecX => real().nullable()();
+  RealColumn get vecY => real().nullable()();
+  RealColumn get vecZ => real().nullable()();
+}
+```
+
 在 `dicts` 表中扩展 `sort_alg` 字段的值：
-* `sort_alg = 'embedding_tsp'`：表示通过语义最短路径排序的衍生版词书。
-* `sort_alg = 'embedding_cluster'`：表示通过语义聚类自动分单元的衍生版词书。
+* `sort_alg = 'embedding_tsp'`：表示通过语义最短路径（3D 空间 TSP 路径）排序的衍生版词书。
+* `sort_alg = 'embedding_cluster'`：表示通过语义聚类（3D 空间 K-Means）自动分单元的衍生版词书。
 
 ---
 
