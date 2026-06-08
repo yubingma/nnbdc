@@ -3,11 +3,15 @@ import sys
 import json
 import numpy as np
 import requests
-import matplotlib.pyplot as plt
+try:
+    import importlib
+    plt = importlib.import_module("matplotlib.pyplot")
+except ImportError:
+    plt = None
 
-# 1. 测试单词列表 (30个词，涵盖 5 大不同类别)
+# 1. 测试单词列表 (30个词，涵盖 5 大不同类别) 
 WORDS = [
-    # 动物 (Animals)
+    # 动物 (Animals) 
     "cat", "dog", "wolf", "lion", "tiger",
     # 自然与天气 (Nature & Weather)
     "rain", "umbrella", "storm", "wind", "cloud", "sun", "sky",
@@ -151,38 +155,41 @@ def main():
         print(f"{w1} -> {w2} (距离: {dist:.4f})")
         
     # 4. 绘制 Matplotlib 3D 散点星图，并用星光虚线连接 TSP 路径
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(projection='3d')
-    
-    colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3']
-    for i in range(K):
-        cluster_points = X_3d[labels == i]
-        ax.scatter(cluster_points[:, 0], cluster_points[:, 1], cluster_points[:, 2], 
-                   c=colors[i % len(colors)], label=f'Unit {i+1}', s=100, alpha=0.8, edgecolors='k')
-                   
-    for idx, word in enumerate(WORDS):
-        ax.text(X_3d[idx, 0] + 0.02, X_3d[idx, 1] + 0.02, X_3d[idx, 2] + 0.02, word, size=9, weight='bold')
+    if plt is None:
+        print("\n[Warning] matplotlib is not installed. Skip saving 3D scatter plot.")
+    else:
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(projection='3d')
         
-    # 用灰色虚线把 TSP 路径串起来
-    for i in range(len(tsp_indices) - 1):
-        idx1 = tsp_indices[i]
-        idx2 = tsp_indices[i+1]
-        ax.plot([X_3d[idx1, 0], X_3d[idx2, 0]], 
-                [X_3d[idx1, 1], X_3d[idx2, 1]], 
-                [X_3d[idx1, 2], X_3d[idx2, 2]], 
-                c='gray', linestyle='--', alpha=0.6, linewidth=1.5)
-                
-    ax.set_title("3D Semantic Space Starfield & TSP Learning Path", fontsize=14, pad=15)
-    ax.set_xlabel("PC 1 (Global Variance 1)")
-    ax.set_ylabel("PC 2 (Global Variance 2)")
-    ax.set_zlabel("PC 3 (Global Variance 3)")
-    ax.legend(loc='upper left')
-    
-    # 保存 3D 渲染图到 Artifacts 目录
-    artifact_dir = "/Users/myb/.gemini/antigravity-ide/brain/6bb45e91-2a04-4d72-8d03-6bb83dea39e2"
-    img_path = os.path.join(artifact_dir, "word_starfield.png")
-    plt.savefig(img_path, dpi=150, bbox_inches='tight')
-    print(f"\n3D 词汇星光分布渲染图已保存至: {img_path}")
+        colors = ['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3']
+        for i in range(K):
+            cluster_points = X_3d[labels == i]
+            ax.scatter(cluster_points[:, 0], cluster_points[:, 1], cluster_points[:, 2], 
+                       c=colors[i % len(colors)], label=f'Unit {i+1}', s=100, alpha=0.8, edgecolors='k')
+                       
+        for idx, word in enumerate(WORDS):
+            ax.text(X_3d[idx, 0] + 0.02, X_3d[idx, 1] + 0.02, X_3d[idx, 2] + 0.02, word, size=9, weight='bold')
+            
+        # 用灰色虚线把 TSP 路径串起来
+        for i in range(len(tsp_indices) - 1):
+            idx1 = tsp_indices[i]
+            idx2 = tsp_indices[i+1]
+            ax.plot([X_3d[idx1, 0], X_3d[idx2, 0]], 
+                    [X_3d[idx1, 1], X_3d[idx2, 1]], 
+                    [X_3d[idx1, 2], X_3d[idx2, 2]], 
+                    c='gray', linestyle='--', alpha=0.6, linewidth=1.5)
+                    
+        ax.set_title("3D Semantic Space Starfield & TSP Learning Path", fontsize=14, pad=15)
+        ax.set_xlabel("PC 1 (Global Variance 1)")
+        ax.set_ylabel("PC 2 (Global Variance 2)")
+        ax.set_zlabel("PC 3 (Global Variance 3)")
+        ax.legend(loc='upper left')
+        
+        # 保存 3D 渲染图到 Artifacts 目录
+        artifact_dir = "/Users/myb/.gemini/antigravity-ide/brain/6bb45e91-2a04-4d72-8d03-6bb83dea39e2"
+        img_path = os.path.join(artifact_dir, "word_starfield.png")
+        plt.savefig(img_path, dpi=150, bbox_inches='tight')
+        print(f"\n3D 词汇星光分布渲染图已保存至: {img_path}")
     
     # 5. 生成精美的 Markdown 验证评估报告
     summary_path = os.path.join(artifact_dir, "prototype_results.md")

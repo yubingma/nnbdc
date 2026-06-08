@@ -29,6 +29,7 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -134,6 +135,7 @@ public class EmbeddingBo {
         }
     }
 
+    @SuppressWarnings("null")
     private RestTemplate getRestTemplate() {
         if (restTemplate == null) {
             okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
@@ -176,6 +178,7 @@ public class EmbeddingBo {
     /**
      * 批量获取通义千问 Embeddings (每次最多 10 词)
      */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public List<float[]> getEmbeddings(List<String> spells) {
         String apiKey = aliyunAiProperties.getApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
@@ -197,20 +200,30 @@ public class EmbeddingBo {
             ResponseEntity<Map> response = getRestTemplate().postForEntity(url, entity, Map.class);
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 Map resBody = response.getBody();
-                List<Map> dataList = (List<Map>) resBody.get("data");
-                if (dataList != null) {
-                    List<float[]> results = new ArrayList<>();
-                    // OpenAI 兼容格式下，可能乱序，需要按照 index 进行排序装填
-                    dataList.sort((a, b) -> Integer.compare((int) a.get("index"), (int) b.get("index")));
-                    for (Map data : dataList) {
-                        List<Number> embList = (List<Number>) data.get("embedding");
-                        float[] emb = new float[embList.size()];
-                        for (int i = 0; i < embList.size(); i++) {
-                            emb[i] = embList.get(i).floatValue();
+                if (resBody != null) {
+                    List<Map> dataList = (List<Map>) resBody.get("data");
+                    if (dataList != null) {
+                        List<float[]> results = new ArrayList<>();
+                        // OpenAI 兼容格式下，可能乱序，需要按照 index 进行排序装填
+                        dataList.sort((a, b) -> {
+                            Number idxA = (Number) a.get("index");
+                            Number idxB = (Number) b.get("index");
+                            int valA = idxA != null ? idxA.intValue() : 0;
+                            int valB = idxB != null ? idxB.intValue() : 0;
+                            return Integer.compare(valA, valB);
+                        });
+                        for (Map data : dataList) {
+                            List<Number> embList = (List<Number>) data.get("embedding");
+                            if (embList != null) {
+                                float[] emb = new float[embList.size()];
+                                for (int i = 0; i < embList.size(); i++) {
+                                    emb[i] = embList.get(i).floatValue();
+                                }
+                                results.add(emb);
+                            }
                         }
-                        results.add(emb);
+                        return results;
                     }
-                    return results;
                 }
             }
             throw new RuntimeException("API 响应无效: status=" + response.getStatusCode());
@@ -499,7 +512,7 @@ public class EmbeddingBo {
                 String updateWordSql = "UPDATE word SET vec_x = ?, vec_y = ?, vec_z = ?, update_time = ? WHERE id = ?";
                 namedParameterJdbcTemplate.getJdbcTemplate().batchUpdate(updateWordSql, new BatchPreparedStatementSetter() {
                     @Override
-                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                    public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
                         Map.Entry<String, List<Float>> entry = coordEntries.get(i);
                         String wordId = entry.getKey();
                         List<Float> coords = entry.getValue();
