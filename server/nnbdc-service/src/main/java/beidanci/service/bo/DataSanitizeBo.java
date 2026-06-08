@@ -301,10 +301,16 @@ public class DataSanitizeBo {
         popularitySanitizeTotal = 0;
 
         try {
-            // 1. 查询所有通用词表里的单词 (dict_id = '0')
+            // 1. 查询所有通用词表里尚未清洗过常用度的单词 (dict_id = '0')
             String sql = "SELECT w.id, w.spell FROM word w " +
                          "INNER JOIN dict_word dw ON dw.word_id = w.id " +
-                         "WHERE dw.dict_id = '0'";
+                         "WHERE dw.dict_id = '0' " +
+                         "  AND NOT EXISTS ( " +
+                         "      SELECT 1 FROM meaning_item mi " +
+                         "      WHERE mi.word_id = w.id " +
+                         "        AND mi.dict_id = '0' " +
+                         "        AND mi.popularity_percent IS NOT NULL " +
+                         "  )";
             List<Map<String, Object>> words = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
             popularitySanitizeTotal = words.size();
             popularitySanitizeLog = String.format("查询完成，共找到 %d 个待清洗单词。", popularitySanitizeTotal);
