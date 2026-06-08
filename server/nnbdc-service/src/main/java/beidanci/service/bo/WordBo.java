@@ -199,7 +199,7 @@ public class WordBo extends BaseBo<Word> {
     }
 
     public List<WordDto> getWordsOfDictBySeqRange(String dictId, Integer fromSeq, Integer toSeq) {
-        StringBuilder sql = new StringBuilder("SELECT id, america_pronounce, british_pronounce, group_info, long_desc, short_desc, popularity, pronounce, spell, create_time, update_time FROM word w WHERE w.id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
+        StringBuilder sql = new StringBuilder("SELECT id, america_pronounce, british_pronounce, group_info, long_desc, short_desc, popularity, pronounce, spell, vec_x, vec_y, vec_z, create_time, update_time FROM word w WHERE w.id IN (SELECT dw.word_id FROM dict_word dw WHERE dw.dict_id=:dictId");
         MapSqlParameterSource params = new MapSqlParameterSource("dictId", dictId);
         if (fromSeq != null) {
             sql.append(" AND dw.seq >= :fromSeq");
@@ -225,6 +225,9 @@ public class WordBo extends BaseBo<Word> {
             wordDto.setPopularity(rs.getObject("popularity", Integer.class));
             wordDto.setPronounce(rs.getString("pronounce"));
             wordDto.setSpell(rs.getString("spell"));
+            wordDto.setVecX(rs.getObject("vec_x", Float.class));
+            wordDto.setVecY(rs.getObject("vec_y", Float.class));
+            wordDto.setVecZ(rs.getObject("vec_z", Float.class));
             wordDto.setCreateTime(rs.getTimestamp("create_time"));
             wordDto.setUpdateTime(rs.getTimestamp("update_time"));
             return wordDto;
@@ -388,8 +391,23 @@ public class WordBo extends BaseBo<Word> {
         dto.setGroupInfo(word.getGroupInfo());
         dto.setShortDesc(word.getShortDesc());
         dto.setLongDesc(word.getLongDesc());
+        dto.setVecX(word.getVecX());
+        dto.setVecY(word.getVecY());
+        dto.setVecZ(word.getVecZ());
         dto.setCreateTime(word.getCreateTime());
         dto.setUpdateTime(word.getUpdateTime());
         return dto;
+    }
+
+    @Transactional(rollbackFor = Throwable.class)
+    public void updateWordVectors(String wordId, Float vecX, Float vecY, Float vecZ) throws Exception {
+        Word word = findById(wordId);
+        if (word != null) {
+            word.setVecX(vecX);
+            word.setVecY(vecY);
+            word.setVecZ(vecZ);
+            word.setUpdateTime(new Date());
+            updateEntity(word);
+        }
     }
 }

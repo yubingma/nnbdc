@@ -211,6 +211,9 @@ Future<void> _runImport({
               pronounce: w.pronounce,
               shortDesc: w.shortDesc,
               spell: w.spell,
+              vecX: w.vecX,
+              vecY: w.vecY,
+              vecZ: w.vecZ,
               createTime: w.createTime,
               updateTime: w.updateTime));
 

@@ -250,7 +250,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 43;
+  int get schemaVersion => 44;
 
   @override
   MigrationStrategy get migration {
@@ -393,6 +393,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 43) {
             await _migrateFromV42ToV43AddPopularityPercent(m);
+          }
+          if (from < 44) {
+            await _migrateFromV43ToV44AddWordCoordinates(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -550,6 +553,15 @@ class MyDatabase extends _$MyDatabase {
     await transaction(() async {
       // 这里的 popularityPercent 字段是由 build_runner 自动在 $MeaningItemsTable 中生成的 GeneratedColumn
       await m.addColumn(meaningItems, meaningItems.popularityPercent);
+    });
+  }
+
+  /// 从版本 43 升级到版本 44：在 words 表中添加 vecX, vecY, vecZ 三维浮点坐标字段
+  Future<void> _migrateFromV43ToV44AddWordCoordinates(Migrator m) async {
+    await transaction(() async {
+      await m.addColumn(words, words.vecX);
+      await m.addColumn(words, words.vecY);
+      await m.addColumn(words, words.vecZ);
     });
   }
 

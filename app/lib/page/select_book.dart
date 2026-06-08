@@ -1278,6 +1278,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             shortDesc: word.shortDesc,
             popularity: word.popularity,
             spell: word.spell,
+            vecX: word.vecX,
+            vecY: word.vecY,
+            vecZ: word.vecZ,
             createTime: word.createTime,
             updateTime: word.updateTime));
         await yieldToUiIfNeeded(100, i); // 更频繁地让出UI

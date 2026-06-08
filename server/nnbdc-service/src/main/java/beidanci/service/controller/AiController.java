@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import beidanci.api.Result;
 import beidanci.api.model.AiStoryVo;
 import beidanci.service.bo.AiBo;
+import beidanci.service.bo.EmbeddingBo;
 import beidanci.service.bo.SysParamBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.SysParam;
@@ -48,6 +49,9 @@ public class AiController {
 
     @Autowired
     private SysParamBo sysParamBo;
+
+    @Autowired
+    private EmbeddingBo embeddingBo;
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -285,6 +289,44 @@ public class AiController {
         } catch (Exception e) {
             log.error("按需生成配音失败, hash=" + wordsHash + ", lang=" + lang, e);
             return Result.fail("生成配音失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取词嵌入重构状态及度量
+     */
+    @GetMapping("/ai/embedding/status.do")
+    public Result<Map<String, Object>> getEmbeddingStatus() {
+        Map<String, Object> statusMap = new HashMap<>();
+        statusMap.put("reconstructStatus", embeddingBo.getReconstructStatus());
+        statusMap.put("reconstructMsg", embeddingBo.getReconstructMsg());
+        statusMap.put("reconstructProgress", embeddingBo.getReconstructProgress());
+        
+        int total = embeddingBo.getTotalWordCount();
+        int fitted = embeddingBo.getFittedWordCount();
+        statusMap.put("totalWords", total);
+        statusMap.put("fittedWords", fitted);
+        
+        double unreconstructedPercent = 0.0;
+        if (total > 0) {
+            unreconstructedPercent = (double) (total - fitted) / total;
+        }
+        statusMap.put("unreconstructedPercent", unreconstructedPercent);
+        statusMap.put("warning", unreconstructedPercent >= 0.30);
+        
+        return Result.success(statusMap);
+    }
+
+    /**
+     * 触发异步一键重构 PCA 空间
+     */
+    @PostMapping("/ai/embedding/reconstruct.do")
+    public Result<String> triggerReconstruct() {
+        try {
+            embeddingBo.reconstructProjectionSpaceAsync();
+            return Result.success("重构任务已成功触发");
+        } catch (Exception e) {
+            return Result.fail(e.getMessage());
         }
     }
 }

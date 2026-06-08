@@ -92,6 +92,9 @@ public class DictImportBo {
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Autowired
+    private EmbeddingBo embeddingBo;
+
+    @Autowired
     @org.springframework.context.annotation.Lazy
     private DictImportBo self;
 
@@ -250,6 +253,15 @@ public class DictImportBo {
                 if (commonDictPo != null) {
                     // 针对通用词库，任务结束时进行一次全量原子核对并同步元数据，确保绝对一致性
                     dictBo.syncWordCountFromActual(Constants.COMMON_DICT_ID);
+                }
+            }
+
+            // 自动补全词典中缺失的词嵌入坐标
+            if (dictId != null && !dictId.isEmpty()) {
+                try {
+                    embeddingBo.completeEmbeddingsForDict(dictId);
+                } catch (Exception e) {
+                    logger.error("自动补全词典 [" + dictId + "] 词嵌入坐标失败", e);
                 }
             }
 

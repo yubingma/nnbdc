@@ -24,6 +24,9 @@ public class WordVo extends UuidVo {
     private String shortDesc;
     private String longDesc;
     private String meaningStr;
+    private Float vecX;
+    private Float vecY;
+    private Float vecZ;
     private List<MeaningItemVo> meaningItems;
     /* private List<SynonymsItem> synonymsItems; */
     private List<WordVo> similarWords;
@@ -233,5 +236,29 @@ public class WordVo extends UuidVo {
 
     public void setImages(List<WordImageVo> images) {
         this.images = images;
+    }
+
+    public Float getVecX() {
+        return vecX;
+    }
+
+    public void setVecX(Float vecX) {
+        this.vecX = vecX;
+    }
+
+    public Float getVecY() {
+        return vecY;
+    }
+
+    public void setVecY(Float vecY) {
+        this.vecY = vecY;
+    }
+
+    public Float getVecZ() {
+        return vecZ;
+    }
+
+    public void setVecZ(Float vecZ) {
+        this.vecZ = vecZ;
     }
 }

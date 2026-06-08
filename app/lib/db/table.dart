@@ -273,6 +273,10 @@ class Words extends Table {
 
   TextColumn get spell => text()();
 
+  RealColumn get vecX => real().nullable()();
+  RealColumn get vecY => real().nullable()();
+  RealColumn get vecZ => real().nullable()();
+
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();

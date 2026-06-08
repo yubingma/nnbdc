@@ -66,6 +66,15 @@ public class Word extends UuidPo implements Ownerable {
     @Column(name = "is_updating", nullable = false)
     private Boolean isUpdating = false;
 
+    @Column(name = "vec_x")
+    private Float vecX;
+
+    @Column(name = "vec_y")
+    private Float vecY;
+
+    @Column(name = "vec_z")
+    private Float vecZ;
+
     private  List<MeaningItem> meaningItems;
 
     private  List<WordImage> images;
@@ -259,5 +268,29 @@ public class Word extends UuidPo implements Ownerable {
 
     public void setIsUpdating(Boolean isUpdating) {
         this.isUpdating = isUpdating;
+    }
+
+    public Float getVecX() {
+        return vecX;
+    }
+
+    public void setVecX(Float vecX) {
+        this.vecX = vecX;
+    }
+
+    public Float getVecY() {
+        return vecY;
+    }
+
+    public void setVecY(Float vecY) {
+        this.vecY = vecY;
+    }
+
+    public Float getVecZ() {
+        return vecZ;
+    }
+
+    public void setVecZ(Float vecZ) {
+        this.vecZ = vecZ;
     }
 }
