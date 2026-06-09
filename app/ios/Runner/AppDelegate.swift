@@ -575,12 +575,12 @@ import StoreKit
         inputNode.removeTap(onBus: 0)
         
         // 2. 获取格式并处理 sampleRate 0 的异常情况
-        var recordingFormat = inputNode.outputFormat(forBus: 0)
-        print("IOS: [ASR] Tap check - Session rate: \(session.sampleRate), Node output rate: \(recordingFormat.sampleRate)")
+        var recordingFormat = inputNode.inputFormat(forBus: 0)
+        print("IOS: [ASR] Tap check - Session rate: \(session.sampleRate), Node input rate: \(recordingFormat.sampleRate)")
         
         if recordingFormat.sampleRate == 0 {
-            recordingFormat = inputNode.inputFormat(forBus: 0)
-            print("IOS: [ASR] Node output format 0, checking inputFormat: \(recordingFormat.sampleRate)")
+            recordingFormat = inputNode.outputFormat(forBus: 0)
+            print("IOS: [ASR] Node input format 0, checking outputFormat: \(recordingFormat.sampleRate)")
         }
         
         let finalFormat: AVAudioFormat
