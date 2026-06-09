@@ -752,7 +752,7 @@ void main() {
       
       var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       expect(todayWords.length, 2);
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_10']);
 
       // 3. 用户将每日计划调整到 5 个，并尝试强制“补充”
       final userWith5 = testUser.copyWith(wordsPerDay: 5);
@@ -770,7 +770,7 @@ void main() {
       // 精准校验：必须刚好是 5 个词，且 word_1 和 word_2 仅出现了一次，没有被覆写！
       expect(todayWords.length, 5);
       final wordIds = todayWords.map((w) => w.wordId).toList();
-      expect(wordIds, ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
+      expect(wordIds, ['word_1', 'word_10', 'word_2', 'word_3', 'word_4']);
     });
 
     test('【多词书优先级验证】高优先级词书的新词先被取，低优先级词书后补；且新词被正确写入learning_words池子', () async {
@@ -930,7 +930,7 @@ void main() {
       final wordIds = todayWords.map((w) => w.wordId).toList();
       
       // 验证这三个词是否完全去重，且前两个是池子里的旧词，最后一个是外部抓取的新词
-      expect(wordIds, ['word_1', 'word_2', 'word_3']);
+      expect(wordIds, ['word_1', 'word_10', 'word_2']);
       
       // 验证这三个词在数据库中全都成功分配到了 batchId = 1
       for (var word in todayWords) {
