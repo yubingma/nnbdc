@@ -39,7 +39,7 @@ public class WordDto extends Dto implements Ownerable {
     }
 
     public boolean isPhrase() {
-        return spell.trim().contains(" ");
+        return spell != null && spell.trim().contains(" ");
     }
 
     public String getSpell() {
@@ -109,7 +109,7 @@ public class WordDto extends Dto implements Ownerable {
     }
 
     public String getSound() {
-        return Utils.getFileNameOfWordSound(spell);
+        return spell != null ? Utils.getFileNameOfWordSound(spell) : null;
     }
 
     public String getLongDesc() {

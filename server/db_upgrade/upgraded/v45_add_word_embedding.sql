@@ -1,5 +1,5 @@
 CREATE TABLE word_embedding (
-    id VARCHAR(50) PRIMARY KEY REFERENCES word(id) ON DELETE CASCADE,
+    id VARCHAR(32) PRIMARY KEY REFERENCES word(id) ON DELETE CASCADE,
     embedding BYTEA NOT NULL,
     dimension INTEGER NOT NULL,
     model_name VARCHAR(100) NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE word_embedding (
 );
 
 CREATE TABLE pca_projection_config (
-    id VARCHAR(50) PRIMARY KEY,
+    id VARCHAR(32) PRIMARY KEY,
     config_json TEXT NOT NULL,
     update_time TIMESTAMP NOT NULL
 );

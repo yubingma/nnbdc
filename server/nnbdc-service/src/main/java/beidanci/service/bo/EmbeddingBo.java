@@ -319,7 +319,8 @@ public class EmbeddingBo {
         log.info("开始增量下载全局缺失的高维词嵌入向量...");
         String sql = "SELECT w.id, w.spell FROM word w " +
                 "LEFT JOIN word_embedding we ON we.id = w.id " +
-                "WHERE we.embedding IS NULL OR we.model_name <> :modelName";
+                "WHERE (we.embedding IS NULL OR we.model_name <> :modelName) " +
+                "AND w.spell IS NOT NULL AND TRIM(w.spell) <> ''";
         MapSqlParameterSource params = new MapSqlParameterSource("modelName", CURRENT_MODEL_NAME);
         List<Map<String, Object>> missingWords = namedParameterJdbcTemplate.queryForList(sql, params);
 
@@ -335,10 +336,16 @@ public class EmbeddingBo {
 
         for (int i = 0; i < missingWords.size(); i++) {
             Map<String, Object> wMap = missingWords.get(i);
-            spellsBatch.add((String) wMap.get("spell"));
-            idsBatch.add((String) wMap.get("id"));
+            String spell = (String) wMap.get("spell");
+            String id = (String) wMap.get("id");
+            if (spell == null || spell.trim().isEmpty()) {
+                continue;
+            }
+            spellsBatch.add(spell);
+            idsBatch.add(id);
 
             if (spellsBatch.size() == 10 || i == missingWords.size() - 1) {
+                if (spellsBatch.isEmpty()) continue;
                 try {
                     List<float[]> embeddingsList = getEmbeddings(spellsBatch);
                     assert embeddingsList.size() == spellsBatch.size() : "获取的 Embeddings 数量与请求不匹配";
