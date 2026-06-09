@@ -536,15 +536,35 @@ public class EmbeddingBo {
                     }
                 });
 
+                // 加载所有单词基本信息，保证同步到客户端的数据完整性，防止客户端反序列化 spell 空异常报错跳过
+                log.info("一键重构：加载所有单词的基本信息以生成同步日志...");
+                String fetchAllWordsSql = "SELECT id, spell, british_pronounce, america_pronounce, pronounce, popularity, group_info, short_desc, long_desc FROM word";
+                List<Map<String, Object>> allWords = namedParameterJdbcTemplate.getJdbcTemplate().queryForList(fetchAllWordsSql);
+                Map<String, Map<String, Object>> wordInfoMap = new HashMap<>(allWords.size());
+                for (Map<String, Object> w : allWords) {
+                    wordInfoMap.put((String) w.get("id"), w);
+                }
+
                 // 6. 批量产生客户端更新日志
                 log.info("一键重构：批量产生同步更新日志，更新量: {}", coordEntries.size());
                 for (Map.Entry<String, List<Float>> entry : coordEntries) {
                     String wordId = entry.getKey();
                     List<Float> coords = entry.getValue();
 
-                    // 只同步关键坐标改变
+                    Map<String, Object> info = wordInfoMap.get(wordId);
+                    if (info == null) continue;
+
+                    // 同步完整的 Word 数据对象，避免客户端 insertOnConflictUpdate 时覆盖其余字段为 null 或是反序列化 spell 报错
                     WordDto wDto = new WordDto();
                     wDto.setId(wordId);
+                    wDto.setSpell((String) info.get("spell"));
+                    wDto.setBritishPronounce((String) info.get("british_pronounce"));
+                    wDto.setAmericaPronounce((String) info.get("america_pronounce"));
+                    wDto.setPronounce((String) info.get("pronounce"));
+                    wDto.setPopularity(info.get("popularity") != null ? ((Number) info.get("popularity")).intValue() : null);
+                    wDto.setGroupInfo((String) info.get("group_info"));
+                    wDto.setShortDesc((String) info.get("short_desc"));
+                    wDto.setLongDesc((String) info.get("long_desc"));
                     wDto.setVecX(coords.get(0));
                     wDto.setVecY(coords.get(1));
                     wDto.setVecZ(coords.get(2));
