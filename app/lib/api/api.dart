@@ -914,4 +914,10 @@ abstract class RestClient {
 
   @POST("/admin/reGenerateSystemSyncLogs.do")
   Future<Result<String>> reGenerateSystemSyncLogs();
+
+  @GET("/ai/embedding/status.do")
+  Future<Result<JsonMap>> getEmbeddingStatus();
+
+  @POST("/ai/embedding/reconstruct.do")
+  Future<Result<String>> triggerReconstruct();
 }

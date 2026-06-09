@@ -6,6 +6,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/api/api.dart';
 
 /// 3D 星空粒子实体模型
 class StarfieldPoint {
@@ -89,6 +90,16 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
   bool _showRelations = true;
   int _densityLimit = 3000;
 
+  // 一键重构相关状态
+  bool _hasReconstructWarning = false;
+  String _reconstructStatus = 'IDLE';
+  String _reconstructMsg = '';
+  double _reconstructProgress = 0.0;
+  int _totalWords = 0;
+  int _fittedWords = 0;
+  double _unreconstructedPercent = 0.0;
+  Timer? _statusPollTimer;
+
   @override
   void initState() {
     super.initState();
@@ -112,6 +123,7 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
   void dispose() {
     _autoRotateController.dispose();
     _resumeTimer?.cancel();
+    _statusPollTimer?.cancel();
     super.dispose();
   }
 
@@ -132,6 +144,197 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
       _isAdmin = true;
     });
     _loadData();
+    _loadStatusQuietly();
+  }
+
+  Future<void> _loadStatusQuietly() async {
+    try {
+      final res = await Api.client.getEmbeddingStatus();
+      if (res.success && res.data != null) {
+        final data = res.data!.data;
+        if (mounted) {
+          setState(() {
+            _hasReconstructWarning = data['warning'] == true;
+            _reconstructStatus = data['reconstructStatus'] ?? 'IDLE';
+            _reconstructMsg = data['reconstructMsg'] ?? '';
+            _reconstructProgress = (data['reconstructProgress'] as num?)?.toDouble() ?? 0.0;
+            _totalWords = (data['totalWords'] as num?)?.toInt() ?? 0;
+            _fittedWords = (data['fittedWords'] as num?)?.toInt() ?? 0;
+            _unreconstructedPercent = (data['unreconstructedPercent'] as num?)?.toDouble() ?? 0.0;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _showReconstructDialog() {
+    _loadStatusQuietly();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final isRunning = _reconstructStatus == 'RUNNING';
+            
+            if (isRunning && (_statusPollTimer == null || !_statusPollTimer!.isActive)) {
+              _startStatusPolling(setDialogState);
+            }
+
+            final percentText = (_unreconstructedPercent * 100).toStringAsFixed(1);
+
+            return AlertDialog(
+              backgroundColor: const Color(0xFF141829),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.rocket_launch, color: Colors.amberAccent, size: 24),
+                  SizedBox(width: 8),
+                  Text('词嵌入一键重构控制台', style: TextStyle(color: Colors.white, fontSize: 18)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '提示：当词库中新增了大量词汇，或者词典同步后 3D 降维出现偏移时，需要执行词嵌入一键重构。这会触发大模型高维向量的异步下载及本地 PCA 矩阵的重新拟合。重构在后台执行，不影响前台学习。',
+                      style: TextStyle(color: Colors.white60, fontSize: 13),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildStatusRow('全库单词数', '$_totalWords 个'),
+                          const Divider(color: Colors.white10),
+                          _buildStatusRow('参与 3D 拟合词数', '$_fittedWords 个'),
+                          const Divider(color: Colors.white10),
+                          _buildStatusRow(
+                            '新增未重构单词占比', 
+                            '$percentText%',
+                            valueColor: _hasReconstructWarning ? Colors.redAccent : Colors.greenAccent
+                          ),
+                          const Divider(color: Colors.white10),
+                          _buildStatusRow('重构状态', _reconstructStatus, valueColor: isRunning ? Colors.amberAccent : Colors.cyanAccent),
+                        ],
+                      ),
+                    ),
+                    if (isRunning) ...[
+                      const SizedBox(height: 20),
+                      LinearProgressIndicator(
+                        value: _reconstructProgress,
+                        backgroundColor: Colors.white10,
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.amberAccent),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _reconstructMsg.isEmpty ? '正在重构，请稍候...' : _reconstructMsg,
+                        style: const TextStyle(color: Colors.amberAccent, fontSize: 12),
+                      ),
+                    ] else if (_reconstructStatus == 'FAILED') ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        '重构失败: $_reconstructMsg',
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isRunning ? null : () => Navigator.pop(context),
+                  child: const Text('关闭', style: TextStyle(color: Colors.white54)),
+                ),
+                ElevatedButton(
+                  onPressed: isRunning ? null : () => _triggerReconstructTask(setDialogState),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amberAccent,
+                    foregroundColor: Colors.black,
+                  ),
+                  child: Text(isRunning ? '重构中...' : '触发词嵌入一键重构'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((_) {
+      _statusPollTimer?.cancel();
+    });
+  }
+
+  Widget _buildStatusRow(String label, String value, {Color valueColor = Colors.white}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          Text(value, style: TextStyle(color: valueColor, fontSize: 13, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  void _startStatusPolling(StateSetter setDialogState) {
+    _statusPollTimer?.cancel();
+    _statusPollTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      try {
+        final res = await Api.client.getEmbeddingStatus();
+        if (res.success && res.data != null) {
+          final data = res.data!.data;
+          if (mounted) {
+            setDialogState(() {
+              _hasReconstructWarning = data['warning'] == true;
+              _reconstructStatus = data['reconstructStatus'] ?? 'IDLE';
+              _reconstructMsg = data['reconstructMsg'] ?? '';
+              _reconstructProgress = (data['reconstructProgress'] as num?)?.toDouble() ?? 0.0;
+              _totalWords = (data['totalWords'] as num?)?.toInt() ?? 0;
+              _fittedWords = (data['fittedWords'] as num?)?.toInt() ?? 0;
+              _unreconstructedPercent = (data['unreconstructedPercent'] as num?)?.toDouble() ?? 0.0;
+            });
+            setState(() {});
+
+            if (_reconstructStatus != 'RUNNING') {
+              _statusPollTimer?.cancel();
+              if (_reconstructStatus == 'COMPLETED') {
+                ToastUtil.success('词嵌入一键重构成功！');
+                _loadData();
+              } else if (_reconstructStatus == 'FAILED') {
+                ToastUtil.error('词嵌入重构失败：$_reconstructMsg');
+              }
+            }
+          }
+        }
+      } catch (_) {}
+    });
+  }
+
+  Future<void> _triggerReconstructTask(StateSetter setDialogState) async {
+    try {
+      final res = await Api.client.triggerReconstruct();
+      if (res.success) {
+        setDialogState(() {
+          _reconstructStatus = 'RUNNING';
+          _reconstructMsg = '重构任务已成功触发，正在建立连接...';
+          _reconstructProgress = 0.0;
+        });
+        setState(() {});
+        _startStatusPolling(setDialogState);
+      } else {
+        ToastUtil.error('触发重构失败: ${res.msg}');
+      }
+    } catch (e) {
+      ToastUtil.error('发生网络错误: $e');
+    }
   }
 
   Future<void> _loadData() async {
@@ -148,7 +351,7 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
         setState(() {
           _isLoading = false;
         });
-        ToastUtil.info('本地暂无带 3D 坐标的单词数据，请先执行“一键重构”！');
+        ToastUtil.info('本地暂无带 3D 坐标的单词数据，请先执行“词嵌入一键重构”！');
         return;
       }
 
@@ -436,9 +639,41 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
                             ),
                           ],
                         ),
-                        IconButton(
-                          onPressed: () => _showSettingsDialog(),
-                          icon: const Icon(Icons.tune, color: Colors.white, size: 22),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                IconButton(
+                                  onPressed: () => _showReconstructDialog(),
+                                  icon: const Icon(Icons.rocket_launch, color: Colors.amberAccent, size: 22),
+                                  tooltip: '词嵌入一键重构',
+                                ),
+                                if (_hasReconstructWarning)
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      constraints: const BoxConstraints(
+                                        minWidth: 8,
+                                        minHeight: 8,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            IconButton(
+                              onPressed: () => _showSettingsDialog(),
+                              icon: const Icon(Icons.tune, color: Colors.white, size: 22),
+                              tooltip: '渲染设置',
+                            ),
+                          ],
                         ),
                       ],
                     ),

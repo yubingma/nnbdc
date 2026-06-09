@@ -29,6 +29,18 @@ class Config {
       "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
       "imgBaseUrl": 'http://192.168.1.230:80/img/',
     },
+    "dev2": {
+      "service_url": "http://192.168.100.159:5200",
+      "socketServerUrl": "http://192.168.100.159:9191/all",
+      "cdnBackUrl": "http://192.168.100.159:5200",
+      "sound_base_url": "http://192.168.100.159:80/sound/",
+      "updateUrl": "http://192.168.100.159:80/app/ver.json",
+      "apkUrl": "http://192.168.100.159:80/app/nnbdc-android.apk",
+      "windowsUrl": "http://192.168.100.159:80/app/nnbdc-windows.zip",
+      "linuxUrl": "http://192.168.100.159:80/app/nnbdc-linux.AppImage",
+      "aiModelUrl": "https://www.nnbdc.com/ai-model/meta.json",
+      "imgBaseUrl": 'http://192.168.100.159:80/img/',
+    },
     "dev_web": {
       "service_url": "http://localhost:5200",
       "socketServerUrl": "http://localhost:9191/all",
