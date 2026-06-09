@@ -1325,7 +1325,9 @@ class _WordManagementTabState extends State<_WordManagementTab> {
           width: 1,
         ),
       ),
-      child: ListTile(
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
@@ -1391,6 +1393,7 @@ class _WordManagementTabState extends State<_WordManagementTab> {
               tooltip: '删除单词',
             ),
           ],
+        ),
         ),
       ),
     );

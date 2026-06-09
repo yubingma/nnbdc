@@ -72,6 +72,18 @@ class WordBo {
       }
     }
 
+    // 临时调试日志：查看本地数据库中实际的 3D 坐标
+    Global.logger.d('TSP 排序调试 [dictId=$dictId]: 共 ${wordsWithCoords.length} 个有坐标, ${wordsWithoutCoords.length} 个无坐标');
+    // 查一下 spell 来帮助确认
+    for (final entry in wordsWithCoords.take(15)) {
+      final spellRow = await db.customSelect(
+        'SELECT spell FROM words WHERE id = ?',
+        variables: [Variable.withString(entry.key)],
+      ).getSingleOrNull();
+      final spell = spellRow?.read<String>('spell') ?? '?';
+      Global.logger.d('  $spell -> (${entry.value[0].toStringAsFixed(4)}, ${entry.value[1].toStringAsFixed(4)}, ${entry.value[2].toStringAsFixed(4)})');
+    }
+
     if (wordsWithCoords.isEmpty) {
       final result = [...wordsWithoutCoords];
       _dictTspCache[dictId] = result;

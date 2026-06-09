@@ -878,7 +878,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
                       ),
-                      child: SwitchListTile(
+                        child: Material(
+                        type: MaterialType.transparency,
+                        child: SwitchListTile(
                         title: const Text('生成单词配图', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         subtitle: const Text('调用大模型根据单词含义绘画，可能显著增加消耗', style: TextStyle(fontSize: 12, color: Colors.grey)),
                         value: _generateWordImage,
@@ -888,6 +890,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           });
                         },
                         activeThumbColor: AppTheme.primaryColor,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -898,7 +901,9 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
                       ),
-                      child: SwitchListTile(
+                        child: Material(
+                        type: MaterialType.transparency,
+                        child: SwitchListTile(
                         title: const Text('同时生成乱序版', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         subtitle: const Text('将生成一个名称带"(乱序版)"的重复词书，单词按MD5混淆排序，且共享发音原图等资源', style: TextStyle(fontSize: 12, color: Colors.grey)),
                         value: _generateShuffledVersion,
@@ -911,6 +916,7 @@ class _DictImportManagementWidgetState extends State<DictImportManagementWidget>
                           });
                         },
                         activeThumbColor: AppTheme.primaryColor,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),

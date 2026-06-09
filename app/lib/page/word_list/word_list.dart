@@ -2951,7 +2951,9 @@ class WordListPageState extends State<WordListPage>
             : Colors.black.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: ListTile(
+      child: Material(
+        type: MaterialType.transparency,
+        child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
         title: Text(
           '语音识别通过规则',
@@ -2983,7 +2985,7 @@ class WordListPageState extends State<WordListPage>
             }).toList();
           },
         ),
-      ),
+        ),
     );
   }
 
@@ -3186,7 +3188,9 @@ class WordListPageState extends State<WordListPage>
                       width: 1,
                     ),
                   ),
-                  child: ListTile(
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
