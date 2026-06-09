@@ -616,28 +616,35 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
                           onPressed: () => Navigator.pop(context),
                           icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                         ),
-                        const Column(
-                          children: [
-                            Text(
-                              '3D 词汇语义星空',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'NotoSansSC',
-                                letterSpacing: 0.8,
+                        Flexible(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '3D 词汇语义星空',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'NotoSansSC',
+                                  letterSpacing: 0.8,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              '基于 AI 词嵌入空间投影 PCA 降维拟合',
-                              style: TextStyle(
-                                color: Colors.white60,
-                                fontSize: 11,
-                                fontFamily: 'NotoSansSC',
+                              const SizedBox(height: 2),
+                              Text(
+                                '基于 AI 词嵌入空间投影 PCA 降维拟合',
+                                style: const TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 11,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         Row(
                           mainAxisSize: MainAxisSize.min,
