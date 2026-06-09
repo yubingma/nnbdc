@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
@@ -261,8 +262,6 @@ class WordListPageState extends State<WordListPage>
   String get asrPassRule => Prefs.read<String>('wordListAsrPassRule') ?? 'ONE';
 
   late WordListPageArgs args;
-  bool dataLoaded = false;
-  int totalWordCount = -1;
 
   /// 是否可以离开当前单词（用户回答正确的释义数量达到要求）
   bool canLeaveCurrWord = false;
@@ -270,9 +269,6 @@ class WordListPageState extends State<WordListPage>
   final ItemScrollController itemScrollController = ItemScrollController();
   final ItemPositionsListener itemPositionsListener =
       ItemPositionsListener.create();
-
-  int? baseIndex;
-  List<WordWrapper> words = [];
 
   Offset floatBtnPosition = const Offset(20.0, 20.0);
   bool _controllerInitialized = false;
@@ -292,6 +288,18 @@ class WordListPageState extends State<WordListPage>
   bool isMenuOpen = false;
 
   // 映射属性到控制器以保持原逻辑引用正常
+  bool get dataLoaded => _controllerInitialized ? controller.dataLoaded : false;
+  set dataLoaded(bool val) { if (_controllerInitialized) controller.dataLoaded = val; }
+
+  int get totalWordCount => _controllerInitialized ? controller.totalWordCount : -1;
+  set totalWordCount(int val) { if (_controllerInitialized) controller.totalWordCount = val; }
+
+  int? get baseIndex => _controllerInitialized ? controller.baseIndex : null;
+  set baseIndex(int? val) { if (_controllerInitialized) controller.baseIndex = val; }
+
+  List<WordWrapper> get words => _controllerInitialized ? controller.words : const [];
+  set words(List<WordWrapper> val) { if (_controllerInitialized) controller.words = val; }
+
   AiStoryVo? get _aiStory => _controllerInitialized ? controller.aiStory : null;
   set _aiStory(AiStoryVo? val) { if (_controllerInitialized) controller.aiStory = val; }
 
@@ -349,9 +357,9 @@ class WordListPageState extends State<WordListPage>
   }
 
   Future<void> doQuery(bool clearCurrent, int fromIndex, final int pageSize,
-      bool jumpToTailWhenReady) async {
+      bool jumpToTailWhenReady, {bool force = false}) async {
     if (_controllerInitialized) {
-      await controller.doQuery(clearCurrent, fromIndex, pageSize, jumpToTailWhenReady);
+      await controller.doQuery(clearCurrent, fromIndex, pageSize, jumpToTailWhenReady, force: force);
     }
   }
 
@@ -550,13 +558,7 @@ class WordListPageState extends State<WordListPage>
     
     controller.addListener(() {
       if (mounted) {
-        setState(() {
-          dataLoaded = controller.dataLoaded;
-          words = controller.words;
-          totalWordCount = controller.totalWordCount;
-          baseIndex = controller.baseIndex;
-          bookMark = controller.bookMark;
-        });
+        setState(() {});
       }
     });
 
@@ -1021,7 +1023,9 @@ class WordListPageState extends State<WordListPage>
                   key: const ValueKey('word_list_scrollable_positioned_list'),
                   itemCount: words.length,
                   itemBuilder: (context, index) {
-                    // 为每个 item 添加 key，提高重用性
+                    if (index < 0 || index >= words.length) {
+                      return const SizedBox.shrink();
+                    }
                     return RepaintBoundary(
                       key: ValueKey('word_${words[index].word.id}'),
                       child: renderWord(index),
@@ -2107,18 +2111,19 @@ class WordListPageState extends State<WordListPage>
                           ),
                         ),
                         onTap: () async {
-                          setState(() {
-                            clearQueryResult();
-                            baseIndex = 0;
-                            doQuery(false, 0, 50, false).then((_) {
-                              // 添加这一行，确保跳转到第一个单词
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                itemScrollController.scrollTo(
-                                    index: 0,
-                                    duration: const Duration(milliseconds: 300),
-                                    alignment: 0.0); // 顶部对齐，避免在最上方无法居中导致的晃动
-                              });
-                            });
+                          if (baseIndex == 0 && words.isNotEmpty && itemScrollController.isAttached) {
+                            itemScrollController.jumpTo(index: 0, alignment: 0.0);
+                            return;
+                          }
+                          if (isQuerying) return;
+                          // force:true 绕过 lastQueryTime 频率限制，用户主动操作应立即可用
+                          baseIndex = 0;
+                          await doQuery(true, 0, _pageSize, false, force: true);
+                          // 使用 addPostFrameCallback 确保在 UI 重建完成后再跳转
+                          SchedulerBinding.instance.addPostFrameCallback((_) {
+                            if (words.isNotEmpty && itemScrollController.isAttached) {
+                              itemScrollController.jumpTo(index: 0, alignment: 0.0);
+                            }
                           });
                         },
                       ),
@@ -2212,19 +2217,19 @@ class WordListPageState extends State<WordListPage>
                           ),
                         ),
                         onTap: () async {
-                          setState(() {
-                            clearQueryResult();
-                            baseIndex = totalWordCount - 50;
-                            baseIndex = baseIndex! < 0 ? 0 : baseIndex;
-                            doQuery(false, baseIndex!, 50, true).then((_) {
-                              // 添加这一行，确保跳转到最后一个单词
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                itemScrollController.scrollTo(
-                                    index: words.length - 1,
-                                    duration: const Duration(milliseconds: 300),
-                                    alignment: _handwritingScrollAlignment); // 显示在屏幕偏上部
-                              });
-                            });
+                          if (totalWordCount <= 0) return;
+                          final int lastPageBase = ((totalWordCount - 1) ~/ _pageSize) * _pageSize;
+                          if (baseIndex != null && baseIndex! <= lastPageBase && baseIndex! + words.length >= totalWordCount && words.isNotEmpty && itemScrollController.isAttached) {
+                            itemScrollController.jumpTo(index: words.length - 1, alignment: _handwritingScrollAlignment);
+                            return;
+                          }
+                          if (isQuerying) return;
+                          baseIndex = lastPageBase < 0 ? 0 : lastPageBase;
+                          await doQuery(true, baseIndex!, _pageSize, false, force: true);
+                          SchedulerBinding.instance.addPostFrameCallback((_) {
+                            if (words.isNotEmpty && itemScrollController.isAttached) {
+                              itemScrollController.jumpTo(index: words.length - 1, alignment: _handwritingScrollAlignment);
+                            }
                           });
                         },
                       ),
@@ -3253,13 +3258,13 @@ class WordListPageState extends State<WordListPage>
   String _getSortAlgDesc(WordSortAlg alg) {
     switch (alg) {
       case WordSortAlg.random:
-        return '基于单词拼写哈希乱序展示';
+        return '单词随机排列';
       case WordSortAlg.alphabetical:
-        return '按英文字母 A-Z 顺序排列';
+        return '单词按拼写顺序排列';
       case WordSortAlg.unit:
-        return '按单词书默认的单元顺序排列';
+        return '单词按单元顺序排列';
       case WordSortAlg.semantic:
-        return '按单词3D向量在语义空间排列';
+        return '单词按语义相关性排列';
     }
   }
 }

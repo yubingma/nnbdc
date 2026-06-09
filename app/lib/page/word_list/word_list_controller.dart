@@ -205,7 +205,7 @@ class WordListController extends ChangeNotifier {
     );
   }
 
-  Future<void> doQuery(bool clearCurrent, int fromIndex, final int queryPageSize, bool jumpToTailWhenReady) async {
+  Future<void> doQuery(bool clearCurrent, int fromIndex, final int queryPageSize, bool jumpToTailWhenReady, {bool force = false}) async {
     fromIndex = fromIndex < 0 ? 0 : fromIndex;
 
     if (isQuerying ||
@@ -216,7 +216,7 @@ class WordListController extends ChangeNotifier {
             words.length >= totalWordCount &&
             words.isNotEmpty) ||
         fromIndex < 0 ||
-        (lastQueryTime != null &&
+        (!force && lastQueryTime != null &&
             AppClock.now().difference(lastQueryTime!).inMilliseconds <
                 minQueryInterval)) {
       return;
@@ -227,6 +227,7 @@ class WordListController extends ChangeNotifier {
 
     if (clearCurrent) {
       clearQueryResult();
+      baseIndex = fromIndex;
     }
 
     await loadAPageOfWords(fromIndex, queryPageSize, jumpToTailWhenReady);
