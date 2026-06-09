@@ -3,6 +3,7 @@ CREATE TABLE word_embedding (
     embedding BYTEA NOT NULL,
     dimension INTEGER NOT NULL,
     model_name VARCHAR(100) NOT NULL,
+    create_time TIMESTAMP NOT NULL,
     update_time TIMESTAMP NOT NULL
 );
 

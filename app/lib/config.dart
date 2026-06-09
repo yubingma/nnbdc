@@ -1,5 +1,5 @@
 class Config {
-  static String profileName = "prod";
+  static String profileName = "dev2";
 
   static final Map profiles = {
     "prod": {
