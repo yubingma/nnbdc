@@ -95,6 +95,7 @@ void main() {
       dictId: dictId,
       isPrivileged: false,
       fetchMastered: false,
+      sortAlg: 'RANDOM',
       createTime: now,
       updateTime: now,
     ));
@@ -344,7 +345,7 @@ void main() {
 
       var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 精确验证它取的是前 5 个词
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_10', 'word_2', 'word_3', 'word_4']);
 
       // 模拟用户在第一天认真学完了这 5 个词
       for (var lw in todayWords) {
@@ -370,7 +371,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 精确验证它往下抓了后 5 个新鲜词
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_10', 'word_6', 'word_7', 'word_8', 'word_9']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_5', 'word_6', 'word_7', 'word_8', 'word_9']);
 
       // 模拟用户在第二天痛快地学完了这仅剩的 5 个新词，但基础极差，只配了 1 天的复习期
       for (var lw in todayWords) {
@@ -400,7 +401,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 因为 Day 2 的稳定性 1.0 远低于 Day 1 的 2.0，所以被优先抽出！
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_10', 'word_6', 'word_7', 'word_8', 'word_9']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_5', 'word_6', 'word_7', 'word_8', 'word_9']);
 
       // 模拟用户在第三天完美地复习了这 5 个词，并将它们直接干到了“毕业”水平（毕业稳定性常数=Constants.graduationStability，默认可能是10.0或更大）
       for (var lw in todayWords) {
@@ -428,7 +429,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 精准验证！果然轮到了 1-5 词的复习
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_10', 'word_2', 'word_3', 'word_4']);
 
       // 同样，用户神采奕奕，把这 5 个词也学到了满分毕业点之上
       for (var lw in todayWords) {
@@ -790,6 +791,7 @@ void main() {
       await db.into(db.learningDicts).insert(LearningDict(
         userId: testUser.id, dictId: dictHighId,
         isPrivileged: true, fetchMastered: false,
+        sortAlg: 'RANDOM',
         createTime: now, updateTime: now,
       ));
       for (int i = 1; i <= 2; i++) {
@@ -815,6 +817,7 @@ void main() {
       await db.into(db.learningDicts).insert(LearningDict(
         userId: testUser.id, dictId: dictLowId,
         isPrivileged: false, fetchMastered: false,
+        sortAlg: 'RANDOM',
         createTime: now, updateTime: now,
       ));
       for (int i = 1; i <= 3; i++) {
@@ -978,6 +981,7 @@ void main() {
         dictId: dictTestId,
         isPrivileged: false,
         fetchMastered: true, // 模拟生词本的 fetchMastered = true
+        sortAlg: 'RANDOM',
         createTime: now,
         updateTime: now,
       ));

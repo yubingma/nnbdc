@@ -12,6 +12,7 @@ import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/utils.dart';
 
 import '../../api/bo/word_bo.dart';
+import '../../api/sort_alg.dart';
 import '../../global.dart';
 import '../../util/app_clock.dart';
 import '../../util/word_util.dart';
@@ -26,6 +27,54 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   MyDatabase get _db => MyDatabase.instance;
 
   DictWordsProvider(this.dict);
+
+  @override
+  Future<WordSortAlg> getSortAlg() async {
+    final bookmarkProvider = DictWordsBookMarkProvider(dict);
+    final bookmark = await bookmarkProvider.getBookMark();
+    if (bookmark != null) {
+      return WordSortAlg.fromCode(bookmark.sortAlg);
+    }
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId != null) {
+      final learningDict = await _db.learningDictsDao.findById(userId, dict.id);
+      if (learningDict != null) {
+        return WordSortAlg.fromCode(learningDict.sortAlg);
+      }
+    }
+    return WordSortAlg.random;
+  }
+
+  @override
+  Future<void> saveSortAlg(WordSortAlg alg) async {
+    final userId = Global.getLoggedInUser()?.id;
+    if (userId == null) return;
+
+    // 1. 双向联动：更新 LearningDicts 偏好
+    final learningDict = await _db.learningDictsDao.findById(userId, dict.id);
+    if (learningDict != null) {
+      final updatedLD = learningDict.copyWith(sortAlg: alg.code, updateTime: AppClock.now());
+      await _db.learningDictsDao.saveEntity(updatedLD, true);
+    }
+
+    // 2. 更新对应书签
+    final bookmarkProvider = DictWordsBookMarkProvider(dict);
+    var bookmark = await bookmarkProvider.getBookMark();
+    if (bookmark != null) {
+      final updatedBookmark = BookMarkVo(bookmark.position, bookmark.spell, alg.code);
+      await bookmarkProvider.saveBookMark(updatedBookmark);
+    }
+  }
+
+  @override
+  Future<bool> get hasUnits async {
+    final result = await (_db.selectOnly(_db.dictWords)
+          ..addColumns([_db.dictWords.unit])
+          ..where(_db.dictWords.dictId.equals(dict.id) & _db.dictWords.unit.isBiggerThanValue(0))
+          ..limit(1))
+        .get();
+    return result.isNotEmpty;
+  }
 
   @override
   String? get targetDictId => dict.id;
@@ -70,7 +119,8 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   Future<PagedResults<WordWrapper>> getAPageOfWords(int fromIndex, int pageSize) async {
     final sw = Stopwatch()..start();
     try {
-      final results = await WordBo().getDictWordsForAPage(dict.id, fromIndex, pageSize);
+      final sortAlg = await getSortAlg();
+      final results = await WordBo().getDictWordsForAPage(dict.id, fromIndex, pageSize, sortAlg: sortAlg.code);
       final wrappedResults = PagedResults<WordWrapper>(results.total);
 
       for (var dictWordVo in results.rows) {
@@ -140,7 +190,8 @@ class DictWordsProvider with WordsProvider implements WordModifier {
   @override
   Future<int> getWordIndex(String spell) async {
     final sw = Stopwatch()..start();
-    var result = await WordBo().getDictWordOrder(dict.id, spell);
+    final sortAlg = await getSortAlg();
+    var result = await WordBo().getDictWordOrder(dict.id, spell, sortAlg: sortAlg.code);
     Global.logger.d('DictWordsProvider: getWordIndex($spell) completed in ${sw.elapsedMilliseconds}ms');
     if (result.success) {
       var order = result.data!;
@@ -224,7 +275,7 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
       final bookmark = await bookmarkQuery.getSingleOrNull();
 
       if (bookmark != null) {
-        final vo = BookMarkVo(bookmark.position, bookmark.spell);
+        final vo = BookMarkVo(bookmark.position, bookmark.spell, bookmark.sortAlg);
         WordBo().updateBookmarkCache(bookMarkName, vo);
         return vo;
       }
@@ -238,7 +289,7 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
         if (content.contains(':')) {
           final parts = content.split(':');
           if (parts.length == 2) {
-            final bookMark = BookMarkVo(int.tryParse(parts[1]) ?? 0, parts[0]);
+            final bookMark = BookMarkVo(int.tryParse(parts[1]) ?? 0, parts[0], 'RANDOM');
             WordBo().updateBookmarkCache(bookMarkName, bookMark);
             // 异步迁移到新表，不阻塞当前返回
             _saveBookMarkLocally(bookMark).then((_) {
@@ -280,6 +331,7 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
           BookMarksCompanion(
             spell: drift.Value(bookMark.spell),
             position: drift.Value(bookMark.position),
+            sortAlg: drift.Value(bookMark.sortAlg),
             updateTime: drift.Value(now),
           ),
         );
@@ -292,6 +344,7 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
                 bookMarkName: bookMarkName,
                 spell: bookMark.spell,
                 position: bookMark.position,
+                sortAlg: bookMark.sortAlg,
                 createTime: now,
                 updateTime: now,
               ),

@@ -2813,6 +2813,7 @@ class _DictCardState extends State<DictCard> {
                               dictId: currentLearningDict.dictId,
                               isPrivileged: newPrivilegedStatus,
                               fetchMastered: currentLearningDict.fetchMastered,
+                              sortAlg: currentLearningDict.sortAlg,
                               createTime: currentLearningDict.createTime,
                               updateTime: currentLearningDict.updateTime,
                             );

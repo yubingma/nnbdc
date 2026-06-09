@@ -53,7 +53,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
     
 
     public List<LearningDictDto> getLearningDictDtosOfUser(String userId) {
-        String sql = "SELECT user_id, dict_id, is_privileged, fetch_mastered, create_time, update_time FROM learning_dict WHERE user_id = :userId";
+        String sql = "SELECT user_id, dict_id, is_privileged, fetch_mastered, sort_alg, create_time, update_time FROM learning_dict WHERE user_id = :userId";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
         
         List<LearningDictDto> dtos = namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -62,6 +62,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
             dto.setDictId(rs.getString("dict_id"));
             dto.setIsPrivileged(rs.getBoolean("is_privileged"));
             dto.setFetchMastered(rs.getBoolean("fetch_mastered"));
+            dto.setSortAlg(rs.getString("sort_alg"));
             dto.setCreateTime(rs.getTimestamp("create_time"));
             dto.setUpdateTime(rs.getTimestamp("update_time"));
             return dto;
@@ -81,6 +82,7 @@ public class LearningDictBo extends BaseBo<LearningDict> {
         dto.setDictId(entity.getDict().getId());
         dto.setIsPrivileged(entity.getIsPrivileged());
         dto.setFetchMastered(entity.getFetchMastered());
+        dto.setSortAlg(entity.getSortAlg());
         dto.setCreateTime(entity.getCreateTime());
         dto.setUpdateTime(entity.getUpdateTime());
         return dto;

@@ -33,6 +33,9 @@ public class LearningDict extends Po {
     @Column(name = "fetch_mastered", nullable = false)
     private Boolean fetchMastered;
 
+    @Column(name = "sort_alg", length = 50, nullable = true)
+    private String sortAlg;
+
     // Constructors
 
     /**
@@ -58,6 +61,14 @@ public class LearningDict extends Po {
 
     public void setFetchMastered(Boolean fetchMastered) {
         this.fetchMastered = fetchMastered;
+    }
+
+    public String getSortAlg() {
+        return sortAlg;
+    }
+
+    public void setSortAlg(String sortAlg) {
+        this.sortAlg = sortAlg;
     }
 
 
@@ -98,6 +109,7 @@ public class LearningDict extends Po {
         learningDict.setId(new LearningDictId(dto.getUserId(), dto.getDictId()));
         learningDict.setIsPrivileged(dto.getIsPrivileged());
         learningDict.setFetchMastered(dto.getFetchMastered());
+        learningDict.setSortAlg(dto.getSortAlg());
         if (dto.getCreateTime() != null) {
             learningDict.setCreateTime(dto.getCreateTime());
         }

@@ -7,6 +7,7 @@ public class LearningDictDto {
     private String userId;
     private Boolean isPrivileged;
     private Boolean fetchMastered;
+    private String sortAlg;
     private Date createTime;
     private Date updateTime;
 
@@ -61,5 +62,11 @@ public class LearningDictDto {
         this.fetchMastered = fetchMastered;
     }
 
+    public String getSortAlg() {
+        return sortAlg;
+    }
 
+    public void setSortAlg(String sortAlg) {
+        this.sortAlg = sortAlg;
+    }
 }

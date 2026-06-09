@@ -569,11 +569,32 @@ class LearningService {
       bool hasMoreInDict = true;
 
       while (hasMoreInDict && learningWords.length < countToFetch) {
-        final dictWords = await (db.select(db.dictWords)
-              ..where((dw) => dw.dictId.equals(learningDict.dictId))
-              ..orderBy([(dw) => OrderingTerm.asc(dw.seq)])
-              ..limit(batchSize, offset: offset))
-            .get();
+        final List<DictWord> dictWords;
+        final sortAlg = learningDict.sortAlg;
+        if (sortAlg != null && sortAlg != 'UNIT') {
+          String sql;
+          if (sortAlg == 'ALPHABETICAL') {
+            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.spell ASC LIMIT ? OFFSET ?';
+          } else if (sortAlg == 'RANDOM') {
+            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
+          } else if (sortAlg == 'SEMANTIC') {
+            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY (w.vec_x IS NULL), w.vec_x ASC, w.vec_y ASC, w.vec_z ASC LIMIT ? OFFSET ?';
+          } else {
+            sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC LIMIT ? OFFSET ?';
+          }
+          final rows = await db.customSelect(sql, variables: [
+            Variable.withString(learningDict.dictId),
+            Variable.withInt(batchSize),
+            Variable.withInt(offset),
+          ]).get();
+          dictWords = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
+        } else {
+          dictWords = await (db.select(db.dictWords)
+                ..where((dw) => dw.dictId.equals(learningDict.dictId))
+                ..orderBy([(dw) => OrderingTerm(expression: dw.unit), (dw) => OrderingTerm(expression: dw.seq)])
+                ..limit(batchSize, offset: offset))
+              .get();
+        }
 
         if (dictWords.isEmpty) {
           hasMoreInDict = false;

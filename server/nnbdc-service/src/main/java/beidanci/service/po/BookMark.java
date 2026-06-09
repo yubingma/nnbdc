@@ -25,6 +25,10 @@ public class BookMark extends Po {
     @Column(name = "spell", length = 100, nullable = false)
     private String spell;
 
+    // 书签的排序算法
+    @Column(name = "sort_alg", length = 50, nullable = true)
+    private String sortAlg;
+
     public BookMark() {
     }
 
@@ -56,6 +60,14 @@ public class BookMark extends Po {
         this.spell = spell;
     }
 
+    public String getSortAlg() {
+        return sortAlg;
+    }
+
+    public void setSortAlg(String sortAlg) {
+        this.sortAlg = sortAlg;
+    }
+
     /**
      * 从DTO转换为实体对象
      */
@@ -64,6 +76,7 @@ public class BookMark extends Po {
         BookMark bookMark = new BookMark(id);
         bookMark.setPosition(dto.getPosition());
         bookMark.setSpell(dto.getSpell());
+        bookMark.setSortAlg(dto.getSortAlg());
         return bookMark;
     }
 }

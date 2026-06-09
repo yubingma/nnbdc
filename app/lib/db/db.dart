@@ -250,7 +250,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 44;
+  int get schemaVersion => 45;
 
   @override
   MigrationStrategy get migration {
@@ -396,6 +396,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 44) {
             await _migrateFromV43ToV44AddWordCoordinates(m);
+          }
+          if (from < 45) {
+            await _migrateFromV44ToV45AddSortAlg(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -562,6 +565,14 @@ class MyDatabase extends _$MyDatabase {
       await m.addColumn(words, words.vecX);
       await m.addColumn(words, words.vecY);
       await m.addColumn(words, words.vecZ);
+    });
+  }
+
+  /// 从版本 44 升级到版本 45：在 book_marks 和 learning_dicts 表中添加 sort_alg 字段
+  Future<void> _migrateFromV44ToV45AddSortAlg(Migrator m) async {
+    await transaction(() async {
+      await m.addColumn(bookMarks, bookMarks.sortAlg);
+      await m.addColumn(learningDicts, learningDicts.sortAlg);
     });
   }
 

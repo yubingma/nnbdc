@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/sort_alg.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -178,6 +179,30 @@ class WordListController extends ChangeNotifier {
     // 语音模式下恢复 ASR
     restoreAsrIfNeeded('loadData');
     Global.logger.d('WordListController: loadData total completed in ${swTotal.elapsedMilliseconds}ms (baseIndex=$baseIndex)');
+  }
+
+  Future<void> changeSortAlg(WordSortAlg newAlg) async {
+    final currentSpell = bookMark?.spell ?? (words.isNotEmpty ? words[0].word.spell : null);
+    if (currentSpell == null) return;
+
+    // 1. 保存新的排序（这会联动修改偏好设置与书签记录的 sortAlg）
+    await args.wordsProvider.saveSortAlg(newAlg);
+
+    // 2. 重查拼写在新排序下的物理位置
+    final newPosition = await args.wordsProvider.getWordIndex(currentSpell);
+    final finalPos = newPosition == -1 ? 0 : newPosition;
+
+    // 3. 构建新的书签快照
+    bookMark = BookMarkVo(finalPos, currentSpell, newAlg.code);
+    await args.bookMarkProvider.saveBookMark(bookMark!);
+
+    // 4. 重置页面数据并重新加载定位
+    dataLoaded = false;
+    clearQueryResult();
+    await loadData(
+      checkAndShowGuide: () {},
+      restoreAsrIfNeeded: (_) {},
+    );
   }
 
   Future<void> doQuery(bool clearCurrent, int fromIndex, final int queryPageSize, bool jumpToTailWhenReady) async {

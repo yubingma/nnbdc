@@ -8,6 +8,9 @@ public class BookMarkVo extends Vo{
     // 书签记录的单词拼写
     private String spell;
 
+    // 书签记录的排序算法
+    private String sortAlg;
+
     public int getPosition() {
         return position;
     }
@@ -22,5 +25,13 @@ public class BookMarkVo extends Vo{
 
     public void setSpell(String spell) {
         this.spell = spell;
+    }
+
+    public String getSortAlg() {
+        return sortAlg;
+    }
+
+    public void setSortAlg(String sortAlg) {
+        this.sortAlg = sortAlg;
     }
 }

@@ -18,6 +18,9 @@ public class BookMarkDto {
     // 书签记录的单词拼写
     private String spell;
 
+    // 书签记录的排序算法
+    private String sortAlg;
+
     // 创建时间
     private Date createTime;
 
@@ -57,6 +60,14 @@ public class BookMarkDto {
 
     public void setSpell(String spell) {
         this.spell = spell;
+    }
+
+    public String getSortAlg() {
+        return sortAlg;
+    }
+
+    public void setSortAlg(String sortAlg) {
+        this.sortAlg = sortAlg;
     }
 
     public Date getCreateTime() {

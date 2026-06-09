@@ -200,6 +200,7 @@ class LearningWordsBookMarkProvider implements BookMarkProvider {
                 bookMarkName: bookMarkName,
                 spell: bookMark.spell,
                 position: bookMark.position,
+                sortAlg: 'RANDOM',
                 createTime: now,
                 updateTime: now,
               ),

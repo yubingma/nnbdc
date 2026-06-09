@@ -8,6 +8,7 @@ public class LearningDictVo extends Vo {
     private DictVo dict;
     private Integer currentWordSeq;
     private boolean isPrivileged;
+    private String sortAlg;
 
     public DictVo getDict() {
         return dict;
@@ -31,5 +32,13 @@ public class LearningDictVo extends Vo {
 
     public void setIsPrivileged(boolean privileged) {
         isPrivileged = privileged;
+    }
+
+    public String getSortAlg() {
+        return sortAlg;
+    }
+
+    public void setSortAlg(String sortAlg) {
+        this.sortAlg = sortAlg;
     }
 }

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/api/sort_alg.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
@@ -60,6 +61,8 @@ const String menuSettings = '学习设置';
 const String menuLegend = '学习状态图例';
 const String menuHideChinese = '隐藏中文';
 const String menuHideEnglish = '隐藏英文';
+const String menuSortSettings = '排序设置';
+
 
 
 mixin WordsProvider {
@@ -93,6 +96,17 @@ mixin WordsProvider {
 
   /// 当单词被标记为“掌握”时，是否保留在当前UI列表中（不自动移除）
   bool get keepWordsOnMaster => false;
+
+  /// 获取当前词表数据源的排序规则
+  Future<WordSortAlg> getSortAlg() async {
+    return WordSortAlg.random;
+  }
+
+  /// 保存当前词表数据源的排序规则
+  Future<void> saveSortAlg(WordSortAlg alg) async {}
+
+  /// 该数据源是否包含分单元的数据（用于判断是否展示单元序）
+  Future<bool> get hasUnits async => false;
 }
 
 abstract class WordModifier {
@@ -2324,6 +2338,9 @@ class WordListPageState extends State<WordListPage>
                           if (studyMode == WordListStudyMode.speakChinese) {
                             menuItems.add(menuSettings);
                           }
+                          if (args.wordsProvider is DictWordsProvider) {
+                            menuItems.add(menuSortSettings);
+                          }
 
                           // 5. 显示菜单 (使用 RootNavigator)
                           // ignore: use_build_context_synchronously
@@ -2378,6 +2395,9 @@ class WordListPageState extends State<WordListPage>
                                 case menuSettings:
                                   icon = Icons.settings;
                                   break;
+                                case menuSortSettings:
+                                  icon = Icons.sort;
+                                  break;
                                 default:
                                   icon = Icons.help_outline;
                               }
@@ -2424,6 +2444,9 @@ class WordListPageState extends State<WordListPage>
                                   isSelected = false;
                                   break;
                                 case menuSettings:
+                                  isSelected = false;
+                                  break;
+                                case menuSortSettings:
                                   isSelected = false;
                                   break;
                               }
@@ -2656,6 +2679,9 @@ class WordListPageState extends State<WordListPage>
                                   break;
                                 case menuSettings:
                                   _showSettingsDialog();
+                                  break;
+                                case menuSortSettings:
+                                  await _showSortSettingsDialog();
                                   break;
                                 }
                               } finally {
@@ -3094,7 +3120,147 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
+  Future<void> _showSortSettingsDialog() async {
+    isMenuOpen = true;
+    try {
+      FocusScope.of(context).unfocus();
+      bool wasAnimating = _asrModelLoadingController.isAnimating;
+      if (wasAnimating) {
+        _asrModelLoadingController.stop();
+      }
+      final capturedContext = context;
+      await Future.delayed(const Duration(milliseconds: 350));
+      if (!capturedContext.mounted) return;
 
+      final isDarkMode = capturedContext.read<DarkMode>().isDarkMode;
+      
+      // Get the current sort alg
+      final currentAlg = await args.wordsProvider.getSortAlg();
+      final hasUnits = await args.wordsProvider.hasUnits;
+
+      final availableAlgs = WordSortAlg.values.where((alg) {
+        if (alg == WordSortAlg.unit && !hasUnits) {
+          return false;
+        }
+        return true;
+      }).toList();
+
+      await showDialog(
+        context: capturedContext,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor:
+                isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              '词表排序设置',
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: availableAlgs.map((alg) {
+                final isSelected = currentAlg == alg;
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFF0097A7).withValues(alpha: 0.1)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF0097A7)
+                          : (isDarkMode ? Colors.white12 : Colors.black12),
+                      width: 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    title: Text(
+                      alg.label,
+                      style: TextStyle(
+                        color: isSelected
+                            ? const Color(0xFF0097A7)
+                            : (isDarkMode ? Colors.white : Colors.black87),
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: Text(
+                      _getSortAlgDesc(alg),
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white54 : Colors.black54,
+                        fontSize: 12,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle, color: Color(0xFF0097A7))
+                        : const Icon(Icons.circle_outlined, color: Colors.grey),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      if (currentAlg != alg) {
+                        setState(() {
+                          _isSwitchingMode = true;
+                        });
+                        try {
+                          await controller.changeSortAlg(alg);
+                          ToastUtil.success('已切换为 ${alg.label}');
+                        } catch (e) {
+                          ToastUtil.error('切换排序失败: $e');
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isSwitchingMode = false;
+                            });
+                          }
+                        }
+                      }
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  '取消',
+                  style: TextStyle(
+                    color: Color(0xFF4A90E2),
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      isMenuOpen = false;
+    }
+  }
+
+  String _getSortAlgDesc(WordSortAlg alg) {
+    switch (alg) {
+      case WordSortAlg.random:
+        return '基于单词拼写哈希乱序展示';
+      case WordSortAlg.alphabetical:
+        return '按英文字母 A-Z 顺序排列';
+      case WordSortAlg.unit:
+        return '按单词书默认的单元顺序排列';
+      case WordSortAlg.semantic:
+        return '按单词3D向量在语义空间排列';
+    }
+  }
 }
 
 

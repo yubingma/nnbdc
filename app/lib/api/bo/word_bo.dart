@@ -1047,27 +1047,45 @@ class WordBo {
     }
   }
 
-  Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize, {bool loadSentences = false}) async {
+  Future<PagedResults<DictWordVo>> getDictWordsForAPage(String dictId, int fromIndex, int pageSize, {bool loadSentences = false, String? sortAlg}) async {
     final sw = Stopwatch()..start();
     try {
       final results = PagedResults<DictWordVo>(0);
       final db = MyDatabase.instance;
 
-      // 1) 并行获取总数和分页条目
-      final queryResults = await Future.wait([
-        (db.selectOnly(db.dictWords)
-              ..addColumns([countAll()])
-              ..where(db.dictWords.dictId.equals(dictId)))
-            .getSingle(),
-        (db.select(db.dictWords)
+      // 1) 获取总数
+      final countResult = await (db.selectOnly(db.dictWords)
+            ..addColumns([countAll()])
+            ..where(db.dictWords.dictId.equals(dictId)))
+          .getSingle();
+      results.total = countResult.read(countAll()) ?? 0;
+
+      // 2) 获取分页条目
+      final List<DictWord> dictWordEntries;
+      if (sortAlg != null && sortAlg != 'UNIT') {
+        String sql;
+        if (sortAlg == 'ALPHABETICAL') {
+          sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.spell ASC LIMIT ? OFFSET ?';
+        } else if (sortAlg == 'RANDOM') {
+          sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
+        } else if (sortAlg == 'SEMANTIC') {
+          sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY (w.vec_x IS NULL), w.vec_x ASC, w.vec_y ASC, w.vec_z ASC LIMIT ? OFFSET ?';
+        } else {
+          sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC LIMIT ? OFFSET ?';
+        }
+        final rows = await db.customSelect(sql, variables: [
+          Variable.withString(dictId),
+          Variable.withInt(pageSize),
+          Variable.withInt(fromIndex),
+        ]).get();
+        dictWordEntries = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
+      } else {
+        dictWordEntries = await (db.select(db.dictWords)
               ..where((dw) => dw.dictId.equals(dictId))
               ..orderBy([(t) => OrderingTerm(expression: t.unit), (t) => OrderingTerm(expression: t.seq)])
               ..limit(pageSize, offset: fromIndex))
-            .get(),
-      ]);
-
-      results.total = (queryResults[0] as TypedResult).read(countAll()) ?? 0;
-      final dictWordEntries = queryResults[1] as List<DictWord>;
+            .get();
+      }
 
       if (dictWordEntries.isEmpty) {
         return results;
@@ -1188,22 +1206,50 @@ class WordBo {
     return result;
   }
 
-  Future<Result<int>> getDictWordOrder(String dictId, String spell) async {
+  Future<Result<int>> getDictWordOrder(String dictId, String spell, {String? sortAlg}) async {
     try {
-      Global.logger.d('开始本地查询词典单词位置: dictId=$dictId, spell=$spell');
+      Global.logger.d('开始本地查询词典单词位置: dictId=$dictId, spell=$spell, sortAlg=$sortAlg');
       final db = MyDatabase.instance;
       
-      // 使用单一查询合并：查找单词 -> 查找关联 -> 计算序号
-      final query = 'SELECT (SELECT count(*) FROM dict_words dw2 WHERE dw2.dict_id = dw1.dict_id AND (dw2.unit < dw1.unit OR (dw2.unit = dw1.unit AND dw2.seq <= dw1.seq))) as word_order '
-                    'FROM dict_words dw1 '
-                    'JOIN words w ON dw1.word_id = w.id '
-                    'WHERE dw1.dict_id = ? AND w.spell = ?';
+      String query;
+      List<Variable> variables = [];
       
-      final row = await db.customSelect(query, variables: [
-        Variable.withString(dictId),
-        Variable.withString(spell),
-      ]).getSingleOrNull();
-
+      if (sortAlg == 'ALPHABETICAL') {
+        query = 'SELECT count(*) as word_order FROM dict_words dw '
+                'JOIN words w ON dw.word_id = w.id '
+                'WHERE dw.dict_id = ? AND w.spell <= ?';
+        variables = [Variable.withString(dictId), Variable.withString(spell)];
+      } else if (sortAlg == 'RANDOM') {
+        query = 'SELECT count(*) as word_order FROM dict_words dw '
+                'JOIN words w ON dw.word_id = w.id '
+                'WHERE dw.dict_id = ? AND w.id <= (SELECT id FROM words WHERE spell = ? LIMIT 1)';
+        variables = [Variable.withString(dictId), Variable.withString(spell)];
+      } else if (sortAlg == 'SEMANTIC') {
+        query = 'SELECT count(*) as word_order FROM dict_words dw '
+                'JOIN words w ON dw.word_id = w.id '
+                'WHERE dw.dict_id = ? AND ('
+                '  w.vec_x < (SELECT vec_x FROM words WHERE spell = ? LIMIT 1) '
+                '  OR (w.vec_x = (SELECT vec_x FROM words WHERE spell = ? LIMIT 1) AND w.vec_y < (SELECT vec_y FROM words WHERE spell = ? LIMIT 1))'
+                '  OR (w.vec_x = (SELECT vec_x FROM words WHERE spell = ? LIMIT 1) AND w.vec_y = (SELECT vec_y FROM words WHERE spell = ? LIMIT 1) AND w.vec_z <= (SELECT vec_z FROM words WHERE spell = ? LIMIT 1))'
+                ')';
+        variables = [
+          Variable.withString(dictId),
+          Variable.withString(spell),
+          Variable.withString(spell),
+          Variable.withString(spell),
+          Variable.withString(spell),
+          Variable.withString(spell),
+          Variable.withString(spell),
+        ];
+      } else {
+        query = 'SELECT (SELECT count(*) FROM dict_words dw2 WHERE dw2.dict_id = dw1.dict_id AND (dw2.unit < dw1.unit OR (dw2.unit = dw1.unit AND dw2.seq <= dw1.seq))) as word_order '
+                'FROM dict_words dw1 '
+                'JOIN words w ON dw1.word_id = w.id '
+                'WHERE dw1.dict_id = ? AND w.spell = ?';
+        variables = [Variable.withString(dictId), Variable.withString(spell)];
+      }
+      
+      final row = await db.customSelect(query, variables: variables).getSingleOrNull();
       final order = row?.read<int>('word_order') ?? -1;
       
       Global.logger.d('找到单词 $spell 在词典 $dictId 中的位置: $order');
