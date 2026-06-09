@@ -28,6 +28,93 @@ class WordBo {
   // 书签缓存，用于加速页面进入
   final Map<String, BookMarkVo> _bookmarkCache = {};
 
+  // TSP 语义排序缓存，用 dictId 作为键，存储排好序的 wordId 列表
+  static final Map<String, List<String>> _dictTspCache = {};
+
+  static void clearTspCache(String dictId) {
+    _dictTspCache.remove(dictId);
+    Global.logger.d('clearTspCache: 已清除词书 $dictId 的 TSP 缓存');
+  }
+
+  static void clearAllTspCache() {
+    _dictTspCache.clear();
+    Global.logger.d('clearAllTspCache: 已清除所有词书的 TSP 缓存');
+  }
+
+  Future<List<String>> getTspSortedWordIdsInternal(String dictId) => _getTspSortedWordIds(dictId);
+
+  Future<List<String>> _getTspSortedWordIds(String dictId) async {
+    if (_dictTspCache.containsKey(dictId)) {
+      return _dictTspCache[dictId]!;
+    }
+
+    final db = MyDatabase.instance;
+    final rows = await db.customSelect(
+      'SELECT dw.word_id, w.vec_x, w.vec_y, w.vec_z FROM dict_words dw '
+      'JOIN words w ON dw.word_id = w.id '
+      'WHERE dw.dict_id = ?',
+      variables: [Variable.withString(dictId)],
+    ).get();
+
+    final List<MapEntry<String, List<double>>> wordsWithCoords = [];
+    final List<String> wordsWithoutCoords = [];
+
+    for (final row in rows) {
+      final String wordId = row.read<String>('word_id');
+      final double? x = row.readNullable<double>('vec_x');
+      final double? y = row.readNullable<double>('vec_y');
+      final double? z = row.readNullable<double>('vec_z');
+
+      if (x != null && y != null && z != null) {
+        wordsWithCoords.add(MapEntry(wordId, [x, y, z]));
+      } else {
+        wordsWithoutCoords.add(wordId);
+      }
+    }
+
+    if (wordsWithCoords.isEmpty) {
+      final result = [...wordsWithoutCoords];
+      _dictTspCache[dictId] = result;
+      return result;
+    }
+
+    // 3D 空间中的贪心旅行商 (TSP - Nearest Neighbor) 最短语义路径算法
+    final List<String> tspSortedIds = [];
+    final int n = wordsWithCoords.length;
+    final Set<int> unvisited = Set.from(Iterable.generate(n));
+
+    int curr = 0;
+    tspSortedIds.add(wordsWithCoords[curr].key);
+    unvisited.remove(curr);
+
+    while (unvisited.isNotEmpty) {
+      int closest = -1;
+      double minDist = double.infinity;
+      final List<double> currPoint = wordsWithCoords[curr].value;
+
+      for (final int idx in unvisited) {
+        final List<double> nodePoint = wordsWithCoords[idx].value;
+        final double dx = currPoint[0] - nodePoint[0];
+        final double dy = currPoint[1] - nodePoint[1];
+        final double dz = currPoint[2] - nodePoint[2];
+        // 采用平方欧氏距离，极大加速 CPU 计算
+        final double dist = dx * dx + dy * dy + dz * dz;
+        if (dist < minDist) {
+          minDist = dist;
+          closest = idx;
+        }
+      }
+
+      curr = closest;
+      tspSortedIds.add(wordsWithCoords[curr].key);
+      unvisited.remove(curr);
+    }
+
+    final finalResult = [...tspSortedIds, ...wordsWithoutCoords];
+    _dictTspCache[dictId] = finalResult;
+    return finalResult;
+  }
+
   /// 批量获取单词的学习状态：null=未学习, true=已掌握, false=学习中
   static Future<Map<String, bool?>> getWordsLearningStatusBatch(String userId, List<String> wordIds) async {
     if (wordIds.isEmpty) return {};
@@ -1063,22 +1150,37 @@ class WordBo {
       // 2) 获取分页条目
       final List<DictWord> dictWordEntries;
       if (sortAlg != null && sortAlg != 'UNIT') {
-        String sql;
-        if (sortAlg == 'ALPHABETICAL') {
-          sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.spell ASC LIMIT ? OFFSET ?';
-        } else if (sortAlg == 'RANDOM') {
-          sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
-        } else if (sortAlg == 'SEMANTIC') {
-          sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY (w.vec_x IS NULL), w.vec_x ASC, w.vec_y ASC, w.vec_z ASC LIMIT ? OFFSET ?';
+        if (sortAlg == 'SEMANTIC') {
+          final sortedIds = await _getTspSortedWordIds(dictId);
+          final pageIds = sortedIds.skip(fromIndex).take(pageSize).toList();
+          if (pageIds.isEmpty) {
+            dictWordEntries = [];
+          } else {
+            final placeholders = pageIds.map((_) => '?').join(',');
+            final rows = await db.customSelect(
+              'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? AND dw.word_id IN ($placeholders)',
+              variables: [Variable.withString(dictId), ...pageIds.map((id) => Variable.withString(id))],
+            ).get();
+            final dictWordEntriesRaw = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
+            final Map<String, DictWord> entryMap = {for (var e in dictWordEntriesRaw) e.wordId: e};
+            dictWordEntries = pageIds.map((id) => entryMap[id]).whereType<DictWord>().toList();
+          }
         } else {
-          sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC LIMIT ? OFFSET ?';
+          String sql;
+          if (sortAlg == 'ALPHABETICAL') {
+            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.spell ASC LIMIT ? OFFSET ?';
+          } else if (sortAlg == 'RANDOM') {
+            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
+          } else {
+            sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC LIMIT ? OFFSET ?';
+          }
+          final rows = await db.customSelect(sql, variables: [
+            Variable.withString(dictId),
+            Variable.withInt(pageSize),
+            Variable.withInt(fromIndex),
+          ]).get();
+          dictWordEntries = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
         }
-        final rows = await db.customSelect(sql, variables: [
-          Variable.withString(dictId),
-          Variable.withInt(pageSize),
-          Variable.withInt(fromIndex),
-        ]).get();
-        dictWordEntries = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
       } else {
         dictWordEntries = await (db.select(db.dictWords)
               ..where((dw) => dw.dictId.equals(dictId))
@@ -1211,6 +1313,21 @@ class WordBo {
       Global.logger.d('开始本地查询词典单词位置: dictId=$dictId, spell=$spell, sortAlg=$sortAlg');
       final db = MyDatabase.instance;
       
+      if (sortAlg == 'SEMANTIC') {
+        final sortedIds = await _getTspSortedWordIds(dictId);
+        final wordRow = await db.customSelect('SELECT id FROM words WHERE spell = ? LIMIT 1', variables: [Variable.withString(spell)]).getSingleOrNull();
+        int order = -1;
+        if (wordRow != null) {
+          final wordId = wordRow.read<String>('id');
+          final index = sortedIds.indexOf(wordId);
+          if (index != -1) {
+            order = index + 1;
+          }
+        }
+        Global.logger.d('找到单词 $spell 在词典 $dictId 中的位置 (SEMANTIC): $order');
+        return Result("SUCCESS", "获取成功", true)..data = order;
+      }
+
       String query;
       List<Variable> variables = [];
       
@@ -1224,23 +1341,6 @@ class WordBo {
                 'JOIN words w ON dw.word_id = w.id '
                 'WHERE dw.dict_id = ? AND w.id <= (SELECT id FROM words WHERE spell = ? LIMIT 1)';
         variables = [Variable.withString(dictId), Variable.withString(spell)];
-      } else if (sortAlg == 'SEMANTIC') {
-        query = 'SELECT count(*) as word_order FROM dict_words dw '
-                'JOIN words w ON dw.word_id = w.id '
-                'WHERE dw.dict_id = ? AND ('
-                '  w.vec_x < (SELECT vec_x FROM words WHERE spell = ? LIMIT 1) '
-                '  OR (w.vec_x = (SELECT vec_x FROM words WHERE spell = ? LIMIT 1) AND w.vec_y < (SELECT vec_y FROM words WHERE spell = ? LIMIT 1))'
-                '  OR (w.vec_x = (SELECT vec_x FROM words WHERE spell = ? LIMIT 1) AND w.vec_y = (SELECT vec_y FROM words WHERE spell = ? LIMIT 1) AND w.vec_z <= (SELECT vec_z FROM words WHERE spell = ? LIMIT 1))'
-                ')';
-        variables = [
-          Variable.withString(dictId),
-          Variable.withString(spell),
-          Variable.withString(spell),
-          Variable.withString(spell),
-          Variable.withString(spell),
-          Variable.withString(spell),
-          Variable.withString(spell),
-        ];
       } else {
         query = 'SELECT (SELECT count(*) FROM dict_words dw2 WHERE dw2.dict_id = dw1.dict_id AND (dw2.unit < dw1.unit OR (dw2.unit = dw1.unit AND dw2.seq <= dw1.seq))) as word_order '
                 'FROM dict_words dw1 '
@@ -1366,6 +1466,8 @@ class WordBo {
         await db.dictWordsDao.insertEntity(dictWord, true);
         await db.dictsDao.updateWordCount(dictId, true);
       });
+
+      clearTspCache(dictId);
 
       // 触发同步
       ThrottledDbSyncService().requestSync();
@@ -1820,6 +1922,8 @@ class WordBo {
       await db.transaction(() async {
         await db.dictWordsDao.deleteDictWordWithCleanup(dictId, wordId, userId, true);
       });
+
+      clearTspCache(dictId);
 
       // 延迟触发同步，确保事务完全提交
       Future.delayed(Duration.zero, () {

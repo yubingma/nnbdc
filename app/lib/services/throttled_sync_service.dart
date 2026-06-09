@@ -8,6 +8,7 @@ import 'package:nnbdc/services/dialog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 
 class ThrottledDbSyncService {
   static final ThrottledDbSyncService _instance = ThrottledDbSyncService._internal();
@@ -144,6 +145,7 @@ class ThrottledDbSyncService {
 
     try {
       await dbsync.syncDb();
+      WordBo.clearAllTspCache();
 
       final endTime = AppClock.now();
       final duration = endTime.difference(startTime);

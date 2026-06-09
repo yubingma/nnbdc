@@ -1,5 +1,6 @@
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/api/result.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:drift/drift.dart';
@@ -572,22 +573,37 @@ class LearningService {
         final List<DictWord> dictWords;
         final sortAlg = learningDict.sortAlg;
         if (sortAlg != 'UNIT') {
-          String sql;
-          if (sortAlg == 'ALPHABETICAL') {
-            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.spell ASC LIMIT ? OFFSET ?';
-          } else if (sortAlg == 'RANDOM') {
-            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
-          } else if (sortAlg == 'SEMANTIC') {
-            sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY (w.vec_x IS NULL), w.vec_x ASC, w.vec_y ASC, w.vec_z ASC LIMIT ? OFFSET ?';
+          if (sortAlg == 'SEMANTIC') {
+            final sortedIds = await WordBo().getTspSortedWordIdsInternal(learningDict.dictId);
+            final batchIds = sortedIds.skip(offset).take(batchSize).toList();
+            if (batchIds.isEmpty) {
+              dictWords = [];
+            } else {
+              final placeholders = batchIds.map((_) => '?').join(',');
+              final rows = await db.customSelect(
+                'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? AND dw.word_id IN ($placeholders)',
+                variables: [Variable.withString(learningDict.dictId), ...batchIds.map((id) => Variable.withString(id))],
+              ).get();
+              final dictWordsRaw = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
+              final Map<String, DictWord> entryMap = {for (var e in dictWordsRaw) e.wordId: e};
+              dictWords = batchIds.map((id) => entryMap[id]).whereType<DictWord>().toList();
+            }
           } else {
-            sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC LIMIT ? OFFSET ?';
+            String sql;
+            if (sortAlg == 'ALPHABETICAL') {
+              sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.spell ASC LIMIT ? OFFSET ?';
+            } else if (sortAlg == 'RANDOM') {
+              sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.id ASC LIMIT ? OFFSET ?';
+            } else {
+              sql = 'SELECT dw.* FROM dict_words dw WHERE dw.dict_id = ? ORDER BY dw.unit ASC, dw.seq ASC LIMIT ? OFFSET ?';
+            }
+            final rows = await db.customSelect(sql, variables: [
+              Variable.withString(learningDict.dictId),
+              Variable.withInt(batchSize),
+              Variable.withInt(offset),
+            ]).get();
+            dictWords = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
           }
-          final rows = await db.customSelect(sql, variables: [
-            Variable.withString(learningDict.dictId),
-            Variable.withInt(batchSize),
-            Variable.withInt(offset),
-          ]).get();
-          dictWords = await Future.wait(rows.map((row) => db.dictWords.mapFromRow(row)));
         } else {
           dictWords = await (db.select(db.dictWords)
                 ..where((dw) => dw.dictId.equals(learningDict.dictId))
