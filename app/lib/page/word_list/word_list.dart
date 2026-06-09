@@ -3145,8 +3145,9 @@ class WordListPageState extends State<WordListPage>
         return true;
       }).toList();
 
+      if (!mounted) return;
       await showDialog(
-        context: capturedContext,
+        context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             backgroundColor:

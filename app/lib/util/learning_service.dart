@@ -571,7 +571,7 @@ class LearningService {
       while (hasMoreInDict && learningWords.length < countToFetch) {
         final List<DictWord> dictWords;
         final sortAlg = learningDict.sortAlg;
-        if (sortAlg != null && sortAlg != 'UNIT') {
+        if (sortAlg != 'UNIT') {
           String sql;
           if (sortAlg == 'ALPHABETICAL') {
             sql = 'SELECT dw.* FROM dict_words dw JOIN words w ON dw.word_id = w.id WHERE dw.dict_id = ? ORDER BY w.spell ASC LIMIT ? OFFSET ?';
