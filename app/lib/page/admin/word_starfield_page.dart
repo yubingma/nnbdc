@@ -200,7 +200,7 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '提示：当词库中新增了大量词汇，或者词典同步后 3D 降维出现偏移时，需要执行词嵌入一键重构。这会触发大模型高维向量的异步下载及本地 PCA 矩阵的重新拟合。重构在后台执行，不影响前台学习。',
+                      '提示：当词库中新增了大量词汇，或者词典同步后 3D 降维出现偏移时，需要执行词嵌入一键重构。这会触发在后台向 AI 大模型获取单词的语义特征（词向量），并更新全局 PCA（主成分分析）降维投影矩阵，重新计算所有单词在 3D 空间中的分布位置。重构在后台执行，不影响正常学习。',
                       style: TextStyle(color: Colors.white60, fontSize: 13),
                     ),
                     const SizedBox(height: 16),

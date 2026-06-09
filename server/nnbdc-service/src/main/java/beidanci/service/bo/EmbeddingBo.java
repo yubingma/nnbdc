@@ -390,7 +390,7 @@ public class EmbeddingBo {
             File tempOutputFile = null;
             try {
                 // 1. 自动增量下载全局缺失的高维向量
-                reconstructMsg = "正在自动补全缺失的高维向量...";
+                reconstructMsg = "正在从 AI 大模型获取缺失单词的词向量...";
                 reconstructProgress = 0.05;
                 try {
                     completeEmbeddingsForMissingWords();
@@ -399,7 +399,7 @@ public class EmbeddingBo {
                 }
 
                 // 2. 导出全量 1024D 原始向量
-                reconstructMsg = "正在导出数据库原始词嵌入...";
+                reconstructMsg = "正在读取已保存的 AI 词特征...";
                 reconstructProgress = 0.1;
                 log.info("一键重构：开始读取数据库中所有高维向量...");
 
