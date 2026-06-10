@@ -28,7 +28,7 @@
 
 ### 1.2 应用场景展示 (Supported Scenarios)
 
-基于我们设计的**“后端保存 2048 维原始向量 + 前端同步 3D 降维坐标 + 1-bit 本地打包极速检索 + 支持 3D-TSP 路径重排”**架构，系统能够完美支持以下丰富的使用场景：
+基于我们设计的**“后端保存 2048 维原始向量 + 前端仅同步 1-bit 高维二值向量（直接存入单词表字段） + 客户端内存动态计算 3D 坐标与汉明距离粗筛 + 支持 3D-TSP 路径重排”**架构，系统能够完美支持以下丰富的使用场景：
 
 #### 场景一：语义智能搜索（Semantic Search）
 * **用户体验**：用户在搜索框输入 **“悲伤”**、**“跟医院相关的词”**、或者 **“科技互联网”**，系统能瞬间找出词库中语义最接近的单词（如输入“悲伤”得出：*sad, sorrow, grief, melancholy, gloomy, mournful*）。
@@ -98,7 +98,7 @@
    * **特点**：局部语义关系保留极佳，能自动聚合成形态各异的“语义星云”，非常适合聚类展示。
 
 ##### 2.3.2 降维的多重技术优势
-* **极低的存储开销**：原 2048 维 float 向量每个词需占 8KB；降至 3 维只需 3 个 float 值（12 字节），2 万个词的总大小仅为 **240KB**。客户端数据库可以非常轻松地同步并常驻内存。
+* **零持久化存储开销**：3D 坐标完全不需要落盘物理存储，内存计算后只以常驻内存数组或实体成员形式保存（3万词仅占约 **360KB** 内存），实现了磁盘 I/O 和存储空间的双重零开销。
 * **毫秒级的本地排序（TSP）**：在 3 维空间下计算欧氏距离极其迅速。在手机端，对数百个生词进行语义最短路径（TSP）重排可在 **1-2 毫秒**内瞬间完成。
 * **完美支持离线运行**：前端只需要获取并存储这 3 维坐标，即可在无网状态下随时随地进行生词本的智能语义重排。
 
@@ -163,30 +163,32 @@ $$\text{Distance}(\vec{x}, \vec{y}) = \sum_{j=1}^{32} \text{Popcount}(x_j \oplus
 graph TD
     A[后端: DictImportBo] -->|词库导入| B[调用百炼 text-embedding-v4]
     B -->|dimensions=2048| C[生成 2048D Float 向量]
-    C -->|floatArrayToByteArray| D[(PostgreSQL: word_embedding)]
+    C -->|floatArrayToByteArray| D[(PostgreSQL: word_embedding 表)]
     C -->|floatArrayTo1BitByteArray| E[生成 256B 1-bit Blob]
-    E -->|保存| D
-    C -->|运行 PCA 降维 2048D->3D| F[计算 vec_x, vec_y, vec_z]
-    F -->|保存| G[(PostgreSQL: word)]
-    D -->|更新 WordDto| H[系统增量同步日志 sys_db_log]
-    G -->|更新 WordDto| H
-    H -->|增量推送| I[客户端: Drift SQLite]
-    I -->|Words 表更新 vecX/vecY/vecZ| J[3D 星空渲染与 K-Means 聚类]
-    I -->|Words 表更新 embedding_1bit| K[本地双层混合检索 / 1-bit TSP 排序]
+    E -->|持久化到主表字段| D2[(PostgreSQL: word 表)]
+    D -->|一键空间重构拟合| F[生成 32KB PCA 降维矩阵配置]
+    F -->|接口下发/同步| G[客户端: 本地配置]
+    D2 -->|增量推送 embedding_1bit| H[系统增量同步日志 sys_db_log]
+    H -->|增量同步| I[客户端: Drift SQLite words 表]
+    I -->|冷启动/矩阵相乘| J[在内存中动态计算 vecX, vecY, vecZ]
+    J -->|直接读取渲染| K[3D 语义星空展示]
+    I -->|1-bit 向量 + 汉明距离| L[本地语义检索 / 1-bit TSP 粗筛]
+    L -->|粗筛候选集 + 内存 3D 坐标| M[二阶段欧氏精排 / 语义渐变重排]
 ```
 
 ### 3.1 后端（Java）改动说明
 
-#### 1. 数据库 `word_embedding` 表结构改造
-* **任务**：在 PostgreSQL 的 `word_embedding` 表中增加 `embedding_1bit` 字段（`BYTEA` 类型），用于持久化预计算好的 256 字节二值向量。
+#### 1. 数据库表结构与 PO 类改造
+* **任务**：
+  1. 服务端 `word` 单词主表直接新增 `embedding_1bit` 字段（`BYTEA`，256字节），并**彻底移除** `vec_x`, `vec_y`, `vec_z` 字段。
+  2. 修改 [Word.java](file:///Volumes/ssd/ppdc/server/nnbdc-service/src/main/java/beidanci/service/po/Word.java)，移除 `vecX`, `vecY`, `vecZ` 的 JPA 成员，新增 `embedding1bit`。
+  3. 后台管理表 `word_embedding` 同样增加并持久化 `embedding_1bit`，供初始化或生成更新包时导出使用。
 * **SQL 脚本**：
   ```sql
-  ALTER TABLE word_embedding ADD COLUMN embedding_1bit BYTEA;
-  ```
-* **PO类修改**：修改 [WordEmbedding.java](file:///Volumes/ssd/ppdc/server/nnbdc-service/src/main/java/beidanci/service/po/WordEmbedding.java)，增加对应的 `embedding1bit` 字节数成员及 Get/Set 方法：
-  ```java
-  @Column(name = "embedding_1bit")
-  private byte[] embedding1bit;
+  ALTER TABLE word DROP COLUMN IF EXISTS vec_x;
+  ALTER TABLE word DROP COLUMN IF EXISTS vec_y;
+  ALTER TABLE word DROP COLUMN IF EXISTS vec_z;
+  ALTER TABLE word ADD COLUMN embedding_1bit BYTEA;
   ```
 
 #### 2. API 参数与嵌入模型升级
@@ -229,11 +231,8 @@ graph TD
 ### 3.2 前端（Flutter/Dart）改动说明
 
 #### 1. 本地数据库表定义与迁移
-* **Drift 表定义**：在 [table.dart](file:///Volumes/ssd/ppdc/app/lib/db/table.dart) 的 `Words` 类中新增 `BlobColumn get embedding1bit => blob().nullable()();`。
-* **数据库迁移**：修改 [db.dart](file:///Volumes/ssd/ppdc/app/lib/db/db.dart)，将当前数据库版本升级（如从版本 44 升级到版本 45），并在迁移回调中执行新列的添加：
-  ```dart
-  await m.addColumn(words, words.embedding1bit);
-  ```
+* **Drift 表定义**：修改 [table.dart](file:///Volumes/ssd/ppdc/app/lib/db/table.dart) 的 `Words` 表定义，**删除** `vecX`, `vecY`, `vecZ` 字段，直接追加 `BlobColumn get embedding1bit => blob().nullable()();`。
+* **数据库迁移**：修改 [db.dart](file:///Volumes/ssd/ppdc/app/lib/db/db.dart)，升级当前数据库版本。在数据库升级迁移回调（Migration Strategy）中，调用删除列 `vec_x`, `vec_y`, `vec_z` 并新增 `embedding_1bit` 列的操作。
 
 #### 2. 数据导入与同步拦截
 * **修改位置**：修改 [dict_import_isolate.dart](file:///Volumes/ssd/ppdc/app/lib/db/dict_import_isolate.dart) 和 [dto.dart](file:///Volumes/ssd/ppdc/app/lib/api/dto.dart)，在解析服务端下发的 Word 数据包时，读取并映射 `embedding1bit` 字段，最终将其写进 SQLite 的 `words` 表。
