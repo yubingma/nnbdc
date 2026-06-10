@@ -2986,6 +2986,7 @@ class WordListPageState extends State<WordListPage>
           },
         ),
         ),
+      ),
     );
   }
 
@@ -3233,6 +3234,7 @@ class WordListPageState extends State<WordListPage>
                         }
                       }
                     },
+                    ),
                   ),
                 );
               }).toList(),

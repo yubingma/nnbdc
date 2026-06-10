@@ -138,16 +138,20 @@ class _MePageState extends State<MePage> {
               ),
             ),
             const Divider(height: 1, thickness: 0.2),
-            ListTile(
+            Material(
+              type: MaterialType.transparency,
+              child: ListTile(
               leading: Icon(Icons.camera_alt_rounded, color: AppTheme.primaryColor),
               title: const Text('拍照', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
+            )),
+            Material(
+              type: MaterialType.transparency,
+              child: ListTile(
               leading: Icon(Icons.photo_library_rounded, color: AppTheme.primaryColor),
               title: const Text('从相册选择', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
+            )),
             const SizedBox(height: 8),
           ],
         ),

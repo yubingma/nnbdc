@@ -570,22 +570,26 @@ extension BdcPageStateDialogs on BdcPageState {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const SizedBox(height: 8),
-                        ListTile(
+                        Material(
+                          type: MaterialType.transparency,
+                          child: ListTile(
                           leading: Icon(Icons.camera_alt_rounded,
                               color: Global.highlight),
                           title: const Text('拍照',
                               style: TextStyle(fontFamily: 'NotoSansSC')),
                           onTap: () => Navigator.pop(
                               context, ImageSource.camera),
-                        ),
-                        ListTile(
+                        )),
+                        Material(
+                          type: MaterialType.transparency,
+                          child: ListTile(
                           leading: Icon(Icons.photo_library_rounded,
                               color: Global.highlight),
                           title: const Text('从相册选择',
                               style: TextStyle(fontFamily: 'NotoSansSC')),
                           onTap: () => Navigator.pop(
                               context, ImageSource.gallery),
-                        ),
+                        )),
                         const SizedBox(height: 8),
                       ],
                     ),
