@@ -16,15 +16,13 @@ void main() {
 
   group('WordsDao - getWordsWithCoordinates Unit Tests', () {
     test('retrieves only words with all three coordinates non-null', () async {
-      // 1. Insert mock words with different coordinate combinations
+      // 1. Insert mock words with different coordinate combinations (now based on embedding1bit)
       await database.wordsDao.insertEntities([
         Word(
           id: 'apple',
           spell: 'apple',
           popularity: 1,
-          vecX: 1.2,
-          vecY: -3.4,
-          vecZ: 0.5,
+          embedding1bit: Uint8List(256),
           createTime: DateTime.now(),
           updateTime: DateTime.now(),
         ),
@@ -32,9 +30,7 @@ void main() {
           id: 'banana',
           spell: 'banana',
           popularity: 1,
-          vecX: null,
-          vecY: 2.0,
-          vecZ: 3.0,
+          embedding1bit: null,
           createTime: DateTime.now(),
           updateTime: DateTime.now(),
         ),
@@ -42,9 +38,7 @@ void main() {
           id: 'cherry',
           spell: 'cherry',
           popularity: 1,
-          vecX: -0.5,
-          vecY: 0.0,
-          vecZ: 9.8,
+          embedding1bit: Uint8List(256),
           createTime: DateTime.now(),
           updateTime: DateTime.now(),
         ),
@@ -52,9 +46,7 @@ void main() {
           id: 'date',
           spell: 'date',
           popularity: 1,
-          vecX: null,
-          vecY: null,
-          vecZ: null,
+          embedding1bit: null,
           createTime: DateTime.now(),
           updateTime: DateTime.now(),
         ),
@@ -72,15 +64,13 @@ void main() {
     });
 
     test('respects the limit parameters when queried', () async {
-      // 1. Insert 3 words with full coordinates
+      // 1. Insert 3 words with full coordinates (non-null embedding1bit)
       await database.wordsDao.insertEntities([
         Word(
           id: 'w1',
           spell: 'w1',
           popularity: 1,
-          vecX: 1.0,
-          vecY: 1.0,
-          vecZ: 1.0,
+          embedding1bit: Uint8List(256),
           createTime: DateTime.now(),
           updateTime: DateTime.now(),
         ),
@@ -88,9 +78,7 @@ void main() {
           id: 'w2',
           spell: 'w2',
           popularity: 1,
-          vecX: 2.0,
-          vecY: 2.0,
-          vecZ: 2.0,
+          embedding1bit: Uint8List(256),
           createTime: DateTime.now(),
           updateTime: DateTime.now(),
         ),
@@ -98,9 +86,7 @@ void main() {
           id: 'w3',
           spell: 'w3',
           popularity: 1,
-          vecX: 3.0,
-          vecY: 3.0,
-          vecZ: 3.0,
+          embedding1bit: Uint8List(256),
           createTime: DateTime.now(),
           updateTime: DateTime.now(),
         ),

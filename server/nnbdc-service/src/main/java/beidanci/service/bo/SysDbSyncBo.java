@@ -300,6 +300,9 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
         // 6. CigenWordLinks
         logs.addAll(generateCigenWordLinkLogs(currentVersion));
 
+        // 7. PcaProjectionConfig
+        logs.addAll(generatePcaProjectionConfigLogs(currentVersion));
+
         // sentence/word_image/word_shortdesc_chinese的数据, 不需要全量同步, 因为数据量太大,
         // 而且用户下载所需词书的时候, 已经包含所需的这些数据了
 
@@ -566,6 +569,38 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
 
             Assert.notNull(tuple[0], "CigenWordLink cigenId must not be null");
             Assert.notNull(tuple[1], "CigenWordLink wordId must not be null");
+
+            logObj.setRecord(JsonUtils.toJson(record));
+            Date now = new Date();
+            logObj.setCreateTime(now);
+            logObj.setUpdateTime(now);
+            logs.add(logObj);
+        }
+        return logs;
+    }
+
+    private List<SysDbLogDto> generatePcaProjectionConfigLogs(int version) {
+        String sql = "SELECT id, config_json, update_time FROM pca_projection_config WHERE id = 'latest'";
+        List<Object[]> results = namedParameterJdbcTemplate.getJdbcTemplate().query(sql, (rs, rowNum) -> new Object[] {
+                rs.getString("id"),
+                rs.getString("config_json"),
+                rs.getTimestamp("update_time")
+        });
+
+        List<SysDbLogDto> logs = new ArrayList<>();
+        for (Object result : results) {
+            Object[] tuple = (Object[]) result;
+            SysDbLogDto logObj = new SysDbLogDto();
+            logObj.setId(Util.uuid());
+            logObj.setVersion(version);
+            logObj.setOperate("INSERT");
+            logObj.setTblName("pca_projection_config");
+            logObj.setRecordId((String) tuple[0]);
+
+            Map<String, Object> record = new LinkedHashMap<>();
+            record.put("id", tuple[0]);
+            record.put("configJson", tuple[1]);
+            record.put("updateTime", tuple[2] != null ? ISO_FMT.format(tuple[2]) : ISO_FMT.format(new Date()));
 
             logObj.setRecord(JsonUtils.toJson(record));
             Date now = new Date();

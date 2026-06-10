@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -1279,9 +1280,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             shortDesc: word.shortDesc,
             popularity: word.popularity,
             spell: word.spell,
-            vecX: word.vecX,
-            vecY: word.vecY,
-            vecZ: word.vecZ,
+            embedding1bit: word.embedding1bit != null ? base64Decode(word.embedding1bit!) : null,
             createTime: word.createTime,
             updateTime: word.updateTime));
         await yieldToUiIfNeeded(100, i); // 更频繁地让出UI

@@ -940,6 +940,7 @@ class Util {
       'sentences': 'sentence',
       'wordImages': 'word_image',
       'userStudyDailyStats': 'user_study_daily_stat',
+      'pcaProjectionConfigs': 'pca_projection_config',
       // word_shortdesc_chineses 已删除，不再映射
     };
 
@@ -975,6 +976,7 @@ class Util {
       'sentence': 'sentences',
       'word_image': 'wordImages',
       'user_study_daily_stat': 'userStudyDailyStats',
+      'pca_projection_config': 'pcaProjectionConfigs',
       // word_shortdesc_chinese 表已删除，映射到特殊标记而不是实际表，同步时将被跳过
       'word_shortdesc_chinese': 'IGNORED',
     };

@@ -17,9 +17,7 @@ public class WordDto extends Dto implements Ownerable {
     private String groupInfo;
     private String shortDesc;
     private String longDesc;
-    private Float vecX;
-    private Float vecY;
-    private Float vecZ;
+    private byte[] embedding1bit;
 
     public WordDto() {
 
@@ -120,27 +118,11 @@ public class WordDto extends Dto implements Ownerable {
         this.longDesc = longDesc;
     }
 
-    public Float getVecX() {
-        return vecX;
+    public byte[] getEmbedding1bit() {
+        return embedding1bit;
     }
 
-    public void setVecX(Float vecX) {
-        this.vecX = vecX;
-    }
-
-    public Float getVecY() {
-        return vecY;
-    }
-
-    public void setVecY(Float vecY) {
-        this.vecY = vecY;
-    }
-
-    public Float getVecZ() {
-        return vecZ;
-    }
-
-    public void setVecZ(Float vecZ) {
-        this.vecZ = vecZ;
+    public void setEmbedding1bit(byte[] embedding1bit) {
+        this.embedding1bit = embedding1bit;
     }
 }

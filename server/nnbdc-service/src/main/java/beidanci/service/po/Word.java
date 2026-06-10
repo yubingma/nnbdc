@@ -66,14 +66,8 @@ public class Word extends UuidPo implements Ownerable {
     @Column(name = "is_updating", nullable = false)
     private Boolean isUpdating = false;
 
-    @Column(name = "vec_x")
-    private Float vecX;
-
-    @Column(name = "vec_y")
-    private Float vecY;
-
-    @Column(name = "vec_z")
-    private Float vecZ;
+    @Column(name = "embedding_1bit")
+    private byte[] embedding1bit;
 
     private  List<MeaningItem> meaningItems;
 
@@ -270,27 +264,11 @@ public class Word extends UuidPo implements Ownerable {
         this.isUpdating = isUpdating;
     }
 
-    public Float getVecX() {
-        return vecX;
+    public byte[] getEmbedding1bit() {
+        return embedding1bit;
     }
 
-    public void setVecX(Float vecX) {
-        this.vecX = vecX;
-    }
-
-    public Float getVecY() {
-        return vecY;
-    }
-
-    public void setVecY(Float vecY) {
-        this.vecY = vecY;
-    }
-
-    public Float getVecZ() {
-        return vecZ;
-    }
-
-    public void setVecZ(Float vecZ) {
-        this.vecZ = vecZ;
+    public void setEmbedding1bit(byte[] embedding1bit) {
+        this.embedding1bit = embedding1bit;
     }
 }

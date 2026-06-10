@@ -531,7 +531,7 @@ class WordsDao extends DatabaseAccessor<MyDatabase> with _$WordsDaoMixin {
   }
 
   Future<List<Word>> getWordsWithCoordinates({int? limit}) {
-    var query = select(words)..where((w) => w.vecX.isNotNull() & w.vecY.isNotNull() & w.vecZ.isNotNull());
+    var query = select(words)..where((w) => w.embedding1bit.isNotNull());
     if (limit != null) {
       query = query..limit(limit);
     }

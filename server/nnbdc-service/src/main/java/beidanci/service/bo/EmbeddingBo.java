@@ -6,9 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,20 +23,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import com.google.gson.Gson;
 
-import beidanci.api.model.WordDto;
 import beidanci.service.config.AliyunAiProperties;
 import beidanci.service.po.WordEmbedding;
-import beidanci.service.util.JsonUtils;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
@@ -47,7 +40,7 @@ public class EmbeddingBo {
 
     private static final Logger log = LoggerFactory.getLogger(EmbeddingBo.class);
 
-    public static final String CURRENT_MODEL_NAME = "text-embedding-v3";
+    public static final String CURRENT_MODEL_NAME = "text-embedding-v4";
 
     @Autowired
     private WordBo wordBo;
@@ -193,7 +186,7 @@ public class EmbeddingBo {
         Map<String, Object> body = new HashMap<>();
         body.put("model", CURRENT_MODEL_NAME);
         body.put("input", spells);
-        body.put("dimensions", 1024);
+        body.put("dimensions", 2048);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
         try {
@@ -279,26 +272,24 @@ public class EmbeddingBo {
 
                         // 1. 保存到 word_embedding 表
                         byte[] byteArr = floatArrayToByteArray(floats);
+                        byte[] oneBitBytes = floatArrayTo1BitByteArray(floats);
                         WordEmbedding existing = wordEmbeddingBo.findById(wordId);
                         if (existing != null) {
                             existing.setEmbedding(byteArr);
-                            existing.setDimension(1024);
+                            existing.setDimension(2048);
                             existing.setModelName(CURRENT_MODEL_NAME);
                             existing.setUpdateTime(new Date());
                             wordEmbeddingBo.updateEntity(existing);
                         } else {
-                            WordEmbedding wordEmbedding = new WordEmbedding(wordId, byteArr, 1024, CURRENT_MODEL_NAME);
+                            WordEmbedding wordEmbedding = new WordEmbedding(wordId, byteArr, 2048, CURRENT_MODEL_NAME);
                             wordEmbedding.setCreateTime(new Date());
                             wordEmbedding.setUpdateTime(new Date());
                             wordEmbeddingBo.createEntity(wordEmbedding);
                         }
 
-                        // 2. 降维投影
-                        float[] coords = projectTo3D(floats);
-
-                        // 3. 更新 Word 并产生同步日志
-                        wordBo.updateWordVectors(wordId, coords[0], coords[1], coords[2]);
-                        log.debug("成功补全单词 [{}], 降维坐标: [{}, {}, {}]", spell, coords[0], coords[1], coords[2]);
+                        // 2. 更新 Word 的 embedding_1bit 并产生同步日志
+                        wordBo.updateWordEmbedding1bit(wordId, oneBitBytes);
+                        log.debug("成功补全单词 [{}] 的二值词嵌入", spell);
                     }
                 } catch (Exception e) {
                     log.error("批量补全词嵌入任务失败，跳过该批次 " + spellsBatch, e);
@@ -354,20 +345,24 @@ public class EmbeddingBo {
                         String wordId = idsBatch.get(j);
                         float[] floats = embeddingsList.get(j);
                         byte[] byteArr = floatArrayToByteArray(floats);
+                        byte[] oneBitBytes = floatArrayTo1BitByteArray(floats);
 
                         WordEmbedding existing = wordEmbeddingBo.findById(wordId);
                         if (existing != null) {
                             existing.setEmbedding(byteArr);
-                            existing.setDimension(1024);
+                            existing.setDimension(2048);
                             existing.setModelName(CURRENT_MODEL_NAME);
                             existing.setUpdateTime(new Date());
                             wordEmbeddingBo.updateEntity(existing);
                         } else {
-                            WordEmbedding wordEmbedding = new WordEmbedding(wordId, byteArr, 1024, CURRENT_MODEL_NAME);
+                            WordEmbedding wordEmbedding = new WordEmbedding(wordId, byteArr, 2048, CURRENT_MODEL_NAME);
                             wordEmbedding.setCreateTime(new Date());
                             wordEmbedding.setUpdateTime(new Date());
                             wordEmbeddingBo.createEntity(wordEmbedding);
                         }
+
+                        // 同步更新 word 表的 embedding_1bit
+                        wordBo.updateWordEmbedding1bit(wordId, oneBitBytes);
                     }
                 } catch (Exception e) {
                     log.error("增量下载高维词嵌入批次失败: " + spellsBatch, e);
@@ -510,69 +505,11 @@ public class EmbeddingBo {
                 // 重新加载本地缓存的投影矩阵
                 loadPcaConfig();
 
-                // 5. 批量更新 word 表的坐标
-                reconstructMsg = "正在全局刷新所有单词坐标...";
+                // 5. 产生主成分投影配置的同步更新日志
+                reconstructMsg = "正在产生投影配置同步日志...";
                 reconstructProgress = 0.9;
-                log.info("一键重构：开始批量更新 word 坐标...");
-
-                List<Map.Entry<String, List<Float>>> coordEntries = new ArrayList<>(output.word_coords.entrySet());
-                String updateWordSql = "UPDATE word SET vec_x = ?, vec_y = ?, vec_z = ?, update_time = ? WHERE id = ?";
-                namedParameterJdbcTemplate.getJdbcTemplate().batchUpdate(updateWordSql, new BatchPreparedStatementSetter() {
-                    @Override
-                    public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
-                        Map.Entry<String, List<Float>> entry = coordEntries.get(i);
-                        String wordId = entry.getKey();
-                        List<Float> coords = entry.getValue();
-                        ps.setFloat(1, coords.get(0));
-                        ps.setFloat(2, coords.get(1));
-                        ps.setFloat(3, coords.get(2));
-                        ps.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-                        ps.setString(5, wordId);
-                    }
-
-                    @Override
-                    public int getBatchSize() {
-                        return coordEntries.size();
-                    }
-                });
-
-                // 加载所有单词基本信息，保证同步到客户端的数据完整性，防止客户端反序列化 spell 空异常报错跳过
-                log.info("一键重构：加载所有单词的基本信息以生成同步日志...");
-                String fetchAllWordsSql = "SELECT id, spell, british_pronounce, america_pronounce, pronounce, popularity, group_info, short_desc, long_desc FROM word";
-                List<Map<String, Object>> allWords = namedParameterJdbcTemplate.getJdbcTemplate().queryForList(fetchAllWordsSql);
-                Map<String, Map<String, Object>> wordInfoMap = new HashMap<>(allWords.size());
-                for (Map<String, Object> w : allWords) {
-                    wordInfoMap.put((String) w.get("id"), w);
-                }
-
-                // 6. 批量产生客户端更新日志
-                log.info("一键重构：批量产生同步更新日志，更新量: {}", coordEntries.size());
-                for (Map.Entry<String, List<Float>> entry : coordEntries) {
-                    String wordId = entry.getKey();
-                    List<Float> coords = entry.getValue();
-
-                    Map<String, Object> info = wordInfoMap.get(wordId);
-                    if (info == null) continue;
-
-                    // 同步完整的 Word 数据对象，避免客户端 insertOnConflictUpdate 时覆盖其余字段为 null 或是反序列化 spell 报错
-                    WordDto wDto = new WordDto();
-                    wDto.setId(wordId);
-                    wDto.setSpell((String) info.get("spell"));
-                    wDto.setBritishPronounce((String) info.get("british_pronounce"));
-                    wDto.setAmericaPronounce((String) info.get("america_pronounce"));
-                    wDto.setPronounce((String) info.get("pronounce"));
-                    wDto.setPopularity(info.get("popularity") != null ? ((Number) info.get("popularity")).intValue() : null);
-                    wDto.setGroupInfo((String) info.get("group_info"));
-                    wDto.setShortDesc((String) info.get("short_desc"));
-                    wDto.setLongDesc((String) info.get("long_desc"));
-                    wDto.setVecX(coords.get(0));
-                    wDto.setVecY(coords.get(1));
-                    wDto.setVecZ(coords.get(2));
-                    wDto.setUpdateTime(new Date());
-
-                    // 系统同步日志，因为单词本身是系统所有
-                    sysDbSyncBo.logOperation(wDto, "UPDATE", "word", wordId, JsonUtils.toJson(wDto));
-                }
+                log.info("一键重构：批量产生主成分投影配置的同步更新日志");
+                sysDbSyncBo.logOperation("UPDATE", "pca_projection_config", "latest", outputJsonStr);
 
                 reconstructStatus = "SUCCESS";
                 reconstructMsg = "重构成功！";
@@ -634,6 +571,16 @@ public class EmbeddingBo {
             buffer.putFloat(f);
         }
         return buffer.array();
+    }
+
+    public static byte[] floatArrayTo1BitByteArray(float[] floats) {
+        byte[] bytes = new byte[floats.length / 8];
+        for (int i = 0; i < floats.length; i++) {
+            if (floats[i] > 0) {
+                bytes[i / 8] |= (1 << (7 - (i % 8)));
+            }
+        }
+        return bytes;
     }
 
     public static float[] byteArrayToFloatArray(byte[] bytes) {

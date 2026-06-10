@@ -275,9 +275,7 @@ class Words extends Table {
 
   TextColumn get spell => text()();
 
-  RealColumn get vecX => real().nullable()();
-  RealColumn get vecY => real().nullable()();
-  RealColumn get vecZ => real().nullable()();
+  BlobColumn get embedding1bit => blob().nullable()();
 
   DateTimeColumn get createTime => dateTime()();
 
@@ -617,6 +615,7 @@ class UserWrongWords extends Table {
   Set<Column>? get primaryKey => {userId, wordId};
 }
 
+
 /// 系统数据版本表（单例表，只有一条记录）
 class SysDbVersion extends Table {
   TextColumn get id => text().withDefault(const Constant('singleton'))();
@@ -627,6 +626,15 @@ class SysDbVersion extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+class PcaProjectionConfigs extends Table {
+  TextColumn get id => text()();
+  TextColumn get configJson => text()();
+  DateTimeColumn get updateTime => dateTime()();
+
+  @override
+  Set<Column>? get primaryKey => {id};
 }
 
 

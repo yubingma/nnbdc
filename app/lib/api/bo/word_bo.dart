@@ -18,6 +18,35 @@ import 'package:nnbdc/constants.dart';
 
 import '../../services/throttled_sync_service.dart';
 
+import 'package:nnbdc/util/pca_projection_service.dart';
+
+const _popCountTable = [
+  0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
+  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+  2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+  3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+  4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
+];
+
+int hammingDistance(Uint8List a, Uint8List b) {
+  int dist = 0;
+  for (int i = 0; i < 256; i++) {
+    dist += _popCountTable[a[i] ^ b[i]];
+  }
+  return dist;
+}
+
 class WordBo {
   static final WordBo _instance = WordBo._internal();
   factory WordBo() => _instance;
@@ -50,67 +79,82 @@ class WordBo {
 
     final db = MyDatabase.instance;
     final rows = await db.customSelect(
-      'SELECT dw.word_id, w.vec_x, w.vec_y, w.vec_z FROM dict_words dw '
+      'SELECT dw.word_id, w.embedding1bit FROM dict_words dw '
       'JOIN words w ON dw.word_id = w.id '
       'WHERE dw.dict_id = ?',
       variables: [Variable.withString(dictId)],
     ).get();
 
-    final List<MapEntry<String, List<double>>> wordsWithCoords = [];
-    final List<String> wordsWithoutCoords = [];
+    final List<MapEntry<String, Uint8List>> wordsWithEmbeddings = [];
+    final List<String> wordsWithoutEmbeddings = [];
 
     for (final row in rows) {
       final String wordId = row.read<String>('word_id');
-      final double? x = row.readNullable<double>('vec_x');
-      final double? y = row.readNullable<double>('vec_y');
-      final double? z = row.readNullable<double>('vec_z');
+      final Uint8List? emb = row.readNullable<Uint8List>('embedding1bit');
 
-      if (x != null && y != null && z != null) {
-        wordsWithCoords.add(MapEntry(wordId, [x, y, z]));
+      if (emb != null && emb.length >= 256) {
+        wordsWithEmbeddings.add(MapEntry(wordId, emb));
       } else {
-        wordsWithoutCoords.add(wordId);
+        wordsWithoutEmbeddings.add(wordId);
       }
     }
 
-    // 临时调试日志：查看本地数据库中实际的 3D 坐标
-    Global.logger.d('TSP 排序调试 [dictId=$dictId]: 共 ${wordsWithCoords.length} 个有坐标, ${wordsWithoutCoords.length} 个无坐标');
-    // 查一下 spell 来帮助确认
-    for (final entry in wordsWithCoords.take(15)) {
-      final spellRow = await db.customSelect(
-        'SELECT spell FROM words WHERE id = ?',
-        variables: [Variable.withString(entry.key)],
-      ).getSingleOrNull();
-      final spell = spellRow?.read<String>('spell') ?? '?';
-      Global.logger.d('  $spell -> (${entry.value[0].toStringAsFixed(4)}, ${entry.value[1].toStringAsFixed(4)}, ${entry.value[2].toStringAsFixed(4)})');
-    }
+    Global.logger.d('TSP 排序 [dictId=$dictId]: 共 ${wordsWithEmbeddings.length} 个有词嵌入, ${wordsWithoutEmbeddings.length} 个无词嵌入');
 
-    if (wordsWithCoords.isEmpty) {
-      final result = [...wordsWithoutCoords];
+    if (wordsWithEmbeddings.isEmpty) {
+      final result = [...wordsWithoutEmbeddings];
       _dictTspCache[dictId] = result;
       return result;
     }
 
-    // 3D 空间中的贪心旅行商 (TSP - Nearest Neighbor) 最短语义路径算法
+    // 两阶段 TSP 排序
+    await PcaProjectionService().ensureInitialized();
+    
+    // 提前计算好所有 3D 坐标并缓存 (精排需要)
+    final Map<String, List<double>> coordsCache = {};
+    List<double> getCoords(String id, Uint8List emb) {
+      return coordsCache.putIfAbsent(id, () => PcaProjectionService().projectTo3D(emb));
+    }
+
     final List<String> tspSortedIds = [];
-    final int n = wordsWithCoords.length;
+    final int n = wordsWithEmbeddings.length;
     final Set<int> unvisited = Set.from(Iterable.generate(n));
 
     int curr = 0;
-    tspSortedIds.add(wordsWithCoords[curr].key);
+    tspSortedIds.add(wordsWithEmbeddings[curr].key);
     unvisited.remove(curr);
 
+    const int K = 20; // 粗筛 K 个候选
+
     while (unvisited.isNotEmpty) {
+      final currId = wordsWithEmbeddings[curr].key;
+      final currEmb = wordsWithEmbeddings[curr].value;
+      final currCoords = getCoords(currId, currEmb);
+
+      // 1. 粗筛：1-bit 汉明距离前 K 小
+      List<MapEntry<int, int>> candidates = [];
+      for (final int idx in unvisited) {
+        final dist = hammingDistance(currEmb, wordsWithEmbeddings[idx].value);
+        candidates.add(MapEntry(idx, dist));
+      }
+
+      // 排序选择前 K 个
+      candidates.sort((a, b) => a.value.compareTo(b.value));
+      final List<MapEntry<int, int>> topK = candidates.take(K).toList();
+
+      // 2. 精排：在这 K 个候选里，计算与当前节点 3D 坐标的欧氏距离，选最小的
       int closest = -1;
       double minDist = double.infinity;
-      final List<double> currPoint = wordsWithCoords[curr].value;
 
-      for (final int idx in unvisited) {
-        final List<double> nodePoint = wordsWithCoords[idx].value;
-        final double dx = currPoint[0] - nodePoint[0];
-        final double dy = currPoint[1] - nodePoint[1];
-        final double dz = currPoint[2] - nodePoint[2];
-        // 采用平方欧氏距离，极大加速 CPU 计算
+      for (final entry in topK) {
+        final int idx = entry.key;
+        final nodeCoords = getCoords(wordsWithEmbeddings[idx].key, wordsWithEmbeddings[idx].value);
+        
+        final double dx = currCoords[0] - nodeCoords[0];
+        final double dy = currCoords[1] - nodeCoords[1];
+        final double dz = currCoords[2] - nodeCoords[2];
         final double dist = dx * dx + dy * dy + dz * dz;
+        
         if (dist < minDist) {
           minDist = dist;
           closest = idx;
@@ -118,11 +162,11 @@ class WordBo {
       }
 
       curr = closest;
-      tspSortedIds.add(wordsWithCoords[curr].key);
+      tspSortedIds.add(wordsWithEmbeddings[curr].key);
       unvisited.remove(curr);
     }
 
-    final finalResult = [...tspSortedIds, ...wordsWithoutCoords];
+    final finalResult = [...tspSortedIds, ...wordsWithoutEmbeddings];
     _dictTspCache[dictId] = finalResult;
     return finalResult;
   }

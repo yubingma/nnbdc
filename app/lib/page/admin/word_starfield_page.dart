@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:nnbdc/util/pca_projection_service.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
@@ -344,14 +345,38 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
 
     try {
       final db = MyDatabase.instance;
-      // 从本地数据库读取所有带 3D 投影坐标的单词，最大限制 5000 确保平滑度
+      // 从本地数据库读取所有带 1bit 词嵌入的单词，最大限制 5000 确保平滑度
       final words = await db.wordsDao.getWordsWithCoordinates(limit: _densityLimit);
 
       if (words.isEmpty) {
         setState(() {
           _isLoading = false;
         });
-        ToastUtil.info('本地暂无带 3D 坐标的单词数据，请先执行“词嵌入一键重构”！');
+        ToastUtil.info('本地暂无词嵌入数据，请先执行“词嵌入一键重构”！');
+        return;
+      }
+
+      await PcaProjectionService().ensureInitialized();
+
+      // 先动态计算好这批词的 3D 坐标
+      final List<Map<String, dynamic>> calculatedWords = [];
+      for (var w in words) {
+        if (w.embedding1bit != null) {
+          final coords = PcaProjectionService().projectTo3D(w.embedding1bit!);
+          calculatedWords.add({
+            'word': w,
+            'x': coords[0],
+            'y': coords[1],
+            'z': coords[2],
+          });
+        }
+      }
+
+      if (calculatedWords.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        ToastUtil.info('本地暂无有效词嵌入坐标的单词数据！');
         return;
       }
 
@@ -360,10 +385,10 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
       double minY = double.infinity, maxY = -double.infinity;
       double minZ = double.infinity, maxZ = -double.infinity;
 
-      for (var w in words) {
-        final x = w.vecX ?? 0.0;
-        final y = w.vecY ?? 0.0;
-        final z = w.vecZ ?? 0.0;
+      for (var item in calculatedWords) {
+        final x = item['x'] as double;
+        final y = item['y'] as double;
+        final z = item['z'] as double;
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -385,10 +410,11 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
       // 缩放边界设定在 [-200, 200] 空间内
       const double targetBound = 200.0;
 
-      _points = words.map((w) {
-        final nx = ((w.vecX ?? 0.0) - offsetX) / maxDelta * (targetBound * 2);
-        final ny = ((w.vecY ?? 0.0) - offsetY) / maxDelta * (targetBound * 2);
-        final nz = ((w.vecZ ?? 0.0) - offsetZ) / maxDelta * (targetBound * 2);
+      _points = calculatedWords.map((item) {
+        final Word w = item['word'] as Word;
+        final nx = ((item['x'] as double) - offsetX) / maxDelta * (targetBound * 2);
+        final ny = ((item['y'] as double) - offsetY) / maxDelta * (targetBound * 2);
+        final nz = ((item['z'] as double) - offsetZ) / maxDelta * (targetBound * 2);
         return StarfieldPoint(
           id: w.id,
           spell: w.spell,

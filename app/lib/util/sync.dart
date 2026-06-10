@@ -18,6 +18,7 @@ import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/pca_projection_service.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 
 export 'package:nnbdc/util/sys_db_sync.dart' show syncSysDb;
@@ -265,6 +266,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           return 5;
         case 'userStudyDailyStats':
           return 5;
+        case 'pcaProjectionConfigs':
+          return 1;
         default:
           throw Exception('Unknown table name: $tableName');
       }
@@ -482,6 +485,14 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
             } else if (log.operate == 'DELETE') {
               await db.userStudyDailyStatsDao.batchDeleteUserRecords(userId, filters: entityJson);
             }
+          } else if (log.tblName == 'pcaProjectionConfigs') {
+            final entity = PcaProjectionConfig.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.into(db.pcaProjectionConfigs).insertOnConflictUpdate(entity);
+              await PcaProjectionService().loadConfig();
+            } else if (log.operate == 'DELETE') {
+              await (db.delete(db.pcaProjectionConfigs)..where((c) => c.id.equals(entity.id))).go();
+            }
           } else if (log.tblName != 'users' &&
               log.tblName != 'dicts' &&
               log.tblName != 'words' &&
@@ -497,7 +508,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               log.tblName != 'userCowDungLogs' &&
               log.tblName != 'meaningItems' &&
               log.tblName != 'learningLogs' &&
-              log.tblName != 'userStudyDailyStats') {
+              log.tblName != 'userStudyDailyStats' &&
+              log.tblName != 'pcaProjectionConfigs') {
             Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
             // 不弹出错误提示，只记录日志
           }

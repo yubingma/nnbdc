@@ -41,11 +41,13 @@ def main():
     # 如果样本数量少于 3 个，PCA 无法计算 3 维投影。我们将通过填充零或者简单投影解决
     if len(embeddings) < 3:
         print("Warning: Sample count is less than 3, fallback to simple projection")
-        mean = np.mean(embeddings, axis=0) if len(embeddings) > 0 else np.zeros(1024, dtype=np.float32)
-        W = np.zeros((1024, 3), dtype=np.float32)
-        W[0, 0] = 1.0
-        W[1, 1] = 1.0
-        W[2, 2] = 1.0
+        dim = embeddings.shape[1] if len(embeddings) > 0 else 2048
+        mean = np.mean(embeddings, axis=0) if len(embeddings) > 0 else np.zeros(dim, dtype=np.float32)
+        W = np.zeros((dim, 3), dtype=np.float32)
+        if dim >= 3:
+            W[0, 0] = 1.0
+            W[1, 1] = 1.0
+            W[2, 2] = 1.0
         projected = np.dot(embeddings - mean, W)
     else:
         projected, W, mean = pca_3d(embeddings)

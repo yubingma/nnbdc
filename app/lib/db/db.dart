@@ -45,6 +45,7 @@ part 'db.g.dart';
   LocalExceptions,
   LearningLogs,
   UserStudyDailyStats,
+  PcaProjectionConfigs,
 ], daos: [
   UsersDao,
   LocalParamsDao,
@@ -250,7 +251,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 45;
+  int get schemaVersion => 46;
 
   @override
   MigrationStrategy get migration {
@@ -399,6 +400,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 45) {
             await _migrateFromV44ToV45AddSortAlg(m);
+          }
+          if (from < 46) {
+            await _migrateFromV45ToV46(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -562,9 +566,11 @@ class MyDatabase extends _$MyDatabase {
   /// 从版本 43 升级到版本 44：在 words 表中添加 vecX, vecY, vecZ 三维浮点坐标字段
   Future<void> _migrateFromV43ToV44AddWordCoordinates(Migrator m) async {
     await transaction(() async {
-      await m.addColumn(words, words.vecX);
-      await m.addColumn(words, words.vecY);
-      await m.addColumn(words, words.vecZ);
+      try {
+        await customStatement('ALTER TABLE words ADD COLUMN vec_x REAL');
+        await customStatement('ALTER TABLE words ADD COLUMN vec_y REAL');
+        await customStatement('ALTER TABLE words ADD COLUMN vec_z REAL');
+      } catch (_) {}
     });
   }
 
@@ -573,6 +579,21 @@ class MyDatabase extends _$MyDatabase {
     await transaction(() async {
       await m.addColumn(bookMarks, bookMarks.sortAlg);
       await m.addColumn(learningDicts, learningDicts.sortAlg);
+    });
+  }
+
+  /// 从版本 45 升级到版本 46：添加 PcaProjectionConfigs 表，Words 添加 embedding1bit，移除 3D 浮点
+  Future<void> _migrateFromV45ToV46(Migrator m) async {
+    await transaction(() async {
+      await m.createTable(pcaProjectionConfigs);
+      await m.addColumn(words, words.embedding1bit);
+      try {
+        await customStatement('ALTER TABLE words DROP COLUMN vec_x');
+        await customStatement('ALTER TABLE words DROP COLUMN vec_y');
+        await customStatement('ALTER TABLE words DROP COLUMN vec_z');
+      } catch (e) {
+        Global.logger.w('删除 words 3D 列失败 (可能SQLite版本不支持): $e');
+      }
     });
   }
 
