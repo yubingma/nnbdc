@@ -611,7 +611,6 @@ public class EmbeddingBo {
     public static class ReconstructOutput {
         private List<Float> mean;
         private List<List<Float>> components;
-        private Map<String, List<Float>> word_coords;
         private int fittedWordCount;
     }
 }
