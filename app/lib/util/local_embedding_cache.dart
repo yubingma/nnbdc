@@ -1,7 +1,5 @@
-import 'dart:typed_data';
 import 'dart:isolate';
 import 'package:flutter/foundation.dart';
-import 'package:drift/drift.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 
