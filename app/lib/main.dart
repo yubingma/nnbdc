@@ -26,6 +26,7 @@ import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/notification_util.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 import 'package:nnbdc/util/ocr_service.dart';
+import 'package:nnbdc/util/local_embedding_cache.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -175,6 +176,11 @@ void main() async {
           // 初始化数据库并确保数据库完整性
           MyDatabase.instance;
           await MyDatabase.ensureDatabaseIntegrity();
+
+          // 静默后台初始化本地高维向量缓存
+          unawaited(LocalEmbeddingCache.instance.initialize(MyDatabase.instance).catchError((e) {
+            Global.logger.e('初始化本地高维向量缓存失败: $e');
+          }));
 
           // SocketIoClient改为延迟连接，只在需要时才连接（如进入russia页面）
           LocalWordCache.instance;

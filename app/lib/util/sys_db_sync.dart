@@ -8,6 +8,7 @@ import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/util/sync.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/pca_projection_service.dart';
+import 'package:nnbdc/util/local_embedding_cache.dart';
 
 /// 同步系统数据库（统一的系统数据同步）
 ///
@@ -170,6 +171,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           // 单词主体
           if (log.operate == 'DELETE') {
             await (db.delete(db.words)..where((t) => t.id.equals(log.recordId))).go();
+            LocalEmbeddingCache.instance.updateWord(log.recordId, null);
           } else {
             if (entityJson['embedding1bit'] is String) {
               entityJson['embedding1bit'] = base64Decode(entityJson['embedding1bit'] as String).toList();
@@ -177,6 +179,7 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
             Word entity = Word.fromJson(entityJson);
             Global.logger.i("📝 同步更新单词: ${entity.spell}, UpdateTime: ${entity.updateTime}");
             await db.wordsDao.insertEntity(entity);
+            LocalEmbeddingCache.instance.updateWord(entity.id, entity.embedding1bit);
           }
         } else if (log.tblName == 'meaning_item') {
           // 单词释义
