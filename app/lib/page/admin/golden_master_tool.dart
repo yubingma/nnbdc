@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
+import 'package:nnbdc/util/data_integrity_checker.dart';
 
 class GoldenMasterToolPage extends StatefulWidget {
   const GoldenMasterToolPage({super.key});
@@ -25,7 +26,9 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
   bool _isProcessing = false;
   bool _isFinished = false;
   String _statusMessage = '准备就绪';
-
+  // 数据库自检信息
+  String? _healthStatusMessage;
+  List<String> _healthIssuesList = [];
   // 数据库概要信息
   int? _dbVersion;
   String? _dbPath;
@@ -159,7 +162,28 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
             _buildInfoRow('SHA-256', _dbSha256 ?? '计算中...', textColor),
             _buildInfoRow('总表数', '$_totalTables', textColor),
             _buildInfoRow('非空表数', '$_nonEmptyTables', textColor),
+            if (_healthStatusMessage != null)
+              _buildInfoRow(
+                '健康自检状态',
+                _healthStatusMessage!,
+                _healthIssuesList.isEmpty ? Colors.green : Colors.red,
+              ),
             const SizedBox(height: 12),
+            if (_healthIssuesList.isNotEmpty) ...[
+              const Text(
+                '数据完整性问题清单:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.red),
+              ),
+              const SizedBox(height: 6),
+              ..._healthIssuesList.map((issue) => Padding(
+                    padding: const EdgeInsets.only(left: 8, bottom: 4),
+                    child: Text(
+                      '• $issue',
+                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                    ),
+                  )),
+              const Divider(height: 24),
+            ],
             const Text(
               '数据统计:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -219,6 +243,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       _isProcessing = true;
       _isFinished = false;
       _statusMessage = '正在初始化...';
+      _healthStatusMessage = null;
+      _healthIssuesList = [];
     });
 
     // 暂停后台同步，防止制作过程中产生同步日志或写入用户数据
@@ -269,6 +295,25 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       setState(() => _statusMessage = '正在压缩数据库 (VACUUM)...');
       await MyDatabase.instance.customStatement('VACUUM');
 
+      // 4.5 进行黄金母版健康自检
+      setState(() => _statusMessage = '正在进行黄金母版健康自检 (Health Check)...');
+      final checker = DataIntegrityChecker();
+      final healthResult = await checker.performFullCheck();
+
+      _healthIssuesList = [];
+      if (healthResult.hasErrors) {
+        _healthIssuesList.addAll(healthResult.errors);
+      }
+      if (healthResult.hasIssues) {
+        _healthIssuesList.addAll(healthResult.issues.map((i) => '[${i.type}] ${i.description}'));
+      }
+
+      if (_healthIssuesList.isEmpty) {
+        _healthStatusMessage = '通过 (100% 完整健康)';
+      } else {
+        _healthStatusMessage = '不健康 (发现 ${_healthIssuesList.length} 个完整性问题)';
+      }
+
       // 5. 获取概要信息
       setState(() => _statusMessage = '正在获取数据库统计信息...');
       await _getDbSummary();
@@ -276,7 +321,11 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       setState(() {
         _isProcessing = false;
         _isFinished = true;
-        _statusMessage = '制作完成';
+        if (_healthIssuesList.isEmpty) {
+          _statusMessage = '制作完成 (健康自检通过)';
+        } else {
+          _statusMessage = '制作完成，但发现完整性缺陷，请检查问题清单！';
+        }
       });
     } catch (e) {
       Global.logger.e('制作黄金母版失败: $e');
