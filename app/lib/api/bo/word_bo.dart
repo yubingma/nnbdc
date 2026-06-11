@@ -74,12 +74,13 @@ class WordBo {
 
   Future<List<String>> _getTspSortedWordIds(String dictId) async {
     if (_dictTspCache.containsKey(dictId)) {
+      Global.logger.d('[SEMANTIC TSP] Cache hit for dictId=$dictId. Returns cached result (length: ${_dictTspCache[dictId]!.length})');
       return _dictTspCache[dictId]!;
     }
 
     final db = MyDatabase.instance;
     final rows = await db.customSelect(
-      'SELECT dw.word_id, w.embedding1bit FROM dict_words dw '
+      'SELECT dw.word_id, w.spell, w.embedding1bit FROM dict_words dw '
       'JOIN words w ON dw.word_id = w.id '
       'WHERE dw.dict_id = ?',
       variables: [Variable.withString(dictId)],
@@ -87,10 +88,13 @@ class WordBo {
 
     final List<MapEntry<String, Uint8List>> wordsWithEmbeddings = [];
     final List<String> wordsWithoutEmbeddings = [];
+    final Map<String, String> idToSpell = {};
 
     for (final row in rows) {
       final String wordId = row.read<String>('word_id');
+      final String spell = row.read<String>('spell');
       final Uint8List? emb = row.readNullable<Uint8List>('embedding1bit');
+      idToSpell[wordId] = spell;
 
       if (emb != null && emb.length >= 256) {
         wordsWithEmbeddings.add(MapEntry(wordId, emb));
@@ -125,9 +129,12 @@ class WordBo {
     unvisited.remove(curr);
 
     const int K = 20; // 粗筛 K 个候选
+    int stepIdx = 0;
 
     while (unvisited.isNotEmpty) {
+      stepIdx++;
       final currId = wordsWithEmbeddings[curr].key;
+      final currSpell = idToSpell[currId] ?? currId;
       final currEmb = wordsWithEmbeddings[curr].value;
       final currCoords = getCoords(currId, currEmb);
 
@@ -142,24 +149,45 @@ class WordBo {
       candidates.sort((a, b) => a.value.compareTo(b.value));
       final List<MapEntry<int, int>> topK = candidates.take(K).toList();
 
+      final top5HammingLog = topK.take(5).map((entry) {
+        final idx = entry.key;
+        final id = wordsWithEmbeddings[idx].key;
+        final spell = idToSpell[id] ?? id;
+        return "'$spell' (Hamming: ${entry.value})";
+      }).join(', ');
+
       // 2. 精排：在这 K 个候选里，计算与当前节点 3D 坐标的欧氏距离，选最小的
       int closest = -1;
       double minDist = double.infinity;
+      final List<String> coordsLogList = [];
 
       for (final entry in topK) {
         final int idx = entry.key;
-        final nodeCoords = getCoords(wordsWithEmbeddings[idx].key, wordsWithEmbeddings[idx].value);
+        final String id = wordsWithEmbeddings[idx].key;
+        final String spell = idToSpell[id] ?? id;
+        final nodeCoords = getCoords(id, wordsWithEmbeddings[idx].value);
         
         final double dx = currCoords[0] - nodeCoords[0];
         final double dy = currCoords[1] - nodeCoords[1];
         final double dz = currCoords[2] - nodeCoords[2];
         final double dist = dx * dx + dy * dy + dz * dz;
+
+        coordsLogList.add("'$spell' (3D Dist: ${dist.toStringAsFixed(4)}, Hamming: ${entry.value})");
         
         if (dist < minDist) {
           minDist = dist;
           closest = idx;
         }
       }
+
+      final chosenId = wordsWithEmbeddings[closest].key;
+      final chosenSpell = idToSpell[chosenId] ?? chosenId;
+      final chosenHamming = topK.firstWhere((e) => e.key == closest).value;
+
+      Global.logger.d('[SEMANTIC TSP] Step $stepIdx: Current = \'$currSpell\' (Coords: [${currCoords.map((c) => c.toStringAsFixed(3)).join(', ')}])\n'
+          '  - Top 5 Hamming candidates: $top5HammingLog\n'
+          '  - Candidates sorted by 3D: ${coordsLogList.join(', ')}\n'
+          '  - Chosen Next = \'$chosenSpell\' (3D dist: ${minDist.toStringAsFixed(4)}, Hamming dist: $chosenHamming)');
 
       curr = closest;
       tspSortedIds.add(wordsWithEmbeddings[curr].key);

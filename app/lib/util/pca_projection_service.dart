@@ -82,7 +82,7 @@ class PcaProjectionService {
     for (int i = 0; i < 2048; i++) {
       int byteIdx = i ~/ 8;
       int bitIdx = i % 8;
-      bool isOne = (embedding1bit[byteIdx] & (1 << (7 - bitIdx))) != 0;
+      bool isOne = (embedding1bit[byteIdx] & (1 << bitIdx)) != 0;
       double val = isOne ? 1.0 : 0.0;
       double centeredVal = val - _mean![i];
 

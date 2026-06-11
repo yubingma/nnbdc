@@ -19,7 +19,7 @@ void main() {
     final list = Uint8List(256);
     final byteIdx = activeBit ~/ 8;
     final bitIdx = activeBit % 8;
-    list[byteIdx] = 1 << (7 - bitIdx);
+    list[byteIdx] = 1 << bitIdx;
     return list;
   }
 

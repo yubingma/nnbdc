@@ -50,6 +50,10 @@ class DictWordsProvider with WordsProvider implements WordModifier {
     final userId = Global.getLoggedInUser()?.id;
     if (userId == null) return;
 
+    if (alg == WordSortAlg.semantic) {
+      WordBo.clearTspCache(dict.id);
+    }
+
     // 1. 双向联动：更新 LearningDicts 偏好
     final learningDict = await _db.learningDictsDao.findById(userId, dict.id);
     if (learningDict != null) {
