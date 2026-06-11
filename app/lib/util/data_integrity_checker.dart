@@ -295,8 +295,13 @@ class DataIntegrityChecker {
 
       for (final dict in allDicts) {
         final actualCount = await _db.dictWordsDao.getDictWordCount(dict.id);
-        if (dict.wordCount != actualCount) {
-          result.addIssue('单词数量不匹配', '词典 "${dict.name}" 元数据(Metadata)记录数: ${dict.wordCount}, 数据库实际关联单词数: $actualCount', 'dict_word_count');
+        // 只有两种情况需要保证 wordCount == actualCount：
+        // 1. 通用兜底词书 (必须完整下载)
+        // 2. 任何其他词书，只要本地实际有关联的单词 (即已经下载或开始学习)
+        if (dict.id == Global.commonDictId || actualCount > 0) {
+          if (dict.wordCount != actualCount) {
+            result.addIssue('单词数量不匹配', '词典 "${dict.name}" 元数据(Metadata)记录数: ${dict.wordCount}, 数据库实际关联单词数: $actualCount', 'dict_word_count');
+          }
         }
       }
     } catch (e, stack) {
