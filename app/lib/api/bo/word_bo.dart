@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -44,6 +45,13 @@ int hammingDistance(Uint8List a, Uint8List b) {
     dist += _popCountTable[a[i] ^ b[i]];
   }
   return dist;
+}
+
+class TspParams {
+  final List<MapEntry<String, Uint8List>> wordsWithEmbeddings;
+  final Map<String, String> idToSpell;
+
+  TspParams(this.wordsWithEmbeddings, this.idToSpell);
 }
 
 class WordBo {
@@ -110,6 +118,18 @@ class WordBo {
       return result;
     }
 
+    final params = TspParams(wordsWithEmbeddings, idToSpell);
+    final optimizedIds = await compute<TspParams, List<String>>(_calcTspInIsolate, params);
+
+    final finalResult = [...optimizedIds, ...wordsWithoutEmbeddings];
+    _dictTspCache[dictId] = finalResult;
+    return finalResult;
+  }
+
+  static List<String> _calcTspInIsolate(TspParams params) {
+    final wordsWithEmbeddings = params.wordsWithEmbeddings;
+    final idToSpell = params.idToSpell;
+
     final List<String> tspSortedIds = [];
     final int n = wordsWithEmbeddings.length;
     final Set<int> unvisited = Set.from(Iterable.generate(n));
@@ -126,14 +146,12 @@ class WordBo {
       final currSpell = idToSpell[currId] ?? currId;
       final currEmb = wordsWithEmbeddings[curr].value;
 
-      // 计算与所有未访问节点的 1-bit 汉明距离
       List<MapEntry<int, int>> candidates = [];
       for (final int idx in unvisited) {
         final dist = hammingDistance(currEmb, wordsWithEmbeddings[idx].value);
         candidates.add(MapEntry(idx, dist));
       }
 
-      // 按汉明距离升序排序
       candidates.sort((a, b) => a.value.compareTo(b.value));
 
       final top5HammingLog = candidates.take(5).map((entry) {
@@ -149,7 +167,7 @@ class WordBo {
       final chosenSpell = idToSpell[chosenId] ?? chosenId;
       final chosenHamming = closestEntry.value;
 
-      Global.logger.d('[SEMANTIC TSP] Step $stepIdx: Current = \'$currSpell\'\n'
+      debugPrint('[SEMANTIC TSP] Step $stepIdx: Current = \'$currSpell\'\n'
           '  - Top 5 Hamming candidates: $top5HammingLog\n'
           '  - Chosen Next = \'$chosenSpell\' (Hamming dist: $chosenHamming)');
 
@@ -158,16 +176,13 @@ class WordBo {
       unvisited.remove(curr);
     }
 
-    // 使用 2-opt 局部搜索优化贪心 TSP 路径，消除由于贪婪 NN 产生的交叉和孤立长边
     final Map<String, Uint8List> idToEmb = Map.fromEntries(wordsWithEmbeddings);
-    final optimizedIds = _optimize2Opt(tspSortedIds, idToEmb);
+    final optimizedIds = _optimize2OptIsolate(tspSortedIds, idToEmb);
 
-    final finalResult = [...optimizedIds, ...wordsWithoutEmbeddings];
-    _dictTspCache[dictId] = finalResult;
-    return finalResult;
+    return optimizedIds;
   }
 
-  List<String> _optimize2Opt(List<String> route, Map<String, Uint8List> idToEmb) {
+  static List<String> _optimize2OptIsolate(List<String> route, Map<String, Uint8List> idToEmb) {
     final List<String> bestRoute = List.from(route);
     final int n = bestRoute.length;
     if (n <= 3) return bestRoute;
@@ -175,26 +190,30 @@ class WordBo {
     bool improved = true;
     int iteration = 0;
     const int maxIterations = 200;
+    
+    // 如果大词书，窗口设为 200，保证极佳的翻转跨度；若小词书则设为全局。
+    final int K = (n > 200) ? 200 : n;
 
     while (improved && iteration < maxIterations) {
       improved = false;
       iteration++;
 
       for (int i = 1; i < n - 1; i++) {
-        for (int j = i + 1; j < n; j++) {
-          final embI_minus_1 = idToEmb[bestRoute[i - 1]]!;
+        final int limit = (i + K < n) ? i + K : n;
+        for (int j = i + 1; j < limit; j++) {
+          final embIMinus1 = idToEmb[bestRoute[i - 1]]!;
           final embI = idToEmb[bestRoute[i]]!;
           final embJ = idToEmb[bestRoute[j]]!;
-          final embJ_plus_1 = (j + 1 < n) ? idToEmb[bestRoute[j + 1]]! : null;
+          final embJPlus1 = (j + 1 < n) ? idToEmb[bestRoute[j + 1]]! : null;
 
-          final int currentDist1 = hammingDistance(embI_minus_1, embI);
-          final int currentDist2 = (embJ_plus_1 != null) ? hammingDistance(embJ, embJ_plus_1) : 0;
+          final int currentDist1 = hammingDistance(embIMinus1, embI);
+          final int currentDist2 = (embJPlus1 != null) ? hammingDistance(embJ, embJPlus1) : 0;
 
-          final int newDist1 = hammingDistance(embI_minus_1, embJ);
-          final int newDist2 = (embJ_plus_1 != null) ? hammingDistance(embI, embJ_plus_1) : 0;
+          final int newDist1 = hammingDistance(embIMinus1, embJ);
+          final int newDist2 = (embJPlus1 != null) ? hammingDistance(embI, embJPlus1) : 0;
 
           if (newDist1 + newDist2 < currentDist1 + currentDist2) {
-            _reverseSegment(bestRoute, i, j);
+            _reverseSegmentIsolate(bestRoute, i, j);
             improved = true;
             break;
           }
@@ -203,11 +222,11 @@ class WordBo {
       }
     }
 
-    Global.logger.d('[SEMANTIC TSP] 2-opt 优化完成，迭代次数: $iteration');
+    debugPrint('[SEMANTIC TSP] 窗口 2-opt 优化完成，迭代次数: $iteration, 窗口 K: $K');
     return bestRoute;
   }
 
-  void _reverseSegment(List<String> route, int i, int j) {
+  static void _reverseSegmentIsolate(List<String> route, int i, int j) {
     while (i < j) {
       final temp = route[i];
       route[i] = route[j];

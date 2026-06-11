@@ -35,6 +35,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
   int? _totalTables;
   int? _nonEmptyTables;
   String? _dbSha256;
+  String? _compressedDbPath;
+  String? _compressedDbSha256;
   final Map<String, int> _tableCounts = {};
 
   @override
@@ -160,6 +162,10 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
             _buildInfoRow('数据库版本', '$_dbVersion', textColor),
             _buildInfoRow('数据库路径', _dbPath ?? '未知', textColor),
             _buildInfoRow('SHA-256', _dbSha256 ?? '计算中...', textColor),
+            if (_compressedDbPath != null) ...[
+              _buildInfoRow('Gzip 压缩包路径', _compressedDbPath!, textColor),
+              _buildInfoRow('Gzip 压缩包 SHA-256', _compressedDbSha256 ?? '计算中...', textColor),
+            ],
             _buildInfoRow('总表数', '$_totalTables', textColor),
             _buildInfoRow('非空表数', '$_nonEmptyTables', textColor),
             if (_healthStatusMessage != null)
@@ -245,6 +251,8 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       _statusMessage = '正在初始化...';
       _healthStatusMessage = null;
       _healthIssuesList = [];
+      _compressedDbPath = null;
+      _compressedDbSha256 = null;
     });
 
     // 暂停后台同步，防止制作过程中产生同步日志或写入用户数据
@@ -317,6 +325,29 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
       // 5. 获取概要信息
       setState(() => _statusMessage = '正在获取数据库统计信息...');
       await _getDbSummary();
+
+      // 5.5 自动生成 Gzip 压缩包
+      setState(() => _statusMessage = '正在自动生成 Gzip 压缩包...');
+      try {
+        final dbFile = File(_dbPath!);
+        final bytes = await dbFile.readAsBytes();
+        final compressedBytes = gzip.encode(bytes);
+
+        final gzPath = '${dbFile.path}.gz';
+        final gzFile = File(gzPath);
+        await gzFile.writeAsBytes(compressedBytes, flush: true);
+
+        _compressedDbPath = gzFile.path;
+        _compressedDbSha256 = sha256.convert(compressedBytes).toString();
+
+        Global.logger.i('✅ Gzip 压缩包已自动生成！\n'
+            '  - 压缩包路径: $_compressedDbPath\n'
+            '  - 原始大小: ${(bytes.length / 1024 / 1024).toStringAsFixed(2)} MB\n'
+            '  - 压缩大小: ${(compressedBytes.length / 1024 / 1024).toStringAsFixed(2)} MB\n'
+            '  - 压缩包 SHA-256: $_compressedDbSha256');
+      } catch (e) {
+        Global.logger.e('❌ 自动生成 Gzip 压缩包失败: $e');
+      }
 
       setState(() {
         _isProcessing = false;
