@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
@@ -7,7 +6,6 @@ import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/pca_projection_service.dart';
 
 void main() {
   late MyDatabase db;
@@ -15,11 +13,13 @@ void main() {
   final String dictId = 'tsp_test_dict';
   final String userId = 'test_user_id';
 
-  Uint8List createEmbedding(int activeBit) {
+  Uint8List createEmbedding(List<int> activeBits) {
     final list = Uint8List(256);
-    final byteIdx = activeBit ~/ 8;
-    final bitIdx = activeBit % 8;
-    list[byteIdx] = 1 << bitIdx;
+    for (final bit in activeBits) {
+      final byteIdx = bit ~/ 8;
+      final bitIdx = bit % 8;
+      list[byteIdx] |= 1 << bitIdx;
+    }
     return list;
   }
 
@@ -74,26 +74,7 @@ void main() {
       updateTime: now,
     ));
 
-    // Setup Mock PCA Config for TSP sorting (dimensions: 2048)
-    final mean = List<double>.filled(2048, 0.0);
-    final components = List<List<double>>.generate(2048, (i) {
-      if (i == 0) return [1.0, 1.0, 1.0];
-      if (i == 1) return [10.0, 10.0, 10.0];
-      if (i == 2) return [1.1, 1.1, 1.1];
-      return [0.0, 0.0, 0.0];
-    });
-    final configJson = jsonEncode({
-      'mean': mean,
-      'components': components,
-    });
-    await db.into(db.pcaProjectionConfigs).insert(PcaProjectionConfig(
-      id: 'latest',
-      configJson: configJson,
-      updateTime: now,
-    ));
 
-    // Force load PCA config for this database instance
-    await PcaProjectionService().loadConfig();
 
     // Clear caches
     WordBo.clearAllTspCache();
@@ -108,15 +89,15 @@ void main() {
       // 1. Insert 3 words with coordinates such that the default order in SQLite is w1, w2, w3,
       // but closest path starting from w1 is w1 -> w3 -> w2.
       await db.into(db.words).insert(Word(
-        id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding(0),
+        id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding([0]),
         createTime: now, updateTime: now,
       ));
       await db.into(db.words).insert(Word(
-        id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding(1),
+        id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding([1, 2]),
         createTime: now, updateTime: now,
       ));
       await db.into(db.words).insert(Word(
-        id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding(2),
+        id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding([0, 1]),
         createTime: now, updateTime: now,
       ));
 
@@ -137,9 +118,9 @@ void main() {
 
     test('getDictWordsForAPage correctly applies SEMANTIC sort using TSP', () async {
       // Setup same words
-      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding(0), createTime: now, updateTime: now));
-      await db.into(db.words).insert(Word(id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding(1), createTime: now, updateTime: now));
-      await db.into(db.words).insert(Word(id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding(2), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding([0]), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding([1, 2]), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding([0, 1]), createTime: now, updateTime: now));
 
       await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w1', seq: 1, unit: 0, createTime: now, updateTime: now));
       await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w2', seq: 2, unit: 0, createTime: now, updateTime: now));
@@ -158,9 +139,9 @@ void main() {
     });
 
     test('getDictWordOrder returns correct TSP index', () async {
-      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding(0), createTime: now, updateTime: now));
-      await db.into(db.words).insert(Word(id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding(1), createTime: now, updateTime: now));
-      await db.into(db.words).insert(Word(id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding(2), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding([0]), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding([1, 2]), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding([0, 1]), createTime: now, updateTime: now));
 
       await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w1', seq: 1, unit: 0, createTime: now, updateTime: now));
       await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w2', seq: 2, unit: 0, createTime: now, updateTime: now));
@@ -178,8 +159,8 @@ void main() {
     });
 
     test('Word addition and removal clears cache', () async {
-      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding(0), createTime: now, updateTime: now));
-      await db.into(db.words).insert(Word(id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding(1), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding([0]), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding([1, 2]), createTime: now, updateTime: now));
       await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w1', seq: 1, unit: 0, createTime: now, updateTime: now));
       await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w2', seq: 2, unit: 0, createTime: now, updateTime: now));
 
@@ -188,7 +169,7 @@ void main() {
       expect(initialList, ['w1', 'w2']);
 
       // Add word w3 -> should invalidate cache
-      await db.into(db.words).insert(Word(id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding(2), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding([0, 1]), createTime: now, updateTime: now));
       await wordBo.addWordToCustomDict(dictId, 'w3');
 
       // Fetch again and verify cache was updated
@@ -204,7 +185,7 @@ void main() {
     });
 
     test('ThrottledDbSyncService reset/completion clears all TSP cache', () async {
-      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding(0), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding([0]), createTime: now, updateTime: now));
       await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w1', seq: 1, unit: 0, createTime: now, updateTime: now));
 
       final wordBo = WordBo();

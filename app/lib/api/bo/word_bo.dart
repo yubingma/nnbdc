@@ -18,7 +18,6 @@ import 'package:nnbdc/constants.dart';
 
 import '../../services/throttled_sync_service.dart';
 
-import 'package:nnbdc/util/pca_projection_service.dart';
 
 const _popCountTable = [
   0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
@@ -111,15 +110,6 @@ class WordBo {
       return result;
     }
 
-    // 两阶段 TSP 排序
-    await PcaProjectionService().ensureInitialized();
-    
-    // 提前计算好所有 3D 坐标并缓存 (精排需要)
-    final Map<String, List<double>> coordsCache = {};
-    List<double> getCoords(String id, Uint8List emb) {
-      return coordsCache.putIfAbsent(id, () => PcaProjectionService().projectTo3D(emb));
-    }
-
     final List<String> tspSortedIds = [];
     final int n = wordsWithEmbeddings.length;
     final Set<int> unvisited = Set.from(Iterable.generate(n));
@@ -128,7 +118,6 @@ class WordBo {
     tspSortedIds.add(wordsWithEmbeddings[curr].key);
     unvisited.remove(curr);
 
-    const int K = 20; // 粗筛 K 个候选
     int stepIdx = 0;
 
     while (unvisited.isNotEmpty) {
@@ -136,58 +125,33 @@ class WordBo {
       final currId = wordsWithEmbeddings[curr].key;
       final currSpell = idToSpell[currId] ?? currId;
       final currEmb = wordsWithEmbeddings[curr].value;
-      final currCoords = getCoords(currId, currEmb);
 
-      // 1. 粗筛：1-bit 汉明距离前 K 小
+      // 计算与所有未访问节点的 1-bit 汉明距离
       List<MapEntry<int, int>> candidates = [];
       for (final int idx in unvisited) {
         final dist = hammingDistance(currEmb, wordsWithEmbeddings[idx].value);
         candidates.add(MapEntry(idx, dist));
       }
 
-      // 排序选择前 K 个
+      // 按汉明距离升序排序
       candidates.sort((a, b) => a.value.compareTo(b.value));
-      final List<MapEntry<int, int>> topK = candidates.take(K).toList();
 
-      final top5HammingLog = topK.take(5).map((entry) {
+      final top5HammingLog = candidates.take(5).map((entry) {
         final idx = entry.key;
         final id = wordsWithEmbeddings[idx].key;
         final spell = idToSpell[id] ?? id;
         return "'$spell' (Hamming: ${entry.value})";
       }).join(', ');
 
-      // 2. 精排：在这 K 个候选里，计算与当前节点 3D 坐标的欧氏距离，选最小的
-      int closest = -1;
-      double minDist = double.infinity;
-      final List<String> coordsLogList = [];
-
-      for (final entry in topK) {
-        final int idx = entry.key;
-        final String id = wordsWithEmbeddings[idx].key;
-        final String spell = idToSpell[id] ?? id;
-        final nodeCoords = getCoords(id, wordsWithEmbeddings[idx].value);
-        
-        final double dx = currCoords[0] - nodeCoords[0];
-        final double dy = currCoords[1] - nodeCoords[1];
-        final double dz = currCoords[2] - nodeCoords[2];
-        final double dist = dx * dx + dy * dy + dz * dz;
-
-        coordsLogList.add("'$spell' (3D Dist: ${dist.toStringAsFixed(4)}, Hamming: ${entry.value})");
-        
-        if (dist < minDist) {
-          minDist = dist;
-          closest = idx;
-        }
-      }
-
+      final closestEntry = candidates.first;
+      final closest = closestEntry.key;
       final chosenId = wordsWithEmbeddings[closest].key;
       final chosenSpell = idToSpell[chosenId] ?? chosenId;
-      final chosenHamming = topK.firstWhere((e) => e.key == closest).value;
+      final chosenHamming = closestEntry.value;
 
-      Global.logger.d('[SEMANTIC TSP] Step $stepIdx: Current = \'$currSpell\' (Coords: [${currCoords.map((c) => c.toStringAsFixed(3)).join(', ')}])\n'
+      Global.logger.d('[SEMANTIC TSP] Step $stepIdx: Current = \'$currSpell\'\n'
           '  - Top 5 Hamming candidates: $top5HammingLog\n'
-          '  - Candidates sorted by 3D: ${coordsLogList.join(', ')}\n'
-          '  - Chosen Next = \'$chosenSpell\' (3D dist: ${minDist.toStringAsFixed(4)}, Hamming dist: $chosenHamming)');
+          '  - Chosen Next = \'$chosenSpell\' (Hamming dist: $chosenHamming)');
 
       curr = closest;
       tspSortedIds.add(wordsWithEmbeddings[curr].key);
