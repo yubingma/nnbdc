@@ -412,23 +412,25 @@ public class EmbeddingBo {
                     throw new RuntimeException("数据库中没有任何词嵌入数据，重构中止。");
                 }
 
-                List<Map<String, Object>> exportData = new ArrayList<>();
-                for (Map<String, Object> row : rows) {
-                    String wordId = (String) row.get("id");
-                    byte[] bytes = (byte[]) row.get("embedding");
-                    float[] floats = byteArrayToFloatArray(bytes);
-
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("id", wordId);
-                    item.put("embedding", floats);
-                    exportData.add(item);
-                }
-
                 tempInputFile = File.createTempFile("pca_input", ".json");
                 tempOutputFile = File.createTempFile("pca_output", ".json");
 
                 Gson gson = new Gson();
-                Files.writeString(tempInputFile.toPath(), gson.toJson(exportData), StandardCharsets.UTF_8);
+                try (java.io.Writer writer = Files.newBufferedWriter(tempInputFile.toPath(), StandardCharsets.UTF_8);
+                     com.google.gson.stream.JsonWriter jsonWriter = gson.newJsonWriter(writer)) {
+                    jsonWriter.beginArray();
+                    for (Map<String, Object> row : rows) {
+                        String wordId = (String) row.get("id");
+                        byte[] bytes = (byte[]) row.get("embedding");
+                        float[] floats = byteArrayToFloatArray(bytes);
+
+                        Map<String, Object> item = new HashMap<>();
+                        item.put("id", wordId);
+                        item.put("embedding", floats);
+                        gson.toJson(item, Map.class, jsonWriter);
+                    }
+                    jsonWriter.endArray();
+                }
 
                 // 2. 自动定位 Python 执行路径
                 reconstructMsg = "正在查找 Python 环境...";

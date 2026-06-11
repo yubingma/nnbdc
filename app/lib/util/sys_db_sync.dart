@@ -7,6 +7,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/util/sync.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/pca_projection_service.dart';
 
 /// 同步系统数据库（统一的系统数据同步）
 ///
@@ -170,6 +171,9 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           if (log.operate == 'DELETE') {
             await (db.delete(db.words)..where((t) => t.id.equals(log.recordId))).go();
           } else {
+            if (entityJson['embedding1bit'] is String) {
+              entityJson['embedding1bit'] = base64Decode(entityJson['embedding1bit'] as String).toList();
+            }
             Word entity = Word.fromJson(entityJson);
             Global.logger.i("📝 同步更新单词: ${entity.spell}, UpdateTime: ${entity.updateTime}");
             await db.wordsDao.insertEntity(entity);
@@ -221,6 +225,16 @@ Future<void> _applySysDbLogs(List<SysDbLogDto> logs) async {
           } else {
             WordImage entity = WordImage.fromJson(entityJson);
             await db.wordImagesDao.insertEntity(entity);
+          }
+        } else if (log.tblName == 'pca_projection_config') {
+          // 主成分投影降维配置
+          if (log.operate == 'DELETE') {
+            await (db.delete(db.pcaProjectionConfigs)..where((t) => t.id.equals(log.recordId))).go();
+          } else {
+            PcaProjectionConfig entity = PcaProjectionConfig.fromJson(entityJson);
+            await db.into(db.pcaProjectionConfigs).insertOnConflictUpdate(entity);
+            // 实时加载最新投影配置
+            await PcaProjectionService().loadConfig();
           }
         } else {
           Global.logger.w('未知的系统数据表: ${log.tblName}');
