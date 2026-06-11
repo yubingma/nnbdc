@@ -158,9 +158,63 @@ class WordBo {
       unvisited.remove(curr);
     }
 
-    final finalResult = [...tspSortedIds, ...wordsWithoutEmbeddings];
+    // 使用 2-opt 局部搜索优化贪心 TSP 路径，消除由于贪婪 NN 产生的交叉和孤立长边
+    final Map<String, Uint8List> idToEmb = Map.fromEntries(wordsWithEmbeddings);
+    final optimizedIds = _optimize2Opt(tspSortedIds, idToEmb);
+
+    final finalResult = [...optimizedIds, ...wordsWithoutEmbeddings];
     _dictTspCache[dictId] = finalResult;
     return finalResult;
+  }
+
+  List<String> _optimize2Opt(List<String> route, Map<String, Uint8List> idToEmb) {
+    final List<String> bestRoute = List.from(route);
+    final int n = bestRoute.length;
+    if (n <= 3) return bestRoute;
+
+    bool improved = true;
+    int iteration = 0;
+    const int maxIterations = 200;
+
+    while (improved && iteration < maxIterations) {
+      improved = false;
+      iteration++;
+
+      for (int i = 1; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+          final embI_minus_1 = idToEmb[bestRoute[i - 1]]!;
+          final embI = idToEmb[bestRoute[i]]!;
+          final embJ = idToEmb[bestRoute[j]]!;
+          final embJ_plus_1 = (j + 1 < n) ? idToEmb[bestRoute[j + 1]]! : null;
+
+          final int currentDist1 = hammingDistance(embI_minus_1, embI);
+          final int currentDist2 = (embJ_plus_1 != null) ? hammingDistance(embJ, embJ_plus_1) : 0;
+
+          final int newDist1 = hammingDistance(embI_minus_1, embJ);
+          final int newDist2 = (embJ_plus_1 != null) ? hammingDistance(embI, embJ_plus_1) : 0;
+
+          if (newDist1 + newDist2 < currentDist1 + currentDist2) {
+            _reverseSegment(bestRoute, i, j);
+            improved = true;
+            break;
+          }
+        }
+        if (improved) break;
+      }
+    }
+
+    Global.logger.d('[SEMANTIC TSP] 2-opt 优化完成，迭代次数: $iteration');
+    return bestRoute;
+  }
+
+  void _reverseSegment(List<String> route, int i, int j) {
+    while (i < j) {
+      final temp = route[i];
+      route[i] = route[j];
+      route[j] = temp;
+      i++;
+      j--;
+    }
   }
 
   /// 批量获取单词的学习状态：null=未学习, true=已掌握, false=学习中
