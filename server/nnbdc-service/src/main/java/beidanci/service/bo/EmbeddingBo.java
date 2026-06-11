@@ -511,7 +511,11 @@ public class EmbeddingBo {
                 reconstructMsg = "正在产生投影配置同步日志...";
                 reconstructProgress = 0.9;
                 log.info("一键重构：批量产生主成分投影配置的同步更新日志");
-                sysDbSyncBo.logOperation("UPDATE", "pca_projection_config", "latest", outputJsonStr);
+                Map<String, Object> syncRecord = new HashMap<>();
+                syncRecord.put("id", "latest");
+                syncRecord.put("configJson", gson.toJson(newConfig));
+                syncRecord.put("updateTime", new Date());
+                sysDbSyncBo.logOperation("UPDATE", "pca_projection_config", "latest", gson.toJson(syncRecord));
 
                 reconstructStatus = "SUCCESS";
                 reconstructMsg = "重构成功！";
