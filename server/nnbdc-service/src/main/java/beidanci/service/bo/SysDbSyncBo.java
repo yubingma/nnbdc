@@ -22,6 +22,8 @@ import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.SysDbLog;
 import beidanci.service.po.SysDbVersion;
+import beidanci.service.po.Dict;
+import beidanci.api.model.DictDto;
 import beidanci.api.model.Ownerable;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.Util;
@@ -48,9 +50,11 @@ public class SysDbSyncBo extends BaseBo<SysDbLog> {
      */
     public void logOperation(Object entity, String operate, String table, String recordId, String record) {
         if (entity instanceof Ownerable) {
-            String ownerId = ((Ownerable) entity).getOwnerId();
-            Assert.isTrue(beidanci.util.Constants.SYS_USER_SYS_ID.equals(ownerId),
-                "SECURITY ALERT: Attempted to log private data to global sync log! table=" + table + ", ownerId=" + ownerId);
+            if (entity instanceof Dict || entity instanceof DictDto) {
+                String ownerId = ((Ownerable) entity).getOwnerId();
+                Assert.isTrue(beidanci.util.Constants.SYS_USER_SYS_ID.equals(ownerId),
+                    "SECURITY ALERT: Attempted to log private data to global sync log! table=" + table + ", ownerId=" + ownerId);
+            }
         }
         logOperation(operate, table, recordId, record);
     }
