@@ -8,6 +8,7 @@ import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/util/local_embedding_cache.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/bdc/models/bdc_page_args.dart';
@@ -144,6 +145,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   double _cumulativeScroll = 0.0;
   int _totalCigenWordsCount = 0;
 
+  // 语境拓展相关状态
+  List<WordVo> _semanticSimilarWords = [];
+  bool _showSemanticTip = true;
+
   void _onTabControllerChanged() {
     if (!mounted) return;
     final index = _tabController.index;
@@ -161,6 +166,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   void initState() {
     super.initState();
     _showCigenTip = Prefs.read<bool>('show_cigen_tip') ?? true;
+    _showSemanticTip = Prefs.read<bool>('show_semantic_tip') ?? true;
     _wordSoundController = AnimationController(
       duration: const Duration(milliseconds: 700),
       vsync: this,
@@ -311,6 +317,23 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       totalCount = uniqueWordIds.length;
     }
     _totalCigenWordsCount = totalCount;
+
+    // 加载语境拓展单词 (语义相似词)
+    if (LocalEmbeddingCache.instance.isInitialized) {
+      try {
+        final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
+        final List<WordVo> tempSemanticWords = [];
+        for (final res in similarResults) {
+          final wordRes = await WordBo().searchWordById(res.wordId, Global.getLoggedInUser()?.id, priorityDictIds: args.priorityDictIds);
+          if (wordRes.word != null) {
+            tempSemanticWords.add(wordRes.word!);
+          }
+        }
+        _semanticSimilarWords = tempSemanticWords;
+      } catch (e, st) {
+        Global.logger.e('加载语境拓展单词失败', error: e, stackTrace: st);
+      }
+    }
 
     setState(() {
       final newLength = calcTabsCount();
@@ -1035,6 +1058,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           if (hasSimilarWords()) Tab(text: '形近词(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义词(${calcSynonymCount()})"),
                           if (hasCigen()) Tab(text: '同根词($_totalCigenWordsCount)'),
+                          if (hasSemanticSimilarWords()) Tab(text: '语境拓展(${_semanticSimilarWords.length})'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
@@ -1109,6 +1133,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             if (hasSimilarWords()) renderSimilarWords(),
                             if (hasSynonyms()) renderSynonyms(),
                             if (hasCigen()) renderCigenAffix(),
+                            if (hasSemanticSimilarWords()) renderSemanticSimilarWords(),
                             if (_canUseAiAssistant) renderAiExplanation(),
                           ],
                         ),
@@ -1193,11 +1218,18 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (hasCigen()) {
       count++;
     }
+    if (hasSemanticSimilarWords()) {
+      count++;
+    }
     // AI 解释 Tab 仅管理员可见
     if (_canUseAiAssistant) {
       count++;
     }
     return count;
+  }
+
+  bool hasSemanticSimilarWords() {
+    return _semanticSimilarWords.isNotEmpty;
   }
 
   bool hasCigen() {
@@ -2096,6 +2128,176 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 const SizedBox(height: 8),
                 Text(
                   '该单词目前没有形近词内容',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget renderSemanticSimilarWords() {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    if (_semanticSimilarWords.isNotEmpty) {
+      final showTip = _showSemanticTip;
+      return ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: showTip ? _semanticSimilarWords.length + 1 : _semanticSimilarWords.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          if (showTip && index == 0) {
+            return Container(
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+              margin: const EdgeInsets.only(bottom: 4),
+              decoration: BoxDecoration(
+                color: isDarkMode 
+                    ? const Color(0xFF1E293B).withValues(alpha: 0.5) 
+                    : const Color(0xFFF3F4F6).withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 14,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '注：高维向量从语义空间中检索出与当前词在语境上最具关联的 10 个词，辅助你进行联想记忆。',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 14),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+                    onPressed: () async {
+                      setState(() {
+                        _showSemanticTip = false;
+                      });
+                      await Prefs.write('show_semantic_tip', false);
+                    },
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final word = showTip ? _semanticSimilarWords[index - 1] : _semanticSimilarWords[index];
+          return InkWell(
+            onTap: () {
+              context.push('/word_detail', 
+                extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
+              );
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: isDarkMode 
+                    ? const Color(0xFF1E1E2D).withValues(alpha: 0.8) 
+                    : const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.01),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    word.spell,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      word.getMeaningStr(),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 10,
+                    color: isDarkMode ? Colors.white24 : Colors.black12,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[300]!.withValues(alpha: 0.3),
+                width: 0.5,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.explore_outlined,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '暂无语境拓展词',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '未找到与该单词语义相近的语境拓展词',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[500],
