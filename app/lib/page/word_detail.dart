@@ -150,6 +150,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   bool _showSemanticTip = true;
   bool _showSimilarTip = true;
   final Map<String, bool> _wordInDictStatus = {};
+  bool _isLoadingSemanticSimilar = false;
+  List<String> _semanticSimilarWordIds = [];
 
   void _onTabControllerChanged() {
     if (!mounted) return;
@@ -321,24 +323,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
     _totalCigenWordsCount = totalCount;
 
-    // 加载语境拓展单词 (语义相似词)
+    // 快速在后台线程中计算出相似单词 ID 列表以决定并锁定 Tab 数量，避免长事务数据库读取阻塞页面秒开
+    List<String> tempSimilarIds = [];
     if (LocalEmbeddingCache.instance.isInitialized) {
       try {
         final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
-        final similarIds = similarResults.map((res) => res.wordId).toList();
-        _semanticSimilarWords = await _getSimpleWordsByIds(similarIds);
+        tempSimilarIds = similarResults.map((res) => res.wordId).toList();
       } catch (e, st) {
-        Global.logger.e('加载语境拓展单词失败', error: e, stackTrace: st);
+        Global.logger.e('快速计算相似单词 ID 失败', error: e, stackTrace: st);
       }
     }
-
-    // 批量查询相关单词是否在学习范围内
-    final allRelatedIds = <String>[];
-    if (args.word.similarWords != null) {
-      allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
-    }
-    allRelatedIds.addAll(_semanticSimilarWords.map((w) => w.id!));
-    await _checkWordsInDict(allRelatedIds);
+    _semanticSimilarWordIds = tempSimilarIds;
 
     setState(() {
       final newLength = calcTabsCount();
@@ -349,6 +344,48 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       }
       dataLoaded = true;
     });
+
+    // 在第一帧秒开渲染后，以非阻塞的异步方式在后台拉取拓展单词详情及进行词库状态判断
+    if (tempSimilarIds.isNotEmpty) {
+      _isLoadingSemanticSimilar = true;
+      unawaited(() async {
+        try {
+          final tempSemanticWords = await _getSimpleWordsByIds(tempSimilarIds);
+          
+          final allRelatedIds = <String>[];
+          if (args.word.similarWords != null) {
+            allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
+          }
+          allRelatedIds.addAll(tempSimilarIds);
+          await _checkWordsInDict(allRelatedIds);
+
+          if (mounted) {
+            setState(() {
+              _semanticSimilarWords = tempSemanticWords;
+              _isLoadingSemanticSimilar = false;
+            });
+          }
+        } catch (e, st) {
+          Global.logger.e('异步加载拓展单词详情或词书状态失败', error: e, stackTrace: st);
+          if (mounted) {
+            setState(() {
+              _isLoadingSemanticSimilar = false;
+            });
+          }
+        }
+      }());
+    } else {
+      // 如果没有相似单词，直接批量查询形近词在词书状态即可
+      final allRelatedIds = <String>[];
+      if (args.word.similarWords != null) {
+        allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
+      }
+      if (allRelatedIds.isNotEmpty) {
+        unawaited(_checkWordsInDict(allRelatedIds).then((_) {
+          if (mounted) setState(() {});
+        }));
+      }
+    }
 
     final links = args.word.cigenWordLinks;
     if (links != null) {
@@ -1157,7 +1194,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           if (hasSimilarWords()) Tab(text: '形近(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义(${calcSynonymCount()})"),
                           if (hasCigen()) Tab(text: '同根($_totalCigenWordsCount)'),
-                          if (hasSemanticSimilarWords()) Tab(text: '拓展(${_semanticSimilarWords.length})'),
+                          if (hasSemanticSimilarWords()) Tab(text: '拓展(${_semanticSimilarWordIds.length})'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
@@ -1328,7 +1365,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   bool hasSemanticSimilarWords() {
-    return _semanticSimilarWords.isNotEmpty;
+    return _semanticSimilarWordIds.isNotEmpty;
   }
 
   bool hasCigen() {
@@ -2304,6 +2341,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
   Widget renderSemanticSimilarWords() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    if (_isLoadingSemanticSimilar && _semanticSimilarWords.isEmpty) {
+      return const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
     if (_semanticSimilarWords.isNotEmpty) {
       final showTip = _showSemanticTip;
       return ListView.separated(
