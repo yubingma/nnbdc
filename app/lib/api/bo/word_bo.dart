@@ -137,6 +137,75 @@ class WordBo {
     Global.logger.d('clearAllTspCache: 已清除所有词书的 TSP 缓存及本地数据库缓存');
   }
 
+  Future<List<String>> getTspSortedWordIdsForList(List<String> wordIds) async {
+    if (wordIds.isEmpty) return [];
+
+    final db = MyDatabase.instance;
+    final List<MapEntry<String, Uint8List>> wordsWithEmbeddings = [];
+    final List<String> wordsWithoutEmbeddings = [];
+    final Map<String, String> idToSpell = {};
+    Uint32List? sig0List;
+    Uint32List? sig1List;
+
+    if (LocalEmbeddingCache.instance.isInitialized) {
+      final int len = wordIds.length;
+      sig0List = Uint32List(len);
+      sig1List = Uint32List(len);
+      int validCount = 0;
+
+      // 批量获取 words 的拼写以填充 idToSpell
+      final wordsQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
+      final words = await wordsQuery.get();
+      final spellMap = {for (var w in words) w.id: w.spell};
+
+      for (final wordId in wordIds) {
+        final spell = spellMap[wordId] ?? wordId;
+        idToSpell[wordId] = spell;
+
+        final emb = LocalEmbeddingCache.instance.getEmbedding(wordId);
+        final sig0 = LocalEmbeddingCache.instance.getSig0(wordId);
+        final sig1 = LocalEmbeddingCache.instance.getSig1(wordId);
+
+        if (emb != null && emb.length >= 256 && sig0 != null && sig1 != null) {
+          wordsWithEmbeddings.add(MapEntry(wordId, emb));
+          sig0List[validCount] = sig0;
+          sig1List[validCount] = sig1;
+          validCount++;
+        } else {
+          wordsWithoutEmbeddings.add(wordId);
+        }
+      }
+
+      if (validCount < len) {
+        sig0List = sig0List.sublist(0, validCount);
+        sig1List = sig1List.sublist(0, validCount);
+      }
+    } else {
+      final rows = await (db.select(db.words)..where((w) => w.id.isIn(wordIds))).get();
+      for (final row in rows) {
+        final String wordId = row.id;
+        final String spell = row.spell;
+        final Uint8List? emb = row.embedding1bit;
+        idToSpell[wordId] = spell;
+
+        if (emb != null && emb.length >= 256) {
+          wordsWithEmbeddings.add(MapEntry(wordId, emb));
+        } else {
+          wordsWithoutEmbeddings.add(wordId);
+        }
+      }
+    }
+
+    if (wordsWithEmbeddings.isEmpty) {
+      return [...wordsWithoutEmbeddings];
+    }
+
+    final params = TspParams(wordsWithEmbeddings, idToSpell, sig0List: sig0List, sig1List: sig1List);
+    final optimizedIds = await compute<TspParams, List<String>>(_calcTspInIsolate, params);
+
+    return [...optimizedIds, ...wordsWithoutEmbeddings];
+  }
+
   Future<List<String>> getTspSortedWordIdsInternal(String dictId) => _getTspSortedWordIds(dictId);
 
   Future<List<String>> _getTspSortedWordIds(String dictId) async {

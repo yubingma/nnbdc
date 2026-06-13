@@ -3151,7 +3151,13 @@ class WordListPageState extends State<WordListPage>
       final isDarkMode = capturedContext.read<DarkMode>().isDarkMode;
       
       // Get the current sort alg
-      final currentAlg = await args.wordsProvider.getSortAlg();
+      WordSortAlg currentAlg;
+      if (args.wordsProvider is! DictWordsProvider) {
+        final currentBookmark = await args.bookMarkProvider.getBookMark();
+        currentAlg = WordSortAlg.fromCode(currentBookmark?.sortAlg ?? WordSortAlg.random.code);
+      } else {
+        currentAlg = await args.wordsProvider.getSortAlg();
+      }
       final hasUnits = await args.wordsProvider.hasUnits;
 
       final availableAlgs = WordSortAlg.values.where((alg) {

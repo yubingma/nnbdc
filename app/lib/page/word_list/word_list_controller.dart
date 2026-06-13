@@ -12,6 +12,9 @@ import 'package:nnbdc/event/events.dart';
 import 'package:nnbdc/global.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'word_list.dart';
+import 'dict_words.dart';
+import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/api/result.dart';
 
 class WordListController extends ChangeNotifier {
   final WordListPageArgs args;
@@ -38,6 +41,48 @@ class WordListController extends ChangeNotifier {
 
   bool _disposed = false;
 
+  // 普通词表的内存语义排序缓存
+  List<WordWrapper>? _semanticSortedCache;
+
+  /// 获取当前实际排序算法
+  Future<WordSortAlg> getCurrentSortAlg() async {
+    if (args.wordsProvider is! DictWordsProvider) {
+      final currentBookmark = await args.bookMarkProvider.getBookMark();
+      if (currentBookmark != null) {
+        return WordSortAlg.fromCode(currentBookmark.sortAlg);
+      }
+    }
+    return await args.wordsProvider.getSortAlg();
+  }
+
+  /// 确保普通词表的内存语义排序缓存已加载
+  Future<void> _ensureSemanticSortedCache() async {
+    if (_semanticSortedCache != null) return;
+    
+    // 一次性获取全量数据
+    final allResult = await args.wordsProvider.getAPageOfWords(0, 999999);
+    final allRows = allResult.rows;
+
+    if (allRows.isEmpty) {
+      _semanticSortedCache = [];
+      return;
+    }
+
+    final wordIds = allRows.map((w) => w.word.id!).toList();
+    final sortedWordIds = await WordBo().getTspSortedWordIdsForList(wordIds);
+
+    final wrapperMap = {for (var w in allRows) w.word.id: w};
+    final List<WordWrapper> sortedWrappers = [];
+    for (final id in sortedWordIds) {
+      final w = wrapperMap[id];
+      if (w != null) {
+        sortedWrappers.add(w);
+      }
+    }
+
+    _semanticSortedCache = sortedWrappers;
+  }
+
   WordListController({
     required this.args,
     required this.itemScrollController,
@@ -61,6 +106,7 @@ class WordListController extends ChangeNotifier {
   void clearQueryResult() {
     words.clear();
     aiStory = null;
+    _semanticSortedCache = null;
     notifyListeners();
   }
 
@@ -91,6 +137,10 @@ class WordListController extends ChangeNotifier {
     bookMark = await args.bookMarkProvider.getBookMark();
     checkAndShowGuide();
 
+    final sortAlg = bookMark != null
+        ? WordSortAlg.fromCode(bookMark!.sortAlg)
+        : await getCurrentSortAlg();
+
     if (isBookMarkValid(bookMark)) {
       // --- 预测并行加载优化 ---
       int predWordIndex = bookMark!.position;
@@ -120,7 +170,12 @@ class WordListController extends ChangeNotifier {
         actualWordIndex = predWordIndex;
         Global.logger.d('WordListController: 书签预测完美命中！成功跳过 getWordIndex 数据库慢查询！');
       } else {
-        actualWordIndex = await args.wordsProvider.getWordIndex(bookMark!.spell);
+        if (sortAlg == WordSortAlg.semantic && args.wordsProvider is! DictWordsProvider) {
+          await _ensureSemanticSortedCache();
+          actualWordIndex = _semanticSortedCache!.indexWhere((w) => w.word.spell == bookMark!.spell);
+        } else {
+          actualWordIndex = await args.wordsProvider.getWordIndex(bookMark!.spell);
+        }
         Global.logger.w('WordListController: 书签预测未命中或越界，回退查询 getWordIndex, spell: ${bookMark!.spell}');
       }
 
@@ -168,7 +223,7 @@ class WordListController extends ChangeNotifier {
       baseIndex = 0;
       await doQuery(true, baseIndex!, pageSize, false);
       if (words.isNotEmpty && bookMark == null) {
-        final defaultAlg = await args.wordsProvider.getSortAlg();
+        final defaultAlg = await getCurrentSortAlg();
         bookMark = BookMarkVo(0, words[0].word.spell, defaultAlg.code);
         args.bookMarkProvider.saveBookMark(bookMark!);
       }
@@ -192,9 +247,27 @@ class WordListController extends ChangeNotifier {
 
     // 1. 保存新的排序（这会联动修改偏好设置与书签记录的 sortAlg）
     await args.wordsProvider.saveSortAlg(newAlg);
+    if (args.wordsProvider is! DictWordsProvider) {
+      final currentBookmark = await args.bookMarkProvider.getBookMark();
+      if (currentBookmark != null) {
+        await args.bookMarkProvider.saveBookMark(
+          BookMarkVo(currentBookmark.position, currentBookmark.spell, newAlg.code),
+        );
+      } else {
+        await args.bookMarkProvider.saveBookMark(
+          BookMarkVo(0, '', newAlg.code),
+        );
+      }
+    }
 
     // 2. 重查拼写在新排序下的物理位置
-    final newPosition = await args.wordsProvider.getWordIndex(currentSpell);
+    int newPosition;
+    if (newAlg == WordSortAlg.semantic && args.wordsProvider is! DictWordsProvider) {
+      await _ensureSemanticSortedCache();
+      newPosition = _semanticSortedCache!.indexWhere((w) => w.word.spell == currentSpell);
+    } else {
+      newPosition = await args.wordsProvider.getWordIndex(currentSpell);
+    }
     final finalPos = newPosition == -1 ? 0 : newPosition;
 
     // 3. 构建新的书签快照
@@ -240,7 +313,18 @@ class WordListController extends ChangeNotifier {
 
   Future<void> loadAPageOfWords(final int fromIndex, final int queryPageSize, bool jumpToTailWhenReady) async {
     try {
-      final result = await args.wordsProvider.getAPageOfWords(fromIndex, queryPageSize);
+      final sortAlg = await getCurrentSortAlg();
+      
+      PagedResults<WordWrapper> result;
+      if (sortAlg == WordSortAlg.semantic && args.wordsProvider is! DictWordsProvider) {
+        await _ensureSemanticSortedCache();
+        final cache = _semanticSortedCache!;
+        final end = (fromIndex + queryPageSize) > cache.length ? cache.length : (fromIndex + queryPageSize);
+        final slicedRows = fromIndex >= cache.length ? <WordWrapper>[] : cache.sublist(fromIndex, end);
+        result = PagedResults<WordWrapper>(cache.length)..rows.addAll(slicedRows);
+      } else {
+        result = await args.wordsProvider.getAPageOfWords(fromIndex, queryPageSize);
+      }
 
       if (result.rows.isEmpty) {
         totalWordCount = result.total;

@@ -1,14 +1,14 @@
 import 'dart:async';
-import 'package:nnbdc/util/sync.dart' as dbsync;
-import 'package:nnbdc/config.dart';
-import 'package:nnbdc/global.dart';
-import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/network_util.dart';
-import 'package:nnbdc/services/dialog_service.dart';
+
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/config.dart';
+import 'package:nnbdc/global.dart';
+import 'package:nnbdc/services/dialog_service.dart';
+import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/network_util.dart';
+import 'package:nnbdc/util/sync.dart' as dbsync;
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/api/bo/word_bo.dart';
 
 class ThrottledDbSyncService {
   static final ThrottledDbSyncService _instance = ThrottledDbSyncService._internal();
