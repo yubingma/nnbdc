@@ -145,7 +145,6 @@ class ThrottledDbSyncService {
 
     try {
       await dbsync.syncDb();
-      WordBo.clearAllTspCache();
 
       final endTime = AppClock.now();
       final duration = endTime.difference(startTime);
