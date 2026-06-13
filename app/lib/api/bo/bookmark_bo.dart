@@ -33,10 +33,10 @@ class BookmarkBo {
       final bookmark = await query.getSingleOrNull();
 
       if (bookmark != null) {
-        final bookmarkVo = BookMarkVo(bookmark.position, bookmark.spell);
+        final bookmarkVo = BookMarkVo(bookmark.position, bookmark.spell, bookmark.sortAlg);
         bookmarkVo.bookMarkName = bookmark.bookMarkName;
 
-        Global.logger.d('获取书签成功: name=$bookMarkName, position=${bookmark.position}, spell=${bookmark.spell}');
+        Global.logger.d('获取书签成功: name=$bookMarkName, position=${bookmark.position}, spell=${bookmark.spell}, sortAlg=${bookmark.sortAlg}');
         final result = Result<BookMarkVo>("SUCCESS", "获取成功", true);
         result.data = bookmarkVo;
         return result;
@@ -54,9 +54,9 @@ class BookmarkBo {
     }
   }
 
-  Future<Result> saveBookMark(String bookMarkName, String spell, int position, String userId) async {
+  Future<Result> saveBookMark(String bookMarkName, String spell, int position, String userId, {String? sortAlg}) async {
     try {
-      Global.logger.d('开始保存书签: name=$bookMarkName, position=$position, spell=$spell, userId=$userId');
+      Global.logger.d('开始保存书签: name=$bookMarkName, position=$position, spell=$spell, userId=$userId, sortAlg=$sortAlg');
       final db = MyDatabase.instance;
 
       // 检查用户是否存在
@@ -78,7 +78,7 @@ class BookmarkBo {
         bookMarkName: bookMarkName,
         spell: spell,
         position: position,
-        sortAlg: existingBookmark?.sortAlg ?? 'RANDOM',
+        sortAlg: sortAlg ?? existingBookmark?.sortAlg ?? 'RANDOM',
         createTime: existingBookmark?.createTime ?? now,
         updateTime: now,
       );
