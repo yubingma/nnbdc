@@ -1,4 +1,7 @@
 enum WordSortAlg {
+  /// 默认序（词书的原始顺序）
+  original('ORIGINAL', '原始序'),
+
   /// 乱序（单词拼写 MD5）
   random('RANDOM', '乱序'),
 
@@ -19,7 +22,7 @@ enum WordSortAlg {
   static WordSortAlg fromCode(String? code) {
     return WordSortAlg.values.firstWhere(
       (e) => e.code == code,
-      orElse: () => WordSortAlg.random, // 默认排序规则
+      orElse: () => WordSortAlg.original, // 默认排序规则
     );
   }
 }

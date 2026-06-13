@@ -42,7 +42,7 @@ class DictWordsProvider with WordsProvider implements WordModifier {
         return WordSortAlg.fromCode(learningDict.sortAlg);
       }
     }
-    return WordSortAlg.random;
+    return WordSortAlg.original;
   }
 
   @override
@@ -293,7 +293,7 @@ class DictWordsBookMarkProvider implements BookMarkProvider {
         if (content.contains(':')) {
           final parts = content.split(':');
           if (parts.length == 2) {
-            final bookMark = BookMarkVo(int.tryParse(parts[1]) ?? 0, parts[0], 'RANDOM');
+            final bookMark = BookMarkVo(int.tryParse(parts[1]) ?? 0, parts[0], 'ORIGINAL');
             WordBo().updateBookmarkCache(bookMarkName, bookMark);
             // 异步迁移到新表，不阻塞当前返回
             _saveBookMarkLocally(bookMark).then((_) {

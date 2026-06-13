@@ -100,7 +100,7 @@ mixin WordsProvider {
 
   /// 获取当前词表数据源的排序规则
   Future<WordSortAlg> getSortAlg() async {
-    return WordSortAlg.random;
+    return WordSortAlg.original;
   }
 
   /// 保存当前词表数据源的排序规则
@@ -2359,6 +2359,10 @@ class WordListPageState extends State<WordListPage>
                             context: capturedContext,
                             position: position,
                             useRootNavigator: true,
+                            constraints: const BoxConstraints(
+                              minWidth: 140,
+                              maxWidth: 160,
+                            ),
                             items: [
                               PopupMenuItem<String>(
                                 enabled: false,
@@ -3160,7 +3164,7 @@ class WordListPageState extends State<WordListPage>
       WordSortAlg currentAlg;
       if (args.wordsProvider is! DictWordsProvider) {
         final currentBookmark = await args.bookMarkProvider.getBookMark();
-        currentAlg = WordSortAlg.fromCode(currentBookmark?.sortAlg ?? WordSortAlg.random.code);
+        currentAlg = WordSortAlg.fromCode(currentBookmark?.sortAlg ?? WordSortAlg.original.code);
       } else {
         currentAlg = await args.wordsProvider.getSortAlg();
       }
@@ -3285,6 +3289,8 @@ class WordListPageState extends State<WordListPage>
 
   String _getSortAlgDesc(WordSortAlg alg) {
     switch (alg) {
+      case WordSortAlg.original:
+        return '词书的原始单词顺序';
       case WordSortAlg.random:
         return '单词随机排列';
       case WordSortAlg.alphabetical:

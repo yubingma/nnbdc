@@ -95,7 +95,7 @@ void main() {
       dictId: dictId,
       isPrivileged: false,
       fetchMastered: false,
-      sortAlg: 'RANDOM',
+      sortAlg: 'ORIGINAL',
       createTime: now,
       updateTime: now,
     ));
@@ -345,7 +345,7 @@ void main() {
 
       var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 精确验证它取的是前 5 个词
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_10', 'word_2', 'word_3', 'word_4']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
 
       // 模拟用户在第一天认真学完了这 5 个词
       for (var lw in todayWords) {
@@ -371,7 +371,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 精确验证它往下抓了后 5 个新鲜词
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_5', 'word_6', 'word_7', 'word_8', 'word_9']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_10', 'word_6', 'word_7', 'word_8', 'word_9']);
 
       // 模拟用户在第二天痛快地学完了这仅剩的 5 个新词，但基础极差，只配了 1 天的复习期
       for (var lw in todayWords) {
@@ -401,7 +401,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 因为 Day 2 的稳定性 1.0 远低于 Day 1 的 2.0，所以被优先抽出！
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_5', 'word_6', 'word_7', 'word_8', 'word_9']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_10', 'word_6', 'word_7', 'word_8', 'word_9']);
 
       // 模拟用户在第三天完美地复习了这 5 个词，并将它们直接干到了“毕业”水平（毕业稳定性常数=Constants.graduationStability，默认可能是10.0或更大）
       for (var lw in todayWords) {
@@ -429,7 +429,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 精准验证！果然轮到了 1-5 词的复习
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_10', 'word_2', 'word_3', 'word_4']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
 
       // 同样，用户神采奕奕，把这 5 个词也学到了满分毕业点之上
       for (var lw in todayWords) {
@@ -752,7 +752,7 @@ void main() {
       
       var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       expect(todayWords.length, 2);
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_10']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_1', 'word_2']);
 
       // 3. 用户将每日计划调整到 5 个，并尝试强制“补充”
       final userWith5 = testUser.copyWith(wordsPerDay: 5);
@@ -770,7 +770,7 @@ void main() {
       // 精准校验：必须刚好是 5 个词，且 word_1 和 word_2 仅出现了一次，没有被覆写！
       expect(todayWords.length, 5);
       final wordIds = todayWords.map((w) => w.wordId).toList();
-      expect(wordIds, ['word_1', 'word_10', 'word_2', 'word_3', 'word_4']);
+      expect(wordIds, ['word_1', 'word_2', 'word_3', 'word_4', 'word_5']);
     });
 
     test('【多词书优先级验证】高优先级词书的新词先被取，低优先级词书后补；且新词被正确写入learning_words池子', () async {
@@ -791,7 +791,7 @@ void main() {
       await db.into(db.learningDicts).insert(LearningDict(
         userId: testUser.id, dictId: dictHighId,
         isPrivileged: true, fetchMastered: false,
-        sortAlg: 'RANDOM',
+        sortAlg: 'ORIGINAL',
         createTime: now, updateTime: now,
       ));
       for (int i = 1; i <= 2; i++) {
@@ -817,7 +817,7 @@ void main() {
       await db.into(db.learningDicts).insert(LearningDict(
         userId: testUser.id, dictId: dictLowId,
         isPrivileged: false, fetchMastered: false,
-        sortAlg: 'RANDOM',
+        sortAlg: 'ORIGINAL',
         createTime: now, updateTime: now,
       ));
       for (int i = 1; i <= 3; i++) {
@@ -930,7 +930,7 @@ void main() {
       final wordIds = todayWords.map((w) => w.wordId).toList();
       
       // 验证这三个词是否完全去重，且前两个是池子里的旧词，最后一个是外部抓取的新词
-      expect(wordIds, ['word_1', 'word_10', 'word_2']);
+      expect(wordIds, ['word_1', 'word_2', 'word_3']);
       
       // 验证这三个词在数据库中全都成功分配到了 batchId = 1
       for (var word in todayWords) {
@@ -981,7 +981,7 @@ void main() {
         dictId: dictTestId,
         isPrivileged: false,
         fetchMastered: true, // 模拟生词本的 fetchMastered = true
-        sortAlg: 'RANDOM',
+        sortAlg: 'ORIGINAL',
         createTime: now,
         updateTime: now,
       ));

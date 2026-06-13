@@ -207,7 +207,7 @@ class LearningDicts extends Table {
   BoolColumn get isPrivileged => boolean()();
   BoolColumn get fetchMastered => boolean()();
 
-  TextColumn get sortAlg => text().withDefault(const Constant('RANDOM'))();
+  TextColumn get sortAlg => text().withDefault(const Constant('ORIGINAL'))();
 
   DateTimeColumn get createTime => dateTime()();
 
@@ -542,7 +542,7 @@ class BookMarks extends Table {
   TextColumn get bookMarkName => text()();
   TextColumn get spell => text()();
   IntColumn get position => integer()();
-  TextColumn get sortAlg => text().withDefault(const Constant('RANDOM'))();
+  TextColumn get sortAlg => text().withDefault(const Constant('ORIGINAL'))();
   DateTimeColumn get createTime => dateTime()();
   DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 

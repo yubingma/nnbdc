@@ -852,7 +852,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                       dictId: dictVo.id,
                       isPrivileged: false,
                       fetchMastered: false,
-                      sortAlg: 'RANDOM',
+                      sortAlg: 'ORIGINAL',
                       createTime: now,
                       updateTime: now);
                   await learningDictsDao.saveEntity(learningDict, true);

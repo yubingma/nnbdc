@@ -101,7 +101,7 @@ class LearningDictVo {
   bool isPrivileged;
   String sortAlg;
 
-  LearningDictVo(this.dict, this.isPrivileged, [this.sortAlg = 'RANDOM']);
+  LearningDictVo(this.dict, this.isPrivileged, [this.sortAlg = 'ORIGINAL']);
 
   factory LearningDictVo.fromJson(Map<String, dynamic> json) => _$LearningDictVoFromJson(json);
 
@@ -1058,10 +1058,10 @@ class BookMarkVo {
   /// 书签记录的单词拼写
   String spell;
 
-  /// 产生该书签时的排序算法：RANDOM/ALPHABETICAL/UNIT/SEMANTIC
+  /// 产生该书签时的排序算法：ORIGINAL/RANDOM/ALPHABETICAL/UNIT/SEMANTIC
   String sortAlg;
 
-  BookMarkVo(this.position, this.spell, [this.sortAlg = 'RANDOM']);
+  BookMarkVo(this.position, this.spell, [this.sortAlg = 'ORIGINAL']);
 
   factory BookMarkVo.fromJson(Map<String, dynamic> json) => _$BookMarkVoFromJson(json);
 

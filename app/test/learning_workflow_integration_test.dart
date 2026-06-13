@@ -274,7 +274,7 @@ void main() {
           dictId: dictId,
           isPrivileged: false,
           fetchMastered: false,
-          sortAlg: 'RANDOM',
+          sortAlg: 'ORIGINAL',
           createTime: now,
           updateTime: now,
         ));

@@ -78,7 +78,7 @@ class BookmarkBo {
         bookMarkName: bookMarkName,
         spell: spell,
         position: position,
-        sortAlg: sortAlg ?? existingBookmark?.sortAlg ?? 'RANDOM',
+        sortAlg: sortAlg ?? existingBookmark?.sortAlg ?? 'ORIGINAL',
         createTime: existingBookmark?.createTime ?? now,
         updateTime: now,
       );
