@@ -1040,6 +1040,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         isScrollable: true,
                         tabAlignment: TabAlignment.center,
                         controller: _tabController,
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 8.0),
                         labelStyle: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
@@ -1055,10 +1056,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         indicatorWeight: 2,
                         tabs: [
                           const Tab(text: '详情'),
-                          if (hasSimilarWords()) Tab(text: '形近词(${args.word.similarWords!.length})'),
-                          if (hasSynonyms()) Tab(text: "近义词(${calcSynonymCount()})"),
-                          if (hasCigen()) Tab(text: '同根词($_totalCigenWordsCount)'),
-                          if (hasSemanticSimilarWords()) Tab(text: '语境拓展(${_semanticSimilarWords.length})'),
+                          if (hasSimilarWords()) Tab(text: '形近(${args.word.similarWords!.length})'),
+                          if (hasSynonyms()) Tab(text: "近义(${calcSynonymCount()})"),
+                          if (hasCigen()) Tab(text: '同根($_totalCigenWordsCount)'),
+                          if (hasSemanticSimilarWords()) Tab(text: '拓展(${_semanticSimilarWords.length})'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
