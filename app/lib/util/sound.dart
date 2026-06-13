@@ -684,10 +684,17 @@ class SoundUtil {
       // 避免 play() 后 0→0.015 阶跃产生瞬态爆音。
       await player.setVolume(0.015);
 
+      bool hasStartedPlaying = false;
       final playCompletedFuture = player.playerStateStream
-          .skip(1)
-          .firstWhere((state) =>
-              state.processingState == ja.ProcessingState.completed)
+          .firstWhere((state) {
+            if (state.playing) {
+              hasStartedPlaying = true;
+            }
+            final isFinished = state.processingState == ja.ProcessingState.completed ||
+                state.processingState == ja.ProcessingState.idle;
+            final isStoppedAfterStart = hasStartedPlaying && !state.playing;
+            return isFinished || isStoppedAfterStart;
+          })
           .timeout(Duration(milliseconds: playTimeoutMs));
 
       // 僵尸防护：当 playCompletedFuture 不在下面 await（因 player 已处于
@@ -704,26 +711,28 @@ class SoundUtil {
       );
 
       // 音量继续淡入（0.015 已在 play 前设置）
-      Future(() async {
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(0.04);
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(0.08);
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(0.15);
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(0.25);
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(0.4);
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(0.55);
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(0.7);
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(0.85);
-        await Future.delayed(const Duration(milliseconds: 6));
-        player.setVolume(1.0);
-      });
+      unawaited(() async {
+        try {
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(0.04);
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(0.08);
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(0.15);
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(0.25);
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(0.4);
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(0.55);
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(0.7);
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(0.85);
+          await Future.delayed(const Duration(milliseconds: 6));
+          await player.setVolume(1.0);
+        } catch (_) {}
+      }());
 
       if (player.processingState != ja.ProcessingState.completed &&
           player.processingState != ja.ProcessingState.idle) {
