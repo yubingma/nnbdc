@@ -249,7 +249,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 46;
+  int get schemaVersion => 47;
 
   @override
   MigrationStrategy get migration {
@@ -401,6 +401,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 46) {
             await _migrateFromV45ToV46(m);
+          }
+          if (from < 47) {
+            await _migrateFromV46ToV47(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -592,6 +595,13 @@ class MyDatabase extends _$MyDatabase {
       } catch (e) {
         Global.logger.w('删除 words 3D 列失败 (可能SQLite版本不支持): $e');
       }
+    });
+  }
+
+  /// 从版本 46 升级到版本 47：在 dict_words 表中添加 semantic_seq 字段
+  Future<void> _migrateFromV46ToV47(Migrator m) async {
+    await transaction(() async {
+      await m.addColumn(dictWords, dictWords.semanticSeq);
     });
   }
 

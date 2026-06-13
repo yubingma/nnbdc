@@ -49,6 +49,11 @@ class DbLogUtil {
         wechatNickname: const Value(null),
         appleUserId: const Value(null),
       );
+    } else if (table == 'dictWords' && record is DictWord) {
+      // 【关键修复】本地缓存字段，不参与同步，过滤避免写入日志及影响云端
+      recordToLog = record.copyWith(
+        semanticSeq: const Value(null),
+      );
     }
 
     final String recordJson;

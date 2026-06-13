@@ -332,6 +332,9 @@ class DictWords extends Table {
   /// 单词所属单元序号，0 表示无单元
   IntColumn get unit => integer().withDefault(const Constant(0))();
 
+  /// 语义排序的序号缓存，从1开始，本地性能优化，不需要同步
+  IntColumn get semanticSeq => integer().nullable()();
+
   DateTimeColumn get createTime => dateTime()();
 
   DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();

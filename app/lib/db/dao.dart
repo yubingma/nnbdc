@@ -622,6 +622,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       }
 
       await into(dictWords).insert(entryToInsert);
+      WordBo.clearTspCache(entry.dictId);
       if (genLog) {
         var dict = await db.dictsDao.findById(entry.dictId);
         var owner = dict?.ownerId;
@@ -642,6 +643,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
     // 删除数据
     await delete(dictWords).delete(entry);
+    WordBo.clearTspCache(entry.dictId);
   }
 
   /// 完整删除词典单词（包括后续序号调整、wordCount更新、学习进度修复）
@@ -667,6 +669,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     // 删除记录
     await delete(dictWords).delete(dictWord);
+    WordBo.clearTspCache(dictId);
 
 
     // 更新词书的wordCount
@@ -684,6 +687,11 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     await batch((batch) {
       batch.insertAll(dictWords, entries, mode: InsertMode.insertOrReplace);
     });
+
+    final dictIds = entries.map((e) => e.dictId).toSet();
+    for (final dictId in dictIds) {
+      WordBo.clearTspCache(dictId);
+    }
 
     // 生成日志（如果需要）
     if (genLog) {
@@ -766,6 +774,8 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     // 更新词书的wordCount（并生成日志用于同步）
     await db.dictsDao.updateWordCount(dictId, genLog);
 
+    WordBo.clearTspCache(dictId);
+
     // 如果是生词本，清空后需要重置排序
     if (dict.name == '生词本') {
       Global.logger.d('生词本已清空，排序已重置，wordCount已更新为0');
@@ -812,6 +822,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     final finalDictId = dictId;
     if (finalDictId != null) {
       await db.dictsDao.updateWordCount(finalDictId, true);
+      WordBo.clearTspCache(finalDictId);
     }
   }
 
@@ -915,6 +926,41 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     for (final w in words) {
       await DbLogUtil.logOperation(userId, 'UPDATE', 'dictWords', '${w.dictId}-${w.wordId}', w);
     }
+  }
+
+  /// 获取本地缓存的语义排序单词 ID 列表
+  Future<List<String>> getSemanticSortedWordIds(String dictId) async {
+    final query = select(dictWords)
+      ..where((dw) => dw.dictId.equals(dictId) & dw.semanticSeq.isNotNull())
+      ..orderBy([(dw) => OrderingTerm.asc(dw.semanticSeq)]);
+    final results = await query.get();
+    return results.map((dw) => dw.wordId).toList();
+  }
+
+  /// 批量更新单词的语义排序缓存序号
+  Future<void> updateSemanticSeqs(String dictId, List<String> wordIds) async {
+    await transaction(() async {
+      await batch((b) {
+        for (int i = 0; i < wordIds.length; i++) {
+          b.update(
+            dictWords,
+            DictWordsCompanion(semanticSeq: Value(i + 1)),
+            where: (dw) => dw.dictId.equals(dictId) & dw.wordId.equals(wordIds[i]),
+          );
+        }
+      });
+    });
+  }
+
+  /// 清空指定词书的语义排序缓存
+  Future<void> clearSemanticSeq(String dictId) async {
+    await (update(dictWords)..where((dw) => dw.dictId.equals(dictId)))
+        .write(const DictWordsCompanion(semanticSeq: Value(null)));
+  }
+
+  /// 清空所有词书的语义排序缓存
+  Future<void> clearAllSemanticSeq() async {
+    await update(dictWords).write(const DictWordsCompanion(semanticSeq: Value(null)));
   }
 }
 

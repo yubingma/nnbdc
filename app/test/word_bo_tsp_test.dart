@@ -231,5 +231,71 @@ void main() {
       // Reset cache for safety
       LocalEmbeddingCache.instance.reset();
     });
+
+    test('TSP database cache persistence and invalidation', () async {
+      await db.into(db.words).insert(Word(id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding([0]), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding([1, 2]), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding([0, 1]), createTime: now, updateTime: now));
+
+      await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w1', seq: 1, unit: 0, createTime: now, updateTime: now));
+      await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w2', seq: 2, unit: 0, createTime: now, updateTime: now));
+      await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w3', seq: 3, unit: 0, createTime: now, updateTime: now));
+
+      final wordBo = WordBo();
+      
+      // 1. 计算前，数据库中的 semanticSeq 应该全为 null
+      var dwsBefore = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
+      for (final dw in dwsBefore) {
+        expect(dw.semanticSeq, null);
+      }
+
+      // 2. 第一次运行排序，将触发计算，并在异步中写入本地数据库缓存
+      final sortedIds = await wordBo.getTspSortedWordIdsInternal(dictId);
+      expect(sortedIds, ['w1', 'w3', 'w2']);
+
+      // 稍作等待以确保异步数据库写入完成
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // 3. 校验数据库中的 semanticSeq 是否已正确设置 (对应 'w1'->1, 'w3'->2, 'w2'->3)
+      var dw1 = await db.dictWordsDao.getById(dictId, 'w1');
+      var dw2 = await db.dictWordsDao.getById(dictId, 'w2');
+      var dw3 = await db.dictWordsDao.getById(dictId, 'w3');
+      expect(dw1?.semanticSeq, 1);
+      expect(dw2?.semanticSeq, 3);
+      expect(dw3?.semanticSeq, 2);
+
+      // 4. 清除内存和数据库缓存
+      WordBo.clearTspCache(dictId);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // 5. 校验清除后，数据库中的 semanticSeq 是否已重置为 null
+      var dwsAfter = await (db.select(db.dictWords)..where((dw) => dw.dictId.equals(dictId))).get();
+      for (final dw in dwsAfter) {
+        expect(dw.semanticSeq, null);
+      }
+    });
+
+    test('TSP database cache persistence and read on cold start', () async {
+      final String dictId2 = 'tsp_test_dict_2';
+      await db.into(db.dicts).insert(Dict(
+        id: dictId2, name: 'TSP Test Book 2', wordCount: 0, isShared: false, isReady: true,
+        ownerId: userId, visible: true, editable: true, deletable: false, createTime: now, updateTime: now,
+      ));
+
+      await db.into(db.words).insert(Word(id: 'w4', spell: 'w4', popularity: 1, embedding1bit: createEmbedding([0]), createTime: now, updateTime: now));
+      await db.into(db.words).insert(Word(id: 'w5', spell: 'w5', popularity: 1, embedding1bit: createEmbedding([1, 2]), createTime: now, updateTime: now));
+
+      await db.into(db.dictWords).insert(DictWord(dictId: dictId2, wordId: 'w4', seq: 1, unit: 0, createTime: now, updateTime: now));
+      await db.into(db.dictWords).insert(DictWord(dictId: dictId2, wordId: 'w5', seq: 2, unit: 0, createTime: now, updateTime: now));
+
+      // 1. 手动写入数据库缓存。设置顺序为 w5 -> w4
+      await db.dictWordsDao.updateSemanticSeqs(dictId2, ['w5', 'w4']);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // 2. 此时内存缓存为空，运行排序，它应当直接读取数据库缓存，返回 w5, w4 (而不是计算出的 w4, w5)
+      final wordBo = WordBo();
+      final sortedIds = await wordBo.getTspSortedWordIdsInternal(dictId2);
+      expect(sortedIds, ['w5', 'w4']);
+    });
   });
 }
