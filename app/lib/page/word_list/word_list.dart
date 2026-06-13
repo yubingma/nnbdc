@@ -2345,9 +2345,7 @@ class WordListPageState extends State<WordListPage>
                           if (studyMode == WordListStudyMode.speakChinese) {
                             menuItems.add(menuSettings);
                           }
-                          if (args.wordsProvider is DictWordsProvider) {
-                            menuItems.add(menuSortSettings);
-                          }
+                          menuItems.add(menuSortSettings);
 
                           // 5. 显示菜单 (使用 RootNavigator)
                           // ignore: use_build_context_synchronously
