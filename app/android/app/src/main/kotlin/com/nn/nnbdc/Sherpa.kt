@@ -112,7 +112,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     result.success(null)
                 }
                 "reset" -> {
-                    currentStream?.let { currentModel?.reset(it) }
+                    synchronized(this) {
+                        currentStream?.let { currentModel?.reset(it) }
+                    }
                     lastSentResult = ""
                     result.success(null)
                 }

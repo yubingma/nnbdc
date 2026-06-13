@@ -616,9 +616,15 @@ class Asr {
 
     if (permissionGranted) {
       try {
-        await asrMethodChannel.invokeMethod('reset');
+        await asrMethodChannel
+            .invokeMethod('reset')
+            .timeout(const Duration(seconds: 2));
       } on PlatformException catch (e) {
         ToastUtil.error("ASR异常6: '${e.message}'.");
+      } on TimeoutException catch (_) {
+        Global.logger.w('ASR: reset channel invoke timeout.');
+      } catch (e) {
+        Global.logger.e('ASR: reset failed: $e');
       }
     }
   }
