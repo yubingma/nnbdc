@@ -158,7 +158,7 @@ class StudyAudioSessionController {
       final sessionFuture = SoundUtil.transitTo(
         AudioMode.playback,
         asrInstance: _asr,
-        hotPlayback: false,
+        hotPlayback: isSpeakMode && SoundUtil.activeSessionCategory == 'playAndRecord',
       );
       SoundUtil.watchPlayer(_audioPlayer);
 
