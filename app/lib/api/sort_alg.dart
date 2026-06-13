@@ -8,8 +8,8 @@ enum WordSortAlg {
   /// 单元序
   unit('UNIT', '单元序'),
 
-  /// 语义序（基于单词 3D 向量）
-  semantic('SEMANTIC', '语义序');
+  /// 语境序（基于单词 3D 向量）
+  semantic('SEMANTIC', '语境序');
 
   final String code;
   final String label;

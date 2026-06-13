@@ -3232,7 +3232,7 @@ class WordListPageState extends State<WordListPage>
                         setState(() {
                           _isSwitchingMode = true;
                           _switchingMessage = alg == WordSortAlg.semantic
-                              ? '正在计算语义排序，请稍候...'
+                              ? '正在计算语境排序，请稍候...'
                               : '正在重新排序，请稍候...';
                         });
                         try {
@@ -3285,7 +3285,7 @@ class WordListPageState extends State<WordListPage>
       case WordSortAlg.unit:
         return '单词按单元顺序排列';
       case WordSortAlg.semantic:
-        return '单词按语义相关性排列';
+        return '按单词语境和意思关联度排列';
     }
   }
 }
