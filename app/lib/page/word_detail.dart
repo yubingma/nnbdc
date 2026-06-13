@@ -341,12 +341,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           // 1. 异步在 Isolate 中检索相似单词 ID，不阻塞 UI 渲染 tick
           final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
           final similarIds = similarResults.map((res) => res.wordId).toList();
-          
-          if (mounted) {
-            setState(() {
-              _semanticSimilarWordIds = similarIds;
-            });
-          }
 
           // 2. 批量拉取拓展单词拼写与释义详情
           final tempSemanticWords = await _getSimpleWordsByIds(similarIds);
@@ -361,6 +355,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
           if (mounted) {
             setState(() {
+              _semanticSimilarWordIds = similarIds;
               _semanticSimilarWords = tempSemanticWords;
               _isLoadingSemanticSimilar = false;
             });
@@ -1194,7 +1189,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           if (hasSimilarWords()) Tab(text: '形近(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义(${calcSynonymCount()})"),
                           if (hasCigen()) Tab(text: '同根($_totalCigenWordsCount)'),
-                          if (hasSemanticSimilarWords()) Tab(text: _semanticSimilarWordIds.isEmpty ? '拓展' : '拓展(${_semanticSimilarWordIds.length})'),
+                          if (hasSemanticSimilarWords()) Tab(text: _isLoadingSemanticSimilar ? '拓展(10)' : '拓展(${_semanticSimilarWordIds.length})'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
