@@ -96,7 +96,7 @@ class BucketWordsBookMarkProvider implements BookMarkProvider {
   Future<bool> saveBookMark(BookMarkVo bookMark) async {
      final user = Global.getLoggedInUser();
      if (user == null) return false;
-    var result = await BookmarkBo().saveBookMark(bookMarkName, bookMark.spell, bookMark.position, user.id);
+    var result = await BookmarkBo().saveBookMark(bookMarkName, bookMark.spell, bookMark.position, user.id, sortAlg: bookMark.sortAlg);
     return result.success;
   }
 }

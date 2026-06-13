@@ -152,7 +152,7 @@ class StageWordsBookMarkProvider implements BookMarkProvider {
       }
 
       final name = await _getBookMarkName();
-      var result = await BookmarkBo().saveBookMark(name, bookMark.spell, bookMark.position, userId);
+      var result = await BookmarkBo().saveBookMark(name, bookMark.spell, bookMark.position, userId, sortAlg: bookMark.sortAlg);
       return result.success;
     } catch (e) {
       Global.logger.e('保存书签异常: $e');

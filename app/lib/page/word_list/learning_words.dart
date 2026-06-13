@@ -134,7 +134,7 @@ class LearningWordsBookMarkProvider implements BookMarkProvider {
 
       if (bookmark != null) {
         Global.logger.d('获取书签成功: name=$bookMarkName, position=${bookmark.position}, spell=${bookmark.spell}');
-        return BookMarkVo(bookmark.position, bookmark.spell);
+        return BookMarkVo(bookmark.position, bookmark.spell, bookmark.sortAlg);
       }
 
       // 如果Bookmarks表没有，检查旧的localParams表
@@ -188,6 +188,7 @@ class LearningWordsBookMarkProvider implements BookMarkProvider {
           BookMarksCompanion(
             spell: drift.Value(bookMark.spell),
             position: drift.Value(bookMark.position),
+            sortAlg: drift.Value(bookMark.sortAlg),
             updateTime: drift.Value(now),
           ),
         );
@@ -200,7 +201,7 @@ class LearningWordsBookMarkProvider implements BookMarkProvider {
                 bookMarkName: bookMarkName,
                 spell: bookMark.spell,
                 position: bookMark.position,
-                sortAlg: 'RANDOM',
+                sortAlg: bookMark.sortAlg,
                 createTime: now,
                 updateTime: now,
               ),

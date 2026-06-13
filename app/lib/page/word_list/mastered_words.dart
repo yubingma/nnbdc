@@ -127,7 +127,7 @@ class MasteredWordsBookMarkProvider implements BookMarkProvider {
         return false;
       }
 
-      var result = await BookmarkBo().saveBookMark(bookMarkName, bookMark.spell, bookMark.position, userId);
+      var result = await BookmarkBo().saveBookMark(bookMarkName, bookMark.spell, bookMark.position, userId, sortAlg: bookMark.sortAlg);
       return result.success;
     } catch (e) {
       Global.logger.e('保存书签异常: $e');

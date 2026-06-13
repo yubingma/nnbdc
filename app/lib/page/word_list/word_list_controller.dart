@@ -41,8 +41,10 @@ class WordListController extends ChangeNotifier {
 
   bool _disposed = false;
 
-  // 普通词表的内存语义排序缓存
-  List<WordWrapper>? _semanticSortedCache;
+  // 普通词表的内存原始和排序缓存
+  List<WordWrapper>? _rawWordsCache;
+  List<WordWrapper>? _memorySortedList;
+  WordSortAlg? _memorySortedAlg;
 
   /// 获取当前实际排序算法
   Future<WordSortAlg> getCurrentSortAlg() async {
@@ -55,32 +57,41 @@ class WordListController extends ChangeNotifier {
     return await args.wordsProvider.getSortAlg();
   }
 
-  /// 确保普通词表的内存语义排序缓存已加载
-  Future<void> _ensureSemanticSortedCache() async {
-    if (_semanticSortedCache != null) return;
-    
-    // 一次性获取全量数据
-    final allResult = await args.wordsProvider.getAPageOfWords(0, 999999);
-    final allRows = allResult.rows;
+  /// 确保普通词表的内存排序缓存已加载
+  Future<void> _ensureMemorySortedList(WordSortAlg sortAlg) async {
+    if (_memorySortedList != null && _memorySortedAlg == sortAlg) return;
 
-    if (allRows.isEmpty) {
-      _semanticSortedCache = [];
+    if (_rawWordsCache == null) {
+      final allResult = await args.wordsProvider.getAPageOfWords(0, 999999);
+      _rawWordsCache = allResult.rows;
+    }
+
+    if (_rawWordsCache!.isEmpty) {
+      _memorySortedList = [];
+      _memorySortedAlg = sortAlg;
       return;
     }
 
-    final wordIds = allRows.map((w) => w.word.id!).toList();
-    final sortedWordIds = await WordBo().getTspSortedWordIdsForList(wordIds);
-
-    final wrapperMap = {for (var w in allRows) w.word.id: w};
-    final List<WordWrapper> sortedWrappers = [];
-    for (final id in sortedWordIds) {
-      final w = wrapperMap[id];
-      if (w != null) {
-        sortedWrappers.add(w);
+    if (sortAlg == WordSortAlg.semantic) {
+      final wordIds = _rawWordsCache!.map((w) => w.word.id!).toList();
+      final sortedWordIds = await WordBo().getTspSortedWordIdsForList(wordIds);
+      final wrapperMap = {for (var w in _rawWordsCache!) w.word.id: w};
+      final List<WordWrapper> sortedWrappers = [];
+      for (final id in sortedWordIds) {
+        final w = wrapperMap[id];
+        if (w != null) {
+          sortedWrappers.add(w);
+        }
       }
+      _memorySortedList = sortedWrappers;
+    } else if (sortAlg == WordSortAlg.alphabetical) {
+      final sortedWrappers = List<WordWrapper>.from(_rawWordsCache!);
+      sortedWrappers.sort((a, b) => a.word.spell.toLowerCase().compareTo(b.word.spell.toLowerCase()));
+      _memorySortedList = sortedWrappers;
+    } else {
+      _memorySortedList = List<WordWrapper>.from(_rawWordsCache!);
     }
-
-    _semanticSortedCache = sortedWrappers;
+    _memorySortedAlg = sortAlg;
   }
 
   WordListController({
@@ -106,7 +117,9 @@ class WordListController extends ChangeNotifier {
   void clearQueryResult() {
     words.clear();
     aiStory = null;
-    _semanticSortedCache = null;
+    _rawWordsCache = null;
+    _memorySortedList = null;
+    _memorySortedAlg = null;
     notifyListeners();
   }
 
@@ -170,9 +183,9 @@ class WordListController extends ChangeNotifier {
         actualWordIndex = predWordIndex;
         Global.logger.d('WordListController: 书签预测完美命中！成功跳过 getWordIndex 数据库慢查询！');
       } else {
-        if (sortAlg == WordSortAlg.semantic && args.wordsProvider is! DictWordsProvider) {
-          await _ensureSemanticSortedCache();
-          actualWordIndex = _semanticSortedCache!.indexWhere((w) => w.word.spell == bookMark!.spell);
+        if (args.wordsProvider is! DictWordsProvider) {
+          await _ensureMemorySortedList(sortAlg);
+          actualWordIndex = _memorySortedList!.indexWhere((w) => w.word.spell == bookMark!.spell);
         } else {
           actualWordIndex = await args.wordsProvider.getWordIndex(bookMark!.spell);
         }
@@ -262,9 +275,9 @@ class WordListController extends ChangeNotifier {
 
     // 2. 重查拼写在新排序下的物理位置
     int newPosition;
-    if (newAlg == WordSortAlg.semantic && args.wordsProvider is! DictWordsProvider) {
-      await _ensureSemanticSortedCache();
-      newPosition = _semanticSortedCache!.indexWhere((w) => w.word.spell == currentSpell);
+    if (args.wordsProvider is! DictWordsProvider) {
+      await _ensureMemorySortedList(newAlg);
+      newPosition = _memorySortedList!.indexWhere((w) => w.word.spell == currentSpell);
     } else {
       newPosition = await args.wordsProvider.getWordIndex(currentSpell);
     }
@@ -316,9 +329,9 @@ class WordListController extends ChangeNotifier {
       final sortAlg = await getCurrentSortAlg();
       
       PagedResults<WordWrapper> result;
-      if (sortAlg == WordSortAlg.semantic && args.wordsProvider is! DictWordsProvider) {
-        await _ensureSemanticSortedCache();
-        final cache = _semanticSortedCache!;
+      if (args.wordsProvider is! DictWordsProvider) {
+        await _ensureMemorySortedList(sortAlg);
+        final cache = _memorySortedList!;
         final end = (fromIndex + queryPageSize) > cache.length ? cache.length : (fromIndex + queryPageSize);
         final slicedRows = fromIndex >= cache.length ? <WordWrapper>[] : cache.sublist(fromIndex, end);
         result = PagedResults<WordWrapper>(cache.length)..rows.addAll(slicedRows);
