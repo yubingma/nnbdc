@@ -2174,7 +2174,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：高维向量从语义空间中检索出与当前词在语境上最具关联的 10 个词，辅助你进行联想记忆。',
+                      '注：系统推荐了 10 个在相似语境中常出现的单词，帮你进行联想记忆。',
                       style: TextStyle(
                         fontSize: 11.5,
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
