@@ -299,8 +299,8 @@ class StudyAudioSessionController {
     try {
       await _audioPlayer.setVolume(0.0);
       _logPlayerState('cancelPlayback.afterMute');
-      await _audioPlayer.pause();
-      await _audioPlayer.seek(Duration.zero);
+      await _audioPlayer.pause().timeout(const Duration(milliseconds: 500));
+      await _audioPlayer.seek(Duration.zero).timeout(const Duration(milliseconds: 500));
       _logPlayerState('cancelPlayback.afterStop');
     } catch (_) {}
   }

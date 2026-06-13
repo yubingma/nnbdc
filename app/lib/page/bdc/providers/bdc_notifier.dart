@@ -716,17 +716,17 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext context, {FsrsRating? fsrsRating, String? reason}) async {
     debugPrint('🕵️ [AudioDiag] showWordDetail.enter | word=${word.spell} isAnswerWrong=$isAnswerWrong');
-    // 强制并平滑地关闭正在播放的主发音/例句音频，彻底根除打开详情页瞬间因两路音频流冲突产生的爆音
+    // 强制并平滑地关闭正在播放的音频与清理 ASR。通过 Future.wait 并行执行，并设置 1.5s 的硬超时，
+    // 防止底层系统音频驱动卡死阻塞跳转页面。
     try {
-      await StudyAudioSessionController().cancelPlayback();
-    } catch (_) {}
-
-    // 在推入详情页前清理 ASR。如果不提前 stopAsr，ASR 会带着 playAndRecord 会话
-    // 进入详情页。当详情页发音播放后用户点"下一词"时，getNextWord 中的 stopAsr()
-    // 触发会话切换，与紧接着的 playWordAndFirstSentence 的 transitTo(playback)
-    // 在几百毫秒内连续竞争 iOS AVAudioSession，产生爆音。
-    await asr.stopAsr();
-    await asr.reset();
+      await Future.wait([
+        StudyAudioSessionController().cancelPlayback(),
+        asr.stopAsr(),
+        asr.reset(),
+      ]).timeout(const Duration(milliseconds: 1500));
+    } catch (e) {
+      Global.logger.w('showWordDetail: clean up ASR/playback failed or timed out: $e');
+    }
 
     _playToken++; // 取消任何待执行的自动播放延迟 callback，防止详情页与主页延迟自动播放并发撞车
 
@@ -1146,8 +1146,14 @@ class BdcNotifier extends _$BdcNotifier {
     );
     try {
       if (!fastPath) {
-        await asr.stopAsr();
-        await asr.reset();
+        try {
+          await Future.wait([
+            asr.stopAsr(),
+            asr.reset(),
+          ]).timeout(const Duration(milliseconds: 1500));
+        } catch (e) {
+          Global.logger.w('getNextWord: clean up ASR failed or timed out: $e');
+        }
       }
 
       meaningController.text = '';
