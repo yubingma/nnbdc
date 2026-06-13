@@ -325,14 +325,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (LocalEmbeddingCache.instance.isInitialized) {
       try {
         final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
-        final List<WordVo> tempSemanticWords = [];
-        for (final res in similarResults) {
-          final wordRes = await WordBo().searchWordById(res.wordId, Global.getLoggedInUser()?.id, priorityDictIds: args.priorityDictIds);
-          if (wordRes.word != null) {
-            tempSemanticWords.add(wordRes.word!);
-          }
-        }
-        _semanticSimilarWords = tempSemanticWords;
+        final similarIds = similarResults.map((res) => res.wordId).toList();
+        _semanticSimilarWords = await _getSimpleWordsByIds(similarIds);
       } catch (e, st) {
         Global.logger.e('加载语境拓展单词失败', error: e, stackTrace: st);
       }
@@ -630,6 +624,47 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       for (final id in wordIds) {
         _wordInDictStatus[id] = true;
       }
+    }
+  }
+
+  Future<List<WordVo>> _getSimpleWordsByIds(List<String> wordIds) async {
+    if (wordIds.isEmpty) return [];
+    final db = MyDatabase.instance;
+    try {
+      final wordsQuery = db.select(db.words)..where((w) => w.id.isIn(wordIds));
+      final localWords = await wordsQuery.get();
+      if (localWords.isEmpty) return [];
+
+      final wordVos = localWords.map((localWord) {
+        return WordVo.c2(localWord.spell)
+          ..id = localWord.id
+          ..shortDesc = localWord.shortDesc
+          ..longDesc = localWord.longDesc
+          ..pronounce = localWord.pronounce
+          ..americaPronounce = localWord.americaPronounce
+          ..britishPronounce = localWord.britishPronounce
+          ..popularity = localWord.popularity
+          ..groupInfo = localWord.groupInfo;
+      }).toList();
+
+      final miQuery = db.select(db.meaningItems)..where((mi) => mi.wordId.isIn(wordIds));
+      final allMeanings = await miQuery.get();
+
+      final Map<String, List<MeaningItemVo>> meaningMap = {};
+      for (final mi in allMeanings) {
+        final miVo = MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null);
+        meaningMap.putIfAbsent(mi.wordId, () => []).add(miVo);
+      }
+
+      for (final vo in wordVos) {
+        vo.meaningItems = meaningMap[vo.id] ?? [];
+      }
+
+      final Map<String, WordVo> idToVo = {for (var vo in wordVos) vo.id!: vo};
+      return wordIds.map((id) => idToVo[id]).whereType<WordVo>().toList();
+    } catch (e, st) {
+      Global.logger.e('批量精简查词失败', error: e, stackTrace: st);
+      return [];
     }
   }
 
