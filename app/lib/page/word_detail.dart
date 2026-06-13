@@ -148,6 +148,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   // 语境拓展相关状态
   List<WordVo> _semanticSimilarWords = [];
   bool _showSemanticTip = true;
+  bool _showSimilarTip = true;
+  final Map<String, bool> _wordInDictStatus = {};
 
   void _onTabControllerChanged() {
     if (!mounted) return;
@@ -167,6 +169,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     super.initState();
     _showCigenTip = Prefs.read<bool>('show_cigen_tip') ?? true;
     _showSemanticTip = Prefs.read<bool>('show_semantic_tip') ?? true;
+    _showSimilarTip = Prefs.read<bool>('show_similar_tip') ?? true;
     _wordSoundController = AnimationController(
       duration: const Duration(milliseconds: 700),
       vsync: this,
@@ -334,6 +337,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         Global.logger.e('加载语境拓展单词失败', error: e, stackTrace: st);
       }
     }
+
+    // 批量查询相关单词是否在学习范围内
+    final allRelatedIds = <String>[];
+    if (args.word.similarWords != null) {
+      allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
+    }
+    allRelatedIds.addAll(_semanticSimilarWords.map((w) => w.id!));
+    await _checkWordsInDict(allRelatedIds);
 
     setState(() {
       final newLength = calcTabsCount();
@@ -567,6 +578,58 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     } finally {
       _cigenLoadingState[cigenId] = false;
       if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _checkWordsInDict(List<String> wordIds) async {
+    if (wordIds.isEmpty) return;
+    final userId = Global.getLoggedInUser()?.id;
+    final db = MyDatabase.instance;
+    final Set<String> inDictWordIds = {};
+
+    try {
+      if (userId != null && userId.isNotEmpty) {
+        final learningDicts = await (db.select(db.learningDicts)
+          ..where((tbl) => tbl.userId.equals(userId))).get();
+        final selectedDictIds = learningDicts.map((d) => d.dictId).toList();
+
+        if (selectedDictIds.isNotEmpty) {
+          final expandedDictIds = <String>{...selectedDictIds};
+          final dbDicts = await (db.select(db.dicts)
+            ..where((d) => d.id.isIn(selectedDictIds))).get();
+          for (final d in dbDicts) {
+            if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
+              expandedDictIds.add(d.baseDictId!);
+            }
+          }
+
+          final miQuery = db.selectOnly(db.meaningItems)
+            ..addColumns([db.meaningItems.wordId])
+            ..where(db.meaningItems.wordId.isIn(wordIds))
+            ..where(db.meaningItems.dictId.isIn(expandedDictIds));
+          final miResults = await miQuery.get();
+
+          inDictWordIds.addAll(miResults.map((r) => r.read(db.meaningItems.wordId)!));
+        } else {
+          inDictWordIds.addAll(wordIds);
+        }
+
+        // 批量检查是否有学习记录
+        final learningStatusMap = await WordBo.getWordsLearningStatusBatch(userId, wordIds);
+        for (final id in wordIds) {
+          final hasRecord = learningStatusMap[id] != null;
+          _wordInDictStatus[id] = inDictWordIds.contains(id) || hasRecord;
+        }
+      } else {
+        for (final id in wordIds) {
+          _wordInDictStatus[id] = true;
+        }
+      }
+    } catch (e) {
+      Global.logger.e('批量检查单词在词书状态失败: $e');
+      for (final id in wordIds) {
+        _wordInDictStatus[id] = true;
+      }
     }
   }
 
@@ -2024,12 +2087,72 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final similarWords = args.word.similarWords;
     if (similarWords != null && similarWords.isNotEmpty) {
+      final showTip = _showSimilarTip;
       return ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: similarWords.length,
+        itemCount: showTip ? similarWords.length + 1 : similarWords.length,
         separatorBuilder: (context, index) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
-          final word = similarWords[index];
+          if (showTip && index == 0) {
+            return Container(
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+              margin: const EdgeInsets.only(bottom: 4),
+              decoration: BoxDecoration(
+                color: isDarkMode 
+                    ? const Color(0xFF1E293B).withValues(alpha: 0.5) 
+                    : const Color(0xFFF3F4F6).withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 14,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '注：推荐了拼写相近的单词。浅色斜体单词不在你当前选择的词书内。可酌情学习',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 14),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+                    onPressed: () async {
+                      setState(() {
+                        _showSimilarTip = false;
+                      });
+                      await Prefs.write('show_similar_tip', false);
+                    },
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final word = showTip ? similarWords[index - 1] : similarWords[index];
+          final inDict = _wordInDictStatus[word.id!] ?? true;
+          
+          final spellColor = inDict
+              ? AppTheme.primaryColor
+              : (isDarkMode ? Colors.grey[500]! : Colors.grey[600]!);
+          final descColor = inDict
+              ? (isDarkMode ? Colors.grey[400] : Colors.grey[600])
+              : (isDarkMode ? Colors.grey[500]!.withValues(alpha: 0.85) : Colors.grey[600]!.withValues(alpha: 0.85));
+
           return InkWell(
             onTap: () {
               // 直接跳转到详情页，不需要中间的抽屉过渡
@@ -2064,7 +2187,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                      color: spellColor,
+                      fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -2075,7 +2199,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       word.getMeaningStr(),
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        color: descColor,
+                        fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
                       ),
                       maxLines: 1,
                       textAlign: TextAlign.right,
@@ -2175,7 +2300,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '注：系统推荐了若干在相似语境中常出现的单词，帮你进行联想记忆。',
+                      '注：系统推荐了若干在相似语境中常出现的单词。浅色斜体单词不在你当前选择的词书内，可酌情学习。',
                       style: TextStyle(
                         fontSize: 11.5,
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
@@ -2202,6 +2327,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           }
 
           final word = showTip ? _semanticSimilarWords[index - 1] : _semanticSimilarWords[index];
+          final inDict = _wordInDictStatus[word.id!] ?? true;
+
+          final spellColor = inDict
+              ? AppTheme.primaryColor
+              : (isDarkMode ? Colors.grey[500]! : Colors.grey[600]!);
+          final descColor = inDict
+              ? (isDarkMode ? Colors.grey[400] : Colors.grey[600])
+              : (isDarkMode ? Colors.grey[500]!.withValues(alpha: 0.85) : Colors.grey[600]!.withValues(alpha: 0.85));
+
           return InkWell(
             onTap: () {
               context.push('/word_detail', 
@@ -2235,7 +2369,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                      color: spellColor,
+                      fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -2246,7 +2381,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       word.getMeaningStr(),
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        color: descColor,
+                        fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
                       ),
                       maxLines: 1,
                       textAlign: TextAlign.right,
