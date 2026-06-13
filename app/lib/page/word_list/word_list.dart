@@ -2298,13 +2298,17 @@ class WordListPageState extends State<WordListPage>
 
                         // 修正：确保 overlay 大小获取正确
                         final overlayRect = Offset.zero & overlayRenderBox.size;
-                        final buttonOffset = button.localToGlobal(Offset.zero, ancestor: overlayRenderBox);
 
-                        final RelativeRect position = RelativeRect.fromLTRB(
-                          buttonOffset.dx,
-                          buttonOffset.dy + 50,
-                          12.0, // 将菜单右侧与屏幕边缘的间距固定为紧凑的 12dp
-                          0.0,
+                        final RelativeRect position = RelativeRect.fromRect(
+                          Rect.fromPoints(
+                            button.localToGlobal(const Offset(0, 50),
+                                ancestor: overlayRenderBox), // 增加垂直偏移
+                            button.localToGlobal(
+                                button.size.bottomRight(Offset.zero) +
+                                    const Offset(0, 50),
+                                ancestor: overlayRenderBox),
+                          ),
+                          overlayRect,
                         );
 
                         try {
@@ -2484,7 +2488,7 @@ class WordListPageState extends State<WordListPage>
                                       const SizedBox(width: 8),
                                       Text(
                                         choice == menuSortSettings
-                                            ? '$menuSortSettings (${sortAlg.label})'
+                                            ? '排序: ${sortAlg.label}'
                                             : choice,
                                         style: TextStyle(
                                           color: isSelected
@@ -3241,7 +3245,6 @@ class WordListPageState extends State<WordListPage>
                         });
                         try {
                           await controller.changeSortAlg(alg);
-                          ToastUtil.success('已切换为 ${alg.label}');
                         } catch (e) {
                           ToastUtil.error('切换排序失败: $e');
                         } finally {
