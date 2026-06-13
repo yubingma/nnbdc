@@ -1,4 +1,5 @@
 import 'dart:isolate';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
@@ -8,12 +9,27 @@ class LocalEmbeddingCache {
   static const int vectorBytes = 256; // 2048维 / 8 = 256 字节
   static const int growthChunkSize = 1000; // 扩容步长（以单词个数为单位）
 
+  // 静态高熵低噪特征维度索引 (64个)
+  static const List<int> highEntropyDims = [
+    1897, 1105, 515, 511, 1852, 146, 1958, 252, 1630, 1420,
+    1327, 1868, 454, 1805, 892, 1428, 1947, 35, 477, 855,
+    1067, 1219, 381, 1879, 211, 486, 718, 29, 404, 986,
+    787, 1312, 1059, 1429, 937, 503, 1913, 1921, 589, 598,
+    969, 1071, 617, 440, 940, 1494, 18, 68, 874, 1800,
+    1469, 783, 1863, 463, 972, 1514, 458, 1893, 1480, 1686,
+    1096, 561, 723, 1039
+  ];
+
   // 单例模式
   LocalEmbeddingCache._privateConstructor();
   static final LocalEmbeddingCache instance = LocalEmbeddingCache._privateConstructor();
 
   // 扁平矩阵：大小为 N * 256 字节的连续内存块
   Uint8List? _matrix;
+
+  // 签名矩阵：大小为 N 的 64 位特征签名（拆分为两个 32 位整型矩阵以在 32 位机器/Dart 虚拟机中提速）
+  Uint32List? _sig0Matrix;
+  Uint32List? _sig1Matrix;
 
   // 单词ID数组：对应矩阵中的行号
   List<String> _wordIds = [];
@@ -44,12 +60,12 @@ class LocalEmbeddingCache {
     return table;
   }
 
-  /// 一次性从本地数据库初始化加载扁平向量矩阵
+  /// 一次性从本地数据库初始化加载扁平向量矩阵，并预计算 64 位特征签名
   Future<void> initialize(MyDatabase db) async {
     if (_isInitialized) return;
 
     try {
-      Global.logger.i('🚀 开始初始化高性能本地向量缓存 (LocalEmbeddingCache)...');
+      Global.logger.i('🚀 开始初始化高性能本地向量缓存并预计算特征签名 (LocalEmbeddingCache)...');
       final stopwatch = Stopwatch()..start();
 
       // 只读取必要的字段（id 和 embedding1bit），避开反序列化为整表 Word 类的巨大开销
@@ -64,6 +80,8 @@ class LocalEmbeddingCache {
       // 预留额外空间（以防同步新插入单词），预分配大小为 (totalWords + 1000) * 256 字节
       final int initialCapacity = totalWords + growthChunkSize;
       _matrix = Uint8List(initialCapacity * vectorBytes);
+      _sig0Matrix = Uint32List(initialCapacity);
+      _sig1Matrix = Uint32List(initialCapacity);
       _wordIds = List<String>.filled(initialCapacity, '');
       _wordToIndex = {};
       _allocatedCount = totalWords;
@@ -78,17 +96,60 @@ class LocalEmbeddingCache {
 
         // 内存快速拷贝写入扁平矩阵对应区间
         _matrix!.setRange(i * vectorBytes, (i + 1) * vectorBytes, embedding);
+
+        // 预计算 64 位特征签名
+        _sig0Matrix![i] = _buildSig(embedding, 0);
+        _sig1Matrix![i] = _buildSig(embedding, 1);
       }
 
       _isInitialized = true;
       stopwatch.stop();
-      Global.logger.i('✅ 本地向量缓存初始化完成，耗时: ${stopwatch.elapsedMilliseconds} ms，占用内存约 ${((_matrix?.length ?? 0) / 1024 / 1024).toStringAsFixed(2)} MB');
+      Global.logger.i('✅ 本地向量缓存及特征签名初始化完成，耗时: ${stopwatch.elapsedMilliseconds} ms，占用内存约 ${((_matrix?.length ?? 0) / 1024 / 1024).toStringAsFixed(2)} MB');
     } catch (e, stackTrace) {
       Global.logger.e('❌ 初始化本地向量缓存崩溃', error: e, stackTrace: stackTrace);
     }
   }
 
-  /// 局部更新、插入或删除内存中的高维量化向量
+  /// 根据 wordId 获取其 1bit 量化向量（256字节）
+  Uint8List? getEmbedding(String wordId) {
+    if (!_isInitialized || _matrix == null) return null;
+    final int? idx = _wordToIndex[wordId];
+    if (idx == null) return null;
+    return Uint8List.sublistView(_matrix!, idx * vectorBytes, (idx + 1) * vectorBytes);
+  }
+
+  /// 获取单词的 sig0 签名
+  int? getSig0(String wordId) {
+    if (!_isInitialized || _sig0Matrix == null) return null;
+    final int? idx = _wordToIndex[wordId];
+    if (idx == null) return null;
+    return _sig0Matrix![idx];
+  }
+
+  /// 获取单词的 sig1 签名
+  int? getSig1(String wordId) {
+    if (!_isInitialized || _sig1Matrix == null) return null;
+    final int? idx = _wordToIndex[wordId];
+    if (idx == null) return null;
+    return _sig1Matrix![idx];
+  }
+
+  /// 辅助方法：提取特定分部的 32 位特征签名
+  static int _buildSig(Uint8List emb, int part) {
+    int sig = 0;
+    final int start = part * 32;
+    for (int i = 0; i < 32; i++) {
+      final int dim = highEntropyDims[start + i];
+      final int byteIdx = dim ~/ 8;
+      final int bitIdx = dim % 8;
+      if ((emb[byteIdx] & (1 << bitIdx)) != 0) {
+        sig |= (1 << i);
+      }
+    }
+    return sig;
+  }
+
+  /// 局部更新、插入或删除内存中的高维量化向量和特征签名
   void updateWord(String wordId, Uint8List? embedding) {
     if (!_isInitialized || _matrix == null) {
       Global.logger.w('⚠️ 向量缓存未初始化，忽略此单词更新: wordId=$wordId');
@@ -100,8 +161,10 @@ class LocalEmbeddingCache {
     // 1. 删除操作 (embedding 为空)
     if (embedding == null || embedding.isEmpty) {
       if (existingIdx != null) {
-        // 逻辑删除：仅清空对应索引处的 wordId，并从 Map 移除
+        // 逻辑删除：仅清空对应索引处的 wordId/签名，并从 Map 移除
         _wordIds[existingIdx] = '';
+        _sig0Matrix![existingIdx] = 0;
+        _sig1Matrix![existingIdx] = 0;
         _wordToIndex.remove(wordId);
         Global.logger.d('🗑️ 向量缓存逻辑删除单词: $wordId');
       }
@@ -118,6 +181,8 @@ class LocalEmbeddingCache {
     if (existingIdx != null) {
       final int offset = existingIdx * vectorBytes;
       _matrix!.setRange(offset, offset + vectorBytes, embedding);
+      _sig0Matrix![existingIdx] = _buildSig(embedding, 0);
+      _sig1Matrix![existingIdx] = _buildSig(embedding, 1);
       Global.logger.d('📝 向量缓存更新单词向量: $wordId (Index: $existingIdx)');
       return;
     }
@@ -134,6 +199,8 @@ class LocalEmbeddingCache {
 
     final int offset = newIdx * vectorBytes;
     _matrix!.setRange(offset, offset + vectorBytes, embedding);
+    _sig0Matrix![newIdx] = _buildSig(embedding, 0);
+    _sig1Matrix![newIdx] = _buildSig(embedding, 1);
     _allocatedCount++;
 
     Global.logger.d('➕ 向量缓存新增单词向量: $wordId (Index: $newIdx)');
@@ -150,6 +217,15 @@ class LocalEmbeddingCache {
     final newMatrix = Uint8List(newCapacity * vectorBytes);
     newMatrix.setRange(0, oldCapacity * vectorBytes, _matrix!);
     _matrix = newMatrix;
+
+    // 扩容签名矩阵
+    final newSig0 = Uint32List(newCapacity);
+    newSig0.setRange(0, oldCapacity, _sig0Matrix!);
+    _sig0Matrix = newSig0;
+
+    final newSig1 = Uint32List(newCapacity);
+    newSig1.setRange(0, oldCapacity, _sig1Matrix!);
+    _sig1Matrix = newSig1;
 
     // 扩容单词ID列表
     final List<String> newWordIds = List<String>.filled(newCapacity, '');

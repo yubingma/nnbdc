@@ -6,6 +6,7 @@ import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/local_embedding_cache.dart';
 
 void main() {
   late MyDatabase db;
@@ -197,6 +198,38 @@ void main() {
 
       final listAfterClear = await wordBo.getTspSortedWordIdsInternal(dictId);
       expect(identical(initialList, listAfterClear), false);
+    });
+
+    test('TSP sorting using LocalEmbeddingCache high performance path', () async {
+      // 1. Insert 3 words
+      await db.into(db.words).insert(Word(
+        id: 'w1', spell: 'w1', popularity: 1, embedding1bit: createEmbedding([0]),
+        createTime: now, updateTime: now,
+      ));
+      await db.into(db.words).insert(Word(
+        id: 'w2', spell: 'w2', popularity: 1, embedding1bit: createEmbedding([1, 2]),
+        createTime: now, updateTime: now,
+      ));
+      await db.into(db.words).insert(Word(
+        id: 'w3', spell: 'w3', popularity: 1, embedding1bit: createEmbedding([0, 1]),
+        createTime: now, updateTime: now,
+      ));
+
+      await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w1', seq: 1, unit: 0, createTime: now, updateTime: now));
+      await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w2', seq: 2, unit: 0, createTime: now, updateTime: now));
+      await db.into(db.dictWords).insert(DictWord(dictId: dictId, wordId: 'w3', seq: 3, unit: 0, createTime: now, updateTime: now));
+
+      // 2. Initialize the LocalEmbeddingCache
+      await LocalEmbeddingCache.instance.initialize(db);
+      expect(LocalEmbeddingCache.instance.isInitialized, true);
+
+      // 3. Verify it does sorting correctly using cache and signatures
+      final wordBo = WordBo();
+      final list = await wordBo.getTspSortedWordIdsInternal(dictId);
+      expect(list, ['w1', 'w3', 'w2']);
+
+      // Reset cache for safety
+      LocalEmbeddingCache.instance.reset();
     });
   });
 }

@@ -19,6 +19,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/constants.dart';
 
 import '../../services/throttled_sync_service.dart';
+import 'package:nnbdc/util/local_embedding_cache.dart';
 
 
 const _popCountTable = [
@@ -70,8 +71,10 @@ int _hammingDistance32(Uint32List a, Uint32List b) {
 class TspParams {
   final List<MapEntry<String, Uint8List>> wordsWithEmbeddings;
   final Map<String, String> idToSpell;
+  final Uint32List? sig0List;
+  final Uint32List? sig1List;
 
-  TspParams(this.wordsWithEmbeddings, this.idToSpell);
+  TspParams(this.wordsWithEmbeddings, this.idToSpell, {this.sig0List, this.sig1List});
 }
 
 class _WordTspNode {
@@ -80,10 +83,10 @@ class _WordTspNode {
   final int sig0;
   final int sig1;
 
-  _WordTspNode(this.id, Uint8List emb, List<int> highEntropyDims)
+  _WordTspNode(this.id, Uint8List emb, int sig0Val, int sig1Val)
       : emb32 = _toUint32List(emb),
-        sig0 = _buildSig(emb, highEntropyDims, 0),
-        sig1 = _buildSig(emb, highEntropyDims, 1);
+        sig0 = sig0Val,
+        sig1 = sig1Val;
 
   static Uint32List _toUint32List(Uint8List emb) {
     if (emb.offsetInBytes % 4 == 0) {
@@ -110,16 +113,6 @@ class _WordTspNode {
 }
 
 class WordBo {
-  static const List<int> _highEntropyDims = [
-    1897, 1105, 515, 511, 1852, 146, 1958, 252, 1630, 1420,
-    1327, 1868, 454, 1805, 892, 1428, 1947, 35, 477, 855,
-    1067, 1219, 381, 1879, 211, 486, 718, 29, 404, 986,
-    787, 1312, 1059, 1429, 937, 503, 1913, 1921, 589, 598,
-    969, 1071, 617, 440, 940, 1494, 18, 68, 874, 1800,
-    1469, 783, 1863, 463, 972, 1514, 458, 1893, 1480, 1686,
-    1096, 561, 723, 1039
-  ];
-
   static final WordBo _instance = WordBo._internal();
   factory WordBo() => _instance;
   WordBo._internal();
@@ -151,28 +144,80 @@ class WordBo {
     }
 
     final db = MyDatabase.instance;
-    final rows = await db.customSelect(
-      'SELECT dw.word_id, w.spell, w.embedding1bit FROM dict_words dw '
-      'JOIN words w ON dw.word_id = w.id '
-      'WHERE dw.dict_id = ?',
-      variables: [Variable.withString(dictId)],
-    ).get();
-
     final List<MapEntry<String, Uint8List>> wordsWithEmbeddings = [];
     final List<String> wordsWithoutEmbeddings = [];
     final Map<String, String> idToSpell = {};
+    Uint32List? sig0List;
+    Uint32List? sig1List;
 
-    for (final row in rows) {
-      final String wordId = row.read<String>('word_id');
-      final String spell = row.read<String>('spell');
-      final Uint8List? emb = row.readNullable<Uint8List>('embedding1bit');
-      idToSpell[wordId] = spell;
+    if (LocalEmbeddingCache.instance.isInitialized) {
+      Global.logger.d('[SEMANTIC TSP] 本地向量缓存已就绪，使用高性能内存通道加载词书 $dictId');
+      final stopwatch = Stopwatch()..start();
 
-      if (emb != null && emb.length >= 256) {
-        wordsWithEmbeddings.add(MapEntry(wordId, emb));
-      } else {
-        wordsWithoutEmbeddings.add(wordId);
+      final rows = await db.customSelect(
+        'SELECT dw.word_id, w.spell FROM dict_words dw '
+        'JOIN words w ON dw.word_id = w.id '
+        'WHERE dw.dict_id = ?',
+        variables: [Variable.withString(dictId)],
+      ).get();
+
+      final int len = rows.length;
+      sig0List = Uint32List(len);
+      sig1List = Uint32List(len);
+      int validCount = 0;
+
+      for (final row in rows) {
+        final String wordId = row.read<String>('word_id');
+        final String spell = row.read<String>('spell');
+        idToSpell[wordId] = spell;
+
+        final emb = LocalEmbeddingCache.instance.getEmbedding(wordId);
+        final sig0 = LocalEmbeddingCache.instance.getSig0(wordId);
+        final sig1 = LocalEmbeddingCache.instance.getSig1(wordId);
+
+        if (emb != null && emb.length >= 256 && sig0 != null && sig1 != null) {
+          wordsWithEmbeddings.add(MapEntry(wordId, emb));
+          sig0List[validCount] = sig0;
+          sig1List[validCount] = sig1;
+          validCount++;
+        } else {
+          // 容错：如果极个别词在缓存中没有（新词或未同步），作为无词嵌入处理
+          wordsWithoutEmbeddings.add(wordId);
+        }
       }
+
+      if (validCount < len) {
+        sig0List = sig0List.sublist(0, validCount);
+        sig1List = sig1List.sublist(0, validCount);
+      }
+
+      stopwatch.stop();
+      Global.logger.d('[SEMANTIC TSP] 从内存缓存加载 ${wordsWithEmbeddings.length} 个单词向量完成，耗时: ${stopwatch.elapsedMilliseconds} ms');
+    } else {
+      Global.logger.d('[SEMANTIC TSP] 本地向量缓存未就绪或测试环境，降级执行 SQLite 读取...');
+      final stopwatch = Stopwatch()..start();
+
+      final rows = await db.customSelect(
+        'SELECT dw.word_id, w.spell, w.embedding1bit FROM dict_words dw '
+        'JOIN words w ON dw.word_id = w.id '
+        'WHERE dw.dict_id = ?',
+        variables: [Variable.withString(dictId)],
+      ).get();
+
+      for (final row in rows) {
+        final String wordId = row.read<String>('word_id');
+        final String spell = row.read<String>('spell');
+        final Uint8List? emb = row.readNullable<Uint8List>('embedding1bit');
+        idToSpell[wordId] = spell;
+
+        if (emb != null && emb.length >= 256) {
+          wordsWithEmbeddings.add(MapEntry(wordId, emb));
+        } else {
+          wordsWithoutEmbeddings.add(wordId);
+        }
+      }
+      stopwatch.stop();
+      Global.logger.d('[SEMANTIC TSP] 从 SQLite 读取 ${wordsWithEmbeddings.length} 个单词向量完成，耗时: ${stopwatch.elapsedMilliseconds} ms');
     }
 
     Global.logger.d('TSP 排序 [dictId=$dictId]: 共 ${wordsWithEmbeddings.length} 个有词嵌入, ${wordsWithoutEmbeddings.length} 个无词嵌入');
@@ -183,7 +228,7 @@ class WordBo {
       return result;
     }
 
-    final params = TspParams(wordsWithEmbeddings, idToSpell);
+    final params = TspParams(wordsWithEmbeddings, idToSpell, sig0List: sig0List, sig1List: sig1List);
     final optimizedIds = await compute<TspParams, List<String>>(_calcTspInIsolate, params);
 
     final finalResult = [...optimizedIds, ...wordsWithoutEmbeddings];
@@ -252,7 +297,9 @@ class WordBo {
     final List<_WordTspNode> nodes = [];
     for (int i = 0; i < n; i++) {
       final entry = wordsWithEmbeddings[i];
-      nodes.add(_WordTspNode(entry.key, entry.value, _highEntropyDims));
+      final int sig0 = params.sig0List != null ? params.sig0List![i] : _WordTspNode._buildSig(entry.value, LocalEmbeddingCache.highEntropyDims, 0);
+      final int sig1 = params.sig1List != null ? params.sig1List![i] : _WordTspNode._buildSig(entry.value, LocalEmbeddingCache.highEntropyDims, 1);
+      nodes.add(_WordTspNode(entry.key, entry.value, sig0, sig1));
     }
 
     final List<String> tspSortedIds = [];
