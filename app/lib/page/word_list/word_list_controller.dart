@@ -157,7 +157,7 @@ class WordListController extends ChangeNotifier {
         initialScrollIndex = actualWordIndex - baseIndex!;
       }
       
-      bookMark = BookMarkVo(actualWordIndex, bookMark!.spell);
+      bookMark = BookMarkVo(actualWordIndex, bookMark!.spell, bookMark!.sortAlg);
 
       // 数据和页面都准备好后，执行一次精准跳转
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -168,7 +168,8 @@ class WordListController extends ChangeNotifier {
       baseIndex = 0;
       await doQuery(true, baseIndex!, pageSize, false);
       if (words.isNotEmpty && bookMark == null) {
-        bookMark = BookMarkVo(0, words[0].word.spell);
+        final defaultAlg = await args.wordsProvider.getSortAlg();
+        bookMark = BookMarkVo(0, words[0].word.spell, defaultAlg.code);
         args.bookMarkProvider.saveBookMark(bookMark!);
       }
     }
@@ -185,6 +186,10 @@ class WordListController extends ChangeNotifier {
     final currentSpell = bookMark?.spell ?? (words.isNotEmpty ? words[0].word.spell : null);
     if (currentSpell == null) return;
 
+    // 立刻重置页面加载状态，使界面立即转为 Loading 态，避免耗时计算期间显示旧列表
+    dataLoaded = false;
+    clearQueryResult();
+
     // 1. 保存新的排序（这会联动修改偏好设置与书签记录的 sortAlg）
     await args.wordsProvider.saveSortAlg(newAlg);
 
@@ -196,9 +201,7 @@ class WordListController extends ChangeNotifier {
     bookMark = BookMarkVo(finalPos, currentSpell, newAlg.code);
     await args.bookMarkProvider.saveBookMark(bookMark!);
 
-    // 4. 重置页面数据并重新加载定位
-    dataLoaded = false;
-    clearQueryResult();
+    // 4. 重新加载定位和数据
     await loadData(
       checkAndShowGuide: () {},
       restoreAsrIfNeeded: (_) {},
@@ -463,7 +466,7 @@ class WordListController extends ChangeNotifier {
         final bookMarkPosition = getBookMarkRawPosition(bookMark);
         if (index + baseIndex! < bookMarkPosition && bookMarkPosition <= words.length + baseIndex!) {
           var w = words[bookMarkPosition - baseIndex! - 1];
-          bookMark = BookMarkVo(bookMarkPosition - 1, w.word.spell);
+          bookMark = BookMarkVo(bookMarkPosition - 1, w.word.spell, bookMark!.sortAlg);
           await args.bookMarkProvider.saveBookMark(bookMark!);
         }
       }
@@ -509,7 +512,7 @@ class WordListController extends ChangeNotifier {
         final bookMarkPosition = getBookMarkRawPosition(bookMark);
         if (index + baseIndex! < bookMarkPosition && bookMarkPosition <= words.length + baseIndex!) {
           var w = words[bookMarkPosition - baseIndex! - 1];
-          bookMark = BookMarkVo(bookMarkPosition - 1, w.word.spell);
+          bookMark = BookMarkVo(bookMarkPosition - 1, w.word.spell, bookMark!.sortAlg);
           await args.bookMarkProvider.saveBookMark(bookMark!);
         }
       }
@@ -537,7 +540,7 @@ class WordListController extends ChangeNotifier {
           final bookMarkPosition = getBookMarkRawPosition(bookMark);
           if (index + baseIndex! < bookMarkPosition && bookMarkPosition <= words.length + baseIndex!) {
             var prevWord = words[bookMarkPosition - baseIndex! - 1];
-            bookMark = BookMarkVo(bookMarkPosition - 1, prevWord.word.spell);
+            bookMark = BookMarkVo(bookMarkPosition - 1, prevWord.word.spell, bookMark!.sortAlg);
             await args.bookMarkProvider.saveBookMark(bookMark!);
           }
         }

@@ -252,6 +252,7 @@ class WordListPageState extends State<WordListPage>
   var studyMode = WordListStudyMode.hideChinese;
   bool _isHandwritingOverlayOpen = true;
   bool _isSwitchingMode = false;
+  String _switchingMessage = '模式切换中...';
   int? _tempHandwritingSelectedIndex;
   final GlobalKey<HandwritingBoardState> _handwritingBoardKey = GlobalKey<HandwritingBoardState>();
   int _renderWordCallCount = 0;
@@ -547,6 +548,7 @@ class WordListPageState extends State<WordListPage>
 
   Future<void> _initAndLoadData() async {
     if (!await checkArgs()) return;
+    if (_controllerInitialized) return;
     
     controller = WordListController(
       args: args,
@@ -2508,6 +2510,7 @@ class WordListPageState extends State<WordListPage>
                             // 这样 Navigator 只有一个 pop 动作，没有路由冲突，动画会极其顺滑。
                             setState(() {
                               _isSwitchingMode = true;
+                              _switchingMessage = '模式切换中...';
                             });
 
                             // 利用微任务将沉重的逻辑切分到下一帧开始
@@ -2771,7 +2774,7 @@ class WordListPageState extends State<WordListPage>
         ),
         // 新手引导覆盖层 - 在Scaffold之上，覆盖整个屏幕包括AppBar
         if (showGuide) _buildGuideOverlay(),
-        if (_isSwitchingMode) _buildSwitchingModeOverlay(isDarkMode),
+        if (_isSwitchingMode) _buildSwitchingModeOverlay(isDarkMode, message: _switchingMessage),
         if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen)
           HandwritingOverlay(
             isDarkMode: isDarkMode,
@@ -2817,38 +2820,43 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
-  Widget _buildSwitchingModeOverlay(bool isDarkMode) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.3),
-      child: Center(
+  Widget _buildSwitchingModeOverlay(bool isDarkMode, {required String message}) {
+    return Positioned.fill(
+      child: AbsorbPointer(
+        absorbing: true,
         child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.grey[850] : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 10,
-              )
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+          color: Colors.black.withValues(alpha: 0.4),
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.grey[850] : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                  )
+                ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                '模式切换中...',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white70 : Colors.black87,
-                  fontSize: 14,
-                  decoration: TextDecoration.none,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                      fontSize: 14,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -3216,9 +3224,12 @@ class WordListPageState extends State<WordListPage>
                         : const Icon(Icons.circle_outlined, color: Colors.grey),
                     onTap: () async {
                       Navigator.of(context).pop();
-                      if (currentAlg != alg) {
+                      if (currentAlg != alg || alg == WordSortAlg.semantic) {
                         setState(() {
                           _isSwitchingMode = true;
+                          _switchingMessage = alg == WordSortAlg.semantic
+                              ? '正在计算语义排序，请稍候...'
+                              : '正在重新排序，请稍候...';
                         });
                         try {
                           await controller.changeSortAlg(alg);
