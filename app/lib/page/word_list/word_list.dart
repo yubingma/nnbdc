@@ -2318,6 +2318,12 @@ class WordListPageState extends State<WordListPage>
                             return;
                           }
 
+                          final sortAlg = await controller.getCurrentSortAlg();
+                          if (!capturedContext.mounted) {
+                            isMenuOpen = false;
+                            return;
+                          }
+
                           // 4. 构建菜单项
                           List<String> menuItems = [
                             menuSortSettings,
@@ -2481,7 +2487,9 @@ class WordListPageState extends State<WordListPage>
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        choice,
+                                        choice == menuSortSettings
+                                            ? '$menuSortSettings (${sortAlg.label})'
+                                            : choice,
                                         style: TextStyle(
                                           color: isSelected
                                               ? const Color(0xFF0097A7)
