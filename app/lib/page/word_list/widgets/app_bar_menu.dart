@@ -43,7 +43,6 @@ class WordListAppBarMenu extends StatelessWidget {
   List<PopupMenuEntry<String>> _buildMenuItems(bool isDarkMode) {
     List<String> menus = [
       menuWordList,
-      menuWalkman,
     ];
 
     if (isAsrSupported) {
@@ -53,6 +52,8 @@ class WordListAppBarMenu extends StatelessWidget {
       menus.add(menuSpeakEnglish);
     }
     menus.add(menuWriteSpell);
+
+    menus.add(menuWalkman);
 
     return menus.map((String choice) {
       return PopupMenuItem<String>(
