@@ -2320,6 +2320,7 @@ class WordListPageState extends State<WordListPage>
 
                           // 4. 构建菜单项
                           List<String> menuItems = [
+                            menuSortSettings,
                             menuWordList,
                             menuWalkman,
                           ];
@@ -2345,7 +2346,6 @@ class WordListPageState extends State<WordListPage>
                           if (studyMode == WordListStudyMode.speakChinese) {
                             menuItems.add(menuSettings);
                           }
-                          menuItems.add(menuSortSettings);
 
                           // 5. 显示菜单 (使用 RootNavigator)
                           // ignore: use_build_context_synchronously
