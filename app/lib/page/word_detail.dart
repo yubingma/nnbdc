@@ -323,18 +323,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
     _totalCigenWordsCount = totalCount;
 
-    // 快速在后台线程中计算出相似单词 ID 列表以决定并锁定 Tab 数量，避免长事务数据库读取阻塞页面秒开
-    List<String> tempSimilarIds = [];
-    if (LocalEmbeddingCache.instance.isInitialized) {
-      try {
-        final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
-        tempSimilarIds = similarResults.map((res) => res.wordId).toList();
-      } catch (e, st) {
-        Global.logger.e('快速计算相似单词 ID 失败', error: e, stackTrace: st);
-      }
-    }
-    _semanticSimilarWordIds = tempSimilarIds;
-
     setState(() {
       final newLength = calcTabsCount();
       if (_tabController.length != newLength) {
@@ -345,18 +333,30 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       dataLoaded = true;
     });
 
-    // 在第一帧秒开渲染后，以非阻塞的异步方式在后台拉取拓展单词详情及进行词库状态判断
-    if (tempSimilarIds.isNotEmpty) {
+    // 在第一帧秒开渲染后，以非阻塞的异步方式在后台计算相似ID、拉取单词详情及进行词库状态判断
+    if (LocalEmbeddingCache.instance.isInitialized) {
       _isLoadingSemanticSimilar = true;
       unawaited(() async {
         try {
-          final tempSemanticWords = await _getSimpleWordsByIds(tempSimilarIds);
+          // 1. 异步在 Isolate 中检索相似单词 ID，不阻塞 UI 渲染 tick
+          final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
+          final similarIds = similarResults.map((res) => res.wordId).toList();
           
+          if (mounted) {
+            setState(() {
+              _semanticSimilarWordIds = similarIds;
+            });
+          }
+
+          // 2. 批量拉取拓展单词拼写与释义详情
+          final tempSemanticWords = await _getSimpleWordsByIds(similarIds);
+          
+          // 3. 批量查询形近词与拓展词在词书内状态
           final allRelatedIds = <String>[];
           if (args.word.similarWords != null) {
             allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
           }
-          allRelatedIds.addAll(tempSimilarIds);
+          allRelatedIds.addAll(similarIds);
           await _checkWordsInDict(allRelatedIds);
 
           if (mounted) {
@@ -366,7 +366,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             });
           }
         } catch (e, st) {
-          Global.logger.e('异步加载拓展单词详情或词书状态失败', error: e, stackTrace: st);
+          Global.logger.e('异步加载拓展单词失败', error: e, stackTrace: st);
           if (mounted) {
             setState(() {
               _isLoadingSemanticSimilar = false;
@@ -375,7 +375,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         }
       }());
     } else {
-      // 如果没有相似单词，直接批量查询形近词在词书状态即可
+      // 降级：仅批量查询形近词在词书范围状态
       final allRelatedIds = <String>[];
       if (args.word.similarWords != null) {
         allRelatedIds.addAll(args.word.similarWords!.map((w) => w.id!));
@@ -1194,7 +1194,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           if (hasSimilarWords()) Tab(text: '形近(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义(${calcSynonymCount()})"),
                           if (hasCigen()) Tab(text: '同根($_totalCigenWordsCount)'),
-                          if (hasSemanticSimilarWords()) Tab(text: '拓展(${_semanticSimilarWordIds.length})'),
+                          if (hasSemanticSimilarWords()) Tab(text: _semanticSimilarWordIds.isEmpty ? '拓展' : '拓展(${_semanticSimilarWordIds.length})'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
@@ -1365,7 +1365,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   bool hasSemanticSimilarWords() {
-    return _semanticSimilarWordIds.isNotEmpty;
+    return LocalEmbeddingCache.instance.isInitialized;
   }
 
   bool hasCigen() {
