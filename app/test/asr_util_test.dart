@@ -18,6 +18,7 @@ void main() {
           final String content = '''
 CHARGE CH AA1 R JH
 JUDGE JH AH1 JH
+TWELVE T W EH1 L V
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -65,6 +66,17 @@ JUDGE JH AH1 JH
       final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(['charge'], 'judge');
       expect(result.text, equals('charge'));
       expect(result.score, greaterThanOrEqualTo(60));
+    });
+
+    test('preprocessEnglish - converts Arabic numbers to English words', () {
+      expect(AsrUtil.preprocessEnglish('12', 'twelve'), equals('twelve'));
+      expect(AsrUtil.preprocessEnglish('i have 23 apples', 'twenty three'), equals('i have twenty three apples'));
+    });
+
+    test('selectBestCandidateWithPhonemeAndScore - matches number "12" to target "twelve"', () async {
+      final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(['12'], 'twelve');
+      expect(result.text, equals('12'));
+      expect(result.score, equals(100));
     });
   });
 }

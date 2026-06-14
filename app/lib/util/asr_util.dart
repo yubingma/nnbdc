@@ -94,6 +94,53 @@ class AsrUtil {
     return result;
   }
 
+  /// 将阿拉伯数字转换为英文数字单词（支持0-999999）
+  /// 例如：12 -> twelve, 123 -> one hundred twenty three
+  static String _convertArabicToEnglish(int num) {
+    if (num < 0 || num > 999999) return num.toString();
+    if (num == 0) return 'zero';
+
+    const ones = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+    String convertLessThanThousand(int n) {
+      String res = '';
+      if (n >= 100) {
+        res += '${ones[n ~/ 100]} hundred';
+        n %= 100;
+        if (n > 0) res += ' ';
+      }
+      if (n >= 20) {
+        res += tens[n ~/ 10];
+        n %= 10;
+        if (n > 0) {
+          res += ' ${ones[n]}';
+        }
+      } else if (n >= 10) {
+        res += teens[n - 10];
+      } else if (n > 0) {
+        res += ones[n];
+      }
+      return res;
+    }
+
+    int temp = num;
+    String result = '';
+    
+    if (temp >= 1000) {
+      result += '${convertLessThanThousand(temp ~/ 1000)} thousand';
+      temp %= 1000;
+      if (temp > 0) result += ' ';
+    }
+    
+    if (temp > 0) {
+      result += convertLessThanThousand(temp);
+    }
+    
+    return result;
+  }
+
   /// 预处理语音识别结果
   /// 主要处理发音相似的中英文替换，并将阿拉伯数字转换为中文数字
   static String preprocess(String result) {
@@ -126,20 +173,27 @@ class AsrUtil {
     return lowerResult;
   }
 
-  /// 预处理英文语音识别结果, 使识别结果尽量往目标单词靠拢
-  /// 主要处理发音相似的英文单词替换
-  /// @param result 语音识别结果
-  /// @param targetWord 目标单词
-  /// @return 预处理后的结果
   static String preprocessEnglish(String result, String targetWord) {
     if (result.isEmpty) return result;
 
     String lowerResult = result.toLowerCase().trim();
-    // String lowerTarget = targetWord.toLowerCase().trim(); // 不再强行替换
 
-    // 之前这里会进行一系列匹配并返回 lowerTarget
-    // 现在直接返回 lowerResult，以满足用户“听到什么就输出什么”的需求
-    // 匹配判定将交给 checkAsrResult 中的 score 逻辑
+    // 1. 将阿拉伯数字转换为英文单词
+    // 使用正则表达式匹配所有数字（包括多位数）
+    lowerResult = lowerResult.replaceAllMapped(RegExp(r'\d+'), (match) {
+      final numStr = match.group(0);
+      if (numStr != null) {
+        try {
+          final num = int.parse(numStr);
+          return _convertArabicToEnglish(num);
+        } catch (e) {
+          // 解析失败，返回原数字
+          return numStr;
+        }
+      }
+      return match.group(0) ?? '';
+    });
+
     return lowerResult;
   }
 
@@ -173,25 +227,28 @@ class AsrUtil {
     if (candidates.isEmpty) return AsrCandidateResult('', 0);
     final lowerTarget = targetWord.toLowerCase().trim();
 
+    // 预处理候选列表（主要进行数字单词归一化等操作）
+    final preprocessedCandidates = candidates.map((c) => preprocessEnglish(c, targetWord)).toList();
+
     // 快速路径：精确匹配时跳过音素加载和计算，避免 3.5MB cmudict 加载阻塞 ASR 响应
-    for (final c in candidates) {
-      final trimmedCandidate = c.toLowerCase().trim();
+    for (int i = 0; i < preprocessedCandidates.length; i++) {
+      final trimmedCandidate = preprocessedCandidates[i];
       if (trimmedCandidate == lowerTarget) {
-        return AsrCandidateResult(c, 100);
+        return AsrCandidateResult(candidates[i], 100);
       }
       // 符号映射匹配：如果候选词是一个符号，且目标词是该符号的发音之一
       final spokenWords = _symbolToSpokenWords[trimmedCandidate];
       if (spokenWords != null && spokenWords.contains(lowerTarget)) {
-        return AsrCandidateResult(c, 100);
+        return AsrCandidateResult(candidates[i], 100);
       }
     }
 
     // 预加载音素库（以防万一）
     await PhonemeUtil.load();
 
-    // 并行计算所有候选词的相似扣
+    // 并行计算所有候选词的相似分
     final scores = await Future.wait(
-      candidates.map((c) => calculateOverallSimilarity(c, lowerTarget)),
+      preprocessedCandidates.map((c) => calculateOverallSimilarity(c, lowerTarget)),
     );
 
     String best = candidates[0];
