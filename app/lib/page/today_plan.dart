@@ -964,7 +964,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           if (!mounted) return;
           // 在页面跳转前启动 iOS 麦克风引擎预热，与导航过渡动画(~300ms)和 BDC 初始化(~250ms)并行。
           // 预热完成时 startAsr 可直接复用已初始化的引擎，消除首次单词 2.3s 冷启动延迟。
-          if (PlatformUtils.isIOS) {
+          if (PlatformUtils.isIOS || PlatformUtils.isAndroid) {
             unawaited(Asr().warmupMicrophone());
           }
           context.push('/bdc').then((value) {
@@ -1035,7 +1035,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   onPressed: () async {
                     await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
                     if (!mounted) return;
-                    if (PlatformUtils.isIOS) {
+                    if (PlatformUtils.isIOS || PlatformUtils.isAndroid) {
                       unawaited(Asr().warmupMicrophone());
                     }
                     context.push('/bdc');

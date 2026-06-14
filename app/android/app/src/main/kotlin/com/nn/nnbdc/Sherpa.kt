@@ -96,8 +96,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     result.success(null)
                 }
                 "startMicrophone" -> {
-                    startMicrophone()
-                    result.success(null)
+                    startMicrophone(result)
                 }
                 "startAsr" -> {
                     startAsr()
@@ -326,33 +325,35 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         return destFile.absolutePath
     }
 
-    private fun startMicrophone() {
+    // result 不为 null 时，在麦克风物理就绪后才回调 Dart（真正的 await 同步点）。
+    // 这是根治「首词 ASR 不工作」的关键：Dart 的 await startMicrophone() 会真正阻塞，
+    // 直到 AudioRecord.startRecording() 完成，而不是在后台线程启动后就假返回。
+    private fun startMicrophone(result: MethodChannel.Result? = null) {
         if (isRecording) {
             Log.i(TAG, "Microphone is already running, re-creating stream with hotwords.")
             synchronized(this) {
                 currentStream?.release()
-                // 启用热词支持
                 val hotwords = pendingHotwords
                 currentStream = currentModel?.createStream(hotwords)
                 lastSentResult = ""
                 isAsrStopped = false
             }
+            activity.runOnUiThread { result?.success(null) }
             return
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 Log.e(TAG, "No RECORD_AUDIO permission")
+                activity.runOnUiThread { result?.success(null) }
                 return
             }
         }
 
-        // 1. 立即在主线程把状态标志置为启动，供 MethodChannel 极速返回
         isRecording = true
         isAsrStopped = false
         lastSentResult = ""
         
-        // 2. 异步下沉耗时录音硬件启动与 ONNX 流创建到专属后台工作线程
         recordingThread = thread(true) {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
             
@@ -360,13 +361,14 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
                 Log.e(TAG, "Invalid buffer size for AudioRecord")
                 isRecording = false
+                activity.runOnUiThread { result?.success(null) }
                 return@thread
             }
 
             try {
-                // 3. 竞态防御：若在此极短的启动间隙里，主线程下发了 stopMicrophone()，则优雅退出
                 if (!isRecording) {
                     Log.i(TAG, "ASR start interrupted by stop command during thread launch.")
+                    activity.runOnUiThread { result?.success(null) }
                     return@thread
                 }
 
@@ -377,33 +379,28 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     audioFormat,
                     minBufferSize * 2
                 )
-                
+
                 if (record.state != AudioRecord.STATE_INITIALIZED) {
                     Log.e(TAG, "Failed to initialize AudioRecord instance")
+                    record.release()
                     isRecording = false
+                    activity.runOnUiThread { result?.success(null) }
                     return@thread
                 }
 
-                audioRecord = record
-                
                 if (!isRecording) {
                     Log.i(TAG, "ASR stop requested right after AudioRecord creation, releasing record.")
                     record.release()
-                    audioRecord = null
+                    activity.runOnUiThread { result?.success(null) }
                     return@thread
                 }
-                
+
                 record.startRecording()
+                audioRecord = record
 
-                if (!isRecording) {
-                    Log.i(TAG, "ASR stop requested right after startRecording, stopping and releasing.")
-                    record.stop()
-                    record.release()
-                    audioRecord = null
-                    return@thread
-                }
+                // AudioRecord 已物理就绪，现在通知 Dart await 可以继续
+                activity.runOnUiThread { result?.success(null) }
 
-                // 4. 异步在子线程完成 C++ ONNX 模型流的创建，规避主线程阻塞
                 Log.i(TAG, "Creating stream with hotwords (in background): $pendingHotwords")
                 val hotwords = pendingHotwords
                 synchronized(this@Sherpa) {
