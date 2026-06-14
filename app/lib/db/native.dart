@@ -13,7 +13,13 @@ MyDatabase constructDb() {
     dbFolder = await getApplicationDocumentsDirectory();
 
     final file = File(p.join(dbFolder.path, 'db.sqlite'));
-    return NativeDatabase(file);
+    return NativeDatabase(
+      file,
+      setup: (rawDb) {
+        rawDb.execute('PRAGMA journal_mode=WAL;');
+        rawDb.execute('PRAGMA busy_timeout=5000;');
+      },
+    );
   });
   return MyDatabase(db);
 }

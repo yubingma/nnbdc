@@ -477,29 +477,31 @@ class LearningService {
 
     // 3. 全局刷新 learningOrder 并保存
     try {
-      for (int i = 0; i < todayLearningWords.length; i++) {
-        var learningWord = todayLearningWords[i];
+      await db.transaction(() async {
+        for (int i = 0; i < todayLearningWords.length; i++) {
+          var learningWord = todayLearningWords[i];
 
-        // 统一更新日期标记（如果是第一次加入今天的批次）
-        // 不再预更新 lastLearningDate，保留其原始值用于 FSRS 间隔计算
-        // 只有当单词今天还没产生学习记录时，才修正 isTodayNewWord 标记。
-        // 否则如果白天学过了一次，learnedTimes 变为了 1，这里会导致标记被重置为 false，导致进度统计错误。
-        if (learningWord.todayLearnedTimes == 0) {
-          // 判断是否为今日新词：从未学习过（learnedTimes == 0）且没有 FSRS 进度 (lastLearningDate == null)
-          bool shouldBeNewWord = learningWord.learnedTimes == 0 && learningWord.lastLearningDate == null;
-          if (learningWord.isTodayNewWord != shouldBeNewWord) {
-            learningWord = learningWord.copyWith(
-              isTodayNewWord: shouldBeNewWord,
-            );
+          // 统一更新日期标记（如果是第一次加入今天的批次）
+          // 不再预更新 lastLearningDate，保留其原始值用于 FSRS 间隔计算
+          // 只有当单词今天还没产生学习记录时，才修正 isTodayNewWord 标记。
+          // 否则如果白天学过了一次，learnedTimes 变为了 1，这里会导致标记被重置为 false，导致进度统计错误。
+          if (learningWord.todayLearnedTimes == 0) {
+            // 判断是否为今日新词：从未学习过（learnedTimes == 0）且没有 FSRS 进度 (lastLearningDate == null)
+            bool shouldBeNewWord = learningWord.learnedTimes == 0 && learningWord.lastLearningDate == null;
+            if (learningWord.isTodayNewWord != shouldBeNewWord) {
+              learningWord = learningWord.copyWith(
+                isTodayNewWord: shouldBeNewWord,
+              );
+            }
           }
+
+          // 重新分配全局连续的学习顺序
+          learningWord = learningWord.copyWith(learningOrder: i + 1);
+
+          todayLearningWords[i] = learningWord;
+          await db.learningWordsDao.saveEntity(learningWord, true);
         }
-
-        // 重新分配全局连续的学习顺序
-        learningWord = learningWord.copyWith(learningOrder: i + 1);
-
-        todayLearningWords[i] = learningWord;
-        await db.learningWordsDao.saveEntity(learningWord, true);
-      }
+      });
 
       Global.logger.d('今日学习单词全局重排完成，共更新 ${todayLearningWords.length} 个单词');
     } catch (e, stackTrace) {

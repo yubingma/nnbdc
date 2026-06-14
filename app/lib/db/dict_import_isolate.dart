@@ -135,13 +135,13 @@ Future<void> _runImport({
 
     sendPhase('db_open');
     // 在后台 isolate 打开 sqlite（避免 path_provider）
-    db = MyDatabase(NativeDatabase(File(dbPath)));
-    
-    // 立即显式启用 WAL 和 busy_timeout，确保并发安全
-    // 注意：NativeDatabase 在打开后会自动执行 beforeOpen 回调，但 isolate 里 MyDatabase 实例独立，
-    // 需要确保这些 Pragma 被执行。
-    await db.customStatement('PRAGMA journal_mode=WAL;');
-    await db.customStatement('PRAGMA busy_timeout=5000;');
+    db = MyDatabase(NativeDatabase(
+      File(dbPath),
+      setup: (rawDb) {
+        rawDb.execute('PRAGMA journal_mode=WAL;');
+        rawDb.execute('PRAGMA busy_timeout=5000;');
+      },
+    ));
 
     // 触发打开并检查版本
     await db.customSelect('SELECT 1', readsFrom: {}).get();
