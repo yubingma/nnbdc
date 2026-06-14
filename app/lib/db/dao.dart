@@ -622,7 +622,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
       }
 
       await into(dictWords).insert(entryToInsert);
-      WordBo.clearTspCache(entry.dictId);
+      WordBo.clearTspCache(entry.dictId, db);
       if (genLog) {
         var dict = await db.dictsDao.findById(entry.dictId);
         var owner = dict?.ownerId;
@@ -643,7 +643,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
     // 删除数据
     await delete(dictWords).delete(entry);
-    WordBo.clearTspCache(entry.dictId);
+    WordBo.clearTspCache(entry.dictId, db);
   }
 
   /// 完整删除词典单词（包括后续序号调整、wordCount更新、学习进度修复）
@@ -669,7 +669,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     // 删除记录
     await delete(dictWords).delete(dictWord);
-    WordBo.clearTspCache(dictId);
+    WordBo.clearTspCache(dictId, db);
 
 
     // 更新词书的wordCount
@@ -690,7 +690,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     final dictIds = entries.map((e) => e.dictId).toSet();
     for (final dictId in dictIds) {
-      WordBo.clearTspCache(dictId);
+      WordBo.clearTspCache(dictId, db);
     }
 
     // 生成日志（如果需要）
@@ -774,7 +774,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     // 更新词书的wordCount（并生成日志用于同步）
     await db.dictsDao.updateWordCount(dictId, genLog);
 
-    WordBo.clearTspCache(dictId);
+    WordBo.clearTspCache(dictId, db);
 
     // 如果是生词本，清空后需要重置排序
     if (dict.name == '生词本') {
@@ -822,7 +822,7 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     final finalDictId = dictId;
     if (finalDictId != null) {
       await db.dictsDao.updateWordCount(finalDictId, true);
-      WordBo.clearTspCache(finalDictId);
+      WordBo.clearTspCache(finalDictId, db);
     }
   }
 

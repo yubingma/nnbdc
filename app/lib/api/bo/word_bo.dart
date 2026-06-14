@@ -125,15 +125,17 @@ class WordBo {
   // TSP 语义排序缓存，用 dictId 作为键，存储排好序的 wordId 列表
   static final Map<String, List<String>> _dictTspCache = {};
 
-  static void clearTspCache(String dictId) {
+  static void clearTspCache(String dictId, [MyDatabase? db]) {
     _dictTspCache.remove(dictId);
-    unawaited(MyDatabase.instance.dictWordsDao.clearSemanticSeq(dictId));
+    final targetDb = db ?? MyDatabase.instance;
+    unawaited(targetDb.dictWordsDao.clearSemanticSeq(dictId));
     Global.logger.d('clearTspCache: 已清除词书 $dictId 的 TSP 缓存及本地数据库缓存');
   }
 
-  static void clearAllTspCache() {
+  static void clearAllTspCache([MyDatabase? db]) {
     _dictTspCache.clear();
-    unawaited(MyDatabase.instance.dictWordsDao.clearAllSemanticSeq());
+    final targetDb = db ?? MyDatabase.instance;
+    unawaited(targetDb.dictWordsDao.clearAllSemanticSeq());
     Global.logger.d('clearAllTspCache: 已清除所有词书的 TSP 缓存及本地数据库缓存');
   }
 

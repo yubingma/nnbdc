@@ -602,6 +602,8 @@ class SoundUtil {
 
       try {
         _logicallyFinishedPlayers.remove(player);
+        // 彻底防爆音：在对播放器做任何状态重置或后续加载前，无条件先将音量归零
+        await player.setVolume(0.0);
         // 复位播放器状态以确保能正确加载新音源。
         // - 如果正在播放中 → 静音 + stop（防爆音）
         // - 如果处于 buffering（前次 setUrl 仍在加载）→ stop 取消缓冲
@@ -610,7 +612,6 @@ class SoundUtil {
             player.processingState == ja.ProcessingState.buffering ||
             player.processingState == ja.ProcessingState.loading;
         if (needHardStop) {
-          await player.setVolume(0.0);
           await player.stop();
         } else {
           await player.pause();
@@ -802,15 +803,11 @@ class SoundUtil {
       final busyDuration = Duration(milliseconds: sleepAfterPlayInMilliSeconds > 0 ? sleepAfterPlayInMilliSeconds : 1000);
       _playerBusyUntil[player] = now.add(busyDuration);
       
-      // 软静音防护 (Soft-Mute Teardown)：如果该播放器正处于活跃播放状态（例如被抢占或强行重放），
-      // 在 stop 前将音量设为 0，防止由于音频流拦腰截断产生瞬时电压阶跃带来的爆音
-      if (player.playing) {
-        await player.setVolume(0.0);
-      }
+      // 彻底防爆音：在对播放器做任何状态重置或后续加载前，无条件先将音量归零
+      await player.setVolume(0.0);
       await player.stop();
       await player.seek(Duration.zero);
       await player.setSpeed(speed);
-      await player.setVolume(volume);
       
       final assetPath = 'assets/audio/$soundFileName';
       final bool isSameAsset = _playerLoadedAsset[player] == assetPath;
@@ -818,6 +815,8 @@ class SoundUtil {
         await player.setAsset(assetPath).timeout(Duration(milliseconds: timeoutInMilliSeconds));
         _playerLoadedAsset[player] = assetPath;
       }
+      // 载入成功后，在启动播放前恢复目标播放音量
+      await player.setVolume(volume);
       _logicallyFinishedPlayers.remove(player);
 
       bool hasStartedPlaying = false;
@@ -899,15 +898,10 @@ class SoundUtil {
 
       try {
         _logicallyFinishedPlayers.remove(player);
-        // 软静音防护 (Soft-Mute Teardown)：如果前一个单词发音仍未播完就切词/预热，
-        // 在 stop 前将音量拉到 0，消除 Native 音频流因半空瞬间切断产生的电流爆音
-        if (player.playing) {
-          await player.setVolume(0.0);
-        }
+        // 彻底防爆音：在对播放器做任何状态重置或后续加载前，无条件先将音量归零
+        await player.setVolume(0.0);
         await player.stop();
       } catch (_) {}
-
-      await player.setVolume(1.0);
 
       final cacheManager = DefaultCacheManager();
       final fileInfo = await cacheManager.getFileFromCache(soundUrl);
@@ -917,6 +911,8 @@ class SoundUtil {
         ).timeout(const Duration(milliseconds: 10000));
         debugPrint('⚡ [SoundUtil] AudioPlayer 预热完成: $soundUrl');
       }
+      // 预热就绪后恢复为 1.0
+      await player.setVolume(1.0);
     } catch (e) {
       debugPrint('⚡ [SoundUtil] AudioPlayer 预热失败 (非关键): $e');
     }
@@ -953,14 +949,11 @@ class SoundUtil {
       final now = AppClock.now();
       _playerBusyUntil[player] = now.add(maxPlay + const Duration(milliseconds: 100));
       
-      // 软静音防护 (Soft-Mute Teardown)
-      if (player.playing) {
-        await player.setVolume(0.0);
-      }
+      // 彻底防爆音：在对播放器做任何状态重置或后续加载前，无条件先将音量归零
+      await player.setVolume(0.0);
       await player.stop();
       await player.seek(Duration.zero);
       await player.setSpeed(speed);
-      await player.setVolume(volume);
       
       final assetPath = 'assets/audio/$soundFileName';
       final bool isSameAsset = _playerLoadedAsset[player] == assetPath;
@@ -968,6 +961,8 @@ class SoundUtil {
         await player.setAsset(assetPath);
         _playerLoadedAsset[player] = assetPath;
       }
+      // 载入成功后，在启动播放前恢复目标播放音量
+      await player.setVolume(volume);
       unawaited(player.play());
       
       // 使用 token 防止误杀：如果播放器在延迟期间被复用了，不 kill 新声音
