@@ -64,6 +64,8 @@ COUGH K AA1 F
 COLO K OW1 L OW0
 CLUE K L UW1
 CHOICE CH OY1 S
+CHARGE CH AA1 R JH
+JUDGE JH AH1 JH
 ''';
           return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
         }
@@ -314,6 +316,16 @@ CHOICE CH OY1 S
       debugPrint('the vs the Atlantic Ocean score: $score');
       
       expect(score, lessThan(Constants.phonemeMatchThreshold));
+    });
+
+    test('charge vs judge - should match', () async {
+      const String target = "judge";
+      const String asrResult = "charge";
+      
+      final int score = await PhonemeUtil.similarity(asrResult, target);
+      debugPrint('Charge vs Judge score: $score');
+      
+      expect(score, greaterThanOrEqualTo(Constants.phonemeMatchThreshold));
     });
   });
 }

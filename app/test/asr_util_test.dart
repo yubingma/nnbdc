@@ -1,7 +1,31 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    // Mock the low-level binary messenger for assets
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMessageHandler(
+      'flutter/assets',
+      (ByteData? message) async {
+        if (message == null) return null;
+        final String key = utf8.decode(message.buffer.asUint8List());
+        if (key == 'assets/cmudict.dict') {
+          final String content = '''
+CHARGE CH AA1 R JH
+JUDGE JH AH1 JH
+''';
+          return ByteData.view(Uint8List.fromList(utf8.encode(content)).buffer);
+        }
+        return null; // Fallback for other assets
+      },
+    );
+  });
+
   group('AsrUtil Punctuation Symbol Normalization Test', () {
     test('selectBestCandidateWithPhonemeAndScore - matches symbol to spoken word', () async {
       // Test en-dash '–' maps to 'dash'
@@ -35,6 +59,12 @@ void main() {
     test('selectBestCandidate - spell similarity falls back to symbol matching', () {
       final best = AsrUtil.selectBestCandidate(['–', 'hello'], 'dash');
       expect(best, equals('–'));
+    });
+
+    test('selectBestCandidateWithPhonemeAndScore - matches charge to judge', () async {
+      final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(['charge'], 'judge');
+      expect(result.text, equals('charge'));
+      expect(result.score, greaterThanOrEqualTo(60));
     });
   });
 }
