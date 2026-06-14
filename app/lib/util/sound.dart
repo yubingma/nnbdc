@@ -70,6 +70,7 @@ class SoundUtil {
     _logicallyFinishedPlayers.clear();
     _playerBusyUntil.clear();
     _activeCutToken.clear();
+    _activeVolumeToken.clear();
     _playerLoadedAsset.clear();
     _configureFuture = null;
   }
@@ -98,9 +99,13 @@ class SoundUtil {
 
   static final List<ja.AudioPlayer> _sfxPool = [];
   static const int _sfxPoolSize = 3;
+
+  /// 判定音效池是否已经完全预热
+  static bool get isSfxPoolFullyPrewarmed => _sfxPool.length >= _sfxPoolSize;
   static final Set<ja.AudioPlayer> _logicallyFinishedPlayers = {};
   static final Map<ja.AudioPlayer, DateTime> _playerBusyUntil = {};
   static final Map<ja.AudioPlayer, Object> _activeCutToken = {};
+  static final Map<ja.AudioPlayer, Object> _activeVolumeToken = {};
   static final Map<ja.AudioPlayer, String> _playerLoadedAsset = {};
   
   /// 全局观察的播放器列表，用于在切换音频会话前确保它们都已播完
@@ -156,7 +161,7 @@ class SoundUtil {
               // b. 强行平滑淡出（Soft-Mute）所有当前活跃的临时/音效播放器，彻底排空声卡缓冲区
               await _cleanupEarlyExitPlayers();
               // c. 原生 ASR 引擎停止后硬件稳定窗口，消除残余瞬态
-              await Future.delayed(const Duration(milliseconds: 50));
+              await Future.delayed(const Duration(milliseconds: 120));
             } else {
               // 判断是否因 Category 转换发生了硬件重构（在执行任何关麦/重配置前先判定）
               final bool isCategoryChanged = _currentSessionCategory != 'playback';
@@ -525,6 +530,7 @@ class SoundUtil {
     _logicallyFinishedPlayers.remove(player);
     _playerBusyUntil.remove(player);
     _activeCutToken.remove(player);
+    _activeVolumeToken.remove(player);
     _playerLoadedAsset.remove(player);
     debugPrint('🔊 [SoundUtil] 已从监视名单安全移除播放器: ${player.hashCode}');
   }
@@ -670,6 +676,7 @@ class SoundUtil {
         }
         if (!loaded) {
           debugPrint('🔍 [AudioDiag] 所有加载途径均失败');
+          throw Exception('Failed to load audio source.');
         }
       }
       debugPrint('⏱️ [Latency-Sound] 资源加载与对齐耗时: ${loadSw.elapsedMilliseconds}ms');
@@ -679,6 +686,9 @@ class SoundUtil {
       );
 
       await player.setSpeed(speed);
+
+      final volumeToken = Object();
+      _activeVolumeToken[player] = volumeToken;
 
       // 提前将音量升至淡入起始值，使 AVPlayer 启动时已处于非零音量，
       // 避免 play() 后 0→0.015 阶跃产生瞬态爆音。
@@ -698,7 +708,7 @@ class SoundUtil {
           .timeout(Duration(milliseconds: playTimeoutMs));
 
       // 僵尸防护：当 playCompletedFuture 不在下面 await（因 player 已处于
-      // completed/idle）时，其 timeout 异常会成为未处理的 zone 错误。
+      // completed/idle）时，其 timeout 异常会成为未处理 of zone 错误。
       // catchError 作为安全网，防止异常泄漏到 runZonedGuarded。
       // 回调必须返回 PlayerState 类型（Future 的类型参数），避免 runtime 断言。
       playCompletedFuture.catchError((_) => player.playerState);
@@ -714,22 +724,31 @@ class SoundUtil {
       unawaited(() async {
         try {
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(0.04);
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(0.08);
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(0.15);
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(0.25);
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(0.4);
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(0.55);
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(0.7);
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(0.85);
           await Future.delayed(const Duration(milliseconds: 6));
+          if (_activeVolumeToken[player] != volumeToken) return;
           await player.setVolume(1.0);
         } catch (_) {}
       }());

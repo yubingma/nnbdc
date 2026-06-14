@@ -85,6 +85,9 @@ class StudyAudioSessionController {
   AudioMode get activeMode => SoundUtil.activeMode;
   String get activeSessionCategory => SoundUtil.activeSessionCategory;
 
+  /// 判定音效池是否已经完全预热
+  bool get isSfxPoolFullyPrewarmed => SoundUtil.isSfxPoolFullyPrewarmed;
+
   /// 主播放器引用。仅用于极少数需要直接操作播放器的场景。
   ja.AudioPlayer get primaryPlayer => _audioPlayer;
 
@@ -299,7 +302,14 @@ class StudyAudioSessionController {
     try {
       await _audioPlayer.setVolume(0.0);
       _logPlayerState('cancelPlayback.afterMute');
-      await _audioPlayer.pause().timeout(const Duration(milliseconds: 500));
+      final needHardStop = _audioPlayer.playing ||
+          _audioPlayer.processingState == ja.ProcessingState.buffering ||
+          _audioPlayer.processingState == ja.ProcessingState.loading;
+      if (needHardStop) {
+        await _audioPlayer.stop().timeout(const Duration(milliseconds: 500));
+      } else {
+        await _audioPlayer.pause().timeout(const Duration(milliseconds: 500));
+      }
       await _audioPlayer.seek(Duration.zero).timeout(const Duration(milliseconds: 500));
       _logPlayerState('cancelPlayback.afterStop');
     } catch (_) {}

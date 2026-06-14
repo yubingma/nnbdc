@@ -185,7 +185,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 彻底避开首词加载与发音播放的硬件黄金窗口，根治并发硬件抢占导致的破音。
     final ctrl = StudyAudioSessionController();
     Future.delayed(const Duration(seconds: 2), () {
-      if (!_isDisposed) {
+      if (!_isDisposed && !ctrl.isSfxPoolFullyPrewarmed) {
         unawaited(ctrl.prewarm());
       }
     });
@@ -1351,7 +1351,7 @@ class BdcNotifier extends _$BdcNotifier {
         if (isMatch) {
           // 仅在麦克风处于开启状态时才进行物理关麦，避免冗余硬件操作导致 Session 被重置为 'none' 并产生爆音
           if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-            await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
+            await StudyAudioSessionController().stopSession(forceStopMicrophone: false);
           }
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
@@ -1541,7 +1541,7 @@ class BdcNotifier extends _$BdcNotifier {
           sentenceDigest: state.englishDigestOfFirstSentence,
           playWord: willPlayWord,
           playSentence: willPlaySentence,
-          isSpeakMode: startAsrWhenFinish,
+          isSpeakMode: startAsrWhenFinish && _shouldShowSpeakTab && state.tabIndex == 0,
         );
       }
     }
