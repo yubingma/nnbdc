@@ -14,7 +14,8 @@ min_ver_code: 26050501
 # 版本更新说明（用于构建脚本生成 ver.json）
 # 格式：每行一个更新项，以 "- " 开头
 changes:
-  - "修复词表bug"
+  - "支持语义拓展"
+  - "修复bug"
 
 
 environment:
