@@ -351,7 +351,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         }
 
         isRecording = true
-        isAsrStopped = false
+        // isAsrStopped 不在此处改，保持 true，等待 startAsr() 统一开启解码
         lastSentResult = ""
         
         recordingThread = thread(true) {
@@ -398,21 +398,22 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 record.startRecording()
                 audioRecord = record
 
-                // AudioRecord 已物理就绪，现在通知 Dart await 可以继续
-                activity.runOnUiThread { result?.success(null) }
-
                 Log.i(TAG, "Creating stream with hotwords (in background): $pendingHotwords")
                 val hotwords = pendingHotwords
                 synchronized(this@Sherpa) {
                     currentStream = currentModel?.createStream(hotwords)
                 }
 
+                // startRecording + createStream 全部就绪，Dart 的 await 才真正可以继续
+                activity.runOnUiThread { result?.success(null) }
+
                 Log.i(TAG, "Started recording and ASR decoder in background thread successfully.")
                 processSamples(minBufferSize)
             } catch (e: Exception) {
+
                 Log.e(TAG, "Failed to start microphone in background: ${e.message}", e)
                 isRecording = false
-                stopMicrophone()
+                activity.runOnUiThread { result?.success(null) }
             }
         }
     }
