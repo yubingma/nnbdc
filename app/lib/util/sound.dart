@@ -205,11 +205,12 @@ class SoundUtil {
           case AudioMode.idle:
             await asrInstance.stopMicrophone();
             await _cleanupEarlyExitPlayers();
-            // 进入 idle 后音频会话可能已被 ASR 关麦时 deactivated。重置
-            // _currentSessionCategory 到初始值 'none'，使后续
-            // usePlaybackCategory(force:false) 不走 "分类相同跳过激活" 路径，
-            // 保证音频会话被完整重新配置。
-            _currentSessionCategory = 'none';
+            // 进入 idle 后音频会话可能已被 ASR 关麦时 deactivated。
+            // 只有当当前分类非 playback 时才重置为 none，若本身已是 playback，
+            // 保持状态以避免重新配置，解决新批次首词因重新激活音频硬件造成的爆音。
+            if (_currentSessionCategory != 'playback') {
+              _currentSessionCategory = 'none';
+            }
             break;
         }
         
@@ -817,7 +818,31 @@ class SoundUtil {
         await player.setAsset(assetPath).timeout(Duration(milliseconds: timeoutInMilliSeconds));
         _playerLoadedAsset[player] = assetPath;
       }
+      _logicallyFinishedPlayers.remove(player);
+
+      bool hasStartedPlaying = false;
+      final playCompletedFuture = player.playerStateStream
+          .firstWhere((state) {
+            if (state.playing) {
+              hasStartedPlaying = true;
+            }
+            final isFinished = state.processingState == ja.ProcessingState.completed ||
+                state.processingState == ja.ProcessingState.idle;
+            final isStoppedAfterStart = hasStartedPlaying && !state.playing;
+            return isFinished || isStoppedAfterStart;
+          })
+          .timeout(Duration(milliseconds: timeoutInMilliSeconds));
+
+      playCompletedFuture.catchError((_) => player.playerState);
+
       unawaited(player.play().catchError((_) {}));
+
+      unawaited(() async {
+        try {
+          await playCompletedFuture;
+        } catch (_) {}
+        _logicallyFinishedPlayers.add(player);
+      }());
       
       if (sleepAfterPlayInMilliSeconds > 0) {
         await Future.delayed(Duration(milliseconds: sleepAfterPlayInMilliSeconds));
