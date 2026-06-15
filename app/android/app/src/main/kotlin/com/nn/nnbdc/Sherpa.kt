@@ -372,12 +372,13 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     return@thread
                 }
 
+                val recordBufferSize = maxOf(minBufferSize * 2, 16000)
                 val record = AudioRecord(
                     audioSource,
                     sampleRateInHz,
                     channelConfig,
                     audioFormat,
-                    minBufferSize * 2
+                    recordBufferSize
                 )
 
                 if (record.state != AudioRecord.STATE_INITIALIZED) {
@@ -419,11 +420,11 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun processSamples(bufferSize: Int) {
-        // 读取缓冲区大小略大于0.1s数据
-        val readSize = maxOf(bufferSize, 1600 * 2) // 3200 bytes for 0.1s 16bit
+        // 固定每次读取 1600 个 Short 样本 (16kHz 采样率下单声道 0.1秒 / 100ms 的数据)
+        val readSize = 1600
         val buffer = ShortArray(readSize) 
         
-        Log.i(TAG, "Processing samples loop started")
+        Log.i(TAG, "Processing samples loop started with fixed read size: $readSize shorts (100ms)")
 
         while (isRecording) {
             val ret = audioRecord?.read(buffer, 0, buffer.size) ?: 0
