@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -428,5 +429,122 @@ void main() {
     expect(state.isWordMastered, false); // 核心保护性断言
 
     await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('BdcNotifier - 英中模式说出半数/全部意思，部分说对播放正确提示音但未通过', () async {
+    // 1. 插入一个拥有多个释义子项的单词
+    final now = AppClock.now();
+    var wordId = 'word_test_meanings';
+    await db.into(db.words).insert(Word(
+          id: wordId,
+          spell: 'banana_test',
+          popularity: 100,
+          createTime: now,
+          updateTime: now,
+        ));
+
+    await db.into(db.meaningItems).insert(MeaningItem(
+          id: 'mim_test_meanings',
+          wordId: wordId,
+          dictId: Global.commonDictId,
+          ciXing: 'n.',
+          meaning: '香蕉;芭蕉;甘蕉',
+          popularity: 100,
+          ownerId: Global.sysUserId,
+          createTime: now,
+          updateTime: now,
+        ));
+
+    await db.into(db.dictWords).insert(DictWord(
+          dictId: 'mock_dict_1',
+          wordId: wordId,
+          seq: 5,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+
+    await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: wordId,
+          addTime: now,
+          addDay: 1,
+          batchId: 1,
+          lastLearningDate: AppClock.today(),
+          stability: 0.0,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          learningOrder: 5,
+          createTime: now,
+          updateTime: now,
+        ));
+
+    // Clear StudyCacheManager cache so it fetches the new list
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+
+    // 切换到刚才插入的这个词 (banana_test)
+    var state = container.read(bdcNotifierProvider);
+    while (state.word?.spell != 'banana_test') {
+      await notifier.getNextWord(true);
+      state = container.read(bdcNotifierProvider);
+    }
+
+    expect(state.word!.spell, 'banana_test');
+    expect(state.studyStep, 'En2Ch');
+
+    // 2. 设置通过条件为 ALL 或者是 HALF
+    notifier.updateAsrPassRuleCache('ALL');
+    state = container.read(bdcNotifierProvider);
+    expect(state.asrPassRuleCache, 'ALL');
+
+    // 3. 用户只说对一个释义：“香蕉”
+    await notifier.onAsrResult(jsonEncode({
+      'best': '香蕉',
+      'candidates': ['香蕉'],
+    }));
+    
+    state = container.read(bdcNotifierProvider);
+    // 应该没有答完，因为需要全部答对（3个）
+    expect(state.hasFinishedAnswering, false);
+    // 但是 matchedCount 增加到了 1
+    expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 1);
+
+    // 4. 用户又说对一个新释义：“芭蕉”
+    await notifier.onAsrResult(jsonEncode({
+      'best': '芭蕉',
+      'candidates': ['芭蕉'],
+    }));
+    
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false);
+    expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 2);
+
+    // 5. 用户说对最后一个释义：“甘蕉”
+    await notifier.onAsrResult(jsonEncode({
+      'best': '甘蕉',
+      'candidates': ['甘蕉'],
+    }));
+    
+    state = container.read(bdcNotifierProvider);
+    // 现在全部答对，应该通过
+    expect(state.hasFinishedAnswering, true);
+    expect(state.wordWrapper!.asrMatchedMeaningItemParts.length, 3);
   });
 }

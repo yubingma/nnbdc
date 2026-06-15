@@ -1355,6 +1355,12 @@ class BdcNotifier extends _$BdcNotifier {
           }
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+        } else {
+          if (PlatformUtils.isIOS) {
+            StudyAudioSessionController().playSoundEffect('correct_ios.wav', speed: 1.0, volume: 0.3);
+          } else {
+            StudyAudioSessionController().playSoundEffect('correct.wav', speed: 1.0, volume: 1.0);
+          }
         }
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
