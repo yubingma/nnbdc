@@ -76,7 +76,7 @@ aliyun:
       get-password: 417523
   ai:
     api-key: ${dashscope_api_key}
-    text-model: qwen3.6-flash
+    text-model: qwen3.7-flash
     tts-model: cosyvoice-v3-flash
     voice: longanyang
 
