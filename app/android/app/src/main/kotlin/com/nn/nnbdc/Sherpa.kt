@@ -178,22 +178,27 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var activeGain: Float = 1.5f
 
     private fun loadModel(type: String) {
+        // 1. 如果需要加载模型，先在同步锁外部执行，防止卡死后台录音读取线程的锁
+        if (type == "en") {
+            if (modelEn == null) {
+                setupEnglishModel()
+            }
+        } else {
+            if (modelZh == null) {
+                setupChineseModel()
+            }
+        }
+
+        // 2. 仅在切换模型引用和重置流时才加锁，锁内耗时不到 1ms，彻底杜绝对后台线程的阻塞
         synchronized(this) {
             // 先清理旧的流，释放资源
             currentStream?.release()
             currentStream = null
             
-            // 懒加载模式，如果需要切换的目标模型不存在则去初始化
             if (type == "en") {
-                if (modelEn == null) {
-                     setupEnglishModel()
-                }
                 currentModel = modelEn
                 activeGain = 2.5f
             } else {
-                if (modelZh == null) {
-                    setupChineseModel()
-                }
                 currentModel = modelZh
                 activeGain = 2.5f
             }
