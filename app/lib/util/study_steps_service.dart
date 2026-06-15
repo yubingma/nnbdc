@@ -33,14 +33,9 @@ class StudyStepsService {
     if (listStepIndex != -1) {
       listStep = voSteps.removeAt(listStepIndex);
     } else {
-      // 【关键修复】对于正常登录用户，严禁在前端“补齐”缺失的学习步骤。
-      // 学习步骤必须由后端权威创建并通过同步下载。
-      if (!Global.isGuest) {
-        return voSteps; 
-      }
-      
-      // 仅对游客允许补齐默认步骤（因为游客不涉及同步）
-      listStep = UserStudyStepVo('List', steps.length, StudyStepState.active.json);
+      // 单词列表(List)是内置的、必须拥有的核心步骤。如果丢失，无论是否是游客，都应在内存中予以补齐，
+      // 以便答题流程正常运转，稍后若有保存操作或启动时数据健康检查，它就会被持久化及同步到云端。
+      listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
     }
 
     listStep.state = StudyStepState.active.json;
@@ -81,21 +76,13 @@ class StudyStepsService {
       if (listStepIndex != -1) {
         listStep = voSteps.removeAt(listStepIndex);
       } else {
-        // 【关键修复】保存时同样禁止为登录用户“补齐”缺失步骤
-        if (!Global.isGuest) {
-          // 如果数据库里没有且也不是 List，则不应强制添加
-          // 这里直接处理剩余步骤
-        } else {
-          listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
-          listStep.state = StudyStepState.active.json;
-          voSteps.add(listStep);
-        }
+        // 单词列表(List)是内置的、必须拥有的核心步骤。保存时如果传入的步骤列表（通常来自
+        // 首页今日计划，该页面会过滤掉List步骤不显示）中没有List步骤，我们也应该无条件补齐它。
+        listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
       }
 
-      if (listStep != null) {
-         listStep.state = StudyStepState.active.json;
-         voSteps.add(listStep);
-      }
+      listStep.state = StudyStepState.active.json;
+      voSteps.add(listStep);
 
       // 重新校正顺序
       for (var i = 0; i < voSteps.length; i++) {
