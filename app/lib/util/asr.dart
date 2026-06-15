@@ -344,9 +344,9 @@ class Asr {
 
   /// 初始化语音识别事件监听
   Future<void> initAsr(void Function(dynamic asrResult)? asrListener) async {
-    if (_isInitializing || _isStarting || _state == AsrState.started) {
+    if (_isInitializing || _isStarting) {
       Global.logger.w(
-          'ASR: initAsr 跳过，当前状态为: $_state, isInitializing=$_isInitializing, isStarting=$_isStarting');
+          'ASR: initAsr 跳过，isInitializing=$_isInitializing, isStarting=$_isStarting');
       return;
     }
 
