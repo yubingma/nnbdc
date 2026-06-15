@@ -1342,12 +1342,16 @@ class BdcNotifier extends _$BdcNotifier {
       final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
       
       final matchStopwatch = Stopwatch()..start();
-      final result = matchInputChineseWithMeaningItems(state.wordWrapper!, inputs);
+      final clonedWrapper = state.wordWrapper!.clone();
+      final result = matchInputChineseWithMeaningItems(clonedWrapper, inputs);
       bool isMatch = _isAsrPassSync(result.totalCount, result.matchedCount);
       Global.logger.d('[PERF] checkAsrResult -> matchInputChineseWithMeaningItems cost: ${matchStopwatch.elapsedMilliseconds}ms');
       
       if (result.newMatchCount > 0) {
-        state = state.copyWith(canLeaveCurrWord: true);
+        state = state.copyWith(
+          canLeaveCurrWord: true,
+          wordWrapper: clonedWrapper,
+        );
         if (isMatch) {
           // 仅在麦克风处于开启状态时才进行物理关麦，避免冗余硬件操作导致 Session 被重置为 'none' 并产生爆音
           if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {

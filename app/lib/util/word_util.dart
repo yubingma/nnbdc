@@ -124,6 +124,24 @@ class WordWrapper {
     }
   }
 
+  WordWrapper clone() {
+    return WordWrapper(word, tag)
+      ..hintLetterCount = hintLetterCount
+      ..isAnswerProvidedBySystem = isAnswerProvidedBySystem
+      ..asrMatchedMeaningItemParts = List.from(asrMatchedMeaningItemParts)
+      ..asrRevealedMeaningItemParts = List.from(asrRevealedMeaningItemParts)
+      ..targetPinyinsCache.addAll(targetPinyinsCache)
+      ..answeredAllMeanings = answeredAllMeanings
+      ..speakEnglishPassed = speakEnglishPassed
+      ..initialLearningStatus = initialLearningStatus
+      ..currentLearningStatus = currentLearningStatus
+      ..pronunciationScore = pronunciationScore
+      ..isAnswerRevealed = isAnswerRevealed
+      ..lastAsrResult = lastAsrResult
+      ..currentProgress = currentProgress
+      ..maxProgress = maxProgress;
+  }
+
   /// 释放资源
   void dispose() {
     _focusNode?.dispose();
@@ -135,7 +153,9 @@ class WordWrapper {
       identical(this, other) ||
       other is WordWrapper &&
           runtimeType == other.runtimeType &&
-          word.id == other.word.id;
+          word.id == other.word.id &&
+          asrMatchedMeaningItemParts.length == other.asrMatchedMeaningItemParts.length &&
+          asrRevealedMeaningItemParts.length == other.asrRevealedMeaningItemParts.length;
 
   @override
   int get hashCode => word.id.hashCode;
