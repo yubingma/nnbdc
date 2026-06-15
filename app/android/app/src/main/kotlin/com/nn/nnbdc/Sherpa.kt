@@ -155,7 +155,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         Log.i(TAG, "Switching model from '$currentModelType' to '$newType' (locale: $locale)")
         
         // 由于需要重建立 Stream，如果正在录音先停止并切断，避免线程抢占旧的流
-        val wasRecording = isRecording && !isAsrStopped
+        val wasRecording = isRecording
         if (wasRecording) {
             stopAsr()
         }
