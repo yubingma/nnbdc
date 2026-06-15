@@ -504,7 +504,7 @@ class BdcNotifier extends _$BdcNotifier {
     String newStudyStep = state.activeUserStudySteps[getWordResult.stepIndex].studyStep;
     
     if (asr.state == AsrState.started) {
-      await asr.stopMicrophone();
+      await StudyAudioSessionController().stopSession(forceStopMicrophone: false);
     }
 
     if (oldStudyStep != newStudyStep || isFromBatchWordList) {
