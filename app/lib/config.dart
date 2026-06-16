@@ -78,4 +78,7 @@ class Config {
 
   // Client secret for Nginx interception
   static const String clientSecret = 'ppdc-official-client-key-7788';
+
+  // Toggle warning logs for frame janks and thread blocks
+  static const bool enablePerformanceJankWarning = false;
 }

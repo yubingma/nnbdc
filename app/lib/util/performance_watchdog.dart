@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart'; // 引入 kReleaseMode
 import 'package:flutter/scheduler.dart';
+import 'package:nnbdc/config.dart';
 import 'package:nnbdc/global.dart';
 
 /// 性能哨兵系统 - 全版本就绪（支持双击唤醒 FPS 诊断与工业级峰值保持运维监控）
@@ -62,14 +63,14 @@ class PerformanceWatchdog {
 
         // 2. 卡顿检测 (掉帧判定)
         if (uiTimeMs > 16) {
-          if (!kReleaseMode) {
+          if (!kReleaseMode && Config.enablePerformanceJankWarning) {
             Global.logger.w('⚠️ [Performance] 帧率警告：UI 线程卡顿！耗时: ${uiTimeMs}ms');
           }
           reportJank(((uiTimeMs - 16) / 32).clamp(0.0, 0.5));
         }
 
         if (rasterTimeMs > 24) {
-          if (!kReleaseMode) {
+          if (!kReleaseMode && Config.enablePerformanceJankWarning) {
             Global.logger.w('⚠️ [Performance] 帧率警告：GPU 渲染卡顿！耗时: ${rasterTimeMs}ms');
           }
           reportJank(((rasterTimeMs - 24) / 32).clamp(0.0, 0.5));
@@ -87,7 +88,7 @@ class PerformanceWatchdog {
         final elapsed = DateTime.now().millisecondsSinceEpoch - start;
         
         if (elapsed > 80) {
-          if (!kReleaseMode) {
+          if (!kReleaseMode && Config.enablePerformanceJankWarning) {
             Global.logger.e('🚨 [UI Thread Blocked] 主线程同步阻塞警告！耗时: ${elapsed}ms。');
           }
           currentFps.value = max(1.0, 1000.0 / elapsed);
