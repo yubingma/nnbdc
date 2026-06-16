@@ -339,7 +339,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       unawaited(() async {
         try {
           // 1. 异步在 Isolate 中检索相似单词 ID，不阻塞 UI 渲染 tick
-          final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
+          final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 9);
           final filteredResults = similarResults.where((res) => res.distance < 500).toList();
           final similarIds = filteredResults.map((res) => res.wordId).toList();
           final distanceMap = {for (var res in filteredResults) res.wordId: res.distance};
@@ -1205,7 +1205,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           if (hasSimilarWords()) Tab(text: '形近(${args.word.similarWords!.length})'),
                           if (hasSynonyms()) Tab(text: "近义(${calcSynonymCount()})"),
                           if (hasCigen()) Tab(text: '同根($_totalCigenWordsCount)'),
-                          if (hasSemanticSimilarWords()) Tab(text: _isLoadingSemanticSimilar ? '拓展(10)' : '拓展(${_semanticSimilarWordIds.length})'),
+                          if (hasSemanticSimilarWords()) Tab(text: _isLoadingSemanticSimilar ? '拓展(9)' : '拓展(${_semanticSimilarWordIds.length})'),
                           if (_canUseAiAssistant)
                             const Tab(
                               child: Row(
