@@ -2158,7 +2158,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: showTip ? similarWords.length + 1 : similarWords.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 8),
+        separatorBuilder: (context, index) => const SizedBox(height: 4),
         itemBuilder: (context, index) {
           if (showTip && index == 0) {
             return Container(
@@ -2213,74 +2213,70 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           final word = showTip ? similarWords[index - 1] : similarWords[index];
           final inDict = _wordInDictStatus[word.id!] ?? true;
           
-          final spellColor = inDict
-              ? AppTheme.primaryColor
+          final Color spellColor = inDict
+              ? (isDarkMode ? Colors.white : Colors.black87)
               : (isDarkMode ? Colors.grey[500]! : Colors.grey[600]!);
-          final descColor = inDict
-              ? (isDarkMode ? Colors.grey[400] : Colors.grey[600])
+          final Color descColor = inDict
+              ? (isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF4B5563))
               : (isDarkMode ? Colors.grey[500]!.withValues(alpha: 0.85) : Colors.grey[600]!.withValues(alpha: 0.85));
 
-          return InkWell(
-            onTap: () {
-              // 直接跳转到详情页，不需要中间的抽屉过渡
-              context.push('/word_detail', 
-                extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
-              );
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: isDarkMode 
+                  ? Colors.white.withValues(alpha: 0.03) 
+                  : Colors.black.withValues(alpha: 0.015),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
                 color: isDarkMode 
-                    ? const Color(0xFF1E1E2D).withValues(alpha: 0.8) 
-                    : const Color(0xFFF8F9FA),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.01),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                    ? Colors.white.withValues(alpha: 0.06) 
+                    : Colors.black.withValues(alpha: 0.05),
+                width: 0.5,
               ),
-              child: Row(
-                children: [
-                  Text(
-                    word.spell,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: spellColor,
-                      fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      word.getMeaningStr(),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: descColor,
-                        fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () {
+                // 直接跳转到详情页，不需要中间的抽屉过渡
+                context.push('/word_detail', 
+                  extra: WordDetailPageArgs(word, true, null, false, priorityDictIds: args.priorityDictIds),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: descColor,
+                            height: 1.45,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: '${word.spell} ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14.5,
+                                color: spellColor,
+                                fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+                              ),
+                            ),
+                            TextSpan(
+                              text: word.getMeaningStr(),
+                              style: TextStyle(
+                                fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      maxLines: 1,
-                      textAlign: TextAlign.right,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 10,
-                    color: isDarkMode ? Colors.white24 : Colors.black12,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
