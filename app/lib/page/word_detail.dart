@@ -340,7 +340,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         try {
           // 1. 异步在 Isolate 中检索相似单词 ID，不阻塞 UI 渲染 tick
           final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
-          final similarIds = similarResults.map((res) => res.wordId).toList();
+          final similarIds = similarResults
+              .where((res) => res.distance < 500)
+              .map((res) => res.wordId)
+              .toList();
 
           // 2. 批量拉取拓展单词拼写与释义详情
           final tempSemanticWords = await _getSimpleWordsByIds(similarIds);
