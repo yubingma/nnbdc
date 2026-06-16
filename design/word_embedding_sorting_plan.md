@@ -214,7 +214,7 @@ graph TD
   * 在 `completeEmbeddingsForDict` 和 `completeEmbeddingsForMissingWords` 方法中，获取 2048 维向量后，生成 256 字节的 `embedding_1bit` 并一并写入数据库。
 
 #### 3. 降维重构脚本自适应适配
-* **位置**：[reconstruct_pca.py](file:///Volumes/ssd/ppdc/scratch/reconstruct_pca.py)
+* **位置**：[reconstruct_pca.py](file:///Volumes/ssd/ppdc/server/nnbdc-service/src/main/resources/reconstruct_pca.py)
 * **修改**：修改降维样本少于 3 个时的降级备用逻辑，使其适配 2048 维度：
   ```python
   dim = embeddings.shape[1]
@@ -273,7 +273,7 @@ graph TD
 ### 第二阶段：后端数据链路与同步改造 (Phase 2)
 * [ ] 后端数据库添加 `word_embedding` 存储结构（添加 `embedding_1bit BYTEA` 字段，256字节）。
 * [ ] 改造 [EmbeddingBo.java](file:///Volumes/ssd/ppdc/server/nnbdc-service/src/main/java/beidanci/service/bo/EmbeddingBo.java)，在调用百炼 API 时请求 2048 维向量，并在入库时进行 1-bit 二值化预计算。
-* [ ] 改造 [reconstruct_pca.py](file:///Volumes/ssd/ppdc/scratch/reconstruct_pca.py)，适配自适应的 2048 维度输入。
+* [ ] 改造 [reconstruct_pca.py](file:///Volumes/ssd/ppdc/server/nnbdc-service/src/main/resources/reconstruct_pca.py)，适配自适应 of 2048 维度输入。
 * [ ] 提供 Embedding 同步机制，改造 `WordDto`，使客户端能够增量下载 `embedding_1bit` 字段。
 
 ### 第三阶段：前端衍生词书生成与 UI 交互实现 (Phase 3)

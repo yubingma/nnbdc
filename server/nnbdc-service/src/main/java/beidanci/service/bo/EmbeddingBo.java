@@ -390,6 +390,7 @@ public class EmbeddingBo {
         new Thread(() -> {
             File tempInputFile = null;
             File tempOutputFile = null;
+            File tempScriptFile = null;
             try {
                 // 1. 自动增量下载全局缺失的高维向量
                 reconstructMsg = "正在从 AI 大模型获取缺失单词的词向量...";
@@ -462,7 +463,46 @@ public class EmbeddingBo {
                 reconstructProgress = 0.5;
                 log.info("一键重构：启动 Python 执行矩阵重新拟合...");
 
-                String scriptPath = "scratch/reconstruct_pca.py";
+                String scriptPath = null;
+                try (InputStream is = getClass().getClassLoader().getResourceAsStream("reconstruct_pca.py")) {
+                    if (is != null) {
+                        tempScriptFile = File.createTempFile("reconstruct_pca", ".py");
+                        tempScriptFile.deleteOnExit();
+                        Files.copy(is, tempScriptFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        scriptPath = tempScriptFile.getAbsolutePath();
+                        log.info("从内置资源包中成功释放并定位 Python 脚本路径: {}", scriptPath);
+                    }
+                } catch (Exception e) {
+                    log.warn("从内置资源包加载 Python 脚本失败，将尝试从本地文件系统查找", e);
+                }
+
+                if (scriptPath == null) {
+                    String[] possibleScriptPaths = {
+                            "server/nnbdc-service/src/main/resources/reconstruct_pca.py",
+                            "nnbdc-service/src/main/resources/reconstruct_pca.py",
+                            "src/main/resources/reconstruct_pca.py",
+                            "tools/reconstruct_pca.py",
+                            "../tools/reconstruct_pca.py",
+                            "../../tools/reconstruct_pca.py",
+                            "scratch/reconstruct_pca.py",
+                            "../scratch/reconstruct_pca.py",
+                            "../../scratch/reconstruct_pca.py",
+                            "实验室/语义排序/reconstruct_pca.py",
+                            "../实验室/语义排序/reconstruct_pca.py",
+                            "../../实验室/语义排序/reconstruct_pca.py"
+                    };
+                    for (String path : possibleScriptPaths) {
+                        if (new File(path).exists()) {
+                            scriptPath = path;
+                            log.info("成功在本地文件系统定位 Python 脚本路径: {}", new File(path).getAbsolutePath());
+                            break;
+                        }
+                    }
+                    if (scriptPath == null) {
+                        throw new RuntimeException("无法定位 Python 重构脚本 reconstruct_pca.py，请检查脚本文件是否存在。已尝试路径: " + String.join(", ", possibleScriptPaths));
+                    }
+                }
+
                 ProcessBuilder pb = new ProcessBuilder(pythonPath, scriptPath, tempInputFile.getAbsolutePath(), tempOutputFile.getAbsolutePath());
                 pb.redirectErrorStream(true);
                 Process process = pb.start();
@@ -531,6 +571,7 @@ public class EmbeddingBo {
                 try {
                     if (tempInputFile != null && tempInputFile.exists()) tempInputFile.delete();
                     if (tempOutputFile != null && tempOutputFile.exists()) tempOutputFile.delete();
+                    if (tempScriptFile != null && tempScriptFile.exists()) tempScriptFile.delete();
                 } catch (Exception ignore) {}
             }
         }).start();
