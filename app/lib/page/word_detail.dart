@@ -340,10 +340,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         try {
           // 1. 异步在 Isolate 中检索相似单词 ID，不阻塞 UI 渲染 tick
           final similarResults = await LocalEmbeddingCache.instance.findSimilarWords(args.word.id!, limit: 10);
-          final similarIds = similarResults
-              .where((res) => res.distance < 500)
-              .map((res) => res.wordId)
-              .toList();
+          final filteredResults = similarResults.where((res) => res.distance < 500).toList();
+          final similarIds = filteredResults.map((res) => res.wordId).toList();
+          final distanceMap = {for (var res in filteredResults) res.wordId: res.distance};
 
           // 2. 批量拉取拓展单词拼写与释义详情
           final tempSemanticWords = await _getSimpleWordsByIds(similarIds);
@@ -356,9 +355,23 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           allRelatedIds.addAll(similarIds);
           await _checkWordsInDict(allRelatedIds);
 
+          // 按照是否在词书内（在的排前面）和汉明距离（小的排前面）排序
+          tempSemanticWords.sort((a, b) {
+            final aInDict = _wordInDictStatus[a.id!] ?? true;
+            final bInDict = _wordInDictStatus[b.id!] ?? true;
+            if (aInDict != bInDict) {
+              return aInDict ? -1 : 1;
+            }
+            final aDist = distanceMap[a.id!] ?? 9999;
+            final bDist = distanceMap[b.id!] ?? 9999;
+            return aDist.compareTo(bDist);
+          });
+
+          final sortedIds = tempSemanticWords.map((w) => w.id!).toList();
+
           if (mounted) {
             setState(() {
-              _semanticSimilarWordIds = similarIds;
+              _semanticSimilarWordIds = sortedIds;
               _semanticSimilarWords = tempSemanticWords;
               _isLoadingSemanticSimilar = false;
             });
