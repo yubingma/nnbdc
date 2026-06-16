@@ -188,11 +188,17 @@ class _WordStarfieldPageState extends State<WordStarfieldPage>
             return AlertDialog(
               backgroundColor: const Color(0xFF141829),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Row(
+              title: Row(
                 children: [
-                  Icon(Icons.rocket_launch, color: Colors.amberAccent, size: 24),
-                  SizedBox(width: 8),
-                  Text('词嵌入一键重构控制台', style: TextStyle(color: Colors.white, fontSize: 18)),
+                  const Icon(Icons.rocket_launch, color: Colors.amberAccent, size: 24),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '词嵌入一键重构控制台',
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               content: SingleChildScrollView(
