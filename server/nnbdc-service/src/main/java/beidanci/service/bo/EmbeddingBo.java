@@ -57,8 +57,6 @@ public class EmbeddingBo {
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    private float[] mean;
-    private float[][] components;
     private int fittedWordCount;
 
     private RestTemplate restTemplate;
@@ -98,31 +96,14 @@ public class EmbeddingBo {
             }
 
             if (jsonStr == null) {
-                log.warn("未找到任何有效 PCA 降维配置，PCA 投影将不可用。");
+                log.warn("未找到任何有效 PCA 降维配置。");
                 return;
             }
 
             Gson gson = new Gson();
             PcaConfig config = gson.fromJson(jsonStr, PcaConfig.class);
             this.fittedWordCount = config.getFittedWordCount();
-
-            List<Float> meanList = config.getMean();
-            this.mean = new float[meanList.size()];
-            for (int i = 0; i < meanList.size(); i++) {
-                this.mean[i] = meanList.get(i);
-            }
-
-            List<List<Float>> compList = config.getComponents();
-            this.components = new float[compList.size()][];
-            for (int i = 0; i < compList.size(); i++) {
-                List<Float> row = compList.get(i);
-                this.components[i] = new float[row.size()];
-                for (int j = 0; j < row.size(); j++) {
-                    this.components[i][j] = row.get(j);
-                }
-            }
-            log.info("PCA 降维矩阵配置解析完成。维度: mean={}, components={}x{}",
-                    this.mean.length, this.components.length, this.components[0].length);
+            log.info("PCA 降维配置解析完成，已拟合单词数: {}", this.fittedWordCount);
         } catch (Exception e) {
             log.error("加载 PCA 配置失败", e);
         }
@@ -140,33 +121,7 @@ public class EmbeddingBo {
         return restTemplate;
     }
 
-    /**
-     * 1024 维到 3 维投影
-     */
-    public float[] projectTo3D(float[] embedding) {
-        if (mean == null || components == null) {
-            log.error("PCA 投影未正确初始化");
-            return new float[]{0f, 0f, 0f};
-        }
-        assert embedding.length == mean.length : "输入的向量维度必须为 " + mean.length;
 
-        // 1. 减去均值
-        float[] centered = new float[embedding.length];
-        for (int i = 0; i < embedding.length; i++) {
-            centered[i] = embedding[i] - mean[i];
-        }
-
-        // 2. 矩阵相乘 centered * components
-        float[] result = new float[3];
-        for (int col = 0; col < 3; col++) {
-            float sum = 0f;
-            for (int row = 0; row < centered.length; row++) {
-                sum += centered[row] * components[row][col];
-            }
-            result[col] = sum;
-        }
-        return result;
-    }
 
     /**
      * 批量获取通义千问 Embeddings (每次最多 10 词)
