@@ -1217,7 +1217,20 @@ class _MePageState extends State<MePage> {
                                     gradient: LinearGradient(
                                       colors: [masteredColor, masteredColor.withValues(alpha: 0.6)],
                                     ),
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: const Radius.circular(4),
+                                      bottomLeft: const Radius.circular(4),
+                                      topRight: clampedMasteryProgress >= clampedFetchProgress ? const Radius.circular(4) : Radius.zero,
+                                      bottomRight: clampedMasteryProgress >= clampedFetchProgress ? const Radius.circular(4) : Radius.zero,
+                                    ),
+                                    border: clampedMasteryProgress < clampedFetchProgress
+                                        ? Border(
+                                            right: BorderSide(
+                                              color: cardColor,
+                                              width: 1.5,
+                                            ),
+                                          )
+                                        : null,
                                     boxShadow: [
                                       BoxShadow(
                                         color: masteredColor.withValues(alpha: 0.3),
@@ -2814,50 +2827,39 @@ class _DictCardState extends State<DictCard> {
         children: [
           Row(
             children: [
-              // 圆形进度指示器
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  // 1. 底层：取词进度圆环
-                  CircularPercentIndicator(
-                    radius: 26.0,
-                    lineWidth: 5.0,
-                    percent: fetchProgress,
-                    backgroundColor: isDarkMode ? Colors.white12 : const Color(0xFFF1F5F9),
-                    linearGradient: LinearGradient(
-                      colors: [fetchColor, fetchColor.withValues(alpha: 0.6)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+              // 圆形三色进度饼图/环图 (带分割线)
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeOutCubic,
+                builder: (context, animValue, child) {
+                  return SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: CustomPaint(
+                      painter: ThreeSegmentProgressPainter(
+                        masteryProgress: masteryProgress * animValue,
+                        fetchProgress: fetchProgress * animValue,
+                        masteredColor: masteredColor,
+                        fetchColor: fetchColor,
+                        backgroundColor: isDarkMode ? Colors.white12 : const Color(0xFFF1F5F9),
+                        dividerColor: cardBgColor,
+                        strokeWidth: 5.0,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$progressPercent%',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: masteredColor,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'Roboto',
+                          ),
+                        ),
+                      ),
                     ),
-                    circularStrokeCap: CircularStrokeCap.round,
-                    animation: true,
-                    animationDuration: 1000,
-                  ),
-                  // 2. 顶层：掌握进度圆环 (背景色设为透明以露出底环)
-                  CircularPercentIndicator(
-                    radius: 26.0,
-                    lineWidth: 5.0,
-                    percent: masteryProgress,
-                    backgroundColor: Colors.transparent,
-                    linearGradient: LinearGradient(
-                      colors: [masteredColor, masteredColor.withValues(alpha: 0.6)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                    circularStrokeCap: CircularStrokeCap.round,
-                    animation: true,
-                    animationDuration: 1000,
-                  ),
-                  Text(
-                    '$progressPercent%',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: masteredColor,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'Roboto',
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
               const SizedBox(width: 16),
               // 词书信息
@@ -3711,5 +3713,100 @@ class _RebuildDatabaseProgressDialogState extends State<_RebuildDatabaseProgress
         ),
       ],
     );
+  }
+}
+
+class ThreeSegmentProgressPainter extends CustomPainter {
+  final double masteryProgress;
+  final double fetchProgress;
+  final Color masteredColor;
+  final Color fetchColor;
+  final Color backgroundColor;
+  final Color dividerColor;
+  final double strokeWidth;
+
+  ThreeSegmentProgressPainter({
+    required this.masteryProgress,
+    required this.fetchProgress,
+    required this.masteredColor,
+    required this.fetchColor,
+    required this.backgroundColor,
+    required this.dividerColor,
+    this.strokeWidth = 5.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final startAngle = -math.pi / 2; // 从 12 点钟方向开始
+
+    // 1. 绘制背景圆环 (未学习部分)
+    final bgPaint = Paint()
+      ..color = backgroundColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // 2. 绘制取词进度圆环 (学习中部分)
+    if (fetchProgress > masteryProgress) {
+      final learningPaint = Paint()
+        ..color = fetchColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.butt;
+
+      final start = startAngle + masteryProgress * 2 * math.pi;
+      final sweep = (fetchProgress - masteryProgress) * 2 * math.pi;
+      canvas.drawArc(rect, start, sweep, false, learningPaint);
+    }
+
+    // 3. 绘制已掌握进度圆环 (已掌握部分)
+    if (masteryProgress > 0) {
+      final masteredPaint = Paint()
+        ..color = masteredColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.butt;
+
+      final sweep = masteryProgress * 2 * math.pi;
+      canvas.drawArc(rect, startAngle, sweep, false, masteredPaint);
+    }
+
+    // 4. 在交界处绘制分割线 (用 cardBgColor 绘制)
+    final dividerPaint = Paint()
+      ..color = dividerColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final innerRadius = radius - strokeWidth / 2 - 0.5;
+    final outerRadius = radius + strokeWidth / 2 + 0.5;
+
+    // 已掌握与学习中的分割线
+    if (masteryProgress > 0 && masteryProgress < 1.0 && fetchProgress > masteryProgress) {
+      final angle = startAngle + masteryProgress * 2 * math.pi;
+      final p1 = Offset(center.dx + math.cos(angle) * innerRadius, center.dy + math.sin(angle) * innerRadius);
+      final p2 = Offset(center.dx + math.cos(angle) * outerRadius, center.dy + math.sin(angle) * outerRadius);
+      canvas.drawLine(p1, p2, dividerPaint);
+    }
+
+    // 学习中与未学习的分割线
+    if (fetchProgress > 0 && fetchProgress < 1.0 && fetchProgress != masteryProgress) {
+      final angle = startAngle + fetchProgress * 2 * math.pi;
+      final p1 = Offset(center.dx + math.cos(angle) * innerRadius, center.dy + math.sin(angle) * innerRadius);
+      final p2 = Offset(center.dx + math.cos(angle) * outerRadius, center.dy + math.sin(angle) * outerRadius);
+      canvas.drawLine(p1, p2, dividerPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant ThreeSegmentProgressPainter oldDelegate) {
+    return oldDelegate.masteryProgress != masteryProgress ||
+        oldDelegate.fetchProgress != fetchProgress ||
+        oldDelegate.masteredColor != masteredColor ||
+        oldDelegate.fetchColor != fetchColor ||
+        oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.dividerColor != dividerColor;
   }
 }
