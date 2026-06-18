@@ -1116,7 +1116,8 @@ class _MePageState extends State<MePage> {
                 final masteryPercentText = (masteryProgress * 100).toStringAsFixed(1);
                 final fetchPercentText = (fetchProgress * 100).toStringAsFixed(1);
 
-                final fetchColor = isDarkModeEnabled ? const Color(0xFF34D399) : const Color(0xFF059669);
+                final masteredColor = isDarkModeEnabled ? const Color(0xFF34D399) : const Color(0xFF10B981);
+                final fetchColor = accentColor;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1148,7 +1149,7 @@ class _MePageState extends State<MePage> {
                               TextSpan(
                                 text: '$masteryPercentText%',
                                 style: TextStyle(
-                                  color: accentColor,
+                                  color: masteredColor,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w900,
                                   fontFamily: 'Roboto',
@@ -1214,12 +1215,12 @@ class _MePageState extends State<MePage> {
                                   width: constraints.maxWidth * clampedMasteryProgress,
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [accentColor, accentColor.withValues(alpha: 0.6)],
+                                      colors: [masteredColor, masteredColor.withValues(alpha: 0.6)],
                                     ),
                                     borderRadius: BorderRadius.circular(4),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: accentColor.withValues(alpha: 0.3),
+                                        color: masteredColor.withValues(alpha: 0.3),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),
@@ -2787,7 +2788,8 @@ class _DictCardState extends State<DictCard> {
     final textColor = isDarkMode ? Colors.white : const Color(0xFF1E293B);
     final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
-    final fetchColor = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
+    final masteredColor = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF10B981);
+    final fetchColor = accentColor;
     final cardBgColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
     final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08);
 
@@ -2838,7 +2840,7 @@ class _DictCardState extends State<DictCard> {
                     percent: masteryProgress,
                     backgroundColor: Colors.transparent,
                     linearGradient: LinearGradient(
-                      colors: [accentColor, accentColor.withValues(alpha: 0.6)],
+                      colors: [masteredColor, masteredColor.withValues(alpha: 0.6)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -2850,7 +2852,7 @@ class _DictCardState extends State<DictCard> {
                     '$progressPercent%',
                     style: TextStyle(
                       fontSize: 10,
-                      color: accentColor,
+                      color: masteredColor,
                       fontWeight: FontWeight.w900,
                       fontFamily: 'Roboto',
                     ),
