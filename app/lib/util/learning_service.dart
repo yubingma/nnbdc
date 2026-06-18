@@ -450,6 +450,11 @@ class LearningService {
       if ((w.batchId ?? 0) > maxBatchId) maxBatchId = w.batchId!;
     }
 
+    // 记录排序前的初始物理顺序，以便在 stability/learningOrder 相同的情况下，保留原本抓取的排序
+    final Map<String, int> initialIndices = {
+      for (int i = 0; i < todayLearningWords.length; i++) todayLearningWords[i].wordId: i
+    };
+
     // 2. 排序逻辑：
     // 首先按照 batchId 升序排列。
     // 对于最新批次 (batchId == maxBatchId)，内部按照 stability 升序排列。
@@ -465,14 +470,14 @@ class LearningService {
       if (a.learningOrder > 0 && b.learningOrder > 0) {
         final cmp = a.learningOrder.compareTo(b.learningOrder);
         if (cmp != 0) return cmp;
-        return a.wordId.compareTo(b.wordId);
+        return (initialIndices[a.wordId] ?? 0).compareTo(initialIndices[b.wordId] ?? 0);
       }
 
       // 2. 如果是尚未初始化的新批次（learningOrder == 0），则按掌握度（stability）升序排列，
       //    确保在该批次内部，用户先学习最陌生的单词。
       final cmp = (a.stability ?? 0.0).compareTo(b.stability ?? 0.0);
       if (cmp != 0) return cmp;
-      return a.wordId.compareTo(b.wordId);
+      return (initialIndices[a.wordId] ?? 0).compareTo(initialIndices[b.wordId] ?? 0);
     });
 
     // 3. 全局刷新 learningOrder 并保存

@@ -371,7 +371,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 精确验证它往下抓了后 5 个新鲜词
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_10', 'word_6', 'word_7', 'word_8', 'word_9']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_6', 'word_7', 'word_8', 'word_9', 'word_10']);
 
       // 模拟用户在第二天痛快地学完了这仅剩的 5 个新词，但基础极差，只配了 1 天的复习期
       for (var lw in todayWords) {
@@ -401,7 +401,7 @@ void main() {
 
       todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
       // 因为 Day 2 的稳定性 1.0 远低于 Day 1 的 2.0，所以被优先抽出！
-      expect(todayWords.map((w) => w.wordId).toList(), ['word_10', 'word_6', 'word_7', 'word_8', 'word_9']);
+      expect(todayWords.map((w) => w.wordId).toList(), ['word_6', 'word_7', 'word_8', 'word_9', 'word_10']);
 
       // 模拟用户在第三天完美地复习了这 5 个词，并将它们直接干到了“毕业”水平（毕业稳定性常数=Constants.graduationStability，默认可能是10.0或更大）
       for (var lw in todayWords) {
@@ -1032,6 +1032,76 @@ void main() {
       final wordIds = todayWords.map((w) => w.wordId).toList();
       expect(wordIds.contains('word_test_1'), true);
       expect(wordIds.contains('word_test_2'), true);
+    });
+
+    test('今日单词分配顺序能够完美保留词书原始顺序（ORIGINAL 排序算法）', () async {
+      // 1. 创建一本专门的词书
+      final dictTestId = 'mock_dict_original_order_test';
+      await db.into(db.dicts).insert(Dict(
+        id: dictTestId,
+        name: '原始顺序测试词书',
+        wordCount: 5,
+        isShared: false,
+        isReady: true,
+        ownerId: 'sys',
+        visible: true,
+        editable: false,
+        deletable: false,
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 绑定词书
+      await db.into(db.learningDicts).insert(LearningDict(
+        userId: testUser.id,
+        dictId: dictTestId,
+        isPrivileged: true, // 设为高优先级以替换之前的词书抓取
+        fetchMastered: false,
+        sortAlg: 'ORIGINAL',
+        createTime: now,
+        updateTime: now,
+      ));
+
+      // 往该词书里塞入 5 个单词，且故意用无序的 ID 但按 seq=1..5 顺序排列
+      // 例如：word_c (seq=1), word_a (seq=2), word_e (seq=3), word_b (seq=4), word_d (seq=5)
+      // 若发生 wordId.compareTo 排序，则最终顺序会变成 word_a, word_b, word_c, word_d, word_e (错乱)
+      // 若稳定排序正确生效，则最终顺序应完全等于 seq 顺序：word_c, word_a, word_e, word_b, word_d
+      final orderList = ['word_c', 'word_a', 'word_e', 'word_b', 'word_d'];
+      for (int i = 0; i < orderList.length; i++) {
+        final wId = orderList[i];
+        await db.into(db.words).insert(Word(
+          id: wId, spell: 'spell_$wId', popularity: 100,
+          createTime: now, updateTime: now,
+        ));
+        await db.into(db.dictWords).insert(DictWord(
+          dictId: dictTestId,
+          wordId: wId,
+          seq: i + 1,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+      }
+
+      // 2. 清理用户已有的学习中记录，只保留空状态
+      await (db.delete(db.learningWords)..where((lw) => lw.userId.equals(testUser.id))).go();
+
+      // 3. 执行今日备课分配
+      final updatedUser = testUser.copyWith(wordsPerDay: 5);
+      await db.usersDao.saveUser(updatedUser, false);
+      Global.updateUserCache(updatedUser);
+
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      // 4. 从本地 DB 重新获取今日分配的单词
+      final todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 5);
+
+      final actualWordIds = todayWords.map((w) => w.wordId).toList();
+      
+      // 5. 核心断言：最终学习顺序必须与词书中的 seq 原始序一致，而不能由于 UUID 字母序排序而被打乱
+      expect(actualWordIds, orderList, reason: '今日单词的分配顺序必须保持词书的原始排序');
     });
   });
 }
