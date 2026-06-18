@@ -1104,63 +1104,136 @@ class _MePageState extends State<MePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 词书总进度 - 移动到此处
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "词书学习总进度",
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                      fontFamily: 'NotoSansSC',
-                    ),
-                  ),
-                  Text(
-                    '${((studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0) * 100).toStringAsFixed(1)}%',
-                    style: TextStyle(
-                      color: accentColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'Roboto',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: 8,
-                width: double.infinity,
-                alignment: Alignment.centerLeft,
-                decoration: BoxDecoration(
-                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final progress =
-                        studyProgress!.rawWordCount > 0 ? studyProgress!.masteredWordsInSelectedDictsCount / studyProgress!.rawWordCount : 0.0;
-                    final clampedProgress = progress > 1.0 ? 1.0 : progress;
-                    return Container(
-                      width: constraints.maxWidth * clampedProgress,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [accentColor, accentColor.withValues(alpha: 0.6)],
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accentColor.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+              Builder(builder: (context) {
+                final totalWords = studyProgress!.rawWordCount;
+                final masteredWords = studyProgress!.masteredWordsInSelectedDictsCount;
+                final learningWords = studyProgress!.learningWordsInSelectedDictsCount;
+                final fetchWords = masteredWords + learningWords;
+
+                final masteryProgress = totalWords > 0 ? masteredWords / totalWords : 0.0;
+                final fetchProgress = totalWords > 0 ? fetchWords / totalWords : 0.0;
+
+                final masteryPercentText = (masteryProgress * 100).toStringAsFixed(1);
+                final fetchPercentText = (fetchProgress * 100).toStringAsFixed(1);
+
+                final fetchColor = isDarkModeEnabled ? const Color(0xFF34D399) : const Color(0xFF059669);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "词书学习总进度",
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            fontFamily: 'NotoSansSC',
                           ),
-                        ],
+                        ),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '已掌握 ',
+                                style: TextStyle(
+                                  color: subtitleColor,
+                                  fontSize: 10,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                              TextSpan(
+                                text: '$masteryPercentText%',
+                                style: TextStyle(
+                                  color: accentColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: 'Roboto',
+                                ),
+                              ),
+                              TextSpan(
+                                text: '  ·  已取词 ',
+                                style: TextStyle(
+                                  color: subtitleColor,
+                                  fontSize: 10,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                              TextSpan(
+                                text: '$fetchPercentText%',
+                                style: TextStyle(
+                                  color: fetchColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: 'Roboto',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      height: 8,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                    );
-                  },
-                ),
-              ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final clampedMasteryProgress = masteryProgress > 1.0 ? 1.0 : masteryProgress;
+                          final clampedFetchProgress = fetchProgress > 1.0 ? 1.0 : fetchProgress;
+                          return Stack(
+                            children: [
+                              // 1. 底层：取词进度条 (Fetch Progress)
+                              if (clampedFetchProgress > 0)
+                                Container(
+                                  width: constraints.maxWidth * clampedFetchProgress,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [fetchColor, fetchColor.withValues(alpha: 0.6)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: fetchColor.withValues(alpha: 0.3),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              // 2. 顶层：掌握进度条 (Mastery Progress)
+                              if (clampedMasteryProgress > 0)
+                                Container(
+                                  width: constraints.maxWidth * clampedMasteryProgress,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [accentColor, accentColor.withValues(alpha: 0.6)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: accentColor.withValues(alpha: 0.3),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              }),
               const SizedBox(height: 24),
 
               Row(
@@ -2700,15 +2773,21 @@ class _DictCardState extends State<DictCard> {
   @override
   Widget build(BuildContext context) {
     final totalWords = widget.dictInfo.name == '生词本' ? (actualWordCount ?? 0) : widget.dictInfo.wordCount;
-    final learnedWords = masteredCount;
-    final progress = (totalWords > 0 ? learnedWords / totalWords : 0.0).clamp(0.0, 1.0);
-    final progressPercent = (progress * 100).toInt();
+    final masteredWords = masteredCount;
+    final learningWords = learnedCount;
+    final fetchWords = masteredWords + learningWords;
+
+    final masteryProgress = (totalWords > 0 ? masteredWords / totalWords : 0.0).clamp(0.0, 1.0);
+    final fetchProgress = (totalWords > 0 ? fetchWords / totalWords : 0.0).clamp(0.0, 1.0);
+
+    final progressPercent = (masteryProgress * 100).toInt();
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
     final textColor = isDarkMode ? Colors.white : const Color(0xFF1E293B);
     final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
+    final fetchColor = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669);
     final cardBgColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
     final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08);
 
@@ -2737,11 +2816,27 @@ class _DictCardState extends State<DictCard> {
               Stack(
                 alignment: Alignment.center,
                 children: [
+                  // 1. 底层：取词进度圆环
                   CircularPercentIndicator(
                     radius: 26.0,
                     lineWidth: 5.0,
-                    percent: progress,
-                    backgroundColor: accentColor.withValues(alpha: 0.1),
+                    percent: fetchProgress,
+                    backgroundColor: isDarkMode ? Colors.white12 : const Color(0xFFF1F5F9),
+                    linearGradient: LinearGradient(
+                      colors: [fetchColor, fetchColor.withValues(alpha: 0.6)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    circularStrokeCap: CircularStrokeCap.round,
+                    animation: true,
+                    animationDuration: 1000,
+                  ),
+                  // 2. 顶层：掌握进度圆环 (背景色设为透明以露出底环)
+                  CircularPercentIndicator(
+                    radius: 26.0,
+                    lineWidth: 5.0,
+                    percent: masteryProgress,
+                    backgroundColor: Colors.transparent,
                     linearGradient: LinearGradient(
                       colors: [accentColor, accentColor.withValues(alpha: 0.6)],
                       begin: Alignment.topCenter,
@@ -2781,13 +2876,11 @@ class _DictCardState extends State<DictCard> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.dictInfo.name == '生词本'
-                          ? '$masteredCount / ${actualWordCount ?? 0} 词'
-                          : '$masteredCount / ${widget.dictInfo.wordCount} 词',
+                      '已掌握 $masteredWords · 已取词 $fetchWords / $totalWords 词',
                       style: TextStyle(
                         color: subtitleColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500, // 稍微加粗一点
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
