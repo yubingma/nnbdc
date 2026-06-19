@@ -19,7 +19,7 @@ import 'package:nnbdc/api/bo/study_bo.dart';
 
 
 class Global {
-  static String get appName => PlatformUtils.isAndroid ? '牛牛背单词' : '泡泡单词';
+  static String get appName => '泡泡单词';
   static String version = 'NONE';
   static String buildNumber = 'NONE';
   static const Color highlight = Colors.teal;
