@@ -6,7 +6,7 @@ description: 泡泡单词 - 智能背单词应用
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # 升级时修改这里
-version: 26.06.21+26062101
+version: 26.06.22+26062201
 
 # 最低支持版本（用于强制升级检查） 
 min_ver_code: 26050501
@@ -14,7 +14,7 @@ min_ver_code: 26050501
 # 版本更新说明（用于构建脚本生成 ver.json）
 # 格式：每行一个更新项，以 "- " 开头
 changes:
-  - "支持语义拓展"
+  - "体验优化"
   - "修复bug"
 
 
