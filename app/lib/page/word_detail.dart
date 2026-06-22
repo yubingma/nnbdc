@@ -143,6 +143,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   final Map<String, bool> _cigenLoadingState = {};
   bool _showCigenTip = true;
   double _cumulativeScroll = 0.0;
+  DateTime? _lastDrawerActionTime;
   int _totalCigenWordsCount = 0;
 
   // 语境拓展相关状态
@@ -162,6 +163,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     if (_canUseAiAssistant && index == calcTabsCount() - 1 && _isTopDrawerExpanded) {
       _isTopDrawerExpanded = false;
       _cumulativeScroll = 0.0;
+      _lastDrawerActionTime = DateTime.now();
     }
     setState(() {});
   }
@@ -1130,6 +1132,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       setState(() {
                         _isTopDrawerExpanded = !_isTopDrawerExpanded;
                         _cumulativeScroll = 0.0;
+                        _lastDrawerActionTime = DateTime.now();
                       });
                     },
                     child: Container(
@@ -1225,6 +1228,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         onNotification: (ScrollNotification notification) {
                           if (notification.metrics.axis == Axis.horizontal) return false;
                           
+                          if (_lastDrawerActionTime != null &&
+                              DateTime.now().difference(_lastDrawerActionTime!).inMilliseconds < 450) {
+                            return false;
+                          }
+                          
                           if (notification is ScrollUpdateNotification) {
                             final scrollDelta = notification.scrollDelta;
                             if (scrollDelta != null) {
@@ -1236,15 +1244,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 if (_isTopDrawerExpanded && notification.metrics.pixels > 10.0) {
                                   setState(() {
                                     _isTopDrawerExpanded = false;
+                                    _lastDrawerActionTime = DateTime.now();
                                   });
                                 }
                               } else if (scrollDelta < 0.0) {
                                 // 用户往上回看内容（下滑手指）且已到达或接近最顶部
-                                if (notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded) {
+                                if (notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded && notification.dragDetails != null) {
                                   _cumulativeScroll += scrollDelta.abs();
                                   if (_cumulativeScroll >= 90.0) {
                                     setState(() {
                                       _isTopDrawerExpanded = true;
+                                      _lastDrawerActionTime = DateTime.now();
                                     });
                                     _cumulativeScroll = 0.0;
                                   }
@@ -1255,11 +1265,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             }
                           } else if (notification is OverscrollNotification) {
                             // 当在最顶部继续往下拉时触发 overscroll
-                            if (notification.overscroll < 0.0 && !_isTopDrawerExpanded) {
+                            if (notification.overscroll < 0.0 && !_isTopDrawerExpanded && notification.dragDetails != null) {
                               _cumulativeScroll += notification.overscroll.abs();
-                              if (_cumulativeScroll >=90.0) {
+                              if (_cumulativeScroll >= 90.0) {
                                 setState(() {
                                   _isTopDrawerExpanded = true;
+                                  _lastDrawerActionTime = DateTime.now();
                                 });
                                 _cumulativeScroll = 0.0;
                               }
