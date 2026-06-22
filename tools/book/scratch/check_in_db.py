@@ -1,7 +1,7 @@
 import os
 
 # 读取抓取到的专八单词
-words_file = "/Volumes/ssd/ppdc/tools/book/专八/专八2000核心词汇表.txt"
+words_file = "/Volumes/ssd/ppdc/tools/book/专八/英语专四专八高频词汇1500词.txt"
 if not os.path.exists(words_file):
     print(f"Error: {words_file} not found.")
     exit(1)

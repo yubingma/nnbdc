@@ -1,0 +1,25 @@
+{
+  "isSystemImport": true,
+  "generateWordImage": false,
+  "generateShuffledVersion": false,
+  "targetDictGroupId": "",
+  "targetGameHallIds": [],
+  "books": [
+    {
+      "fileName": "专八2000核心词汇表.txt",
+      "dictName": "专八2000核心词汇表",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    },
+    {
+      "fileName": "英语专四专八高频词汇1500词.txt",
+      "dictName": "英语专四专八高频词汇1500词",
+      "domain": "",
+      "description": "",
+      "targetDictGroupId": "",
+      "targetGameHallIds": []
+    }
+  ]
+}
