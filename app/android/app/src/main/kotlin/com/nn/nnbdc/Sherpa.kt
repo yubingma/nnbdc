@@ -597,11 +597,19 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     // 释放资源，如onDestroy时调用
     fun release() {
-        stopMicrophone()
-        modelEn?.release()
-        modelEn = null
-        modelZh?.release()
-        modelZh = null
-        currentModel = null
+        thread {
+            try {
+                Log.i(TAG, "Releasing Sherpa resources in background thread")
+                stopMicrophone()
+                modelEn?.release()
+                modelEn = null
+                modelZh?.release()
+                modelZh = null
+                currentModel = null
+                Log.i(TAG, "Sherpa resources released successfully in background")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to release Sherpa resources in background", e)
+            }
+        }
     }
 }

@@ -44,5 +44,6 @@ class MainActivity : FlutterActivity() {
         super.onDestroy()
         tts?.shutdown()
         aiInference?.cleanup()
+        asr?.release()
     }
 }

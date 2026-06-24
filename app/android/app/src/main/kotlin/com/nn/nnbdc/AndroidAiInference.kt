@@ -262,27 +262,43 @@ class AndroidAiInference(private val context: Context) {
     }
 
     private fun unloadModel(result: MethodChannel.Result) {
-        try {
-            Log.i(TAG, "Unloading model")
-            if (isModelLoaded) {
-                unload()
+        aiScope.launch {
+            try {
+                Log.i(TAG, "Unloading model in background")
+                if (isModelLoaded) {
+                    unload()
+                }
+                isModelLoaded = false
+                modelPath = null
+                withContext(Dispatchers.Main) {
+                    result.success(null)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Unload model failed", e)
+                withContext(Dispatchers.Main) {
+                    result.error("UNLOAD_FAILED", e.message, null)
+                }
             }
-            isModelLoaded = false
-            modelPath = null
-            result.success(null)
-        } catch (e: Exception) {
-            Log.e(TAG, "Unload model failed", e)
-            result.error("UNLOAD_FAILED", e.message, null)
         }
     }
 
     fun cleanup() {
-        if (isModelLoaded) {
-            unload()
-            shutdown()
-        }
-        aiScope.cancel()
+        val loaded = isModelLoaded
         isModelLoaded = false
         modelPath = null
+        
+        kotlin.concurrent.thread {
+            try {
+                if (loaded) {
+                    Log.i(TAG, "Cleanup model in background thread")
+                    unload()
+                    shutdown()
+                    Log.i(TAG, "Cleanup model complete in background thread")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Cleanup failed in background thread", e)
+            }
+        }
+        aiScope.cancel()
     }
 }
