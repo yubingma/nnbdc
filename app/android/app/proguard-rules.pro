@@ -9,6 +9,10 @@
 -keep class com.k2fsa.sherpa.onnx.** { *; }
 -keep class com.k2fsa.sherpa.ncnn.** { *; }
 
+# 防止 flutter_local_notifications 插件的 model 类和 receiver 类在 release 下被混淆导致 Gson 反序列化失败
+-keep class com.dexterous.** { *; }
+
+
 
 -dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallException
