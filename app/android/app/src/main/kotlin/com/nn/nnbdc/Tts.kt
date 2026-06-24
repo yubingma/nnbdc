@@ -16,7 +16,7 @@ import java.util.*
 class Tts(private val activity: Activity) : EventChannel.StreamHandler {
     private lateinit var eventChannel: EventChannel
     private var events: EventChannel.EventSink? = null
-    private lateinit var ttobj: TextToSpeech
+    private var ttobj: TextToSpeech? = null
 
     fun initChannel(flutterEngine: FlutterEngine) {
         eventChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "nnbdc/tts_events")
@@ -39,8 +39,9 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
                     "en-US" -> Locale.US
                     else -> Locale.US
                 }
-                if (::ttobj.isInitialized) {
-                    val resultVal = ttobj.isLanguageAvailable(locale)
+                val currentTtobj = ttobj
+                if (currentTtobj != null) {
+                    val resultVal = currentTtobj.isLanguageAvailable(locale)
                     val supported = resultVal >= TextToSpeech.LANG_AVAILABLE
                     result.success(supported)
                 } else {
@@ -55,10 +56,10 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
     override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
         this.events = events
 
-        ttobj = TextToSpeech(activity) { status ->
+        val tts = TextToSpeech(activity) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 // Initialize with a default language, but it will be overridden in speak()
-                val result = ttobj.setLanguage(Locale.US)
+                val result = ttobj?.setLanguage(Locale.US)
                 if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                     Log.e("TTS", "Language is not supported or missing data")
                 }
@@ -73,10 +74,11 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
                 events.success(event)
             }
         }
+        ttobj = tts
         
         // 不同Android版本使用不同的监听器API
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            ttobj.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String) {
                     Log.d("TTS", "onStart: $utteranceId")
                 }
@@ -99,7 +101,7 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
             })
         } else {
             @Suppress("DEPRECATION")
-            ttobj.setOnUtteranceCompletedListener { utteranceId ->
+            tts.setOnUtteranceCompletedListener { utteranceId ->
                 Log.d("TTS", "onUtteranceCompleted: $utteranceId")
                 val event: MutableMap<String, Any> = HashMap()
                 event["type"] = "ttsCompleted"
@@ -114,7 +116,8 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     fun speak(text: String, utteranceId: String, language: String) {
-        if (!::ttobj.isInitialized) {
+        val currentTtobj = ttobj
+        if (currentTtobj == null) {
             Log.e("TTS", "ttobj not initialized")
             return
         }
@@ -128,7 +131,7 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
         }
         
         Log.d("TTS", "Setting language to $locale for text: $text")
-        val result = ttobj.setLanguage(locale)
+        val result = currentTtobj.setLanguage(locale)
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
             Log.e("TTS", "Language $language is not supported or missing data (result code: $result)")
             // Even if language is not supported, we should still try to speak or signal completion
@@ -144,24 +147,21 @@ class Tts(private val activity: Activity) : EventChannel.StreamHandler {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             val params = Bundle()
-            ttobj.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+            currentTtobj.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
         } else {
             @Suppress("DEPRECATION")
             val params = HashMap<String, String>()
             params[TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID] = utteranceId
-            ttobj.speak(text, TextToSpeech.QUEUE_FLUSH, params)
+            currentTtobj.speak(text, TextToSpeech.QUEUE_FLUSH, params)
         }
     }
 
     fun stop() {
-        if (::ttobj.isInitialized) {
-            ttobj.stop()
-        }
+        ttobj?.stop()
     }
 
     fun shutdown() {
-        if (::ttobj.isInitialized) {
-            ttobj.shutdown()
-        }
+        ttobj?.shutdown()
+        ttobj = null
     }
 } 

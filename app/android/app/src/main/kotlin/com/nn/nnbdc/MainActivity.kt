@@ -6,10 +6,10 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 
 class MainActivity : FlutterActivity() {
-    private lateinit var asr: Sherpa
-    private lateinit var tts: Tts
-    private lateinit var aiInference: AndroidAiInference
-    private lateinit var ocr: OcrChannel
+    private var asr: Sherpa? = null
+    private var tts: Tts? = null
+    private var aiInference: AndroidAiInference? = null
+    private var ocr: OcrChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,27 +22,27 @@ class MainActivity : FlutterActivity() {
         aiInference = AndroidAiInference(this)
         ocr = OcrChannel(this)
         
-        asr.initModel()
+        asr?.initModel()
     }
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         // Ensure components are initialized before use
-        if (!::asr.isInitialized) asr = Sherpa(this)
-        if (!::tts.isInitialized) tts = Tts(this)
-        if (!::aiInference.isInitialized) aiInference = AndroidAiInference(this)
-        if (!::ocr.isInitialized) ocr = OcrChannel(this)
+        val currentAsr = asr ?: Sherpa(this).also { asr = it }
+        val currentTts = tts ?: Tts(this).also { tts = it }
+        val currentAiInference = aiInference ?: AndroidAiInference(this).also { aiInference = it }
+        val currentOcr = ocr ?: OcrChannel(this).also { ocr = it }
 
-        asr.initChannel(flutterEngine)
-        tts.initChannel(flutterEngine)
-        aiInference.initChannel(flutterEngine)
-        ocr.initChannel(flutterEngine)
+        currentAsr.initChannel(flutterEngine)
+        currentTts.initChannel(flutterEngine)
+        currentAiInference.initChannel(flutterEngine)
+        currentOcr.initChannel(flutterEngine)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (::tts.isInitialized) tts.shutdown()
-        if (::aiInference.isInitialized) aiInference.cleanup()
+        tts?.shutdown()
+        aiInference?.cleanup()
     }
 }
