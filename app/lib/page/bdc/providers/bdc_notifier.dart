@@ -52,6 +52,7 @@ class BdcNotifier extends _$BdcNotifier {
   DateTime? _lastAsrStartAt;
   bool _isSoundPlayingOrPending = false;
   bool _isAnswerCorrectHandling = false;
+  DateTime? _lastCorrectSoundTime;
 
   void _updateState(BdcState newState, {String tag = ''}) {
     _stateChangeCount++;
@@ -424,6 +425,7 @@ class BdcNotifier extends _$BdcNotifier {
   Future<bool> handleWord(GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     if (getWordResult == null) return false;
     _isAnswerCorrectHandling = false; // 新词开始，安全重置答对锁
+    _lastCorrectSoundTime = null; // 重置正确反馈音播放时间
     final totalStopwatch = Stopwatch()..start();
     
     // 防止处理同一个结果引发的循环
@@ -1377,11 +1379,7 @@ class BdcNotifier extends _$BdcNotifier {
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         } else {
-          if (PlatformUtils.isIOS) {
-            StudyAudioSessionController().playSoundEffect('correct_ios.wav', speed: 1.0, volume: 0.3);
-          } else {
-            StudyAudioSessionController().playSoundEffect('correct.wav', speed: 1.0, volume: 1.0);
-          }
+          _playCorrectSound();
         }
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
@@ -1531,11 +1529,7 @@ class BdcNotifier extends _$BdcNotifier {
       await playWordAndFirstSentence(true, false);
       debugPrint('⚡ [PERF] _onAnswerCorrect -> playWordAndFirstSentence cost: ${playSw.elapsedMilliseconds}ms');
     } else {
-      if (PlatformUtils.isIOS) {
-        StudyAudioSessionController().playSoundEffect('correct_ios.wav', speed: 1.0, volume: 0.3);
-      } else {
-        StudyAudioSessionController().playSoundEffect('correct.wav', speed: 1.0, volume: 1.0);
-      }
+      _playCorrectSound();
     }
 
     bool autoJump = state.autoJumpAfterCorrect;
@@ -1548,6 +1542,21 @@ class BdcNotifier extends _$BdcNotifier {
       });
     }
     Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
+  }
+
+  void _playCorrectSound() {
+    final now = DateTime.now();
+    if (_lastCorrectSoundTime != null &&
+        now.difference(_lastCorrectSoundTime!) < const Duration(milliseconds: 800)) {
+      debugPrint('⚡ [Audio-Filter] 800ms 内已播放过正确反馈音，忽略本次播放以防止回声');
+      return;
+    }
+    _lastCorrectSoundTime = now;
+    if (PlatformUtils.isIOS) {
+      StudyAudioSessionController().playSoundEffect('correct_ios.wav', speed: 1.0, volume: 0.3);
+    } else {
+      StudyAudioSessionController().playSoundEffect('correct.wav', speed: 1.0, volume: 1.0);
+    }
   }
 
   Future<void> playWordAndFirstSentence(bool forcePlayWord, bool startAsrWhenFinish, {bool forcePlaySentence = false}) async {
