@@ -11,7 +11,7 @@ import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/prefs.dart';
-import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
@@ -154,7 +154,7 @@ void main() {
   });
 
   setUp(() async {
-    SoundUtil.audioSessionConfigured = true;
+    StudyAudioSessionController.instance.audioSessionConfigured = true;
     db = MyDatabase(NativeDatabase.memory());
     MyDatabase.setInstanceForTesting(db);
 

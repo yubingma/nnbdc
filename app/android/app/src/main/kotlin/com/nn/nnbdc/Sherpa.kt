@@ -233,7 +233,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             // 英文识别配方：放宽末端静音检测，给犹豫的发音留时间
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
-                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.6f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.4f).build())
                 .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(15.0f).build())
                 .build()
 
@@ -279,7 +279,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
-                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.6f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.4f).build())
                 .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(15.0f).build())
                 .build()
 
@@ -480,10 +480,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             // ⚡ 优化：在物理输入音量极小（norm < 0.008）且用户尚未有效发声（lastSentResult.isEmpty()）的静息状态下，
                             // 强行拦截识别结果并判定为 ""（静音），防止背景空气噪声被误判为 "and" 等幻觉词
                             val rawText = result.text.trim().lowercase()
-                            // 使用增益调整后的有效电平做噪声门判断
-                            // 阈值 0.002（增益后等效约 -54 dBFS），适应低增益 Android 设备
-                            val effectiveNorm = (norm * gain).coerceIn(0.0, 1.0)
-                            val text = if (effectiveNorm < 0.002 && lastSentResult.isEmpty()) "" else rawText
+                            val text = rawText
                             
                             // 仅在用户实际说过话后才在端点时重置流
                             // 纯静音端点（用户还没开口）不重置，避免打断即将开始的识别
@@ -492,18 +489,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                                     m.reset(s)
                                     lastSentResult = ""
                                     Log.i(TAG, "ASR Endpoint detected: Stream reset.")
-                                } else {
-                                    Log.v(TAG, "ASR Endpoint suppressed (no speech yet).")
                                 }
                             }
                             
                             val tokens = result.tokens
-                            
-                            // 周期性音量打印
-                            audioBlockCount++
-                            if (audioBlockCount % 20 == 0) {
-                                Log.v(TAG, "ASR Monitor: lvl=${String.format("%.4f", norm)}, gain=${gain}x, tokens=${tokens?.size ?: 0}")
-                            }
 
                             // 无条件发送记录
                             if (tokens != null && tokens.isNotEmpty()) {

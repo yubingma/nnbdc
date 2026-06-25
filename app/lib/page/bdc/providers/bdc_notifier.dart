@@ -49,7 +49,6 @@ Asr asr(AsrRef ref) {
 class BdcNotifier extends _$BdcNotifier {
   int _stateChangeCount = 0;
   bool _isDisposed = false;
-  DateTime? _lastAsrStartAt;
   bool _isSoundPlayingOrPending = false;
   bool _isAnswerCorrectHandling = false;
   DateTime? _lastCorrectSoundTime;
@@ -83,7 +82,7 @@ class BdcNotifier extends _$BdcNotifier {
   @override
   BdcState build() {
     asr = ref.watch(asrProvider);
-    StudyAudioSessionController().registerNotifier(this);
+    StudyAudioSessionController.instance.registerNotifier(this);
     
     // Initialize args
     final argsJson = Prefs.read<String>("BdcPageArgs");
@@ -111,11 +110,14 @@ class BdcNotifier extends _$BdcNotifier {
       progressBarTapTimer?.cancel();
       _syncLearningTimeToDb();
       asr.removeStateListener(_onAsrStateChanged);
-      // 仅停止 ASR 识别任务，不销毁原生音频引擎。
-      // 引擎保持存活可在后续 BDC 页面访问时消除 2.3s 的冷启动延迟。
-      asr.stopAsr();
       // 物理释放麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源，防止退出页面后麦克风占用指示灯持续亮起
-      unawaited(StudyAudioSessionController().stopSession(forceStopMicrophone: true, caller: this));
+      unawaited(StudyAudioSessionController.instance.syncHardwareIntent(
+        isInSpeakTab: false,
+        isAnsweringActive: false,
+        language: AsrLanguage.english,
+        phrases: [],
+        caller: this,
+      ));
       meaningController.dispose();
       Prefs.remove("BdcPageArgs");
     });
@@ -188,7 +190,7 @@ class BdcNotifier extends _$BdcNotifier {
     
     // 极致优化：为了绝对保障批次第一个单词的发音稳定与流畅，我们将音效池的预热延后 2 秒（用户看词阶段）执行，
     // 彻底避开首词加载与发音播放的硬件黄金窗口，根治并发硬件抢占导致的破音。
-    final ctrl = StudyAudioSessionController();
+    final ctrl = StudyAudioSessionController.instance;
     Future.delayed(const Duration(seconds: 2), () {
       if (!_isDisposed && !ctrl.isSfxPoolFullyPrewarmed) {
         unawaited(ctrl.prewarm());
@@ -240,7 +242,7 @@ class BdcNotifier extends _$BdcNotifier {
       }
       
       // 彻底将音频会话配置异步化抛入后台，避免页面转场滑出期间音频硬件重新配置导致丢帧
-      unawaited(StudyAudioSessionController().configureSession());
+      unawaited(StudyAudioSessionController.instance.configureSession());
       
       final studyConfig = StudyConfig.fromCurrentUser();
       
@@ -511,7 +513,13 @@ class BdcNotifier extends _$BdcNotifier {
     String newStudyStep = state.activeUserStudySteps[getWordResult.stepIndex].studyStep;
     
     if (asr.state == AsrState.started) {
-      await StudyAudioSessionController().stopSession(forceStopMicrophone: false);
+      await StudyAudioSessionController.instance.syncHardwareIntent(
+        isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+        isAnsweringActive: false,
+        language: AsrLanguage.english,
+        phrases: [],
+        caller: this,
+      );
     }
 
     if (oldStudyStep != newStudyStep || isFromBatchWordList) {
@@ -637,7 +645,7 @@ class BdcNotifier extends _$BdcNotifier {
         }
 
         debugPrint('🕵️ [AudioDiag] handleWord.delayedCallback.enter | word=${state.word?.spell} shouldSpeak=$shouldSpeak');
-        try { await StudyAudioSessionController().cancelPlayback(); } catch (_) {}
+        try { await StudyAudioSessionController.instance.cancelPlayback(); } catch (_) {}
         debugPrint('🕵️ [AudioDiag] handleWord.delayedCallback.afterCancelPlayback');
         await playWordAndFirstSentence(false, shouldSpeak);
         // 麦克风预热由 playWordAndFirstSentence 内部的 _handleTabChangeForAsr
@@ -726,7 +734,7 @@ class BdcNotifier extends _$BdcNotifier {
       final ratingResult = _calculateRating("选择题");
       _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
     } else {
-      StudyAudioSessionController().playSoundEffect('failed.mp3', speed: 1.5, volume: 1.0);
+      StudyAudioSessionController.instance.playSoundEffect('failed.mp3', speed: 1.5, volume: 1.0);
       showWordDetail(state.word!, true, context, fsrsRating: FsrsRating.again, reason: "选错了答案");
     }
   }
@@ -737,7 +745,7 @@ class BdcNotifier extends _$BdcNotifier {
     // 防止底层系统音频驱动卡死阻塞跳转页面。
     try {
       await Future.wait([
-        StudyAudioSessionController().cancelPlayback(),
+        StudyAudioSessionController.instance.cancelPlayback(),
         asr.stopAsr(),
         asr.reset(),
       ]).timeout(const Duration(milliseconds: 1500));
@@ -764,7 +772,7 @@ class BdcNotifier extends _$BdcNotifier {
     _pageTransitionBarrier = barrier;
     final result = await goRouter.push<bool>('/word_detail', extra: WordDetailPageArgs(word, false, null, isAnswerWrong,
         showNextWordButton: true,
-        sessionController: StudyAudioSessionController(),
+        sessionController: StudyAudioSessionController.instance,
         onNextWord: () => getNextWord(true, fsrsRating: state.lastFsrsRating, fastPath: false)));
     
     if (_isDisposed) return;
@@ -868,19 +876,21 @@ class BdcNotifier extends _$BdcNotifier {
 
   void updateIsKeyboardVisible(bool visible) {
     state = state.copyWith(isKeyboardVisible: visible);
-    if (visible) {
-      unawaited(StudyAudioSessionController().stopSession(forceStopMicrophone: true));
-    } else {
-      _handleTabChangeForAsr();
-    }
+    _syncAudioHardware();
   }
 
   void goToPreviousWord() async {
     if (state.history.isEmpty) return;
 
     _saveCurrentWordState();
-    await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
-    await StudyAudioSessionController().cancelPlayback();
+    await StudyAudioSessionController.instance.syncHardwareIntent(
+      isInSpeakTab: false,
+      isAnsweringActive: false,
+      language: AsrLanguage.english,
+      phrases: [],
+      caller: this,
+    );
+    await StudyAudioSessionController.instance.cancelPlayback();
 
     int nextIndex;
     if (state.historyIndex == -1) {
@@ -906,8 +916,14 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     _saveCurrentWordState();
-    await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
-    await StudyAudioSessionController().cancelPlayback();
+    await StudyAudioSessionController.instance.syncHardwareIntent(
+      isInSpeakTab: false,
+      isAnsweringActive: false,
+      language: AsrLanguage.english,
+      phrases: [],
+      caller: this,
+    );
+    await StudyAudioSessionController.instance.cancelPlayback();
     
     state = state.copyWith(historyIndex: -1);
     await handleWord(target, isFromBatchWordList: true);
@@ -1080,7 +1096,7 @@ class BdcNotifier extends _$BdcNotifier {
       // 切换单词的一瞬间，强行、立即关停上一个单词的音频播放，
       // 使得 SoundUtil.waitForAllPlayers 判定无活跃播放器，从而闪电完成 AudioSession 切换！
       try {
-        unawaited(StudyAudioSessionController().cancelPlayback());
+        unawaited(StudyAudioSessionController.instance.cancelPlayback());
       } catch (_) {}
 
       // 答对单词后切换下一词前的视觉驻留延迟。
@@ -1338,18 +1354,24 @@ class BdcNotifier extends _$BdcNotifier {
         }
         // 仅在麦克风处于开启状态时才进行物理关麦
         if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-          await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
+          await StudyAudioSessionController.instance.syncHardwareIntent(
+            isInSpeakTab: false,
+            isAnsweringActive: false,
+            language: AsrLanguage.english,
+            phrases: [],
+            caller: this,
+          );
         }
         
         if (state.hasFinishedAnswering) {
           // 已经答对了（处于查看详情时的额外练习），直接关闭
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-          StudyAudioSessionController().playWordSound(state.word!);
+          StudyAudioSessionController.instance.playWordSound(state.word!);
         } else {
           // 还没答对（英中模式下的拼写练习），仅关闭界面，不视为答对题目
           state = state.copyWith(showHandwritingBoard: false);
-          StudyAudioSessionController().playWordSound(state.word!);
+          StudyAudioSessionController.instance.playWordSound(state.word!);
           _handleTabChangeForAsr();
         }
         Global.logger.d('[PERF] checkAsrResult spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
@@ -1375,7 +1397,13 @@ class BdcNotifier extends _$BdcNotifier {
           
           // 仅在麦克风处于开启状态时才进行物理关麦，避免冗余硬件操作导致 Session 被重置为 'none' 并产生爆音
           if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-            await StudyAudioSessionController().stopSession(forceStopMicrophone: false);
+            await StudyAudioSessionController.instance.syncHardwareIntent(
+              isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+              isAnsweringActive: false,
+              language: AsrLanguage.english,
+              phrases: [],
+              caller: this,
+            );
           }
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
@@ -1405,8 +1433,14 @@ class BdcNotifier extends _$BdcNotifier {
 
         if (state.hasFinishedAnswering) {
           // 若已答完，需先等待麦克风关停（含切换至 playback），再播放发音防止回声
-          await StudyAudioSessionController().stopSession(forceStopMicrophone: true);
-          StudyAudioSessionController().playWordSound(state.word!);
+          await StudyAudioSessionController.instance.syncHardwareIntent(
+            isInSpeakTab: false,
+            isAnsweringActive: false,
+            language: AsrLanguage.english,
+            phrases: [],
+            caller: this,
+          );
+          StudyAudioSessionController.instance.playWordSound(state.word!);
         } else {
           // 若未答完，后续 _onAnswerCorrect -> playWordAndFirstSentence 内部会进行原子关麦与播音，
           // 此处无需重复 stopSession 以防底层硬件频繁配置冲突产生轻微爆音
@@ -1554,9 +1588,9 @@ class BdcNotifier extends _$BdcNotifier {
     }
     _lastCorrectSoundTime = now;
     if (PlatformUtils.isIOS) {
-      StudyAudioSessionController().playSoundEffect('correct_ios.wav', speed: 1.0, volume: 0.3);
+      StudyAudioSessionController.instance.playSoundEffect('correct_ios.wav', speed: 1.0, volume: 0.3);
     } else {
-      StudyAudioSessionController().playSoundEffect('correct.wav', speed: 1.0, volume: 1.0);
+      StudyAudioSessionController.instance.playSoundEffect('correct.wav', speed: 1.0, volume: 1.0);
     }
   }
 
@@ -1575,7 +1609,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     if (willPlayWord || willPlaySentence) {
       if (state.word != null) {
-        await StudyAudioSessionController().playWordAndSentence(
+        await StudyAudioSessionController.instance.playWordAndSentence(
           state.word!,
           sentenceDigest: state.englishDigestOfFirstSentence,
           playWord: willPlayWord,
@@ -1595,82 +1629,42 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('[PERF] playWordAndFirstSentence total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
+  void _syncAudioHardware() {
+    if (_isDisposed) return;
+    
+    final isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0;
+    final isAnsweringActive = state.word != null &&
+        state.loadError == null &&
+        !state.hasFinishedAnswering &&
+        !state.showHandwritingBoard &&
+        !state.isGettingNextWord &&
+        !state.isKeyboardVisible;
+
+    final language = state.studyStep == StudyStep.ch2En.json ? AsrLanguage.english : AsrLanguage.chinese;
+    List<String> phrases = [];
+    if (state.word != null) {
+      if (language == AsrLanguage.english) {
+        phrases.add(state.word!.spell);
+      } else {
+        phrases.addAll(AsrUtil.extractContextualPhrases(state.word!.meaningItems ?? []));
+      }
+    }
+
+    unawaited(StudyAudioSessionController.instance.syncHardwareIntent(
+      isInSpeakTab: isInSpeakTab,
+      isAnsweringActive: isAnsweringActive,
+      language: language,
+      phrases: phrases,
+      caller: this,
+    ));
+  }
+
   void _handleTabChangeForAsr() {
     if (_isSoundPlayingOrPending) {
       debugPrint('💡 [BDC-ASR] 拦截 _handleTabChangeForAsr()：当前正处于单词发音播放或等待播放期间，拒绝开启 ASR。');
       return;
     }
-
-    // 只有在显示了“说”Tab（即 _shouldShowSpeakTab 为 true）且当前索引为 0 时，才认为是“说”模式
-    bool isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0; 
-    
-    debugPrint('💡 [BDC-ASR] _handleTabChangeForAsr() 触发。isInSpeakTab: $isInSpeakTab (shouldShowSpeakTab: $_shouldShowSpeakTab, tabIndex: ${state.tabIndex})');
-
-    if (isInSpeakTab) {
-      if (state.word == null || state.loadError != null || state.hasFinishedAnswering || state.showHandwritingBoard || state.isGettingNextWord || state.isKeyboardVisible) {
-        debugPrint('💡 [BDC-ASR] 当前虽然在 SpeakTab，但由于条件不满足决定停止 ASR：word=${state.word?.spell}, loadError=${state.loadError}, hasFinishedAnswering=${state.hasFinishedAnswering}, showHandwritingBoard=${state.showHandwritingBoard}, isGettingNextWord=${state.isGettingNextWord}, isKeyboardVisible=${state.isKeyboardVisible}');
-        
-        // 如果处于 SpeakTab，但只是因为换词中、已答对、手写板展开等暂时的非答题状态，只执行热停止 (stopAsr) 以暂停识别，保持麦克风与 playAndRecord 会话 Category 稳定，避免高频冷切换
-        final shouldOnlyStopAsr = state.isGettingNextWord || state.hasFinishedAnswering || state.showHandwritingBoard;
-        unawaited(StudyAudioSessionController().stopSession(forceStopMicrophone: !shouldOnlyStopAsr));
-        return;
-      }
-
-      final language = state.studyStep == StudyStep.ch2En.json ? AsrLanguage.english : AsrLanguage.chinese;
-      debugPrint('💡 [BDC-ASR] 条件满足，准备调用 _startAsrWithHint，语言: ${language.locale}');
-      unawaited(_startAsrWithHint(language));
-    } else {
-      debugPrint('💡 [BDC-ASR] 不在 SpeakTab，当前 asr 状态: ${asr.state}');
-      // 如果不在说模式下，且当前 ASR 仍在运行或音频 Category 依然是录放通道，强制触发 cold 关停以释放麦克风和硬件资源
-      if (asr.state != AsrState.stopped || StudyAudioSessionController().activeSessionCategory == 'playAndRecord') {
-        debugPrint('💡 [BDC-ASR] 不在 SpeakTab 且 ASR 运行或麦克风未释放，触发状态机物理释放麦克风');
-        unawaited(StudyAudioSessionController().stopSession(forceStopMicrophone: true));
-      }
-    }
-  }
-
-  Future<void> _startAsrWithHint(AsrLanguage language) async {
-    final now = AppClock.now();
-    if (_lastAsrStartAt != null &&
-        now.difference(_lastAsrStartAt!).inMilliseconds < 600) {
-      debugPrint('⚡ [BDC-ASR] 拦截 _startAsrWithHint：与上次启动时间间隔过近 (${now.difference(_lastAsrStartAt!).inMilliseconds}ms)，防止串行二次启动颤音。');
-      return;
-    }
-    _lastAsrStartAt = now;
-
-    final sw = Stopwatch()..start();
-    if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) {
-      debugPrint('⚡ [PERF] _startAsrWithHint SKIPPED: word=${state.word != null} loadErr=${state.loadError != null} hw=${state.showHandwritingBoard} getting=${state.isGettingNextWord}');
-      return;
-    }
-
-    debugPrint('⚡ [PERF] _startAsrWithHint START lang=${language.locale}');
-
-    // 添加调试日志，方便查看正确答案
-    final correctAnswer = state.studyStep == StudyStep.ch2En.json ? state.word?.spell : state.word?.getMeaningStr();
-    Global.logger.d('~~~~~ 当前说模式正确答案: ${correctAnswer?.replaceAll('\n', '; ')}');
-
-    // 2. 提取热词（Phrases）并启动 ASR，等就绪
-    List<String> phrases = [];
-    if (language == AsrLanguage.english) {
-      phrases.add(state.word!.spell);
-    } else {
-      phrases.addAll(AsrUtil.extractContextualPhrases(state.word!.meaningItems ?? []));
-    }
-
-    try {
-      await StudyAudioSessionController().startSession(
-        language: language,
-        phrases: phrases,
-        isSpeakMode: true,
-      );
-      
-      state = state.copyWith(wordStartTime: AppClock.now());
-      debugPrint('⚡ [PERF] _startAsrWithHint DONE total: ${sw.elapsedMilliseconds}ms');
-    } catch (e) {
-      Global.logger.e('ASR启动指令下发失败: $e');
-      debugPrint('⚡ [PERF] _startAsrWithHint FAILED: $e');
-    }
+    _syncAudioHardware();
   }
 
   void handleTabChangeForAsr() {
@@ -1679,11 +1673,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   void updateKeyboardVisibility(bool visible) {
     state = state.copyWith(isKeyboardVisible: visible);
-    if (visible) {
-      unawaited(StudyAudioSessionController().stopSession(forceStopMicrophone: true));
-    } else {
-      handleTabChangeForAsr();
-    }
+    _syncAudioHardware();
   }
 
   void updateShowHandwritingBoard(bool show) {

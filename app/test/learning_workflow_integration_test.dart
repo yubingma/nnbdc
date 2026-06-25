@@ -13,7 +13,7 @@ import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/prefs.dart';
-import 'package:nnbdc/util/sound.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:flutter/services.dart';
@@ -153,7 +153,7 @@ void main() {
   });
 
   setUp(() async {
-    SoundUtil.audioSessionConfigured = true;
+    StudyAudioSessionController.instance.audioSessionConfigured = true;
     
     // 初始化 Fake 虚拟时钟为 Day 1: 2026-05-20 08:00:00
     fakeClock = FakeClock(DateTime(2026, 5, 20, 8, 0, 0));
