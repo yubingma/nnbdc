@@ -55,6 +55,12 @@ class StudyAudioSessionController {
 
   /// 是否保留麦克风保温状态（即使页面销毁或调用 stopSession，也只执行 ASR 停止而不断开麦克风物理流）
   bool keepMicrophoneWarm = false;
+  Object? _activeNotifier;
+
+  void registerNotifier(Object notifier) {
+    _activeNotifier = notifier;
+    debugPrint('⏱️ [SessionController] 注册新的活跃 Notifier: $notifier');
+  }
 
   /// 取消待执行的延迟释放麦克风任务
   void cancelIdleTimer() {
@@ -249,7 +255,12 @@ class StudyAudioSessionController {
 
   Future<void> stopSession({
     bool forceStopMicrophone = false,
+    Object? caller,
   }) async {
+    if (caller != null && _activeNotifier != null && caller != _activeNotifier) {
+      debugPrint('⏱️ [SessionController] 忽略来自老实例 $caller 的 stopSession 请求，当前活跃实例为 $_activeNotifier');
+      return;
+    }
     if (forceStopMicrophone && keepMicrophoneWarm) {
       if (_idleTimer != null) {
         debugPrint('⏱️ [SessionController] 重新刷新麦克风保温计时器，取消之前的任务');

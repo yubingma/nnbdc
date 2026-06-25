@@ -83,6 +83,7 @@ class BdcNotifier extends _$BdcNotifier {
   @override
   BdcState build() {
     asr = ref.watch(asrProvider);
+    StudyAudioSessionController().registerNotifier(this);
     
     // Initialize args
     final argsJson = Prefs.read<String>("BdcPageArgs");
@@ -114,7 +115,7 @@ class BdcNotifier extends _$BdcNotifier {
       // 引擎保持存活可在后续 BDC 页面访问时消除 2.3s 的冷启动延迟。
       asr.stopAsr();
       // 物理释放麦克风，平滑物理淡出所有活跃音频流并物理释放硬件资源，防止退出页面后麦克风占用指示灯持续亮起
-      unawaited(StudyAudioSessionController().stopSession(forceStopMicrophone: true));
+      unawaited(StudyAudioSessionController().stopSession(forceStopMicrophone: true, caller: this));
       meaningController.dispose();
       Prefs.remove("BdcPageArgs");
     });
