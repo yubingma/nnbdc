@@ -117,7 +117,7 @@ class SoundUtil {
   static Future<void>? _configureFuture;
  
   /// 全局唯一的音频工作状态机转换网关（原子化、串行化、硬件防撞车）
-  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance, bool hotPlayback = false}) {
+  static Future<void> transitTo(AudioMode targetMode, {required Asr asrInstance}) {
     return _stateTransitionLock.protect(() async {
       // 1. 跨平台防挂起卫士：若不支持 ASR，录音模式自动无缝降级为纯播放模式
       var finalTargetMode = targetMode;
@@ -144,41 +144,25 @@ class SoundUtil {
       }
  
       final sw = Stopwatch()..start();
-      // 热切换仅在当前处于 record 模式时才有意义（保留麦克风保温）。
-      // 当从 idle 切换到 playback 时必须走冷路径以调用 usePlaybackCategory() 激活音频会话。
-      // 注意：_currentSessionCategory 可能已过时（如 idle 后仍为 'playAndRecord'），
-      // 因此以 _activeMode 为准判断是否真的处于录音模式。
-      final bool isActuallyRecording = _activeMode == AudioMode.record;
-      final bool effectiveHotPlayback = hotPlayback && isActuallyRecording;
-      debugPrint('🔊 [AudioEngine] 状态机开始转换: $_activeMode ➔ $finalTargetMode (hotPlayback: $hotPlayback, effective: $effectiveHotPlayback)');
+      debugPrint('🔊 [AudioEngine] 状态机开始转换: $_activeMode ➔ $finalTargetMode');
 
       try {
         switch (finalTargetMode) {
           case AudioMode.playback:
-            if (effectiveHotPlayback) {
-              // a. 软件层热关停 ASR 识别输入流，保留麦克风物理流与 Audio Category 通道保温
-              await asrInstance.stopAsr();
-              // b. 强行平滑淡出（Soft-Mute）所有当前活跃的临时/音效播放器，彻底排空声卡缓冲区
-              await _cleanupEarlyExitPlayers();
-              // c. 原生 ASR 引擎停止后硬件稳定窗口，消除残余瞬态
-              await Future.delayed(const Duration(milliseconds: 120));
-            } else {
-              // 判断是否因 Category 转换发生了硬件重构（在执行任何关麦/重配置前先判定）
-              final bool isCategoryChanged = _currentSessionCategory != 'playback';
-
-              // a. 物理关闭麦克风（冷关停）
-              // 根治 InsufficientPriority (561017449) 错误：不论之前的 _activeMode 是什么，
-              // 进入 playback 之前都必须确保原生麦克风彻底关闭并释放 ASR 占用，否则切换 Category 会锁死。
-              await asrInstance.stopMicrophone();
-              // b. 强行平滑淡出（Soft-Mute）所有当前活跃 of 临时/音效播放器，彻底排空声卡缓冲区
-              await _cleanupEarlyExitPlayers();
-              
-              // c. 物理配置 AudioSession 为高品质 playback 模式；若已是 playback 则跳过重配置以根除不必要会话切换导致的爆音
-              await usePlaybackCategory(force: false);
-              // d. Session 切换后硬件稳定窗口，消除 deactivate/reactivate 瞬态
-              final delayMs = isCategoryChanged ? 150 : 80;
-              await Future.delayed(Duration(milliseconds: delayMs));
-            }
+            // a. 物理关闭麦克风（冷关停）
+            // 根治 InsufficientPriority (561017449) 错误：不论之前的 _activeMode 是什么，
+            // 进入 playback 之前都必须确保原生麦克风彻底关闭并释放 ASR 占用，否则切换 Category 会锁死。
+            await asrInstance.stopMicrophone();
+            // b. 强行平滑淡出（Soft-Mute）所有当前活跃的临时/音效播放器，彻底排空声卡缓冲区
+            await _cleanupEarlyExitPlayers();
+            
+            // 判断是否因 Category 转换发生了硬件重构（在执行任何关麦/重配置前先判定）
+            final bool isCategoryChanged = _currentSessionCategory != 'playback';
+            // c. 物理配置 AudioSession 为高品质 playback 模式；若已是 playback 则跳过重配置以根除不必要会话切换导致的爆音
+            await usePlaybackCategory(force: false);
+            // d. Session 切换后硬件稳定窗口，消除 deactivate/reactivate 瞬态
+            final delayMs = isCategoryChanged ? 150 : 80;
+            await Future.delayed(Duration(milliseconds: delayMs));
             break;
  
           case AudioMode.record:

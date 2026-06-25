@@ -104,7 +104,6 @@ class StudyAudioSessionController {
       final sessionFuture = SoundUtil.transitTo(
         AudioMode.playback,
         asrInstance: _asr,
-        hotPlayback: SoundUtil.activeSessionCategory == 'playAndRecord',
       );
       await SoundUtil.playPronounceSound2(word, _audioPlayer,
           preWaitFuture: preWaitFuture ?? sessionFuture);
@@ -120,7 +119,6 @@ class StudyAudioSessionController {
       final sessionFuture = SoundUtil.transitTo(
         AudioMode.playback,
         asrInstance: _asr,
-        hotPlayback: SoundUtil.activeSessionCategory == 'playAndRecord',
       );
       await SoundUtil.playSentenceSound2(digest, _audioPlayer,
           speed: speed, preWaitFuture: preWaitFuture ?? sessionFuture);
@@ -171,7 +169,6 @@ class StudyAudioSessionController {
       final sessionFuture = SoundUtil.transitTo(
         AudioMode.playback,
         asrInstance: _asr,
-        hotPlayback: isSpeakMode && SoundUtil.activeSessionCategory == 'playAndRecord',
       );
       SoundUtil.watchPlayer(_audioPlayer);
 

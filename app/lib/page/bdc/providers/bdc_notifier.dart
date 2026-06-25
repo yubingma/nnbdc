@@ -49,6 +49,8 @@ Asr asr(AsrRef ref) {
 class BdcNotifier extends _$BdcNotifier {
   int _stateChangeCount = 0;
   bool _isDisposed = false;
+  DateTime? _lastAsrStartAt;
+  bool _isSoundPlayingOrPending = false;
 
   void _updateState(BdcState newState, {String tag = ''}) {
     _stateChangeCount++;
@@ -609,8 +611,12 @@ class BdcNotifier extends _$BdcNotifier {
     // 将发音播放和 ASR 启动延迟 200ms 执行，在卡片过渡动画结束前不抢占渲染资源。
     // 使用 _playToken 防止快速切词时旧 callback 使用过期 state。
     final token = ++_playToken;
+    _isSoundPlayingOrPending = true; // 开启播放及自动开麦保护
     Future.delayed(const Duration(milliseconds: 200), () async {
-      if (_playToken != token || _isDisposed) return;
+      if (_playToken != token || _isDisposed) {
+        _isSoundPlayingOrPending = false;
+        return;
+      }
       final playStopwatch = Stopwatch()..start();
       try {
         // 页面过渡屏障：如果详情页弹出动画仍在进行，等待其完成再播放，
@@ -618,7 +624,10 @@ class BdcNotifier extends _$BdcNotifier {
         if (_pageTransitionBarrier != null) {
           debugPrint('🕵️ [AudioDiag] handleWord.delayedCallback.waitingTransition');
           await _pageTransitionBarrier!.future;
-          if (_playToken != token || _isDisposed) return;
+          if (_playToken != token || _isDisposed) {
+            _isSoundPlayingOrPending = false;
+            return;
+          }
           debugPrint('🕵️ [AudioDiag] handleWord.delayedCallback.transitionDone');
         }
 
@@ -632,6 +641,9 @@ class BdcNotifier extends _$BdcNotifier {
       } catch (e, st) {
         Global.logger.e('后台播放单词发音及开启 ASR 失败', error: e, stackTrace: st);
       } finally {
+        if (_playToken == token) {
+          _isSoundPlayingOrPending = false;
+        }
         Global.logger.d('[PERF] handleWord -> playWordAndFirstSentence (background) cost: ${playStopwatch.elapsedMilliseconds}ms');
       }
     });
@@ -1558,6 +1570,8 @@ class BdcNotifier extends _$BdcNotifier {
       }
     }
 
+    _isSoundPlayingOrPending = false; // 播音已结束，释放状态保护
+
     if (startAsrWhenFinish && !_isDisposed) {
       debugPrint('⏱️ [Latency-BDC] 播放完自动衔接 ASR...');
       _handleTabChangeForAsr();
@@ -1567,6 +1581,11 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void _handleTabChangeForAsr() {
+    if (_isSoundPlayingOrPending) {
+      debugPrint('💡 [BDC-ASR] 拦截 _handleTabChangeForAsr()：当前正处于单词发音播放或等待播放期间，拒绝开启 ASR。');
+      return;
+    }
+
     // 只有在显示了“说”Tab（即 _shouldShowSpeakTab 为 true）且当前索引为 0 时，才认为是“说”模式
     bool isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0; 
     
@@ -1596,6 +1615,14 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> _startAsrWithHint(AsrLanguage language) async {
+    final now = AppClock.now();
+    if (_lastAsrStartAt != null &&
+        now.difference(_lastAsrStartAt!).inMilliseconds < 600) {
+      debugPrint('⚡ [BDC-ASR] 拦截 _startAsrWithHint：与上次启动时间间隔过近 (${now.difference(_lastAsrStartAt!).inMilliseconds}ms)，防止串行二次启动颤音。');
+      return;
+    }
+    _lastAsrStartAt = now;
+
     final sw = Stopwatch()..start();
     if (state.word == null || state.loadError != null || state.showHandwritingBoard || state.isGettingNextWord) {
       debugPrint('⚡ [PERF] _startAsrWithHint SKIPPED: word=${state.word != null} loadErr=${state.loadError != null} hw=${state.showHandwritingBoard} getting=${state.isGettingNextWord}');

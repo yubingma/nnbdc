@@ -604,6 +604,12 @@ import StoreKit
     private func startSpeechRecognition() {
         print("IOS: [ASR] startSpeechRecognition called, engine.isRunning: \(audioEngine.isRunning)")
         
+        // 核心安全哨兵：若 ASR 已经被逻辑停止，绝对禁止创建新的识别请求，直接阻断防重入
+        if isAsrStopped {
+            print("IOS: [ASR] startSpeechRecognition BLOCKED: isAsrStopped is true.")
+            return
+        }
+        
         // 1. 先确保停止旧任务，并暂时阻断数据喂入
         stopSpeechRecognition()
         print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
