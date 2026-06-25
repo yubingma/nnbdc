@@ -51,6 +51,7 @@ class BdcNotifier extends _$BdcNotifier {
   bool _isDisposed = false;
   DateTime? _lastAsrStartAt;
   bool _isSoundPlayingOrPending = false;
+  bool _isAnswerCorrectHandling = false;
 
   void _updateState(BdcState newState, {String tag = ''}) {
     _stateChangeCount++;
@@ -422,6 +423,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<bool> handleWord(GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     if (getWordResult == null) return false;
+    _isAnswerCorrectHandling = false; // 新词开始，安全重置答对锁
     final totalStopwatch = Stopwatch()..start();
     
     // 防止处理同一个结果引发的循环
@@ -1283,6 +1285,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> checkAsrResult({String? asrInput, bool isVoice = false}) async {
     if (_isDisposed) return;
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
     final stopwatch = Stopwatch()..start();
     String inputText = asrInput ?? meaningController.text;
     if (asrInput == null) {
@@ -1365,6 +1368,8 @@ class BdcNotifier extends _$BdcNotifier {
           wordWrapper: clonedWrapper,
         );
         if (isMatch) {
+          _isAnswerCorrectHandling = true; // 立即同步上锁，防止异步 stopSession 期间重入
+          
           // 仅在麦克风处于开启状态时才进行物理关麦，避免冗余硬件操作导致 Session 被重置为 'none' 并产生爆音
           if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
             await StudyAudioSessionController().stopSession(forceStopMicrophone: false);
