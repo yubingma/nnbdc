@@ -540,7 +540,14 @@ class StudyAudioSessionController {
   Future<void> forceReconfigureSession() async {
     return _queueLock.protect(() async {
       _audioSessionConfigured = false;
-      await _doConfigureAudioSession();
+      final category = _currentSessionCategory;
+      if (category == 'playAndRecord') {
+        _currentSessionCategory = 'none';
+        await _usePlayAndRecordCategory();
+      } else {
+        await _usePlaybackCategory(force: true);
+      }
+      _audioSessionConfigured = true;
     });
   }
 

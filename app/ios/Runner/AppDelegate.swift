@@ -438,14 +438,24 @@ import StoreKit
             let audioSession = AVAudioSession.sharedInstance()
             let targetCategory = AVAudioSession.Category.playAndRecord
             let targetMode = AVAudioSession.Mode.default
-            let targetOptions: AVAudioSession.CategoryOptions = [.defaultToSpeaker, .mixWithOthers, .allowBluetooth, .allowBluetoothA2DP]
             
+            // 只要当前已经是 playAndRecord 且 mode 是 default，直接信任并跳过 setCategory
+            // 避免强行用 targetOptions 覆盖 Flutter 已经配好的 options（不管是含 mixWithOthers 还是不含）
             if audioSession.category == targetCategory &&
-               audioSession.mode == targetMode &&
-               audioSession.categoryOptions == targetOptions {
-                print("IOS: [ASR] setupAudioSession: AVAudioSession is already correctly configured, skipping setCategory.")
+               audioSession.mode == targetMode {
+                print("IOS: [ASR] setupAudioSession: AVAudioSession is already correctly configured as playAndRecord, keeping options: \(audioSession.categoryOptions)")
             } else {
-                print("IOS: [ASR] setupAudioSession: Reconfiguring AVAudioSession from \(audioSession.category) (mode: \(audioSession.mode)) to playAndRecord (mode: default)")
+                // 仅在 category 不符（如冷启动）时才进行初始配置
+                // 此时读取并尊重当前 options 中是否包含了 mixWithOthers 选项
+                let currentOptions = audioSession.categoryOptions
+                let hasMixOption = currentOptions.contains(.mixWithOthers)
+                
+                var targetOptions: AVAudioSession.CategoryOptions = [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
+                if hasMixOption {
+                    targetOptions.insert(.mixWithOthers)
+                }
+                
+                print("IOS: [ASR] setupAudioSession: Reconfiguring AVAudioSession from \(audioSession.category) (mode: \(audioSession.mode)) to playAndRecord with options: \(targetOptions)")
                 try audioSession.setCategory(
                     targetCategory,
                     mode: targetMode,
@@ -866,8 +876,13 @@ extension AppDelegate {
                 try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers])
             } else if audioSession.category == .playAndRecord {
                 let currentOptions = audioSession.categoryOptions
-                if !currentOptions.contains(.defaultToSpeaker) || !currentOptions.contains(.mixWithOthers) {
-                    try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers, .allowBluetooth, .allowBluetoothA2DP])
+                // 只有当缺少 defaultToSpeaker 时才去重设，重设时也尊重并保留现有的 mixWithOthers 开关状态
+                if !currentOptions.contains(.defaultToSpeaker) {
+                    var targetOptions: AVAudioSession.CategoryOptions = [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
+                    if currentOptions.contains(.mixWithOthers) {
+                        targetOptions.insert(.mixWithOthers)
+                    }
+                    try audioSession.setCategory(.playAndRecord, mode: .default, options: targetOptions)
                 }
             }
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
