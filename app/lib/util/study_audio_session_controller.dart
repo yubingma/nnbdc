@@ -101,8 +101,13 @@ class StudyAudioSessionController {
     cancelIdleTimer();
     return _queueLock.protect(() async {
       _unsubscribeMeter();
+      final sessionFuture = SoundUtil.transitTo(
+        AudioMode.playback,
+        asrInstance: _asr,
+        hotPlayback: SoundUtil.activeSessionCategory == 'playAndRecord',
+      );
       await SoundUtil.playPronounceSound2(word, _audioPlayer,
-          preWaitFuture: preWaitFuture);
+          preWaitFuture: preWaitFuture ?? sessionFuture);
     });
   }
 
@@ -112,8 +117,13 @@ class StudyAudioSessionController {
     cancelIdleTimer();
     return _queueLock.protect(() async {
       _unsubscribeMeter();
+      final sessionFuture = SoundUtil.transitTo(
+        AudioMode.playback,
+        asrInstance: _asr,
+        hotPlayback: SoundUtil.activeSessionCategory == 'playAndRecord',
+      );
       await SoundUtil.playSentenceSound2(digest, _audioPlayer,
-          speed: speed, preWaitFuture: preWaitFuture);
+          speed: speed, preWaitFuture: preWaitFuture ?? sessionFuture);
     });
   }
 

@@ -10,7 +10,6 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/analytics_util.dart';
-import 'package:nnbdc/util/platform_util.dart';
 
 import 'api/vo.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';

@@ -403,36 +403,6 @@ import StoreKit
         teardownAudioEngine()
         isRecording = false
         
-        // 核心修复：先停用音频会话，再切换分类，最后重新激活。
-        // 直接从 playAndRecord 切换到 playback 并 setActive(true) 会触发
-        // AVAudioSessionErrorCodeInsufficientPriority (OSStatus 561017449 / '!pri')。
-        // 正确的 iOS 音频会话切换顺序：deactivate → setCategory → activate。
-        // 若当前分类已经是 .playback，跳过整个 deactivate/reactivate 循环，
-        // 根除不必要的会话切换导致的爆音。
-        let audioSession = AVAudioSession.sharedInstance()
-        if audioSession.category != .playback {
-            do {
-                // 1. 停用当前会话，释放音频硬件给系统
-                try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
-                print("IOS: [ASR] Audio session deactivated")
-                // 2. 切换分类到 playback
-                try audioSession.setCategory(
-                    .playback,
-                    mode: .default,
-                    options: [.mixWithOthers]
-                )
-                print("IOS: [ASR] Audio session category set to .playback")
-                // 3. 重新激活
-                try audioSession.setActive(true)
-                print("IOS: [ASR] Native AVAudioSession category successfully reverted to .playback")
-            } catch {
-                let nsError = error as NSError
-                print("IOS: [ASR] Native AVAudioSession category revert failed: \(error) (domain: \(nsError.domain), code: \(nsError.code))")
-            }
-        } else {
-            print("IOS: [ASR] Audio session already .playback, skipping deactivate/reactivate cycle to prevent pop")
-        }
-        
         result(nil)
     }
     
@@ -884,9 +854,25 @@ extension AppDelegate {
     private func speak(text: String, utteranceId: String, language: String) {
         print("IOS: TTS speak: text='\(text)', utteranceId='\(utteranceId)', language='\(language)'")
         
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            if audioSession.category != .playback && audioSession.category != .playAndRecord {
+                try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            } else if audioSession.category == .playAndRecord {
+                let currentOptions = audioSession.categoryOptions
+                if !currentOptions.contains(.defaultToSpeaker) || !currentOptions.contains(.mixWithOthers) {
+                    try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers, .allowBluetooth, .allowBluetoothA2DP])
+                }
+            }
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            print("IOS: [TTS] AVAudioSession pre-configured and activated successfully")
+        } catch {
+            print("IOS: [TTS] Failed to configure/activate AVAudioSession: \(error)")
+        }
+        
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: language)
-        utterance.rate = 0.5
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
         utterance.postUtteranceDelay = 0.0
@@ -894,8 +880,16 @@ extension AppDelegate {
         
         print("IOS: TTS utterance created: voice=\(utterance.voice?.language ?? "unknown")")
         currentUtteranceId = utteranceId
-        print("IOS: TTS starting synthesis for utteranceId: \(utteranceId)")
-        synthesizer.speak(utterance)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            guard self.currentUtteranceId == utteranceId else {
+                print("IOS: [TTS] speak cancelled before start: \(utteranceId)")
+                return
+            }
+            print("IOS: TTS starting synthesis for utteranceId: \(utteranceId)")
+            self.synthesizer.speak(utterance)
+        }
     }
     
     private func stopTts() {
@@ -935,6 +929,11 @@ extension AppDelegate: AVSpeechSynthesizerDelegate {
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         print("IOS: TTS didStart: utteranceId=\(currentUtteranceId ?? "nil")")
+        if let utteranceId = currentUtteranceId {
+            let event: [String: Any] = ["type": "ttsStarted", "data": utteranceId]
+            print("IOS: TTS sending start event: \(event)")
+            ttsEventSink?(event)
+        }
     }
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {

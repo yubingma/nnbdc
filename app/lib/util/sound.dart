@@ -170,7 +170,6 @@ class SoundUtil {
               // 根治 InsufficientPriority (561017449) 错误：不论之前的 _activeMode 是什么，
               // 进入 playback 之前都必须确保原生麦克风彻底关闭并释放 ASR 占用，否则切换 Category 会锁死。
               await asrInstance.stopMicrophone();
-              _currentSessionCategory = 'playback';
               // b. 强行平滑淡出（Soft-Mute）所有当前活跃 of 临时/音效播放器，彻底排空声卡缓冲区
               await _cleanupEarlyExitPlayers();
               
@@ -195,7 +194,7 @@ class SoundUtil {
             await asrInstance.startMicrophone();
             // d. 【物理错峰阻断】：如果是物理冷启动，给底层声卡和重采样驱动留出充足的 150ms 稳定窗口以物理根除爆音；
             //    若是本已保温的热复用路径，提供 80ms 的平滑缓冲区释放与错峰时间，根除提示音与播放器冲突爆音。
-            final delayMs = isColdStart ? 80 : 40;
+            final delayMs = isColdStart ? 180 : 60;
             debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活 (${isColdStart ? "冷启动" : "热复用"})，错峰延迟 ${delayMs}ms 稳定时钟...');
             await Future.delayed(Duration(milliseconds: delayMs));
             // e. 稳定窗口结束后，正式播放“叮”的就绪提示音
@@ -607,12 +606,19 @@ class SoundUtil {
         // 复位播放器状态以确保能正确加载新音源。
         // - 如果正在播放中 → 静音 + stop（防爆音）
         // - 如果处于 buffering（前次 setUrl 仍在加载）→ stop 取消缓冲
+        // - 如果已播放完成 (completed) → stop 物理复位为 idle，避免 iOS completed 态 replace 产生爆音
         // - 其他状态 → pause + seek(0) 软复位，保持原生播放器存活
         final needHardStop = player.playing ||
             player.processingState == ja.ProcessingState.buffering ||
-            player.processingState == ja.ProcessingState.loading;
+            player.processingState == ja.ProcessingState.loading ||
+            player.processingState == ja.ProcessingState.completed;
         if (needHardStop) {
+          final isCompleted = player.processingState == ja.ProcessingState.completed;
           await player.stop();
+          if (isCompleted) {
+            // 给原生音频管线 30ms 稳定窗口，消除 stop 可能产生的余音和硬件瞬态
+            await Future.delayed(const Duration(milliseconds: 30));
+          }
         } else {
           await player.pause();
         }

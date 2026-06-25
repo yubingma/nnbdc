@@ -42,8 +42,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../util/permission_util.dart';
 import 'dart:ui' as ui;
-
-import "package:percent_indicator/percent_indicator.dart";
 import 'package:provider/provider.dart';
 
 import '../global.dart';

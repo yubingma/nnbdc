@@ -1450,6 +1450,16 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
     
+    // 同步立即锁定状态，彻底阻断由于 ASR 连续识别或 re-entry 重复触发导致的回声和并发冲突
+    state = state.copyWith(
+      hasFinishedAnswering: true,
+      canLeaveCurrWord: true,
+      lastFsrsRating: rating,
+      lastFsrsRatingReason: reason,
+      showHandwritingBoard: false,
+    );
+    _handleTabChangeForAsr();
+    
     // 巩固阶段：巩固评分不得优于之前的测评评分。
     // 如果用户答得比测评时好（评分档次更高），则以测评评分为准，
     // 防止因测评阶段已掌握评分较高而导致巩固阶段重复降难度。
@@ -1465,14 +1475,6 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.studyStep == StudyStep.en2Ch.json && state.wordWrapper != null) {
       state.wordWrapper!.revealAllRemainingMeanings();
     }
-    state = state.copyWith(
-      hasFinishedAnswering: true,
-      canLeaveCurrWord: true,
-      lastFsrsRating: rating,
-      lastFsrsRatingReason: reason,
-      showHandwritingBoard: false,
-    );
-    _handleTabChangeForAsr();
     
     final fsrsStopwatch = Stopwatch()..start();
     final lw = state.currentGetWordResult?.learningWord;
