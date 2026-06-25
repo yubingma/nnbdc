@@ -14,6 +14,7 @@ class StudyConfig {
   bool enableWordImage;
   bool preferKeyboardInSpelling;
   String distractorStrategy;
+  bool mixWithOthersForIos;
   Map<String, dynamic>? walkman;
 
   StudyConfig({
@@ -27,6 +28,7 @@ class StudyConfig {
     this.enableWordImage = true,
     this.preferKeyboardInSpelling = false,
     this.distractorStrategy = 'RecentlyLearned',
+    this.mixWithOthersForIos = false,
     this.walkman,
   });
 
@@ -42,6 +44,7 @@ class StudyConfig {
       enableWordImage: _toBool(json['enableWordImage'], true),
       preferKeyboardInSpelling: _toBool(json['preferKeyboardInSpelling'], false),
       distractorStrategy: json['distractorStrategy'] is String ? json['distractorStrategy'] : 'RecentlyLearned',
+      mixWithOthersForIos: _toBool(json['mixWithOthersForIos'], false),
       walkman: json['walkman'] is Map<String, dynamic> ? json['walkman'] : null,
     );
   }
@@ -76,6 +79,7 @@ class StudyConfig {
       'enableWordImage': enableWordImage,
       'preferKeyboardInSpelling': preferKeyboardInSpelling,
       'distractorStrategy': distractorStrategy,
+      'mixWithOthersForIos': mixWithOthersForIos,
       if (walkman != null) 'walkman': walkman,
     };
   }

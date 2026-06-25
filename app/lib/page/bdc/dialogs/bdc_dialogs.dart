@@ -212,6 +212,7 @@ extension BdcPageStateDialogs on BdcPageState {
     var localAutoJumpAfterCorrectCh2En = studyConfig.autoJumpAfterCorrectCh2En;
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
     var localDistractorStrategy = studyConfig.distractorStrategy;
+    var localMixWithOthersForIos = studyConfig.mixWithOthersForIos;
 
     if (!mounted) return;
 
@@ -405,6 +406,15 @@ extension BdcPageStateDialogs on BdcPageState {
                                       });
                                     },
                                   ),
+                                  _buildSettingItem(
+                                    'iOS 混音：允许背景音共存',
+                                    localMixWithOthersForIos,
+                                    (value) {
+                                      setState(() {
+                                        localMixWithOthersForIos = value;
+                                      });
+                                    },
+                                  ),
                                 ];
 
                                 return Column(
@@ -498,6 +508,7 @@ extension BdcPageStateDialogs on BdcPageState {
                             studyConfigToSave.asrPassRule = localAsrPassRule;
                             studyConfigToSave.enableWordImage = localEnableWordImage;
                             studyConfigToSave.distractorStrategy = localDistractorStrategy;
+                            studyConfigToSave.mixWithOthersForIos = localMixWithOthersForIos;
                             await studyConfigToSave.saveToCurrentUser();
                           }
 
@@ -508,6 +519,9 @@ extension BdcPageStateDialogs on BdcPageState {
                                 localAutoJumpAfterCorrectCh2En);
                             notifier.updateAutoJumpEn2Ch(
                                 localAutoJumpAfterCorrectEn2Ch);
+                            if (PlatformUtils.isIOS) {
+                              unawaited(StudyAudioSessionController.instance.forceReconfigureSession());
+                            }
                             Navigator.pop(context, true);
                           }
                         },

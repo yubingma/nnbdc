@@ -11,6 +11,7 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/pinyin.dart';
+import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/global.dart';
 
 /// 全局唯一的音频会话控制器。
@@ -43,6 +44,8 @@ class StudyAudioSessionController {
       : _asr = Asr(),
         _audioPlayer = SoundUtil.createAudioPlayer() {
     _watchPlayer(_audioPlayer);
+    _asrHintPlayer = SoundUtil.createAudioPlayer();
+    _watchPlayer(_asrHintPlayer!);
     _asr.addStateListener(_onAsrStateChange);
   }
 
@@ -52,6 +55,7 @@ class StudyAudioSessionController {
 
   final Asr _asr;
   final ja.AudioPlayer _audioPlayer;
+  ja.AudioPlayer? _asrHintPlayer;
   final _SessionMutex _queueLock = _SessionMutex();
   Timer? _idleTimer;
 
@@ -136,6 +140,10 @@ class StudyAudioSessionController {
     _audioSessionConfigured = false;
     _activeMode = AudioMode.idle;
     _watchedPlayers.clear();
+    _watchPlayer(_audioPlayer);
+    if (_asrHintPlayer != null) {
+      _watchPlayer(_asrHintPlayer!);
+    }
     _logicallyFinishedPlayers.clear();
     _playerBusyUntil.clear();
     _activeCutToken.clear();
@@ -498,7 +506,7 @@ class StudyAudioSessionController {
             await _usePlayAndRecordCategory();
             await _asr.startMicrophone();
             
-            final delayMs = isColdStart ? 180 : 60;
+            final delayMs = isColdStart ? 100 : 60;
             debugPrint('⏱️ [AudioEngine] 麦克风物理通道已激活 (${isColdStart ? "冷启动" : "热复用"})，错峰延迟 ${delayMs}ms 稳定时钟...');
             await Future.delayed(Duration(milliseconds: delayMs));
             await _playAsrReadyHintSound();
@@ -525,6 +533,14 @@ class StudyAudioSessionController {
         } catch (_) {}
         _activeMode = AudioMode.idle;
       }
+    });
+  }
+
+  /// 强制重新配置音频会话（一般在用户修改了混音设置后调用以即时生效）
+  Future<void> forceReconfigureSession() async {
+    return _queueLock.protect(() async {
+      _audioSessionConfigured = false;
+      await _doConfigureAudioSession();
     });
   }
 
@@ -578,10 +594,13 @@ class StudyAudioSessionController {
         await Future.delayed(const Duration(milliseconds: 50));
       }
 
+      final mixWithOthers = StudyConfig.fromCurrentUser().mixWithOthersForIos;
       final session = await AudioSession.instance;
       await session.configure(AudioSessionConfiguration(
         avAudioSessionCategory: AVAudioSessionCategory.playback,
-        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.mixWithOthers,
+        avAudioSessionCategoryOptions: mixWithOthers
+            ? AVAudioSessionCategoryOptions.mixWithOthers
+            : AVAudioSessionCategoryOptions.none,
         avAudioSessionMode: AVAudioSessionMode.defaultMode,
         androidAudioAttributes: const AndroidAudioAttributes(
           contentType: AndroidAudioContentType.music,
@@ -627,11 +646,12 @@ class StudyAudioSessionController {
         await Future.delayed(const Duration(milliseconds: 50));
       }
 
+      final mixWithOthers = StudyConfig.fromCurrentUser().mixWithOthersForIos;
       final session = await AudioSession.instance;
       await session.configure(AudioSessionConfiguration(
         avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
         avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.defaultToSpeaker |
-            AVAudioSessionCategoryOptions.mixWithOthers |
+            (mixWithOthers ? AVAudioSessionCategoryOptions.mixWithOthers : AVAudioSessionCategoryOptions.none) |
             AVAudioSessionCategoryOptions.allowBluetooth |
             AVAudioSessionCategoryOptions.allowAirPlay |
             AVAudioSessionCategoryOptions.allowBluetoothA2dp,
@@ -827,6 +847,20 @@ class StudyAudioSessionController {
         }
       }
     }
+
+    final hintPlayer = _asrHintPlayer;
+    if (hintPlayer != null) {
+      try {
+        const assetPath = 'assets/audio/asr_ready_hint.wav';
+        if (_playerLoadedAsset[hintPlayer] != assetPath) {
+          await hintPlayer.setAsset(assetPath);
+          _playerLoadedAsset[hintPlayer] = assetPath;
+          debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热成功');
+        }
+      } catch (e) {
+        debugPrint('🔊 [SessionController] ASR 提示音常驻播放器预热失败: $e');
+      }
+    }
   }
 
   void prefetchSounds(List<String> urls) {
@@ -927,7 +961,19 @@ class StudyAudioSessionController {
   }
 
   Future<void> _playAsrReadyHintSound() async {
-    await _playAssetSound('asr_ready_hint.wav', 1.0, 0.2, 1000, 100);
+    final player = _asrHintPlayer;
+    if (player == null) return;
+    try {
+      _activeVolumeToken[player] = Object();
+      await player.setVolume(0.2);
+      await player.stop();
+      await player.seek(Duration.zero);
+      _logicallyFinishedPlayers.remove(player);
+      unawaited(player.play().catchError((_) {}));
+      _playerBusyUntil[player] = AppClock.now().add(const Duration(milliseconds: 500));
+    } catch (e) {
+      debugPrint('🔊 [SessionController] 极速播放 ASR 提示音出错: $e');
+    }
   }
 
   Future<void> _playAsrReadyHintSoundWithCleanup() async {
@@ -1099,6 +1145,15 @@ class StudyAudioSessionController {
     _unsubscribeMeter();
     meterLevelNotifier.dispose();
     _unwatchPlayer(_audioPlayer);
+    final hintPlayer = _asrHintPlayer;
+    if (hintPlayer != null) {
+      _unwatchPlayer(hintPlayer);
+      try {
+        hintPlayer.setVolume(0.0);
+        hintPlayer.stop();
+        hintPlayer.dispose().catchError((_) {});
+      } catch (_) {}
+    }
     try {
       _audioPlayer.setVolume(0.0);
       _audioPlayer.stop();
