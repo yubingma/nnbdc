@@ -406,15 +406,16 @@ extension BdcPageStateDialogs on BdcPageState {
                                       });
                                     },
                                   ),
-                                  _buildSettingItem(
-                                    'iOS 混音：允许背景音共存',
-                                    localMixWithOthersForIos,
-                                    (value) {
-                                      setState(() {
-                                        localMixWithOthersForIos = value;
-                                      });
-                                    },
-                                  ),
+                                  if (PlatformUtils.isIOS)
+                                    _buildSettingItem(
+                                      'iOS 混音：允许背景音共存',
+                                      localMixWithOthersForIos,
+                                      (value) {
+                                        setState(() {
+                                          localMixWithOthersForIos = value;
+                                        });
+                                      },
+                                    ),
                                 ];
 
                                 return Column(
