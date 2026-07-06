@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/network_util.dart';
+import 'package:nnbdc/util/platform_util.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 abstract class SocketStatusListener {
@@ -44,6 +45,11 @@ class SocketIoClient {
     var opts = io.OptionBuilder()
         .setTransports(['websocket'])
         .disableAutoConnect() // 禁用自动连接
+        .setExtraHeaders({
+          'X-PPDC-CLIENT': Config.clientSecret,
+          'X-Client-Platform': PlatformUtils.platformLabel,
+          'X-Client-Version': Global.buildNumber,
+        })
         .build();
     socket = io.io(Config.socketServerUrl, opts);
 
