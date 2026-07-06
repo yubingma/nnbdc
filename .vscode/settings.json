@@ -46,5 +46,6 @@
     "markdownlint.config": {
         "default": false
     },
-    "markdown.validate.enabled": false
+    "markdown.validate.enabled": false,
+    "cmake.sourceDirectory": "/Volumes/ssd/ppdc/app/linux"
 }

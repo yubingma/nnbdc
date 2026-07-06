@@ -64,6 +64,7 @@ class NotificationUtil {
       channelDescription: '每天定时提醒背单词',
       importance: Importance.max,
       priority: Priority.high,
+      icon: 'ic_launcher',
     );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
