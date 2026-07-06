@@ -44,7 +44,7 @@ public class HallGroupBo extends BaseBo<HallGroup> {
 
         // 收集所有 HallGroup 的 ID
         Set<String> hallGroupIds = hallGroups.stream()
-                .map(HallGroup::getId)
+                .map(hg -> hg.getId())
                 .collect(Collectors.toSet());
 
         if (hallGroupIds.isEmpty()) {
@@ -122,7 +122,7 @@ public class HallGroupBo extends BaseBo<HallGroup> {
                 new EntityRowMapper<>(DictGroup.class));
 
         Map<String, DictGroup> dictGroupMap = dictGroups.stream()
-                .collect(Collectors.toMap(DictGroup::getId, dg -> dg));
+                .collect(Collectors.toMap(dg -> dg.getId(), dg -> dg));
 
         // 为每个 DictGroup 设置完整的父分组对象
         for (DictGroup dictGroup : dictGroups) {

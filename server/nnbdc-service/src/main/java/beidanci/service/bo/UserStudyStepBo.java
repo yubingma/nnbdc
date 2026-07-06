@@ -48,7 +48,7 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
     public void initUserStudySteps(String userId) {
         // 如果用户的学习步骤不足， 则添加缺失的学习步骤
         List<UserStudyStep> userStudySteps = getUserStudySteps(userId);
-        List<StudyStep> existingSteps = userStudySteps.stream().map(UserStudyStep::getStudyStep)
+        List<StudyStep> existingSteps = userStudySteps.stream().map(step -> step.getStudyStep())
                 .collect(Collectors.toList());
         if (existingSteps.size() < StudyStep.values().length) {
             UserStudyStepId id;

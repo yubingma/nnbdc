@@ -78,7 +78,7 @@ public class GameHallBo extends BaseBo<GameHall> {
             new EntityRowMapper<>(Word.class));
 
         // 批量加载所有单词的 meaningItems
-        List<String> wordIds = words.stream().map(Word::getId).collect(Collectors.toList());
+        List<String> wordIds = words.stream().map(w -> w.getId()).collect(Collectors.toList());
         Map<String, List<MeaningItemVo>> meaningItemsByWordId = new HashMap<>();
         if (!wordIds.isEmpty()) {
             // 优先查询通用词典的释义项（dictId = '0'）

@@ -167,7 +167,7 @@ public class DictImportController {
 
         File finalDir = targetDir;
         if (!new File(finalDir, "meta.json").exists()) {
-            File[] subDirs = targetDir.listFiles(File::isDirectory);
+            File[] subDirs = targetDir.listFiles(f -> f.isDirectory());
             if (subDirs != null && subDirs.length == 1) {
                 if (new File(subDirs[0], "meta.json").exists()) {
                     finalDir = subDirs[0];

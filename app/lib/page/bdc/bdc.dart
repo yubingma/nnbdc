@@ -17,7 +17,6 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/page/pic_search.dart';
-import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
@@ -42,6 +41,7 @@ import '../../util/utils.dart';
 import '../../widget/handwriting_board.dart';
 import 'providers/bdc_notifier.dart';
 import 'providers/bdc_state.dart';
+import 'providers/bdc_state_ui_signature.dart';
 import "widgets/chinese_asr_input_widget.dart";
 import "widgets/english_asr_input_widget.dart";
 import "widgets/word_images_widget.dart";
@@ -239,17 +239,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     // 顶级只监听加载状态，不再监听具体单词细节
     ref.watch(bdcNotifierProvider.select((s) => s.dataLoaded));
 
-    // 获取一份不含高频更新字段的稳定状态供主框架结构使用
-    final state = ref.watch(bdcNotifierProvider.select((s) => s.copyWith(
-      asrResult: '',
-      asrState: AsrState.unknown,
-      currentAsrCandidates: const [],
-      asrPassRuleCache: '',
-      playingStates: const {'word': false, 'sentence': false},
-      currentScore: 0,
-      meaningText: '',
-      hintTapCount: 0,
-    )));
+    // 极致优化：使用轻量化比对签名对象控制顶层 build 刷新时机，避免昂贵的大集合深比较
+    ref.watch(bdcNotifierProvider.select((s) => BdcStateUiSignature(s)));
+    final state = ref.read(bdcNotifierProvider);
     _activeState = state;
 
     {

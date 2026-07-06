@@ -547,7 +547,7 @@ public class ReadyState extends RoomState {
         room.broadcastEvent("sysCmd", "BEGIN");
         isPlaying = true;
         // 清空历史触底计时
-        fallTasks.values().forEach(TimerTask::cancel);
+        fallTasks.values().forEach(t -> t.cancel());
         fallTasks.clear();
         // 清空堆叠标记，避免上一局游戏状态影响新游戏
         stackAddedOnce.clear();
@@ -609,7 +609,7 @@ public class ReadyState extends RoomState {
             room.broadcastEvent("loser", loser.getId());
             gameOverProcessor.adjustUserScore(winer, loser);
             isPlaying = false;
-            fallTasks.values().forEach(TimerTask::cancel);
+            fallTasks.values().forEach(t -> t.cancel());
             fallTasks.clear();
             // 清空堆叠标记
             stackAddedOnce.clear();

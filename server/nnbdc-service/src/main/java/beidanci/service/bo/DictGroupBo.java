@@ -83,7 +83,7 @@ public class DictGroupBo extends BaseBo<DictGroup> {
 
         // 收集所有 DictGroup 的 ID
         Set<String> dictGroupIds = dictGroups.stream()
-                .map(DictGroup::getId)
+                .map(dg -> dg.getId())
                 .collect(Collectors.toSet());
 
         if (dictGroupIds.isEmpty()) {
@@ -124,7 +124,7 @@ public class DictGroupBo extends BaseBo<DictGroup> {
             List<Dict> allDicts = namedParameterJdbcTemplate.query(dictsSql, dictsParams,
                     new EntityRowMapper<>(Dict.class));
             dictMap = allDicts.stream()
-                    .collect(Collectors.toMap(Dict::getId, d -> d));
+                    .collect(Collectors.toMap(d -> d.getId(), d -> d));
         }
 
         // 按 groupId 分组
