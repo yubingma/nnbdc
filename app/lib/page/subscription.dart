@@ -9,9 +9,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../state.dart';
-import 'package:nnbdc/api/vo.dart';
-import 'package:nnbdc/db/db.dart';
-import 'package:nnbdc/api/api.dart';
 
 
 
@@ -28,14 +25,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   bool _isLoading = true;
   String? _purchasingProductId; // 记录当前正在购买的产品ID
   bool _isRestoring = false;
-  final TextEditingController _promoCodeController = TextEditingController();
-  bool _isRedeeming = false;
 
-  @override
-  void dispose() {
-    _promoCodeController.dispose();
-    super.dispose();
-  }
 
 
   @override
@@ -424,10 +414,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
                   const SizedBox(height: 24),
 
-                  // 邀请码兑换
-                  _buildPromoCodeSection(),
-
-                  const SizedBox(height: 24),
 
                   // 说明文字
                   Card(
@@ -717,123 +703,5 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       // 忽略解析错误
     }
     return '更优惠';
-  }
-
-  Widget _buildPromoCodeSection() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.card_giftcard,
-                  color: Theme.of(context).primaryColor,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '兑换活动邀请码',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _promoCodeController,
-                    decoration: InputDecoration(
-                      hintText: '请输入活动邀请码',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _isRedeeming ? null : _redeemPromoCode,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isRedeeming
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('兑换'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _redeemPromoCode() async {
-    final code = _promoCodeController.text.trim();
-    if (code.isEmpty) {
-      ToastUtil.error('请输入邀请码');
-      return;
-    }
-
-    final user = Global.getLoggedInUser();
-    if (user == null) {
-      ToastUtil.error('请先登录');
-      return;
-    }
-
-    setState(() {
-      _isRedeeming = true;
-    });
-
-    try {
-      final result = await Api.client.redeemPromoCode(user.id, code);
-      if (result.success && result.data != null) {
-        final updatedUserVo = result.data!;
-        
-        // 更新本地数据库及缓存
-        await MyDatabase.instance.usersDao.saveUser(userVo2User(updatedUserVo), false);
-        
-        ToastUtil.success('兑换成功！您已获得会员权益');
-        _promoCodeController.clear();
-        
-        // 重新获取会员状态并刷新UI
-        await _refreshUserInfo();
-      } else {
-        ToastUtil.error(result.msg ?? '兑换失败');
-      }
-    } catch (e) {
-      Global.logger.e('兑换活动码失败', error: e);
-      ToastUtil.error('兑换出错，请稍后重试');
-    } finally {
-      setState(() {
-        _isRedeeming = false;
-      });
-    }
   }
 }

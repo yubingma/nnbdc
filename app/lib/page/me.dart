@@ -1011,43 +1011,53 @@ class _MePageState extends State<MePage> {
                 }
 
                 if (!isPremium && PlatformUtils.isIOS) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
-                        loadData();
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.amber.shade50.withValues(alpha: 0.3),
-                        border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5), width: 1.5),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                            loadData();
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.amber.shade50.withValues(alpha: 0.3),
+                            border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5), width: 1.5),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                '解锁每日单词上限及更多特权',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.normal,
-                                  color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
-                                  fontFamily: 'NotoSansSC',
-                                ),
+                              Row(
+                                children: [
+                                  Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '解锁每日单词上限及更多特权',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.normal,
+                                      color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
+                                      fontFamily: 'NotoSansSC',
+                                    ),
+                                  ),
+                                ],
                               ),
+                              Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 16),
                             ],
                           ),
-                          Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 16),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      _PromoRedemptionWidget(onRedeemSuccess: () {
+                        loadData();
+                      }),
+                    ],
                   );
                 }
+
 
                 if (isPremium && premiumInfoText != null) {
                   return Container(
@@ -3808,3 +3818,116 @@ class ThreeSegmentProgressPainter extends CustomPainter {
         oldDelegate.dividerColor != dividerColor;
   }
 }
+
+class _PromoRedemptionWidget extends StatefulWidget {
+  final VoidCallback onRedeemSuccess;
+
+  const _PromoRedemptionWidget({required this.onRedeemSuccess});
+
+  @override
+  State<_PromoRedemptionWidget> createState() => _PromoRedemptionWidgetState();
+}
+
+class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
+  final TextEditingController _controller = TextEditingController();
+  bool _isRedeeming = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _redeem() async {
+    final code = _controller.text.trim();
+    if (code.isEmpty) {
+      ToastUtil.error('请输入邀请码');
+      return;
+    }
+
+    final user = Global.getLoggedInUser();
+    if (user == null) {
+      ToastUtil.error('请先登录');
+      return;
+    }
+
+    setState(() {
+      _isRedeeming = true;
+    });
+
+    try {
+      final result = await Api.client.redeemPromoCode(user.id, code);
+      if (result.success && result.data != null) {
+        final updatedUserVo = result.data!;
+        
+        // 更新本地数据库及缓存
+        await MyDatabase.instance.usersDao.saveUser(userVo2User(updatedUserVo), false);
+        
+        ToastUtil.success('兑换成功！您已获得会员权益');
+        _controller.clear();
+        widget.onRedeemSuccess();
+      } else {
+        ToastUtil.error(result.msg ?? '兑换失败');
+      }
+    } catch (e) {
+      Global.logger.e('兑换活动码失败', error: e);
+      ToastUtil.error('兑换出错，请稍后重试');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRedeeming = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
+        border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade300, width: 1),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              style: const TextStyle(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: '输入邀请码成为会员',
+                hintStyle: const TextStyle(fontSize: 13),
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: _isRedeeming ? null : _redeem,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isRedeeming
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('兑换', style: TextStyle(fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
