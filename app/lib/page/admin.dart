@@ -20,7 +20,9 @@ import 'package:nnbdc/page/admin/dict_group_management.dart';
 import 'package:nnbdc/page/admin/pdf_convert_page.dart';
 import 'package:nnbdc/page/admin/batch_import_management.dart';
 import 'package:nnbdc/page/admin/word_starfield_page.dart';
+import 'package:nnbdc/page/admin/promo_activity_management.dart';
 import 'package:nnbdc/state.dart';
+
 
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -121,6 +123,13 @@ class _AdminPageState extends State<AdminPage> {
         color: const Color(0xFFFF9800),
         onTap: () => _navigateToUserManagement(),
       ),
+      _buildManagementCard(
+        title: '运营推广活动',
+        icon: Icons.campaign,
+        color: Colors.blueAccent,
+        onTap: () => _navigateToPromoActivityManagement(),
+      ),
+
       _buildManagementCard(
         title: '系统设置',
         icon: Icons.settings,
@@ -479,6 +488,16 @@ class _AdminPageState extends State<AdminPage> {
       ),
     );
   }
+
+  void _navigateToPromoActivityManagement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PromoActivityManagementPage(),
+      ),
+    );
+  }
+
 
   void _navigateToCdnManagement() {
     Navigator.push(

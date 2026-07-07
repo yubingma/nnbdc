@@ -920,4 +920,31 @@ abstract class RestClient {
 
   @POST("/ai/embedding/reconstruct.do")
   Future<Result<String>> triggerReconstruct();
+
+  @POST("/redeemPromoCode.do")
+
+  @FormUrlEncoded()
+  Future<Result<UserVo>> redeemPromoCode(
+      @Field("userId") String userId,
+      @Field("promoCode") String promoCode);
+
+  @POST("/admin/createPromoActivity.do")
+  @FormUrlEncoded()
+  Future<Result<void>> createPromoActivity(
+      @Field("userId") String userId,
+      @Field("name") String name,
+      @Field("activityCode") String activityCode,
+      @Field("duration") String? duration,
+      @Field("maxRedemptions") int? maxRedemptions);
+
+  @GET("/admin/listPromoActivities.do")
+  Future<Result<List<PromoActivityVo>>> listPromoActivities(
+      @Query("userId") String userId);
+
+  @POST("/admin/deletePromoActivity.do")
+  @FormUrlEncoded()
+  Future<Result<void>> deletePromoActivity(
+      @Field("userId") String userId,
+      @Field("activityId") String activityId);
 }
+

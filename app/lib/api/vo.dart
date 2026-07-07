@@ -1702,3 +1702,36 @@ class UserBaseDataVo {
 
   Map<String, dynamic> toJson() => _$UserBaseDataVoToJson(this);
 }
+
+@JsonSerializable()
+class PromoActivityVo {
+  String? id;
+  String? activityCode;
+  String? name;
+  String? duration;
+  DateTime? startTime;
+  DateTime? endTime;
+  int? maxRedemptions;
+  int? redemptionCount;
+  bool? isActive;
+  DateTime? createTime;
+  DateTime? updateTime;
+
+  PromoActivityVo({
+    this.id,
+    this.activityCode,
+    this.name,
+    this.duration,
+    this.startTime,
+    this.endTime,
+    this.maxRedemptions,
+    this.redemptionCount,
+    this.isActive,
+    this.createTime,
+    this.updateTime,
+  });
+
+  factory PromoActivityVo.fromJson(Map<String, dynamic> json) => _$PromoActivityVoFromJson(json);
+  Map<String, dynamic> toJson() => _$PromoActivityVoToJson(this);
+}
+
