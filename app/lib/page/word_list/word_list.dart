@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/pdf_exporter.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -3546,6 +3548,7 @@ class WordListPageState extends State<WordListPage>
 
   Future<void> _handleExportPdf(PdfExportMode exportMode, bool includePronounce, bool isDoubleColumn) async {
     final title = args.appBarTitle;
+    File? pdfFile;
     try {
       await Api.loadingService.show(status: '正在获取词表单词...');
       if (!mounted) return;
@@ -3557,8 +3560,7 @@ class WordListPageState extends State<WordListPage>
         throw Exception('当前词表中没有任何单词');
       }
 
-      await PdfExporter.exportToPdf(
-        context: context,
+      pdfFile = await PdfExporter.generatePdfFile(
         title: title,
         words: allWords,
         exportMode: exportMode,
@@ -3573,6 +3575,17 @@ class WordListPageState extends State<WordListPage>
       ToastUtil.error('导出失败: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       await Api.loadingService.dismiss();
+    }
+
+    if (pdfFile != null) {
+      try {
+        await Share.shareXFiles(
+          [XFile(pdfFile.path)],
+          subject: '$title - 导出词表',
+        );
+      } catch (e) {
+        Global.logger.e('分享 PDF 失败', error: e);
+      }
     }
   }
 }

@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:share_plus/share_plus.dart';
 
 import '../api/vo.dart';
 import 'word_util.dart';
@@ -21,8 +19,8 @@ class PdfExporter {
   /// 双栏每页的最大行数 (双栏，所以每页最多展示 maxRowsPerDoublePage * 2 个单词)
   static const int maxRowsPerDoublePage = 32;
 
-  static Future<void> exportToPdf({
-    required BuildContext context,
+  /// 生成 PDF 并保存为临时文件，返回 File 实例
+  static Future<File> generatePdfFile({
     required String title,
     required List<WordWrapper> words,
     required PdfExportMode exportMode,
@@ -200,11 +198,7 @@ class PdfExporter {
       final file = File(filePath);
       await file.writeAsBytes(bytes);
 
-      onStatusChanged('拉起系统分享...');
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: '$title - 导出词表',
-      );
+      return file;
     } catch (e) {
       rethrow;
     }
@@ -405,7 +399,7 @@ class PdfExporter {
                     ),
                   )
                 : pw.Text(
-                    word.meaningStr ?? '',
+                    word.getMeaningStr(), // 修复：调用 word.getMeaningStr() 方法动态生成释义，而不是使用为 null 的 meaningStr
                     style: const pw.TextStyle(
                       fontSize: 8.5,
                       // 中文使用默认主题指定的 ttfSC (NotoSansSC)
