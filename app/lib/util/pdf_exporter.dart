@@ -14,10 +14,10 @@ enum PdfExportMode {
 }
 
 class PdfExporter {
-  /// 单栏每页的最大行数 (适当留空以兼容释义换行)
-  static const int maxRowsPerSinglePage = 26;
+  /// 单栏每页的最大行数 (预留充足垂直安全空间，允许词义多行折行)
+  static const int maxRowsPerSinglePage = 25;
   /// 双栏每页的最大行数 (双栏，所以每页最多展示 maxRowsPerDoublePage * 2 个单词)
-  static const int maxRowsPerDoublePage = 30;
+  static const int maxRowsPerDoublePage = 28;
 
   /// 生成 PDF 并保存为临时文件，返回 File 实例
   static Future<File> generatePdfFile({
@@ -403,12 +403,12 @@ class PdfExporter {
                     ),
                   )
                 : pw.Text(
-                    _formatMeaningForPdf(word.getMeaningStr()), // 格式化并在分号、逗号后强制加上空格，彻底解决 CJK 字符折行并根治零宽空格乱码 Bug
+                    _formatMeaningForPdf(word.getMeaningStr()), // 格式化并在分号、逗号后强制加上空格，让 PDF 原生引擎自由换行折行
                     style: const pw.TextStyle(
                       fontSize: 8.5,
                       color: PdfColors.grey800,
                     ),
-                    maxLines: 2, // 无论是单栏还是双栏，都允许最多 2 行显示，保证字号清晰且完整展示
+                    // 不再强制限制 maxLines，支持 3 个或更多个词性时的无限折行排版展示，绝对不遗漏任何释义
                   ),
           ),
         ],
