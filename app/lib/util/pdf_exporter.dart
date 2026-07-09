@@ -299,12 +299,16 @@ class PdfExporter {
 
     // 根据是单栏还是双栏，动态分配宽度
     final double indexWidth = isDoubleColumn ? 20 : 25;
-    final double spellWidth = isDoubleColumn ? 85 : 140;
-    final double pronounceWidth = isDoubleColumn ? 55 : 90;
-    final double rowHeight = isDoubleColumn ? 22 : 24;
+    final double spellWidth = isDoubleColumn ? 80 : 140; // 双栏稍窄，增加中文可展示空间
+    final double pronounceWidth = isDoubleColumn ? 50 : 90; // 双栏稍窄
+
+    // 双栏固定行高保证左右对称，单栏弹性大小防止释义换行被截断
+    final pw.BoxConstraints constraints = isDoubleColumn
+        ? const pw.BoxConstraints(minHeight: 22, maxHeight: 22)
+        : const pw.BoxConstraints(minHeight: 24);
 
     return pw.Container(
-      height: rowHeight,
+      constraints: constraints,
       alignment: pw.Alignment.centerLeft,
       decoration: const pw.BoxDecoration(
         border: pw.Border(
@@ -399,17 +403,36 @@ class PdfExporter {
                     ),
                   )
                 : pw.Text(
-                    word.getMeaningStr(), // 修复：调用 word.getMeaningStr() 方法动态生成释义，而不是使用为 null 的 meaningStr
+                    _getCleanMeaning(word), // 优化：仅拼接中文释义本身，省去词性前缀，节省约40%的宽度，确保不被截断
                     style: const pw.TextStyle(
                       fontSize: 8.5,
-                      // 中文使用默认主题指定的 ttfSC (NotoSansSC)
                       color: PdfColors.grey800,
                     ),
-                    maxLines: 1,
+                    maxLines: isDoubleColumn ? 1 : 2, // 单栏允许折行展示更多
                   ),
           ),
         ],
       ),
     );
+  }
+
+  /// 提取无词性的纯中文释义，优化紧凑排版下的展示效果
+  static String _getCleanMeaning(WordVo word) {
+    if (word.meaningItems == null || word.meaningItems!.isEmpty) {
+      return word.meaningStr ?? '';
+    }
+    final List<String> parts = [];
+    for (var item in word.getMergedMeaningItems()) {
+      if (item.meaning != null && item.meaning!.trim().isNotEmpty) {
+        String m = item.meaning!.trim();
+        while (m.endsWith(';') || m.endsWith('；') || m.endsWith(',') || m.endsWith('，')) {
+          m = m.substring(0, m.length - 1);
+        }
+        if (m.isNotEmpty) {
+          parts.add(m);
+        }
+      }
+    }
+    return parts.isNotEmpty ? parts.join('；') : (word.meaningStr ?? '');
   }
 }

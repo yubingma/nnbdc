@@ -3578,6 +3578,8 @@ class WordListPageState extends State<WordListPage>
     }
 
     if (pdfFile != null) {
+      // 关键！等待 250 毫秒，让进度提示框的 Overlay 淡出动画完全结束，再拉起可能会挂起 UI 的原生分享弹窗
+      await Future.delayed(const Duration(milliseconds: 250));
       try {
         await Share.shareXFiles(
           [XFile(pdfFile.path)],
