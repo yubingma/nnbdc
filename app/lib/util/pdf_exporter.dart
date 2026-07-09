@@ -34,7 +34,7 @@ class PdfExporter {
 
     // 1. 先用换行符拆分出所有的独立释义行，并在数据源级别硬截断，确保高度预测与渲染 100% 对齐
     List<String> lines = meaningText.split('\n');
-    final int maxAllowedLines = isDoubleColumn ? 3 : 6;
+    final int maxAllowedLines = isDoubleColumn ? 6 : 6; // 双栏也放宽至 6 行，与单栏完全一致，确保词性不丢失！
     if (lines.length > maxAllowedLines) {
       lines = lines.sublist(0, maxAllowedLines);
     }
@@ -58,7 +58,7 @@ class PdfExporter {
       if (isDoubleColumn) {
         // 双栏下可用中文宽度约 91.6px，8.5号中文字体下能容纳的加权字符长度临界值为 10.5
         if (weightedLength > 10.5) {
-          lineEstimatedLines = 2; // 双栏模式释义行最大限制在 2 行
+          lineEstimatedLines = (weightedLength / 10.5).ceil(); // 动态计算双栏折行数，彻底消除写死最多 2 行的高度误差
         }
       } else {
         // 单栏下可用中文宽度约 248px，能容纳的加权字符长度大约为 29.0
@@ -412,7 +412,7 @@ class PdfExporter {
     List<String> lines = formatted.split('\n');
 
     // 在数据源级别限制词性行数，避免在 PDF 库中使用 maxLines 触发排版截断渲染 Bug
-    final int maxAllowedLines = isDoubleColumn ? 3 : 6;
+    final int maxAllowedLines = isDoubleColumn ? 6 : 6; // 双栏也放宽至 6 行，与单栏完全一致
     if (lines.length > maxAllowedLines) {
       lines = lines.sublist(0, maxAllowedLines);
     }
