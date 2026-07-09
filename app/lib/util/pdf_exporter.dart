@@ -285,7 +285,7 @@ class PdfExporter {
     );
   }
 
-  /// 构建单个单词的行
+  /// 构建单个单词的行 (引入斑马线效果提升视线追踪体验)
   static pw.Widget _buildWordRow(
     int displayNum,
     WordVo word,
@@ -310,8 +310,11 @@ class PdfExporter {
     return pw.Container(
       constraints: constraints,
       alignment: pw.Alignment.centerLeft,
-      decoration: const pw.BoxDecoration(
-        border: pw.Border(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 4), // 加上水平内边距让斑马线效果左右收缩更美观
+      decoration: pw.BoxDecoration(
+        // 斑马线：奇数行渲染极其浅雅的灰色，在横向较宽排版下极大降低视线错行概率
+        color: displayNum % 2 == 1 ? PdfColors.grey50 : null,
+        border: const pw.Border(
           bottom: pw.BorderSide(
             width: 0.3,
             color: PdfColors.grey300,
