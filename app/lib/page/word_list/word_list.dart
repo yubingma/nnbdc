@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:nnbdc/util/pdf_exporter.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -63,6 +64,7 @@ const String menuLegend = '学习状态图例';
 const String menuHideChinese = '隐藏中文';
 const String menuHideEnglish = '隐藏英文';
 const String menuSortSettings = '排序设置';
+const String menuExportPdf = '导出为 PDF';
 
 
 
@@ -2344,6 +2346,7 @@ class WordListPageState extends State<WordListPage>
                           menuItems.add(menuWriteSpellHandwriting);
                           menuItems.add(menuHideChinese);
                           menuItems.add(menuHideEnglish);
+                          menuItems.add(menuExportPdf);
 
                           if (args.showAiStory) {
                             menuItems.add(menuAiStory);
@@ -2404,6 +2407,9 @@ class WordListPageState extends State<WordListPage>
                                   break;
                                 case menuHideEnglish:
                                   icon = Icons.visibility_off;
+                                  break;
+                                case menuExportPdf:
+                                  icon = Icons.picture_as_pdf;
                                   break;
 
                                 case menuAiStory:
@@ -2466,6 +2472,9 @@ class WordListPageState extends State<WordListPage>
                                 case menuSortSettings:
                                   isSelected = false;
                                   break;
+                                case menuExportPdf:
+                                  isSelected = false;
+                                  break;
                               }
 
                               return PopupMenuItem<String>(
@@ -2517,16 +2526,16 @@ class WordListPageState extends State<WordListPage>
 
                           // 6. 处理选择
                           if (selectedValue != null) {
-                            // 根本解决方案：不使用延迟等待，也不使用全局 Modal 路由。
-                            // 而是通过 setState 触发页面内部的加载层。
-                            // 这样 Navigator 只有一个 pop 动作，没有路由冲突，动画会极其顺滑。
-                            setState(() {
-                              _isSwitchingMode = true;
-                              _switchingMessage = '模式切换中...';
-                            });
+                            if (selectedValue == menuExportPdf) {
+                              _showExportPdfBottomSheet();
+                            } else {
+                              setState(() {
+                                _isSwitchingMode = true;
+                                _switchingMessage = '模式切换中...';
+                              });
 
-                            // 利用微任务将沉重的逻辑切分到下一帧开始
-                            Future.microtask(() async {
+                              // 利用微任务将沉重的逻辑切分到下一帧开始
+                              Future.microtask(() async {
                               if (!mounted) return;
                               
                               try {
@@ -2712,6 +2721,7 @@ class WordListPageState extends State<WordListPage>
                                 }
                               }
                             });
+                            }
                           }
                         } finally {
                           // 7. 恢复标志位
@@ -3301,6 +3311,195 @@ class WordListPageState extends State<WordListPage>
         return '单词按单元顺序排列';
       case WordSortAlg.semantic:
         return '按单词语境和意思关联度排列';
+    }
+  }
+
+  void _showExportPdfBottomSheet() {
+    PdfExportMode selectedMode = PdfExportMode.classic;
+    bool includePronounce = true;
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    const primaryColor = Color(0xFF0097A7);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            Widget buildRadioOption(PdfExportMode mode, String label) {
+              final isSelected = selectedMode == mode;
+              return InkWell(
+                onTap: () {
+                  setModalState(() {
+                    selectedMode = mode;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                        color: isSelected ? primaryColor : (isDarkMode ? Colors.white54 : Colors.grey[400]),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDarkMode ? Colors.white : Colors.grey[800],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '导出词表为 PDF',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.grey[900],
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: isDarkMode ? Colors.white60 : Colors.grey[600]),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '支持中英对照、拼写和释义的自测默写排版，适合纸质打印与 iPad 复习。',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDarkMode ? Colors.white60 : Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
+                  const SizedBox(height: 8),
+                  Text(
+                    '导出模式',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode ? Colors.white70 : Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  buildRadioOption(PdfExportMode.classic, '中英对照表 (常规复习清单)'),
+                  buildRadioOption(PdfExportMode.spellDictation, '拼写默写本 (隐藏英文，保留中文和横线)'),
+                  buildRadioOption(PdfExportMode.meaningDictation, '释义记忆本 (隐藏中文，保留英文和横线)'),
+                  const SizedBox(height: 4),
+                  Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
+                  const SizedBox(height: 4),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: primaryColor,
+                    title: Text(
+                      '包含单词音标',
+                      style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.grey[800]),
+                    ),
+                    value: includePronounce,
+                    onChanged: (val) {
+                      setModalState(() {
+                        includePronounce = val ?? true;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: isDarkMode ? Colors.white30 : Colors.grey[300]!),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            '取消',
+                            style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _handleExportPdf(selectedMode, includePronounce);
+                          },
+                          child: const Text(
+                            '开始导出',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handleExportPdf(PdfExportMode exportMode, bool includePronounce) async {
+    final title = args.appBarTitle;
+    try {
+      await Api.loadingService.show(status: '正在获取词表单词...');
+      if (!mounted) return;
+      
+      final allWords = await controller.getAllSortedWords();
+      if (!mounted) return;
+      
+      if (allWords.isEmpty) {
+        throw Exception('当前词表中没有任何单词');
+      }
+
+      await PdfExporter.exportToPdf(
+        context: context,
+        title: title,
+        words: allWords,
+        exportMode: exportMode,
+        includePronounce: includePronounce,
+        onStatusChanged: (status) {
+          Api.loadingService.show(status: status);
+        },
+      );
+    } catch (e) {
+      Global.logger.e('导出 PDF 失败', error: e);
+      ToastUtil.error('导出失败: ${e.toString().replaceAll('Exception: ', '')}');
+    } finally {
+      await Api.loadingService.dismiss();
     }
   }
 }

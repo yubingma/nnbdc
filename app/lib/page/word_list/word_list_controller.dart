@@ -654,4 +654,20 @@ class WordListController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// 获取当前词表所有且排好序的单词列表 (用于 PDF 导出)
+  Future<List<WordWrapper>> getAllSortedWords() async {
+    final sortAlg = await getCurrentSortAlg();
+    if (args.wordsProvider is! DictWordsProvider) {
+      await _ensureMemorySortedList(sortAlg);
+      return _memorySortedList ?? [];
+    } else {
+      final allResult = await args.wordsProvider.getAPageOfWords(0, 999999);
+      final list = allResult.rows;
+      if (sortAlg == WordSortAlg.alphabetical) {
+        list.sort((a, b) => a.word.spell.toLowerCase().compareTo(b.word.spell.toLowerCase()));
+      }
+      return list;
+    }
+  }
 }
