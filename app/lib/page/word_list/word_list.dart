@@ -2346,7 +2346,6 @@ class WordListPageState extends State<WordListPage>
                           menuItems.add(menuWriteSpellHandwriting);
                           menuItems.add(menuHideChinese);
                           menuItems.add(menuHideEnglish);
-                          menuItems.add(menuExportPdf);
 
                           if (args.showAiStory) {
                             menuItems.add(menuAiStory);
@@ -2357,6 +2356,7 @@ class WordListPageState extends State<WordListPage>
 
                           // 随身听菜单放在最下面
                           menuItems.add(menuWalkman);
+                          menuItems.add(menuExportPdf);
 
                           // 5. 显示菜单 (使用 RootNavigator)
                           // ignore: use_build_context_synchronously
@@ -3322,6 +3322,7 @@ class WordListPageState extends State<WordListPage>
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -3362,108 +3363,110 @@ class WordListPageState extends State<WordListPage>
               );
             }
 
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '导出词表为 PDF',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.grey[900],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: isDarkMode ? Colors.white60 : Colors.grey[600]),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '支持中英对照、拼写和释义的自测默写排版，适合纸质打印与 iPad 复习。',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDarkMode ? Colors.white60 : Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
-                  const SizedBox(height: 8),
-                  Text(
-                    '导出模式',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDarkMode ? Colors.white70 : Colors.grey[800],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  buildRadioOption(PdfExportMode.classic, '中英对照表 (常规复习清单)'),
-                  buildRadioOption(PdfExportMode.spellDictation, '拼写默写本 (隐藏英文，保留中文和横线)'),
-                  buildRadioOption(PdfExportMode.meaningDictation, '释义记忆本 (隐藏中文，保留英文和横线)'),
-                  const SizedBox(height: 4),
-                  Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
-                  const SizedBox(height: 4),
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    activeColor: primaryColor,
-                    title: Text(
-                      '包含单词音标',
-                      style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.grey[800]),
-                    ),
-                    value: includePronounce,
-                    onChanged: (val) {
-                      setModalState(() {
-                        includePronounce = val ?? true;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: isDarkMode ? Colors.white30 : Colors.grey[300]!),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '导出词表为 PDF',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? Colors.white : Colors.grey[900],
                           ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: isDarkMode ? Colors.white60 : Colors.grey[600]),
                           onPressed: () => Navigator.pop(context),
-                          child: Text(
-                            '取消',
-                            style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '支持中英对照、拼写和释义的自测默写排版，适合纸质打印与 iPad 复习。',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDarkMode ? Colors.white60 : Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
+                    const SizedBox(height: 8),
+                    Text(
+                      '导出模式',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDarkMode ? Colors.white70 : Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    buildRadioOption(PdfExportMode.classic, '中英对照表 (常规复习清单)'),
+                    buildRadioOption(PdfExportMode.spellDictation, '拼写默写本 (隐藏英文，保留中文和横线)'),
+                    buildRadioOption(PdfExportMode.meaningDictation, '释义记忆本 (隐藏中文，保留英文和横线)'),
+                    const SizedBox(height: 4),
+                    Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
+                    const SizedBox(height: 4),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      activeColor: primaryColor,
+                      title: Text(
+                        '包含单词音标',
+                        style: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.grey[800]),
+                      ),
+                      value: includePronounce,
+                      onChanged: (val) {
+                        setModalState(() {
+                          includePronounce = val ?? true;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: isDarkMode ? Colors.white30 : Colors.grey[300]!),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              '取消',
+                              style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            elevation: 0,
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _handleExportPdf(selectedMode, includePronounce);
-                          },
-                          child: const Text(
-                            '开始导出',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              elevation: 0,
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _handleExportPdf(selectedMode, includePronounce);
+                            },
+                            child: const Text(
+                              '开始导出',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
