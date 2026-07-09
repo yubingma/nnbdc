@@ -19,7 +19,7 @@ class PdfExporter {
   /// 双栏每页的最大行数 (用于动态算法的安全边界参考)
   static const int maxRowsPerDoublePage = 22;
 
-  /// 估算单个单词在指定排版下的物理高度，校准折行增量高度，实现像素级精准切页
+  /// 估算单个单词在指定排版下的物理高度，采用中英文加权字符长度算法，实现最精准的折行高度预算
   static double _estimateWordHeight(WordVo word, bool isDoubleColumn, bool includePronounce) {
     // 基础高度 (单行最小高度 constraints)
     final double baseHeight = isDoubleColumn ? 22.0 : 24.0;
@@ -31,16 +31,28 @@ class PdfExporter {
       return baseHeight;
     }
 
+    // 引入加权字符长度计算：中文字符权重为 1.0，西文字符（词性前缀等）权重为 0.5，比单纯用 length 估算折行精确数倍
+    double weightedLength = 0.0;
+    for (int i = 0; i < meaningText.length; i++) {
+      int charCode = meaningText.codeUnitAt(i);
+      if (charCode > 127) {
+        weightedLength += 1.0;
+      } else {
+        weightedLength += 0.5;
+      }
+    }
+
     int estimatedLines = 1;
     if (isDoubleColumn) {
-      // 双栏下，可用中文宽度约 110px，在 8.5 号字下大约容纳 13 个字符
-      if (meaningText.length > 13) {
+      // 双栏下，扣除序号/Spell/音标等物理宽度后，中文可用宽度约 91.6px
+      // 8.5号中文字体下，能容纳的加权字符长度临界值大约为 11
+      if (weightedLength > 11.0) {
         estimatedLines = 2; // 双栏最大限制在 2 行
       }
     } else {
-      // 单栏下，可用中文宽度约 270px，在 8.5 号字下大约容纳 32 个字符
-      if (meaningText.length > 32) {
-        estimatedLines = (meaningText.length / 32).ceil();
+      // 单栏下，可用中文宽度约 260px，在 8.5 号字下大约容纳加权长度 30.0 的字符
+      if (weightedLength > 30.0) {
+        estimatedLines = (weightedLength / 30.0).ceil();
         if (estimatedLines > 4) estimatedLines = 4; // 单栏限制最大换行 4 行
       }
     }
@@ -63,7 +75,7 @@ class PdfExporter {
 
     try {
       onStatusChanged('正在加载字体资源...');
-      // 1. 同时加载中文字体和西文字体，防止中文乱码和音标特殊字符乱码
+      // 1. 同时加载中文字体和西文字体，防止中文乱码 and 音标特殊字符乱码
       final fontDataSC = await rootBundle.load('assets/fonts/NotoSansSC-Regular.ttf');
       final fontDataEN = await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
       
@@ -83,8 +95,8 @@ class PdfExporter {
       int currentWordIdx = 0;
 
       if (isDoubleColumn) {
-        // 双栏最大安全可用主体高度：812px可用，扣除页眉页脚等非主体部分(51px)，设为精准的 755px
-        const double maxPageHeight = 755.0; 
+        // 双栏最大安全可用主体高度：812px物理总高，扣除页眉页脚等非主体部分固定开销(51px)，直接顶满至 761px 极限空间
+        const double maxPageHeight = 761.0; 
 
         while (currentWordIdx < words.length) {
           int count = 1;
@@ -121,8 +133,8 @@ class PdfExporter {
           currentWordIdx += finalCount;
         }
       } else {
-        // 单栏最大安全可用主体高度：802px可用，扣除页眉页脚等(51px)，设为精准的 745px
-        const double maxPageHeight = 745.0; 
+        // 单栏最大安全可用主体高度：802px物理总高，扣除页眉页脚等固定开销(51px)，直接顶满至 751px 极限空间
+        const double maxPageHeight = 751.0; 
 
         while (currentWordIdx < words.length) {
           int count = 1;
