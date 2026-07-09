@@ -433,6 +433,9 @@ class PdfExporter {
       if (match != null) {
         pos = match.group(1) ?? '';
         meaning = line.substring(pos.length);
+      } else {
+        // 词性前缀为空，用淡淡的圆点（• ）进行占位，以在视觉上与纯文本折行明确区分
+        pos = '• ';
       }
 
       if (mode == PdfExportMode.meaningDictation) {
@@ -441,9 +444,10 @@ class PdfExporter {
           lineSpans.add(
             pw.TextSpan(
               text: pos,
-              style: const pw.TextStyle(
+              style: pw.TextStyle(
                 fontSize: 8.5,
-                color: PdfColors.grey700,
+                color: pos == '• ' ? PdfColors.grey400 : PdfColors.grey700,
+                fontWeight: pos == '• ' ? pw.FontWeight.bold : pw.FontWeight.normal,
               ),
             ),
           );
@@ -462,9 +466,21 @@ class PdfExporter {
         );
       } else {
         // 中英对照经典模式：全文显示
+        if (pos.isNotEmpty) {
+          lineSpans.add(
+            pw.TextSpan(
+              text: pos,
+              style: pw.TextStyle(
+                fontSize: 8.5,
+                color: pos == '• ' ? PdfColors.grey400 : PdfColors.grey800,
+                fontWeight: pos == '• ' ? pw.FontWeight.bold : pw.FontWeight.normal,
+              ),
+            ),
+          );
+        }
         lineSpans.add(
           pw.TextSpan(
-            text: line,
+            text: meaning,
             style: const pw.TextStyle(
               fontSize: 8.5,
               color: PdfColors.grey800,
