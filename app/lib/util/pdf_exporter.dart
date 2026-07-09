@@ -396,6 +396,82 @@ class PdfExporter {
     );
   }
 
+  /// 智能构建中文释义区域的富文本渲染（自测模式下只保留词性，且后面的释义生成精准下划线）
+  static pw.Widget _buildMeaningTextWithPos(
+    String meaningStr,
+    PdfExportMode mode,
+    PdfColor rowBgColor,
+    bool isDoubleColumn,
+  ) {
+    final String formatted = _formatMeaningForPdf(meaningStr);
+    final List<String> lines = formatted.split('\n');
+    final List<pw.InlineSpan> lineSpans = [];
+
+    // 正则匹配句首的词性缩写（如 n., vt., vi., adj. 等，包含可选空格）
+    final RegExp posRegExp = RegExp(r'^([a-zA-Z]+\.\s*)');
+
+    for (int i = 0; i < lines.length; i++) {
+      final String line = lines[i];
+      if (line.trim().isEmpty) continue;
+
+      final Match? match = posRegExp.firstMatch(line);
+      String pos = '';
+      String meaning = line;
+
+      if (match != null) {
+        pos = match.group(1) ?? '';
+        meaning = line.substring(pos.length);
+      }
+
+      if (mode == PdfExportMode.meaningDictation) {
+        // 释义自测模式：词性以灰色常规字体正常显示，中文释义以背景色完美物理隐藏并带下划线
+        if (pos.isNotEmpty) {
+          lineSpans.add(
+            pw.TextSpan(
+              text: pos,
+              style: const pw.TextStyle(
+                fontSize: 8.5,
+                color: PdfColors.grey700,
+              ),
+            ),
+          );
+        }
+        lineSpans.add(
+          pw.TextSpan(
+            text: meaning,
+            style: pw.TextStyle(
+              fontSize: 8.5,
+              color: rowBgColor, // 100% 与背景融为一体
+              decoration: pw.TextDecoration.underline,
+              decorationColor: PdfColors.grey400,
+              decorationStyle: pw.TextDecorationStyle.solid,
+            ),
+          ),
+        );
+      } else {
+        // 中英对照经典模式：全文显示
+        lineSpans.add(
+          pw.TextSpan(
+            text: line,
+            style: const pw.TextStyle(
+              fontSize: 8.5,
+              color: PdfColors.grey800,
+            ),
+          ),
+        );
+      }
+
+      if (i < lines.length - 1) {
+        lineSpans.add(const pw.TextSpan(text: '\n'));
+      }
+    }
+
+    return pw.RichText(
+      text: pw.TextSpan(children: lineSpans),
+      maxLines: isDoubleColumn ? 2 : null,
+    );
+  }
+
   /// 构建单个单词的行 (引入斑马线效果提升视线追踪体验)
   static pw.Widget _buildWordRow(
     int displayNum,
@@ -503,21 +579,11 @@ class PdfExporter {
 
           // 中文释义 或 填空手写下划线
           pw.Expanded(
-            child: pw.Text(
-              _formatMeaningForPdf(word.getMeaningStr()), // 格式化并在分号、逗号后强制加上空格，让 PDF 原生引擎自由换行折行
-              style: pw.TextStyle(
-                fontSize: 8.5,
-                // 释义记忆自测模式下，将字体颜色设置为与当前行背景色绝对相同，实现完美物理隐形占位，同时添加灰色下划线充当多行手写横线
-                color: mode == PdfExportMode.meaningDictation
-                    ? rowBgColor
-                    : PdfColors.grey800,
-                decoration: mode == PdfExportMode.meaningDictation
-                    ? pw.TextDecoration.underline
-                    : null,
-                decorationColor: PdfColors.grey400,
-                decorationStyle: pw.TextDecorationStyle.solid,
-              ),
-              maxLines: isDoubleColumn ? 2 : null, // 关键：双栏模式最多只支持折行 2 行，彻底防止无限折行抢占空间挤掉后面单词；单栏无限折行
+            child: _buildMeaningTextWithPos(
+              word.getMeaningStr(),
+              mode,
+              rowBgColor,
+              isDoubleColumn,
             ),
           ),
         ],
