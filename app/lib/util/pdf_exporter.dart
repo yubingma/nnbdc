@@ -14,10 +14,10 @@ enum PdfExportMode {
 }
 
 class PdfExporter {
-  /// 单栏每页的最大行数
-  static const int maxRowsPerSinglePage = 28;
+  /// 单栏每页的最大行数 (适当留空以兼容释义换行)
+  static const int maxRowsPerSinglePage = 26;
   /// 双栏每页的最大行数 (双栏，所以每页最多展示 maxRowsPerDoublePage * 2 个单词)
-  static const int maxRowsPerDoublePage = 32;
+  static const int maxRowsPerDoublePage = 30;
 
   /// 生成 PDF 并保存为临时文件，返回 File 实例
   static Future<File> generatePdfFile({
@@ -302,9 +302,9 @@ class PdfExporter {
     final double spellWidth = isDoubleColumn ? 80 : 140; // 双栏稍窄，增加中文可展示空间
     final double pronounceWidth = isDoubleColumn ? 50 : 90; // 双栏稍窄
 
-    // 双栏固定行高保证左右对称，单栏弹性大小防止释义换行被截断
+    // 不再使用固定高度限制（maxHeight），让高度可以自适应折行撑开，防止折行重叠
     final pw.BoxConstraints constraints = isDoubleColumn
-        ? const pw.BoxConstraints(minHeight: 22, maxHeight: 22)
+        ? const pw.BoxConstraints(minHeight: 22)
         : const pw.BoxConstraints(minHeight: 24);
 
     return pw.Container(
@@ -402,55 +402,27 @@ class PdfExporter {
                       ),
                     ),
                   )
-                : (isDoubleColumn
-                    ? pw.FittedBox(
-                        fit: pw.BoxFit.scaleDown,
-                        alignment: pw.Alignment.centerLeft,
-                        child: pw.Text(
-                          _getCleanMeaning(word),
-                          style: const pw.TextStyle(
-                            fontSize: 8.5,
-                            color: PdfColors.grey800,
-                          ),
-                        ),
-                      )
-                    : pw.Text(
-                        _addZeroWidthSpaces(_getCleanMeaning(word)), // 使用零宽空格，使无空格长中文能在边界自动换行，彻底防截断
-                        style: const pw.TextStyle(
-                          fontSize: 8.5,
-                          color: PdfColors.grey800,
-                        ),
-                        maxLines: 2, // 单栏允许折行展示更多
-                      )),
+                : pw.Text(
+                    _formatMeaningForPdf(word.getMeaningStr()), // 格式化并在分号、逗号后强制加上空格，彻底解决 CJK 字符折行并根治零宽空格乱码 Bug
+                    style: const pw.TextStyle(
+                      fontSize: 8.5,
+                      color: PdfColors.grey800,
+                    ),
+                    maxLines: 2, // 无论是单栏还是双栏，都允许最多 2 行显示，保证字号清晰且完整展示
+                  ),
           ),
         ],
       ),
     );
   }
 
-  /// 提取无词性的纯中文释义，优化紧凑排版下的展示效果
-  static String _getCleanMeaning(WordVo word) {
-    if (word.meaningItems == null || word.meaningItems!.isEmpty) {
-      return word.meaningStr ?? '';
-    }
-    final List<String> parts = [];
-    for (var item in word.getMergedMeaningItems()) {
-      if (item.meaning != null && item.meaning!.trim().isNotEmpty) {
-        String m = item.meaning!.trim();
-        while (m.endsWith(';') || m.endsWith('；') || m.endsWith(',') || m.endsWith('，')) {
-          m = m.substring(0, m.length - 1);
-        }
-        if (m.isNotEmpty) {
-          parts.add(m);
-        }
-      }
-    }
-    return parts.isNotEmpty ? parts.join('；') : (word.meaningStr ?? '');
-  }
-
-  /// 在中文字符之间插入零宽空格（\u200B），以便 PDF 引擎能够在中文的任意位置进行软折行适配
-  static String _addZeroWidthSpaces(String text) {
+  /// 格式化中文释义字串，通过在标点（分号、逗号）后面补足半角空格来提供 PDF 引擎的原生分词折行依据
+  /// 彻底废弃 \u200B (零宽空格)，避开了中文字体库不支持该 glyph 导致的渲染乱码
+  static String _formatMeaningForPdf(String text) {
     if (text.isEmpty) return text;
-    return text.split('').join('\u{200B}');
+    return text
+        .replaceAll(RegExp(r'[;；]+'), '； ')
+        .replaceAll(RegExp(r'[,，]+'), '， ')
+        .trim();
   }
 }
