@@ -412,7 +412,7 @@ class PdfExporter {
                       fontSize: 8.5,
                       color: PdfColors.grey800,
                     ),
-                    // 不再强制限制 maxLines，支持 3 个或更多个词性时的无限折行排版展示，绝对不遗漏任何释义
+                    maxLines: isDoubleColumn ? 2 : null, // 关键：双栏模式最多只支持折行 2 行，彻底防止无限折行抢占空间挤掉后面单词；单栏无限折行
                   ),
           ),
         ],
