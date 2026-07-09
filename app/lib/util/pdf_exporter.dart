@@ -14,10 +14,10 @@ enum PdfExportMode {
 }
 
 class PdfExporter {
-  /// 单栏每页的最大行数 (预留充足垂直安全空间，允许词义多行折行)
-  static const int maxRowsPerSinglePage = 25;
+  /// 单栏每页的最大行数 (预留充足垂直安全空间，允许词义多行折行，防止截断丢失单词)
+  static const int maxRowsPerSinglePage = 20;
   /// 双栏每页的最大行数 (双栏，所以每页最多展示 maxRowsPerDoublePage * 2 个单词)
-  static const int maxRowsPerDoublePage = 28;
+  static const int maxRowsPerDoublePage = 22;
 
   /// 生成 PDF 并保存为临时文件，返回 File 实例
   static Future<File> generatePdfFile({
@@ -71,13 +71,14 @@ class PdfExporter {
           pdfDoc.addPage(
             pw.Page(
               pageFormat: PdfPageFormat.a4,
-              margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              // 适当收窄垂直 Margins，将最大可用空间拓展至 760 像素，配合 22 行数彻底规避溢出截断
+              margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 15),
               build: (pw.Context pwContext) {
                 return pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     _buildHeader(title, pageIndex + 1, totalPages, exportMode, true),
-                    pw.SizedBox(height: 12),
+                    pw.SizedBox(height: 10),
                     pw.Expanded(
                       child: pw.Row(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -127,7 +128,7 @@ class PdfExporter {
                         ],
                       ),
                     ),
-                    pw.SizedBox(height: 8),
+                    pw.SizedBox(height: 6),
                     _buildFooter(pageIndex + 1, totalPages),
                   ],
                 );
@@ -151,13 +152,13 @@ class PdfExporter {
           pdfDoc.addPage(
             pw.Page(
               pageFormat: PdfPageFormat.a4,
-              margin: const pw.EdgeInsets.symmetric(horizontal: 36, vertical: 24),
+              margin: const pw.EdgeInsets.symmetric(horizontal: 36, vertical: 20),
               build: (pw.Context pwContext) {
                 return pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     _buildHeader(title, pageIndex + 1, totalPages, exportMode, false),
-                    pw.SizedBox(height: 12),
+                    pw.SizedBox(height: 10),
                     pw.Expanded(
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -174,7 +175,7 @@ class PdfExporter {
                         }).toList(),
                       ),
                     ),
-                    pw.SizedBox(height: 8),
+                    pw.SizedBox(height: 6),
                     _buildFooter(pageIndex + 1, totalPages),
                   ],
                 );
