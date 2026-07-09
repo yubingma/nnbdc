@@ -14,10 +14,34 @@ enum PdfExportMode {
 }
 
 class PdfExporter {
-  /// 单栏每页的最大行数 (预留充足垂直安全空间，允许词义多行折行，防止截断丢失单词)
-  static const int maxRowsPerSinglePage = 20;
-  /// 双栏每页的最大行数 (双栏，所以每页最多展示 maxRowsPerDoublePage * 2 个单词)
-  static const int maxRowsPerDoublePage = 22;
+  /// 估算单个单词在指定排版下的物理高度，用于实现动态切页算法
+  static double _estimateWordHeight(WordVo word, bool isDoubleColumn, bool includePronounce) {
+    // 基础高度
+    final double baseHeight = isDoubleColumn ? 22.0 : 24.0;
+    // 换行增量高度
+    final double lineIncrement = 12.0;
+
+    final String meaningText = _formatMeaningForPdf(word.getMeaningStr());
+    if (meaningText.isEmpty) {
+      return baseHeight;
+    }
+
+    int estimatedLines = 1;
+    if (isDoubleColumn) {
+      // 双栏下，可用中文宽度约 110px，在 8.5 号字下大约容纳 13 个字符
+      if (meaningText.length > 13) {
+        estimatedLines = 2; // 双栏最大限制在 2 行
+      }
+    } else {
+      // 单栏下，可用中文宽度约 270px，在 8.5 号字下大约容纳 32 个字符
+      if (meaningText.length > 32) {
+        estimatedLines = (meaningText.length / 32).ceil();
+        if (estimatedLines > 4) estimatedLines = 4; // 单栏限制最大换行 4 行
+      }
+    }
+
+    return baseHeight + (estimatedLines - 1) * lineIncrement;
+  }
 
   /// 生成 PDF 并保存为临时文件，返回 File 实例
   static Future<File> generatePdfFile({
@@ -49,29 +73,91 @@ class PdfExporter {
         ),
       );
 
+      // 2. 根据动态高度累加预测算法进行切页，实现 A4 页面空间利用率最大化且绝对不溢出截断
+      final List<List<WordWrapper>> pagesData = [];
+      int currentWordIdx = 0;
+
       if (isDoubleColumn) {
-        // 双栏排版
-        final int wordsPerPage = maxRowsPerDoublePage * 2;
-        final int totalPages = (words.length / wordsPerPage).ceil();
+        const double maxPageHeight = 720.0; // 双栏最大安全可用主体高度 (760px 可用)
 
-        for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-          final int startIdx = pageIndex * wordsPerPage;
-          final int endIdx = (startIdx + wordsPerPage < words.length)
-              ? startIdx + wordsPerPage
-              : words.length;
+        while (currentWordIdx < words.length) {
+          int count = 1;
+          while (currentWordIdx + count <= words.length) {
+            final List<WordWrapper> candidateWords =
+                words.sublist(currentWordIdx, currentWordIdx + count);
 
-          final List<WordWrapper> pageWords = words.sublist(startIdx, endIdx);
+            // 模拟左右均分
+            final int mid = (candidateWords.length / 2).ceil();
+            final List<WordWrapper> left = candidateWords.sublist(0, mid);
+            final List<WordWrapper> right = candidateWords.sublist(mid);
 
-          // 将这一页的单词分为左右两栏
+            // 计算左右两栏高度
+            double leftHeight = 0;
+            for (var w in left) {
+              leftHeight += _estimateWordHeight(w.word, true, includePronounce);
+            }
+            double rightHeight = 0;
+            for (var w in right) {
+              rightHeight += _estimateWordHeight(w.word, true, includePronounce);
+            }
+
+            final double pageHeight = leftHeight > rightHeight ? leftHeight : rightHeight;
+
+            if (pageHeight <= maxPageHeight) {
+              count++;
+            } else {
+              break;
+            }
+          }
+
+          final int finalCount = count > 1 ? count - 1 : 1;
+          pagesData.add(words.sublist(currentWordIdx, currentWordIdx + finalCount));
+          currentWordIdx += finalCount;
+        }
+      } else {
+        const double maxPageHeight = 710.0; // 单栏最大安全可用主体高度 (740px 可用)
+
+        while (currentWordIdx < words.length) {
+          int count = 1;
+          while (currentWordIdx + count <= words.length) {
+            final List<WordWrapper> candidateWords =
+                words.sublist(currentWordIdx, currentWordIdx + count);
+
+            double totalHeight = 0;
+            for (var w in candidateWords) {
+              totalHeight += _estimateWordHeight(w.word, false, includePronounce);
+            }
+
+            if (totalHeight <= maxPageHeight) {
+              count++;
+            } else {
+              break;
+            }
+          }
+
+          final int finalCount = count > 1 ? count - 1 : 1;
+          pagesData.add(words.sublist(currentWordIdx, currentWordIdx + finalCount));
+          currentWordIdx += finalCount;
+        }
+      }
+
+      // 3. 构建排版渲染页面
+      final int totalPages = pagesData.length;
+      int pageStartGlobalIdx = 0; // 全局绝对序列计数器
+
+      for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+        final List<WordWrapper> pageWords = pagesData[pageIndex];
+        final int startIdx = pageStartGlobalIdx;
+
+        if (isDoubleColumn) {
+          // 将当前页的单词均分为左右两列
           final int midPoint = (pageWords.length / 2).ceil();
           final List<WordWrapper> leftColWords = pageWords.sublist(0, midPoint);
-          final List<WordWrapper> rightColWords =
-              pageWords.sublist(midPoint, pageWords.length);
+          final List<WordWrapper> rightColWords = pageWords.sublist(midPoint);
 
           pdfDoc.addPage(
             pw.Page(
               pageFormat: PdfPageFormat.a4,
-              // 适当收窄垂直 Margins，将最大可用空间拓展至 760 像素，配合 22 行数彻底规避溢出截断
               margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 15),
               build: (pw.Context pwContext) {
                 return pw.Column(
@@ -135,20 +221,8 @@ class PdfExporter {
               },
             ),
           );
-        }
-      } else {
-        // 单栏排版
-        final int wordsPerPage = maxRowsPerSinglePage;
-        final int totalPages = (words.length / wordsPerPage).ceil();
-
-        for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-          final int startIdx = pageIndex * wordsPerPage;
-          final int endIdx = (startIdx + wordsPerPage < words.length)
-              ? startIdx + wordsPerPage
-              : words.length;
-
-          final List<WordWrapper> pageWords = words.sublist(startIdx, endIdx);
-
+        } else {
+          // 单栏排版
           pdfDoc.addPage(
             pw.Page(
               pageFormat: PdfPageFormat.a4,
@@ -183,6 +257,8 @@ class PdfExporter {
             ),
           );
         }
+
+        pageStartGlobalIdx += pageWords.length;
       }
 
       onStatusChanged('正在生成 PDF 文件...');
@@ -412,7 +488,7 @@ class PdfExporter {
                       fontSize: 8.5,
                       color: PdfColors.grey800,
                     ),
-                    maxLines: isDoubleColumn ? 2 : null, // 关键：双栏模式最多只支持折行 2 行，彻底防止无限折行抢占空间挤掉后面单词；单栏无限折行
+                    maxLines: isDoubleColumn ? 2 : null, // 双栏模式最多只支持折行 2 行，彻底防止无限折行抢占空间挤掉后面单词；单栏无限折行
                   ),
           ),
         ],
