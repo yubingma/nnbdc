@@ -31,8 +31,12 @@ class PdfExporter {
       return baseHeight;
     }
 
-    // 1. 先用换行符拆分出所有的独立释义行，解决多词性(\n)换行漏估算天坑
-    final List<String> lines = meaningText.split('\n');
+    // 1. 先用换行符拆分出所有的独立释义行，并在数据源级别硬截断，确保高度预测与渲染 100% 对齐
+    List<String> lines = meaningText.split('\n');
+    final int maxAllowedLines = isDoubleColumn ? 3 : 6;
+    if (lines.length > maxAllowedLines) {
+      lines = lines.sublist(0, maxAllowedLines);
+    }
     int totalEstimatedLines = 0;
 
     for (final line in lines) {
@@ -496,16 +500,13 @@ class PdfExporter {
     final double spellWidth = isDoubleColumn ? 80 : 140; // 双栏稍窄，增加中文可展示空间
     final double pronounceWidth = isDoubleColumn ? 50 : 90; // 双栏稍窄
 
-    // 不再使用固定高度限制（maxHeight），让高度可以自适应折行撑开，防止折行重叠
-    final pw.BoxConstraints constraints = isDoubleColumn
-        ? const pw.BoxConstraints(minHeight: 18) // 调小为 18 像素，使双栏版面极其紧凑饱满
-        : const pw.BoxConstraints(minHeight: 22);
+    final double estimatedHeight = _estimateWordHeight(word, isDoubleColumn, includePronounce);
 
     final bool isOdd = displayNum % 2 == 1;
     final PdfColor rowBgColor = isOdd ? PdfColors.cyan50 : PdfColors.white;
 
     return pw.Container(
-      constraints: constraints,
+      height: estimatedHeight, // 显式指定行高，彻底避开 flex 多层嵌套下的高度塌陷与重叠 Bug
       alignment: pw.Alignment.centerLeft,
       padding: const pw.EdgeInsets.symmetric(horizontal: 4), // 加上水平内边距让斑马线效果左右收缩更美观
       decoration: pw.BoxDecoration(
