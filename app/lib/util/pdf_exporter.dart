@@ -312,8 +312,8 @@ class PdfExporter {
       alignment: pw.Alignment.centerLeft,
       padding: const pw.EdgeInsets.symmetric(horizontal: 4), // 加上水平内边距让斑马线效果左右收缩更美观
       decoration: pw.BoxDecoration(
-        // 斑马线：奇数行渲染极其浅雅的灰色，在横向较宽排版下极大降低视线错行概率
-        color: displayNum % 2 == 1 ? PdfColors.grey50 : null,
+        // 斑马线：奇数行渲染极其浅雅的青蓝色，与页眉深青色呼应
+        color: displayNum % 2 == 1 ? PdfColors.cyan50 : null,
         border: const pw.Border(
           bottom: pw.BorderSide(
             width: 0.3,
