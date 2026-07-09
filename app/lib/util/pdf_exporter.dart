@@ -16,8 +16,10 @@ enum PdfExportMode {
 }
 
 class PdfExporter {
-  /// 每页的最大行数 (双栏，所以每页最多展示 maxRowsPerPage * 2 个单词)
-  static const int maxRowsPerPage = 32;
+  /// 单栏每页的最大行数
+  static const int maxRowsPerSinglePage = 28;
+  /// 双栏每页的最大行数 (双栏，所以每页最多展示 maxRowsPerDoublePage * 2 个单词)
+  static const int maxRowsPerDoublePage = 32;
 
   static Future<void> exportToPdf({
     required BuildContext context,
@@ -25,6 +27,7 @@ class PdfExporter {
     required List<WordWrapper> words,
     required PdfExportMode exportMode,
     required bool includePronounce,
+    required bool isDoubleColumn,
     required Function(String) onStatusChanged,
   }) async {
     if (words.isEmpty) {
@@ -32,114 +35,172 @@ class PdfExporter {
     }
 
     try {
-      onStatusChanged('正在加载中文字体...');
-      // 1. 加载本地中文字体以支持中文渲染 (避免乱码)
-      final fontData = await rootBundle.load('assets/fonts/NotoSansSC-Regular.ttf');
-      final ttfFont = pw.Font.ttf(fontData);
+      onStatusChanged('正在加载字体资源...');
+      // 1. 同时加载中文字体和西文字体，防止中文乱码和音标特殊字符乱码
+      final fontDataSC = await rootBundle.load('assets/fonts/NotoSansSC-Regular.ttf');
+      final fontDataEN = await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
+      
+      final ttfSC = pw.Font.ttf(fontDataSC);
+      final ttfEN = pw.Font.ttf(fontDataEN);
 
       onStatusChanged('正在排版 PDF 文档...');
       final pdfDoc = pw.Document(
         theme: pw.ThemeData.withFont(
-          base: ttfFont,
+          base: ttfSC,
+          bold: ttfSC, // 修复 bold 时中文回退到默认英文加粗导致乱码的 Bug
         ),
       );
 
-      // 2. 分页处理单词数据
-      final int wordsPerPage = maxRowsPerPage * 2;
-      final int totalPages = (words.length / wordsPerPage).ceil();
+      if (isDoubleColumn) {
+        // 双栏排版
+        final int wordsPerPage = maxRowsPerDoublePage * 2;
+        final int totalPages = (words.length / wordsPerPage).ceil();
 
-      for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-        final int startIdx = pageIndex * wordsPerPage;
-        final int endIdx = (startIdx + wordsPerPage < words.length)
-            ? startIdx + wordsPerPage
-            : words.length;
+        for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+          final int startIdx = pageIndex * wordsPerPage;
+          final int endIdx = (startIdx + wordsPerPage < words.length)
+              ? startIdx + wordsPerPage
+              : words.length;
 
-        final List<WordWrapper> pageWords = words.sublist(startIdx, endIdx);
+          final List<WordWrapper> pageWords = words.sublist(startIdx, endIdx);
 
-        // 将这一页的单词分为左右两栏
-        final int midPoint = (pageWords.length / 2).ceil();
-        final List<WordWrapper> leftColWords = pageWords.sublist(0, midPoint);
-        final List<WordWrapper> rightColWords =
-            pageWords.sublist(midPoint, pageWords.length);
+          // 将这一页的单词分为左右两栏
+          final int midPoint = (pageWords.length / 2).ceil();
+          final List<WordWrapper> leftColWords = pageWords.sublist(0, midPoint);
+          final List<WordWrapper> rightColWords =
+              pageWords.sublist(midPoint, pageWords.length);
 
-        pdfDoc.addPage(
-          pw.Page(
-            pageFormat: PdfPageFormat.a4,
-            margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            build: (pw.Context pwContext) {
-              return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  // 页眉
-                  _buildHeader(title, pageIndex + 1, totalPages, exportMode),
-                  pw.SizedBox(height: 12),
-
-                  // 双栏内容区
-                  pw.Expanded(
-                    child: pw.Row(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        // 左栏
-                        pw.Expanded(
-                          child: pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: leftColWords.asMap().entries.map((entry) {
-                              final int itemIdx = startIdx + entry.key;
-                              return _buildWordRow(
-                                  itemIdx + 1, entry.value.word, exportMode, includePronounce);
-                            }).toList(),
+          pdfDoc.addPage(
+            pw.Page(
+              pageFormat: PdfPageFormat.a4,
+              margin: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              build: (pw.Context pwContext) {
+                return pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(title, pageIndex + 1, totalPages, exportMode, true),
+                    pw.SizedBox(height: 12),
+                    pw.Expanded(
+                      child: pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          // 左栏
+                          pw.Expanded(
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: leftColWords.asMap().entries.map((entry) {
+                                final int itemIdx = startIdx + entry.key;
+                                return _buildWordRow(
+                                  itemIdx + 1,
+                                  entry.value.word,
+                                  exportMode,
+                                  includePronounce,
+                                  true,
+                                  ttfEN,
+                                );
+                              }).toList(),
+                            ),
                           ),
-                        ),
-                        
-                        // 中间分割线
-                        pw.VerticalDivider(
-                          width: 24,
-                          thickness: 0.5,
-                          color: PdfColors.grey400,
-                        ),
-
-                        // 右栏
-                        pw.Expanded(
-                          child: pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: rightColWords.asMap().entries.map((entry) {
-                              final int itemIdx = startIdx + midPoint + entry.key;
-                              return _buildWordRow(
-                                  itemIdx + 1, entry.value.word, exportMode, includePronounce);
-                            }).toList(),
+                          
+                          // 中间分割线
+                          pw.VerticalDivider(
+                            width: 24,
+                            thickness: 0.5,
+                            color: PdfColors.grey400,
                           ),
-                        ),
-                      ],
+
+                          // 右栏
+                          pw.Expanded(
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: rightColWords.asMap().entries.map((entry) {
+                                final int itemIdx = startIdx + midPoint + entry.key;
+                                return _buildWordRow(
+                                  itemIdx + 1,
+                                  entry.value.word,
+                                  exportMode,
+                                  includePronounce,
+                                  true,
+                                  ttfEN,
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    pw.SizedBox(height: 8),
+                    _buildFooter(pageIndex + 1, totalPages),
+                  ],
+                );
+              },
+            ),
+          );
+        }
+      } else {
+        // 单栏排版
+        final int wordsPerPage = maxRowsPerSinglePage;
+        final int totalPages = (words.length / wordsPerPage).ceil();
 
-                  // 页脚
-                  pw.SizedBox(height: 8),
-                  _buildFooter(pageIndex + 1, totalPages),
-                ],
-              );
-            },
-          ),
-        );
+        for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+          final int startIdx = pageIndex * wordsPerPage;
+          final int endIdx = (startIdx + wordsPerPage < words.length)
+              ? startIdx + wordsPerPage
+              : words.length;
+
+          final List<WordWrapper> pageWords = words.sublist(startIdx, endIdx);
+
+          pdfDoc.addPage(
+            pw.Page(
+              pageFormat: PdfPageFormat.a4,
+              margin: const pw.EdgeInsets.symmetric(horizontal: 36, vertical: 24),
+              build: (pw.Context pwContext) {
+                return pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(title, pageIndex + 1, totalPages, exportMode, false),
+                    pw.SizedBox(height: 12),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: pageWords.asMap().entries.map((entry) {
+                          final int itemIdx = startIdx + entry.key;
+                          return _buildWordRow(
+                            itemIdx + 1,
+                            entry.value.word,
+                            exportMode,
+                            includePronounce,
+                            false,
+                            ttfEN,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    pw.SizedBox(height: 8),
+                    _buildFooter(pageIndex + 1, totalPages),
+                  ],
+                );
+              },
+            ),
+          );
+        }
       }
 
       onStatusChanged('正在生成 PDF 文件...');
-      // 3. 将 PDF 写入临时文件
       final bytes = await pdfDoc.save();
       final tempDir = await getTemporaryDirectory();
       
-      // 处理文件名中的非法字符
       final safeTitle = title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
       final modeSuffix = exportMode == PdfExportMode.classic
           ? '中英对照'
           : (exportMode == PdfExportMode.spellDictation ? '拼写默写' : '释义默写');
+      final colSuffix = isDoubleColumn ? '双栏' : '单栏';
       
-      final String filePath = '${tempDir.path}/${safeTitle}_$modeSuffix.pdf';
+      final String filePath = '${tempDir.path}/${safeTitle}_${modeSuffix}_$colSuffix.pdf';
       final file = File(filePath);
       await file.writeAsBytes(bytes);
 
       onStatusChanged('拉起系统分享...');
-      // 4. 调用原生分享
       await Share.shareXFiles(
         [XFile(file.path)],
         subject: '$title - 导出词表',
@@ -155,6 +216,7 @@ class PdfExporter {
     int pageNum,
     int totalPages,
     PdfExportMode mode,
+    bool isDoubleColumn,
   ) {
     String modeName = '中英对照表';
     if (mode == PdfExportMode.spellDictation) {
@@ -162,6 +224,8 @@ class PdfExporter {
     } else if (mode == PdfExportMode.meaningDictation) {
       modeName = '释义记忆自测本';
     }
+
+    final colName = isDoubleColumn ? '双列版' : '单列版';
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -178,9 +242,9 @@ class PdfExporter {
               ),
             ),
             pw.Text(
-              modeName,
+              '$modeName ($colName)',
               style: const pw.TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 color: PdfColors.grey700,
               ),
             ),
@@ -233,13 +297,20 @@ class PdfExporter {
     WordVo word,
     PdfExportMode mode,
     bool includePronounce,
+    bool isDoubleColumn,
+    pw.Font ttfEN,
   ) {
     final bool hasPronounce =
         includePronounce && word.mergedPronounce.isNotEmpty;
 
-    // 行高固定在 22 像素左右，保持规整
+    // 根据是单栏还是双栏，动态分配宽度
+    final double indexWidth = isDoubleColumn ? 20 : 25;
+    final double spellWidth = isDoubleColumn ? 85 : 140;
+    final double pronounceWidth = isDoubleColumn ? 55 : 90;
+    final double rowHeight = isDoubleColumn ? 22 : 24;
+
     return pw.Container(
-      height: 22,
+      height: rowHeight,
       alignment: pw.Alignment.centerLeft,
       decoration: const pw.BoxDecoration(
         border: pw.Border(
@@ -254,7 +325,7 @@ class PdfExporter {
         children: [
           // 序号
           pw.SizedBox(
-            width: 20,
+            width: indexWidth,
             child: pw.Text(
               '$displayNum.',
               style: const pw.TextStyle(
@@ -267,7 +338,7 @@ class PdfExporter {
           // 英文单词 或 填空下划线
           if (mode == PdfExportMode.spellDictation)
             pw.Container(
-              width: 75,
+              width: spellWidth - 6,
               height: 12,
               margin: const pw.EdgeInsets.only(right: 6),
               decoration: const pw.BoxDecoration(
@@ -281,18 +352,18 @@ class PdfExporter {
             )
           else
             pw.SizedBox(
-              width: 75,
+              width: spellWidth,
               child: pw.Padding(
-                padding: const pw.EdgeInsets.only(right: 4),
+                padding: const pw.EdgeInsets.only(right: 6),
                 child: pw.Text(
                   word.spell,
                   style: pw.TextStyle(
                     fontSize: 9.5,
                     fontWeight: pw.FontWeight.bold,
+                    font: ttfEN, // 显式指定西文专用 NotoSans 渲染英文，包含完整 IPA 字符集支持
                     color: PdfColors.grey900,
                   ),
                   maxLines: 1,
-                  overflow: pw.TextOverflow.clip,
                 ),
               ),
             ),
@@ -300,17 +371,17 @@ class PdfExporter {
           // 音标 (可选)
           if (hasPronounce)
             pw.SizedBox(
-              width: 50,
+              width: pronounceWidth,
               child: pw.Padding(
-                padding: const pw.EdgeInsets.only(right: 4),
+                padding: const pw.EdgeInsets.only(right: 6),
                 child: pw.Text(
                   word.mergedPronounce,
-                  style: const pw.TextStyle(
+                  style: pw.TextStyle(
                     fontSize: 7.5,
+                    font: ttfEN, // 显式指定 NotoSans 渲染音标，完美支持音标特殊字符防止乱码
                     color: PdfColors.grey600,
                   ),
                   maxLines: 1,
-                  overflow: pw.TextOverflow.clip,
                 ),
               ),
             ),
@@ -321,7 +392,7 @@ class PdfExporter {
                 ? pw.Align(
                     alignment: pw.Alignment.bottomLeft,
                     child: pw.Container(
-                      width: 100,
+                      width: isDoubleColumn ? 100 : 150,
                       height: 12,
                       decoration: const pw.BoxDecoration(
                         border: pw.Border(
@@ -337,10 +408,10 @@ class PdfExporter {
                     word.meaningStr ?? '',
                     style: const pw.TextStyle(
                       fontSize: 8.5,
+                      // 中文使用默认主题指定的 ttfSC (NotoSansSC)
                       color: PdfColors.grey800,
                     ),
                     maxLines: 1,
-                    overflow: pw.TextOverflow.clip,
                   ),
           ),
         ],

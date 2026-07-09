@@ -3317,6 +3317,7 @@ class WordListPageState extends State<WordListPage>
   void _showExportPdfBottomSheet() {
     PdfExportMode selectedMode = PdfExportMode.classic;
     bool includePronounce = true;
+    bool isDoubleColumn = true;
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     const primaryColor = Color(0xFF0097A7);
 
@@ -3413,6 +3414,74 @@ class WordListPageState extends State<WordListPage>
                     const SizedBox(height: 4),
                     Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
                     const SizedBox(height: 4),
+                    Text(
+                      '页面版式',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDarkMode ? Colors.white70 : Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                isDoubleColumn = true;
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isDoubleColumn ? Icons.radio_button_checked : Icons.radio_button_off,
+                                    color: isDoubleColumn ? primaryColor : (isDarkMode ? Colors.white54 : Colors.grey[400]),
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '双列排版 (省纸)',
+                                    style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white : Colors.grey[800]),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                isDoubleColumn = false;
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    !isDoubleColumn ? Icons.radio_button_checked : Icons.radio_button_off,
+                                    color: !isDoubleColumn ? primaryColor : (isDarkMode ? Colors.white54 : Colors.grey[400]),
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '单列排版 (字大)',
+                                    style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.white : Colors.grey[800]),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
+                    const SizedBox(height: 4),
                     CheckboxListTile(
                       contentPadding: EdgeInsets.zero,
                       activeColor: primaryColor,
@@ -3455,7 +3524,7 @@ class WordListPageState extends State<WordListPage>
                             ),
                             onPressed: () {
                               Navigator.pop(context);
-                              _handleExportPdf(selectedMode, includePronounce);
+                              _handleExportPdf(selectedMode, includePronounce, isDoubleColumn);
                             },
                             child: const Text(
                               '开始导出',
@@ -3475,7 +3544,7 @@ class WordListPageState extends State<WordListPage>
     );
   }
 
-  Future<void> _handleExportPdf(PdfExportMode exportMode, bool includePronounce) async {
+  Future<void> _handleExportPdf(PdfExportMode exportMode, bool includePronounce, bool isDoubleColumn) async {
     final title = args.appBarTitle;
     try {
       await Api.loadingService.show(status: '正在获取词表单词...');
@@ -3494,6 +3563,7 @@ class WordListPageState extends State<WordListPage>
         words: allWords,
         exportMode: exportMode,
         includePronounce: includePronounce,
+        isDoubleColumn: isDoubleColumn,
         onStatusChanged: (status) {
           Api.loadingService.show(status: status);
         },
