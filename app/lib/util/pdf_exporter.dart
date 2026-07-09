@@ -66,9 +66,9 @@ class PdfExporter {
 
     // 3. 对应排版渲染引擎的限制进行物理封顶
     if (isDoubleColumn) {
-      if (totalEstimatedLines > 2) totalEstimatedLines = 2; // 双栏最大限制 2 行以防溢出
+      if (totalEstimatedLines > 3) totalEstimatedLines = 3; // 双栏最大限制放宽至 3 行，完美容纳 3 个词性并立展示
     } else {
-      if (totalEstimatedLines > 6) totalEstimatedLines = 6; // 单栏最大限制 6 行以防极端数据破版
+      if (totalEstimatedLines > 6) totalEstimatedLines = 6; // 单栏最大限制在 6 行以防极端数据破版
     }
 
     return baseHeight + (totalEstimatedLines - 1) * lineIncrement;
@@ -468,7 +468,7 @@ class PdfExporter {
 
     return pw.RichText(
       text: pw.TextSpan(children: lineSpans),
-      maxLines: isDoubleColumn ? 2 : null,
+      maxLines: isDoubleColumn ? 3 : null, // 双栏模式放宽限制至最多 3 行，完美适配 3 个词性并列排版
     );
   }
 
