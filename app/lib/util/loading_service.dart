@@ -47,16 +47,16 @@ class LoadingService {
   }
 
   Future<void> show({String status = 'loading...', bool dismissOnTap = false, Color? maskColor}) async {
-    if (_isShowing) {
-      await dismiss();
-    }
-
     _status = status;
     _isProgress = false;
     _isDismissible = dismissOnTap;
     _isShowing = true;
 
-    _createOverlay();
+    if (_overlayEntry == null) {
+      _createOverlay();
+    } else {
+      _updateOverlay();
+    }
   }
 
   Future<void> showProgress(double progress, {String? status}) async {

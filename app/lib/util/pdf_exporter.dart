@@ -402,14 +402,26 @@ class PdfExporter {
                       ),
                     ),
                   )
-                : pw.Text(
-                    _getCleanMeaning(word), // 优化：仅拼接中文释义本身，省去词性前缀，节省约40%的宽度，确保不被截断
-                    style: const pw.TextStyle(
-                      fontSize: 8.5,
-                      color: PdfColors.grey800,
-                    ),
-                    maxLines: isDoubleColumn ? 1 : 2, // 单栏允许折行展示更多
-                  ),
+                : (isDoubleColumn
+                    ? pw.FittedBox(
+                        fit: pw.BoxFit.scaleDown,
+                        alignment: pw.Alignment.centerLeft,
+                        child: pw.Text(
+                          _getCleanMeaning(word),
+                          style: const pw.TextStyle(
+                            fontSize: 8.5,
+                            color: PdfColors.grey800,
+                          ),
+                        ),
+                      )
+                    : pw.Text(
+                        _addZeroWidthSpaces(_getCleanMeaning(word)), // 使用零宽空格，使无空格长中文能在边界自动换行，彻底防截断
+                        style: const pw.TextStyle(
+                          fontSize: 8.5,
+                          color: PdfColors.grey800,
+                        ),
+                        maxLines: 2, // 单栏允许折行展示更多
+                      )),
           ),
         ],
       ),
@@ -434,5 +446,11 @@ class PdfExporter {
       }
     }
     return parts.isNotEmpty ? parts.join('；') : (word.meaningStr ?? '');
+  }
+
+  /// 在中文字符之间插入零宽空格（\u200B），以便 PDF 引擎能够在中文的任意位置进行软折行适配
+  static String _addZeroWidthSpaces(String text) {
+    if (text.isEmpty) return text;
+    return text.split('').join('\u{200B}');
   }
 }
