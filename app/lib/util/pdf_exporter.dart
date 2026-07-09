@@ -22,7 +22,8 @@ class PdfExporter {
   /// 估算单个单词在指定排版下的物理高度，支持多词性换行符(\n)切割与加权长度折行预测
   static double _estimateWordHeight(WordVo word, bool isDoubleColumn, bool includePronounce) {
     // 基础高度 (单行最小高度 constraints)
-    final double baseHeight = isDoubleColumn ? 18.0 : 22.0;
+    // 经过高精度排版测算，由于字体 Bounding Box 及 Baseline 对齐等物理占用，双栏单行物理基准高度约为 28pt，单栏约为 32pt
+    final double baseHeight = isDoubleColumn ? 28.0 : 32.0;
     // 多行文字的增量行高 (8.5号字在 leading 约束下折行后，实际只增大约 8 像素高度)
     final double lineIncrement = 8.0;
 
@@ -70,9 +71,9 @@ class PdfExporter {
 
     // 3. 对应排版渲染引擎的限制进行物理封顶
     if (isDoubleColumn) {
-      if (totalEstimatedLines > 3) totalEstimatedLines = 3; // 双栏最大限制放宽至 3 行，完美容纳 3 个词性并立展示
+      if (totalEstimatedLines > 6) totalEstimatedLines = 6; // 双栏最大限制放宽至 6 行，完美容纳 3 个词性折行后的极限高度
     } else {
-      if (totalEstimatedLines > 6) totalEstimatedLines = 6; // 单栏最大限制在 6 行以防极端数据破版
+      if (totalEstimatedLines > 12) totalEstimatedLines = 12; // 单栏最大限制放宽至 12 行，完美容纳 6 个词性折行后的极限高度
     }
 
     return baseHeight + (totalEstimatedLines - 1) * lineIncrement;
@@ -521,6 +522,7 @@ class PdfExporter {
         ),
       ),
       child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           // 序号
           pw.SizedBox(
