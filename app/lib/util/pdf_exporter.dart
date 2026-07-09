@@ -404,7 +404,14 @@ class PdfExporter {
     bool isDoubleColumn,
   ) {
     final String formatted = _formatMeaningForPdf(meaningStr);
-    final List<String> lines = formatted.split('\n');
+    List<String> lines = formatted.split('\n');
+
+    // 在数据源级别限制词性行数，避免在 PDF 库中使用 maxLines 触发排版截断渲染 Bug
+    final int maxAllowedLines = isDoubleColumn ? 3 : 6;
+    if (lines.length > maxAllowedLines) {
+      lines = lines.sublist(0, maxAllowedLines);
+    }
+
     final List<pw.InlineSpan> lineSpans = [];
 
     // 正则匹配句首的词性缩写（如 n., vt., vi., adj. 等，包含可选空格）
@@ -468,7 +475,7 @@ class PdfExporter {
 
     return pw.RichText(
       text: pw.TextSpan(children: lineSpans),
-      maxLines: isDoubleColumn ? 3 : null, // 双栏模式放宽限制至最多 3 行，完美适配 3 个词性并列排版
+      maxLines: null, // 废弃 maxLines 限制，改用上述 lines 截断，避开 pdf 库的 layout Bug
     );
   }
 
