@@ -19,45 +19,59 @@ class PdfExporter {
   /// 双栏每页的最大行数 (用于动态算法的安全边界参考)
   static const int maxRowsPerDoublePage = 22;
 
-  /// 估算单个单词在指定排版下的物理高度，采用中英文加权字符长度算法，实现最精准的折行高度预算
+  /// 估算单个单词在指定排版下的物理高度，支持多词性换行符(\n)切割与加权长度折行预测
   static double _estimateWordHeight(WordVo word, bool isDoubleColumn, bool includePronounce) {
     // 基础高度 (单行最小高度 constraints)
-    final double baseHeight = isDoubleColumn ? 22.0 : 24.0;
-    // 多行文字的增量行高 (8.5号字在 leading 约束下折行后，实际只增大约 7~8 像素高度)
-    final double lineIncrement = isDoubleColumn ? 7.0 : 8.0;
+    final double baseHeight = isDoubleColumn ? 18.0 : 22.0;
+    // 多行文字的增量行高 (8.5号字在 leading 约束下折行后，实际只增大约 8 像素高度)
+    final double lineIncrement = 8.0;
 
     final String meaningText = _formatMeaningForPdf(word.getMeaningStr());
     if (meaningText.isEmpty) {
       return baseHeight;
     }
 
-    // 引入加权字符长度计算：中文字符权重为 1.0，西文字符（词性前缀等）权重为 0.5，比单纯用 length 估算折行精确数倍
-    double weightedLength = 0.0;
-    for (int i = 0; i < meaningText.length; i++) {
-      int charCode = meaningText.codeUnitAt(i);
-      if (charCode > 127) {
-        weightedLength += 1.0;
+    // 1. 先用换行符拆分出所有的独立释义行，解决多词性(\n)换行漏估算天坑
+    final List<String> lines = meaningText.split('\n');
+    int totalEstimatedLines = 0;
+
+    for (final line in lines) {
+      if (line.trim().isEmpty) continue;
+
+      // 2. 对每个独立子行单独计算中英文加权长度，精准估算是否会发生容器边界折行
+      double weightedLength = 0.0;
+      for (int i = 0; i < line.length; i++) {
+        int charCode = line.codeUnitAt(i);
+        if (charCode > 127) {
+          weightedLength += 1.0;
+        } else {
+          weightedLength += 0.5;
+        }
+      }
+
+      int lineEstimatedLines = 1;
+      if (isDoubleColumn) {
+        // 双栏下可用中文宽度约 91.6px，8.5号中文字体下能容纳的加权字符长度临界值为 10.5
+        if (weightedLength > 10.5) {
+          lineEstimatedLines = 2; // 双栏模式释义行最大限制在 2 行
+        }
       } else {
-        weightedLength += 0.5;
+        // 单栏下可用中文宽度约 248px，能容纳的加权字符长度大约为 29.0
+        if (weightedLength > 29.0) {
+          lineEstimatedLines = (weightedLength / 29.0).ceil();
+        }
       }
+      totalEstimatedLines += lineEstimatedLines;
     }
 
-    int estimatedLines = 1;
+    // 3. 对应排版渲染引擎的限制进行物理封顶
     if (isDoubleColumn) {
-      // 双栏下，扣除序号/Spell/音标等物理宽度后，中文可用宽度约 91.6px
-      // 8.5号中文字体下，能容纳的加权字符长度临界值大约为 11
-      if (weightedLength > 11.0) {
-        estimatedLines = 2; // 双栏最大限制在 2 行
-      }
+      if (totalEstimatedLines > 2) totalEstimatedLines = 2; // 双栏最大限制 2 行以防溢出
     } else {
-      // 单栏下，可用中文宽度约 260px，在 8.5 号字下大约容纳加权长度 30.0 的字符
-      if (weightedLength > 30.0) {
-        estimatedLines = (weightedLength / 30.0).ceil();
-        if (estimatedLines > 4) estimatedLines = 4; // 单栏限制最大换行 4 行
-      }
+      if (totalEstimatedLines > 6) totalEstimatedLines = 6; // 单栏最大限制 6 行以防极端数据破版
     }
 
-    return baseHeight + (estimatedLines - 1) * lineIncrement;
+    return baseHeight + (totalEstimatedLines - 1) * lineIncrement;
   }
 
   /// 生成 PDF 并保存为临时文件，返回 File 实例
@@ -400,8 +414,8 @@ class PdfExporter {
 
     // 不再使用固定高度限制（maxHeight），让高度可以自适应折行撑开，防止折行重叠
     final pw.BoxConstraints constraints = isDoubleColumn
-        ? const pw.BoxConstraints(minHeight: 22)
-        : const pw.BoxConstraints(minHeight: 24);
+        ? const pw.BoxConstraints(minHeight: 18) // 调小为 18 像素，使双栏版面极其紧凑饱满
+        : const pw.BoxConstraints(minHeight: 22);
 
     return pw.Container(
       constraints: constraints,
