@@ -89,7 +89,7 @@ class PdfExporter {
 
     try {
       onStatusChanged('正在加载字体资源...');
-      // 1. 同时加载中文字体和西文字体，防止中文乱码 and 音标特殊字符乱码
+      // 1. 同时加载中文字体 and 西文字体，防止中文乱码 and 音标特殊字符乱码
       final fontDataSC = await rootBundle.load('assets/fonts/NotoSansSC-Regular.ttf');
       final fontDataEN = await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
       
@@ -105,6 +105,7 @@ class PdfExporter {
       );
 
       // 2. 根据动态高度累加预测算法进行切页，实现 A4 页面空间利用率最大化且绝对不溢出截断
+      // 不管是 classic 还是 meaningDictation 模式，由于我们采用了同等中文高度隐形占位，两者高度与切页结果 100% 对齐一致
       final List<List<WordWrapper>> pagesData = [];
       int currentWordIdx = 0;
 
@@ -183,7 +184,7 @@ class PdfExporter {
         final int startIdx = pageStartGlobalIdx;
 
         if (isDoubleColumn) {
-          // 将当前页的单词均分为左右两列
+          // 将当前页 of 单词均分为左右两列
           final int midPoint = (pageWords.length / 2).ceil();
           final List<WordWrapper> leftColWords = pageWords.sublist(0, midPoint);
           final List<WordWrapper> rightColWords = pageWords.sublist(midPoint);
@@ -417,13 +418,16 @@ class PdfExporter {
         ? const pw.BoxConstraints(minHeight: 18) // 调小为 18 像素，使双栏版面极其紧凑饱满
         : const pw.BoxConstraints(minHeight: 22);
 
+    final bool isOdd = displayNum % 2 == 1;
+    final PdfColor rowBgColor = isOdd ? PdfColors.cyan50 : PdfColors.white;
+
     return pw.Container(
       constraints: constraints,
       alignment: pw.Alignment.centerLeft,
       padding: const pw.EdgeInsets.symmetric(horizontal: 4), // 加上水平内边距让斑马线效果左右收缩更美观
       decoration: pw.BoxDecoration(
         // 斑马线：奇数行渲染极其浅雅的青蓝色，与页眉深青色呼应
-        color: displayNum % 2 == 1 ? PdfColors.cyan50 : null,
+        color: isOdd ? PdfColors.cyan50 : null,
         border: const pw.Border(
           bottom: pw.BorderSide(
             width: 0.3,
@@ -497,32 +501,24 @@ class PdfExporter {
               ),
             ),
 
-          // 中文释义 或 填空下划线
+          // 中文释义 或 填空手写下划线
           pw.Expanded(
-            child: mode == PdfExportMode.meaningDictation
-                ? pw.Align(
-                    alignment: pw.Alignment.bottomLeft,
-                    child: pw.Container(
-                      width: isDoubleColumn ? 100 : 150,
-                      height: 12,
-                      decoration: const pw.BoxDecoration(
-                        border: pw.Border(
-                          bottom: pw.BorderSide(
-                            width: 0.5,
-                            color: PdfColors.grey600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                : pw.Text(
-                    _formatMeaningForPdf(word.getMeaningStr()), // 格式化并在分号、逗号后强制加上空格，让 PDF 原生引擎自由换行折行
-                    style: const pw.TextStyle(
-                      fontSize: 8.5,
-                      color: PdfColors.grey800,
-                    ),
-                    maxLines: isDoubleColumn ? 2 : null, // 关键：双栏模式最多只支持折行 2 行，彻底防止无限折行抢占空间挤掉后面单词；单栏无限折行
-                  ),
+            child: pw.Text(
+              _formatMeaningForPdf(word.getMeaningStr()), // 格式化并在分号、逗号后强制加上空格，让 PDF 原生引擎自由换行折行
+              style: pw.TextStyle(
+                fontSize: 8.5,
+                // 释义记忆自测模式下，将字体颜色设置为与当前行背景色绝对相同，实现完美物理隐形占位，同时添加灰色下划线充当多行手写横线
+                color: mode == PdfExportMode.meaningDictation
+                    ? rowBgColor
+                    : PdfColors.grey800,
+                decoration: mode == PdfExportMode.meaningDictation
+                    ? pw.TextDecoration.underline
+                    : null,
+                decorationColor: PdfColors.grey400,
+                decorationStyle: pw.TextDecorationStyle.solid,
+              ),
+              maxLines: isDoubleColumn ? 2 : null, // 关键：双栏模式最多只支持折行 2 行，彻底防止无限折行抢占空间挤掉后面单词；单栏无限折行
+            ),
           ),
         ],
       ),
