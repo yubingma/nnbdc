@@ -14,12 +14,17 @@ enum PdfExportMode {
 }
 
 class PdfExporter {
-  /// 估算单个单词在指定排版下的物理高度，用于实现动态切页算法
+  /// 单栏每页的最大行数 (用于动态算法的安全边界参考)
+  static const int maxRowsPerSinglePage = 20;
+  /// 双栏每页的最大行数 (用于动态算法的安全边界参考)
+  static const int maxRowsPerDoublePage = 22;
+
+  /// 估算单个单词在指定排版下的物理高度，校准折行增量高度，实现像素级精准切页
   static double _estimateWordHeight(WordVo word, bool isDoubleColumn, bool includePronounce) {
-    // 基础高度
+    // 基础高度 (单行最小高度 constraints)
     final double baseHeight = isDoubleColumn ? 22.0 : 24.0;
-    // 换行增量高度
-    final double lineIncrement = 12.0;
+    // 多行文字的增量行高 (8.5号字在 leading 约束下折行后，实际只增大约 7~8 像素高度)
+    final double lineIncrement = isDoubleColumn ? 7.0 : 8.0;
 
     final String meaningText = _formatMeaningForPdf(word.getMeaningStr());
     if (meaningText.isEmpty) {
@@ -78,7 +83,8 @@ class PdfExporter {
       int currentWordIdx = 0;
 
       if (isDoubleColumn) {
-        const double maxPageHeight = 720.0; // 双栏最大安全可用主体高度 (760px 可用)
+        // 双栏最大安全可用主体高度：812px可用，扣除页眉页脚等非主体部分(51px)，设为精准的 755px
+        const double maxPageHeight = 755.0; 
 
         while (currentWordIdx < words.length) {
           int count = 1;
@@ -115,7 +121,8 @@ class PdfExporter {
           currentWordIdx += finalCount;
         }
       } else {
-        const double maxPageHeight = 710.0; // 单栏最大安全可用主体高度 (740px 可用)
+        // 单栏最大安全可用主体高度：802px可用，扣除页眉页脚等(51px)，设为精准的 745px
+        const double maxPageHeight = 745.0; 
 
         while (currentWordIdx < words.length) {
           int count = 1;
@@ -488,7 +495,7 @@ class PdfExporter {
                       fontSize: 8.5,
                       color: PdfColors.grey800,
                     ),
-                    maxLines: isDoubleColumn ? 2 : null, // 双栏模式最多只支持折行 2 行，彻底防止无限折行抢占空间挤掉后面单词；单栏无限折行
+                    maxLines: isDoubleColumn ? 2 : null, // 关键：双栏模式最多只支持折行 2 行，彻底防止无限折行抢占空间挤掉后面单词；单栏无限折行
                   ),
           ),
         ],
