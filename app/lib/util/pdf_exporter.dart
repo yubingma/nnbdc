@@ -382,7 +382,7 @@ class PdfExporter {
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
             pw.Text(
-              '由泡泡单词 App 智能导出',
+              '由泡泡单词 App 导出',
               style: const pw.TextStyle(
                 fontSize: 8,
                 color: PdfColors.grey500,
