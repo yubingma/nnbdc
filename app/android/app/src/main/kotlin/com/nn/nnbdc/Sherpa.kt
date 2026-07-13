@@ -85,8 +85,19 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             when (call.method) {
                 "setLanguage" -> {
                     val locale = call.argument<String>("locale") ?: "zh-CN"
-                    setLanguage(locale)
-                    result.success(null)
+                    thread {
+                        try {
+                            setLanguage(locale)
+                            activity.runOnUiThread {
+                                result.success(null)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to setLanguage asynchronously", e)
+                            activity.runOnUiThread {
+                                result.error("SET_LANGUAGE_FAILED", e.message, null)
+                            }
+                        }
+                    }
                 }
                 "setContextualStrings" -> {
                     val phrases = call.argument<List<String>>("phrases") ?: emptyList()
@@ -139,8 +150,14 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     // 可以在 MainActivity onCreate 中调用初始化默认模型
     fun initModel() {
-        // 默认初始化中文（并且设定为当前模型）
-        loadModel("zh")
+        thread {
+            try {
+                // 默认初始化中文（并且设定为当前模型）
+                loadModel("zh")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to initModel in background", e)
+            }
+        }
     }
 
     private fun setLanguage(locale: String) {
