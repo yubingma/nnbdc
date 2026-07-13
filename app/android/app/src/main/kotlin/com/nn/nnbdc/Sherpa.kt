@@ -450,6 +450,19 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
         while (isRecording) {
             val ret = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+            if (ret < 0) {
+                Log.e(TAG, "AudioRecord read returned error code: $ret. Stopping recording loop.")
+                isRecording = false
+                break
+            } else if (ret == 0) {
+                try {
+                    Thread.sleep(20)
+                } catch (e: InterruptedException) {
+                    // Ignore
+                }
+                continue
+            }
+
             if (ret > 0) {
                 // 1. 计算电平
                 var sumSquares = 0.0
