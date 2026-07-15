@@ -261,7 +261,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 .setEnableEndpoint(true)
                 .setDecodingMethod("modified_beam_search")
                 .setMaxActivePaths(8) // 适度降低搜索范围，平衡准确度与稳定性
-                .setHotwordsScore(2.0f) // 【关键优化】：大幅降低热词权重，防止在长词识别时出现吞词或叠词。
+                .setHotwordsScore(3.0f) // 【关键优化】：微调热词权重为 3.0f，平衡口音纠偏与吞词叠词副作用。
                 .setBlankPenalty(0.5f) // 增加惩罚，减少乱码和幻觉
                 .build()
 
