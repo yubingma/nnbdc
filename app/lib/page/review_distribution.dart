@@ -68,10 +68,13 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     final nowDate = AppClock.today();
 
     Map<int, int> dayToTotalCounts = {};
-    _totalWords = filteredData.length;
     _totalNewWords = 0;
+    final Set<String> seenWordIds = {}; // 去重：JOIN 可能导致同一 wordId 出现多次（多词根）
 
     for (var item in filteredData) {
+      final wordId = item['wordId'] as String?;
+      if (wordId == null || !seenWordIds.add(wordId)) continue; // 已见过 → 跳过重复行
+
       final isNew = (item['learnedTimes'] ?? 0) == 0;
       if (isNew) {
         _totalNewWords++;
@@ -95,6 +98,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
       dayToTotalCounts[key] = (dayToTotalCounts[key] ?? 0) + 1;
     }
+    _totalWords = seenWordIds.length; // 基于去重后的唯一单词数
 
     dayToTotalCounts[0] = dayToTotalCounts[0] ?? 0;
     var sortedKeys = dayToTotalCounts.keys.toList()..sort();
