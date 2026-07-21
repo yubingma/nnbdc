@@ -249,7 +249,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 47;
+  int get schemaVersion => 48;
 
   @override
   MigrationStrategy get migration {
@@ -404,6 +404,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 47) {
             await _migrateFromV46ToV47(m);
+          }
+          if (from < 48) {
+            await _migrateFromV47ToV48(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -1693,5 +1696,14 @@ class MyDatabase extends _$MyDatabase {
         Global.logger.e('手动补全 $tableName 审计字段失败: $e');
       }
     }
+  }
+
+  /// 从版本 47 升级到版本 48：向 users 表添加 vip_expire_date, vip_type, last_pay_channel 字段
+  Future<void> _migrateFromV47ToV48(Migrator m) async {
+    await transaction(() async {
+      await m.addColumn(users, users.vipExpireDate);
+      await m.addColumn(users, users.vipType);
+      await m.addColumn(users, users.lastPayChannel);
+    });
   }
 }

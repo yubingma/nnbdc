@@ -166,6 +166,15 @@ class Users extends Table {
   /// iOS订阅到期时间
   DateTimeColumn get subscriptionExpireDateIos => dateTime().nullable()();
 
+  /// 通用会员到期时间
+  DateTimeColumn get vipExpireDate => dateTime().nullable()();
+
+  /// 会员类型：monthly/annual/lifetime
+  TextColumn get vipType => text().nullable()();
+
+  /// 最近一次支付渠道
+  TextColumn get lastPayChannel => text().nullable()();
+
   /// iOS订阅类型：monthly/annual
   TextColumn get subscriptionTypeIos => text().nullable()();
 

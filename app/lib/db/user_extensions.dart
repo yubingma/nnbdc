@@ -57,6 +57,11 @@ extension UserExtensions on User {
     userVo.subscriptionTypeIos = subscriptionTypeIos;
     userVo.subscriptionStatusIos = subscriptionStatusIos;
 
+    // 通用会员字段
+    userVo.vipExpireDate = vipExpireDate;
+    userVo.vipType = vipType;
+    userVo.lastPayChannel = lastPayChannel;
+
     // 强制会员字段
     userVo.premiumOverrideEnabled = premiumOverrideEnabled;
     userVo.premiumOverrideUpdateTime = premiumOverrideUpdateTime;

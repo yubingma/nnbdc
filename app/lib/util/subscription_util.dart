@@ -542,7 +542,17 @@ class SubscriptionUtil {
       return true;
     }
 
-    // 1) iOS订阅
+    // 1) 通用会员到期时间 (包含微信/支付宝/全渠道支付)
+    try {
+      final vipExpire = user.vipExpireDate;
+      if (vipExpire != null && vipExpire.isAfter(now)) {
+        return true;
+      }
+    } catch (_) {
+      return true;
+    }
+
+    // 2) iOS传统订阅
     try {
       if (user.isPremiumIos == true) {
         final expireDate = user.subscriptionExpireDateIos;

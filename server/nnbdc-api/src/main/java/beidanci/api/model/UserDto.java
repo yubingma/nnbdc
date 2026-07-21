@@ -49,6 +49,11 @@ public class UserDto extends Dto {
     private String subscriptionStatusIos;
     private String lastReceiptDataIos;
 
+    // 通用会员字段
+    private Date vipExpireDate;
+    private String vipType;
+    private String lastPayChannel;
+
     /**
      * 强制视为会员（用于纠纷处理/白名单/补偿等）
      * - enabled=true 且未过期（根据 updateTime + duration 判断）则认为是会员
@@ -372,6 +377,30 @@ public class UserDto extends Dto {
 
     public void setLastReceiptDataIos(String lastReceiptDataIos) {
         this.lastReceiptDataIos = lastReceiptDataIos;
+    }
+
+    public Date getVipExpireDate() {
+        return vipExpireDate;
+    }
+
+    public void setVipExpireDate(Date vipExpireDate) {
+        this.vipExpireDate = vipExpireDate;
+    }
+
+    public String getVipType() {
+        return vipType;
+    }
+
+    public void setVipType(String vipType) {
+        this.vipType = vipType;
+    }
+
+    public String getLastPayChannel() {
+        return lastPayChannel;
+    }
+
+    public void setLastPayChannel(String lastPayChannel) {
+        this.lastPayChannel = lastPayChannel;
     }
 
     public Boolean getPremiumOverrideEnabled() {

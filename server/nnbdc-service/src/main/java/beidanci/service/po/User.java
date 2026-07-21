@@ -934,6 +934,9 @@ public class User extends UuidPo {
         user.setSubscriptionTypeIos(dto.getSubscriptionTypeIos());
         user.setSubscriptionStatusIos(dto.getSubscriptionStatusIos());
         user.setLastReceiptDataIos(dto.getLastReceiptDataIos());
+        user.setVipExpireDate(dto.getVipExpireDate());
+        user.setVipType(dto.getVipType());
+        user.setLastPayChannel(dto.getLastPayChannel());
 
         user.setPremiumOverrideEnabled(Boolean.TRUE.equals(dto.getPremiumOverrideEnabled()));
         user.setPremiumOverrideUpdateTime(dto.getPremiumOverrideUpdateTime());
@@ -1000,6 +1003,9 @@ public class User extends UuidPo {
         dto.setSubscriptionTypeIos(this.getSubscriptionTypeIos());
         dto.setSubscriptionStatusIos(this.getSubscriptionStatusIos());
         dto.setLastReceiptDataIos(this.getLastReceiptDataIos());
+        dto.setVipExpireDate(this.getVipExpireDate());
+        dto.setVipType(this.getVipType());
+        dto.setLastPayChannel(this.getLastPayChannel());
 
         dto.setPremiumOverrideEnabled(Boolean.TRUE.equals(this.getPremiumOverrideEnabled()));
         dto.setPremiumOverrideUpdateTime(this.getPremiumOverrideUpdateTime());

@@ -78,6 +78,21 @@ public class UserVo extends UuidVo {
     private Date subscriptionExpireDateIos;
 
     /**
+     * 通用会员到期时间
+     */
+    private Date vipExpireDate;
+
+    /**
+     * 会员类型
+     */
+    private String vipType;
+
+    /**
+     * 最后支付渠道
+     */
+    private String lastPayChannel;
+
+    /**
      * iOS订阅类型：monthly/annual
      */
     private String subscriptionTypeIos;
@@ -207,6 +222,30 @@ public class UserVo extends UuidVo {
 
     public void setSubscriptionExpireDateIos(Date subscriptionExpireDateIos) {
         this.subscriptionExpireDateIos = subscriptionExpireDateIos;
+    }
+
+    public Date getVipExpireDate() {
+        return vipExpireDate;
+    }
+
+    public void setVipExpireDate(Date vipExpireDate) {
+        this.vipExpireDate = vipExpireDate;
+    }
+
+    public String getVipType() {
+        return vipType;
+    }
+
+    public void setVipType(String vipType) {
+        this.vipType = vipType;
+    }
+
+    public String getLastPayChannel() {
+        return lastPayChannel;
+    }
+
+    public void setLastPayChannel(String lastPayChannel) {
+        this.lastPayChannel = lastPayChannel;
     }
 
     public String getSubscriptionTypeIos() {

@@ -268,6 +268,15 @@ class UserVo {
   /// iOS订阅到期时间
   DateTime? subscriptionExpireDateIos;
 
+  /// 通用会员到期时间
+  DateTime? vipExpireDate;
+
+  /// 会员类型
+  String? vipType;
+
+  /// 最后支付渠道
+  String? lastPayChannel;
+
   /// iOS订阅类型：monthly/annual
   String? subscriptionTypeIos;
 
