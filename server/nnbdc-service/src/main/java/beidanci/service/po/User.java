@@ -213,6 +213,24 @@ public class User extends UuidPo {
     private String lastReceiptDataIos;
 
     /**
+     * 通用会员到期时间 (兼容全渠道支付)
+     */
+    @Column(name = "vip_expire_date", nullable = true)
+    private Date vipExpireDate;
+
+    /**
+     * 会员类型：monthly/annual/lifetime
+     */
+    @Column(name = "vip_type", length = 20, nullable = true)
+    private String vipType;
+
+    /**
+     * 最近一次支付渠道 (WECHAT, ALIPAY, HUAWEI_IAP 等)
+     */
+    @Column(name = "last_pay_channel", length = 30, nullable = true)
+    private String lastPayChannel;
+
+    /**
      * 强制视为会员（用于纠纷处理/白名单/补偿等）
      * 注意：该字段及其元数据仅用于“判定是否视为会员”，程序不主动根据时间自动修改 enabled。
      */
@@ -278,6 +296,30 @@ public class User extends UuidPo {
 
     public void setLastReceiptDataIos(String lastReceiptDataIos) {
         this.lastReceiptDataIos = lastReceiptDataIos;
+    }
+
+    public Date getVipExpireDate() {
+        return vipExpireDate;
+    }
+
+    public void setVipExpireDate(Date vipExpireDate) {
+        this.vipExpireDate = vipExpireDate;
+    }
+
+    public String getVipType() {
+        return vipType;
+    }
+
+    public void setVipType(String vipType) {
+        this.vipType = vipType;
+    }
+
+    public String getLastPayChannel() {
+        return lastPayChannel;
+    }
+
+    public void setLastPayChannel(String lastPayChannel) {
+        this.lastPayChannel = lastPayChannel;
     }
 
     public Boolean getPremiumOverrideEnabled() {

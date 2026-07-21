@@ -822,6 +822,16 @@ abstract class RestClient {
   @FormUrlEncoded()
   Future<Result> restoreSubscription(@Field("userId") String userId);
 
+  // 通用预下单API
+  @POST("/pay/createPreOrder.do")
+  @FormUrlEncoded()
+  Future<Result<PayPreOrderVo>> createPreOrder({
+    @Field("userId") required String userId,
+    @Field("productId") required String productId,
+    @Field("amount") required double amount,
+    @Field("channel") required String channel,
+  });
+
   // 词库导入相关API
   @POST("/import/submit")
   @http.Headers(<String, dynamic>{"Content-Type": "application/json"})

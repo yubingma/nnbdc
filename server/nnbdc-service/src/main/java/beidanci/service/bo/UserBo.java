@@ -695,7 +695,17 @@ public class UserBo extends BaseBo<User> {
             now = new Date();
         }
 
-        // 1) iOS订阅
+        // 1) 通用会员到期时间 (全渠道支付)
+        try {
+            Date vipExpire = user.getVipExpireDate();
+            if (vipExpire != null && vipExpire.after(now)) {
+                return true;
+            }
+        } catch (Exception ignored) {
+            return true; // 偏向会员
+        }
+
+        // 2) iOS传统订阅
         try {
             if (Boolean.TRUE.equals(user.getIsPremiumIos())) {
                 Date expire = user.getSubscriptionExpireDateIos();

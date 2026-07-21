@@ -1735,3 +1735,22 @@ class PromoActivityVo {
   Map<String, dynamic> toJson() => _$PromoActivityVoToJson(this);
 }
 
+@JsonSerializable()
+class PayPreOrderVo {
+  final String orderId;
+  final String channel;
+  final String? payData;
+  final Map<String, String>? payParams;
+
+  PayPreOrderVo({
+    required this.orderId,
+    required this.channel,
+    this.payData,
+    this.payParams,
+  });
+
+  factory PayPreOrderVo.fromJson(Map<String, dynamic> json) => _$PayPreOrderVoFromJson(json);
+  Map<String, dynamic> toJson() => _$PayPreOrderVoToJson(this);
+}
+
+
