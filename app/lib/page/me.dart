@@ -3091,7 +3091,7 @@ class _DictCardState extends State<DictCard> {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('停止学习并删除记录'),
+                    child: const Text('停止学习并清除学习中单词'),
                   ),
                 ),
                 const SizedBox(height: 12),
