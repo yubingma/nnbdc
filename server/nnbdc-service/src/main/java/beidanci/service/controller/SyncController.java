@@ -3,6 +3,7 @@ package beidanci.service.controller;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.http.HttpServletRequest;
@@ -103,6 +104,20 @@ public class SyncController {
         // 查询用户数据库增量日志
         List<UserDbLogDto> logs = syncBo.getUserDbLogsFromVersion(userId, fromVersion);
         log.info("用户数据库增量日志查询完成, 数量: {}", logs.size());
+
+        // 如果客户端不支持例句练习环节，过滤掉相关同步日志，防老前端崩溃
+        String supportedSteps = request.getHeader("X-Supported-Steps");
+        if (supportedSteps == null || !supportedSteps.contains("EnSentence2Ch")) {
+            logs = logs.stream().filter(dbLog -> {
+                if ("userStudySteps".equals(dbLog.getTblName())) {
+                    String entityJson = dbLog.getRecord();
+                    return entityJson == null || 
+                           (!entityJson.contains("EnSentence2Ch") && !entityJson.contains("ChSentence2En"));
+                }
+                return true;
+            }).collect(Collectors.toList());
+            log.info("已针对老版本客户端进行兼容过滤, 过滤后日志数量: {}", logs.size());
+        }
 
         // 构建响应对象
         Result<List<UserDbLogDto>> result = Result.success(logs);

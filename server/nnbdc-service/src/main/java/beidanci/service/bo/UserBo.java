@@ -1070,11 +1070,16 @@ public class UserBo extends BaseBo<User> {
         );
     }
 
+    @Transactional(readOnly = true)
+    public Result<UserBaseDataVo> getUserBaseData(String userId) {
+        return getUserBaseData(userId, null);
+    }
+
     /**
      * 获取用户的基础数据，供前端调用（用于重装、环境健康检查等数据恢复，不包含自动创建）
      */
     @Transactional(readOnly = true)
-    public Result<UserBaseDataVo> getUserBaseData(String userId) {
+    public Result<UserBaseDataVo> getUserBaseData(String userId, String supportedSteps) {
         User user = findById(userId);
         if (user == null) {
             return Result.fail("用户不存在");
@@ -1094,6 +1099,13 @@ public class UserBo extends BaseBo<User> {
 
         List<UserStudyStep> studySteps = userStudyStepBo.getUserStudySteps(user.getId());
         if (studySteps != null && !studySteps.isEmpty()) {
+            // 如果客户端不支持例句练习环节，过滤掉相关学习步骤DTO，防老前端崩溃
+            if (supportedSteps == null || !supportedSteps.contains("EnSentence2Ch")) {
+                studySteps = studySteps.stream()
+                        .filter(step -> step.getStudyStep() != StudyStep.EnSentence2Ch && step.getStudyStep() != StudyStep.ChSentence2En)
+                        .collect(Collectors.toList());
+            }
+
             List<UserStudyStepDto> stepDtos = studySteps.stream().map(step -> new UserStudyStepDto(
                     step.getId().getUserId(),
                     step.getStudyStep(),

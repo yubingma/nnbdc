@@ -206,6 +206,8 @@ class CustomInterceptors extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     // 增加全局请求计数
     Global.activeRequestCount.value++;
+    // 声明客户端支持的学习步骤列表，供后端执行版本兼容过滤
+    options.headers['X-Supported-Steps'] = 'En2Ch,Ch2En,EnSentence2Ch,ChSentence2En,List';
     return super.onRequest(options, handler);
   }
 
