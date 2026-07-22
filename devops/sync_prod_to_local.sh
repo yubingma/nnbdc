@@ -6,6 +6,9 @@
 # 设置发生错误时立即退出
 set -e
 
+# 记录脚本开始时间
+START_TIME=$(date +%s)
+
 # 解析参数支持非交互模式
 AUTO_CONFIRM=false
 if [ "$1" = "-y" ] || [ "$1" = "--yes" ]; then
@@ -116,3 +119,7 @@ rm -f "$TEMP_BACKUP_FILE"
 echo "🧹 临时备份文件已清理。"
 echo "============================================="
 echo "🎉 数据库同步完成！"
+END_TIME=$(date +%s)
+TOTAL_TIME=$((END_TIME - START_TIME))
+echo "⏱️ 同步总耗时: ${TOTAL_TIME} 秒"
+
