@@ -48,25 +48,19 @@ echo "============================================="
 # 第一步：在生产环境备份数据库，并通过管道压缩后传输到本地
 echo "1️⃣ 正在备份生产环境数据库并传输到本地..."
 
-# 排除对本地开发无影响的几个大表数据 (只排除数据，保留空表和分区表结构)
-EXCLUDE_ARGS="--exclude-table-data=sys_db_log --exclude-table-data=word_embedding --exclude-table-data=user_db_log"
-# 显式拼接全部 64 个哈希分区子表，采用最兼容的 while 循环，彻底规避不同 Shell (如 Mac 自带的古老 Bash 3.2) 对大括号展开或通配符转义的兼容性问题
-i=0
-while [ $i -le 63 ]; do
-    EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude-table-data=user_db_log_p$i"
-    i=$((i+1))
-done
-
 if command -v pv &> /dev/null; then
+    echo "🧪 [DEBUG] 正在使用 [pv] 进度条分支执行备份..."
     sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-        "docker exec -i pg pg_dump $EXCLUDE_ARGS -Umyb bdc | gzip" | pv > "$TEMP_BACKUP_FILE"
+        'docker exec -i pg pg_dump --exclude-table-data=sys_db_log --exclude-table-data=word_embedding --exclude-table-data=user_db_log\* -Umyb bdc | gzip' | pv > "$TEMP_BACKUP_FILE"
 elif dd status=progress < /dev/null &> /dev/null; then
     echo "💡 提示: 安装 'pv' 可以显示更精美的进度 (brew install pv)"
+    echo "🧪 [DEBUG] 正在使用 [dd] 进度条分支执行备份..."
     sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-        "docker exec -i pg pg_dump $EXCLUDE_ARGS -Umyb bdc | gzip" | dd status=progress > "$TEMP_BACKUP_FILE"
+        'docker exec -i pg pg_dump --exclude-table-data=sys_db_log --exclude-table-data=word_embedding --exclude-table-data=user_db_log\* -Umyb bdc | gzip' | dd status=progress > "$TEMP_BACKUP_FILE"
 else
+    echo "🧪 [DEBUG] 正在使用 [无进度条] 分支执行备份..."
     sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-        "docker exec -i pg pg_dump $EXCLUDE_ARGS -Umyb bdc | gzip" > "$TEMP_BACKUP_FILE"
+        'docker exec -i pg pg_dump --exclude-table-data=sys_db_log --exclude-table-data=word_embedding --exclude-table-data=user_db_log\* -Umyb bdc | gzip' > "$TEMP_BACKUP_FILE"
 fi
 
 if [ ! -f "$TEMP_BACKUP_FILE" ] || [ ! -s "$TEMP_BACKUP_FILE" ]; then
