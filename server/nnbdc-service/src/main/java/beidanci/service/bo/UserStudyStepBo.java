@@ -51,71 +51,41 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
         List<StudyStep> existingSteps = userStudySteps.stream().map(step -> step.getStudyStep())
                 .collect(Collectors.toList());
         if (existingSteps.size() < StudyStep.values().length) {
-            UserStudyStepId id;
-            UserStudyStep step;
+            // 定义理想的 5 个步骤的目标顺序
+            StudyStep[] orderedSteps = {
+                StudyStep.En2Ch,
+                StudyStep.Ch2En,
+                StudyStep.EnSentence2Ch,
+                StudyStep.ChSentence2En,
+                StudyStep.List
+            };
 
-            // 使用新列表而不是重新查询数据库
-            List<UserStudyStep> newSteps = new ArrayList<>(userStudySteps);
+            // 建立 Map 以免多次遍历
+            Map<StudyStep, UserStudyStep> existingMap = userStudySteps.stream()
+                .collect(Collectors.toMap(s -> s.getStudyStep(), s -> s));
 
-            // 添加缺失的 En2Ch 步骤
-            if (!existingSteps.contains(StudyStep.En2Ch)) {
-                id = new UserStudyStepId(userId, StudyStep.En2Ch);
-                step = new UserStudyStep(id);
-                step.setSeq(0);
-                step.setState(StudyStepState.Active);
-                newSteps.add(step);
-            }
-
-            // 添加缺失的 Ch2En 步骤
-            if (!existingSteps.contains(StudyStep.Ch2En)) {
-                id = new UserStudyStepId(userId, StudyStep.Ch2En);
-                step = new UserStudyStep(id);
-                step.setSeq(1);
-                step.setState(StudyStepState.Active);
-                newSteps.add(step);
-            }
-
-            // 添加缺失的 EnSentence2Ch 步骤
-            if (!existingSteps.contains(StudyStep.EnSentence2Ch)) {
-                id = new UserStudyStepId(userId, StudyStep.EnSentence2Ch);
-                step = new UserStudyStep(id);
-                step.setSeq(2);
-                step.setState(StudyStepState.Active);
-                newSteps.add(step);
-            }
-
-            // 添加缺失的 ChSentence2En 步骤
-            if (!existingSteps.contains(StudyStep.ChSentence2En)) {
-                id = new UserStudyStepId(userId, StudyStep.ChSentence2En);
-                step = new UserStudyStep(id);
-                step.setSeq(3);
-                step.setState(StudyStepState.Active);
-                newSteps.add(step);
-            }
-
-            // 添加缺失的 List 步骤
-            if (!existingSteps.contains(StudyStep.List)) {
-                id = new UserStudyStepId(userId, StudyStep.List);
-                step = new UserStudyStep(id);
-                step.setSeq(4);
-                step.setState(StudyStepState.Active);
-                newSteps.add(step);
-            }
-
-            // 重新校正 seq，保证列表有序且 List 排在最后
-            int seq = 0;
-            for (UserStudyStep s : newSteps) {
-                if (s.getStudyStep() != StudyStep.List) {
-                    s.setSeq(seq++);
+            for (int i = 0; i < orderedSteps.length; i++) {
+                StudyStep stepEnum = orderedSteps[i];
+                if (existingMap.containsKey(stepEnum)) {
+                    UserStudyStep existingStep = existingMap.get(stepEnum);
+                    // 仅当原本的 seq 顺序不一致时，执行更新
+                    if (existingStep.getSeq() != i) {
+                        existingStep.setSeq(i);
+                        try {
+                            updateEntity(existingStep);
+                        } catch (Exception e) {
+                            logger.error("更新现有学习步骤 seq 顺序失败：" + stepEnum, e);
+                        }
+                    }
+                } else {
+                    // 若不存在此步骤，执行插入
+                    UserStudyStepId id = new UserStudyStepId(userId, stepEnum);
+                    UserStudyStep newStep = new UserStudyStep(id);
+                    newStep.setSeq(i);
+                    newStep.setState(StudyStepState.Active);
+                    createEntity(newStep);
                 }
             }
-            for (UserStudyStep s : newSteps) {
-                if (s.getStudyStep() == StudyStep.List) {
-                    s.setSeq(seq++);
-                }
-            }
-
-            saveStudySteps(newSteps, userId, false);
         }
     }
 
