@@ -105,7 +105,13 @@ gunzip -c "$TEMP_BACKUP_FILE" | psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U 
 
 echo "✅ 数据导入成功！"
 
-# 第四步：清理临时文件
+# 第四步：自动修正本机的特殊配置
+echo "4️⃣ 正在自动修正本机特殊配置 (imgBaseDir)..."
+psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d "$LOCAL_DB_NAME" -c \
+    "UPDATE sys_param SET param_value = '/opt/homebrew/opt/nginx/html/img', update_time = CURRENT_TIMESTAMP WHERE param_name = 'imgBaseDir';"
+echo "✅ 本机特殊配置修正成功。"
+
+# 第五步：清理临时文件
 rm -f "$TEMP_BACKUP_FILE"
 echo "🧹 临时备份文件已清理。"
 echo "============================================="
