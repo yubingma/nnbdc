@@ -597,10 +597,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                                     children: [
                                       Icon(Icons.lock_outline_rounded, color: Colors.orangeAccent),
                                       SizedBox(width: 8),
-                                      Text('每日目标已锁定'),
+                                      Text('今日目标已锁定'),
                                     ],
                                   ),
-                                  content: const Text('一旦开始今日计划中任何环节的学习，为了保证每日学习任务与统计数据的一致性，今日的目标单词数将会被锁定，不可修改。'),
+                                  content: const Text('一旦开始今日的学习，目标单词数将会被锁定，不可修改。'),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.of(ctx).pop(),
