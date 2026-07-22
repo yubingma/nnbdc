@@ -48,8 +48,8 @@ echo "============================================="
 # 第一步：在生产环境备份数据库，并通过管道压缩后传输到本地
 echo "1️⃣ 正在备份生产环境数据库并传输到本地..."
 
-# 排除对本地开发无影响的几个大表数据 (只排除数据，保留空表结构)
-EXCLUDE_ARGS="--exclude-table-data=sys_db_log --exclude-table-data=word_embedding"
+# 排除对本地开发无影响的几个大表数据 (只排除数据，保留空表和分区表结构)
+EXCLUDE_ARGS="--exclude-table-data=sys_db_log --exclude-table-data=word_embedding --exclude-table-data=user_db_log*"
 
 if command -v pv &> /dev/null; then
     sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
