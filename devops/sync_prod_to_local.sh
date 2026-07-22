@@ -41,8 +41,18 @@ echo "============================================="
 
 # 第一步：在生产环境备份数据库，并通过管道压缩后传输到本地
 echo "1️⃣ 正在备份生产环境数据库并传输到本地..."
-sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-    "docker exec -i pg pg_dump -Umyb bdc | gzip" > "$TEMP_BACKUP_FILE"
+
+if command -v pv &> /dev/null; then
+    sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
+        "docker exec -i pg pg_dump -Umyb bdc | gzip" | pv > "$TEMP_BACKUP_FILE"
+elif dd status=progress < /dev/null &> /dev/null; then
+    echo "💡 提示: 安装 'pv' 可以显示更精美的进度 (brew install pv)"
+    sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
+        "docker exec -i pg pg_dump -Umyb bdc | gzip" | dd status=progress > "$TEMP_BACKUP_FILE"
+else
+    sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
+        "docker exec -i pg pg_dump -Umyb bdc | gzip" > "$TEMP_BACKUP_FILE"
+fi
 
 if [ ! -f "$TEMP_BACKUP_FILE" ] || [ ! -s "$TEMP_BACKUP_FILE" ]; then
     echo "❌ 备份传输失败，生成的文件为空。"
