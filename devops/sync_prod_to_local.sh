@@ -50,9 +50,11 @@ echo "1️⃣ 正在备份生产环境数据库并传输到本地..."
 
 # 排除对本地开发无影响的几个大表数据 (只排除数据，保留空表和分区表结构)
 EXCLUDE_ARGS="--exclude-table-data=sys_db_log --exclude-table-data=word_embedding --exclude-table-data=user_db_log"
-# 显式拼接全部 64 个哈希分区子表，彻底规避通配符在不同 Shell 中被提前展开或解析失效的 Globbing 陷阱
-for i in {0..63}; do
+# 显式拼接全部 64 个哈希分区子表，采用最兼容的 while 循环，彻底规避不同 Shell (如 Mac 自带的古老 Bash 3.2) 对大括号展开或通配符转义的兼容性问题
+i=0
+while [ $i -le 63 ]; do
     EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude-table-data=user_db_log_p$i"
+    i=$((i+1))
 done
 
 if command -v pv &> /dev/null; then
