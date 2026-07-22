@@ -518,11 +518,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       children: [
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
                         renderMissionCard(),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         renderStudySteps(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 12),
                       ],
                     ),
                   ),
@@ -558,7 +558,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         children: [
           // Header: Goal Setting
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -586,11 +586,38 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           ),
                         ),
                         if (user?.todayStudyStarted == true) ...[
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.lock_outline_rounded,
-                            color: isDarkMode ? Colors.white38 : Colors.black26,
-                            size: 16,
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Row(
+                                    children: [
+                                      Icon(Icons.lock_outline_rounded, color: Colors.orangeAccent),
+                                      SizedBox(width: 8),
+                                      Text('每日目标已锁定'),
+                                    ],
+                                  ),
+                                  content: const Text('一旦开始今日计划中任何环节的学习，为了保证每日学习任务与统计数据的一致性，今日的目标单词数将会被锁定，不可修改。'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(ctx).pop(),
+                                      child: const Text('我知道了'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              child: Icon(
+                                Icons.lock_outline_rounded,
+                                color: isDarkMode ? Colors.white38 : Colors.black26,
+                                size: 16,
+                              ),
+                            ),
                           ),
                         ],
                       ],
@@ -604,7 +631,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
           // Progress Section
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Column(
               children: [
                 Row(
@@ -628,12 +655,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
                     value: progress,
-                    minHeight: 10,
+                    minHeight: 8,
                     backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       isDarkMode ? const Color(0xFF06B6D4) : const Color(0xFF0891B2),
@@ -646,7 +673,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
           // Stats Grid
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
             child: Column(
               children: [
                 Row(
@@ -679,10 +706,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
               !_hasTriedSupplement)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
-                margin: const EdgeInsets.only(top: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
@@ -719,7 +746,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
           // Action Button
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
             child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
                 ? renderErrorActions()
                 : renderStartButton(),
@@ -743,7 +770,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           }
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(20),
@@ -859,7 +886,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     if (hasDakaToday && _totalStepCount > 0 && _completedStepCount >= _totalStepCount) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isDarkMode ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
           borderRadius: BorderRadius.circular(20),
@@ -901,7 +928,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 11),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         onPressed: () async {
@@ -1056,7 +1083,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1125,10 +1152,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return Container(
       key: ValueKey(step.studyStep),
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
         color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           if (isActive)
             BoxShadow(
@@ -1155,9 +1182,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               _updateProgress();
             });
           },
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
                 Container(
