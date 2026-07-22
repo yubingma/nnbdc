@@ -125,6 +125,10 @@ class StudyStepsService {
         return StudyStep.en2Ch;
       case 'Ch2En':
         return StudyStep.ch2En;
+      case 'EnSentence2Ch':
+        return StudyStep.enSentence2Ch;
+      case 'ChSentence2En':
+        return StudyStep.chSentence2En;
       case 'List':
         return StudyStep.list;
       default:

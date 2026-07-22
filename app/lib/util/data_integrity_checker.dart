@@ -330,6 +330,18 @@ class DataIntegrityChecker {
         result.addIssue('学习步骤缺失', '用户缺少学习步骤：Ch2En', 'user_study_steps');
       }
 
+      // 检查是否缺少 EnSentence2Ch
+      final hasEnSentence2Ch = steps.any((step) => step.studyStep == 'EnSentence2Ch');
+      if (!hasEnSentence2Ch) {
+        result.addIssue('学习步骤缺失', '用户缺少学习步骤：EnSentence2Ch', 'user_study_steps');
+      }
+
+      // 检查是否缺少 ChSentence2En
+      final hasChSentence2En = steps.any((step) => step.studyStep == 'ChSentence2En');
+      if (!hasChSentence2En) {
+        result.addIssue('学习步骤缺失', '用户缺少学习步骤：ChSentence2En', 'user_study_steps');
+      }
+
       // 检查是否缺少 List
       final hasList = steps.any((step) => step.studyStep == 'List');
       if (!hasList) {
@@ -1153,11 +1165,15 @@ class DataIntegrityChecker {
       final steps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
       final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
       final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
+      final hasEnSentence2Ch = steps.any((step) => step.studyStep == 'EnSentence2Ch');
+      final hasChSentence2En = steps.any((step) => step.studyStep == 'ChSentence2En');
       final hasList = steps.any((step) => step.studyStep == 'List');
 
       List<String> missing = [];
       if (!hasEn2Ch) missing.add('En2Ch');
       if (!hasCh2En) missing.add('Ch2En');
+      if (!hasEnSentence2Ch) missing.add('EnSentence2Ch');
+      if (!hasChSentence2En) missing.add('ChSentence2En');
       if (!hasList) missing.add('List');
 
       if (missing.isNotEmpty) {
@@ -1169,11 +1185,15 @@ class DataIntegrityChecker {
           final newSteps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
           final newHasEn2Ch = newSteps.any((step) => step.studyStep == 'En2Ch');
           final newHasCh2En = newSteps.any((step) => step.studyStep == 'Ch2En');
+          final newHasEnSentence2Ch = newSteps.any((step) => step.studyStep == 'EnSentence2Ch');
+          final newHasChSentence2En = newSteps.any((step) => step.studyStep == 'ChSentence2En');
           final newHasList = newSteps.any((step) => step.studyStep == 'List');
 
           missing.clear();
           if (!newHasEn2Ch) missing.add('En2Ch');
           if (!newHasCh2En) missing.add('Ch2En');
+          if (!newHasEnSentence2Ch) missing.add('EnSentence2Ch');
+          if (!newHasChSentence2En) missing.add('ChSentence2En');
           if (!newHasList) missing.add('List');
 
           if (missing.isEmpty) {
@@ -1190,11 +1210,15 @@ class DataIntegrityChecker {
         final finalSteps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
         final finalHasEn2Ch = finalSteps.any((step) => step.studyStep == 'En2Ch');
         final finalHasCh2En = finalSteps.any((step) => step.studyStep == 'Ch2En');
+        final finalHasEnSentence2Ch = finalSteps.any((step) => step.studyStep == 'EnSentence2Ch');
+        final finalHasChSentence2En = finalSteps.any((step) => step.studyStep == 'ChSentence2En');
         final finalHasList = finalSteps.any((step) => step.studyStep == 'List');
 
         missing.clear();
         if (!finalHasEn2Ch) missing.add('En2Ch');
         if (!finalHasCh2En) missing.add('Ch2En');
+        if (!finalHasEnSentence2Ch) missing.add('EnSentence2Ch');
+        if (!finalHasChSentence2En) missing.add('ChSentence2En');
         if (!finalHasList) missing.add('List');
 
         if (missing.isNotEmpty) {

@@ -75,13 +75,44 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
                 newSteps.add(step);
             }
 
-            // 添加缺失的 List 步骤
-            if (!existingSteps.contains(StudyStep.List)) {
-                id = new UserStudyStepId(userId, StudyStep.List);
+            // 添加缺失的 EnSentence2Ch 步骤
+            if (!existingSteps.contains(StudyStep.EnSentence2Ch)) {
+                id = new UserStudyStepId(userId, StudyStep.EnSentence2Ch);
                 step = new UserStudyStep(id);
                 step.setSeq(2);
                 step.setState(StudyStepState.Active);
                 newSteps.add(step);
+            }
+
+            // 添加缺失的 ChSentence2En 步骤
+            if (!existingSteps.contains(StudyStep.ChSentence2En)) {
+                id = new UserStudyStepId(userId, StudyStep.ChSentence2En);
+                step = new UserStudyStep(id);
+                step.setSeq(3);
+                step.setState(StudyStepState.Active);
+                newSteps.add(step);
+            }
+
+            // 添加缺失的 List 步骤
+            if (!existingSteps.contains(StudyStep.List)) {
+                id = new UserStudyStepId(userId, StudyStep.List);
+                step = new UserStudyStep(id);
+                step.setSeq(4);
+                step.setState(StudyStepState.Active);
+                newSteps.add(step);
+            }
+
+            // 重新校正 seq，保证列表有序且 List 排在最后
+            int seq = 0;
+            for (UserStudyStep s : newSteps) {
+                if (s.getStudyStep() != StudyStep.List) {
+                    s.setSeq(seq++);
+                }
+            }
+            for (UserStudyStep s : newSteps) {
+                if (s.getStudyStep() == StudyStep.List) {
+                    s.setSeq(seq++);
+                }
             }
 
             saveStudySteps(newSteps, userId, false);

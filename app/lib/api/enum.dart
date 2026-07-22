@@ -86,6 +86,12 @@ enum StudyStep {
   /// 中→英 - 眼
   ch2En,
 
+  /// 例句英→中
+  enSentence2Ch,
+
+  /// 例句中→英
+  chSentence2En,
+
   /// 列表模式 - 预览/复习当前批次单词
   list
 }
@@ -97,6 +103,10 @@ extension StudyStepExt on StudyStep {
         return "En2Ch";
       case StudyStep.ch2En:
         return "Ch2En";
+      case StudyStep.enSentence2Ch:
+        return "EnSentence2Ch";
+      case StudyStep.chSentence2En:
+        return "ChSentence2En";
       case StudyStep.list:
         return "List";
     }
@@ -108,6 +118,10 @@ extension StudyStepExt on StudyStep {
         return "英→中";
       case StudyStep.ch2En:
         return "中→英";
+      case StudyStep.enSentence2Ch:
+        return "例句英→中";
+      case StudyStep.chSentence2En:
+        return "例句中→英";
       case StudyStep.list: 
         return "单词列表";
     }
@@ -119,6 +133,10 @@ extension StudyStepExt on StudyStep {
         return StudyStep.en2Ch;
       case "Ch2En":
         return StudyStep.ch2En;
+      case "EnSentence2Ch":
+        return StudyStep.enSentence2Ch;
+      case "ChSentence2En":
+        return StudyStep.chSentence2En;
       case "List":
         return StudyStep.list;
       default:
