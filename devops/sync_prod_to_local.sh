@@ -49,7 +49,11 @@ echo "============================================="
 echo "1️⃣ 正在备份生产环境数据库并传输到本地..."
 
 # 排除对本地开发无影响的几个大表数据 (只排除数据，保留空表和分区表结构)
-EXCLUDE_ARGS="--exclude-table-data=sys_db_log --exclude-table-data=word_embedding --exclude-table-data=user_db_log*"
+EXCLUDE_ARGS="--exclude-table-data=sys_db_log --exclude-table-data=word_embedding --exclude-table-data=user_db_log"
+# 显式拼接全部 64 个哈希分区子表，彻底规避通配符在不同 Shell 中被提前展开或解析失效的 Globbing 陷阱
+for i in {0..63}; do
+    EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude-table-data=user_db_log_p$i"
+done
 
 if command -v pv &> /dev/null; then
     sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
