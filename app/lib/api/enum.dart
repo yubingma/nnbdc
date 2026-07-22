@@ -93,7 +93,10 @@ enum StudyStep {
   chSentence2En,
 
   /// 列表模式 - 预览/复习当前批次单词
-  list
+  list,
+
+  /// 未知兜底（用于未来向后兼容）
+  unknown
 }
 
 extension StudyStepExt on StudyStep {
@@ -109,6 +112,8 @@ extension StudyStepExt on StudyStep {
         return "ChSentence2En";
       case StudyStep.list:
         return "List";
+      case StudyStep.unknown:
+        return "Unknown";
     }
   }
 
@@ -124,6 +129,8 @@ extension StudyStepExt on StudyStep {
         return "例句中→英";
       case StudyStep.list: 
         return "单词列表";
+      case StudyStep.unknown:
+        return "未知环节";
     }
   }
 
@@ -140,7 +147,8 @@ extension StudyStepExt on StudyStep {
       case "List":
         return StudyStep.list;
       default:
-        throw ArgumentError('无效的StudyStep值：$value');
+        // 遇到未来未知步骤，返回 unknown，避免老客户端崩溃
+        return StudyStep.unknown;
     }
   }
 }

@@ -25,6 +25,9 @@ class StudyStepsService {
 
     // 转换为VO对象
     var voSteps = steps.map(_convertToVo).toList();
+    
+    // 过滤掉所有不认识的未知步骤（防崩兜底）
+    voSteps.removeWhere((s) => s.studyStep == 'Unknown');
 
     // 强制“单词列表”阶段排在最后且必须激活
     var listStepIndex = voSteps.indexWhere((s) => s.studyStep == 'List');
@@ -132,7 +135,7 @@ class StudyStepsService {
       case 'List':
         return StudyStep.list;
       default:
-        throw Exception('无效的StudyStep值：$stepStr');
+        return StudyStep.unknown;
     }
   }
 
