@@ -1113,7 +1113,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           if (s == step) {
             if (activeIndex == 0) {
               stepName += ' (测评)';
-            } else if (activeIndex == 1) {
+            } else {
               stepName += ' (巩固)'; 
             }
             break;

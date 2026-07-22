@@ -1466,10 +1466,16 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.wordStartTime == null) return (rating: FsrsRating.good, reason: "$method，初始评分: ${FsrsRating.good.label}");
     final responseTime = AppClock.now().difference(state.wordStartTime!).inSeconds;
     
+    // 判断是否为例句环节，如果是，适当延长打分响应时间阈值（Easy 16s，Hard 30s）
+    final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json || 
+                                state.studyStep == StudyStep.chSentence2En.json;
+    final int easyThreshold = isSentenceStep ? 16 : 8;
+    final int hardThreshold = isSentenceStep ? 30 : 18;
+
     FsrsRating rating;
-    if (responseTime < 8) {
+    if (responseTime < easyThreshold) {
       rating = FsrsRating.easy;
-    } else if (responseTime >= 18) {
+    } else if (responseTime >= hardThreshold) {
       rating = FsrsRating.hard;
     } else {
       rating = FsrsRating.good;
