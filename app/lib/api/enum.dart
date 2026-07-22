@@ -120,13 +120,13 @@ extension StudyStepExt on StudyStep {
   String get description {
     switch (this) {
       case StudyStep.en2Ch:
-        return "英→中";
+        return "单词 · 英→中";
       case StudyStep.ch2En:
-        return "中→英";
+        return "单词 · 中→英";
       case StudyStep.enSentence2Ch:
-        return "例句英→中";
+        return "例句 · 英→中";
       case StudyStep.chSentence2En:
-        return "例句中→英";
+        return "例句 · 中→英";
       case StudyStep.list: 
         return "单词列表";
       case StudyStep.unknown:

@@ -2,10 +2,10 @@ package beidanci.api.model;
 
 public enum StudyStep {
     List("单词列表"),
-    En2Ch("英→中"),
-    Ch2En("中→英"),
-    EnSentence2Ch("例句英→中"),
-    ChSentence2En("例句中→英");
+    En2Ch("单词 · 英→中"),
+    Ch2En("单词 · 中→英"),
+    EnSentence2Ch("例句 · 英→中"),
+    ChSentence2En("例句 · 中→英");
 
     private String description;
 
