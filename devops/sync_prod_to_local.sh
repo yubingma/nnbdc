@@ -6,6 +6,12 @@
 # 设置发生错误时立即退出
 set -e
 
+# 解析参数支持非交互模式
+AUTO_CONFIRM=false
+if [ "$1" = "-y" ] || [ "$1" = "--yes" ]; then
+    AUTO_CONFIRM=true
+fi
+
 # 本地数据库配置（读取环境变量，若无则使用默认值）
 LOCAL_DB_HOST="${db_host:-127.0.0.1}"
 LOCAL_DB_PORT="${db_port:-5432}"
@@ -42,16 +48,19 @@ echo "============================================="
 # 第一步：在生产环境备份数据库，并通过管道压缩后传输到本地
 echo "1️⃣ 正在备份生产环境数据库并传输到本地..."
 
+# 排除对本地开发无影响的几个大表数据 (只排除数据，保留空表结构)
+EXCLUDE_ARGS="--exclude-table-data=sys_db_log --exclude-table-data=word_embedding"
+
 if command -v pv &> /dev/null; then
     sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-        "docker exec -i pg pg_dump -Umyb bdc | gzip" | pv > "$TEMP_BACKUP_FILE"
+        "docker exec -i pg pg_dump $EXCLUDE_ARGS -Umyb bdc | gzip" | pv > "$TEMP_BACKUP_FILE"
 elif dd status=progress < /dev/null &> /dev/null; then
     echo "💡 提示: 安装 'pv' 可以显示更精美的进度 (brew install pv)"
     sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-        "docker exec -i pg pg_dump -Umyb bdc | gzip" | dd status=progress > "$TEMP_BACKUP_FILE"
+        "docker exec -i pg pg_dump $EXCLUDE_ARGS -Umyb bdc | gzip" | dd status=progress > "$TEMP_BACKUP_FILE"
 else
     sshpass -p "$nnbdc_server_pwd" ssh -o StrictHostKeyChecking=no -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" \
-        "docker exec -i pg pg_dump -Umyb bdc | gzip" > "$TEMP_BACKUP_FILE"
+        "docker exec -i pg pg_dump $EXCLUDE_ARGS -Umyb bdc | gzip" > "$TEMP_BACKUP_FILE"
 fi
 
 if [ ! -f "$TEMP_BACKUP_FILE" ] || [ ! -s "$TEMP_BACKUP_FILE" ]; then
@@ -63,7 +72,11 @@ echo "✅ 备份下载成功，临时文件: $TEMP_BACKUP_FILE"
 
 # 第二步：提示用户是否清空本地数据库再导入
 echo "---------------------------------------------"
-read -p "⚠️ 是否【重建】本地数据库 '$LOCAL_DB_NAME' (清空所有本地数据)？ (y/n): " CONFIRM
+if [ "$AUTO_CONFIRM" = "true" ]; then
+    CONFIRM="y"
+else
+    read -p "⚠️ 是否【重建】本地数据库 '$LOCAL_DB_NAME' (清空所有本地数据)？ (y/n): " CONFIRM
+fi
 
 export PGPASSWORD="$LOCAL_DB_PASSWORD"
 
@@ -71,12 +84,17 @@ if [ "$CONFIRM" = "y" ] || [ "$CONFIRM" = "Y" ]; then
     echo "2️⃣ 正在重建本地数据库..."
     
     # 终止现有的连接以防止删除数据库失败
-    psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d postgres -c \
-        "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$LOCAL_DB_NAME' AND pid <> pg_backend_pid();" >/dev/null 2>&1 || true
-
-    dropdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" --if-exists "$LOCAL_DB_NAME"
+    # 使用 dropdb --force 可以强行删除被占用的数据库，如果 pg 版本较低不支持 --force，则使用 SQL 强杀连接作为备用
+    if dropdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" --if-exists --force "$LOCAL_DB_NAME" 2>/dev/null; then
+        echo "✅ 本地数据库 '$LOCAL_DB_NAME' 已强行重置(使用 --force)。"
+    else
+        # 降级备用方案：先杀连接，再普通删除
+        psql -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" -d postgres -c \
+            "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$LOCAL_DB_NAME' AND pid <> pg_backend_pid();" >/dev/null 2>&1 || true
+        dropdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" --if-exists "$LOCAL_DB_NAME"
+        echo "✅ 本地数据库 '$LOCAL_DB_NAME' 已重置。"
+    fi
     createdb -h "$LOCAL_DB_HOST" -p "$LOCAL_DB_PORT" -U "$LOCAL_DB_USER" "$LOCAL_DB_NAME"
-    echo "✅ 本地数据库 '$LOCAL_DB_NAME' 已重置。"
 else
     echo "2️⃣ 跳过数据库重建，将直接进行覆盖导入..."
 fi
