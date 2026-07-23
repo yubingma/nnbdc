@@ -1372,6 +1372,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               padding: EdgeInsets.zero,
               child: () {
                 final step = state.studyStep;
+                final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+                    ? state.word!.sentences!.first
+                    : null;
                 if (step == StudyStep.enSentence2Ch.json) {
                   final recognizedText = state.currentAsrCandidates.isNotEmpty ? state.currentAsrCandidates.first : '';
                   return Column(
@@ -1393,6 +1396,27 @@ extension BdcPageStateUIComponents on BdcPageState {
                           style: TextStyle(
                             fontSize: 14,
                             color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
+                      ],
+                      if (state.hasFinishedAnswering && state.currentScore != 100 && sentence != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          '正确翻译：',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _cachedIsDarkMode
+                                ? const Color(0xFF9CA3AF).withValues(alpha: 0.6)
+                                : const Color(0xFF6B7280).withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          sentence.chinese ?? '',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: _cachedIsDarkMode ? const Color(0xFFFCA5A5) : const Color(0xFFEF4444),
                           ),
                         ),
                       ],
@@ -1420,6 +1444,31 @@ extension BdcPageStateUIComponents on BdcPageState {
                             fontSize: 14,
                             color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
                           ),
+                        ),
+                      ],
+                      if (state.hasFinishedAnswering && state.currentScore != 100 && sentence != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          '正确例句：',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _cachedIsDarkMode
+                                ? const Color(0xFF9CA3AF).withValues(alpha: 0.6)
+                                : const Color(0xFF6B7280).withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Util.makeEnglishSpanText(
+                          sentence.english ?? '',
+                          state.word?.spell ?? '',
+                          true,
+                          context,
+                          false,
+                          null,
+                          false,
+                          FontWeight.w500,
+                          fontSize: 14,
+                          color: _cachedIsDarkMode ? const Color(0xFFFCA5A5) : const Color(0xFFEF4444),
                         ),
                       ],
                     ],
