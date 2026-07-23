@@ -128,6 +128,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   DateTime? _lastSyncTime;
+  String _accumulatedAsrText = "";
 
   void _onAsrStateChanged(AsrState asrState) {
     Future.microtask(() {
@@ -556,6 +557,8 @@ class BdcNotifier extends _$BdcNotifier {
       newTabIndex = speakTabAvailable ? 1 : 0;
     }
 
+    _accumulatedAsrText = "";
+
     state = state.copyWith(
       currentGetWordResult: getWordResult,
       word: word,
@@ -856,9 +859,11 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.wordWrapper != null) {
       final wrapper = state.wordWrapper!;
       wrapper.hintLetterCount = 0;
+      _accumulatedAsrText = "";
       state = state.copyWith(
         wordWrapper: wrapper,
         isUpdatingByHint: !state.isUpdatingByHint,
+        currentAsrCandidates: [],
       );
       if (state.studyStep == StudyStep.ch2En.json || state.showHandwritingBoard) {
         meaningController.text = '';
@@ -1279,25 +1284,77 @@ class BdcNotifier extends _$BdcNotifier {
         resultData = null;
       }
 
+      String best = "";
       if (resultData != null && resultData.containsKey('candidates')) {
         candidates = List<String>.from(resultData['candidates']);
-        String best = resultData['best'] ?? candidates.first;
-        
-        if (state.studyStep == StudyStep.ch2En.json) {
-          final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidates, state.word!.spell);
-          processedResult = AsrUtil.preprocessEnglish(result.text, state.word!.spell);
-          _updateState(state.copyWith(currentScore: result.score, currentAsrCandidates: candidates), tag: 'asr-result');
+        best = resultData['best'] ?? candidates.first;
+      } else {
+        best = event.toString();
+        candidates = [best];
+      }
+
+      final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
+                              state.studyStep == StudyStep.chSentence2En.json;
+
+      if (isSentence) {
+        final cleanBest = best.trim();
+        if (cleanBest.isNotEmpty) {
+          if (_accumulatedAsrText.isEmpty) {
+            _accumulatedAsrText = cleanBest;
+          } else {
+            if (cleanBest.startsWith(_accumulatedAsrText)) {
+              _accumulatedAsrText = cleanBest;
+            } else if (_accumulatedAsrText.startsWith(cleanBest)) {
+              // 保留更长的 accumulated，不作覆盖
+            } else {
+              final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
+              if (isEnglish) {
+                _accumulatedAsrText = "$_accumulatedAsrText $cleanBest";
+              } else {
+                _accumulatedAsrText = "$_accumulatedAsrText$cleanBest";
+              }
+            }
+          }
+        }
+        processedResult = AsrUtil.preprocess(_accumulatedAsrText);
+        final uniqueCandidates = [_accumulatedAsrText];
+        for (final c in candidates) {
+          if (c != _accumulatedAsrText) uniqueCandidates.add(c);
+        }
+        _updateState(state.copyWith(currentAsrCandidates: uniqueCandidates), tag: 'asr-candidate');
+      } else {
+        if (resultData != null && resultData.containsKey('candidates')) {
+          if (state.studyStep == StudyStep.ch2En.json) {
+            final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidates, state.word!.spell);
+            processedResult = AsrUtil.preprocessEnglish(result.text, state.word!.spell);
+            _updateState(state.copyWith(currentScore: result.score, currentAsrCandidates: candidates), tag: 'asr-result');
+          } else {
+            processedResult = AsrUtil.preprocess(best);
+            _updateState(state.copyWith(currentAsrCandidates: candidates), tag: 'asr-candidate');
+          }
         } else {
           processedResult = AsrUtil.preprocess(best);
           _updateState(state.copyWith(currentAsrCandidates: candidates), tag: 'asr-candidate');
         }
-      } else {
-        candidates = [event.toString()];
-        processedResult = AsrUtil.preprocess(event.toString());
       }
     } catch (e) {
       processedResult = AsrUtil.preprocess(event.toString());
       candidates = [event.toString()];
+      final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
+                              state.studyStep == StudyStep.chSentence2En.json;
+      if (isSentence) {
+        final cleanBest = event.toString().trim();
+        if (cleanBest.isNotEmpty && !_accumulatedAsrText.contains(cleanBest)) {
+          final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
+          if (isEnglish) {
+            _accumulatedAsrText = "$_accumulatedAsrText $cleanBest";
+          } else {
+            _accumulatedAsrText = "$_accumulatedAsrText$cleanBest";
+          }
+        }
+        processedResult = AsrUtil.preprocess(_accumulatedAsrText);
+        _updateState(state.copyWith(currentAsrCandidates: [_accumulatedAsrText]), tag: 'asr-candidate');
+      }
     }
 
     checkAsrResult(asrInput: processedResult, isVoice: true);
