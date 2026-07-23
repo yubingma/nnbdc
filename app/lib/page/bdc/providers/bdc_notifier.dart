@@ -1275,11 +1275,15 @@ class BdcNotifier extends _$BdcNotifier {
   Future<void> onAsrResult(event) async {
     String processedResult = "";
     List<String> candidates = [];
+    bool isFinal = false;
     
     try {
       Map<String, dynamic>? resultData;
       try {
         resultData = jsonDecode(event.toString());
+        if (resultData != null) {
+          isFinal = resultData['isFinal'] ?? false;
+        }
       } catch (_) {
         resultData = null;
       }
@@ -1347,12 +1351,13 @@ class BdcNotifier extends _$BdcNotifier {
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
         _updateState(state.copyWith(currentAsrCandidates: [_accumulatedAsrText]), tag: 'asr-candidate');
       }
+      isFinal = true;
     }
 
-    checkAsrResult(asrInput: processedResult, isVoice: true);
+    checkAsrResult(asrInput: processedResult, isVoice: true, isFinal: isFinal);
   }
 
-  Future<void> checkAsrResult({String? asrInput, bool isVoice = false}) async {
+  Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false}) async {
     if (_isDisposed) return;
     if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
     final stopwatch = Stopwatch()..start();
@@ -1410,7 +1415,13 @@ class BdcNotifier extends _$BdcNotifier {
         // 实时更新 currentScore，让 UI 实时显示得分！
         state = state.copyWith(currentScore: maxScore);
 
-        final bool isMatch = step == StudyStep.enSentence2Ch.json ? (maxScore >= 60) : (maxScore >= 70);
+        final bool isMatch;
+        if (maxScore >= 100) {
+          isMatch = true;
+        } else {
+          final bool passedThreshold = step == StudyStep.enSentence2Ch.json ? (maxScore >= 60) : (maxScore >= 70);
+          isMatch = passedThreshold && (!isVoice || isFinal);
+        }
 
         if (isMatch) {
           _isAnswerCorrectHandling = true;
