@@ -435,7 +435,7 @@ class Util {
             ))
         .copyWith(
       fontFamily: 'NotoSansSC',
-      color: context.watch<DarkMode>().isDarkMode ? Colors.grey[300] : Colors.grey[700],
+      color: style?.color ?? (context.watch<DarkMode>().isDarkMode ? Colors.grey[300] : Colors.grey[700]),
     );
 
     return Text.rich(
@@ -443,9 +443,12 @@ class Util {
         for (var i = 0; i < parts.length; i++)
           TextSpan(
             text: parts[i],
-            style: boldWordIndices.contains(i) ? baseStyle.copyWith(color: Global.highlight) : baseStyle,
+            style: boldWordIndices.contains(i)
+                ? baseStyle.copyWith(color: Global.highlight, fontWeight: FontWeight.bold)
+                : baseStyle,
           )
       ]),
+      textAlign: style?.textAlign ?? TextAlign.start,
     );
   }
 
@@ -495,7 +498,11 @@ class Util {
       if (isPunctuation) {
         // 标点符号
         spans.add(TextSpan(
-            text: token, style: TextStyle(color: boldWordIndices.contains(i) ? Global.highlight : null, fontSize: fontSize, fontWeight: fontWeight)));
+            text: token,
+            style: TextStyle(
+                color: boldWordIndices.contains(i) ? Global.highlight : null,
+                fontSize: fontSize,
+                fontWeight: boldWordIndices.contains(i) ? FontWeight.bold : fontWeight)));
       } else {
         // 单词
         spans.add(boldWordIndices.contains(i) && maskTextField != null
@@ -504,7 +511,10 @@ class Util {
               )
             : TextSpan(
                 text: boldWordIndices.contains(i) && maskHighlightWord ? ''.padRight(token.length, '_') : token,
-                style: TextStyle(color: boldWordIndices.contains(i) ? Global.highlight : null, fontSize: fontSize, fontWeight: fontWeight),
+                style: TextStyle(
+                    color: boldWordIndices.contains(i) ? Global.highlight : null,
+                    fontSize: fontSize,
+                    fontWeight: boldWordIndices.contains(i) ? FontWeight.bold : fontWeight),
                 recognizer: TapGestureRecognizer()
                   ..onTap = () async {
                     // 高亮单词禁止点击查词
