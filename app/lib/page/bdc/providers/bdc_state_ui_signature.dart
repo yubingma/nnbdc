@@ -28,6 +28,7 @@ class BdcStateUiSignature {
   final bool isWordImageEdited;
   final bool isSelectModePreferred;
   final int? currentScore;
+  final String? asrFirstCandidate;
 
   BdcStateUiSignature(BdcState s)
       : dataLoaded = s.dataLoaded,
@@ -54,7 +55,8 @@ class BdcStateUiSignature {
         highlightedWordImgId = s.highlightedWordImg?.id,
         isWordImageEdited = s.isWordImageEdited,
         isSelectModePreferred = s.isSelectModePreferred,
-        currentScore = s.currentScore;
+        currentScore = s.currentScore,
+        asrFirstCandidate = s.currentAsrCandidates.isNotEmpty ? s.currentAsrCandidates.first : null;
 
   @override
   bool operator ==(Object other) {
@@ -84,7 +86,8 @@ class BdcStateUiSignature {
         highlightedWordImgId == other.highlightedWordImgId &&
         isWordImageEdited == other.isWordImageEdited &&
         isSelectModePreferred == other.isSelectModePreferred &&
-        currentScore == other.currentScore;
+        currentScore == other.currentScore &&
+        asrFirstCandidate == other.asrFirstCandidate;
   }
 
   @override
@@ -114,5 +117,6 @@ class BdcStateUiSignature {
         isWordImageEdited,
         isSelectModePreferred,
         currentScore,
+        asrFirstCandidate,
       ]);
 }

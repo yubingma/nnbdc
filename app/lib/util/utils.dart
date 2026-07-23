@@ -450,8 +450,19 @@ class Util {
   }
 
   /// 把英文句子的每个单词转换为相应的widget，形成一个RichText
-  static Text makeEnglishSpanText(String words, String highlightWord, bool highlightWordHasBeenTaged, BuildContext context, bool maskHighlightWord,
-      SizedBox? maskTextField, bool isHighlightWordUnClickable, FontWeight fontWeight, {double fontSize = 14}) {
+  static Text makeEnglishSpanText(
+      String words,
+      String highlightWord,
+      bool highlightWordHasBeenTaged,
+      BuildContext context,
+      bool maskHighlightWord,
+      SizedBox? maskTextField,
+      bool isHighlightWordUnClickable,
+      FontWeight fontWeight, {
+    double fontSize = 14,
+    TextAlign textAlign = TextAlign.left,
+    Color? color,
+  }) {
     words = words.trim();
 
     // 获得所有高亮(加粗)单词的下标
@@ -734,7 +745,15 @@ class Util {
       }
     }
 
-    return Text.rich(TextSpan(children: spans));
+    return Text.rich(
+      TextSpan(children: spans),
+      textAlign: textAlign,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+      ),
+    );
   }
 
   static String getWordDefaultPronounce(WordVo word) {

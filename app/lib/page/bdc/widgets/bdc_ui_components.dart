@@ -2066,15 +2066,18 @@ extension BdcPageStateUIComponents on BdcPageState {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Text(
+            child: Util.makeEnglishSpanText(
               sentenceText,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 20,
-                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
-                height: 1.4,
-              ),
+              state.word?.spell ?? '',
+              true,
+              context,
+              false,
+              null,
+              false,
+              FontWeight.normal,
+              fontSize: 20,
               textAlign: TextAlign.center,
+              color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
             ),
           ),
           const SizedBox(height: 8),
