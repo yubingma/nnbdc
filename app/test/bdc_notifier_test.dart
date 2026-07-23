@@ -579,5 +579,18 @@ void main() {
     expect(notifier.getEnglishSentenceMatchScore('I eat an apple morning', 'I eat an apple every morning.'), 83);
     // 匹对“I eat an apple every morning”，LCS单词为 6, 6/6 = 100%
     expect(notifier.getEnglishSentenceMatchScore('I eat an apple every morning.', 'I eat an apple every morning.'), 100);
+
+    // 3. 验证智能重叠拼接去重算法 (stitchTexts)
+    // 中文无重合拼接
+    expect(BdcNotifier.stitchTexts('我每天', '一个苹果', isEnglish: false), '我每天一个苹果');
+    // 中文有重合拼接
+    expect(BdcNotifier.stitchTexts('我每天', '每天吃苹果', isEnglish: false), '我每天吃苹果');
+    expect(BdcNotifier.stitchTexts('我每天早上吃', '吃一个苹果', isEnglish: false), '我每天早上吃一个苹果');
+    
+    // 英文无重合拼接
+    expect(BdcNotifier.stitchTexts('i eat', 'a watermelon', isEnglish: true), 'i eat a watermelon');
+    // 英文有重合拼接 (包括单词级大小写归一化匹配)
+    expect(BdcNotifier.stitchTexts('i eat', 'eat an apple', isEnglish: true), 'i eat an apple');
+    expect(BdcNotifier.stitchTexts('I have', 'have a Apple', isEnglish: true), 'I have a Apple');
   });
 }

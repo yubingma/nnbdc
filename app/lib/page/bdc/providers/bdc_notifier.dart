@@ -1299,6 +1299,7 @@ class BdcNotifier extends _$BdcNotifier {
       if (isSentence) {
         final cleanBest = best.trim();
         if (cleanBest.isNotEmpty) {
+          final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
           if (_accumulatedAsrText.isEmpty) {
             _accumulatedAsrText = cleanBest;
           } else {
@@ -1307,12 +1308,7 @@ class BdcNotifier extends _$BdcNotifier {
             } else if (_accumulatedAsrText.startsWith(cleanBest)) {
               // 保留更长的 accumulated，不作覆盖
             } else {
-              final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
-              if (isEnglish) {
-                _accumulatedAsrText = "$_accumulatedAsrText $cleanBest";
-              } else {
-                _accumulatedAsrText = "$_accumulatedAsrText$cleanBest";
-              }
+              _accumulatedAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
             }
           }
         }
@@ -1344,13 +1340,9 @@ class BdcNotifier extends _$BdcNotifier {
                               state.studyStep == StudyStep.chSentence2En.json;
       if (isSentence) {
         final cleanBest = event.toString().trim();
-        if (cleanBest.isNotEmpty && !_accumulatedAsrText.contains(cleanBest)) {
+        if (cleanBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
-          if (isEnglish) {
-            _accumulatedAsrText = "$_accumulatedAsrText $cleanBest";
-          } else {
-            _accumulatedAsrText = "$_accumulatedAsrText$cleanBest";
-          }
+          _accumulatedAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
         _updateState(state.copyWith(currentAsrCandidates: [_accumulatedAsrText]), tag: 'asr-candidate');
@@ -2001,6 +1993,59 @@ class BdcNotifier extends _$BdcNotifier {
       state = state.copyWith();
     } catch (e, stackTrace) {
       Global.logger.e('🔊 [BDC-ASR] 刷新设置与重构语音识别失败: $e', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// 智能重叠拼接算法：寻找并融合 prev 末尾与 next 开头的重合重叠部分
+  static String stitchTexts(String prev, String next, {bool isEnglish = false}) {
+    final p = prev.trim();
+    final n = next.trim();
+    if (p.isEmpty) return n;
+    if (n.isEmpty) return p;
+
+    if (isEnglish) {
+      // 英文按单词单词级（Word-based）进行重叠比对
+      final pWords = p.split(RegExp(r'\s+'));
+      final nWords = n.split(RegExp(r'\s+'));
+      
+      int maxOverlap = 0;
+      final minLen = pWords.length < nWords.length ? pWords.length : nWords.length;
+      
+      for (int i = 1; i <= minLen; i++) {
+        final pTail = pWords.sublist(pWords.length - i).join(' ').toLowerCase();
+        final nHead = nWords.sublist(0, i).join(' ').toLowerCase();
+        
+        if (pTail == nHead) {
+          maxOverlap = i;
+        }
+      }
+      
+      if (maxOverlap > 0) {
+        final remainingN = nWords.sublist(maxOverlap).join(' ');
+        return remainingN.isEmpty ? p : "$p $remainingN";
+      } else {
+        return "$p $n";
+      }
+    } else {
+      // 中文按字符字级（Character-based）进行重叠比对
+      int maxOverlap = 0;
+      final minLen = p.length < n.length ? p.length : n.length;
+      
+      for (int i = 1; i <= minLen; i++) {
+        final pTail = p.substring(p.length - i);
+        final nHead = n.substring(0, i);
+        
+        if (pTail == nHead) {
+          maxOverlap = i;
+        }
+      }
+      
+      if (maxOverlap > 0) {
+        final remainingN = n.substring(maxOverlap);
+        return "$p$remainingN";
+      } else {
+        return "$p$n";
+      }
     }
   }
 
