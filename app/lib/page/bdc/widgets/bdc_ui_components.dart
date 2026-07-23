@@ -1277,6 +1277,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                     
                     final bool isChineseInput = state.studyStep == StudyStep.en2Ch.json ||
                                                 state.studyStep == StudyStep.enSentence2Ch.json;
+                    final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
+                                            state.studyStep == StudyStep.chSentence2En.json;
                     return isChineseInput
                         ? ChineseAsrInputWidget(
                             controller: notifier.meaningController,
@@ -1286,6 +1288,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isKeyboardVisible: state.isKeyboardVisible,
                             focusNode: _meaningFocusNode,
                             score: currentScore,
+                            isSentenceStep: isSentence,
                           )
                         : EnglishAsrInputWidget(
                             controller: notifier.meaningController,
@@ -1295,6 +1298,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isKeyboardVisible: state.isKeyboardVisible,
                             focusNode: _meaningFocusNode,
                             score: currentScore,
+                            isSentenceStep: isSentence,
                           );
                   },
                 ),
