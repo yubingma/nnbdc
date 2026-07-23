@@ -690,17 +690,23 @@ extension BdcPageStateUIComponents on BdcPageState {
                 child: (state.showAnswerButtons ||
                         state.studyStep == StudyStep.en2Ch.json ||
                         state.studyStep == StudyStep.ch2En.json ||
+                        state.studyStep == StudyStep.enSentence2Ch.json ||
+                        state.studyStep == StudyStep.chSentence2En.json ||
                         state.studyStep == StudyStep.list.json)
                     ? Column(
                         children: [
                           if (state.studyStep == StudyStep.en2Ch.json ||
-                              state.studyStep == StudyStep.ch2En.json) ...[
+                              state.studyStep == StudyStep.ch2En.json ||
+                              state.studyStep == StudyStep.enSentence2Ch.json ||
+                              state.studyStep == StudyStep.chSentence2En.json) ...[
                             _buildTabBar(),
                             const SizedBox(height: 8),
                           ],
                           Expanded(
                             child: (state.studyStep == StudyStep.en2Ch.json ||
-                                    state.studyStep == StudyStep.ch2En.json)
+                                    state.studyStep == StudyStep.ch2En.json ||
+                                    state.studyStep == StudyStep.enSentence2Ch.json ||
+                                    state.studyStep == StudyStep.chSentence2En.json)
                                 ? TabBarView(
                                     key: ValueKey('bdc_tab_bar_view_${_tabController?.length}'),
                                     controller: _tabController,
@@ -1353,6 +1359,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               child: () {
                 final step = state.studyStep;
                 if (step == StudyStep.enSentence2Ch.json) {
+                  final recognizedText = state.currentAsrCandidates.isNotEmpty ? state.currentAsrCandidates.first : '';
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1366,9 +1373,51 @@ extension BdcPageStateUIComponents on BdcPageState {
                               : const Color(0xFF4B5563),
                         ),
                       ),
+                      if (recognizedText.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _cachedIsDarkMode
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.03),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _cachedIsDarkMode
+                                  ? Colors.white10
+                                  : Colors.black.withValues(alpha: 0.05),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '识别结果：',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _cachedIsDarkMode ? Colors.white38 : Colors.black38,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '“$recognizedText”',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: _cachedIsDarkMode ? Colors.white70 : Colors.black87,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   );
                 } else if (step == StudyStep.chSentence2En.json) {
+                  final recognizedText = state.currentAsrCandidates.isNotEmpty ? state.currentAsrCandidates.first : '';
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1382,6 +1431,47 @@ extension BdcPageStateUIComponents on BdcPageState {
                               : const Color(0xFF4B5563),
                         ),
                       ),
+                      if (recognizedText.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _cachedIsDarkMode
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.03),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _cachedIsDarkMode
+                                  ? Colors.white10
+                                  : Colors.black.withValues(alpha: 0.05),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '识别结果：',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _cachedIsDarkMode ? Colors.white38 : Colors.black38,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '“$recognizedText”',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: _cachedIsDarkMode ? Colors.white70 : Colors.black87,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   );
                 } else if (step == StudyStep.en2Ch.json) {
