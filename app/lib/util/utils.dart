@@ -418,7 +418,8 @@ class Util {
   }
 
   /// 把中文句子中的高亮文字(已用html标签加粗)转换为相应的widget，形成一个RichText
-  static Widget makeChineseSpanText(String chinese, BuildContext context, {TextStyle? style}) {
+  static Widget makeChineseSpanText(String chinese, BuildContext context,
+      {TextStyle? style, TextAlign textAlign = TextAlign.start}) {
     // 根据句子里的html加粗标签，获得高亮文字的下标
     var boldWordIndices = Util.getBoldCharIndices(chinese);
 
@@ -448,7 +449,7 @@ class Util {
                 : baseStyle,
           )
       ]),
-      textAlign: style?.textAlign ?? TextAlign.start,
+      textAlign: textAlign,
     );
   }
 
