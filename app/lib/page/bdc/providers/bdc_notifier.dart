@@ -1765,7 +1765,9 @@ class BdcNotifier extends _$BdcNotifier {
         !state.isGettingNextWord &&
         !state.isKeyboardVisible;
 
-    final language = state.studyStep == StudyStep.ch2En.json ? AsrLanguage.english : AsrLanguage.chinese;
+    final language = (state.studyStep == StudyStep.ch2En.json || state.studyStep == StudyStep.chSentence2En.json)
+        ? AsrLanguage.english
+        : AsrLanguage.chinese;
     List<String> phrases = [];
     if (state.word != null) {
       if (language == AsrLanguage.english) {
