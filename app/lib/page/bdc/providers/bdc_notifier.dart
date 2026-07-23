@@ -550,8 +550,9 @@ class BdcNotifier extends _$BdcNotifier {
     WordWrapper wordWrapper = WordWrapper(word, null);
     
     bool speakTabAvailable = _getShouldShowSpeakTabFor(newStudyStep);
+    final bool isSentenceStep = newStudyStep == StudyStep.enSentence2Ch.json || newStudyStep == StudyStep.chSentence2En.json;
     int newTabIndex = 0;
-    if (state.isSelectModePreferred) {
+    if (state.isSelectModePreferred && !isSentenceStep) {
       newTabIndex = speakTabAvailable ? 1 : 0;
     }
 

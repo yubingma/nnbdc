@@ -696,17 +696,13 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ? Column(
                         children: [
                           if (state.studyStep == StudyStep.en2Ch.json ||
-                              state.studyStep == StudyStep.ch2En.json ||
-                              state.studyStep == StudyStep.enSentence2Ch.json ||
-                              state.studyStep == StudyStep.chSentence2En.json) ...[
+                              state.studyStep == StudyStep.ch2En.json) ...[
                             _buildTabBar(),
                             const SizedBox(height: 8),
                           ],
                           Expanded(
                             child: (state.studyStep == StudyStep.en2Ch.json ||
-                                    state.studyStep == StudyStep.ch2En.json ||
-                                    state.studyStep == StudyStep.enSentence2Ch.json ||
-                                    state.studyStep == StudyStep.chSentence2En.json)
+                                    state.studyStep == StudyStep.ch2En.json)
                                 ? TabBarView(
                                     key: ValueKey('bdc_tab_bar_view_${_tabController?.length}'),
                                     controller: _tabController,
@@ -721,18 +717,21 @@ extension BdcPageStateUIComponents on BdcPageState {
                                       ),
                                     ],
                                   )
-                                : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      Flexible(
-                                        child: SingleChildScrollView(
-                                          physics: const BouncingScrollPhysics(),
-                                          child: _buildChoiceList(),
-                                        ),
+                                : (state.studyStep == StudyStep.enSentence2Ch.json ||
+                                       state.studyStep == StudyStep.chSentence2En.json)
+                                    ? _buildSpeakPanel()
+                                    : Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          Flexible(
+                                            child: SingleChildScrollView(
+                                              physics: const BouncingScrollPhysics(),
+                                              child: _buildChoiceList(),
+                                            ),
+                                          ),
+                                          Expanded(child: _buildSpeakPanel()),
+                                        ],
                                       ),
-                                      Expanded(child: _buildSpeakPanel()),
-                                    ],
-                                  ),
                           ),
                         ],
                       )
@@ -1301,26 +1300,28 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
               ),
 
-              const SizedBox(width: 8),
-
-              // 功能按钮区
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPanelButton(
-                    icon: Icons.emoji_objects_rounded,
-                    label: '提示',
-                    onTap: () => notifier.giveALittleHint(),
-                    onLongPress: () => notifier.giveFullHint(),
-                  ),
-                  const SizedBox(width: 6),
-                  _buildPanelButton(
-                    icon: Icons.refresh,
-                    label: '清除',
-                    onTap: () => notifier.clearHint(),
-                  ),
-                ],
-              ),
+              if (state.studyStep != StudyStep.enSentence2Ch.json &&
+                  state.studyStep != StudyStep.chSentence2En.json) ...[
+                const SizedBox(width: 8),
+                // 功能按钮区
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildPanelButton(
+                      icon: Icons.emoji_objects_rounded,
+                      label: '提示',
+                      onTap: () => notifier.giveALittleHint(),
+                      onLongPress: () => notifier.giveFullHint(),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildPanelButton(
+                      icon: Icons.refresh,
+                      label: '清除',
+                      onTap: () => notifier.clearHint(),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
