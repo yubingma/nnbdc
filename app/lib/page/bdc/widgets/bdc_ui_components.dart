@@ -1246,6 +1246,8 @@ extension BdcPageStateUIComponents on BdcPageState {
       return const SizedBox.shrink();
     }
     final isDarkMode = _cachedIsDarkMode;
+    final bool isSentence = step == StudyStep.enSentence2Ch.json ||
+        step == StudyStep.chSentence2En.json;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1304,10 +1306,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
               ),
 
-              if (state.studyStep != StudyStep.enSentence2Ch.json &&
-                  state.studyStep != StudyStep.chSentence2En.json) ...[
-                const SizedBox(width: 8),
-                // 功能按钮区
+              const SizedBox(width: 8),
+              if (isSentence)
+                _buildPanelButton(
+                  icon: Icons.refresh,
+                  label: '清空',
+                  onTap: () => notifier.clearHint(),
+                )
+              else
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1325,7 +1331,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ),
                   ],
                 ),
-              ],
             ],
           ),
         ),
