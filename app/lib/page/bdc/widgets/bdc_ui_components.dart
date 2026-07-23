@@ -315,9 +315,22 @@ extension BdcPageStateUIComponents on BdcPageState {
             if (state.studyStep == StudyStep.ch2En.json &&
                 state.currentGetWordResult?.learningWord?.word != null)
               _buildMeaningStepCard(state),
+            // 例句英→中模式整合卡片
+            if (state.studyStep == StudyStep.enSentence2Ch.json &&
+                state.currentGetWordResult?.learningWord?.word != null)
+              _buildEnSentenceStepCard(state),
+            // 例句中→英模式整合卡片
+            if (state.studyStep == StudyStep.chSentence2En.json &&
+                state.currentGetWordResult?.learningWord?.word != null)
+              _buildChSentenceStepCard(state),
 
-            _buildPhoneticRow(state),
-            _buildFirstSentenceRow(state),
+            // 音标和例句辅助行，仅在单词/浏览模式下显示，例句模式本身不需要它们
+            if (state.studyStep == StudyStep.en2Ch.json ||
+                state.studyStep == StudyStep.ch2En.json ||
+                state.studyStep == StudyStep.list.json) ...[
+              _buildPhoneticRow(state),
+              _buildFirstSentenceRow(state),
+            ],
           ],
         ),
       ),
@@ -1219,8 +1232,11 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildSpeakPanel() {
-    if (!((state.studyStep == StudyStep.en2Ch.json ||
-            state.studyStep == StudyStep.ch2En.json) &&
+    final String? step = state.studyStep;
+    if (!((step == StudyStep.en2Ch.json ||
+            step == StudyStep.ch2En.json ||
+            step == StudyStep.enSentence2Ch.json ||
+            step == StudyStep.chSentence2En.json) &&
         state.word != null)) {
       return const SizedBox.shrink();
     }
@@ -1254,7 +1270,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                     final currentAsrState = ref.watch(bdcNotifierProvider.select((s) => s.asrState));
                     final currentScore = ref.watch(bdcNotifierProvider.select((s) => s.currentScore));
                     
-                    return state.studyStep == StudyStep.en2Ch.json
+                    final bool isChineseInput = state.studyStep == StudyStep.en2Ch.json ||
+                                                state.studyStep == StudyStep.enSentence2Ch.json;
+                    return isChineseInput
                         ? ChineseAsrInputWidget(
                             controller: notifier.meaningController,
                             asrState: currentAsrState,
@@ -1331,34 +1349,70 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ? const NeverScrollableScrollPhysics()
                   : null,
               padding: EdgeInsets.zero,
-              child: state.studyStep == StudyStep.en2Ch.json
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ...renderAsrMeaningItems(state.wordWrapper!,
-                            isDarkMode: context.read<DarkMode>().isDarkMode),
-                        const SizedBox(height: 16),
-                        _buildSpellingExerciseButton(isDarkMode),
-                      ],
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '说出单词发音 或 直接拼写：',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: _cachedIsDarkMode
-                                ? const Color(0xFFD1D5DB)
-                                : const Color(0xFF4B5563),
-                          ),
+              child: () {
+                final step = state.studyStep;
+                if (step == StudyStep.enSentence2Ch.json) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '请说出对应的中文翻译：',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: _cachedIsDarkMode
+                              ? const Color(0xFFD1D5DB)
+                              : const Color(0xFF4B5563),
                         ),
-                        const SizedBox(height: 12),
-                        // 拼写练习按钮 (替代原来的 TextField)
-                        _buildSpellingExerciseButton(isDarkMode),
-                      ],
-                    ),
+                      ),
+                    ],
+                  );
+                } else if (step == StudyStep.chSentence2En.json) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '请读出对应的英文例句：',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: _cachedIsDarkMode
+                              ? const Color(0xFFD1D5DB)
+                              : const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ],
+                  );
+                } else if (step == StudyStep.en2Ch.json) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...renderAsrMeaningItems(state.wordWrapper!,
+                          isDarkMode: context.read<DarkMode>().isDarkMode),
+                      const SizedBox(height: 16),
+                      _buildSpellingExerciseButton(isDarkMode),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '说出单词发音 或 直接拼写：',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: _cachedIsDarkMode
+                              ? const Color(0xFFD1D5DB)
+                              : const Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSpellingExerciseButton(isDarkMode),
+                    ],
+                  );
+                }
+              }(),
             ),
           ),
         ),
@@ -1957,6 +2011,85 @@ extension BdcPageStateUIComponents on BdcPageState {
                   null,
                   true,
                   FontWeight.w300),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildEnSentenceStepCard(BdcState state) {
+    final isDarkMode = _cachedIsDarkMode;
+    final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+        ? state.word!.sentences!.first
+        : null;
+    final sentenceText = sentence?.english ?? "No sentence available";
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(color: Colors.transparent),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              sentenceText,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.volume_up_rounded,
+                  color: isDarkMode ? const Color(0xFF22D3EE) : AppTheme.primaryColor,
+                  size: 28,
+                ),
+                onPressed: () {
+                  notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChSentenceStepCard(BdcState state) {
+    final isDarkMode = _cachedIsDarkMode;
+    final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+        ? state.word!.sentences!.first
+        : null;
+    final translationText = sentence?.chinese ?? "暂无例句翻译";
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(color: Colors.transparent),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              translationText,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
