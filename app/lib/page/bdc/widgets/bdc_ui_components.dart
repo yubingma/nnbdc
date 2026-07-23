@@ -810,6 +810,8 @@ extension BdcPageStateUIComponents on BdcPageState {
         if (state.showAnswerButtons ||
             state.studyStep == StudyStep.en2Ch.json ||
             state.studyStep == StudyStep.ch2En.json ||
+            state.studyStep == StudyStep.enSentence2Ch.json ||
+            state.studyStep == StudyStep.chSentence2En.json ||
             state.studyStep == StudyStep.list.json)
           AbsorbPointer(
             absorbing: !state.buttonsEnabled,
@@ -837,6 +839,8 @@ extension BdcPageStateUIComponents on BdcPageState {
         if (state.showAnswerButtons ||
             state.studyStep == StudyStep.en2Ch.json ||
             state.studyStep == StudyStep.ch2En.json ||
+            state.studyStep == StudyStep.enSentence2Ch.json ||
+            state.studyStep == StudyStep.chSentence2En.json ||
             state.studyStep == StudyStep.list.json) ...[
           const SizedBox(width: 12),
           AbsorbPointer(
