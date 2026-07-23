@@ -564,20 +564,20 @@ void main() {
     
     // 1. 验证中文句子匹配（EnSentence2Ch 60% 字符级阈值）
     // 目标：“我每天早上吃一个苹果。” (10个中文字)
-    // 匹对“吃一个苹果”，LCS为 5, 5/10 = 50% < 60%，应该失败
-    expect(notifier.checkChineseSentenceMatch('吃一个苹果', '我每天早上吃一个苹果。'), false);
-    // 匹对“我每天吃苹果”，LCS为 6, 6/10 = 60%，应该成功
-    expect(notifier.checkChineseSentenceMatch('我每天吃苹果', '我每天早上吃一个苹果。'), true);
-    // 匹对“我每天早上都吃苹果”，LCS为 8, 8/10 = 80%，应该成功
-    expect(notifier.checkChineseSentenceMatch('我每天早上都吃苹果', '我每天早上吃一个苹果。'), true);
+    // 匹对“吃一个苹果”，LCS为 5, 5/10 = 50%
+    expect(notifier.getChineseSentenceMatchScore('吃一个苹果', '我每天早上吃一个苹果。'), 50);
+    // 匹对“我每天吃苹果”，LCS为 6, 6/10 = 60%
+    expect(notifier.getChineseSentenceMatchScore('我每天吃苹果', '我每天早上吃一个苹果。'), 60);
+    // 匹对“我每天早上都吃苹果”，LCS为 8, 8/10 = 80%
+    expect(notifier.getChineseSentenceMatchScore('我每天早上都吃苹果', '我每天早上吃一个苹果。'), 80);
 
     // 2. 验证英文句子匹配（ChSentence2En 70% 单词级偏置阈值）
     // 目标：“I eat an apple every morning.” (6个英文单词)
-    // 匹对“I eat apple”，分词为 [i, eat, apple]，LCS为 3, 3/6 = 50% < 70%，应该失败
-    expect(notifier.checkEnglishSentenceMatch('I eat apple', 'I eat an apple every morning.'), false);
-    // 匹对“I eat an apple morning”，分词为 [i, eat, an, apple, morning]，LCS为 5, 5/6 = 83% >= 70%，应该成功
-    expect(notifier.checkEnglishSentenceMatch('I eat an apple morning', 'I eat an apple every morning.'), true);
-    // 匹对“I eat an apple every morning”，LCS单词为 6, 6/6 = 100% >= 70%，应该成功
-    expect(notifier.checkEnglishSentenceMatch('I eat an apple every morning.', 'I eat an apple every morning.'), true);
+    // 匹对“I eat apple”，分词为 [i, eat, apple]，LCS为 3, 3/6 = 50%
+    expect(notifier.getEnglishSentenceMatchScore('I eat apple', 'I eat an apple every morning.'), 50);
+    // 匹对“I eat an apple morning”，分词为 [i, eat, an, apple, morning]，LCS为 5, 5/6 = 83%
+    expect(notifier.getEnglishSentenceMatchScore('I eat an apple morning', 'I eat an apple every morning.'), 83);
+    // 匹对“I eat an apple every morning”，LCS单词为 6, 6/6 = 100%
+    expect(notifier.getEnglishSentenceMatchScore('I eat an apple every morning.', 'I eat an apple every morning.'), 100);
   });
 }

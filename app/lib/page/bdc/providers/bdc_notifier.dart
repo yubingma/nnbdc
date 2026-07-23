@@ -1339,27 +1339,28 @@ class BdcNotifier extends _$BdcNotifier {
 
         final isFromAsr = asrInput != null || meaningController.text == _handlingChinese;
         final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
-        bool isMatch = false;
+        int maxScore = 0;
 
         if (step == StudyStep.enSentence2Ch.json) {
           // 例句英中：说中文，匹对 sentence.chinese
           final targetCh = sentence.chinese ?? "";
           for (final input in inputs) {
-            if (checkChineseSentenceMatch(input, targetCh)) {
-              isMatch = true;
-              break;
-            }
+            final score = getChineseSentenceMatchScore(input, targetCh);
+            if (score > maxScore) maxScore = score;
           }
         } else {
           // 例句中英：说英文，匹对 sentence.english
           final targetEn = sentence.english ?? "";
           for (final input in inputs) {
-            if (checkEnglishSentenceMatch(input, targetEn)) {
-              isMatch = true;
-              break;
-            }
+            final score = getEnglishSentenceMatchScore(input, targetEn);
+            if (score > maxScore) maxScore = score;
           }
         }
+
+        // 实时更新 currentScore，让 UI 实时显示得分！
+        state = state.copyWith(currentScore: maxScore);
+
+        final bool isMatch = step == StudyStep.enSentence2Ch.json ? (maxScore >= 60) : (maxScore >= 70);
 
         if (isMatch) {
           _isAnswerCorrectHandling = true;
@@ -1730,6 +1731,50 @@ class BdcNotifier extends _$BdcNotifier {
     _syncAudioHardware();
   }
 
+  int getChineseSentenceMatchScore(String input, String target) {
+    String clean(String s) => s.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+    final cleanInput = clean(input);
+    final cleanTarget = clean(target);
+    if (cleanTarget.isEmpty) return 0;
+
+    List<List<int>> dp = List.generate(cleanInput.length + 1, (_) => List.filled(cleanTarget.length + 1, 0));
+    for (int i = 1; i <= cleanInput.length; i++) {
+      for (int j = 1; j <= cleanTarget.length; j++) {
+        if (cleanInput[i - 1] == cleanTarget[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
+        } else {
+          dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
+        }
+      }
+    }
+    final lcs = dp[cleanInput.length][cleanTarget.length];
+    final ratio = lcs / cleanTarget.length;
+    return (ratio * 100).round();
+  }
+
+  int getEnglishSentenceMatchScore(String input, String target) {
+    List<String> getWords(String s) {
+      return s.toLowerCase().split(RegExp(r"[^a-zA-Z\d\u0027]")).where((w) => w.isNotEmpty).toList();
+    }
+    final inputWords = getWords(input);
+    final targetWords = getWords(target);
+    if (targetWords.isEmpty) return 0;
+
+    List<List<int>> dp = List.generate(inputWords.length + 1, (_) => List.filled(targetWords.length + 1, 0));
+    for (int i = 1; i <= inputWords.length; i++) {
+      for (int j = 1; j <= targetWords.length; j++) {
+        if (inputWords[i - 1] == targetWords[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
+        } else {
+          dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
+        }
+      }
+    }
+    final lcs = dp[inputWords.length][targetWords.length];
+    final ratio = lcs / targetWords.length;
+    return (ratio * 100).round();
+  }
+
   void handleTabChangeForAsr() {
     _handleTabChangeForAsr();
   }
@@ -1901,48 +1946,5 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  bool checkChineseSentenceMatch(String input, String target) {
-    String clean(String s) => s.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
-    final cleanInput = clean(input);
-    final cleanTarget = clean(target);
-    if (cleanTarget.isEmpty) return false;
-
-    List<List<int>> dp = List.generate(cleanInput.length + 1, (_) => List.filled(cleanTarget.length + 1, 0));
-    for (int i = 1; i <= cleanInput.length; i++) {
-      for (int j = 1; j <= cleanTarget.length; j++) {
-        if (cleanInput[i - 1] == cleanTarget[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1] + 1;
-        } else {
-          dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
-        }
-      }
-    }
-    final lcs = dp[cleanInput.length][cleanTarget.length];
-    final ratio = lcs / cleanTarget.length;
-    return ratio >= 0.60;
-  }
-
-  bool checkEnglishSentenceMatch(String input, String target) {
-    List<String> getWords(String s) {
-      return s.toLowerCase().split(RegExp(r"[^a-zA-Z\d\u0027]")).where((w) => w.isNotEmpty).toList();
-    }
-    final inputWords = getWords(input);
-    final targetWords = getWords(target);
-    if (targetWords.isEmpty) return false;
-
-    List<List<int>> dp = List.generate(inputWords.length + 1, (_) => List.filled(targetWords.length + 1, 0));
-    for (int i = 1; i <= inputWords.length; i++) {
-      for (int j = 1; j <= targetWords.length; j++) {
-        if (inputWords[i - 1] == targetWords[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1] + 1;
-        } else {
-          dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
-        }
-      }
-    }
-    final lcs = dp[inputWords.length][targetWords.length];
-    final ratio = lcs / targetWords.length;
-    return ratio >= 0.70;
-  }
 }
 

@@ -1280,6 +1280,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 notifier.asr.startAsr(language),
                             isKeyboardVisible: state.isKeyboardVisible,
                             focusNode: _meaningFocusNode,
+                            score: currentScore,
                           )
                         : EnglishAsrInputWidget(
                             controller: notifier.meaningController,

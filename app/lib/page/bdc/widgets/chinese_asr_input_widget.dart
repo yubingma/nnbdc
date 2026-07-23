@@ -12,6 +12,7 @@ class ChineseAsrInputWidget extends StatefulWidget {
   final Function(AsrLanguage) onStartAsr;
   final bool isKeyboardVisible;
   final FocusNode focusNode;
+  final int? score; // 新增：匹配度得分
 
   const ChineseAsrInputWidget({
     super.key,
@@ -20,6 +21,7 @@ class ChineseAsrInputWidget extends StatefulWidget {
     required this.onStartAsr,
     required this.isKeyboardVisible,
     required this.focusNode,
+    this.score,
   });
 
   @override
@@ -138,13 +140,62 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            statusText,
-            style: TextStyle(
-              fontSize: 10,
-              color: isDarkMode ? Colors.white38 : Colors.black26,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 65,
+                child: Text(
+                  statusText,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDarkMode ? Colors.white38 : Colors.black26,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Visibility(
+                visible: widget.score != null && widget.score! > 0,
+                maintainSize: true,
+                maintainState: true,
+                maintainAnimation: true,
+                child: Tooltip(
+                  message: '匹配度得分',
+                  triggerMode: TooltipTriggerMode.tap,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: (widget.score ?? 0) >= 60
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.1),
+                      border: Border.all(
+                        color: (widget.score ?? 0) >= 60
+                            ? Colors.green.withValues(alpha: 0.5)
+                            : Colors.orange.withValues(alpha: 0.5),
+                        width: 1,
+                      ),
+                    ),
+                    child: SizedBox(
+                      width: 25,
+                      child: Center(
+                        child: Text(
+                          '${widget.score ?? 0}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: (widget.score ?? 0) >= 60
+                                ? Colors.green
+                                : Colors.orange,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
