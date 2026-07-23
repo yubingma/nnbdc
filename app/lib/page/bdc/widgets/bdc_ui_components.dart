@@ -1371,51 +1371,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                       Text(
                         '请说出对应的中文翻译：',
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
                           color: _cachedIsDarkMode
-                              ? const Color(0xFFD1D5DB)
-                              : const Color(0xFF4B5563),
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF6B7280),
                         ),
                       ),
                       if (recognizedText.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _cachedIsDarkMode
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.black.withValues(alpha: 0.03),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _cachedIsDarkMode
-                                  ? Colors.white10
-                                  : Colors.black.withValues(alpha: 0.05),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '识别结果：',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _cachedIsDarkMode ? Colors.white38 : Colors.black38,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '“$recognizedText”',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: _cachedIsDarkMode ? Colors.white70 : Colors.black87,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 6),
+                        Text(
+                          recognizedText,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
                           ),
                         ),
                       ],
@@ -1429,51 +1397,19 @@ extension BdcPageStateUIComponents on BdcPageState {
                       Text(
                         '请读出对应的英文例句：',
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
                           color: _cachedIsDarkMode
-                              ? const Color(0xFFD1D5DB)
-                              : const Color(0xFF4B5563),
+                              ? const Color(0xFF9CA3AF)
+                              : const Color(0xFF6B7280),
                         ),
                       ),
                       if (recognizedText.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _cachedIsDarkMode
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.black.withValues(alpha: 0.03),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _cachedIsDarkMode
-                                  ? Colors.white10
-                                  : Colors.black.withValues(alpha: 0.05),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '识别结果：',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _cachedIsDarkMode ? Colors.white38 : Colors.black38,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '“$recognizedText”',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: _cachedIsDarkMode ? Colors.white70 : Colors.black87,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 6),
+                        Text(
+                          recognizedText,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
                           ),
                         ),
                       ],
