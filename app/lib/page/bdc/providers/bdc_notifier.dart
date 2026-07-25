@@ -1581,9 +1581,9 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  ({FsrsRating rating, String reason}) _calculateRating(String method) {
+  ({FsrsRating rating, String reason}) _calculateRating(String method, {int? customResponseTime}) {
     if (state.wordStartTime == null) return (rating: FsrsRating.good, reason: "$method，初始评分: ${FsrsRating.good.label}");
-    final responseTime = AppClock.now().difference(state.wordStartTime!).inSeconds;
+    final responseTime = customResponseTime ?? AppClock.now().difference(state.wordStartTime!).inSeconds;
     
     // 判断是否为例句环节，如果是，适当延长打分响应时间阈值（Easy 16s，Hard 30s）
     final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json || 
@@ -1599,7 +1599,12 @@ class BdcNotifier extends _$BdcNotifier {
     } else {
       rating = FsrsRating.good;
     }
-    String reason = "$method，响应时间: ${responseTime}s，判定为${rating.label}";
+    String reason;
+    if (method == "AI裁判") {
+      reason = "AI裁判判定回答正确 (答题耗时: ${responseTime}s)，判定为${rating.label}";
+    } else {
+      reason = "$method，响应时间: ${responseTime}s，判定为${rating.label}";
+    }
     
     if (state.hintTapCount >= 2 || state.showSentenceTranslation) {
       rating = FsrsRating.again;
@@ -2107,6 +2112,10 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> evaluateWithAiReferee(BuildContext context) async {
+    final userResponseTime = state.wordStartTime != null
+        ? AppClock.now().difference(state.wordStartTime!).inSeconds
+        : 0;
+
     final word = state.word;
     if (word == null) return;
     final sentence = (word.sentences != null && word.sentences!.isNotEmpty)
@@ -2195,7 +2204,7 @@ class BdcNotifier extends _$BdcNotifier {
               caller: this,
             );
           }
-          final ratingResult = _calculateRating("AI裁判");
+          final ratingResult = _calculateRating("AI裁判", customResponseTime: userResponseTime);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         } else {
           // 调用 UI 弹窗
