@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 
 import com.alibaba.dashscope.common.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import beidanci.api.Result;
 import beidanci.api.model.AiStoryVo;
@@ -197,14 +198,22 @@ public class AiController {
     public Result<String> aiChat(
             @RequestParam("messagesJson") String messagesJson,
             @RequestParam("userId") String userId) {
-        try {
-            if (userBo.findById(userId) == null) {
-                return Result.fail("用户身份验证失败");
-            }
+        if (userBo.findById(userId) == null) {
+            return Result.fail("用户身份验证失败");
+        }
 
-             List<Message> messages = new  ArrayList<>();
-            com.fasterxml.jackson.databind.JsonNode arrayNode = mapper.readTree(messagesJson);
-            for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
+        final String userIdentifier = MDC.get("userContext") != null ? MDC.get("userContext") : "User(" + userId + ")";
+        final String clientType = MDC.get("platform") != null ? MDC.get("platform") : "Unknown";
+
+        Result<Runnable> admissionResult = aiBo.enterAiChat(userId, userIdentifier, clientType);
+        if (!admissionResult.isSuccess()) {
+            return Result.fail(admissionResult.getMsg());
+        }
+
+        try {
+            List<Message> messages = new ArrayList<>();
+            JsonNode arrayNode = mapper.readTree(messagesJson);
+            for (JsonNode node : arrayNode) {
                 messages.add(Message.builder()
                         .role(node.get("role").asText())
                         .content(node.get("content").asText())
@@ -214,6 +223,10 @@ public class AiController {
             return Result.success(result);
         } catch (Exception e) {
             return Result.fail(e.getMessage());
+        } finally {
+            if (admissionResult.getData() != null) {
+                admissionResult.getData().run();
+            }
         }
     }
 
