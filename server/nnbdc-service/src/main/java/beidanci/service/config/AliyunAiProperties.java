@@ -61,4 +61,30 @@ public class AliyunAiProperties {
     public void setVoice(String voice) {
         this.voice = voice;
     }
+
+    /**
+     * DeepSeek API Key
+     */
+    private String deepseekApiKey;
+
+    /**
+     * DeepSeek Base URL
+     */
+    private String deepseekBaseUrl = "https://api.deepseek.com/v1";
+
+    public String getDeepseekApiKey() {
+        return deepseekApiKey;
+    }
+
+    public void setDeepseekApiKey(String deepseekApiKey) {
+        this.deepseekApiKey = deepseekApiKey;
+    }
+
+    public String getDeepseekBaseUrl() {
+        return deepseekBaseUrl;
+    }
+
+    public void setDeepseekBaseUrl(String deepseekBaseUrl) {
+        this.deepseekBaseUrl = deepseekBaseUrl;
+    }
 }

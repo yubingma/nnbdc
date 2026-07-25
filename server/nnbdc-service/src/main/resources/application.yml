@@ -75,10 +75,12 @@ aliyun:
       verification-code: 417522
       get-password: 417523
   ai:
-    api-key: ${dashscope_api_key}
-    text-model: qwen3.6-flash
-    tts-model: cosyvoice-v3-flash
-    voice: longanyang
+    api-key: ${dashscope_api_key} # 阿里云百炼 API Key，用于语音合成 (CosyVoice) 和图片 OCR (Qwen-VL)
+    deepseek-api-key: ${DEEPSEEK_API_KEY} # DeepSeek 官方 API Key，用于文本处理（AI 短文生成、AI 裁判对话）
+    deepseek-base-url: https://api.deepseek.com/v1 # DeepSeek 官方 API Base URL (OpenAI 兼容协议 v1)
+    text-model: deepseek-v4-flash # 文本处理模型。配置为 deepseek-v4-flash 时将路由至 DeepSeek 官方 API
+    tts-model: cosyvoice-v3-flash # 语音合成模型，指定为阿里云百炼的 cosyvoice-v3-flash
+    voice: longanyang # 语音合成发音人角色名（如 longanyang）
 
 # 短信验证码配置
 sms:

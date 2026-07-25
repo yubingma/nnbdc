@@ -256,17 +256,18 @@ public class AiBo {
      * @return AI 生成的文本
      */
     public String generateText(String systemPrompt, String userPrompt) {
-        String apiKey = aiProperties.getApiKey();
+        String apiKey = getTextApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
-            logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析 (当前值为: {})", apiKey);
-            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
+            logger.error("AI 文本大模型调用失败: API Key 未设置或未正确解析 (当前值为: {})", apiKey);
+            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置大模型 API Key");
         }
 
         // 使用 OpenAI 兼容模式调用
         try {
             RestTemplate restTemplate = getRestTemplate();
 
-            String url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+            String url = getTextBaseUrl() + "/chat/completions";
+            logger.info("🤖 AI 文本生成请求 - 模型: {}, 终点端点: {}", aiProperties.getTextModel(), url);
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -322,17 +323,34 @@ public class AiBo {
      * @param messages 用户和系统消息列表
      * @return AI 生成的文本
      */
+    private String getTextApiKey() {
+        String model = aiProperties.getTextModel();
+        if (model != null && model.contains("deepseek")) {
+            return aiProperties.getDeepseekApiKey();
+        }
+        return aiProperties.getApiKey();
+    }
+
+    private String getTextBaseUrl() {
+        String model = aiProperties.getTextModel();
+        if (model != null && model.contains("deepseek")) {
+            return aiProperties.getDeepseekBaseUrl();
+        }
+        return "https://dashscope.aliyuncs.com/compatible-mode/v1";
+    }
+
     public String chat(List<Message> messages) {
-        String apiKey = aiProperties.getApiKey();
+        String apiKey = getTextApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
-            logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
-            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
+            logger.error("AI 文本大模型调用失败: API Key 未设置或未正确解析");
+            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置大模型 API Key");
         }
 
         try {
             RestTemplate restTemplate = getRestTemplate();
 
-            String url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+            String url = getTextBaseUrl() + "/chat/completions";
+            logger.info("🤖 AI 阻塞对话请求 - 模型: {}, 终点端点: {}", aiProperties.getTextModel(), url);
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -453,10 +471,10 @@ public class AiBo {
      */
     @SuppressWarnings("unchecked")
     public Flowable<String> chatStream(List<Message> messages) {
-        String apiKey = aiProperties.getApiKey();
+        String apiKey = getTextApiKey();
         if (apiKey == null || apiKey.isEmpty() || apiKey.startsWith("${")) {
-            logger.error("阿里云 AI 调用失败: API Key 未设置或未正确解析");
-            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置 dashscope_api_key");
+            logger.error("AI 文本大模型调用失败: API Key 未设置或未正确解析");
+            throw new RuntimeException("AI 调用失败: 请在环境变量或配置文件中设置大模型 API Key");
         }
 
         return Flowable.create(emitter -> {
@@ -482,8 +500,10 @@ public class AiBo {
                     .readTimeout(300, TimeUnit.SECONDS)
                     .build();
 
+            String url = getTextBaseUrl() + "/chat/completions";
+            logger.info("🤖 AI 流式对话请求 - 模型: {}, 终点端点: {}", aiProperties.getTextModel(), url);
             Request request = new Request.Builder()
-                    .url("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions")
+                    .url(url)
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .post(body)
@@ -1119,6 +1139,7 @@ public class AiBo {
         RestTemplate restTemplate = new RestTemplate(factory);
         
         String url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+        logger.info("🤖 AI 多模态 OCR 识别请求 - 模型: qwen-vl-max, 终点端点: {}", url);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + apiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
