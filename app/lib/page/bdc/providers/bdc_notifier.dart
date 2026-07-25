@@ -2106,5 +2106,194 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+  Future<void> evaluateWithAiReferee(BuildContext context) async {
+    final word = state.word;
+    if (word == null) return;
+    final sentence = (word.sentences != null && word.sentences!.isNotEmpty)
+        ? word.sentences!.first
+        : null;
+    if (sentence == null) {
+      ToastUtil.error("当前单词没有例句，无法进行AI裁判");
+      return;
+    }
+
+    final recognizedText = state.currentAsrCandidates.isNotEmpty
+        ? state.currentAsrCandidates.first
+        : '';
+    final userInput = recognizedText.isNotEmpty
+        ? recognizedText
+        : meaningController.text;
+
+    if (userInput.trim().isEmpty) {
+      ToastUtil.error("请先回答问题");
+      return;
+    }
+
+    // 1. 停止 ASR 录音
+    try {
+      await asr.stopAsr();
+    } catch (_) {}
+
+    // 2. 显示 Loading
+    await Api.loadingService.show(status: 'AI裁判裁决中...');
+
+    try {
+      final user = Global.getLoggedInUser();
+      if (user == null) {
+        ToastUtil.error("请先登录");
+        return;
+      }
+
+      final isEn2Ch = state.studyStep == StudyStep.enSentence2Ch.json;
+      final sourceText = isEn2Ch ? (sentence.english ?? "") : (sentence.chinese ?? "");
+      final referenceText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
+
+      final systemPrompt = 'You are an AI referee for a language learning app. Your job is to judge whether the user\'s answer is correct for the given exercise. The user is doing sentence translation exercises. You will be provided with: 1. Exercise Type. 2. Source Sentence. 3. Reference Translation. 4. User Answer. Please evaluate if the User Answer is semantically equivalent to the Reference Translation. Accept minor differences, synonyms, tense variations, or plural variations if the overall meaning is correct. You must respond in JSON format with keys: "isCorrect" (boolean) and "explanation" (string explanation in Chinese). Do NOT include markdown code blocks. Output raw JSON.';
+      final userPrompt = 'Exercise Type: ${state.studyStep}\nSource Sentence: $sourceText\nReference Translation: $referenceText\nUser Answer: $userInput';
+
+      final messages = [
+        {"role": "system", "content": systemPrompt},
+        {"role": "user", "content": userPrompt}
+      ];
+      final messagesJson = jsonEncode(messages);
+
+      final result = await Api.client.aiChat(messagesJson, user.id);
+      
+      // 关闭 Loading 避免阻碍后续弹窗
+      await Api.loadingService.dismiss();
+
+      if (result.success && result.data != null) {
+        final responseText = result.data!.trim();
+        String cleanJson = responseText;
+        if (cleanJson.contains('```')) {
+          final regExp = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```');
+          final match = regExp.firstMatch(cleanJson);
+          if (match != null) {
+            cleanJson = match.group(1) ?? cleanJson;
+          }
+        }
+
+        final startIdx = cleanJson.indexOf('{');
+        final endIdx = cleanJson.lastIndexOf('}');
+        if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
+          cleanJson = cleanJson.substring(startIdx, endIdx + 1);
+        }
+
+        final parsed = jsonDecode(cleanJson.trim());
+        final isCorrect = parsed['isCorrect'] as bool? ?? false;
+        final explanation = parsed['explanation'] as String? ?? '';
+
+        if (isCorrect) {
+          ToastUtil.success("AI 裁判判定：通过！");
+          _isAnswerCorrectHandling = true;
+          if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+            await StudyAudioSessionController.instance.syncHardwareIntent(
+              isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+              isAnsweringActive: false,
+              language: AsrLanguage.english,
+              phrases: [],
+              caller: this,
+            );
+          }
+          final ratingResult = _calculateRating("AI裁判");
+          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+        } else {
+          // 调用 UI 弹窗
+          if (context.mounted) {
+            _showRefereeResultDialog(context, explanation);
+          }
+        }
+      } else {
+        ToastUtil.error(result.msg ?? "调用 AI 裁判失败");
+      }
+    } catch (e, st) {
+      await Api.loadingService.dismiss();
+      Global.logger.e("AI裁判判分出错", error: e, stackTrace: st);
+      ToastUtil.error("AI 裁判开小差了，请重试");
+    }
+  }
+
+  void _showRefereeResultDialog(BuildContext context, String explanation) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final textColor = isDark ? Colors.white : Colors.black87;
+        
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDark 
+                    ? const Color(0xFF1E1E1E).withValues(alpha: 0.85) 
+                    : Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.gavel_rounded,
+                      color: Colors.orange,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "AI 裁判判定：未通过",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    explanation.isNotEmpty ? explanation : "你的回答与例句原意有偏差，请调整后再试。",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: textColor.withValues(alpha: 0.7),
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text("我知道了", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 }
+
 

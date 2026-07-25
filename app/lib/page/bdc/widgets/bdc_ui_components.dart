@@ -804,9 +804,33 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildRatingButtonsRow() {
+    final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
+        state.studyStep == StudyStep.chSentence2En.json;
+    final recognizedText = state.currentAsrCandidates.isNotEmpty
+        ? state.currentAsrCandidates.first
+        : '';
+    final hasInput = recognizedText.trim().isNotEmpty ||
+        notifier.meaningController.text.trim().isNotEmpty;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
+        if (isSentence && !state.hasFinishedAnswering && hasInput) ...[
+          ElevatedButton.icon(
+            icon: const Icon(Icons.gavel_rounded, size: 18),
+            label: const Text('AI裁判', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => notifier.evaluateWithAiReferee(context),
+          ),
+          const SizedBox(width: 12),
+        ],
         if (state.showAnswerButtons ||
             state.studyStep == StudyStep.en2Ch.json ||
             state.studyStep == StudyStep.ch2En.json ||
