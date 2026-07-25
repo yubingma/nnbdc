@@ -86,6 +86,9 @@ public class AiBo {
     private final AtomicInteger activeAiChatRequests = new AtomicInteger(0);
     private final ConcurrentHashMap<String, AtomicInteger> userAiChatRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicInteger> userDailyAiChatRequests = new ConcurrentHashMap<>();
+    private final AtomicInteger activeAiRefereeRequests = new AtomicInteger(0);
+    private final ConcurrentHashMap<String, AtomicInteger> userAiRefereeRequests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicInteger> userDailyAiRefereeRequests = new ConcurrentHashMap<>();
     private final Map<String, java.util.concurrent.CompletableFuture<Result<AiStoryVo>>> inFlightStories = new ConcurrentHashMap<>();
 
     private volatile RestTemplate sharedRestTemplate;
@@ -395,38 +398,45 @@ public class AiBo {
         }
     }
 
-    /**
-     * 进入 AI 聊天计数 (并发限制)
-     * @param userId 用户 ID
-     * @param userIdentifier 用户标识 (用于日志，如 "昵称(ID)")
-     * @param clientType 客户端类型 (如 "iOS", "Android", "Web")
-     * @return AI 聊天资源进入结果 (成功则包含释放资源的 Runnable)
-     */
     public Result<Runnable> enterAiChat(String userId, String userIdentifier, String clientType) {
-        int globalLimit = sysParamUtil.getAiChatGlobalLimit();
-        int userLimit = sysParamUtil.getAiChatUserLimit();
-        int userDailyLimit = sysParamUtil.getAiChatUserDailyLimit();
+        return enterAiLimit(userId, userIdentifier, clientType, false);
+    }
+
+    public Result<Runnable> enterAiReferee(String userId, String userIdentifier, String clientType) {
+        return enterAiLimit(userId, userIdentifier, clientType, true);
+    }
+
+    private Result<Runnable> enterAiLimit(String userId, String userIdentifier, String clientType, boolean isReferee) {
+        int globalLimit = isReferee ? sysParamUtil.getAiRefereeGlobalLimit() : sysParamUtil.getAiChatGlobalLimit();
+        int userLimit = isReferee ? sysParamUtil.getAiRefereeUserLimit() : sysParamUtil.getAiChatUserLimit();
+        int userDailyLimit = isReferee ? sysParamUtil.getAiRefereeUserDailyLimit() : sysParamUtil.getAiChatUserDailyLimit();
+
+        String serviceName = isReferee ? "AI裁判" : "AI聊天";
+
+        AtomicInteger activeRequests = isReferee ? activeAiRefereeRequests : activeAiChatRequests;
+        ConcurrentHashMap<String, AtomicInteger> userRequests = isReferee ? userAiRefereeRequests : userAiChatRequests;
+        ConcurrentHashMap<String, AtomicInteger> userDailyRequests = isReferee ? userDailyAiRefereeRequests : userDailyAiChatRequests;
 
         // 1. 全局并发检查 (使用自旋保证原子性)
         while (true) {
-            int current = activeAiChatRequests.get();
+            int current = activeRequests.get();
             if (current >= globalLimit) {
-                logger.warn("AI 系统全局并发达到上限: {}, 拒绝来自用户 [{}]({}) 的请求", globalLimit, userId, userIdentifier);
-                return Result.fail("服务器 AI 服务并发达到上限，请稍后再试");
+                logger.warn("AI {} 服务全局并发达到上限: {}, 拒绝来自用户 [{}]({}) 的请求", serviceName, globalLimit, userId, userIdentifier);
+                return Result.fail("服务器 " + serviceName + " 服务并发达到上限，请稍后再试");
             }
-            if (activeAiChatRequests.compareAndSet(current, current + 1)) {
+            if (activeRequests.compareAndSet(current, current + 1)) {
                 break;
             }
         }
 
         // 2. 用户并发检查 (使用自旋保证原子性)
-        AtomicInteger userCount = userAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
+        AtomicInteger userCount = userRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         while (true) {
             int current = userCount.get();
             if (current >= userLimit) {
-                activeAiChatRequests.decrementAndGet(); // 回退全局计数
-                logger.warn("单用户 AI 并发达到上限: 用户 [{}]({}) 已达 {} 并发", userId, userIdentifier, userLimit);
-                return Result.fail("您的 AI 聊天并发请求过多，请等待上一个回复结束");
+                activeRequests.decrementAndGet(); // 回退全局计数
+                logger.warn("单用户 AI {} 并发达到上限: 用户 [{}]({}) 已达 {} 并发", serviceName, userId, userIdentifier, userLimit);
+                return Result.fail("您的 " + serviceName + " 并发请求过多，请等待上一个回复结束");
             }
             if (userCount.compareAndSet(current, current + 1)) {
                 break;
@@ -434,14 +444,14 @@ public class AiBo {
         }
 
         // 3. 今日次数检查
-        AtomicInteger userDailyCount = userDailyAiChatRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
+        AtomicInteger userDailyCount = userDailyRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         while (true) {
             int current = userDailyCount.get();
             if (current >= userDailyLimit) {
-                activeAiChatRequests.decrementAndGet(); // 回退全局计数
+                activeRequests.decrementAndGet(); // 回退全局计数
                 userCount.decrementAndGet();           // 回退用户并发计数
-                logger.warn("用户今日 AI 聊天次数达到上限: 用户 [{}]({}) 已达 {} 次", userId, userIdentifier, userDailyLimit);
-                return Result.fail("您今日的 AI 聊天次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
+                logger.warn("用户今日 AI {} 次数达到上限: 用户 [{}]({}) 已达 {} 次", serviceName, userId, userIdentifier, userDailyLimit);
+                return Result.fail("您今日的 " + serviceName + " 次数已达到上限 (" + userDailyLimit + "次)，请明天再试");
             }
             if (userDailyCount.compareAndSet(current, current + 1)) {
                 break;
@@ -449,7 +459,7 @@ public class AiBo {
         }
 
         return Result.success(null, () -> {
-            activeAiChatRequests.decrementAndGet();
+            activeRequests.decrementAndGet();
             userCount.decrementAndGet();
         });
     }
@@ -459,8 +469,9 @@ public class AiBo {
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void resetDailyStats() {
-        logger.info("重置用户 AI 聊天每日调用计数");
+        logger.info("重置用户 AI 聊天与 AI 裁判每日调用计数");
         userDailyAiChatRequests.clear();
+        userDailyAiRefereeRequests.clear();
     }
 
     /**

@@ -94,6 +94,21 @@ public class SysParamUtil {
         return param == null ? 100 : Integer.parseInt(param.getParamValue());
     }
 
+    public int getAiRefereeGlobalLimit() {
+        SysParam param = sysParamBO.findById("AiRefereeGlobalLimit", false);
+        return param == null ? 30 : Integer.parseInt(param.getParamValue());
+    }
+
+    public int getAiRefereeUserLimit() {
+        SysParam param = sysParamBO.findById("AiRefereeUserLimit", false);
+        return param == null ? 5 : Integer.parseInt(param.getParamValue());
+    }
+
+    public int getAiRefereeUserDailyLimit() {
+        SysParam param = sysParamBO.findById("AiRefereeUserDailyLimit", false);
+        return param == null ? 100 : Integer.parseInt(param.getParamValue());
+    }
+
     public boolean isAiStoryEnTtsEnabled() {
         SysParam param = sysParamBO.findById("AiStoryEnTtsEnabled", false);
         return param != null && Boolean.parseBoolean(param.getParamValue().trim());
