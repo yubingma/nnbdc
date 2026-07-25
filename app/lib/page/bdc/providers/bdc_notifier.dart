@@ -2213,7 +2213,7 @@ class BdcNotifier extends _$BdcNotifier {
       final sourceText = isEn2Ch ? (sentence.english ?? "") : (sentence.chinese ?? "");
       final referenceText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
 
-      final systemPrompt = 'You are an AI referee for a language learning app. Your job is to judge whether the user\'s answer is correct for the given exercise. The user is doing sentence translation exercises. You will be provided with: 1. Exercise Type. 2. Source Sentence. 3. Reference Translation. 4. User Answer. Please evaluate if the User Answer is semantically equivalent to the Reference Translation. Accept minor differences, synonyms, tense variations, or plural variations if the overall meaning is correct. You must respond in JSON format with keys: "isCorrect" (boolean) and "explanation" (string explanation in Chinese). Do NOT include markdown code blocks. Output raw JSON.';
+      final systemPrompt = 'You are an AI referee. Judge if the user\'s translation is semantically correct. Respond in raw JSON format with: {"isCorrect": true} if correct, or {"isCorrect": false, "explanation": "Chinese explanation (max 12 words)"} if incorrect. Do NOT explain if correct. Do NOT include markdown format like ```json.';
       final userPrompt = 'Exercise Type: ${state.studyStep}\nSource Sentence: $sourceText\nReference Translation: $referenceText\nUser Answer: $userInput';
 
       final messages = [
