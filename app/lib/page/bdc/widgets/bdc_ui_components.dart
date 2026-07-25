@@ -1412,12 +1412,46 @@ extension BdcPageStateUIComponents on BdcPageState {
                       ),
                       if (recognizedText.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(
-                          recognizedText,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                recognizedText,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
+                                ),
+                              ),
+                            ),
+                            if (state.hasFinishedAnswering &&
+                                (state.lastFsrsRatingReason?.contains("AI裁判") ?? false)) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.gavel_rounded, color: Colors.green, size: 12),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      "AI判定正确",
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ],
@@ -1438,12 +1472,46 @@ extension BdcPageStateUIComponents on BdcPageState {
                       ),
                       if (recognizedText.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(
-                          recognizedText,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                recognizedText,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
+                                ),
+                              ),
+                            ),
+                            if (state.hasFinishedAnswering &&
+                                (state.lastFsrsRatingReason?.contains("AI裁判") ?? false)) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.gavel_rounded, color: Colors.green, size: 12),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      "AI判定正确",
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ],
