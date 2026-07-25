@@ -407,8 +407,8 @@ public class AiBo {
     }
 
     private Result<Runnable> enterAiLimit(String userId, String userIdentifier, String clientType, boolean isReferee) {
-        int globalLimit = isReferee ? sysParamUtil.getAiRefereeGlobalLimit() : sysParamUtil.getAiChatGlobalLimit();
-        int userLimit = isReferee ? sysParamUtil.getAiRefereeUserLimit() : sysParamUtil.getAiChatUserLimit();
+        int globalConcurrencyLimit = isReferee ? sysParamUtil.getAiRefereeGlobalConcurrencyLimit() : sysParamUtil.getAiChatGlobalConcurrencyLimit();
+        int userConcurrencyLimit = isReferee ? sysParamUtil.getAiRefereeUserConcurrencyLimit() : sysParamUtil.getAiChatUserConcurrencyLimit();
         int userDailyLimit = isReferee ? sysParamUtil.getAiRefereeUserDailyLimit() : sysParamUtil.getAiChatUserDailyLimit();
 
         String serviceName = isReferee ? "AI裁判" : "AI聊天";
@@ -420,8 +420,8 @@ public class AiBo {
         // 1. 全局并发检查 (使用自旋保证原子性)
         while (true) {
             int current = activeRequests.get();
-            if (current >= globalLimit) {
-                logger.warn("AI {} 服务全局并发达到上限: {}, 拒绝来自用户 [{}]({}) 的请求", serviceName, globalLimit, userId, userIdentifier);
+            if (current >= globalConcurrencyLimit) {
+                logger.warn("AI {} 服务全局并发达到上限: {}, 拒绝来自用户 [{}]({}) 的请求", serviceName, globalConcurrencyLimit, userId, userIdentifier);
                 return Result.fail("服务器 " + serviceName + " 服务并发达到上限，请稍后再试");
             }
             if (activeRequests.compareAndSet(current, current + 1)) {
@@ -433,9 +433,9 @@ public class AiBo {
         AtomicInteger userCount = userRequests.computeIfAbsent(userId, k -> new AtomicInteger(0));
         while (true) {
             int current = userCount.get();
-            if (current >= userLimit) {
+            if (current >= userConcurrencyLimit) {
                 activeRequests.decrementAndGet(); // 回退全局计数
-                logger.warn("单用户 AI {} 并发达到上限: 用户 [{}]({}) 已达 {} 并发", serviceName, userId, userIdentifier, userLimit);
+                logger.warn("单用户 AI {} 并发达到上限: 用户 [{}]({}) 已达 {} 并发", serviceName, userId, userIdentifier, userConcurrencyLimit);
                 return Result.fail("您的 " + serviceName + " 并发请求过多，请等待上一个回复结束");
             }
             if (userCount.compareAndSet(current, current + 1)) {

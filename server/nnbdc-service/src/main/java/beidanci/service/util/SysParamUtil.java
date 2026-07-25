@@ -78,13 +78,13 @@ public class SysParamUtil {
         return param == null ? 5 : Integer.parseInt(param.getParamValue());
     }
 
-    public int getAiChatGlobalLimit() {
-        SysParam param = sysParamBO.findById("AiChatGlobalLimit", false);
+    public int getAiChatGlobalConcurrencyLimit() {
+        SysParam param = sysParamBO.findById("AiChatGlobalConcurrencyLimit", false);
         return param == null ? 20 : Integer.parseInt(param.getParamValue());
     }
 
-    public int getAiChatUserLimit() {
-        SysParam param = sysParamBO.findById("AiChatUserLimit", false);
+    public int getAiChatUserConcurrencyLimit() {
+        SysParam param = sysParamBO.findById("AiChatUserConcurrencyLimit", false);
         return param == null ? 5 : Integer.parseInt(param.getParamValue());
     }
 
@@ -94,13 +94,13 @@ public class SysParamUtil {
         return param == null ? 100 : Integer.parseInt(param.getParamValue());
     }
 
-    public int getAiRefereeGlobalLimit() {
-        SysParam param = sysParamBO.findById("AiRefereeGlobalLimit", false);
+    public int getAiRefereeGlobalConcurrencyLimit() {
+        SysParam param = sysParamBO.findById("AiRefereeGlobalConcurrencyLimit", false);
         return param == null ? 30 : Integer.parseInt(param.getParamValue());
     }
 
-    public int getAiRefereeUserLimit() {
-        SysParam param = sysParamBO.findById("AiRefereeUserLimit", false);
+    public int getAiRefereeUserConcurrencyLimit() {
+        SysParam param = sysParamBO.findById("AiRefereeUserConcurrencyLimit", false);
         return param == null ? 5 : Integer.parseInt(param.getParamValue());
     }
 

@@ -238,12 +238,12 @@ public class AiController {
         Map<String, Object> config = new HashMap<>();
         
         config.put("concurrencyLimit", aiBo.getStoryConcurrencyLimit());
-        config.put("aiChatGlobalLimit", sysParamUtil.getAiChatGlobalLimit());
-        config.put("aiChatUserLimit", sysParamUtil.getAiChatUserLimit());
+        config.put("aiChatGlobalConcurrencyLimit", sysParamUtil.getAiChatGlobalConcurrencyLimit());
+        config.put("aiChatUserConcurrencyLimit", sysParamUtil.getAiChatUserConcurrencyLimit());
         config.put("aiChatUserDailyLimit", sysParamUtil.getAiChatUserDailyLimit());
 
-        config.put("aiRefereeGlobalLimit", sysParamUtil.getAiRefereeGlobalLimit());
-        config.put("aiRefereeUserLimit", sysParamUtil.getAiRefereeUserLimit());
+        config.put("aiRefereeGlobalConcurrencyLimit", sysParamUtil.getAiRefereeGlobalConcurrencyLimit());
+        config.put("aiRefereeUserConcurrencyLimit", sysParamUtil.getAiRefereeUserConcurrencyLimit());
         config.put("aiRefereeUserDailyLimit", sysParamUtil.getAiRefereeUserDailyLimit());
 
         return Result.success(config);
@@ -255,20 +255,20 @@ public class AiController {
     @PostMapping("/ai/saveConfig.do")
     public Result<String> saveAiConfig(
             @RequestParam("concurrencyLimit") int concurrencyLimit,
-            @RequestParam(value = "aiChatGlobalLimit", defaultValue = "20") int aiChatGlobalLimit,
-            @RequestParam(value = "aiChatUserLimit", defaultValue = "2") int aiChatUserLimit,
+            @RequestParam(value = "aiChatGlobalConcurrencyLimit", defaultValue = "20") int aiChatGlobalConcurrencyLimit,
+            @RequestParam(value = "aiChatUserConcurrencyLimit", defaultValue = "2") int aiChatUserConcurrencyLimit,
             @RequestParam(value = "aiChatUserDailyLimit", defaultValue = "100") int aiChatUserDailyLimit,
-            @RequestParam(value = "aiRefereeGlobalLimit", defaultValue = "30") int aiRefereeGlobalLimit,
-            @RequestParam(value = "aiRefereeUserLimit", defaultValue = "5") int aiRefereeUserLimit,
+            @RequestParam(value = "aiRefereeGlobalConcurrencyLimit", defaultValue = "30") int aiRefereeGlobalConcurrencyLimit,
+            @RequestParam(value = "aiRefereeUserConcurrencyLimit", defaultValue = "5") int aiRefereeUserConcurrencyLimit,
             @RequestParam(value = "aiRefereeUserDailyLimit", defaultValue = "100") int aiRefereeUserDailyLimit) throws IllegalAccessException {
         
         saveParam("AiStoryConcurrencyLimit", String.valueOf(concurrencyLimit), "AI 短文生成并发上限");
-        saveParam("AiChatGlobalLimit", String.valueOf(aiChatGlobalLimit), "AI 聊天全局并发上限");
-        saveParam("AiChatUserLimit", String.valueOf(aiChatUserLimit), "AI 聊天单用户并发上限");
+        saveParam("AiChatGlobalConcurrencyLimit", String.valueOf(aiChatGlobalConcurrencyLimit), "AI 聊天全局并发上限");
+        saveParam("AiChatUserConcurrencyLimit", String.valueOf(aiChatUserConcurrencyLimit), "AI 聊天单用户并发上限");
         saveParam("AiChatUserDailyLimit", String.valueOf(aiChatUserDailyLimit), "AI 聊天单用户每日次数上限");
 
-        saveParam("AiRefereeGlobalLimit", String.valueOf(aiRefereeGlobalLimit), "AI 裁判全局并发上限");
-        saveParam("AiRefereeUserLimit", String.valueOf(aiRefereeUserLimit), "AI 裁判单用户并发上限");
+        saveParam("AiRefereeGlobalConcurrencyLimit", String.valueOf(aiRefereeGlobalConcurrencyLimit), "AI 裁判全局并发上限");
+        saveParam("AiRefereeUserConcurrencyLimit", String.valueOf(aiRefereeUserConcurrencyLimit), "AI 裁判单用户并发上限");
         saveParam("AiRefereeUserDailyLimit", String.valueOf(aiRefereeUserDailyLimit), "AI 裁判单用户每日次数上限");
 
         return Result.success("系统配置保存成功");
