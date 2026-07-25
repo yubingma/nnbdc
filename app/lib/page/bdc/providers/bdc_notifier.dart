@@ -1754,6 +1754,19 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('[PERF] playWordAndFirstSentence total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
 
+  List<String> _extractEnglishWords(String sentence) {
+    // 1. 去掉 HTML 标签
+    final plainText = sentence.replaceAll(RegExp(r"<.*?>"), " ");
+    // 2. 清洗非字母数字和空白的标点符号
+    final cleanText = plainText.replaceAll(RegExp(r"[^a-zA-Z0-9\s]"), " ");
+    // 3. 按空格切分，并过滤掉空串
+    return cleanText
+        .split(RegExp(r"\s+"))
+        .map((w) => w.trim())
+        .where((w) => w.isNotEmpty)
+        .toList();
+  }
+
   void _syncAudioHardware() {
     if (_isDisposed) return;
     
@@ -1772,6 +1785,37 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.word != null) {
       if (language == AsrLanguage.english) {
         phrases.add(state.word!.spell);
+        // 如果是例句中英模式，把例句的每个单词也加入热词，并对核心词做权重加倍
+        if (state.studyStep == StudyStep.chSentence2En.json) {
+          final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+              ? state.word!.sentences!.first
+              : null;
+          if (sentence != null) {
+            final rawSentence = sentence.english ?? '';
+            
+            // 提取加粗的词（<b>包裹的短语）以用于后续加权
+            final RegExp boldPattern = RegExp(r"<b>(.*?)</b>");
+            final Iterable<Match> matches = boldPattern.allMatches(rawSentence);
+            final List<String> boldPhrases = matches.map((m) => m.group(1) ?? "").where((w) => w.isNotEmpty).toList();
+
+            // 提取所有分词
+            final words = _extractEnglishWords(rawSentence);
+            if (words.isNotEmpty) {
+              // A. 整句例句作为串联热词
+              phrases.add(words.join(" "));
+              
+              // B. 例句中每一个单独单词
+              phrases.addAll(words);
+              
+              // C. 核心词/主单词权重加倍
+              phrases.add(state.word!.spell);
+              for (final boldPhrase in boldPhrases) {
+                final boldWords = _extractEnglishWords(boldPhrase);
+                phrases.addAll(boldWords);
+              }
+            }
+          }
+        }
       } else {
         phrases.addAll(AsrUtil.extractContextualPhrases(state.word!.meaningItems ?? []));
       }
