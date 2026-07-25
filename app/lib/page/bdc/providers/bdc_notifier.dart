@@ -2066,45 +2066,101 @@ class BdcNotifier extends _$BdcNotifier {
     if (n.isEmpty) return p;
 
     if (isEnglish) {
-      // 英文按单词单词级（Word-based）进行重叠比对
       final pWords = p.split(RegExp(r'\s+'));
       final nWords = n.split(RegExp(r'\s+'));
-      
-      int maxOverlap = 0;
-      final minLen = pWords.length < nWords.length ? pWords.length : nWords.length;
-      
+
+      // 归一化单词列表（仅保留字母和数字，并转为小写）
+      final cleanPWords = pWords
+          .map((w) => w.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase())
+          .toList();
+      final cleanNWords = nWords
+          .map((w) => w.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase())
+          .toList();
+
+      cleanPWords.removeWhere((w) => w.isEmpty);
+      cleanNWords.removeWhere((w) => w.isEmpty);
+
+      if (cleanPWords.isEmpty) return n;
+      if (cleanNWords.isEmpty) return p;
+
+      int maxCleanOverlap = 0;
+      final minLen = cleanPWords.length < cleanNWords.length
+          ? cleanPWords.length
+          : cleanNWords.length;
+
       for (int i = 1; i <= minLen; i++) {
-        final pTail = pWords.sublist(pWords.length - i).join(' ').toLowerCase();
-        final nHead = nWords.sublist(0, i).join(' ').toLowerCase();
-        
+        final pTail = cleanPWords.sublist(cleanPWords.length - i).join(' ');
+        final nHead = cleanNWords.sublist(0, i).join(' ');
+
         if (pTail == nHead) {
-          maxOverlap = i;
+          maxCleanOverlap = i;
         }
       }
-      
-      if (maxOverlap > 0) {
-        final remainingN = nWords.sublist(maxOverlap).join(' ');
+
+      if (maxCleanOverlap > 0) {
+        // 在原始的 nWords 中，找到第 maxCleanOverlap 个含有有效字母/数字单词的索引
+        int count = 0;
+        int sliceIdx = 0;
+        final validReg = RegExp(r'[a-zA-Z0-9]');
+
+        for (int i = 0; i < nWords.length; i++) {
+          if (validReg.hasMatch(nWords[i])) {
+            count++;
+            if (count == maxCleanOverlap) {
+              sliceIdx = i + 1;
+              break;
+            }
+          }
+        }
+
+        final remainingN = nWords.sublist(sliceIdx).join(' ');
         return remainingN.isEmpty ? p : "$p $remainingN";
       } else {
         return "$p $n";
       }
     } else {
-      // 中文按字符字级（Character-based）进行重叠比对
-      int maxOverlap = 0;
-      final minLen = p.length < n.length ? p.length : n.length;
-      
+      // 中文按字符字级进行重叠比对，归一化（剔除非中文/字母/数字）
+      final cleanP = p.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '');
+      final cleanN = n.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '');
+
+      if (cleanP.isEmpty) return n;
+      if (cleanN.isEmpty) return p;
+
+      int maxCleanOverlap = 0;
+      final minLen = cleanP.length < cleanN.length ? cleanP.length : cleanN.length;
+
       for (int i = 1; i <= minLen; i++) {
-        final pTail = p.substring(p.length - i);
-        final nHead = n.substring(0, i);
-        
+        final pTail = cleanP.substring(cleanP.length - i);
+        final nHead = cleanN.substring(0, i);
+
         if (pTail == nHead) {
-          maxOverlap = i;
+          maxCleanOverlap = i;
         }
       }
-      
-      if (maxOverlap > 0) {
-        final remainingN = n.substring(maxOverlap);
-        return "$p$remainingN";
+
+      if (maxCleanOverlap > 0) {
+        // 映射回原始的 n，找到第 maxCleanOverlap 个有效字符的索引
+        int count = 0;
+        int sliceIdx = 0;
+        final validReg = RegExp(r'[\u4e00-\u9fa5a-zA-Z0-9]');
+
+        for (int i = 0; i < n.length; i++) {
+          if (validReg.hasMatch(n[i])) {
+            count++;
+            if (count == maxCleanOverlap) {
+              sliceIdx = i + 1;
+              break;
+            }
+          }
+        }
+
+        // 去除截断后开头紧跟的多余标点
+        while (sliceIdx < n.length && !validReg.hasMatch(n[sliceIdx])) {
+          sliceIdx++;
+        }
+
+        final remainingN = n.substring(sliceIdx);
+        return remainingN.isEmpty ? p : "$p$remainingN";
       } else {
         return "$p$n";
       }

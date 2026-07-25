@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 
 void main() {
   group('表名转换测试', () {
@@ -17,6 +18,33 @@ void main() {
       expect(Util.remoteTableNameToLocal('user_study_step'), equals('userStudySteps'));
       expect(Util.remoteTableNameToLocal('user_oper'), equals('userOpers'));
       expect(Util.remoteTableNameToLocal('dict_word'), equals('dictWords'));
+    });
+  });
+
+  group('ASR文本智能拼接测试 (stitchTexts)', () {
+    test('中文无标点正常重叠', () {
+      final res = BdcNotifier.stitchTexts("我爱苹果", "苹果很好吃", isEnglish: false);
+      expect(res, equals("我爱苹果很好吃"));
+    });
+
+    test('中文带不同标点重叠', () {
+      final res = BdcNotifier.stitchTexts("我爱苹果。", "苹果，很好吃。", isEnglish: false);
+      expect(res, equals("我爱苹果。很好吃。"));
+    });
+
+    test('英文带不同标点重叠', () {
+      final res = BdcNotifier.stitchTexts("I love apple.", "Apple, it is good.", isEnglish: true);
+      expect(res, equals("I love apple. it is good."));
+    });
+
+    test('完全重叠包含关系', () {
+      final res = BdcNotifier.stitchTexts("我爱苹果", "苹果", isEnglish: false);
+      expect(res, equals("我爱苹果"));
+    });
+
+    test('完全没有重叠', () {
+      final res = BdcNotifier.stitchTexts("我爱苹果", "香蕉很好吃", isEnglish: false);
+      expect(res, equals("我爱苹果香蕉很好吃"));
     });
   });
 } 
