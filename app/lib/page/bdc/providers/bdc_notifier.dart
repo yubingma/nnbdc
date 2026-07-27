@@ -706,6 +706,32 @@ class BdcNotifier extends _$BdcNotifier {
     _handleTabChangeForAsr();
   }
 
+  void revealAnswerAndMarkWrong(BuildContext context) {
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+
+    // 播放失败音效以代表此题算作答错
+    StudyAudioSessionController.instance.playSoundEffect('failed.mp3', speed: 1.5, volume: 1.0);
+
+    // 强制关闭 ASR 识别
+    StudyAudioSessionController.instance.syncHardwareIntent(
+      isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+      isAnsweringActive: false,
+      language: AsrLanguage.english,
+      phrases: [],
+      caller: this,
+    );
+
+    // 设置已完成回答状态，评分为 FsrsRating.again，显示正确答案
+    state = state.copyWith(
+      hasFinishedAnswering: true,
+      canLeaveCurrWord: true,
+      lastFsrsRating: FsrsRating.again,
+      lastFsrsRatingReason: "手动查看答案",
+      currentScore: 0, // 分数设为 0 代表未读对
+    );
+    _handleTabChangeForAsr();
+  }
+
   void onAnswerClicked(int index, BuildContext context) async {
     if (state.selectedAnswerIndex != null) {
       int wordIdx = index - 1;

@@ -2202,6 +2202,34 @@ extension BdcPageStateUIComponents on BdcPageState {
               ),
             ],
           ),
+          if (!state.hasFinishedAnswering) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              icon: Icon(
+                Icons.visibility_outlined,
+                size: 16,
+                color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              ),
+              label: Text(
+                "看答案",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                backgroundColor: isDarkMode ? const Color(0x1F60A5FA) : const Color(0x0C2563EB),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              onPressed: () {
+                notifier.revealAnswerAndMarkWrong(context);
+              },
+            ),
+          ],
           if (state.hasFinishedAnswering && sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeChineseSpanText(
@@ -2247,6 +2275,34 @@ extension BdcPageStateUIComponents on BdcPageState {
               textAlign: TextAlign.center,
             ),
           ),
+          if (!state.hasFinishedAnswering) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              icon: Icon(
+                Icons.visibility_outlined,
+                size: 16,
+                color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+              ),
+              label: Text(
+                "看答案",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                backgroundColor: isDarkMode ? const Color(0x1F60A5FA) : const Color(0x0C2563EB),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              onPressed: () {
+                notifier.revealAnswerAndMarkWrong(context);
+              },
+            ),
+          ],
           if (state.hasFinishedAnswering && sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeEnglishSpanText(
