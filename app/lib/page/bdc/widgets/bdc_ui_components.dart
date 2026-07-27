@@ -2204,25 +2204,27 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
           if (!state.hasFinishedAnswering) ...[
             const SizedBox(height: 12),
-            TextButton.icon(
+            ElevatedButton.icon(
               icon: Icon(
                 Icons.visibility_outlined,
                 size: 16,
-                color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                color: isDarkMode ? Colors.black : Colors.white,
               ),
               label: Text(
                 "看答案",
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                  color: isDarkMode ? Colors.black : Colors.white,
                 ),
               ),
-              style: TextButton.styleFrom(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDarkMode ? Colors.white : AppTheme.primaryColor,
+                foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                backgroundColor: isDarkMode ? const Color(0x1F60A5FA) : const Color(0x0C2563EB),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               onPressed: () {
@@ -2277,25 +2279,27 @@ extension BdcPageStateUIComponents on BdcPageState {
           ),
           if (!state.hasFinishedAnswering) ...[
             const SizedBox(height: 12),
-            TextButton.icon(
+            ElevatedButton.icon(
               icon: Icon(
                 Icons.visibility_outlined,
                 size: 16,
-                color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                color: isDarkMode ? Colors.black : Colors.white,
               ),
               label: Text(
                 "看答案",
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                  color: isDarkMode ? Colors.black : Colors.white,
                 ),
               ),
-              style: TextButton.styleFrom(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDarkMode ? Colors.white : AppTheme.primaryColor,
+                foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                backgroundColor: isDarkMode ? const Color(0x1F60A5FA) : const Color(0x0C2563EB),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               onPressed: () {

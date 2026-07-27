@@ -709,8 +709,7 @@ class BdcNotifier extends _$BdcNotifier {
   void revealAnswerAndMarkWrong(BuildContext context) {
     if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
 
-    // 播放失败音效以代表此题算作答错
-    StudyAudioSessionController.instance.playSoundEffect('failed.mp3', speed: 1.5, volume: 1.0);
+
 
     // 强制关闭 ASR 识别
     StudyAudioSessionController.instance.syncHardwareIntent(
