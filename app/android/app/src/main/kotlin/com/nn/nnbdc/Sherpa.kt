@@ -29,7 +29,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     // Sherpa Onnx Recognizer
     private var modelEn: OnlineRecognizer? = null
+    private var modelEnSentence: OnlineRecognizer? = null
     private var modelZh: OnlineRecognizer? = null
+    private var sentenceBpeTokenizer: BpeTokenizer? = null
     
     // 当前使用的工作模型指针
     private var currentModel: OnlineRecognizer? = null
@@ -101,9 +103,12 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 }
                 "setContextualStrings" -> {
                     val phrases = call.argument<List<String>>("phrases") ?: emptyList()
-                    // 转换为大写以匹配 tokens.txt 中的 BPE 编码
-                    pendingHotwords = phrases.joinToString(" ") { it.uppercase() }
-                    Log.i(TAG, "~~~~~ASR HOTWORDS: $pendingHotwords")
+                    pendingHotwords = if (currentModelType == "en_sentence" && sentenceBpeTokenizer != null) {
+                        phrases.map { sentenceBpeTokenizer!!.tokenize(it) }.filter { it.isNotEmpty() }.joinToString("/")
+                    } else {
+                        phrases.joinToString(" ") { it.uppercase() }
+                    }
+                    Log.i(TAG, "~~~~~ASR HOTWORDS (Tokenized): $pendingHotwords")
                     result.success(null)
                 }
                 "startMicrophone" -> {
@@ -133,6 +138,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                         try {
                             if (modelZh == null) setupChineseModel()
                             if (modelEn == null) setupEnglishModel()
+                            if (modelEnSentence == null) setupEnglishSentenceModel()
                             activity.runOnUiThread {
                                 result.success(null)
                             }
@@ -161,7 +167,11 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun setLanguage(locale: String) {
-        val newType = if (locale.startsWith("en")) "en" else "zh"
+        val newType = if (locale.startsWith("en")) {
+            if (locale.contains("sentence")) "en_sentence" else "en"
+        } else {
+            "zh"
+        }
 
         if (newType == currentModelType && currentModel != null) {
             currentLocale = locale
@@ -196,7 +206,11 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun loadModel(type: String) {
         // 1. 如果需要加载模型，先在同步锁外部执行，防止卡死后台录音读取线程的锁
-        if (type == "en") {
+        if (type == "en_sentence") {
+            if (modelEnSentence == null) {
+                setupEnglishSentenceModel()
+            }
+        } else if (type == "en") {
             if (modelEn == null) {
                 setupEnglishModel()
             }
@@ -212,12 +226,18 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             currentStream?.release()
             currentStream = null
             
-            if (type == "en") {
+            if (type == "en_sentence") {
+                currentModel = modelEnSentence
+                activeGain = 1.2f
+                Log.i(TAG, "ASR_MODEL_ACTIVE: Switched working model to ENGLISH SENTENCE MODEL (en-20M BPE)")
+            } else if (type == "en") {
                 currentModel = modelEn
                 activeGain = 2.5f
+                Log.i(TAG, "ASR_MODEL_ACTIVE: Switched working model to ENGLISH PHONE-BASED MODEL (en-66M Phone)")
             } else {
                 currentModel = modelZh
                 activeGain = 2.5f
+                Log.i(TAG, "ASR_MODEL_ACTIVE: Switched working model to CHINESE/MULTI MODEL")
             }
             
             currentModelType = type
@@ -226,15 +246,15 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun setupEnglishModel() {
-        val modelDir = "sherpa-onnx-streaming-zipformer-en-2023-06-26"
-        Log.i(TAG, "Isolating Recipe: Loading ENGLISH model (Upgraded 66M)")
+        val modelDir = "sherpa-onnx-streaming-zipformer-en-2023-06-21"
+        Log.i(TAG, "ASR_MODEL_ACTIVE: Loading UNIFIED ENGLISH model (Standard 80M)")
 
         try {
             val cacheDir = activity.cacheDir.absolutePath
             val destDir = "$cacheDir/$modelDir"
             val tokensPath = copyAsset(modelDir, "tokens.txt", destDir)
             val encoderPath = copyAsset(modelDir, "encoder-epoch-99-avg-1.int8.onnx", destDir)
-            val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.int8.onnx", destDir)
+            val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.onnx", destDir)
             val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
 
             val modelConfig = OnlineModelConfig.builder()
@@ -250,7 +270,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             // 英文识别配方：放宽末端静音检测，给犹豫的发音留时间
             val endpointConfig = EndpointConfig.builder()
                 .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
-                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(0.4f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
                 .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(15.0f).build())
                 .build()
 
@@ -269,6 +289,56 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             Log.i(TAG, "English isolated recipe loaded to memory.")
         } catch (e: Exception) {
             Log.e(TAG, "English model load failed", e)
+            throw e
+        }
+    }
+
+    private fun setupEnglishSentenceModel() {
+        val modelDir = "sherpa-onnx-streaming-zipformer-en-2023-06-21"
+        Log.i(TAG, "ASR_MODEL_ACTIVE: Loading ENGLISH SENTENCE BPE model (Standard 80M)")
+
+        try {
+            val cacheDir = activity.cacheDir.absolutePath
+            val destDir = "$cacheDir/$modelDir"
+            val tokensPath = copyAsset(modelDir, "tokens.txt", destDir)
+            val encoderPath = copyAsset(modelDir, "encoder-epoch-99-avg-1.int8.onnx", destDir)
+            val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.onnx", destDir)
+            val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
+
+            val tokensContent = java.io.File(tokensPath).readText()
+            sentenceBpeTokenizer = BpeTokenizer(tokensContent)
+
+            val modelConfig = OnlineModelConfig.builder()
+                .setTransducer(OnlineTransducerModelConfig.builder()
+                    .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
+                .setTokens(tokensPath)
+                .setNumThreads(2)
+                .setDebug(false)
+                .build()
+
+            val featConfig = FeatureConfig.builder().setSampleRate(16000).setFeatureDim(80).build()
+
+            val endpointConfig = EndpointConfig.builder()
+                .setRule1(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(2.4f).build())
+                .setRule2(EndpointRule.builder().setMustContainNonSilence(true).setMinTrailingSilence(1.2f).build())
+                .setRule3(EndpointRule.builder().setMustContainNonSilence(false).setMinTrailingSilence(0f).setMinUtteranceLength(15.0f).build())
+                .build()
+
+            val config = OnlineRecognizerConfig.builder()
+                .setFeatureConfig(featConfig)
+                .setOnlineModelConfig(modelConfig)
+                .setEndpointConfig(endpointConfig)
+                .setEnableEndpoint(true)
+                .setDecodingMethod("modified_beam_search")
+                .setMaxActivePaths(20)
+                .setHotwordsScore(3.0f)
+                .setBlankPenalty(0.5f)
+                .build()
+
+            modelEnSentence = OnlineRecognizer(config)
+            Log.i(TAG, "ASR_MODEL_ACTIVE: English sentence BPE 20M recipe loaded to memory successfully.")
+        } catch (e: Exception) {
+            Log.e(TAG, "English sentence model load failed", e)
             throw e
         }
     }
@@ -359,6 +429,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 currentStream = currentModel?.createStream(hotwords)
                 lastSentResult = ""
                 isAsrStopped = false
+                asrResumeTime = System.currentTimeMillis() + 300 // 重建 Stream 后静默 300ms，清理时序抖动
             }
             activity.runOnUiThread { result?.success(null) }
             return
@@ -425,6 +496,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 val hotwords = pendingHotwords
                 synchronized(this@Sherpa) {
                     currentStream = currentModel?.createStream(hotwords)
+                    asrResumeTime = System.currentTimeMillis() + 300 // 物理麦克风就绪后静默 300ms，避开开启时的瞬态脉冲
                 }
 
                 // startRecording + createStream 全部就绪，Dart 的 await 才真正可以继续
@@ -507,11 +579,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             
                             val isEndpoint = m.isEndpoint(s)
                             val result = m.getResult(s)
-                            // ⚡ 优化：在物理输入音量极小（norm < 0.008）且用户尚未有效发声（lastSentResult.isEmpty()）的静息状态下，
-                            // 强行拦截识别结果并判定为 ""（静音），防止背景空气噪声被误判为 "and" 等幻觉词
                             val rawText = result.text.trim().lowercase()
                             val text = rawText
-                            
+
                             // 仅在用户实际说过话后才在端点时重置流
                             // 纯静音端点（用户还没开口）不重置，避免打断即将开始的识别
                             if (isEndpoint) {
@@ -565,7 +635,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun startAsr() {
         Log.i(TAG, "Starting ASR...")
-        asrResumeTime = System.currentTimeMillis() + 300 // 与短促的提示音配合，缩短等待时间以提升体验
+        asrResumeTime = System.currentTimeMillis() + 300 // 恢复至 300ms 安全延迟，避免吞句首词
         isAsrStopped = false
         lastSentResult = "" // 开启识别时强制重置上一次结果，避免残留
     }
@@ -630,5 +700,56 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 Log.e(TAG, "Failed to release Sherpa resources in background", e)
             }
         }
+    }
+
+    private fun getRms(buffer: ShortArray, size: Int): Float {
+        var sum = 0.0f
+        for (i in 0 until size) {
+            val sample = buffer[i] / 32768.0f
+            sum += sample * sample
+        }
+        return if (size > 0) Math.sqrt((sum / size).toDouble()).toFloat() else 0.0f
+    }
+}
+
+class BpeTokenizer(tokensFileContent: String) {
+    private val tokenSet = HashSet<String>()
+    
+    init {
+        tokensFileContent.lines().forEach { line ->
+            val parts = line.trim().split(Regex("\\s+"))
+            if (parts.size >= 2) {
+                val token = parts[0].replace("▁", "\u2581")
+                tokenSet.add(token)
+            }
+        }
+    }
+
+    fun tokenize(text: String): String {
+        val words = text.uppercase().trim().split(Regex("[^A-Z0-9'#]+")).filter { it.isNotEmpty() }
+        val resultTokens = mutableListOf<String>()
+
+        for (word in words) {
+            val bpeWord = "\u2581$word"
+            var temp = bpeWord
+            while (temp.isNotEmpty()) {
+                var matched = false
+                for (len in temp.length downTo 1) {
+                    val sub = temp.substring(0, len)
+                    if (tokenSet.contains(sub)) {
+                        resultTokens.add(sub)
+                        temp = temp.substring(len)
+                        matched = true
+                        break
+                    }
+                }
+                if (!matched) {
+                    val singleChar = temp.substring(0, 1)
+                    resultTokens.add(singleChar)
+                    temp = temp.substring(1)
+                }
+            }
+        }
+        return resultTokens.joinToString(" ")
     }
 }

@@ -129,6 +129,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   DateTime? _lastSyncTime;
   String _accumulatedAsrText = "";
+  String _lastFinalAsrText = "";
 
   void _onAsrStateChanged(AsrState asrState) {
     Future.microtask(() {
@@ -558,6 +559,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     _accumulatedAsrText = "";
+    _lastFinalAsrText = "";
 
     state = state.copyWith(
       currentGetWordResult: getWordResult,
@@ -860,6 +862,7 @@ class BdcNotifier extends _$BdcNotifier {
       final wrapper = state.wordWrapper!;
       wrapper.hintLetterCount = 0;
       _accumulatedAsrText = "";
+      _lastFinalAsrText = "";
       state = state.copyWith(
         wordWrapper: wrapper,
         isUpdatingByHint: !state.isUpdatingByHint,
@@ -1297,6 +1300,11 @@ class BdcNotifier extends _$BdcNotifier {
         candidates = [best];
       }
 
+      // ⚡ 净化防护：用正则剔除掉由 ASR 解码注意力退化产生的连续重复单字符（如 r r r r r）
+      final repeatPattern = RegExp(r'\b([a-zA-Z])(\s+\1){2,}\b', caseSensitive: false);
+      best = best.replaceAll(repeatPattern, '').trim();
+      candidates = candidates.map((c) => c.replaceAll(repeatPattern, '').trim()).toList();
+
       final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
                               state.studyStep == StudyStep.chSentence2En.json;
 
@@ -1304,16 +1312,14 @@ class BdcNotifier extends _$BdcNotifier {
         final cleanBest = best.trim();
         if (cleanBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
-          if (_accumulatedAsrText.isEmpty) {
-            _accumulatedAsrText = cleanBest;
+          if (isEnglish) {
+            Global.logger.i('🎤 [ASR] [Sentence-English] ASR识别事件触发，例句模式激活中，使用 en-US-sentence (en-80M BPE) 模型识别。当前识别片段: "$cleanBest"');
+          }
+          if (isFinal) {
+            _lastFinalAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+            _accumulatedAsrText = _lastFinalAsrText;
           } else {
-            if (cleanBest.startsWith(_accumulatedAsrText)) {
-              _accumulatedAsrText = cleanBest;
-            } else if (_accumulatedAsrText.startsWith(cleanBest)) {
-              // 保留更长的 accumulated，不作覆盖
-            } else {
-              _accumulatedAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
-            }
+            _accumulatedAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
           }
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
@@ -1346,7 +1352,8 @@ class BdcNotifier extends _$BdcNotifier {
         final cleanBest = event.toString().trim();
         if (cleanBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
-          _accumulatedAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
+          _lastFinalAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+          _accumulatedAsrText = _lastFinalAsrText;
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
         _updateState(state.copyWith(currentAsrCandidates: [_accumulatedAsrText]), tag: 'asr-candidate');
@@ -1407,7 +1414,7 @@ class BdcNotifier extends _$BdcNotifier {
           // 例句中英：说英文，匹对 sentence.english
           final targetEn = sentence.english ?? "";
           for (final input in inputs) {
-            final score = getEnglishSentenceMatchScore(input, targetEn);
+            final score = await getEnglishSentenceMatchScore(input, targetEn);
             if (score > maxScore) maxScore = score;
           }
         }
@@ -1416,12 +1423,11 @@ class BdcNotifier extends _$BdcNotifier {
         state = state.copyWith(currentScore: maxScore);
 
         final bool isMatch;
-        if (maxScore >= 100) {
-          isMatch = true;
-        } else {
-          final bool passedThreshold = step == StudyStep.enSentence2Ch.json ? (maxScore >= 60) : (maxScore >= 70);
-          isMatch = passedThreshold && (!isVoice || isFinal);
-        }
+        // 将英文例句通过的得分阈值放宽到 60 分，增加口音与吞音容错率
+        // ⚡ 体验优化：为了防止最后一个单词没有显示完整就提前通关并掐断识别，
+        // 对于语音识别（isVoice），必须等待最后一帧 isFinal 为 true 时才执行 Match 通过，以保证单词在 UI 上完整展现。
+        final bool passedThreshold = maxScore >= 60;
+        isMatch = passedThreshold && (!isVoice || isFinal);
 
         if (isMatch) {
           _isAnswerCorrectHandling = true;
@@ -1783,12 +1789,17 @@ class BdcNotifier extends _$BdcNotifier {
         !state.isGettingNextWord &&
         !state.isKeyboardVisible;
 
-    final language = (state.studyStep == StudyStep.ch2En.json || state.studyStep == StudyStep.chSentence2En.json)
-        ? AsrLanguage.english
-        : AsrLanguage.chinese;
+    final AsrLanguage language;
+    if (state.studyStep == StudyStep.chSentence2En.json) {
+      language = AsrLanguage.englishSentence;
+    } else if (state.studyStep == StudyStep.ch2En.json) {
+      language = AsrLanguage.english;
+    } else {
+      language = AsrLanguage.chinese;
+    }
     List<String> phrases = [];
     if (state.word != null) {
-      if (language == AsrLanguage.english) {
+      if (language == AsrLanguage.english || language == AsrLanguage.englishSentence) {
         phrases.add(state.word!.spell);
         // 如果是例句中英模式，把例句的每个单词也加入热词，并对核心词做权重加倍
         if (state.studyStep == StudyStep.chSentence2En.json) {
@@ -1864,27 +1875,55 @@ class BdcNotifier extends _$BdcNotifier {
     return (ratio * 100).round();
   }
 
-  int getEnglishSentenceMatchScore(String input, String target) {
+  Future<int> getEnglishSentenceMatchScore(String input, String target) async {
     List<String> getWords(String s) {
-      return s.toLowerCase().split(RegExp(r"[^a-zA-Z\d\u0027]")).where((w) => w.isNotEmpty).toList();
+      final list = s.toLowerCase().split(RegExp(r"[^a-zA-Z\d\u0027]")).where((w) => w.isNotEmpty).toList();
+      // 过滤由于呼吸声/吸气声或拟声产生的非单词辅音块(如单字母t, s, 独立's 等)，只保留 a, i 和长度大于 1 且不是 's 的有效单词
+      return list.where((w) {
+        if (w == 'a' || w == 'i') return true;
+        if (w == "'s" || w == "s") return false;
+        if (w.length == 1) return false;
+        return true;
+      }).toList();
     }
     final inputWords = getWords(input);
     final targetWords = getWords(target);
     if (targetWords.isEmpty) return 0;
 
-    List<List<int>> dp = List.generate(inputWords.length + 1, (_) => List.filled(targetWords.length + 1, 0));
+    // 1. 使用最长公共子序列 (LCS) 算法并结合音素相似度计算两个单词列表的匹配度
+    List<List<double>> dp = List.generate(
+        inputWords.length + 1, (_) => List.filled(targetWords.length + 1, 0.0));
+
     for (int i = 1; i <= inputWords.length; i++) {
       for (int j = 1; j <= targetWords.length; j++) {
-        if (inputWords[i - 1] == targetWords[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1] + 1;
+        final wA = inputWords[i - 1];
+        final wB = targetWords[j - 1];
+        
+        double matchWeight = 0.0;
+        if (wA == wB) {
+          matchWeight = 1.0; // 字面完全一致，满分匹配
+        } else {
+          // 如果字面不相等，进行音素模糊相似度比对
+          final sim = await PhonemeUtil.similarity(wA, wB);
+          if (sim >= 75) {
+            matchWeight = 0.75; // 音素相似算通过，但权重打 7.5 折扣除完美度分值
+          }
+        }
+
+        if (matchWeight > 0.0) {
+          dp[i][j] = dp[i - 1][j - 1] + matchWeight;
         } else {
           dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
         }
       }
     }
-    final lcs = dp[inputWords.length][targetWords.length];
-    final ratio = lcs / targetWords.length;
-    return (ratio * 100).round();
+    final double lcs = dp[inputWords.length][targetWords.length];
+    final wordScore = (lcs * 100 / targetWords.length).round().clamp(0, 100);
+
+    // 2. 同时计算整句的音素相似度，取两者最大值作为容错
+    final phonemeScore = await PhonemeUtil.similarity(input, target);
+
+    return wordScore > phonemeScore ? wordScore : phonemeScore;
   }
 
   void handleTabChangeForAsr() {

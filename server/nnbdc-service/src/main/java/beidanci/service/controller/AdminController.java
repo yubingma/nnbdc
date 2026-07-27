@@ -370,7 +370,15 @@ public class AdminController {
             @RequestParam(value = "aiChatGlobalLimit", defaultValue = "20") int aiChatGlobalLimit,
             @RequestParam(value = "aiChatUserLimit", defaultValue = "2") int aiChatUserLimit,
             @RequestParam(value = "aiChatUserDailyLimit", defaultValue = "100") int aiChatUserDailyLimit) throws IllegalAccessException {
-        return aiController.saveAiConfig(concurrencyLimit, aiChatGlobalLimit, aiChatUserLimit, aiChatUserDailyLimit);
+        return aiController.saveAiConfig(
+                concurrencyLimit,
+                aiChatGlobalLimit,
+                aiChatUserLimit,
+                aiChatUserDailyLimit,
+                sysParamUtil.getAiRefereeGlobalConcurrencyLimit(),
+                sysParamUtil.getAiRefereeUserConcurrencyLimit(),
+                sysParamUtil.getAiRefereeUserDailyLimit()
+        );
     }
 
     // ============================================

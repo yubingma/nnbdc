@@ -14,6 +14,7 @@ enum AsrState { unknown, initialized, started, stopping, stopped }
 
 enum AsrLanguage {
   english('en-US'),
+  englishSentence('en-US-sentence'),
   chinese('zh-CN');
 
   const AsrLanguage(this.locale);

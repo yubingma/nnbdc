@@ -291,7 +291,8 @@ import StoreKit
     // MARK: - ASR Methods
     
     private func setLanguage(locale: String, result: @escaping FlutterResult) {
-        currentLocale = locale
+        let cleanLocale = locale.replacingOccurrences(of: "-sentence", with: "")
+        currentLocale = cleanLocale
         
         // 重新初始化语音识别器
         setupSpeechRecognizer()

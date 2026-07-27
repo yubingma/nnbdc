@@ -574,11 +574,11 @@ void main() {
     // 2. 验证英文句子匹配（ChSentence2En 70% 单词级偏置阈值）
     // 目标：“I eat an apple every morning.” (6个英文单词)
     // 匹对“I eat apple”，分词为 [i, eat, apple]，LCS为 3, 3/6 = 50%
-    expect(notifier.getEnglishSentenceMatchScore('I eat apple', 'I eat an apple every morning.'), 50);
+    expect(await notifier.getEnglishSentenceMatchScore('I eat apple', 'I eat an apple every morning.'), 50);
     // 匹对“I eat an apple morning”，分词为 [i, eat, an, apple, morning]，LCS为 5, 5/6 = 83%
-    expect(notifier.getEnglishSentenceMatchScore('I eat an apple morning', 'I eat an apple every morning.'), 83);
+    expect(await notifier.getEnglishSentenceMatchScore('I eat an apple morning', 'I eat an apple every morning.'), 83);
     // 匹对“I eat an apple every morning”，LCS单词为 6, 6/6 = 100%
-    expect(notifier.getEnglishSentenceMatchScore('I eat an apple every morning.', 'I eat an apple every morning.'), 100);
+    expect(await notifier.getEnglishSentenceMatchScore('I eat an apple every morning.', 'I eat an apple every morning.'), 100);
 
     // 3. 验证智能重叠拼接去重算法 (stitchTexts)
     // 中文无重合拼接

@@ -1476,12 +1476,17 @@ extension BdcPageStateUIComponents on BdcPageState {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
-                              child: Text(
+                              child: Util.makeEnglishSpanText(
                                 recognizedText,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
-                                ),
+                                state.word?.spell ?? '',
+                                false,
+                                context,
+                                false,
+                                null,
+                                false,
+                                FontWeight.w400,
+                                fontSize: 14,
+                                color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
                               ),
                             ),
                             if (state.hasFinishedAnswering &&
@@ -2197,7 +2202,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               ),
             ],
           ),
-          if (state.hasFinishedAnswering && state.currentScore != 100 && sentence != null) ...[
+          if (state.hasFinishedAnswering && sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeChineseSpanText(
               sentence.chinese ?? '',
@@ -2242,7 +2247,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               textAlign: TextAlign.center,
             ),
           ),
-          if (state.hasFinishedAnswering && state.currentScore != 100 && sentence != null) ...[
+          if (state.hasFinishedAnswering && sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeEnglishSpanText(
               sentence.english ?? '',
@@ -2689,5 +2694,4 @@ extension BdcPageStateUIComponents on BdcPageState {
       ),
     );
   }
-
 }
