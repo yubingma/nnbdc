@@ -699,6 +699,16 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(words: words, correctAnswerIndex: correctIndex);
   }
 
+  /// 当前是否为例句巩固环节（非测评，仅为练习）。
+  /// 条件：例句步骤 (EnSentence2Ch / ChSentence2En) 且不是第一个环节 (stepIndex > 0)。
+  bool _isSentencePracticeStep() {
+    final step = state.studyStep;
+    if (step != StudyStep.enSentence2Ch.json && step != StudyStep.chSentence2En.json) {
+      return false;
+    }
+    return (state.currentGetWordResult?.stepIndex ?? 0) > 0;
+  }
+
   void updateTabIndex(int index) {
     // Determine if the user is choosing the "Select" tab (always the last tab)
     final isSelectTab = index == (_shouldShowSpeakTab ? 1 : 0);
@@ -721,11 +731,13 @@ class BdcNotifier extends _$BdcNotifier {
     );
 
     // 设置已完成回答状态，评分为 FsrsRating.again，显示正确答案
+    // 例句巩固环节仅为练习，不降低评分
+    final bool isSentencePractice = _isSentencePracticeStep();
     state = state.copyWith(
       hasFinishedAnswering: true,
       canLeaveCurrWord: true,
-      lastFsrsRating: FsrsRating.again,
-      lastFsrsRatingReason: "手动查看答案",
+      lastFsrsRating: isSentencePractice ? null : FsrsRating.again,
+      lastFsrsRatingReason: isSentencePractice ? "手动查看答案（练习模式）" : "手动查看答案",
       currentScore: 0, // 分数设为 0 代表未读对
     );
     _handleTabChangeForAsr();
@@ -766,7 +778,11 @@ class BdcNotifier extends _$BdcNotifier {
       _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
     } else {
       StudyAudioSessionController.instance.playSoundEffect('failed.mp3', speed: 1.5, volume: 1.0);
-      showWordDetail(state.word!, true, context, fsrsRating: FsrsRating.again, reason: "选错了答案");
+      // 例句巩固环节仅为练习，错选不降低评分
+      final bool isSentencePractice = _isSentencePracticeStep();
+      showWordDetail(state.word!, true, context,
+          fsrsRating: isSentencePractice ? null : FsrsRating.again,
+          reason: isSentencePractice ? "选错了答案（练习模式）" : "选错了答案");
     }
   }
 
@@ -1728,13 +1744,16 @@ class BdcNotifier extends _$BdcNotifier {
       _playCorrectSound();
     }
 
+    // 例句巩固环节（非测评）仅为练习，不更新 FSRS 参数
+    final bool isSentencePractice = _isSentencePracticeStep();
+
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
       // 中英模式发音已完整播完，仅需 400ms 短暂缓冲即可舒适跳转；
       // 其他模式保留原有 800ms 延迟。
       final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 0 : 1000;
       Future.delayed(Duration(milliseconds: jumpDelayMs), () {
-        getNextWord(true, fsrsRating: rating);
+        getNextWord(true, fsrsRating: isSentencePractice ? null : rating);
       });
     }
     Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
