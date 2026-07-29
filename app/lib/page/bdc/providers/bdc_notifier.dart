@@ -1362,6 +1362,18 @@ class BdcNotifier extends _$BdcNotifier {
           } else {
             _accumulatedAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
           }
+
+          // 例句中英模式 (ChSentence2En)：在 final 帧对 ASR 结果进行发音相似度自动纠错，
+          // 将因口音/吞音误识别的单词替换为例句中的正确用词（如 "schoo" → "school"）。
+          if (isEnglish && isFinal && _accumulatedAsrText.isNotEmpty) {
+            final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+                ? state.word!.sentences!.first
+                : null;
+            if (sentence?.english != null && sentence!.english!.isNotEmpty) {
+              _accumulatedAsrText = await _phoneticAutoCorrectSentence(_accumulatedAsrText, sentence.english!);
+              _lastFinalAsrText = _accumulatedAsrText;
+            }
+          }
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
         final uniqueCandidates = [_accumulatedAsrText];
@@ -1395,6 +1407,17 @@ class BdcNotifier extends _$BdcNotifier {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
           _lastFinalAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
           _accumulatedAsrText = _lastFinalAsrText;
+
+          // 一样的发音相似度自动纠错
+          if (isEnglish && _accumulatedAsrText.isNotEmpty) {
+            final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+                ? state.word!.sentences!.first
+                : null;
+            if (sentence?.english != null && sentence!.english!.isNotEmpty) {
+              _accumulatedAsrText = await _phoneticAutoCorrectSentence(_accumulatedAsrText, sentence.english!);
+              _lastFinalAsrText = _accumulatedAsrText;
+            }
+          }
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
         _updateState(state.copyWith(currentAsrCandidates: [_accumulatedAsrText]), tag: 'asr-candidate');
@@ -1820,6 +1843,51 @@ class BdcNotifier extends _$BdcNotifier {
         .map((w) => w.trim())
         .where((w) => w.isNotEmpty)
         .toList();
+  }
+
+  /// 对例句中英模式 (ChSentence2En) 的 ASR 识别结果进行发音相似度自动纠错。
+  /// 将识别出的每个单词与例句正确单词做音素比对，相似度达到阈值时替换为例句用词，
+  /// 修正 ASR 对发音相近单词的误识别（如 "dessert" → "desert"、"gotta" → "got to" 等）。
+  Future<String> _phoneticAutoCorrectSentence(String input, String targetSentence) async {
+    final inputWords = _extractEnglishWords(input);
+    if (inputWords.isEmpty) return input;
+
+    final targetWords = _extractEnglishWords(targetSentence);
+    if (targetWords.isEmpty) return input;
+
+    final corrected = <String>[];
+    for (final iw in inputWords) {
+      final iwLower = iw.toLowerCase();
+
+      // 1. 精确匹配优先（大小写不敏感）
+      String? exactMatch;
+      for (final tw in targetWords) {
+        if (iwLower == tw.toLowerCase()) {
+          exactMatch = tw;
+          break;
+        }
+      }
+      if (exactMatch != null) {
+        corrected.add(exactMatch);
+        continue;
+      }
+
+      // 2. 音素相似度模糊匹配
+      String bestMatch = iw;
+      int bestSim = 0;
+      for (final tw in targetWords) {
+        final sim = await PhonemeUtil.similarity(iw, tw);
+        if (sim > bestSim) {
+          bestSim = sim;
+          bestMatch = tw;
+        }
+      }
+
+      // 相似度 >= 75 时纠正为例句中的正确单词
+      corrected.add(bestSim >= 75 ? bestMatch : iw);
+    }
+
+    return corrected.join(" ");
   }
 
   void _syncAudioHardware() {
