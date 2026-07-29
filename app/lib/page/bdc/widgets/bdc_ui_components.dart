@@ -330,8 +330,36 @@ extension BdcPageStateUIComponents on BdcPageState {
                 state.studyStep == StudyStep.list.json) ...[
               _buildPhoneticRow(state),
               _buildFirstSentenceRow(state),
-            ],
-          ],
+                      ],
+                      if (state.aiRefereeFeedback != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.gavel_rounded, color: Colors.orange.shade600, size: 14),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  state.aiRefereeFeedback!,
+                                  style: TextStyle(
+                                    color: Colors.orange.shade700,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
         ),
       ),
     );
@@ -1517,6 +1545,34 @@ extension BdcPageStateUIComponents on BdcPageState {
                               ),
                             ],
                           ],
+                        ),
+                      ],
+                      if (state.aiRefereeFeedback != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.gavel_rounded, color: Colors.orange.shade600, size: 14),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  state.aiRefereeFeedback!,
+                                  style: TextStyle(
+                                    color: Colors.orange.shade700,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ],

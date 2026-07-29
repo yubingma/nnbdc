@@ -576,6 +576,7 @@ class BdcNotifier extends _$BdcNotifier {
       showSentenceTranslation: false,
       currentScore: null,
       englishDigestOfFirstSentence: null,
+      aiRefereeFeedback: null,
       wordStartTime: AppClock.now(),
       fsrsItem: null,
       lastFsrsRating: null,
@@ -2348,12 +2349,12 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
 
-    // 1. 停止 ASR 录音
+    // 停止 ASR 录音，冻结当前识别文本用于评判
     try {
       await asr.stopAsr();
     } catch (_) {}
 
-    // 2. 显示 Loading
+    // 显示 Loading
     await Api.loadingService.show(status: 'AI裁判裁决中...');
 
     try {
@@ -2377,8 +2378,7 @@ class BdcNotifier extends _$BdcNotifier {
       final messagesJson = jsonEncode(messages);
 
       final result = await Api.client.aiChat(messagesJson, user.id);
-      
-      // 关闭 Loading 避免阻碍后续弹窗
+
       await Api.loadingService.dismiss();
 
       if (result.success && result.data != null) {
@@ -2417,10 +2417,18 @@ class BdcNotifier extends _$BdcNotifier {
           final ratingResult = _calculateRating("AI裁判", customResponseTime: userResponseTime);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         } else {
-          // 调用 UI 弹窗
-          if (context.mounted) {
-            _showRefereeResultDialog(context, explanation);
-          }
+          // 直接在页面上 inline 显示反馈 + 自动重启 ASR
+          state = state.copyWith(aiRefereeFeedback: explanation);
+          // 延迟重启 ASR，让用户先看到反馈
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (!_isDisposed) _handleTabChangeForAsr();
+          });
+          // 5 秒后自动清除反馈
+          Future.delayed(const Duration(seconds: 5), () {
+            if (!_isDisposed && state.aiRefereeFeedback == explanation) {
+              state = state.copyWith(aiRefereeFeedback: null);
+            }
+          });
         }
       } else {
         ToastUtil.error(result.msg ?? "调用 AI 裁判失败");
@@ -2432,87 +2440,9 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  void _showRefereeResultDialog(BuildContext context, String explanation) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        final textColor = isDark ? Colors.white : Colors.black87;
-        
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-          child: Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? const Color(0xFF1E1E1E).withValues(alpha: 0.85) 
-                    : Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.gavel_rounded,
-                      color: Colors.orange,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "AI 裁判判定：未通过",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    explanation.isNotEmpty ? explanation : "你的回答与例句原意有偏差，请调整后再试。",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: textColor.withValues(alpha: 0.7),
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text("我知道了", style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
 }
+
+
 
 
