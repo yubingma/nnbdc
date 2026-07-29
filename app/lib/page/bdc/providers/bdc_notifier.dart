@@ -1350,29 +1350,31 @@ class BdcNotifier extends _$BdcNotifier {
                               state.studyStep == StudyStep.chSentence2En.json;
 
       if (isSentence) {
-        final cleanBest = best.trim();
-        if (cleanBest.isNotEmpty) {
+        final rawBest = best.trim();
+        if (rawBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
           if (isEnglish) {
-            Global.logger.i('🎤 [ASR] [Sentence-English] ASR识别事件触发，例句模式激活中，使用 en-US-sentence (en-80M BPE) 模型识别。当前识别片段: "$cleanBest"');
+            Global.logger.i('🎤 [ASR] [Sentence-English] ASR识别事件触发，例句模式激活中，使用 en-US-sentence (en-80M BPE) 模型识别。当前识别片段: "$rawBest"');
           }
+
+          // 例句中英模式：在 stitch 之前对 ASR 片段做发音相似度自动纠错，
+          // 确保 stitch 的 prev 与 next 都是纠正后文本，重叠检测才能正确工作，
+          // 同时让所有帧（不限于 final）都能实时显示纠正结果。
+          String cleanBest = rawBest;
+          if (isEnglish) {
+            final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+                ? state.word!.sentences!.first
+                : null;
+            if (sentence?.english != null && sentence!.english!.isNotEmpty) {
+              cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
+            }
+          }
+
           if (isFinal) {
             _lastFinalAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
             _accumulatedAsrText = _lastFinalAsrText;
           } else {
             _accumulatedAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
-          }
-
-          // 例句中英模式 (ChSentence2En)：在 final 帧对 ASR 结果进行发音相似度自动纠错，
-          // 将因口音/吞音误识别的单词替换为例句中的正确用词（如 "schoo" → "school"）。
-          if (isEnglish && isFinal && _accumulatedAsrText.isNotEmpty) {
-            final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
-                ? state.word!.sentences!.first
-                : null;
-            if (sentence?.english != null && sentence!.english!.isNotEmpty) {
-              _accumulatedAsrText = await _phoneticAutoCorrectSentence(_accumulatedAsrText, sentence.english!);
-              _lastFinalAsrText = _accumulatedAsrText;
-            }
           }
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
@@ -1402,22 +1404,23 @@ class BdcNotifier extends _$BdcNotifier {
       final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
                               state.studyStep == StudyStep.chSentence2En.json;
       if (isSentence) {
-        final cleanBest = event.toString().trim();
-        if (cleanBest.isNotEmpty) {
+        final rawBest = event.toString().trim();
+        if (rawBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
-          _lastFinalAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
-          _accumulatedAsrText = _lastFinalAsrText;
 
-          // 一样的发音相似度自动纠错
-          if (isEnglish && _accumulatedAsrText.isNotEmpty) {
+          // 同样在 stitch 前做自动纠错
+          String cleanBest = rawBest;
+          if (isEnglish) {
             final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
                 ? state.word!.sentences!.first
                 : null;
             if (sentence?.english != null && sentence!.english!.isNotEmpty) {
-              _accumulatedAsrText = await _phoneticAutoCorrectSentence(_accumulatedAsrText, sentence.english!);
-              _lastFinalAsrText = _accumulatedAsrText;
+              cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
             }
           }
+
+          _lastFinalAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+          _accumulatedAsrText = _lastFinalAsrText;
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
         _updateState(state.copyWith(currentAsrCandidates: [_accumulatedAsrText]), tag: 'asr-candidate');
