@@ -55,6 +55,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var isRecording: Boolean = false
     @Volatile
     var isAsrStopped = true
+    // ASR 会话代际：startAsr/stopAsr 均递增。runOnUiThread 发送前校验，
+    // 丢弃 stop 前已入队的遗留事件，避免污染下一次 PTT 识别会话
+    @Volatile
+    private var asrEpoch = 0L
 
     // 统计处理音频块的计数，用于限制日志频率
     private var audioBlockCount = 0
@@ -119,8 +123,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     result.success(null)
                 }
                 "stopAsr" -> {
-                    stopAsr()
-                    result.success(null)
+                    val flushText = stopAsr()
+                    result.success(flushText)
                 }
                 "stopMicrophone" -> {
                     stopMicrophone()
@@ -605,7 +609,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             if (shouldSend) {
                                  lastSentResult = text
                                 Log.d(TAG, "~~~~~ASR RESULT: '$text' (isFinal=$isEndpoint)")
+                                val sendEpoch = asrEpoch
                                 activity.runOnUiThread {
+                                    // 若已 stop/start 切换会话，丢弃已入队的遗留事件
+                                    if (sendEpoch != asrEpoch) return@runOnUiThread
                                     try {
                                         val resultData = JSONObject().apply {
                                             put("best", text)
@@ -635,22 +642,72 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun startAsr() {
         Log.i(TAG, "Starting ASR...")
-        asrResumeTime = System.currentTimeMillis() + 300 // 恢复至 300ms 安全延迟，避免吞句首词
-        isAsrStopped = false
-        lastSentResult = "" // 开启识别时强制重置上一次结果，避免残留
+        synchronized(this) {
+            // PTT 重按热复用:旧 stream 已在 stopAsr 释放,此处为空则重建,避免复用残留音频
+            if (currentStream == null) {
+                Log.i(TAG, "Creating fresh stream with hotwords: $pendingHotwords")
+                currentStream = currentModel?.createStream(pendingHotwords)
+            }
+            asrResumeTime = System.currentTimeMillis() + 300 // 恢复至 300ms 安全延迟，避免吞句首词
+            asrEpoch++
+            isAsrStopped = false
+            lastSentResult = "" // 开启识别时强制重置上一次结果，避免残留
+        }
     }
 
-    private fun stopAsr() {
+    private fun stopAsr(): String? {
+        var flushText: String? = null
         synchronized(this) {
-            Log.i(TAG, "Stopping ASR (Hot Stop)...")
+            Log.i(TAG, "Stopping ASR (Flush Stop)...")
             isAsrStopped = true
+            asrEpoch++
             try {
-                currentStream?.let { s -> currentModel?.let { m -> m.reset(s) } }
+                val s = currentStream
+                val m = currentModel
+                if (m != null && s != null) {
+                    // 优雅收尾:结束音频输入,解码所有已喂入的残留音频,送出最终结果。
+                    // 这样松开按钮不会硬切丢词,尾部单词自然识别完成后再释放。
+                    s.inputFinished()
+                    var decodeCount = 0
+                    val flushDeadline = System.currentTimeMillis() + 1000 // 安全上限,防极端长音频卡死 UI 线程
+                    while (m.isReady(s) && System.currentTimeMillis() < flushDeadline) {
+                        m.decode(s)
+                        decodeCount++
+                    }
+                    if (decodeCount > 0) {
+                        Log.i(TAG, "Flush decoded $decodeCount extra chunk(s).")
+                    }
+                    val result = m.getResult(s)
+                    val text = result.text.trim().lowercase()
+                    if (text.isNotBlank() && text != lastSentResult) {
+                        lastSentResult = text
+                        flushText = text
+                        Log.d(TAG, "~~~~~ASR FLUSH FINAL: '$text'")
+                        // 同步发送(不走 runOnUiThread):EventSink 线程安全,且必须保证
+                        // 事件先于 MethodChannel result 送达,否则 Flutter 端 stopPttAsr
+                        // 的 await 返回时 _accumulatedAsrText 尚未包含尾部单词。
+                        try {
+                            val resultData = JSONObject().apply {
+                                put("best", text)
+                                put("candidates", JSONArray().apply { put(text) })
+                                put("isFinal", true)
+                            }
+                            events?.success(resultData.toString())
+                        } catch (e: Exception) {
+                            events?.success(text)
+                        }
+                    }
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Error during Hot Stop reset: ${e.message}")
+                Log.e(TAG, "Error during Flush Stop: ${e.message}", e)
             }
+            // 彻底释放旧 stream 及其内部未解码的音频特征(Sherpa reset 不清空特征提取器,
+            // 复用旧 stream 会把残留音频在新会话中解码出来)。下次 startAsr 重建干净 stream。
+            currentStream?.release()
+            currentStream = null
             lastSentResult = ""
         }
+        return flushText
     }
 
     private fun stopMicrophone() {

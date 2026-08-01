@@ -53,7 +53,9 @@ class StudyAudioSessionController {
   // Dependencies & States (Consolidated from SoundUtil)
   // ============================================================
 
-  final Asr _asr;
+  /// 内部持有的 ASR 实例。生产环境为全局单例 [Asr]。
+  /// 测试可通过 [debugSetAsrForTesting] 替换为 Mock。
+  Asr _asr;
   final ja.AudioPlayer _audioPlayer;
   ja.AudioPlayer? _asrHintPlayer;
   final _SessionMutex _queueLock = _SessionMutex();
@@ -134,6 +136,14 @@ class StudyAudioSessionController {
   @visibleForTesting
   set audioSessionConfigured(bool value) => _audioSessionConfigured = value;
 
+  /// 测试专用：替换内部 ASR 实例（Mock），并重新挂载状态监听。
+  @visibleForTesting
+  void debugSetAsrForTesting(Asr asr) {
+    _asr.removeStateListener(_onAsrStateChange);
+    _asr = asr;
+    _asr.addStateListener(_onAsrStateChange);
+  }
+
   @visibleForTesting
   void resetForTesting() {
     _currentSessionCategory = 'none';
@@ -197,6 +207,7 @@ class StudyAudioSessionController {
     required AsrLanguage language,
     required List<String> phrases,
     Object? caller,
+    bool bypassStartDebounce = false,
   }) async {
     if (caller != null && _activeNotifier != null && caller != _activeNotifier) {
       debugPrint('⏱️ [SessionController] 忽略来自老实例 $caller 的 syncHardwareIntent 请求，当前活跃为 $_activeNotifier');
@@ -212,6 +223,7 @@ class StudyAudioSessionController {
           language: language,
           phrases: phrases,
           isSpeakMode: true,
+          bypassStartDebounce: bypassStartDebounce,
         );
       } else {
         // 2. 虽在说模式，但处于非答题暂态（如已答对、换词中、手写板展开）：热停止 ASR 任务并挂起，但保持麦克风保温稳定
@@ -341,9 +353,11 @@ class StudyAudioSessionController {
     required AsrLanguage language,
     required List<String> phrases,
     required bool isSpeakMode,
+    bool bypassStartDebounce = false,
   }) async {
     final now = AppClock.now();
-    if (_lastAsrStartAt != null &&
+    if (!bypassStartDebounce &&
+        _lastAsrStartAt != null &&
         now.difference(_lastAsrStartAt!).inMilliseconds < 600) {
       debugPrint('⚡ [SessionController] 拦截 startSession：与上次启动时间间隔过近 (${now.difference(_lastAsrStartAt!).inMilliseconds}ms)，防止串行二次启动颤音');
       return;

@@ -1622,6 +1622,10 @@ extension BdcPageStateUIComponents on BdcPageState {
             ),
           ),
         ),
+
+        // 3. 例句环节底部固定"按住说话"按钮：独立于滚动区，位置不随识别文本/反馈变化
+        if (isSentence && !state.hasFinishedAnswering)
+          _buildPttSpeakButton(),
       ],
     );
   }
@@ -1724,6 +1728,69 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
         const SizedBox(height: 16),
       ],
+    );
+  }
+
+  /// 例句环节"按住说话"PTT 大按钮：按下并保持开始识别，松开停止并立即判定。
+  /// 仅例句步骤 (EnSentence2Ch / ChSentence2En) 且未答完时展示。
+  /// 用 [Listener] 监听原始指针事件而非 GestureDetector：
+  /// 按钮处于 SingleChildScrollView 内，GestureDetector 的 Tap 会因手指轻微移动
+  /// 触发的滚动手势竞争而被 cancel，导致说话被打断；Listener 不参与手势竞技场，
+  /// 按下即开始、任何抬起即停止，手指抖动不会中断识别。
+  Widget _buildPttSpeakButton() {
+    final isDarkMode = _cachedIsDarkMode;
+    // 用 Consumer 细粒度监听 isPttPressed，避免依赖顶层 _activeState 缓存（顶层按 BdcStateUiSignature 重建，不含该字段）
+    return Consumer(
+      builder: (context, ref, _) {
+        final isPressed = ref.watch(bdcNotifierProvider.select((s) => s.isPttPressed));
+        final bgColor = isPressed
+            ? (isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.08))
+            : AppTheme.primaryColor;
+        final fgColor = isPressed
+            ? (isDarkMode ? Colors.white : Colors.black87)
+            : Colors.white;
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Listener(
+            onPointerDown: (_) => notifier.startPttAsr(),
+            onPointerUp: (_) => notifier.stopPttAsr(),
+            onPointerCancel: (_) => notifier.stopPttAsr(),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              height: 52,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isPressed
+                      ? (isDarkMode ? Colors.white54 : Colors.black26)
+                      : Colors.transparent,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isPressed ? Icons.mic_rounded : Icons.mic_none_rounded,
+                    color: fgColor,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isPressed ? '松开结束并判定' : '按住说话',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: fgColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

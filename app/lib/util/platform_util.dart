@@ -2,6 +2,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 class PlatformUtils {
+  /// 测试专用：覆盖 ASR 支持判定（null = 按平台自动判断）。
+  /// 单元测试环境运行在 macOS 上，Platform.isIOS/isAndroid 均为 false，
+  /// 无法验证 PTT 按下→启动识别的链路，故允许测试注入 true。
+  @visibleForTesting
+  static bool? asrSupportedOverride;
+
   static bool _isWeb() {
     // 通过kIsWeb变量判断是否为web环境!
     return kIsWeb == true;
@@ -51,7 +57,7 @@ class PlatformUtils {
   /// 目前只有iOS和Android平台支持ASR
   /// Web、Windows、macOS不支持
   static bool isAsrSupported() {
-    return isIOS || isAndroid;
+    return asrSupportedOverride ?? (isIOS || isAndroid);
   }
 
   /// 判断当前平台是否支持英文ASR

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +12,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +23,9 @@ import 'package:nnbdc/services/study_cache_manager.dart';
 class MockAsr implements Asr {
   final AsrState _state = AsrState.initialized;
   final List<Function(AsrState)> _stateListeners = [];
+
+  int startAsrCallCount = 0;
+  int stopAsrCallCount = 0;
 
   @override
   AsrState get state => _state;
@@ -32,6 +38,12 @@ class MockAsr implements Asr {
 
   @override
   set permissionGranted(bool value) {}
+
+  @override
+  AsrLanguage? get currentLanguage => null;
+
+  @override
+  Future<void> updateLanguage(AsrLanguage language) async {}
 
   @override
   void addStateListener(Function(AsrState) listener) {
@@ -50,10 +62,17 @@ class MockAsr implements Asr {
   Future<void> preloadModels() async {}
 
   @override
-  Future<void> startAsr(AsrLanguage language, {List<String>? phrases, bool playHintSound = true}) async {}
+  Future<void> startAsr(AsrLanguage language, {List<String>? phrases, bool playHintSound = true}) async {
+    startAsrCallCount++;
+  }
 
   @override
-  Future<void> stopAsr() async {}
+  Future<void> stopAsr() async {
+    stopAsrCallCount++;
+  }
+
+  @override
+  Future<void> startMicrophone() async {}
 
   @override
   Future<void> stopMicrophone() async {}
@@ -325,6 +344,13 @@ void main() {
     state = container.read(bdcNotifierProvider);
     expect(state.showHandwritingBoard, true);
 
+    // 5. 单词环节 (En2Ch) PTT 不生效：startPttAsr 直接返回，不启动识别
+    expect(state.studyStep, 'En2Ch');
+    notifier.startPttAsr();
+    await Future.delayed(const Duration(milliseconds: 50));
+    expect(mockAsr.startAsrCallCount, 0);
+    expect(container.read(bdcNotifierProvider).isPttPressed, false);
+
     // 等待所有后台异步任务（例如 StudyBo 里的单词拼写预获取）在数据库关闭前执行完毕，防止出现 Can't re-open database 警告
     await Future.delayed(const Duration(milliseconds: 100));
   });
@@ -592,5 +618,128 @@ void main() {
     // 英文有重合拼接 (包括单词级大小写归一化匹配)
     expect(BdcNotifier.stitchTexts('i eat', 'eat an apple', isEnglish: true), 'i eat an apple');
     expect(BdcNotifier.stitchTexts('I have', 'have a Apple', isEnglish: true), 'I have a Apple');
+  });
+
+  test('例句环节 PTT 按下说话:按下启动识别、松开停止并判定、空文本静默放弃', () async {
+    // 1. 追加例句步骤(EnSentence2Ch, seq 1),使 activeUserStudySteps = [En2Ch, EnSentence2Ch]
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          studyStep: 'EnSentence2Ch',
+          seq: 1,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    // 将 word_1 的今日学习次数置为 1,使 StudyBo 计算 stepIndex = todayLearnedTimes = 1(例句步骤)
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    // 为 word_1 的释义项 mim_1 插入例句数据
+    await db.into(db.sentences).insert(Sentence(
+          id: 'snt_1',
+          english: 'I eat an apple every morning.',
+          chinese: '我每天早上吃一个苹果。',
+          englishDigest: 'I eat an apple every morning.',
+          partOfSpeech: '',
+          theType: 'tts',
+          handCount: 0,
+          footCount: 0,
+          authorId: 'sys',
+          ownerId: 'sys',
+          meaningItemId: 'mim_1',
+          wordMeaning: '苹果',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    // 将 Mock 注入 StudyAudioSessionController 内部,使 startSession → _asr.startAsr 走 Mock
+    StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+    // 测试环境运行在 macOS 上,需模拟 ASR 支持,使 transitTo(record) 不降级为 playback
+    PlatformUtils.asrSupportedOverride = true;
+    addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+
+    // 2. 应直接进入例句步骤(stepIndex=1)
+    var state = container.read(bdcNotifierProvider);
+    expect(state.studyStep, 'EnSentence2Ch');
+    expect(state.word?.spell, 'apple');
+
+    // 3. 进入例句环节后不应自动开麦
+    expect(mockAsr.startAsrCallCount, 0);
+
+    // 4. 按下 PTT → 启动识别,isPttPressed 置为 true
+    notifier.startPttAsr();
+    // startSession 走真实 controller 串行队列 + transitTo 有 60-100ms 延时,轮询等待 ASR 真正启动
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 1; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    state = container.read(bdcNotifierProvider);
+    expect(state.isPttPressed, true);
+    expect(mockAsr.startAsrCallCount, 1);
+    // loadData → getNextWord 末尾会做一次 ASR 清理,记录为基线
+    final stopAsrBaseline = mockAsr.stopAsrCallCount;
+
+    // 5. 松开 PTT 但没说话 → 不判定,静默放弃
+    await notifier.stopPttAsr();
+    await Future.delayed(const Duration(milliseconds: 50));
+    state = container.read(bdcNotifierProvider);
+    expect(state.isPttPressed, false);
+    expect(state.hasFinishedAnswering, false);
+    expect(mockAsr.stopAsrCallCount, stopAsrBaseline + 1);
+
+    // 5.1 遗留事件隔离：松开后原生端 stop 前已排队的最终结果到达，
+    //     应被忽略(例句环节 _isPttPressed=false 守卫)，不污染文本也不触发判定
+    await notifier.onAsrResult(jsonEncode({
+      'best': '我每天早上吃一个苹果',
+      'candidates': ['我每天早上吃一个苹果'],
+      'isFinal': true,
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, false, reason: '松开后的遗留事件不得触发判定');
+    expect(state.currentAsrCandidates, isEmpty, reason: '松开后的遗留事件不得污染识别候选');
+
+    // 6. 再次按下 PTT 并说出正确中文翻译 → 松开即判定通过
+    notifier.startPttAsr();
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 2; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    expect(mockAsr.startAsrCallCount, 2);
+    // 新一轮识别从干净状态开始：遗留事件未污染累积文本
+    state = container.read(bdcNotifierProvider);
+    expect(state.currentAsrCandidates, isEmpty, reason: '新一轮按住应从空候选开始');
+
+    await notifier.onAsrResult(jsonEncode({
+      'best': '我每天早上吃一个苹果',
+      'candidates': ['我每天早上吃一个苹果'],
+      'isFinal': true,
+    }));
+    await notifier.stopPttAsr();
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true);
+
+    // 7. 答完后 PTT 不再生效：hasFinishedAnswering=true 时按下直接返回，不启动识别
+    final callsBeforeAnsweredRetry = mockAsr.startAsrCallCount;
+    notifier.startPttAsr();
+    await Future.delayed(const Duration(milliseconds: 50));
+    expect(mockAsr.startAsrCallCount, callsBeforeAnsweredRetry);
+    expect(container.read(bdcNotifierProvider).isPttPressed, false);
+
+    await Future.delayed(const Duration(milliseconds: 100));
   });
 }

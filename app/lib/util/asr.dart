@@ -518,30 +518,34 @@ class Asr {
     return;
   }
 
-  Future<void> stopAsr() async {
+  /// 停止识别并返回 flush 后的最终识别文本(可能为 null:未识别出内容或已处于停止态)。
+  /// 原生端会优雅收尾:结束音频输入、解码残留音频后再释放,保证松开按钮不丢尾部单词。
+  Future<String?> stopAsr() async {
     Global.logger.i('ASR: stopAsr() called (instance: $hashCode)');
-    if (!PlatformUtils.isAsrSupported()) return;
+    if (!PlatformUtils.isAsrSupported()) return null;
 
     if (state == AsrState.stopped || state == AsrState.stopping) {
       Global.logger
           .w('ASR: ASR is already stopped or stopping (instance: $hashCode)');
-      return;
+      return null;
     }
 
     setState(AsrState.stopping);
     final startTime = AppClock.now();
     try {
-      await asrMethodChannel
-          .invokeMethod('stopAsr')
+      final flushText = await asrMethodChannel
+          .invokeMethod<String>('stopAsr')
           .timeout(const Duration(seconds: 3));
       final endTime = AppClock.now();
       setState(AsrState.stopped);
       Global.logger.i(
           'ASR: ASR stopped successfully (instance: $hashCode, duration: ${endTime.difference(startTime).inMilliseconds}ms)');
+      return flushText;
     } catch (e) {
       Global.logger
           .e('ASR: Exception during stop: $e (instance: $hashCode)');
       setState(AsrState.stopped);
+      return null;
     }
   }
 

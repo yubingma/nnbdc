@@ -131,6 +131,14 @@ class BdcNotifier extends _$BdcNotifier {
   String _accumulatedAsrText = "";
   String _lastFinalAsrText = "";
 
+  /// 例句环节 PTT(按下说话):是否按住中
+  bool _isPttPressed = false;
+
+  /// 例句环节 PTT 会话轮次 token：每次 startPttAsr 递增。
+  /// onAsrResult 的异步间隙(await 纠错)恢复后校验轮次是否仍为当前轮，
+  /// 拦截"上一轮 stop 前已进入的事件在重按后继续写入"的跨轮污染
+  int _pttRoundToken = 0;
+
   void _onAsrStateChanged(AsrState asrState) {
     Future.microtask(() {
       if (_isDisposed) return;
@@ -587,6 +595,7 @@ class BdcNotifier extends _$BdcNotifier {
       isKeyboardVisible: false,
       hintTapCount: 0,
       isWordMastered: false,
+      isPttPressed: false,
     );
 
     final wordId = word.id;
@@ -626,7 +635,8 @@ class BdcNotifier extends _$BdcNotifier {
 
     // iOS 说模式引擎预热在发音播放完成后进行，避免提前抢占 AudioSession
     //（将 session 切为 playAndRecord）导致后续发音播放时 session 状态不匹配产生爆音。
-    final bool shouldSpeak = _shouldShowSpeakTab && state.tabIndex == 0;
+    // 例句环节采用 PTT（按下说话）完全手动控制，不自动开麦。
+    final bool shouldSpeak = !isSentenceStep && _shouldShowSpeakTab && state.tabIndex == 0;
 
     // 将发音播放和 ASR 启动延迟 200ms 执行，在卡片过渡动画结束前不抢占渲染资源。
     // 使用 _playToken 防止快速切词时旧 callback 使用过期 state。
@@ -713,7 +723,12 @@ class BdcNotifier extends _$BdcNotifier {
   void updateTabIndex(int index) {
     // Determine if the user is choosing the "Select" tab (always the last tab)
     final isSelectTab = index == (_shouldShowSpeakTab ? 1 : 0);
-    state = state.copyWith(tabIndex: index, isSelectModePreferred: isSelectTab);
+    // 切换 Tab 即视为松开 PTT（防止切到"选"Tab 后例句环节识别仍在继续）
+    if (_isPttPressed) {
+      _isPttPressed = false;
+      unawaited(asr.stopAsr());
+    }
+    state = state.copyWith(tabIndex: index, isSelectModePreferred: isSelectTab, isPttPressed: _isPttPressed);
     _handleTabChangeForAsr();
   }
 
@@ -903,8 +918,10 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.wordWrapper != null) {
       final wrapper = state.wordWrapper!;
       wrapper.hintLetterCount = 0;
-      _accumulatedAsrText = "";
-      _lastFinalAsrText = "";
+    _accumulatedAsrText = "";
+    _lastFinalAsrText = "";
+    // 换词即视为松开 PTT：防止按住时自动进下一词导致 _isPttPressed 残留、新词例句环节误自动开麦
+    _isPttPressed = false;
       state = state.copyWith(
         wordWrapper: wrapper,
         isUpdatingByHint: !state.isUpdatingByHint,
@@ -1318,6 +1335,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> onAsrResult(event) async {
+    final int pttRoundAtEntry = _pttRoundToken;
     String processedResult = "";
     List<String> candidates = [];
     bool isFinal = false;
@@ -1351,6 +1369,9 @@ class BdcNotifier extends _$BdcNotifier {
                               state.studyStep == StudyStep.chSentence2En.json;
 
       if (isSentence) {
+        // 例句环节为 PTT 模式：松开后到达的遗留事件一律忽略，
+        // 避免原生端 stop 前已排队的最终结果污染下一次按住的新会话
+        if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
         final rawBest = best.trim();
         if (rawBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
@@ -1368,6 +1389,8 @@ class BdcNotifier extends _$BdcNotifier {
                 : null;
             if (sentence?.english != null && sentence!.english!.isNotEmpty) {
               cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
+              // await 期间可能已松开并重按(轮次切换)：校验仍属于当前 PTT 轮次才继续写入
+              if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
             }
           }
 
@@ -1405,6 +1428,7 @@ class BdcNotifier extends _$BdcNotifier {
       final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
                               state.studyStep == StudyStep.chSentence2En.json;
       if (isSentence) {
+        if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
         final rawBest = event.toString().trim();
         if (rawBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
@@ -1417,6 +1441,8 @@ class BdcNotifier extends _$BdcNotifier {
                 : null;
             if (sentence?.english != null && sentence!.english!.isNotEmpty) {
               cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
+              // await 间隙可能已切换 PTT 轮次：校验后才继续写入
+              if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
             }
           }
 
@@ -1500,13 +1526,21 @@ class BdcNotifier extends _$BdcNotifier {
         if (isMatch) {
           _isAnswerCorrectHandling = true;
           if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-            await StudyAudioSessionController.instance.syncHardwareIntent(
-              isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
-              isAnsweringActive: false,
-              language: AsrLanguage.english,
-              phrases: [],
-              caller: this,
-            );
+            // 例句环节 PTT 语义：统一走 _syncAudioHardware 按 _isPttPressed 判定说模式，
+            // 避免旧表达式 (_shouldShowSpeakTab && tabIndex==0) 绕过 PTT 控制导致开麦状态错乱。
+            final bool isSentenceStep = step == StudyStep.enSentence2Ch.json ||
+                step == StudyStep.chSentence2En.json;
+            if (isSentenceStep) {
+              _syncAudioHardware();
+            } else {
+              await StudyAudioSessionController.instance.syncHardwareIntent(
+                isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+                isAnsweringActive: false,
+                language: AsrLanguage.english,
+                phrases: [],
+                caller: this,
+              );
+            }
           }
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
@@ -1894,10 +1928,16 @@ class BdcNotifier extends _$BdcNotifier {
     return corrected.join(" ");
   }
 
-  void _syncAudioHardware() {
+  void _syncAudioHardware({bool bypassStartDebounce = false}) {
     if (_isDisposed) return;
-    
-    final isInSpeakTab = _shouldShowSpeakTab && state.tabIndex == 0;
+
+    // 例句环节的"说"模式完全由 PTT 按住状态控制：按住才视为说模式并开麦，
+    // 松开/切选 Tab/答对/离开时 isInSpeakTab=false → 物理释放麦克风。
+    final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json ||
+        state.studyStep == StudyStep.chSentence2En.json;
+    final isInSpeakTab = isSentenceStep
+        ? _isPttPressed && state.tabIndex == 0
+        : _shouldShowSpeakTab && state.tabIndex == 0;
     final isAnsweringActive = state.word != null &&
         state.loadError == null &&
         !state.hasFinishedAnswering &&
@@ -1959,6 +1999,7 @@ class BdcNotifier extends _$BdcNotifier {
       language: language,
       phrases: phrases,
       caller: this,
+      bypassStartDebounce: bypassStartDebounce,
     ));
   }
 
@@ -1968,6 +2009,54 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
     _syncAudioHardware();
+  }
+
+  /// 例句环节 PTT(按下说话)：按下并保持时开始语音识别。
+  /// 仅例句步骤 (EnSentence2Ch / ChSentence2En) 且未答完时生效。
+  void startPttAsr() {
+    if (_isDisposed) return;
+    final step = state.studyStep;
+    final bool isSentenceStep = step == StudyStep.enSentence2Ch.json ||
+        step == StudyStep.chSentence2En.json;
+    if (!isSentenceStep || state.hasFinishedAnswering) return;
+    if (_isPttPressed) return; // 防重复按下
+
+    _isPttPressed = true;
+    _pttRoundToken++; // 开启新一轮 PTT 会话
+    // 按住即开始全新一轮识别：重置累积文本与候选，松开时以本轮文本判定
+    _accumulatedAsrText = "";
+    _lastFinalAsrText = "";
+    _updateState(
+      state.copyWith(isPttPressed: true, currentAsrCandidates: []),
+      tag: 'ptt-start',
+    );
+    _syncAudioHardware(bypassStartDebounce: true);
+  }
+
+  /// 例句环节 PTT(按下说话)：松开时优雅收尾并立即判定。
+  /// 有识别文本则以最终结果判定；空文本（没说话）静默放弃。
+  Future<void> stopPttAsr() async {
+    if (_isDisposed) return;
+    final int roundAtStop = _pttRoundToken;
+    // 无条件停止识别任务（保留麦克风保温，支持快速重按）；
+    // 即使 _isPttPressed 已被切 Tab 等复位，抬起事件也必须停止识别。
+    // 原生端 flush 收尾：结束音频输入、解码残留音频后返回完整最终文本，
+    // 松开不会硬切丢词，尾部单词自然识别完成。
+    final String? flushText = await asr.stopAsr();
+    // await 期间可能已重新按住（新 PTT 轮次），本轮停止不得覆盖新轮状态
+    if (_pttRoundToken != roundAtStop) return;
+    _isPttPressed = false;
+    _updateState(state.copyWith(isPttPressed: false), tag: 'ptt-stop');
+
+    // flush 返回的最终文本与按住期间累积文本做重叠拼接：
+    // flush 含松开瞬间未显示完的尾部单词（stitch 会拼上），
+    // 若 flush 只是累积文本的子集（如原生端点 reset 后仅含末段）则去重不变。
+    final String effective = flushText != null && flushText.isNotEmpty
+        ? stitchTexts(_accumulatedAsrText, flushText)
+        : _accumulatedAsrText;
+    final text = effective.trim();
+    if (text.isEmpty) return; // 没说话：静默放弃，不判定
+    await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
   }
 
   int getChineseSentenceMatchScore(String input, String target) {

@@ -18,6 +18,9 @@ import StoreKit
     private var meterEventSink: FlutterEventSink?
     private var isAsrStopped = true
     private var isRecording = false
+    // ASR 会话代际：startSpeechRecognition 递增并捕获，async 发送前校验。
+    // stopAsr 递增使已排队的遗留结果块失效，避免污染下一次 PTT 识别会话
+    private var asrSessionId = 0
     private var currentLocale = "zh-CN" // 默认中文，用于识别单词释义
     private var isAudioEngineInitialized = false // 跟踪 audioEngine 是否已初始化
     private var skippedBufferCount = 0 // 跟踪跳过的缓冲区数量
@@ -392,6 +395,7 @@ import StoreKit
         // 只停止识别流水线，保留音频引擎运行
         print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
         isAsrStopped = true
+        asrSessionId += 1
         stopSpeechRecognition()
         result(nil)
     }
@@ -400,6 +404,7 @@ import StoreKit
         print("IOS: [ASR] stopMicrophone (Cold Stop) requested")
         print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
         isAsrStopped = true
+        asrSessionId += 1
         stopSpeechRecognition()
         teardownAudioEngine()
         isRecording = false
@@ -411,6 +416,7 @@ import StoreKit
         
         // 暂停 ASR 状态
         isAsrStopped = true
+        asrSessionId += 1
         
         // 清理识别任务
         if recognitionTask != nil {
@@ -621,6 +627,9 @@ import StoreKit
             return
         }
         
+        asrSessionId += 1
+        let sessionId = asrSessionId
+        
         // 1. 先确保停止旧任务，并暂时阻断数据喂入
         stopSpeechRecognition()
         print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
@@ -674,7 +683,7 @@ import StoreKit
 
         print("IOS: [ASR] Creating SFSpeechAudioBufferRecognitionRequest & recognitionTask synchronously...")
         
-        self.recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
+        self.recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self, sessionId] result, error in
             guard let self = self else { return }
             var isFinal = false
             var shouldRestart = false
@@ -702,7 +711,8 @@ import StoreKit
                     // 如果是新的部分结果，立即发送候选结果
                     if !isFinal {
                         self.lastPartialResult = selectedString
-                        DispatchQueue.main.async {
+                        DispatchQueue.main.async { [weak self, sessionId] in
+                            guard let self = self, self.asrSessionId == sessionId else { return }
                             let candidates = result.transcriptions.map { $0.formattedString }
                             print("IOS: [ASR] Sending partial result with candidates to Flutter: '\(selectedString)'")
                             
@@ -721,7 +731,8 @@ import StoreKit
                     }
                     // 如果是最终结果，发送多个候选结果
                     else if isFinal {
-                        DispatchQueue.main.async {
+                        DispatchQueue.main.async { [weak self, sessionId] in
+                            guard let self = self, self.asrSessionId == sessionId else { return }
                             let candidates = result.transcriptions.map { $0.formattedString }
                             print("IOS: [ASR] Sending final result with candidates to Flutter: '\(selectedString)'")
                             
