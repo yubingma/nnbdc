@@ -16,11 +16,18 @@ import kotlin.math.sqrt
 import org.json.JSONObject
 import org.json.JSONArray
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 // Sherpa-ONNX imports
 import com.k2fsa.sherpa.onnx.*
 
 private const val TAG = "sherpa-onnx"
+
+// 静音判定阈值:归一化 RMS 低于此值视为静音块(16kHz 16bit,静音环境约 0.003-0.01)
+private const val SILENCE_THRESHOLD = 0.015f
+// 连续静音块数:达到此数量(每块 100ms)认为用户已说完、缓冲区尾部音频已排空
+private const val SILENCE_BLOCK_COUNT = 3
 
 class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var eventChannel: EventChannel? = null
@@ -60,6 +67,12 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     // 丢弃 stop 前已入队的遗留事件，避免污染下一次 PTT 识别会话
     @Volatile
     private var asrEpoch = 0L
+    // Flush 排空信号：stopAsr 等待 processSamples 把 AudioRecord 缓冲区中的
+    // 尾部音频(含词尾静音)全部喂入后通知，确保 flush 能解出完整尾部单词。
+    @Volatile
+    private var flushSignal: CountDownLatch? = null
+    // 停止后连续静音块计数，用于判定用户已说完、缓冲区尾部音频已排空
+    private var silentBlockCount = 0
 
     // 统计处理音频块的计数，用于限制日志频率
     private var audioBlockCount = 0
@@ -585,8 +598,22 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                             // 让 stopAsr 的 flush 能解码到松开瞬间的尾部单词
                             s.acceptWaveform(samples, sampleRateInHz)
 
-                            // 停止信号已发出：本块已喂入，不再解码发送，由 stopAsr 统一 flush
+                            // 停止信号已发出：本块已喂入，不再解码发送，由 stopAsr 统一 flush。
+                            // 连续静音块意味着 AudioRecord 缓冲区中的尾部音频(含词尾)已
+                            // 全部读出喂入——此时通知 stopAsr 可以安全 inputFinished + flush，
+                            // 避免词尾音频仍滞留在缓冲区导致最后一个词解码不完整。
                             if (isAsrStopped) {
+                                if (norm < SILENCE_THRESHOLD) {
+                                    silentBlockCount++
+                                    if (silentBlockCount >= SILENCE_BLOCK_COUNT) {
+                                        flushSignal?.let { latch ->
+                                            flushSignal = null
+                                            latch.countDown()
+                                        }
+                                    }
+                                } else {
+                                    silentBlockCount = 0
+                                }
                                 return@synchronized
                             }
 
@@ -672,17 +699,21 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun stopAsr(): String? {
         var flushText: String? = null
+        val latch = CountDownLatch(1)
         synchronized(this) {
             Log.i(TAG, "Stopping ASR (Flush Stop)...")
             isAsrStopped = true
             asrEpoch++
+            silentBlockCount = 0
+            flushSignal = latch
         }
-        // 固定等待 300ms 让 processSamples 持续喂入，排空 AudioRecord 缓冲区中的
-        // 尾部音频：停止瞬间缓冲区可能积压多个音频块(每块 100ms)，若立即 inputFinished，
-        // 未被喂入的尾部单词音频会丢失；且 sherpa-onnx 在线模型需要词尾后的静音
-        // 才能确定词边界，立即截断会导致最后一个词无法解码。
+        // 等待 processSamples 排空 AudioRecord 缓冲区中的尾部音频：
+        // 停止后它持续喂入，直到读到连续静音块(用户已说完、词尾音频+静音全部
+        // 进入 stream)才通知本方法。词尾静音是 sherpa-onnx 在线模型确定词边界
+        // 的必要输入，等不到静音就 inputFinished 会导致最后一个词解码不完整
+        // (如 yesterday 只解出 yesterd)。800ms 超时仅作环境持续噪音时的兜底。
         try {
-            Thread.sleep(300)
+            latch.await(800, TimeUnit.MILLISECONDS)
         } catch (e: InterruptedException) {
             Log.e(TAG, "Interrupted while waiting for in-flight audio feed", e)
         }
@@ -736,6 +767,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             currentStream?.release()
             currentStream = null
             lastSentResult = ""
+            flushSignal = null
         }
         return flushText
     }
