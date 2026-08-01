@@ -2043,10 +2043,8 @@ class BdcNotifier extends _$BdcNotifier {
     // 原生端 flush 收尾：结束音频输入、解码残留音频后返回完整最终文本，
     // 松开不会硬切丢词，尾部单词自然识别完成。
     final String? flushText = await asr.stopAsr();
-    // await 期间可能已重新按住（新 PTT 轮次），本轮停止不得覆盖新轮状态
+    // await 期间可能已重新按住(新 PTT 轮次),本轮停止不得覆盖新轮状态
     if (_pttRoundToken != roundAtStop) return;
-    _isPttPressed = false;
-    _updateState(state.copyWith(isPttPressed: false), tag: 'ptt-stop');
 
     // flush 返回的最终文本与按住期间累积文本做重叠拼接：
     // flush 含松开瞬间未显示完的尾部单词（stitch 会拼上），
@@ -2055,6 +2053,18 @@ class BdcNotifier extends _$BdcNotifier {
         ? stitchTexts(_accumulatedAsrText, flushText)
         : _accumulatedAsrText;
     final text = effective.trim();
+
+    // 直接用拼接后的最终文本更新 UI：flush 事件虽由原生同步发送，但英文例句的
+    // onAsrResult 在纠错 await 间隙可能已被置 false 的 _isPttPressed 拦截丢弃，
+    // 若只依赖事件流，松开瞬间的尾部单词不会显示。此处显式补上，保证 UI 完整。
+    if (text.isNotEmpty) {
+      _accumulatedAsrText = text;
+      _updateState(state.copyWith(currentAsrCandidates: [text]), tag: 'asr-flush');
+    }
+
+    _isPttPressed = false;
+    _updateState(state.copyWith(isPttPressed: false), tag: 'ptt-stop');
+
     if (text.isEmpty) return; // 没说话：静默放弃，不判定
     await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
   }

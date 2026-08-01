@@ -67,8 +67,9 @@ class MockAsr implements Asr {
   }
 
   @override
-  Future<void> stopAsr() async {
+  Future<String?> stopAsr() async {
     stopAsrCallCount++;
+    return null;
   }
 
   @override

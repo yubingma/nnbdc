@@ -15,6 +15,9 @@ import kotlin.concurrent.thread
 import kotlin.math.sqrt
 import org.json.JSONObject
 import org.json.JSONArray
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 // Sherpa-ONNX imports
 import com.k2fsa.sherpa.onnx.*
@@ -59,6 +62,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     // 丢弃 stop 前已入队的遗留事件，避免污染下一次 PTT 识别会话
     @Volatile
     private var asrEpoch = 0L
+    // Flush 停止信号：stopAsr 等待 processSamples 把已在途(已读出未喂入)的
+    // 音频块喂入 stream 后再 flush，确保松开瞬间的尾部单词不被丢弃
+    @Volatile
+    private var flushSignal: CountDownLatch? = null
 
     // 统计处理音频块的计数，用于限制日志频率
     private var audioBlockCount = 0
@@ -561,20 +568,31 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 synchronized(this) {
                     val s = currentStream
                     val m = currentModel
-                    if (!isAsrStopped && isRecording && m != null && s != null) {
+                    if (isRecording && m != null && s != null) {
                         if (System.currentTimeMillis() < asrResumeTime) {
                             return@synchronized // Skip decoding to clear hardware reverb
                         }
-                        
+
                         // 使用当前配方定义的动态增益
                         val gain = activeGain
-                        val samples = FloatArray(ret) { 
-                            (buffer[it] / 32768.0f * gain).coerceIn(-1.0f, 1.0f) 
+                        val samples = FloatArray(ret) {
+                            (buffer[it] / 32768.0f * gain).coerceIn(-1.0f, 1.0f)
                         }
-                        
+
                         try {
+                            // 无条件喂入：即使已收到停止信号，仍要把本块喂入，
+                            // 让 stopAsr 的 flush 能解码到松开瞬间的尾部单词
                             s.acceptWaveform(samples, sampleRateInHz)
-                            
+
+                            // 停止信号已发出：通知 stopAsr 在途音频已喂入，不再解码发送
+                            if (isAsrStopped) {
+                                flushSignal?.let { latch ->
+                                    flushSignal = null
+                                    latch.countDown()
+                                }
+                                return@synchronized
+                            }
+
                             var decodeCount = 0
                             while (m.isReady(s)) {
                                 m.decode(s)
@@ -657,10 +675,21 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun stopAsr(): String? {
         var flushText: String? = null
+        val latch = CountDownLatch(1)
         synchronized(this) {
             Log.i(TAG, "Stopping ASR (Flush Stop)...")
             isAsrStopped = true
             asrEpoch++
+            flushSignal = latch
+        }
+        // 等待 processSamples 把已在途的音频块喂入 stream(最多 500ms)，
+        // 否则松开瞬间读出的尾部音频会被丢弃，flush 解码不到尾部单词
+        try {
+            latch.await(500, TimeUnit.MILLISECONDS)
+        } catch (e: InterruptedException) {
+            Log.e(TAG, "Interrupted while waiting for in-flight audio feed", e)
+        }
+        synchronized(this) {
             try {
                 val s = currentStream
                 val m = currentModel
@@ -706,6 +735,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             currentStream?.release()
             currentStream = null
             lastSentResult = ""
+            flushSignal = null
         }
         return flushText
     }
