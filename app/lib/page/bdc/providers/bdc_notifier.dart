@@ -2046,27 +2046,27 @@ class BdcNotifier extends _$BdcNotifier {
     // await 期间可能已重新按住(新 PTT 轮次),本轮停止不得覆盖新轮状态
     if (_pttRoundToken != roundAtStop) return;
 
-    // flush 返回的最终文本与按住期间累积文本做重叠拼接：
-    // flush 含松开瞬间未显示完的尾部单词（stitch 会拼上），
-    // 若 flush 只是累积文本的子集（如原生端点 reset 后仅含末段）则去重不变。
-    final String effective = flushText != null && flushText.isNotEmpty
-        ? stitchTexts(_accumulatedAsrText, flushText)
-        : _accumulatedAsrText;
-    final text = effective.trim();
-
-    // 直接用拼接后的最终文本更新 UI：flush 事件虽由原生同步发送，但英文例句的
-    // onAsrResult 在纠错 await 间隙可能已被置 false 的 _isPttPressed 拦截丢弃，
-    // 若只依赖事件流，松开瞬间的尾部单词不会显示。此处显式补上，保证 UI 完整。
-    if (text.isNotEmpty) {
-      _accumulatedAsrText = text;
-      _updateState(state.copyWith(currentAsrCandidates: [text]), tag: 'asr-flush');
+    // 松开瞬间原生 flush 解出的完整文本:作为 isFinal 事件交给 onAsrResult
+    // 走统一路径(纠错+拼接+UI 更新+判定),与实时事件流完全一致,避免
+    // 此处用 stitchTexts 自行拼接导致 flushText(未纠错)与累积文本(已纠错)
+    // 不一致时重叠检测失败、整句重复。
+    if (flushText != null && flushText.isNotEmpty) {
+      await onAsrResult(jsonEncode({
+        'best': flushText,
+        'candidates': [flushText],
+        'isFinal': true,
+      }));
     }
 
     _isPttPressed = false;
     _updateState(state.copyWith(isPttPressed: false), tag: 'ptt-stop');
 
-    if (text.isEmpty) return; // 没说话：静默放弃，不判定
-    await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
+    // flush 为空(原生未解出内容)但有累积文本时的兜底判定
+    if (flushText == null || flushText.isEmpty) {
+      final text = _accumulatedAsrText.trim();
+      if (text.isEmpty) return; // 没说话：静默放弃，不判定
+      await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
+    }
   }
 
   int getChineseSentenceMatchScore(String input, String target) {
