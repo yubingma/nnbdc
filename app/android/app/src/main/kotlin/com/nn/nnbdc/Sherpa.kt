@@ -130,8 +130,15 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     result.success(null)
                 }
                 "stopAsr" -> {
-                    val flushText = stopAsr()
-                    result.success(flushText)
+                    // stopAsr 内含 latch.await + flush decode 循环(最长 ~1.5s),
+                    // 必须在后台线程执行,否则会阻塞 Android 主线程,
+                    // 导致松开按钮瞬间 UI 事件滞留、识别结果显示立刻停止。
+                    thread {
+                        val flushText = stopAsr()
+                        activity.runOnUiThread {
+                            result.success(flushText)
+                        }
+                    }
                 }
                 "stopMicrophone" -> {
                     stopMicrophone()
