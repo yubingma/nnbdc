@@ -1306,9 +1306,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             color: Colors.white,
                             fontSize: 12,
                           ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(2.0),
-                            child: Icon(Icons.lock_outline_rounded, size: 16, color: Colors.orangeAccent),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2.0),
+                            child: Icon(
+                              Icons.lock_outline_rounded,
+                              size: 16,
+                              color: isDarkMode ? Colors.white38 : Colors.black26,
+                            ),
                           ),
                         ),
                       ],
