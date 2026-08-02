@@ -385,6 +385,7 @@ import StoreKit
         }
         
         isAsrStopped = false
+        lastPartialResult = ""
         
         startSpeechRecognition()
         result(nil)
@@ -396,8 +397,11 @@ import StoreKit
         print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
         isAsrStopped = true
         asrSessionId += 1
+        let flushText = lastPartialResult
         stopSpeechRecognition()
-        result(nil)
+        lastPartialResult = ""
+        print("IOS: [ASR] stopAsr completed, returning flushText: '\(flushText)'")
+        result(flushText.isEmpty ? nil : flushText)
     }
     
     private func stopMicrophone(result: @escaping FlutterResult) {
@@ -708,9 +712,9 @@ import StoreKit
                 
                 // 处理部分结果和最终结果
                 if !selectedString.isEmpty && !self.isAsrStopped {
+                    self.lastPartialResult = selectedString
                     // 如果是新的部分结果，立即发送候选结果
                     if !isFinal {
-                        self.lastPartialResult = selectedString
                         DispatchQueue.main.async { [weak self, sessionId] in
                             guard let self = self, self.asrSessionId == sessionId else { return }
                             let candidates = result.transcriptions.map { $0.formattedString }
@@ -718,7 +722,8 @@ import StoreKit
                             
                             let resultData: [String: Any] = [
                                 "best": selectedString,
-                                "candidates": candidates
+                                "candidates": candidates,
+                                "isFinal": false
                             ]
                             
                             if let jsonData = try? JSONSerialization.data(withJSONObject: resultData),
@@ -734,11 +739,12 @@ import StoreKit
                         DispatchQueue.main.async { [weak self, sessionId] in
                             guard let self = self, self.asrSessionId == sessionId else { return }
                             let candidates = result.transcriptions.map { $0.formattedString }
-                            print("IOS: [ASR] Sending final result with candidates to Flutter: '\(selectedString)'")
+                            print("IOS: [ASR] Sending final result with candidates to Flutter: '\(selectedString)' (isFinal: true)")
                             
                             let resultData: [String: Any] = [
                                 "best": selectedString,
-                                "candidates": candidates
+                                "candidates": candidates,
+                                "isFinal": true
                             ]
                             
                             if let jsonData = try? JSONSerialization.data(withJSONObject: resultData),
@@ -748,7 +754,6 @@ import StoreKit
                                 self.eventSink?(selectedString)
                             }
                         }
-                        self.lastPartialResult = ""
                     }
                 }
                 
