@@ -819,9 +819,11 @@ class BdcNotifier extends _$BdcNotifier {
   void hideAnswer() {
     if (!state.hasFinishedAnswering) return;
     _isPracticeMode = true;
+    _isAnswerCorrectHandling = false; // 重置答对锁,否则练习模式 checkAsrResult 被 L1555 拦截,评分不更新
     state = state.copyWith(
       hasFinishedAnswering: false,
-      canLeaveCurrWord: false,
+      // 练习模式允许点"下一词"离开(canLeaveCurrWord=true 使底部按钮可见)
+      canLeaveCurrWord: true,
       showSentenceTranslation: false,
       currentScore: null,
       currentAsrCandidates: [],
@@ -1612,6 +1614,7 @@ class BdcNotifier extends _$BdcNotifier {
 
         // 实时更新 currentScore，让 UI 实时显示得分！
         state = state.copyWith(currentScore: maxScore);
+        Global.logger.d('[PTT] score更新: isPracticeMode=$_isPracticeMode maxScore=$maxScore');
 
         final bool isMatch;
         // 将英文例句通过的得分阈值放宽到 60 分，增加口音与吞音容错率
@@ -2271,6 +2274,7 @@ class BdcNotifier extends _$BdcNotifier {
     final step = state.studyStep;
     final bool isSentenceStep = step == StudyStep.enSentence2Ch.json ||
         step == StudyStep.chSentence2En.json;
+    Global.logger.d('[PTT] startPttAsr: isSentenceStep=$isSentenceStep hasFinished=${state.hasFinishedAnswering} isPttPressed=$_isPttPressed isPracticeMode=$_isPracticeMode');
     if (!isSentenceStep || state.hasFinishedAnswering) return;
     if (_isPttPressed) return; // 防重复按下
 
