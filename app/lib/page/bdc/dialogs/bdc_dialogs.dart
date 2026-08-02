@@ -1203,17 +1203,6 @@ extension BdcPageStateDialogs on BdcPageState {
       context: context,
       builder: (context) {
         String finalReason = state.lastFsrsRatingReason ?? '';
-        // 巩固环节中，只有当自动评分被限制（高于测评环节评分）时才显示提示
-        if (state.currentGetWordResult != null &&
-            state.currentGetWordResult!.stepIndex > 0 &&
-            state.assessmentRating != null &&
-            state.lastFsrsRating != null &&
-            state.lastFsrsRating!.index > state.assessmentRating!.index) {
-          if (finalReason.isNotEmpty) {
-            finalReason += '\n';
-          }
-          finalReason += '⚠️ 当前处于巩固环节，自动评分上限被限制为测评结果（${state.assessmentRating!.label}）。';
-        }
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

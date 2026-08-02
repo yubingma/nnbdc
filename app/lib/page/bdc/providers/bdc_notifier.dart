@@ -1821,6 +1821,8 @@ class BdcNotifier extends _$BdcNotifier {
         }
       }
       if (capRating != null && rating.index > capRating.index) {
+        // 识别依据描述体现压制:说明实际识别更优,但因巩固环节上限被限制为测评评分
+        reason = '$reason（语音识别判定更优，但因巩固环节评分上限，压制为${capRating.label}）';
         rating = capRating;
       }
     }
