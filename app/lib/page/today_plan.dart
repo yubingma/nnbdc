@@ -24,6 +24,7 @@ import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/learning_service.dart';
+import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
@@ -624,7 +625,21 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     ),
                   ],
                 ),
-                renderGoalDropdown(),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: '高级设置',
+                      icon: Icon(
+                        Icons.tune_rounded,
+                        size: 20,
+                        color: isDarkMode ? Colors.white54 : Colors.black45,
+                      ),
+                      onPressed: () => _showAdvancedSettingsDialog(),
+                    ),
+                    renderGoalDropdown(),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1228,5 +1243,107 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   Future<void> saveStudyStep() async {
     await StudyBo().saveUserStudySteps(studySteps!);
+  }
+
+  /// 弹出"高级设置"对话框，可配置今日最少新词数量
+  void _showAdvancedSettingsDialog() {
+    // 回调上下文必须使用 read 而非 watch（watch 只能在 build 中使用）
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final isStarted = user?.todayStudyStarted == true;
+    final config = StudyConfig.fromCurrentUser();
+    final wordsPerDay = user?.effectiveWordsPerDay ?? 20;
+    int selected = config.minNewWordsPerDay.clamp(0, wordsPerDay);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+          title: const Row(
+            children: [
+              Icon(Icons.tune_rounded, size: 22),
+              SizedBox(width: 8),
+              Text('高级设置'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '今日最少新词数量',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (isStarted)
+                    Row(
+                      children: [
+                        Text(
+                          '$selected',
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.lock_outline_rounded, size: 16, color: Colors.orangeAccent),
+                      ],
+                    )
+                  else
+                    DropdownButton<int>(
+                      value: selected,
+                      isDense: true,
+                      icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
+                      dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() => selected = value);
+                      },
+                      items: [
+                        for (int v = 0; v <= wordsPerDay; v++)
+                          DropdownMenuItem(
+                            value: v,
+                            child: Text(v == 0 ? '0（不限制）' : '$v'),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: isStarted
+                  ? null
+                  : () async {
+                      config.minNewWordsPerDay = selected;
+                      await config.saveToCurrentUser();
+                      if (ctx.mounted) Navigator.of(ctx).pop();
+                      // 重新生成今日计划，使配置生效
+                      loadData(forceSupplement: true);
+                    },
+              child: const Text('保存'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

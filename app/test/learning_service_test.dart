@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/util/study_config.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -1102,6 +1103,123 @@ void main() {
       
       // 5. 核心断言：最终学习顺序必须与词书中的 seq 原始序一致，而不能由于 UUID 字母序排序而被打乱
       expect(actualWordIds, orderList, reason: '今日单词的分配顺序必须保持词书的原始排序');
+    });
+  });
+
+  group('StudyConfig - minNewWordsPerDay 序列化', () {
+    test('minNewWordsPerDay 字段 round-trip', () {
+      final config = StudyConfig(minNewWordsPerDay: 5);
+      final json = config.toJson();
+      expect(json['minNewWordsPerDay'], 5);
+      final restored = StudyConfig.fromJson(json);
+      expect(restored.minNewWordsPerDay, 5);
+    });
+
+    test('缺失字段时默认 0', () {
+      final restored = StudyConfig.fromJson({});
+      expect(restored.minNewWordsPerDay, 0);
+    });
+  });
+
+  group('LearningService - 今日最少新词数量配置', () {
+    Future<void> seedDueReviewWords(int count) async {
+      final pastDate = now.subtract(const Duration(days: 3));
+      for (int i = 1; i <= count; i++) {
+        await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'due_$i',
+          addTime: pastDate,
+          addDay: 1,
+          stability: 2.5,
+          difficulty: 5.0,
+          elapsedDays: 3,
+          scheduledDays: 1, // 到期
+          reps: 1,
+          lapses: 0,
+          state: 1,
+          lastLearningDate: pastDate,
+          isTodayNewWord: false,
+          learnedTimes: 1,
+          todayLearnedTimes: 0,
+          learningOrder: 0,
+          createTime: pastDate,
+          updateTime: pastDate,
+        ));
+      }
+    }
+
+    test('复习词充足时配置最少新词后仍保证新词数量', () async {
+      // wordsPerDay = 5，先造 8 个到期复习词（≥ wordsPerDay）
+      await seedDueReviewWords(8);
+
+      // 配置 minNewWordsPerDay = 3
+      final config = StudyConfig(minNewWordsPerDay: 3);
+      await config.saveToCurrentUser(); // 写入 user.studyConfig 并更新缓存
+
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+
+      var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      // 总词数保持 wordsPerDay = 5
+      expect(todayWords.length, 5);
+
+      int newCount = todayWords.where((w) => w.isTodayNewWord).length;
+      int reviewCount = todayWords.where((w) => !w.isTodayNewWord).length;
+      // 新词 ≥ 配置值 3
+      expect(newCount, 3);
+      // 复习词 = 5 - 3 = 2
+      expect(reviewCount, 2);
+    });
+
+    test('默认配置(0)行为不变：复习词填满时新词为 0', () async {
+      await seedDueReviewWords(8);
+      // 不配置，保持默认 0
+      final result = await LearningService.prepareTodayStudy(true);
+      expect(result.success, true);
+      var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(todayWords.length, 5);
+      int newCount = todayWords.where((w) => w.isTodayNewWord).length;
+      expect(newCount, 0); // 复习词优先填满，新词为 0（现状行为）
+    });
+
+    test('新词枯竭时尽力而为，复习词填满剩余位置', () async {
+      // 词书只有 10 个词（setUp 生成 word_1..word_10），wordsPerDay = 5
+      // 先把 7 个词占为复习词（learningWords 中 lastLearningDate != null），只剩 3 个绝对新词可抓
+      final pastDate = now.subtract(const Duration(days: 3));
+      for (int i = 1; i <= 7; i++) {
+        await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_$i', // 占用词书中的词，使其不再可被抓为新词
+          addTime: pastDate,
+          addDay: 1,
+          stability: 2.5,
+          difficulty: 5.0,
+          elapsedDays: 3,
+          scheduledDays: 1,
+          reps: 1,
+          lapses: 0,
+          state: 1,
+          lastLearningDate: pastDate,
+          isTodayNewWord: false,
+          learnedTimes: 1,
+          todayLearnedTimes: 0,
+          learningOrder: 0,
+          createTime: pastDate,
+          updateTime: pastDate,
+        ));
+      }
+
+      final config = StudyConfig(minNewWordsPerDay: 5);
+      await config.saveToCurrentUser();
+
+      await LearningService.prepareTodayStudy(true);
+      var todayWords = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      // 词书只剩 3 个新词可抓（word_8, word_9, word_10）
+      // 复习词 = 7 个到期词，但总词数上限 wordsPerDay = 5
+      expect(todayWords.length, 5);
+      int newCount = todayWords.where((w) => w.isTodayNewWord).length;
+      expect(newCount, 3); // 尽力而为：3 个新词
+      expect(todayWords.where((w) => !w.isTodayNewWord).length, 2); // 复习词填满剩余
     });
   });
 }

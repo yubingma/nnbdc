@@ -2035,11 +2035,23 @@ class BdcNotifier extends _$BdcNotifier {
     final targetWords = _extractEnglishWords(targetSentence);
     if (targetWords.isEmpty) return input;
 
+    // 激进纠错:识别词与目标词发音相似(>=60)即替换,容忍词数/切分不完全对齐
+    // (如 "the seaplane" → "discipline"、"could" → "good" 等近音误识别)
+    const int matchThreshold = 60;
+
+    // 预计算目标相邻词组合(供 input 多词匹配 target 组合)
+    final targetCombos = <String>[];
+    for (var j = 0; j + 1 < targetWords.length; j++) {
+      targetCombos.add('${targetWords[j]} ${targetWords[j + 1]}');
+    }
+
     final corrected = <String>[];
-    for (final iw in inputWords) {
+    var i = 0;
+    while (i < inputWords.length) {
+      final iw = inputWords[i];
       final iwLower = iw.toLowerCase();
 
-      // 1. 精确匹配优先（大小写不敏感）
+      // 1. 精确匹配优先(大小写不敏感)
       String? exactMatch;
       for (final tw in targetWords) {
         if (iwLower == tw.toLowerCase()) {
@@ -2049,22 +2061,49 @@ class BdcNotifier extends _$BdcNotifier {
       }
       if (exactMatch != null) {
         corrected.add(exactMatch);
+        i++;
         continue;
       }
 
       // 2. 音素相似度模糊匹配
+      // 候选:单个目标词、目标相邻两词组合、input 当前词+下一词 vs 目标词
       String bestMatch = iw;
       int bestSim = 0;
-      for (final tw in targetWords) {
-        final sim = await PhonemeUtil.similarity(iw, tw);
-        if (sim > bestSim) {
-          bestSim = sim;
-          bestMatch = tw;
+      int consumeNext = 0; // 是否合并消耗下一个 input 词
+
+      // 2a. input 单词 vs 目标单词/目标组合
+      for (var j = 0; j < targetWords.length; j++) {
+        final sim1 = await PhonemeUtil.similarity(iw, targetWords[j]);
+        if (sim1 > bestSim) {
+          bestSim = sim1;
+          bestMatch = targetWords[j];
+        }
+        if (j + 1 < targetWords.length) {
+          final combo = '${targetWords[j]} ${targetWords[j + 1]}';
+          final sim2 = await PhonemeUtil.similarity(iw, combo);
+          if (sim2 > bestSim) {
+            bestSim = sim2;
+            bestMatch = combo;
+          }
         }
       }
 
-      // 相似度 >= 75 时纠正为例句中的正确单词
-      corrected.add(bestSim >= 75 ? bestMatch : iw);
+      // 2b. input 两词组合 vs 目标单词(如 "the seaplane" → "discipline")
+      if (i + 1 < inputWords.length) {
+        final iwCombo = '$iw ${inputWords[i + 1]}';
+        for (var j = 0; j < targetWords.length; j++) {
+          final sim3 = await PhonemeUtil.similarity(iwCombo, targetWords[j]);
+          if (sim3 > bestSim) {
+            bestSim = sim3;
+            bestMatch = targetWords[j];
+            consumeNext = 1; // 合并消耗下一个 input 词
+          }
+        }
+      }
+
+      corrected.add(bestSim >= matchThreshold ? bestMatch : iw);
+      Global.logger.d('[CORRECT] "$iw" → best="$bestMatch" sim=$bestSim consumeNext=$consumeNext');
+      i += 1 + consumeNext;
     }
 
     return corrected.join(" ");

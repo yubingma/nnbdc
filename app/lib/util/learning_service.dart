@@ -9,6 +9,8 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/constants.dart';
 import 'package:nnbdc/db/user_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
+import 'package:nnbdc/util/study_config.dart';
+import 'dart:math';
 
 class LearningService {
   static void debugLog(String msg) {
@@ -140,13 +142,19 @@ class LearningService {
       }
 
       // 生成(或补充)今日要学习的单词列表
-      bool needAddNewWords = todayWords.isEmpty || (todayWords.length < (user.effectiveWordsPerDay) && addNewWordsIfNotEnough);
+      // 触发条件：今日为空 / 词数不足且允许补充 / 今日新词数不足配置的最少新词数
+      final int minNewWordsPerDay = StudyConfig.fromCurrentUser().minNewWordsPerDay;
+      int todayNewCount = todayWords.where((w) => w.isTodayNewWord).length;
+      bool needAddNewWords = todayWords.isEmpty ||
+          (todayWords.length < (user.effectiveWordsPerDay) && addNewWordsIfNotEnough) ||
+          (minNewWordsPerDay > 0 && todayNewCount < minNewWordsPerDay);
       Global.logger.d(
-          '[FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: $needAddNewWords (todayWords.isEmpty: ${todayWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough)');
+          '[FETCH-WORD] [prepareTodayStudy] 是否需要补充单词: $needAddNewWords (todayWords.isEmpty: ${todayWords.isEmpty}, addNewWordsIfNotEnough: $addNewWordsIfNotEnough, minNewWordsPerDay: $minNewWordsPerDay, todayNewCount: $todayNewCount)');
 
       bool wordExhausted = false;
       if (needAddNewWords) {
-        todayWords = await genTodayWords(user.id, AppClock.now(), todayWords);
+        todayWords = await genTodayWords(user.id, AppClock.now(), todayWords,
+            minNewWordsPerDay: minNewWordsPerDay);
         wordExhausted = todayWords.length < (user.effectiveWordsPerDay);
         
         if (wordExhausted) {
@@ -231,7 +239,9 @@ class LearningService {
   }
 
   /// 产生（或补充）今天要学习的单词列表，并把该列表更新到数据库
-  static Future<List<LearningWord>> genTodayWords(String userId, DateTime now, List<LearningWord> todayLearningWords) async {
+  /// [minNewWordsPerDay] 今日最少新词数量（配额内保证：总词数保持 wordsPerDay，新词优先到配额）
+  static Future<List<LearningWord>> genTodayWords(String userId, DateTime now, List<LearningWord> todayLearningWords,
+      {int minNewWordsPerDay = 0}) async {
     final db = MyDatabase.instance;
     final user = await db.usersDao.getUserById(userId);
     if (user == null) {
@@ -323,32 +333,96 @@ class LearningService {
     }
     int targetBatchId = maxBatchId == 0 ? 1 : maxBatchId + 1;
 
-    // 2. 将到期单词加入今日计划，直到达到用户设定的每日目标
+    // 确定 addDay 序号（提前计算，供下方多次抓新词共用）
+    LearningWord? latestWord;
+    for (var word in allLearningWords) {
+      if (latestWord == null || word.addTime.isAfter(latestWord.addTime)) {
+        latestWord = word;
+      }
+    }
+    int todayDayNumber = 1;
+    if (latestWord != null) {
+      todayDayNumber = DateUtils.isSameDay(latestWord.addTime, now) ? latestWord.addDay : latestWord.addDay + 1;
+    }
+
+    // 拆分到期词：新词（从未学过）与复习词（已建立进度）
+    final List<LearningWord> dueNewWords = dueWords.where((w) => w.lastLearningDate == null).toList();
+    final List<LearningWord> dueReviewWords = dueWords.where((w) => w.lastLearningDate != null).toList();
+
+    // 新词配额（不超过总目标）；0 表示不启用，行为与现状完全一致
+    final int newQuota = min(minNewWordsPerDay, user.effectiveWordsPerDay);
+    Global.logger.d('[FETCH-WORD] [genTodayWords] 新词配额: $newQuota (配置 $minNewWordsPerDay), 到期新词: ${dueNewWords.length}, 到期复习词: ${dueReviewWords.length}');
+
     int dueAddedCount = 0;
-    for (var word in dueWords) {
+
+    // 2a. 若今日计划中"已有词数 + 新词缺口"超过 wordsPerDay：挤出未学复习词为新词腾位
+    if (newQuota > 0) {
+      int existingNewCount = todayLearningWords.where((w) => w.isTodayNewWord).length;
+      int newDeficit = newQuota - existingNewCount;
+      if (newDeficit > 0) {
+        int neededRoom = todayLearningWords.length + newDeficit - user.effectiveWordsPerDay;
+        if (neededRoom > 0) {
+          final evictable = todayLearningWords
+              .where((w) => !w.isTodayNewWord && w.todayLearnedTimes == 0)
+              .toList();
+          int toEvict = min(neededRoom, evictable.length);
+          for (var w in evictable.take(toEvict)) {
+            await db.learningWordsDao.saveEntity(
+                w.copyWith(batchId: const Value(0), learningOrder: 0), true);
+            todayLearningWords.remove(w);
+          }
+          Global.logger.d('[FETCH-WORD] [genTodayWords] 为新词配额挤出 $toEvict 个未学复习词');
+        }
+      }
+    }
+
+    // 2b. 先填到期新词到配额（幽灵新词优先于词书绝对新词，保持现状兼容）
+    int newCountNow = todayLearningWords.where((w) => w.isTodayNewWord).length;
+    for (var word in dueNewWords) {
+      if (newCountNow >= newQuota) break;
+      if (todayLearningWords.length >= user.effectiveWordsPerDay) break;
+      todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId), learningOrder: 0));
+      newCountNow++;
+      dueAddedCount++;
+    }
+
+    // 2c. 到期新词不足配额时，从词书抓绝对新词补足
+    if (newCountNow < newQuota && todayLearningWords.length < user.effectiveWordsPerDay) {
+      int needNewCount = min(newQuota - newCountNow, user.effectiveWordsPerDay - todayLearningWords.length);
+      Global.logger.d('[FETCH-WORD] [genTodayWords] 新词配额未满，从词书抓取新词，缺额: $needNewCount');
+      final newWords = await fetchNewWordsToLearn(
+        userId,
+        todayDayNumber,
+        needNewCount,
+        excludeWordIds: todayLearningWords.map((e) => e.wordId).toSet(),
+      );
+      for (var word in newWords) {
+        todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId), learningOrder: 0));
+        newCountNow++;
+      }
+    }
+
+    // 2d. 填到期复习词填满剩余位置
+    for (var word in dueReviewWords) {
       if (todayLearningWords.length >= user.effectiveWordsPerDay) {
-        Global.logger.d('[FETCH-WORD] [genTodayWords] 到期复习词已填满计划 (${user.effectiveWordsPerDay})');
+        Global.logger.d('[FETCH-WORD] [genTodayWords] 计划已填满 (${user.effectiveWordsPerDay})');
         break;
       }
       todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId), learningOrder: 0));
       dueAddedCount++;
     }
-    Global.logger.d('[FETCH-WORD] [genTodayWords] 本批次 ($targetBatchId) 新增复习词: $dueAddedCount, 当前总数: ${todayLearningWords.length}');
+    Global.logger.d('[FETCH-WORD] [genTodayWords] 本批次 ($targetBatchId) 新增单词: $dueAddedCount, 当前总数: ${todayLearningWords.length}');
 
-    // 3. 如果依然没取够，则从词书按顺序抓取绝对的新词来补足以撑起今日计划
+    // 2e. 若依然没取够（复习词不足），先填剩余到期新词，再从词书抓绝对新词补足
     if (todayLearningWords.length < user.effectiveWordsPerDay) {
-      // 确定 addDay 序号
-      LearningWord? latestWord;
-      for (var word in allLearningWords) {
-        if (latestWord == null || word.addTime.isAfter(latestWord.addTime)) {
-          latestWord = word;
-        }
+      for (var word in dueNewWords) {
+        if (todayLearningWords.length >= user.effectiveWordsPerDay) break;
+        if (todayLearningWords.any((w) => w.wordId == word.wordId)) continue;
+        todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId), learningOrder: 0));
+        dueAddedCount++;
       }
-      int todayDayNumber = 1;
-      if (latestWord != null) {
-        todayDayNumber = DateUtils.isSameDay(latestWord.addTime, now) ? latestWord.addDay : latestWord.addDay + 1;
-      }
-
+    }
+    if (todayLearningWords.length < user.effectiveWordsPerDay) {
       int needNewCount = user.effectiveWordsPerDay - todayLearningWords.length;
       Global.logger.d('[FETCH-WORD] [genTodayWords] 计划未满，准备新抓取单词，缺额: $needNewCount');
 
@@ -363,7 +437,6 @@ class LearningService {
         todayLearningWords.add(word.copyWith(batchId: Value(targetBatchId), learningOrder: 0));
       }
     }
-
 
     return todayLearningWords;
   }

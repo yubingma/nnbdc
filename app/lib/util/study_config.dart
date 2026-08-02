@@ -16,6 +16,7 @@ class StudyConfig {
   String distractorStrategy;
   bool mixWithOthersForIos;
   Map<String, dynamic>? walkman;
+  int minNewWordsPerDay;
 
   StudyConfig({
     this.autoPlayWord = true,
@@ -30,6 +31,7 @@ class StudyConfig {
     this.distractorStrategy = 'RecentlyLearned',
     this.mixWithOthersForIos = false,
     this.walkman,
+    this.minNewWordsPerDay = 0,
   });
 
   factory StudyConfig.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,7 @@ class StudyConfig {
       distractorStrategy: json['distractorStrategy'] is String ? json['distractorStrategy'] : 'RecentlyLearned',
       mixWithOthersForIos: _toBool(json['mixWithOthersForIos'], false),
       walkman: json['walkman'] is Map<String, dynamic> ? json['walkman'] : null,
+      minNewWordsPerDay: _toInt(json['minNewWordsPerDay']),
     );
   }
 
@@ -55,6 +58,12 @@ class StudyConfig {
     if (value is int) return value != 0; 
     if (value is String) return value.toLowerCase() == 'true' || value == '1';
     return defaultValue;
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return 0;
   }
 
   static String _toAsrPassRule(dynamic value) {
@@ -81,6 +90,7 @@ class StudyConfig {
       'distractorStrategy': distractorStrategy,
       'mixWithOthersForIos': mixWithOthersForIos,
       if (walkman != null) 'walkman': walkman,
+      'minNewWordsPerDay': minNewWordsPerDay,
     };
   }
 
