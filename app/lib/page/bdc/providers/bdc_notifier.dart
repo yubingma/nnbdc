@@ -2226,25 +2226,28 @@ class BdcNotifier extends _$BdcNotifier {
     // 松开后统一用答案区完整文本直接判定:
     // 不能依赖 onAsrResult(flush),因其句子分支在 _isPttPressed=false 时会拦截丢弃。
     //
-    // flush 解出的是含尾部单词的完整文本(原生已解出松开瞬间的词尾),
-    // 而按住期间 controller 累积的文本可能缺最后一个词(实时事件滞后)。
-    // 因此优先用 flushText 补全 controller,再判定,避免尾部单词缺失。
+    // 原生 flush 解出的是干净完整的最终文本(含尾部词),而按住期间实时累积的
+    // current(controller)可能因 stitch 失败而错乱重复。因此松开时以 flush 为准,
+    // 补全/重置答案区文本后再判定,避免错乱文本与缺失尾部。
     if (flushText != null && flushText.isNotEmpty) {
-      final fullFlush = _pttAnchorPrefix + flushText.trim() + _pttAnchorSuffix;
-      if (sentenceAnswerController.text != fullFlush) {
-        sentenceAnswerController.value = sentenceAnswerController.value.copyWith(
-          text: fullFlush,
-          selection: TextSelection.collapsed(offset: fullFlush.length),
-          composing: TextRange.empty,
-        );
-      }
-      _accumulatedAsrText = flushText.trim();
-      _lastFinalAsrText = flushText.trim();
+      final currentText = sentenceAnswerController.text;
+      final flushTrim = flushText.trim();
+      // flush 是干净完整文本:直接采用(首次模式),补充模式拼接锚点。
+      final String fullFlush = (_pttAnchorPrefix.isEmpty && _pttAnchorSuffix.isEmpty)
+          ? flushTrim
+          : _pttAnchorPrefix + flushTrim + _pttAnchorSuffix;
+      sentenceAnswerController.value = sentenceAnswerController.value.copyWith(
+        text: fullFlush,
+        selection: TextSelection.collapsed(offset: fullFlush.length),
+        composing: TextRange.empty,
+      );
+      _accumulatedAsrText = flushTrim;
+      _lastFinalAsrText = flushTrim;
       _updateState(
         state.copyWith(currentAsrCandidates: [fullFlush]),
         tag: 'asr-flush',
       );
-      Global.logger.d('[PTT] 松开补全尾部: controller="${sentenceAnswerController.text}" flush="$flushText"');
+      Global.logger.d('[PTT] 松开以flush为准: current="$currentText" flush="$flushTrim" result="$fullFlush"');
     }
     final String text = sentenceAnswerController.text.trim();
     Global.logger.d('[PTT] 松开判定: wasPendingPass=$wasPendingPass text="$text"');
