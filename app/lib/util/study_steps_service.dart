@@ -29,6 +29,16 @@ class StudyStepsService {
     // 过滤掉所有不认识的未知步骤（防崩兜底）
     voSteps.removeWhere((s) => s.studyStep == 'Unknown');
 
+    // 检查并补全缺失的标准学习步骤 (如 EnSentence2Ch、ChSentence2En)
+    bool needsPersist = false;
+    final requiredSteps = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
+    for (final stepName in requiredSteps) {
+      if (!voSteps.any((s) => s.studyStep == stepName)) {
+        voSteps.add(UserStudyStepVo(stepName, voSteps.length, StudyStepState.active.json));
+        needsPersist = true;
+      }
+    }
+
     // 强制“单词列表”阶段排在最后且必须激活
     var listStepIndex = voSteps.indexWhere((s) => s.studyStep == 'List');
     UserStudyStepVo? listStep;
@@ -39,6 +49,7 @@ class StudyStepsService {
       // 单词列表(List)是内置的、必须拥有的核心步骤。如果丢失，无论是否是游客，都应在内存中予以补齐，
       // 以便答题流程正常运转，稍后若有保存操作或启动时数据健康检查，它就会被持久化及同步到云端。
       listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
+      needsPersist = true;
     }
 
     listStep.state = StudyStepState.active.json;
@@ -47,6 +58,26 @@ class StudyStepsService {
     // 重新校正所有的seq，确保有序且List排在最后
     for (var i = 0; i < voSteps.length; i++) {
       voSteps[i].seq = i;
+    }
+
+    if (needsPersist) {
+      // 补全缺失步骤时必须静默保存 (genLog: false)，严禁产生本地 db_log，防止上报服务端触发同步报错
+      try {
+        final now = AppClock.now();
+        final entities = voSteps
+            .map((vo) => UserStudyStep(
+                  userId: user.id,
+                  studyStep: vo.studyStep,
+                  seq: vo.seq,
+                  state: vo.state,
+                  createTime: now,
+                  updateTime: now,
+                ))
+            .toList();
+        await _db.userStudyStepsDao.saveUserStudySteps(entities, user.id, false);
+      } catch (e) {
+        Global.logger.w('静默补全缺失学习步骤到本地数据库失败: $e');
+      }
     }
 
     return voSteps;
@@ -71,6 +102,15 @@ class StudyStepsService {
     try {
       // 转换为VO对象以便于处理
       var voSteps = List<UserStudyStepVo>.from(steps);
+
+      // 确保标准例句步骤不会因前端保存丢失
+      final requiredSteps = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
+      for (final stepName in requiredSteps) {
+        if (!voSteps.any((s) => s.studyStep == stepName)) {
+          // 如果用户提交的设置中没有此步骤，以 Inactive 状态追加补全
+          voSteps.add(UserStudyStepVo(stepName, voSteps.length, StudyStepState.inactive.json));
+        }
+      }
 
       // 强制“单词列表”阶段排在最后且必须激活
       var listStepIndex = voSteps.indexWhere((s) => s.studyStep == 'List');

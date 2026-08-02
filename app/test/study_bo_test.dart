@@ -207,9 +207,9 @@ void main() {
       expect(wordResult.learningWord!.word.id, 'word_1');
       expect(wordResult.stepIndex, 0);
 
-      // 这时刚开始学，进度应为 [0, 10] (5个词 * 2个环节)
+      // 这时刚开始学，进度应为 [0, 25] (5个词 * 5个环节含List)
       expect(wordResult.progress![0], 0);
-      expect(wordResult.progress![1], 10);
+      expect(wordResult.progress![1], 25);
     });
 
     test('推进一个环节(gotoNext=true)：正确叠加进度并跳到 List(或下一个词)', () async {
@@ -251,9 +251,9 @@ void main() {
       // 由于 word_1 被标记已掌握，如果接下来我们再拉下一个词去展示，就会自动跳过 word_1。
       final fetchNext = await studyBo.getWord(false, false);
       
-      // 这个 fetchNext 获取到的不再是 word_1，而是 word_2！且进度因为 word_1 被视为完成，自动折合为 2 分进度(也就是 2/10 + ...)
+      // 这个 fetchNext 获取到的不再是 word_1，而是 word_2！且进度因为 word_1 被视为完成，自动折合为 4 分进度(也就是 4/20 + ...)
       expect(fetchNext.data!.learningWord!.word.id, 'word_2');
-      expect(fetchNext.data!.progress![0], greaterThanOrEqualTo(2));
+      expect(fetchNext.data!.progress![0], greaterThanOrEqualTo(4));
     });
 
     test('答错 FsrsRating.again 时：自动加入错词表', () async {
@@ -271,8 +271,8 @@ void main() {
       for (int i = 1; i <= 5; i++) {
         var lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals('word_$i'))).getSingle();
         await StudyCacheManager().saveAndSyncWordState(db, lw.copyWith(
-          todayLearnedTimes: 2, // 达到总环节数(2)
-          learnedTimes: 2,
+          todayLearnedTimes: 5, // 达到总环节数(5, 含List)
+          learnedTimes: 5,
         ));
       }
 
