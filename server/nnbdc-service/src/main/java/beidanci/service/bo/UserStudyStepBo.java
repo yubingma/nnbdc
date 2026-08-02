@@ -82,7 +82,11 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
                     UserStudyStepId id = new UserStudyStepId(userId, stepEnum);
                     UserStudyStep newStep = new UserStudyStep(id);
                     newStep.setSeq(i);
-                    newStep.setState(StudyStepState.Active);
+                    if (stepEnum == StudyStep.EnSentence2Ch || stepEnum == StudyStep.ChSentence2En) {
+                        newStep.setState(StudyStepState.Inactive);
+                    } else {
+                        newStep.setState(StudyStepState.Active);
+                    }
                     createEntity(newStep);
                 }
             }
