@@ -26,6 +26,8 @@ tools/.vscode/
 .env
 .env.local
 .env.*.local
+.venv
+venv
 *.log
 *.pyc
 
