@@ -1764,6 +1764,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                     ),
                   );
                 }
+                // 巩固阶段兜底:LearningLog 无测评记录且 assessmentRating 未恢复。
+                // 若已作答(如点击"看答案"后 lastFsrsRating=again)则显示评分,
+                // 否则显示"测评中"。
+                final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
+                final bool hasRating = state.lastFsrsRating != null;
                 return Container(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: FittedBox(
@@ -1772,13 +1777,29 @@ extension BdcPageStateUIComponents on BdcPageState {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          '[巩固] 今日测评: 测评中',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: textColor,
-                          ),
-                        ),
+                        // 有评分时才可点击弹"修改今日评分"对话框;测评中不可点击
+                        hasRating
+                            ? InkWell(
+                                onTap: _showRatingModifyDialog,
+                                borderRadius: BorderRadius.circular(4),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 2),
+                                  child: Text(
+                                    '[巩固] 今日测评: $fallbackLabel',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: hasRating
+                                          ? AppTheme.primaryColor
+                                          : textColor,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                '[巩固] 今日测评: 测评中',
+                                style: TextStyle(fontSize: 11, color: textColor),
+                              ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text('|',
@@ -1905,6 +1926,11 @@ extension BdcPageStateUIComponents on BdcPageState {
         );
       }
 
+      // 兜底:测评环节(stepIndex 0)或未答完时。
+      // 若已有评分(如点击"看答案"后 lastFsrsRating=again)则显示评分,
+      // 否则显示"测评中"。
+      final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
+      final bool hasRating = state.lastFsrsRating != null;
       return Container(
         padding: const EdgeInsets.only(bottom: 8),
         child: FittedBox(
@@ -1913,13 +1939,27 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '[测评] 今日测评: 测评中',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: textColor,
-                ),
-              ),
+              // 有评分时才可点击弹"修改今日评分"对话框;测评中不可点击
+              hasRating
+                  ? InkWell(
+                      onTap: _showRatingModifyDialog,
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Text(
+                          '[测评] 今日测评: $fallbackLabel',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: hasRating ? AppTheme.primaryColor : textColor,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Text(
+                      '[测评] 今日测评: 测评中',
+                      style: TextStyle(fontSize: 11, color: textColor),
+                    ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text('|',
