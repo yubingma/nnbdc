@@ -2094,7 +2094,7 @@ class BdcNotifier extends _$BdcNotifier {
         }
         if (mergedSim >= matchThreshold) {
           corrected.add(merged);
-          Global.logger.d('[CORRECT] 功能词合并 "$iw"+${mergedConsume} → "$merged" sim=$mergedSim');
+          Global.logger.d('[CORRECT] 功能词合并 "$iw"+$mergedConsume → "$merged" sim=$mergedSim');
           i += 1 + mergedConsume;
           continue;
         }
