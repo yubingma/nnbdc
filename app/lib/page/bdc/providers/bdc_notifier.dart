@@ -2312,12 +2312,25 @@ class BdcNotifier extends _$BdcNotifier {
           flushTrim = correctedFlush;
         }
       }
-      // flush 是干净完整文本:直接采用(首次模式),补充模式拼接锚点。
-      // 锚点与增量之间用空格分隔,避免多轮识别结果黏连
-      // (如 "Good teaspoon" + "Good this plan" → 中间加空格)。
+      // 松开时合并 current(按住期间实时累积)与 flush(原生收尾):
+      // - flush 可能只是端点 reset 后的末段(如 "for success in any organization"),
+      //   而 current 是完整文本 —— 此时应保留 current,避免截断;
+      // - flush 更完整(补尾部词)时用 flush;
+      // - current 异常错乱(远超 flush 且不重叠)时用 flush 兜底。
       final String fullFlush;
       if (_pttAnchorPrefix.isEmpty && _pttAnchorSuffix.isEmpty) {
-        fullFlush = flushTrim;
+        final currentNorm = currentText.trim();
+        if (currentNorm.isNotEmpty &&
+            (currentNorm.contains(flushTrim) || flushTrim.contains(currentNorm))) {
+          // 一方包含另一方:取更完整者(按长度)
+          fullFlush = flushTrim.length >= currentNorm.length ? flushTrim : currentNorm;
+        } else if (currentNorm.length > flushTrim.length * 2 && !flushTrim.contains(currentNorm)) {
+          // current 异常长且与 flush 不重叠:视为错乱,用 flush
+          Global.logger.d('[PTT] current 疑似错乱,改用 flush');
+          fullFlush = flushTrim;
+        } else {
+          fullFlush = currentNorm.isEmpty ? flushTrim : currentNorm;
+        }
       } else {
         final prefix = _pttAnchorPrefix.isEmpty
             ? ''
@@ -2332,13 +2345,13 @@ class BdcNotifier extends _$BdcNotifier {
         selection: TextSelection.collapsed(offset: fullFlush.length),
         composing: TextRange.empty,
       );
-      _accumulatedAsrText = flushTrim;
-      _lastFinalAsrText = flushTrim;
+      _accumulatedAsrText = fullFlush;
+      _lastFinalAsrText = fullFlush;
       _updateState(
         state.copyWith(currentAsrCandidates: [fullFlush]),
         tag: 'asr-flush',
       );
-      Global.logger.d('[PTT] 松开以flush为准: current="$currentText" flush="$flushTrim" result="$fullFlush"');
+      Global.logger.d('[PTT] 松开合并: current="$currentText" flush="$flushTrim" result="$fullFlush"');
     }
     final String text = sentenceAnswerController.text.trim();
     Global.logger.d('[PTT] 松开判定: wasPendingPass=$wasPendingPass text="$text"');
