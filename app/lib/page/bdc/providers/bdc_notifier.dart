@@ -2035,20 +2035,19 @@ class BdcNotifier extends _$BdcNotifier {
     final targetWords = _extractEnglishWords(targetSentence);
     if (targetWords.isEmpty) return input;
 
-    // 激进纠错:识别词与目标词发音相似(>=60)即替换,容忍词数/切分不完全对齐
-    // (如 "the seaplane" → "discipline"、"could" → "good" 等近音误识别)
+    // 发音相似度纠错:识别词与目标词音素相似(>=60)且长度相近(差<=2)时替换为目标词。
+    // 目标:纠正实词近音误识别(如 "teaspring" → "discipline" sim=77)。
+    // 常见功能词不参与纠错(避免 "this"→"is"、"to"→"for" 等误改)。
     const int matchThreshold = 60;
-
-    // 预计算目标相邻词组合(供 input 多词匹配 target 组合)
-    final targetCombos = <String>[];
-    for (var j = 0; j + 1 < targetWords.length; j++) {
-      targetCombos.add('${targetWords[j]} ${targetWords[j + 1]}');
-    }
+    const int maxLenDiff = 2;
+    const Set<String> functionWords = {
+      'a', 'an', 'the', 'is', 'are', 'was', 'were', 'to', 'for', 'of', 'at',
+      'in', 'on', 'this', 'that', 'these', 'those', 'his', 'her', 'it', 'its',
+      'and', 'or', 'but', 'with', 'as', 'by', 'from', 'up', 'out', 'do', 'does',
+    };
 
     final corrected = <String>[];
-    var i = 0;
-    while (i < inputWords.length) {
-      final iw = inputWords[i];
+    for (final iw in inputWords) {
       final iwLower = iw.toLowerCase();
 
       // 1. 精确匹配优先(大小写不敏感)
@@ -2061,49 +2060,30 @@ class BdcNotifier extends _$BdcNotifier {
       }
       if (exactMatch != null) {
         corrected.add(exactMatch);
-        i++;
         continue;
       }
 
-      // 2. 音素相似度模糊匹配
-      // 候选:单个目标词、目标相邻两词组合、input 当前词+下一词 vs 目标词
+      // 功能词不做近音纠错(除非目标里也恰好有它且完全匹配——上面已处理)
+      if (functionWords.contains(iwLower)) {
+        corrected.add(iw);
+        continue;
+      }
+
+      // 2. 音素相似度模糊匹配:与单个目标词比较,取最高(长度相近才考虑)
       String bestMatch = iw;
       int bestSim = 0;
-      int consumeNext = 0; // 是否合并消耗下一个 input 词
-
-      // 2a. input 单词 vs 目标单词/目标组合
       for (var j = 0; j < targetWords.length; j++) {
+        if (functionWords.contains(targetWords[j].toLowerCase())) continue; // 目标功能词不作为纠错目标
+        if ((iw.length - targetWords[j].length).abs() > maxLenDiff) continue; // 长度差过大跳过
         final sim1 = await PhonemeUtil.similarity(iw, targetWords[j]);
         if (sim1 > bestSim) {
           bestSim = sim1;
           bestMatch = targetWords[j];
         }
-        if (j + 1 < targetWords.length) {
-          final combo = '${targetWords[j]} ${targetWords[j + 1]}';
-          final sim2 = await PhonemeUtil.similarity(iw, combo);
-          if (sim2 > bestSim) {
-            bestSim = sim2;
-            bestMatch = combo;
-          }
-        }
-      }
-
-      // 2b. input 两词组合 vs 目标单词(如 "the seaplane" → "discipline")
-      if (i + 1 < inputWords.length) {
-        final iwCombo = '$iw ${inputWords[i + 1]}';
-        for (var j = 0; j < targetWords.length; j++) {
-          final sim3 = await PhonemeUtil.similarity(iwCombo, targetWords[j]);
-          if (sim3 > bestSim) {
-            bestSim = sim3;
-            bestMatch = targetWords[j];
-            consumeNext = 1; // 合并消耗下一个 input 词
-          }
-        }
       }
 
       corrected.add(bestSim >= matchThreshold ? bestMatch : iw);
-      Global.logger.d('[CORRECT] "$iw" → best="$bestMatch" sim=$bestSim consumeNext=$consumeNext');
-      i += 1 + consumeNext;
+      Global.logger.d('[CORRECT] "$iw" → best="$bestMatch" sim=$bestSim');
     }
 
     return corrected.join(" ");
@@ -2270,11 +2250,35 @@ class BdcNotifier extends _$BdcNotifier {
     // 补全/重置答案区文本后再判定,避免错乱文本与缺失尾部。
     if (flushText != null && flushText.isNotEmpty) {
       final currentText = sentenceAnswerController.text;
-      final flushTrim = flushText.trim();
+      var flushTrim = flushText.trim();
+      // 英文例句(chSentence2En):对 flush 最终文本做发音相似度纠错,
+      // 与实时事件一致(如 "displain" → "discipline"),否则松开以 flush 为准
+      // 会绕过纠错,识别错误无法修正。
+      if (state.studyStep == StudyStep.chSentence2En.json) {
+        final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+            ? state.word!.sentences!.first
+            : null;
+        if (sentence?.english != null && sentence!.english!.isNotEmpty) {
+          final correctedFlush = await _phoneticAutoCorrectSentence(flushTrim, sentence.english!);
+          Global.logger.d('[PTT] flush纠错: "$flushTrim" → "$correctedFlush"');
+          flushTrim = correctedFlush;
+        }
+      }
       // flush 是干净完整文本:直接采用(首次模式),补充模式拼接锚点。
-      final String fullFlush = (_pttAnchorPrefix.isEmpty && _pttAnchorSuffix.isEmpty)
-          ? flushTrim
-          : _pttAnchorPrefix + flushTrim + _pttAnchorSuffix;
+      // 锚点与增量之间用空格分隔,避免多轮识别结果黏连
+      // (如 "Good teaspoon" + "Good this plan" → 中间加空格)。
+      final String fullFlush;
+      if (_pttAnchorPrefix.isEmpty && _pttAnchorSuffix.isEmpty) {
+        fullFlush = flushTrim;
+      } else {
+        final prefix = _pttAnchorPrefix.isEmpty
+            ? ''
+            : (_pttAnchorPrefix.endsWith(' ') ? _pttAnchorPrefix : '$_pttAnchorPrefix ');
+        final suffix = _pttAnchorSuffix.isEmpty
+            ? ''
+            : (_pttAnchorSuffix.startsWith(' ') ? _pttAnchorSuffix : ' $_pttAnchorSuffix');
+        fullFlush = prefix + flushTrim + suffix;
+      }
       sentenceAnswerController.value = sentenceAnswerController.value.copyWith(
         text: fullFlush,
         selection: TextSelection.collapsed(offset: fullFlush.length),

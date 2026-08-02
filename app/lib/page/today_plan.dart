@@ -589,7 +589,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         if (user?.todayStudyStarted == true) ...[
                           const SizedBox(width: 4),
                           Tooltip(
-                            message: '一旦开始今日的学习，目标单词数将会被锁定，不可修改。',
+                            message: '已开始今日学习，单词数已锁定。',
                             triggerMode: TooltipTriggerMode.tap,
                             preferBelow: true,
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

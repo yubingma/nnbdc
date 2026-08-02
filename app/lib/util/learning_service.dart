@@ -374,6 +374,17 @@ class LearningService {
           Global.logger.d('[FETCH-WORD] [genTodayWords] 为新词配额挤出 $toEvict 个未学复习词');
         }
       }
+
+      // 2a-2. 将今日计划中保留的"未学"复习词统一归入最新批次（targetBatchId），
+      // 使新词与复习词处于同一批次内，由 updateTodayLearningWords 按 stability 升序重排时，
+      // 新词（stability=0.0）自然排在复习词（stability>0）前面，保证学习顺序新词优先。
+      // 注意：只移动今日尚未开始学习的词（todayLearnedTimes == 0），不干扰已学词的进度定位。
+      for (int i = 0; i < todayLearningWords.length; i++) {
+        final w = todayLearningWords[i];
+        if (w.todayLearnedTimes == 0 && (w.batchId ?? 0) != targetBatchId) {
+          todayLearningWords[i] = w.copyWith(batchId: Value(targetBatchId), learningOrder: 0);
+        }
+      }
     }
 
     // 2b. 先填到期新词到配额（幽灵新词优先于词书绝对新词，保持现状兼容）

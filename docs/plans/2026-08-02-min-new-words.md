@@ -502,3 +502,11 @@ Expected: No issues found
 - 2c/2e 中的 `fetchNewWordsToLearn` 需共用提前计算的 `todayDayNumber`
 - 2e 遍历幽灵新词时用 `todayLearningWords.any((w) => w.wordId == word.wordId)` 去重，防止与 2b 已添加的重复
 - `wordExhausted` 判断（`todayWords.length < effectiveWordsPerDay`）保持不变
+
+### 执行中发现并修复的问题
+
+**P2（重要）— 补充场景下新词可能排在复习词后面**：用户提出"新词是否保证在复习词前面"。测试验证发现：同一天调整配置触发补充时，2a 挤出的复习词归零，但**保留的未学复习词仍在旧批次（batchId=1）**，新词进入新批次（batchId=2）；`updateTodayLearningWords` 按 **batchId 升序优先** 排序，导致旧批次复习词排在新词前面（实际顺序：due_4(复), due_5(复), word_1(新)...）。
+
+**修复**：genTodayWords 2a 后新增 2a-2 步骤——将今日计划中保留的"未学"复习词（`todayLearnedTimes == 0`）统一归入最新批次（targetBatchId）并重置 learningOrder=0，使新词与复习词处于同一批次，由 updateTodayLearningWords 按 stability 升序重排时新词（stability=0.0）自然排在复习词（stability>0）前面。已学词（todayLearnedTimes > 0）不受影响（不移动批次，保护进度定位）。
+
+**新增测试**：`补充场景：调整最少新词配置后，新词应排在复习词前面（学习顺序）`

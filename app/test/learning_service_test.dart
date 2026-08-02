@@ -1221,5 +1221,29 @@ void main() {
       expect(newCount, 3); // 尽力而为：3 个新词
       expect(todayWords.where((w) => !w.isTodayNewWord).length, 2); // 复习词填满剩余
     });
+
+    test('补充场景：调整最少新词配置后，新词应排在复习词前面（学习顺序）', () async {
+      // 首次：minNewWords=0，5 个到期复习词填满计划（全部为复习词）
+      await seedDueReviewWords(8);
+      final result1 = await LearningService.prepareTodayStudy(true);
+      expect(result1.success, true);
+      var words1 = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(words1.length, 5);
+      expect(words1.every((w) => !w.isTodayNewWord), true, reason: '首次无配置时全是复习词');
+
+      // 同一天调整配置：minNewWords=3（不跨天，lastLearningDate 已是今天）
+      final config = StudyConfig(minNewWordsPerDay: 3);
+      await config.saveToCurrentUser();
+      final result2 = await LearningService.prepareTodayStudy(true);
+      expect(result2.success, true);
+      var words2 = await LearningService.getTodayLearningWordsFromDb(testUser.id);
+      expect(words2.length, 5);
+
+      // 学习顺序：新词应排在复习词前面
+      int firstNewIndex = words2.indexWhere((w) => w.isTodayNewWord);
+      int firstReviewIndex = words2.indexWhere((w) => !w.isTodayNewWord);
+      expect(firstNewIndex, lessThan(firstReviewIndex),
+          reason: '新词应排在复习词前面，实际顺序: ${words2.map((w) => '${w.wordId}(${w.isTodayNewWord ? "新" : "复"})').join(", ")}');
+    });
   });
 }
