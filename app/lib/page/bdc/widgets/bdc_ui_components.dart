@@ -1542,12 +1542,11 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-  /// 例句环节可编辑答案输入框：识别结果写入其中，支持光标插入/手动编辑。
-  /// PTT 按住期间只读(避免键盘干扰说话)；答完后只读。
+  /// 例句环节可编辑答案输入框：识别结果写入其中，支持光标定位与语音插入补充。
+  /// 不弹系统输入法(readOnly + showCursor)：点击仅显示光标位置作为语音插入点，
   /// 编辑区固定在可视高度内占满答案区，内容多时可内部滚动。
   Widget _buildSentenceAnswerArea() {
     final isDarkMode = _cachedIsDarkMode;
-    final bool readOnly = state.isPttPressed || state.hasFinishedAnswering;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1557,7 +1556,10 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: TextField(
             controller: notifier.sentenceAnswerController,
             focusNode: _sentenceAnswerFocusNode,
-            readOnly: readOnly,
+            // readOnly:不弹系统输入法,点击仅聚焦以显示光标位置(语音插入点)。
+            // 光标位置由 onAsrResult 读取,用于 PTT 补充说话时定位插入点。
+            readOnly: true,
+            showCursor: true,
             enabled: !state.hasFinishedAnswering,
             style: TextStyle(
               fontSize: 14,
@@ -1567,7 +1569,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             expands: true,
             textAlignVertical: TextAlignVertical.top,
             decoration: InputDecoration(
-              hintText: '识别结果将显示在这里，可点击编辑',
+              hintText: '识别结果将显示在这里，可点击定位光标',
               hintStyle: TextStyle(
                 fontSize: 13,
                 color: isDarkMode ? Colors.white24 : Colors.black26,
@@ -1627,40 +1629,6 @@ extension BdcPageStateUIComponents on BdcPageState {
             ),
           ),
         ],
-        Consumer(
-          builder: (context, ref, _) {
-            final feedback = ref.watch(bdcNotifierProvider.select((s) => s.aiRefereeFeedback));
-            if (feedback == null) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.gavel_rounded, color: Colors.orange.shade600, size: 14),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        feedback,
-                        style: TextStyle(
-                          color: Colors.orange.shade700,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
       ],
     );
   }

@@ -56,9 +56,6 @@ class BdcState extends Equatable {
   final int? assessmentScheduledDays;
   final String? englishDigestOfFirstSentence;
 
-  /// AI裁判判定失败时的反馈文字（为空则隐藏），显示在识别文本下方
-  final String? aiRefereeFeedback;
-
   final Map<String, bool> playingStates;
   final int hintTapCount;
   final bool isWordMastered;
@@ -121,7 +118,6 @@ class BdcState extends Equatable {
     this.assessmentRating,
     this.assessmentScheduledDays,
     this.englishDigestOfFirstSentence,
-    this.aiRefereeFeedback,
     this.playingStates = const {'word': false, 'sentence': false},
     this.hintTapCount = 0,
     this.isWordMastered = false,
@@ -186,7 +182,6 @@ class BdcState extends Equatable {
     Object? assessmentRating = _sentinel,
     Object? assessmentScheduledDays = _sentinel,
     Object? englishDigestOfFirstSentence = _sentinel,
-    Object? aiRefereeFeedback = _sentinel,
     Map<String, bool>? playingStates,
     int? hintTapCount,
     bool? isWordMastered,
@@ -243,7 +238,6 @@ class BdcState extends Equatable {
       assessmentRating: assessmentRating == _sentinel ? this.assessmentRating : (assessmentRating as FsrsRating?),
       assessmentScheduledDays: assessmentScheduledDays == _sentinel ? this.assessmentScheduledDays : (assessmentScheduledDays as int?),
       englishDigestOfFirstSentence: englishDigestOfFirstSentence == _sentinel ? this.englishDigestOfFirstSentence : (englishDigestOfFirstSentence as String?),
-      aiRefereeFeedback: aiRefereeFeedback == _sentinel ? this.aiRefereeFeedback : (aiRefereeFeedback as String?),
       playingStates: playingStates ?? this.playingStates,
       hintTapCount: hintTapCount ?? this.hintTapCount,
       isWordMastered: isWordMastered ?? this.isWordMastered,
@@ -303,7 +297,6 @@ class BdcState extends Equatable {
     assessmentRating,
     assessmentScheduledDays,
     englishDigestOfFirstSentence,
-    aiRefereeFeedback,
     playingStates,
     hintTapCount,
     isWordMastered,

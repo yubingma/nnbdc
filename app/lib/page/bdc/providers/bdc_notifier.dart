@@ -99,21 +99,10 @@ class BdcNotifier extends _$BdcNotifier {
     asr.addStateListener(_onAsrStateChanged);
     
     meaningController.addListener(() {
-      if (_pttSuppressAutoCheck) return; // PTT 按住期间抑制自动判定
       _checkAsrDebounceTimer?.cancel();
       _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
         checkAsrResult();
       });
-    });
-    // 例句答案区手动编辑(PTT 未按住时)的自动判定监听
-    sentenceAnswerController.addListener(() {
-      if (_pttSuppressAutoCheck) return;
-      if (!_isPttPressed && _isSentenceStepActive()) {
-        _checkAsrDebounceTimer?.cancel();
-        _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
-          checkAsrResult(asrInput: sentenceAnswerController.text, isVoice: false, isFinal: true);
-        });
-      }
     });
 
     ref.onDispose(() {
@@ -158,10 +147,6 @@ class BdcNotifier extends _$BdcNotifier {
   /// 本轮识别增量插入锚点之间，松开后拼成完整答案。
   String _pttAnchorPrefix = "";
   String _pttAnchorSuffix = "";
-
-  /// PTT 按住期间抑制 meaningController/sentenceAnswerController 的
-  /// 自动防抖判定(150ms)，避免识别文本写入时误触发判定；松开后由 stopPttAsr 统一判定
-  bool _pttSuppressAutoCheck = false;
 
   void _onAsrStateChanged(AsrState asrState) {
     Future.microtask(() {
@@ -617,7 +602,6 @@ class BdcNotifier extends _$BdcNotifier {
       showSentenceTranslation: false,
       currentScore: null,
       englishDigestOfFirstSentence: null,
-      aiRefereeFeedback: null,
       wordStartTime: AppClock.now(),
       fsrsItem: null,
       lastFsrsRating: null,
@@ -2089,7 +2073,6 @@ class BdcNotifier extends _$BdcNotifier {
         : curText.length; // 无光标/选区时默认追加到末尾
     _pttAnchorPrefix = curText.substring(0, caret);
     _pttAnchorSuffix = curText.substring(caret);
-    _pttSuppressAutoCheck = true; // 按住期间抑制自动判定
     // 按住即开始全新一轮识别：重置本轮增量累积文本，松开时以"锚点+增量+锚点后"判定
     _accumulatedAsrText = "";
     _lastFinalAsrText = "";
@@ -2125,8 +2108,6 @@ class BdcNotifier extends _$BdcNotifier {
       }));
     }
 
-    // 解除抑制:松开后可正常自动判定(手动编辑 150ms 防抖)
-    _pttSuppressAutoCheck = false;
     _isPttPressed = false;
     _updateState(state.copyWith(isPttPressed: false), tag: 'ptt-stop');
 
@@ -2572,8 +2553,11 @@ class BdcNotifier extends _$BdcNotifier {
         final isCorrect = parsed['isCorrect'] as bool? ?? false;
         final explanation = parsed['explanation'] as String? ?? '';
 
+        if (!context.mounted) return; // async 间隙后确保 context 仍有效
+
         if (isCorrect) {
-          ToastUtil.success("AI 裁判判定：通过！");
+          // 判定通过:对话框告知结果,关闭后进入答对流程
+          await showAiRefereeDialog(context, isCorrect: true, explanation: '');
           _isAnswerCorrectHandling = true;
           if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
             await StudyAudioSessionController.instance.syncHardwareIntent(
@@ -2587,18 +2571,9 @@ class BdcNotifier extends _$BdcNotifier {
           final ratingResult = _calculateRating("AI裁判", customResponseTime: userResponseTime);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         } else {
-          // 直接在页面上 inline 显示反馈 + 自动重启 ASR
-          state = state.copyWith(aiRefereeFeedback: explanation);
-          // 延迟重启 ASR，让用户先看到反馈
-          Future.delayed(const Duration(milliseconds: 200), () {
-            if (!_isDisposed) _handleTabChangeForAsr();
-          });
-          // 5 秒后自动清除反馈
-          Future.delayed(const Duration(seconds: 5), () {
-            if (!_isDisposed && state.aiRefereeFeedback == explanation) {
-              state = state.copyWith(aiRefereeFeedback: null);
-            }
-          });
+          // 判定失败:对话框显示解释,关闭后自动重启 ASR 让用户重试
+          await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
+          if (!_isDisposed) _handleTabChangeForAsr();
         }
       } else {
         ToastUtil.error(result.msg ?? "调用 AI 裁判失败");
@@ -2610,6 +2585,42 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+  /// 以对话框形式展示 AI 裁判结果(通过/失败),避免反馈气泡被滚动区顶出可视范围。
+  Future<void> showAiRefereeDialog(
+    BuildContext context, {
+    required bool isCorrect,
+    required String explanation,
+  }) async {
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              isCorrect ? Icons.check_circle : Icons.gavel_rounded,
+              color: isCorrect ? Colors.green : Colors.orange,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            const Text('AI 裁判'),
+          ],
+        ),
+        content: Text(
+          isCorrect ? '判定通过！回答正确。' : explanation,
+          style: const TextStyle(fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
 
 }
 
