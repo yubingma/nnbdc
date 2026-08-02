@@ -2225,8 +2225,29 @@ class BdcNotifier extends _$BdcNotifier {
 
     // 松开后统一用答案区完整文本直接判定:
     // 不能依赖 onAsrResult(flush),因其句子分支在 _isPttPressed=false 时会拦截丢弃。
+    //
+    // flush 解出的是含尾部单词的完整文本(原生已解出松开瞬间的词尾),
+    // 而按住期间 controller 累积的文本可能缺最后一个词(实时事件滞后)。
+    // 因此优先用 flushText 补全 controller,再判定,避免尾部单词缺失。
+    if (flushText != null && flushText.isNotEmpty) {
+      final fullFlush = _pttAnchorPrefix + flushText.trim() + _pttAnchorSuffix;
+      if (sentenceAnswerController.text != fullFlush) {
+        sentenceAnswerController.value = sentenceAnswerController.value.copyWith(
+          text: fullFlush,
+          selection: TextSelection.collapsed(offset: fullFlush.length),
+          composing: TextRange.empty,
+        );
+      }
+      _accumulatedAsrText = flushText.trim();
+      _lastFinalAsrText = flushText.trim();
+      _updateState(
+        state.copyWith(currentAsrCandidates: [fullFlush]),
+        tag: 'asr-flush',
+      );
+      Global.logger.d('[PTT] 松开补全尾部: controller="${sentenceAnswerController.text}" flush="$flushText"');
+    }
     final String text = sentenceAnswerController.text.trim();
-    Global.logger.d('[PTT] 松开判定: wasPendingPass=$wasPendingPass text="$text" flushText="${flushText ?? ''}"');
+    Global.logger.d('[PTT] 松开判定: wasPendingPass=$wasPendingPass text="$text"');
     if (text.isNotEmpty) {
       await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
     }
