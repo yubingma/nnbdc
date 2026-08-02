@@ -2074,12 +2074,17 @@ class BdcNotifier extends _$BdcNotifier {
       // 功能词不做近音纠错,但可能是误切碎片(如 "this plan" → "discipline"):
       // 先尝试与后续词合并匹配目标词,仅当合并也不达标时才保留原功能词。
       if (functionWords.contains(iwLower)) {
-        // 尝试与后续 1-2 词合并匹配目标词
+        // 尝试与后续 1-2 词合并匹配目标词。
+        // 约束1:窗口不跨功能词(避免 "this plan is" 把 "is" 也吞进合并);
+        // 约束2:合并相似度需 >= 70(高于普通阈值,防 "this plan is"→"any" 误判)。
         String merged = iw;
         int mergedSim = 0;
         int mergedConsume = 0;
         for (var win = 2; win <= 3 && i + win <= inputWords.length; win++) {
-          final windowText = inputWords.sublist(i, i + win).join(" ");
+          final winWords = inputWords.sublist(i, i + win);
+          // 窗口内除当前功能词外,若还有功能词则停止扩展
+          if (winWords.skip(1).any((w) => functionWords.contains(w.toLowerCase()))) break;
+          final windowText = winWords.join(" ");
           for (var j = 0; j < targetWords.length; j++) {
             final tw = targetWords[j];
             if (functionWords.contains(tw.toLowerCase())) continue;
@@ -2092,7 +2097,7 @@ class BdcNotifier extends _$BdcNotifier {
             }
           }
         }
-        if (mergedSim >= matchThreshold) {
+        if (mergedSim >= 70) {
           corrected.add(merged);
           Global.logger.d('[CORRECT] 功能词合并 "$iw"+$mergedConsume → "$merged" sim=$mergedSim');
           i += 1 + mergedConsume;
@@ -2103,25 +2108,40 @@ class BdcNotifier extends _$BdcNotifier {
         continue;
       }
 
-      // 2. 滑动窗口音素匹配:尝试 1/2/3 词片段 vs 目标词,取最高
+      // 2. 滑动窗口音素匹配:先算单词匹配(win=1),再算多词合并(win=2/3)。
+      //    仅当多词合并相似度显著高于单词匹配(+15)时才合并,避免吞掉能独立
+      //    匹配的词(如 "gurty seaplane" → "gurty"≈good + "seaplane"≈discipline,
+      //    不应把 "gurty sea" 误合并成 discipline 而丢掉 good)。
       String bestMatch = iw;
       int bestSim = 0;
       int consumeNext = 0; // 合并消耗的额外词数
-      for (var win = 1; win <= 3 && i + win <= inputWords.length; win++) {
-        // 窗口片段(最多3词)
-        final windowText = inputWords.sublist(i, i + win).join(" ");
-        // 窗口内若有功能词且 win>1,跳过(避免 "the plain" 误合并)
-        if (win > 1) {
-          final winWords = inputWords.sublist(i, i + win);
-          final hasFunc = winWords.any((w) => functionWords.contains(w.toLowerCase()));
-          if (hasFunc) continue;
+
+      // 2a. 单词匹配(win=1)
+      for (var j = 0; j < targetWords.length; j++) {
+        final tw = targetWords[j];
+        if (functionWords.contains(tw.toLowerCase())) continue;
+        if ((iw.length - tw.length).abs() > maxLenDiff) continue;
+        final sim = await PhonemeUtil.similarity(iw, tw);
+        if (sim > bestSim) {
+          bestSim = sim;
+          bestMatch = tw;
         }
+      }
+      final int singleBestSim = bestSim;
+
+      // 2b. 多词合并(win=2/3),仅当明显优于单词匹配
+      for (var win = 2; win <= 3 && i + win <= inputWords.length; win++) {
+        final windowText = inputWords.sublist(i, i + win).join(" ");
+        final winWords = inputWords.sublist(i, i + win);
+        // 窗口内含功能词则跳过(避免 "the plain" 误合并)
+        if (winWords.any((w) => functionWords.contains(w.toLowerCase()))) continue;
         for (var j = 0; j < targetWords.length; j++) {
           final tw = targetWords[j];
-          if (functionWords.contains(tw.toLowerCase())) continue; // 目标功能词不作为纠错目标
+          if (functionWords.contains(tw.toLowerCase())) continue;
           if ((windowText.length - tw.length).abs() > maxLenDiff * win) continue;
           final sim = await PhonemeUtil.similarity(windowText, tw);
-          if (sim > bestSim) {
+          // 仅当合并相似度比单词匹配高至少 15 分才采用(防误合并)
+          if (sim > bestSim && sim >= singleBestSim + 15) {
             bestSim = sim;
             bestMatch = tw;
             consumeNext = win - 1;

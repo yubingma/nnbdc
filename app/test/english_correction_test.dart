@@ -317,4 +317,24 @@ void main() {
     final result = await simulateAsrCorrection(notifier, mockAsr, 'good this plan');
     expect(result, 'good discipline');
   });
+
+  test('用例2: 目标 good discipline, ASR 结果 gurty seaplane → 纠正为 good discipline(不吞 good)', () async {
+    final (notifier, mockAsr) = await setupSentence2En(
+      'Good discipline is essential for success in any organization.',
+      '良好的纪律对任何组织的成功都至关重要。',
+    );
+    final result = await simulateAsrCorrection(notifier, mockAsr, 'gurty seaplane');
+    expect(result, 'good discipline',
+        reason: 'gurty≈good 与 seaplane≈discipline 应分别匹配,不得把 gurty sea 误合并吞掉 good');
+  });
+
+  test('用例3: 目标 good discipline is essential, ASR 结果 could this plan is essential → 纠正为 good discipline is essential(中间词不丢)', () async {
+    final (notifier, mockAsr) = await setupSentence2En(
+      'Good discipline is essential for success in any organization.',
+      '良好的纪律对任何组织的成功都至关重要。',
+    );
+    final result = await simulateAsrCorrection(notifier, mockAsr, 'could this plan is essential');
+    expect(result, 'good discipline is essential',
+        reason: 'this plan 应合并为 discipline,"is essential" 应保留,中间词不得丢失');
+  });
 }
