@@ -108,11 +108,13 @@ void main() {
     // 验证2: List步骤排在最末位
     expect(steps.last.studyStep, equals('List'));
 
-    // 验证3: 持久化库中也有这5个步骤
+    // 验证3: 持久化库中也有这5个步骤，且两个例句新模式默认未选中 (Inactive)
     final dbSteps = await db.userStudyStepsDao.getUserStudySteps(testUser.id);
     expect(dbSteps.length, equals(5));
-    expect(dbSteps.any((s) => s.studyStep == 'EnSentence2Ch'), true);
-    expect(dbSteps.any((s) => s.studyStep == 'ChSentence2En'), true);
+    final enSentenceStep = dbSteps.firstWhere((s) => s.studyStep == 'EnSentence2Ch');
+    final chSentenceStep = dbSteps.firstWhere((s) => s.studyStep == 'ChSentence2En');
+    expect(enSentenceStep.state, equals('Inactive'), reason: '新增加的例句英中环节默认不选中');
+    expect(chSentenceStep.state, equals('Inactive'), reason: '新增加的例句中英环节默认不选中');
 
     // 验证4: 自动补全过程严禁产生 db_log 记录，防后端增量同步报错
     final logs = await db.select(db.userDbLogs).get();

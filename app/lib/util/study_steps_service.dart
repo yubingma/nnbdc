@@ -34,7 +34,10 @@ class StudyStepsService {
     final requiredSteps = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
     for (final stepName in requiredSteps) {
       if (!voSteps.any((s) => s.studyStep == stepName)) {
-        voSteps.add(UserStudyStepVo(stepName, voSteps.length, StudyStepState.active.json));
+        // 例句新模式默认不要选中 (Inactive)
+        final isSentenceStep = stepName == 'EnSentence2Ch' || stepName == 'ChSentence2En';
+        final defaultState = isSentenceStep ? StudyStepState.inactive.json : StudyStepState.active.json;
+        voSteps.add(UserStudyStepVo(stepName, voSteps.length, defaultState));
         needsPersist = true;
       }
     }
