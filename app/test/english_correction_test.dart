@@ -328,6 +328,20 @@ void main() {
         reason: 'gurty≈good 与 seaplane≈discipline 应分别匹配,不得把 gurty sea 误合并吞掉 good');
   });
 
+  test('用例4: 目标 good discipline, ASR 结果 gulty seaplane → 至少保留 good 语义(不把两词误合并吞掉 good)', () async {
+    final (notifier, mockAsr) = await setupSentence2En(
+      'Good discipline is essential for success in any organization.',
+      '良好的纪律对任何组织的成功都至关重要。',
+    );
+    final result = await simulateAsrCorrection(notifier, mockAsr, 'gulty seaplane');
+    // "gulty seaplane" 是两个目标词(good+discipline)的误识别,
+    // 不应被整体合并为一个词吞掉 good。seaplane 应纠正为 discipline。
+    expect(result, isNot('discipline'),
+        reason: '不得把 gulty seaplane 整体合并成 discipline 吞掉 good');
+    expect(result.contains('discipline'), true,
+        reason: 'seaplane 应纠正为 discipline');
+  });
+
   test('用例3: 目标 good discipline is essential, ASR 结果 could this plan is essential → 纠正为 good discipline is essential(中间词不丢)', () async {
     final (notifier, mockAsr) = await setupSentence2En(
       'Good discipline is essential for success in any organization.',

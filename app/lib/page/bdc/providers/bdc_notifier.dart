@@ -2089,6 +2089,8 @@ class BdcNotifier extends _$BdcNotifier {
             final tw = targetWords[j];
             if (functionWords.contains(tw.toLowerCase())) continue;
             if ((windowText.length - tw.length).abs() > maxLenDiff * win) continue;
+            // 窗口总长度不得超过目标词长度+2(防把两个目标词误合并为一个)
+            if (windowText.length > tw.length + 2) continue;
             final sim = await PhonemeUtil.similarity(windowText, tw);
             if (sim > mergedSim) {
               mergedSim = sim;
@@ -2129,7 +2131,7 @@ class BdcNotifier extends _$BdcNotifier {
       }
       final int singleBestSim = bestSim;
 
-      // 2b. 多词合并(win=2/3),仅当明显优于单词匹配
+      // 2b. 多词合并(win=2/3),仅当明显优于单词匹配,且窗口长度不超过目标词太多
       for (var win = 2; win <= 3 && i + win <= inputWords.length; win++) {
         final windowText = inputWords.sublist(i, i + win).join(" ");
         final winWords = inputWords.sublist(i, i + win);
@@ -2139,6 +2141,10 @@ class BdcNotifier extends _$BdcNotifier {
           final tw = targetWords[j];
           if (functionWords.contains(tw.toLowerCase())) continue;
           if ((windowText.length - tw.length).abs() > maxLenDiff * win) continue;
+          // 窗口总长度不得超过目标词长度+2:碎片合并的目标是长词被切短
+          // (如 "this plan"(8)→"discipline"(10)),而 "gulty seaplane"(13)
+          // 实际是两个目标词的误识别,不应整体匹配一个词。
+          if (windowText.length > tw.length + 2) continue;
           final sim = await PhonemeUtil.similarity(windowText, tw);
           // 仅当合并相似度比单词匹配高至少 15 分才采用(防误合并)
           if (sim > bestSim && sim >= singleBestSim + 15) {
