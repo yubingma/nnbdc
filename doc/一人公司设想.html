@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI时代小型创业合伙平台模式初步构想</title>
+  <meta name="description" content="AI时代小型创业合伙平台模式初步构想 - 一人公司与母公司合伙机制探索">
+  <style>
+    :root {
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+      
+      /* Dark Theme Default */
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-card-hover: #334155;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-purple: #a855f7;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --gradient-brand: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #06b6d4 100%);
+      --gradient-card: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+      --shadow-glow: 0 0 25px rgba(168, 85, 247, 0.15);
+      --toc-width: 280px;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.8);
+      --bg-card-hover: #f1f5f9;
+      --border-color: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --gradient-brand: linear-gradient(135deg, #7c3aed 0%, #2563eb 50%, #0284c7 100%);
+      --gradient-card: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      --shadow-glow: 0 0 25px rgba(124, 58, 237, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-family: var(--font-family);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-primary);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      background: var(--gradient-brand);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn-icon {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-purple);
+      transform: translateY(-1px);
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+      padding: 2rem 1.5rem;
+      gap: 2.5rem;
+    }
+
+    /* Sidebar TOC */
+    .sidebar {
+      width: var(--toc-width);
+      flex-shrink: 0;
+      position: sticky;
+      top: 5rem;
+      height: calc(100vh - 7rem);
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    .toc-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .toc-item a {
+      display: block;
+      padding: 0.4rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-left: 2px solid transparent;
+    }
+
+    .toc-item a:hover {
+      color: var(--text-primary);
+      background: var(--bg-card-hover);
+    }
+
+    .toc-item.active a {
+      color: var(--accent-purple);
+      background: rgba(168, 85, 247, 0.1);
+      border-left-color: var(--accent-purple);
+      font-weight: 600;
+    }
+
+    .toc-item.depth-2 {
+      padding-left: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      max-width: 900px;
+    }
+
+    /* Hero Banner */
+    .hero-header {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .hero-tag {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      color: var(--accent-purple);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 2.4rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 1rem;
+      background: var(--gradient-brand);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Markdown Styling */
+    section {
+      margin-bottom: 3rem;
+      scroll-margin-top: 5rem;
+    }
+
+    h1, h2, h3, h4 {
+      color: var(--text-primary);
+      font-weight: 700;
+      line-height: 1.3;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 1.2em;
+      background: var(--gradient-brand);
+      border-radius: 2px;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: var(--accent-purple);
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    ul, ol {
+      margin-bottom: 1.5rem;
+      padding-left: 1.5rem;
+      color: var(--text-secondary);
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    blockquote {
+      background: rgba(168, 85, 247, 0.05);
+      border-left: 4px solid var(--accent-purple);
+      padding: 1.2rem 1.5rem;
+      border-radius: 0 12px 12px 0;
+      margin: 1.5rem 0;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    hr {
+      border: 0;
+      height: 1px;
+      background: var(--border-color);
+      margin: 3rem 0;
+    }
+
+    /* Diagram & Visual Cards */
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* Tree Diagram CSS */
+    .tree-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1rem 0;
+    }
+
+    .tree-node {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 0.75rem 1.75rem;
+      border-radius: 12px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .tree-node.parent {
+      border-color: var(--accent-purple);
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--accent-purple);
+      font-size: 1.1rem;
+    }
+
+    .tree-branches {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    .tree-branch-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+
+    .tree-branch-item:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent-blue);
+    }
+
+    .tree-branch-item .title {
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 0.25rem;
+    }
+
+    .tree-branch-item .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Share Allocation Cards */
+    .share-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .share-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+
+    .share-card-header {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .share-progress {
+      height: 10px;
+      background: var(--bg-primary);
+      border-radius: 5px;
+      overflow: hidden;
+      display: flex;
+      margin-bottom: 0.75rem;
+    }
+
+    .share-bar-leader {
+      background: var(--accent-emerald);
+      height: 100%;
+    }
+
+    .share-bar-parent {
+      background: var(--accent-purple);
+      height: 100%;
+    }
+
+    .share-legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Formula Box */
+    .formula-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 14px;
+      padding: 1.5rem;
+      text-align: center;
+      margin: 1.5rem 0;
+    }
+
+    .formula-title {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .formula-expr {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .formula-badge {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 0.35rem 0.85rem;
+      border-radius: 8px;
+      color: var(--accent-cyan);
+    }
+
+    /* Calculation Flow */
+    .calc-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+
+    .calc-step {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-secondary);
+      padding: 0.85rem 1.25rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      font-size: 0.95rem;
+    }
+
+    .calc-step-highlight {
+      border-color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.1);
+      font-weight: 700;
+      color: var(--accent-emerald);
+    }
+
+    /* Infrastructure Grid */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .feature-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent-purple);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card h4 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    /* Timeline / Vesting */
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .timeline-step {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .timeline-year {
+      font-size: 0.85rem;
+      color: var(--accent-amber);
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    /* Comparison Box */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    @media (max-width: 640px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .comparison-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .comparison-box.old {
+      border-color: rgba(244, 63, 94, 0.3);
+    }
+
+    .comparison-box.new {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .comparison-box h4 {
+      margin-top: 0;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .sidebar {
+        display: none;
+      }
+      .main-content {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="header">
+    <div class="header-brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+      <span>一人公司设想.html</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" id="theme-toggle" title="切换主题">
+        <svg width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon">
+          <circle cx="12" cy="12" r="5"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+      <div class="toc-title">目录导航</div>
+      <ul class="toc-list" id="toc-list">
+        <li class="toc-item"><a href="#sec-1">一、背景与出发点</a></li>
+        <li class="toc-item"><a href="#sec-2">二、基本模式：母公司 + 独立项目</a></li>
+        <li class="toc-item"><a href="#sec-3">三、项目股权设计</a></li>
+        <li class="toc-item"><a href="#sec-4">四、收益分配逻辑</a></li>
+        <li class="toc-item"><a href="#sec-5">五、这种模式的核心激励</a></li>
+        <li class="toc-item"><a href="#sec-6">六、母公司的价值是什么？</a></li>
+        <li class="toc-item"><a href="#sec-7">七、母公司的权利</a></li>
+        <li class="toc-item"><a href="#sec-8">八、项目负责人的权利</a></li>
+        <li class="toc-item"><a href="#sec-9">九、如何避免“僵尸股东”</a></li>
+        <li class="toc-item"><a href="#sec-10">十、必须区分失败和不努力</a></li>
+        <li class="toc-item"><a href="#sec-11">十一、这种模式的本质</a></li>
+        <li class="toc-item"><a href="#sec-12">十二、未来可能的发展方向</a></li>
+        <li class="toc-item"><a href="#sec-13">十三、未来需要继续深化的问题</a></li>
+        <li class="toc-item"><a href="#sec-14">初步结论</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- Hero Banner -->
+      <div class="hero-header">
+        <span class="hero-tag">组织架构探索 · 创业思考</span>
+        <h1 class="hero-title">AI时代小型创业合伙平台模式初步构想</h1>
+        <div class="hero-meta">
+          <span>📅 2026年8月</span>
+          <span>💡 探索“一人公司 + 平台母公司”新型合伙机制</span>
+        </div>
+      </div>
+
+      <!-- Section 1 -->
+      <section id="sec-1">
+        <h1>一、背景与出发点</h1>
+        <p>随着 AI 工具的发展，个人生产力正在快速提升。</p>
+        
+        <div class="comparison-grid">
+          <div class="comparison-box old">
+            <h4>过去：完整产品闭环依赖团队</h4>
+            <p>产品经理 · UI设计师 · 前端工程师 · 后端工程师 · 测试人员 · 运营人员</p>
+          </div>
+          <div class="comparison-box new">
+            <h4>未来：高能力个体 + AI 工具</h4>
+            <p>产品规划 · 开发实现 · 测试发布 · 用户运营 · 商业化探索</p>
+          </div>
+        </div>
+
+        <p>因此，未来可能出现大量<strong>“一人公司”</strong>。</p>
+
+        <p>但是，一人公司存在明显风险：</p>
+        <ol>
+          <li>个人能力存在短板；</li>
+          <li>创始人生病、精力下降会导致业务中断；</li>
+          <li>单个产品失败会承担全部风险；</li>
+          <li>缺少交流、资源共享和互相支持。</li>
+        </ol>
+
+        <p>因此，可以探索一种新的组织形态：</p>
+        <blockquote>
+          多个具备独立创业能力的人，通过一个平台型母公司连接，共同降低创业风险。
+        </blockquote>
+      </section>
+
+      <hr>
+
+      <!-- Section 2 -->
+      <section id="sec-2">
+        <h1>二、基本模式：母公司 + 独立项目</h1>
+        <p>假设有三个人：<strong>A</strong>、<strong>B</strong>、<strong>C</strong>，三个人分别负责三个产品。</p>
+        <ul>
+          <li><strong>A</strong> 负责英语学习产品；</li>
+          <li><strong>B</strong> 负责企业软件；</li>
+          <li><strong>C</strong> 负责教育工具。</li>
+        </ul>
+
+        <div class="diagram-card">
+          <div class="tree-diagram">
+            <div class="tree-node parent">母公司</div>
+            <div class="tree-branches">
+              <div class="tree-branch-item">
+                <div class="title">项目 A</div>
+                <div class="subtitle">A 负责（英语学习）</div>
+              </div>
+              <div class="tree-branch-item">
+                <div class="title">项目 B</div>
+                <div class="subtitle">B 负责（企业软件）</div>
+              </div>
+              <div class="tree-branch-item">
+                <div class="title">项目 C</div>
+                <div class="subtitle">C 负责（教育工具）</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p>每个人不是普通员工，而是项目负责人。</p>
+      </section>
+
+      <hr>
+
+      <!-- Section 3 -->
+      <section id="sec-3">
+        <h1>三、项目股权设计</h1>
+        <p><strong>推荐模式：</strong>每个项目独立核算。</p>
+        
+        <div class="share-grid">
+          <div class="share-card">
+            <div class="share-card-header">
+              <span>项目 A 公司</span>
+            </div>
+            <div class="share-progress">
+              <div class="share-bar-leader" style="width: 70%;"></div>
+              <div class="share-bar-parent" style="width: 30%;"></div>
+            </div>
+            <div class="share-legend">
+              <span>负责人 A: <strong>70%</strong></span>
+              <span>母公司: <strong>30%</strong></span>
+            </div>
+          </div>
+
+          <div class="share-card">
+            <div class="share-card-header">
+              <span>项目 B 公司</span>
+            </div>
+            <div class="share-progress">
+              <div class="share-bar-leader" style="width: 70%;"></div>
+              <div class="share-bar-parent" style="width: 30%;"></div>
+            </div>
+            <div class="share-legend">
+              <span>负责人 B: <strong>70%</strong></span>
+              <span>母公司: <strong>30%</strong></span>
+            </div>
+          </div>
+
+          <div class="share-card">
+            <div class="share-card-header">
+              <span>项目 C 公司</span>
+            </div>
+            <div class="share-progress">
+              <div class="share-bar-leader" style="width: 70%;"></div>
+              <div class="share-bar-parent" style="width: 30%;"></div>
+            </div>
+            <div class="share-legend">
+              <span>负责人 C: <strong>70%</strong></span>
+              <span>母公司: <strong>30%</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <p><strong>核心含义：</strong>项目负责人拥有主要收益权；母公司获得平台收益。</p>
+      </section>
+
+      <hr>
+
+      <!-- Section 4 -->
+      <section id="sec-4">
+        <h1>四、收益分配逻辑</h1>
+        <p>个人收益来源公式：</p>
+        
+        <div class="formula-card">
+          <div class="formula-title">个人最终总收益计算公式</div>
+          <div class="formula-expr">
+            <span class="formula-badge">个人收益</span> = 
+            <span class="formula-badge">自己的项目收益</span> + 
+            <span class="formula-badge">母公司收益分红</span>
+          </div>
+        </div>
+
+        <h3>计算示例（假设 A 项目一年利润 100 万）：</h3>
+        <div class="calc-steps">
+          <div class="calc-step">
+            <span>1. 项目 A 独立分配：</span>
+            <span>负责人 A 获得 70% (70万元) | 母公司获得 30% (30万元)</span>
+          </div>
+          <div class="calc-step">
+            <span>2. 母公司收益分红：</span>
+            <span>假设母公司 3 个股东平均分红，每人获得 10万元</span>
+          </div>
+          <div class="calc-step calc-step-highlight">
+            <span>3. 负责人 A 最终收益：</span>
+            <span>70万 + 10万 = 80万元</span>
+          </div>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- Section 5 -->
+      <section id="sec-5">
+        <h1>五、这种模式的核心激励</h1>
+        <p>它同时解决两个关键问题：</p>
+        
+        <h2>1. 鼓励个人做好自己的项目</h2>
+        <p>项目负责人获得 70% 左右主要收益，项目越成功，个人收益越高。</p>
+
+        <h2>2. 鼓励互相帮助</h2>
+        <p>其他人的项目成功会增加母公司的整体收益。例如 B 帮助 A 提供推广经验、分享技术方案、提供用户渠道，最终 B 也能通过母公司分红间接受益。</p>
+      </section>
+
+      <hr>
+
+      <!-- Section 6 -->
+      <section id="sec-6">
+        <h1>六、母公司的价值是什么？</h1>
+        <p>母公司不能只是拿股份，否则 30% 股权没有合理依据。母公司需要提供<strong>创业基础设施</strong>：</p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🏢</div>
+            <h4>1. 公司服务</h4>
+            <p>公司主体、财务、税务、法律、知识产权、合同管理。</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <h4>2. 技术基础设施</h4>
+            <p>用户系统、登录体系、支付体系、数据分析、AI能力、自动化部署、云资源管理。</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <h4>3. 产品和运营能力</h4>
+            <p>用户增长经验、推广渠道、ASO经验、商业化经验、产品方法论。</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">💰</div>
+            <h4>4. 资源和资本能力</h4>
+            <p>项目早期投资、合作资源、融资支持。</p>
+          </div>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- Section 7 -->
+      <section id="sec-7">
+        <h1>七、母公司的权利</h1>
+        <p>作为平台股东，母公司应该拥有以下治理权利：</p>
+        <ul>
+          <li><strong>1. 财务知情权：</strong>了解收入、成本、用户数据、产品状态。</li>
+          <li><strong>2. 重大事项决策权：</strong>例如不能随意出售项目、转移代码、修改股权、放弃核心资产。</li>
+          <li><strong>3. 项目投资权：</strong>优秀项目，母公司可以继续投入资金与资源。</li>
+        </ul>
+      </section>
+
+      <hr>
+
+      <!-- Section 8 -->
+      <section id="sec-8">
+        <h1>八、项目负责人的权利</h1>
+        <p>项目负责人应该拥有：</p>
+        <ul>
+          <li><strong>1. 产品自主权：</strong>负责产品方向、功能设计、用户定位、商业模式。</li>
+          <li><strong>2. 经营自主权：</strong>使用 AI 工具、招募协作者、外包服务。</li>
+          <li><strong>3. 收益权：</strong>项目成功后获得主要收益。</li>
+        </ul>
+      </section>
+
+      <hr>
+
+      <!-- Section 9 -->
+      <section id="sec-9">
+        <h1>九、如何避免“僵尸股东”</h1>
+        <p><strong>最大风险：</strong>有人早期加入获得母公司股份，后来不投入、不创业、不帮助别人，仍然享受收益。</p>
+        
+        <p><strong>解决方案：</strong></p>
+
+        <h3>方案 1：股权归属期（Vest）</h3>
+        <p>例如母公司 33% 股份并非立即完全拥有，而是按 4 年归属：</p>
+        <div class="timeline">
+          <div class="timeline-step">
+            <div class="timeline-year">第 1 年</div>
+            <div class="timeline-val">8.25%</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-year">第 2 年</div>
+            <div class="timeline-val">16.5%</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-year">第 3 年</div>
+            <div class="timeline-val">24.75%</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-year">第 4 年</div>
+            <div class="timeline-val">100%</div>
+          </div>
+        </div>
+        <p>如果中途退出，只保留已归属部分。</p>
+
+        <h3>方案 2：贡献绑定</h3>
+        <p>考察是否持续负责项目、是否参与平台建设、是否帮助其他项目。长期无贡献可以触发股份回购、股份调整或分红权调整。</p>
+      </section>
+
+      <hr>
+
+      <!-- Section 10 -->
+      <section id="sec-10">
+        <h1>十、必须区分失败和不努力</h1>
+        <p>创业失败是正常风险，不能因为项目失败就简单剥夺股权。需要清晰区分：</p>
+        
+        <div class="comparison-grid">
+          <div class="comparison-box new">
+            <h4>情况 A：认真创业但失败</h4>
+            <p>表现为：调研市场、持续开发、推广测试、复盘调整。</p>
+            <p><strong>处理原则：应该保护。</strong></p>
+          </div>
+          <div class="comparison-box old">
+            <h4>情况 B：缺乏投入</h4>
+            <p>表现为：长期不更新、不推广、不学习、放弃经营。</p>
+            <p><strong>处理原则：启动退出机制。</strong></p>
+          </div>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- Section 11 -->
+      <section id="sec-11">
+        <h1>十一、这种模式的本质</h1>
+        <p>它不是传统公司的“老板-员工”雇佣关系，而是：</p>
+        <blockquote>
+          创业者 + 创业平台
+        </blockquote>
+        <p>每个人都是<strong>产品负责人</strong>、<strong>小型 CEO</strong> 和 <strong>独立创业单元</strong>。</p>
+        <p>母公司类似<strong>创业孵化器</strong>、<strong>Venture Studio</strong> 或 <strong>创业基金</strong>。</p>
+      </section>
+
+      <hr>
+
+      <!-- Section 12 -->
+      <section id="sec-12">
+        <h1>十二、未来可能的发展方向</h1>
+        <p>AI 降低开发成本后，一个优秀个人 + AI 可能拥有过去一个小团队的生产力。</p>
+        
+        <div class="formula-card">
+          <div class="formula-expr">
+            <span>10 个人</span> ➔ <span>创造几十个产品</span> ➔ <span>少数成功产品养活整个生态</span>
+          </div>
+        </div>
+
+        <p>类似投资组合：多数项目普通或失败，少数项目实现高速增长。</p>
+      </section>
+
+      <hr>
+
+      <!-- Section 13 -->
+      <section id="sec-13">
+        <h1>十三、未来需要继续深化的问题</h1>
+        <ol>
+          <li>母公司股权如何设计；</li>
+          <li>项目负责人如何进入和退出；</li>
+          <li>项目失败后的处理机制；</li>
+          <li>如何评价贡献；</li>
+          <li>如何防止内部竞争和利益冲突；</li>
+          <li>如何设计长期激励；</li>
+          <li>AI时代这种组织相比传统公司的优势是否成立。</li>
+        </ol>
+      </section>
+
+      <hr>
+
+      <!-- Section 14 -->
+      <section id="sec-14">
+        <h1>初步结论</h1>
+        <p>AI时代可能出现一种新的创业组织：</p>
+        <blockquote>
+          不是雇佣大量员工，而是连接多个高能力创业者，通过共享基础设施降低创业风险。
+        </blockquote>
+        
+        <p><strong>核心思想：</strong></p>
+        <ul>
+          <li><strong>个人</strong>负责创造价值；</li>
+          <li><strong>平台</strong>负责降低成本；</li>
+          <li><strong>股权</strong>负责绑定长期利益。</li>
+        </ul>
+        <p>这种模式可能成为未来“小型公司生态”的一种重要形式。</p>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>AI时代小型创业合伙平台模式构想 · HTML Generated Document</p>
+  </footer>
+
+  <script>
+    // Theme Toggle Logic
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const htmlEl = document.documentElement;
+
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = htmlEl.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', newTheme);
+    });
+
+    // TOC Active Scroll Sync
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px 0px -60% 0px',
+      threshold: 0
+    };
+
+    const sections = document.querySelectorAll('section');
+    const tocLinks = document.querySelectorAll('.toc-item');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          tocLinks.forEach(link => {
+            const anchor = link.querySelector('a');
+            if (anchor.getAttribute('href') === '#' + id) {
+              link.classList.add('active');
+            } else {
+              link.classList.remove('active');
+            }
+          });
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach(sec => observer.observe(sec));
+  </script>
+</body>
+</html>
