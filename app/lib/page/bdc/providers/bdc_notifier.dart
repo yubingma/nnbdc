@@ -1800,6 +1800,31 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
     
+    // 巩固阶段：巩固评分不得优于之前的测评评分。
+    // 如果用户答得比测评时好（评分档次更高），则以测评评分为准，
+    // 防止因测评阶段已掌握评分较高而导致巩固阶段重复降难度。
+    // 测评得分与 UI 显示的"今日测评"同源:均取 LearningLog 最新一条
+    // (getHistory 按时间倒序,进入巩固环节时最新一条即测评环节评分)。
+    // 必须在设置 lastFsrsRating 之前执行,确保 UI 显示的评分也是封顶后的值。
+    if ((state.currentGetWordResult?.stepIndex ?? 0) > 0) {
+      final wordId = state.currentGetWordResult?.learningWord?.word.id;
+      final userId = Global.getLoggedInUser()?.id;
+      FsrsRating? capRating;
+      if (wordId != null && userId != null) {
+        try {
+          final logs = await MyDatabase.instance.learningLogsDao.getHistory(userId, wordId);
+          if (logs.isNotEmpty) {
+            capRating = FsrsRatingExt.fromInt(logs.first.rating);
+          }
+        } catch (e) {
+          Global.logger.d('查询测评评分用于封顶失败: $e');
+        }
+      }
+      if (capRating != null && rating.index > capRating.index) {
+        rating = capRating;
+      }
+    }
+
     // 同步立即锁定状态，彻底阻断由于 ASR 连续识别或 re-entry 重复触发导致的回声和并发冲突
     state = state.copyWith(
       hasFinishedAnswering: true,
@@ -1809,15 +1834,6 @@ class BdcNotifier extends _$BdcNotifier {
       showHandwritingBoard: false,
     );
     _handleTabChangeForAsr();
-    
-    // 巩固阶段：巩固评分不得优于之前的测评评分。
-    // 如果用户答得比测评时好（评分档次更高），则以测评评分为准，
-    // 防止因测评阶段已掌握评分较高而导致巩固阶段重复降难度。
-    if ((state.currentGetWordResult?.stepIndex ?? 0) > 0 && state.assessmentRating != null) {
-      if (rating.index > state.assessmentRating!.index) {
-        rating = state.assessmentRating!;
-      }
-    }
     
     // 答对了，轻量级停止识别任务本身，保持麦克风与 Category 通道保温，绝不阻塞 UI 主帧
     unawaited(asr.stopAsr());
