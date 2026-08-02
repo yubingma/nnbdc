@@ -445,6 +445,16 @@ class BdcNotifier extends _$BdcNotifier {
             history: [...state.history, wordResult],
             wordUIStates: {...state.wordUIStates, wordId: wordUIState},
           );
+          // 若恢复的单词正是当前正在学习的单词(重新进入学习页),
+          // 将其测评得分(上个环节的 lastFsrsRating)提取为 assessmentRating,
+          // 供巩固环节显示"测评参考"与评分修正对话框默认值使用。
+          if (state.word?.id == wordId && state.currentGetWordResult != null &&
+              state.currentGetWordResult!.stepIndex > 0 && wordUIState.lastFsrsRating != null) {
+            state = state.copyWith(
+              assessmentRating: wordUIState.lastFsrsRating,
+              assessmentScheduledDays: wordUIState.fsrsItem?.scheduledDays,
+            );
+          }
         }
       }
     } catch (e) {
@@ -1022,11 +1032,11 @@ class BdcNotifier extends _$BdcNotifier {
 
 
 
+  /// 持久化"离开的单词"的完整 UI 状态(含测评得分 lastFsrsRating)。
+  /// 立即执行(不延迟):取下一个单词时同步落盘,确保用户随时返回
+  /// 学习计划页/退出页面后,重新进入仍能恢复该单词的测评得分。
   void _persistLastWordHistoryItem() {
-    _persistTimer?.cancel();
-    _persistTimer = Timer(const Duration(seconds: 1), () {
-      _executePersistLastWordHistoryItem();
-    });
+    _executePersistLastWordHistoryItem();
   }
 
   /// 直接持久化指定的历史条目（不经过定时器），用于掌握操作后同步更新
