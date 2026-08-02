@@ -43,7 +43,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
     _waveController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
-    )..repeat();
+    );
 
     _meterSubscription = Asr().meterStream().listen((level) {
       if (mounted) {
@@ -53,6 +53,23 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
         });
       }
     });
+    _syncWaveAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant ChineseAsrInputWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncWaveAnimation();
+  }
+
+  /// 波形动画按需启停：仅识别进行中(started)时运行，其余状态停止，
+  /// 避免 AnimationController 无限 repeat 在非识别状态空转浪费资源。
+  void _syncWaveAnimation() {
+    if (widget.asrState == AsrState.started) {
+      if (!_waveController.isAnimating) _waveController.repeat();
+    } else {
+      if (_waveController.isAnimating) _waveController.stop();
+    }
   }
 
   @override
@@ -136,9 +153,9 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
               double height = 4.0;
               double alpha = 0.2;
 
-              // 动态聆听或就绪状态
-              if (widget.asrState == AsrState.started ||
-                  widget.asrState == AsrState.initialized) {
+              // 动态聆听状态：仅识别进行中(started)才波动。
+              // initialized 只是模型就绪(未录音/未按住PTT),不应波动。
+              if (widget.asrState == AsrState.started) {
                 final double breath = sin(
                     (_waveController.value + (index * 0.125)) * pi * 2);
 
