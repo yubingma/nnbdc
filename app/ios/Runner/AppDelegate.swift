@@ -394,7 +394,6 @@ import StoreKit
     private func stopAsr(result: @escaping FlutterResult) {
         print("IOS: [ASR] stopAsr (Hot Stop) requested")
         print("IOS: [ASR] Ending audio stream and flushing final recognition...")
-        isAsrStopped = true
         asrSessionId += 1
         
         // 核心修正：通知 SFSpeechAudioBufferRecognitionRequest 音频录入完毕，解出缓冲区中残余的尾巴音频
@@ -408,6 +407,7 @@ import StoreKit
                 result(nil)
                 return
             }
+            self.isAsrStopped = true
             let flushText = self.lastPartialResult
             self.stopSpeechRecognition()
             self.lastPartialResult = ""
@@ -688,13 +688,8 @@ import StoreKit
         recognitionRequest.taskHint = .dictation
         
         if #available(iOS 13.0, *) {
-            if speechRecognizer.supportsOnDeviceRecognition {
-                recognitionRequest.requiresOnDeviceRecognition = true
-                print("IOS: [ASR] supportsOnDeviceRecognition = true, enabled offline ASR.")
-            } else {
-                recognitionRequest.requiresOnDeviceRecognition = false
-                print("IOS: [ASR] supportsOnDeviceRecognition = false, falling back to online ASR.")
-            }
+            // 使用默认在线/离线混合识别模式，避免部分真机因缺乏离线语言包引发 Error 1107 频繁重启
+            recognitionRequest.requiresOnDeviceRecognition = false
         }
 
         print("IOS: [ASR] Creating SFSpeechAudioBufferRecognitionRequest & recognitionTask synchronously...")
@@ -722,9 +717,12 @@ import StoreKit
                 isFinal = result.isFinal
                 print("~~~~~ASR RESULT: '\(selectedString)' (isFinal: \(isFinal))")
                 
+                if !selectedString.isEmpty {
+                    self.lastPartialResult = selectedString
+                }
+                
                 // 处理部分结果和最终结果
                 if !selectedString.isEmpty && !self.isAsrStopped {
-                    self.lastPartialResult = selectedString
                     // 如果是新的部分结果，立即发送候选结果
                     if !isFinal {
                         DispatchQueue.main.async { [weak self, sessionId] in
