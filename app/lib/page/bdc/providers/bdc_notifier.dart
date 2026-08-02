@@ -2603,7 +2603,9 @@ class BdcNotifier extends _$BdcNotifier {
         final remainingN = n.substring(sliceIdx);
         return remainingN.isEmpty ? p : "$p$remainingN";
       } else {
-        return "$p$n";
+        // 无重叠的阶段性结果用空格分隔,避免多个阶段识别文本黏连
+        // (如误识别 "Good" 与后续 "the day before..." 直接拼成 "Goodthe day...")
+        return "$p $n";
       }
     }
   }
