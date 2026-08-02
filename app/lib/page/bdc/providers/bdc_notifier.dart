@@ -138,6 +138,10 @@ class BdcNotifier extends _$BdcNotifier {
   /// 例句环节 PTT(按下说话):是否按住中
   bool _isPttPressed = false;
 
+  /// 例句练习模式:看答案后隐藏答案,恢复语音识别练习。
+  /// 练习时识别判定照常但答对不改今日测评结果(不写 LearningLog、不更新 FSRS)。
+  bool _isPracticeMode = false;
+
   /// 例句环节 PTT 会话轮次 token：每次 startPttAsr 递增。
   /// onAsrResult 的异步间隙(await 纠错)恢复后校验轮次是否仍为当前轮，
   /// 拦截"上一轮 stop 前已进入的事件在重按后继续写入"的跨轮污染
@@ -596,6 +600,7 @@ class BdcNotifier extends _$BdcNotifier {
     _accumulatedAsrText = "";
     _lastFinalAsrText = "";
     sentenceAnswerController.text = ""; // 新单词重置例句答案区
+    _isPracticeMode = false; // 新单词/新环节重置练习模式
 
     state = state.copyWith(
       currentGetWordResult: getWordResult,
@@ -771,7 +776,9 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void revealAnswerAndMarkWrong(BuildContext context) {
-    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+    // 用户显式点击"看答案"是强意图,即使 _isAnswerCorrectHandling 残留也执行
+    _isAnswerCorrectHandling = false;
+    if (state.hasFinishedAnswering) return;
 
 
 
@@ -787,13 +794,37 @@ class BdcNotifier extends _$BdcNotifier {
     // 设置已完成回答状态，评分为 FsrsRating.again，显示正确答案
     // 例句巩固环节仅为练习，不降低评分
     final bool isSentencePractice = _isSentencePracticeStep();
+    // 练习模式(看答案后隐藏答案再练习)中再次看答案:不改今日测评结果
+    final bool keepRating = _isPracticeMode;
     state = state.copyWith(
       hasFinishedAnswering: true,
       canLeaveCurrWord: true,
-      lastFsrsRating: isSentencePractice ? null : FsrsRating.again,
-      lastFsrsRatingReason: isSentencePractice ? "手动查看答案（练习模式）" : "手动查看答案",
+      lastFsrsRating: keepRating
+          ? state.lastFsrsRating
+          : (isSentencePractice ? null : FsrsRating.again),
+      lastFsrsRatingReason: keepRating
+          ? state.lastFsrsRatingReason
+          : (isSentencePractice ? "手动查看答案（练习模式）" : "手动查看答案"),
       currentScore: 0, // 分数设为 0 代表未读对
     );
+    _handleTabChangeForAsr();
+  }
+
+  /// 例句环节:看答案后隐藏答案,回到可练习状态(PTT 可用、可语音识别),
+  /// 但进入练习模式——识别答对不改今日测评结果(不写 LearningLog/不更新 FSRS)。
+  void hideAnswer() {
+    if (!state.hasFinishedAnswering) return;
+    _isPracticeMode = true;
+    state = state.copyWith(
+      hasFinishedAnswering: false,
+      canLeaveCurrWord: false,
+      showSentenceTranslation: false,
+      currentScore: null,
+      currentAsrCandidates: [],
+    );
+    sentenceAnswerController.text = "";
+    _accumulatedAsrText = "";
+    _lastFinalAsrText = "";
     _handleTabChangeForAsr();
   }
 
@@ -1604,8 +1635,19 @@ class BdcNotifier extends _$BdcNotifier {
               );
             }
           }
-          final ratingResult = _calculateRating(method);
-          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+          if (_isPracticeMode) {
+            // 练习模式:识别答对仅反馈,不改今日测评结果(不写 LearningLog/不更新 FSRS)
+            _isAnswerCorrectHandling = false; // 练习答对不锁死,允许继续练习/看答案
+            _playCorrectSound();
+            state = state.copyWith(
+              hasFinishedAnswering: false,
+              canLeaveCurrWord: false,
+              currentScore: maxScore,
+            );
+          } else {
+            final ratingResult = _calculateRating(method);
+            _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+          }
         }
       }
       Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');

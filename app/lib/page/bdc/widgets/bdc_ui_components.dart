@@ -2270,6 +2270,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             ),
           ),
           const SizedBox(height: 8),
+          // 小喇叭 + 看答案/隐藏答案 同行,根据作答状态切换按钮,避免按钮被滚动区遮挡
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -2283,38 +2284,30 @@ extension BdcPageStateUIComponents on BdcPageState {
                   notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
                 },
               ),
+              if (!state.hasFinishedAnswering)
+                TextButton.icon(
+                  icon: const Icon(Icons.visibility_outlined, size: 16),
+                  label: const Text("看答案",
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
+                  onPressed: () {
+                    notifier.revealAnswerAndMarkWrong(context);
+                  },
+                )
+              else
+                TextButton.icon(
+                  onPressed: () => notifier.hideAnswer(),
+                  icon: const Icon(Icons.visibility_off_outlined, size: 16),
+                  label: const Text('隐藏答案继续练习',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
+                ),
             ],
           ),
-          if (!state.hasFinishedAnswering) ...[
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              icon: Icon(
-                Icons.visibility_outlined,
-                size: 16,
-                color: isDarkMode ? Colors.black : Colors.white,
-              ),
-              label: Text(
-                "看答案",
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode ? Colors.black : Colors.white,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDarkMode ? Colors.white : AppTheme.primaryColor,
-                foregroundColor: isDarkMode ? Colors.black : Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                notifier.revealAnswerAndMarkWrong(context);
-              },
-            ),
-          ],
           if (state.hasFinishedAnswering && sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeChineseSpanText(
@@ -2360,36 +2353,44 @@ extension BdcPageStateUIComponents on BdcPageState {
               textAlign: TextAlign.center,
             ),
           ),
-          if (!state.hasFinishedAnswering) ...[
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              icon: Icon(
-                Icons.visibility_outlined,
-                size: 16,
-                color: isDarkMode ? Colors.black : Colors.white,
-              ),
-              label: Text(
-                "看答案",
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode ? Colors.black : Colors.white,
+          // 小喇叭 + 看答案/隐藏答案 同行,根据作答状态切换按钮,避免按钮被滚动区遮挡
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.volume_up_rounded,
+                  color: isDarkMode ? const Color(0xFF22D3EE) : AppTheme.primaryColor,
+                  size: 28,
                 ),
+                onPressed: () {
+                  notifier.playWordAndFirstSentence(false, false, forcePlaySentence: true);
+                },
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDarkMode ? Colors.white : AppTheme.primaryColor,
-                foregroundColor: isDarkMode ? Colors.black : Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              if (!state.hasFinishedAnswering)
+                TextButton.icon(
+                  icon: const Icon(Icons.visibility_outlined, size: 16),
+                  label: const Text("看答案",
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
+                  onPressed: () {
+                    notifier.revealAnswerAndMarkWrong(context);
+                  },
+                )
+              else
+                TextButton.icon(
+                  onPressed: () => notifier.hideAnswer(),
+                  icon: const Icon(Icons.visibility_off_outlined, size: 16),
+                  label: const Text('隐藏答案继续练习',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
                 ),
-              ),
-              onPressed: () {
-                notifier.revealAnswerAndMarkWrong(context);
-              },
-            ),
-          ],
+            ],
+          ),
           if (state.hasFinishedAnswering && sentence != null) ...[
             const SizedBox(height: 12),
             Util.makeEnglishSpanText(
