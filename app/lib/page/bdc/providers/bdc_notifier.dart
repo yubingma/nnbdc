@@ -21,6 +21,7 @@ import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
+import 'package:nnbdc/util/pinyin.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/fsrs.dart';
@@ -1403,14 +1404,19 @@ class BdcNotifier extends _$BdcNotifier {
           // 确保 stitch 的 prev 与 next 都是纠正后文本，重叠检测才能正确工作，
           // 同时让所有帧（不限于 final）都能实时显示纠正结果。
           String cleanBest = rawBest;
+          final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+              ? state.word!.sentences!.first
+              : null;
           if (isEnglish) {
-            final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
-                ? state.word!.sentences!.first
-                : null;
             if (sentence?.english != null && sentence!.english!.isNotEmpty) {
               cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
               // await 期间可能已松开并重按(轮次切换)：校验仍属于当前 PTT 轮次才继续写入
               if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
+            }
+          } else {
+            // 英中模式(说中文)：同样按发音相似度纠错为正确的汉字(保守策略)
+            if (sentence?.chinese != null && sentence!.chinese!.isNotEmpty) {
+              cleanBest = _phoneticAutoCorrectChineseSentence(rawBest, sentence.chinese!);
             }
           }
 
@@ -1467,14 +1473,19 @@ class BdcNotifier extends _$BdcNotifier {
 
           // 同样在 stitch 前做自动纠错
           String cleanBest = rawBest;
+          final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+              ? state.word!.sentences!.first
+              : null;
           if (isEnglish) {
-            final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
-                ? state.word!.sentences!.first
-                : null;
             if (sentence?.english != null && sentence!.english!.isNotEmpty) {
               cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
               // await 间隙可能已切换 PTT 轮次：校验后才继续写入
               if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
+            }
+          } else {
+            // 英中模式(说中文)：按发音相似度纠错为正确的汉字(保守策略)
+            if (sentence?.chinese != null && sentence!.chinese!.isNotEmpty) {
+              cleanBest = _phoneticAutoCorrectChineseSentence(rawBest, sentence.chinese!);
             }
           }
 
@@ -1967,6 +1978,71 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     return corrected.join(" ");
+  }
+
+  /// 对例句英中模式 (EnSentence2Ch) 的中文 ASR 识别结果做发音相似度自动纠错。
+  /// 保守策略:逐字与目标中文例句按位置对齐,仅当识别字与目标字发音高度相似
+  /// (声母/韵母/声调加权相似度 >= minSimularityForMatch)时替换为目标字,
+  /// 修正 ASR 对同音/近音字的误识别(如"每当"→"每天"),发音明显不同的字保留原样,
+  /// 避免把用户没发准的音强行改对。多音字取双方拼音集合中的最大相似度。
+  String _phoneticAutoCorrectChineseSentence(String input, String target) {
+    final cleanInput = input.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+    final cleanTarget = target.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+    if (cleanInput.isEmpty || cleanTarget.isEmpty) return input;
+
+    final inputChars = cleanInput.split('');
+    final targetChars = cleanTarget.split('');
+
+    // 预计算目标句每个字的拼音集合(供多音字匹配)
+    final targetPinyinSets = <String, List<String>>{};
+    for (final ch in targetChars) {
+      targetPinyinSets[ch] = targetPinyinSets[ch] ?? hanziToPinyin(ch);
+    }
+
+    final corrected = <String>[];
+    for (var i = 0; i < inputChars.length; i++) {
+      final inChar = inputChars[i];
+      // 位置对齐优先:与目标同位字比对
+      final inPinyins = hanziToPinyin(inChar);
+      String bestTargetChar = inChar;
+      double bestSim = 0.0;
+
+      final alignedTarget = i < targetChars.length ? targetChars[i] : null;
+      if (alignedTarget != null) {
+        bestSim = _maxPinyinSim(inPinyins, targetPinyinSets[alignedTarget] ?? []);
+        if (bestSim >= minSimularityForMatch) {
+          bestTargetChar = alignedTarget;
+        } else {
+          // 位置对不上(如多字/少字)时,在目标句剩余部分就近找最相似字
+          final searchTarget = (i < targetChars.length) ? targetChars.sublist(i) : [];
+          for (final tch in searchTarget) {
+            final sim = _maxPinyinSim(inPinyins, targetPinyinSets[tch] ?? []);
+            if (sim > bestSim) {
+              bestSim = sim;
+              bestTargetChar = sim >= minSimularityForMatch ? tch : inChar;
+            }
+          }
+        }
+      }
+      corrected.add(bestTargetChar);
+    }
+
+    return corrected.join();
+  }
+
+  /// 计算两个拼音集合间的最大发音相似度(处理多音字)
+  double _maxPinyinSim(List<String> pinyinsA, List<String> pinyinsB) {
+    if (pinyinsA.isEmpty || pinyinsB.isEmpty) return 0.0;
+    double max = 0.0;
+    for (final a in pinyinsA) {
+      final pa = PinyinParser(a);
+      for (final b in pinyinsB) {
+        final pb = PinyinParser(b);
+        final sim = similarityOf2ParsedPinyin(pa, pb);
+        if (sim > max) max = sim;
+      }
+    }
+    return max;
   }
 
   void _syncAudioHardware({bool bypassStartDebounce = false}) {

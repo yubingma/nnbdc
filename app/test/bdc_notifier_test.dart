@@ -833,4 +833,71 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 100));
   });
+
+  test('例句环节中文识别发音相似度纠错:同音字被替换为目标字', () async {
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          studyStep: 'EnSentence2Ch',
+          seq: 1,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    await db.into(db.sentences).insert(Sentence(
+          id: 'snt_4',
+          english: 'I eat an apple every morning.',
+          chinese: '我每天早上吃一个苹果。',
+          englishDigest: 'I eat an apple every morning.',
+          partOfSpeech: '',
+          theType: 'tts',
+          handCount: 0,
+          footCount: 0,
+          authorId: 'sys',
+          ownerId: 'sys',
+          meaningItemId: 'mim_1',
+          wordMeaning: '苹果',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+    PlatformUtils.asrSupportedOverride = true;
+    addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+    expect(container.read(bdcNotifierProvider).studyStep, 'EnSentence2Ch');
+
+    // 按住识别:"苹锅"中"锅"(guo)与目标"果"(guo)同音,应被纠错为"果"
+    notifier.startPttAsr();
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 1; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    await notifier.onAsrResult(jsonEncode({
+      'best': '我每天早上吃一个苹锅',
+      'candidates': ['我每天早上吃一个苹锅'],
+      'isFinal': false,
+    }));
+    expect(notifier.sentenceAnswerController.text, '我每天早上吃一个苹果',
+        reason: '同音字"锅"应被发音纠错为目标字"果"');
+    await notifier.stopPttAsr();
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
 }
