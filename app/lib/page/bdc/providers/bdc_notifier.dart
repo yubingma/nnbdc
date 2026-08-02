@@ -2071,8 +2071,33 @@ class BdcNotifier extends _$BdcNotifier {
         continue;
       }
 
-      // 功能词不做近音纠错(除非目标里也恰好有它且完全匹配——上面已处理)
+      // 功能词不做近音纠错,但可能是误切碎片(如 "this plan" → "discipline"):
+      // 先尝试与后续词合并匹配目标词,仅当合并也不达标时才保留原功能词。
       if (functionWords.contains(iwLower)) {
+        // 尝试与后续 1-2 词合并匹配目标词
+        String merged = iw;
+        int mergedSim = 0;
+        int mergedConsume = 0;
+        for (var win = 2; win <= 3 && i + win <= inputWords.length; win++) {
+          final windowText = inputWords.sublist(i, i + win).join(" ");
+          for (var j = 0; j < targetWords.length; j++) {
+            final tw = targetWords[j];
+            if (functionWords.contains(tw.toLowerCase())) continue;
+            if ((windowText.length - tw.length).abs() > maxLenDiff * win) continue;
+            final sim = await PhonemeUtil.similarity(windowText, tw);
+            if (sim > mergedSim) {
+              mergedSim = sim;
+              merged = tw;
+              mergedConsume = win - 1;
+            }
+          }
+        }
+        if (mergedSim >= matchThreshold) {
+          corrected.add(merged);
+          Global.logger.d('[CORRECT] 功能词合并 "$iw"+${mergedConsume} → "$merged" sim=$mergedSim');
+          i += 1 + mergedConsume;
+          continue;
+        }
         corrected.add(iw);
         i++;
         continue;
