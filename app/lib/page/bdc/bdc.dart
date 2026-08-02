@@ -82,6 +82,9 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
   /// 释义输入框焦点控制
   final FocusNode _meaningFocusNode = FocusNode();
 
+  /// 例句答案区(可编辑识别结果)焦点控制
+  final FocusNode _sentenceAnswerFocusNode = FocusNode();
+
   /// 顶级音频播放器，委托给全局控制器维护的单例实例
   ja.AudioPlayer get _audioPlayer => StudyAudioSessionController.instance.primaryPlayer;
 
@@ -224,6 +227,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     _keyboardSubscription.cancel();
     _tabController?.dispose();
     _meaningFocusNode.dispose();
+    _sentenceAnswerFocusNode.dispose();
     _speakPanelScrollController.dispose();
     _soundController.dispose();
     _wordSoundController.dispose();

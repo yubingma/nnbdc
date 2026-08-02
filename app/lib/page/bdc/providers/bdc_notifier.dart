@@ -76,6 +76,9 @@ class BdcNotifier extends _$BdcNotifier {
     getTargetSpell: () => state.word?.spell,
     baseColor: AppTheme.primaryColor,
   );
+  // 例句环节答案区(可编辑)独立控制器:识别结果写入此处,支持光标插入/手动编辑,
+  // 避免与单词拼写 meaningController 的逐字符标色逻辑冲突。
+  late final TextEditingController sentenceAnswerController = TextEditingController();
   
   String _handlingChinese = "";
 
@@ -96,10 +99,21 @@ class BdcNotifier extends _$BdcNotifier {
     asr.addStateListener(_onAsrStateChanged);
     
     meaningController.addListener(() {
+      if (_pttSuppressAutoCheck) return; // PTT 按住期间抑制自动判定
       _checkAsrDebounceTimer?.cancel();
       _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
         checkAsrResult();
       });
+    });
+    // 例句答案区手动编辑(PTT 未按住时)的自动判定监听
+    sentenceAnswerController.addListener(() {
+      if (_pttSuppressAutoCheck) return;
+      if (!_isPttPressed && _isSentenceStepActive()) {
+        _checkAsrDebounceTimer?.cancel();
+        _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
+          checkAsrResult(asrInput: sentenceAnswerController.text, isVoice: false, isFinal: true);
+        });
+      }
     });
 
     ref.onDispose(() {
@@ -119,6 +133,7 @@ class BdcNotifier extends _$BdcNotifier {
         caller: this,
       ));
       meaningController.dispose();
+      sentenceAnswerController.dispose();
       Prefs.remove("BdcPageArgs");
     });
 
@@ -139,11 +154,28 @@ class BdcNotifier extends _$BdcNotifier {
   /// 拦截"上一轮 stop 前已进入的事件在重按后继续写入"的跨轮污染
   int _pttRoundToken = 0;
 
+  /// 例句补充模式锚点：按住 PTT 时答案区光标前后的文本。
+  /// 本轮识别增量插入锚点之间，松开后拼成完整答案。
+  String _pttAnchorPrefix = "";
+  String _pttAnchorSuffix = "";
+
+  /// PTT 按住期间抑制 meaningController/sentenceAnswerController 的
+  /// 自动防抖判定(150ms)，避免识别文本写入时误触发判定；松开后由 stopPttAsr 统一判定
+  bool _pttSuppressAutoCheck = false;
+
   void _onAsrStateChanged(AsrState asrState) {
     Future.microtask(() {
       if (_isDisposed) return;
       _updateState(state.copyWith(asrState: asrState), tag: 'asr-state');
     });
+  }
+
+  /// 是否处于例句环节且未答完(答案区可编辑/可补充)
+  bool _isSentenceStepActive() {
+    final step = state.studyStep;
+    return (step == StudyStep.enSentence2Ch.json ||
+            step == StudyStep.chSentence2En.json) &&
+        !state.hasFinishedAnswering;
   }
 
   void _startLearningTimer() {
@@ -568,6 +600,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     _accumulatedAsrText = "";
     _lastFinalAsrText = "";
+    sentenceAnswerController.text = ""; // 新单词重置例句答案区
 
     state = state.copyWith(
       currentGetWordResult: getWordResult,
@@ -603,6 +636,7 @@ class BdcNotifier extends _$BdcNotifier {
       _restoreWordState(getWordResult);
     } else {
       meaningController.text = "";
+      sentenceAnswerController.text = ""; // 新单词重置例句答案区
     }
 
     if (state.wordWrapper != null) {
@@ -920,6 +954,7 @@ class BdcNotifier extends _$BdcNotifier {
       wrapper.hintLetterCount = 0;
     _accumulatedAsrText = "";
     _lastFinalAsrText = "";
+    sentenceAnswerController.text = ""; // 清空例句答案区
     // 换词即视为松开 PTT：防止按住时自动进下一词导致 _isPttPressed 残留、新词例句环节误自动开麦
     _isPttPressed = false;
       state = state.copyWith(
@@ -1146,6 +1181,7 @@ class BdcNotifier extends _$BdcNotifier {
           isWordMastered: false,
         );
         meaningController.text = "";
+        sentenceAnswerController.text = "";
       }
       debugPrint('⚡ [PERF] _restoreWordState cost: ${sw.elapsedMilliseconds}ms');
     }
@@ -1406,6 +1442,18 @@ class BdcNotifier extends _$BdcNotifier {
         for (final c in candidates) {
           if (c != _accumulatedAsrText) uniqueCandidates.add(c);
         }
+        // 识别增量写入可编辑答案区(锚点前 + 本轮增量 + 锚点后),光标置于增量末尾,
+        // 便于连续补充。currentAsrCandidates 保持增量语义供判定时拼接。
+        if (_isPttPressed) {
+          final fullText = _pttAnchorPrefix + _accumulatedAsrText + _pttAnchorSuffix;
+          if (sentenceAnswerController.text != fullText) {
+            sentenceAnswerController.value = sentenceAnswerController.value.copyWith(
+              text: fullText,
+              selection: TextSelection.collapsed(offset: _pttAnchorPrefix.length + _accumulatedAsrText.length),
+              composing: TextRange.empty,
+            );
+          }
+        }
         _updateState(state.copyWith(currentAsrCandidates: uniqueCandidates), tag: 'asr-candidate');
       } else {
         if (resultData != null && resultData.containsKey('candidates')) {
@@ -1455,7 +1503,11 @@ class BdcNotifier extends _$BdcNotifier {
       isFinal = true;
     }
 
-    checkAsrResult(asrInput: processedResult, isVoice: true, isFinal: isFinal);
+    // 句子环节判定用完整答案(锚点+增量+锚点后);非句子环节用处理后的识别结果
+    final String judgeInput = (_isSentenceStepActive() && _isPttPressed)
+        ? sentenceAnswerController.text
+        : processedResult;
+    checkAsrResult(asrInput: judgeInput, isVoice: true, isFinal: isFinal);
   }
 
   Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false}) async {
@@ -1493,8 +1545,13 @@ class BdcNotifier extends _$BdcNotifier {
           method = "手写输入";
         }
 
-        final isFromAsr = asrInput != null || meaningController.text == _handlingChinese;
-        final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
+        // 语音/手写识别传入 asrInput(完整答案)时直接用它判定；
+        // 键盘输入或防抖自动判定时用当前答案区文本。
+        final List<String> inputs = (asrInput != null)
+            ? [asrInput]
+            : [sentenceAnswerController.text.isNotEmpty
+                ? sentenceAnswerController.text
+                : meaningController.text];
         int maxScore = 0;
 
         if (step == StudyStep.enSentence2Ch.json) {
@@ -2023,7 +2080,17 @@ class BdcNotifier extends _$BdcNotifier {
 
     _isPttPressed = true;
     _pttRoundToken++; // 开启新一轮 PTT 会话
-    // 按住即开始全新一轮识别：重置累积文本与候选，松开时以本轮文本判定
+    // 捕获答案区锚点：若已有内容(补充模式)，本轮识别增量插入光标处；
+    // 否则锚点为空(首次模式)，等同从头识别。
+    final curText = sentenceAnswerController.text;
+    final sel = sentenceAnswerController.selection;
+    final int caret = (sel.isValid && sel.isCollapsed && sel.start <= curText.length)
+        ? sel.start
+        : curText.length; // 无光标/选区时默认追加到末尾
+    _pttAnchorPrefix = curText.substring(0, caret);
+    _pttAnchorSuffix = curText.substring(caret);
+    _pttSuppressAutoCheck = true; // 按住期间抑制自动判定
+    // 按住即开始全新一轮识别：重置本轮增量累积文本，松开时以"锚点+增量+锚点后"判定
     _accumulatedAsrText = "";
     _lastFinalAsrText = "";
     _updateState(
@@ -2058,12 +2125,16 @@ class BdcNotifier extends _$BdcNotifier {
       }));
     }
 
+    // 解除抑制:松开后可正常自动判定(手动编辑 150ms 防抖)
+    _pttSuppressAutoCheck = false;
     _isPttPressed = false;
     _updateState(state.copyWith(isPttPressed: false), tag: 'ptt-stop');
 
-    // flush 为空(原生未解出内容)但有累积文本时的兜底判定
+    // 完整答案 = 锚点 + 本轮增量 + 锚点后(controller 已在 onAsrResult 实时更新,
+    // 此处仅兜底:flush 为空但有累积文本时,确保 controller 反映最终状态)
+    final String fullText = sentenceAnswerController.text;
     if (flushText == null || flushText.isEmpty) {
-      final text = _accumulatedAsrText.trim();
+      final text = fullText.trim();
       if (text.isEmpty) return; // 没说话：静默放弃，不判定
       await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
     }

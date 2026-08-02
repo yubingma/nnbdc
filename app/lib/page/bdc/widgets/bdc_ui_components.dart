@@ -1397,198 +1397,9 @@ extension BdcPageStateUIComponents on BdcPageState {
               child: () {
                 final step = state.studyStep;
                 if (step == StudyStep.enSentence2Ch.json) {
-                  final recognizedText = state.currentAsrCandidates.isNotEmpty ? state.currentAsrCandidates.first : '';
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '请说出对应的中文翻译：',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _cachedIsDarkMode
-                              ? const Color(0xFF9CA3AF)
-                              : const Color(0xFF6B7280),
-                        ),
-                      ),
-                      if (recognizedText.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                recognizedText,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
-                                ),
-                              ),
-                            ),
-                            if (state.hasFinishedAnswering &&
-                                (state.lastFsrsRatingReason?.contains("AI裁判") ?? false)) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.gavel_rounded, color: Colors.green, size: 12),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      "AI判定正确",
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final feedback = ref.watch(bdcNotifierProvider.select((s) => s.aiRefereeFeedback));
-                          if (feedback == null) return const SizedBox.shrink();
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.gavel_rounded, color: Colors.orange.shade600, size: 14),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      feedback,
-                                      style: TextStyle(
-                                        color: Colors.orange.shade700,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  );
+                  return _buildSentenceAnswerArea();
                 } else if (step == StudyStep.chSentence2En.json) {
-                  final recognizedText = state.currentAsrCandidates.isNotEmpty ? state.currentAsrCandidates.first : '';
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '请读出对应的英文例句：',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _cachedIsDarkMode
-                              ? const Color(0xFF9CA3AF)
-                              : const Color(0xFF6B7280),
-                        ),
-                      ),
-                      if (recognizedText.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Util.makeEnglishSpanText(
-                                recognizedText,
-                                state.word?.spell ?? '',
-                                false,
-                                context,
-                                false,
-                                null,
-                                false,
-                                FontWeight.w400,
-                                fontSize: 14,
-                                color: _cachedIsDarkMode ? Colors.white60 : Colors.black54,
-                              ),
-                            ),
-                            if (state.hasFinishedAnswering &&
-                                (state.lastFsrsRatingReason?.contains("AI裁判") ?? false)) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.gavel_rounded, color: Colors.green, size: 12),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      "AI判定正确",
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                      Consumer(
-                        builder: (context, ref, _) {
-                          final feedback = ref.watch(bdcNotifierProvider.select((s) => s.aiRefereeFeedback));
-                          if (feedback == null) return const SizedBox.shrink();
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.gavel_rounded, color: Colors.orange.shade600, size: 14),
-                                  const SizedBox(width: 6),
-                                  Flexible(
-                                    child: Text(
-                                      feedback,
-                                      style: TextStyle(
-                                        color: Colors.orange.shade700,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  );
+                  return _buildSentenceAnswerArea();
                 } else if (step == StudyStep.en2Ch.json) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1731,6 +1542,129 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
+  /// 例句环节可编辑答案输入框：识别结果写入其中，支持光标插入/手动编辑。
+  /// PTT 按住期间只读(避免键盘干扰说话)；答完后只读。
+  /// 编辑区固定在可视高度内占满答案区，内容多时可内部滚动。
+  Widget _buildSentenceAnswerArea() {
+    final isDarkMode = _cachedIsDarkMode;
+    final bool readOnly = state.isPttPressed || state.hasFinishedAnswering;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 160,
+          child: TextField(
+            controller: notifier.sentenceAnswerController,
+            focusNode: _sentenceAnswerFocusNode,
+            readOnly: readOnly,
+            enabled: !state.hasFinishedAnswering,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDarkMode ? Colors.white70 : Colors.black87,
+            ),
+            maxLines: null,
+            expands: true,
+            textAlignVertical: TextAlignVertical.top,
+            decoration: InputDecoration(
+              hintText: '识别结果将显示在这里，可点击编辑',
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: isDarkMode ? Colors.white24 : Colors.black26,
+              ),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              filled: true,
+              fillColor: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.04),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDarkMode ? Colors.white12 : Colors.black12,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: AppTheme.primaryColor, width: 1.2),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (state.hasFinishedAnswering &&
+            (state.lastFsrsRatingReason?.contains("AI裁判") ?? false)) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.gavel_rounded, color: Colors.green, size: 12),
+                  SizedBox(width: 4),
+                  Text(
+                    "AI判定正确",
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        Consumer(
+          builder: (context, ref, _) {
+            final feedback = ref.watch(bdcNotifierProvider.select((s) => s.aiRefereeFeedback));
+            if (feedback == null) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.gavel_rounded, color: Colors.orange.shade600, size: 14),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        feedback,
+                        style: TextStyle(
+                          color: Colors.orange.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   /// 例句环节"按住说话"PTT 大按钮：按下并保持开始识别，松开停止并立即判定。
   /// 仅例句步骤 (EnSentence2Ch / ChSentence2En) 且未答完时展示。
   /// 用 [Listener] 监听原始指针事件而非 GestureDetector：
@@ -1753,7 +1687,13 @@ extension BdcPageStateUIComponents on BdcPageState {
         return Padding(
           padding: const EdgeInsets.only(top: 16),
           child: Listener(
-            onPointerDown: (_) => notifier.startPttAsr(),
+            onPointerDown: (_) {
+              // 按住说话时收起答案区键盘，避免键盘与说话手势冲突
+              if (_sentenceAnswerFocusNode.hasFocus) {
+                _sentenceAnswerFocusNode.unfocus();
+              }
+              notifier.startPttAsr();
+            },
             onPointerUp: (_) => notifier.stopPttAsr(),
             onPointerCancel: (_) => notifier.stopPttAsr(),
             child: AnimatedContainer(

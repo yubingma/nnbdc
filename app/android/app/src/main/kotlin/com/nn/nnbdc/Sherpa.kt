@@ -724,6 +724,16 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 if (m != null && s != null) {
                     // 优雅收尾:结束音频输入,解码所有已喂入的残留音频,送出最终结果。
                     // 这样松开按钮不会硬切丢词,尾部单词自然识别完成后再释放。
+                    //
+                    // 关键:sherpa-onnx 流式解码按 chunk 批量进行,IsReady() 要求至少
+                    // 有 1 个完整 chunk 的新帧才解码。松开瞬间尾部音频不足一个 chunk 时,
+                    // 最后几个词(尤其最后一个词)的帧永远不会被解码,导致词尾缺失
+                    // (如 yesterday 只解出 yesterd)。解决:填充尾部静音 padding,
+                    // 让 NumFramesReady 覆盖所有真实帧,IsReady 保持 true 直到真实
+                    // 音频(含词尾)全部解码完。静音 padding 只产生 blank,不引入噪音。
+                    val tailPadSeconds = 0.8f
+                    val tailPadding = FloatArray((tailPadSeconds * sampleRateInHz).toInt())
+                    s.acceptWaveform(tailPadding, sampleRateInHz)
                     s.inputFinished()
                     var decodeCount = 0
                     val flushDeadline = System.currentTimeMillis() + 1000 // 安全上限,防极端长音频卡死 UI 线程

@@ -743,4 +743,152 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 100));
   });
+
+  test('例句环节 PTT 补充模式:光标处插入新识别内容,锚点前后文本保留', () async {
+    // 复用例句步骤 setup
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          studyStep: 'EnSentence2Ch',
+          seq: 1,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    await db.into(db.sentences).insert(Sentence(
+          id: 'snt_2',
+          english: 'I eat an apple every morning.',
+          chinese: '我每天早上吃一个苹果。',
+          englishDigest: 'I eat an apple every morning.',
+          partOfSpeech: '',
+          theType: 'tts',
+          handCount: 0,
+          footCount: 0,
+          authorId: 'sys',
+          ownerId: 'sys',
+          meaningItemId: 'mim_1',
+          wordMeaning: '苹果',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+    PlatformUtils.asrSupportedOverride = true;
+    addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+    expect(container.read(bdcNotifierProvider).studyStep, 'EnSentence2Ch');
+
+    // 1. 首次按住:识别出一部分(如"我每天早上"),松开
+    notifier.startPttAsr();
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 1; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    await notifier.onAsrResult(jsonEncode({
+      'best': '我每天早上',
+      'candidates': ['我每天早上'],
+      'isFinal': false,
+    }));
+    // 识别增量写入答案区
+    expect(notifier.sentenceAnswerController.text, '我每天早上');
+    await notifier.stopPttAsr();
+    await Future.delayed(const Duration(milliseconds: 50));
+    expect(container.read(bdcNotifierProvider).isPttPressed, false);
+    // 未答完(文本不完整,判定不通过)
+    expect(container.read(bdcNotifierProvider).hasFinishedAnswering, false);
+
+    // 2. 光标移到文本中间(如"我每天|早上"),再次按住补充
+    notifier.sentenceAnswerController.selection =
+        const TextSelection.collapsed(offset: 3); // 光标在"早上"前
+    notifier.startPttAsr();
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 2; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    // 补充识别"都吃",应插入光标处:我每天[都吃]早上
+    await notifier.onAsrResult(jsonEncode({
+      'best': '都吃',
+      'candidates': ['都吃'],
+      'isFinal': false,
+    }));
+    expect(notifier.sentenceAnswerController.text, '我每天' + '都吃' + '早上',
+        reason: '补充内容应插入光标处,锚点前后文本保留');
+    await notifier.stopPttAsr();
+    await Future.delayed(const Duration(milliseconds: 50));
+    expect(container.read(bdcNotifierProvider).isPttPressed, false);
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('例句环节手动编辑答案区:完整正确翻译输入后自动判定通过', () async {
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          studyStep: 'EnSentence2Ch',
+          seq: 1,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    await db.into(db.sentences).insert(Sentence(
+          id: 'snt_3',
+          english: 'I eat an apple every morning.',
+          chinese: '我每天早上吃一个苹果。',
+          englishDigest: 'I eat an apple every morning.',
+          partOfSpeech: '',
+          theType: 'tts',
+          handCount: 0,
+          footCount: 0,
+          authorId: 'sys',
+          ownerId: 'sys',
+          meaningItemId: 'mim_1',
+          wordMeaning: '苹果',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+    PlatformUtils.asrSupportedOverride = true;
+    addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    final context = FakeBuildContext();
+    await notifier.loadData(context);
+    expect(container.read(bdcNotifierProvider).studyStep, 'EnSentence2Ch');
+
+    // 手动编辑答案区为完整正确翻译,应触发自动判定并答对
+    notifier.sentenceAnswerController.text = '我每天早上吃一个苹果。';
+    await Future.delayed(const Duration(milliseconds: 250)); // 等 150ms 防抖 + 判定
+    expect(container.read(bdcNotifierProvider).hasFinishedAnswering, true,
+        reason: '编辑为完整正确翻译后应自动判定通过');
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
 }
