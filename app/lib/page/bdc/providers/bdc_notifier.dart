@@ -1664,7 +1664,8 @@ class BdcNotifier extends _$BdcNotifier {
             _playCorrectSound();
             state = state.copyWith(
               hasFinishedAnswering: false,
-              canLeaveCurrWord: false,
+              // 练习模式始终允许点"下一词"离开(不被练习分支覆盖为 false)
+              canLeaveCurrWord: true,
               currentScore: maxScore,
             );
           } else {
