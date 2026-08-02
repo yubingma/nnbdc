@@ -10,6 +10,8 @@ class StudyConfig {
   bool enableAllWrong;
   bool autoJumpAfterCorrectCh2En;
   bool autoJumpAfterCorrectEn2Ch;
+  bool autoJumpAfterCorrectChSentence2En;
+  bool autoJumpAfterCorrectEnSentence2Ch;
   String asrPassRule;
   bool enableWordImage;
   bool preferKeyboardInSpelling;
@@ -25,6 +27,8 @@ class StudyConfig {
     this.enableAllWrong = false,
     this.autoJumpAfterCorrectCh2En = false,
     this.autoJumpAfterCorrectEn2Ch = false,
+    this.autoJumpAfterCorrectChSentence2En = false,
+    this.autoJumpAfterCorrectEnSentence2Ch = false,
     this.asrPassRule = 'ONE',
     this.enableWordImage = true,
     this.preferKeyboardInSpelling = false,
@@ -42,6 +46,8 @@ class StudyConfig {
       enableAllWrong: _toBool(json['enableAllWrong'], false),
       autoJumpAfterCorrectCh2En: _toBool(json['autoJumpAfterCorrectCh2En'], false),
       autoJumpAfterCorrectEn2Ch: _toBool(json['autoJumpAfterCorrectEn2Ch'], false),
+      autoJumpAfterCorrectChSentence2En: _toBool(json['autoJumpAfterCorrectChSentence2En'], false),
+      autoJumpAfterCorrectEnSentence2Ch: _toBool(json['autoJumpAfterCorrectEnSentence2Ch'], false),
       asrPassRule: _toAsrPassRule(json['asrPassRule']),
       enableWordImage: _toBool(json['enableWordImage'], true),
       preferKeyboardInSpelling: _toBool(json['preferKeyboardInSpelling'], false),
@@ -84,6 +90,8 @@ class StudyConfig {
       'enableAllWrong': enableAllWrong,
       'autoJumpAfterCorrectCh2En': autoJumpAfterCorrectCh2En,
       'autoJumpAfterCorrectEn2Ch': autoJumpAfterCorrectEn2Ch,
+      'autoJumpAfterCorrectChSentence2En': autoJumpAfterCorrectChSentence2En,
+      'autoJumpAfterCorrectEnSentence2Ch': autoJumpAfterCorrectEnSentence2Ch,
       'asrPassRule': asrPassRule,
       'enableWordImage': enableWordImage,
       'preferKeyboardInSpelling': preferKeyboardInSpelling,

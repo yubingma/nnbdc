@@ -211,6 +211,8 @@ extension BdcPageStateDialogs on BdcPageState {
     var localAsrPassRule = studyConfig.asrPassRule;
     var localAutoJumpAfterCorrectCh2En = studyConfig.autoJumpAfterCorrectCh2En;
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
+    var localAutoJumpAfterCorrectChSentence2En = studyConfig.autoJumpAfterCorrectChSentence2En;
+    var localAutoJumpAfterCorrectEnSentence2Ch = studyConfig.autoJumpAfterCorrectEnSentence2Ch;
     var localDistractorStrategy = studyConfig.distractorStrategy;
     var localMixWithOthersForIos = studyConfig.mixWithOthersForIos;
 
@@ -389,7 +391,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     },
                                   ),
                                   _buildSettingItem(
-                                    '中英极速：答对后直接下一词',
+                                    '中英单词极速：答对后直接下一词',
                                     localAutoJumpAfterCorrectCh2En,
                                     (value) {
                                       setState(() {
@@ -398,11 +400,29 @@ extension BdcPageStateDialogs on BdcPageState {
                                     },
                                   ),
                                   _buildSettingItem(
-                                    '英中极速：答对后直接下一词',
+                                    '英中单词极速：答对后直接下一词',
                                     localAutoJumpAfterCorrectEn2Ch,
                                     (value) {
                                       setState(() {
                                         localAutoJumpAfterCorrectEn2Ch = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '中英例句极速：答对后直接下一词',
+                                    localAutoJumpAfterCorrectChSentence2En,
+                                    (value) {
+                                      setState(() {
+                                        localAutoJumpAfterCorrectChSentence2En = value;
+                                      });
+                                    },
+                                  ),
+                                  _buildSettingItem(
+                                    '英中例句极速：答对后直接下一词',
+                                    localAutoJumpAfterCorrectEnSentence2Ch,
+                                    (value) {
+                                      setState(() {
+                                        localAutoJumpAfterCorrectEnSentence2Ch = value;
                                       });
                                     },
                                   ),
@@ -506,6 +526,10 @@ extension BdcPageStateDialogs on BdcPageState {
                                 localAutoJumpAfterCorrectCh2En;
                             studyConfigToSave.autoJumpAfterCorrectEn2Ch =
                                 localAutoJumpAfterCorrectEn2Ch;
+                            studyConfigToSave.autoJumpAfterCorrectChSentence2En =
+                                localAutoJumpAfterCorrectChSentence2En;
+                            studyConfigToSave.autoJumpAfterCorrectEnSentence2Ch =
+                                localAutoJumpAfterCorrectEnSentence2Ch;
                             studyConfigToSave.asrPassRule = localAsrPassRule;
                             studyConfigToSave.enableWordImage = localEnableWordImage;
                             studyConfigToSave.distractorStrategy = localDistractorStrategy;

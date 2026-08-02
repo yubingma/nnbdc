@@ -50,6 +50,8 @@ class BdcState extends Equatable {
   final bool isKeyboardVisible;
   final bool autoJumpAfterCorrectCh2En;
   final bool autoJumpAfterCorrectEn2Ch;
+  final bool autoJumpAfterCorrectChSentence2En;
+  final bool autoJumpAfterCorrectEnSentence2Ch;
   final String asrPassRuleCache;
   final FsrsRating? lowestRatingForCurrentWord;
   final FsrsRating? assessmentRating;
@@ -113,6 +115,8 @@ class BdcState extends Equatable {
     this.isKeyboardVisible = false,
     this.autoJumpAfterCorrectCh2En = true,
     this.autoJumpAfterCorrectEn2Ch = true,
+    this.autoJumpAfterCorrectChSentence2En = true,
+    this.autoJumpAfterCorrectEnSentence2Ch = true,
     this.asrPassRuleCache = 'ONE',
     this.lowestRatingForCurrentWord,
     this.assessmentRating,
@@ -138,6 +142,12 @@ class BdcState extends Equatable {
   bool get autoJumpAfterCorrect {
     if (studyStep == StudyStep.ch2En.json) {
       return autoJumpAfterCorrectCh2En;
+    }
+    if (studyStep == StudyStep.chSentence2En.json) {
+      return autoJumpAfterCorrectChSentence2En;
+    }
+    if (studyStep == StudyStep.enSentence2Ch.json) {
+      return autoJumpAfterCorrectEnSentence2Ch;
     }
     return autoJumpAfterCorrectEn2Ch;
   }
@@ -177,6 +187,8 @@ class BdcState extends Equatable {
     bool? isKeyboardVisible,
     bool? autoJumpAfterCorrectCh2En,
     bool? autoJumpAfterCorrectEn2Ch,
+    bool? autoJumpAfterCorrectChSentence2En,
+    bool? autoJumpAfterCorrectEnSentence2Ch,
     String? asrPassRuleCache,
     Object? lowestRatingForCurrentWord = _sentinel,
     Object? assessmentRating = _sentinel,
@@ -233,6 +245,8 @@ class BdcState extends Equatable {
       isKeyboardVisible: isKeyboardVisible ?? this.isKeyboardVisible,
       autoJumpAfterCorrectCh2En: autoJumpAfterCorrectCh2En ?? this.autoJumpAfterCorrectCh2En,
       autoJumpAfterCorrectEn2Ch: autoJumpAfterCorrectEn2Ch ?? this.autoJumpAfterCorrectEn2Ch,
+      autoJumpAfterCorrectChSentence2En: autoJumpAfterCorrectChSentence2En ?? this.autoJumpAfterCorrectChSentence2En,
+      autoJumpAfterCorrectEnSentence2Ch: autoJumpAfterCorrectEnSentence2Ch ?? this.autoJumpAfterCorrectEnSentence2Ch,
       asrPassRuleCache: asrPassRuleCache ?? this.asrPassRuleCache,
       lowestRatingForCurrentWord: lowestRatingForCurrentWord == _sentinel ? this.lowestRatingForCurrentWord : (lowestRatingForCurrentWord as FsrsRating?),
       assessmentRating: assessmentRating == _sentinel ? this.assessmentRating : (assessmentRating as FsrsRating?),
@@ -292,6 +306,8 @@ class BdcState extends Equatable {
     isKeyboardVisible,
     autoJumpAfterCorrectCh2En,
     autoJumpAfterCorrectEn2Ch,
+    autoJumpAfterCorrectChSentence2En,
+    autoJumpAfterCorrectEnSentence2Ch,
     asrPassRuleCache,
     lowestRatingForCurrentWord,
     assessmentRating,

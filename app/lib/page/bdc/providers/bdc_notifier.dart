@@ -285,6 +285,8 @@ class BdcNotifier extends _$BdcNotifier {
         asrPassRuleCache: studyConfig.asrPassRule,
         autoJumpAfterCorrectCh2En: studyConfig.autoJumpAfterCorrectCh2En,
         autoJumpAfterCorrectEn2Ch: studyConfig.autoJumpAfterCorrectEn2Ch,
+        autoJumpAfterCorrectChSentence2En: studyConfig.autoJumpAfterCorrectChSentence2En,
+        autoJumpAfterCorrectEnSentence2Ch: studyConfig.autoJumpAfterCorrectEnSentence2Ch,
       );
 
       final stepsStopwatch = Stopwatch()..start();
@@ -1003,6 +1005,18 @@ class BdcNotifier extends _$BdcNotifier {
         isUpdatingByHint: !state.isUpdatingByHint,
         currentAsrCandidates: [],
       );
+      // 例句环节已答对时,点"清空"自动进入练习模式(可继续语音练习,评分不改变测评结果)
+      final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json ||
+          state.studyStep == StudyStep.chSentence2En.json;
+      if (isSentenceStep && state.hasFinishedAnswering) {
+        _isPracticeMode = true;
+        _isAnswerCorrectHandling = false;
+        state = state.copyWith(
+          hasFinishedAnswering: false,
+          canLeaveCurrWord: true,
+          currentScore: null,
+        );
+      }
       if (state.studyStep == StudyStep.ch2En.json || state.showHandwritingBoard) {
         meaningController.text = '';
       }
@@ -2484,6 +2498,10 @@ class BdcNotifier extends _$BdcNotifier {
   void updateAutoJump(bool value) {
     if (state.studyStep == StudyStep.ch2En.json) {
       state = state.copyWith(autoJumpAfterCorrectCh2En: value);
+    } else if (state.studyStep == StudyStep.chSentence2En.json) {
+      state = state.copyWith(autoJumpAfterCorrectChSentence2En: value);
+    } else if (state.studyStep == StudyStep.enSentence2Ch.json) {
+      state = state.copyWith(autoJumpAfterCorrectEnSentence2Ch: value);
     } else {
       state = state.copyWith(autoJumpAfterCorrectEn2Ch: value);
     }
@@ -2495,6 +2513,14 @@ class BdcNotifier extends _$BdcNotifier {
 
   void updateAutoJumpEn2Ch(bool value) {
     state = state.copyWith(autoJumpAfterCorrectEn2Ch: value);
+  }
+
+  void updateAutoJumpChSentence2En(bool value) {
+    state = state.copyWith(autoJumpAfterCorrectChSentence2En: value);
+  }
+
+  void updateAutoJumpEnSentence2Ch(bool value) {
+    state = state.copyWith(autoJumpAfterCorrectEnSentence2Ch: value);
   }
 
   void updateFlippedAnswerIndices(Set<int> indices) {
