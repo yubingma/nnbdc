@@ -1487,10 +1487,10 @@ class BdcNotifier extends _$BdcNotifier {
           }
 
           if (isFinal) {
-            _lastFinalAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
+            _lastFinalAsrText = mergeAsrText(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
             _accumulatedAsrText = _lastFinalAsrText;
           } else {
-            _accumulatedAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
+            _accumulatedAsrText = mergeAsrText(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
           }
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
@@ -1550,7 +1550,7 @@ class BdcNotifier extends _$BdcNotifier {
             }
           }
 
-          _lastFinalAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
+          _lastFinalAsrText = mergeAsrText(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
           _accumulatedAsrText = _lastFinalAsrText;
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
@@ -2658,6 +2658,18 @@ class BdcNotifier extends _$BdcNotifier {
     } catch (e, stackTrace) {
       Global.logger.e('🔊 [BDC-ASR] 刷新设置与重构语音识别失败: $e', error: e, stackTrace: stackTrace);
     }
+  }
+
+  /// 合并本轮 PTT 的 ASR 结果到累积文本。
+  /// 两端原生识别器(Android sherpa-onnx / iOS SFSpeechRecognizer)发送的都是
+  /// "累积全文"(从会话/段落开始到当前的完整文本),并非增量片段。
+  /// - iOS:每次回调都是完整全文且识别中途会整体改写,重叠拼接会把旧全文与
+  ///   改写后的新全文错误串接导致整句重复,故直接以最新全文覆盖。
+  /// - Android:按住期间以 _lastFinalAsrText(空)为基准同样退化为覆盖;
+  ///   仅跨段(endpoint reset 后新段落)时才需要 stitchTexts 与旧段拼接。
+  static String mergeAsrText(String prev, String next, {bool isEnglish = false}) {
+    if (PlatformUtils.isIOS) return next;
+    return stitchTexts(prev, next, isEnglish: isEnglish);
   }
 
   /// 智能重叠拼接算法：寻找并融合 prev 末尾与 next 开头的重合重叠部分

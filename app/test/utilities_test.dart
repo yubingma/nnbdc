@@ -44,7 +44,8 @@ void main() {
 
     test('完全没有重叠', () {
       final res = BdcNotifier.stitchTexts("我爱苹果", "香蕉很好吃", isEnglish: false);
-      expect(res, equals("我爱苹果香蕉很好吃"));
+      // 无重叠的阶段性结果用空格分隔，避免多个阶段识别文本黏连（与 bdc_notifier_test 断言一致）
+      expect(res, equals("我爱苹果 香蕉很好吃"));
     });
   });
 } 

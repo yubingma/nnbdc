@@ -889,4 +889,94 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 100));
   });
+
+  test('例句环节 PTT:Android 累积全文事件流(识别中途改写)不产生大段重复', () async {
+    // 回归用例:Android sherpa-onnx 与 iOS SFSpeechRecognizer 发送的都是"累积全文"
+    // (从会话开始到当前的完整文本)。按住期间若识别器中途改写已输出内容
+    // (如 "displine" → "discipline"),对累积全文做 stitchTexts 重叠拼接会把
+    // 旧全文与改写后的新全文错误串接 → 整句重复。正确行为:按住期间以空基准
+    // 直接覆盖为最新全文,仅跨段(endpoint reset 后新段落)才拼接。
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          studyStep: 'EnSentence2Ch',
+          seq: 1,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    await db.into(db.sentences).insert(Sentence(
+          id: 'snt_7',
+          english: 'I eat an apple every morning.',
+          chinese: '我每天早上吃一个苹果。',
+          englishDigest: 'I eat an apple every morning.',
+          partOfSpeech: '',
+          theType: 'tts',
+          handCount: 0,
+          footCount: 0,
+          authorId: 'sys',
+          ownerId: 'sys',
+          meaningItemId: 'mim_1',
+          wordMeaning: '苹果',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    StudyAudioSessionController.instance.debugSetAsrForTesting(mockAsr);
+    PlatformUtils.asrSupportedOverride = true;
+    addTearDown(() => PlatformUtils.asrSupportedOverride = null);
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    expect(container.read(bdcNotifierProvider).studyStep, 'EnSentence2Ch');
+
+    notifier.startPttAsr();
+    for (var i = 0; i < 20 && mockAsr.startAsrCallCount < 1; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+
+    // 模拟累积全文事件流(每次事件是完整文本,识别中途改写):
+    // 1. 初始识别 "我每天早上吃一个苹果"
+    await notifier.onAsrResult(jsonEncode({
+      'best': '我每天早上吃一个苹果',
+      'candidates': ['我每天早上吃一个苹果'],
+      'isFinal': false,
+    }));
+    // 2. 识别器追加 "和香蕉" → 完整文本
+    await notifier.onAsrResult(jsonEncode({
+      'best': '我每天早上吃一个苹果和香蕉',
+      'candidates': ['我每天早上吃一个苹果和香蕉'],
+      'isFinal': false,
+    }));
+    // 3. 识别器中途改写:去掉"和" → 完整文本
+    await notifier.onAsrResult(jsonEncode({
+      'best': '我每天早上吃一个苹果香蕉',
+      'candidates': ['我每天早上吃一个苹果香蕉'],
+      'isFinal': false,
+    }));
+
+    // 累积文本必须等于最新完整文本,不得把旧全文与改写后的新全文串接重复
+    final accumulated = notifier.sentenceAnswerController.text.trim();
+    expect(accumulated, '我每天早上吃一个苹果香蕉',
+        reason: '累积全文事件流应直接覆盖为最新完整文本,不得拼接出重复: 实际 "$accumulated"');
+    // 不包含任何重复片段(如 "苹果和香蕉我每天早上" 之类)
+    expect(accumulated.split('我每天').length, 2,
+        reason: '旧全文与新全文不得被同时保留: 实际 "$accumulated"');
+
+    await notifier.stopPttAsr();
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
 }
