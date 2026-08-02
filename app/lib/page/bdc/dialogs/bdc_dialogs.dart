@@ -18,37 +18,40 @@ extension BdcPageStateDialogs on BdcPageState {
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
   /// 分组标题(无开关),用于设置分组层次(如"极速模式"分组)
   Widget _buildSectionHeader(String title, {String? subtitle}) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            textScaler: const TextScaler.linear(1.0),
-            style: const TextStyle(
-              fontFamily: "NotoSansSC",
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 2),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              subtitle,
+              title,
               textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: "NotoSansSC",
-                fontSize: 12,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withValues(alpha: 0.6),
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
               ),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                textScaler: const TextScaler.linear(1.0),
+                style: TextStyle(
+                  fontFamily: "NotoSansSC",
+                  fontSize: 12,
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

@@ -353,7 +353,7 @@ public class AiBo {
             RestTemplate restTemplate = getRestTemplate();
 
             String url = getTextBaseUrl() + "/chat/completions";
-            logger.info("🤖 AI 阻塞对话请求 - 模型: {}, 终点端点: {}", aiProperties.getTextModel(), url);
+            logger.info("🤖 AI 阻塞式对话请求 - 模型: {}, 终点端点: {}", aiProperties.getTextModel(), url);
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
