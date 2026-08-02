@@ -1487,10 +1487,10 @@ class BdcNotifier extends _$BdcNotifier {
           }
 
           if (isFinal) {
-            _lastFinalAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+            _lastFinalAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
             _accumulatedAsrText = _lastFinalAsrText;
           } else {
-            _accumulatedAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+            _accumulatedAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
           }
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
@@ -1550,7 +1550,7 @@ class BdcNotifier extends _$BdcNotifier {
             }
           }
 
-          _lastFinalAsrText = stitchTexts(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+          _lastFinalAsrText = stitchTexts(_accumulatedAsrText, cleanBest, isEnglish: isEnglish);
           _accumulatedAsrText = _lastFinalAsrText;
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);

@@ -393,15 +393,27 @@ import StoreKit
     
     private func stopAsr(result: @escaping FlutterResult) {
         print("IOS: [ASR] stopAsr (Hot Stop) requested")
-        // 只停止识别流水线，保留音频引擎运行
-        print("IOS: [ASR] Data stream channel CLOSED (isAsrStopped = true)")
+        print("IOS: [ASR] Ending audio stream and flushing final recognition...")
         isAsrStopped = true
         asrSessionId += 1
-        let flushText = lastPartialResult
-        stopSpeechRecognition()
-        lastPartialResult = ""
-        print("IOS: [ASR] stopAsr completed, returning flushText: '\(flushText)'")
-        result(flushText.isEmpty ? nil : flushText)
+        
+        // 核心修正：通知 SFSpeechAudioBufferRecognitionRequest 音频录入完毕，解出缓冲区中残余的尾巴音频
+        if let request = recognitionRequest {
+            request.endAudio()
+        }
+        
+        // 延迟 200ms 允许 SFSpeechRecognizer 完成尾巴音频的收尾解码
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            guard let self = self else {
+                result(nil)
+                return
+            }
+            let flushText = self.lastPartialResult
+            self.stopSpeechRecognition()
+            self.lastPartialResult = ""
+            print("IOS: [ASR] stopAsr completed, returning flushText: '\(flushText)'")
+            result(flushText.isEmpty ? nil : flushText)
+        }
     }
     
     private func stopMicrophone(result: @escaping FlutterResult) {
