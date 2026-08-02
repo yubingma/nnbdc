@@ -588,29 +588,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         ),
                         if (user?.todayStudyStarted == true) ...[
                           const SizedBox(width: 4),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Row(
-                                    children: [
-                                      Icon(Icons.lock_outline_rounded, color: Colors.orangeAccent),
-                                      SizedBox(width: 8),
-                                      Text('今日目标已锁定'),
-                                    ],
-                                  ),
-                                  content: const Text('一旦开始今日的学习，目标单词数将会被锁定，不可修改。'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(ctx).pop(),
-                                      child: const Text('我知道了'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                          Tooltip(
+                            message: '一旦开始今日的学习，目标单词数将会被锁定，不可修改。',
+                            triggerMode: TooltipTriggerMode.tap,
+                            preferBelow: true,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isDarkMode ? const Color(0xFF334155) : const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            textStyle: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                               child: Icon(
