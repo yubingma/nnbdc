@@ -122,6 +122,9 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 "setContextualStrings" -> {
                     val phrases = call.argument<List<String>>("phrases") ?: emptyList()
                     pendingHotwords = if (currentModelType == "en_sentence" && sentenceBpeTokenizer != null) {
+                        // en_sentence 模型:Java 侧先用 BPE 分词器把短语编码为 token 序列,
+                        // 再用 "/" 分隔多个短语。createStream 会把 "/" 转 "\n",
+                        // EncodeBase 直接查 symbol_table 得到 token id(无需 C++ bpe_encoder)。
                         phrases.map { sentenceBpeTokenizer!!.tokenize(it) }.filter { it.isNotEmpty() }.joinToString("/")
                     } else {
                         phrases.joinToString(" ") { it.uppercase() }
@@ -333,10 +336,17 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val tokensContent = java.io.File(tokensPath).readText()
             sentenceBpeTokenizer = BpeTokenizer(tokensContent)
 
+            // 热词需要 modeling_unit=bpe + bpe_vocab:C++ 的 EncodeHotwords 才能把
+            // 原始英文短语编码为 token 序列。默认 modeling_unit=cjkchar 会按字符切分
+            // 英文导致热词编码失败("Encode hotwords failed"),热词 biasing 完全失效。
+            val bpeVocabPath = copyAsset(modelDir, "bpe_vocab.txt", destDir)
+
             val modelConfig = OnlineModelConfig.builder()
                 .setTransducer(OnlineTransducerModelConfig.builder()
                     .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
                 .setTokens(tokensPath)
+                .setModelingUnit("bpe")
+                .setBpeVocab(bpeVocabPath)
                 .setNumThreads(2)
                 .setDebug(false)
                 .build()
@@ -685,11 +695,15 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private fun startAsr() {
         Log.i(TAG, "Starting ASR...")
         synchronized(this) {
-            // PTT 重按热复用:旧 stream 已在 stopAsr 释放,此处为空则重建,避免复用残留音频
-            if (currentStream == null) {
-                Log.i(TAG, "Creating fresh stream with hotwords: $pendingHotwords")
-                currentStream = currentModel?.createStream(pendingHotwords)
-            }
+            // PTT 重按热复用:旧 stream 已在 stopAsr 释放,此处为空则重建,避免复用残留音频。
+            // 关键:即使 stream 已存在(startMicrophone 预创建),也要用最新 pendingHotwords
+            // 重建——否则 startMicrophone 时热词可能尚未设置(setContextualStrings 在
+            // startAsr 之前才调用),复用旧 stream 会导致热词 biasing 不生效,
+            // 识别准确率差(如 discipline 识别为 easy plain)。
+            val hotwords = pendingHotwords
+            currentStream?.release()
+            Log.i(TAG, "Creating fresh stream with hotwords: $hotwords")
+            currentStream = currentModel?.createStream(hotwords)
             asrResumeTime = System.currentTimeMillis() + 300 // 恢复至 300ms 安全延迟，避免吞句首词
             asrEpoch++
             isAsrStopped = false
@@ -754,18 +768,27 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                         lastSentResult = text
                         flushText = text
                         Log.d(TAG, "~~~~~ASR FLUSH FINAL: '$text'")
-                        // 同步发送(不走 runOnUiThread):EventSink 线程安全,且必须保证
-                        // 事件先于 MethodChannel result 送达,否则 Flutter 端 stopPttAsr
-                        // 的 await 返回时 _accumulatedAsrText 尚未包含尾部单词。
+                        // Flutter 的 EventSink.success 必须在主线程调用(@UiThread),
+                        // stopAsr 在后台线程执行,因此经 runOnUiThread 发送。
+                        // Flutter 端 stopPttAsr 已改用 flushText 直接判定,不依赖
+                        // 此事件先行到达,故可安全切主线程发送。
                         try {
                             val resultData = JSONObject().apply {
                                 put("best", text)
                                 put("candidates", JSONArray().apply { put(text) })
                                 put("isFinal", true)
                             }
-                            events?.success(resultData.toString())
+                            activity.runOnUiThread {
+                                try {
+                                    events?.success(resultData.toString())
+                                } catch (e: Exception) {
+                                    events?.success(text)
+                                }
+                            }
                         } catch (e: Exception) {
-                            events?.success(text)
+                            activity.runOnUiThread {
+                                events?.success(text)
+                            }
                         }
                     }
                 }

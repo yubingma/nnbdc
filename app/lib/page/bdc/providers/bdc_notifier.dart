@@ -2028,6 +2028,10 @@ class BdcNotifier extends _$BdcNotifier {
   /// 对例句中英模式 (ChSentence2En) 的 ASR 识别结果进行发音相似度自动纠错。
   /// 将识别出的每个单词与例句正确单词做音素比对，相似度达到阈值时替换为例句用词，
   /// 修正 ASR 对发音相近单词的误识别（如 "dessert" → "desert"、"gotta" → "got to" 等）。
+  /// 对例句中英模式 (ChSentence2En) 的 ASR 结果做发音相似度自动纠错。
+  /// 支持"多词↔单词"对齐:中文用户发音不准时,一个单词可能被拆成多个近音词
+  /// (如 "discipline" → "these plain"、"teasplane"),需要把识别词的连续片段
+  /// (1-3 词)与目标词比较,发音相似则整体合并替换为目标词。
   Future<String> _phoneticAutoCorrectSentence(String input, String targetSentence) async {
     final inputWords = _extractEnglishWords(input);
     if (inputWords.isEmpty) return input;
@@ -2035,11 +2039,12 @@ class BdcNotifier extends _$BdcNotifier {
     final targetWords = _extractEnglishWords(targetSentence);
     if (targetWords.isEmpty) return input;
 
-    // 发音相似度纠错:识别词与目标词音素相似(>=60)且长度相近(差<=2)时替换为目标词。
-    // 目标:纠正实词近音误识别(如 "teaspring" → "discipline" sim=77)。
-    // 常见功能词不参与纠错(避免 "this"→"is"、"to"→"for" 等误改)。
-    const int matchThreshold = 60;
-    const int maxLenDiff = 2;
+    // 发音相似度纠错:识别片段与目标词音素相似(>=55)即替换为目标词。
+    // 目标:纠正近音误识别与多词切分错误(如 "these plain"→"discipline"、
+    // "teasplane"→"discipline")。
+    const int matchThreshold = 55;
+    const int maxLenDiff = 3;
+    // 常见功能词不参与近音纠错(避免 "this"→"is"、"to"→"for" 等误改)
     const Set<String> functionWords = {
       'a', 'an', 'the', 'is', 'are', 'was', 'were', 'to', 'for', 'of', 'at',
       'in', 'on', 'this', 'that', 'these', 'those', 'his', 'her', 'it', 'its',
@@ -2047,7 +2052,9 @@ class BdcNotifier extends _$BdcNotifier {
     };
 
     final corrected = <String>[];
-    for (final iw in inputWords) {
+    var i = 0;
+    while (i < inputWords.length) {
+      final iw = inputWords[i];
       final iwLower = iw.toLowerCase();
 
       // 1. 精确匹配优先(大小写不敏感)
@@ -2060,30 +2067,46 @@ class BdcNotifier extends _$BdcNotifier {
       }
       if (exactMatch != null) {
         corrected.add(exactMatch);
+        i++;
         continue;
       }
 
       // 功能词不做近音纠错(除非目标里也恰好有它且完全匹配——上面已处理)
       if (functionWords.contains(iwLower)) {
         corrected.add(iw);
+        i++;
         continue;
       }
 
-      // 2. 音素相似度模糊匹配:与单个目标词比较,取最高(长度相近才考虑)
+      // 2. 滑动窗口音素匹配:尝试 1/2/3 词片段 vs 目标词,取最高
       String bestMatch = iw;
       int bestSim = 0;
-      for (var j = 0; j < targetWords.length; j++) {
-        if (functionWords.contains(targetWords[j].toLowerCase())) continue; // 目标功能词不作为纠错目标
-        if ((iw.length - targetWords[j].length).abs() > maxLenDiff) continue; // 长度差过大跳过
-        final sim1 = await PhonemeUtil.similarity(iw, targetWords[j]);
-        if (sim1 > bestSim) {
-          bestSim = sim1;
-          bestMatch = targetWords[j];
+      int consumeNext = 0; // 合并消耗的额外词数
+      for (var win = 1; win <= 3 && i + win <= inputWords.length; win++) {
+        // 窗口片段(最多3词)
+        final windowText = inputWords.sublist(i, i + win).join(" ");
+        // 窗口内若有功能词且 win>1,跳过(避免 "the plain" 误合并)
+        if (win > 1) {
+          final winWords = inputWords.sublist(i, i + win);
+          final hasFunc = winWords.any((w) => functionWords.contains(w.toLowerCase()));
+          if (hasFunc) continue;
+        }
+        for (var j = 0; j < targetWords.length; j++) {
+          final tw = targetWords[j];
+          if (functionWords.contains(tw.toLowerCase())) continue; // 目标功能词不作为纠错目标
+          if ((windowText.length - tw.length).abs() > maxLenDiff * win) continue;
+          final sim = await PhonemeUtil.similarity(windowText, tw);
+          if (sim > bestSim) {
+            bestSim = sim;
+            bestMatch = tw;
+            consumeNext = win - 1;
+          }
         }
       }
 
       corrected.add(bestSim >= matchThreshold ? bestMatch : iw);
-      Global.logger.d('[CORRECT] "$iw" → best="$bestMatch" sim=$bestSim');
+      Global.logger.d('[CORRECT] "$iw" win=${consumeNext + 1} → "$bestMatch" sim=$bestSim');
+      i += 1 + consumeNext;
     }
 
     return corrected.join(" ");
