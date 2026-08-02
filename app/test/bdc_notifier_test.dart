@@ -825,7 +825,7 @@ void main() {
       'candidates': ['都吃'],
       'isFinal': false,
     }));
-    expect(notifier.sentenceAnswerController.text, '我每天' + '都吃' + '早上',
+    expect(notifier.sentenceAnswerController.text, '我每天都吃早上',
         reason: '补充内容应插入光标处,锚点前后文本保留');
     await notifier.stopPttAsr();
     await Future.delayed(const Duration(milliseconds: 50));
