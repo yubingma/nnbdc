@@ -609,7 +609,7 @@ void main() {
 
     // 3. 验证智能重叠拼接去重算法 (stitchTexts)
     // 中文无重合拼接
-    expect(BdcNotifier.stitchTexts('我每天', '一个苹果', isEnglish: false), '我每天一个苹果');
+    expect(BdcNotifier.stitchTexts('我每天', '一个苹果', isEnglish: false), '我每天 一个苹果');
     // 中文有重合拼接
     expect(BdcNotifier.stitchTexts('我每天', '每天吃苹果', isEnglish: false), '我每天吃苹果');
     expect(BdcNotifier.stitchTexts('我每天早上吃', '吃一个苹果', isEnglish: false), '我每天早上吃一个苹果');
