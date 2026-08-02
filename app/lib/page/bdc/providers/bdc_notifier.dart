@@ -1822,7 +1822,7 @@ class BdcNotifier extends _$BdcNotifier {
       }
       if (capRating != null && rating.index > capRating.index) {
         // 识别依据描述体现压制:说明巩固环节评分不能高于测评得分
-        reason = '$reason，巩固环节上限为测评环节结果（${capRating.label}）';
+        reason = '$reason，但巩固环节上限为测评环节结果（${capRating.label}）';
         rating = capRating;
       }
     }
