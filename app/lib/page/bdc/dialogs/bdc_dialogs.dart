@@ -16,10 +16,47 @@ Color _getRatingColor(FsrsRating rating, bool isDarkMode) {
 extension BdcPageStateDialogs on BdcPageState {
   BdcState get state => ref.watch(bdcNotifierProvider);
   BdcNotifier get notifier => ref.read(bdcNotifierProvider.notifier);
+  /// 分组标题(无开关),用于设置分组层次(如"极速模式"分组)
+  Widget _buildSectionHeader(String title, {String? subtitle}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            textScaler: const TextScaler.linear(1.0),
+            style: const TextStyle(
+              fontFamily: "NotoSansSC",
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontFamily: "NotoSansSC",
+                fontSize: 12,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildSettingItem(String title, bool value, Function(bool) onChanged,
-      {Widget? customTrailing, String? subtitle}) {
+      {Widget? customTrailing, String? subtitle, double indent = 16}) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      contentPadding: EdgeInsets.symmetric(horizontal: indent, vertical: 0),
       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
       dense: true,
       title: Text(
@@ -213,6 +250,7 @@ extension BdcPageStateDialogs on BdcPageState {
     var localAutoJumpAfterCorrectEn2Ch = studyConfig.autoJumpAfterCorrectEn2Ch;
     var localAutoJumpAfterCorrectChSentence2En = studyConfig.autoJumpAfterCorrectChSentence2En;
     var localAutoJumpAfterCorrectEnSentence2Ch = studyConfig.autoJumpAfterCorrectEnSentence2Ch;
+
     var localDistractorStrategy = studyConfig.distractorStrategy;
     var localMixWithOthersForIos = studyConfig.mixWithOthersForIos;
 
@@ -390,41 +428,49 @@ extension BdcPageStateDialogs on BdcPageState {
                                       });
                                     },
                                   ),
+                                  _buildSectionHeader(
+                                    '极速模式',
+                                    subtitle: '答对后直接进入下一词',
+                                  ),
                                   _buildSettingItem(
-                                    '中英单词极速：答对后直接下一词',
+                                    '单词 · 中→英',
                                     localAutoJumpAfterCorrectCh2En,
                                     (value) {
                                       setState(() {
                                         localAutoJumpAfterCorrectCh2En = value;
                                       });
                                     },
+                                    indent: 36,
                                   ),
                                   _buildSettingItem(
-                                    '英中单词极速：答对后直接下一词',
+                                    '单词 · 英→中',
                                     localAutoJumpAfterCorrectEn2Ch,
                                     (value) {
                                       setState(() {
                                         localAutoJumpAfterCorrectEn2Ch = value;
                                       });
                                     },
+                                    indent: 36,
                                   ),
                                   _buildSettingItem(
-                                    '中英例句极速：答对后直接下一词',
+                                    '例句 · 中→英',
                                     localAutoJumpAfterCorrectChSentence2En,
                                     (value) {
                                       setState(() {
                                         localAutoJumpAfterCorrectChSentence2En = value;
                                       });
                                     },
+                                    indent: 36,
                                   ),
                                   _buildSettingItem(
-                                    '英中例句极速：答对后直接下一词',
+                                    '例句 · 英→中',
                                     localAutoJumpAfterCorrectEnSentence2Ch,
                                     (value) {
                                       setState(() {
                                         localAutoJumpAfterCorrectEnSentence2Ch = value;
                                       });
                                     },
+                                    indent: 36,
                                   ),
                                   if (PlatformUtils.isIOS)
                                     _buildSettingItem(
