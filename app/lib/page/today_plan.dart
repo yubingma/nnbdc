@@ -1295,10 +1295,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         const SizedBox(width: 4),
                         Tooltip(
                           message: '今日学习已开始，无法修改最少新词数量',
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => ToastUtil.info('今日学习已开始，无法修改最少新词数量'),
-                            child: const Icon(Icons.lock_outline_rounded, size: 16, color: Colors.orangeAccent),
+                          triggerMode: TooltipTriggerMode.tap,
+                          preferBelow: false,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? const Color(0xFF334155) : const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          textStyle: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(2.0),
+                            child: Icon(Icons.lock_outline_rounded, size: 16, color: Colors.orangeAccent),
                           ),
                         ),
                       ],
