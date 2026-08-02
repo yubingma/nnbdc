@@ -633,6 +633,16 @@ class BdcNotifier extends _$BdcNotifier {
       sentenceAnswerController.text = ""; // 新单词重置例句答案区
     }
 
+    // 加载该单词的历史测评日志,供巩固环节显示"今日测评"得分。
+    // (learningHistoryFuture 此前从未赋值,导致巩固环节的 FutureBuilder
+    //  永远拿不到数据,只能显示"测评中"。)
+    final currentUserId = Global.getLoggedInUser()?.id;
+    if (currentUserId != null && wordId != null) {
+      learningHistoryFuture = MyDatabase.instance.learningLogsDao.getHistory(currentUserId, wordId);
+    } else {
+      learningHistoryFuture = null;
+    }
+
     if (state.wordWrapper != null) {
       final previousUIState = state.wordUIStates[word.id];
       if (previousUIState != null) {
