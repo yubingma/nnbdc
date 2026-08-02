@@ -1619,14 +1619,21 @@ class BdcNotifier extends _$BdcNotifier {
         // 对于语音识别（isVoice），必须等待最后一帧 isFinal 为 true 时才执行 Match 通过，以保证单词在 UI 上完整展现。
         final bool passedThreshold = maxScore >= 60;
         isMatch = passedThreshold && (!isVoice || isFinal);
+        Global.logger.d('[PTT] checkAsrResult isPttPressed=$_isPttPressed isFinal=$isFinal score=$maxScore passedThreshold=$passedThreshold isMatch=$isMatch inputs=$inputs');
+
+        // PTT 按住期间:识别得分达标即记录等待松开标记(不要求 isFinal,
+        // 因为按住期间实时事件 isFinal=false,但得分已达到通过阈值)。
+        // 松开按钮(释放手指)是例句环节语音通过的必要条件之一。
+        if (_isPttPressed && passedThreshold) {
+          _pendingPttPass = true;
+          _isAnswerCorrectHandling = false; // 不锁死,按住期间持续更新得分
+        }
 
         if (isMatch) {
-          // PTT 按住期间:识别达标但等待松开才判定通过。
-          // 松开按钮(释放手指)是例句环节语音通过的必要条件之一。
+          // 已松开时正常通过;按住期间(isMatch 不可能成立,因 isFinal=false)
+          // 若意外成立则等待松开
           if (_isPttPressed) {
-            _pendingPttPass = true;
             state = state.copyWith(currentScore: maxScore);
-            _isAnswerCorrectHandling = false; // 不锁死,按住期间持续更新得分
             Global.logger.d('[PTT] 识别已达标但按住中,等待松开判定. score=$maxScore');
             return;
           }
@@ -2216,30 +2223,11 @@ class BdcNotifier extends _$BdcNotifier {
     final bool wasPendingPass = _pendingPttPass;
     _pendingPttPass = false;
 
-    // 松开瞬间原生 flush 解出的完整文本:作为 isFinal 事件交给 onAsrResult
-    // 走统一路径(纠错+拼接+UI 更新+判定),与实时事件流完全一致,避免
-    // 此处用 stitchTexts 自行拼接导致 flushText(未纠错)与累积文本(已纠错)
-    // 不一致时重叠检测失败、整句重复。
-    if (flushText != null && flushText.isNotEmpty) {
-      await onAsrResult(jsonEncode({
-        'best': flushText,
-        'candidates': [flushText],
-        'isFinal': true,
-      }));
-    } else if (wasPendingPass) {
-      // 按住期间已达标但 flush 为空(如极端情况):用累积文本直接判定通过
-      final text = sentenceAnswerController.text.trim();
-      if (text.isNotEmpty) {
-        await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
-      }
-    }
-
-    // 完整答案 = 锚点 + 本轮增量 + 锚点后(controller 已在 onAsrResult 实时更新,
-    // 此处仅兜底:flush 为空但有累积文本时,确保 controller 反映最终状态)
-    final String fullText = sentenceAnswerController.text;
-    if (flushText == null || flushText.isEmpty) {
-      final text = fullText.trim();
-      if (text.isEmpty) return; // 没说话：静默放弃，不判定
+    // 松开后统一用答案区完整文本直接判定:
+    // 不能依赖 onAsrResult(flush),因其句子分支在 _isPttPressed=false 时会拦截丢弃。
+    final String text = sentenceAnswerController.text.trim();
+    Global.logger.d('[PTT] 松开判定: wasPendingPass=$wasPendingPass text="$text" flushText="${flushText ?? ''}"');
+    if (text.isNotEmpty) {
       await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
     }
   }
