@@ -931,13 +931,17 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  void _updateFsrsPreview(FsrsRating rating) {
+  void _updateFsrsPreview(FsrsRating rating, {bool forceInit = false}) {
     final lw = state.currentGetWordResult?.learningWord;
     if (lw != null) {
       final fsrs = FSRS();
       int days = state.daysSinceLastReview ?? 0;
       FSRSItem nextItem;
-      if (lw.stability == null || lw.stability == 0.0) {
+      // 新词(从未学过或仅测评一次,无复习历史)用 init 计算;
+      // forceInit 用于"修改今日评分"场景:单词测评提交后 stability 已非 0,
+      // 但若仅测评过一次(reps<=1),改评分应重新 init 而非 next——
+      // 否则同一天内(next 的 elapsedDays=0)稳定性不变,修改评分无效。
+      if (forceInit || lw.stability == null || lw.stability == 0.0) {
         nextItem = fsrs.init(rating);
       } else {
         final prevItem = FSRSItem(
@@ -958,7 +962,43 @@ class BdcNotifier extends _$BdcNotifier {
 
   void updateFsrsRating(FsrsRating rating) {
     state = state.copyWith(lastFsrsRating: rating);
-    _updateFsrsPreview(rating);
+    // 仅测评过一次的新词(reps<=1)修改评分时重新 init 计算下次复习时间
+    final lw = state.currentGetWordResult?.learningWord;
+    final bool forceInit = (lw?.reps ?? 0) <= 1;
+    _updateFsrsPreview(rating, forceInit: forceInit);
+    // 同步巩固阶段的测评参考显示,使"今日测评"标签立即反映新评分
+    if (state.assessmentRating != null) {
+      state = state.copyWith(
+        assessmentRating: rating,
+        assessmentScheduledDays: state.fsrsItem?.scheduledDays,
+      );
+    }
+    // 持久化评分修改:覆盖 LearningLog 最新一条并更新单词 FSRS,
+    // 同时刷新学习历史 future,让巩固环节 FutureBuilder 重新加载。
+    unawaited(_persistRatingModification(rating));
+  }
+
+  Future<void> _persistRatingModification(FsrsRating rating) async {
+    final lw = state.currentGetWordResult?.learningWord;
+    if (lw == null || state.fsrsItem == null) return;
+    try {
+      await StudyBo().saveHistoryFSRSUpdate(
+        currWord: lw,
+        nextFsrs: state.fsrsItem!,
+        newRating: rating,
+      );
+      if (_isDisposed) return;
+      // 刷新学习历史,让巩固环节"今日测评"显示修改后的评分
+      final userId = Global.getLoggedInUser()?.id;
+      final wordId = lw.word.id;
+      if (userId != null && wordId != null) {
+        learningHistoryFuture =
+            MyDatabase.instance.learningLogsDao.getHistory(userId, wordId);
+        state = state.copyWith();
+      }
+    } catch (e, s) {
+      Global.logger.e('修改今日评分持久化失败', error: e, stackTrace: s);
+    }
   }
 
   void giveALittleHint() {

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart' as ja;
+import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
@@ -977,6 +978,120 @@ void main() {
         reason: '旧全文与新全文不得被同时保留: 实际 "$accumulated"');
 
     await notifier.stopPttAsr();
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('BdcNotifier - updateFsrsRating 修改评分后:同步 assessmentRating、持久化 LearningLog 并刷新 learningHistoryFuture', () async {
+    // 准备:插入一条已有 LearningLog(模拟测评环节已提交评分 good)
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_1',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.good.value,
+      stability: 1.0,
+      difficulty: 5.0,
+      elapsedDays: 0,
+      scheduledDays: 3,
+      createTime: now,
+      updateTime: now,
+    ), false);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+
+    // 修改评分为 easy
+    notifier.updateFsrsRating(FsrsRating.easy);
+    state = container.read(bdcNotifierProvider);
+    expect(state.lastFsrsRating, FsrsRating.easy);
+
+    // 等待异步持久化完成
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    // LearningLog 最新一条已持久化更新为 easy
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs, isNotEmpty, reason: '应有 LearningLog 记录');
+    expect(logs.first.rating, FsrsRating.easy.value,
+        reason: '修改评分后 LearningLog 最新一条应为新评分,实际为 ${logs.first.rating}');
+
+    // learningHistoryFuture 已刷新:解析后最新一条为新评分
+    final futureLogs = await notifier.learningHistoryFuture;
+    expect(futureLogs, isNot(null));
+    expect(futureLogs!.first.rating, FsrsRating.easy.value,
+        reason: 'learningHistoryFuture 刷新后应返回新评分');
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('BdcNotifier - 修改今日评分:新词(仅测评一次)改评分应重新 init 计算下次复习天数', () async {
+    // 模拟新词已完成测评提交(easy):stability=init(easy)的结果 5.8,reps=1
+    await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
+        .write(LearningWordsCompanion(
+          stability: const Value(5.8),
+          difficulty: const Value(2.11),
+          reps: const Value(1),
+          scheduledDays: const Value(6),
+          state: const Value(1), // Learning
+        ));
+    await db.learningLogsDao.saveEntity(LearningLog(
+      id: 'log_easy_1',
+      userId: testUser.id,
+      wordId: 'word_1',
+      rating: FsrsRating.easy.value,
+      stability: 5.8,
+      difficulty: 2.11,
+      elapsedDays: 0,
+      scheduledDays: 6,
+      createTime: now,
+      updateTime: now,
+    ), false);
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple');
+
+    // 把 easy 改成 good:新词应重新 init(good),下次复习 = init(good).scheduledDays = 2 天
+    notifier.updateFsrsRating(FsrsRating.good);
+    state = container.read(bdcNotifierProvider);
+    expect(state.fsrsItem, isNot(null));
+    expect(state.fsrsItem!.scheduledDays, 2,
+        reason: '新词改评分应重新 init 计算,预期 2 天,实际 ${state.fsrsItem!.scheduledDays}');
+
+    // 等待异步持久化完成,LearningLog 的 scheduledDays 也应更新为 init(good) 的结果
+    await Future.delayed(const Duration(milliseconds: 100));
+    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+    expect(logs, isNotEmpty);
+    expect(logs.first.scheduledDays, 2,
+        reason: 'LearningLog 持久化的下次复习天数应为 init(good) 的 2 天,实际 ${logs.first.scheduledDays}');
+
     await Future.delayed(const Duration(milliseconds: 100));
   });
 }
