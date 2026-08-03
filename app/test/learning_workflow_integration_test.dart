@@ -205,6 +205,10 @@ void main() {
     Prefs.write('currentUserId', 'test_user_id');
 
     // 2. 生成学习步骤配置: En2Ch（英译汉） + List（浏览）两个主要步骤
+    //    注:StudyStepsService.getUserStudySteps 会自动补全缺失的标准步骤
+    //    (En2Ch/Ch2En/EnSentence2Ch/ChSentence2En)。为模拟"用户只勾选英译汉"
+    //    的真实配置(Ch2En 存在但 Inactive),此处显式插入 Ch2En(Inactive),
+    //    否则自动补全会把 Ch2En 激活为第 3 个学习环节,导致本测试 2 步完成的预期失效。
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
           studyStep: 'En2Ch',
@@ -215,8 +219,16 @@ void main() {
         ));
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
-          studyStep: 'List',
+          studyStep: 'Ch2En',
           seq: 1,
+          state: 'Inactive',
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          studyStep: 'List',
+          seq: 2,
           state: 'Active',
           createTime: now,
           updateTime: now,
