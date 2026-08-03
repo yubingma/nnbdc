@@ -962,20 +962,79 @@ class BdcNotifier extends _$BdcNotifier {
 
   void updateFsrsRating(FsrsRating rating) {
     state = state.copyWith(lastFsrsRating: rating);
-    // 仅测评过一次的新词(reps<=1)修改评分时重新 init 计算下次复习时间
-    final lw = state.currentGetWordResult?.learningWord;
-    final bool forceInit = (lw?.reps ?? 0) <= 1;
-    _updateFsrsPreview(rating, forceInit: forceInit);
-    // 同步巩固阶段的测评参考显示,使"今日测评"标签立即反映新评分
+    // 立即同步巩固阶段的测评参考评分标签
     if (state.assessmentRating != null) {
-      state = state.copyWith(
-        assessmentRating: rating,
-        assessmentScheduledDays: state.fsrsItem?.scheduledDays,
-      );
+      state = state.copyWith(assessmentRating: rating);
     }
-    // 持久化评分修改:覆盖 LearningLog 最新一条并更新单词 FSRS,
-    // 同时刷新学习历史 future,让巩固环节 FutureBuilder 重新加载。
-    unawaited(_persistRatingModification(rating));
+    // 异步:按"该词今天之前是否学习过"决定重新 init(新词)或 next(复习词),
+    // 重新计算下次复习时间并持久化,同时刷新学习历史 future。
+    unawaited(_applyRatingModification(rating));
+  }
+
+  Future<void> _applyRatingModification(FsrsRating rating) async {
+    final lw = state.currentGetWordResult?.learningWord;
+    if (lw == null) return;
+    try {
+      final nextItem = await _recalcFsrsForRating(lw, rating);
+      state = state.copyWith(fsrsItem: nextItem);
+      // 同步巩固阶段的测评参考显示,使"今日测评"标签立即反映新评分
+      if (state.assessmentRating != null) {
+        state = state.copyWith(
+          assessmentScheduledDays: state.fsrsItem?.scheduledDays,
+        );
+      }
+      await _persistRatingModification(rating);
+    } catch (e, s) {
+      Global.logger.e('修改今日评分失败', error: e, stackTrace: s);
+    }
+  }
+
+  /// 按新评分重新计算 FSRS 结果。
+  ///
+  /// 修改"今日测评"评分的语义是修正测评环节的评分。测评环节对
+  /// 今日新词是 init,对复习词是 next。因此:
+  /// - 今日新词(addTime 属于今天)→ 重新 init(rating)
+  /// - 复习词 → next(测评前状态 lw, rating, elapsedDays)
+  ///
+  /// 用 addTime 而非 stability 判断:巩固环节的 lw.stability 已被测评
+  /// 提交推进(新词 init 后非 0),无法区分新词与复习词;addTime 恒定。
+  /// elapsedDays 取 LearningLog 最新一条(测评提交结果)的值——lw 的
+  /// lastLearningDate 已被测评提交更新为今天,直接计算会得到 0。
+  Future<FSRSItem> _recalcFsrsForRating(
+      LearningWordVo lw, FsrsRating rating) async {
+    final fsrs = FSRS();
+    final isNewToday = lw.addTime != null &&
+        app_date.DateUtils.businessDate(lw.addTime!) == AppClock.today();
+    if (isNewToday || lw.stability == null || lw.stability == 0.0) {
+      return fsrs.init(rating);
+    }
+
+    // 测评环节提交时的真实 elapsedDays(取自 LearningLog 最新一条)
+    int elapsedDays = 0;
+    try {
+      final userId = Global.getLoggedInUser()?.id;
+      final wordId = lw.word.id;
+      if (userId != null && wordId != null) {
+        final logs = await MyDatabase.instance.learningLogsDao
+            .getHistory(userId, wordId);
+        if (logs.isNotEmpty) {
+          elapsedDays = logs.first.elapsedDays;
+        }
+      }
+    } catch (e) {
+      Global.logger.e('获取测评 elapsedDays 失败,按 0 处理', error: e);
+    }
+
+    final prevItem = FSRSItem(
+      stability: lw.stability!,
+      difficulty: lw.difficulty!,
+      elapsedDays: elapsedDays,
+      scheduledDays: lw.scheduledDays ?? 0,
+      reps: lw.reps ?? 0,
+      lapses: lw.lapses ?? 0,
+      state: FsrsState.values[lw.state ?? 0],
+    );
+    return fsrs.next(prevItem, rating, elapsedDays);
   }
 
   Future<void> _persistRatingModification(FsrsRating rating) async {
