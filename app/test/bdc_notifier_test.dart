@@ -599,6 +599,11 @@ void main() {
     // 匹对“我每天早上都吃苹果”，LCS为 8, 8/10 = 80%
     expect(notifier.getChineseSentenceMatchScore('我每天早上都吃苹果', '我每天早上吃一个苹果。'), 80);
 
+    // 她/他/它 发音相同，语音识别无法区分，视为完全等同
+    expect(notifier.getChineseSentenceMatchScore('他每天早上吃一个苹果。', '她每天早上吃一个苹果。'), 100);
+    expect(notifier.getChineseSentenceMatchScore('它很漂亮。', '她很漂亮。'), 100);
+    expect(notifier.getChineseSentenceMatchScore('他走了。', '她走了。'), 100);
+
     // 2. 验证英文句子匹配（ChSentence2En 70% 单词级偏置阈值）
     // 目标：“I eat an apple every morning.” (6个英文单词)
     // 匹对“I eat apple”，分词为 [i, eat, apple]，LCS为 3, 3/6 = 50%
@@ -1176,16 +1181,18 @@ void main() {
       createTime: yesterday,
       updateTime: yesterday,
     ), false);
-    // 今天测评提交的记录(最新一条,用户看到的"轻松/6天后",elapsedDays=1 为测评前间隔)
+    // 今天测评提交的记录(最新一条,用户看到的"轻松/6天后")
+    // 注意:测评 easy 是 next(测评前状态=5.8, easy, elapsedDays=1) 的结果,
+    // 真实 FSRS 计算 stability≈13.0, scheduledDays=13
     await db.learningLogsDao.saveEntity(LearningLog(
       id: 'log_today_assess',
       userId: testUser.id,
       wordId: 'word_1',
       rating: FsrsRating.easy.value,
-      stability: 5.8,
+      stability: 13.0,
       difficulty: 2.11,
       elapsedDays: 1,
-      scheduledDays: 6,
+      scheduledDays: 13,
       createTime: now,
       updateTime: now,
     ), false);
@@ -1213,9 +1220,10 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
     state = container.read(bdcNotifierProvider);
     expect(state.fsrsItem, isNot(null));
-    // 基于测评前状态(5.8, elapsedDays=1) next(good) ≈ 8 天,不应停留在 6 天
-    expect(state.fsrsItem!.scheduledDays, isNot(6),
-        reason: '复习词改评分应基于测评前状态重算,下次复习天数不应停留在 6 天,实际 ${state.fsrsItem!.scheduledDays}');
+    // 基于测评前状态(stability=5.8, elapsedDays=1) next(good):
+    // 真实 FSRS 计算结果 ≈ 8 天(不是停留在测评后的 6 天)
+    expect(state.fsrsItem!.scheduledDays, 8,
+        reason: '复习词改评分应基于测评前状态(5.8)重算,预期 8 天,实际 ${state.fsrsItem!.scheduledDays}');
 
     await Future.delayed(const Duration(milliseconds: 100));
   });

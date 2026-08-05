@@ -991,50 +991,58 @@ class BdcNotifier extends _$BdcNotifier {
 
   /// 按新评分重新计算 FSRS 结果。
   ///
-  /// 修改"今日测评"评分的语义是修正测评环节的评分。测评环节对
-  /// 今日新词是 init,对复习词是 next。因此:
-  /// - 今日新词(addTime 属于今天)→ 重新 init(rating)
-  /// - 复习词 → next(测评前状态 lw, rating, elapsedDays)
+  /// 修改"今日测评"评分的语义是修正测评环节的评分。判断测评环节
+  /// 是 init(新词)还是 next(复习词)的依据是 LearningLog 最新一条
+  /// (即本次测评提交结果)的 elapsedDays:
+  /// - elapsedDays == 0 → 测评是 init(今日新词)→ 重新 init(rating)
+  /// - elapsedDays > 0 → 测评是 next(复习词)→ next(测评前状态, rating, elapsedDays)
   ///
-  /// 用 addTime 而非 stability 判断:巩固环节的 lw.stability 已被测评
-  /// 提交推进(新词 init 后非 0),无法区分新词与复习词;addTime 恒定。
-  /// elapsedDays 取 LearningLog 最新一条(测评提交结果)的值——lw 的
-  /// lastLearningDate 已被测评提交更新为今天,直接计算会得到 0。
+  /// 不能用 addTime 判断:计划内单词可能 addTime 很早但 stability 从未
+  /// 初始化(今天才真正学习),测评仍走 init;反之也不能用巩固环节的
+  /// lw.stability——它已被测评提交推进(init 后非 0),用它做 next 会
+  /// 产生"测评后状态再推进一次"的重复放大。复习词的测评前状态应取
+  /// LearningLog 中"今天之前最后一条"记录(该记录即测评前最后一次学习结果)。
   Future<FSRSItem> _recalcFsrsForRating(
       LearningWordVo lw, FsrsRating rating) async {
     final fsrs = FSRS();
-    final isNewToday = lw.addTime != null &&
-        app_date.DateUtils.businessDate(lw.addTime!) == AppClock.today();
-    if (isNewToday || lw.stability == null || lw.stability == 0.0) {
+    final userId = Global.getLoggedInUser()?.id;
+    final wordId = lw.word.id;
+    if (userId == null || wordId == null) return fsrs.init(rating);
+
+    final logs =
+        await MyDatabase.instance.learningLogsDao.getHistory(userId, wordId);
+    if (logs.isEmpty) return fsrs.init(rating);
+
+    // 本次测评提交的结果(最新一条)
+    final latestLog = logs.first;
+
+    // init(新词):elapsedDays==0 → 修改评分 = 重新 init
+    if (latestLog.elapsedDays == 0) {
       return fsrs.init(rating);
     }
 
-    // 测评环节提交时的真实 elapsedDays(取自 LearningLog 最新一条)
-    int elapsedDays = 0;
-    try {
-      final userId = Global.getLoggedInUser()?.id;
-      final wordId = lw.word.id;
-      if (userId != null && wordId != null) {
-        final logs = await MyDatabase.instance.learningLogsDao
-            .getHistory(userId, wordId);
-        if (logs.isNotEmpty) {
-          elapsedDays = logs.first.elapsedDays;
-        }
+    // next(复习词):找"今天之前最后一条"记录作为测评前状态
+    final today = AppClock.today();
+    LearningLog? prevLog;
+    for (final log in logs) {
+      if (log.createTime.isBefore(today)) {
+        prevLog = log;
+        break;
       }
-    } catch (e) {
-      Global.logger.e('获取测评 elapsedDays 失败,按 0 处理', error: e);
     }
+    // 无测评前记录(理论上不会发生,防御性兜底按新词处理)
+    if (prevLog == null) return fsrs.init(rating);
 
     final prevItem = FSRSItem(
-      stability: lw.stability!,
-      difficulty: lw.difficulty!,
-      elapsedDays: elapsedDays,
-      scheduledDays: lw.scheduledDays ?? 0,
+      stability: prevLog.stability,
+      difficulty: prevLog.difficulty,
+      elapsedDays: latestLog.elapsedDays,
+      scheduledDays: prevLog.scheduledDays,
       reps: lw.reps ?? 0,
       lapses: lw.lapses ?? 0,
       state: FsrsState.values[lw.state ?? 0],
     );
-    return fsrs.next(prevItem, rating, elapsedDays);
+    return fsrs.next(prevItem, rating, latestLog.elapsedDays);
   }
 
   Future<void> _persistRatingModification(FsrsRating rating) async {
@@ -2506,8 +2514,10 @@ class BdcNotifier extends _$BdcNotifier {
 
   int getChineseSentenceMatchScore(String input, String target) {
     String clean(String s) => s.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
-    final cleanInput = clean(input);
-    final cleanTarget = clean(target);
+    // 她/他/它 发音均为 tā，语音识别无法区分，统一归一化为"他"
+    String normalizePronoun(String s) => s.split('').map((ch) => (ch == '她' || ch == '它') ? '他' : ch).join('');
+    final cleanInput = normalizePronoun(clean(input));
+    final cleanTarget = normalizePronoun(clean(target));
     if (cleanTarget.isEmpty) return 0;
 
     List<List<int>> dp = List.generate(cleanInput.length + 1, (_) => List.filled(cleanTarget.length + 1, 0));
