@@ -2938,7 +2938,7 @@ class BdcNotifier extends _$BdcNotifier {
       final sourceText = isEn2Ch ? (sentence.english ?? "") : (sentence.chinese ?? "");
       final referenceText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
 
-      final systemPrompt = 'You are an AI referee. Judge if the user\'s translation is semantically correct. Respond in raw JSON format with: {"isCorrect": true} if correct, or {"isCorrect": false, "explanation": "Chinese explanation (max 12 words)"} if incorrect. Do NOT explain if correct. Do NOT include markdown format like ```json.';
+      final systemPrompt = 'You are an AI referee. Judge if the user\'s translation is semantically correct. IMPORTANT: In Chinese, 她/他/它 (she/he/it) are all pronounced "tā" and speech recognition cannot distinguish them. Treat them as completely interchangeable — a difference in this pronoun alone does NOT make the answer incorrect. Respond in raw JSON format with: {"isCorrect": true} if correct, or {"isCorrect": false, "explanation": "Chinese explanation (max 12 words)"} if incorrect. Do NOT explain if correct. Do NOT include markdown format like \`\`\`json.';
       final userPrompt = 'Exercise Type: ${state.studyStep}\nSource Sentence: $sourceText\nReference Translation: $referenceText\nUser Answer: $userInput';
 
       final messages = [
