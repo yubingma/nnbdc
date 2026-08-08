@@ -1574,7 +1574,7 @@ class BdcNotifier extends _$BdcNotifier {
         if (rawBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;
           if (isEnglish) {
-            Global.logger.i('🎤 [ASR] [Sentence-English] ASR识别事件触发，例句模式激活中，使用 en-US-sentence (en-80M BPE) 模型识别。当前识别片段: "$rawBest"');
+            Global.logger.d('~~~~~[ASR] RAW isFinal=$isFinal rawBest=[$rawBest]');
           }
 
           // 例句中英模式：在 stitch 之前对 ASR 片段做发音相似度自动纠错，
@@ -1587,7 +1587,9 @@ class BdcNotifier extends _$BdcNotifier {
                 ? state.word!.sentences!.first
                 : null;
             if (sentence?.english != null && sentence!.english!.isNotEmpty) {
+              Global.logger.d('~~~~~[CORRECT] CALL onAsrResult isFinal=$isFinal rawBest=[$rawBest]');
               cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
+              Global.logger.d('~~~~~[CORRECT] RESULT onAsrResult cleanBest=[$cleanBest]');
               // await 期间可能已松开并重按(轮次切换)：校验仍属于当前 PTT 轮次才继续写入
               if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
             }
@@ -1610,12 +1612,16 @@ class BdcNotifier extends _$BdcNotifier {
                   ? await getEnglishSentenceMatchScore(_accumulatedAsrText, sentence.english ?? '')
                   : getChineseSentenceMatchScore(_accumulatedAsrText, sentence.chinese ?? '');
               if (newScore < oldScore) {
+                Global.logger.d('~~~~~[MERGE] REJECT oldScore=$oldScore newScore=$newScore keep=[$prevAccumulated] reject=[$_accumulatedAsrText]');
                 _accumulatedAsrText = prevAccumulated;
+              } else {
+                Global.logger.d('~~~~~[MERGE] ACCEPT oldScore=$oldScore newScore=$newScore accum=[$_accumulatedAsrText]');
               }
             }
           }
           if (isFinal) {
             _lastFinalAsrText = _accumulatedAsrText;
+            Global.logger.d('~~~~~[MERGE] FINAL _lastFinalAsrText=[$_lastFinalAsrText]');
           }
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
@@ -1669,7 +1675,9 @@ class BdcNotifier extends _$BdcNotifier {
                 ? state.word!.sentences!.first
                 : null;
             if (sentence?.english != null && sentence!.english!.isNotEmpty) {
+              Global.logger.d('~~~~~[CORRECT] CALL onAsrResult(catch) rawBest=[$rawBest]');
               cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
+              Global.logger.d('~~~~~[CORRECT] RESULT onAsrResult(catch) cleanBest=[$cleanBest]');
               // await 间隙可能已切换 PTT 轮次：校验后才继续写入
               if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
             }
@@ -2175,6 +2183,7 @@ class BdcNotifier extends _$BdcNotifier {
   /// 核心原则：利用 ASR 已正确识别的词作为位置锚点，只在未对齐的局部做纠错。
   /// 避免 "for"(句尾) 被全局搜索错误替换为 "towed"(句中)。
   Future<String> _phoneticAutoCorrectSentence(String input, String targetSentence) async {
+    final sw = Stopwatch()..start();
     final inputWords = _extractEnglishWords(input);
     if (inputWords.isEmpty) return input;
 
@@ -2187,9 +2196,12 @@ class BdcNotifier extends _$BdcNotifier {
     for (final iw in inputWords) {
       if (targetLowerSet.contains(iw.toLowerCase())) exactHits++;
     }
-    if (inputWords.isNotEmpty && exactHits / inputWords.length >= 0.8) {
+    final hitRatio = inputWords.isNotEmpty ? exactHits / inputWords.length : 0.0;
+    if (hitRatio >= 0.8) {
+      Global.logger.d('~~~~~[CORRECT] SKIP (exact hits: $exactHits/${inputWords.length}=${(hitRatio*100).round()}%) input=[$input]→target=[$targetSentence]');
       return input;
     }
+    Global.logger.d('~~~~~[CORRECT] START input=[$input] target=[$targetSentence] exactHits=$exactHits/${inputWords.length}');
 
     const int matchThreshold = 55;
     const int maxLenDiff = 3;
@@ -2211,6 +2223,22 @@ class BdcNotifier extends _$BdcNotifier {
       if (bestJ >= 0) { inputAlign[i] = bestJ; targetUsed[bestJ] = true; }
     }
 
+    // 如果没有任何精确锚点(all input words are wrong against target),
+    // 说明 ASR 结果完全跑偏，不做纠错(避免 "to try talk"→"towed dock" 等幻觉)。
+    if (!inputAlign.any((a) => a != null)) {
+      Global.logger.d('~~~~~[CORRECT] SKIP (no anchors, input too noisy)');
+      return input;
+    }
+
+    // 日志：对齐结果
+    final alignDesc = <String>[];
+    for (int i = 0; i < inputWords.length; i++) {
+      if (inputAlign[i] != null) {
+        alignDesc.add('${inputWords[i]}→target[${inputAlign[i]}]="${targetWords[inputAlign[i]!]}"');
+      }
+    }
+    Global.logger.d('~~~~~[CORRECT] 对齐锚点: ${alignDesc.isEmpty ? "无" : alignDesc.join(", ")}');
+
     // 步骤 2：对未对齐的词，在期望位置附近做局部音素纠错
     final corrected = <String>[];
     var i = 0;
@@ -2222,6 +2250,15 @@ class BdcNotifier extends _$BdcNotifier {
       }
 
       final iw = inputWords[i];
+
+      // ≤2 字符的词通常是 ASR 碎片（如 "ve" 是 "vessel" 的前缀），
+      // 音素匹配过于模糊，不纠错，避免 "ve"→"dry" 误改。
+      if (iw.length <= 2) {
+        Global.logger.d('~~~~~[CORRECT] KEPT "${iw}" (too short for phoneme correction)');
+        corrected.add(iw);
+        i++;
+        continue;
+      }
 
       // 计算该词在 target 中的期望位置窗口（基于前后锚点）
       int leftJ = -1, rightJ = targetWords.length;
@@ -2264,11 +2301,18 @@ class BdcNotifier extends _$BdcNotifier {
         }
       }
 
-      corrected.add(bestSim >= matchThreshold ? bestMatch : iw);
+      final result = bestSim >= matchThreshold ? bestMatch : iw;
+      final action = bestSim >= matchThreshold
+          ? 'CORRECTED "${iw}"→"$result" window=[$wStart..$wEnd] sim=$bestSim'
+          : 'KEPT "${iw}" (bestSim=$bestSim<${matchThreshold})';
+      Global.logger.d('~~~~~[CORRECT] $action');
+      corrected.add(result);
       i += 1 + consumeNext;
     }
 
-    return corrected.join(" ");
+    final result = corrected.join(" ");
+    Global.logger.d('~~~~~[CORRECT] DONE (${sw.elapsedMilliseconds}ms) result=[$result]');
+    return result;
   }
 
   void _syncAudioHardware({bool bypassStartDebounce = false}) {
@@ -2442,7 +2486,9 @@ class BdcNotifier extends _$BdcNotifier {
             ? state.word!.sentences!.first
             : null;
         if (sentence?.english != null && sentence!.english!.isNotEmpty) {
+          Global.logger.d('~~~~~[CORRECT] CALL stopPttAsr flushTrim=[$flushTrim]');
           final correctedFlush = await _phoneticAutoCorrectSentence(flushTrim, sentence.english!);
+          Global.logger.d('~~~~~[CORRECT] RESULT stopPttAsr correctedFlush=[$correctedFlush]');
           Global.logger.d('[PTT] flush纠错: "$flushTrim" → "$correctedFlush"');
           flushTrim = correctedFlush;
         }
@@ -2457,8 +2503,10 @@ class BdcNotifier extends _$BdcNotifier {
       final String fullFlush;
       if (_pttAnchorPrefix.isEmpty && _pttAnchorSuffix.isEmpty) {
         final currentNorm = currentText.trim();
+        Global.logger.d('~~~~~[MERGE] stopPttAsr current=[$currentNorm] flush=[$flushTrim]');
         // 用匹配度而非长度选择最优文本
         fullFlush = await _selectBestText(currentNorm, flushTrim);
+        Global.logger.d('~~~~~[MERGE] stopPttAsr RESULT fullFlush=[$fullFlush]');
       } else {
         final prefix = _pttAnchorPrefix.isEmpty
             ? ''
@@ -2509,7 +2557,7 @@ class BdcNotifier extends _$BdcNotifier {
         : getChineseSentenceMatchScore(flush, sentence.chinese ?? '');
 
     final best = newScore > oldScore ? flush : current;
-    Global.logger.d('[PTT] _selectBestText: currentScore=$oldScore flushScore=$newScore → "${best.length > 40 ? "${best.substring(0, 40)}..." : best}"');
+    Global.logger.d('~~~~~[MERGE] _selectBestText: old=$oldScore new=$newScore → "$best"');
     return best;
   }
 
