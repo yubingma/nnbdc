@@ -2514,10 +2514,14 @@ class BdcNotifier extends _$BdcNotifier {
 
   int getChineseSentenceMatchScore(String input, String target) {
     String clean(String s) => s.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
-    // 她/他/它 发音均为 tā，语音识别无法区分，统一归一化为"他"
-    String normalizePronoun(String s) => s.split('').map((ch) => (ch == '她' || ch == '它') ? '他' : ch).join('');
-    final cleanInput = normalizePronoun(clean(input));
-    final cleanTarget = normalizePronoun(clean(target));
+    // 同音字归一化：她/他/它 (tā)、的/地/得 (de) 发音完全相同，语音识别无法区分
+    String normalizeHomophones(String s) => s.split('').map((ch) {
+      if (ch == '她' || ch == '它') return '他';
+      if (ch == '地' || ch == '得') return '的';
+      return ch;
+    }).join('');
+    final cleanInput = normalizeHomophones(clean(input));
+    final cleanTarget = normalizeHomophones(clean(target));
     if (cleanTarget.isEmpty) return 0;
 
     List<List<int>> dp = List.generate(cleanInput.length + 1, (_) => List.filled(cleanTarget.length + 1, 0));

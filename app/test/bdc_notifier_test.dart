@@ -604,6 +604,13 @@ void main() {
     expect(notifier.getChineseSentenceMatchScore('它很漂亮。', '她很漂亮。'), 100);
     expect(notifier.getChineseSentenceMatchScore('他走了。', '她走了。'), 100);
 
+    // 的/地/得 发音相同 (de)，语音识别无法区分，视为完全等同
+    expect(notifier.getChineseSentenceMatchScore('机器精确的切割金属。', '机器精确地切割金属。'), 100);
+    expect(notifier.getChineseSentenceMatchScore('他高兴的跳了起来。', '他高兴地跳了起来。'), 100);
+    expect(notifier.getChineseSentenceMatchScore('他跑的快。', '他跑得快。'), 100);
+    // 混合情况：的同音字全部归一
+    expect(notifier.getChineseSentenceMatchScore('她的确跑的很快。', '他的确跑得很快。'), 100);
+
     // 2. 验证英文句子匹配（ChSentence2En 70% 单词级偏置阈值）
     // 目标：“I eat an apple every morning.” (6个英文单词)
     // 匹对“I eat apple”，分词为 [i, eat, apple]，LCS为 3, 3/6 = 50%
