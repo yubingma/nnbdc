@@ -226,6 +226,8 @@ class AsrUtil {
   ) async {
     if (candidates.isEmpty) return AsrCandidateResult('', 0);
     final lowerTarget = targetWord.toLowerCase().trim();
+    // 目标是否为单字（无空格）：用于触发多词候选的拼接容错
+    final targetIsSingleWord = !lowerTarget.contains(' ');
 
     // 预处理候选列表（主要进行数字单词归一化等操作）
     final preprocessedCandidates = candidates.map((c) => preprocessEnglish(c, targetWord)).toList();
@@ -241,15 +243,44 @@ class AsrUtil {
       if (spokenWords != null && spokenWords.contains(lowerTarget)) {
         return AsrCandidateResult(candidates[i], 100);
       }
+      // 单字拼接容错：目标为单字但识别结果被 ASR 拆成了多个词（如 headmaster → said master）
+      // 尝试去掉空格拼接后再精确匹配
+      if (targetIsSingleWord && trimmedCandidate.contains(' ')) {
+        if (trimmedCandidate.replaceAll(' ', '') == lowerTarget) {
+          return AsrCandidateResult(candidates[i], 100);
+        }
+      }
     }
 
     // 预加载音素库（以防万一）
     await PhonemeUtil.load();
 
-    // 并行计算所有候选词的相似分
-    final scores = await Future.wait(
-      preprocessedCandidates.map((c) => calculateOverallSimilarity(c, lowerTarget)),
+    // 构建评分输入：对每个候选计算相似分。当目标为单字且候选含空格时，
+    // 额外对拼接版（去掉空格）也计算一次，取两者中的最高分。
+    // 用 scoreInputOrigIdx 记录每个评分输入对应的原始候选索引，用于后聚合。
+    final scoreInputs = <String>[];
+    final scoreInputOrigIdx = <int>[];
+    for (int i = 0; i < preprocessedCandidates.length; i++) {
+      scoreInputs.add(preprocessedCandidates[i]);
+      scoreInputOrigIdx.add(i);
+      if (targetIsSingleWord && preprocessedCandidates[i].contains(' ')) {
+        scoreInputs.add(preprocessedCandidates[i].replaceAll(' ', ''));
+        scoreInputOrigIdx.add(i);
+      }
+    }
+
+    final allScores = await Future.wait(
+      scoreInputs.map((c) => calculateOverallSimilarity(c, lowerTarget)),
     );
+
+    // 按原始候选索引聚合，每个候选取自身及拼接版的最高分
+    final scores = List.filled(candidates.length, 0);
+    for (int j = 0; j < scoreInputs.length; j++) {
+      final origIdx = scoreInputOrigIdx[j];
+      if (allScores[j] > scores[origIdx]) {
+        scores[origIdx] = allScores[j];
+      }
+    }
 
     String best = candidates[0];
     int bestScore = scores[0];
