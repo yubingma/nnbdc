@@ -1594,7 +1594,27 @@ class BdcNotifier extends _$BdcNotifier {
           }
 
           if (isFinal) {
-            _lastFinalAsrText = mergeAsrText(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+            // 合并前比较新旧文本对目标句的匹配度：若旧文本已达标且新文本更差，拒绝覆盖。
+            // 解决 ASR endpoint reset 后产生幻觉帧把正确结果冲掉的问题。
+            String? candidate = cleanBest;
+            if (_lastFinalAsrText.isNotEmpty) {
+              final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+                  ? state.word!.sentences!.first
+                  : null;
+              if (sentence != null) {
+                final oldScore = isEnglish
+                    ? await getEnglishSentenceMatchScore(_lastFinalAsrText, sentence.english ?? '')
+                    : getChineseSentenceMatchScore(_lastFinalAsrText, sentence.chinese ?? '');
+                final newScore = isEnglish
+                    ? await getEnglishSentenceMatchScore(cleanBest, sentence.english ?? '')
+                    : getChineseSentenceMatchScore(cleanBest, sentence.chinese ?? '');
+                if (newScore < oldScore && oldScore >= 60) {
+                  Global.logger.d('[ASR-QA] 拒绝低质量新帧: oldScore=$oldScore newScore=$newScore, 保留 "$_lastFinalAsrText"');
+                  candidate = _lastFinalAsrText;
+                }
+              }
+            }
+            _lastFinalAsrText = candidate!;
             _accumulatedAsrText = _lastFinalAsrText;
           } else {
             _accumulatedAsrText = mergeAsrText(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
@@ -1784,11 +1804,9 @@ class BdcNotifier extends _$BdcNotifier {
             _isAnswerCorrectHandling = false; // 练习答对不锁死,允许继续练习/看答案
             _playCorrectSound();
             state = state.copyWith(
-              hasFinishedAnswering: false,
-              // 练习模式始终允许点"下一词"离开(不被练习分支覆盖为 false)
+              hasFinishedAnswering: true, // 自动显示正确答案,便于用户比对纠错
               canLeaveCurrWord: true,
               currentScore: maxScore,
-              showSentenceTranslation: true, // 自动显示正确答案,便于用户比对纠错
             );
           } else {
             final ratingResult = _calculateRating(method);
@@ -2164,6 +2182,16 @@ class BdcNotifier extends _$BdcNotifier {
 
     final targetWords = _extractEnglishWords(targetSentence);
     if (targetWords.isEmpty) return input;
+
+    // 如果输入已经高度匹配目标句（≥80% 词精确命中），跳过纠错避免误改正确词
+    final targetLowerSet = targetWords.map((w) => w.toLowerCase()).toSet();
+    int exactHits = 0;
+    for (final iw in inputWords) {
+      if (targetLowerSet.contains(iw.toLowerCase())) exactHits++;
+    }
+    if (inputWords.isNotEmpty && exactHits / inputWords.length >= 0.8) {
+      return input;
+    }
 
     // 发音相似度纠错:识别片段与目标词音素相似(>=55)即替换为目标词。
     // 目标:纠正近音误识别与多词切分错误(如 "these plain"→"discipline"、
