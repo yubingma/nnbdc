@@ -1788,6 +1788,7 @@ class BdcNotifier extends _$BdcNotifier {
               // 练习模式始终允许点"下一词"离开(不被练习分支覆盖为 false)
               canLeaveCurrWord: true,
               currentScore: maxScore,
+              showSentenceTranslation: true, // 自动显示正确答案,便于用户比对纠错
             );
           } else {
             final ratingResult = _calculateRating(method);
