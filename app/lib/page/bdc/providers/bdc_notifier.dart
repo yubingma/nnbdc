@@ -1593,31 +1593,29 @@ class BdcNotifier extends _$BdcNotifier {
             }
           }
 
-          if (isFinal) {
-            // 合并前比较新旧文本对目标句的匹配度：若旧文本已达标且新文本更差，拒绝覆盖。
-            // 解决 ASR endpoint reset 后产生幻觉帧把正确结果冲掉的问题。
-            String? candidate = cleanBest;
-            if (_lastFinalAsrText.isNotEmpty) {
-              final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
-                  ? state.word!.sentences!.first
-                  : null;
-              if (sentence != null) {
-                final oldScore = isEnglish
-                    ? await getEnglishSentenceMatchScore(_lastFinalAsrText, sentence.english ?? '')
-                    : getChineseSentenceMatchScore(_lastFinalAsrText, sentence.chinese ?? '');
-                final newScore = isEnglish
-                    ? await getEnglishSentenceMatchScore(cleanBest, sentence.english ?? '')
-                    : getChineseSentenceMatchScore(cleanBest, sentence.chinese ?? '');
-                if (newScore < oldScore && oldScore >= 60) {
-                  Global.logger.d('[ASR-QA] 拒绝低质量新帧: oldScore=$oldScore newScore=$newScore, 保留 "$_lastFinalAsrText"');
-                  candidate = _lastFinalAsrText;
-                }
+          // 每个帧（无论 final/non-final）先与旧文本做增量拼接。Android 端点 reset
+          // 后新帧可能只是尾部片段，stitchTexts 在无重叠时会错误地直接拼接。
+          // 拼接后用匹配度守卫：若拼接结果不如旧文本，保留旧文本。
+          final prevAccumulated = _accumulatedAsrText;
+          _accumulatedAsrText = mergeAsrText(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+          if (prevAccumulated.isNotEmpty && _accumulatedAsrText != prevAccumulated) {
+            final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+                ? state.word!.sentences!.first
+                : null;
+            if (sentence != null) {
+              final oldScore = isEnglish
+                  ? await getEnglishSentenceMatchScore(prevAccumulated, sentence.english ?? '')
+                  : getChineseSentenceMatchScore(prevAccumulated, sentence.chinese ?? '');
+              final newScore = isEnglish
+                  ? await getEnglishSentenceMatchScore(_accumulatedAsrText, sentence.english ?? '')
+                  : getChineseSentenceMatchScore(_accumulatedAsrText, sentence.chinese ?? '');
+              if (newScore < oldScore) {
+                _accumulatedAsrText = prevAccumulated;
               }
             }
-            _lastFinalAsrText = candidate!;
-            _accumulatedAsrText = _lastFinalAsrText;
-          } else {
-            _accumulatedAsrText = mergeAsrText(_lastFinalAsrText, cleanBest, isEnglish: isEnglish);
+          }
+          if (isFinal) {
+            _lastFinalAsrText = _accumulatedAsrText;
           }
         }
         processedResult = AsrUtil.preprocess(_accumulatedAsrText);
@@ -2173,9 +2171,9 @@ class BdcNotifier extends _$BdcNotifier {
   /// 将识别出的每个单词与例句正确单词做音素比对，相似度达到阈值时替换为例句用词，
   /// 修正 ASR 对发音相近单词的误识别（如 "dessert" → "desert"、"gotta" → "got to" 等）。
   /// 对例句中英模式 (ChSentence2En) 的 ASR 结果做发音相似度自动纠错。
-  /// 支持"多词↔单词"对齐:中文用户发音不准时,一个单词可能被拆成多个近音词
-  /// (如 "discipline" → "these plain"、"teasplane"),需要把识别词的连续片段
-  /// (1-3 词)与目标词比较,发音相似则整体合并替换为目标词。
+  ///
+  /// 核心原则：利用 ASR 已正确识别的词作为位置锚点，只在未对齐的局部做纠错。
+  /// 避免 "for"(句尾) 被全局搜索错误替换为 "towed"(句中)。
   Future<String> _phoneticAutoCorrectSentence(String input, String targetSentence) async {
     final inputWords = _extractEnglishWords(input);
     if (inputWords.isEmpty) return input;
@@ -2183,7 +2181,7 @@ class BdcNotifier extends _$BdcNotifier {
     final targetWords = _extractEnglishWords(targetSentence);
     if (targetWords.isEmpty) return input;
 
-    // 如果输入已经高度匹配目标句（≥80% 词精确命中），跳过纠错避免误改正确词
+    // 如果输入已经高度匹配目标句（≥80% 词精确命中），跳过纠错
     final targetLowerSet = targetWords.map((w) => w.toLowerCase()).toSet();
     int exactHits = 0;
     for (final iw in inputWords) {
@@ -2193,124 +2191,80 @@ class BdcNotifier extends _$BdcNotifier {
       return input;
     }
 
-    // 发音相似度纠错:识别片段与目标词音素相似(>=55)即替换为目标词。
-    // 目标:纠正近音误识别与多词切分错误(如 "these plain"→"discipline"、
-    // "teasplane"→"discipline")。
     const int matchThreshold = 55;
     const int maxLenDiff = 3;
-    // 常见功能词不参与近音纠错(避免 "this"→"is"、"to"→"for" 等误改)
-    const Set<String> functionWords = {
-      'a', 'an', 'the', 'is', 'are', 'was', 'were', 'to', 'for', 'of', 'at',
-      'in', 'on', 'this', 'that', 'these', 'those', 'his', 'her', 'it', 'its',
-      'and', 'or', 'but', 'with', 'as', 'by', 'from', 'up', 'out', 'do', 'does',
-    };
 
+    // 步骤 1：位置感知对齐。为每个 input 词在 target 中找精确匹配，
+    // 优先匹配位置相近的，避免 "for"(句尾) 匹配到 "towed"(句中)。
+    final inputAlign = List<int?>.filled(inputWords.length, null); // → targetIndex
+    final targetUsed = List<bool>.filled(targetWords.length, false);
+    for (int i = 0; i < inputWords.length; i++) {
+      final iw = inputWords[i].toLowerCase();
+      int bestJ = -1, bestDist = 999;
+      for (int j = 0; j < targetWords.length; j++) {
+        if (targetUsed[j]) continue;
+        if (iw == targetWords[j].toLowerCase()) {
+          final dist = (i - j).abs();
+          if (dist < bestDist) { bestDist = dist; bestJ = j; }
+        }
+      }
+      if (bestJ >= 0) { inputAlign[i] = bestJ; targetUsed[bestJ] = true; }
+    }
+
+    // 步骤 2：对未对齐的词，在期望位置附近做局部音素纠错
     final corrected = <String>[];
     var i = 0;
     while (i < inputWords.length) {
+      if (inputAlign[i] != null) {
+        corrected.add(targetWords[inputAlign[i]!]);
+        i++;
+        continue;
+      }
+
       final iw = inputWords[i];
-      final iwLower = iw.toLowerCase();
 
-      // 1. 精确匹配优先(大小写不敏感)
-      String? exactMatch;
-      for (final tw in targetWords) {
-        if (iwLower == tw.toLowerCase()) {
-          exactMatch = tw;
-          break;
-        }
+      // 计算该词在 target 中的期望位置窗口（基于前后锚点）
+      int leftJ = -1, rightJ = targetWords.length;
+      for (int k = i - 1; k >= 0 && leftJ < 0; k--) {
+        if (inputAlign[k] != null) leftJ = inputAlign[k]!;
       }
-      if (exactMatch != null) {
-        corrected.add(exactMatch);
-        i++;
-        continue;
+      for (int k = i + 1; k < inputWords.length && rightJ >= targetWords.length; k++) {
+        if (inputAlign[k] != null) rightJ = inputAlign[k]!;
       }
+      // 无锚点时按比例估算
+      if (leftJ < 0) leftJ = (i * targetWords.length / inputWords.length).round() - 2;
+      if (rightJ >= targetWords.length) rightJ = ((i + 1) * targetWords.length / inputWords.length).round() + 2;
+      final wStart = (leftJ + 1).clamp(0, targetWords.length - 1);
+      final wEnd = rightJ.clamp(wStart, targetWords.length - 1);
 
-      // 功能词不做近音纠错,但可能是误切碎片(如 "this plan" → "discipline"):
-      // 先尝试与后续词合并匹配目标词,仅当合并也不达标时才保留原功能词。
-      if (functionWords.contains(iwLower)) {
-        // 尝试与后续 1-2 词合并匹配目标词。
-        // 约束1:窗口不跨功能词(避免 "this plan is" 把 "is" 也吞进合并);
-        // 约束2:合并相似度需 >= 70(高于普通阈值,防 "this plan is"→"any" 误判)。
-        String merged = iw;
-        int mergedSim = 0;
-        int mergedConsume = 0;
-        for (var win = 2; win <= 3 && i + win <= inputWords.length; win++) {
-          final winWords = inputWords.sublist(i, i + win);
-          // 窗口内除当前功能词外,若还有功能词则停止扩展
-          if (winWords.skip(1).any((w) => functionWords.contains(w.toLowerCase()))) break;
-          final windowText = winWords.join(" ");
-          for (var j = 0; j < targetWords.length; j++) {
-            final tw = targetWords[j];
-            if (functionWords.contains(tw.toLowerCase())) continue;
-            if ((windowText.length - tw.length).abs() > maxLenDiff * win) continue;
-            // 窗口总长度不得超过目标词长度+2(防把两个目标词误合并为一个)
-            if (windowText.length > tw.length + 2) continue;
-            final sim = await PhonemeUtil.similarity(windowText, tw);
-            if (sim > mergedSim) {
-              mergedSim = sim;
-              merged = tw;
-              mergedConsume = win - 1;
-            }
-          }
-        }
-        if (mergedSim >= 70) {
-          corrected.add(merged);
-          Global.logger.d('[CORRECT] 功能词合并 "$iw"+$mergedConsume → "$merged" sim=$mergedSim');
-          i += 1 + mergedConsume;
-          continue;
-        }
-        corrected.add(iw);
-        i++;
-        continue;
-      }
-
-      // 2. 滑动窗口音素匹配:先算单词匹配(win=1),再算多词合并(win=2/3)。
-      //    仅当多词合并相似度显著高于单词匹配(+15)时才合并,避免吞掉能独立
-      //    匹配的词(如 "gurty seaplane" → "gurty"≈good + "seaplane"≈discipline,
-      //    不应把 "gurty sea" 误合并成 discipline 而丢掉 good)。
+      // 在位置窗口中做音素匹配（单词 + 多词合并）
       String bestMatch = iw;
-      int bestSim = 0;
-      int consumeNext = 0; // 合并消耗的额外词数
+      int bestSim = 0, consumeNext = 0;
 
-      // 2a. 单词匹配(win=1)
-      for (var j = 0; j < targetWords.length; j++) {
+      for (int j = wStart; j <= wEnd; j++) {
         final tw = targetWords[j];
-        if (functionWords.contains(tw.toLowerCase())) continue;
+        if (targetUsed[j]) continue;
         if ((iw.length - tw.length).abs() > maxLenDiff) continue;
         final sim = await PhonemeUtil.similarity(iw, tw);
-        if (sim > bestSim) {
-          bestSim = sim;
-          bestMatch = tw;
-        }
+        if (sim > bestSim) { bestSim = sim; bestMatch = tw; }
       }
-      final int singleBestSim = bestSim;
+      final singleBestSim = bestSim;
 
-      // 2b. 多词合并(win=2/3),仅当明显优于单词匹配,且窗口长度不超过目标词太多
       for (var win = 2; win <= 3 && i + win <= inputWords.length; win++) {
         final windowText = inputWords.sublist(i, i + win).join(" ");
-        final winWords = inputWords.sublist(i, i + win);
-        // 窗口内含功能词则跳过(避免 "the plain" 误合并)
-        if (winWords.any((w) => functionWords.contains(w.toLowerCase()))) continue;
-        for (var j = 0; j < targetWords.length; j++) {
+        for (int j = wStart; j <= wEnd; j++) {
           final tw = targetWords[j];
-          if (functionWords.contains(tw.toLowerCase())) continue;
+          if (targetUsed[j]) continue;
           if ((windowText.length - tw.length).abs() > maxLenDiff * win) continue;
-          // 窗口总长度不得超过目标词长度+2:碎片合并的目标是长词被切短
-          // (如 "this plan"(8)→"discipline"(10)),而 "gulty seaplane"(13)
-          // 实际是两个目标词的误识别,不应整体匹配一个词。
           if (windowText.length > tw.length + 2) continue;
           final sim = await PhonemeUtil.similarity(windowText, tw);
-          // 仅当合并相似度比单词匹配高至少 15 分才采用(防误合并)
           if (sim > bestSim && sim >= singleBestSim + 15) {
-            bestSim = sim;
-            bestMatch = tw;
-            consumeNext = win - 1;
+            bestSim = sim; bestMatch = tw; consumeNext = win - 1;
           }
         }
       }
 
       corrected.add(bestSim >= matchThreshold ? bestMatch : iw);
-      Global.logger.d('[CORRECT] "$iw" win=${consumeNext + 1} → "$bestMatch" sim=$bestSim');
       i += 1 + consumeNext;
     }
 
@@ -2498,20 +2452,13 @@ class BdcNotifier extends _$BdcNotifier {
       //   而 current 是完整文本 —— 此时应保留 current,避免截断;
       // - flush 更完整(补尾部词)时用 flush;
       // - current 异常错乱(远超 flush 且不重叠)时用 flush 兜底。
+      // 但长度比较不可靠:端点 reset 后 current 可能已被新帧 stitch 污染,
+      // flush 也可能只是尾部片段。最终依据:对目标句的匹配度。
       final String fullFlush;
       if (_pttAnchorPrefix.isEmpty && _pttAnchorSuffix.isEmpty) {
         final currentNorm = currentText.trim();
-        if (currentNorm.isNotEmpty &&
-            (currentNorm.contains(flushTrim) || flushTrim.contains(currentNorm))) {
-          // 一方包含另一方:取更完整者(按长度)
-          fullFlush = flushTrim.length >= currentNorm.length ? flushTrim : currentNorm;
-        } else if (currentNorm.length > flushTrim.length * 2 && !flushTrim.contains(currentNorm)) {
-          // current 异常长且与 flush 不重叠:视为错乱,用 flush
-          Global.logger.d('[PTT] current 疑似错乱,改用 flush');
-          fullFlush = flushTrim;
-        } else {
-          fullFlush = currentNorm.isEmpty ? flushTrim : currentNorm;
-        }
+        // 用匹配度而非长度选择最优文本
+        fullFlush = await _selectBestText(currentNorm, flushTrim);
       } else {
         final prefix = _pttAnchorPrefix.isEmpty
             ? ''
@@ -2539,6 +2486,31 @@ class BdcNotifier extends _$BdcNotifier {
     if (text.isNotEmpty) {
       await checkAsrResult(asrInput: text, isVoice: true, isFinal: true);
     }
+  }
+
+  /// 松开时比较 currentText(按住期间累积) 与 flushText(原生收尾) 对目标句的匹配度，
+  /// 返回匹配度更高的文本。避免端点 reset 后 flush/current 被污染时选错。
+  Future<String> _selectBestText(String current, String flush) async {
+    if (current.isEmpty) return flush;
+    if (flush.isEmpty) return current;
+    if (current == flush) return current;
+
+    final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+        ? state.word!.sentences!.first
+        : null;
+    if (sentence == null) return current.length >= flush.length ? current : flush;
+
+    final isEnglish = state.studyStep == StudyStep.chSentence2En.json;
+    final oldScore = isEnglish
+        ? await getEnglishSentenceMatchScore(current, sentence.english ?? '')
+        : getChineseSentenceMatchScore(current, sentence.chinese ?? '');
+    final newScore = isEnglish
+        ? await getEnglishSentenceMatchScore(flush, sentence.english ?? '')
+        : getChineseSentenceMatchScore(flush, sentence.chinese ?? '');
+
+    final best = newScore > oldScore ? flush : current;
+    Global.logger.d('[PTT] _selectBestText: currentScore=$oldScore flushScore=$newScore → "${best.length > 40 ? "${best.substring(0, 40)}..." : best}"');
+    return best;
   }
 
   int getChineseSentenceMatchScore(String input, String target) {
@@ -2805,12 +2777,16 @@ class BdcNotifier extends _$BdcNotifier {
   /// 合并本轮 PTT 的 ASR 结果到累积文本。
   /// 两端原生识别器(Android sherpa-onnx / iOS SFSpeechRecognizer)发送的都是
   /// "累积全文"(从会话/段落开始到当前的完整文本),并非增量片段。
-  /// - iOS:每次回调都是完整全文且识别中途会整体改写,重叠拼接会把旧全文与
-  ///   改写后的新全文错误串接导致整句重复,故直接以最新全文覆盖。
+  /// - iOS:每次回调都是完整全文且识别中途会整体改写。但端点 reset 后新帧可能只有
+  ///   尾部片段(如 "was chipped"),此时应保留更长的 prev 而非截断覆盖。
   /// - Android:按住期间以 _lastFinalAsrText(空)为基准同样退化为覆盖;
   ///   仅跨段(endpoint reset 后新段落)时才需要 stitchTexts 与旧段拼接。
   static String mergeAsrText(String prev, String next, {bool isEnglish = false}) {
-    if (PlatformUtils.isIOS) return next;
+    if (PlatformUtils.isIOS) {
+      // 若 prev 更长且包含 next,说明 next 只是 prev 的末尾截断（端点 reset 导致），保留 prev
+      if (prev.length > next.length && prev.contains(next)) return prev;
+      return next;
+    }
     return stitchTexts(prev, next, isEnglish: isEnglish);
   }
 
