@@ -256,7 +256,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             
             if (type == "en_sentence") {
                 currentModel = modelEnSentence
-                activeGain = 1.2f
+                activeGain = 2.5f
                 Log.i(TAG, "ASR_MODEL_ACTIVE: Switched working model to ENGLISH SENTENCE MODEL (en-20M BPE)")
             } else if (type == "en") {
                 currentModel = modelEn
