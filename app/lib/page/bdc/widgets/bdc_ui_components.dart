@@ -1707,11 +1707,11 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
-    // 当前环节阶段名：测评（stepIndex 0）/ 恢复（复习轨道答错后的补救环节，由 handleWord 计算）/ 巩固（其余后续环节）
+    // 当前环节阶段名：测评（stepIndex 0）/ 重测（复习轨道测评答错后的加测环节，由 handleWord 计算）/ 巩固（其余后续环节）
     final gwr = state.currentGetWordResult;
     final String stageText = gwr == null || gwr.stepIndex == 0
         ? '[测评] '
-        : (state.isRestoreStep ? '[恢复] ' : '[巩固] ');
+        : (state.isRestoreStep ? '[重测] ' : '[巩固] ');
 
     if (!state.hasFinishedAnswering || state.fsrsItem == null) {
       if (state.currentGetWordResult != null &&

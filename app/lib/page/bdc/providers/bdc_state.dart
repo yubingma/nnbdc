@@ -61,7 +61,7 @@ class BdcState extends Equatable {
   final Map<String, bool> playingStates;
   final int hintTapCount;
   final bool isWordMastered;
-  /// 当前环节是否为复习轨道的恢复环节（测评答错后的补救环节），由 handleWord 按轨道与 stepIndex 计算
+  /// 当前环节是否为复习轨道的重测环节（测评答错后的加测环节），由 handleWord 按轨道与 stepIndex 计算
   final bool isRestoreStep;
   
   final DateTime? wordStartTime;

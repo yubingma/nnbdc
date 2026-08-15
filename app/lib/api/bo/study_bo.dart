@@ -668,7 +668,7 @@ class StudyBo {
         }());
       }
 
-      // 轨道推导 helper：每个词按状态走学习轨道（激活序列）或复习轨道（测评+恢复+List）。
+      // 轨道推导 helper：每个词按状态走学习轨道（激活序列）或复习轨道（测评+重测+List）。
       // 轨道由"今天首条评分日志的 elapsedDays"固化（init=0 → 学习轨道；跨天 next>0 → 复习轨道），
       // 当天后续评分不再改变轨道，防止 state 变化导致轨道中途漂移。
       List<String> trackOf(LearningWord word) => StudyTrack.trackOf(
@@ -730,7 +730,7 @@ class StudyBo {
       bool shouldSave = gotoNext || fsrsRating != null || isWordMastered;
       if (shouldSave) {
         final currWord = todayWords[currentWordIndex];
-        // 复习轨道测评环节答对：跳过恢复环节，直接进入 List
+        // 复习轨道测评环节答对：跳过重测环节，直接进入 List
         final bool skipRestoreStep = StudyTrack.isReviewTrack(
               activeStepNames: activeStepNames,
               stability: currWord.stability,
@@ -959,7 +959,7 @@ class StudyBo {
 
     // FSRS 逻辑：学习事件（当天重设）与复习事件（跨天单次信号）区分
     // - 新词首次评分（stability 空/0）：init
-    // - 当天非首次评分（学习轨道巩固 / 复习轨道恢复）：relearn 重设（可升可降）
+    // - 当天非首次评分（学习轨道巩固 / 复习轨道重测）：relearn 重设（可升可降）
     // - 跨天首次评分（复习词测评 / 学一半词次日检验）：next 复习公式
     FSRSItem? nextFsrs;
     if (fsrsRating != null) {
@@ -988,7 +988,7 @@ class StudyBo {
         final bool isSameDayToday = currWord.lastLearningDate != null &&
             DateUtils.isSameBusinessDay(currWord.lastLearningDate!, AppClock.today());
         if (isSameDayToday) {
-          // 学习/恢复事件：重设稳定性与难度。state 判据：本次提交后是否还有评分环节
+          // 学习/重测事件：重设稳定性与难度。state 判据：本次提交后是否还有评分环节
           //（评分环节 = 轨道中 List 之外的环节；List 恒为末位且不评分，
           //  故 allStepsCompletedForWord 语义为"最后一个评分环节已提交"，见 getWord）。
           nextFsrs = fsrs.relearn(currentFsrs, fsrsRating,
@@ -1056,7 +1056,7 @@ class StudyBo {
     final updatedWord = currWord.copyWith(
       lastLearningDate: Value(AppClock.today()),
       learnedTimes: (currWord.learnedTimes) + 1,
-      // 复习轨道测评答对时跳过恢复环节直接进 List（+2）；其余 +1
+      // 复习轨道测评答对时跳过重测环节直接进 List（+2）；其余 +1
       todayLearnedTimes: (currWord.todayLearnedTimes) + (skipRestoreStep ? 2 : 1),
       stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
       difficulty: nextFsrs != null ? Value(nextFsrs.difficulty) : const Value.absent(),

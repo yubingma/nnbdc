@@ -61,6 +61,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
   Set<String> _masteredWordIds = {};
+  /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道说明）
+  int _studyStepsTab = 0;
 
   /// 近期已下载/尝试下载的词书 ID 集合（防止导入后异步可见性延迟导致的循环）
   static final Map<String, DateTime> _recentlyDownloadedAt = {};
@@ -1135,35 +1137,119 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   letterSpacing: 0.5,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '拖动 ⠿ 排序',
-                  style: TextStyle(
-                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+              // 拖动排序提示仅新词 tab 有意义
+              if (_studyStepsTab == 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '拖动 ⠿ 排序',
+                    style: TextStyle(
+                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
-        ReorderableListView(
-          buildDefaultDragHandles: false,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          // ignore: deprecated_member_use
-          onReorder: reorderData,
-          children: [
-            for (int i = 0; i < studySteps!.length; i++) _buildStepTile(studySteps![i], i),
-          ],
+        DefaultTabController(
+          length: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                dividerColor: Colors.transparent,
+                onTap: (i) => setState(() => _studyStepsTab = i),
+                tabs: const [
+                  Tab(text: '新词'),
+                  Tab(text: '旧词'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (_studyStepsTab == 0)
+                ReorderableListView(
+                  buildDefaultDragHandles: false,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  // ignore: deprecated_member_use
+                  onReorder: reorderData,
+                  children: [
+                    for (int i = 0; i < studySteps!.length; i++) _buildStepTile(studySteps![i], i),
+                  ],
+                )
+              else
+                _buildReviewStepsInfoCard(isDarkMode),
+            ],
+          ),
         ),
       ],
+    );
+  }
+
+  /// 旧词 tab：复习轨道的只读说明（方案 A，不做可配置项）
+  Widget _buildReviewStepsInfoCard(bool isDarkMode) {
+    final textColor = isDarkMode ? Colors.white70 : Colors.black87;
+    final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final firstStepName = selectedSteps().isNotEmpty
+        ? StudyStepExt.fromString(selectedSteps().first.studyStep).description
+        : '第一环节';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDarkMode
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildReviewStepRow('① 测评', '$firstStepName（新词的第 1 个环节）', textColor),
+          _buildReviewStepRow('② 重测', '测评答错时，当天反向加测一次（英→中 答错则 中→英）', textColor),
+          _buildReviewStepRow('③ 单词列表', '浏览本组单词', textColor),
+          const SizedBox(height: 8),
+          Text(
+            '旧词不需要再学例句等巩固环节，复习更轻快。',
+            style: TextStyle(fontSize: 11, color: subColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewStepRow(String title, String desc, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 84,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              desc,
+              style: TextStyle(fontSize: 12, color: textColor),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

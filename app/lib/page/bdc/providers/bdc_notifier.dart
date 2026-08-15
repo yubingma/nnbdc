@@ -1060,7 +1060,7 @@ class BdcNotifier extends _$BdcNotifier {
     if (prevLog == null) return fsrs.init(rating);
 
     // 当天首条日志（createTime 最早）的 elapsedDays 决定当天事件类型：
-    // 不能用最新一条（巩固/恢复的 relearn 日志 elapsedDays 恒为 0，会误判为新词 init）
+    // 不能用最新一条（巩固/重测的 relearn 日志 elapsedDays 恒为 0，会误判为新词 init）
     final todayLogs =
         logs.where((l) => !l.createTime.isBefore(today)).toList(); // 倒序
     final firstTodayLog = todayLogs.last; // 当天最早一条

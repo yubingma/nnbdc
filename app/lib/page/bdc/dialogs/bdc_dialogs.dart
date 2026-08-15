@@ -1558,7 +1558,7 @@ extension BdcPageStateDialogs on BdcPageState {
         .getMasteredWordsForUser(user.id);
     final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
 
-    // 今天评分日志：固化每词轨道（与 StudyBo 一致），并标记当天答错过（恢复环节真走过）的词
+    // 今天评分日志：固化每词轨道（与 StudyBo 一致），并标记当天答错过（重测环节真走过）的词
     final todayStart = AppClock.today();
     final logRows = await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
           ..where((l) =>
@@ -1567,7 +1567,7 @@ extension BdcPageStateDialogs on BdcPageState {
         .get();
     final firstLogElapsedDays = <String, int>{};
     final earliestTime = <String, DateTime>{};
-    // 当天评分日志条数：恢复环节"真走过"= 当天有 ≥2 条评分日志（测评 + 恢复）
+    // 当天评分日志条数：重测环节"真走过"= 当天有 ≥2 条评分日志（测评 + 重测）
     final todayLogCounts = <String, int>{};
     for (final row in logRows) {
       final prev = earliestTime[row.wordId];
@@ -1965,7 +1965,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                 sIndex++) ...[
                                               if (sIndex ==
                                                   activeSteps.length - 1)
-        // 轨道 2：复习轨道隐藏环节——恢复环节行（测评/List 与轨道 1 共用）
+        // 轨道 2：复习轨道隐藏环节——重测环节行（测评/List 与轨道 1 共用）
                                                   Padding(
                                                     padding:
                                                         const EdgeInsets.symmetric(
@@ -1977,10 +1977,10 @@ extension BdcPageStateDialogs on BdcPageState {
                                                         SizedBox(
                                                           width: 60,
                                                           child: Text(
-                                                            '恢复(${StudyTrack.reviewTrack(activeStepNames)[1]})',
+                                                            '重测(${StudyTrack.reviewTrack(activeStepNames)[1]})',
                                                             style: TextStyle(
                                                                 fontSize: 10,
-                                                                // 恢复环节为旧词（复习轨道）专属 → 橙色
+                                                                // 重测环节为旧词（复习轨道）专属 → 橙色
                                                                 color: Colors.orange),
                                                             maxLines: 1,
                                                             overflow:
@@ -2015,7 +2015,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                               nextStepIndex == 1;
                                                           final isWordFinished =
                                                               isEffectivelyMastered(w);
-                                                          // 恢复环节真走过 = 当天有 ≥2 条评分日志（测评+恢复）；答对跳过恢复 → 灰
+                                                          // 重测环节真走过 = 当天有 ≥2 条评分日志（测评+重测）；答对跳过重测 → 灰
                                                           final isStepCompleted =
                                                               isReviewWord &&
                                                                   ((todayLogCounts[

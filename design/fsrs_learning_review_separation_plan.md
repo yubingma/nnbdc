@@ -255,3 +255,50 @@ if (isSameDayToday) {
 2. 新用例最终断言（全 good 自然毕业路径）：每词 LearningLog == 4（init + 3 次未毕业复习，毕业复习不写日志）、总天数 [100,160]（实测 135）。
 3. `bdc_notifier_test` 的修改评分用例断言 8 天 → 9 天（旧公式硬编码值修正）。
 4. 全量回归：290 通过、2 skip、4 个既有 ASR 失败（english_correction_test，已实证与本次改动无关）。
+
+## 9. 补充需求 Plan：学习环节设置分"新词/旧词"Tab + "重测"用词统一（方案 A）
+
+### 需求
+
+1. 今日计划页"学习环节"设置区拆为**新词 / 旧词两个 tab**（方案 A：旧词 tab 只读说明型，不新增配置存储与同步）。
+2. "恢复"环节用词统一改为 **"重测"**（面板行标签、底部环节标签、旧词 tab 文案、相关中文注释）。
+
+### 改动清单
+
+**A. 用词统一（UI + 中文注释）**
+- `bdc_dialogs.dart`：面板行标签 `恢复(...)` → `重测(...)`；相关注释"恢复环节"→"重测环节"。
+- `bdc_ui_components.dart`：`'[恢复] '` → `'[重测] '`。
+- `bdc_state.dart` / `bdc_notifier.dart` / `study_track.dart` / `study_bo.dart`：中文注释"恢复环节"→"重测环节"（内部标识符 `isRestoreStep` 等保留英文，不动）。
+
+**B. `today_plan.dart` 的 `renderStudySteps()`（约 :1119）改造为双 tab**
+- 标题"学习环节"下加两个 tab：**新词 / 旧词**（页面内嵌 TabBar + TabBarView，旧词说明卡固定高度避免布局问题）。
+- **新词 tab**：现有 ReorderableListView 环节设置（激活开关 + 拖动排序 + List 恒末尾），原样迁移。
+- **旧词 tab**：只读说明卡：
+  - ① 测评：新词序列的第 1 环节（动态显示环节名，跟随新词设置，不可单独改）
+  - ② 重测：仅当测评答错时，当天加测一次反向环节（如英→中答错则中→英）
+  - ③ 单词列表：浏览本组单词
+  - 附一句说明："旧词不需要再学例句等巩固环节，复习更轻快。"
+
+### 架构审查（ppdc-architect 要点）
+
+1. 分层与职责 ✅ PASS：纯前端 UI 与文案，落 app/。
+2. 数据流与同步 ✅ PASS：方案 A 不新增配置存储，无同步影响。
+3. Dto/Vo ✅ PASS：不涉及。
+4. 设计原则 ✅ PASS：只读说明型避免新增实体；用词统一消除歧义。
+5. Surgical ✅ PASS：改动限定 today_plan.dart 与文案文件。
+6. 验证充分性 ✅ PASS：flutter analyze + bdc_notifier_test + 全量回归。
+7. 可执行性 ✅ PASS：无前置依赖。
+
+结论：PASS。
+
+### 验证
+
+`flutter analyze` 无问题；`flutter test test/bdc_notifier_test.dart` 通过；全量回归通过后交用户决策。
+
+### 执行结果（第 9 节）
+
+- 用词统一完成："恢复"→"重测"（面板行标签 `重测(Ch2En)`、底部 `[重测]`、6 个文件的中文注释；内部标识符 `isRestoreStep` 保留英文）。
+- `today_plan.dart` 学习环节设置区改造为 **新词/旧词双 tab**（TabBar + 条件渲染）：
+  - 新词 tab：现有环节配置（激活开关 + 拖排序 + "拖动 ⠿ 排序"徽章仅此 tab 显示）；
+  - 旧词 tab：只读说明卡（① 测评=新词第 1 环节（动态显示名称）② 重测=答错当天反向加测 ③ 单词列表 + "旧词不需要再学例句等巩固环节，复习更轻快"）。
+- 验证：`flutter analyze` 7 文件无问题；全量 `flutter test` 294 通过、2 skip、0 失败。
