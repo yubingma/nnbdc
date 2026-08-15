@@ -1154,9 +1154,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
+              // 拖动排序提示仅新词 tab（可排序）显示
+              if (_studyStepsTab == 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
                   color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
                 ),
