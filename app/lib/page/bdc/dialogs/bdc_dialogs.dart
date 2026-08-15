@@ -1805,6 +1805,19 @@ extension BdcPageStateDialogs on BdcPageState {
                                     fontSize: 10, color: subTextColor)),
                           ],
                         ),
+                        // 拼写颜色图例：新词绿 / 旧词橙（当前词仍为蓝色加粗）
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('新词',
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.green)),
+                            const SizedBox(width: 8),
+                            Text('旧词',
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.orange)),
+                          ],
+                        ),
                       ],
                     ),
                     const Divider(height: 24, thickness: 0.5),
@@ -1885,6 +1898,26 @@ extension BdcPageStateDialogs on BdcPageState {
                                                             ?.word
                                                             .id ==
                                                         w.wordId;
+                                                // 新词（学习轨道）/旧词（复习轨道）用拼写颜色区分，当前词保持蓝色加粗优先
+                                                final isReviewWord =
+                                                    StudyTrack.isReviewTrack(
+                                                  activeStepNames:
+                                                      activeStepNames,
+                                                  stability: w.stability,
+                                                  state: w.state,
+                                                  lastLearningDate:
+                                                      w.lastLearningDate,
+                                                  todayFirstLogElapsedDays:
+                                                      firstLogElapsedDays[
+                                                          w.wordId],
+                                                  today: todayStart,
+                                                );
+                                                final Color spellColor =
+                                                    isCurrentWord
+                                                        ? Colors.blueAccent
+                                                        : (isReviewWord
+                                                            ? Colors.orange
+                                                            : Colors.green);
                                                 return Tooltip(
                                                   message:
                                                       spellings[w.wordId] ??
@@ -1903,10 +1936,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                             w.wordId,
                                                         style: TextStyle(
                                                           fontSize: 11,
-                                                          color: isCurrentWord
-                                                              ? Colors
-                                                                  .blueAccent
-                                                              : textColor,
+                                                          color: spellColor,
                                                           fontWeight:
                                                               isCurrentWord
                                                                   ? FontWeight
