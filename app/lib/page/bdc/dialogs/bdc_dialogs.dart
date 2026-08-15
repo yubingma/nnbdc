@@ -1980,7 +1980,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                             '恢复(${StudyTrack.reviewTrack(activeStepNames)[1]})',
                                                             style: TextStyle(
                                                                 fontSize: 10,
-                                                                color: subTextColor),
+                                                                // 恢复环节为旧词（复习轨道）专属 → 橙色
+                                                                color: Colors.orange),
                                                             maxLines: 1,
                                                             overflow:
                                                                 TextOverflow.ellipsis,
@@ -2082,7 +2083,15 @@ extension BdcPageStateDialogs on BdcPageState {
                                                       '${sIndex + 1}: ${activeSteps[sIndex].studyStep}',
                                                       style: TextStyle(
                                                           fontSize: 10,
-                                                          color: subTextColor),
+                                                          // 第 1 环节（测评，新旧共用）与末位 List（共用）保持原色；
+                                                          // 中间环节为新词（学习轨道）专属 → 绿色
+                                                          color: (sIndex == 0 ||
+                                                                  sIndex ==
+                                                                      activeSteps
+                                                                              .length -
+                                                                          1)
+                                                              ? subTextColor
+                                                              : Colors.green),
                                                       maxLines: 1,
                                                       overflow:
                                                           TextOverflow.ellipsis,
