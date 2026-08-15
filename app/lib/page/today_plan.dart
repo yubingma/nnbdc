@@ -24,6 +24,7 @@ import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/learning_service.dart';
+import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -254,7 +255,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       oldWordCount = _todayWords!.length - newWordCount!;
       todayWordCount = _todayWords!.length;
 
-      _updateProgress();
+      unawaited(_updateProgress());
       Global.logger.d('Progress calculated: $_completedStepCount / $_totalStepCount');
 
     } catch (e, stackTrace) {
@@ -304,7 +305,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       }
 
       _todayWords = await LearningService.getTodayLearningWordsFromDb(user!.id!);
-      _updateProgress();
+      unawaited(_updateProgress());
       
       // 估算今日单词数（基于本地已有数据）
       if (_todayWords != null && _todayWords!.isNotEmpty) {
@@ -376,19 +377,52 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
 
-  void _updateProgress() {
-    final activeStepsCount = selectedSteps().length;
+  Future<void> _updateProgress() async {
     if (_todayWords == null) {
       _totalStepCount = 0;
       _completedStepCount = 0;
       return;
     }
-    
-    _totalStepCount = (_todayWords!.length * activeStepsCount).toInt();
+
+    // 每词按其自身轨道（学习轨道/复习轨道）的环节数贡献进度；
+    // 轨道由今天首条评分日志的间隔固化（与 StudyBo 一致）
+    final user = Global.getLoggedInUser();
+    final activeStepNames = selectedSteps().map((s) => s.studyStep).toList();
+    final today = AppClock.today();
+    Map<String, int> firstLogElapsedDays = {};
+    if (user != null && _todayWords!.isNotEmpty) {
+      final db = MyDatabase.instance;
+      final rows = await (db.select(db.learningLogs)
+            ..where((l) =>
+                l.userId.equals(user.id) &
+                l.wordId.isIn(_todayWords!.map((w) => w.wordId)) &
+                l.createTime.isBiggerOrEqualValue(today)))
+          .get();
+      final earliestTime = <String, DateTime>{};
+      for (final row in rows) {
+        final prev = earliestTime[row.wordId];
+        if (prev == null || row.createTime.isBefore(prev)) {
+          earliestTime[row.wordId] = row.createTime;
+          firstLogElapsedDays[row.wordId] = row.elapsedDays;
+        }
+      }
+    }
+    _totalStepCount = 0;
     _completedStepCount = 0;
     for (final word in _todayWords!) {
-      _completedStepCount += word.getCompletedSteps(_masteredWordIds, activeStepsCount);
+      final trackLen = StudyTrack.trackOf(
+        activeStepNames: activeStepNames,
+        stability: word.stability,
+        state: word.state,
+        lastLearningDate: word.lastLearningDate,
+        todayFirstLogElapsedDays: firstLogElapsedDays[word.wordId],
+        today: today,
+      ).length;
+      _totalStepCount += trackLen;
+      _completedStepCount += word.getCompletedSteps(_masteredWordIds, trackLen);
     }
+    // 异步计算完成后刷新进度显示（调用方多以 unawaited 方式调用）
+    if (mounted) setState(() {});
   }
 
   void reorderData(int oldIndex, int newIndex) {
@@ -1184,7 +1218,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               step.state = isActive ? StudyStepState.inactive.json : StudyStepState.active.json;
               saveStudyStep();
               // Fast local update for progress
-              _updateProgress();
+              unawaited(_updateProgress());
             });
           },
           borderRadius: BorderRadius.circular(16),

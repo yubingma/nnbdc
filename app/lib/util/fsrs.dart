@@ -19,7 +19,10 @@ class FSRS {
 
   /// 初始状态转换 (New -> Learning/Review)
   /// @param rating FsrsRating.again, FsrsRating.hard, FsrsRating.good, FsrsRating.easy
-  FSRSItem init(FsrsRating rating) {
+  /// @param nextState 学习步骤全部完成后由调用方指定（默认 learning：
+  ///   若该评分已是当天最后一个评分环节，调用方应传 review/relearning，
+  ///   避免学完的词次日被"学一半"判定误抓）
+  FSRSItem init(FsrsRating rating, {FsrsState nextState = FsrsState.learning}) {
     int ratingValue = rating.value;
     
     double stability = w[ratingValue - 1];
@@ -33,7 +36,7 @@ class FSRS {
       scheduledDays: _calculateInterval(stability),
       reps: 1,
       lapses: (rating == FsrsRating.again) ? 1 : 0,
-      state: FsrsState.learning,
+      state: nextState,
     );
   }
 
@@ -62,10 +65,11 @@ class FSRS {
       // 遗忘
       nextS = w[7] * pow(nextD, -w[8]) * (pow(s + 1, w[9]) - 1) * exp(w[10] * (1 - r));
     } else {
-      // 记忆
+      // 记忆（FSRS-4.5 原版公式：与遗忘分支共用 w[8]/w[9]/w[10] 三元组，
+      // 此前误用 w[11]/w[12]/w[13]（FSRS-5 索引位置），与 4.5 默认权重不匹配）
       double hardPenalty = (rating == FsrsRating.hard) ? w[15] : 1.0;
       double easyBonus = (rating == FsrsRating.easy) ? w[16] : 1.0;
-      nextS = s * (1 + exp(w[11]) * (11 - nextD) * pow(s, -w[12]) * (exp((1 - r) * w[13]) - 1) * hardPenalty * easyBonus);
+      nextS = s * (1 + exp(w[8]) * (11 - nextD) * pow(s, -w[9]) * (exp((1 - r) * w[10]) - 1) * hardPenalty * easyBonus);
     }
     
     // 稳定性下限保护
@@ -79,6 +83,27 @@ class FSRS {
       reps: lastItem.reps + 1,
       lapses: (rating == FsrsRating.again) ? lastItem.lapses + 1 : lastItem.lapses,
       state: (rating == FsrsRating.again) ? FsrsState.relearning : FsrsState.review,
+    );
+  }
+
+  /// 学习/恢复事件：当天同一词的非首次评分（学习轨道巩固环节、复习轨道恢复环节）
+  ///
+  /// FSRS 学习步骤语义：直接重设稳定性与难度（可升可降，最后一次评分决定当天结果），
+  /// 与复习公式 [next]（每天一次的复习信号）严格区分。
+  FSRSItem relearn(FSRSItem last, FsrsRating rating, {required FsrsState nextState}) {
+    int ratingValue = rating.value;
+
+    double stability = w[ratingValue - 1];
+    double difficulty = (w[4] - (ratingValue - 1) * w[5]).clamp(1.0, 10.0);
+
+    return FSRSItem(
+      stability: stability,
+      difficulty: difficulty,
+      elapsedDays: 0,
+      scheduledDays: _calculateInterval(stability),
+      reps: last.reps + 1,
+      lapses: (rating == FsrsRating.again) ? last.lapses + 1 : last.lapses,
+      state: nextState,
     );
   }
 

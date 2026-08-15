@@ -1,4 +1,5 @@
 import 'package:nnbdc/db/db.dart';
+import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/global.dart';
@@ -277,6 +278,13 @@ class LearningService {
     bool isDue(LearningWord word) {
       if (word.lastLearningDate == null) return true; // 全新词未在当前算法下学习过
 
+      // 学一半次日检验：昨天处于学习状态但未走完学习轨道（跨天即复习事件），
+      // 今日强制到期并按复习轨道快速检验，而不是等 scheduledDays 到期后从头重学。
+      if (word.state == FsrsState.learning.value &&
+          !DateUtils.isSameBusinessDay(word.lastLearningDate!, today)) {
+        return true;
+      }
+
       // FSRS 逻辑：上次学习日期 + 计划天数 <= 今天
       final lastDate = DateUtils.businessDate(word.lastLearningDate!);
       final nextReviewDate = lastDate.add(Duration(days: word.scheduledDays ?? 0));
@@ -363,7 +371,13 @@ class LearningService {
         int neededRoom = todayLearningWords.length + newDeficit - user.effectiveWordsPerDay;
         if (neededRoom > 0) {
           final evictable = todayLearningWords
-              .where((w) => !w.isTodayNewWord && w.todayLearnedTimes == 0)
+              .where((w) =>
+                  !w.isTodayNewWord &&
+                  w.todayLearnedTimes == 0 &&
+                  // 学一半次日检验词不可挤出：它们必须在今天按复习轨道出现
+                  !(w.state == FsrsState.learning.value &&
+                      w.lastLearningDate != null &&
+                      !DateUtils.isSameBusinessDay(w.lastLearningDate!, today)))
               .toList();
           int toEvict = min(neededRoom, evictable.length);
           for (var w in evictable.take(toEvict)) {

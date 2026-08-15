@@ -593,4 +593,79 @@ void main() {
     await Future.delayed(const Duration(milliseconds: 100));
     print('🎉 所有端到端长周期仿真学习、多天打卡及 FSRS 数据收敛断言全部完美通过！');
   });
+
+  test('整本词书多天学习到自然毕业：每词总复习次数符合 FSRS 预期', () async {
+    // 全程不人工标记掌握，逐天 good 答对，验证自然毕业路径的总复习次数。
+    // 全 good 理论值：init(2.4, 间隔2天) → 复习1(≈7.0, 间隔7天) → 复习2(≈44, 间隔45天)
+    // → 复习3(≈186 ≥180) 自然毕业 = 总评分 4 次（毕业复习不写日志 → LearningLog 3 条）。
+    int loopCount = 0;
+    while (loopCount < 180) {
+      // 防死循环上限（修复权重后全 good 路径最后一词约 134 天毕业）
+      loopCount++;
+      fakeClock.advanceDays(1);
+
+      final userInDb = await db.usersDao.getUserById(testUser.id);
+      final loopUser = userInDb!.copyWith(todayStudyStarted: false);
+      await db.usersDao.saveUser(loopUser, true);
+      Global.updateUserCache(loopUser);
+
+      await LearningService.prepareTodayStudy(true);
+      // 间隔期（无到期词且词书已空）备词返回失败属正常行为，不断言
+
+      final allMastered =
+          await db.masteredWordsDao.getMasteredWordsForUser(testUser.id);
+      if (allMastered.length == 8) {
+        print('🎉 自然毕业仿真在第 $loopCount 天检测到全书 8 词全部毕业！');
+        break;
+      }
+
+      final todayWords =
+          await StudyCacheManager().getTodayWords(db, testUser.id);
+      if (todayWords.isEmpty) continue; // 间隔期无词到期
+
+      int securityGuard = 0; // 防止单日答题陷入死循环
+      while (securityGuard < 100) {
+        securityGuard++;
+        final getWordRes = await studyBo.getWord(false, false);
+        if (!getWordRes.success) break;
+        final data = getWordRes.data!;
+        if (data.finished == true) break;
+        if (data.learningWord == null) break;
+        if (data.stepIndex >= 1) {
+          // List 环节（学习轨道 stepIndex=1；复习轨道测评答对跳过恢复后 stepIndex=2）
+          final completeListRes =
+              await studyBo.completeListStepForCurrentBatch();
+          expect(completeListRes.success, true);
+          break;
+        }
+        // 评分环节：一律答对（全 good 路径，无人工掌握）
+        await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      }
+    }
+
+    // 断言 1：全书 8 词必须自然毕业（无人工标记掌握）
+    final allMastered =
+        await db.masteredWordsDao.getMasteredWordsForUser(testUser.id);
+    expect(allMastered.length, 8, reason: '8 个词必须全部自然毕业');
+
+    // 断言 2：每词评分日志条数 == 4（init + 3 次未毕业复习；毕业那次复习不写日志）
+    // 修复权重错位后全 good 路径：2.4 →(2天)→ 8.5 →(8天)→ 28.7 →(29天)→ 89.5 →(90天)→ ≥180 毕业
+    for (int i = 1; i <= 8; i++) {
+      final logs =
+          await db.learningLogsDao.getHistory(testUser.id, 'w_$i');
+      expect(
+        logs.length,
+        4,
+        reason: 'w_$i 应经历 init + 3 次复习后自然毕业（总评分 5 次，毕业复习不写日志）',
+      );
+    }
+
+    // 断言 3：总天数在 FSRS 理论区间（约 2→8→29→90 天间隔，最后一词约 130 天）
+    expect(loopCount, greaterThanOrEqualTo(100));
+    expect(loopCount, lessThanOrEqualTo(160));
+
+    // 等待后台 unawaited 任务执行完毕
+    await Future.delayed(const Duration(milliseconds: 100));
+    print('🎉 自然毕业验证通过：全书 8 词、每词总评分 5 次（日志 4 条）、总天数 $loopCount');
+  });
 }

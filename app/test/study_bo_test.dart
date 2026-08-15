@@ -282,4 +282,230 @@ void main() {
       expect(result.data!.finished, true); // 返回结束标记
     });
   });
+
+  group('StudyBo - FSRS 状态机（学习/复习事件区分）', () {
+    // 重建 3 步激活序列 En2Ch -> Ch2En -> List，用于模拟当天多次评分
+    Future<void> setupThreeSteps() async {
+      await db.delete(db.userStudySteps).go();
+      final now = AppClock.now();
+      for (final (i, step) in ['En2Ch', 'Ch2En', 'List'].indexed) {
+        await db.into(db.userStudySteps).insert(UserStudyStep(
+              userId: testUser.id,
+              studyStep: step,
+              seq: i,
+              state: 'Active',
+              createTime: now,
+              updateTime: now,
+            ));
+      }
+    }
+
+    // 把其他 4 个词置为今日已学完，确保 getWord 定位到指定词
+    Future<void> finishOtherWords(String wordId) async {
+      for (int i = 1; i <= 5; i++) {
+        final id = 'word_$i';
+        if (id == wordId) continue;
+        final lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals(id))).getSingle();
+        await db.learningWordsDao.saveEntity(lw.copyWith(
+          todayLearnedTimes: 3,
+          learnedTimes: 3,
+        ), false);
+      }
+    }
+
+    Future<void> setWordFsrs(String wordId, {
+      required double stability,
+      required double difficulty,
+      required int elapsedDays,
+      required int scheduledDays,
+      required int reps,
+      required int lapses,
+      required int state,
+      required int todayLearnedTimes,
+      required int learnedTimes,
+      required DateTime lastLearningDate,
+    }) async {
+      final lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals(wordId))).getSingle();
+      await db.learningWordsDao.saveEntity(lw.copyWith(
+        stability: Value(stability),
+        difficulty: Value(difficulty),
+        elapsedDays: Value(elapsedDays),
+        scheduledDays: Value(scheduledDays),
+        reps: Value(reps),
+        lapses: Value(lapses),
+        state: Value(state),
+        todayLearnedTimes: todayLearnedTimes,
+        learnedTimes: learnedTimes,
+        lastLearningDate: Value(lastLearningDate),
+      ), false);
+    }
+
+    Future<LearningWord> wordOf(String wordId) async {
+      return (db.select(db.learningWords)..where((w) => w.wordId.equals(wordId))).getSingle();
+    }
+
+    test('新词首次评分走 init（stability 从 0 起步）', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      // setUp 数据 stability=0.0, todayLearnedTimes=0 → 首次评分
+      final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      expect(result.success, true);
+      final w = await wordOf('word_1');
+      expect(w.stability, 2.4);
+      expect(w.reps, 1);
+      expect(w.state, FsrsState.learning.value);
+    });
+
+    test('当天第二次评分（巩固环节）走 relearn 重设：hard 降级', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      await setWordFsrs('word_1',
+        stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+        reps: 1, lapses: 0, state: FsrsState.learning.value,
+        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today());
+
+      final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.hard);
+      expect(result.success, true);
+      final w = await wordOf('word_1');
+      expect(w.stability, 0.6); // 重设，不再是"hard 被吞保持 2.4"
+      expect(w.reps, 2);
+      expect(w.lapses, 0);
+      // Ch2En 是 3 步序列的最后一个评分环节 → 提交后无剩余评分环节 → review
+      expect(w.state, FsrsState.review.value);
+      expect(w.todayLearnedTimes, 2);
+    });
+
+    test('当天巩固环节答对维持/恢复：again 后可 relearn good 恢复 2.4', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      await setWordFsrs('word_1',
+        stability: 0.4, difficulty: 4.93, elapsedDays: 0, scheduledDays: 1,
+        reps: 1, lapses: 1, state: FsrsState.learning.value,
+        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today());
+
+      final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      expect(result.success, true);
+      final w = await wordOf('word_1');
+      expect(w.stability, 2.4); // 当天答对可恢复（不再卡死在 0.4）
+      expect(w.state, FsrsState.review.value);
+    });
+
+    test('最后评分环节答错 → relearning（明日重现）', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      await setWordFsrs('word_1',
+        stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+        reps: 1, lapses: 0, state: FsrsState.learning.value,
+        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today());
+
+      final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
+      expect(result.success, true);
+      final w = await wordOf('word_1');
+      expect(w.stability, 0.4); // 重设 0.4，而非清零 0.1
+      expect(w.lapses, 1);
+      expect(w.state, FsrsState.relearning.value);
+      expect(w.scheduledDays, 1); // 明日重现
+    });
+
+    test('跨天首次评分（复习事件）走 next：稳定性增长', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      await setWordFsrs('word_1',
+        stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+        reps: 1, lapses: 0, state: FsrsState.learning.value,
+        todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
+
+      final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      expect(result.success, true);
+      final w = await wordOf('word_1');
+      expect(w.stability, greaterThan(2.4)); // 复习公式增长
+      expect(w.state, FsrsState.review.value);
+      // 学一半词次日走复习轨道：测评答对跳过恢复环节，直接 +2 进 List
+      expect(w.todayLearnedTimes, 2);
+    });
+
+    test('学一半词次日检验（learning 跨天）同样走 next', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      await setWordFsrs('word_1',
+        stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+        reps: 1, lapses: 0, state: FsrsState.learning.value,
+        todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
+
+      final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
+      expect(result.success, true);
+      final w = await wordOf('word_1');
+      expect(w.state, FsrsState.relearning.value); // 跨天答错进入重学
+      expect(w.scheduledDays, 1);
+    });
+
+    test('复习轨道恢复环节：relearning 当天答对 → review，再错 → relearning', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      // 模拟：复习词测评答错后 state=relearning, stability=0.4, 今天已评一次分
+      await setWordFsrs('word_1',
+        stability: 0.4, difficulty: 4.93, elapsedDays: 0, scheduledDays: 1,
+        reps: 2, lapses: 2, state: FsrsState.relearning.value,
+        todayLearnedTimes: 1, learnedTimes: 2, lastLearningDate: AppClock.today());
+
+      // 恢复环节答对
+      var result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      expect(result.success, true);
+      var w = await wordOf('word_1');
+      expect(w.stability, 2.4);
+      expect(w.state, FsrsState.review.value); // 恢复成功，今日完成
+      expect(w.lapses, 2); // good 不新增 lapse
+
+      // 重置再模拟恢复环节答错
+      await setWordFsrs('word_1',
+        stability: 0.4, difficulty: 4.93, elapsedDays: 0, scheduledDays: 1,
+        reps: 2, lapses: 2, state: FsrsState.relearning.value,
+        todayLearnedTimes: 1, learnedTimes: 2, lastLearningDate: AppClock.today());
+      result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
+      expect(result.success, true);
+      w = await wordOf('word_1');
+      expect(w.stability, 0.4);
+      expect(w.state, FsrsState.relearning.value); // 明日重现
+      expect(w.lapses, 3);
+    });
+
+    test('复习词测评答错不跳过恢复（todayLearnedTimes +1）', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      await setWordFsrs('word_1',
+        stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+        reps: 1, lapses: 0, state: FsrsState.review.value,
+        todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
+
+      final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
+      expect(result.success, true);
+      final w = await wordOf('word_1');
+      expect(w.state, FsrsState.relearning.value);
+      expect(w.todayLearnedTimes, 1); // 不跳过：还需走恢复环节
+    });
+
+    test('复习轨道跳过恢复后 completeListStepForCurrentBatch 按轨道推进 List', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      await setWordFsrs('word_1',
+        stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+        reps: 1, lapses: 0, state: FsrsState.review.value,
+        todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
+
+      // 测评答对 → 跳过恢复 → todayLearnedTimes=2（复习轨道 [测评, 恢复, List] 的 List 位置）
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      var w = await wordOf('word_1');
+      expect(w.todayLearnedTimes, 2);
+
+      // 完成列表学习：判据按该词自身轨道，推进到 3（轨道走完）
+      final completeRes = await studyBo.completeListStepForCurrentBatch();
+      expect(completeRes.success, true);
+      w = await wordOf('word_1');
+      expect(w.todayLearnedTimes, 3);
+    });
+  });
 }

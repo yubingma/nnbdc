@@ -285,6 +285,11 @@ void main() {
     );
     addTearDown(() => container.dispose());
 
+    // 保持 provider 订阅,防止 AutoDispose provider 在异步间隙被回收
+    // (生产环境由页面 listen,测试需显式模拟)
+    final sub = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(sub.close);
+
     final notifier = container.read(bdcNotifierProvider.notifier);
     await notifier.loadData(FakeBuildContext());
     expect(container.read(bdcNotifierProvider).studyStep, 'ChSentence2En');

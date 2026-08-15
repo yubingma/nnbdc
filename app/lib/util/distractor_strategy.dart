@@ -9,7 +9,7 @@ import 'package:drift/drift.dart' as drift;
 
 abstract class DistractorStrategy {
   Future<List<WordVo>> getTwoOtherWords({
-    required List<UserStudyStep> steps,
+    required List<String> trackSteps,
     required int learningMode,
     required List<MeaningItemVo> meaningItemVos,
     required List<LearningWord> todayWords,
@@ -21,7 +21,7 @@ abstract class DistractorStrategy {
 class LearningWordsDistractorStrategy implements DistractorStrategy {
   @override
   Future<List<WordVo>> getTwoOtherWords({
-    required List<UserStudyStep> steps,
+    required List<String> trackSteps,
     required int learningMode,
     required List<MeaningItemVo> meaningItemVos,
     required List<LearningWord> todayWords,
@@ -30,7 +30,7 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
   }) async {
     try {
       List<WordVo> otherWords = [];
-      if ([StudyStep.en2Ch.json, StudyStep.ch2En.json].contains(steps[learningMode].studyStep)) {
+      if ([StudyStep.en2Ch.json, StudyStep.ch2En.json].contains(trackSteps[learningMode])) {
         // 用于跟踪已选择的单词ID，避免重复
         final selectedWordIds = <String>{targetWordLearningData.wordId};
         final candidateIds = <String>[];
@@ -243,7 +243,7 @@ class LearningWordsDistractorStrategy implements DistractorStrategy {
 class ShapeSimilarDistractorStrategy implements DistractorStrategy {
   @override
   Future<List<WordVo>> getTwoOtherWords({
-    required List<UserStudyStep> steps,
+    required List<String> trackSteps,
     required int learningMode,
     required List<MeaningItemVo> meaningItemVos,
     required List<LearningWord> todayWords,
@@ -252,7 +252,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
   }) async {
     try {
       final List<WordVo> otherWords = [];
-      if (![StudyStep.en2Ch.json, StudyStep.ch2En.json].contains(steps[learningMode].studyStep)) {
+      if (![StudyStep.en2Ch.json, StudyStep.ch2En.json].contains(trackSteps[learningMode])) {
         return otherWords;
       }
 
@@ -443,7 +443,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
       // 5. 如果不足 2 个（理论上拼写排序必然够，除非词库极小），使用“学习中单词”策略补足
       if (otherWords.length < 2) {
         final fallbackWords = await LearningWordsDistractorStrategy().getTwoOtherWords(
-          steps: steps,
+          trackSteps: trackSteps,
           learningMode: learningMode,
           meaningItemVos: meaningItemVos,
           todayWords: todayWords,
@@ -464,7 +464,7 @@ class ShapeSimilarDistractorStrategy implements DistractorStrategy {
       Global.logger.e('Error in ShapeSimilarDistractorStrategy: $e', stackTrace: stackTrace);
       // 降级执行 LearningWords 策略
       return await LearningWordsDistractorStrategy().getTwoOtherWords(
-        steps: steps,
+        trackSteps: trackSteps,
         learningMode: learningMode,
         meaningItemVos: meaningItemVos,
         todayWords: todayWords,

@@ -91,4 +91,4 @@ For multi-step tasks, state a brief plan:
 
 团队角色：用户(决策者) + 主Agent(规划师+集成验证) + 架构师(subagent) + Flutter/Java开发(subagent) + 审查员(subagent) + 音频专家(subagent)
 
-附加 skill(hermes目录下): audio-specialist (音频变更), ppdc-architect (架构审查)
+附加 skill(位于 `.agents/skills/` 目录): audio-specialist (音频变更), ppdc-architect (架构审查)

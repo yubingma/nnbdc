@@ -130,6 +130,85 @@ void main() {
     });
   });
 
+  group('FSRS Algorithm Relearn', () {
+    late FSRS fsrs;
+    late FSRSItem lastItem;
+
+    setUp(() {
+      fsrs = FSRS();
+      lastItem = fsrs.init(FsrsRating.good);
+    });
+
+    test('relearn resets stability to w[rating-1] and init difficulty', () {
+      final good = fsrs.relearn(lastItem, FsrsRating.good, nextState: FsrsState.learning);
+      expect(good.stability, 2.4);
+      expect(good.difficulty, closeTo(3.05, 0.001)); // w[4] - 2*w[5] = 4.93 - 1.88
+      expect(good.elapsedDays, 0);
+      expect(good.scheduledDays, greaterThanOrEqualTo(1));
+      expect(good.reps, lastItem.reps + 1);
+      expect(good.lapses, lastItem.lapses);
+
+      final hard = fsrs.relearn(lastItem, FsrsRating.hard, nextState: FsrsState.learning);
+      expect(hard.stability, 0.6);
+
+      final again = fsrs.relearn(lastItem, FsrsRating.again, nextState: FsrsState.relearning);
+      expect(again.stability, 0.4);
+
+      final easy = fsrs.relearn(lastItem, FsrsRating.easy, nextState: FsrsState.learning);
+      expect(easy.stability, 5.8);
+    });
+
+    test('relearn can raise or lower stability (learning-step semantics)', () {
+      final afterAgain = fsrs.init(FsrsRating.again); // 0.4
+      final recovered = fsrs.relearn(afterAgain, FsrsRating.good, nextState: FsrsState.learning);
+      expect(recovered.stability, 2.4); // 当天答对可恢复
+
+      final afterGood = fsrs.init(FsrsRating.good); // 2.4
+      final degraded = fsrs.relearn(afterGood, FsrsRating.again, nextState: FsrsState.relearning);
+      expect(degraded.stability, 0.4); // 降级而非清零 0.1
+    });
+
+    test('relearn accumulates reps and lapses', () {
+      final item1 = fsrs.relearn(lastItem, FsrsRating.again, nextState: FsrsState.learning);
+      expect(item1.reps, 2);
+      expect(item1.lapses, 1);
+
+      final item2 = fsrs.relearn(item1, FsrsRating.good, nextState: FsrsState.review);
+      expect(item2.reps, 3);
+      expect(item2.lapses, 1); // good 不回滚也不新增
+
+      final item3 = fsrs.relearn(item2, FsrsRating.again, nextState: FsrsState.relearning);
+      expect(item3.reps, 4);
+      expect(item3.lapses, 2);
+    });
+
+    test('relearn passes through caller-provided state', () {
+      expect(
+        fsrs.relearn(lastItem, FsrsRating.good, nextState: FsrsState.review).state,
+        FsrsState.review,
+      );
+      expect(
+        fsrs.relearn(lastItem, FsrsRating.good, nextState: FsrsState.learning).state,
+        FsrsState.learning,
+      );
+      expect(
+        fsrs.relearn(lastItem, FsrsRating.again, nextState: FsrsState.relearning).state,
+        FsrsState.relearning,
+      );
+    });
+
+    test('relearn keeps difficulty within [1.0, 10.0]', () {
+      final customFsrs = FSRS(w: [
+        0.4, 0.6, 2.4, 5.8,
+        0.5, // w[4] = 0.5 (initial difficulty base)
+        5.0, // w[5] = 5.0 (difficulty multiplier)
+        0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.29, 2.61
+      ]);
+      final item = customFsrs.relearn(lastItem, FsrsRating.easy, nextState: FsrsState.learning);
+      expect(item.difficulty, 1.0); // 0.5 - 3*5.0 = -14.5 -> clamped to 1.0
+    });
+  });
+
   group('FSRS Config', () {
     test('calculate interval depends on retention', () {
       var fsrsNormal = FSRS(requestRetention: 0.9);

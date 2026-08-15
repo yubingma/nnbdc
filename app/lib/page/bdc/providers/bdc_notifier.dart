@@ -28,6 +28,7 @@ import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -506,7 +507,8 @@ class BdcNotifier extends _$BdcNotifier {
       state = state.copyWith(buttonsEnabled: true);
     });
 
-    final currentStep = state.activeUserStudySteps[getWordResult.stepIndex].studyStep;
+    final trackResult = await _trackOfCurrentWord(getWordResult);
+    final currentStep = trackResult.track[getWordResult.stepIndex];
     if (currentStep == 'List') {
       state = state.copyWith(
         loadError: '正在跳转到单词列表...',
@@ -557,7 +559,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     String? oldStudyStep = state.studyStep;
-    String newStudyStep = state.activeUserStudySteps[getWordResult.stepIndex].studyStep;
+    String newStudyStep = trackResult.track[getWordResult.stepIndex];
     
     if (asr.state == AsrState.started) {
       await StudyAudioSessionController.instance.syncHardwareIntent(
@@ -613,6 +615,7 @@ class BdcNotifier extends _$BdcNotifier {
       word: word,
       wordWrapper: wordWrapper,
       studyStep: newStudyStep,
+      isRestoreStep: trackResult.isReview && getWordResult.stepIndex == 1,
       canLeaveCurrWord: false,
       hasFinishedAnswering: false,
       selectedAnswerIndex: null,
@@ -759,14 +762,45 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(words: words, correctAnswerIndex: correctIndex);
   }
 
-  /// 当前是否为例句巩固环节（非测评，仅为练习）。
-  /// 条件：例句步骤 (EnSentence2Ch / ChSentence2En) 且不是第一个环节 (stepIndex > 0)。
-  bool _isSentencePracticeStep() {
-    final step = state.studyStep;
-    if (step != StudyStep.enSentence2Ch.json && step != StudyStep.chSentence2En.json) {
-      return false;
+  /// 当前取词结果所属单词的环节轨道（学习轨道/复习轨道）与是否复习轨道，用于把 stepIndex 映射为具体环节名。
+  /// 轨道由今天首条评分日志的间隔固化（与 StudyBo 一致），防止当天轨道漂移。
+  Future<({List<String> track, bool isReview})> _trackOfCurrentWord(GetWordResult getWordResult) async {
+    final lw = getWordResult.learningWord;
+    if (lw == null) return (track: const <String>[], isReview: false);
+    final userId = Global.getLoggedInUser()?.id;
+    final wordId = lw.word.id;
+    int? firstLogElapsedDays;
+    if (userId != null && wordId != null) {
+      final row = await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
+            ..where((l) =>
+                l.userId.equals(userId) &
+                l.wordId.equals(wordId) &
+                l.createTime.isBiggerOrEqualValue(AppClock.today()))
+            ..orderBy([(l) => drift.OrderingTerm(expression: l.createTime)])
+            ..limit(1))
+          .getSingleOrNull();
+      firstLogElapsedDays = row?.elapsedDays;
     }
-    return (state.currentGetWordResult?.stepIndex ?? 0) > 0;
+    final activeStepNames = state.activeUserStudySteps.map((s) => s.studyStep).toList();
+    final isReview = StudyTrack.isReviewTrack(
+      activeStepNames: activeStepNames,
+      stability: lw.stability,
+      state: lw.state,
+      lastLearningDate: lw.lastLearningDate,
+      todayFirstLogElapsedDays: firstLogElapsedDays,
+      today: AppClock.today(),
+    );
+    return (
+      track: StudyTrack.trackOf(
+        activeStepNames: activeStepNames,
+        stability: lw.stability,
+        state: lw.state,
+        lastLearningDate: lw.lastLearningDate,
+        todayFirstLogElapsedDays: firstLogElapsedDays,
+        today: AppClock.today(),
+      ),
+      isReview: isReview,
+    );
   }
 
   void updateTabIndex(int index) {
@@ -798,19 +832,13 @@ class BdcNotifier extends _$BdcNotifier {
     );
 
     // 设置已完成回答状态，评分为 FsrsRating.again，显示正确答案
-    // 例句巩固环节仅为练习，不降低评分
-    final bool isSentencePractice = _isSentencePracticeStep();
-    // 练习模式(看答案后隐藏答案再练习)中再次看答案:不改今日测评结果
+    // 练习模式(看答案后隐藏答案再练习)中再次看答案:不改今日评分
     final bool keepRating = _isPracticeMode;
     state = state.copyWith(
       hasFinishedAnswering: true,
       canLeaveCurrWord: true,
-      lastFsrsRating: keepRating
-          ? state.lastFsrsRating
-          : (isSentencePractice ? null : FsrsRating.again),
-      lastFsrsRatingReason: keepRating
-          ? state.lastFsrsRatingReason
-          : (isSentencePractice ? "手动查看答案（练习模式）" : "手动查看答案"),
+      lastFsrsRating: keepRating ? state.lastFsrsRating : FsrsRating.again,
+      lastFsrsRatingReason: keepRating ? state.lastFsrsRatingReason : "手动查看答案",
       currentScore: 0, // 分数设为 0 代表未读对
     );
     _handleTabChangeForAsr();
@@ -871,11 +899,9 @@ class BdcNotifier extends _$BdcNotifier {
       _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
     } else {
       StudyAudioSessionController.instance.playSoundEffect('failed.mp3', speed: 1.5, volume: 1.0);
-      // 例句巩固环节仅为练习，错选不降低评分
-      final bool isSentencePractice = _isSentencePracticeStep();
       showWordDetail(state.word!, true, context,
-          fsrsRating: isSentencePractice ? null : FsrsRating.again,
-          reason: isSentencePractice ? "选错了答案（练习模式）" : "选错了答案");
+          fsrsRating: FsrsRating.again,
+          reason: "选错了答案");
     }
   }
 
@@ -931,17 +957,14 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  void _updateFsrsPreview(FsrsRating rating, {bool forceInit = false}) {
+  void _updateFsrsPreview(FsrsRating rating) {
     final lw = state.currentGetWordResult?.learningWord;
     if (lw != null) {
       final fsrs = FSRS();
       int days = state.daysSinceLastReview ?? 0;
       FSRSItem nextItem;
-      // 新词(从未学过或仅测评一次,无复习历史)用 init 计算;
-      // forceInit 用于"修改今日评分"场景:单词测评提交后 stability 已非 0,
-      // 但若仅测评过一次(reps<=1),改评分应重新 init 而非 next——
-      // 否则同一天内(next 的 elapsedDays=0)稳定性不变,修改评分无效。
-      if (forceInit || lw.stability == null || lw.stability == 0.0) {
+      if (lw.stability == null || lw.stability == 0.0) {
+        // 新词：init 预览
         nextItem = fsrs.init(rating);
       } else {
         final prevItem = FSRSItem(
@@ -951,7 +974,7 @@ class BdcNotifier extends _$BdcNotifier {
           scheduledDays: lw.scheduledDays ?? 0,
           reps: lw.reps ?? 0,
           lapses: lw.lapses ?? 0,
-          state: FsrsState.values[lw.state ?? 0],
+          state: FsrsStateExt.fromInt(lw.state),
         );
         nextItem = fsrs.next(prevItem, rating, days);
       }
@@ -1002,6 +1025,13 @@ class BdcNotifier extends _$BdcNotifier {
   /// lw.stability——它已被测评提交推进(init 后非 0),用它做 next 会
   /// 产生"测评后状态再推进一次"的重复放大。复习词的测评前状态应取
   /// LearningLog 中"今天之前最后一条"记录(该记录即测评前最后一次学习结果)。
+  /// 按新评分重新计算 FSRS 结果（修改"今日评分"时调用）。
+  ///
+  /// 幂等规则：以"今天首条评分日志的前一条"（测评前状态）为基准重算：
+  /// - 今天首条日志 elapsedDays == 0 → 当天是 init（新词学习日）→ 重新 init(rating)；
+  /// - 今天首条日志 elapsedDays > 0 → 当天是 next（复习日）→ next(测评前状态, rating, 该间隔)；
+  /// - 今天之前无日志 → 新词 → init(rating)。
+  /// reps/lapses 回推：测评前 reps = lw.reps − 当天日志条数；lapses 同理减去当天 again 条数。
   Future<FSRSItem> _recalcFsrsForRating(
       LearningWordVo lw, FsrsRating rating) async {
     final fsrs = FSRS();
@@ -1013,36 +1043,45 @@ class BdcNotifier extends _$BdcNotifier {
         await MyDatabase.instance.learningLogsDao.getHistory(userId, wordId);
     if (logs.isEmpty) return fsrs.init(rating);
 
-    // 本次测评提交的结果(最新一条)
-    final latestLog = logs.first;
-
-    // init(新词):elapsedDays==0 → 修改评分 = 重新 init
-    if (latestLog.elapsedDays == 0) {
-      return fsrs.init(rating);
-    }
-
-    // next(复习词):找"今天之前最后一条"记录作为测评前状态
     final today = AppClock.today();
+    // 今天之前的最后一条日志 = 测评前状态
     LearningLog? prevLog;
+    int todayLogCount = 0;
+    int todayAgainCount = 0;
     for (final log in logs) {
       if (log.createTime.isBefore(today)) {
         prevLog = log;
         break;
       }
+      todayLogCount++;
+      if (log.rating == FsrsRating.again.value) todayAgainCount++;
     }
-    // 无测评前记录(理论上不会发生,防御性兜底按新词处理)
+    // 新词（今天之前无日志）：修改评分 = 重新 init
     if (prevLog == null) return fsrs.init(rating);
+
+    // 当天首条日志（createTime 最早）的 elapsedDays 决定当天事件类型：
+    // 不能用最新一条（巩固/恢复的 relearn 日志 elapsedDays 恒为 0，会误判为新词 init）
+    final todayLogs =
+        logs.where((l) => !l.createTime.isBefore(today)).toList(); // 倒序
+    final firstTodayLog = todayLogs.last; // 当天最早一条
+    if (firstTodayLog.elapsedDays == 0) {
+      // 当天是学习日（init 起手），巩固环节评分已按 relearn 重设过
+      return fsrs.init(rating);
+    }
 
     final prevItem = FSRSItem(
       stability: prevLog.stability,
       difficulty: prevLog.difficulty,
-      elapsedDays: latestLog.elapsedDays,
+      elapsedDays: firstTodayLog.elapsedDays,
       scheduledDays: prevLog.scheduledDays,
-      reps: lw.reps ?? 0,
-      lapses: lw.lapses ?? 0,
-      state: FsrsState.values[lw.state ?? 0],
+      reps: (lw.reps ?? 0) - todayLogCount,
+      lapses: (lw.lapses ?? 0) - todayAgainCount,
+      // 日志表无 state 字段：测评前 state 由其评分推断（again → relearning，否则 review）
+      state: prevLog.rating == FsrsRating.again.value
+          ? FsrsState.relearning
+          : FsrsState.review,
     );
-    return fsrs.next(prevItem, rating, latestLog.elapsedDays);
+    return fsrs.next(prevItem, rating, firstTodayLog.elapsedDays);
   }
 
   Future<void> _persistRatingModification(FsrsRating rating) async {
@@ -1533,6 +1572,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> onAsrResult(event) async {
+    if (_isDisposed) return;
     final int pttRoundAtEntry = _pttRoundToken;
     String processedResult = "";
     List<String> candidates = [];
@@ -1591,7 +1631,7 @@ class BdcNotifier extends _$BdcNotifier {
               cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
               Global.logger.d('~~~~~[CORRECT] RESULT onAsrResult cleanBest=[$cleanBest]');
               // await 期间可能已松开并重按(轮次切换)：校验仍属于当前 PTT 轮次才继续写入
-              if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
+              if (_isDisposed || !_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
             }
           }
 
@@ -1657,7 +1697,9 @@ class BdcNotifier extends _$BdcNotifier {
           _updateState(state.copyWith(currentAsrCandidates: candidates), tag: 'asr-candidate');
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Global.logger.d('~~~~~[CORRECT] onAsrResult EXCEPTION: $e\n$stackTrace');
+      if (_isDisposed) return;
       processedResult = AsrUtil.preprocess(event.toString());
       candidates = [event.toString()];
       final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
@@ -1679,7 +1721,7 @@ class BdcNotifier extends _$BdcNotifier {
               cleanBest = await _phoneticAutoCorrectSentence(rawBest, sentence.english!);
               Global.logger.d('~~~~~[CORRECT] RESULT onAsrResult(catch) cleanBest=[$cleanBest]');
               // await 间隙可能已切换 PTT 轮次：校验后才继续写入
-              if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
+              if (_isDisposed || !_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
             }
           }
 
@@ -2011,33 +2053,6 @@ class BdcNotifier extends _$BdcNotifier {
       _handleTabChangeForAsr();
       return;
     }
-    
-    // 巩固阶段：巩固评分不得优于之前的测评评分。
-    // 如果用户答得比测评时好（评分档次更高），则以测评评分为准，
-    // 防止因测评阶段已掌握评分较高而导致巩固阶段重复降难度。
-    // 测评得分与 UI 显示的"今日测评"同源:均取 LearningLog 最新一条
-    // (getHistory 按时间倒序,进入巩固环节时最新一条即测评环节评分)。
-    // 必须在设置 lastFsrsRating 之前执行,确保 UI 显示的评分也是封顶后的值。
-    if ((state.currentGetWordResult?.stepIndex ?? 0) > 0) {
-      final wordId = state.currentGetWordResult?.learningWord?.word.id;
-      final userId = Global.getLoggedInUser()?.id;
-      FsrsRating? capRating;
-      if (wordId != null && userId != null) {
-        try {
-          final logs = await MyDatabase.instance.learningLogsDao.getHistory(userId, wordId);
-          if (logs.isNotEmpty) {
-            capRating = FsrsRatingExt.fromInt(logs.first.rating);
-          }
-        } catch (e) {
-          Global.logger.d('查询测评评分用于封顶失败: $e');
-        }
-      }
-      if (capRating != null && rating.index > capRating.index) {
-        // 识别依据描述体现压制:说明巩固环节评分不能高于测评得分
-        reason = '$reason，但巩固环节上限为测评环节结果（${capRating.label}）';
-        rating = capRating;
-      }
-    }
 
     // 同步立即锁定状态，彻底阻断由于 ASR 连续识别或 re-entry 重复触发导致的回声和并发冲突
     state = state.copyWith(
@@ -2076,7 +2091,7 @@ class BdcNotifier extends _$BdcNotifier {
           scheduledDays: lw.scheduledDays ?? 0,
           reps: lw.reps ?? 0,
           lapses: lw.lapses ?? 0,
-          state: FsrsState.values[lw.state ?? 0],
+          state: FsrsStateExt.fromInt(lw.state),
         );
         nextItem = fsrs.next(prevItem, rating, days);
       }
@@ -2097,16 +2112,13 @@ class BdcNotifier extends _$BdcNotifier {
       _playCorrectSound();
     }
 
-    // 例句巩固环节（非测评）仅为练习，不更新 FSRS 参数
-    final bool isSentencePractice = _isSentencePracticeStep();
-
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
       // 中英模式发音已完整播完，仅需 400ms 短暂缓冲即可舒适跳转；
       // 其他模式保留原有 800ms 延迟。
       final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 0 : 1000;
       Future.delayed(Duration(milliseconds: jumpDelayMs), () {
-        getNextWord(true, fsrsRating: isSentencePractice ? null : rating);
+        getNextWord(true, fsrsRating: rating);
       });
     }
     Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
@@ -2205,6 +2217,13 @@ class BdcNotifier extends _$BdcNotifier {
 
     const int matchThreshold = 55;
     const int maxLenDiff = 3;
+    // 常见功能词:不做单词级近音纠正(避免 "this"→"is"、"to"→"for" 等误改),
+    // 但可发起与后续词的合并匹配(如 "this plan"→"discipline")。
+    const Set<String> functionWords = {
+      'a', 'an', 'the', 'is', 'are', 'was', 'were', 'to', 'for', 'of', 'at',
+      'in', 'on', 'this', 'that', 'these', 'those', 'his', 'her', 'it', 'its',
+      'and', 'or', 'but', 'with', 'as', 'by', 'from', 'up', 'out', 'do', 'does',
+    };
 
     // 步骤 1：位置感知对齐。为每个 input 词在 target 中找精确匹配，
     // 优先匹配位置相近的，避免 "for"(句尾) 匹配到 "towed"(句中)。
@@ -2223,13 +2242,6 @@ class BdcNotifier extends _$BdcNotifier {
       if (bestJ >= 0) { inputAlign[i] = bestJ; targetUsed[bestJ] = true; }
     }
 
-    // 如果没有任何精确锚点(all input words are wrong against target),
-    // 说明 ASR 结果完全跑偏，不做纠错(避免 "to try talk"→"towed dock" 等幻觉)。
-    if (!inputAlign.any((a) => a != null)) {
-      Global.logger.d('~~~~~[CORRECT] SKIP (no anchors, input too noisy)');
-      return input;
-    }
-
     // 日志：对齐结果
     final alignDesc = <String>[];
     for (int i = 0; i < inputWords.length; i++) {
@@ -2240,6 +2252,7 @@ class BdcNotifier extends _$BdcNotifier {
     Global.logger.d('~~~~~[CORRECT] 对齐锚点: ${alignDesc.isEmpty ? "无" : alignDesc.join(", ")}');
 
     // 步骤 2：对未对齐的词，在期望位置附近做局部音素纠错
+    final hasAnchors = inputAlign.any((a) => a != null);
     final corrected = <String>[];
     var i = 0;
     while (i < inputWords.length) {
@@ -2254,7 +2267,7 @@ class BdcNotifier extends _$BdcNotifier {
       // ≤2 字符的词通常是 ASR 碎片（如 "ve" 是 "vessel" 的前缀），
       // 音素匹配过于模糊，不纠错，避免 "ve"→"dry" 误改。
       if (iw.length <= 2) {
-        Global.logger.d('~~~~~[CORRECT] KEPT "${iw}" (too short for phoneme correction)');
+        Global.logger.d('~~~~~[CORRECT] KEPT "$iw" (too short for phoneme correction)');
         corrected.add(iw);
         i++;
         continue;
@@ -2268,9 +2281,10 @@ class BdcNotifier extends _$BdcNotifier {
       for (int k = i + 1; k < inputWords.length && rightJ >= targetWords.length; k++) {
         if (inputAlign[k] != null) rightJ = inputAlign[k]!;
       }
-      // 无锚点时按比例估算
-      if (leftJ < 0) leftJ = (i * targetWords.length / inputWords.length).round() - 2;
-      if (rightJ >= targetWords.length) rightJ = ((i + 1) * targetWords.length / inputWords.length).round() + 2;
+      // 无锚点按比例估算;全句无任何锚点时退化为全局窗口(输入可能对应目标句任意局部,
+      // 比例估算对短输入会错位,如 "seaplane" 的估算窗口不含 "discipline")
+      if (leftJ < 0) leftJ = hasAnchors ? (i * targetWords.length / inputWords.length).round() - 2 : -1;
+      if (rightJ >= targetWords.length) rightJ = hasAnchors ? ((i + 1) * targetWords.length / inputWords.length).round() + 2 : targetWords.length;
       final wStart = (leftJ + 1).clamp(0, targetWords.length - 1);
       final wEnd = rightJ.clamp(wStart, targetWords.length - 1);
 
@@ -2278,24 +2292,37 @@ class BdcNotifier extends _$BdcNotifier {
       String bestMatch = iw;
       int bestSim = 0, consumeNext = 0;
 
-      for (int j = wStart; j <= wEnd; j++) {
-        final tw = targetWords[j];
-        if (targetUsed[j]) continue;
-        if ((iw.length - tw.length).abs() > maxLenDiff) continue;
-        final sim = await PhonemeUtil.similarity(iw, tw);
-        if (sim > bestSim) { bestSim = sim; bestMatch = tw; }
+      final isFunctionWord = functionWords.contains(iw.toLowerCase());
+      if (!isFunctionWord) {
+        for (int j = wStart; j <= wEnd; j++) {
+          final tw = targetWords[j];
+          if (targetUsed[j]) continue;
+          if (functionWords.contains(tw.toLowerCase())) continue;
+          if ((iw.length - tw.length).abs() > maxLenDiff) continue;
+          final sim = await PhonemeUtil.similarity(iw, tw);
+          if (sim > bestSim) { bestSim = sim; bestMatch = tw; }
+        }
       }
       final singleBestSim = bestSim;
 
       for (var win = 2; win <= 3 && i + win <= inputWords.length; win++) {
-        final windowText = inputWords.sublist(i, i + win).join(" ");
+        // 窗口不跨功能词(除首词外):避免 "this plan is" 把 "is" 也吞进合并
+        final winWords = inputWords.sublist(i, i + win);
+        if (winWords.skip(1).any((w) => functionWords.contains(w.toLowerCase()))) break;
+        final windowText = winWords.join(" ");
         for (int j = wStart; j <= wEnd; j++) {
           final tw = targetWords[j];
           if (targetUsed[j]) continue;
+          if (functionWords.contains(tw.toLowerCase())) continue;
           if ((windowText.length - tw.length).abs() > maxLenDiff * win) continue;
           if (windowText.length > tw.length + 2) continue;
           final sim = await PhonemeUtil.similarity(windowText, tw);
-          if (sim > bestSim && sim >= singleBestSim + 15) {
+          // 功能词发起的合并(如 "this plan"→"discipline")阈值 70;
+          // 普通词合并要求显著优于单词匹配(+15),防吞掉可独立匹配的词
+          final bool mergeOk = isFunctionWord
+              ? (sim > bestSim && sim >= 70)
+              : (sim > bestSim && sim >= singleBestSim + 15);
+          if (mergeOk) {
             bestSim = sim; bestMatch = tw; consumeNext = win - 1;
           }
         }
@@ -2303,8 +2330,8 @@ class BdcNotifier extends _$BdcNotifier {
 
       final result = bestSim >= matchThreshold ? bestMatch : iw;
       final action = bestSim >= matchThreshold
-          ? 'CORRECTED "${iw}"→"$result" window=[$wStart..$wEnd] sim=$bestSim'
-          : 'KEPT "${iw}" (bestSim=$bestSim<${matchThreshold})';
+          ? 'CORRECTED "$iw"→"$result" window=[$wStart..$wEnd] sim=$bestSim'
+          : 'KEPT "$iw" (bestSim=$bestSim<$matchThreshold)';
       Global.logger.d('~~~~~[CORRECT] $action');
       corrected.add(result);
       i += 1 + consumeNext;

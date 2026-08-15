@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/study_config.dart';
 
 void main() {
@@ -292,6 +293,63 @@ void main() {
       expect(updatedWord.todayLearnedTimes, 0);
       // 它作为旧词，被重新发配到了今天的新的BatchId上 (今天生成的所有词 BatchId 也是1起步)
       expect(updatedWord.batchId, 1);
+    });
+
+    test('学一半的词次日强制到期入计划（scheduledDays 未到期也出现）', () async {
+      final yesterday = now.subtract(const Duration(days: 1));
+      testUser = testUser.copyWith(lastLearningDate: Value(yesterday));
+      Global.updateUserCache(testUser);
+
+      // word_half：昨天学习状态学了一半（stability=2.4, scheduledDays=2 未到期）
+      await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_half',
+          addTime: yesterday,
+          addDay: 1,
+          batchId: 0,
+          stability: 2.4,
+          difficulty: 3.05,
+          elapsedDays: 0,
+          scheduledDays: 2,
+          reps: 1,
+          lapses: 0,
+          state: FsrsState.learning.value,
+          lastLearningDate: yesterday,
+          isTodayNewWord: false,
+          learnedTimes: 1,
+          todayLearnedTimes: 0,
+          learningOrder: 0,
+          createTime: yesterday,
+          updateTime: yesterday));
+      // word_done：对照——已学完进入 review，scheduledDays=2 未到期 → 今天不应出现
+      await db.into(db.learningWords).insert(LearningWord(
+          userId: testUser.id,
+          wordId: 'word_done',
+          addTime: yesterday,
+          addDay: 1,
+          batchId: 0,
+          stability: 2.4,
+          difficulty: 3.05,
+          elapsedDays: 0,
+          scheduledDays: 2,
+          reps: 1,
+          lapses: 0,
+          state: FsrsState.review.value,
+          lastLearningDate: yesterday,
+          isTodayNewWord: false,
+          learnedTimes: 1,
+          todayLearnedTimes: 0,
+          learningOrder: 0,
+          createTime: yesterday,
+          updateTime: yesterday));
+
+      await LearningService.prepareTodayStudy(true);
+
+      final half = await (db.select(db.learningWords)..where((lw) => lw.wordId.equals('word_half'))).getSingle();
+      final done = await (db.select(db.learningWords)..where((lw) => lw.wordId.equals('word_done'))).getSingle();
+
+      expect(half.batchId, greaterThan(0), reason: '学一半的词次日必须强制进入今日计划');
+      expect(done.batchId, 0, reason: '已学完且未到期的复习词今天不应出现');
     });
 
     test('所有书桌词书都已学完的场景（词汇枯竭）', () async {

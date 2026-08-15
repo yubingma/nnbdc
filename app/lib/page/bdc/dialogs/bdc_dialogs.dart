@@ -1551,11 +1551,42 @@ extension BdcPageStateDialogs on BdcPageState {
     // 获取今日所有学习单词及其状态
     final words = await LearningService.getTodayLearningWordsFromDb(user.id);
     final activeSteps = state.activeUserStudySteps;
+    final activeStepNames = activeSteps.map((s) => s.studyStep).toList();
 
     // 获取用户已掌握的单词 ID 集，用于准确反映调度状态
     final masteredWords = await MyDatabase.instance.masteredWordsDao
         .getMasteredWordsForUser(user.id);
     final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
+
+    // 今天评分日志：固化每词轨道（与 StudyBo 一致），并标记当天答错过（恢复环节真走过）的词
+    final todayStart = AppClock.today();
+    final logRows = await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
+          ..where((l) =>
+              l.userId.equals(user.id) &
+              l.createTime.isBiggerOrEqualValue(todayStart)))
+        .get();
+    final firstLogElapsedDays = <String, int>{};
+    final earliestTime = <String, DateTime>{};
+    // 当天评分日志条数：恢复环节"真走过"= 当天有 ≥2 条评分日志（测评 + 恢复）
+    final todayLogCounts = <String, int>{};
+    for (final row in logRows) {
+      final prev = earliestTime[row.wordId];
+      if (prev == null || row.createTime.isBefore(prev)) {
+        earliestTime[row.wordId] = row.createTime;
+        firstLogElapsedDays[row.wordId] = row.elapsedDays;
+      }
+      todayLogCounts[row.wordId] = (todayLogCounts[row.wordId] ?? 0) + 1;
+    }
+
+    // 轨道推导 helper（与 StudyBo.getWord 一致的固化规则）
+    List<String> trackOf(LearningWord w) => StudyTrack.trackOf(
+          activeStepNames: activeStepNames,
+          stability: w.stability,
+          state: w.state,
+          lastLearningDate: w.lastLearningDate,
+          todayFirstLogElapsedDays: firstLogElapsedDays[w.wordId],
+          today: todayStart,
+        );
 
     // 助手函数：判断单词是否已掌握 (调度层的一致性逻辑)
     bool isEffectivelyMastered(dynamic word) {
@@ -1599,16 +1630,13 @@ extension BdcPageStateDialogs on BdcPageState {
       batches.putIfAbsent(chunkId, () => []).add(w);
     }
 
-    // 计算即将到来的待办单元格 sequence
+    // 计算即将到来的待办单元格 sequence（按每词自身轨道的当前位置）
     List<Map<String, dynamic>> pendingCells = [];
-    for (var batchId in batches.keys) {
-      final batchWords = batches[batchId]!;
-      for (int sIndex = 0; sIndex < activeSteps.length; sIndex++) {
-        for (var w in batchWords) {
-          if (w.todayLearnedTimes == sIndex) {
-            pendingCells.add({'wordId': w.wordId, 'sIndex': sIndex});
-          }
-        }
+    for (var w in words) {
+      if (isEffectivelyMastered(w)) continue;
+      final track = trackOf(w);
+      if (w.todayLearnedTimes < track.length) {
+        pendingCells.add({'wordId': w.wordId, 'sIndex': w.todayLearnedTimes});
       }
     }
 
@@ -1900,12 +1928,117 @@ extension BdcPageStateDialogs on BdcPageState {
                                             ],
                                           ),
                                           const SizedBox(height: 8),
-                                          // Data Rows (Steps)
-                                          ...List.generate(activeSteps.length,
-                                              (sIndex) {
-                                            final stepInfo =
-                                                activeSteps[sIndex];
-                                            return Padding(
+                                          // Data Rows (Steps) —— 轨道 1：学习轨道（激活序列）
+                                          ...[
+                                            for (int sIndex = 0;
+                                                sIndex < activeSteps.length;
+                                                sIndex++) ...[
+                                              if (sIndex ==
+                                                  activeSteps.length - 1)
+        // 轨道 2：复习轨道隐藏环节——恢复环节行（测评/List 与轨道 1 共用）
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                            vertical: 4),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment.start,
+                                                      children: [
+                                                        SizedBox(
+                                                          width: 60,
+                                                          child: Text(
+                                                            '恢复(${StudyTrack.reviewTrack(activeStepNames)[1]})',
+                                                            style: TextStyle(
+                                                                fontSize: 10,
+                                                                color: subTextColor),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow.ellipsis,
+                                                          ),
+                                                        ),
+                                                        ...batchWords.map((w) {
+                                                          final isReviewWord =
+                                                              StudyTrack.isReviewTrack(
+                                                            activeStepNames:
+                                                                activeStepNames,
+                                                            stability: w.stability,
+                                                            state: w.state,
+                                                            lastLearningDate:
+                                                                w.lastLearningDate,
+                                                            todayFirstLogElapsedDays:
+                                                                firstLogElapsedDays[
+                                                                    w.wordId],
+                                                            today: todayStart,
+                                                          );
+                                                          final isCurrentStep = state
+                                                                      .currentGetWordResult
+                                                                      ?.learningWord
+                                                                      ?.word
+                                                                      .id ==
+                                                                  w.wordId &&
+                                                              isReviewWord &&
+                                                              w.todayLearnedTimes == 1;
+                                                          final isNextStep = nextWordId ==
+                                                                  w.wordId &&
+                                                              isReviewWord &&
+                                                              nextStepIndex == 1;
+                                                          final isWordFinished =
+                                                              isEffectivelyMastered(w);
+                                                          // 恢复环节真走过 = 当天有 ≥2 条评分日志（测评+恢复）；答对跳过恢复 → 灰
+                                                          final isStepCompleted =
+                                                              isReviewWord &&
+                                                                  ((todayLogCounts[
+                                                                                  w.wordId] ??
+                                                                              0) >=
+                                                                          2 ||
+                                                                      isCurrentStep);
+
+                                                          return Container(
+                                                            width: 30,
+                                                            alignment:
+                                                                Alignment.center,
+                                                            child: Container(
+                                                              width: 14,
+                                                              height: 14,
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: isStepCompleted
+                                                                    ? Colors.green
+                                                                    : (isDark
+                                                                        ? Colors
+                                                                            .white24
+                                                                        : Colors.grey
+                                                                            .withValues(
+                                                                                alpha:
+                                                                                    0.3)),
+                                                                borderRadius:
+                                                                    isWordFinished
+                                                                        ? BorderRadius
+                                                                            .circular(
+                                                                                3)
+                                                                        : BorderRadius
+                                                                            .circular(
+                                                                                7),
+                                                                border: isCurrentStep
+                                                                    ? Border.all(
+                                                                        color: Colors
+                                                                            .blueAccent,
+                                                                        width: 2)
+                                                                    : (isNextStep
+                                                                        ? Border.all(
+                                                                            color: Colors
+                                                                                .orange,
+                                                                            width: 2)
+                                                                        : null),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        }),
+                                                        const SizedBox(width: 16),
+                                                      ],
+                                                    ),
+                                                  ),
+                                            Padding(
                                               padding:
                                                   const EdgeInsets.symmetric(
                                                       vertical: 4),
@@ -1916,7 +2049,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   SizedBox(
                                                     width: 60,
                                                     child: Text(
-                                                      '${sIndex + 1}: ${stepInfo.studyStep}',
+                                                      '${sIndex + 1}: ${activeSteps[sIndex].studyStep}',
                                                       style: TextStyle(
                                                           fontSize: 10,
                                                           color: subTextColor),
@@ -1926,20 +2059,51 @@ extension BdcPageStateDialogs on BdcPageState {
                                                     ),
                                                   ),
                                                   ...batchWords.map((w) {
+                                                    final isReviewWord =
+                                                        StudyTrack.isReviewTrack(
+                                                      activeStepNames:
+                                                          activeStepNames,
+                                                      stability: w.stability,
+                                                      state: w.state,
+                                                      lastLearningDate:
+                                                          w.lastLearningDate,
+                                                      todayFirstLogElapsedDays:
+                                                          firstLogElapsedDays[
+                                                              w.wordId],
+                                                      today: todayStart,
+                                                    );
+                                                    // 词在当前行上的轨道内索引；null = 该行不适用于此词（复习词跳过学习轨道中间环节 → 灰）
+                                                    final int? trackIndex;
+                                                    if (isReviewWord) {
+                                                      if (sIndex == 0) {
+                                                        trackIndex = 0; // 测评行
+                                                      } else if (sIndex ==
+                                                          activeSteps.length -
+                                                              1) {
+                                                        trackIndex = 2; // List 行
+                                                      } else {
+                                                        trackIndex = null;
+                                                      }
+                                                    } else {
+                                                      trackIndex = sIndex;
+                                                    }
                                                     // Is the user learning this exact word in this exact step right now?
-                                                    final isCurrentStep =
-                                                        state.currentGetWordResult
-                                                                    ?.learningWord
-                                                                    ?.word
-                                                                    .id ==
-                                                                w.wordId &&
-                                                            w.todayLearnedTimes ==
-                                                                sIndex;
+                                                    final isCurrentStep = state
+                                                                .currentGetWordResult
+                                                                ?.learningWord
+                                                                ?.word
+                                                                .id ==
+                                                            w.wordId &&
+                                                        trackIndex != null &&
+                                                        w.todayLearnedTimes ==
+                                                            trackIndex;
                                                     final isNextStep =
                                                         nextWordId ==
                                                                 w.wordId &&
+                                                            trackIndex !=
+                                                                null &&
                                                             nextStepIndex ==
-                                                                sIndex;
+                                                                trackIndex;
                                                     // 已掌握的唯一标准：稳定度大于等于毕业阈值，或者在已掌握表中
                                                     final isWordFinished =
                                                         isEffectivelyMastered(
@@ -1948,9 +2112,11 @@ extension BdcPageStateDialogs on BdcPageState {
                                                     // 从用户视角看：如果我处于这个环节，或者处于之后的环节，或者单词已掌握，则该格显绿
                                                     final isStepCompleted =
                                                         isWordFinished ||
-                                                            w.todayLearnedTimes >
-                                                                sIndex ||
-                                                            isCurrentStep;
+                                                            (trackIndex !=
+                                                                    null &&
+                                                                (w.todayLearnedTimes >
+                                                                        trackIndex ||
+                                                                    isCurrentStep));
 
                                                     return Container(
                                                       width: 30,
@@ -1998,8 +2164,10 @@ extension BdcPageStateDialogs on BdcPageState {
                                                           16), // Padding right for scrolling
                                                 ],
                                               ),
-                                            );
-                                          }),
+                                            ),
+                                              ],
+                                          ],
+                                          
                                         ],
                                       ),
                                     ),

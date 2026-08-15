@@ -1707,6 +1707,12 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     final textColor = isDarkMode ? Colors.white38 : Colors.black38;
 
+    // 当前环节阶段名：测评（stepIndex 0）/ 恢复（复习轨道答错后的补救环节，由 handleWord 计算）/ 巩固（其余后续环节）
+    final gwr = state.currentGetWordResult;
+    final String stageText = gwr == null || gwr.stepIndex == 0
+        ? '[测评] '
+        : (state.isRestoreStep ? '[恢复] ' : '[巩固] ');
+
     if (!state.hasFinishedAnswering || state.fsrsItem == null) {
       if (state.currentGetWordResult != null &&
           state.currentGetWordResult!.stepIndex > 0 &&
@@ -1745,7 +1751,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            '[巩固] 今日测评: $assLabel',
+                            '$stageText今日测评: $assLabel',
                             style: TextStyle(fontSize: 11, color: assColor),
                           ),
                           Padding(
@@ -1786,7 +1792,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 4, vertical: 2),
                                   child: Text(
-                                    '[巩固] 今日测评: $fallbackLabel',
+                                    '$stageText今日测评: $fallbackLabel',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: hasRating
@@ -1797,7 +1803,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                 ),
                               )
                             : Text(
-                                '[巩固] 今日测评: 测评中',
+                                '$stageText今日测评: 测评中',
                                 style: TextStyle(fontSize: 11, color: textColor),
                               ),
                         Padding(
@@ -1859,7 +1865,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         child: Row(
                           children: [
                             Text(
-                              '[巩固] 今日测评: $ratingLabel',
+                              '$stageText今日测评: $ratingLabel',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: ratingColor,
@@ -1948,7 +1954,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         padding:
                             const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         child: Text(
-                          '[测评] 今日测评: $fallbackLabel',
+                          '$stageText今日测评: $fallbackLabel',
                           style: TextStyle(
                             fontSize: 11,
                             color: hasRating ? AppTheme.primaryColor : textColor,
@@ -1957,7 +1963,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       ),
                     )
                   : Text(
-                      '[测评] 今日测评: 测评中',
+                      '$stageText今日测评: 测评中',
                       style: TextStyle(fontSize: 11, color: textColor),
                     ),
               Padding(
@@ -2000,7 +2006,6 @@ extension BdcPageStateUIComponents on BdcPageState {
         break;
     }
 
-    String stageText = (state.currentGetWordResult != null && state.currentGetWordResult!.stepIndex > 0) ? '[巩固] ' : '[测评] ';
     return Container(
       padding: const EdgeInsets.only(bottom: 8),
       child: FittedBox(

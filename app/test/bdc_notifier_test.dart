@@ -1228,9 +1228,9 @@ void main() {
     state = container.read(bdcNotifierProvider);
     expect(state.fsrsItem, isNot(null));
     // 基于测评前状态(stability=5.8, elapsedDays=1) next(good):
-    // 真实 FSRS 计算结果 ≈ 8 天(不是停留在测评后的 6 天)
-    expect(state.fsrsItem!.scheduledDays, 8,
-        reason: '复习词改评分应基于测评前状态(5.8)重算,预期 8 天,实际 ${state.fsrsItem!.scheduledDays}');
+    // 真实 FSRS 计算结果 ≈ 9 天(不是停留在测评后的 6 天)
+    expect(state.fsrsItem!.scheduledDays, 9,
+        reason: '复习词改评分应基于测评前状态(5.8)重算,预期 9 天,实际 ${state.fsrsItem!.scheduledDays}');
 
     await Future.delayed(const Duration(milliseconds: 100));
   });
@@ -1303,6 +1303,61 @@ void main() {
     state = container.read(bdcNotifierProvider);
     expect(state.fsrsItem!.scheduledDays, 6,
         reason: '改回 easy 应稳定回到 6 天,实际 ${state.fsrsItem!.scheduledDays}');
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  test('BdcNotifier - 复习词测评答错进入恢复环节(isRestoreStep)→答对进入列表页', () async {
+    // word_1 改造成复习词：昨天学过、scheduledDays=2、state=review（只改 word_1）
+    final yesterday = now.subtract(const Duration(days: 1));
+    await (db.update(db.learningWords)
+          ..where((lw) => lw.userId.equals(testUser.id) & lw.wordId.equals('word_1')))
+        .write(LearningWordsCompanion(
+          stability: const Value(2.4),
+          difficulty: const Value(3.05),
+          elapsedDays: const Value(0),
+          scheduledDays: const Value(2),
+          reps: const Value(1),
+          lapses: const Value(0),
+          state: const Value(2),
+          lastLearningDate: Value(yesterday),
+          todayLearnedTimes: const Value(0),
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    print('DIAG 进入: studyStep=${state.studyStep} stepIndex=${state.currentGetWordResult?.stepIndex} wordState=${state.currentGetWordResult?.learningWord?.state}');
+
+    // 测评答错 → 应进入恢复环节
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
+    state = container.read(bdcNotifierProvider);
+    print('DIAG 答错后: word=${state.currentGetWordResult?.learningWord?.word.id} studyStep=${state.studyStep} stepIndex=${state.currentGetWordResult?.stepIndex} wordState=${state.currentGetWordResult?.learningWord?.state} lastRating=${state.lastFsrsRating}');
+    expect(state.currentGetWordResult!.stepIndex, 1,
+        reason: '答错后应进入复习轨道恢复环节(stepIndex=1)');
+    expect(state.currentGetWordResult!.learningWord!.state, FsrsState.relearning.value,
+        reason: '恢复环节词状态应为 relearning');
+    expect(state.isRestoreStep, true,
+        reason: '恢复环节应标记 isRestoreStep，UI 底部显示[恢复]');
+
+    // 恢复环节答对 → 复习轨道今日完成，进入 List 环节（列表页）
+    final res2 = await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
+    state = container.read(bdcNotifierProvider);
+    expect(state.loadError, '正在跳转到单词列表...',
+        reason: '恢复环节答对后应进入列表页环节');
 
     await Future.delayed(const Duration(milliseconds: 100));
   });

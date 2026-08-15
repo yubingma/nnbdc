@@ -6,6 +6,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animation_progress_bar/flutter_animation_progress_bar.dart';
@@ -36,6 +37,7 @@ import '../../util/analytics_util.dart';
 import '../../util/app_clock.dart';
 import '../../util/learning_service.dart';
 import '../../util/study_config.dart';
+import '../../util/study_track.dart';
 import '../../util/performance_watchdog.dart';
 import '../../util/utils.dart';
 import '../../widget/handwriting_board.dart';
