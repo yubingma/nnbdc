@@ -1123,10 +1123,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 标题行：学习环节 —— 新词/旧词 tab —— 拖动排序徽章（单行紧凑布局）
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 6),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 '学习环节',
@@ -1137,58 +1137,54 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   letterSpacing: 0.5,
                 ),
               ),
-              // 拖动排序提示仅新词 tab 有意义
-              if (_studyStepsTab == 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '拖动 ⠿ 排序',
-                    style: TextStyle(
-                      color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
+              const SizedBox(width: 12),
+              DefaultTabController(
+                length: 2,
+                child: SizedBox(
+                  width: 132,
+                  child: TabBar(
+                    dividerColor: Colors.transparent,
+                    labelPadding: EdgeInsets.zero,
+                    onTap: (i) => setState(() => _studyStepsTab = i),
+                    tabs: const [
+                      Tab(text: '新词'),
+                      Tab(text: '旧词'),
+                    ],
                   ),
                 ),
-            ],
-          ),
-        ),
-        DefaultTabController(
-          length: 2,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TabBar(
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                dividerColor: Colors.transparent,
-                onTap: (i) => setState(() => _studyStepsTab = i),
-                tabs: const [
-                  Tab(text: '新词'),
-                  Tab(text: '旧词'),
-                ],
               ),
-              const SizedBox(height: 8),
-              if (_studyStepsTab == 0)
-                ReorderableListView(
-                  buildDefaultDragHandles: false,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  // ignore: deprecated_member_use
-                  onReorder: reorderData,
-                  children: [
-                    for (int i = 0; i < studySteps!.length; i++) _buildStepTile(studySteps![i], i),
-                  ],
-                )
-              else
-                _buildReviewStepsInfoCard(isDarkMode),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '拖动 ⠿ 排序',
+                  style: TextStyle(
+                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+        if (_studyStepsTab == 0)
+          ReorderableListView(
+            buildDefaultDragHandles: false,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            // ignore: deprecated_member_use
+            onReorder: reorderData,
+            children: [
+              for (int i = 0; i < studySteps!.length; i++) _buildStepTile(studySteps![i], i),
+            ],
+          )
+        else
+          _buildReviewStepsInfoCard(isDarkMode),
       ],
     );
   }
@@ -1214,10 +1210,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         children: [
           _buildReviewStepRow('① 测评', '$firstStepName（新词的第 1 个环节）', textColor),
           _buildReviewStepRow('② 重测', '测评答错时，当天反向加测一次（英→中 答错则 中→英）', textColor),
-          _buildReviewStepRow('③ 单词列表', '浏览本组单词', textColor),
           const SizedBox(height: 8),
           Text(
-            '旧词不需要再学例句等巩固环节，复习更轻快。',
+            '旧词比新词学习环节少，复习更轻快。',
             style: TextStyle(fontSize: 11, color: subColor),
           ),
         ],
