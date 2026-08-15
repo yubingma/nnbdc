@@ -1193,9 +1193,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Widget _buildReviewStepsInfoCard(bool isDarkMode) {
     final textColor = isDarkMode ? Colors.white70 : Colors.black87;
     final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final firstStepName = selectedSteps().isNotEmpty
-        ? StudyStepExt.fromString(selectedSteps().first.studyStep).description
+    final activeSteps = selectedSteps();
+    final firstStepName = activeSteps.isNotEmpty
+        ? StudyStepExt.fromString(activeSteps.first.studyStep).description
         : '第一环节';
+    // 重测环节按实际配置动态推导（与调度层 StudyTrack.reviewTrack 一致）：
+    // 反向永远成立——测评是英→中方向（单词/例句）→ 重测中→英（Ch2En）；中→英方向 → 重测英→中（En2Ch）
+    final restoreStepName = activeSteps.isNotEmpty
+        ? StudyStepExt.fromString(StudyTrack.reviewTrack(
+                activeSteps.map((s) => s.studyStep).toList())[1])
+            .description
+        : '汉译英';
+    final restoreDesc = '测评答错时，当天加测一次【$restoreStepName】';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -1209,7 +1218,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildReviewStepRow('① 测评', '$firstStepName（新词的第 1 个环节）', textColor),
-          _buildReviewStepRow('② 重测', '测评答错时，当天反向加测一次（英→中 答错则 中→英）', textColor),
+          _buildReviewStepRow('② 重测', restoreDesc, textColor),
           const SizedBox(height: 8),
           Text(
             '旧词比新词学习环节少，复习更轻快。',

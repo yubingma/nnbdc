@@ -76,25 +76,32 @@ void main() {
   });
 
   group('StudyTrack.reviewTrack 复习轨道构造', () {
-    test('测评=En2Ch → 恢复=Ch2En（方向互补）', () {
+    test('测评=En2Ch → 重测=Ch2En（方向互补）', () {
       expect(StudyTrack.reviewTrack(steps3), ['En2Ch', 'Ch2En', 'List']);
     });
 
-    test('测评=Ch2En → 恢复=En2Ch（方向互补）', () {
+    test('测评=Ch2En → 重测=En2Ch（方向互补）', () {
       expect(StudyTrack.reviewTrack(['Ch2En', 'En2Ch', 'List']), ['Ch2En', 'En2Ch', 'List']);
     });
 
-    test('测评是例句环节 → 恢复取激活单词环节中序列靠前者', () {
+    test('测评=例句英→中 → 重测=单词中→英（反向永远成立）', () {
       expect(
         StudyTrack.reviewTrack(stepsSentenceFirst),
-        ['EnSentence2Ch', 'En2Ch', 'List'],
+        ['EnSentence2Ch', 'Ch2En', 'List'],
       );
     });
 
-    test('无激活单词环节 → 恢复默认 En2Ch', () {
+    test('测评=例句中→英 → 重测=单词英→中（反向永远成立）', () {
+      expect(
+        StudyTrack.reviewTrack(['ChSentence2En', 'En2Ch', 'List']),
+        ['ChSentence2En', 'En2Ch', 'List'],
+      );
+    });
+
+    test('仅例句激活（无单词环节）→ 重测仍由方向决定', () {
       expect(
         StudyTrack.reviewTrack(stepsSentenceOnly),
-        ['EnSentence2Ch', 'En2Ch', 'List'],
+        ['EnSentence2Ch', 'Ch2En', 'List'],
       );
     });
   });

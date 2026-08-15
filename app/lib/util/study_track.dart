@@ -54,21 +54,16 @@ class StudyTrack {
   }
 
   /// 复习轨道：测评环节 = 激活序列第 1 环节（List 恒在末位，故非 List）；
-  /// 重测环节 = En2Ch/Ch2En 二者之一：
-  /// - 测评是单词环节 → 方向互补的另一个（未激活也出现一次）；
-  /// - 测评是例句环节 → 激活单词环节中序列靠前者（都未激活默认 En2Ch）。
+  /// 重测环节 = 与测评方向互补的单词环节（反向永远成立）：
+  /// - 测评是英→中方向（En2Ch / EnSentence2Ch）→ 重测 Ch2En（中→英）；
+  /// - 测评是中→英方向（Ch2En / ChSentence2En）→ 重测 En2Ch（英→中）。
+  /// 例句与单词同理：例句英→中答错，反向为单词中→英（Ch2En），反之亦然。
   static List<String> reviewTrack(List<String> activeStepNames) {
     final check = activeStepNames.first;
-    String restore;
-    if (check == 'En2Ch') {
-      restore = 'Ch2En';
-    } else if (check == 'Ch2En') {
-      restore = 'En2Ch';
-    } else {
-      final wordSteps =
-          activeStepNames.where((s) => s == 'En2Ch' || s == 'Ch2En').toList();
-      restore = wordSteps.isNotEmpty ? wordSteps.first : 'En2Ch';
-    }
+    // 中→英方向（单词或例句）→ 反向英→中；其余（英→中方向/未知兜底）→ 反向中→英
+    final String restore = (check == 'Ch2En' || check == 'ChSentence2En')
+        ? 'En2Ch'
+        : 'Ch2En';
     return [check, restore, 'List'];
   }
 
