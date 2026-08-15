@@ -1217,7 +1217,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildReviewStepRow('① 测评', '$firstStepName（新词的第 1 个环节）', textColor),
+          _buildReviewStepRow('① 测评', '$firstStepName（与新词的第 1 个环节相同）', textColor),
           _buildReviewStepRow('② 重测', restoreDesc, textColor),
           const SizedBox(height: 8),
           Text(
