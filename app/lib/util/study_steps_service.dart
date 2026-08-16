@@ -194,3 +194,99 @@ class StudyStepsService {
     }
   }
 }
+
+/// 旧词学习规则三组（显式设置，所见即所得）
+class ReviewStudyStepsConfig {
+  final String checkStep; // 测评环节（单选）
+  final List<String> correctSteps; // 答对后的环节序列（可为空）
+  final List<String> wrongSteps; // 答错后的环节序列（可为空）
+
+  ReviewStudyStepsConfig({
+    required this.checkStep,
+    required this.correctSteps,
+    required this.wrongSteps,
+  });
+}
+
+/// 旧词学习规则服务（独立于新词 UserStudySteps 的 userReviewStudySteps 表）
+class ReviewStudyStepsService {
+  MyDatabase get _db => MyDatabase.instance;
+
+  /// 读取当前用户的旧词三组规则；未设置（表空）时返回 null
+  Future<ReviewStudyStepsConfig?> getConfig() async {
+    final user = Global.getLoggedInUser();
+    if (user == null) return null;
+    final steps = await _db.userReviewStudyStepsDao.getUserReviewStudySteps(user.id);
+    String? check;
+    final correct = <String>[];
+    final wrong = <String>[];
+    for (final s in steps) {
+      if (s.state != 'Active') continue;
+      switch (s.group) {
+        case 'check':
+          check = s.studyStep;
+          break;
+        case 'correct':
+          correct.add(s.studyStep);
+          break;
+        case 'wrong':
+          wrong.add(s.studyStep);
+          break;
+      }
+    }
+    if (check == null) return null;
+    return ReviewStudyStepsConfig(
+        checkStep: check, correctSteps: correct, wrongSteps: wrong);
+  }
+
+  /// 整组覆盖保存旧词三组规则
+  Future<void> saveConfig({
+    required String checkStep,
+    required List<String> correctSteps,
+    required List<String> wrongSteps,
+  }) async {
+    final user = Global.getLoggedInUser();
+    if (user == null) throw Exception('用户未登录');
+    final now = AppClock.now();
+    for (final group in ['check', 'correct', 'wrong']) {
+      await _db.userReviewStudyStepsDao
+          .deleteGroupUserReviewStudySteps(user.id, group, true);
+    }
+    final entities = <UserReviewStudyStep>[
+      UserReviewStudyStep(
+        userId: user.id,
+        group: 'check',
+        studyStep: checkStep,
+        seq: 0,
+        state: 'Active',
+        createTime: now,
+        updateTime: now,
+      ),
+    ];
+    for (int i = 0; i < correctSteps.length; i++) {
+      entities.add(UserReviewStudyStep(
+        userId: user.id,
+        group: 'correct',
+        studyStep: correctSteps[i],
+        seq: i,
+        state: 'Active',
+        createTime: now,
+        updateTime: now,
+      ));
+    }
+    for (int i = 0; i < wrongSteps.length; i++) {
+      entities.add(UserReviewStudyStep(
+        userId: user.id,
+        group: 'wrong',
+        studyStep: wrongSteps[i],
+        seq: i,
+        state: 'Active',
+        createTime: now,
+        updateTime: now,
+      ));
+    }
+    for (final e in entities) {
+      await _db.userReviewStudyStepsDao.saveUserReviewStudyStep(e, true);
+    }
+  }
+}

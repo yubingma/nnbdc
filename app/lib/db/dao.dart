@@ -1466,6 +1466,83 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
   }
 }
 
+@DriftAccessor(tables: [UserReviewStudySteps])
+class UserReviewStudyStepsDao extends DatabaseAccessor<MyDatabase>
+    with _$UserReviewStudyStepsDaoMixin {
+  UserReviewStudyStepsDao(super.db);
+
+  // 获取用户的旧词学习规则（全部三组），按 group + seq 排序
+  Future<List<UserReviewStudyStep>> getUserReviewStudySteps(String userId) {
+    return (select(userReviewStudySteps)
+          ..where((s) => s.userId.equals(userId))
+          ..orderBy([
+            (s) => OrderingTerm(expression: s.group),
+            (s) => OrderingTerm(expression: s.seq),
+          ]))
+        .get();
+  }
+
+  // 保存单条旧词学习步骤：不存在则插入，存在则更新
+  Future<void> saveUserReviewStudyStep(
+      UserReviewStudyStep step, bool genLog) async {
+    final existing = await (select(userReviewStudySteps)
+          ..where((s) =>
+              s.userId.equals(step.userId) &
+              s.group.equals(step.group) &
+              s.studyStep.equals(step.studyStep)))
+        .getSingleOrNull();
+
+    if (existing == null) {
+      await into(userReviewStudySteps).insert(step);
+      if (genLog) {
+        await DbLogUtil.logOperation(step.userId, 'INSERT',
+            'userReviewStudySteps', '${step.userId}-${step.group}-${step.studyStep}', step);
+      }
+    } else if (existing.seq != step.seq || existing.state != step.state) {
+      await (update(userReviewStudySteps)
+            ..where((s) =>
+                s.userId.equals(step.userId) &
+                s.group.equals(step.group) &
+                s.studyStep.equals(step.studyStep)))
+          .write(UserReviewStudyStepsCompanion(
+            seq: Value(step.seq),
+            state: Value(step.state),
+            updateTime: Value(step.updateTime),
+          ));
+      if (genLog) {
+        await DbLogUtil.logOperation(step.userId, 'UPDATE',
+            'userReviewStudySteps', '${step.userId}-${step.group}-${step.studyStep}', step);
+      }
+    }
+  }
+
+  // 删除单条旧词学习步骤
+  Future<void> deleteUserReviewStudyStep(
+      String userId, String group, String studyStep, bool genLog) async {
+    await (delete(userReviewStudySteps)
+          ..where((s) =>
+              s.userId.equals(userId) &
+              s.group.equals(group) &
+              s.studyStep.equals(studyStep)))
+        .go();
+    if (genLog) {
+      await DbLogUtil.logOperation(userId, 'DELETE', 'userReviewStudySteps',
+          '$userId-$group-$studyStep', null);
+    }
+  }
+
+  /// 删除用户某组的全部旧词学习步骤（用于整组覆盖保存）
+  Future<void> deleteGroupUserReviewStudySteps(
+      String userId, String group, bool genLog) async {
+    final existing = await (select(userReviewStudySteps)
+          ..where((s) => s.userId.equals(userId) & s.group.equals(group)))
+        .get();
+    for (final step in existing) {
+      await deleteUserReviewStudyStep(userId, group, step.studyStep, genLog);
+    }
+  }
+}
+
 @DriftAccessor(tables: [Dakas])
 class DakasDao extends DatabaseAccessor<MyDatabase> with _$DakasDaoMixin {
   DakasDao(super.db);

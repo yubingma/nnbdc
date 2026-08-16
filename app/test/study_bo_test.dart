@@ -487,7 +487,7 @@ void main() {
       expect(w.todayLearnedTimes, 1); // 不跳过：还需走恢复环节
     });
 
-    test('复习轨道跳过恢复后 completeListStepForCurrentBatch 按轨道推进 List', () async {
+    test('复习轨道答错走答错组后 completeListStepForCurrentBatch 按轨道推进 List', () async {
       await setupThreeSteps();
       await finishOtherWords('word_1');
       final yesterday = AppClock.today().subtract(const Duration(days: 1));
@@ -496,16 +496,44 @@ void main() {
         reps: 1, lapses: 0, state: FsrsState.review.value,
         todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
 
-      // 测评答对 → 跳过恢复 → todayLearnedTimes=2（复习轨道 [测评, 恢复, List] 的 List 位置）
-      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      // 测评答错 → 默认答错组 [反向互补=Ch2En] 非空 → +1 进入答错组环节
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
       var w = await wordOf('word_1');
+      expect(w.todayLearnedTimes, 1);
+      expect(w.state, FsrsState.relearning.value);
+
+      // 答错组环节答对 → +1 → 轨道 [En2Ch, Ch2En, List] 的 List 位置
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      w = await wordOf('word_1');
       expect(w.todayLearnedTimes, 2);
+      expect(w.state, FsrsState.review.value);
 
       // 完成列表学习：判据按该词自身轨道，推进到 3（轨道走完）
       final completeRes = await studyBo.completeListStepForCurrentBatch();
       expect(completeRes.success, true);
       w = await wordOf('word_1');
       expect(w.todayLearnedTimes, 3);
+    });
+
+    test('复习轨道测评答对且答对组为空（默认）：+2 直接完成，今日 finished', () async {
+      await setupThreeSteps();
+      await finishOtherWords('word_1');
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      await setWordFsrs('word_1',
+        stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+        reps: 1, lapses: 0, state: FsrsState.review.value,
+        todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
+
+      // 未设置旧词规则 → 答对组空 → 测评答对 +2 直接完成（跳过组与 List）
+      await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      var w = await wordOf('word_1');
+      expect(w.todayLearnedTimes, 2);
+      expect(w.state, FsrsState.review.value);
+
+      // 该词已走完轨道（track=[En2Ch, List] 长度 2），后续 getWord 返回 finished
+      final res = await studyBo.getWord(false, false);
+      expect(res.success, true);
+      expect(res.data!.finished, true);
     });
   });
 }

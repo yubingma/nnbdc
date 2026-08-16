@@ -28,6 +28,7 @@ import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_track.dart';
 import 'package:nnbdc/util/sound.dart';
 import 'package:nnbdc/util/study_config.dart';
@@ -770,6 +771,7 @@ class BdcNotifier extends _$BdcNotifier {
     final userId = Global.getLoggedInUser()?.id;
     final wordId = lw.word.id;
     int? firstLogElapsedDays;
+    int? firstLogRating;
     if (userId != null && wordId != null) {
       final row = await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
             ..where((l) =>
@@ -780,8 +782,13 @@ class BdcNotifier extends _$BdcNotifier {
             ..limit(1))
           .getSingleOrNull();
       firstLogElapsedDays = row?.elapsedDays;
+      firstLogRating = row?.rating;
     }
     final activeStepNames = state.activeUserStudySteps.map((s) => s.studyStep).toList();
+    final reviewCfg = await ReviewStudyStepsService().getConfig();
+    final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : const <String>[];
+    final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
+    final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
     final isReview = StudyTrack.isReviewTrack(
       activeStepNames: activeStepNames,
       stability: lw.stability,
@@ -797,6 +804,10 @@ class BdcNotifier extends _$BdcNotifier {
         state: lw.state,
         lastLearningDate: lw.lastLearningDate,
         todayFirstLogElapsedDays: firstLogElapsedDays,
+        reviewCheckSteps: reviewCheckSteps,
+        reviewCorrectSteps: reviewCorrectSteps,
+        reviewWrongSteps: reviewWrongSteps,
+        todayFirstLogRating: firstLogRating,
         today: AppClock.today(),
       ),
       isReview: isReview,

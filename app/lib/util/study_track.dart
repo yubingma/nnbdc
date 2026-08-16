@@ -1,12 +1,13 @@
+import 'package:nnbdc/api/enum.dart';
+
 /// 学习环节轨道推导：每个词按状态分配"学习轨道"或"复习轨道"。
 ///
 /// - 学习轨道 = 用户激活序列（含 List），用于新词（学习事件：多环节建立记忆，
 ///   每次评分走 FSRS 学习步骤重设语义）。
-/// - 复习轨道 = [测评(激活序列第 1), 重测(方向互补单词环节), List]，用于复习词
-///   （复习事件：每天单次快速检验；答错当天走重测环节，再错明日重现）。
+/// - 复习轨道 = [测评, 后续环节(按答对/答错分组显式配置), List]，用于旧词
+///   （复习事件：测评 = 每天单次复习信号；后续环节按测评结果走对应组）。
 class StudyTrack {
-  /// 判定该词今天是否走复习轨道（与 [trackOf] 同参同判据，供"测评答对跳过重测环节"等场景显式使用，
-  /// 避免用轨道长度推断——学习轨道 [En2Ch, Ch2En, List] 与复习轨道同为长度 3）。
+  /// 判定该词今天是否走复习轨道（与 [trackOf] 同参同判据，供"测评后跳过空组"等场景显式使用）。
   ///
   /// 轨道在"今天首次评分"时固化：今天首条评分日志的 elapsedDays 决定当天轨道
   /// （init=0 → 学习轨道；跨天 next>0 → 复习轨道），当天后续评分不再改变轨道，
@@ -32,6 +33,58 @@ class StudyTrack {
     return true;
   }
 
+  /// 旧词三组的有效值（含未设置时的回退默认）：
+  /// - 测评 = 配置的 checkStep；未设置 → 新词序列第 1 环节；
+  /// - 答对组 = 配置的 correctSteps；未设置 → 空（答对即完成）；
+  /// - 答错组 = 配置的 wrongSteps；未设置 → [反向互补环节]（旧行为）。
+  static ({String check, List<String> correct, List<String> wrong})
+      effectiveReviewConfig({
+    required List<String> reviewCheckSteps,
+    required List<String> reviewCorrectSteps,
+    required List<String> reviewWrongSteps,
+    required List<String> fallbackActiveStepNames,
+  }) {
+    if (reviewCheckSteps.isNotEmpty) {
+      return (
+        check: reviewCheckSteps.first,
+        correct: List.of(reviewCorrectSteps),
+        wrong: List.of(reviewWrongSteps),
+      );
+    }
+    final fallbackCheck = fallbackActiveStepNames.first;
+    return (
+      check: fallbackCheck,
+      correct: const [],
+      wrong: [oppositeWordStep(fallbackCheck)],
+    );
+  }
+
+  /// 反向互补的单词环节：英→中方向（单词/例句）→ Ch2En；中→英方向 → En2Ch。
+  static String oppositeWordStep(String step) {
+    return (step == 'Ch2En' || step == 'ChSentence2En') ? 'En2Ch' : 'Ch2En';
+  }
+
+  /// 复习轨道：测评 + 按测评结果（当天首条评分日志的 rating）走答对/答错组 + List。
+  /// 测评尚未提交（firstLogRating == null）→ 仅 [测评, List]（评分后轨道扩展）。
+  static List<String> reviewTrack({
+    required List<String> reviewCheckSteps,
+    required List<String> reviewCorrectSteps,
+    required List<String> reviewWrongSteps,
+    required List<String> fallbackActiveStepNames,
+    required int? firstLogRating,
+  }) {
+    final eff = effectiveReviewConfig(
+      reviewCheckSteps: reviewCheckSteps,
+      reviewCorrectSteps: reviewCorrectSteps,
+      reviewWrongSteps: reviewWrongSteps,
+      fallbackActiveStepNames: fallbackActiveStepNames,
+    );
+    final after = firstLogRating == null
+        ? const <String>[]
+        : (firstLogRating == FsrsRating.again.value ? eff.wrong : eff.correct);
+    return [eff.check, ...after, 'List'];
+  }
+
   /// 判定该词今天应走哪条轨道，返回轨道环节名数组。
   static List<String> trackOf({
     required List<String> activeStepNames,
@@ -39,6 +92,10 @@ class StudyTrack {
     int? state,
     DateTime? lastLearningDate,
     int? todayFirstLogElapsedDays,
+    required List<String> reviewCheckSteps,
+    required List<String> reviewCorrectSteps,
+    required List<String> reviewWrongSteps,
+    int? todayFirstLogRating,
     required DateTime today,
   }) {
     return isReviewTrack(
@@ -49,22 +106,14 @@ class StudyTrack {
       todayFirstLogElapsedDays: todayFirstLogElapsedDays,
       today: today,
     )
-        ? reviewTrack(activeStepNames)
+        ? reviewTrack(
+            reviewCheckSteps: reviewCheckSteps,
+            reviewCorrectSteps: reviewCorrectSteps,
+            reviewWrongSteps: reviewWrongSteps,
+            fallbackActiveStepNames: activeStepNames,
+            firstLogRating: todayFirstLogRating,
+          )
         : activeStepNames;
-  }
-
-  /// 复习轨道：测评环节 = 激活序列第 1 环节（List 恒在末位，故非 List）；
-  /// 重测环节 = 与测评方向互补的单词环节（反向永远成立）：
-  /// - 测评是英→中方向（En2Ch / EnSentence2Ch）→ 重测 Ch2En（中→英）；
-  /// - 测评是中→英方向（Ch2En / ChSentence2En）→ 重测 En2Ch（英→中）。
-  /// 例句与单词同理：例句英→中答错，反向为单词中→英（Ch2En），反之亦然。
-  static List<String> reviewTrack(List<String> activeStepNames) {
-    final check = activeStepNames.first;
-    // 中→英方向（单词或例句）→ 反向英→中；其余（英→中方向/未知兜底）→ 反向中→英
-    final String restore = (check == 'Ch2En' || check == 'ChSentence2En')
-        ? 'En2Ch'
-        : 'Ch2En';
-    return [check, restore, 'List'];
   }
 
   /// 该评分环节（索引 currentIndex）之后是否还有评分环节。

@@ -1340,12 +1340,10 @@ void main() {
     final notifier = container.read(bdcNotifierProvider.notifier);
     await notifier.loadData(FakeBuildContext());
     var state = container.read(bdcNotifierProvider);
-    print('DIAG 进入: studyStep=${state.studyStep} stepIndex=${state.currentGetWordResult?.stepIndex} wordState=${state.currentGetWordResult?.learningWord?.state}');
 
     // 测评答错 → 应进入恢复环节
     await notifier.getNextWord(true, fsrsRating: FsrsRating.again);
     state = container.read(bdcNotifierProvider);
-    print('DIAG 答错后: word=${state.currentGetWordResult?.learningWord?.word.id} studyStep=${state.studyStep} stepIndex=${state.currentGetWordResult?.stepIndex} wordState=${state.currentGetWordResult?.learningWord?.state} lastRating=${state.lastFsrsRating}');
     expect(state.currentGetWordResult!.stepIndex, 1,
         reason: '答错后应进入复习轨道恢复环节(stepIndex=1)');
     expect(state.currentGetWordResult!.learningWord!.state, FsrsState.relearning.value,
@@ -1354,7 +1352,7 @@ void main() {
         reason: '恢复环节应标记 isRestoreStep，UI 底部显示[恢复]');
 
     // 恢复环节答对 → 复习轨道今日完成，进入 List 环节（列表页）
-    final res2 = await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
+    await notifier.getNextWord(true, fsrsRating: FsrsRating.good);
     state = container.read(bdcNotifierProvider);
     expect(state.loadError, '正在跳转到单词列表...',
         reason: '恢复环节答对后应进入列表页环节');

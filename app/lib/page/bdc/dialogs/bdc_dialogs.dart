@@ -1558,35 +1558,55 @@ extension BdcPageStateDialogs on BdcPageState {
         .getMasteredWordsForUser(user.id);
     final masteredWordIds = masteredWords.map((w) => w.wordId).toSet();
 
-    // 今天评分日志：固化每词轨道（与 StudyBo 一致），并标记当天答错过（重测环节真走过）的词
+    // 今天评分日志：固化每词轨道（与 StudyBo 一致）
     final todayStart = AppClock.today();
     final logRows = await (MyDatabase.instance.select(MyDatabase.instance.learningLogs)
           ..where((l) =>
               l.userId.equals(user.id) &
               l.createTime.isBiggerOrEqualValue(todayStart)))
         .get();
-    final firstLogElapsedDays = <String, int>{};
+    final firstLogs = <String, ({int elapsedDays, int rating})>{};
     final earliestTime = <String, DateTime>{};
-    // 当天评分日志条数：重测环节"真走过"= 当天有 ≥2 条评分日志（测评 + 重测）
+    // 当天评分日志条数：后续组环节"真走过"= 当天有 ≥2 条评分日志（测评 + 组内评分）
     final todayLogCounts = <String, int>{};
     for (final row in logRows) {
       final prev = earliestTime[row.wordId];
       if (prev == null || row.createTime.isBefore(prev)) {
         earliestTime[row.wordId] = row.createTime;
-        firstLogElapsedDays[row.wordId] = row.elapsedDays;
+        firstLogs[row.wordId] =
+            (elapsedDays: row.elapsedDays, rating: row.rating);
       }
       todayLogCounts[row.wordId] = (todayLogCounts[row.wordId] ?? 0) + 1;
     }
 
+    // 旧词三组规则（未设置时回退默认）
+    final reviewCfg = await ReviewStudyStepsService().getConfig();
+    final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : const <String>[];
+    final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
+    final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
+    final effReview = StudyTrack.effectiveReviewConfig(
+      reviewCheckSteps: reviewCheckSteps,
+      reviewCorrectSteps: reviewCorrectSteps,
+      reviewWrongSteps: reviewWrongSteps,
+      fallbackActiveStepNames: activeStepNames,
+    );
+
     // 轨道推导 helper（与 StudyBo.getWord 一致的固化规则）
-    List<String> trackOf(LearningWord w) => StudyTrack.trackOf(
-          activeStepNames: activeStepNames,
-          stability: w.stability,
-          state: w.state,
-          lastLearningDate: w.lastLearningDate,
-          todayFirstLogElapsedDays: firstLogElapsedDays[w.wordId],
-          today: todayStart,
-        );
+    List<String> trackOf(LearningWord w) {
+      final first = firstLogs[w.wordId];
+      return StudyTrack.trackOf(
+        activeStepNames: activeStepNames,
+        stability: w.stability,
+        state: w.state,
+        lastLearningDate: w.lastLearningDate,
+        todayFirstLogElapsedDays: first?.elapsedDays,
+        reviewCheckSteps: reviewCheckSteps,
+        reviewCorrectSteps: reviewCorrectSteps,
+        reviewWrongSteps: reviewWrongSteps,
+        todayFirstLogRating: first?.rating,
+        today: todayStart,
+      );
+    }
 
     // 助手函数：判断单词是否已掌握 (调度层的一致性逻辑)
     bool isEffectivelyMastered(dynamic word) {
@@ -1908,8 +1928,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   lastLearningDate:
                                                       w.lastLearningDate,
                                                   todayFirstLogElapsedDays:
-                                                      firstLogElapsedDays[
-                                                          w.wordId],
+                                                      firstLogs[
+                                                          w.wordId]?.elapsedDays,
                                                   today: todayStart,
                                                 );
                                                 final Color spellColor =
@@ -1977,10 +1997,10 @@ extension BdcPageStateDialogs on BdcPageState {
                                                         SizedBox(
                                                           width: 60,
                                                           child: Text(
-                                                            '重测(${StudyTrack.reviewTrack(activeStepNames)[1]})',
+                                                            '重测(${effReview.wrong.first})',
                                                             style: TextStyle(
                                                                 fontSize: 10,
-                                                                // 重测环节为旧词（复习轨道）专属 → 橙色
+                                                                // 答错组为旧词（复习轨道）答错路径专属 → 橙色
                                                                 color: Colors.orange),
                                                             maxLines: 1,
                                                             overflow:
@@ -1997,8 +2017,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                             lastLearningDate:
                                                                 w.lastLearningDate,
                                                             todayFirstLogElapsedDays:
-                                                                firstLogElapsedDays[
-                                                                    w.wordId],
+                                                                firstLogs[
+                                                                    w.wordId]?.elapsedDays,
                                                             today: todayStart,
                                                           );
                                                           final isCurrentStep = state
@@ -2107,8 +2127,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                                       lastLearningDate:
                                                           w.lastLearningDate,
                                                       todayFirstLogElapsedDays:
-                                                          firstLogElapsedDays[
-                                                              w.wordId],
+                                                          firstLogs[
+                                                              w.wordId]?.elapsedDays,
                                                       today: todayStart,
                                                     );
                                                     // 词在当前行上的轨道内索引；null = 该行不适用于此词（复习词跳过学习轨道中间环节 → 灰）

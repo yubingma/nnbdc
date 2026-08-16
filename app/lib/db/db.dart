@@ -37,6 +37,7 @@ part 'db.g.dart';
   DictGroups,
   GroupAndDictLinks,
   UserStudySteps,
+  UserReviewStudySteps,
   Dakas,
   UserOpers,
   UserCowDungLogs,
@@ -69,6 +70,7 @@ part 'db.g.dart';
   DictGroupsDao,
   GroupAndDictLinksDao,
   UserStudyStepsDao,
+  UserReviewStudyStepsDao,
   DakasDao,
   UserOpersDao,
   MasteredWordsDao,
@@ -249,7 +251,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 48;
+  int get schemaVersion => 49;
 
   @override
   MigrationStrategy get migration {
@@ -408,6 +410,10 @@ class MyDatabase extends _$MyDatabase {
           if (from < 48) {
             await _migrateFromV47ToV48(m);
           }
+          if (from < 49) {
+            // 新增旧词（复习词）独立学习环节序列表
+            await m.createTable(userReviewStudySteps);
+          }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
           Global.logger.e('❌ 数据库升级失败，将删除所有表并重建: $e', error: e, stackTrace: stackTrace);
@@ -526,7 +532,7 @@ class MyDatabase extends _$MyDatabase {
         dicts, words, userDbLogs, userDbVersions, dictWords, wordImages,
         verbTenses, synonyms, similarWords, cigens, cigenWordLinks,
         meaningItems, sentences, learningWords, bookMarks, dictGroups,
-        groupAndDictLinks, userStudySteps, dakas, userOpers, userCowDungLogs,
+        groupAndDictLinks, userStudySteps, userReviewStudySteps, dakas, userOpers, userCowDungLogs,
         userWrongWords, sysDbVersion, localExceptions, learningLogs,
         userStudyDailyStats
       ];
@@ -1622,7 +1628,7 @@ class MyDatabase extends _$MyDatabase {
       votedWordImages, learningDicts, dicts, words, userDbLogs, userDbVersions,
       dictWords, wordImages, verbTenses, synonyms, similarWords, cigens,
       cigenWordLinks, meaningItems, sentences, learningWords, bookMarks,
-      dictGroups, groupAndDictLinks, userStudySteps, dakas, userOpers,
+      dictGroups, groupAndDictLinks, userStudySteps, userReviewStudySteps, dakas, userOpers,
       userCowDungLogs, userWrongWords, sysDbVersion, localExceptions,
     ];
 

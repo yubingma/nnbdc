@@ -155,11 +155,15 @@ class StudyBo {
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
       final activeStepNames = steps.map((s) => s.studyStep).toList();
-      final firstLogElapsedDays =
-          await _loadTodayFirstLogElapsedDays(user.id, todayWords);
+      final firstLogs =
+          await _loadTodayFirstLogs(user.id, todayWords);
+      final reviewCfg = await ReviewStudyStepsService().getConfig();
       int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
           activeStepNames: activeStepNames,
-          firstLogElapsedDays: firstLogElapsedDays,
+          firstLogs: firstLogs,
+          reviewCheckSteps: reviewCfg != null ? [reviewCfg.checkStep] : const [],
+          reviewCorrectSteps: reviewCfg?.correctSteps ?? const [],
+          reviewWrongSteps: reviewCfg?.wrongSteps ?? const [],
           batchSize: batchSize);
       if (batchStartIndex == -1) {
         Global.logger.d('所有批次单词已完成');
@@ -464,11 +468,18 @@ class StudyBo {
 
       // 计算 batchStartIndex
       final activeStepNames = steps.map((s) => s.studyStep).toList();
-      final firstLogElapsedDays =
-          await _loadTodayFirstLogElapsedDays(user.id, todayWords);
+      final firstLogs =
+          await _loadTodayFirstLogs(user.id, todayWords);
+      final reviewCfg = await ReviewStudyStepsService().getConfig();
+      final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : const <String>[];
+      final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
+      final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
       final batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
           activeStepNames: activeStepNames,
-          firstLogElapsedDays: firstLogElapsedDays,
+          firstLogs: firstLogs,
+          reviewCheckSteps: reviewCheckSteps,
+          reviewCorrectSteps: reviewCorrectSteps,
+          reviewWrongSteps: reviewWrongSteps,
           batchSize: 10);
       if (batchStartIndex == -1) {
         return Result("ERROR", "所有单词已完成列表学习", false);
@@ -487,12 +498,17 @@ class StudyBo {
       bool anyUpdated = false;
       for (final word in batchWords) {
         // 按该词自身轨道判断当前环节是否为 List（复习词轨道与学习词轨道不同）
+        final first = firstLogs[word.wordId];
         final track = StudyTrack.trackOf(
           activeStepNames: activeStepNames,
           stability: word.stability,
           state: word.state,
           lastLearningDate: word.lastLearningDate,
-          todayFirstLogElapsedDays: firstLogElapsedDays[word.wordId],
+          todayFirstLogElapsedDays: first?.elapsedDays,
+          reviewCheckSteps: reviewCheckSteps,
+          reviewCorrectSteps: reviewCorrectSteps,
+          reviewWrongSteps: reviewWrongSteps,
+          todayFirstLogRating: first?.rating,
           today: AppClock.today(),
         );
         int currentStepIndex = word.todayLearnedTimes;
@@ -632,15 +648,23 @@ class StudyBo {
       final masteredWordIds = await StudyCacheManager().getMasteredWordIds(db, user.id);
       Global.logger.d('🐛 [BDC Performance Item] 查询已掌握单词ID耗时: ${swMastered.elapsedMilliseconds} ms');
 
-      // 查询今天首条评分日志间隔：固化每个词的当天轨道（学习/复习），当天不漂移
-      final firstLogElapsedDays =
-          await _loadTodayFirstLogElapsedDays(user.id, todayWords);
+      // 查询今天首条评分日志（间隔+评分）：固化每个词的当天轨道（学习/复习），当天不漂移
+      final firstLogs =
+          await _loadTodayFirstLogs(user.id, todayWords);
+      // 旧词三组显式规则（未设置时轨道层回退默认）
+      final reviewCfg = await ReviewStudyStepsService().getConfig();
+      final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : <String>[];
+      final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
+      final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
       int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
           activeStepNames: activeStepNames,
-          firstLogElapsedDays: firstLogElapsedDays,
+          firstLogs: firstLogs,
+          reviewCheckSteps: reviewCheckSteps,
+          reviewCorrectSteps: reviewCorrectSteps,
+          reviewWrongSteps: reviewWrongSteps,
           batchSize: batchSize);
       if (batchStartIndex == -1) {
         return _buildTodayStudyFinishedResult();
@@ -668,17 +692,24 @@ class StudyBo {
         }());
       }
 
-      // 轨道推导 helper：每个词按状态走学习轨道（激活序列）或复习轨道（测评+重测+List）。
+      // 轨道推导 helper：每个词按状态走学习轨道（激活序列）或复习轨道（测评+答对/答错组+List）。
       // 轨道由"今天首条评分日志的 elapsedDays"固化（init=0 → 学习轨道；跨天 next>0 → 复习轨道），
       // 当天后续评分不再改变轨道，防止 state 变化导致轨道中途漂移。
-      List<String> trackOf(LearningWord word) => StudyTrack.trackOf(
-            activeStepNames: activeStepNames,
-            stability: word.stability,
-            state: word.state,
-            lastLearningDate: word.lastLearningDate,
-            todayFirstLogElapsedDays: firstLogElapsedDays[word.wordId],
-            today: today,
-          );
+      List<String> trackOf(LearningWord word) {
+        final first = firstLogs[word.wordId];
+        return StudyTrack.trackOf(
+          activeStepNames: activeStepNames,
+          stability: word.stability,
+          state: word.state,
+          lastLearningDate: word.lastLearningDate,
+          todayFirstLogElapsedDays: first?.elapsedDays,
+          reviewCheckSteps: reviewCheckSteps,
+          reviewCorrectSteps: reviewCorrectSteps,
+          reviewWrongSteps: reviewWrongSteps,
+          todayFirstLogRating: first?.rating,
+          today: today,
+        );
+      }
 
       // 添加批次状态日志
       Global.logger.d('~~~~~BDC_BATCH: startIdx=$batchStartIndex, batchSize=${batchWords.length}, activeStepCount=$activeStepCount');
@@ -730,18 +761,26 @@ class StudyBo {
       bool shouldSave = gotoNext || fsrsRating != null || isWordMastered;
       if (shouldSave) {
         final currWord = todayWords[currentWordIndex];
-        // 复习轨道测评环节答对：跳过重测环节，直接进入 List
-        final bool skipRestoreStep = StudyTrack.isReviewTrack(
+        // 复习轨道测评环节评分后：对应组（答对/答错）为空 → 跳过组直接进 List 位置（+2）；组非空 → +1 逐环节走
+        final effReview = StudyTrack.effectiveReviewConfig(
+          reviewCheckSteps: reviewCheckSteps,
+          reviewCorrectSteps: reviewCorrectSteps,
+          reviewWrongSteps: reviewWrongSteps,
+          fallbackActiveStepNames: activeStepNames,
+        );
+        final bool skipGroupSteps = StudyTrack.isReviewTrack(
               activeStepNames: activeStepNames,
               stability: currWord.stability,
               state: currWord.state,
               lastLearningDate: currWord.lastLearningDate,
-              todayFirstLogElapsedDays: firstLogElapsedDays[currWord.wordId],
+              todayFirstLogElapsedDays: firstLogs[currWord.wordId]?.elapsedDays,
               today: today,
             ) &&
             currentStepIndex == 0 &&
             fsrsRating != null &&
-            fsrsRating != FsrsRating.again;
+            (fsrsRating == FsrsRating.again
+                ? effReview.wrong.isEmpty
+                : effReview.correct.isEmpty);
         final nextFsrsItem = await updateCurrWord(
           isWordMastered: isWordMastered,
           currWord: currWord,
@@ -749,12 +788,13 @@ class StudyBo {
           now: now,
           db: db,
           allStepsCompletedForWord: allStepsCompletedForWord,
-          skipRestoreStep: skipRestoreStep,
+          skipGroupSteps: skipGroupSteps,
           fsrsRating: fsrsRating,
         );
         // 刚写入的今日首条评分日志立即固化进轨道判定 Map（当日轨道不漂移）
-        if (nextFsrsItem != null) {
-          firstLogElapsedDays.putIfAbsent(currWord.wordId, () => nextFsrsItem.elapsedDays);
+        if (nextFsrsItem != null && fsrsRating != null) {
+          firstLogs.putIfAbsent(currWord.wordId,
+              () => (elapsedDays: nextFsrsItem.elapsedDays, rating: fsrsRating.value));
         }
 
         // 同步内存状态
@@ -814,7 +854,10 @@ class StudyBo {
       // 完全基于当前（已更新的）状态，重新推导下一个单词
       int nextBatchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
           activeStepNames: activeStepNames,
-          firstLogElapsedDays: firstLogElapsedDays,
+          firstLogs: firstLogs,
+          reviewCheckSteps: reviewCheckSteps,
+          reviewCorrectSteps: reviewCorrectSteps,
+          reviewWrongSteps: reviewWrongSteps,
           batchSize: batchSize);
       if (nextBatchStartIndex == -1) {
         return _buildTodayStudyFinishedResult();
@@ -936,7 +979,7 @@ class StudyBo {
     required DateTime now,
     required MyDatabase db,
     required bool allStepsCompletedForWord,
-    bool skipRestoreStep = false,
+    bool skipGroupSteps = false,
     FsrsRating? fsrsRating,
   }) async {
     // 停止使用 dateOnlyNow，保留完整时间戳以支持状态驱动定位
@@ -1057,7 +1100,8 @@ class StudyBo {
       lastLearningDate: Value(AppClock.today()),
       learnedTimes: (currWord.learnedTimes) + 1,
       // 复习轨道测评答对时跳过重测环节直接进 List（+2）；其余 +1
-      todayLearnedTimes: (currWord.todayLearnedTimes) + (skipRestoreStep ? 2 : 1),
+      // 复习轨道测评评分后对应组（答对/答错）为空：跳过组直接进 List 位置（+2）；组非空 → +1
+      todayLearnedTimes: (currWord.todayLearnedTimes) + (skipGroupSteps ? 2 : 1),
       stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
       difficulty: nextFsrs != null ? Value(nextFsrs.difficulty) : const Value.absent(),
       elapsedDays: nextFsrs != null ? Value(nextFsrs.elapsedDays) : const Value.absent(),
@@ -1074,9 +1118,9 @@ class StudyBo {
   }
 
   /// 查询今日单词在今天的首条评分日志的 elapsedDays（用于固化当天学习/复习轨道）
-  Future<Map<String, int>> _loadTodayFirstLogElapsedDays(
+  Future<Map<String, ({int elapsedDays, int rating})>> _loadTodayFirstLogs(
       String userId, List<LearningWord> words) async {
-    final result = <String, int>{};
+    final result = <String, ({int elapsedDays, int rating})>{};
     if (words.isEmpty) return result;
     final db = MyDatabase.instance;
     final todayStart = AppClock.today();
@@ -1086,13 +1130,13 @@ class StudyBo {
               l.wordId.isIn(words.map((w) => w.wordId)) &
               l.createTime.isBiggerOrEqualValue(todayStart)))
         .get();
-    // 每词取最早一条日志（今天首条评分）的 elapsedDays
+    // 每词取最早一条日志（今天首条评分）的 elapsedDays 与 rating（用于固化轨道与扩展复习轨道）
     final earliestTime = <String, DateTime>{};
     for (final row in rows) {
       final prev = earliestTime[row.wordId];
       if (prev == null || row.createTime.isBefore(prev)) {
         earliestTime[row.wordId] = row.createTime;
-        result[row.wordId] = row.elapsedDays;
+        result[row.wordId] = (elapsedDays: row.elapsedDays, rating: row.rating);
       }
     }
     return result;
@@ -1252,19 +1296,27 @@ class StudyBo {
   /// 逻辑：找到第一个今日尚未完成所有轨道环节的批次（每词按其自身轨道长度判定）
   static int _calculateBatchStartIndex(List<LearningWord> todayWords, Set<String> masteredWordIds,
       {required List<String> activeStepNames,
-      required Map<String, int> firstLogElapsedDays,
+      required Map<String, ({int elapsedDays, int rating})> firstLogs,
+      required List<String> reviewCheckSteps,
+      required List<String> reviewCorrectSteps,
+      required List<String> reviewWrongSteps,
       int batchSize = 10}) {
     final today = AppClock.today();
     for (int i = 0; i < todayWords.length; i += batchSize) {
       bool batchFinished = true;
       for (int j = i; j < i + batchSize && j < todayWords.length; j++) {
         // 状态驱动：如果单词已学完（达到毕业稳定性，或者在 masteredWords 表中存在，或者今日学习次数已走完自身轨道）
+        final first = firstLogs[todayWords[j].wordId];
         final trackLen = StudyTrack.trackOf(
           activeStepNames: activeStepNames,
           stability: todayWords[j].stability,
           state: todayWords[j].state,
           lastLearningDate: todayWords[j].lastLearningDate,
-          todayFirstLogElapsedDays: firstLogElapsedDays[todayWords[j].wordId],
+          todayFirstLogElapsedDays: first?.elapsedDays,
+          reviewCheckSteps: reviewCheckSteps,
+          reviewCorrectSteps: reviewCorrectSteps,
+          reviewWrongSteps: reviewWrongSteps,
+          todayFirstLogRating: first?.rating,
           today: today,
         ).length;
         bool wordFinished = todayWords[j].isTodayFinished(masteredWordIds, trackLen);

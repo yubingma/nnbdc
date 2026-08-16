@@ -25,6 +25,7 @@ import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/learning_service.dart';
 import 'package:nnbdc/util/study_track.dart';
+import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -61,8 +62,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   int _totalStepCount = 0;
   List<LearningWord>? _todayWords;
   Set<String> _masteredWordIds = {};
-  /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道说明）
+  /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道配置）
   int _studyStepsTab = 0;
+  /// 旧词三组规则（显式设置）；_reviewConfigSaved=false 表示未落库（当前为默认规则）
+  String? _reviewCheckStep;
+  List<String> _reviewCorrectSteps = [];
+  List<String> _reviewWrongSteps = [];
+  bool _reviewConfigSaved = false;
 
   /// 近期已下载/尝试下载的词书 ID 集合（防止导入后异步可见性延迟导致的循环）
   static final Map<String, DateTime> _recentlyDownloadedAt = {};
@@ -286,6 +292,16 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       studySteps = stepsResult.data?.where((step) => step.studyStep != 'List').toList();
     }
 
+    // 加载旧词三组规则；未设置时预填默认（测评=新词第 1、答对后=空、答错后=[反向互补]）
+    final reviewCfg = await ReviewStudyStepsService().getConfig();
+    _reviewConfigSaved = reviewCfg != null;
+    final fallbackCheck = selectedSteps().isNotEmpty
+        ? selectedSteps().first.studyStep
+        : 'En2Ch';
+    _reviewCheckStep = reviewCfg?.checkStep ?? fallbackCheck;
+    _reviewCorrectSteps = List.of(reviewCfg?.correctSteps ?? const []);
+    _reviewWrongSteps = List.of(reviewCfg?.wrongSteps ?? [StudyTrack.oppositeWordStep(fallbackCheck)]);
+
     if (user != null) {
       final db = MyDatabase.instance;
       _masteredWordIds = await StudyCacheManager().getMasteredWordIds(db, user!.id!);
@@ -391,7 +407,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final user = Global.getLoggedInUser();
     final activeStepNames = selectedSteps().map((s) => s.studyStep).toList();
     final today = AppClock.today();
-    Map<String, int> firstLogElapsedDays = {};
+    Map<String, ({int elapsedDays, int rating})> firstLogs = {};
     if (user != null && _todayWords!.isNotEmpty) {
       final db = MyDatabase.instance;
       final rows = await (db.select(db.learningLogs)
@@ -405,19 +421,29 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         final prev = earliestTime[row.wordId];
         if (prev == null || row.createTime.isBefore(prev)) {
           earliestTime[row.wordId] = row.createTime;
-          firstLogElapsedDays[row.wordId] = row.elapsedDays;
+          firstLogs[row.wordId] =
+              (elapsedDays: row.elapsedDays, rating: row.rating);
         }
       }
     }
+    final reviewCfg = await ReviewStudyStepsService().getConfig();
+    final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : const <String>[];
+    final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
+    final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
     _totalStepCount = 0;
     _completedStepCount = 0;
     for (final word in _todayWords!) {
+      final first = firstLogs[word.wordId];
       final trackLen = StudyTrack.trackOf(
         activeStepNames: activeStepNames,
         stability: word.stability,
         state: word.state,
         lastLearningDate: word.lastLearningDate,
-        todayFirstLogElapsedDays: firstLogElapsedDays[word.wordId],
+        todayFirstLogElapsedDays: first?.elapsedDays,
+        reviewCheckSteps: reviewCheckSteps,
+        reviewCorrectSteps: reviewCorrectSteps,
+        reviewWrongSteps: reviewWrongSteps,
+        todayFirstLogRating: first?.rating,
         today: today,
       ).length;
       _totalStepCount += trackLen;
@@ -1191,22 +1217,22 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 旧词 tab：复习轨道的只读说明（方案 A，不做可配置项）
+  /// 旧词 tab：三组显式配置（测评单选 / 答对后序列 / 答错后序列，所见即所得）
   Widget _buildReviewStepsInfoCard(bool isDarkMode) {
     final textColor = isDarkMode ? Colors.white70 : Colors.black87;
     final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final activeSteps = selectedSteps();
-    final firstStepName = activeSteps.isNotEmpty
-        ? StudyStepExt.fromString(activeSteps.first.studyStep).description
-        : '第一环节';
-    // 重测环节按实际配置动态推导（与调度层 StudyTrack.reviewTrack 一致）：
-    // 反向永远成立——测评是英→中方向（单词/例句）→ 重测中→英（Ch2En）；中→英方向 → 重测英→中（En2Ch）
-    final restoreStepName = activeSteps.isNotEmpty
-        ? StudyStepExt.fromString(StudyTrack.reviewTrack(
-                activeSteps.map((s) => s.studyStep).toList())[1])
-            .description
-        : '汉译英';
-    final restoreDesc = '测评答错时，当天加测一次【$restoreStepName】';
+    const allStepNames = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
+    String desc(String s) => StudyStepExt.fromString(s).description;
+
+    Widget sectionTitle(String title) => Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            title,
+            style: TextStyle(
+                fontSize: 12, fontWeight: FontWeight.bold, color: textColor),
+          ),
+        );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -1219,44 +1245,93 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildReviewStepRow('① 测评', '$firstStepName（与新词的第 1 个环节相同）', textColor),
-          _buildReviewStepRow('② 重测', restoreDesc, textColor),
+          sectionTitle('测评环节（第一个环节）'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final s in allStepNames)
+                ChoiceChip(
+                  label: Text(desc(s), style: const TextStyle(fontSize: 12)),
+                  selected: _reviewCheckStep == s,
+                  onSelected: (_) => setState(() => _reviewCheckStep = s),
+                ),
+            ],
+          ),
+          sectionTitle('答对后（可为空：答对即完成）'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final s in allStepNames)
+                FilterChip(
+                  label: Text(desc(s), style: const TextStyle(fontSize: 12)),
+                  selected: _reviewCorrectSteps.contains(s),
+                  onSelected: (sel) => setState(() {
+                    if (sel) {
+                      if (!_reviewCorrectSteps.contains(s)) {
+                        _reviewCorrectSteps.add(s);
+                      }
+                    } else {
+                      _reviewCorrectSteps.remove(s);
+                    }
+                  }),
+                ),
+            ],
+          ),
+          sectionTitle('答错后（可为空：答错即结束，明日重现）'),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final s in allStepNames)
+                FilterChip(
+                  label: Text(desc(s), style: const TextStyle(fontSize: 12)),
+                  selected: _reviewWrongSteps.contains(s),
+                  onSelected: (sel) => setState(() {
+                    if (sel) {
+                      if (!_reviewWrongSteps.contains(s)) {
+                        _reviewWrongSteps.add(s);
+                      }
+                    } else {
+                      _reviewWrongSteps.remove(s);
+                    }
+                  }),
+                ),
+            ],
+          ),
           const SizedBox(height: 8),
           Text(
-            '旧词比新词学习环节少，复习更轻快。',
+            _reviewConfigSaved ? '已保存自定义规则' : '当前为默认规则（未自定义）：测评=新词第 1 环节，答对即完成，答错反向加测一次',
             style: TextStyle(fontSize: 11, color: subColor),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton(
+              onPressed: _reviewCheckStep == null ? null : saveReviewConfig,
+              child: const Text('保存旧词规则'),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildReviewStepRow(String title, String desc, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 84,
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              desc,
-              style: TextStyle(fontSize: 12, color: textColor),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> saveReviewConfig() async {
+    final check = _reviewCheckStep;
+    if (check == null) return;
+    try {
+      await ReviewStudyStepsService().saveConfig(
+        checkStep: check,
+        correctSteps: _reviewCorrectSteps,
+        wrongSteps: _reviewWrongSteps,
+      );
+      setState(() => _reviewConfigSaved = true);
+      ToastUtil.success('旧词规则已保存');
+    } catch (e, s) {
+      Global.logger.e('保存旧词规则失败', error: e, stackTrace: s);
+      ToastUtil.error('保存旧词规则失败');
+    }
   }
 
   Widget _buildStepTile(UserStudyStepVo step, int index) {

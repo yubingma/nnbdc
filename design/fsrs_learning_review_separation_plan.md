@@ -303,3 +303,90 @@ if (isSameDayToday) {
   - 新词 tab：现有环节配置（激活开关 + 拖排序 + "拖动 ⠿ 排序"徽章仅此 tab 显示）；
   - 旧词 tab：只读说明卡（① 测评=新词第 1 环节（动态显示名称）② 重测=答错当天反向加测 ③ 单词列表 + "旧词不需要再学例句等巩固环节，复习更轻快"）。
 - 验证：`flutter analyze` 7 文件无问题；全量 `flutter test` 294 通过、2 skip、0 失败。
+
+## 10. 补充需求 Plan：旧词学习规则三组显式设置（修订版，取代旧方案 B）
+
+### 需求（已与用户确认，取消所有隐含规则）
+
+旧词 tab 设置三个显式区块：
+
+| 区块 | 内容 | 语义 |
+|---|---|---|
+| 测评环节 | 单选 1 个（必选） | 进入旧词后先做 |
+| 答对后 | 多选 + 排序，**可为空** | 测评答对 → 走这些环节（空 = 直接完成） |
+| 答错后 | 多选 + 排序，**可为空** | 测评答错 → 走这些环节（空 = 答错即结束，明日重现） |
+
+- 全部显式、所见即所得；取消"自动补反向重测""N=1 补/N≥2 全走"等隐含规则。
+- 四类环节（含例句）都可选；List 恒末尾（内部环节）。
+- FSRS 语义不变：测评 = next 复习公式；后续环节 = relearn 重设（现有 updateCurrWord 的 isSameDayToday 分支已支持）。
+- 存量用户：表为空 → 回退旧行为并在 UI 预填显示（测评=新词第 1 环节、答对后=空、答错后=[反向互补环节]），用户改动保存后才落库。
+
+### 存储
+
+`UserReviewStudySteps` 表：userId / group（'check'/'correct'/'wrong'）/ studyStep / seq / state / 时间戳，主键 (userId, group, studyStep)。（已开工的 Task 1 半成品按此调整：加 group 列并纳入主键。）
+
+### 轨道构造（study_track）
+
+- `reviewTrack({checkStep, correctSteps, wrongSteps, firstLogRating, fallbackCheckStep})`：
+  - check 为空（未设置）→ 回退：check = fallbackCheckStep（新词第 1）、correct = []、wrong = [反向(check)]；
+  - 轨道 = `[check] + (当天首条评分日志 rating == again ? wrong : correct) + [List]`；
+  - 测评尚未提交（无首条日志）→ `[check, List]`（仅测评可见，评分后轨道扩展）。
+- 调用方需提供"当天首条日志的 rating"：getWord 的日志预查 Map 由 (wordId → elapsedDays) 扩展为 (wordId → (elapsedDays, rating))；bdc_notifier/面板/today_plan 同步适配。
+
+### 调度（study_bo）
+
+- 测评评分后的推进增量：
+  - 测评答对且 correct 组为空 → todayLearnedTimes +2（跳过组直接进 List 位置，当日完成）；
+  - 测评答错且 wrong 组为空 → +2（直接完成，scheduledDays=1 明日重现）；
+  - 组非空 → +1（进入组第 1 环节，逐环节推进）。
+- 原 skipRestoreStep 参数改造为该增量逻辑（skipRemainingSteps）。
+
+### UI（today_plan）
+
+- 旧词 tab 三区块：测评（四选一）、答对后（多选+排序，可空）、答错后（多选+排序，可空）；保存落库（三组）。
+- 表为空 → 预填默认值（测评=新词第 1、答对后=空、答错后=[反向]）并标注"当前为默认规则（未自定义）"。
+- 至少测评 1 个校验；拖动排序徽章两 tab 显示。
+
+### Task 分解
+
+1. 存储：表加 group 列入主键（调整半成品）+ db 迁移（49 版）+ dao 按 group 增删改查与 DbLog 同步。
+2. sync.dart 分发 'userReviewStudySteps'。
+3. study_steps_service：读三组（check/correct/wrong）、保存三组。
+4. study_track：三组轨道规则 + trackOf/isReviewTrack 参数扩展 + 全部调用方适配（含日志 Map 带 rating）。
+5. 调度：测评后推进增量（组空 +2 / 组非空 +1）。
+6. UI 三区块 + 默认预填 + 校验。
+7. 测试：study_track（三组轨道/空组/回退）、service、study_bo（答对空组直跳/答错空组明日重现/组内逐环节）、integration 适配；全量 flutter test。
+
+### 架构审查要点
+
+1. 分层 ✅ PASS：前端为主，后端透传零改动。
+2. 数据流与同步 ✅ PASS：新表 db_log 同步；老客户端安全跳过已验证。
+3. Dto/Vo ✅ PASS：VO 复用 UserStudyStepVo。
+4. 设计原则 ✅ PASS：显式三组消除隐含规则；空表回退 + UI 预填免迁移。
+5. Surgical ✅ PASS：新表 + 参数扩展，不动新词逻辑。
+6. 验证 ✅ PASS：单元 + 集成 + 全量（后端无改动）。
+7. 可执行性 ✅ PASS。
+
+结论：PASS。
+
+### 验证
+
+flutter analyze 无问题；flutter test 全量通过后交用户决策。
+
+### 执行结果（第 10 节修订版）
+
+- 存储：`UserReviewStudySteps` 表（userId/group/studyStep 复合主键，group ∈ check/correct/wrong）+ db schemaVersion 49 迁移 + DAO（INSERT/UPDATE/DELETE 全量 DbLog 同步，与 userStudySteps 的"禁 INSERT"历史包袱不同）。
+- sync.dart：新表分发分支 + 未知表白名单；老客户端安全跳过（已验证）。
+- study_track：`effectiveReviewConfig`（未设置回退默认）、`oppositeWordStep`（反向互补）、`reviewTrack` 三组轨道（测评 + 按首条日志 rating 选答对/答错组 + List；测评未提交仅 [测评, List]）。
+- 调度：`skipGroupSteps` 判据（测评评分后对应组为空 → +2 直接完成；组非空 → +1 逐环节）；日志预查扩展为 (elapsedDays, rating)。
+- UI：旧词 tab 三区块（测评 ChoiceChip 单选 / 答对后 FilterChip 多选 / 答错后 FilterChip 多选，选择顺序即序列）+ 默认规则预填与说明 + 保存按钮。
+- 面板：轨道 2 行标签改为 `答错(环节名)`（答错组第一项），拼写/环节颜色语义保持。
+- 测试：study_track_test 14、study_bo_test 新增"答错组推进 List"与"答对组空 +2 完成"用例；全量 flutter test 298 通过、2 skip、0 失败。
+
+### 纠正：后端同步并非透明透传（用户质疑后实证发现）
+
+- 拉取接口（getUserDbLogsFromVersion）仅按表名过滤 JSON，但**上传链路** `UserDbSyncBo.processSyncLog` 有表名白名单 switch，未知表名会抛 `IllegalArgumentException` 导致整个同步批次失败。
+- 已补齐后端：`UserReviewStudyStepDto`（api/model）、`UserReviewStudyStep`/`UserReviewStudyStepId`（PO，表 `user_review_study_step`，group 保留字用列名 `group_name`）、`UserReviewStudyStepBo`、`UserDbSyncBo` switch 新增 `user_review_study_step` 分支与处理函数（INSERT/UPDATE/DELETE 正常处理，无 userStudySteps 的"禁 INSERT"历史包袱）。
+- 前端 `utils.dart` 表名双向映射新增 `userReviewStudySteps ↔ user_review_study_step`。
+- 运维脚本：`db_upgrade/latest-to-upgrade/v52_add_user_review_study_step.sql`（需在生产库执行）。
+- 验证：后端 `mvn compile` 通过；前端全量 298 通过、2 skip、0 失败。

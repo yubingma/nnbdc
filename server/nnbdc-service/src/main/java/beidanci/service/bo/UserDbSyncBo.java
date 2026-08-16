@@ -69,6 +69,9 @@ public class UserDbSyncBo {
     private UserStudyStepBo userStudyStepBo;
 
     @Autowired
+    private UserReviewStudyStepBo userReviewStudyStepBo;
+
+    @Autowired
     private DakaBo dakaBo;
 
     @Autowired
@@ -388,6 +391,7 @@ public class UserDbSyncBo {
             case "dict" -> processDictSync(userId, recordJson, operation);
             case "book_mark" -> processBookMarkSync(userId, recordJson, operation);
             case "user_study_step" -> processUserStudyStepSync(userId, recordJson, operation);
+            case "user_review_study_step" -> processUserReviewStudyStepSync(userId, recordJson, operation);
             case "daka" -> processDakasSync(userId, recordJson, operation);
             case "user_oper" -> processUserOperSync(userId, recordJson, operation);
             case "user_wrong_word" -> processUserWrongWordSync(userId, recordJson, operation);
@@ -758,6 +762,49 @@ public class UserDbSyncBo {
                     logger.error(errorMsg);
                     throw new IllegalArgumentException(errorMsg);
                 }
+            }
+        }
+    }
+
+    /**
+     * 处理旧词（复习词）三组学习规则同步
+     */
+    private void processUserReviewStudyStepSync(String userId, String recordJson, String operation)
+            throws IllegalAccessException {
+        UserReviewStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserReviewStudyStepDto.class);
+        stepDto.setUserId(userId);
+        UserReviewStudyStepId id = new UserReviewStudyStepId(userId, stepDto.getGroup(), stepDto.getStudyStep());
+        UserReviewStudyStep studyStep = new UserReviewStudyStep(id);
+        studyStep.setSeq(stepDto.getSeq());
+        studyStep.setState(stepDto.getState());
+
+        if (stepDto.getCreateTime() != null) {
+            studyStep.setCreateTime(stepDto.getCreateTime());
+        }
+        if (stepDto.getUpdateTime() != null) {
+            studyStep.setUpdateTime(stepDto.getUpdateTime());
+        }
+
+        switch (operation) {
+            case "INSERT" -> {
+                if (userReviewStudyStepBo.findById(id) == null) {
+                    userReviewStudyStepBo.createEntity(studyStep);
+                } else {
+                    logger.info("user_review_study_step 已存在，忽略重复 INSERT: id={}", id);
+                }
+            }
+            case "UPDATE" -> {
+                if (userReviewStudyStepBo.findById(id) == null) {
+                    userReviewStudyStepBo.createEntity(studyStep);
+                } else {
+                    userReviewStudyStepBo.updateEntity(studyStep);
+                }
+            }
+            case "DELETE" -> userReviewStudyStepBo.deleteEntity(studyStep);
+            default -> {
+                String errorMsg = String.format("不支持的旧词学习规则表操作: %s", operation);
+                logger.error(errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
         }
     }

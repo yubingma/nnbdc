@@ -7,60 +7,76 @@ void main() {
   final today = AppClock.today();
   final yesterday = today.subtract(const Duration(days: 1));
   final List<String> steps3 = ['En2Ch', 'Ch2En', 'List'];
-  final List<String> stepsSentenceFirst = ['EnSentence2Ch', 'En2Ch', 'Ch2En', 'List'];
   final List<String> stepsSentenceOnly = ['EnSentence2Ch', 'ChSentence2En', 'List'];
+
+  List<String> trackOfNew({
+    List<String> activeStepNames = const ['En2Ch', 'Ch2En', 'List'],
+    double? stability,
+    int? state,
+    DateTime? lastLearningDate,
+    int? todayFirstLogElapsedDays,
+    List<String> reviewCheckSteps = const [],
+    List<String> reviewCorrectSteps = const [],
+    List<String> reviewWrongSteps = const [],
+    int? todayFirstLogRating,
+  }) =>
+      StudyTrack.trackOf(
+        activeStepNames: activeStepNames,
+        stability: stability,
+        state: state,
+        lastLearningDate: lastLearningDate,
+        todayFirstLogElapsedDays: todayFirstLogElapsedDays,
+        reviewCheckSteps: reviewCheckSteps,
+        reviewCorrectSteps: reviewCorrectSteps,
+        reviewWrongSteps: reviewWrongSteps,
+        todayFirstLogRating: todayFirstLogRating,
+        today: today,
+      );
 
   group('StudyTrack.trackOf 轨道分配', () {
     test('新词（stability null 或 0）走学习轨道', () {
-      expect(StudyTrack.trackOf(activeStepNames: steps3, stability: null, today: today), steps3);
-      expect(StudyTrack.trackOf(activeStepNames: steps3, stability: 0.0, today: today), steps3);
+      expect(trackOfNew(stability: null), steps3);
+      expect(trackOfNew(stability: 0.0), steps3);
     });
 
     test('今天首条评分日志 elapsedDays==0（init，今天新学）→ 学习轨道', () {
       expect(
-        StudyTrack.trackOf(
-          activeStepNames: steps3,
+        trackOfNew(
           stability: 2.4,
           state: FsrsState.review.value,
           lastLearningDate: today,
           todayFirstLogElapsedDays: 0,
-          today: today,
         ),
         steps3,
       );
     });
 
     test('今天首条评分日志 elapsedDays>0（跨天复习/学一半次日）→ 复习轨道', () {
+      // 未设置回退：答对组为空 → good 评分后轨道 [测评, List]
       expect(
-        StudyTrack.trackOf(
-          activeStepNames: steps3,
+        trackOfNew(
           stability: 2.4,
           state: FsrsState.learning.value,
           lastLearningDate: yesterday,
           todayFirstLogElapsedDays: 1,
-          today: today,
+          todayFirstLogRating: FsrsRating.good.value,
         ),
-        ['En2Ch', 'Ch2En', 'List'],
+        ['En2Ch', 'List'],
       );
     });
 
-    test('今天尚无评分且已有进度（到期复习词/学一半词）→ 复习轨道', () {
-      for (final state in [FsrsState.learning.value, FsrsState.review.value, FsrsState.relearning.value]) {
-        expect(
-          StudyTrack.trackOf(
-            activeStepNames: steps3,
-            stability: 2.4,
-            state: state,
-            lastLearningDate: yesterday,
-            today: today,
-          ),
-          ['En2Ch', 'Ch2En', 'List'],
-        );
-      }
+    test('今天尚无评分且已有进度 → 复习轨道（测评未提交，仅测评+List）', () {
+      expect(
+        trackOfNew(
+          stability: 2.4,
+          state: FsrsState.review.value,
+          lastLearningDate: yesterday,
+        ),
+        ['En2Ch', 'List'],
+      );
     });
 
     test('轨道固化：今天首条日志为 init 后，即使 state 已是 review 也保持学习轨道', () {
-      // 新词今天学完评分环节（state=review），但首条日志 elapsedDays==0 → 学习轨道继续走 List
       expect(
         StudyTrack.isReviewTrack(
           activeStepNames: steps3,
@@ -75,42 +91,100 @@ void main() {
     });
   });
 
-  group('StudyTrack.reviewTrack 复习轨道构造', () {
-    test('测评=En2Ch → 重测=Ch2En（方向互补）', () {
-      expect(StudyTrack.reviewTrack(steps3), ['En2Ch', 'Ch2En', 'List']);
-    });
-
-    test('测评=Ch2En → 重测=En2Ch（方向互补）', () {
-      expect(StudyTrack.reviewTrack(['Ch2En', 'En2Ch', 'List']), ['Ch2En', 'En2Ch', 'List']);
-    });
-
-    test('测评=例句英→中 → 重测=单词中→英（反向永远成立）', () {
+  group('StudyTrack.reviewTrack 三组显式规则', () {
+    test('已设置：测评+答对组（首条日志 good）', () {
       expect(
-        StudyTrack.reviewTrack(stepsSentenceFirst),
+        StudyTrack.reviewTrack(
+          reviewCheckSteps: ['En2Ch'],
+          reviewCorrectSteps: ['Ch2En'],
+          reviewWrongSteps: ['EnSentence2Ch'],
+          fallbackActiveStepNames: steps3,
+          firstLogRating: FsrsRating.good.value,
+        ),
+        ['En2Ch', 'Ch2En', 'List'],
+      );
+    });
+
+    test('已设置：测评+答错组（首条日志 again）', () {
+      expect(
+        StudyTrack.reviewTrack(
+          reviewCheckSteps: ['En2Ch'],
+          reviewCorrectSteps: ['Ch2En'],
+          reviewWrongSteps: ['EnSentence2Ch'],
+          fallbackActiveStepNames: steps3,
+          firstLogRating: FsrsRating.again.value,
+        ),
+        ['En2Ch', 'EnSentence2Ch', 'List'],
+      );
+    });
+
+    test('已设置：答对组为空 → 测评后直接 List（评分后轨道）', () {
+      expect(
+        StudyTrack.reviewTrack(
+          reviewCheckSteps: ['En2Ch'],
+          reviewCorrectSteps: [],
+          reviewWrongSteps: ['Ch2En'],
+          fallbackActiveStepNames: steps3,
+          firstLogRating: FsrsRating.good.value,
+        ),
+        ['En2Ch', 'List'],
+      );
+    });
+
+    test('未设置（空配置）回退：测评=新词第1、答错=[反向互补]', () {
+      expect(
+        StudyTrack.reviewTrack(
+          reviewCheckSteps: [],
+          reviewCorrectSteps: [],
+          reviewWrongSteps: [],
+          fallbackActiveStepNames: steps3,
+          firstLogRating: FsrsRating.again.value,
+        ),
+        ['En2Ch', 'Ch2En', 'List'],
+      );
+    });
+
+    test('未设置且测评是例句中→英 → 回退答错=[英→中]', () {
+      expect(
+        StudyTrack.reviewTrack(
+          reviewCheckSteps: [],
+          reviewCorrectSteps: [],
+          reviewWrongSteps: [],
+          fallbackActiveStepNames: stepsSentenceOnly,
+          firstLogRating: FsrsRating.again.value,
+        ),
         ['EnSentence2Ch', 'Ch2En', 'List'],
       );
     });
 
-    test('测评=例句中→英 → 重测=单词英→中（反向永远成立）', () {
+    test('测评未提交 → 仅 [测评, List]（评分后轨道扩展）', () {
       expect(
-        StudyTrack.reviewTrack(['ChSentence2En', 'En2Ch', 'List']),
-        ['ChSentence2En', 'En2Ch', 'List'],
+        StudyTrack.reviewTrack(
+          reviewCheckSteps: ['En2Ch'],
+          reviewCorrectSteps: ['Ch2En'],
+          reviewWrongSteps: ['EnSentence2Ch'],
+          fallbackActiveStepNames: steps3,
+          firstLogRating: null,
+        ),
+        ['En2Ch', 'List'],
       );
     });
+  });
 
-    test('仅例句激活（无单词环节）→ 重测仍由方向决定', () {
-      expect(
-        StudyTrack.reviewTrack(stepsSentenceOnly),
-        ['EnSentence2Ch', 'Ch2En', 'List'],
-      );
+  group('StudyTrack.oppositeWordStep 反向互补', () {
+    test('英→中方向 → Ch2En；中→英方向 → En2Ch', () {
+      expect(StudyTrack.oppositeWordStep('En2Ch'), 'Ch2En');
+      expect(StudyTrack.oppositeWordStep('EnSentence2Ch'), 'Ch2En');
+      expect(StudyTrack.oppositeWordStep('Ch2En'), 'En2Ch');
+      expect(StudyTrack.oppositeWordStep('ChSentence2En'), 'En2Ch');
     });
   });
 
   group('StudyTrack.hasMoreGradedSteps', () {
     test('List 不计入评分环节', () {
       final track = ['En2Ch', 'Ch2En', 'List'];
-      expect(StudyTrack.hasMoreGradedSteps(track, 0), true); // En2Ch 后还有 Ch2En
-      expect(StudyTrack.hasMoreGradedSteps(track, 1), false); // Ch2En 后仅 List
+      expect(StudyTrack.hasMoreGradedSteps(track, 0), true);
+      expect(StudyTrack.hasMoreGradedSteps(track, 1), false);
       expect(StudyTrack.hasMoreGradedSteps(track, 2), false);
     });
 
@@ -118,7 +192,7 @@ void main() {
       final track = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'List'];
       expect(StudyTrack.hasMoreGradedSteps(track, 0), true);
       expect(StudyTrack.hasMoreGradedSteps(track, 1), true);
-      expect(StudyTrack.hasMoreGradedSteps(track, 2), false); // 例句后仅 List
+      expect(StudyTrack.hasMoreGradedSteps(track, 2), false);
     });
   });
 }

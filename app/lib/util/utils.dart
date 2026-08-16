@@ -950,6 +950,7 @@ class Util {
     Map<String, String> tableNameMapping = {
       'dakas': 'daka',
       'userStudySteps': 'user_study_step',
+      'userReviewStudySteps': 'user_review_study_step',
       'userOpers': 'user_oper',
       'learningWords': 'learning_word',
       'learningDicts': 'learning_dict',
@@ -986,6 +987,7 @@ class Util {
     Map<String, String> specialMappings = {
       'daka': 'dakas',
       'user_study_step': 'userStudySteps',
+      'user_review_study_step': 'userReviewStudySteps',
       'user_oper': 'userOpers',
       'learning_word': 'learningWords',
       'learning_dict': 'learningDicts',

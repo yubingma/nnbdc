@@ -461,6 +461,13 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
             } else if (log.operate == 'DELETE') {
               await db.userStudyStepsDao.deleteUserStudyStep(entity.userId, entity.studyStep, false);
             }
+          } else if (log.tblName == 'userReviewStudySteps') {
+            UserReviewStudyStep entity = UserReviewStudyStep.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.userReviewStudyStepsDao.saveUserReviewStudyStep(entity, false);
+            } else if (log.operate == 'DELETE') {
+              await db.userReviewStudyStepsDao.deleteUserReviewStudyStep(entity.userId, entity.group, entity.studyStep, false);
+            }
           } else if (log.tblName == 'userCowDungLogs') {
             UserCowDungLog entity = UserCowDungLog.fromJson(entityJson);
             if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
@@ -505,6 +512,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               log.tblName != 'userOpers' &&
               log.tblName != 'bookMarks' &&
               log.tblName != 'userStudySteps' &&
+              log.tblName != 'userReviewStudySteps' &&
               log.tblName != 'userCowDungLogs' &&
               log.tblName != 'meaningItems' &&
               log.tblName != 'learningLogs' &&
