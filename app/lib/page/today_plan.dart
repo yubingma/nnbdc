@@ -1256,7 +1256,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     DropdownMenuItem(value: s, child: Text(desc(s))),
                 ],
                 onChanged: (v) {
-                  if (v != null) setState(() => _reviewCheckStep = v);
+                  if (v != null) {
+                    setState(() => _reviewCheckStep = v);
+                    unawaited(saveReviewConfig());
+                  }
                 },
               ),
             ],
@@ -1270,12 +1273,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             steps: _reviewCorrectSteps,
             isDarkMode: isDarkMode,
             onAdd: () => _pickReviewStepForBranch(allStepNames, isCorrect: true),
-            onRemove: (s) => setState(() => _reviewCorrectSteps.remove(s)),
-            onReorder: (oldIdx, newIdx) => setState(() {
-              if (newIdx > oldIdx) newIdx--;
-              final item = _reviewCorrectSteps.removeAt(oldIdx);
-              _reviewCorrectSteps.insert(newIdx, item);
-            }),
+            onRemove: (s) {
+              setState(() => _reviewCorrectSteps.remove(s));
+              unawaited(saveReviewConfig());
+            },
+            onReorder: (oldIdx, newIdx) {
+              setState(() {
+                if (newIdx > oldIdx) newIdx--;
+                final item = _reviewCorrectSteps.removeAt(oldIdx);
+                _reviewCorrectSteps.insert(newIdx, item);
+              });
+              unawaited(saveReviewConfig());
+            },
           ),
           const SizedBox(height: 8),
           // 答错分支（橙）
@@ -1286,24 +1295,23 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             steps: _reviewWrongSteps,
             isDarkMode: isDarkMode,
             onAdd: () => _pickReviewStepForBranch(allStepNames, isCorrect: false),
-            onRemove: (s) => setState(() => _reviewWrongSteps.remove(s)),
-            onReorder: (oldIdx, newIdx) => setState(() {
-              if (newIdx > oldIdx) newIdx--;
-              final item = _reviewWrongSteps.removeAt(oldIdx);
-              _reviewWrongSteps.insert(newIdx, item);
-            }),
+            onRemove: (s) {
+              setState(() => _reviewWrongSteps.remove(s));
+              unawaited(saveReviewConfig());
+            },
+            onReorder: (oldIdx, newIdx) {
+              setState(() {
+                if (newIdx > oldIdx) newIdx--;
+                final item = _reviewWrongSteps.removeAt(oldIdx);
+                _reviewWrongSteps.insert(newIdx, item);
+              });
+              unawaited(saveReviewConfig());
+            },
           ),
           const SizedBox(height: 8),
           Text(
-            _reviewConfigSaved ? '已保存自定义规则' : '当前为默认规则（未自定义）',
+            _reviewConfigSaved ? '规则修改后自动保存' : '当前为默认规则（未自定义），修改后自动保存',
             style: TextStyle(fontSize: 11, color: subColor),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton(
-              onPressed: _reviewCheckStep == null ? null : saveReviewConfig,
-              child: const Text('保存旧词规则'),
-            ),
           ),
         ],
       ),
@@ -1444,6 +1452,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           _reviewWrongSteps.add(picked);
         }
       });
+      unawaited(saveReviewConfig());
     }
   }
 
@@ -1456,8 +1465,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         correctSteps: _reviewCorrectSteps,
         wrongSteps: _reviewWrongSteps,
       );
-      setState(() => _reviewConfigSaved = true);
-      ToastUtil.success('旧词规则已保存');
+      if (mounted && !_reviewConfigSaved) {
+        setState(() => _reviewConfigSaved = true);
+      }
     } catch (e, s) {
       Global.logger.e('保存旧词规则失败', error: e, stackTrace: s);
       ToastUtil.error('保存旧词规则失败');
