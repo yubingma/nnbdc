@@ -1530,17 +1530,6 @@ class UserReviewStudyStepsDao extends DatabaseAccessor<MyDatabase>
           '$userId-$group-$studyStep', null);
     }
   }
-
-  /// 删除用户某组的全部旧词学习步骤（用于整组覆盖保存）
-  Future<void> deleteGroupUserReviewStudySteps(
-      String userId, String group, bool genLog) async {
-    final existing = await (select(userReviewStudySteps)
-          ..where((s) => s.userId.equals(userId) & s.group.equals(group)))
-        .get();
-    for (final step in existing) {
-      await deleteUserReviewStudyStep(userId, group, step.studyStep, genLog);
-    }
-  }
 }
 
 @DriftAccessor(tables: [Dakas])

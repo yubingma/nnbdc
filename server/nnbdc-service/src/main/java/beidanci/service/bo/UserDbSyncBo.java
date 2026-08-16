@@ -391,7 +391,7 @@ public class UserDbSyncBo {
             case "dict" -> processDictSync(userId, recordJson, operation);
             case "book_mark" -> processBookMarkSync(userId, recordJson, operation);
             case "user_study_step" -> processUserStudyStepSync(userId, recordJson, operation);
-            case "user_review_study_step" -> processUserReviewStudyStepSync(userId, recordJson, operation);
+            case "user_review_study_step" -> processUserReviewStudyStepSync(userId, log.getRecordId(), recordJson, operation);
             case "daka" -> processDakasSync(userId, recordJson, operation);
             case "user_oper" -> processUserOperSync(userId, recordJson, operation);
             case "user_wrong_word" -> processUserWrongWordSync(userId, recordJson, operation);
@@ -769,8 +769,22 @@ public class UserDbSyncBo {
     /**
      * 处理旧词（复习词）三组学习规则同步
      */
-    private void processUserReviewStudyStepSync(String userId, String recordJson, String operation)
+    private void processUserReviewStudyStepSync(String userId, String recordId, String recordJson, String operation)
             throws IllegalAccessException {
+        if ("DELETE".equals(operation)) {
+            // DELETE 日志无实体 JSON：从 recordId（userId-group-studyStep）解析主键
+            int idx1 = recordId.lastIndexOf('-');
+            int idx0 = recordId.lastIndexOf('-', idx1 - 1);
+            if (idx0 < 0 || idx1 < 0) {
+                throw new IllegalArgumentException("无法解析旧词学习规则 DELETE 记录ID: " + recordId);
+            }
+            String group = recordId.substring(idx0 + 1, idx1);
+            StudyStep studyStep = StudyStep.valueOf(recordId.substring(idx1 + 1));
+            UserReviewStudyStepId id = new UserReviewStudyStepId(userId, group, studyStep);
+            userReviewStudyStepBo.deleteEntity(new UserReviewStudyStep(id));
+            return;
+        }
+
         UserReviewStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserReviewStudyStepDto.class);
         stepDto.setUserId(userId);
         UserReviewStudyStepId id = new UserReviewStudyStepId(userId, stepDto.getGroup(), stepDto.getStudyStep());
@@ -800,7 +814,6 @@ public class UserDbSyncBo {
                     userReviewStudyStepBo.updateEntity(studyStep);
                 }
             }
-            case "DELETE" -> userReviewStudyStepBo.deleteEntity(studyStep);
             default -> {
                 String errorMsg = String.format("不支持的旧词学习规则表操作: %s", operation);
                 logger.error(errorMsg);

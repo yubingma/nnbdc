@@ -1217,21 +1217,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 旧词 tab：三组显式配置（测评单选 / 答对后序列 / 答错后序列，所见即所得）
+  /// 旧词 tab：三组显式配置——测评单选下拉 + 答对/答错分支（可视化，分支内环节可拖拽排序）
   Widget _buildReviewStepsInfoCard(bool isDarkMode) {
     final textColor = isDarkMode ? Colors.white70 : Colors.black87;
     final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     const allStepNames = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
     String desc(String s) => StudyStepExt.fromString(s).description;
-
-    Widget sectionTitle(String title) => Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
-          child: Text(
-            title,
-            style: TextStyle(
-                fontSize: 12, fontWeight: FontWeight.bold, color: textColor),
-          ),
-        );
 
     return Container(
       width: double.infinity,
@@ -1245,64 +1236,66 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          sectionTitle('测评环节（第一个环节）'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
+          // 测评环节：单选下拉
+          Row(
             children: [
-              for (final s in allStepNames)
-                ChoiceChip(
-                  label: Text(desc(s), style: const TextStyle(fontSize: 12)),
-                  selected: _reviewCheckStep == s,
-                  onSelected: (_) => setState(() => _reviewCheckStep = s),
-                ),
+              Text(
+                '测评环节',
+                style: TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<String>(
+                value: _reviewCheckStep ?? allStepNames.first,
+                underline: const SizedBox.shrink(),
+                style: TextStyle(fontSize: 13, color: textColor),
+                dropdownColor:
+                    isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+                items: [
+                  for (final s in allStepNames)
+                    DropdownMenuItem(value: s, child: Text(desc(s))),
+                ],
+                onChanged: (v) {
+                  if (v != null) setState(() => _reviewCheckStep = v);
+                },
+              ),
             ],
           ),
-          sectionTitle('答对后（可为空：答对即完成）'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              for (final s in allStepNames)
-                FilterChip(
-                  label: Text(desc(s), style: const TextStyle(fontSize: 12)),
-                  selected: _reviewCorrectSteps.contains(s),
-                  onSelected: (sel) => setState(() {
-                    if (sel) {
-                      if (!_reviewCorrectSteps.contains(s)) {
-                        _reviewCorrectSteps.add(s);
-                      }
-                    } else {
-                      _reviewCorrectSteps.remove(s);
-                    }
-                  }),
-                ),
-            ],
+          const SizedBox(height: 12),
+          // 答对分支（绿）
+          _buildReviewBranch(
+            title: '答对后',
+            titleColor: Colors.green,
+            emptyHint: '空：答对即完成',
+            steps: _reviewCorrectSteps,
+            isDarkMode: isDarkMode,
+            onAdd: () => _pickReviewStepForBranch(allStepNames, isCorrect: true),
+            onRemove: (s) => setState(() => _reviewCorrectSteps.remove(s)),
+            onReorder: (oldIdx, newIdx) => setState(() {
+              if (newIdx > oldIdx) newIdx--;
+              final item = _reviewCorrectSteps.removeAt(oldIdx);
+              _reviewCorrectSteps.insert(newIdx, item);
+            }),
           ),
-          sectionTitle('答错后（可为空：答错即结束，明日重现）'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              for (final s in allStepNames)
-                FilterChip(
-                  label: Text(desc(s), style: const TextStyle(fontSize: 12)),
-                  selected: _reviewWrongSteps.contains(s),
-                  onSelected: (sel) => setState(() {
-                    if (sel) {
-                      if (!_reviewWrongSteps.contains(s)) {
-                        _reviewWrongSteps.add(s);
-                      }
-                    } else {
-                      _reviewWrongSteps.remove(s);
-                    }
-                  }),
-                ),
-            ],
+          const SizedBox(height: 8),
+          // 答错分支（橙）
+          _buildReviewBranch(
+            title: '答错后',
+            titleColor: Colors.orange,
+            emptyHint: '空：答错即结束，明日重现',
+            steps: _reviewWrongSteps,
+            isDarkMode: isDarkMode,
+            onAdd: () => _pickReviewStepForBranch(allStepNames, isCorrect: false),
+            onRemove: (s) => setState(() => _reviewWrongSteps.remove(s)),
+            onReorder: (oldIdx, newIdx) => setState(() {
+              if (newIdx > oldIdx) newIdx--;
+              final item = _reviewWrongSteps.removeAt(oldIdx);
+              _reviewWrongSteps.insert(newIdx, item);
+            }),
           ),
           const SizedBox(height: 8),
           Text(
-            _reviewConfigSaved ? '已保存自定义规则' : '当前为默认规则（未自定义）：测评=新词第 1 环节，答对即完成，答错反向加测一次',
+            _reviewConfigSaved ? '已保存自定义规则' : '当前为默认规则（未自定义）',
             style: TextStyle(fontSize: 11, color: subColor),
           ),
           Align(
@@ -1315,6 +1308,143 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         ],
       ),
     );
+  }
+
+  /// 分支（答对/答错）可视化：缩进 + 分支竖线 + 色点标题 + 可拖拽排序的环节列表
+  Widget _buildReviewBranch({
+    required String title,
+    required Color titleColor,
+    required String emptyHint,
+    required List<String> steps,
+    required bool isDarkMode,
+    required VoidCallback onAdd,
+    required void Function(String) onRemove,
+    required void Function(int, int) onReorder,
+  }) {
+    final textColor = isDarkMode ? Colors.white70 : Colors.black87;
+    final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.only(left: 10, bottom: 2),
+      decoration: BoxDecoration(
+        border: Border(
+            left: BorderSide(
+                color: titleColor.withValues(alpha: 0.55), width: 2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration:
+                        BoxDecoration(color: titleColor, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    title,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: textColor),
+                  ),
+                ],
+              ),
+              TextButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('添加', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+          if (steps.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text(emptyHint,
+                  style: TextStyle(fontSize: 11, color: subColor)),
+            )
+          else
+            ReorderableListView(
+              buildDefaultDragHandles: false,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              // ignore: deprecated_member_use
+              onReorder: onReorder,
+              children: [
+                for (int i = 0; i < steps.length; i++)
+                  Container(
+                    key: ValueKey('review_${title}_$i'),
+                    margin: const EdgeInsets.symmetric(vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.03),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        ReorderableDragStartListener(
+                          index: i,
+                          child: const Icon(Icons.drag_indicator,
+                              size: 18, color: Colors.grey),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            StudyStepExt.fromString(steps[i]).description,
+                            style:
+                                TextStyle(fontSize: 13, color: textColor),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 16),
+                          onPressed: () => onRemove(steps[i]),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// 分支"添加环节"：弹窗列出该分支未添加的环节
+  Future<void> _pickReviewStepForBranch(List<String> allStepNames,
+      {required bool isCorrect}) async {
+    final current = isCorrect ? _reviewCorrectSteps : _reviewWrongSteps;
+    final available = allStepNames.where((s) => !current.contains(s)).toList();
+    if (available.isEmpty) return;
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(isCorrect ? '添加"答对后"环节' : '添加"答错后"环节'),
+        children: [
+          for (final s in available)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, s),
+              child: Text(StudyStepExt.fromString(s).description),
+            ),
+        ],
+      ),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        if (isCorrect) {
+          _reviewCorrectSteps.add(picked);
+        } else {
+          _reviewWrongSteps.add(picked);
+        }
+      });
+    }
   }
 
   Future<void> saveReviewConfig() async {

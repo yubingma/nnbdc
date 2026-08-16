@@ -239,7 +239,8 @@ class ReviewStudyStepsService {
         checkStep: check, correctSteps: correct, wrongSteps: wrong);
   }
 
-  /// 整组覆盖保存旧词三组规则
+  /// 保存旧词三组规则（diff 保存：只对变化的部分发 DELETE/INSERT/UPDATE 日志）。
+  /// 删除与插入的主键互不重叠，同步顺序（先删后插或先插后删）不影响最终结果。
   Future<void> saveConfig({
     required String checkStep,
     required List<String> correctSteps,
@@ -248,44 +249,48 @@ class ReviewStudyStepsService {
     final user = Global.getLoggedInUser();
     if (user == null) throw Exception('用户未登录');
     final now = AppClock.now();
+
+    // 目标三组（studyStep → seq）
+    final targets = <String, Map<String, int>>{
+      'check': {checkStep: 0},
+      'correct': {for (int i = 0; i < correctSteps.length; i++) correctSteps[i]: i},
+      'wrong': {for (int i = 0; i < wrongSteps.length; i++) wrongSteps[i]: i},
+    };
+
+    // 现有三组（group → studyStep → 实体）
+    final existing = await _db.userReviewStudyStepsDao.getUserReviewStudySteps(user.id);
+    final existingByGroup = <String, Map<String, UserReviewStudyStep>>{};
+    for (final e in existing) {
+      existingByGroup.putIfAbsent(e.group, () => {})[e.studyStep] = e;
+    }
+
+    final pendingSaves = <UserReviewStudyStep>[];
     for (final group in ['check', 'correct', 'wrong']) {
-      await _db.userReviewStudyStepsDao
-          .deleteGroupUserReviewStudySteps(user.id, group, true);
+      final target = targets[group]!;
+      final cur = existingByGroup[group] ?? <String, UserReviewStudyStep>{};
+
+      // 1. 删除：现有中存在但目标中已移除的环节
+      for (final step in cur.keys) {
+        if (!target.containsKey(step)) {
+          await _db.userReviewStudyStepsDao
+              .deleteUserReviewStudyStep(user.id, group, step, true);
+        }
+      }
+      // 2. 插入/更新：目标中的环节（saveUserReviewStudyStep 内部按 existing 判定 INSERT/UPDATE）
+      target.forEach((step, seq) {
+        final old = cur[step];
+        pendingSaves.add(UserReviewStudyStep(
+          userId: user.id,
+          group: group,
+          studyStep: step,
+          seq: seq,
+          state: 'Active',
+          createTime: old?.createTime ?? now,
+          updateTime: now,
+        ));
+      });
     }
-    final entities = <UserReviewStudyStep>[
-      UserReviewStudyStep(
-        userId: user.id,
-        group: 'check',
-        studyStep: checkStep,
-        seq: 0,
-        state: 'Active',
-        createTime: now,
-        updateTime: now,
-      ),
-    ];
-    for (int i = 0; i < correctSteps.length; i++) {
-      entities.add(UserReviewStudyStep(
-        userId: user.id,
-        group: 'correct',
-        studyStep: correctSteps[i],
-        seq: i,
-        state: 'Active',
-        createTime: now,
-        updateTime: now,
-      ));
-    }
-    for (int i = 0; i < wrongSteps.length; i++) {
-      entities.add(UserReviewStudyStep(
-        userId: user.id,
-        group: 'wrong',
-        studyStep: wrongSteps[i],
-        seq: i,
-        state: 'Active',
-        createTime: now,
-        updateTime: now,
-      ));
-    }
-    for (final e in entities) {
+    for (final e in pendingSaves) {
       await _db.userReviewStudyStepsDao.saveUserReviewStudyStep(e, true);
     }
   }

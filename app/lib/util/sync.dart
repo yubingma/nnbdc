@@ -254,6 +254,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           return 5;
         case 'userStudySteps':
           return 5;
+        case 'userReviewStudySteps':
+          return 5;
         case 'dakas':
           return 5;
         case 'userOpers':
