@@ -249,7 +249,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 49;
+  int get schemaVersion => 50;
 
   @override
   MigrationStrategy get migration {
@@ -408,7 +408,7 @@ class MyDatabase extends _$MyDatabase {
           if (from < 48) {
             await _migrateFromV47ToV48(m);
           }
-          if (from < 49) {
+          if (from < 50) {
             await _migrateFromV48ToV49UserStudyStepsThreeGroup(m);
           }
         } catch (e, stackTrace) {
@@ -439,6 +439,9 @@ class MyDatabase extends _$MyDatabase {
 
         // 确保所有表的审计字段都不为 NULL (处理可能存在的历史遗留问题)
         await _backfillAllAuditColumns();
+
+        // 确保 user_study_steps 拥有 scope 列 (防止开发中间版本遗漏迁移)
+        await _ensureUserStudyStepsHasScope();
       },
     );
   }
@@ -1710,10 +1713,21 @@ class MyDatabase extends _$MyDatabase {
     });
   }
 
-  /// 从版本 48 升级到版本 49：user_study_steps 单表增强为三组结构（scope/group），
+  /// 从版本 48/49 升级到版本 50：user_study_steps 单表增强为三组结构（scope/group），
   /// 老激活序列映射为 scope='new' 三组；user_review_study_steps 数据并入 scope='review' 后删除。
   Future<void> _migrateFromV48ToV49UserStudyStepsThreeGroup(Migrator m) async {
     await transaction(() async {
+      // 检查当前表结构：如果已有 scope 列，无需重复迁移
+      final pragmaRows = await customSelect(
+        "PRAGMA table_info('user_study_steps')",
+        readsFrom: {},
+      ).get();
+      final hasScope = pragmaRows.any((row) => row.read<String>('name') == 'scope');
+      if (hasScope) {
+        Global.logger.i('user_study_steps 已包含 scope 列，跳过结构迁移');
+        return;
+      }
+
       // 1. 老表改名，按新结构重建
       await customStatement('ALTER TABLE user_study_steps RENAME TO user_study_steps_old');
       await m.createTable(userStudySteps);
@@ -1742,8 +1756,8 @@ class MyDatabase extends _$MyDatabase {
             check.read<String>('study_step'),
             0,
             'Active',
-            check.read<DateTime>('create_time'),
-            check.read<DateTime>('update_time'),
+            check.read<int?>('create_time') ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000),
+            check.read<int?>('update_time') ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000),
           ],
         );
         for (int i = 1; i < ordered.length; i++) {
@@ -1759,8 +1773,8 @@ class MyDatabase extends _$MyDatabase {
                 step.read<String>('study_step'),
                 i - 1,
                 'Active',
-                step.read<DateTime>('create_time'),
-                step.read<DateTime>('update_time'),
+                step.read<int?>('create_time') ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000),
+                step.read<int?>('update_time') ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000),
               ],
             );
           }
@@ -1783,5 +1797,24 @@ class MyDatabase extends _$MyDatabase {
       await customStatement('DROP TABLE user_study_steps_old');
       await customStatement('DROP TABLE IF EXISTS user_review_study_steps');
     });
+  }
+
+  /// 兜底自愈检测：确保 user_study_steps 拥有 scope 列
+  Future<void> _ensureUserStudyStepsHasScope() async {
+    try {
+      final pragmaRows = await customSelect(
+        "PRAGMA table_info('user_study_steps')",
+        readsFrom: {},
+      ).get();
+      if (pragmaRows.isEmpty) return;
+      final hasScope = pragmaRows.any((row) => row.read<String>('name') == 'scope');
+      if (!hasScope) {
+        Global.logger.w('检测到 user_study_steps 缺失 scope 列，正在自动补齐迁移...');
+        await _migrateFromV48ToV49UserStudyStepsThreeGroup(Migrator(this));
+        Global.logger.i('user_study_steps 自动补齐迁移完成');
+      }
+    } catch (e, st) {
+      Global.logger.e('检查/补齐 user_study_steps scope 列异常: $e', error: e, stackTrace: st);
+    }
   }
 }
