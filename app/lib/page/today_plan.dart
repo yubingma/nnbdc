@@ -1193,7 +1193,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 学习规则三组配置卡（scope='new' 新词 / 'review' 旧词，UI 同构）
   Widget _buildReviewStepsInfoCard({required String scope, required bool isDarkMode}) {
     final textColor = isDarkMode ? Colors.white70 : Colors.black87;
-    final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     const allStepNames = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
     String desc(String s) => StudyStepExt.fromString(s).description;
     final isNew = scope == 'new';
@@ -1201,7 +1200,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     String? checkStep() => isNew ? _newCheckStep : _reviewCheckStep;
     List<String> correctSteps() => isNew ? _newCorrectSteps : _reviewCorrectSteps;
     List<String> wrongSteps() => isNew ? _newWrongSteps : _reviewWrongSteps;
-    bool configSaved() => isNew ? _newConfigSaved : _reviewConfigSaved;
     void setCheck(String v) => setState(() {
           if (isNew) {
             _newCheckStep = v;
@@ -1232,7 +1230,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           Row(
             children: [
               Text(
-                '测评环节：',
+                '测评：',
                 style: TextStyle(
                     fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
               ),
@@ -1263,6 +1261,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             titleColor: Colors.green,
             emptyHint: isNew ? '空：测评答对即完成' : '空：答对即完成',
             steps: correctSteps(),
+            allStepNames: allStepNames,
             isDarkMode: isDarkMode,
             onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: true),
             onRemove: (s) {
@@ -1285,6 +1284,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             titleColor: Colors.orange,
             emptyHint: isNew ? '空：测评答错即结束，明日重现' : '空：答错即结束，明日重现',
             steps: wrongSteps(),
+            allStepNames: allStepNames,
             isDarkMode: isDarkMode,
             onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: false),
             onRemove: (s) {
@@ -1299,11 +1299,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               });
               unawaited(saveReviewConfig(scope));
             },
-          ),
-          const SizedBox(height: 8),
-          Text(
-            configSaved() ? '规则修改后自动保存' : '当前为默认规则（未自定义），修改后自动保存',
-            style: TextStyle(fontSize: 11, color: subColor),
           ),
         ],
       ),
@@ -1382,6 +1377,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required Color titleColor,
     required String emptyHint,
     required List<String> steps,
+    required List<String> allStepNames,
     required bool isDarkMode,
     required VoidCallback onAdd,
     required void Function(String) onRemove,
@@ -1389,6 +1385,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }) {
     final textColor = isDarkMode ? Colors.white70 : Colors.black87;
     final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final bool canAdd = allStepNames.any((s) => !steps.contains(s));
     return Container(
       margin: const EdgeInsets.only(left: 8),
       padding: const EdgeInsets.only(left: 10, bottom: 2),
@@ -1421,11 +1418,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   ),
                 ],
               ),
-              TextButton.icon(
-                onPressed: onAdd,
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('添加', style: TextStyle(fontSize: 12)),
-              ),
+              if (canAdd)
+                TextButton.icon(
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('添加', style: TextStyle(fontSize: 12)),
+                ),
             ],
           ),
           if (steps.isEmpty)
