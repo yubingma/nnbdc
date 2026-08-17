@@ -1232,7 +1232,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           Row(
             children: [
               Text(
-                '测评环节',
+                '测评环节：',
                 style: TextStyle(
                     fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
               ),
