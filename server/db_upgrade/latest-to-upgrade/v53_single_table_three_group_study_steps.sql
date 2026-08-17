@@ -8,7 +8,10 @@ ALTER TABLE user_study_step ADD COLUMN IF NOT EXISTS scope VARCHAR(10);
 ALTER TABLE user_study_step ADD COLUMN IF NOT EXISTS group_name VARCHAR(20);
 
 -- 2. 去掉旧主键 (user_id, study_step)，以便同一 studyStep 可同时进入 correct 与 wrong
+ALTER TABLE user_study_step DROP CONSTRAINT IF EXISTS pk_user_study_step_study_step_user_id;
 ALTER TABLE user_study_step DROP CONSTRAINT IF EXISTS user_study_step_pkey;
+DROP INDEX IF EXISTS pk_user_study_step_study_step_user_id;
+DROP INDEX IF EXISTS user_study_step_pkey;
 
 -- 3. 老激活序列 → scope='new'：
 --    - 测评组 check：每用户 seq 最小的 Active 非 List 环节（即用户实际配置的第一个环节）
