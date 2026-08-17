@@ -504,7 +504,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Today\'s Plan',
+                            '今日学习计划',
                             style: TextStyle(
                               color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                               fontSize: 22,
