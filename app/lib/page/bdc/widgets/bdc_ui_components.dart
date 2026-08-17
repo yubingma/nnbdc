@@ -1574,30 +1574,14 @@ extension BdcPageStateUIComponents on BdcPageState {
             hintText: hintText,
             hintStyle: TextStyle(
               fontSize: 13,
-              color: isDarkMode ? Colors.white24 : Colors.black26,
+              color: isDarkMode ? Colors.white30 : Colors.black38,
             ),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            filled: true,
-            fillColor: isDarkMode
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.black.withValues(alpha: 0.04),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: isDarkMode ? Colors.white12 : Colors.black12,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: AppTheme.primaryColor, width: 1.2),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
-              ),
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
           ),
         ),
         if (state.hasFinishedAnswering &&
