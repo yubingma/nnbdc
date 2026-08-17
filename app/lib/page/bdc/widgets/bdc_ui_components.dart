@@ -1577,6 +1577,8 @@ extension BdcPageStateUIComponents on BdcPageState {
               color: isDarkMode ? Colors.white30 : Colors.black38,
             ),
             isDense: true,
+            filled: false,
+            fillColor: Colors.transparent,
             contentPadding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
