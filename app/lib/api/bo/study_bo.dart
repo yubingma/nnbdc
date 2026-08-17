@@ -679,8 +679,6 @@ class StudyBo {
               ? (isReviewWord ? reviewCfg.wrong : newCfg.wrong)
               : (isReviewWord ? reviewCfg.correct : newCfg.correct);
         }
-        // 测评评分且接续组为空 → 跳过组与 List 直接完成（+2）；其余 +1 逐环节走
-        final bool skipGroupSteps = groupAfterRating != null && groupAfterRating.isEmpty;
         // allStepsCompletedForWord: 本次评分提交后，该词是否还有剩余评分环节。
         // 测评评分时轨道尚未按首条评分扩展，按所选组长度判定；其余环节轨道完整，
         // List 恒为末位且不评分。updateCurrWord 用它决定 state：无剩余评分环节才转 review/relearning
@@ -694,7 +692,6 @@ class StudyBo {
           now: now,
           db: db,
           allStepsCompletedForWord: allStepsCompletedForWord,
-          skipGroupSteps: skipGroupSteps,
           fsrsRating: fsrsRating,
         );
         // 刚写入的今日首条评分日志立即固化进轨道判定 Map（当日轨道不漂移）
@@ -883,7 +880,6 @@ class StudyBo {
     required DateTime now,
     required MyDatabase db,
     required bool allStepsCompletedForWord,
-    bool skipGroupSteps = false,
     FsrsRating? fsrsRating,
   }) async {
     // 停止使用 dateOnlyNow，保留完整时间戳以支持状态驱动定位
@@ -1003,9 +999,7 @@ class StudyBo {
     final updatedWord = currWord.copyWith(
       lastLearningDate: Value(AppClock.today()),
       learnedTimes: (currWord.learnedTimes) + 1,
-      // 复习轨道测评答对时跳过重测环节直接进 List（+2）；其余 +1
-      // 复习轨道测评评分后对应组（答对/答错）为空：跳过组直接进 List 位置（+2）；组非空 → +1
-      todayLearnedTimes: (currWord.todayLearnedTimes) + (skipGroupSteps ? 2 : 1),
+      todayLearnedTimes: (currWord.todayLearnedTimes) + 1,
       stability: nextFsrs != null ? Value(nextFsrs.stability) : const Value.absent(),
       difficulty: nextFsrs != null ? Value(nextFsrs.difficulty) : const Value.absent(),
       elapsedDays: nextFsrs != null ? Value(nextFsrs.elapsedDays) : const Value.absent(),

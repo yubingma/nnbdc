@@ -133,7 +133,7 @@ void main() {
       );
     });
 
-    test('新词答对组为空 → 评分后轨道不扩展（[测评, List]，由 skipGroupSteps +2 直接完成）', () {
+    test('新词答对组为空 → 评分后轨道不扩展（[测评, List]，进入 List 环节）', () {
       expect(
         trackOfCfg(
           newCorrect: const [],

@@ -226,8 +226,8 @@ void main() {
       // 所以我们直接看看库里的真实影响：
       var updatedWord1 = await (db.select(db.learningWords)..where((w) => w.wordId.equals('word_1'))).getSingle();
 
-      // 测评答对且新词答对组为空 → 跳过组与 List 直接完成（+2）
-      expect(updatedWord1.todayLearnedTimes, 2);
+      // 测评答对且新词答对组为空 → 自然步进至 List（+1）
+      expect(updatedWord1.todayLearnedTimes, 1);
       // 有了 fsrs rating, 所以 stability 有了一个基础初始值
       expect(updatedWord1.stability, greaterThan(0.0));
 
@@ -449,8 +449,8 @@ void main() {
       final w = await wordOf('word_1');
       expect(w.stability, greaterThan(2.4)); // 复习公式增长
       expect(w.state, FsrsState.review.value);
-      // 学一半词次日走复习轨道：测评答对跳过恢复环节，直接 +2 进 List
-      expect(w.todayLearnedTimes, 2);
+      // 学一半词次日走复习轨道：测评答对 +1 进 List（步进至 1）
+      expect(w.todayLearnedTimes, 1);
     });
 
     test('学一半词次日检验（learning 跨天）同样走 next', () async {
@@ -545,7 +545,7 @@ void main() {
       expect(w.todayLearnedTimes, 3);
     });
 
-    test('复习轨道测评答对且答对组为空（默认）：+2 直接完成，今日 finished', () async {
+    test('复习轨道测评答对且答对组为空（默认）：+1 进入 List 环节，完成 List 后 finished', () async {
       await setupThreeSteps();
       await finishOtherWords('word_1');
       final yesterday = AppClock.today().subtract(const Duration(days: 1));
@@ -554,16 +554,64 @@ void main() {
         reps: 1, lapses: 0, state: FsrsState.review.value,
         todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
 
-      // 未设置旧词规则 → 答对组空 → 测评答对 +2 直接完成（跳过组与 List）
+      // 未设置旧词规则 → 答对组空 → 测评答对 +1 进入 List 环节
       await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
       var w = await wordOf('word_1');
-      expect(w.todayLearnedTimes, 2);
+      expect(w.todayLearnedTimes, 1);
       expect(w.state, FsrsState.review.value);
 
-      // 该词已走完轨道（track=[En2Ch, List] 长度 2），后续 getWord 返回 finished
+      // 该批次处于 List 环节，getWord 返回 List 环节
       final res = await studyBo.getWord(false, false);
       expect(res.success, true);
-      expect(res.data!.finished, true);
+      expect(res.data!.stepIndex, 1);
+
+      // 完成列表学习后，该词推进到 2（轨道走完），今日 finished
+      final completeRes = await studyBo.completeListStepForCurrentBatch();
+      expect(completeRes.success, true);
+      w = await wordOf('word_1');
+      expect(w.todayLearnedTimes, 2);
+
+      final finishRes = await studyBo.getWord(false, false);
+      expect(finishRes.success, true);
+      expect(finishRes.data!.finished, true);
+    });
+
+    test('整批复习词全部答对且答对组为空：5个词依次测完后统一进入 List 环节，完成 List 后整批 finished', () async {
+      await setupThreeSteps();
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      for (int i = 1; i <= 5; i++) {
+        await setWordFsrs('word_$i',
+          stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+          reps: 1, lapses: 0, state: FsrsState.review.value,
+          todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
+      }
+
+      // 依次完成 5 个词的测评打分 (Good)
+      for (int i = 1; i <= 5; i++) {
+        final res = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+        expect(res.success, true);
+        final w = await wordOf('word_$i');
+        expect(w.todayLearnedTimes, 1); // 步进至 1 (List 索引)
+      }
+
+      // 5 个词全部测完，当前环节应为 List 环节
+      final listRes = await studyBo.getWord(false, false);
+      expect(listRes.success, true);
+      expect(listRes.data!.stepIndex, 1);
+
+      // 调用 completeListStepForCurrentBatch 批量完成 List
+      final completeRes = await studyBo.completeListStepForCurrentBatch();
+      expect(completeRes.success, true);
+
+      // 验证 5 个词全部推进到 2 (轨道走完)，整批 finished
+      for (int i = 1; i <= 5; i++) {
+        final w = await wordOf('word_$i');
+        expect(w.todayLearnedTimes, 2);
+      }
+
+      final finishRes = await studyBo.getWord(false, false);
+      expect(finishRes.success, true);
+      expect(finishRes.data!.finished, true);
     });
   });
 }
