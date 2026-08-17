@@ -1545,6 +1545,12 @@ extension BdcPageStateUIComponents on BdcPageState {
   /// 编辑区固定在可视高度内占满答案区，内容多时可内部滚动。
   Widget _buildSentenceAnswerArea() {
     final isDarkMode = _cachedIsDarkMode;
+    final hintText = state.studyStep == StudyStep.enSentence2Ch.json
+        ? '请按住下方按钮，说出中文翻译'
+        : (state.studyStep == StudyStep.chSentence2En.json
+            ? '请按住下方按钮，朗读英文例句'
+            : '请按住下方按钮说话');
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1567,7 +1573,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             expands: true,
             textAlignVertical: TextAlignVertical.top,
             decoration: InputDecoration(
-              hintText: '识别结果将显示在这里，可点击定位光标',
+              hintText: hintText,
               hintStyle: TextStyle(
                 fontSize: 13,
                 color: isDarkMode ? Colors.white24 : Colors.black26,
