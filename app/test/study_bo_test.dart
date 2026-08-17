@@ -80,19 +80,14 @@ void main() {
     await Prefs.init();
     Prefs.write('currentUserId', 'test_user_id');
 
-    // 生成学习步骤配置: 1个答题环节(En2Ch) + 1个浏览环节(List)
+    // 学习步骤配置（三组）: 新词测评 En2Ch，答对/答错组为空 → 新词轨道 [En2Ch, List]
+    // 旧词未配置 → 默认: 测评 En2Ch，答对组空，答错组 [Ch2En]
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'check',
           studyStep: 'En2Ch',
           seq: 0,
-          state: 'Active',
-          createTime: now,
-          updateTime: now,
-        ));
-    await db.into(db.userStudySteps).insert(UserStudyStep(
-          userId: testUser.id,
-          studyStep: 'List',
-          seq: 1,
           state: 'Active',
           createTime: now,
           updateTime: now,
@@ -207,9 +202,9 @@ void main() {
       expect(wordResult.learningWord!.word.id, 'word_1');
       expect(wordResult.stepIndex, 0);
 
-      // 这时刚开始学，进度应为 [0, 15] (5个词 * 3个激活步骤含List)
+      // 这时刚开始学，进度应为 [0, 10] (5个词 * 2个环节: 测评 En2Ch + List)
       expect(wordResult.progress![0], 0);
-      expect(wordResult.progress![1], 15);
+      expect(wordResult.progress![1], 10);
     });
 
     test('推进一个环节(gotoNext=true)：正确叠加进度并跳到 List(或下一个词)', () async {
@@ -231,7 +226,8 @@ void main() {
       // 所以我们直接看看库里的真实影响：
       var updatedWord1 = await (db.select(db.learningWords)..where((w) => w.wordId.equals('word_1'))).getSingle();
 
-      expect(updatedWord1.todayLearnedTimes, 1);
+      // 测评答对且新词答对组为空 → 跳过组与 List 直接完成（+2）
+      expect(updatedWord1.todayLearnedTimes, 2);
       // 有了 fsrs rating, 所以 stability 有了一个基础初始值
       expect(updatedWord1.stability, greaterThan(0.0));
 
@@ -271,8 +267,8 @@ void main() {
       for (int i = 1; i <= 5; i++) {
         var lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals('word_$i'))).getSingle();
         await StudyCacheManager().saveAndSyncWordState(db, lw.copyWith(
-          todayLearnedTimes: 3, // 达到总激活步骤数(3, 含List)
-          learnedTimes: 3,
+          todayLearnedTimes: 2, // 达到该词轨道长度(2: 测评 + List)
+          learnedTimes: 2,
         ));
       }
 
@@ -284,20 +280,27 @@ void main() {
   });
 
   group('StudyBo - FSRS 状态机（学习/复习事件区分）', () {
-    // 重建 3 步激活序列 En2Ch -> Ch2En -> List，用于模拟当天多次评分
+    // 重建三组配置: 新词测评 En2Ch，答对/答错组均 [Ch2En]
+    // → 评分后轨道 [En2Ch, Ch2En, List]（2 个评分环节 + List），用于模拟当天多次评分
     Future<void> setupThreeSteps() async {
       await db.delete(db.userStudySteps).go();
       final now = AppClock.now();
-      for (final (i, step) in ['En2Ch', 'Ch2En', 'List'].indexed) {
+      Future<void> insert(String group, String studyStep) async {
         await db.into(db.userStudySteps).insert(UserStudyStep(
               userId: testUser.id,
-              studyStep: step,
-              seq: i,
+              scope: 'new',
+              group: group,
+              studyStep: studyStep,
+              seq: 0,
               state: 'Active',
               createTime: now,
               updateTime: now,
             ));
       }
+
+      await insert('check', 'En2Ch');
+      await insert('correct', 'Ch2En');
+      await insert('wrong', 'Ch2En');
     }
 
     // 把其他 4 个词置为今日已学完，确保 getWord 定位到指定词
@@ -307,7 +310,7 @@ void main() {
         if (id == wordId) continue;
         final lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals(id))).getSingle();
         await db.learningWordsDao.saveEntity(lw.copyWith(
-          todayLearnedTimes: 3,
+          todayLearnedTimes: 3, // 未评分新词轨道 [En2Ch, List] 长 2，3 已走完
           learnedTimes: 3,
         ), false);
       }
@@ -324,6 +327,10 @@ void main() {
       required int todayLearnedTimes,
       required int learnedTimes,
       required DateTime lastLearningDate,
+      // 可选的"今天首条评分日志"（固化当天学习/复习轨道）：
+      // 同一词当天已评分过的场景必须携带，模拟真实不变量"评过分必有一条今日日志"
+      int? firstLogElapsedDays,
+      int? firstLogRating,
     }) async {
       final lw = await (db.select(db.learningWords)..where((w) => w.wordId.equals(wordId))).getSingle();
       await db.learningWordsDao.saveEntity(lw.copyWith(
@@ -338,6 +345,24 @@ void main() {
         learnedTimes: learnedTimes,
         lastLearningDate: Value(lastLearningDate),
       ), false);
+      if (firstLogElapsedDays != null && firstLogRating != null) {
+        // 预置日志即"今天首条评分日志"：清掉该词历史日志保证重置语义与主键唯一
+        await (db.delete(db.learningLogs)
+              ..where((l) => l.userId.equals(testUser.id) & l.wordId.equals(wordId)))
+            .go();
+        await db.learningLogsDao.saveEntity(LearningLog(
+          id: 'preset_log_$wordId',
+          userId: testUser.id,
+          wordId: wordId,
+          rating: firstLogRating,
+          stability: stability,
+          difficulty: difficulty,
+          elapsedDays: firstLogElapsedDays,
+          scheduledDays: scheduledDays,
+          createTime: AppClock.now(),
+          updateTime: AppClock.now(),
+        ), false);
+      }
     }
 
     Future<LearningWord> wordOf(String wordId) async {
@@ -362,7 +387,8 @@ void main() {
       await setWordFsrs('word_1',
         stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
         reps: 1, lapses: 0, state: FsrsState.learning.value,
-        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today());
+        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today(),
+        firstLogElapsedDays: 0, firstLogRating: FsrsRating.good.value);
 
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.hard);
       expect(result.success, true);
@@ -381,7 +407,8 @@ void main() {
       await setWordFsrs('word_1',
         stability: 0.4, difficulty: 4.93, elapsedDays: 0, scheduledDays: 1,
         reps: 1, lapses: 1, state: FsrsState.learning.value,
-        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today());
+        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today(),
+        firstLogElapsedDays: 0, firstLogRating: FsrsRating.good.value);
 
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
       expect(result.success, true);
@@ -396,7 +423,8 @@ void main() {
       await setWordFsrs('word_1',
         stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
         reps: 1, lapses: 0, state: FsrsState.learning.value,
-        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today());
+        todayLearnedTimes: 1, learnedTimes: 1, lastLearningDate: AppClock.today(),
+        firstLogElapsedDays: 0, firstLogRating: FsrsRating.good.value);
 
       final result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
       expect(result.success, true);
@@ -448,7 +476,8 @@ void main() {
       await setWordFsrs('word_1',
         stability: 0.4, difficulty: 4.93, elapsedDays: 0, scheduledDays: 1,
         reps: 2, lapses: 2, state: FsrsState.relearning.value,
-        todayLearnedTimes: 1, learnedTimes: 2, lastLearningDate: AppClock.today());
+        todayLearnedTimes: 1, learnedTimes: 2, lastLearningDate: AppClock.today(),
+        firstLogElapsedDays: 1, firstLogRating: FsrsRating.again.value);
 
       // 恢复环节答对
       var result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
@@ -462,7 +491,8 @@ void main() {
       await setWordFsrs('word_1',
         stability: 0.4, difficulty: 4.93, elapsedDays: 0, scheduledDays: 1,
         reps: 2, lapses: 2, state: FsrsState.relearning.value,
-        todayLearnedTimes: 1, learnedTimes: 2, lastLearningDate: AppClock.today());
+        todayLearnedTimes: 1, learnedTimes: 2, lastLearningDate: AppClock.today(),
+        firstLogElapsedDays: 1, firstLogRating: FsrsRating.again.value);
       result = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
       expect(result.success, true);
       w = await wordOf('word_1');

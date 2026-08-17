@@ -69,9 +69,6 @@ public class UserDbSyncBo {
     private UserStudyStepBo userStudyStepBo;
 
     @Autowired
-    private UserReviewStudyStepBo userReviewStudyStepBo;
-
-    @Autowired
     private DakaBo dakaBo;
 
     @Autowired
@@ -159,10 +156,11 @@ public class UserDbSyncBo {
         List<UserStudyStep> stepsAfter = userStudyStepBo.getUserStudySteps(userId);
 
         for (UserStudyStep stepAfter : stepsAfter) {
-            boolean existed = stepsBefore.stream().anyMatch(s -> s.getStudyStep() == stepAfter.getStudyStep());
+            boolean existed = stepsBefore.stream().anyMatch(s -> s.getId().equals(stepAfter.getId()));
             if (!existed) {
+                UserStudyStepId stepId = stepAfter.getId();
                 logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "user_study_step",
-                        userId + "-" + stepAfter.getStudyStep(),
+                        userId + "-" + stepId.getScope() + "-" + stepId.getGroupName() + "-" + stepId.getStudyStep(),
                         JsonUtils.toJson(userStudyStepBo.toDto(stepAfter)), null, null));
             }
         }
@@ -390,8 +388,7 @@ public class UserDbSyncBo {
             case "user" -> processUserSync(userId, recordJson, operation);
             case "dict" -> processDictSync(userId, recordJson, operation);
             case "book_mark" -> processBookMarkSync(userId, recordJson, operation);
-            case "user_study_step" -> processUserStudyStepSync(userId, recordJson, operation);
-            case "user_review_study_step" -> processUserReviewStudyStepSync(userId, log.getRecordId(), recordJson, operation);
+            case "user_study_step" -> processUserStudyStepSync(userId, log.getRecordId(), recordJson, operation);
             case "daka" -> processDakasSync(userId, recordJson, operation);
             case "user_oper" -> processUserOperSync(userId, recordJson, operation);
             case "user_wrong_word" -> processUserWrongWordSync(userId, recordJson, operation);
@@ -718,77 +715,40 @@ public class UserDbSyncBo {
     }
 
     /**
-     * 处理用户学习步骤同步
+     * 处理用户学习步骤同步（单表三组结构：scope='new'/'review'，group='check'/'correct'/'wrong'）
      */
-    private void processUserStudyStepSync(String userId, String recordJson, String operation)
+    private void processUserStudyStepSync(String userId, String recordId, String recordJson, String operation)
             throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             userStudyStepBo.batchDeleteUserRecords(userId, recordJson);
-        } else {
-            UserStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserStudyStepDto.class);
-            stepDto.setUserId(userId);
-            UserStudyStepId id = new UserStudyStepId(userId, stepDto.getStudyStep());
-            UserStudyStep studyStep = new UserStudyStep(id);
-            studyStep.setSeq(stepDto.getSeq());
-            studyStep.setState(stepDto.getState());
-
-            if (stepDto.getCreateTime() != null) {
-                studyStep.setCreateTime(stepDto.getCreateTime());
-            }
-            if (stepDto.getUpdateTime() != null) {
-                studyStep.setUpdateTime(stepDto.getUpdateTime());
-            }
-
-            switch (operation) {
-                case "INSERT" -> {
-                    // 【校验三】禁止通过同步创建学习步骤
-                    throw new IllegalArgumentException(String.format("禁止通过同步创建学习步骤: step=[%s]", stepDto.getStudyStep()));
-                }
-                case "UPDATE" -> {
-                    UserStudyStep existing = userStudyStepBo.findById(id);
-                    if (existing == null) {
-                        // 若服务端数据库暂缺该步骤 (如历史老用户缺失新增的例句步骤)，先自动补全基础步骤结构
-                        userStudyStepBo.initUserStudySteps(userId);
-                        existing = userStudyStepBo.findById(id);
-                    }
-                    if (existing == null) {
-                        throw new IllegalArgumentException(String.format("禁止通过同步修改不存在的学习步骤: step=[%s]", stepDto.getStudyStep()));
-                    }
-                    userStudyStepBo.updateEntity(studyStep);
-                }
-                case "DELETE" -> userStudyStepBo.deleteEntity(studyStep);
-                default -> {
-                    String errorMsg = String.format("不支持的用户学习步骤表操作: %s", operation);
-                    logger.error(errorMsg);
-                    throw new IllegalArgumentException(errorMsg);
-                }
-            }
+            return;
         }
-    }
-
-    /**
-     * 处理旧词（复习词）三组学习规则同步
-     */
-    private void processUserReviewStudyStepSync(String userId, String recordId, String recordJson, String operation)
-            throws IllegalAccessException {
         if ("DELETE".equals(operation)) {
-            // DELETE 日志无实体 JSON：从 recordId（userId-group-studyStep）解析主键
-            int idx1 = recordId.lastIndexOf('-');
+            // DELETE 日志无实体 JSON：从 recordId（userId-scope-group-studyStep）解析主键
+            int idx2 = recordId.lastIndexOf('-');
+            int idx1 = recordId.lastIndexOf('-', idx2 - 1);
             int idx0 = recordId.lastIndexOf('-', idx1 - 1);
-            if (idx0 < 0 || idx1 < 0) {
-                throw new IllegalArgumentException("无法解析旧词学习规则 DELETE 记录ID: " + recordId);
+            if (idx0 < 0 || idx1 < 0 || idx2 < 0) {
+                throw new IllegalArgumentException("无法解析学习步骤 DELETE 记录ID: " + recordId);
             }
-            String group = recordId.substring(idx0 + 1, idx1);
-            StudyStep studyStep = StudyStep.valueOf(recordId.substring(idx1 + 1));
-            UserReviewStudyStepId id = new UserReviewStudyStepId(userId, group, studyStep);
-            userReviewStudyStepBo.deleteEntity(new UserReviewStudyStep(id));
+            String scope = recordId.substring(idx0 + 1, idx1);
+            String group = recordId.substring(idx1 + 1, idx2);
+            StudyStep studyStep = StudyStep.valueOf(recordId.substring(idx2 + 1));
+            UserStudyStepId id = new UserStudyStepId(userId, scope, group, studyStep);
+            userStudyStepBo.deleteEntity(new UserStudyStep(id));
             return;
         }
 
-        UserReviewStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserReviewStudyStepDto.class);
+        UserStudyStepDto stepDto = JsonUtils.makeObject(recordJson, UserStudyStepDto.class);
         stepDto.setUserId(userId);
-        UserReviewStudyStepId id = new UserReviewStudyStepId(userId, stepDto.getGroup(), stepDto.getStudyStep());
-        UserReviewStudyStep studyStep = new UserReviewStudyStep(id);
+        // 老客户端日志无 scope/group 字段：升级窗口内忽略（学习环节设置不同步，强制升级机制兜底）
+        if (stepDto.getScope() == null || stepDto.getScope().isEmpty()
+                || stepDto.getGroup() == null || stepDto.getGroup().isEmpty()) {
+            logger.warn("忽略老客户端 user_study_step 日志（缺少 scope/group）: recordId={}", recordId);
+            return;
+        }
+        UserStudyStepId id = new UserStudyStepId(userId, stepDto.getScope(), stepDto.getGroup(), stepDto.getStudyStep());
+        UserStudyStep studyStep = new UserStudyStep(id);
         studyStep.setSeq(stepDto.getSeq());
         studyStep.setState(stepDto.getState());
 
@@ -800,22 +760,16 @@ public class UserDbSyncBo {
         }
 
         switch (operation) {
-            case "INSERT" -> {
-                if (userReviewStudyStepBo.findById(id) == null) {
-                    userReviewStudyStepBo.createEntity(studyStep);
+            case "INSERT", "UPDATE" -> {
+                UserStudyStep existing = userStudyStepBo.findById(id);
+                if (existing == null) {
+                    userStudyStepBo.createEntity(studyStep);
                 } else {
-                    logger.info("user_review_study_step 已存在，忽略重复 INSERT: id={}", id);
-                }
-            }
-            case "UPDATE" -> {
-                if (userReviewStudyStepBo.findById(id) == null) {
-                    userReviewStudyStepBo.createEntity(studyStep);
-                } else {
-                    userReviewStudyStepBo.updateEntity(studyStep);
+                    userStudyStepBo.updateEntity(studyStep);
                 }
             }
             default -> {
-                String errorMsg = String.format("不支持的旧词学习规则表操作: %s", operation);
+                String errorMsg = String.format("不支持的用户学习步骤表操作: %s", operation);
                 logger.error(errorMsg);
                 throw new IllegalArgumentException(errorMsg);
             }
@@ -1296,7 +1250,7 @@ public class UserDbSyncBo {
                         userDbVersion,
                         "INSERT",
                         "user_study_step",
-                        userId + "-" + stepDto.getStudyStep(),
+                        userId + "-" + stepDto.getScope() + "-" + stepDto.getGroup() + "-" + stepDto.getStudyStep(),
                         JsonUtils.toJson(stepDto),
                         stepDto.getCreateTime(),
                         stepDto.getUpdateTime());

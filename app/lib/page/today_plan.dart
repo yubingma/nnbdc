@@ -46,7 +46,6 @@ class TodayPlanPage extends StatefulWidget {
 }
 
 class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMixin, WidgetsBindingObserver {
-  List<UserStudyStepVo>? studySteps;
   int? newWordCount;
   int? oldWordCount;
   int? todayWordCount;
@@ -64,6 +63,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Set<String> _masteredWordIds = {};
   /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道配置）
   int _studyStepsTab = 0;
+  /// 新词三组规则（显式设置）；_newConfigSaved=false 表示未落库（当前为默认规则）
+  String? _newCheckStep;
+  List<String> _newCorrectSteps = [];
+  List<String> _newWrongSteps = [];
+  bool _newConfigSaved = false;
   /// 旧词三组规则（显式设置）；_reviewConfigSaved=false 表示未落库（当前为默认规则）
   String? _reviewCheckStep;
   List<String> _reviewCorrectSteps = [];
@@ -287,20 +291,18 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       user = userResult.data;
     }
 
-    final stepsResult = await StudyBo().getUserStudySteps();
-    if (stepsResult.success) {
-      studySteps = stepsResult.data?.where((step) => step.studyStep != 'List').toList();
-    }
+    // 加载新旧词三组规则；未配置时使用默认值（不落库）
+    final newCfg = await StudyStepsService().getThreeGroupConfig('new');
+    _newConfigSaved = await _dbHasScopeConfig('new');
+    _newCheckStep = newCfg.check;
+    _newCorrectSteps = List.of(newCfg.correct);
+    _newWrongSteps = List.of(newCfg.wrong);
 
-    // 加载旧词三组规则；未设置时预填默认（测评=新词第 1、答对后=空、答错后=[反向互补]）
-    final reviewCfg = await ReviewStudyStepsService().getConfig();
-    _reviewConfigSaved = reviewCfg != null;
-    final fallbackCheck = selectedSteps().isNotEmpty
-        ? selectedSteps().first.studyStep
-        : 'En2Ch';
-    _reviewCheckStep = reviewCfg?.checkStep ?? fallbackCheck;
-    _reviewCorrectSteps = List.of(reviewCfg?.correctSteps ?? const []);
-    _reviewWrongSteps = List.of(reviewCfg?.wrongSteps ?? [StudyTrack.oppositeWordStep(fallbackCheck)]);
+    final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
+    _reviewConfigSaved = await _dbHasScopeConfig('review');
+    _reviewCheckStep = reviewCfg.check;
+    _reviewCorrectSteps = List.of(reviewCfg.correct);
+    _reviewWrongSteps = List.of(reviewCfg.wrong);
 
     if (user != null) {
       final db = MyDatabase.instance;
@@ -405,7 +407,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     // 每词按其自身轨道（学习轨道/复习轨道）的环节数贡献进度；
     // 轨道由今天首条评分日志的间隔固化（与 StudyBo 一致）
     final user = Global.getLoggedInUser();
-    final activeStepNames = selectedSteps().map((s) => s.studyStep).toList();
     final today = AppClock.today();
     Map<String, ({int elapsedDays, int rating})> firstLogs = {};
     if (user != null && _todayWords!.isNotEmpty) {
@@ -426,24 +427,24 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         }
       }
     }
-    final reviewCfg = await ReviewStudyStepsService().getConfig();
-    final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : const <String>[];
-    final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
-    final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
+    final newCfg = await StudyStepsService().getThreeGroupConfig('new');
+    final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
     _totalStepCount = 0;
     _completedStepCount = 0;
     for (final word in _todayWords!) {
       final first = firstLogs[word.wordId];
       final trackLen = StudyTrack.trackOf(
-        activeStepNames: activeStepNames,
         stability: word.stability,
         state: word.state,
         lastLearningDate: word.lastLearningDate,
         todayFirstLogElapsedDays: first?.elapsedDays,
-        reviewCheckSteps: reviewCheckSteps,
-        reviewCorrectSteps: reviewCorrectSteps,
-        reviewWrongSteps: reviewWrongSteps,
         todayFirstLogRating: first?.rating,
+        newCheck: newCfg.check,
+        newCorrect: newCfg.correct,
+        newWrong: newCfg.wrong,
+        reviewCheck: reviewCfg.check,
+        reviewCorrect: reviewCfg.correct,
+        reviewWrong: reviewCfg.wrong,
         today: today,
       ).length;
       _totalStepCount += trackLen;
@@ -453,21 +454,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     if (mounted) setState(() {});
   }
 
-  void reorderData(int oldIndex, int newIndex) {
-    if (!mounted) return;
-    setState(() {
-      final items = studySteps!.removeAt(oldIndex);
-      studySteps!.insert(newIndex, items);
-      for (var i = 0; i < studySteps!.length; i++) {
-        studySteps![i].seq = i;
-      }
-      saveStudyStep();
-    });
-  }
-
-  List<UserStudyStepVo> selectedSteps() {
-    return studySteps?.where((s) => s.state == StudyStepState.active.json).toList() ?? [];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -999,8 +985,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         onPressed: () async {
-          if (selectedSteps().isEmpty) {
-            ToastUtil.error('请选择至少一个学习环节');
+          if (_newCheckStep == null) {
+            ToastUtil.error('请选择测评环节');
             return;
           }
 
@@ -1180,9 +1166,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ),
               ),
               const Spacer(),
-              // 拖动排序提示仅新词 tab（可排序）显示
-              if (_studyStepsTab == 0)
-                Container(
+              Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                   color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
@@ -1200,29 +1184,37 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             ],
           ),
         ),
-        if (_studyStepsTab == 0)
-          ReorderableListView(
-            buildDefaultDragHandles: false,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            // ignore: deprecated_member_use
-            onReorder: reorderData,
-            children: [
-              for (int i = 0; i < studySteps!.length; i++) _buildStepTile(studySteps![i], i),
-            ],
-          )
-        else
-          _buildReviewStepsInfoCard(isDarkMode),
+        _buildReviewStepsInfoCard(scope: _studyStepsTab == 0 ? 'new' : 'review', isDarkMode: isDarkMode),
       ],
     );
   }
 
   /// 旧词 tab：三组显式配置——测评单选下拉 + 答对/答错分支（可视化，分支内环节可拖拽排序）
-  Widget _buildReviewStepsInfoCard(bool isDarkMode) {
+  /// 学习规则三组配置卡（scope='new' 新词 / 'review' 旧词，UI 同构）
+  Widget _buildReviewStepsInfoCard({required String scope, required bool isDarkMode}) {
     final textColor = isDarkMode ? Colors.white70 : Colors.black87;
     final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     const allStepNames = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
     String desc(String s) => StudyStepExt.fromString(s).description;
+    final isNew = scope == 'new';
+
+    String? checkStep() => isNew ? _newCheckStep : _reviewCheckStep;
+    List<String> correctSteps() => isNew ? _newCorrectSteps : _reviewCorrectSteps;
+    List<String> wrongSteps() => isNew ? _newWrongSteps : _reviewWrongSteps;
+    bool configSaved() => isNew ? _newConfigSaved : _reviewConfigSaved;
+    void setCheck(String v) => setState(() {
+          if (isNew) {
+            _newCheckStep = v;
+          } else {
+            _reviewCheckStep = v;
+          }
+        });
+    void mutateCorrect(void Function(List<String>) fn) => setState(() {
+          fn(isNew ? _newCorrectSteps : _reviewCorrectSteps);
+        });
+    void mutateWrong(void Function(List<String>) fn) => setState(() {
+          fn(isNew ? _newWrongSteps : _reviewWrongSteps);
+        });
 
     return Container(
       width: double.infinity,
@@ -1246,7 +1238,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               ),
               const SizedBox(width: 8),
               DropdownButton<String>(
-                value: _reviewCheckStep ?? allStepNames.first,
+                value: checkStep() ?? allStepNames.first,
                 underline: const SizedBox.shrink(),
                 style: TextStyle(fontSize: 13, color: textColor),
                 dropdownColor:
@@ -1257,8 +1249,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ],
                 onChanged: (v) {
                   if (v != null) {
-                    setState(() => _reviewCheckStep = v);
-                    unawaited(saveReviewConfig());
+                    setCheck(v);
+                    unawaited(saveReviewConfig(scope));
                   }
                 },
               ),
@@ -1269,21 +1261,21 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           _buildReviewBranch(
             title: '答对后',
             titleColor: Colors.green,
-            emptyHint: '空：答对即完成',
-            steps: _reviewCorrectSteps,
+            emptyHint: isNew ? '空：测评答对即完成' : '空：答对即完成',
+            steps: correctSteps(),
             isDarkMode: isDarkMode,
-            onAdd: () => _pickReviewStepForBranch(allStepNames, isCorrect: true),
+            onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: true),
             onRemove: (s) {
-              setState(() => _reviewCorrectSteps.remove(s));
-              unawaited(saveReviewConfig());
+              mutateCorrect((list) => list.remove(s));
+              unawaited(saveReviewConfig(scope));
             },
             onReorder: (oldIdx, newIdx) {
-              setState(() {
+              mutateCorrect((list) {
                 if (newIdx > oldIdx) newIdx--;
-                final item = _reviewCorrectSteps.removeAt(oldIdx);
-                _reviewCorrectSteps.insert(newIdx, item);
+                final item = list.removeAt(oldIdx);
+                list.insert(newIdx, item);
               });
-              unawaited(saveReviewConfig());
+              unawaited(saveReviewConfig(scope));
             },
           ),
           const SizedBox(height: 8),
@@ -1291,26 +1283,26 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           _buildReviewBranch(
             title: '答错后',
             titleColor: Colors.orange,
-            emptyHint: '空：答错即结束，明日重现',
-            steps: _reviewWrongSteps,
+            emptyHint: isNew ? '空：测评答错即结束，明日重现' : '空：答错即结束，明日重现',
+            steps: wrongSteps(),
             isDarkMode: isDarkMode,
-            onAdd: () => _pickReviewStepForBranch(allStepNames, isCorrect: false),
+            onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: false),
             onRemove: (s) {
-              setState(() => _reviewWrongSteps.remove(s));
-              unawaited(saveReviewConfig());
+              mutateWrong((list) => list.remove(s));
+              unawaited(saveReviewConfig(scope));
             },
             onReorder: (oldIdx, newIdx) {
-              setState(() {
+              mutateWrong((list) {
                 if (newIdx > oldIdx) newIdx--;
-                final item = _reviewWrongSteps.removeAt(oldIdx);
-                _reviewWrongSteps.insert(newIdx, item);
+                final item = list.removeAt(oldIdx);
+                list.insert(newIdx, item);
               });
-              unawaited(saveReviewConfig());
+              unawaited(saveReviewConfig(scope));
             },
           ),
           const SizedBox(height: 8),
           Text(
-            _reviewConfigSaved ? '规则修改后自动保存' : '当前为默认规则（未自定义），修改后自动保存',
+            configSaved() ? '规则修改后自动保存' : '当前为默认规则（未自定义），修改后自动保存',
             style: TextStyle(fontSize: 11, color: subColor),
           ),
         ],
@@ -1318,7 +1310,73 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     );
   }
 
-  /// 分支（答对/答错）可视化：缩进 + 分支竖线 + 色点标题 + 可拖拽排序的环节列表
+  /// 分支"添加环节"：弹窗列出该分支未添加的环节
+  Future<void> _pickReviewStepForBranch(
+      String scope, List<String> allStepNames,
+      {required bool isCorrect}) async {
+    final isNew = scope == 'new';
+    final current = isCorrect
+        ? (isNew ? _newCorrectSteps : _reviewCorrectSteps)
+        : (isNew ? _newWrongSteps : _reviewWrongSteps);
+    final available = allStepNames.where((s) => !current.contains(s)).toList();
+    if (available.isEmpty) return;
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(isCorrect ? '添加"答对后"环节' : '添加"答错后"环节'),
+        children: [
+          for (final s in available)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, s),
+              child: Text(StudyStepExt.fromString(s).description),
+            ),
+        ],
+      ),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        if (isCorrect) {
+          (isNew ? _newCorrectSteps : _reviewCorrectSteps).add(picked);
+        } else {
+          (isNew ? _newWrongSteps : _reviewWrongSteps).add(picked);
+        }
+      });
+      unawaited(saveReviewConfig(scope));
+    }
+  }
+
+  /// 表内是否已有该 scope 的配置（用于"默认规则"提示）
+  Future<bool> _dbHasScopeConfig(String scope) async {
+    final user = Global.getLoggedInUser();
+    if (user == null) return false;
+    final steps = await MyDatabase.instance.userStudyStepsDao.getStepsOfScope(user.id, scope);
+    return steps.isNotEmpty;
+  }
+
+  Future<void> saveReviewConfig(String scope) async {
+    final isNew = scope == 'new';
+    final check = isNew ? _newCheckStep : _reviewCheckStep;
+    if (check == null) return;
+    try {
+      await StudyStepsService().saveThreeGroupConfig(
+        scope: scope,
+        check: check,
+        correct: isNew ? _newCorrectSteps : _reviewCorrectSteps,
+        wrong: isNew ? _newWrongSteps : _reviewWrongSteps,
+      );
+      if (mounted) {
+        if (isNew && !_newConfigSaved) {
+          setState(() => _newConfigSaved = true);
+        } else if (!isNew && !_reviewConfigSaved) {
+          setState(() => _reviewConfigSaved = true);
+        }
+      }
+    } catch (e, s) {
+      Global.logger.e('保存学习规则失败', error: e, stackTrace: s);
+      ToastUtil.error('保存学习规则失败');
+    }
+  }
+
   Widget _buildReviewBranch({
     required String title,
     required Color titleColor,
@@ -1426,155 +1484,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   /// 分支"添加环节"：弹窗列出该分支未添加的环节
-  Future<void> _pickReviewStepForBranch(List<String> allStepNames,
-      {required bool isCorrect}) async {
-    final current = isCorrect ? _reviewCorrectSteps : _reviewWrongSteps;
-    final available = allStepNames.where((s) => !current.contains(s)).toList();
-    if (available.isEmpty) return;
-    final picked = await showDialog<String>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(isCorrect ? '添加"答对后"环节' : '添加"答错后"环节'),
-        children: [
-          for (final s in available)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(ctx, s),
-              child: Text(StudyStepExt.fromString(s).description),
-            ),
-        ],
-      ),
-    );
-    if (picked != null && mounted) {
-      setState(() {
-        if (isCorrect) {
-          _reviewCorrectSteps.add(picked);
-        } else {
-          _reviewWrongSteps.add(picked);
-        }
-      });
-      unawaited(saveReviewConfig());
-    }
-  }
 
-  Future<void> saveReviewConfig() async {
-    final check = _reviewCheckStep;
-    if (check == null) return;
-    try {
-      await ReviewStudyStepsService().saveConfig(
-        checkStep: check,
-        correctSteps: _reviewCorrectSteps,
-        wrongSteps: _reviewWrongSteps,
-      );
-      if (mounted && !_reviewConfigSaved) {
-        setState(() => _reviewConfigSaved = true);
-      }
-    } catch (e, s) {
-      Global.logger.e('保存旧词规则失败', error: e, stackTrace: s);
-      ToastUtil.error('保存旧词规则失败');
-    }
-  }
-
-  Widget _buildStepTile(UserStudyStepVo step, int index) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final isActive = step.state == StudyStepState.active.json;
-
-    String stepName = StudyStepExt.fromString(step.studyStep).description;
-    if (isActive) {
-      int activeIndex = 0;
-      for (var s in studySteps!) {
-        if (s.state == StudyStepState.active.json) {
-          if (s == step) {
-            if (activeIndex == 0) {
-              stepName += ' (测评)';
-            } else {
-              stepName += ' (巩固)'; 
-            }
-            break;
-          }
-          activeIndex++;
-        }
-      }
-    }
-
-    return Container(
-      key: ValueKey(step.studyStep),
-      margin: const EdgeInsets.only(bottom: 6),
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          if (isActive)
-            BoxShadow(
-              color: const Color(0xFF0EA5E9).withValues(alpha: isDarkMode ? 0.1 : 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-        ],
-        border: Border.all(
-          color: isActive
-              ? (isDarkMode ? const Color(0xFF0EA5E9).withValues(alpha: 0.5) : const Color(0xFF0EA5E9).withValues(alpha: 0.3))
-              : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
-          width: 2,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              step.state = isActive ? StudyStepState.inactive.json : StudyStepState.active.json;
-              saveStudyStep();
-              // Fast local update for progress
-              unawaited(_updateProgress());
-            });
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isActive ? (isDarkMode ? const Color(0xFF0EA5E9).withValues(alpha: 0.2) : const Color(0xFFE0F2FE)) : Colors.transparent,
-                  ),
-                  child: Icon(
-                    isActive ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                    color: isActive ? const Color(0xFF0EA5E9) : (isDarkMode ? Colors.white24 : Colors.black12),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    stepName,
-                    style: TextStyle(
-                      color: isActive ? (isDarkMode ? Colors.white : const Color(0xFF1E293B)) : (isDarkMode ? Colors.white38 : Colors.black26),
-                      fontSize: 16,
-                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                    ),
-                  ),
-                ),
-                ReorderableDragStartListener(
-                  index: index,
-                  child: Icon(
-                    Icons.drag_indicator_rounded,
-                    color: isDarkMode ? Colors.white38 : Colors.black26,
-                    size: 22,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> saveStudyStep() async {
-    await StudyBo().saveUserStudySteps(studySteps!);
-  }
 
   /// 弹出"高级设置"对话框，可配置今日最少新词数量
   void _showAdvancedSettingsDialog() {

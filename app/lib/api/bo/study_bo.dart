@@ -70,48 +70,6 @@ class StudyBo {
     }
   }
 
-  Future<Result<List<UserStudyStepVo>>> getUserStudySteps() async {
-    try {
-      final steps = await _studyStepsService.getUserStudySteps();
-      final result = Result<List<UserStudyStepVo>>("SUCCESS", "获取成功", true);
-      result.data = steps;
-      return result;
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '获取学习步骤失败', showToast: false);
-      final result = Result<List<UserStudyStepVo>>("ERROR", "获取学习步骤失败: $e", false);
-      result.data = null;
-      return result;
-    }
-  }
-
-  Future<Result<List<UserStudyStepVo>>> getActiveUserStudySteps() async {
-    try {
-      final steps = await _studyStepsService.getActiveUserStudySteps();
-      final result = Result<List<UserStudyStepVo>>("SUCCESS", "获取成功", true);
-      result.data = steps;
-      return result;
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '获取激活的学习步骤失败', showToast: false);
-      final result = Result<List<UserStudyStepVo>>("ERROR", "获取激活的学习步骤失败: $e", false);
-      result.data = null;
-      return result;
-    }
-  }
-
-  Future<Result<void>> saveUserStudySteps(List<UserStudyStepVo> steps) async {
-    try {
-      await _studyStepsService.saveUserStudySteps(steps);
-      try {
-        ThrottledDbSyncService().requestSync();
-      } catch (syncError, stackTrace) {
-        ErrorHandler.handleError(syncError, stackTrace, logPrefix: '同步学习步骤到服务器失败', showToast: false);
-      }
-      return Result("SUCCESS", "保存成功", true);
-    } catch (e, stackTrace) {
-      ErrorHandler.handleError(e, stackTrace, logPrefix: '保存学习步骤失败', showToast: false);
-      return Result("ERROR", "保存学习步骤失败: $e", false);
-    }
-  }
 
   Future<List<LearningWordVo>> getCurrentBatchCache() async {
     final sw = Stopwatch()..start();
@@ -124,7 +82,6 @@ class StudyBo {
 
       Global.logger.d('开始获取批次单词: userId=${user.id}');
       final db = MyDatabase.instance;
-      final now = AppClock.now();
 
       // 查询今日已分配批次的单词 (batchId > 0 表示该词属于今日学习计划)
       final query = db.select(db.learningWords)
@@ -136,17 +93,8 @@ class StudyBo {
       final todayWords = await query.get();
 
       // 获取学习步骤（用于构造每词的环节轨道）
-      final stepsVo = await _studyStepsService.getActiveUserStudySteps();
-      final steps = stepsVo
-          .map((vo) => UserStudyStep(
-                userId: user.id,
-                studyStep: vo.studyStep,
-                seq: vo.seq,
-                state: vo.state,
-                createTime: now,
-                updateTime: now,
-              ))
-          .toList();
+      final newCfg = await _studyStepsService.getThreeGroupConfig('new');
+      final reviewCfg = await _studyStepsService.getThreeGroupConfig('review');
 
       // 获取用户已掌握的单词（状态驱动）
       final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
@@ -154,16 +102,12 @@ class StudyBo {
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
-      final activeStepNames = steps.map((s) => s.studyStep).toList();
       final firstLogs =
           await _loadTodayFirstLogs(user.id, todayWords);
-      final reviewCfg = await ReviewStudyStepsService().getConfig();
       int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
-          activeStepNames: activeStepNames,
           firstLogs: firstLogs,
-          reviewCheckSteps: reviewCfg != null ? [reviewCfg.checkStep] : const [],
-          reviewCorrectSteps: reviewCfg?.correctSteps ?? const [],
-          reviewWrongSteps: reviewCfg?.wrongSteps ?? const [],
+          newCfg: newCfg,
+          reviewCfg: reviewCfg,
           batchSize: batchSize);
       if (batchStartIndex == -1) {
         Global.logger.d('所有批次单词已完成');
@@ -437,49 +381,26 @@ class StudyBo {
         return Result("ERROR", "用户未登录", false);
       }
 
-      final now = AppClock.now();
-
       var todayWords = await StudyCacheManager().getTodayWords(db, user.id);
 
       if (todayWords.isEmpty) {
         return Result("ERROR", "今日没有学习单词", false);
       }
 
-      // 获取当前 active steps count
-      final stepsVo = await _studyStepsService.getActiveUserStudySteps();
-      final steps = stepsVo
-          .map((vo) => UserStudyStep(
-                userId: user.id,
-                studyStep: vo.studyStep,
-                seq: vo.seq,
-                state: vo.state,
-                createTime: now,
-                updateTime: now,
-              ))
-          .toList();
-      final modeCount = steps.length;
-      if (modeCount == 0) {
-        return Result("ERROR", "未配置学习步骤", false);
-      }
+      final newCfg = await _studyStepsService.getThreeGroupConfig('new');
+      final reviewCfg = await _studyStepsService.getThreeGroupConfig('review');
 
       // 计算掌握情况（状态驱动）
       final masteredWords = await db.masteredWordsDao.getMasteredWordsForUser(user.id);
       final masteredWordIds = masteredWords.map((e) => e.wordId).toSet();
 
       // 计算 batchStartIndex
-      final activeStepNames = steps.map((s) => s.studyStep).toList();
       final firstLogs =
           await _loadTodayFirstLogs(user.id, todayWords);
-      final reviewCfg = await ReviewStudyStepsService().getConfig();
-      final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : const <String>[];
-      final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
-      final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
       final batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
-          activeStepNames: activeStepNames,
           firstLogs: firstLogs,
-          reviewCheckSteps: reviewCheckSteps,
-          reviewCorrectSteps: reviewCorrectSteps,
-          reviewWrongSteps: reviewWrongSteps,
+          newCfg: newCfg,
+          reviewCfg: reviewCfg,
           batchSize: 10);
       if (batchStartIndex == -1) {
         return Result("ERROR", "所有单词已完成列表学习", false);
@@ -500,15 +421,17 @@ class StudyBo {
         // 按该词自身轨道判断当前环节是否为 List（复习词轨道与学习词轨道不同）
         final first = firstLogs[word.wordId];
         final track = StudyTrack.trackOf(
-          activeStepNames: activeStepNames,
           stability: word.stability,
           state: word.state,
           lastLearningDate: word.lastLearningDate,
           todayFirstLogElapsedDays: first?.elapsedDays,
-          reviewCheckSteps: reviewCheckSteps,
-          reviewCorrectSteps: reviewCorrectSteps,
-          reviewWrongSteps: reviewWrongSteps,
           todayFirstLogRating: first?.rating,
+          newCheck: newCfg.check,
+          newCorrect: newCfg.correct,
+          newWrong: newCfg.wrong,
+          reviewCheck: reviewCfg.check,
+          reviewCorrect: reviewCfg.correct,
+          reviewWrong: reviewCfg.wrong,
           today: AppClock.today(),
         );
         int currentStepIndex = word.todayLearnedTimes;
@@ -617,24 +540,13 @@ class StudyBo {
 
       final swSteps = Stopwatch()..start();
       // 获取用户的学习步骤配置
-      final stepsVo = await _studyStepsService.getActiveUserStudySteps();
-      final steps = stepsVo
-          .map((vo) => UserStudyStep(
-                userId: user.id,
-                studyStep: vo.studyStep,
-                seq: vo.seq,
-                state: vo.state,
-                createTime: now,
-                updateTime: now,
-              ))
-          .toList();
-      final activeStepCount = steps.length;
-      if (activeStepCount == 0) {
+      final newCfg = await _studyStepsService.getThreeGroupConfig('new');
+      final reviewCfg = await _studyStepsService.getThreeGroupConfig('review');
+      if (newCfg.check.isEmpty) {
         Global.logger.e('Error: No active study steps found for user ${user.id}. Cannot proceed.');
         return Result("ERROR", "用户学习步骤未配置", false);
       }
       Global.logger.d('🐛 [BDC Performance Item] 获取用户学习步骤耗时: ${swSteps.elapsedMilliseconds} ms');
-      final activeStepNames = steps.map((s) => s.studyStep).toList();
 
       final swWords = Stopwatch()..start();
       var todayWords = await StudyCacheManager().getTodayWords(db, user.id);
@@ -652,19 +564,13 @@ class StudyBo {
       final firstLogs =
           await _loadTodayFirstLogs(user.id, todayWords);
       // 旧词三组显式规则（未设置时轨道层回退默认）
-      final reviewCfg = await ReviewStudyStepsService().getConfig();
-      final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : <String>[];
-      final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
-      final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
 
       // 状态驱动：推导当前批次起始位置 (batchStartIndex)
       const int batchSize = 10;
       int batchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
-          activeStepNames: activeStepNames,
           firstLogs: firstLogs,
-          reviewCheckSteps: reviewCheckSteps,
-          reviewCorrectSteps: reviewCorrectSteps,
-          reviewWrongSteps: reviewWrongSteps,
+          newCfg: newCfg,
+          reviewCfg: reviewCfg,
           batchSize: batchSize);
       if (batchStartIndex == -1) {
         return _buildTodayStudyFinishedResult();
@@ -698,21 +604,23 @@ class StudyBo {
       List<String> trackOf(LearningWord word) {
         final first = firstLogs[word.wordId];
         return StudyTrack.trackOf(
-          activeStepNames: activeStepNames,
           stability: word.stability,
           state: word.state,
           lastLearningDate: word.lastLearningDate,
           todayFirstLogElapsedDays: first?.elapsedDays,
-          reviewCheckSteps: reviewCheckSteps,
-          reviewCorrectSteps: reviewCorrectSteps,
-          reviewWrongSteps: reviewWrongSteps,
           todayFirstLogRating: first?.rating,
+          newCheck: newCfg.check,
+          newCorrect: newCfg.correct,
+          newWrong: newCfg.wrong,
+          reviewCheck: reviewCfg.check,
+          reviewCorrect: reviewCfg.correct,
+          reviewWrong: reviewCfg.wrong,
           today: today,
         );
       }
 
       // 添加批次状态日志
-      Global.logger.d('~~~~~BDC_BATCH: startIdx=$batchStartIndex, batchSize=${batchWords.length}, activeStepCount=$activeStepCount');
+      Global.logger.d('~~~~~BDC_BATCH: startIdx=$batchStartIndex, batchSize=${batchWords.length}');
       for (var w in batchWords) {
         final bool isMastered = w.isEffectivelyMastered(masteredWordIds);
         final bool isFinished = w.isTodayFinished(masteredWordIds, trackOf(w).length);
@@ -751,36 +659,34 @@ class StudyBo {
         currentStepIndex = currentTrack.length - 1;
       }
 
-      // allStepsCompletedForWord: 本次评分提交后，该词是否还有剩余评分环节
-      //（评分环节 = 轨道中 List 之外的环节；List 恒为末位且不评分）
-      // updateCurrWord 用它决定 relearn 后的 state：无剩余评分环节才转 review/relearning
-      bool allStepsCompletedForWord = !StudyTrack.hasMoreGradedSteps(currentTrack, currentStepIndex);
-
       // 仅在推进进度或提供评分时更新当前单词状态
       // fsrsRating != null 或 isWordMastered = true 时，说明用户已经完成了一次对该词的有效评价，需要保存
       bool shouldSave = gotoNext || fsrsRating != null || isWordMastered;
       if (shouldSave) {
         final currWord = todayWords[currentWordIndex];
-        // 复习轨道测评环节评分后：对应组（答对/答错）为空 → 跳过组直接进 List 位置（+2）；组非空 → +1 逐环节走
-        final effReview = StudyTrack.effectiveReviewConfig(
-          reviewCheckSteps: reviewCheckSteps,
-          reviewCorrectSteps: reviewCorrectSteps,
-          reviewWrongSteps: reviewWrongSteps,
-          fallbackActiveStepNames: activeStepNames,
-        );
-        final bool skipGroupSteps = StudyTrack.isReviewTrack(
-              activeStepNames: activeStepNames,
+        final bool isReviewWord = StudyTrack.isReviewTrack(
               stability: currWord.stability,
               state: currWord.state,
               lastLearningDate: currWord.lastLearningDate,
               todayFirstLogElapsedDays: firstLogs[currWord.wordId]?.elapsedDays,
               today: today,
-            ) &&
-            currentStepIndex == 0 &&
-            fsrsRating != null &&
-            (fsrsRating == FsrsRating.again
-                ? effReview.wrong.isEmpty
-                : effReview.correct.isEmpty);
+            );
+        // 本次评分后接续的组：测评环节（首条评分）时按答对/答错选组；
+        // 其余环节轨道已完整（首条评分后轨道扩展），无接续组
+        List<String>? groupAfterRating;
+        if (currentStepIndex == 0 && fsrsRating != null) {
+          groupAfterRating = fsrsRating == FsrsRating.again
+              ? (isReviewWord ? reviewCfg.wrong : newCfg.wrong)
+              : (isReviewWord ? reviewCfg.correct : newCfg.correct);
+        }
+        // 测评评分且接续组为空 → 跳过组与 List 直接完成（+2）；其余 +1 逐环节走
+        final bool skipGroupSteps = groupAfterRating != null && groupAfterRating.isEmpty;
+        // allStepsCompletedForWord: 本次评分提交后，该词是否还有剩余评分环节。
+        // 测评评分时轨道尚未按首条评分扩展，按所选组长度判定；其余环节轨道完整，
+        // List 恒为末位且不评分。updateCurrWord 用它决定 state：无剩余评分环节才转 review/relearning
+        final bool allStepsCompletedForWord = groupAfterRating != null
+            ? groupAfterRating.isEmpty
+            : !StudyTrack.hasMoreGradedSteps(currentTrack, currentStepIndex);
         final nextFsrsItem = await updateCurrWord(
           isWordMastered: isWordMastered,
           currWord: currWord,
@@ -853,11 +759,9 @@ class StudyBo {
 
       // 完全基于当前（已更新的）状态，重新推导下一个单词
       int nextBatchStartIndex = _calculateBatchStartIndex(todayWords, masteredWordIds,
-          activeStepNames: activeStepNames,
           firstLogs: firstLogs,
-          reviewCheckSteps: reviewCheckSteps,
-          reviewCorrectSteps: reviewCorrectSteps,
-          reviewWrongSteps: reviewWrongSteps,
+          newCfg: newCfg,
+          reviewCfg: reviewCfg,
           batchSize: batchSize);
       if (nextBatchStartIndex == -1) {
         return _buildTodayStudyFinishedResult();
@@ -1295,11 +1199,9 @@ class StudyBo {
   /// 状态驱动：推导当前批次起始位置 (batchStartIndex)
   /// 逻辑：找到第一个今日尚未完成所有轨道环节的批次（每词按其自身轨道长度判定）
   static int _calculateBatchStartIndex(List<LearningWord> todayWords, Set<String> masteredWordIds,
-      {required List<String> activeStepNames,
-      required Map<String, ({int elapsedDays, int rating})> firstLogs,
-      required List<String> reviewCheckSteps,
-      required List<String> reviewCorrectSteps,
-      required List<String> reviewWrongSteps,
+      {required Map<String, ({int elapsedDays, int rating})> firstLogs,
+      required ThreeGroupSteps newCfg,
+      required ThreeGroupSteps reviewCfg,
       int batchSize = 10}) {
     final today = AppClock.today();
     for (int i = 0; i < todayWords.length; i += batchSize) {
@@ -1308,15 +1210,17 @@ class StudyBo {
         // 状态驱动：如果单词已学完（达到毕业稳定性，或者在 masteredWords 表中存在，或者今日学习次数已走完自身轨道）
         final first = firstLogs[todayWords[j].wordId];
         final trackLen = StudyTrack.trackOf(
-          activeStepNames: activeStepNames,
           stability: todayWords[j].stability,
           state: todayWords[j].state,
           lastLearningDate: todayWords[j].lastLearningDate,
           todayFirstLogElapsedDays: first?.elapsedDays,
-          reviewCheckSteps: reviewCheckSteps,
-          reviewCorrectSteps: reviewCorrectSteps,
-          reviewWrongSteps: reviewWrongSteps,
           todayFirstLogRating: first?.rating,
+          newCheck: newCfg.check,
+          newCorrect: newCfg.correct,
+          newWrong: newCfg.wrong,
+          reviewCheck: reviewCfg.check,
+          reviewCorrect: reviewCfg.correct,
+          reviewWrong: reviewCfg.wrong,
           today: today,
         ).length;
         bool wordFinished = todayWords[j].isTodayFinished(masteredWordIds, trackLen);
@@ -1378,19 +1282,9 @@ class StudyBo {
     required DateTime now,
     required MyDatabase db,
   }) async {
-    // 获取当前学习模式的总步骤数（用于饱和填充状态）
-    final stepsVo = await _studyStepsService.getActiveUserStudySteps();
-    final steps = stepsVo
-        .map((vo) => UserStudyStep(
-              userId: user.id,
-              studyStep: vo.studyStep,
-              seq: vo.seq,
-              state: vo.state,
-              createTime: now,
-              updateTime: now,
-            ))
-        .toList();
-    final int stepCount = steps.length;
+    // 学习轨道长度（三组结构：测评 + 答对组 + List）用于饱和填充今日环节数
+    final newCfg = await _studyStepsService.getThreeGroupConfig('new');
+    final int stepCount = newCfg.correct.length + 2;
 
     if (user.todayStudyStarted) {
       // 已经进入学习执行阶段：不删除记录，而是将状态“填满”

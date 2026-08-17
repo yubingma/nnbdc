@@ -1035,6 +1035,8 @@ public class UserBo extends BaseBo<User> {
         
         List<UserStudyStepDto> stepDtos = studySteps.stream().map(step -> new UserStudyStepDto(
                 step.getId().getUserId(),
+                step.getId().getScope(),
+                step.getId().getGroupName(),
                 step.getStudyStep(),
                 step.getSeq(),
                 step.getState(),
@@ -1108,6 +1110,8 @@ public class UserBo extends BaseBo<User> {
 
             List<UserStudyStepDto> stepDtos = studySteps.stream().map(step -> new UserStudyStepDto(
                     step.getId().getUserId(),
+                    step.getId().getScope(),
+                    step.getId().getGroupName(),
                     step.getStudyStep(),
                     step.getSeq(),
                     step.getState(),

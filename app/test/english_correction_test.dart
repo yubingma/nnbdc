@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
@@ -233,9 +234,11 @@ void main() {
   });
 
   Future<(BdcNotifier, MockAsr)> setupSentence2En(String sentenceEn, String sentenceCh) async {
-    // 学习步骤: En2Ch(seq 0) 基础 + ChSentence2En(seq 1) 例句中英
+    // 学习步骤（三组）: 测评 En2Ch + 答对组 [ChSentence2En]
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'check',
           studyStep: 'En2Ch',
           seq: 0,
           state: 'Active',
@@ -244,8 +247,10 @@ void main() {
         ));
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
           studyStep: 'ChSentence2En',
-          seq: 1,
+          seq: 0,
           state: 'Active',
           createTime: now,
           updateTime: now,
@@ -253,6 +258,20 @@ void main() {
     // 将基础词的今日学习次数置为 1,使 StudyBo 计算 stepIndex = 1(例句步骤)
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    // 插入"今天首条评分日志"（elapsedDays=0, good）：轨道按答对组扩展为
+    // [En2Ch, ChSentence2En, List]，stepIndex=1 即例句环节
+    await db.learningLogsDao.saveEntity(LearningLog(
+          id: 'first_log_corr_base',
+          userId: testUser.id,
+          wordId: 'word_corr_base',
+          rating: FsrsRating.good.value,
+          stability: 2.4,
+          difficulty: 3.05,
+          elapsedDays: 0,
+          scheduledDays: 2,
+          createTime: now,
+          updateTime: now,
+        ), false);
 
     // 例句
     await db.into(db.sentences).insert(Sentence(

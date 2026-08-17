@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -31,6 +30,11 @@ import beidanci.service.po.UserStudyStepId;
 public class UserStudyStepBo extends BaseBo<UserStudyStep> {
     private static final Logger logger = LoggerFactory.getLogger(UserStudyStepBo.class);
 
+    /** 学习规则的三个组名（group 是 SQL 保留字，DB 列名用 group_name） */
+    private static final String GROUP_CHECK = "check";
+    private static final String GROUP_CORRECT = "correct";
+    private static final String GROUP_WRONG = "wrong";
+
     @PostConstruct
     public void init() {
         setDao(new BaseDao<UserStudyStep>() {
@@ -41,56 +45,51 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     /**
-     * 如果用户的学习步骤不足， 则添加缺失的学习步骤
-     *
-     * @param userId
+     * 如果用户的学习步骤不足，则添加缺失的默认三组（scope='new' 新词 + scope='review' 旧词）。
+     * 仅补缺，不覆盖用户已有配置：某组已有环节时保持原样。
      */
     public void initUserStudySteps(String userId) {
-        // 如果用户的学习步骤不足， 则添加缺失的学习步骤
-        List<UserStudyStep> userStudySteps = getUserStudySteps(userId);
-        List<StudyStep> existingSteps = userStudySteps.stream().map(step -> step.getStudyStep())
-                .collect(Collectors.toList());
-        if (existingSteps.size() < StudyStep.values().length) {
-            // 定义理想的 5 个步骤的目标顺序
-            StudyStep[] orderedSteps = {
-                StudyStep.En2Ch,
-                StudyStep.Ch2En,
-                StudyStep.EnSentence2Ch,
-                StudyStep.ChSentence2En,
-                StudyStep.List
-            };
+        // 新词默认三组: check=En2Ch、correct=[Ch2En, EnSentence2Ch, ChSentence2En]、wrong=同
+        initScope(userId, "new", StudyStep.En2Ch,
+                new StudyStep[] { StudyStep.Ch2En, StudyStep.EnSentence2Ch, StudyStep.ChSentence2En },
+                new StudyStep[] { StudyStep.Ch2En, StudyStep.EnSentence2Ch, StudyStep.ChSentence2En });
+        // 旧词默认三组: check=En2Ch、correct=[]、wrong=[Ch2En]
+        initScope(userId, "review", StudyStep.En2Ch,
+                new StudyStep[] {},
+                new StudyStep[] { StudyStep.Ch2En });
+    }
 
-            // 建立 Map 以免多次遍历
-            Map<StudyStep, UserStudyStep> existingMap = userStudySteps.stream()
-                .collect(Collectors.toMap(s -> s.getStudyStep(), s -> s));
+    /**
+     * 为指定 scope 补缺三组：某组一条环节都没有时才插入默认环节（组内顺序从 0 开始）
+     */
+    private void initScope(String userId, String scope, StudyStep defaultCheck,
+            StudyStep[] defaultCorrect, StudyStep[] defaultWrong) {
+        List<UserStudyStep> steps = getStepsOfScope(userId, scope);
+        boolean hasCheck = steps.stream().anyMatch(s -> GROUP_CHECK.equals(s.getId().getGroupName()));
+        boolean hasCorrect = steps.stream().anyMatch(s -> GROUP_CORRECT.equals(s.getId().getGroupName()));
+        boolean hasWrong = steps.stream().anyMatch(s -> GROUP_WRONG.equals(s.getId().getGroupName()));
 
-            for (int i = 0; i < orderedSteps.length; i++) {
-                StudyStep stepEnum = orderedSteps[i];
-                if (existingMap.containsKey(stepEnum)) {
-                    UserStudyStep existingStep = existingMap.get(stepEnum);
-                    // 仅当原本的 seq 顺序不一致时，执行更新
-                    if (existingStep.getSeq() != i) {
-                        existingStep.setSeq(i);
-                        try {
-                            updateEntity(existingStep);
-                        } catch (Exception e) {
-                            logger.error("更新现有学习步骤 seq 顺序失败：" + stepEnum, e);
-                        }
-                    }
-                } else {
-                    // 若不存在此步骤，执行插入
-                    UserStudyStepId id = new UserStudyStepId(userId, stepEnum);
-                    UserStudyStep newStep = new UserStudyStep(id);
-                    newStep.setSeq(i);
-                    if (stepEnum == StudyStep.EnSentence2Ch || stepEnum == StudyStep.ChSentence2En) {
-                        newStep.setState(StudyStepState.Inactive);
-                    } else {
-                        newStep.setState(StudyStepState.Active);
-                    }
-                    createEntity(newStep);
-                }
+        if (!hasCheck) {
+            insertStep(userId, scope, GROUP_CHECK, defaultCheck, 0);
+        }
+        if (!hasCorrect) {
+            for (int i = 0; i < defaultCorrect.length; i++) {
+                insertStep(userId, scope, GROUP_CORRECT, defaultCorrect[i], i);
             }
         }
+        if (!hasWrong) {
+            for (int i = 0; i < defaultWrong.length; i++) {
+                insertStep(userId, scope, GROUP_WRONG, defaultWrong[i], i);
+            }
+        }
+    }
+
+    private void insertStep(String userId, String scope, String group, StudyStep studyStep, int seq) {
+        UserStudyStepId id = new UserStudyStepId(userId, scope, group, studyStep);
+        UserStudyStep newStep = new UserStudyStep(id);
+        newStep.setSeq(seq);
+        newStep.setState(StudyStepState.Active);
+        createEntity(newStep);
     }
 
     public void saveStudySteps(List<UserStudyStep> studySteps, String userId, boolean clearFirst) {
@@ -115,7 +114,19 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
     }
 
     /**
-     * 获取用户的所有学习步骤，按顺序排列
+     * 获取用户指定 scope 的所有学习步骤，按组+顺序排列
+     */
+    public List<UserStudyStep> getStepsOfScope(String userId, String scope) {
+        String sql = "SELECT * FROM user_study_step WHERE user_id = :userId AND scope = :scope "
+                + "ORDER BY group_name ASC, seq ASC";
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("userId", userId);
+        params.addValue("scope", scope);
+        return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(UserStudyStep.class));
+    }
+
+    /**
+     * 获取用户的所有学习步骤（两个 scope 的全部三组），按 scope+组+顺序排列
      *
      * @param userId
      * @return
@@ -124,23 +135,8 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
         // 重要：不要使用 BaseDao 的动态条件查询来过滤 user 字段。
         // BaseDao.pagedQuery 明确不支持用关联对象字段（Po 子类）作为查询条件，并且该异常会被吞掉，
         // 从而导致 userId 条件被静默忽略，误返回全表数据。
-        String sql = "SELECT * FROM user_study_step WHERE user_id = :userId ORDER BY seq ASC";
+        String sql = "SELECT * FROM user_study_step WHERE user_id = :userId ORDER BY scope ASC, group_name ASC, seq ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
-        return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(UserStudyStep.class));
-    }
-
-    /**
-     * 获取用户的所有处于激活状态的学习步骤，按顺序排列
-     *
-     * @param userId
-     * @return
-     */
-    public List<UserStudyStep> getActiveStudyStepsOfUser(String userId) {
-        // 同 getUserStudySteps：避免动态条件查询忽略 userId 过滤
-        String sql = "SELECT * FROM user_study_step WHERE user_id = :userId AND state = :state ORDER BY seq ASC";
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("userId", userId);
-        params.addValue("state", StudyStepState.Active.name());
         return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(UserStudyStep.class));
     }
 
@@ -167,6 +163,8 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
 
         UserStudyStepDto dto = new UserStudyStepDto();
         dto.setUserId(entity.getUser().getId());
+        dto.setScope(entity.getScope());
+        dto.setGroup(entity.getGroupName());
         dto.setStudyStep(entity.getStudyStep());
         dto.setSeq(entity.getSeq());
         dto.setState(entity.getState());
@@ -213,6 +211,14 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
             parameters.put("userId", userId);
 
             // 添加过滤条件
+            if (filters.containsKey("scope")) {
+                sql.append(" AND scope = :scope");
+                parameters.put("scope", filters.get("scope"));
+            }
+            if (filters.containsKey("group")) {
+                sql.append(" AND group_name = :group");
+                parameters.put("group", filters.get("group"));
+            }
             if (filters.containsKey("studyStep")) {
                 sql.append(" AND study_step = :studyStep");
                 parameters.put("studyStep", filters.get("studyStep"));

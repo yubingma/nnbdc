@@ -37,7 +37,6 @@ part 'db.g.dart';
   DictGroups,
   GroupAndDictLinks,
   UserStudySteps,
-  UserReviewStudySteps,
   Dakas,
   UserOpers,
   UserCowDungLogs,
@@ -70,7 +69,6 @@ part 'db.g.dart';
   DictGroupsDao,
   GroupAndDictLinksDao,
   UserStudyStepsDao,
-  UserReviewStudyStepsDao,
   DakasDao,
   UserOpersDao,
   MasteredWordsDao,
@@ -411,8 +409,7 @@ class MyDatabase extends _$MyDatabase {
             await _migrateFromV47ToV48(m);
           }
           if (from < 49) {
-            // 新增旧词（复习词）独立学习环节序列表
-            await m.createTable(userReviewStudySteps);
+            await _migrateFromV48ToV49UserStudyStepsThreeGroup(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -532,7 +529,7 @@ class MyDatabase extends _$MyDatabase {
         dicts, words, userDbLogs, userDbVersions, dictWords, wordImages,
         verbTenses, synonyms, similarWords, cigens, cigenWordLinks,
         meaningItems, sentences, learningWords, bookMarks, dictGroups,
-        groupAndDictLinks, userStudySteps, userReviewStudySteps, dakas, userOpers, userCowDungLogs,
+        groupAndDictLinks, userStudySteps, dakas, userOpers, userCowDungLogs,
         userWrongWords, sysDbVersion, localExceptions, learningLogs,
         userStudyDailyStats
       ];
@@ -1628,7 +1625,7 @@ class MyDatabase extends _$MyDatabase {
       votedWordImages, learningDicts, dicts, words, userDbLogs, userDbVersions,
       dictWords, wordImages, verbTenses, synonyms, similarWords, cigens,
       cigenWordLinks, meaningItems, sentences, learningWords, bookMarks,
-      dictGroups, groupAndDictLinks, userStudySteps, userReviewStudySteps, dakas, userOpers,
+      dictGroups, groupAndDictLinks, userStudySteps, dakas, userOpers,
       userCowDungLogs, userWrongWords, sysDbVersion, localExceptions,
     ];
 
@@ -1710,6 +1707,81 @@ class MyDatabase extends _$MyDatabase {
       await m.addColumn(users, users.vipExpireDate);
       await m.addColumn(users, users.vipType);
       await m.addColumn(users, users.lastPayChannel);
+    });
+  }
+
+  /// 从版本 48 升级到版本 49：user_study_steps 单表增强为三组结构（scope/group），
+  /// 老激活序列映射为 scope='new' 三组；user_review_study_steps 数据并入 scope='review' 后删除。
+  Future<void> _migrateFromV48ToV49UserStudyStepsThreeGroup(Migrator m) async {
+    await transaction(() async {
+      // 1. 老表改名，按新结构重建
+      await customStatement('ALTER TABLE user_study_steps RENAME TO user_study_steps_old');
+      await m.createTable(userStudySteps);
+
+      // 2. 老激活序列 → scope='new' 三组（内存映射：seq 最小的激活环节为 check，其余为 correct + wrong 各一份）
+      final rows = await customSelect(
+        'SELECT user_id, study_step, seq, state, create_time, update_time '
+        'FROM user_study_steps_old WHERE state = \'Active\' AND study_step != \'List\'',
+        readsFrom: {},
+      ).get();
+      final byUser = <String, List<QueryRow>>{};
+      for (final row in rows) {
+        byUser.putIfAbsent(row.read<String>('user_id'), () => []).add(row);
+      }
+      for (final entry in byUser.entries) {
+        final ordered = entry.value
+          ..sort((a, b) => a.read<int>('seq').compareTo(b.read<int>('seq')));
+        final check = ordered.first;
+        await customStatement(
+          'INSERT INTO user_study_steps (user_id, scope, "group", study_step, seq, state, create_time, update_time) '
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            check.read<String>('user_id'),
+            'new',
+            'check',
+            check.read<String>('study_step'),
+            0,
+            'Active',
+            check.read<DateTime>('create_time'),
+            check.read<DateTime>('update_time'),
+          ],
+        );
+        for (int i = 1; i < ordered.length; i++) {
+          final step = ordered[i];
+          for (final group in ['correct', 'wrong']) {
+            await customStatement(
+              'INSERT INTO user_study_steps (user_id, scope, "group", study_step, seq, state, create_time, update_time) '
+              'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+              [
+                step.read<String>('user_id'),
+                'new',
+                group,
+                step.read<String>('study_step'),
+                i - 1,
+                'Active',
+                step.read<DateTime>('create_time'),
+                step.read<DateTime>('update_time'),
+              ],
+            );
+          }
+        }
+      }
+
+      // 3. review 表数据并入 scope='review'（若表存在；未发版的 v48 迁移可能建过该表）
+      final reviewTableExists = (await customSelect(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='user_review_study_steps'",
+        readsFrom: {},
+      ).get()).isNotEmpty;
+      if (reviewTableExists) {
+        await customStatement(
+          'INSERT INTO user_study_steps (user_id, scope, "group", study_step, seq, state, create_time, update_time) '
+          'SELECT user_id, \'review\', "group", study_step, seq, state, create_time, update_time '
+          'FROM user_review_study_steps');
+      }
+
+      // 4. 清理旧表
+      await customStatement('DROP TABLE user_study_steps_old');
+      await customStatement('DROP TABLE IF EXISTS user_review_study_steps');
     });
   }
 }

@@ -15,32 +15,12 @@ class LocalParams extends Table {
   Set<Column>? get primaryKey => {name};
 }
 
-// 用户学习步骤表
+// 用户学习步骤表：承载新词（scope='new'）与旧词（scope='review'）两套三组规则
+// 三组：group='check'（测评，单选）/ 'correct'（答对后序列）/ 'wrong'（答错后序列）
 class UserStudySteps extends Table {
   TextColumn get userId => text()();
 
-  TextColumn get studyStep => text()();
-
-  IntColumn get seq => integer()();
-
-  TextColumn get state => text()(); // 'Active', 'Inactive'
-
-  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
-
-  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
-
-  @override
-  Set<Column>? get primaryKey => {userId, studyStep};
-}
-
-/// 旧词（复习词）的独立学习规则，与 [UserStudySteps]（新词序列）解耦。
-/// 三组显式设置（所见即所得，无隐含规则）：
-/// - group='check'：测评环节（单选，至多 1 个）
-/// - group='correct'：测评答对后的环节序列（可为空）
-/// - group='wrong'：测评答错后的环节序列（可为空）
-/// 表为空 = 未设置，运行时回退默认（测评=新词第 1 环节、答对后=空、答错后=[反向互补]）。
-class UserReviewStudySteps extends Table {
-  TextColumn get userId => text()();
+  TextColumn get scope => text()(); // 'new' / 'review'
 
   TextColumn get group => text()(); // 'check' / 'correct' / 'wrong'
 
@@ -55,7 +35,7 @@ class UserReviewStudySteps extends Table {
   DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
 
   @override
-  Set<Column>? get primaryKey => {userId, group, studyStep};
+  Set<Column>? get primaryKey => {userId, scope, group, studyStep};
 }
 
 class VotedSentences extends Table {

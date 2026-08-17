@@ -1367,59 +1367,85 @@ class GroupAndDictLinksDao extends DatabaseAccessor<MyDatabase> with _$GroupAndD
 class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudyStepsDaoMixin {
   UserStudyStepsDao(super.db);
 
-  // 获取用户的所有学习步骤，按index顺序排列
+  // 获取用户指定 scope（'new'/'review'）的全部三组规则，按 group + seq 排序
+  Future<List<UserStudyStep>> getStepsOfScope(String userId, String scope) {
+    return (select(userStudySteps)
+          ..where((s) => s.userId.equals(userId) & s.scope.equals(scope))
+          ..orderBy([
+            (s) => OrderingTerm(expression: s.group),
+            (s) => OrderingTerm(expression: s.seq),
+          ]))
+        .get();
+  }
+
+  // 获取用户全部三组规则（两个 scope），按 scope + group + seq 排序（供完整性检查等使用）
   Future<List<UserStudyStep>> getUserStudySteps(String userId) {
     return (select(userStudySteps)
           ..where((s) => s.userId.equals(userId))
-          ..orderBy([(s) => OrderingTerm(expression: s.seq)]))
+          ..orderBy([
+            (s) => OrderingTerm(expression: s.scope),
+            (s) => OrderingTerm(expression: s.group),
+            (s) => OrderingTerm(expression: s.seq),
+          ]))
         .get();
   }
 
-  // 获取用户的激活状态的学习步骤，按index顺序排列
-  Future<List<UserStudyStep>> getActiveUserStudySteps(String userId) {
+  // 获取用户某 scope 某 group 的环节（按 seq 排序，仅 Active）
+  Future<List<UserStudyStep>> getGroupSteps(String userId, String scope, String group) {
     return (select(userStudySteps)
-          ..where((s) => s.userId.equals(userId) & s.state.equals('Active'))
+          ..where((s) =>
+              s.userId.equals(userId) &
+              s.scope.equals(scope) &
+              s.group.equals(group) &
+              s.state.equals('Active'))
           ..orderBy([(s) => OrderingTerm(expression: s.seq)]))
         .get();
   }
 
-  // 保存用户的学习步骤，若存在则更新(会判断是否真正发生了变化)，不存在则创建
+  // 保存单条三组规则：不存在则插入，存在且变化则更新（diff 保存，正常发 INSERT/UPDATE/DELETE 日志）
   Future<void> saveUserStudyStep(UserStudyStep step, bool genLog) async {
-    final UserStudyStep? existing =
-        await (select(userStudySteps)..where((s) => s.userId.equals(step.userId) & s.studyStep.equals(step.studyStep))).getSingleOrNull();
+    final existing = await (select(userStudySteps)
+          ..where((s) =>
+              s.userId.equals(step.userId) &
+              s.scope.equals(step.scope) &
+              s.group.equals(step.group) &
+              s.studyStep.equals(step.studyStep)))
+        .getSingleOrNull();
 
     if (existing == null) {
       await into(userStudySteps).insert(step);
       if (genLog) {
-        // 【关键修复】对于学习步骤表，严禁发送 INSERT 日志，因为该表记录必须由后端初始化。
-        // 此处即便是本地首次插入（通常发生在登录后同步完成前），也应使用 UPDATE 操作，
-        // 以便服务端能正确识别并处理，同时也符合“后端先行创建”的原则。
-        await DbLogUtil.logOperation(step.userId, 'UPDATE', 'userStudySteps', '${step.userId}-${step.studyStep}', step);
+        await DbLogUtil.logOperation(step.userId, 'INSERT', 'userStudySteps',
+            '${step.userId}-${step.scope}-${step.group}-${step.studyStep}', step);
       }
-    } else {
-      // 更新
-      step = step.copyWith(updateTime: AppClock.now());
-      if (existing.state != step.state || existing.seq != step.seq) {
-        await update(userStudySteps).replace(step);
-        if (genLog) {
-          await DbLogUtil.logOperation(step.userId, 'UPDATE', 'userStudySteps', '${step.userId}-${step.studyStep}', step);
-        }
+    } else if (existing.seq != step.seq || existing.state != step.state) {
+      await update(userStudySteps).replace(step);
+      if (genLog) {
+        await DbLogUtil.logOperation(step.userId, 'UPDATE', 'userStudySteps',
+            '${step.userId}-${step.scope}-${step.group}-${step.studyStep}', step);
       }
     }
   }
 
-  // 批量保存用户的学习步骤(会判断是否真正发生了变化)
+  // 批量保存用户的三组规则（diff 保存）
   Future<void> saveUserStudySteps(List<UserStudyStep> steps, String userId, bool genLog) async {
     for (final step in steps) {
       await saveUserStudyStep(step, genLog);
     }
   }
 
-  // 删除特定的学习步骤
-  Future<void> deleteUserStudyStep(String userId, String studyStep, bool genLog) async {
-    await (delete(userStudySteps)..where((s) => s.userId.equals(userId) & s.studyStep.equals(studyStep))).go();
+  // 删除单条三组规则
+  Future<void> deleteUserStudyStep(String userId, String scope, String group, String studyStep, bool genLog) async {
+    await (delete(userStudySteps)
+          ..where((s) =>
+              s.userId.equals(userId) &
+              s.scope.equals(scope) &
+              s.group.equals(group) &
+              s.studyStep.equals(studyStep)))
+        .go();
     if (genLog) {
-      await DbLogUtil.logOperation(userId, 'DELETE', 'userStudySteps', '$userId-$studyStep', null);
+      await DbLogUtil.logOperation(userId, 'DELETE', 'userStudySteps',
+          '$userId-$scope-$group-$studyStep', null);
     }
   }
 
@@ -1463,72 +1489,6 @@ class UserStudyStepsDao extends DatabaseAccessor<MyDatabase> with _$UserStudySte
     await (delete(userStudySteps)..where((s) => s.studyStep.equals('Pronounce'))).go();
 
     Global.logger.d('已删除所有听音选意模式的用户数据');
-  }
-}
-
-@DriftAccessor(tables: [UserReviewStudySteps])
-class UserReviewStudyStepsDao extends DatabaseAccessor<MyDatabase>
-    with _$UserReviewStudyStepsDaoMixin {
-  UserReviewStudyStepsDao(super.db);
-
-  // 获取用户的旧词学习规则（全部三组），按 group + seq 排序
-  Future<List<UserReviewStudyStep>> getUserReviewStudySteps(String userId) {
-    return (select(userReviewStudySteps)
-          ..where((s) => s.userId.equals(userId))
-          ..orderBy([
-            (s) => OrderingTerm(expression: s.group),
-            (s) => OrderingTerm(expression: s.seq),
-          ]))
-        .get();
-  }
-
-  // 保存单条旧词学习步骤：不存在则插入，存在则更新
-  Future<void> saveUserReviewStudyStep(
-      UserReviewStudyStep step, bool genLog) async {
-    final existing = await (select(userReviewStudySteps)
-          ..where((s) =>
-              s.userId.equals(step.userId) &
-              s.group.equals(step.group) &
-              s.studyStep.equals(step.studyStep)))
-        .getSingleOrNull();
-
-    if (existing == null) {
-      await into(userReviewStudySteps).insert(step);
-      if (genLog) {
-        await DbLogUtil.logOperation(step.userId, 'INSERT',
-            'userReviewStudySteps', '${step.userId}-${step.group}-${step.studyStep}', step);
-      }
-    } else if (existing.seq != step.seq || existing.state != step.state) {
-      await (update(userReviewStudySteps)
-            ..where((s) =>
-                s.userId.equals(step.userId) &
-                s.group.equals(step.group) &
-                s.studyStep.equals(step.studyStep)))
-          .write(UserReviewStudyStepsCompanion(
-            seq: Value(step.seq),
-            state: Value(step.state),
-            updateTime: Value(step.updateTime),
-          ));
-      if (genLog) {
-        await DbLogUtil.logOperation(step.userId, 'UPDATE',
-            'userReviewStudySteps', '${step.userId}-${step.group}-${step.studyStep}', step);
-      }
-    }
-  }
-
-  // 删除单条旧词学习步骤
-  Future<void> deleteUserReviewStudyStep(
-      String userId, String group, String studyStep, bool genLog) async {
-    await (delete(userReviewStudySteps)
-          ..where((s) =>
-              s.userId.equals(userId) &
-              s.group.equals(group) &
-              s.studyStep.equals(studyStep)))
-        .go();
-    if (genLog) {
-      await DbLogUtil.logOperation(userId, 'DELETE', 'userReviewStudySteps',
-          '$userId-$group-$studyStep', null);
-    }
   }
 }
 
@@ -1949,13 +1909,14 @@ class MasteredWordsDao extends DatabaseAccessor<MyDatabase> with _$MasteredWords
       // 2. 处理学习中记录
       final user = await db.usersDao.getUserById(userId);
       if (user?.todayStudyStarted ?? false) {
-        final steps = await db.userStudyStepsDao.getActiveUserStudySteps(userId);
+        // 学习轨道长度（三组结构：测评 + 答对组 + List）用于饱和今日环节数
+        final correctSteps = await db.userStudyStepsDao.getGroupSteps(userId, 'new', 'correct');
         await db.learningWordsDao.saveEntity(
             learningWord.copyWith(
               stability: Value(Constants.graduationStability),
               lastLearningDate: Value(now),
               learnedTimes: learningWord.learnedTimes + 1,
-              todayLearnedTimes: steps.length,
+              todayLearnedTimes: correctSteps.length + 2,
             ),
             true);
       } else {

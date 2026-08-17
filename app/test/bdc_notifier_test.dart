@@ -216,9 +216,11 @@ void main() {
     await Prefs.init();
     Prefs.write('currentUserId', 'test_user_id');
 
-    // 插入学习步骤配置: 1个答题环节(En2Ch)
+    // 插入学习步骤配置（三组）: 测评 En2Ch，答对/答错组默认空
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'check',
           studyStep: 'En2Ch',
           seq: 0,
           state: 'Active',
@@ -635,11 +637,13 @@ void main() {
   });
 
   test('例句环节 PTT 按下说话:按下启动识别、松开停止并判定、空文本静默放弃', () async {
-    // 1. 追加例句步骤(EnSentence2Ch, seq 1),使 activeUserStudySteps = [En2Ch, EnSentence2Ch]
+    // 1. 追加例句步骤(EnSentence2Ch)到答对组,使轨道扩展为 [En2Ch, EnSentence2Ch, List]
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
           studyStep: 'EnSentence2Ch',
-          seq: 1,
+          seq: 0,
           state: 'Active',
           createTime: now,
           updateTime: now,
@@ -647,6 +651,19 @@ void main() {
     // 将 word_1 的今日学习次数置为 1,使 StudyBo 计算 stepIndex = todayLearnedTimes = 1(例句步骤)
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    // 插入"今天首条评分日志"（elapsedDays=0, good）：轨道按答对组扩展
+    await db.learningLogsDao.saveEntity(LearningLog(
+          id: 'first_log_word_1',
+          userId: testUser.id,
+          wordId: 'word_1',
+          rating: FsrsRating.good.value,
+          stability: 2.4,
+          difficulty: 3.05,
+          elapsedDays: 0,
+          scheduledDays: 2,
+          createTime: now,
+          updateTime: now,
+        ), false);
     // 为 word_1 的释义项 mim_1 插入例句数据
     await db.into(db.sentences).insert(Sentence(
           id: 'snt_1',
@@ -761,14 +778,30 @@ void main() {
     // 复用例句步骤 setup
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
           studyStep: 'EnSentence2Ch',
-          seq: 1,
+          seq: 0,
           state: 'Active',
           createTime: now,
           updateTime: now,
         ));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    // 插入"今天首条评分日志"（elapsedDays=0, good）：轨道按答对组扩展为
+    // [En2Ch, EnSentence2Ch, List]，stepIndex=1 即例句环节
+    await db.learningLogsDao.saveEntity(LearningLog(
+          id: 'first_log_word_1',
+          userId: testUser.id,
+          wordId: 'word_1',
+          rating: FsrsRating.good.value,
+          stability: 2.4,
+          difficulty: 3.05,
+          elapsedDays: 0,
+          scheduledDays: 2,
+          createTime: now,
+          updateTime: now,
+        ), false);
     await db.into(db.sentences).insert(Sentence(
           id: 'snt_2',
           english: 'I eat an apple every morning.',
@@ -850,14 +883,30 @@ void main() {
   test('进入单词时加载 learningHistoryFuture(历史测评日志)', () async {
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
           studyStep: 'EnSentence2Ch',
-          seq: 1,
+          seq: 0,
           state: 'Active',
           createTime: now,
           updateTime: now,
         ));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    // 插入"今天首条评分日志"（elapsedDays=0, good）：轨道按答对组扩展为
+    // [En2Ch, EnSentence2Ch, List]，stepIndex=1 即例句环节
+    await db.learningLogsDao.saveEntity(LearningLog(
+          id: 'first_log_word_1',
+          userId: testUser.id,
+          wordId: 'word_1',
+          rating: FsrsRating.good.value,
+          stability: 2.4,
+          difficulty: 3.05,
+          elapsedDays: 0,
+          scheduledDays: 2,
+          createTime: now,
+          updateTime: now,
+        ), false);
     await db.into(db.sentences).insert(Sentence(
           id: 'snt_6',
           english: 'I eat an apple every morning.',
@@ -911,14 +960,30 @@ void main() {
     // 直接覆盖为最新全文,仅跨段(endpoint reset 后新段落)才拼接。
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
           studyStep: 'EnSentence2Ch',
-          seq: 1,
+          seq: 0,
           state: 'Active',
           createTime: now,
           updateTime: now,
         ));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(todayLearnedTimes: const Value(1)));
+    // 插入"今天首条评分日志"（elapsedDays=0, good）：轨道按答对组扩展为
+    // [En2Ch, EnSentence2Ch, List]，stepIndex=1 即例句环节
+    await db.learningLogsDao.saveEntity(LearningLog(
+          id: 'first_log_word_1',
+          userId: testUser.id,
+          wordId: 'word_1',
+          rating: FsrsRating.good.value,
+          stability: 2.4,
+          difficulty: 3.05,
+          elapsedDays: 0,
+          scheduledDays: 2,
+          createTime: now,
+          updateTime: now,
+        ), false);
     await db.into(db.sentences).insert(Sentence(
           id: 'snt_7',
           english: 'I eat an apple every morning.',

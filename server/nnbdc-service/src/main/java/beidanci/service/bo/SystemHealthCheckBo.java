@@ -177,15 +177,17 @@ public class SystemHealthCheckBo {
         List<String> errors = new ArrayList<>();
         
         try {
-            // 使用一个 SQL 查询直接找出缺少 En2Ch 或 Ch2En 的用户
-            String sql = "SELECT u.id, u.user_name, 'En2Ch' as missing_step " +
+            // 使用一个 SQL 查询直接找出缺少新词测评环节(scope='new' 且 group='check')的用户
+            String sql = "SELECT u.id, u.user_name, 'new-check' as missing_step " +
                         "FROM \"user\" u " +
-                        "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'En2Ch' " +
+                        "LEFT JOIN user_study_step uss ON u.id = uss.user_id " +
+                        "  AND uss.scope = 'new' AND uss.group_name = 'check' " +
                         "WHERE uss.user_id IS NULL " +
                         "UNION ALL " +
-                        "SELECT u.id, u.user_name, 'Ch2En' as missing_step " +
+                        "SELECT u.id, u.user_name, 'review-check' as missing_step " +
                         "FROM \"user\" u " +
-                        "LEFT JOIN user_study_step uss ON u.id = uss.user_id AND uss.study_step = 'Ch2En' " +
+                        "LEFT JOIN user_study_step uss ON u.id = uss.user_id " +
+                        "  AND uss.scope = 'review' AND uss.group_name = 'check' " +
                         "WHERE uss.user_id IS NULL";
             
             List<Object[]> missingSteps = namedParameterJdbcTemplate.query(sql, 
@@ -1225,11 +1227,11 @@ public class SystemHealthCheckBo {
     private int fixUserStudySteps(List<String> fixed) {
         int fixedCount = 0;
         try {
-            // 获取所有缺失学习步骤的用户 ID
+            // 获取所有缺失学习步骤的用户 ID（新词测评环节缺失即视为不完整）
             String findUsersSql = "SELECT DISTINCT id FROM \"user\" u " +
                                  "WHERE NOT EXISTS (" +
                                  "  SELECT 1 FROM user_study_step uss " +
-                                 "  WHERE uss.user_id = u.id AND uss.study_step IN ('En2Ch', 'Ch2En')" +
+                                 "  WHERE uss.user_id = u.id AND uss.scope = 'new' AND uss.group_name = 'check'" +
                                  ")";
             List<String> userIds = namedParameterJdbcTemplate.query(findUsersSql, new MapSqlParameterSource(), (rs, rowNum) -> rs.getString("id"));
             

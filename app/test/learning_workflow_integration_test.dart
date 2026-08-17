@@ -204,13 +204,13 @@ void main() {
     await Prefs.init();
     Prefs.write('currentUserId', 'test_user_id');
 
-    // 2. 生成学习步骤配置: En2Ch（英译汉） + List（浏览）两个主要步骤
-    //    注:StudyStepsService.getUserStudySteps 会自动补全缺失的标准步骤
-    //    (En2Ch/Ch2En/EnSentence2Ch/ChSentence2En)。为模拟"用户只勾选英译汉"
-    //    的真实配置(Ch2En 存在但 Inactive),此处显式插入 Ch2En(Inactive),
-    //    否则自动补全会把 Ch2En 激活为第 3 个学习环节,导致本测试 2 步完成的预期失效。
+    // 2. 学习步骤配置（三组）: 新词测评 En2Ch，答对/答错组均 [Ch2En]
+    //    → 新词轨道 [En2Ch, Ch2En, List]（2 个评分环节 + List）；
+    //    旧词未配置 → 默认: 测评 En2Ch，答对组空，答错组 [Ch2En]
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'check',
           studyStep: 'En2Ch',
           seq: 0,
           state: 'Active',
@@ -219,16 +219,20 @@ void main() {
         ));
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
+          scope: 'new',
+          group: 'correct',
           studyStep: 'Ch2En',
-          seq: 1,
-          state: 'Inactive',
+          seq: 0,
+          state: 'Active',
           createTime: now,
           updateTime: now,
         ));
     await db.into(db.userStudySteps).insert(UserStudyStep(
           userId: testUser.id,
-          studyStep: 'List',
-          seq: 2,
+          scope: 'new',
+          group: 'wrong',
+          studyStep: 'Ch2En',
+          seq: 0,
           state: 'Active',
           createTime: now,
           updateTime: now,
@@ -343,6 +347,31 @@ void main() {
     AppClock.reset();
   });
 
+  // 通用"整天答题"驱动：逐次取当前词，评分环节答对（或按策略标记已掌握），
+  // List 环节（getWord 以 progress [0,0] 标识，正常模式总环节数恒 > 0）批量完成。
+  // 返回该天是否学习完成（finished）。
+  Future<bool> playWholeDay({required bool masterLearnedWords}) async {
+    int guard = 0;
+    while (guard++ < 500) {
+      final res = await studyBo.getWord(false, false);
+      if (!res.success) break;
+      final data = res.data!;
+      if (data.finished) return true;
+      if (data.learningWord == null) break;
+      if (data.progress != null && data.progress![1] == 0) {
+        // List 模式：批量推进列表浏览
+        final completeRes = await studyBo.completeListStepForCurrentBatch();
+        expect(completeRes.success, true);
+      } else if (masterLearnedWords && data.learningWord!.learnedTimes >= 1) {
+        // 学过至少一次的单词直接标记已掌握（加速毕业收敛）
+        await studyBo.getWord(true, true);
+      } else {
+        await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      }
+    }
+    return false;
+  }
+
   test('多天端到端全词书学习流集成测试', () async {
     final mockAsr = MockAsr();
 
@@ -371,30 +400,30 @@ void main() {
     expect(todayWords[1].wordId, 'w_2');
     expect(todayWords[2].wordId, 'w_3');
 
-    // 2. 模拟精细化答题操作
-    // 获取第一个单词：w_1 (apple)
+    // 2. 模拟精细化答题操作（新词轨道 [En2Ch, Ch2En, List]：每词按自身轨道推进）
+    // 获取第一个单词：w_1 (apple)，测评环节 En2Ch
     var getWordRes = await studyBo.getWord(false, false);
     expect(getWordRes.success, true);
     var wordVo = getWordRes.data!.learningWord;
     expect(wordVo!.word.id, 'w_1');
     expect(getWordRes.data!.stepIndex, 0); // 当前是步骤 0 (En2Ch)
 
-    // 模拟 w_1 回答正确 (Good)，进入 FSRS 评分保存
+    // 模拟 w_1 回答正确 (Good) → +1 进入巩固环节 Ch2En
     await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
 
-    // 获取第二个单词：w_2 (banana)
+    // 获取第二个单词：w_2 (banana)，测评环节 En2Ch
     getWordRes = await studyBo.getWord(false, false);
     wordVo = getWordRes.data!.learningWord;
     expect(wordVo!.word.id, 'w_2');
 
-    // 模拟 w_2 答错 (Again)。应该会自动触发记录错词本
+    // 模拟 w_2 答错 (Again) → +1 进入答错组 Ch2En，并自动记录错词本
     await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
     
     // 断言：错词本里确实多了一条 w_2 错词记录
     final wrongWord = await db.userWrongWordsDao.getEntity(testUser.id, 'w_2');
     expect(wrongWord != null, true);
 
-    // 获取第三个单词：w_3 (cherry)
+    // 获取第三个单词：w_3 (cherry)，测评环节 En2Ch
     getWordRes = await studyBo.getWord(false, false);
     wordVo = getWordRes.data!.learningWord;
     expect(wordVo!.word.id, 'w_3');
@@ -406,11 +435,23 @@ void main() {
     final isW3Mastered = await db.masteredWordsDao.isWordMastered(testUser.id, 'w_3');
     expect(isW3Mastered, true);
 
-    // 此时第一批次的所有词均已完成 En2Ch(步骤0)，下一步应该自动进入 List(步骤1)
+    // 回到 w_1（今日次数最少），巩固环节 Ch2En 答对 → 进入 List 位置
+    getWordRes = await studyBo.getWord(false, false);
+    expect(getWordRes.data!.learningWord!.word.id, 'w_1');
+    expect(getWordRes.data!.stepIndex, 1); // 步骤 1: Ch2En
+    await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+
+    // 回到 w_2，答错组 Ch2En 再答错 → 明日重现（复习词）
+    getWordRes = await studyBo.getWord(false, false);
+    expect(getWordRes.data!.learningWord!.word.id, 'w_2');
+    expect(getWordRes.data!.stepIndex, 1); // 步骤 1: Ch2En
+    await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
+
+    // w_1、w_2 均走完评分环节，下一步进入 List(步骤2)
     getWordRes = await studyBo.getWord(false, false);
     expect(getWordRes.data!.learningWord, isNotNull);
     expect(getWordRes.data!.learningWord!.batchId, isNotNull);
-    expect(getWordRes.data!.stepIndex, 1); // 步骤 1: List
+    expect(getWordRes.data!.stepIndex, 2); // 步骤 2: List
 
     // 3. 完成批量列表浏览 (completeListStepForCurrentBatch)
     var completeListRes = await studyBo.completeListStepForCurrentBatch();
@@ -477,19 +518,9 @@ void main() {
     expect(wordIds.contains('w_1'), false); // 未到期
     expect(wordIds.contains('w_3'), false); // 已毕业
 
-    // 模拟第二天的精细学习：w_2, w_4, w_5 在 En2Ch 均回答 Good
-    await studyBo.getWord(false, true, fsrsRating: FsrsRating.good); // 批次中首词回答 Good
-    await studyBo.getWord(false, true, fsrsRating: FsrsRating.good); // 次词回答 Good
-    await studyBo.getWord(false, true, fsrsRating: FsrsRating.good); // 末词回答 Good
-    
-    // 批次完成 En2Ch，应自动进入 List 步骤 (stepIndex == 1)
-    getWordRes = await studyBo.getWord(false, false);
-    expect(getWordRes.data!.learningWord, isNotNull);
-    expect(getWordRes.data!.learningWord!.batchId, isNotNull);
-    expect(getWordRes.data!.stepIndex, 1);
+    // 模拟第二天的精细学习：所有词全程答对（复习词测评答对 → 直接完成）
+    expect(await playWholeDay(masterLearnedWords: false), true);
 
-    await studyBo.completeListStepForCurrentBatch();
-    
     // 再次获取应判定今日学完
     getWordRes = await studyBo.getWord(false, false);
     expect(getWordRes.data!.finished, true);
@@ -531,36 +562,8 @@ void main() {
         continue;
       }
 
-      // 用通用状态机答题流进行今日学习仿真
-      bool todayFinished = false;
-      int securityGuard = 0; // 防止单日答题陷入死循环
-      
-      while (!todayFinished && securityGuard < 100) {
-        securityGuard++;
-        var getWordRes = await studyBo.getWord(false, false);
-        if (!getWordRes.success) {
-          break;
-        }
-        
-        final data = getWordRes.data!;
-        if (data.finished == true) {
-          todayFinished = true;
-          break;
-        }
-        
-        if (data.stepIndex == 1) {
-          // 列表浏览环节
-          var completeListRes = await studyBo.completeListStepForCurrentBatch();
-          expect(completeListRes.success, true);
-        } else {
-          // En2Ch 答题环节
-          final currentWord = data.learningWord!;
-          // 为了加速毕业并百分之百收敛，如果一个单词学过超过 1 次(learnedTimes >= 1)，我们就标记为已掌握（毕业）
-          // 否则用 FSRS Rating Good 答对
-          bool isMastered = currentWord.learnedTimes >= 1;
-          await studyBo.getWord(isMastered, true, fsrsRating: FsrsRating.good);
-        }
-      }
+      // 用通用整天答题驱动进行今日学习仿真（学过至少一次的词直接标记已掌握，加速收敛）
+      expect(await playWholeDay(masterLearnedWords: true), true);
 
       await studyBo.saveDakaRecord("第 ${loopCount + 2} 天打卡！");
     }
@@ -594,10 +597,17 @@ void main() {
     print('🎉 所有端到端长周期仿真学习、多天打卡及 FSRS 数据收敛断言全部完美通过！');
   });
 
-  test('整本词书多天学习到自然毕业：每词总复习次数符合 FSRS 预期', () async {
-    // 全程不人工标记掌握，逐天 good 答对，验证自然毕业路径的总复习次数。
-    // 全 good 理论值：init(2.4, 间隔2天) → 复习1(≈7.0, 间隔7天) → 复习2(≈44, 间隔45天)
-    // → 复习3(≈186 ≥180) 自然毕业 = 总评分 4 次（毕业复习不写日志 → LearningLog 3 条）。
+  test('整本词书多天学习到自然毕业：每词总评分次数符合 FSRS 预期', () async {
+    // 全程不人工标记掌握，逐天 good 答对，验证自然毕业路径的总评分次数。
+    // 使用默认三组配置（清掉 setUp 的紧凑配置）:
+    //   新词: 测评 En2Ch + 答对组 [Ch2En, EnSentence2Ch, ChSentence2En] + List
+    //         → 新词当天 4 次评分（init + 3 次巩固 relearn）；
+    //   复习词: 测评答对跳过恢复环节直接完成（+2）。
+    // 全 good 理论值：init(2.4, 间隔2天) → 复习1(≈8.5, 8天) → 复习2(≈28.7, 29天)
+    // → 复习3(≈89.5, 90天) → 复习4(≥180) 自然毕业
+    // = 每词总评分 4(当天) + 4(跨天) = 8 次（毕业那次复习不写日志 → LearningLog 7 条）。
+    await db.delete(db.userStudySteps).go();
+
     int loopCount = 0;
     while (loopCount < 180) {
       // 防死循环上限（修复权重后全 good 路径最后一词约 134 天毕业）
@@ -623,24 +633,7 @@ void main() {
           await StudyCacheManager().getTodayWords(db, testUser.id);
       if (todayWords.isEmpty) continue; // 间隔期无词到期
 
-      int securityGuard = 0; // 防止单日答题陷入死循环
-      while (securityGuard < 100) {
-        securityGuard++;
-        final getWordRes = await studyBo.getWord(false, false);
-        if (!getWordRes.success) break;
-        final data = getWordRes.data!;
-        if (data.finished == true) break;
-        if (data.learningWord == null) break;
-        if (data.stepIndex >= 1) {
-          // List 环节（学习轨道 stepIndex=1；复习轨道测评答对跳过恢复后 stepIndex=2）
-          final completeListRes =
-              await studyBo.completeListStepForCurrentBatch();
-          expect(completeListRes.success, true);
-          break;
-        }
-        // 评分环节：一律答对（全 good 路径，无人工掌握）
-        await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
-      }
+      expect(await playWholeDay(masterLearnedWords: false), true);
     }
 
     // 断言 1：全书 8 词必须自然毕业（无人工标记掌握）
@@ -648,15 +641,16 @@ void main() {
         await db.masteredWordsDao.getMasteredWordsForUser(testUser.id);
     expect(allMastered.length, 8, reason: '8 个词必须全部自然毕业');
 
-    // 断言 2：每词评分日志条数 == 4（init + 3 次未毕业复习；毕业那次复习不写日志）
-    // 修复权重错位后全 good 路径：2.4 →(2天)→ 8.5 →(8天)→ 28.7 →(29天)→ 89.5 →(90天)→ ≥180 毕业
+    // 断言 2：每词评分日志条数 == 7（init + 3 次当天巩固 + 3 次未毕业复习；
+    // 毕业那次复习不写日志）。修复权重错位后全 good 路径：
+    // 2.4 →(2天)→ 8.5 →(8天)→ 28.7 →(29天)→ 89.5 →(90天)→ ≥180 毕业
     for (int i = 1; i <= 8; i++) {
       final logs =
           await db.learningLogsDao.getHistory(testUser.id, 'w_$i');
       expect(
         logs.length,
-        4,
-        reason: 'w_$i 应经历 init + 3 次复习后自然毕业（总评分 5 次，毕业复习不写日志）',
+        7,
+        reason: 'w_$i 应经历 init + 3 次当天巩固 + 3 次复习后自然毕业（总评分 8 次，毕业复习不写日志）',
       );
     }
 
@@ -666,6 +660,6 @@ void main() {
 
     // 等待后台 unawaited 任务执行完毕
     await Future.delayed(const Duration(milliseconds: 100));
-    print('🎉 自然毕业验证通过：全书 8 词、每词总评分 5 次（日志 4 条）、总天数 $loopCount');
+    print('🎉 自然毕业验证通过：全书 8 词、每词总评分 8 次（日志 7 条）、总天数 $loopCount');
   });
 }

@@ -25,8 +25,16 @@ public class UserStudyStep extends Po {
     @Enumerated(EnumType.STRING)
     private StudyStep studyStep;
 
+    /** 'new' 新词 / 'review' 旧词（只读镜像，主键组件见 id） */
+    @Column(name = "scope", nullable = false, updatable = false, insertable = false)
+    private String scope;
+
+    /** 'check' 测评 / 'correct' 答对后 / 'wrong' 答错后（只读镜像，主键组件见 id） */
+    @Column(name = "group_name", nullable = false, updatable = false, insertable = false)
+    private String groupName;
+
     /**
-     * 本学习步骤在所有步骤中的顺序号，从0开始
+     * 本学习步骤在组内的顺序号，从0开始
      */
     @Column(name = "seq", nullable = false)
     private Integer seq;
@@ -85,5 +93,21 @@ public class UserStudyStep extends Po {
 
     public void setStudyStep(StudyStep studyStep) {
         this.studyStep = studyStep;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 }

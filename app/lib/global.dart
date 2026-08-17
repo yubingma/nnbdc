@@ -237,57 +237,7 @@ class Global {
       logger.i('已为访客创建已掌握词书: id=$masteredDictId');
     }
 
-    // 为访客初始化学习步骤（与后端 createNewUser 对齐）
-    // 仅在首次创建访客时生成，避免重复登录时产生重复记录
-    final existingSteps = await db.userStudyStepsDao.getUserStudySteps(guestId);
-    if (existingSteps.isEmpty) {
-      final newSteps = [
-        UserStudyStep(
-          userId: guestId,
-          studyStep: 'En2Ch',
-          seq: 0,
-          state: 'Active',
-          createTime: now,
-          updateTime: now,
-        ),
-        UserStudyStep(
-          userId: guestId,
-          studyStep: 'Ch2En',
-          seq: 1,
-          state: 'Active',
-          createTime: now,
-          updateTime: now,
-        ),
-        UserStudyStep(
-          userId: guestId,
-          studyStep: 'EnSentence2Ch',
-          seq: 2,
-          state: 'Inactive',
-          createTime: now,
-          updateTime: now,
-        ),
-        UserStudyStep(
-          userId: guestId,
-          studyStep: 'ChSentence2En',
-          seq: 3,
-          state: 'Inactive',
-          createTime: now,
-          updateTime: now,
-        ),
-        UserStudyStep(
-          userId: guestId,
-          studyStep: 'List',
-          seq: 4,
-          state: 'Active',
-          createTime: now,
-          updateTime: now,
-        ),
-      ];
-      await db.batch((batch) {
-        batch.insertAll(db.userStudySteps, newSteps);
-      });
-      logger.i('已为访客初始化学习步骤');
-    }
+    // 三组结构下访客无需初始化学习步骤：表空时运行时使用默认三组（StudyStepsService.getThreeGroupConfig）
 
     // 设置为当前登录用户
     await setLoggedInUser(guestVo);

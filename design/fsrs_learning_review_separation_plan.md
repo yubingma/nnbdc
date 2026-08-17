@@ -390,3 +390,71 @@ flutter analyze 无问题；flutter test 全量通过后交用户决策。
 - 前端 `utils.dart` 表名双向映射新增 `userReviewStudySteps ↔ user_review_study_step`。
 - 运维脚本：`db_upgrade/latest-to-upgrade/v52_add_user_review_study_step.sql`（需在生产库执行）。
 - 验证：后端 `mvn compile` 通过；前端全量 298 通过、2 skip、0 失败。
+
+## 11. 补充需求 Plan：UserStudySteps 单表增强，承载新词+旧词三组规则（未发版窗口重构）
+
+### 需求（已与用户确认）
+
+- 新词环节设置也改为"测评单选 + 答对后/答错后分支"三组结构（与旧词同款 UI），答对后为空 = 测评答对当天即完成。
+- **删除 UserReviewStudySteps 表**，增强 UserStudySteps 单表承载两套三组规则（scope 区分）。
+- 老数据升级：老激活序列 → scope='new' 等价映射（第1环节=check，剩余=correct+wrong 各存一份，List/Inactive 丢弃）；user_review_study_step 已有数据并入 scope='review'。
+- 已接受：老版本 App 在升级窗口内"学习环节设置不同步"（老式日志被后端忽略；强制升级机制兜底）。
+
+### 存储设计
+
+前端 `UserStudySteps` 增强：userId / **scope**('new'/'review') / **group**('check'/'correct'/'wrong') / studyStep / seq / state / 时间戳；主键 (userId, scope, group, studyStep)。同步 tblName 保持 'userStudySteps'（复用现有链路，删除之前加的 userReviewStudySteps 映射与分支）。
+
+### 迁移
+
+- **前端 v49（改写）**：SQLite 重建 user_study_steps 表（新主键）→ 老序列映射为 scope='new' 三组 → user_review_study_steps 数据并入 scope='review' → DROP user_review_study_steps。
+- **后端 v53（改写 v52）**：PostgreSQL 同构迁移（老序列映射 + review 表并入 + DROP user_review_study_step）。
+- 默认三组（表空时运行时补全，不落库）：scope='new' → check=En2Ch、correct=[Ch2En, EnSentence2Ch, ChSentence2En]、wrong=同；scope='review' → check=新词 check、correct=[]、wrong=[反向(check)]。
+
+### 轨道与调度
+
+- study_track：新旧词轨道同构（check + 按首条评分选 correct/wrong 组 + List）；删除"未配置回退激活序列"逻辑（三组为唯一表达，默认三组运行时补全）。
+- skipGroupSteps 通用化：测评评分后对应组为空 → +2 直接完成（新词、旧词同规则）。
+- FSRS 语义不变：新词测评=init、后续=relearn；旧词测评=next、后续=relearn。
+
+### 服务与 UI
+
+- StudyStepsService 改造：getThreeGroupConfig(scope)/saveThreeGroupConfig(scope, ...)（diff 保存）；删除 ReviewStudyStepsService。
+- 后端 UserStudyStepBo.initUserStudySteps 改为初始化默认三组（scope='new' + scope='review'）。
+- 后端 UserDbSyncBo：user_study_step handler 改为三组语义（INSERT/UPDATE/DELETE 正常处理，含 DELETE 从 recordId 解析）；**老客户端无 scope/group 字段的日志 → warn + 跳过（不抛异常）**。
+- 前端新词 tab 换三组分支 UI（复用旧词组件，参数化 scope）；删除旧"激活+拖排序"列表 UI。
+
+### Task 分解
+
+1. 前端存储：UserStudySteps 表增强 + v49 迁移（含 review 表并入与 DROP）+ DAO 三组 diff 读写；删除 UserReviewStudySteps 表与 DAO。
+2. 前端服务：StudyStepsService 三组读写与默认补全；删 ReviewStudyStepsService；调用方适配（study_bo/bdc_notifier/today_plan/面板）。
+3. 前端轨道：study_track 三组同构 + skipGroupSteps 通用化。
+4. 前端同步：utils.dart 删多余映射；sync.dart userStudySteps 分支适配三组实体。
+5. 前端 UI：新词 tab 三组分支（复用组件）+ 删旧列表。
+6. 后端：PO/ID/DTO 增强 + v53 迁移 + initUserStudySteps 三组化 + handler 三组化与老日志跳过。
+7. 测试：迁移、三组读写、轨道、调度、同步用例 + 全量 flutter test + mvn compile。
+
+### 架构审查要点
+
+1. 分层 ✅：前端为主 + 后端同步/初始化配套。
+2. 数据流与同步 ✅：单表沿用既有同步链路；老客户端日志安全跳过（接受窗口内设置不同步）。
+3. Dto/Vo ✅：UserStudyStepDto 扩展 scope/group。
+4. 设计原则 ✅：单表收敛、未发版窗口改写迁移、等价映射保行为。
+5. Surgical ✅：改动集中存储/轨道/UI 三处，学习词表等不动。
+6. 验证 ✅：迁移单测 + 全量 + mvn compile。
+7. 可执行性 ✅。
+
+结论：PASS。
+
+### 验证
+
+flutter analyze / flutter test 全量 / mvn compile 通过后交用户决策。
+
+### 执行记录（Task 1-7）
+
+- Task 1 存储 ✅：UserStudySteps 表增强（scope/group，主键 userId+scope+group+studyStep）+ schemaVersion 49 迁移（老序列→scope='new' 三组、user_review_study_steps 并入 scope='review'、DROP）+ DAO 三组读写（saveUserStudyStep 普通 INSERT/UPDATE/DELETE 日志，recordId=userId-scope-group-studyStep）；UserReviewStudySteps 表与 DAO 删除。
+- Task 2 服务 ✅：StudyStepsService 三组读写（getThreeGroupConfig 空表默认补全不落库 / saveThreeGroupConfig diff 保存）；ReviewStudyStepsService 删除；调用方（study_bo / bdc_notifier / today_plan / bdc_dialogs）全部适配；global.dart 访客步骤初始化删除。
+- Task 3 轨道 ✅：study_track 三组同构（[check, 按首条评分选组, List]，isReviewTrack 由当天首条日志 elapsedDays 固化）；skipGroupSteps 通用化（测评评分后对应组空 → +2 直接完成）。**额外修复**：getWord 的 allStepsCompletedForWord 原按"评分前轨道"判定，测评环节轨道尚未按首条评分扩展，会导致新词答对后过早转 review；改为按所选组长度判定（与 skipGroupSteps 共用 groupAfterRating）。
+- Task 4 同步 ✅：utils.dart 删多余映射；sync.dart userStudySteps 分支适配三组实体（含 DELETE 走 recordId 解析）。
+- Task 5 UI ✅：新词 tab 三组分支 UI（复用旧词组件参数化 scope），progress modeCount 固定 5；today_plan 三组配置卡（check 下拉 + correct/wrong ReorderableListView，自动保存）。
+- Task 6 后端 ✅：UserStudyStepId/PO/Dto 加 scope/group（列名 group_name）；UserStudyStepBo.initUserStudySteps 初始化默认三组（new + review）；UserDbSyncBo user_study_step handler 三组化（INSERT/UPDATE/DELETE 正常处理、DELETE 从 recordId 解析、老客户端无 scope/group 日志 warn+跳过）；UserBo/SystemHealthCheckBo 适配；删除 UserReviewStudyStep PO/Id/Bo/Dto；v53 迁移（user_study_step 加列、老序列→new 三组、review 表并入 scope='review'、DROP user_review_study_step、重建主键）。mvn compile ✅。
+- Task 7 测试 ✅：study_bo_test（三组 fixture + 首条日志预置 + 15 用例）、study_track_test 重写、study_steps_service_test 重写、learning_workflow_integration_test 重写（多天端到端 + 自然毕业：每词 8 次评分、日志 7 条、约 135 天毕业）、bdc_notifier_test / english_correction_test fixture 三组化；flutter analyze 全量 0 issue；相关测试全绿。

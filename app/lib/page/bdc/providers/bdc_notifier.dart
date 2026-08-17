@@ -291,17 +291,7 @@ class BdcNotifier extends _$BdcNotifier {
         autoJumpAfterCorrectEnSentence2Ch: studyConfig.autoJumpAfterCorrectEnSentence2Ch,
       );
 
-      final stepsStopwatch = Stopwatch()..start();
-      var stepsResult = await StudyBo().getActiveUserStudySteps();
-      debugPrint('⚡ [PERF] loadData -> getActiveUserStudySteps cost: ${stepsStopwatch.elapsedMilliseconds}ms');
-      if (!stepsResult.success || stepsResult.data == null) {
-        if (context.mounted && dialogShown) {
-          Navigator.of(context, rootNavigator: true).pop();
-        }
-        ToastUtil.error(stepsResult.msg ?? '获取学习步骤失败');
-        return;
-      }
-      state = state.copyWith(activeUserStudySteps: stepsResult.data!, loadError: null);
+      state = state.copyWith(loadError: null);
 
       final nextWordStopwatch = Stopwatch()..start();
       bool success = await getNextWord(false);
@@ -784,13 +774,9 @@ class BdcNotifier extends _$BdcNotifier {
       firstLogElapsedDays = row?.elapsedDays;
       firstLogRating = row?.rating;
     }
-    final activeStepNames = state.activeUserStudySteps.map((s) => s.studyStep).toList();
-    final reviewCfg = await ReviewStudyStepsService().getConfig();
-    final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : const <String>[];
-    final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
-    final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
+    final newCfg = await StudyStepsService().getThreeGroupConfig('new');
+    final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
     final isReview = StudyTrack.isReviewTrack(
-      activeStepNames: activeStepNames,
       stability: lw.stability,
       state: lw.state,
       lastLearningDate: lw.lastLearningDate,
@@ -799,15 +785,17 @@ class BdcNotifier extends _$BdcNotifier {
     );
     return (
       track: StudyTrack.trackOf(
-        activeStepNames: activeStepNames,
         stability: lw.stability,
         state: lw.state,
         lastLearningDate: lw.lastLearningDate,
         todayFirstLogElapsedDays: firstLogElapsedDays,
-        reviewCheckSteps: reviewCheckSteps,
-        reviewCorrectSteps: reviewCorrectSteps,
-        reviewWrongSteps: reviewWrongSteps,
         todayFirstLogRating: firstLogRating,
+        newCheck: newCfg.check,
+        newCorrect: newCfg.correct,
+        newWrong: newCfg.wrong,
+        reviewCheck: reviewCfg.check,
+        reviewCorrect: reviewCfg.correct,
+        reviewWrong: reviewCfg.wrong,
         today: AppClock.today(),
       ),
       isReview: isReview,

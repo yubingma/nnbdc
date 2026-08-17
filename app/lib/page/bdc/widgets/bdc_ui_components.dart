@@ -463,8 +463,9 @@ extension BdcPageStateUIComponents on BdcPageState {
                               .withValues(alpha: baseAlpha);
                         }
 
-                        // 计算批次数量（基于单词数量，每批次10个单词）
-                        final modeCount = state.activeUserStudySteps.length;
+                        // 计算批次数量（基于单词数量，每批次10个单词）。
+                        // 三组结构下学习轨道默认 5 个环节（测评+3巩固+List），用于近似单词数换算。
+                        const int modeCount = 5;
 
                         // 【根本原因修复】检查 modeCount 和 maxValue 是否有效
                         // 如果学习步骤未配置或进度数据无效，不渲染进度条

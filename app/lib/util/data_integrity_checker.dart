@@ -7,7 +7,6 @@ import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/network_util.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/tts.dart';
@@ -1124,28 +1123,6 @@ class DataIntegrityChecker {
           }
         }
 
-        // 恢复学习步骤
-        if (data.studySteps != null) {
-          final existingSteps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
-          final existingStepNames = existingSteps.map((e) => e.studyStep).toSet();
-          
-          final stepsToInsert = data.studySteps!
-              .where((stepDto) => !existingStepNames.contains(stepDto.studyStep))
-              .map((stepDto) => UserStudyStep(
-                userId: stepDto.userId,
-                studyStep: stepDto.studyStep,
-                seq: stepDto.seq,
-                state: stepDto.state,
-                createTime: stepDto.createTime,
-                updateTime: stepDto.updateTime,
-              )).toList();
-          
-          if (stepsToInsert.isNotEmpty) {
-            await _db.batch((batch) {
-              batch.insertAll(_db.userStudySteps, stepsToInsert, mode: InsertMode.insertOrIgnore);
-            });
-          }
-        }
         return true;
       } else {
         fixResult.addError('从服务端获取基础数据失败: ${response.msg}');
@@ -1158,94 +1135,10 @@ class DataIntegrityChecker {
     }
   }
 
-  /// 修复用户学习步骤缺失问题
-  /// 通过拉取服务端的基础数据自动恢复
+  /// 修复用户学习步骤缺失问题（三组结构下由运行时默认补全，本地表为空也无需修复）
   Future<void> _fixUserStudySteps(IntegrityFixResult fixResult, String currentUserId) async {
-    try {
-      final steps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
-      final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
-      final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
-      final hasEnSentence2Ch = steps.any((step) => step.studyStep == 'EnSentence2Ch');
-      final hasChSentence2En = steps.any((step) => step.studyStep == 'ChSentence2En');
-      final hasList = steps.any((step) => step.studyStep == 'List');
-
-      List<String> missing = [];
-      if (!hasEn2Ch) missing.add('En2Ch');
-      if (!hasCh2En) missing.add('Ch2En');
-      if (!hasEnSentence2Ch) missing.add('EnSentence2Ch');
-      if (!hasChSentence2En) missing.add('ChSentence2En');
-      if (!hasList) missing.add('List');
-
-      if (missing.isNotEmpty) {
-        // 先尝试通过常规的 syncUserDb 恢复
-        try {
-          await ThrottledDbSyncService().requestSyncAndWait(immediate: true);
-          
-          // 同步后重新检查是否成功恢复
-          final newSteps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
-          final newHasEn2Ch = newSteps.any((step) => step.studyStep == 'En2Ch');
-          final newHasCh2En = newSteps.any((step) => step.studyStep == 'Ch2En');
-          final newHasEnSentence2Ch = newSteps.any((step) => step.studyStep == 'EnSentence2Ch');
-          final newHasChSentence2En = newSteps.any((step) => step.studyStep == 'ChSentence2En');
-          final newHasList = newSteps.any((step) => step.studyStep == 'List');
-
-          missing.clear();
-          if (!newHasEn2Ch) missing.add('En2Ch');
-          if (!newHasCh2En) missing.add('Ch2En');
-          if (!newHasEnSentence2Ch) missing.add('EnSentence2Ch');
-          if (!newHasChSentence2En) missing.add('ChSentence2En');
-          if (!newHasList) missing.add('List');
-
-          if (missing.isEmpty) {
-            fixResult.addFixed('通过数据同步成功补全了学习步骤');
-            return;
-          }
-        } catch (e) {
-          Global.logger.e('尝试通过数据同步恢复学习步骤时出错', error: e);
-        }
-
-        bool ok = await _fetchAndSaveBaseData(currentUserId, fixResult);
-
-        // 重新获取最新的所有步骤，判断最终依然缺少哪些步骤
-        final finalSteps = await _db.userStudyStepsDao.getUserStudySteps(currentUserId);
-        final finalHasEn2Ch = finalSteps.any((step) => step.studyStep == 'En2Ch');
-        final finalHasCh2En = finalSteps.any((step) => step.studyStep == 'Ch2En');
-        final finalHasEnSentence2Ch = finalSteps.any((step) => step.studyStep == 'EnSentence2Ch');
-        final finalHasChSentence2En = finalSteps.any((step) => step.studyStep == 'ChSentence2En');
-        final finalHasList = finalSteps.any((step) => step.studyStep == 'List');
-
-        missing.clear();
-        if (!finalHasEn2Ch) missing.add('En2Ch');
-        if (!finalHasCh2En) missing.add('Ch2En');
-        if (!finalHasEnSentence2Ch) missing.add('EnSentence2Ch');
-        if (!finalHasChSentence2En) missing.add('ChSentence2En');
-        if (!finalHasList) missing.add('List');
-
-        if (missing.isNotEmpty) {
-          final now = AppClock.now();
-          int maxSeq = finalSteps.isEmpty ? -1 : finalSteps.map((s) => s.seq).reduce((a, b) => a > b ? a : b);
-
-          for (final stepName in missing) {
-            maxSeq++;
-            final newStep = UserStudyStep(
-              userId: currentUserId,
-              studyStep: stepName,
-              seq: maxSeq,
-              state: 'Active',
-              createTime: now,
-              updateTime: now,
-            );
-            await _db.userStudyStepsDao.saveUserStudyStep(newStep, true);
-          }
-          fixResult.addFixed('本地兜底补全了确实缺失的学习步骤: ${missing.join(", ")}，并已记录同步日志');
-        } else if (ok) {
-           fixResult.addFixed('成功拉取服务端同步补全了缺失的学习步骤');
-        }
-      }
-    } catch (e, stack) {
-      Global.logger.e('检查用户学习步骤时出错', error: e, stackTrace: stack);
-      fixResult.addError('检查用户学习步骤时出错：$e');
-    }
+    // 三组结构（scope/group）下，学习规则缺失时 StudyStepsService.getThreeGroupConfig 会运行时返回默认三组，
+    // 不再需要"五步骤补全"逻辑。
   }
 
   /// 修复用户缺失的词书（生词本 / 已掌握）

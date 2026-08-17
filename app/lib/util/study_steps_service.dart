@@ -1,222 +1,23 @@
-import 'package:nnbdc/api/vo.dart';
-import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/study_track.dart';
 
-/// 用户学习步骤服务，提供本地数据库操作实现
+/// 三组学习规则（check=测评 / correct=答对后 / wrong=答错后）
+typedef ThreeGroupSteps = ({String check, List<String> correct, List<String> wrong});
+
+/// 用户学习步骤服务：单表三组结构（scope='new' 新词 / 'review' 旧词），
+/// 新词与旧词的学习规则同构，仅默认值与 FSRS 评分语义不同。
 class StudyStepsService {
   /// 注意：不要缓存 `MyDatabase.instance`。
-  /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
-  /// 若缓存旧实例会导致 "Can't re-open a database after closing it"。
   MyDatabase get _db => MyDatabase.instance;
 
-  /// 获取当前用户的所有学习步骤
-  Future<List<UserStudyStepVo>> getUserStudySteps() async {
-    // 获取当前登录用户
+  /// 读取指定 scope 的三组规则；表空（未配置）时返回默认值（不落库）。
+  Future<ThreeGroupSteps> getThreeGroupConfig(String scope) async {
     final user = Global.getLoggedInUser();
-    if (user == null) {
-      return [];
-    }
-
-    // 查询学习步骤
-    final steps = await _db.userStudyStepsDao.getUserStudySteps(user.id);
-
-
-    // 转换为VO对象
-    var voSteps = steps.map(_convertToVo).toList();
-    
-    // 过滤掉所有不认识的未知步骤（防崩兜底）
-    voSteps.removeWhere((s) => s.studyStep == 'Unknown');
-
-    // 检查并补全缺失的标准学习步骤 (如 EnSentence2Ch、ChSentence2En)
-    bool needsPersist = false;
-    final requiredSteps = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
-    for (final stepName in requiredSteps) {
-      if (!voSteps.any((s) => s.studyStep == stepName)) {
-        // 例句新模式默认不要选中 (Inactive)
-        final isSentenceStep = stepName == 'EnSentence2Ch' || stepName == 'ChSentence2En';
-        final defaultState = isSentenceStep ? StudyStepState.inactive.json : StudyStepState.active.json;
-        voSteps.add(UserStudyStepVo(stepName, voSteps.length, defaultState));
-        needsPersist = true;
-      }
-    }
-
-    // 强制“单词列表”阶段排在最后且必须激活
-    var listStepIndex = voSteps.indexWhere((s) => s.studyStep == 'List');
-    UserStudyStepVo? listStep;
-
-    if (listStepIndex != -1) {
-      listStep = voSteps.removeAt(listStepIndex);
-    } else {
-      // 单词列表(List)是内置的、必须拥有的核心步骤。如果丢失，无论是否是游客，都应在内存中予以补齐，
-      // 以便答题流程正常运转，稍后若有保存操作或启动时数据健康检查，它就会被持久化及同步到云端。
-      listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
-      needsPersist = true;
-    }
-
-    listStep.state = StudyStepState.active.json;
-    voSteps.add(listStep);
-
-    // 重新校正所有的seq，确保有序且List排在最后
-    for (var i = 0; i < voSteps.length; i++) {
-      voSteps[i].seq = i;
-    }
-
-    if (needsPersist) {
-      // 补全缺失步骤时必须静默保存 (genLog: false)，严禁产生本地 db_log，防止上报服务端触发同步报错
-      try {
-        final now = AppClock.now();
-        final entities = voSteps
-            .map((vo) => UserStudyStep(
-                  userId: user.id,
-                  studyStep: vo.studyStep,
-                  seq: vo.seq,
-                  state: vo.state,
-                  createTime: now,
-                  updateTime: now,
-                ))
-            .toList();
-        await _db.userStudyStepsDao.saveUserStudySteps(entities, user.id, false);
-      } catch (e) {
-        Global.logger.w('静默补全缺失学习步骤到本地数据库失败: $e');
-      }
-    }
-
-    return voSteps;
-  }
-
-  /// 获取当前用户的激活状态的学习步骤
-  Future<List<UserStudyStepVo>> getActiveUserStudySteps() async {
-    // 直接复用 getUserStudySteps 以确保规则一致（List必然存在且在最后）
-    final allSteps = await getUserStudySteps();
-
-    // 转换为VO对象
-    return allSteps.where((s) => s.state == StudyStepState.active.json).toList();
-  }
-
-  /// 保存用户学习步骤
-  Future<void> saveUserStudySteps(List<UserStudyStepVo> steps) async {
-    final user = Global.getLoggedInUser();
-    if (user == null) {
-      throw Exception('用户未登录');
-    }
-
-    try {
-      // 转换为VO对象以便于处理
-      var voSteps = List<UserStudyStepVo>.from(steps);
-
-      // 确保标准例句步骤不会因前端保存丢失
-      final requiredSteps = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
-      for (final stepName in requiredSteps) {
-        if (!voSteps.any((s) => s.studyStep == stepName)) {
-          // 如果用户提交的设置中没有此步骤，以 Inactive 状态追加补全
-          voSteps.add(UserStudyStepVo(stepName, voSteps.length, StudyStepState.inactive.json));
-        }
-      }
-
-      // 强制“单词列表”阶段排在最后且必须激活
-      var listStepIndex = voSteps.indexWhere((s) => s.studyStep == 'List');
-      UserStudyStepVo? listStep;
-
-      if (listStepIndex != -1) {
-        listStep = voSteps.removeAt(listStepIndex);
-      } else {
-        // 单词列表(List)是内置的、必须拥有的核心步骤。保存时如果传入的步骤列表（通常来自
-        // 首页今日计划，该页面会过滤掉List步骤不显示）中没有List步骤，我们也应该无条件补齐它。
-        listStep = UserStudyStepVo('List', voSteps.length, StudyStepState.active.json);
-      }
-
-      listStep.state = StudyStepState.active.json;
-      voSteps.add(listStep);
-
-      // 重新校正顺序
-      for (var i = 0; i < voSteps.length; i++) {
-        voSteps[i].seq = i;
-      }
-
-      // 转换为实体对象
-      final now = AppClock.now();
-      final entities = voSteps
-          .map((vo) => UserStudyStep(
-                userId: user.id,
-                studyStep: vo.studyStep,
-                seq: vo.seq,
-                state: vo.state,
-                createTime: now,
-                updateTime: now,
-              ))
-          .toList();
-
-      await _db.userStudyStepsDao.saveUserStudySteps(entities, user.id, true);
-    } catch (e) {
-      Global.logger.d('保存学习步骤到本地数据库失败: $e');
-      rethrow;
-    }
-  }
-
-
-  /// 将数据库实体转换为VO对象
-  UserStudyStepVo _convertToVo(UserStudyStep step) {
-    final studyStep = _getStudyStepFromString(step.studyStep);
-    final state = _getStudyStepStateFromString(step.state);
-
-    return UserStudyStepVo(studyStep.json, step.seq, state.json);
-  }
-
-  /// 从字符串获取StudyStep枚举
-  StudyStep _getStudyStepFromString(String stepStr) {
-    switch (stepStr) {
-      case 'En2Ch':
-        return StudyStep.en2Ch;
-      case 'Ch2En':
-        return StudyStep.ch2En;
-      case 'EnSentence2Ch':
-        return StudyStep.enSentence2Ch;
-      case 'ChSentence2En':
-        return StudyStep.chSentence2En;
-      case 'List':
-        return StudyStep.list;
-      default:
-        return StudyStep.unknown;
-    }
-  }
-
-  /// 从字符串获取StudyStepState枚举
-  StudyStepState _getStudyStepStateFromString(String stateStr) {
-    switch (stateStr) {
-      case 'Active':
-        return StudyStepState.active;
-      case 'Inactive':
-        return StudyStepState.inactive;
-      default:
-        return StudyStepState.inactive;
-    }
-  }
-}
-
-/// 旧词学习规则三组（显式设置，所见即所得）
-class ReviewStudyStepsConfig {
-  final String checkStep; // 测评环节（单选）
-  final List<String> correctSteps; // 答对后的环节序列（可为空）
-  final List<String> wrongSteps; // 答错后的环节序列（可为空）
-
-  ReviewStudyStepsConfig({
-    required this.checkStep,
-    required this.correctSteps,
-    required this.wrongSteps,
-  });
-}
-
-/// 旧词学习规则服务（独立于新词 UserStudySteps 的 userReviewStudySteps 表）
-class ReviewStudyStepsService {
-  MyDatabase get _db => MyDatabase.instance;
-
-  /// 读取当前用户的旧词三组规则；未设置（表空）时返回 null
-  Future<ReviewStudyStepsConfig?> getConfig() async {
-    final user = Global.getLoggedInUser();
-    if (user == null) return null;
-    final steps = await _db.userReviewStudyStepsDao.getUserReviewStudySteps(user.id);
+    final steps = user == null
+        ? <UserStudyStep>[]
+        : await _db.userStudyStepsDao.getStepsOfScope(user.id, scope);
     String? check;
     final correct = <String>[];
     final wrong = <String>[];
@@ -234,53 +35,63 @@ class ReviewStudyStepsService {
           break;
       }
     }
-    if (check == null) return null;
-    return ReviewStudyStepsConfig(
-        checkStep: check, correctSteps: correct, wrongSteps: wrong);
+    if (check != null) {
+      return (check: check, correct: correct, wrong: wrong);
+    }
+    // 未配置：默认三组
+    if (scope == 'new') {
+      const defaultSteps = ['Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
+      return (check: 'En2Ch', correct: defaultSteps, wrong: defaultSteps);
+    }
+    // review 默认：check=新词 check、correct=[]、wrong=[反向互补]
+    final newCfg = await getThreeGroupConfig('new');
+    return (
+      check: newCfg.check,
+      correct: const <String>[],
+      wrong: [StudyTrack.oppositeWordStep(newCfg.check)],
+    );
   }
 
-  /// 保存旧词三组规则（diff 保存：只对变化的部分发 DELETE/INSERT/UPDATE 日志）。
-  /// 删除与插入的主键互不重叠，同步顺序（先删后插或先插后删）不影响最终结果。
-  Future<void> saveConfig({
-    required String checkStep,
-    required List<String> correctSteps,
-    required List<String> wrongSteps,
+  /// diff 保存指定 scope 的三组规则（删除与插入的主键互不重叠，同步顺序无关）
+  Future<void> saveThreeGroupConfig({
+    required String scope,
+    required String check,
+    required List<String> correct,
+    required List<String> wrong,
   }) async {
     final user = Global.getLoggedInUser();
     if (user == null) throw Exception('用户未登录');
     final now = AppClock.now();
 
-    // 目标三组（studyStep → seq）
     final targets = <String, Map<String, int>>{
-      'check': {checkStep: 0},
-      'correct': {for (int i = 0; i < correctSteps.length; i++) correctSteps[i]: i},
-      'wrong': {for (int i = 0; i < wrongSteps.length; i++) wrongSteps[i]: i},
+      'check': {check: 0},
+      'correct': {for (int i = 0; i < correct.length; i++) correct[i]: i},
+      'wrong': {for (int i = 0; i < wrong.length; i++) wrong[i]: i},
     };
 
-    // 现有三组（group → studyStep → 实体）
-    final existing = await _db.userReviewStudyStepsDao.getUserReviewStudySteps(user.id);
-    final existingByGroup = <String, Map<String, UserReviewStudyStep>>{};
+    final existing = await _db.userStudyStepsDao.getStepsOfScope(user.id, scope);
+    final existingByGroup = <String, Map<String, UserStudyStep>>{};
     for (final e in existing) {
       existingByGroup.putIfAbsent(e.group, () => {})[e.studyStep] = e;
     }
 
-    final pendingSaves = <UserReviewStudyStep>[];
+    final pendingSaves = <UserStudyStep>[];
     for (final group in ['check', 'correct', 'wrong']) {
       final target = targets[group]!;
-      final cur = existingByGroup[group] ?? <String, UserReviewStudyStep>{};
-
-      // 1. 删除：现有中存在但目标中已移除的环节
+      final cur = existingByGroup[group] ?? <String, UserStudyStep>{};
+      // 删除：现有中存在但目标中已移除的环节
       for (final step in cur.keys) {
         if (!target.containsKey(step)) {
-          await _db.userReviewStudyStepsDao
-              .deleteUserReviewStudyStep(user.id, group, step, true);
+          await _db.userStudyStepsDao
+              .deleteUserStudyStep(user.id, scope, group, step, true);
         }
       }
-      // 2. 插入/更新：目标中的环节（saveUserReviewStudyStep 内部按 existing 判定 INSERT/UPDATE）
+      // 插入/更新：目标中的环节
       target.forEach((step, seq) {
         final old = cur[step];
-        pendingSaves.add(UserReviewStudyStep(
+        pendingSaves.add(UserStudyStep(
           userId: user.id,
+          scope: scope,
           group: group,
           studyStep: step,
           seq: seq,
@@ -291,7 +102,7 @@ class ReviewStudyStepsService {
       });
     }
     for (final e in pendingSaves) {
-      await _db.userReviewStudyStepsDao.saveUserReviewStudyStep(e, true);
+      await _db.userStudyStepsDao.saveUserStudyStep(e, true);
     }
   }
 }

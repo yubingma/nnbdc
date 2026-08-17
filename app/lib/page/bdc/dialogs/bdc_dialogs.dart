@@ -1550,8 +1550,14 @@ extension BdcPageStateDialogs on BdcPageState {
 
     // 获取今日所有学习单词及其状态
     final words = await LearningService.getTodayLearningWordsFromDb(user.id);
-    final activeSteps = state.activeUserStudySteps;
-    final activeStepNames = activeSteps.map((s) => s.studyStep).toList();
+    // 三组配置与面板行集合：测评 + 各组合并去重 + List
+    final newCfg = await StudyStepsService().getThreeGroupConfig('new');
+    final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
+    final panelSteps = <String>[
+      newCfg.check,
+      ...{...newCfg.correct, ...newCfg.wrong, ...reviewCfg.correct, ...reviewCfg.wrong},
+      'List',
+    ];
 
     // 获取用户已掌握的单词 ID 集，用于准确反映调度状态
     final masteredWords = await MyDatabase.instance.masteredWordsDao
@@ -1579,31 +1585,21 @@ extension BdcPageStateDialogs on BdcPageState {
       todayLogCounts[row.wordId] = (todayLogCounts[row.wordId] ?? 0) + 1;
     }
 
-    // 旧词三组规则（未设置时回退默认）
-    final reviewCfg = await ReviewStudyStepsService().getConfig();
-    final reviewCheckSteps = reviewCfg != null ? [reviewCfg.checkStep] : const <String>[];
-    final reviewCorrectSteps = reviewCfg?.correctSteps ?? const <String>[];
-    final reviewWrongSteps = reviewCfg?.wrongSteps ?? const <String>[];
-    final effReview = StudyTrack.effectiveReviewConfig(
-      reviewCheckSteps: reviewCheckSteps,
-      reviewCorrectSteps: reviewCorrectSteps,
-      reviewWrongSteps: reviewWrongSteps,
-      fallbackActiveStepNames: activeStepNames,
-    );
-
     // 轨道推导 helper（与 StudyBo.getWord 一致的固化规则）
     List<String> trackOf(LearningWord w) {
       final first = firstLogs[w.wordId];
       return StudyTrack.trackOf(
-        activeStepNames: activeStepNames,
         stability: w.stability,
         state: w.state,
         lastLearningDate: w.lastLearningDate,
         todayFirstLogElapsedDays: first?.elapsedDays,
-        reviewCheckSteps: reviewCheckSteps,
-        reviewCorrectSteps: reviewCorrectSteps,
-        reviewWrongSteps: reviewWrongSteps,
         todayFirstLogRating: first?.rating,
+        newCheck: newCfg.check,
+        newCorrect: newCfg.correct,
+        newWrong: newCfg.wrong,
+        reviewCheck: reviewCfg.check,
+        reviewCorrect: reviewCfg.correct,
+        reviewWrong: reviewCfg.wrong,
         today: todayStart,
       );
     }
@@ -1921,8 +1917,6 @@ extension BdcPageStateDialogs on BdcPageState {
                                                 // 新词（学习轨道）/旧词（复习轨道）用拼写颜色区分，当前词保持蓝色加粗优先
                                                 final isReviewWord =
                                                     StudyTrack.isReviewTrack(
-                                                  activeStepNames:
-                                                      activeStepNames,
                                                   stability: w.stability,
                                                   state: w.state,
                                                   lastLearningDate:
@@ -1981,114 +1975,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                           // Data Rows (Steps) —— 轨道 1：学习轨道（激活序列）
                                           ...[
                                             for (int sIndex = 0;
-                                                sIndex < activeSteps.length;
+                                                sIndex < panelSteps.length;
                                                 sIndex++) ...[
-                                              if (sIndex ==
-                                                  activeSteps.length - 1)
-        // 轨道 2：复习轨道隐藏环节——重测环节行（测评/List 与轨道 1 共用）
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                            vertical: 4),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.start,
-                                                      children: [
-                                                        SizedBox(
-                                                          width: 60,
-                                                          child: Text(
-                                                            '重测(${effReview.wrong.first})',
-                                                            style: TextStyle(
-                                                                fontSize: 10,
-                                                                // 答错组为旧词（复习轨道）答错路径专属 → 橙色
-                                                                color: Colors.orange),
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow.ellipsis,
-                                                          ),
-                                                        ),
-                                                        ...batchWords.map((w) {
-                                                          final isReviewWord =
-                                                              StudyTrack.isReviewTrack(
-                                                            activeStepNames:
-                                                                activeStepNames,
-                                                            stability: w.stability,
-                                                            state: w.state,
-                                                            lastLearningDate:
-                                                                w.lastLearningDate,
-                                                            todayFirstLogElapsedDays:
-                                                                firstLogs[
-                                                                    w.wordId]?.elapsedDays,
-                                                            today: todayStart,
-                                                          );
-                                                          final isCurrentStep = state
-                                                                      .currentGetWordResult
-                                                                      ?.learningWord
-                                                                      ?.word
-                                                                      .id ==
-                                                                  w.wordId &&
-                                                              isReviewWord &&
-                                                              w.todayLearnedTimes == 1;
-                                                          final isNextStep = nextWordId ==
-                                                                  w.wordId &&
-                                                              isReviewWord &&
-                                                              nextStepIndex == 1;
-                                                          final isWordFinished =
-                                                              isEffectivelyMastered(w);
-                                                          // 重测环节真走过 = 当天有 ≥2 条评分日志（测评+重测）；答对跳过重测 → 灰
-                                                          final isStepCompleted =
-                                                              isReviewWord &&
-                                                                  ((todayLogCounts[
-                                                                                  w.wordId] ??
-                                                                              0) >=
-                                                                          2 ||
-                                                                      isCurrentStep);
-
-                                                          return Container(
-                                                            width: 30,
-                                                            alignment:
-                                                                Alignment.center,
-                                                            child: Container(
-                                                              width: 14,
-                                                              height: 14,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: isStepCompleted
-                                                                    ? Colors.green
-                                                                    : (isDark
-                                                                        ? Colors
-                                                                            .white24
-                                                                        : Colors.grey
-                                                                            .withValues(
-                                                                                alpha:
-                                                                                    0.3)),
-                                                                borderRadius:
-                                                                    isWordFinished
-                                                                        ? BorderRadius
-                                                                            .circular(
-                                                                                3)
-                                                                        : BorderRadius
-                                                                            .circular(
-                                                                                7),
-                                                                border: isCurrentStep
-                                                                    ? Border.all(
-                                                                        color: Colors
-                                                                            .blueAccent,
-                                                                        width: 2)
-                                                                    : (isNextStep
-                                                                        ? Border.all(
-                                                                            color: Colors
-                                                                                .orange,
-                                                                            width: 2)
-                                                                        : null),
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }),
-                                                        const SizedBox(width: 16),
-                                                      ],
-                                                    ),
-                                                  ),
                                             Padding(
                                               padding:
                                                   const EdgeInsets.symmetric(
@@ -2100,14 +1988,14 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   SizedBox(
                                                     width: 60,
                                                     child: Text(
-                                                      '${sIndex + 1}: ${activeSteps[sIndex].studyStep}',
+                                                      '${sIndex + 1}: ${panelSteps[sIndex]}',
                                                       style: TextStyle(
                                                           fontSize: 10,
                                                           // 第 1 环节（测评，新旧共用）与末位 List（共用）保持原色；
                                                           // 中间环节为新词（学习轨道）专属 → 绿色
                                                           color: (sIndex == 0 ||
                                                                   sIndex ==
-                                                                      activeSteps
+                                                                      panelSteps
                                                                               .length -
                                                                           1)
                                                               ? subTextColor
@@ -2120,8 +2008,6 @@ extension BdcPageStateDialogs on BdcPageState {
                                                   ...batchWords.map((w) {
                                                     final isReviewWord =
                                                         StudyTrack.isReviewTrack(
-                                                      activeStepNames:
-                                                          activeStepNames,
                                                       stability: w.stability,
                                                       state: w.state,
                                                       lastLearningDate:
@@ -2137,7 +2023,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                                       if (sIndex == 0) {
                                                         trackIndex = 0; // 测评行
                                                       } else if (sIndex ==
-                                                          activeSteps.length -
+                                                          panelSteps.length -
                                                               1) {
                                                         trackIndex = 2; // List 行
                                                       } else {

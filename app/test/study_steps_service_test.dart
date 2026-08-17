@@ -67,82 +67,45 @@ void main() {
     Prefs.write('currentUserId', testUser.id);
   });
 
-  test('老用户仅有En2Ch、Ch2En、List时，getUserStudySteps会自动补全EnSentence2Ch与ChSentence2En且不产生db_log', () async {
-    final now = AppClock.now();
-    // 模拟老用户本地只有 En2Ch, Ch2En, List 3个步骤
-    await db.into(db.userStudySteps).insert(UserStudyStep(
-          userId: testUser.id,
-          studyStep: 'En2Ch',
-          seq: 0,
-          state: 'Active',
-          createTime: now,
-          updateTime: now,
-        ));
-    await db.into(db.userStudySteps).insert(UserStudyStep(
-          userId: testUser.id,
-          studyStep: 'Ch2En',
-          seq: 1,
-          state: 'Active',
-          createTime: now,
-          updateTime: now,
-        ));
-    await db.into(db.userStudySteps).insert(UserStudyStep(
-          userId: testUser.id,
-          studyStep: 'List',
-          seq: 2,
-          state: 'Active',
-          createTime: now,
-          updateTime: now,
-        ));
+  test('新词未配置时返回默认三组且不落库', () async {
+    final cfg = await studyStepsService.getThreeGroupConfig('new');
+    expect(cfg.check, 'En2Ch');
+    expect(cfg.correct, ['Ch2En', 'EnSentence2Ch', 'ChSentence2En']);
+    expect(cfg.wrong, ['Ch2En', 'EnSentence2Ch', 'ChSentence2En']);
 
-    // 清空当前 userDbLogs 表
-    await db.delete(db.userDbLogs).go();
-
-    // 调用 getUserStudySteps()
-    final steps = await studyStepsService.getUserStudySteps();
-
-    // 验证1: 步骤列表中必须包含 EnSentence2Ch 和 ChSentence2En
-    final stepNames = steps.map((s) => s.studyStep).toList();
-    expect(stepNames, containsAll(['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En', 'List']));
-
-    // 验证2: List步骤排在最末位
-    expect(steps.last.studyStep, equals('List'));
-
-    // 验证3: 持久化库中也有这5个步骤，且两个例句新模式默认未选中 (Inactive)
-    final dbSteps = await db.userStudyStepsDao.getUserStudySteps(testUser.id);
-    expect(dbSteps.length, equals(5));
-    final enSentenceStep = dbSteps.firstWhere((s) => s.studyStep == 'EnSentence2Ch');
-    final chSentenceStep = dbSteps.firstWhere((s) => s.studyStep == 'ChSentence2En');
-    expect(enSentenceStep.state, equals('Inactive'), reason: '新增加的例句英中环节默认不选中');
-    expect(chSentenceStep.state, equals('Inactive'), reason: '新增加的例句中英环节默认不选中');
-
-    // 验证4: 自动补全过程严禁产生 db_log 记录，防后端增量同步报错
-    final logs = await db.select(db.userDbLogs).get();
-    final studyStepLogs = logs.where((l) => l.tblName == 'userStudySteps' || l.tblName == 'user_study_step');
-    expect(studyStepLogs.isEmpty, true, reason: '自动补全缺失步骤不得写入 db_log 日志，防止同步时报错');
+    // 默认值仅运行时返回，不写入数据库
+    final dbSteps =
+        await db.userStudyStepsDao.getStepsOfScope(testUser.id, 'new');
+    expect(dbSteps, isEmpty);
   });
 
-  group('ReviewStudyStepsService diff 保存', () {
-    late ReviewStudyStepsService reviewService;
+  test('复习词未配置时默认: check=新词 check、correct 空、wrong=[反向互补]', () async {
+    final cfg = await studyStepsService.getThreeGroupConfig('review');
+    expect(cfg.check, 'En2Ch');
+    expect(cfg.correct, isEmpty);
+    expect(cfg.wrong, ['Ch2En']);
+  });
 
-    setUp(() {
-      reviewService = ReviewStudyStepsService();
-    });
-
-    Future<List<UserDbLog>> getLogs() =>
-        (db.select(db.userDbLogs)..where((l) => l.tblName.equals('userReviewStudySteps'))).get();
+  group('三组 diff 保存', () {
+    Future<List<UserDbLog>> getLogs() => (db.select(db.userDbLogs)
+          ..where((l) => l.tblName.equals('userStudySteps')))
+        .get();
 
     test('首次保存 2+2：本地 5 条实体、5 条 INSERT 日志', () async {
-      await reviewService.saveConfig(
-        checkStep: 'En2Ch',
-        correctSteps: ['Ch2En', 'EnSentence2Ch'],
-        wrongSteps: ['Ch2En', 'ChSentence2En'],
+      await studyStepsService.saveThreeGroupConfig(
+        scope: 'review',
+        check: 'En2Ch',
+        correct: ['Ch2En', 'EnSentence2Ch'],
+        wrong: ['Ch2En', 'ChSentence2En'],
       );
-      final config = await reviewService.getConfig();
-      expect(config, isNotNull);
-      expect(config!.checkStep, 'En2Ch');
-      expect(config.correctSteps, ['Ch2En', 'EnSentence2Ch']);
-      expect(config.wrongSteps, ['Ch2En', 'ChSentence2En']);
+      final config = await studyStepsService.getThreeGroupConfig('review');
+      expect(config.check, 'En2Ch');
+      expect(config.correct, ['Ch2En', 'EnSentence2Ch']);
+      expect(config.wrong, ['Ch2En', 'ChSentence2En']);
+
+      final dbSteps =
+          await db.userStudyStepsDao.getStepsOfScope(testUser.id, 'review');
+      expect(dbSteps.length, 5);
 
       final logs = await getLogs();
       expect(logs.where((l) => l.operate == 'INSERT').length, 5);
@@ -150,35 +113,39 @@ void main() {
     });
 
     test('再次保存相同配置：不产生新日志（diff 为空）', () async {
-      await reviewService.saveConfig(
-        checkStep: 'En2Ch',
-        correctSteps: ['Ch2En', 'EnSentence2Ch'],
-        wrongSteps: ['Ch2En', 'ChSentence2En'],
+      await studyStepsService.saveThreeGroupConfig(
+        scope: 'review',
+        check: 'En2Ch',
+        correct: ['Ch2En', 'EnSentence2Ch'],
+        wrong: ['Ch2En', 'ChSentence2En'],
       );
       final before = (await getLogs()).length;
 
-      await reviewService.saveConfig(
-        checkStep: 'En2Ch',
-        correctSteps: ['Ch2En', 'EnSentence2Ch'],
-        wrongSteps: ['Ch2En', 'ChSentence2En'],
+      await studyStepsService.saveThreeGroupConfig(
+        scope: 'review',
+        check: 'En2Ch',
+        correct: ['Ch2En', 'EnSentence2Ch'],
+        wrong: ['Ch2En', 'ChSentence2En'],
       );
       final after = (await getLogs()).length;
       expect(after, before, reason: 'diff 为空时不应产生新日志');
     });
 
     test('改配置（correct 换一个环节）：只 DELETE 被移除项、INSERT 新增项，交集不动', () async {
-      await reviewService.saveConfig(
-        checkStep: 'En2Ch',
-        correctSteps: ['Ch2En', 'EnSentence2Ch'],
-        wrongSteps: ['Ch2En'],
+      await studyStepsService.saveThreeGroupConfig(
+        scope: 'review',
+        check: 'En2Ch',
+        correct: ['Ch2En', 'EnSentence2Ch'],
+        wrong: ['Ch2En'],
       );
       final before = await getLogs();
 
       // correct: [Ch2En, EnSentence2Ch] → [Ch2En, ChSentence2En]（移除 EnSentence2Ch、新增 ChSentence2En）
-      await reviewService.saveConfig(
-        checkStep: 'En2Ch',
-        correctSteps: ['Ch2En', 'ChSentence2En'],
-        wrongSteps: ['Ch2En'],
+      await studyStepsService.saveThreeGroupConfig(
+        scope: 'review',
+        check: 'En2Ch',
+        correct: ['Ch2En', 'ChSentence2En'],
+        wrong: ['Ch2En'],
       );
 
       final after = await getLogs();
@@ -190,10 +157,10 @@ void main() {
       expect(newLogs.where((l) => l.operate == 'UPDATE'), isEmpty,
           reason: '交集的 Ch2En/check/wrong 无变化，不应产生 UPDATE');
 
-      final config = await reviewService.getConfig();
-      expect(config!.correctSteps, ['Ch2En', 'ChSentence2En']);
-      expect(config.checkStep, 'En2Ch');
-      expect(config.wrongSteps, ['Ch2En']);
+      final config = await studyStepsService.getThreeGroupConfig('review');
+      expect(config.correct, ['Ch2En', 'ChSentence2En']);
+      expect(config.check, 'En2Ch');
+      expect(config.wrong, ['Ch2En']);
     });
   });
 }

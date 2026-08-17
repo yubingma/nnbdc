@@ -14,9 +14,16 @@ public class UserStudyStepId implements java.io.Serializable {
 
     // Fields
 
-
     @Column(name = "user_id", nullable = false)
     private String userId;
+
+    /** 'new' 新词 / 'review' 旧词 */
+    @Column(name = "scope", nullable = false, length = 10)
+    private String scope;
+
+    /** 'check' 测评 / 'correct' 答对后 / 'wrong' 答错后 */
+    @Column(name = "group_name", nullable = false, length = 20)
+    private String groupName;
 
     @Column(name = "study_step", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
@@ -25,8 +32,10 @@ public class UserStudyStepId implements java.io.Serializable {
     public UserStudyStepId() {
     }
 
-    public UserStudyStepId(String userId, StudyStep studyStep) {
+    public UserStudyStepId(String userId, String scope, String groupName, StudyStep studyStep) {
         this.userId = userId;
+        this.scope = scope;
+        this.groupName = groupName;
         this.studyStep = studyStep;
     }
 
@@ -36,6 +45,22 @@ public class UserStudyStepId implements java.io.Serializable {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public StudyStep getStudyStep() {
@@ -56,7 +81,8 @@ public class UserStudyStepId implements java.io.Serializable {
             return false;
         UserStudyStepId castOther = (UserStudyStepId) other;
 
-        return studyStep.equals(castOther.studyStep) && userId.equals(castOther.userId);
+        return studyStep.equals(castOther.studyStep) && userId.equals(castOther.userId)
+                && scope.equals(castOther.scope) && groupName.equals(castOther.groupName);
     }
 
     @Override
@@ -64,6 +90,8 @@ public class UserStudyStepId implements java.io.Serializable {
         int result = 17;
 
         result = 37 * result + userId.hashCode();
+        result = 37 * result + scope.hashCode();
+        result = 37 * result + groupName.hashCode();
         result = 37 * result + studyStep.hashCode();
         return result;
     }
