@@ -498,27 +498,24 @@ extension BdcPageStateUIComponents on BdcPageState {
                             Row(
                               children: List.generate(totalBatches, (index) {
                                 final isLastBatch = index == totalBatches - 1;
-                                // 计算该批次包含的单词数
                                 final startWordIndex = index * batchWordCount;
                                 final endWordIndex = min(
                                     (index + 1) * batchWordCount, wordCount);
                                 final batchWords =
-                                    endWordIndex - startWordIndex;
-                                // 转换为进度条宽度（乘以模式数）
-                                final batchSteps = batchWords * modeCount;
-                                final batchWidth =
-                                    (batchSteps / maxValue) * width;
-                                return Container(
-                                  width: batchWidth,
-                                  decoration: BoxDecoration(
-                                    color: getBatchColor(index, totalBatches),
-                                    borderRadius: BorderRadius.horizontal(
-                                      left: index == 0
-                                          ? const Radius.circular(1.5)
-                                          : Radius.zero,
-                                      right: isLastBatch
-                                          ? const Radius.circular(1.5)
-                                          : Radius.zero,
+                                    max(1, endWordIndex - startWordIndex);
+                                return Expanded(
+                                  flex: batchWords,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: getBatchColor(index, totalBatches),
+                                      borderRadius: BorderRadius.horizontal(
+                                        left: index == 0
+                                            ? const Radius.circular(1.5)
+                                            : Radius.zero,
+                                        right: isLastBatch
+                                            ? const Radius.circular(1.5)
+                                            : Radius.zero,
+                                      ),
                                     ),
                                   ),
                                 );
