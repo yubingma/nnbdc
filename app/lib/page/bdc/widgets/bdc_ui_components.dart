@@ -1555,50 +1555,47 @@ extension BdcPageStateUIComponents on BdcPageState {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: 160,
-          child: TextField(
-            controller: notifier.sentenceAnswerController,
-            focusNode: _sentenceAnswerFocusNode,
-            // readOnly:不弹系统输入法,点击仅聚焦以显示光标位置(语音插入点)。
-            // 光标位置由 onAsrResult 读取,用于 PTT 补充说话时定位插入点。
-            readOnly: true,
-            showCursor: true,
-            enabled: !state.hasFinishedAnswering,
-            style: TextStyle(
-              fontSize: 14,
-              color: isDarkMode ? Colors.white70 : Colors.black87,
+        TextField(
+          controller: notifier.sentenceAnswerController,
+          focusNode: _sentenceAnswerFocusNode,
+          // readOnly:不弹系统输入法,点击仅聚焦以显示光标位置(语音插入点)。
+          // 光标位置由 onAsrResult 读取,用于 PTT 补充说话时定位插入点。
+          readOnly: true,
+          showCursor: true,
+          enabled: !state.hasFinishedAnswering,
+          style: TextStyle(
+            fontSize: 14,
+            color: isDarkMode ? Colors.white70 : Colors.black87,
+          ),
+          minLines: 2,
+          maxLines: 5,
+          textAlignVertical: TextAlignVertical.top,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(
+              fontSize: 13,
+              color: isDarkMode ? Colors.white24 : Colors.black26,
             ),
-            maxLines: null,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: TextStyle(
-                fontSize: 13,
-                color: isDarkMode ? Colors.white24 : Colors.black26,
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            filled: true,
+            fillColor: isDarkMode
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.04),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDarkMode ? Colors.white12 : Colors.black12,
               ),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              filled: true,
-              fillColor: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.black.withValues(alpha: 0.04),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(
-                  color: isDarkMode ? Colors.white12 : Colors.black12,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: AppTheme.primaryColor, width: 1.2),
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(
-                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
-                ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: AppTheme.primaryColor, width: 1.2),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(
+                color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
               ),
             ),
           ),
