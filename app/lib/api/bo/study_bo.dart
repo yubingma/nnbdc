@@ -722,10 +722,13 @@ class StudyBo {
             returnWord.lapses,
             returnWord.state);
 
+        final returnTrack = trackOf(returnWord);
+        final listStepIndex = returnTrack.isNotEmpty ? returnTrack.length - 1 : 0;
+
         return Result<GetWordResult>("SUCCESS", "获取成功", true)
           ..data = GetWordResult(
             learningWordVo,
-            currentStepIndex,
+            listStepIndex,
             null,
             [0, 0],
             null,

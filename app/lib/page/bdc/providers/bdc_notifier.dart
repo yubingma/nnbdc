@@ -499,7 +499,10 @@ class BdcNotifier extends _$BdcNotifier {
     });
 
     final trackResult = await _trackOfCurrentWord(getWordResult);
-    final currentStep = trackResult.track[getWordResult.stepIndex];
+    final int stepIdx = (getWordResult.stepIndex >= 0 && getWordResult.stepIndex < trackResult.track.length)
+        ? getWordResult.stepIndex
+        : (trackResult.track.isNotEmpty ? trackResult.track.length - 1 : 0);
+    final currentStep = trackResult.track.isNotEmpty ? trackResult.track[stepIdx] : '';
     if (currentStep == 'List') {
       state = state.copyWith(
         loadError: '正在跳转到单词列表...',
