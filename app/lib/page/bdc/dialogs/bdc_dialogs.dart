@@ -1550,13 +1550,39 @@ extension BdcPageStateDialogs on BdcPageState {
 
     // 获取今日所有学习单词及其状态
     final words = await LearningService.getTodayLearningWordsFromDb(user.id);
-    // 三组配置与面板行集合：测评 + 各组合并去重 + List
+    // 三组配置与流水线行定义：新词（绿）、旧词（橙）、公用（List）
     final newCfg = await StudyStepsService().getThreeGroupConfig('new');
     final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
-    final panelSteps = <String>[
-      newCfg.check,
-      ...{...newCfg.correct, ...newCfg.wrong, ...reviewCfg.correct, ...reviewCfg.wrong},
-      'List',
+
+    final newMiddleSteps = {...newCfg.correct, ...newCfg.wrong}
+        .where((s) => s != newCfg.check && s != 'List')
+        .toList();
+    final reviewMiddleSteps = {...reviewCfg.correct, ...reviewCfg.wrong}
+        .where((s) => s != reviewCfg.check && s != 'List')
+        .toList();
+
+    String getGroupTag(String step, List<String> correct, List<String> wrong) {
+      final inCorrect = correct.contains(step);
+      final inWrong = wrong.contains(step);
+      if (inCorrect && inWrong) return '通';
+      if (inCorrect) return '对';
+      if (inWrong) return '错';
+      return '';
+    }
+
+    final pipelineRows = <({String label, String stepName, String trackType, bool isCheck, bool isList})>[
+      // 新词测评
+      (label: '新·测: ${newCfg.check}', stepName: newCfg.check, trackType: 'new', isCheck: true, isList: false),
+      // 新词中间环节
+      for (final s in newMiddleSteps)
+        (label: '新·${getGroupTag(s, newCfg.correct, newCfg.wrong)}: $s', stepName: s, trackType: 'new', isCheck: false, isList: false),
+      // 旧词测评
+      (label: '旧·测: ${reviewCfg.check}', stepName: reviewCfg.check, trackType: 'review', isCheck: true, isList: false),
+      // 旧词中间环节
+      for (final s in reviewMiddleSteps)
+        (label: '旧·${getGroupTag(s, reviewCfg.correct, reviewCfg.wrong)}: $s', stepName: s, trackType: 'review', isCheck: false, isList: false),
+      // List 公用环节
+      (label: 'List', stepName: 'List', trackType: 'shared', isCheck: false, isList: true),
     ];
 
     // 获取用户已掌握的单词 ID 集，用于准确反映调度状态
@@ -1821,17 +1847,27 @@ extension BdcPageStateDialogs on BdcPageState {
                                     fontSize: 10, color: subTextColor)),
                           ],
                         ),
-                        // 拼写颜色图例：新词绿 / 旧词橙（当前词仍为蓝色加粗）
+                        // 轨道颜色图例：新词绿 / 旧词橙 / List公用
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('新词',
+                            const Text('新词',
                                 style: TextStyle(
-                                    fontSize: 10, color: Colors.green)),
+                                    fontSize: 10,
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold)),
                             const SizedBox(width: 8),
-                            Text('旧词',
+                            const Text('旧词',
                                 style: TextStyle(
-                                    fontSize: 10, color: Colors.orange)),
+                                    fontSize: 10,
+                                    color: Colors.orange,
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 8),
+                            Text('公用',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: subTextColor,
+                                    fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ],
@@ -1906,7 +1942,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                             children: [
                                               const SizedBox(
                                                   width:
-                                                      60), // Space for step names
+                                                      82), // Space for step names
                                               ...batchWords.map((w) {
                                                 final isCurrentWord =
                                                     state.currentGetWordResult
@@ -1972,145 +2008,172 @@ extension BdcPageStateDialogs on BdcPageState {
                                             ],
                                           ),
                                           const SizedBox(height: 8),
-                                          // Data Rows (Steps) —— 轨道 1：学习轨道（激活序列）
+                                          // Data Rows (Steps) —— 按新词、旧词、List行清晰分离
                                           ...[
-                                            for (int sIndex = 0;
-                                                sIndex < panelSteps.length;
-                                                sIndex++) ...[
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 4),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
-                                                children: [
-                                                  SizedBox(
-                                                    width: 60,
-                                                    child: Text(
-                                                      '${sIndex + 1}: ${panelSteps[sIndex]}',
-                                                      style: TextStyle(
-                                                          fontSize: 10,
-                                                          // 第 1 环节（测评，新旧共用）与末位 List（共用）保持原色；
-                                                          // 中间环节为新词（学习轨道）专属 → 绿色
-                                                          color: (sIndex == 0 ||
-                                                                  sIndex ==
-                                                                      panelSteps
-                                                                              .length -
-                                                                          1)
-                                                              ? subTextColor
-                                                              : Colors.green),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                  ...batchWords.map((w) {
-                                                    final isReviewWord =
-                                                        StudyTrack.isReviewTrack(
-                                                      stability: w.stability,
-                                                      state: w.state,
-                                                      lastLearningDate:
-                                                          w.lastLearningDate,
-                                                      todayFirstLogElapsedDays:
-                                                          firstLogs[
-                                                              w.wordId]?.elapsedDays,
-                                                      today: todayStart,
-                                                    );
-                                                    // 词在当前行上的轨道内索引；null = 该行不适用于此词（复习词跳过学习轨道中间环节 → 灰）
-                                                    final int? trackIndex;
-                                                    if (isReviewWord) {
-                                                      if (sIndex == 0) {
-                                                        trackIndex = 0; // 测评行
-                                                      } else if (sIndex ==
-                                                          panelSteps.length -
-                                                              1) {
-                                                        trackIndex = 2; // List 行
-                                                      } else {
-                                                        trackIndex = null;
-                                                      }
-                                                    } else {
-                                                      trackIndex = sIndex;
-                                                    }
-                                                    // Is the user learning this exact word in this exact step right now?
-                                                    final isCurrentStep = state
-                                                                .currentGetWordResult
-                                                                ?.learningWord
-                                                                ?.word
-                                                                .id ==
-                                                            w.wordId &&
-                                                        trackIndex != null &&
-                                                        w.todayLearnedTimes ==
-                                                            trackIndex;
-                                                    final isNextStep =
-                                                        nextWordId ==
-                                                                w.wordId &&
-                                                            trackIndex !=
-                                                                null &&
-                                                            nextStepIndex ==
-                                                                trackIndex;
-                                                    // 已掌握的唯一标准：稳定度大于等于毕业阈值，或者在已掌握表中
-                                                    final isWordFinished =
-                                                        isEffectivelyMastered(
-                                                            w);
-
-                                                    // 从用户视角看：如果我处于这个环节，或者处于之后的环节，或者单词已掌握，则该格显绿
-                                                    final isStepCompleted =
-                                                        isWordFinished ||
-                                                            (trackIndex !=
-                                                                    null &&
-                                                                (w.todayLearnedTimes >
-                                                                        trackIndex ||
-                                                                    isCurrentStep));
-
-                                                    return Container(
-                                                      width: 30,
-                                                      alignment:
-                                                          Alignment.center,
-                                                      child: Container(
-                                                        width: 14,
-                                                        height: 14,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: isStepCompleted
-                                                              ? Colors.green
-                                                              : (isDark
-                                                                  ? Colors
-                                                                      .white24
-                                                                  : Colors.grey
-                                                                      .withValues(
-                                                                          alpha:
-                                                                              0.3)),
-                                                          borderRadius:
-                                                              isWordFinished
-                                                                  ? BorderRadius
-                                                                      .circular(
-                                                                          3)
-                                                                  : BorderRadius
-                                                                      .circular(
-                                                                          7), // 矩形(圆角3)/圆形(圆角7)
-                                                          border: isCurrentStep
-                                                              ? Border.all(
-                                                                  color: Colors
-                                                                      .blueAccent,
-                                                                  width: 2)
-                                                              : (isNextStep
-                                                                  ? Border.all(
-                                                                      color: Colors
-                                                                          .orange,
-                                                                      width: 2)
-                                                                  : null),
+                                            for (final row in pipelineRows) ...[
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 4),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.start,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 82,
+                                                      child: Tooltip(
+                                                        message: row.label,
+                                                        child: Text(
+                                                          row.label,
+                                                          style: TextStyle(
+                                                            fontSize: 10,
+                                                            fontWeight: FontWeight.w500,
+                                                            color: row.trackType == 'new'
+                                                                ? Colors.green
+                                                                : (row.trackType == 'review'
+                                                                    ? Colors.orange
+                                                                    : subTextColor),
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow:
+                                                              TextOverflow.ellipsis,
                                                         ),
                                                       ),
-                                                    );
-                                                  }),
-                                                  const SizedBox(
-                                                      width:
-                                                          16), // Padding right for scrolling
-                                                ],
+                                                    ),
+                                                    ...batchWords.map((w) {
+                                                      final isReviewWord =
+                                                          StudyTrack.isReviewTrack(
+                                                        stability: w.stability,
+                                                        state: w.state,
+                                                        lastLearningDate:
+                                                            w.lastLearningDate,
+                                                        todayFirstLogElapsedDays:
+                                                            firstLogs[
+                                                                w.wordId]?.elapsedDays,
+                                                        today: todayStart,
+                                                      );
+                                                      final wordTrack = trackOf(w);
+
+                                                      // 计算该行在该词当前轨道中的索引
+                                                      int? trackIndex;
+                                                      if (row.isList) {
+                                                        trackIndex = wordTrack.length - 1;
+                                                      } else if (row.trackType == 'new') {
+                                                        if (!isReviewWord) {
+                                                          if (row.isCheck) {
+                                                            trackIndex = 0;
+                                                          } else {
+                                                            final foundIdx = wordTrack.indexOf(row.stepName, 1);
+                                                            if (foundIdx != -1 && foundIdx < wordTrack.length - 1) {
+                                                              trackIndex = foundIdx;
+                                                            }
+                                                          }
+                                                        }
+                                                      } else if (row.trackType == 'review') {
+                                                        if (isReviewWord) {
+                                                          if (row.isCheck) {
+                                                            trackIndex = 0;
+                                                          } else {
+                                                            final foundIdx = wordTrack.indexOf(row.stepName, 1);
+                                                            if (foundIdx != -1 && foundIdx < wordTrack.length - 1) {
+                                                              trackIndex = foundIdx;
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+
+                                                      // 若该环节不属于该词当前轨道，显示微小浅色占位点
+                                                      if (trackIndex == null) {
+                                                        return Container(
+                                                          width: 30,
+                                                          alignment: Alignment.center,
+                                                          child: Container(
+                                                            width: 4,
+                                                            height: 4,
+                                                            decoration: BoxDecoration(
+                                                              color: isDark
+                                                                  ? Colors.white.withValues(alpha: 0.1)
+                                                                  : Colors.black.withValues(alpha: 0.08),
+                                                              shape: BoxShape.circle,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+
+                                                      // Is the user learning this exact word in this exact step right now?
+                                                      final isCurrentStep = state
+                                                                  .currentGetWordResult
+                                                                  ?.learningWord
+                                                                  ?.word
+                                                                  .id ==
+                                                              w.wordId &&
+                                                          w.todayLearnedTimes ==
+                                                              trackIndex;
+                                                      final isNextStep =
+                                                          nextWordId ==
+                                                                  w.wordId &&
+                                                              nextStepIndex ==
+                                                                  trackIndex;
+                                                      // 已掌握的唯一标准：稳定度大于等于毕业阈值，或者在已掌握表中
+                                                      final isWordFinished =
+                                                          isEffectivelyMastered(
+                                                              w);
+
+                                                      // 从用户视角看：如果我处于这个环节，或者处于之后的环节，或者单词已掌握，则该格显绿
+                                                      final isStepCompleted =
+                                                          isWordFinished ||
+                                                              (w.todayLearnedTimes >
+                                                                      trackIndex ||
+                                                                  isCurrentStep);
+
+                                                      return Container(
+                                                        width: 30,
+                                                        alignment:
+                                                            Alignment.center,
+                                                        child: Container(
+                                                          width: 14,
+                                                          height: 14,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: isStepCompleted
+                                                                ? Colors.green
+                                                                : (isDark
+                                                                    ? Colors
+                                                                        .white24
+                                                                    : Colors.grey
+                                                                        .withValues(
+                                                                            alpha:
+                                                                                0.3)),
+                                                            borderRadius:
+                                                                isWordFinished
+                                                                    ? BorderRadius
+                                                                        .circular(
+                                                                            3)
+                                                                    : BorderRadius
+                                                                        .circular(
+                                                                            7), // 矩形(圆角3)/圆形(圆角7)
+                                                            border: isCurrentStep
+                                                                ? Border.all(
+                                                                    color: Colors
+                                                                        .blueAccent,
+                                                                    width: 2)
+                                                                : (isNextStep
+                                                                    ? Border.all(
+                                                                        color: Colors
+                                                                            .orange,
+                                                                        width: 2)
+                                                                    : null),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }),
+                                                    const SizedBox(
+                                                        width:
+                                                            16), // Padding right for scrolling
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                              ],
+                                            ],
                                           ],
                                           
                                         ],
