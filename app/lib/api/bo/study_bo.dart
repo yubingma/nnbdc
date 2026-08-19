@@ -627,25 +627,14 @@ class StudyBo {
         Global.logger.d('  - [${w.wordId}] todayTimes=${w.todayLearnedTimes}, isMastered=$isMastered, isFinished=$isFinished');
       }
 
-      // 在当前批次内，推导当前单词和环节
+      // 在当前批次内，推导当前单词和环节（练习题优先，List在后）
       List<LearningWord> sortedBatchWords = List.from(batchWords);
-      sortedBatchWords.sort((a, b) {
-        // 状态驱动：已掌握单词视为已完成今日所有环节
-        final bool isAFinished = a.isEffectivelyMastered(masteredWordIds);
-        final bool isBFinished = b.isEffectivelyMastered(masteredWordIds);
-
-        final int trackLenA = trackOf(a).length;
-        final int trackLenB = trackOf(b).length;
-        final int effA = isAFinished ? trackLenA : min(a.todayLearnedTimes, trackLenA);
-        final int effB = isBFinished ? trackLenB : min(b.todayLearnedTimes, trackLenB);
-
-        // 优先练习今日学习次数较少的单词
-        if (effA != effB) {
-          return effA.compareTo(effB);
-        }
-        // 次数相同时，严格按照既定学习序号排序，确保“从左到右”的直观体验
-        return a.learningOrder.compareTo(b.learningOrder);
-      });
+      sortedBatchWords.sort((a, b) => _compareBatchWords(
+            a,
+            b,
+            masteredWordIds: masteredWordIds,
+            trackOf: trackOf,
+          ));
 
       final currentWordForPos = sortedBatchWords.first;
       int currentWordIndex = todayWords.indexOf(currentWordForPos);
@@ -770,22 +759,13 @@ class StudyBo {
         nextBatchWords.add(todayWords[i]);
       }
 
-      // 按照学习效率 (eff) 排序，找出该批次最需要学习的下一个单词
-      nextBatchWords.sort((a, b) {
-        final bool isAFinished = a.isEffectivelyMastered(masteredWordIds);
-        final bool isBFinished = b.isEffectivelyMastered(masteredWordIds);
-
-        final int trackLenA = trackOf(a).length;
-        final int trackLenB = trackOf(b).length;
-        final int effA = isAFinished ? trackLenA : min(a.todayLearnedTimes, trackLenA);
-        final int effB = isBFinished ? trackLenB : min(b.todayLearnedTimes, trackLenB);
-
-        if (effA != effB) {
-          return effA.compareTo(effB);
-        }
-        // 次数相同时，严格按照既定学习序号排序
-        return a.learningOrder.compareTo(b.learningOrder);
-      });
+      // 按照优先级排序，找出该批次最需要学习的下一个单词（练习题优先，List在后）
+      nextBatchWords.sort((a, b) => _compareBatchWords(
+            a,
+            b,
+            masteredWordIds: masteredWordIds,
+            trackOf: trackOf,
+          ));
 
       final nextWordForPos = nextBatchWords.first;
       int nextWordIndex = todayWords.indexOf(nextWordForPos);
@@ -1228,6 +1208,47 @@ class StudyBo {
       }
     }
     return -1; // 所有批次都学完了
+  }
+
+  /// 批次内单词调度排序比较器：
+  /// 1. 已掌握或已完成所有轨道的单词排在最后；
+  /// 2. 处于普通练习题（currentStep != 'List'）的单词严格优先于已到达 List 等待状态的单词；
+  /// 3. 同处于普通练习题（或均处于 List）：按 todayLearnedTimes 升序（保证横向轮流推进）；
+  /// 4. 步数相同时按批次内既定序号 learningOrder 升序（从左到右）。
+  static int _compareBatchWords(
+    LearningWord a,
+    LearningWord b, {
+    required Set<String> masteredWordIds,
+    required List<String> Function(LearningWord) trackOf,
+  }) {
+    final trackA = trackOf(a);
+    final trackB = trackOf(b);
+    final bool isAFinished = a.isEffectivelyMastered(masteredWordIds) ||
+        a.isTodayFinished(masteredWordIds, trackA.length);
+    final bool isBFinished = b.isEffectivelyMastered(masteredWordIds) ||
+        b.isTodayFinished(masteredWordIds, trackB.length);
+
+    if (isAFinished != isBFinished) {
+      return isAFinished ? 1 : -1;
+    }
+    if (isAFinished && isBFinished) {
+      return a.learningOrder.compareTo(b.learningOrder);
+    }
+
+    final bool isAList = a.todayLearnedTimes < trackA.length &&
+        trackA[a.todayLearnedTimes] == 'List';
+    final bool isBList = b.todayLearnedTimes < trackB.length &&
+        trackB[b.todayLearnedTimes] == 'List';
+
+    // 普通练习题优先于 List 等待状态
+    if (isAList != isBList) {
+      return isAList ? 1 : -1;
+    }
+
+    if (a.todayLearnedTimes != b.todayLearnedTimes) {
+      return a.todayLearnedTimes.compareTo(b.todayLearnedTimes);
+    }
+    return a.learningOrder.compareTo(b.learningOrder);
   }
 
   /// 计算指定单词的指定学习模式, 在第几个顺位出现

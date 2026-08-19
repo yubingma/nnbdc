@@ -1672,13 +1672,35 @@ extension BdcPageStateDialogs on BdcPageState {
       batches.putIfAbsent(chunkId, () => []).add(w);
     }
 
-    // 计算即将到来的待办单元格 sequence（按每词自身轨道的当前位置）
+    // 计算即将到来的待办单元格 sequence（按批次内调度实际优先级：普通练习题优先，List在后）
     List<Map<String, dynamic>> pendingCells = [];
-    for (var w in words) {
-      if (isEffectivelyMastered(w)) continue;
-      final track = trackOf(w);
-      if (w.todayLearnedTimes < track.length) {
-        pendingCells.add({'wordId': w.wordId, 'sIndex': w.todayLearnedTimes});
+    final batchIdsList = batches.keys.toList()..sort();
+    for (final bId in batchIdsList) {
+      final bWords = List<dynamic>.from(batches[bId]!);
+      bWords.sort((a, b) {
+        final trackA = trackOf(a);
+        final trackB = trackOf(b);
+        final bool isAFinished = isEffectivelyMastered(a) || (a.todayLearnedTimes as int) >= trackA.length;
+        final bool isBFinished = isEffectivelyMastered(b) || (b.todayLearnedTimes as int) >= trackB.length;
+        if (isAFinished != isBFinished) return isAFinished ? 1 : -1;
+        if (isAFinished && isBFinished) return (a.learningOrder as int).compareTo(b.learningOrder as int);
+
+        final bool isAList = (a.todayLearnedTimes as int) < trackA.length && trackA[a.todayLearnedTimes] == 'List';
+        final bool isBList = (b.todayLearnedTimes as int) < trackB.length && trackB[b.todayLearnedTimes] == 'List';
+        if (isAList != isBList) return isAList ? 1 : -1;
+
+        if (a.todayLearnedTimes != b.todayLearnedTimes) {
+          return (a.todayLearnedTimes as int).compareTo(b.todayLearnedTimes as int);
+        }
+        return (a.learningOrder as int).compareTo(b.learningOrder as int);
+      });
+
+      for (var w in bWords) {
+        if (isEffectivelyMastered(w)) continue;
+        final track = trackOf(w);
+        if ((w.todayLearnedTimes as int) < track.length) {
+          pendingCells.add({'wordId': w.wordId, 'sIndex': w.todayLearnedTimes});
+        }
       }
     }
 

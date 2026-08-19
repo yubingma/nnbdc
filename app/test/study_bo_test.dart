@@ -613,5 +613,65 @@ void main() {
       expect(finishRes.success, true);
       expect(finishRes.data!.finished, true);
     });
+
+    test('混合批次（部分答对到达List等待，部分答错有错题）：优先做完所有普通练习题，最后整批唯一次进入 List 环节', () async {
+      await setupThreeSteps();
+      final yesterday = AppClock.today().subtract(const Duration(days: 1));
+      for (int i = 1; i <= 5; i++) {
+        await setWordFsrs('word_$i',
+          stability: 2.4, difficulty: 3.05, elapsedDays: 0, scheduledDays: 2,
+          reps: 1, lapses: 0, state: FsrsState.review.value,
+          todayLearnedTimes: 0, learnedTimes: 1, lastLearningDate: yesterday);
+      }
+
+      // word_1 ~ word_4 测评答对 (Good)
+      for (int i = 1; i <= 4; i++) {
+        final res = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+        expect(res.success, true);
+        final w = await wordOf('word_$i');
+        expect(w.todayLearnedTimes, 1);
+      }
+
+      // word_5 测评答错 (Again)，进入错题分支 [En2Ch, Ch2En, List]
+      final wrongRes = await studyBo.getWord(false, true, fsrsRating: FsrsRating.again);
+      expect(wrongRes.success, true);
+      final w5 = await wordOf('word_5');
+      expect(w5.todayLearnedTimes, 1);
+
+      // 此时 word_1~4 处于 List 等待（todayTimes=1, track=[En2Ch, List]），
+      // word_5 处于 Ch2En 错题练习（todayTimes=1, track=[En2Ch, Ch2En, List]）。
+      // 关键验证：调度必须优先选择 word_5 的 Ch2En 练习题，不能提前进入 List！
+      final nextPracticeRes = await studyBo.getWord(false, false);
+      expect(nextPracticeRes.success, true);
+      expect(nextPracticeRes.data!.learningWord!.word.id, 'word_5');
+      expect(nextPracticeRes.data!.stepIndex, 1); // 指向 Ch2En，不是 List 环节
+
+      // 完成 word_5 的 Ch2En 练习题 (Good)
+      final finishWrongStepRes = await studyBo.getWord(false, true, fsrsRating: FsrsRating.good);
+      expect(finishWrongStepRes.success, true);
+      final w5After = await wordOf('word_5');
+      expect(w5After.todayLearnedTimes, 2); // 此时 word_5 也到达了 List 环节 (trackLen=3, stepIndex=2)
+
+      // 现在 5 个词全部完成各自普通练习题，整批唯一次统一进入 List 环节
+      final listRes = await studyBo.getWord(false, false);
+      expect(listRes.success, true);
+      // 当前为列表模式
+
+      // 批量完成 List
+      final completeRes = await studyBo.completeListStepForCurrentBatch();
+      expect(completeRes.success, true);
+
+      // 验证 5 个词全部完成
+      for (int i = 1; i <= 4; i++) {
+        final w = await wordOf('word_$i');
+        expect(w.todayLearnedTimes, 2);
+      }
+      final w5Final = await wordOf('word_5');
+      expect(w5Final.todayLearnedTimes, 3);
+
+      final finishRes = await studyBo.getWord(false, false);
+      expect(finishRes.success, true);
+      expect(finishRes.data!.finished, true);
+    });
   });
 }
