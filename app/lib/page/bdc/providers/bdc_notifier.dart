@@ -1685,9 +1685,20 @@ class BdcNotifier extends _$BdcNotifier {
         }
         _updateState(state.copyWith(currentAsrCandidates: uniqueCandidates), tag: 'asr-candidate');
       } else {
+        // 单词环节：若当前题目已答完（或正在执行答对过渡）且非主动练习模式，
+        // 忽略关麦过渡期间到达的残余尾部 ASR 帧，避免尾音低分篡改通关评分。
+        if ((state.hasFinishedAnswering || _isAnswerCorrectHandling) && !_isPracticeMode) {
+          return;
+        }
+
         if (resultData != null && resultData.containsKey('candidates')) {
           if (state.studyStep == StudyStep.ch2En.json) {
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidates, state.word!.spell);
+            if (_isDisposed) return;
+            // await 音素计算期间可能并发完成了答对处理，二次守卫防止低分覆盖
+            if ((state.hasFinishedAnswering || _isAnswerCorrectHandling) && !_isPracticeMode) {
+              return;
+            }
             processedResult = AsrUtil.preprocessEnglish(result.text, state.word!.spell);
             _updateState(state.copyWith(currentScore: result.score, currentAsrCandidates: candidates), tag: 'asr-result');
           } else {
@@ -1702,12 +1713,16 @@ class BdcNotifier extends _$BdcNotifier {
     } catch (e, stackTrace) {
       Global.logger.d('~~~~~[CORRECT] onAsrResult EXCEPTION: $e\n$stackTrace');
       if (_isDisposed) return;
-      processedResult = AsrUtil.preprocess(event.toString());
-      candidates = [event.toString()];
       final bool isSentence = state.studyStep == StudyStep.enSentence2Ch.json ||
                               state.studyStep == StudyStep.chSentence2En.json;
+      if (!isSentence && (state.hasFinishedAnswering || _isAnswerCorrectHandling) && !_isPracticeMode) {
+        return;
+      }
+      processedResult = AsrUtil.preprocess(event.toString());
+      candidates = [event.toString()];
       if (isSentence) {
         if (!_isPttPressed || pttRoundAtEntry != _pttRoundToken) return;
+
         final rawBest = event.toString().trim();
         if (rawBest.isNotEmpty) {
           final bool isEnglish = state.studyStep == StudyStep.chSentence2En.json;

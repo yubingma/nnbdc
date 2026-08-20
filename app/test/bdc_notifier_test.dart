@@ -1424,4 +1424,72 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 100));
   });
+
+  test('BdcNotifier - Ch2En环节发音通过后残余低分ASR帧不应覆盖通关评分', () async {
+    // 设置步骤配置为 Ch2En 测评
+    await (db.delete(db.userStudySteps)..where((uss) => uss.userId.equals(testUser.id))).go();
+    await db.into(db.userStudySteps).insert(UserStudyStep(
+          userId: testUser.id,
+          scope: 'new',
+          group: 'check',
+          studyStep: 'Ch2En',
+          seq: 0,
+          state: 'Active',
+          createTime: now,
+          updateTime: now,
+        ));
+    StudyCacheManager().clear();
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.studyStep, 'Ch2En');
+    expect(state.hasFinishedAnswering, false);
+
+    // 1. 用户发音精准命中单词 (word_1 的 spell 为 apple)
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'apple',
+      'candidates': ['apple'],
+    }));
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true, reason: '发音命中目标词应标记已答完');
+    expect(state.currentScore, 100, reason: '精准匹配发音得分应为 100');
+
+    // 2. 关麦过渡期间到达残余低分 ASR 帧（如尾音噪音识别为 banana）
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'banana',
+      'candidates': ['banana'],
+    }));
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true);
+    expect(state.currentScore, 100, reason: '答完后收到的残余低分尾帧不应覆盖已取得的通关高分');
+
+    // 3. 进入主动练习模式后（如清空或重练），重新发音应正常更新得分
+    notifier.clearHint();
+    state = container.read(bdcNotifierProvider);
+    await notifier.onAsrResult(jsonEncode({
+      'best': 'apple',
+      'candidates': ['apply'],
+    }));
+    state = container.read(bdcNotifierProvider);
+    expect(state.currentScore, isA<int>(), reason: '练习模式下应允许正常更新得分');
+
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
 }
+
+
