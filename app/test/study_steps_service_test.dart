@@ -70,8 +70,8 @@ void main() {
   test('新词未配置时返回默认三组且不落库', () async {
     final cfg = await studyStepsService.getThreeGroupConfig('new');
     expect(cfg.check, 'En2Ch');
-    expect(cfg.correct, ['Ch2En', 'EnSentence2Ch', 'ChSentence2En']);
-    expect(cfg.wrong, ['Ch2En', 'EnSentence2Ch', 'ChSentence2En']);
+    expect(cfg.correct, ['Ch2En']);
+    expect(cfg.wrong, ['Ch2En']);
 
     // 默认值仅运行时返回，不写入数据库
     final dbSteps =

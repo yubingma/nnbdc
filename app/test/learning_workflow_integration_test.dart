@@ -600,12 +600,12 @@ void main() {
   test('整本词书多天学习到自然毕业：每词总评分次数符合 FSRS 预期', () async {
     // 全程不人工标记掌握，逐天 good 答对，验证自然毕业路径的总评分次数。
     // 使用默认三组配置（清掉 setUp 的紧凑配置）:
-    //   新词: 测评 En2Ch + 答对组 [Ch2En, EnSentence2Ch, ChSentence2En] + List
-    //         → 新词当天 4 次评分（init + 3 次巩固 relearn）；
+    //   新词: 测评 En2Ch + 答对组 [Ch2En] + List
+    //         → 新词当天 2 次评分（init + 1 次巩固 relearn）；
     //   复习词: 测评答对跳过恢复环节直接完成（+2）。
     // 全 good 理论值：init(2.4, 间隔2天) → 复习1(≈8.5, 8天) → 复习2(≈28.7, 29天)
     // → 复习3(≈89.5, 90天) → 复习4(≥180) 自然毕业
-    // = 每词总评分 4(当天) + 4(跨天) = 8 次（毕业那次复习不写日志 → LearningLog 7 条）。
+    // = 每词总评分 2(当天) + 4(跨天) = 6 次（毕业那次复习不写日志 → LearningLog 5 条）。
     await db.delete(db.userStudySteps).go();
 
     int loopCount = 0;
@@ -641,7 +641,7 @@ void main() {
         await db.masteredWordsDao.getMasteredWordsForUser(testUser.id);
     expect(allMastered.length, 8, reason: '8 个词必须全部自然毕业');
 
-    // 断言 2：每词评分日志条数 == 7（init + 3 次当天巩固 + 3 次未毕业复习；
+    // 断言 2：每词评分日志条数 == 5（init + 1 次当天巩固 + 3 次未毕业复习；
     // 毕业那次复习不写日志）。修复权重错位后全 good 路径：
     // 2.4 →(2天)→ 8.5 →(8天)→ 28.7 →(29天)→ 89.5 →(90天)→ ≥180 毕业
     for (int i = 1; i <= 8; i++) {
@@ -649,8 +649,8 @@ void main() {
           await db.learningLogsDao.getHistory(testUser.id, 'w_$i');
       expect(
         logs.length,
-        7,
-        reason: 'w_$i 应经历 init + 3 次当天巩固 + 3 次复习后自然毕业（总评分 8 次，毕业复习不写日志）',
+        5,
+        reason: 'w_$i 应经历 init + 1 次当天巩固 + 3 次复习后自然毕业（总评分 6 次，毕业复习不写日志）',
       );
     }
 
@@ -660,6 +660,6 @@ void main() {
 
     // 等待后台 unawaited 任务执行完毕
     await Future.delayed(const Duration(milliseconds: 100));
-    print('🎉 自然毕业验证通过：全书 8 词、每词总评分 8 次（日志 7 条）、总天数 $loopCount');
+    print('🎉 自然毕业验证通过：全书 8 词、每词总评分 6 次（日志 5 条）、总天数 $loopCount');
   });
 }

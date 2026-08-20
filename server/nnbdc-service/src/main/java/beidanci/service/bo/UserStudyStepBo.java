@@ -49,10 +49,10 @@ public class UserStudyStepBo extends BaseBo<UserStudyStep> {
      * 仅补缺，不覆盖用户已有配置：某组已有环节时保持原样。
      */
     public void initUserStudySteps(String userId) {
-        // 新词默认三组: check=En2Ch、correct=[Ch2En, EnSentence2Ch, ChSentence2En]、wrong=同
+        // 新词默认三组: check=En2Ch、correct=[Ch2En]、wrong=[Ch2En]
         initScope(userId, "new", StudyStep.En2Ch,
-                new StudyStep[] { StudyStep.Ch2En, StudyStep.EnSentence2Ch, StudyStep.ChSentence2En },
-                new StudyStep[] { StudyStep.Ch2En, StudyStep.EnSentence2Ch, StudyStep.ChSentence2En });
+                new StudyStep[] { StudyStep.Ch2En },
+                new StudyStep[] { StudyStep.Ch2En });
         // 旧词默认三组: check=En2Ch、correct=[]、wrong=[Ch2En]
         initScope(userId, "review", StudyStep.En2Ch,
                 new StudyStep[] {},

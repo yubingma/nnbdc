@@ -40,7 +40,7 @@ class StudyStepsService {
     }
     // 未配置：默认三组
     if (scope == 'new') {
-      const defaultSteps = ['Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
+      const defaultSteps = ['Ch2En'];
       return (check: 'En2Ch', correct: defaultSteps, wrong: defaultSteps);
     }
     // review 默认：check=新词 check、correct=[]、wrong=[反向互补]
