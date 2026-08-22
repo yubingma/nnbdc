@@ -125,8 +125,10 @@ void main() {
   }
 
   /// 插入一条 learning_words 学习记录（"学习过"= 进入过学习轨道，stability 可空可毕业）
-  /// 插入学习记录；[state] 为 FSRS 状态（0=New 未评分、1=Learning 学过），默认 1（学过）
-  Future<void> insertLearningWord(String wordId, {double? stability, int state = 1}) async {
+  /// 插入学习记录；[state] 为 FSRS 状态（0=New 未评分、1=Learning 学过），默认 1（学过）；
+  /// [lastLearningDate] 为最近学习日期（用于锚点排序权重）
+  Future<void> insertLearningWord(String wordId,
+      {double? stability, int state = 1, DateTime? lastLearningDate}) async {
     await db.learningWordsDao.saveEntity(LearningWord(
       userId: userId,
       wordId: wordId,
@@ -138,6 +140,7 @@ void main() {
       todayLearnedTimes: 0,
       stability: stability,
       state: state,
+      lastLearningDate: lastLearningDate,
       createTime: now,
       updateTime: now,
     ), false);
@@ -259,12 +262,15 @@ void main() {
 
       final wordBo = WordBo();
       final ids = await wordBo.getConfusableWordIds(userId);
-      // 词表 = len≥3 锚点（house/weather/cat 保留，go 排除）+ 相近词 horse
-      expect(ids.toSet(), {'w_house', 'w_horse', 'w_weather', 'w_cat'});
+      // 词表 = 有相近词的锚点（house 有 horse）+ 相近词 horse；
+      // weather（whether 距离 2 无相近词）/cat（无同长候选）/go（len<3）均为孤立/不合格锚点 → 剔除
+      expect(ids.toSet(), {'w_house', 'w_horse'});
       expect(ids, isNot(contains('w_whether'))); // dist=2 → 不含
       expect(ids, isNot(contains('w_cart'))); // 长度不同 → 不含
       expect(ids, isNot(contains('w_go'))); // len<3 锚点 → 不在词表
-      expect(await wordBo.getConfusableWordCount(userId), 4);
+      expect(ids, isNot(contains('w_weather')));
+      expect(ids, isNot(contains('w_cat')));
+      expect(await wordBo.getConfusableWordCount(userId), 2);
     });
   });
 
@@ -289,7 +295,8 @@ void main() {
       await insertDictWord('d2', 'w_cot');
       await insertDictWord('d2', 'w_there');
 
-      // 锚点：5 词全部学习过 → 词表 = 学习范围全量（去重 + 排序语义与旧版一致）
+      // 锚点：5 词全部学习过；但 cat/cot/cut 互为相近词（3 字母互邻）→ 保留；
+      // cart(4)/there(5) 在学习范围内无同长度一字之差词 → 孤立锚点 → 剔除
       for (final id in ['w_cat', 'w_cart', 'w_cot', 'w_cut', 'w_there']) {
         await insertLearningWord(id);
       }
@@ -297,25 +304,22 @@ void main() {
       final wordBo = WordBo();
       final ids = await wordBo.getConfusableWordIds(userId);
 
-      // 去重后 5 个单词，集合正确
-      expect(ids.length, 5);
-      expect(ids.toSet(), {'w_cat', 'w_cart', 'w_cot', 'w_cut', 'w_there'});
+      // 去重后 3 个单词（cat/cot/cut），集合正确；顺序为锚点字典序 cat < cot < cut
+      expect(ids, ['w_cat', 'w_cot', 'w_cut']);
+      expect(ids, isNot(contains('w_cart')));
+      expect(ids, isNot(contains('w_there')));
 
-      // 与 confusableClusterSort 直接调用严格一致（5 词全为锚点 → 按锚点字典序成簇）
+      // 与 confusableClusterSort 直接调用严格一致（仅保留的 3 个锚点传入簇式）
       final expected = confusableClusterSort(
         const {
           (id: 'w_cat', spell: 'cat'),
-          (id: 'w_cart', spell: 'cart'),
           (id: 'w_cot', spell: 'cot'),
           (id: 'w_cut', spell: 'cut'),
-          (id: 'w_there', spell: 'there'),
         },
         const [
           (id: 'w_cat', spell: 'cat'),
-          (id: 'w_cart', spell: 'cart'),
           (id: 'w_cot', spell: 'cot'),
           (id: 'w_cut', spell: 'cut'),
-          (id: 'w_there', spell: 'there'),
         ],
       );
       expect(ids, expected);
@@ -326,6 +330,34 @@ void main() {
       expect(await wordBo.getConfusableWordIds(userId), isEmpty);
       expect(await wordBo.getConfusableWordCount(userId), 0);
     });
+
+    test('锚点簇头按最近学习时间降序；学习时间更新触发重算', () async {
+      await insertDict('d1');
+      await insertLearningDict('d1');
+      await insertWord('w_cat', 'cat');
+      await insertWord('w_cot', 'cot');
+      await insertWord('w_cut', 'cut');
+      await insertDictWord('d1', 'w_cat');
+      await insertDictWord('d1', 'w_cot');
+      await insertDictWord('d1', 'w_cut');
+      final t19 = DateTime(2026, 8, 19);
+      final t20 = DateTime(2026, 8, 20);
+      final t21 = DateTime(2026, 8, 21); // 最新
+      // 三锚点互邻（3 字母）都保留；按最近学习时间降序：cot(21) → cat(20) → cut(19)
+      await insertLearningWord('w_cat', lastLearningDate: t20);
+      await insertLearningWord('w_cot', lastLearningDate: t21);
+      await insertLearningWord('w_cut', lastLearningDate: t19);
+
+      final wordBo = WordBo();
+      final list1 = await wordBo.getConfusableWordIds(userId);
+      expect(list1, ['w_cot', 'w_cat', 'w_cut']);
+
+      // 学习时间更新（w_cut 变成最新）→ 签名含时间分量 → 重算，cut 排最前
+      await insertLearningWord('w_cut', lastLearningDate: DateTime(2026, 8, 22));
+      final list2 = await wordBo.getConfusableWordIds(userId);
+      expect(identical(list1, list2), false);
+      expect(list2, ['w_cut', 'w_cot', 'w_cat']);
+    });
   });
 
   group('getConfusableWordIds - 缓存与签名失效', () {
@@ -333,28 +365,28 @@ void main() {
       await insertDict('d1');
       await insertLearningDict('d1');
       await insertWord('w1', 'cat');
-      await insertWord('w2', 'cart');
+      await insertWord('w2', 'cot'); // cat/cot 同长 3、距离 1 → 锚点互邻，都保留
       await insertDictWord('d1', 'w1');
       await insertDictWord('d1', 'w2');
       await insertLearningWord('w1');
       await insertLearningWord('w2');
 
       final wordBo = WordBo();
-      // 簇式：锚点按字典序 cart → cat（w2=cart < w1=cat）
+      // 簇式：锚点按字典序 cat → cot（w1=cat < w2=cot）
       final list1 = await wordBo.getConfusableWordIds(userId);
-      expect(list1, ['w2', 'w1']);
+      expect(list1, ['w1', 'w2']);
       expect(WordBo.isConfusableSortReady(userId), true);
 
       // 二次调用命中缓存（同一实例，无重算）
       final list2 = await wordBo.getConfusableWordIds(userId);
       expect(identical(list1, list2), true);
 
-      // 词书新增单词 w3（非锚点，但与锚点距离 1 → 进 C）：B 变、A 不变 → 签名变化重算
-      await insertWord('w3', 'cot');
+      // 词书新增单词 w3（非锚点，但与锚点距离 1 → 进 C，归属 cat 簇）：B 变、A 不变 → 签名变化重算
+      await insertWord('w3', 'cut');
       await insertDictWord('d1', 'w3');
       final list3 = await wordBo.getConfusableWordIds(userId);
       expect(identical(list1, list3), false);
-      expect(list3, ['w2', 'w1', 'w3']);
+      expect(list3, ['w1', 'w3', 'w2']);
 
       // 删除学习词书 → 签名变化 → 重算为空
       await db.learningDictsDao.deleteEntity(
@@ -396,10 +428,10 @@ void main() {
       expect(identical(list1, list2), false);
 
       // 移入已掌握（w_hose 进已掌握词书）→ A 变 → 重算；
-      // hose 由此成为锚点（len 4 ≥ 3，孤立锚点保留）→ 重新进入词表
+      // hose 由此成为锚点（len 4 ≥ 3），但学习范围内无同长度一字之差词 → 孤立锚点 → 仍不进入词表
       await db.masteredWordsDao.saveMasteredWord(userId, 'w_hose', false, false);
       final list3 = await wordBo.getConfusableWordIds(userId);
-      expect(list3.toSet(), {'w_house', 'w_horse', 'w_hose'});
+      expect(list3.toSet(), {'w_house', 'w_horse'});
       expect(identical(list2, list3), false);
     });
   });
@@ -411,13 +443,13 @@ void main() {
       await insertLearningDict('d1');
       await insertLearningDict('d2');
       await insertWord('w1', 'cat');
-      await insertWord('w2', 'cart');
-      await insertWord('w3', 'cot');
+      await insertWord('w2', 'cot');
+      await insertWord('w3', 'cut');
       await insertDictWord('d1', 'w1');
       await insertDictWord('d1', 'w2');
       await insertDictWord('d2', 'w2'); // 重叠
       await insertDictWord('d2', 'w3');
-      // 锚点 w1/w2；w3 与锚点距离 1 → 进 C，词表共 3 词
+      // 锚点 w1/w2（cat/cot 互邻）；w3=cut 与锚点距离 1 → 进 C，词表共 3 词
       await insertLearningWord('w1');
       await insertLearningWord('w2');
 
@@ -584,7 +616,7 @@ void main() {
       await insertDictWord('d1', 'w2');
       await insertDictWord('d2', 'w2'); // 重叠
       await insertDictWord('d2', 'w3');
-      // 锚点：3 词全部学习过
+      // 锚点：3 词全部学习过；cat/cot 互邻保留，cart(4) 孤立锚点剔除 → 词表 2 词
       await insertLearningWord('w1');
       await insertLearningWord('w2');
       await insertLearningWord('w3');
@@ -592,7 +624,7 @@ void main() {
       final result = await WordBo().getWordLists();
       expect(result.success, true);
       final entry = result.data!.firstWhere((wl) => wl.name == '易混淆单词');
-      expect(entry.wordCount, 3);
+      expect(entry.wordCount, 2);
     });
   });
 }

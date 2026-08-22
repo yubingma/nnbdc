@@ -115,6 +115,10 @@ mixin WordsProvider {
 
   /// 数据源是否支持自定义排序（用于是否展示"排序设置"菜单；固定排序的虚拟词表可关闭）
   bool get canCustomizeSort => true;
+
+  /// 该数据源是否为"分组展示"（如易混淆词表的锚点簇），返回单词在列表中的组号
+  /// （相邻同组单词连续出现；默认恒 0 = 不分组着色）。
+  int groupIndexOf(int index) => 0;
 }
 
 abstract class WordModifier {
@@ -1515,11 +1519,34 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
+  /// 分组底色：按组号交替使用浅色（浅色模式）/深色（暗色模式）变体，
+  /// 便于看清易混淆词表中每组（锚点簇）的边界；组号 0 = 默认底色。
+  Color _groupBackgroundColor(int group, bool isDarkMode) {
+    if (group <= 0) return isDarkMode ? Colors.black26 : Colors.white;
+    if (isDarkMode) {
+      const darkTints = [
+        Color(0xFF1F2A3A), // 深蓝
+        Color(0xFF33261F), // 深橙
+        Color(0xFF2A2438), // 深紫
+        Color(0xFF1F3327), // 深绿
+      ];
+      return darkTints[(group - 1) % darkTints.length];
+    }
+    const lightTints = [
+      Color(0xFFE8F4FD), // 浅蓝
+      Color(0xFFFFF3E0), // 浅橙
+      Color(0xFFF1EDFB), // 浅紫
+      Color(0xFFE7F5EC), // 浅绿
+    ];
+    return lightTints[(group - 1) % lightTints.length];
+  }
+
   Widget _buildWordDecoration(
       {required Widget child,
       required bool isBookmarked,
       required bool isDarkMode,
-      bool? learningStatus}) {
+      bool? learningStatus,
+      int group = 0}) {
     final isAsrReady = isBookmarked && asr.state == AsrState.started;
 
     return AnimatedBuilder(
@@ -1549,7 +1576,7 @@ class WordListPageState extends State<WordListPage>
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
           decoration: BoxDecoration(
-            color: isDarkMode ? Colors.black26 : Colors.white,
+            color: _groupBackgroundColor(group, isDarkMode),
             borderRadius: BorderRadius.circular(8),
             boxShadow: shadows,
             border: Border.all(
@@ -1763,6 +1790,7 @@ class WordListPageState extends State<WordListPage>
           isBookmarked: isBookmarked,
           isDarkMode: isDarkMode,
           learningStatus: learningStatus,
+          group: args.wordsProvider.groupIndexOf(i),
           child: _renderWordContent(word, i, isBookmarked, isDarkMode, learningStatus),
         );
 

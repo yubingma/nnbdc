@@ -28,6 +28,16 @@ class ConfusableWordsProvider with WordsProvider {
   @override
   bool get canCustomizeSort => false;
 
+  /// 与最近一次 getAPageOfWords 返回行对应的组号表（0 = 默认底色；>0 按锚点簇交替着色）
+  List<int> _groupIds = [];
+
+  /// 分组展示：簇式排序中每个锚点簇为一组（组号从 1 递增），供卡片底色区分边界
+  @override
+  int groupIndexOf(int index) {
+    if (index < 0 || index >= _groupIds.length) return 0;
+    return _groupIds[index];
+  }
+
   /// 非词书数据源，无单元概念
   @override
   Future<bool> get hasUnits async => false;
@@ -41,8 +51,10 @@ class ConfusableWordsProvider with WordsProvider {
         return PagedResults<WordWrapper>(0);
       }
 
-      // 1. 全量排序 id：内存缓存命中即快，首次进入的 isolate 排序耗时由页面 loading 态覆盖
+      // 1. 全量排序 id：内存缓存命中即快，首次进入的 isolate 排序耗时由页面 loading 态覆盖；
+      //    锚点集合用于分组着色（每个锚点簇 = 一组）
       final sortedIds = await WordBo().getConfusableWordIds(userId);
+      final anchorIds = await WordBo().getConfusableAnchorIds(userId);
 
       // 2. 一次性批量查详情（words 批量 + 批量释义），避免逐词循环；
       //    释义缺失的异常词由容错加载跳过，保证单条数据异常不清空整页
@@ -50,9 +62,13 @@ class ConfusableWordsProvider with WordsProvider {
       final wordMap = {for (final w in words) w.id: w};
       final meaningsMap = await _loadMeaningsTolerantly(sortedIds, userId);
 
-      // 3. 按排序后的 id 顺序组装 WordWrapper（详情/释义缺失的异常词跳过）
+      // 3. 按排序后的 id 顺序组装 WordWrapper（详情/释义缺失的异常词跳过）；
+      //    同步构建组号表：遇锚点组号 +1，成员沿用当前组号（异常词跳过时组号也跳过）
       final results = PagedResults<WordWrapper>(0);
+      final groupIds = <int>[];
+      var group = 0;
       for (final id in sortedIds) {
+        if (anchorIds.contains(id)) group++;
         final wordEntry = wordMap[id];
         final mItems = meaningsMap[id];
         if (wordEntry == null || mItems == null) {
@@ -72,12 +88,13 @@ class ConfusableWordsProvider with WordsProvider {
             .map((mi) => MeaningItemVo.from(mi.ciXing, mi.meaning)..id = mi.id)
             .toList();
         results.rows.add(WordWrapper(wordVo, wordVo));
+        groupIds.add(group);
       }
       // 实际可展示的单词数（异常词被跳过）作为总数
       results.total = results.rows.length;
 
       // 4. 控制器对非 DictWordsProvider 走 getAPageOfWords(0, 999999) 全量 + 内存切片路径，
-      //    此处按签名切片，保持接口语义
+      //    此处按签名切片，保持接口语义（组号表同步切片）
       if (fromIndex > 0 || pageSize < results.rows.length) {
         final end = (fromIndex + pageSize) > results.rows.length
             ? results.rows.length
@@ -88,7 +105,14 @@ class ConfusableWordsProvider with WordsProvider {
         results.rows
           ..clear()
           ..addAll(sliced);
+        final slicedGroups = fromIndex >= groupIds.length
+            ? <int>[]
+            : groupIds.sublist(fromIndex, fromIndex + sliced.length);
+        groupIds
+          ..clear()
+          ..addAll(slicedGroups);
       }
+      _groupIds = groupIds;
 
       Global.logger.d('ConfusableWordsProvider: getAPageOfWords(from=$fromIndex) completed in ${sw.elapsedMilliseconds}ms');
       return results;

@@ -158,17 +158,22 @@ class WordBo {
     _confusableInflight.clear();
   }
 
-  /// 数据签名：学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序的哈希；
-  /// 学习词书增删（dictIds）、词书单词增删（B，即使锚点不变 C 应变）、学习记录/已掌握变化
-  /// （A）任一变化都会改变签名。三个列表以 'd:'/'w:'/'a:' 边界标记 + ',' 分隔拼接，
-  /// 避免列表间拼接歧义（如 ['a']+['bc'] 与 ['ab']+['c']）。
-  static String _confusableSignature(
-      List<String> dictIds, Set<String> wordIds, Set<String> anchorIds) {
+  /// 数据签名：学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序 +
+  /// 锚点最近学习时间的哈希；学习词书增删（dictIds）、词书单词增删（B，即使锚点不变 C 应变）、
+  /// 学习记录/已掌握变化（A）或锚点学习时间变化（排序权重）任一变化都会改变签名。
+  /// 各列表以 'd:'/'w:'/'a:'/'t:' 边界标记 + ',' 分隔拼接，避免列表间拼接歧义。
+  static String _confusableSignature(List<String> dictIds, Set<String> wordIds,
+      Set<String> anchorIds, Map<String, DateTime?> anchorTimes) {
     final sortedDictIds = [...dictIds]..sort();
     final sortedWordIds = wordIds.toList()..sort();
     final sortedAnchorIds = anchorIds.toList()..sort();
-    final content =
-        'd:${sortedDictIds.join(',')};w:${sortedWordIds.join(',')};a:${sortedAnchorIds.join(',')}';
+    // 时间分量按锚点 id 有序拼接（id:毫秒时间戳，缺失为空），保证确定性
+    final sortedTimes = [
+      for (final id in sortedAnchorIds)
+        '${anchorTimes[id]?.millisecondsSinceEpoch ?? ''}',
+    ];
+    final content = 'd:${sortedDictIds.join(',')};w:${sortedWordIds.join(',')};'
+        'a:${sortedAnchorIds.join(',')};t:${sortedTimes.join(',')}';
     return sha256.convert(utf8.encode(content)).toString();
   }
 
@@ -2764,35 +2769,56 @@ class WordBo {
     return (dictIds: dictIds, wordIds: wordIds);
   }
 
-  /// 锚点集 A = 学习范围 B ∩（learning_words 记录 ∪ 已掌握词书）。
-  /// learning_words 取 userId 的全部 wordId——不带 stability 过滤（"学习过"含已毕业，
-  /// 既有 getLearningWordIdSet 过滤 stability<180 会排除已毕业，不可复用），故在 WordBo 内联查询。
-  /// 锚点 = 学习范围内 ∩（学习记录中"确实学过"的 ∪ 已掌握）。
-  /// "确实学过"：learning_words 中 FSRS state > 0（0=New 未评分，仅加入学习范围/被分配
-  /// 今日计划不算学过；1/2/3=Learning/Review/Relearning 表示至少评分过一次）；
-  /// 已掌握词书（毕业）天然算学过。
-  static Future<Set<String>> _loadConfusableAnchors(String userId, Set<String> wordIds) async {
+  /// 锚点 = 学习范围内 ∩（学习记录中"确实学过"的 ∪ 已掌握），并携带**最近学习时间**：
+  /// - learning_words 的 lastLearningDate（最近评分日期，state > 0 才算学过）；
+  /// - 仅已掌握（无学习记录）的锚点取已掌握词书词条 create_time（掌握时间）；
+  /// - 两者都无 → null（排最后）。
+  static Future<Map<String, DateTime?>> _loadConfusableAnchors(
+      String userId, Set<String> wordIds) async {
     if (wordIds.isEmpty) return {};
     final db = MyDatabase.instance;
     final learnedRows = await (db.select(db.learningWords)
           ..where((lw) =>
               lw.userId.equals(userId) & lw.state.isBiggerThanValue(0)))
         .get();
-    final learnedOrMastered = {for (final lw in learnedRows) lw.wordId}
-      ..addAll(await db.masteredWordsDao.getMasteredWordIdSet(userId));
-    return wordIds.intersection(learnedOrMastered);
+    final anchorTimes = <String, DateTime?>{};
+    for (final lw in learnedRows) {
+      if (!wordIds.contains(lw.wordId)) continue;
+      final cur = anchorTimes[lw.wordId];
+      if (cur == null || (lw.lastLearningDate != null && lw.lastLearningDate!.isAfter(cur))) {
+        anchorTimes[lw.wordId] = lw.lastLearningDate;
+      }
+    }
+    // 仅已掌握的锚点：取已掌握词书词条 create_time 作为掌握时间
+    final masteredIds = await db.masteredWordsDao.getMasteredWordIdSet(userId);
+    final missingMastered =
+        masteredIds.intersection(wordIds).difference(anchorTimes.keys.toSet());
+    if (missingMastered.isNotEmpty) {
+      final masteredDict = await db.dictsDao.findUserMasteredDict(userId);
+      if (masteredDict != null) {
+        final rows = await (db.select(db.dictWords)
+              ..where((dw) =>
+                  dw.dictId.equals(masteredDict.id) & dw.wordId.isIn(missingMastered)))
+            .get();
+        for (final dw in rows) {
+          anchorTimes[dw.wordId] ??= dw.createTime;
+        }
+      }
+    }
+    return {for (final id in anchorTimes.keys) if (wordIds.contains(id)) id: anchorTimes[id]};
   }
 
   /// 易混淆单词：锚点（学习过的词）∪ 学习范围内与锚点拼写相近（编辑距离 ≤ 1 且
-  /// 长度相同且 ≥ 3 字母）的词，按簇式排序（锚点成簇、组内同长度、组间不接龙），
-  /// 返回排序后的 wordId 列表。
+  /// 长度相同且 ≥ 3 字母）的词，按簇式排序（锚点成簇、组内同长度、组间不接龙；
+  /// 锚点簇头按"最近学习时间越新越靠前"排序），返回排序后的 wordId 列表。
   /// 空锚点 → 空列表。
-  /// 内存缓存带签名校验（学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序），
-  /// 任一分量变化即失效重算；并发同签名请求共享同一个排序 Future 防重算。
+  /// 内存缓存带签名校验（学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序
+  /// + 锚点最近学习时间），任一分量变化即失效重算；并发同签名请求共享同一个排序 Future 防重算。
   Future<List<String>> getConfusableWordIds(String userId) async {
     final (:dictIds, :wordIds) = await _loadConfusableWords(userId);
-    final anchorIds = await _loadConfusableAnchors(userId, wordIds);
-    final signature = _confusableSignature(dictIds, wordIds, anchorIds);
+    final anchorTimes = await _loadConfusableAnchors(userId, wordIds);
+    final anchorIds = anchorTimes.keys.toSet();
+    final signature = _confusableSignature(dictIds, wordIds, anchorIds, anchorTimes);
 
     final cached = _confusableCache[userId];
     if (cached != null && cached.signature == signature) {
@@ -2805,7 +2831,7 @@ class WordBo {
     if (inflight != null) {
       return inflight;
     }
-    final future = _computeConfusableSorted(userId, wordIds, anchorIds, signature);
+    final future = _computeConfusableSorted(userId, wordIds, anchorIds, anchorTimes, signature);
     _confusableInflight[inflightKey] = future;
     try {
       return await future;
@@ -2814,14 +2840,20 @@ class WordBo {
     }
   }
 
+  /// 当前易混淆词表的锚点 id 集合（用于 UI 分组着色；确保排序缓存就绪后返回）。
+  Future<Set<String>> getConfusableAnchorIds(String userId) async {
+    await getConfusableWordIds(userId);
+    return _confusableCache[userId]?.anchorIds ?? {};
+  }
+
   /// 关联 words 取 spell → isolate（锚点过滤 + 簇式排序）→ 写入结果缓存。
   /// 无锚点时词表为空（A ∪ C = ∅），直接缓存空列表不进入 isolate——
   /// isolate 空锚点语义同样为空，此处短路仅为省去无谓查询与 isolate 往返。
-  static Future<List<String>> _computeConfusableSorted(
-      String userId, Set<String> wordIds, Set<String> anchorIds, String signature) async {
+  static Future<List<String>> _computeConfusableSorted(String userId, Set<String> wordIds,
+      Set<String> anchorIds, Map<String, DateTime?> anchorTimes, String signature) async {
     if (anchorIds.isEmpty) {
       final empty = <String>[];
-      _confusableCache[userId] = _ConfusableCacheEntry(empty, signature);
+      _confusableCache[userId] = _ConfusableCacheEntry(empty, signature, anchorIds);
       return empty;
     }
     final db = MyDatabase.instance;
@@ -2834,14 +2866,18 @@ class WordBo {
       // 容错：words 表缺失时以 id 兜底（与 getTspSortedWordIdsForList 一致）
       spells.add(spellMap[id] ?? id);
     }
-    // 锚点 ⊆ 学习范围，spell 已含于 spellMap
+    // 锚点 ⊆ 学习范围，spell 已含于 spellMap；时间与锚点 id 一一对应
     final anchorIdsList = anchorIds.toList();
     final anchorSpells = [for (final id in anchorIdsList) spellMap[id] ?? id];
+    final anchorTimesList = [for (final id in anchorIdsList) anchorTimes[id]];
     final sortedIds = await compute<ConfusableSortParams, List<String>>(
         confusableSortInIsolate,
         ConfusableSortParams(ids, spells,
-            anchorIds: anchorIdsList, anchorSpells: anchorSpells));
-    _confusableCache[userId] = _ConfusableCacheEntry(sortedIds, signature);
+            anchorIds: anchorIdsList,
+            anchorSpells: anchorSpells,
+            anchorTimes: anchorTimesList));
+    _confusableCache[userId] =
+        _ConfusableCacheEntry(sortedIds, signature, anchorIds);
     return sortedIds;
   }
 
@@ -3120,5 +3156,6 @@ class CigenExpandedWord {
 class _ConfusableCacheEntry {
   final List<String> sortedIds;
   final String signature;
-  _ConfusableCacheEntry(this.sortedIds, this.signature);
+  final Set<String> anchorIds;
+  _ConfusableCacheEntry(this.sortedIds, this.signature, this.anchorIds);
 }

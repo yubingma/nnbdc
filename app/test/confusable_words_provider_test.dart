@@ -8,7 +8,6 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/page/word_list/confusable_words.dart';
 import 'package:nnbdc/util/app_clock.dart';
-import 'package:nnbdc/util/confusable_sort.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:toastification/toastification.dart';
 
@@ -155,7 +154,8 @@ void main() {
     ));
   }
 
-  /// 构造 5 词（cat/cart/cot/cut/there 同族）的学习词书数据，并返回 confusableClusterSort 期望顺序
+  /// 构造 5 词（cat/cart/cot/cut/there）的学习词书数据，并返回 confusableClusterSort 期望顺序。
+  /// 锚点全部学习过；cat/cot/cut 互为相近词（3 字母互邻）保留，cart(4)/there(5) 为孤立锚点剔除。
   Future<List<String>> seedConfusableData() async {
     await insertDict('d1');
     await insertDict('d2');
@@ -171,25 +171,11 @@ void main() {
       await insertWord(id, spell);
       await insertCommonMeaning('mi_$id', id);
       await insertDictWord('d1', id);
-      await insertLearningWord(id); // 锚点：5 词全部学习过 → 词表 = 学习范围全量
+      await insertLearningWord(id); // 锚点：5 词全部学习过
     }
     await insertDictWord('d2', 'w_cat'); // 跨词书重叠，只算一次
-    return confusableClusterSort(
-      const {
-        (id: 'w_cat', spell: 'cat'),
-        (id: 'w_cart', spell: 'cart'),
-        (id: 'w_cot', spell: 'cot'),
-        (id: 'w_cut', spell: 'cut'),
-        (id: 'w_there', spell: 'there'),
-      },
-      const [
-        (id: 'w_cat', spell: 'cat'),
-        (id: 'w_cart', spell: 'cart'),
-        (id: 'w_cot', spell: 'cot'),
-        (id: 'w_cut', spell: 'cut'),
-        (id: 'w_there', spell: 'there'),
-      ],
-    );
+    // 期望：锚点字典序 cat < cot < cut（cart/there 孤立锚点被准入剔除）
+    return ['w_cat', 'w_cot', 'w_cut'];
   }
 
   group('ConfusableWordsProvider - 全量加载与切片', () {
@@ -198,7 +184,7 @@ void main() {
 
       final result = await ConfusableWordsProvider().getAPageOfWords(0, 999999);
 
-      expect(result.total, 5);
+      expect(result.total, 3);
       expect(result.rows.map((w) => w.word.id).toList(), expected);
       // 每个单词都带上了批量释义（每个词 1 条通用释义）
       for (final w in result.rows) {
@@ -213,7 +199,7 @@ void main() {
 
       final result = await ConfusableWordsProvider().getAPageOfWords(1, 2);
 
-      expect(result.total, 5);
+      expect(result.total, 3);
       expect(result.rows.map((w) => w.word.id).toList(),
           expected.sublist(1, 3));
     });
@@ -229,8 +215,8 @@ void main() {
       await insertLearningDict('d1');
       // w_missing 无任何释义（数据异常），其余两词有通用释义
       await insertWord('w_ok1', 'cat');
-      await insertWord('w_ok2', 'cart');
-      await insertWord('w_missing', 'cot');
+      await insertWord('w_ok2', 'cot'); // 与 cat 同长 3、距离 1 → 锚点互邻
+      await insertWord('w_missing', 'cut'); // 与锚点距离 1 → 相近词（释义缺失）
       await insertCommonMeaning('mi_ok1', 'w_ok1');
       await insertCommonMeaning('mi_ok2', 'w_ok2');
       await insertDictWord('d1', 'w_ok1');
@@ -242,9 +228,9 @@ void main() {
 
       final result = await ConfusableWordsProvider().getAPageOfWords(0, 999999);
 
-      // 释义缺失词被跳过，其余按簇式序（锚点 cart → cat，cot 属 cat 簇但被跳过）返回，总数 = 实际返回数
+      // 释义缺失词被跳过，其余按簇式序（锚点 cat → cot）返回，总数 = 实际返回数
       expect(result.total, 2);
-      expect(result.rows.map((w) => w.word.id).toList(), ['w_ok2', 'w_ok1']);
+      expect(result.rows.map((w) => w.word.id).toList(), ['w_ok1', 'w_ok2']);
       expect(result.rows.any((w) => w.word.id == 'w_missing'), false);
     });
   });
@@ -273,6 +259,33 @@ void main() {
       final result = await ConfusableWordsProvider().getAPageOfWords(0, 999999);
       expect(await ConfusableWordsProvider().deleteWord(result.rows.first),
           false);
+    });
+
+    test('groupIndexOf 按锚点簇分组：每组连续同组号', () async {
+      // 场景 1：全锚点（cat/cot/cut 学习过）→ 每个锚点自成一簇，组号依次递增
+      await seedConfusableData();
+      var provider = ConfusableWordsProvider();
+      await provider.getAPageOfWords(0, 999999);
+      expect(provider.groupIndexOf(0), 1);
+      expect(provider.groupIndexOf(1), 2);
+      expect(provider.groupIndexOf(2), 3);
+      expect(provider.groupIndexOf(99), 0); // 越界 → 默认底色
+
+      // 场景 2：给现有学习词书 d1 加相近词 w_rat（与锚点 cat 一字之差、非锚点）
+      // → cat 簇 [cat, rat]，cot/cut 各自成簇，组号 [1,1,2,3]
+      await insertWord('w_rat', 'rat');
+      await insertCommonMeaning('mi_rat', 'w_rat');
+      await insertDictWord('d1', 'w_rat');
+
+      provider = ConfusableWordsProvider();
+      final result = await provider.getAPageOfWords(0, 999999);
+      // cat 簇 [cat, rat]（相近词按字典序），cot 簇 [cot]，cut 簇 [cut]
+      expect(result.rows.map((w) => w.word.id).toList(),
+          ['w_cat', 'w_rat', 'w_cot', 'w_cut']);
+      expect(provider.groupIndexOf(0), 1);
+      expect(provider.groupIndexOf(1), 1);
+      expect(provider.groupIndexOf(2), 2);
+      expect(provider.groupIndexOf(3), 3);
     });
 
     testWidgets('unmasterWord 返回 false 且 masteredWords 表不变（只读浏览）',

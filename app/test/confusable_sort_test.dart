@@ -45,18 +45,31 @@ int _bySpellThenId(ConfusableWord a, ConfusableWord b) {
   return bySpell != 0 ? bySpell : a.id.compareTo(b.id);
 }
 
-/// 朴素实现：锚点按 (spell, id) 字典序为簇头；每个非锚点相近词归属到
-/// "与它一字之差（同长度、距离 ≤ 1）且 (spell, id) 字典序最小"的锚点，只出现一次；
-/// 簇内相近词按 (spell, id) 排序；输出 = 各簇依次展开。
+/// 朴素实现：锚点按"最近学习时间降序（缺失排最后）+ (spell, id) 字典序"为簇头；
+/// 每个非锚点相近词归属到"与它一字之差（同长度、距离 ≤ 1）且 (spell, id) 字典序最小"的锚点，
+/// 只出现一次；簇内相近词按 (spell, id) 排序；输出 = 各簇依次展开。
 List<String> naiveConfusableClusterSort(
   Set<ConfusableWord> anchors,
-  List<ConfusableWord> selected,
-) {
+  List<ConfusableWord> selected, {
+  Map<String, DateTime?>? anchorTimes,
+}) {
   if (selected.isEmpty) return [];
   final anchorsSorted = [
     for (final a in anchors)
       if (a.spell.length >= 3) a,
-  ]..sort(_bySpellThenId);
+  ]..sort((a, b) {
+      final ta = anchorTimes?[a.id];
+      final tb = anchorTimes?[b.id];
+      if (ta != null && tb != null) {
+        final byTime = tb.compareTo(ta);
+        if (byTime != 0) return byTime;
+      } else if (ta != null) {
+        return -1;
+      } else if (tb != null) {
+        return 1;
+      }
+      return _bySpellThenId(a, b);
+    });
   if (anchorsSorted.isEmpty) return [];
   final anchorIds = {for (final a in anchorsSorted) a.id};
 
@@ -360,6 +373,34 @@ void main() {
       final order = confusableClusterSort(anchors, selected);
       expect(order, ['drag', 'drug', 'drum']);
       expect(order, naiveConfusableClusterSort(anchors, selected));
+    });
+
+    test('锚点按最近学习时间降序；缺失排最后；时间相同按字典序', () {
+      final t1 = DateTime(2026, 8, 20);
+      final t2 = DateTime(2026, 8, 21); // 更新
+      const anchors = {
+        (id: 'cat', spell: 'cat'),
+        (id: 'cot', spell: 'cot'),
+        (id: 'cut', spell: 'cut'),
+      };
+      const selected = [
+        (id: 'cat', spell: 'cat'),
+        (id: 'cot', spell: 'cot'),
+        (id: 'cut', spell: 'cut'),
+      ];
+      final anchorTimes = <String, DateTime?>{
+        'cat': t1,
+        'cot': t2, // 最新 → 排最前
+        'cut': null, // 缺失 → 排最后
+      };
+      final order = confusableClusterSort(anchors, selected, anchorTimes: anchorTimes);
+      expect(order, ['cot', 'cat', 'cut']);
+      expect(order, naiveConfusableClusterSort(anchors, selected, anchorTimes: anchorTimes));
+
+      // 时间相同 → 按 (spell, id) 字典序（cot < cut）
+      final sameTime = <String, DateTime?>{'cat': t1, 'cot': t1, 'cut': t1};
+      expect(confusableClusterSort(anchors, selected, anchorTimes: sameTime),
+          ['cat', 'cot', 'cut']);
     });
 
     test('孤立锚点（无相近词）按字典序排列', () {
