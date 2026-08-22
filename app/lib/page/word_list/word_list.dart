@@ -1519,26 +1519,17 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
-  /// 分组底色：按组号交替使用浅色（浅色模式）/深色（暗色模式）变体，
-  /// 便于看清易混淆词表中每组（锚点簇）的边界；组号 0 = 默认底色。
+  /// 分组底色：**两种颜色交替**（组 1、3、5… 一种；组 2、4、6… 另一种），
+  /// 只改变卡片背景色，便于看清易混淆词表中每组（锚点簇）的边界；
+  /// 组号 0 = 默认底色。
   Color _groupBackgroundColor(int group, bool isDarkMode) {
     if (group <= 0) return isDarkMode ? Colors.black26 : Colors.white;
     if (isDarkMode) {
-      const darkTints = [
-        Color(0xFF1F2A3A), // 深蓝
-        Color(0xFF33261F), // 深橙
-        Color(0xFF2A2438), // 深紫
-        Color(0xFF1F3327), // 深绿
-      ];
-      return darkTints[(group - 1) % darkTints.length];
+      // 深蓝 ↔ 深橙 交替（色相差异大、对比明显）
+      return (group - 1).isEven ? const Color(0xFF2E3D5C) : const Color(0xFF5C3D24);
     }
-    const lightTints = [
-      Color(0xFFE8F4FD), // 浅蓝
-      Color(0xFFFFF3E0), // 浅橙
-      Color(0xFFF1EDFB), // 浅紫
-      Color(0xFFE7F5EC), // 浅绿
-    ];
-    return lightTints[(group - 1) % lightTints.length];
+    // 蓝 100 ↔ 橙 100 交替
+    return (group - 1).isEven ? const Color(0xFFBBDEFB) : const Color(0xFFFFE0B2);
   }
 
   Widget _buildWordDecoration(
@@ -1572,6 +1563,12 @@ class WordListPageState extends State<WordListPage>
           ];
         }
 
+        final defaultBorder =
+            isBookmarked
+                ? (isAsrReady
+                    ? AppTheme.gradientStartColor.withValues(alpha: 0.5)
+                    : const Color(0xFF0097A7))
+                : Colors.transparent;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
@@ -1579,15 +1576,7 @@ class WordListPageState extends State<WordListPage>
             color: _groupBackgroundColor(group, isDarkMode),
             borderRadius: BorderRadius.circular(8),
             boxShadow: shadows,
-            border: Border.all(
-              width: 1.8,
-              strokeAlign: BorderSide.strokeAlignInside,
-              color: isBookmarked
-                  ? (isAsrReady 
-                      ? AppTheme.gradientStartColor.withValues(alpha: 0.5)
-                      : const Color(0xFF0097A7))
-                  : Colors.transparent,
-            ),
+            border: Border.all(color: defaultBorder, width: 1.8),
           ),
           child: child,
         );
@@ -1785,7 +1774,7 @@ class WordListPageState extends State<WordListPage>
       builder: (context, activeIndex, child) {
         final isBookmarked = activeIndex == i;
 
-        // 基础单词内容
+        // 基础单词内容；分组词表按锚点簇交替底色（组号由 provider 提供）
         Widget content = _buildWordDecoration(
           isBookmarked: isBookmarked,
           isDarkMode: isDarkMode,
