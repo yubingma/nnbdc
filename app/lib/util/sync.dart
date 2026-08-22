@@ -812,6 +812,17 @@ void printFormattedChanges(String label, List<Map<String, dynamic>> changes) {
   // 格式化输出变更记录（已移除日志）
 }
 
+/// 同步前自检：对当前用户全部词书执行 seq 连续性修复（生成 UPDATE 日志进入本次上传批次）。
+/// 仅在词书 seq 断裂时产生写入与日志；连续时零写入零日志（_reorderDictWords 内部逐词比较跳过）。
+Future<void> repairDictWordSequences(String userId) async {
+  final db = MyDatabase.instance;
+  final allDicts = await db.dictsDao.select(db.dicts).get();
+  for (final dict in allDicts) {
+    if (dict.ownerId != userId) continue; // 只处理用户自己的词书，系统词书（ownerId=sysUser）跳过
+    await db.dictWordsDao.fixDictOrder(dict.id, true);
+  }
+}
+
 // 同步指定用户的用户数据库
 Future<void> syncUserDb(String userId) async {
   if (_isSyncUserDbRunning) {
@@ -832,6 +843,10 @@ Future<void> syncUserDb(String userId) async {
     if (localDbVersion > 0) {
       await _validateCoreData(userId);
     }
+
+    // 同步前自检：对当前用户全部词书执行 seq 连续性修复，让历史遗留断裂在上传前自愈，
+    // 生成的 UPDATE 日志随本次批次上传，避免触发服务端 DICT_WORD_ORDER_INVALID 校验失败。
+    await repairDictWordSequences(userId);
 
     // 获取服务端数据库版本
     var remoteDbVersion = -1;

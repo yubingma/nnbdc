@@ -244,11 +244,10 @@ public class UserDbSyncBo {
      * @param logs                    同步日志列表
      * @return 同步后，服务端数据库最新版本
      * @throws DbVersionNotMatchException 数据库版本不匹配异常
-     * @throws IllegalAccessException     非法访问异常
      * @throws RawWordDataErrorException  生词数据错误异常
      */
     public int syncUserDb2Back(String userId, int expectedServerDbVersion, List<UserDbLogDto> logs)
-            throws DbVersionNotMatchException, IllegalAccessException, RawWordDataErrorException {
+            throws DbVersionNotMatchException, RawWordDataErrorException {
 
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         def.setName("syncUserDb");
@@ -311,7 +310,7 @@ public class UserDbSyncBo {
 
             transactionManager.commit(status);
             return lastVersion + 1;
-        } catch (DbVersionNotMatchException | RawWordDataErrorException | IllegalAccessException | RuntimeException e) {
+        } catch (DbVersionNotMatchException | RawWordDataErrorException | RuntimeException e) {
             try {
                 // 检查事务状态，只有在事务仍然活跃时才回滚
                 if (!status.isCompleted()) {
@@ -324,8 +323,6 @@ public class UserDbSyncBo {
             }
             if (e instanceof DbVersionNotMatchException dbVersionNotMatchException)
                 throw dbVersionNotMatchException;
-            if (e instanceof IllegalAccessException illegalAccessException)
-                throw illegalAccessException;
             if (e instanceof RawWordDataErrorException rawWordDataErrorException)
                 throw rawWordDataErrorException;
             throw new RuntimeException(e.getMessage(), e);
@@ -1042,19 +1039,11 @@ public class UserDbSyncBo {
      * 重要改进：使用 CAS (Compare-And-Swap) 来更新版本号，确保原子性
      */
     private void validateAndFinalizeSync(String userId, List<UserDbLogDto> logs, int lastVersion)
-            throws IllegalAccessException, RawWordDataErrorException, DbVersionNotMatchException {
+            throws RawWordDataErrorException, DbVersionNotMatchException {
         // 用户所有个人词书的顺序校验
-        try {
-            String issue = dictWordBo.validateDictWordsOrderOfUser(userId);
-            if (issue != null) {
-                userDbIssueBo.recordIssue(userId, "DICT_WORD_ORDER_INVALID", issue);
-                throw new RawWordDataErrorException("DICT_WORD_ORDER_INVALID: " + issue);
-            }
-        } catch (RawWordDataErrorException e) {
-            throw e;
-        } catch (IllegalAccessException e) {
-            logger.error("校验生词本顺序失败，将回滚整个事务: {}", e.getMessage(), e);
-            throw new RuntimeException("校验生词本顺序失败: " + e.getMessage(), e);
+        String issue = dictWordBo.validateDictWordsOrderOfUser(userId);
+        if (issue != null) {
+            throw new RawWordDataErrorException("DICT_WORD_ORDER_INVALID: " + issue);
         }
 
         // 更新用户排名（在版本号更新之前，避免排名更新失败影响版本号）
@@ -1075,6 +1064,18 @@ public class UserDbSyncBo {
         }
 
         logger.info("数据库版本更新成功：{} -> {}", lastVersion, newVersion);
+    }
+
+    /**
+     * 记录词书顺序异常（在同步事务回滚之后调用，独立事务落库；
+     * 不能在同步事务内调用，否则随回滚丢失，且 user_db_issue 外键与事务内 user 行锁互斥）
+     */
+    public void recordDictWordOrderIssue(String userId, String message) {
+        try {
+            userDbIssueBo.recordIssue(userId, "DICT_WORD_ORDER_INVALID", message);
+        } catch (RuntimeException | IllegalAccessException e) {
+            logger.error("记录词书顺序异常失败: userId={}, message={}", userId, message, e);
+        }
     }
 
     /**

@@ -633,7 +633,8 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     }
   }
 
-  // 删除词书中的单词（单纯删除数据，不处理序号，仅供同步或已有清理逻辑的包装方法使用）
+  // 删除词书中的单词（用户主动删除时删除后重排剩余词 seq 并生成 UPDATE 日志；
+  // genLog=false 仅供服务端日志回放，不重排）
   Future<void> deleteEntity(DictWord entry, bool genLog) async {
     if (genLog) {
       var dict = await db.dictsDao.findById(entry.dictId);
@@ -644,6 +645,11 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
     // 删除数据
     await delete(dictWords).delete(entry);
     WordBo.clearTspCache(entry.dictId, db);
+
+    // 删除后重排剩余词的seq，保证连续（仅用户主动删除时；服务端日志回放不重排，避免日志循环）
+    if (genLog) {
+      await _reorderDictWords(entry.dictId, true);
+    }
   }
 
   /// 完整删除词典单词（包括后续序号调整、wordCount更新、学习进度修复）
@@ -674,6 +680,11 @@ class DictWordsDao extends DatabaseAccessor<MyDatabase> with _$DictWordsDaoMixin
 
     // 更新词书的wordCount
     await db.dictsDao.updateWordCount(dictId, genLog);
+
+    // 删除后重排剩余词的seq，保证连续（仅用户主动删除时；服务端日志回放不重排，避免日志循环）
+    if (genLog) {
+      await _reorderDictWords(dictId, true);
+    }
 
     // 学习进度已改为基于状态计算，不再需要维护 currentWordSeq
     Global.logger.d('已删除词典单词并完成清理: dictId=$dictId, wordId=$wordId, seqNo=$seqNo');
