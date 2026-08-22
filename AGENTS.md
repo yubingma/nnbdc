@@ -77,18 +77,4 @@ For multi-step tasks, state a brief plan:
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
 
-## AI 团队工作流
 
-对于任何代码修改需求，加载 `ppdc-team-workflow` skill 并按 6 阶段流程执行：
-
-阶段 0: 需求 → Plan (writing-plans)
-阶段 1: 架构审查 Plan (ppdc-architect)
-阶段 2: 用户审批 Plan
-阶段 3: 逐 Task 执行 (TDD + 代码审查 + 音频专家审查)
-阶段 4: 架构集成审查
-阶段 5: 集成验证 (flutter test + mvn test)
-阶段 6: 用户决策 (commit/修改/放弃)
-
-团队角色：用户(决策者) + 主Agent(规划师+集成验证) + 架构师(subagent) + Flutter/Java开发(subagent) + 审查员(subagent) + 音频专家(subagent)
-
-附加 skill(位于 `.agents/skills/` 目录): audio-specialist (音频变更), ppdc-architect (架构审查)
