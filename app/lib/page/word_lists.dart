@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/page/word_list/confusable_words.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
 import 'package:nnbdc/page/word_list/learning_words.dart';
 import 'package:nnbdc/page/word_list/mastered_words.dart';
@@ -163,6 +164,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               toDictWordsListPage(dict, true)!.then((value) => loadData());
             } else if (wordList.name == '已掌握') {
               toMasteredWordsListPage(true)!.then((value) => loadData());
+            } else if (wordList.name == '易混淆单词') {
+              toConfusableWordsListPage()!.then((value) => loadData());
             }
           },
           child: Container(

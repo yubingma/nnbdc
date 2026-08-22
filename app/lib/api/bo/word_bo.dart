@@ -20,6 +20,7 @@ import 'package:nnbdc/constants.dart';
 
 import '../../services/throttled_sync_service.dart';
 import 'package:nnbdc/util/local_embedding_cache.dart';
+import 'package:nnbdc/util/confusable_sort.dart';
 
 
 const _popCountTable = [
@@ -137,6 +138,38 @@ class WordBo {
     final targetDb = db ?? MyDatabase.instance;
     unawaited(targetDb.dictWordsDao.clearAllSemanticSeq());
     Global.logger.d('clearAllTspCache: 已清除所有词书的 TSP 缓存及本地数据库缓存');
+  }
+
+  // 易混淆单词排序缓存：key = userId；value 记录排序结果与数据签名，
+  // 签名（学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序）变化即失效重算
+  static final Map<String, _ConfusableCacheEntry> _confusableCache = {};
+
+  // 并发防重算：key = '$userId|$signature'；同一用户同一数据签名下并发请求共享同一个排序 Future
+  static final Map<String, Future<List<String>>> _confusableInflight = {};
+
+  /// 供测试检查：该用户的易混淆排序缓存是否已生成（只读缓存，不触发任何查询/排序）
+  @visibleForTesting
+  static bool isConfusableSortReady(String userId) => _confusableCache.containsKey(userId);
+
+  /// 供测试清理：清空易混淆单词缓存（排序结果与进行中的排序 Future）
+  @visibleForTesting
+  static void clearConfusableCache() {
+    _confusableCache.clear();
+    _confusableInflight.clear();
+  }
+
+  /// 数据签名：学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序的哈希；
+  /// 学习词书增删（dictIds）、词书单词增删（B，即使锚点不变 C 应变）、学习记录/已掌握变化
+  /// （A）任一变化都会改变签名。三个列表以 'd:'/'w:'/'a:' 边界标记 + ',' 分隔拼接，
+  /// 避免列表间拼接歧义（如 ['a']+['bc'] 与 ['ab']+['c']）。
+  static String _confusableSignature(
+      List<String> dictIds, Set<String> wordIds, Set<String> anchorIds) {
+    final sortedDictIds = [...dictIds]..sort();
+    final sortedWordIds = wordIds.toList()..sort();
+    final sortedAnchorIds = anchorIds.toList()..sort();
+    final content =
+        'd:${sortedDictIds.join(',')};w:${sortedWordIds.join(',')};a:${sortedAnchorIds.join(',')}';
+    return sha256.convert(utf8.encode(content)).toString();
   }
 
   Future<List<String>> getTspSortedWordIdsForList(List<String> wordIds) async {
@@ -2431,6 +2464,8 @@ class WordBo {
       // 获取全局已掌握单词数量
       final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
       wordLists.add(WordList("已掌握", masteredWordIds.length));
+      // 易混淆单词：词表单词数（锚点 + 范围内相近词；未命中时完整计算一次并缓存，命中复用缓存长度）
+      wordLists.add(WordList("易混淆单词", await getConfusableWordCount(user.id)));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
     } catch (e, stackTrace) {
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);
@@ -2688,22 +2723,21 @@ class WordBo {
       }
     }
 
-    // 按最大 popularity limit 过滤通用释义
-    if (maxPopularityLimit == null) {
-      return commonMeaningItems;
-    }
-    
-    final intLimit = maxPopularityLimit;
-    final filtered = commonMeaningItems.where((mi) => mi.popularity <= intLimit).toList();
+    // 按最大 popularity limit 过滤通用释义（min-3 保底见 _applyPopularityLimit）
+    return _applyPopularityLimit(commonMeaningItems, maxPopularityLimit);
+  }
 
-    // 【保底逻辑】如果一个单词的释义由于限制度太严格而被过滤完了，或者剩余太少，
-    // 我们至少保留常用度排名最靠前的 3 个释义，防止出现“暂无释义”。
-    // 注意：commonMeaningItems 已经在前面按 popularity 升序排过序了。
-    const minMeanings = 3;
-    if (filtered.length < minMeanings && commonMeaningItems.length > filtered.length) {
-      return commonMeaningItems.take(minMeanings).toList();
+  /// 按 maxPopularityLimit 过滤通用释义；若过滤后不足 min-3 保底取常用度最靠前 3 条，
+  /// 防止出现"暂无释义"（common 需已按 popularity 升序排列；limit 为 null 表示不限制）。
+  static List<MeaningItem> _applyPopularityLimit(List<MeaningItem> common, int? maxPopularityLimit) {
+    if (maxPopularityLimit == null) {
+      return common;
     }
-    
+    final filtered = common.where((mi) => mi.popularity <= maxPopularityLimit).toList();
+    const minMeanings = 3;
+    if (filtered.length < minMeanings && common.length > filtered.length) {
+      return common.take(minMeanings).toList();
+    }
     return filtered;
   }
 
@@ -2711,6 +2745,200 @@ class WordBo {
   Future<List<MeaningItemVo>> getMeaningItemsForWord(String wordId, String userId) async {
     final items = await getWordMeaningItems(wordId, userId);
     return items.map((e) => MeaningItemVo(e.id, e.ciXing, e.meaning, null, null, null)).toList();
+  }
+
+  // ---------- 易混淆单词：学习词书聚合 / 锚点过滤 / 计数 / 批量释义 ----------
+
+  /// 学习词书 dictId 列表 + 聚合去重后的 wordId 集合（同词多词书只算一次；不排序）
+  static Future<({List<String> dictIds, Set<String> wordIds})> _loadConfusableWords(String userId) async {
+    final db = MyDatabase.instance;
+    final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
+    final dictIds = [for (final d in learningDicts) d.dictId];
+    final wordIds = <String>{};
+    if (dictIds.isNotEmpty) {
+      final rows = await (db.select(db.dictWords)..where((dw) => dw.dictId.isIn(dictIds))).get();
+      for (final r in rows) {
+        wordIds.add(r.wordId);
+      }
+    }
+    return (dictIds: dictIds, wordIds: wordIds);
+  }
+
+  /// 锚点集 A = 学习范围 B ∩（learning_words 记录 ∪ 已掌握词书）。
+  /// learning_words 取 userId 的全部 wordId——不带 stability 过滤（"学习过"含已毕业，
+  /// 既有 getLearningWordIdSet 过滤 stability<180 会排除已毕业，不可复用），故在 WordBo 内联查询。
+  static Future<Set<String>> _loadConfusableAnchors(String userId, Set<String> wordIds) async {
+    if (wordIds.isEmpty) return {};
+    final db = MyDatabase.instance;
+    final learnedRows =
+        await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
+    final learnedOrMastered = {for (final lw in learnedRows) lw.wordId}
+      ..addAll(await db.masteredWordsDao.getMasteredWordIdSet(userId));
+    return wordIds.intersection(learnedOrMastered);
+  }
+
+  /// 易混淆单词：锚点（学习过的词）∪ 学习范围内与锚点拼写相近（编辑距离 ≤ 2）的词，
+  /// 按拼写相似度贪心最近邻排序，返回排序后的 wordId 列表。空锚点 → 空列表。
+  /// 内存缓存带签名校验（学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序），
+  /// 任一分量变化即失效重算；并发同签名请求共享同一个排序 Future 防重算。
+  Future<List<String>> getConfusableWordIds(String userId) async {
+    final (:dictIds, :wordIds) = await _loadConfusableWords(userId);
+    final anchorIds = await _loadConfusableAnchors(userId, wordIds);
+    final signature = _confusableSignature(dictIds, wordIds, anchorIds);
+
+    final cached = _confusableCache[userId];
+    if (cached != null && cached.signature == signature) {
+      return cached.sortedIds;
+    }
+
+    // 并发防重算：同一用户同一数据签名下共享同一个排序 Future（key 含 userId，避免跨用户串用）
+    final inflightKey = '$userId|$signature';
+    final inflight = _confusableInflight[inflightKey];
+    if (inflight != null) {
+      return inflight;
+    }
+    final future = _computeConfusableSorted(userId, wordIds, anchorIds, signature);
+    _confusableInflight[inflightKey] = future;
+    try {
+      return await future;
+    } finally {
+      _confusableInflight.remove(inflightKey);
+    }
+  }
+
+  /// 关联 words 取 spell → isolate（锚点过滤 + 贪心排序）→ 写入结果缓存。
+  /// 无锚点时词表为空（A ∪ C = ∅），直接缓存空列表不进入 isolate——
+  /// confusableSortInIsolate 空锚点退化为全量，与"空锚点 → 空词表"语义不符，故在此短路。
+  static Future<List<String>> _computeConfusableSorted(
+      String userId, Set<String> wordIds, Set<String> anchorIds, String signature) async {
+    if (anchorIds.isEmpty) {
+      final empty = <String>[];
+      _confusableCache[userId] = _ConfusableCacheEntry(empty, signature);
+      return empty;
+    }
+    final db = MyDatabase.instance;
+    final words = await (db.select(db.words)..where((w) => w.id.isIn(wordIds))).get();
+    final spellMap = {for (final w in words) w.id: w.spell};
+    final ids = <String>[];
+    final spells = <String>[];
+    for (final id in wordIds) {
+      ids.add(id);
+      // 容错：words 表缺失时以 id 兜底（与 getTspSortedWordIdsForList 一致）
+      spells.add(spellMap[id] ?? id);
+    }
+    // 锚点 ⊆ 学习范围，spell 已含于 spellMap
+    final anchorIdsList = anchorIds.toList();
+    final anchorSpells = [for (final id in anchorIdsList) spellMap[id] ?? id];
+    final sortedIds = await compute<ConfusableSortParams, List<String>>(
+        confusableSortInIsolate,
+        ConfusableSortParams(ids, spells,
+            anchorIds: anchorIdsList, anchorSpells: anchorSpells));
+    _confusableCache[userId] = _ConfusableCacheEntry(sortedIds, signature);
+    return sortedIds;
+  }
+
+  /// 易混淆单词计数：与排序共用缓存——缓存命中（签名一致）直接返回长度，
+  /// 未命中则完整计算一次（过滤 + 排序，isolate）并缓存。
+  Future<int> getConfusableWordCount(String userId) async {
+    final ids = await getConfusableWordIds(userId);
+    return ids.length;
+  }
+
+  /// 批量获取释义（与 [getWordMeaningItems] 语义一致）：
+  /// 学习词书定制释义优先（含父级词库展开）；无定制释义时用通用释义，按所有学习词书的
+  /// 最大 popularityLimit 过滤，过滤后不足 min-3 保底取常用度最靠前 3 条；已掌握/学习中的
+  /// 单词不参与过滤。一次批量查询实现（wordIds IN + 定制释义批量 + 通用兜底批量），避免逐词循环。
+  Future<Map<String, List<MeaningItem>>> getConfusableMeaningsInBatch(
+      Set<String> wordIds, String userId) async {
+    final db = MyDatabase.instance;
+    final wordIdList = wordIds.toList();
+    if (wordIdList.isEmpty) {
+      return {};
+    }
+
+    // 学习词书集合 + 父级词库展开（与 getWordMeaningItems 口径一致）
+    final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(userId);
+    final dictIds = [for (final d in learningDicts) d.dictId];
+    final expandedDictIds = <String>{...dictIds};
+    if (dictIds.isNotEmpty) {
+      final dbDicts = await (db.select(db.dicts)..where((d) => d.id.isIn(dictIds))).get();
+      for (final d in dbDicts) {
+        if (d.baseDictId != null && d.baseDictId!.isNotEmpty) {
+          expandedDictIds.add(d.baseDictId!);
+        }
+      }
+    }
+
+    // 批量查定制释义（学习词书及父级词库）
+    final customMap = <String, List<MeaningItem>>{};
+    if (expandedDictIds.isNotEmpty) {
+      final customQuery = db.select(db.meaningItems)
+        ..where((mi) => mi.wordId.isIn(wordIdList) & mi.dictId.isIn(expandedDictIds))
+        ..orderBy([
+          (mi) => OrderingTerm(expression: mi.wordId),
+          (mi) => OrderingTerm(expression: mi.popularity),
+        ]);
+      for (final mi in await customQuery.get()) {
+        customMap.putIfAbsent(mi.wordId, () => []).add(mi);
+      }
+    }
+
+    // 批量查通用释义（按 wordId、popularity 升序，与逐词查询的排序一致）
+    final commonQuery = db.select(db.meaningItems)
+      ..where((mi) => mi.wordId.isIn(wordIdList) & mi.dictId.equals(Global.commonDictId))
+      ..orderBy([
+        (mi) => OrderingTerm(expression: mi.wordId),
+        (mi) => OrderingTerm(expression: mi.popularity),
+      ]);
+    final commonMap = <String, List<MeaningItem>>{};
+    for (final mi in await commonQuery.get()) {
+      commonMap.putIfAbsent(mi.wordId, () => []).add(mi);
+    }
+
+    // 所有学习词书（含父级词库）的最大 popularityLimit，一次计算；null 视为不限制
+    int? maxPopularityLimit;
+    if (expandedDictIds.isNotEmpty) {
+      final dicts = await (db.select(db.dicts)..where((d) => d.id.isIn(expandedDictIds))).get();
+      for (final d in dicts) {
+        final limit = d.popularityLimit;
+        if (limit == null) {
+          maxPopularityLimit = null;
+          break;
+        }
+        if (maxPopularityLimit == null || limit > maxPopularityLimit) {
+          maxPopularityLimit = limit;
+        }
+      }
+    }
+
+    // 已掌握/学习中的单词不参与 popularity 过滤（批量一次查齐）
+    final masteredIds = await db.masteredWordsDao.getMasteredWordIdSetForWords(userId, wordIdList);
+    final learningRows = await (db.select(db.learningWords)
+          ..where((tbl) => tbl.userId.equals(userId) & tbl.wordId.isIn(wordIdList)))
+        .get();
+    final learningIds = {for (final lw in learningRows) lw.wordId};
+
+    // 逐词组装（纯内存过滤，无逐词查库）
+    final result = <String, List<MeaningItem>>{};
+    for (final wordId in wordIdList) {
+      final custom = customMap[wordId];
+      if (custom != null && custom.isNotEmpty) {
+        result[wordId] = custom;
+        continue;
+      }
+      final common = commonMap[wordId];
+      if (common == null || common.isEmpty) {
+        // 与 getWordMeaningItems 一致：通用释义缺失视为数据异常
+        final shortId = wordId.length > 6 ? wordId.substring(0, 6) : wordId;
+        Global.logger.e('通用释义缺失: wordId=$shortId');
+        throw Exception('通用释义缺失: wordId=$shortId');
+      }
+      final limit = masteredIds.contains(wordId) || learningIds.contains(wordId)
+          ? null
+          : maxPopularityLimit;
+      result[wordId] = _applyPopularityLimit(common, limit);
+    }
+    return result;
   }
 
   Future<Result<int>> getLearningWordInBucketOrder(String spell, int bucketKey, String userId) async {
@@ -2878,4 +3106,11 @@ class CigenExpandedWord {
   final String category; // 具体的词根或词缀拼写/变体名称，如 'A' 或 'B'
   final String? cigenMeaning; // 词根/词缀中文含义
   CigenExpandedWord(this.word, this.learningStatus, {this.inDict = true, this.category = 'ROOT', this.cigenMeaning});
+}
+
+/// 易混淆单词排序缓存条目：排序后的 wordId 列表 + 数据签名
+class _ConfusableCacheEntry {
+  final List<String> sortedIds;
+  final String signature;
+  _ConfusableCacheEntry(this.sortedIds, this.signature);
 }

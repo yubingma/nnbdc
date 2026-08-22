@@ -112,6 +112,9 @@ mixin WordsProvider {
 
   /// 该数据源是否包含分单元的数据（用于判断是否展示单元序）
   Future<bool> get hasUnits async => false;
+
+  /// 数据源是否支持自定义排序（用于是否展示"排序设置"菜单；固定排序的虚拟词表可关闭）
+  bool get canCustomizeSort => true;
 }
 
 abstract class WordModifier {
@@ -2330,7 +2333,8 @@ class WordListPageState extends State<WordListPage>
 
                           // 4. 构建菜单项
                           List<String> menuItems = [
-                            menuSortSettings,
+                            if (args.wordsProvider.canCustomizeSort)
+                              menuSortSettings,
                             menuWordList,
                           ];
                           if (args.canAddWord &&
