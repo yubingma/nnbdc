@@ -214,22 +214,42 @@ void main() {
       expect(ids.toSet(), {'w_house', 'w_horse'});
     });
 
-    test('阈值边界：dist=2 相近词加入、dist=3 排除', () async {
+    test('阈值边界：dist=1 含、dist=2 不含、长度不同不含、len<3 锚点不在词表', () async {
       await insertDict('d1');
       await insertLearningDict('d1');
+      // 锚点（学习过）：house / weather / cat / go
+      // 候选（仅在学习范围、非锚点）：horse / whether / cart
+      await insertWord('w_house', 'house');
+      await insertWord('w_horse', 'horse'); // dist(house)=1 同长 5 → 含
+      await insertWord('w_weather', 'weather');
+      await insertWord('w_whether', 'whether'); // dist(weather)=2 同长 7 → 不含
       await insertWord('w_cat', 'cat');
-      await insertWord('w_crate', 'crate'); // dist(cat, crate) = 2
-      await insertWord('w_castle', 'castle'); // dist(cat, castle) = 3
-      await insertDictWord('d1', 'w_cat');
-      await insertDictWord('d1', 'w_crate');
-      await insertDictWord('d1', 'w_castle');
+      await insertWord('w_cart', 'cart'); // dist(cat)=1 但长度 4≠3 → 不含
+      await insertWord('w_go', 'go'); // len 2 < 3：锚点也不进入词表
+      for (final id in [
+        'w_house',
+        'w_horse',
+        'w_weather',
+        'w_whether',
+        'w_cat',
+        'w_cart',
+        'w_go',
+      ]) {
+        await insertDictWord('d1', id);
+      }
+      await insertLearningWord('w_house');
+      await insertLearningWord('w_weather');
       await insertLearningWord('w_cat');
+      await insertLearningWord('w_go');
 
       final wordBo = WordBo();
       final ids = await wordBo.getConfusableWordIds(userId);
-      expect(ids.toSet(), {'w_cat', 'w_crate'});
-      expect(ids, isNot(contains('w_castle')));
-      expect(await wordBo.getConfusableWordCount(userId), 2);
+      // 词表 = len≥3 锚点（house/weather/cat 保留，go 排除）+ 相近词 horse
+      expect(ids.toSet(), {'w_house', 'w_horse', 'w_weather', 'w_cat'});
+      expect(ids, isNot(contains('w_whether'))); // dist=2 → 不含
+      expect(ids, isNot(contains('w_cart'))); // 长度不同 → 不含
+      expect(ids, isNot(contains('w_go'))); // len<3 锚点 → 不在词表
+      expect(await wordBo.getConfusableWordCount(userId), 4);
     });
   });
 
@@ -341,17 +361,18 @@ void main() {
       await insertLearningWord('w_house');
 
       final wordBo = WordBo();
-      // 锚点 house → 词表 house + horse + hose（后两者与 house 距离 ≤ 2）
+      // 锚点 house → 词表 house + horse（hose 长度 4≠5，作为相近词被排除）
       final list1 = await wordBo.getConfusableWordIds(userId);
-      expect(list1.toSet(), {'w_house', 'w_horse', 'w_hose'});
+      expect(list1.toSet(), {'w_house', 'w_horse'});
 
       // 新增 learning_word（w_horse 学习过）→ A 变 → 重算（集合不变，缓存对象换新）
       await insertLearningWord('w_horse');
       final list2 = await wordBo.getConfusableWordIds(userId);
-      expect(list2.toSet(), {'w_house', 'w_horse', 'w_hose'});
+      expect(list2.toSet(), {'w_house', 'w_horse'});
       expect(identical(list1, list2), false);
 
-      // 移入已掌握（w_hose 进已掌握词书）→ A 变 → 重算
+      // 移入已掌握（w_hose 进已掌握词书）→ A 变 → 重算；
+      // hose 由此成为锚点（len 4 ≥ 3，孤立锚点保留）→ 重新进入词表
       await db.masteredWordsDao.saveMasteredWord(userId, 'w_hose', false, false);
       final list3 = await wordBo.getConfusableWordIds(userId);
       expect(list3.toSet(), {'w_house', 'w_horse', 'w_hose'});

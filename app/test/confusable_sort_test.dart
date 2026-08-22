@@ -50,17 +50,20 @@ List<String> naiveConfusableSort(List<ConfusableWord> words) {
 
 // ===== 朴素 A×B 两两全量过滤：无剪枝的对照基准（规则与 selectConfusableNear 完全一致）=====
 
-/// 朴素实现：候选属于锚点，或与任一锚点编辑距离 <= maxDist，即入选
+/// 朴素实现（新规则）：候选 len ≥ 3，且（属于锚点，或与同长度锚点编辑距离 ≤ maxDist）即入选
 Set<String> naiveSelectConfusableNear(
   Set<ConfusableWord> anchors,
   List<ConfusableWord> candidates, {
-  int maxDist = 2,
+  int maxDist = 1,
 }) {
   if (anchors.isEmpty) return {};
   return {
     for (final b in candidates)
-      if (anchors.contains(b) ||
-          anchors.any((a) => EditDistance.forStrings(b.spell, a.spell) <= maxDist))
+      if (b.spell.length >= 3 &&
+          (anchors.contains(b) ||
+              anchors.any((a) =>
+                  a.spell.length == b.spell.length &&
+                  EditDistance.forStrings(b.spell, a.spell) <= maxDist)))
         b.id,
   };
 }
@@ -285,53 +288,61 @@ void main() {
   });
 
   group('selectConfusableNear 锚点过滤', () {
-    test('锚点一定出现在结果集', () {
+    test('锚点保留语义：len≥3 锚点（即使无相近词）在结果集；len<3 锚点不在结果集', () {
       const anchors = {
-        (id: 'a1', spell: 'house'),
-        (id: 'a2', spell: 'cat'),
+        (id: 'a1', spell: 'house'), // len 5，无相近词 → 孤立锚点保留
+        (id: 'a2', spell: 'go'), // len 2 < 3 → 不进入词表
       };
       const candidates = [
         (id: 'a1', spell: 'house'),
-        (id: 'a2', spell: 'cat'),
+        (id: 'a2', spell: 'go'),
         (id: 'b1', spell: 'dog'), // 与锚点距离远，不影响锚点保留
       ];
       final result = selectConfusableNear(anchors, candidates);
-      expect(result, containsAll(['a1', 'a2']));
+      expect(result, {'a1'});
+      expect(result, isNot(contains('a2')));
     });
 
-    test('与锚点编辑距离 <= 2 的相近词加入', () {
-      // 先验证构造词对的距离：house/horse=1、weather/whether=2
+    test('阈值边界：dist=1 含、dist=2 不含、长度不同不含、len<3 不含', () {
+      // 先用 EditDistance 验证构造词对的距离
       expect(EditDistance.forStrings('house', 'horse'), 1);
       expect(EditDistance.forStrings('weather', 'whether'), 2);
+      expect(EditDistance.forStrings('cat', 'cart'), 1); // 长度 3≠4
+      expect(EditDistance.forStrings('at', 'it'), 1); // 长度 2 < 3
 
       const anchors = {
-        (id: 'a1', spell: 'house'),
-        (id: 'a2', spell: 'weather'),
+        (id: 'a_house', spell: 'house'),
+        (id: 'a_weather', spell: 'weather'),
+        (id: 'a_cat', spell: 'cat'),
+        (id: 'a_at', spell: 'at'),
       };
       const candidates = [
-        (id: 'b1', spell: 'horse'), // 与 house 距离 1
-        (id: 'b2', spell: 'whether'), // 与 weather 距离 2
-        (id: 'b3', spell: 'dog'), // 无关 → 排除
+        (id: 'b_horse', spell: 'horse'), // 与 house 同长 5、dist=1 → 含
+        (id: 'b_whether', spell: 'whether'), // 与 weather 同长 7、dist=2 → 不含（距离超限）
+        (id: 'b_cart', spell: 'cart'), // 与 cat 距离 1 但长度 4≠3 → 不含（长度不同）
+        (id: 'b_it', spell: 'it'), // 与 at 距离 1 但长度 2<3 → 不含（最短词长）
+        (id: 'b_dog', spell: 'dog'), // 无关 → 排除
       ];
-      expect(selectConfusableNear(anchors, candidates), {'b1', 'b2'});
+      expect(selectConfusableNear(anchors, candidates), {'b_horse'});
     });
 
-    test('阈值边界：maxDist=2 时 dist=2 加入、dist=3 排除', () {
-      // 先用 EditDistance 验证构造词对的距离
-      expect(EditDistance.forStrings('cat', 'cut'), 1);
-      expect(EditDistance.forStrings('cat', 'cart'), 1);
-      expect(EditDistance.forStrings('whether', 'weather'), 2);
-      expect(EditDistance.forStrings('cat', 'cattle'), 3);
+    test('显式 maxDist 参数在长度相同约束下仍生效', () {
+      // weather/whether 同长 7、距离恰为 2：默认 1 不含，显式 2 含
+      const anchors = {(id: 'a', spell: 'weather')};
+      const candidates = [(id: 'b', spell: 'whether')];
+      expect(selectConfusableNear(anchors, candidates), isEmpty);
+      expect(selectConfusableNear(anchors, candidates, maxDist: 2), {'b'});
+    });
 
-      // dist=2（边界内）：whether 与锚点 weather 距离恰为 2 → 加入
-      const anchors2 = {(id: 'a', spell: 'weather')};
-      const candidates2 = [(id: 'b', spell: 'whether')];
-      expect(selectConfusableNear(anchors2, candidates2, maxDist: 2), {'b'});
-
-      // dist=3（边界外）：cat 与锚点 cattle 距离恰为 3 → 排除
-      const anchors3 = {(id: 'a', spell: 'cattle')};
-      const candidates3 = [(id: 'b', spell: 'cat')];
-      expect(selectConfusableNear(anchors3, candidates3, maxDist: 2), isEmpty);
+    test('dist=0 同拼写不同 id：按公式距离 0 ≤ 1 仍包含', () {
+      // 与"一字之差"（恰好一次替换）的直观表述不同：同拼写 dist=0 也满足
+      // len 相同 && dist ≤ 1，按公式语义仍包含
+      const anchors = {(id: 'a1', spell: 'house')};
+      const candidates = [
+        (id: 'a1', spell: 'house'),
+        (id: 'b1', spell: 'house'), // 同拼写不同 id，dist=0
+      ];
+      expect(selectConfusableNear(anchors, candidates), {'a1', 'b1'});
     });
 
     test('空锚点返回空集；空候选返回空集', () {
@@ -343,21 +354,21 @@ void main() {
     });
 
     test('长度分桶剪枝与朴素两两全量严格一致', () {
-      // 手工构造：混合长度 + 锚点自身 + 同 spell 不同 id
+      // 手工构造：混合长度 + 锚点自身 + 同 spell 不同 id + len<3 锚点/候选
       const anchors = {
         (id: 'a1', spell: 'cat'),
         (id: 'a2', spell: 'cattle'),
-        (id: 'a3', spell: 'x'),
+        (id: 'a3', spell: 'x'), // len 1 < 3：新规则下不进桶、不参与匹配
         (id: 'a4', spell: 'apple'),
       };
       const candidates = [
         (id: 'a1', spell: 'cat'), // 锚点自身
-        (id: 'b1', spell: 'cut'), // 与 cat 距离 1
-        (id: 'b2', spell: 'cart'), // 与 cat 距离 1
+        (id: 'b1', spell: 'cut'), // 与 cat 同长、距离 1
+        (id: 'b2', spell: 'cart'), // 与 cat 距离 1 但长度 4≠3 → 排除
         (id: 'b3', spell: 'apple'), // 与 a4 同 spell（不同 id，距离 0）
         (id: 'b4', spell: 'cattle'), // 与 a2 同 spell（不同 id，距离 0）
         (id: 'b5', spell: 'zzzz'), // 与任何锚点距离远
-        (id: 'b6', spell: 'xx'), // 与 a3 距离 1
+        (id: 'b6', spell: 'xx'), // len 2 < 3：新规则下不返回
       ];
       for (final maxDist in [0, 1, 2, 3]) {
         expect(
@@ -367,7 +378,7 @@ void main() {
         );
       }
 
-      // 随机对照（n <= 60，锚点随机子集，长度混合）
+      // 随机对照（n <= 60，锚点随机子集，长度混合）：显式 maxDist 0..3
       for (var seed = 0; seed < 50; seed++) {
         final rng = Random(seed);
         final n = 1 + rng.nextInt(60);
@@ -378,6 +389,24 @@ void main() {
           selectConfusableNear(anchorsSet, words, maxDist: maxDist),
           naiveSelectConfusableNear(anchorsSet, words, maxDist: maxDist),
           reason: 'seed=$seed, n=$n, maxDist=$maxDist',
+        );
+      }
+
+      // 随机对照：默认 maxDist 必须等于 1 且与朴素实现一致
+      for (var seed = 0; seed < 50; seed++) {
+        final rng = Random(1000 + seed);
+        final n = 1 + rng.nextInt(60);
+        final words = randomWords(rng, n);
+        final anchorsSet = {for (final w in words) if (rng.nextBool()) w};
+        expect(
+          selectConfusableNear(anchorsSet, words),
+          selectConfusableNear(anchorsSet, words, maxDist: 1),
+          reason: 'seed=$seed 默认 maxDist 必须为 1',
+        );
+        expect(
+          selectConfusableNear(anchorsSet, words),
+          naiveSelectConfusableNear(anchorsSet, words),
+          reason: 'seed=$seed 默认 maxDist 与朴素实现一致',
         );
       }
     });
@@ -430,6 +459,30 @@ void main() {
         anchorSpells: const [],
       );
       expect(confusableSortInIsolate(paramsEmptyAnchors), confusableSort(words));
+    });
+
+    test('空锚点退化路径：候选先按 len ≥ 3 过滤（与正常路径语义一致，不豁免最短词长）', () {
+      const words = [
+        (id: 'w_go', spell: 'go'), // len 2 < 3 → 过滤
+        (id: 'w_cat', spell: 'cat'),
+        (id: 'w_at', spell: 'at'), // len 2 < 3 → 过滤
+        (id: 'w_cot', spell: 'cot'),
+        (id: 'w_cart', spell: 'cart'),
+      ];
+      final params = ConfusableSortParams(
+        [for (final w in words) w.id],
+        [for (final w in words) w.spell],
+        anchorIds: const [],
+        anchorSpells: const [],
+      );
+      final expected = confusableSort(const [
+        (id: 'w_cat', spell: 'cat'),
+        (id: 'w_cot', spell: 'cot'),
+        (id: 'w_cart', spell: 'cart'),
+      ]);
+      expect(confusableSortInIsolate(params), expected);
+      expect(confusableSortInIsolate(params), isNot(contains('w_go')));
+      expect(confusableSortInIsolate(params), isNot(contains('w_at')));
     });
   });
 }

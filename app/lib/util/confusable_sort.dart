@@ -88,22 +88,27 @@ void _take(ConfusableWord w, List<String> order, Set<String> unvisited) {
 }
 
 /// 返回 candidates 中"属于锚点 或 与某锚点编辑距离 ≤ maxDist"的 id 集合。
-/// 长度分桶剪枝：编辑距离 ≥ |len 差|，故只对 |len(b)-len(a)| ≤ maxDist 的锚点桶计算距离；
-/// 找到任一满足条件的锚点即短路。剪枝只依赖下界，结果与朴素两两全量严格一致。
+/// 规则（叠加）：参与词 len ≥ 3、相近词对长度相同、编辑距离 ≤ 1（默认 maxDist）。
+/// 长度相同 + 距离 ≤ 1 ⇒ 相近词只可能是"一字之差"（恰好一次替换；同拼写不同 id 的
+/// dist=0 按公式 ≤ 1 仍包含）。长度分桶剪枝：编辑距离 ≥ |len 差|，长度相同约束下只查
+/// b 的同长度锚点桶（长度差为 0 时下界恰为 0，桶内无漏收），结果与朴素两两全量严格一致。
+/// len < 3 的锚点不进桶、len < 3 的候选不返回。
 Set<String> selectConfusableNear(
   Set<ConfusableWord> anchors,
   List<ConfusableWord> candidates, {
-  int maxDist = 2,
+  int maxDist = 1,
 }) {
   if (anchors.isEmpty) return {};
-  // 锚点按 spell 长度分桶
+  // 锚点按 spell 长度分桶（len < 3 的锚点不参与匹配）
   final buckets = <int, List<ConfusableWord>>{};
   for (final a in anchors) {
+    if (a.spell.length < 3) continue;
     buckets.putIfAbsent(a.spell.length, () => []).add(a);
   }
   final result = <String>{};
   for (final b in candidates) {
-    // 候选本身是锚点 → 直接包含；否则与长度差 ≤ maxDist 的锚点桶计算距离
+    if (b.spell.length < 3) continue; // len < 3 的候选不返回
+    // 候选本身是锚点（len ≥ 3）→ 直接包含；否则与同长度锚点桶计算距离
     if (anchors.contains(b) || _nearAnyAnchor(b, buckets, maxDist)) {
       result.add(b.id);
     }
@@ -111,25 +116,24 @@ Set<String> selectConfusableNear(
   return result;
 }
 
-/// b 是否与 [buckets] 中某个长度差 ≤ maxDist 的锚点编辑距离 ≤ maxDist（短路）
+/// b 是否与 [buckets] 中与 b 同长度的锚点编辑距离 ≤ maxDist（短路）。
+/// 规则要求相近词对长度相同，故只查 b 长度的精确桶；
+/// 编辑距离 ≥ |len 差| 保证同长度桶（长度差 0，下界 0）不漏收。
 bool _nearAnyAnchor(
   ConfusableWord b,
   Map<int, List<ConfusableWord>> buckets,
   int maxDist,
 ) {
-  final len = b.spell.length;
-  for (var l = len - maxDist; l <= len + maxDist; l++) {
-    final bucket = buckets[l];
-    if (bucket == null) continue;
-    for (final a in bucket) {
-      if (EditDistance.forStrings(b.spell, a.spell) <= maxDist) return true;
-    }
+  final bucket = buckets[b.spell.length];
+  if (bucket == null) return false;
+  for (final a in bucket) {
+    if (EditDistance.forStrings(b.spell, a.spell) <= maxDist) return true;
   }
   return false;
 }
 
 /// isolate 传参：ids 与 spells 一一对应；anchorIds 与 anchorSpells 一一对应
-/// （anchorIds 为空表示无锚点，过滤退化为全量，与旧行为等价）
+/// （anchorIds 为空表示无锚点，过滤退化为仅 len ≥ 3，与正常路径语义一致）
 class ConfusableSortParams {
   final List<String> ids;
   final List<String> spells;
@@ -147,7 +151,8 @@ class ConfusableSortParams {
 }
 
 /// isolate 入口：先按锚点过滤（selectConfusableNear），再对结果集贪心排序，
-/// 供 WordBo 用 compute 调用。无锚点时过滤退化为全量（与旧行为等价）。
+/// 供 WordBo 用 compute 调用。无锚点时过滤退化为仅 len ≥ 3（与正常路径一致，
+/// 不豁免最短词长约束）。
 List<String> confusableSortInIsolate(ConfusableSortParams params) {
   final candidates = <ConfusableWord>[
     for (var i = 0; i < params.ids.length; i++)
@@ -158,9 +163,12 @@ List<String> confusableSortInIsolate(ConfusableSortParams params) {
       (id: params.anchorIds[i], spell: params.anchorSpells[i]),
   };
   if (anchors.isEmpty) {
-    return confusableSort(candidates);
+    return confusableSort([
+      for (final w in candidates)
+        if (w.spell.length >= 3) w,
+    ]);
   }
-  final selected = selectConfusableNear(anchors, candidates, maxDist: 2);
+  final selected = selectConfusableNear(anchors, candidates, maxDist: 1);
   final filtered = [for (final w in candidates) if (selected.contains(w.id)) w];
   return confusableSort(filtered);
 }

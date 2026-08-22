@@ -2777,8 +2777,9 @@ class WordBo {
     return wordIds.intersection(learnedOrMastered);
   }
 
-  /// 易混淆单词：锚点（学习过的词）∪ 学习范围内与锚点拼写相近（编辑距离 ≤ 2）的词，
-  /// 按拼写相似度贪心最近邻排序，返回排序后的 wordId 列表。空锚点 → 空列表。
+  /// 易混淆单词：锚点（学习过的词）∪ 学习范围内与锚点拼写相近（编辑距离 ≤ 1 且
+  /// 长度相同且 ≥ 3 字母）的词，按拼写相似度贪心最近邻排序，返回排序后的 wordId 列表。
+  /// 空锚点 → 空列表。
   /// 内存缓存带签名校验（学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序），
   /// 任一分量变化即失效重算；并发同签名请求共享同一个排序 Future 防重算。
   Future<List<String>> getConfusableWordIds(String userId) async {
@@ -2808,7 +2809,7 @@ class WordBo {
 
   /// 关联 words 取 spell → isolate（锚点过滤 + 贪心排序）→ 写入结果缓存。
   /// 无锚点时词表为空（A ∪ C = ∅），直接缓存空列表不进入 isolate——
-  /// confusableSortInIsolate 空锚点退化为全量，与"空锚点 → 空词表"语义不符，故在此短路。
+  /// 空锚点退化路径只按 len ≥ 3 过滤，与"空锚点 → 空词表"语义不符，故在此短路。
   static Future<List<String>> _computeConfusableSorted(
       String userId, Set<String> wordIds, Set<String> anchorIds, String signature) async {
     if (anchorIds.isEmpty) {

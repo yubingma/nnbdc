@@ -10,8 +10,8 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 /// 易混淆单词：以用户学习过的词（学习记录 ∪ 已掌握）为锚点，聚合学习词书内
-/// 锚点及与锚点拼写相近（编辑距离 ≤ 2）的单词，按拼写相似度贪心最近邻排序的
-/// 动态虚拟词表。纯浏览视图：不落库、不产生 DbLog、不触发同步。
+/// 锚点及与锚点拼写相近（编辑距离 ≤ 1 且长度相同且 ≥ 3 字母）的单词，按拼写相似度
+/// 贪心最近邻排序的动态虚拟词表。纯浏览视图：不落库、不产生 DbLog、不触发同步。
 class ConfusableWordsProvider with WordsProvider {
   /// 注意：不要缓存 `MyDatabase.instance`。
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
