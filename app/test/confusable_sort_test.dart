@@ -5,67 +5,88 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/confusable_sort.dart';
 import 'package:nnbdc/util/edit_distance.dart';
 
-// ===== 朴素 O(n²) 全量贪心：无剪枝的对照基准（规则与 confusableSort 完全一致）=====
-
-int _bySpellThenId(ConfusableWord a, ConfusableWord b) {
-  final bySpell = a.spell.compareTo(b.spell);
-  return bySpell != 0 ? bySpell : a.id.compareTo(b.id);
-}
-
-/// 候选 w（距离 d）是否优于当前最优 best（距离 bestDist）：
-/// 距离更小，或距离相同取 (spell, id) 字典序更小
-bool _isBetter(ConfusableWord w, int d, ConfusableWord? best, int bestDist) {
-  if (best == null || d < bestDist) return true;
-  if (d > bestDist) return false;
-  final bySpell = w.spell.compareTo(best.spell);
-  return bySpell != 0 ? bySpell < 0 : w.id.compareTo(best.id) < 0;
-}
-
-/// 朴素全量贪心：从字典序最小的词出发，每一步全量扫描未访问集选最近邻
-List<String> naiveConfusableSort(List<ConfusableWord> words) {
-  if (words.length <= 1) {
-    return [for (final w in words) w.id];
-  }
-  final sorted = [...words]..sort(_bySpellThenId);
-  final unvisited = <ConfusableWord>{...sorted};
-  var cur = sorted.first;
-  final order = <String>[cur.id];
-  unvisited.remove(cur);
-  while (unvisited.isNotEmpty) {
-    ConfusableWord? best;
-    var bestDist = 0;
-    for (final w in unvisited) {
-      final d = EditDistance.forStrings(cur.spell, w.spell);
-      if (_isBetter(w, d, best, bestDist)) {
-        best = w;
-        bestDist = d;
-      }
-    }
-    order.add(best!.id);
-    cur = best;
-    unvisited.remove(best);
-  }
-  return order;
-}
-
 // ===== 朴素 A×B 两两全量过滤：无剪枝的对照基准（规则与 selectConfusableNear 完全一致）=====
 
-/// 朴素实现（新规则）：候选 len ≥ 3，且（属于锚点，或与同长度锚点编辑距离 ≤ maxDist）即入选
+/// 朴素实现：候选 len ≥ 3；锚点只有在学习范围内存在与它一字之差（同长度、距离 ≤ maxDist）
+/// 的词时才保留（无相近词的孤立锚点剔除，相近词可以是其他锚点）；非锚点候选与某锚点
+/// 一字之差即作为相近词入选。
 Set<String> naiveSelectConfusableNear(
   Set<ConfusableWord> anchors,
   List<ConfusableWord> candidates, {
   int maxDist = 1,
 }) {
   if (anchors.isEmpty) return {};
-  return {
-    for (final b in candidates)
-      if (b.spell.length >= 3 &&
-          (anchors.contains(b) ||
-              anchors.any((a) =>
-                  a.spell.length == b.spell.length &&
-                  EditDistance.forStrings(b.spell, a.spell) <= maxDist)))
-        b.id,
-  };
+  final result = <String>{};
+  final nearAnchors = <String>{};
+  for (final b in candidates) {
+    if (b.spell.length < 3) continue;
+    var matched = false;
+    for (final a in anchors) {
+      if (a.id == b.id) continue; // 排除自身
+      if (a.spell.length == b.spell.length &&
+          EditDistance.forStrings(b.spell, a.spell) <= maxDist) {
+        matched = true;
+        nearAnchors.add(a.id);
+        if (anchors.contains(b)) nearAnchors.add(b.id);
+      }
+    }
+    if (matched && !anchors.contains(b)) {
+      result.add(b.id);
+    }
+  }
+  result.addAll(nearAnchors);
+  return result;
+}
+
+// ===== 朴素簇式排序：无分桶剪枝的对照基准（规则与 confusableClusterSort 完全一致）=====
+
+int _bySpellThenId(ConfusableWord a, ConfusableWord b) {
+  final bySpell = a.spell.compareTo(b.spell);
+  return bySpell != 0 ? bySpell : a.id.compareTo(b.id);
+}
+
+/// 朴素实现：锚点按 (spell, id) 字典序为簇头；每个非锚点相近词归属到
+/// "与它一字之差（同长度、距离 ≤ 1）且 (spell, id) 字典序最小"的锚点，只出现一次；
+/// 簇内相近词按 (spell, id) 排序；输出 = 各簇依次展开。
+List<String> naiveConfusableClusterSort(
+  Set<ConfusableWord> anchors,
+  List<ConfusableWord> selected,
+) {
+  if (selected.isEmpty) return [];
+  final anchorsSorted = [
+    for (final a in anchors)
+      if (a.spell.length >= 3) a,
+  ]..sort(_bySpellThenId);
+  if (anchorsSorted.isEmpty) return [];
+  final anchorIds = {for (final a in anchorsSorted) a.id};
+
+  final members = <String, List<ConfusableWord>>{};
+  for (final c in selected) {
+    if (c.spell.length < 3 || anchorIds.contains(c.id)) continue;
+    ConfusableWord? best;
+    for (final a in anchorsSorted) {
+      if (a.spell.length != c.spell.length) continue;
+      if (EditDistance.forStrings(c.spell, a.spell) <= 1) {
+        if (best == null || _bySpellThenId(a, best) < 0) best = a;
+      }
+    }
+    if (best != null) {
+      members.putIfAbsent(best.id, () => []).add(c);
+    }
+  }
+  for (final list in members.values) {
+    list.sort(_bySpellThenId);
+  }
+
+  final result = <String>[];
+  for (final a in anchorsSorted) {
+    result.add(a.id);
+    final m = members[a.id];
+    if (m != null) {
+      result.addAll(m.map((w) => w.id));
+    }
+  }
+  return result;
 }
 
 // ===== 断言辅助 =====
@@ -96,7 +117,6 @@ List<ConfusableWord> randomWords(Random rng, int n) {
     );
     words.add((id: 'w$i', spell: spell));
   }
-  // 去重按 wordId，spell 允许重复：补一个同 spell 不同 id 的词
   if (n >= 3) {
     words.add((id: 'dup', spell: words[rng.nextInt(n)].spell));
   }
@@ -104,207 +124,40 @@ List<ConfusableWord> randomWords(Random rng, int n) {
 }
 
 void main() {
-  group('confusableSort 边界', () {
-    test('空列表 → 空', () {
-      expect(confusableSort([]), isEmpty);
-      expect(naiveConfusableSort([]), isEmpty);
-    });
-
-    test('单元素 → 原样', () {
-      const words = [(id: 'w1', spell: 'hello')];
-      expect(confusableSort(words), ['w1']);
-    });
-
-    test('两个词：从字典序小的词出发', () {
-      // 'cart' < 'cat'（第 3 位 r < t），起始词是 cart
-      const words = [
-        (id: 'b', spell: 'cat'),
-        (id: 'a', spell: 'cart'),
-      ];
-      expect(confusableSort(words), ['a', 'b']);
-      expect(confusableSort(words), naiveConfusableSort(words));
-    });
-
-    test('全等长词', () {
-      const words = [
-        (id: 'w1', spell: 'abc'),
-        (id: 'w2', spell: 'bcd'),
-        (id: 'w3', spell: 'cde'),
-        (id: 'w4', spell: 'xyz'),
-      ];
-      // abc -> bcd(2) -> cde(2) -> xyz(3)
-      expect(confusableSort(words), ['w1', 'w2', 'w3', 'w4']);
-      expect(confusableSort(words), naiveConfusableSort(words));
-    });
-
-    test('混合长度词', () {
-      const words = [
-        (id: 'w1', spell: 'a'),
-        (id: 'w2', spell: 'abcd'),
-        (id: 'w3', spell: 'abcdefghi'),
-      ];
-      // a -> abcd(3，桶内) -> abcdefghi(回退全量)
-      expect(confusableSort(words), ['w1', 'w2', 'w3']);
-      expect(confusableSort(words), naiveConfusableSort(words));
-    });
-  });
-
-  group('相似词聚簇', () {
-    test('拼写相近组在结果中成簇相邻，且整体是原词集排列', () {
-      const words = [
-        // 相似组 A：cat 家族
-        (id: 'cart', spell: 'cart'),
-        (id: 'cat', spell: 'cat'),
-        (id: 'cot', spell: 'cot'),
-        (id: 'cut', spell: 'cut'),
-        // 相似组 B
-        (id: 'their', spell: 'their'),
-        (id: 'there', spell: 'there'),
-        // 相似组 C
-        (id: 'whether', spell: 'whether'),
-        (id: 'weather', spell: 'weather'),
-        // 无关词（拼写距离远）
-        (id: 'window', spell: 'window'),
-        (id: 'umbrella', spell: 'umbrella'),
-        (id: 'xylophone', spell: 'xylophone'),
-        (id: 'zebra', spell: 'zebra'),
-      ];
-
-      final order = confusableSort(words);
-      expectPermutation(order, words);
-
-      // 每组在结果中成簇相邻
-      expectContiguous(order, {'cart', 'cat', 'cot', 'cut'});
-      expectContiguous(order, {'their', 'there'});
-      expectContiguous(order, {'weather', 'whether'});
-
-      // 与朴素全量贪心一致
-      expect(order, naiveConfusableSort(words));
-    });
-  });
-
-  group('平局按字典序', () {
-    test('距离相同取 spell 字典序更小', () {
-      // cur='cat' 时 'cot' 与 'cut' 距离均为 1，取 'cot'（c-o < c-u）
-      const words = [
-        (id: 'cat', spell: 'cat'),
-        (id: 'cut', spell: 'cut'),
-        (id: 'cot', spell: 'cot'),
-      ];
-      expect(confusableSort(words), ['cat', 'cot', 'cut']);
-      expect(confusableSort(words), naiveConfusableSort(words));
-    });
-  });
-
-  group('剪枝回退与朴素全量贪心严格一致', () {
-    test('桶内最优距离 > DELTA 时回退全量扫描，选中桶外更近词', () {
-      // cur='aaaa'(4)，桶（长度 1..7）内仅剩 'bbbbb'(5)，距离 5 > DELTA=3；
-      // 桶外词 'aaaabbbb'(8)（长度差 4 > DELTA）距离反而为 4，更近。
-      // 若实现错误地"桶内最优 > DELTA 仍直接取桶内"，会得到 [aaaa, bbbbb, aaaabbbb]，
-      // 与朴素全量贪心不一致。
-      const words = [
-        (id: 's', spell: 'aaaa'),
-        (id: 'b', spell: 'bbbbb'),
-        (id: 'y', spell: 'aaaabbbb'),
-      ];
-      final order = confusableSort(words);
-      expect(order, ['s', 'y', 'b']);
-      expect(order, naiveConfusableSort(words));
-    });
-
-    test('桶内候选为空时回退全量扫描', () {
-      // cur='bb'(2) 时长度 1..5 桶内已无未访问词，只剩桶外 'cccccc'(6)，必须回退全量
-      const words = [
-        (id: 'a', spell: 'aa'),
-        (id: 'b', spell: 'bb'),
-        (id: 'c', spell: 'cccccc'),
-      ];
-      expect(confusableSort(words), ['a', 'b', 'c']);
-      expect(confusableSort(words), naiveConfusableSort(words));
-    });
-
-    test('随机词集与朴素全量贪心一致（含全等长 / 混合长度 / 同 spell 词）', () {
-      // 构造词集：全等长、少量长度聚簇 + 远距 outlier、混合长度
-      final constructed = <List<ConfusableWord>>[
-        // 全部等长（剪枝桶集中在单一长度）
-        [
-          for (var i = 0; i < 20; i++)
-            (id: 'e$i', spell: 'aaaaa${i.toRadixString(36).padLeft(2, '0')}'),
-        ],
-        // 长度聚簇在 4..6，加远距 outlier（长度 1 与 12）
-        [
-          for (var i = 0; i < 15; i++)
-            (id: 'c$i', spell: 'abcde${i.toRadixString(36)}'),
-          (id: 'o1', spell: 'x'),
-          (id: 'o2', spell: 'zzzzzzzzzzzz'),
-        ],
-        // 混合长度（1..12 随机）
-        randomWords(Random(7), 30),
-        // 同 spell 不同 id
-        [
-          (id: 'd1', spell: 'apple'),
-          (id: 'd2', spell: 'apple'),
-          (id: 'd3', spell: 'pineapple'),
-        ],
-      ];
-
-      for (final words in constructed) {
-        expect(confusableSort(words), naiveConfusableSort(words),
-            reason: '剪枝结果必须与朴素全量贪心一致: $words');
-      }
-
-      // 多组随机词集（n <= 40）
-      for (var seed = 0; seed < 50; seed++) {
-        final rng = Random(seed);
-        final n = rng.nextInt(41);
-        final words = randomWords(rng, n);
-        expect(confusableSort(words), naiveConfusableSort(words),
-            reason: 'seed=$seed, n=$n 时剪枝结果必须与朴素全量贪心一致');
-      }
-    });
-  });
-
-  group('isolate 入口', () {
-    test('confusableSortInIsolate 与 confusableSort 结果一致', () {
-      const words = [
-        (id: 'cart', spell: 'cart'),
-        (id: 'cat', spell: 'cat'),
-        (id: 'cot', spell: 'cot'),
-        (id: 'cut', spell: 'cut'),
-        (id: 'there', spell: 'there'),
-        (id: 'their', spell: 'their'),
-        (id: 'window', spell: 'window'),
-      ];
-      final params = ConfusableSortParams(
-        [for (final w in words) w.id],
-        [for (final w in words) w.spell],
-      );
-      expect(confusableSortInIsolate(params), confusableSort(words));
-      expect(confusableSortInIsolate(params), naiveConfusableSort(words));
-
-      // 空输入
-      expect(confusableSortInIsolate(ConfusableSortParams([], [])), isEmpty);
-    });
-  });
-
   group('selectConfusableNear 锚点过滤', () {
-    test('锚点保留语义：len≥3 锚点（即使无相近词）在结果集；len<3 锚点不在结果集', () {
+    test('锚点保留语义：有相近词的锚点保留；孤立锚点（无相近词）与 len<3 锚点不在结果集', () {
       const anchors = {
-        (id: 'a1', spell: 'house'), // len 5，无相近词 → 孤立锚点保留
+        (id: 'a1', spell: 'house'), // len 5，无相近词 → 孤立锚点，不进入词表
         (id: 'a2', spell: 'go'), // len 2 < 3 → 不进入词表
+        (id: 'a3', spell: 'cat'), // len 3，有相近词 cut → 保留
       };
       const candidates = [
         (id: 'a1', spell: 'house'),
         (id: 'a2', spell: 'go'),
-        (id: 'b1', spell: 'dog'), // 与锚点距离远，不影响锚点保留
+        (id: 'a3', spell: 'cat'),
+        (id: 'b1', spell: 'dog'), // 与锚点距离远，不影响
+        (id: 'b2', spell: 'cut'), // 与 cat 同长 3、距离 1 → 相近词
       ];
       final result = selectConfusableNear(anchors, candidates);
-      expect(result, {'a1'});
+      expect(result, {'a3', 'b2'});
+      expect(result, isNot(contains('a1')));
       expect(result, isNot(contains('a2')));
     });
 
+    test('锚点互邻（互为相近词）双方都保留', () {
+      // drug 与 drag 同长 4、距离 1，都学习过（都是锚点）→ 互为相近词，双方保留
+      const anchors = {
+        (id: 'drug', spell: 'drug'),
+        (id: 'drag', spell: 'drag'),
+      };
+      const candidates = [
+        (id: 'drug', spell: 'drug'),
+        (id: 'drag', spell: 'drag'),
+      ];
+      expect(selectConfusableNear(anchors, candidates), {'drug', 'drag'});
+    });
+
     test('阈值边界：dist=1 含、dist=2 不含、长度不同不含、len<3 不含', () {
-      // 先用 EditDistance 验证构造词对的距离
       expect(EditDistance.forStrings('house', 'horse'), 1);
       expect(EditDistance.forStrings('weather', 'whether'), 2);
       expect(EditDistance.forStrings('cat', 'cart'), 1); // 长度 3≠4
@@ -323,20 +176,23 @@ void main() {
         (id: 'b_it', spell: 'it'), // 与 at 距离 1 但长度 2<3 → 不含（最短词长）
         (id: 'b_dog', spell: 'dog'), // 无关 → 排除
       ];
-      expect(selectConfusableNear(anchors, candidates), {'b_horse'});
+      final result = selectConfusableNear(anchors, candidates);
+      // 只有 house 有相近词（horse）→ house 锚点保留；weather/cat/at 无相近词 → 剔除
+      expect(result, {'a_house', 'b_horse'});
+      expect(result, isNot(contains('a_weather')));
+      expect(result, isNot(contains('a_cat')));
     });
 
     test('显式 maxDist 参数在长度相同约束下仍生效', () {
-      // weather/whether 同长 7、距离恰为 2：默认 1 不含，显式 2 含
+      // weather/whether 同长 7、距离恰为 2：默认 1 时 whether 不是相近词、
+      // weather 无相近词 → 空；显式 2 时 whether 成为相近词 → weather 锚点保留 + whether
       const anchors = {(id: 'a', spell: 'weather')};
       const candidates = [(id: 'b', spell: 'whether')];
       expect(selectConfusableNear(anchors, candidates), isEmpty);
-      expect(selectConfusableNear(anchors, candidates, maxDist: 2), {'b'});
+      expect(selectConfusableNear(anchors, candidates, maxDist: 2), {'a', 'b'});
     });
 
     test('dist=0 同拼写不同 id：按公式距离 0 ≤ 1 仍包含', () {
-      // 与"一字之差"（恰好一次替换）的直观表述不同：同拼写 dist=0 也满足
-      // len 相同 && dist ≤ 1，按公式语义仍包含
       const anchors = {(id: 'a1', spell: 'house')};
       const candidates = [
         (id: 'a1', spell: 'house'),
@@ -354,11 +210,10 @@ void main() {
     });
 
     test('长度分桶剪枝与朴素两两全量严格一致', () {
-      // 手工构造：混合长度 + 锚点自身 + 同 spell 不同 id + len<3 锚点/候选
       const anchors = {
         (id: 'a1', spell: 'cat'),
         (id: 'a2', spell: 'cattle'),
-        (id: 'a3', spell: 'x'), // len 1 < 3：新规则下不进桶、不参与匹配
+        (id: 'a3', spell: 'x'), // len 1 < 3：不进桶、不参与匹配
         (id: 'a4', spell: 'apple'),
       };
       const candidates = [
@@ -368,7 +223,7 @@ void main() {
         (id: 'b3', spell: 'apple'), // 与 a4 同 spell（不同 id，距离 0）
         (id: 'b4', spell: 'cattle'), // 与 a2 同 spell（不同 id，距离 0）
         (id: 'b5', spell: 'zzzz'), // 与任何锚点距离远
-        (id: 'b6', spell: 'xx'), // len 2 < 3：新规则下不返回
+        (id: 'b6', spell: 'xx'), // len 2 < 3：不返回
       ];
       for (final maxDist in [0, 1, 2, 3]) {
         expect(
@@ -378,7 +233,6 @@ void main() {
         );
       }
 
-      // 随机对照（n <= 60，锚点随机子集，长度混合）：显式 maxDist 0..3
       for (var seed = 0; seed < 50; seed++) {
         final rng = Random(seed);
         final n = 1 + rng.nextInt(60);
@@ -392,7 +246,6 @@ void main() {
         );
       }
 
-      // 随机对照：默认 maxDist 必须等于 1 且与朴素实现一致
       for (var seed = 0; seed < 50; seed++) {
         final rng = Random(1000 + seed);
         final n = 1 + rng.nextInt(60);
@@ -412,18 +265,197 @@ void main() {
     });
   });
 
-  group('isolate 入口（锚点过滤 + 排序）', () {
-    test('带锚点：confusableSortInIsolate 与 selectConfusableNear + confusableSort 一致', () {
+  group('confusableClusterSort 簇式排序', () {
+    test('唯一锚点：相近词归属该锚点、组内按 (spell, id) 排序', () {
+      const anchors = {(id: 'drug', spell: 'drug')};
+      const selected = [
+        (id: 'drug', spell: 'drug'),
+        (id: 'drum', spell: 'drum'), // 与 drug 同长 4、距离 1
+        (id: 'drag', spell: 'drag'), // 与 drug 同长 4、距离 1
+      ];
+      // 组内按 (spell, id)：drag < drum
+      expect(confusableClusterSort(anchors, selected), ['drug', 'drag', 'drum']);
+      expect(
+        confusableClusterSort(anchors, selected),
+        naiveConfusableClusterSort(anchors, selected),
+      );
+    });
+
+    test('多锚点归属：相近词归属 (spell, id) 字典序最小的锚点、只出现一次', () {
       const anchors = {
-        (id: 'a1', spell: 'house'),
-        (id: 'a2', spell: 'weather'),
+        (id: 'cat', spell: 'cat'),
+        (id: 'cot', spell: 'cot'),
+      };
+      const selected = [
+        (id: 'cat', spell: 'cat'),
+        (id: 'cot', spell: 'cot'),
+        (id: 'cut', spell: 'cut'), // 与 cat、cot 距离均为 1 → 归属 cat（c-a < c-o）
+      ];
+      final order = confusableClusterSort(anchors, selected);
+      expect(order, ['cat', 'cut', 'cot']);
+      expect(order.where((id) => id == 'cut').length, 1);
+      expect(order, naiveConfusableClusterSort(anchors, selected));
+    });
+
+    test('组内字母数相同（组间可不同）', () {
+      const anchors = {
+        (id: 'drug', spell: 'drug'), // len 4
+        (id: 'cat', spell: 'cat'), // len 3
+      };
+      const selected = [
+        (id: 'drug', spell: 'drug'),
+        (id: 'drum', spell: 'drum'), // len 4，属 drug 簇
+        (id: 'cat', spell: 'cat'),
+        (id: 'cut', spell: 'cut'), // len 3，属 cat 簇
+      ];
+      final order = confusableClusterSort(anchors, selected);
+      expect(order, ['cat', 'cut', 'drug', 'drum']);
+      // 组内长度一致：cat/cut 为 3，drug/drum 为 4
+      final spells = {for (final w in selected) w.id: w.spell};
+      for (final cluster in [
+        ['cat', 'cut'],
+        ['drug', 'drum'],
+      ]) {
+        final lens = cluster.map((id) => spells[id]!.length).toSet();
+        expect(lens.length, 1, reason: '组内字母数必须相同: $cluster');
+      }
+    });
+
+    test('组间不接龙：相近词只出现在其归属簇，不跨簇串联', () {
+      // 构造贪心排序会串成链的场景：drum-drug-drag-rag-rage-age
+      // 锚点 = {drug, age}（均学习过）
+      const anchors = {
+        (id: 'drug', spell: 'drug'),
+        (id: 'age', spell: 'age'),
+      };
+      const selected = [
+        (id: 'drug', spell: 'drug'),
+        (id: 'age', spell: 'age'),
+        (id: 'drum', spell: 'drum'), // 与 drug 同长 4、距离 1 → drug 簇
+        (id: 'drag', spell: 'drag'), // 与 drug 同长 4、距离 1 → drug 簇
+        (id: 'rag', spell: 'rag'), // 与 drag 距离 1，但与锚点 drug 距离 2 → 不进词表
+        (id: 'rage', spell: 'rage'), // 与 age 长度 4≠3 → 不进词表
+      ];
+      // 准入后的词表只含 drug、age、drum、drag（rage/rag 因长度/距离被排除）
+      final selectedFiltered = [
+        for (final w in selected) w,
+      ];
+      final order = confusableClusterSort(anchors, selectedFiltered);
+      expect(order, ['age', 'drug', 'drag', 'drum']);
+      expect(order, naiveConfusableClusterSort(anchors, selectedFiltered));
+    });
+
+    test('锚点互为相近词（都学习过）各自成簇、互不并入', () {
+      // drug 与 drag 同长 4、距离 1，互为相近词；但都是锚点 → 各自成簇、互不并入
+      const anchors = {
+        (id: 'drug', spell: 'drug'),
+        (id: 'drag', spell: 'drag'),
+      };
+      const selected = [
+        (id: 'drug', spell: 'drug'),
+        (id: 'drag', spell: 'drag'),
+        (id: 'drum', spell: 'drum'), // 与 drug 距离 1 → drug 簇
+        (id: 'rag', spell: 'rag'), // 长度 3 ≠ 4，与 drag 长度不同 → 准入排除（不进词表）
+      ];
+      final order = confusableClusterSort(anchors, selected);
+      expect(order, ['drag', 'drug', 'drum']);
+      expect(order, naiveConfusableClusterSort(anchors, selected));
+    });
+
+    test('孤立锚点（无相近词）按字典序排列', () {
+      const anchors = {
+        (id: 'house', spell: 'house'),
+        (id: 'apple', spell: 'apple'),
+      };
+      const selected = [
+        (id: 'house', spell: 'house'),
+        (id: 'apple', spell: 'apple'),
+      ];
+      expect(confusableClusterSort(anchors, selected), ['apple', 'house']);
+    });
+
+    test('空锚点 / 空 selected → 空', () {
+      expect(confusableClusterSort({}, const [(id: 'b', spell: 'cat')]), isEmpty);
+      expect(
+        confusableClusterSort(const {(id: 'a', spell: 'cat')}, const []),
+        isEmpty,
+      );
+    });
+
+    test('len<3 锚点不参与；len<3 候选不输出', () {
+      const anchors = {
+        (id: 'a_go', spell: 'go'), // len 2 < 3 → 不参与
+        (id: 'a_cat', spell: 'cat'),
+      };
+      const selected = [
+        (id: 'a_go', spell: 'go'),
+        (id: 'a_cat', spell: 'cat'),
+        (id: 'b_cut', spell: 'cut'), // 与 cat 距离 1 → cat 簇
+        (id: 'b_at', spell: 'at'), // len 2 < 3 → 不输出
+      ];
+      final order = confusableClusterSort(anchors, selected);
+      expect(order, ['a_cat', 'b_cut']);
+      expect(order, naiveConfusableClusterSort(anchors, selected));
+    });
+
+    test('与朴素归属实现严格一致（构造 + 随机词集）', () {
+      final constructed = <(Set<ConfusableWord>, List<ConfusableWord>)>[
+        // 手工：锚点同长度、候选跨长度
+        (
+          const {
+            (id: 'a1', spell: 'cat'),
+            (id: 'a2', spell: 'cot'),
+            (id: 'a3', spell: 'house'),
+          },
+          const [
+            (id: 'a1', spell: 'cat'),
+            (id: 'a2', spell: 'cot'),
+            (id: 'a3', spell: 'house'),
+            (id: 'b1', spell: 'cut'),
+            (id: 'b2', spell: 'horse'),
+            (id: 'b3', spell: 'cart'),
+            (id: 'b4', spell: 'mouse'),
+          ],
+        ),
+      ];
+      for (final (anchorsSet, selected) in constructed) {
+        expect(
+          confusableClusterSort(anchorsSet, selected),
+          naiveConfusableClusterSort(anchorsSet, selected),
+          reason: '手工构造词集',
+        );
+      }
+
+      for (var seed = 0; seed < 100; seed++) {
+        final rng = Random(seed);
+        final n = 1 + rng.nextInt(50);
+        final words = randomWords(rng, n);
+        final anchorsSet = {for (final w in words) if (rng.nextBool()) w};
+        // selected 取"与锚点直接一字之差"的准入结果（与产品链路一致）
+        final selectedSet = selectConfusableNear(anchorsSet, words);
+        final selected = [for (final w in words) if (selectedSet.contains(w.id)) w];
+        expect(
+          confusableClusterSort(anchorsSet, selected),
+          naiveConfusableClusterSort(anchorsSet, selected),
+          reason: 'seed=$seed, n=$n',
+        );
+      }
+    });
+  });
+
+  group('isolate 入口（锚点过滤 + 簇式排序）', () {
+    test('带锚点：confusableSortInIsolate 与 selectConfusableNear + confusableClusterSort 一致', () {
+      const anchors = {
+        (id: 'drug', spell: 'drug'),
+        (id: 'age', spell: 'age'),
       };
       const words = [
-        (id: 'a1', spell: 'house'),
-        (id: 'b1', spell: 'horse'),
-        (id: 'a2', spell: 'weather'),
-        (id: 'b2', spell: 'whether'),
-        (id: 'c1', spell: 'dog'), // 无关词：过滤后被排除
+        (id: 'drug', spell: 'drug'),
+        (id: 'age', spell: 'age'),
+        (id: 'drum', spell: 'drum'),
+        (id: 'drag', spell: 'drag'),
+        (id: 'rag', spell: 'rag'), // 与 drug 距离 2 → 被准入排除
+        (id: 'dog', spell: 'dog'), // 无关 → 排除
       ];
       final params = ConfusableSortParams(
         [for (final w in words) w.id],
@@ -433,24 +465,28 @@ void main() {
       );
       final selected = selectConfusableNear(anchors, words);
       final filtered = [for (final w in words) if (selected.contains(w.id)) w];
-      expect(confusableSortInIsolate(params), confusableSort(filtered));
-      expect(confusableSortInIsolate(params), isNot(contains('c1')));
+      final selectedAnchors = {
+        for (final a in anchors)
+          if (selected.contains(a.id)) a,
+      };
+      expect(confusableSortInIsolate(params),
+          confusableClusterSort(selectedAnchors, filtered));
+      expect(confusableSortInIsolate(params), isNot(contains('rag')));
+      expect(confusableSortInIsolate(params), isNot(contains('dog')));
     });
 
-    test('无锚点（anchorIds 空）：与既有 confusableSort 结果一致（向后兼容）', () {
+    test('无锚点 → 空词表（无学习过的词则无词表）', () {
       const words = [
-        (id: 'cart', spell: 'cart'),
-        (id: 'cat', spell: 'cat'),
-        (id: 'cot', spell: 'cot'),
-        (id: 'cut', spell: 'cut'),
-        (id: 'window', spell: 'window'),
+        (id: 'w_cat', spell: 'cat'),
+        (id: 'w_cot', spell: 'cot'),
+        (id: 'w_cart', spell: 'cart'),
+        (id: 'w_go', spell: 'go'),
       ];
-      // 不传锚点参数（默认空）与显式传空锚点等价
       final params = ConfusableSortParams(
         [for (final w in words) w.id],
         [for (final w in words) w.spell],
       );
-      expect(confusableSortInIsolate(params), confusableSort(words));
+      expect(confusableSortInIsolate(params), isEmpty);
 
       final paramsEmptyAnchors = ConfusableSortParams(
         [for (final w in words) w.id],
@@ -458,31 +494,36 @@ void main() {
         anchorIds: const [],
         anchorSpells: const [],
       );
-      expect(confusableSortInIsolate(paramsEmptyAnchors), confusableSort(words));
+      expect(confusableSortInIsolate(paramsEmptyAnchors), isEmpty);
+
+      // 空输入
+      expect(confusableSortInIsolate(ConfusableSortParams([], [])), isEmpty);
     });
 
-    test('空锚点退化路径：候选先按 len ≥ 3 过滤（与正常路径语义一致，不豁免最短词长）', () {
+    test('用户示例集成：锚点 {drug, drag}（学习过），输出为簇式、组内同长度、不接龙', () {
+      // 近似用户看到的 drum/drug/drag/rag/rage/age 场景——在收紧规则（同长度 + 一字之差）下：
+      // rag(3) 与 drag(4) 长度不同 → 排除；rage(4) 与 drug/drag 距离 2/3 → 排除；
+      // age(3) 非锚点且与锚点距离远 → 排除；drum(4) 与 drug(4) 距离 1 → 归属 drug 簇。
+      // 输出 = 锚点 drag/drug 各自成簇（互为相近词但都学习过，互不并入）。
+      const anchors = {
+        (id: 'drug', spell: 'drug'),
+        (id: 'drag', spell: 'drag'),
+      };
       const words = [
-        (id: 'w_go', spell: 'go'), // len 2 < 3 → 过滤
-        (id: 'w_cat', spell: 'cat'),
-        (id: 'w_at', spell: 'at'), // len 2 < 3 → 过滤
-        (id: 'w_cot', spell: 'cot'),
-        (id: 'w_cart', spell: 'cart'),
+        (id: 'drug', spell: 'drug'),
+        (id: 'drag', spell: 'drag'),
+        (id: 'drum', spell: 'drum'),
+        (id: 'rag', spell: 'rag'),
+        (id: 'rage', spell: 'rage'),
+        (id: 'age', spell: 'age'),
       ];
       final params = ConfusableSortParams(
         [for (final w in words) w.id],
         [for (final w in words) w.spell],
-        anchorIds: const [],
-        anchorSpells: const [],
+        anchorIds: [for (final a in anchors) a.id],
+        anchorSpells: [for (final a in anchors) a.spell],
       );
-      final expected = confusableSort(const [
-        (id: 'w_cat', spell: 'cat'),
-        (id: 'w_cot', spell: 'cot'),
-        (id: 'w_cart', spell: 'cart'),
-      ]);
-      expect(confusableSortInIsolate(params), expected);
-      expect(confusableSortInIsolate(params), isNot(contains('w_go')));
-      expect(confusableSortInIsolate(params), isNot(contains('w_at')));
+      expect(confusableSortInIsolate(params), ['drag', 'drug', 'drum']);
     });
   });
 }

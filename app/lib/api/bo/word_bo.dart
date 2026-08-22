@@ -2767,18 +2767,25 @@ class WordBo {
   /// 锚点集 A = 学习范围 B ∩（learning_words 记录 ∪ 已掌握词书）。
   /// learning_words 取 userId 的全部 wordId——不带 stability 过滤（"学习过"含已毕业，
   /// 既有 getLearningWordIdSet 过滤 stability<180 会排除已毕业，不可复用），故在 WordBo 内联查询。
+  /// 锚点 = 学习范围内 ∩（学习记录中"确实学过"的 ∪ 已掌握）。
+  /// "确实学过"：learning_words 中 FSRS state > 0（0=New 未评分，仅加入学习范围/被分配
+  /// 今日计划不算学过；1/2/3=Learning/Review/Relearning 表示至少评分过一次）；
+  /// 已掌握词书（毕业）天然算学过。
   static Future<Set<String>> _loadConfusableAnchors(String userId, Set<String> wordIds) async {
     if (wordIds.isEmpty) return {};
     final db = MyDatabase.instance;
-    final learnedRows =
-        await (db.select(db.learningWords)..where((lw) => lw.userId.equals(userId))).get();
+    final learnedRows = await (db.select(db.learningWords)
+          ..where((lw) =>
+              lw.userId.equals(userId) & lw.state.isBiggerThanValue(0)))
+        .get();
     final learnedOrMastered = {for (final lw in learnedRows) lw.wordId}
       ..addAll(await db.masteredWordsDao.getMasteredWordIdSet(userId));
     return wordIds.intersection(learnedOrMastered);
   }
 
   /// 易混淆单词：锚点（学习过的词）∪ 学习范围内与锚点拼写相近（编辑距离 ≤ 1 且
-  /// 长度相同且 ≥ 3 字母）的词，按拼写相似度贪心最近邻排序，返回排序后的 wordId 列表。
+  /// 长度相同且 ≥ 3 字母）的词，按簇式排序（锚点成簇、组内同长度、组间不接龙），
+  /// 返回排序后的 wordId 列表。
   /// 空锚点 → 空列表。
   /// 内存缓存带签名校验（学习词书 dictId 有序 + 学习范围 wordId 有序 + 锚点 wordId 有序），
   /// 任一分量变化即失效重算；并发同签名请求共享同一个排序 Future 防重算。
@@ -2807,9 +2814,9 @@ class WordBo {
     }
   }
 
-  /// 关联 words 取 spell → isolate（锚点过滤 + 贪心排序）→ 写入结果缓存。
+  /// 关联 words 取 spell → isolate（锚点过滤 + 簇式排序）→ 写入结果缓存。
   /// 无锚点时词表为空（A ∪ C = ∅），直接缓存空列表不进入 isolate——
-  /// 空锚点退化路径只按 len ≥ 3 过滤，与"空锚点 → 空词表"语义不符，故在此短路。
+  /// isolate 空锚点语义同样为空，此处短路仅为省去无谓查询与 isolate 往返。
   static Future<List<String>> _computeConfusableSorted(
       String userId, Set<String> wordIds, Set<String> anchorIds, String signature) async {
     if (anchorIds.isEmpty) {

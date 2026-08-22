@@ -125,7 +125,8 @@ void main() {
   }
 
   /// 插入一条 learning_words 学习记录（"学习过"= 进入过学习轨道，stability 可空可毕业）
-  Future<void> insertLearningWord(String wordId, {double? stability}) async {
+  /// 插入学习记录；[state] 为 FSRS 状态（0=New 未评分、1=Learning 学过），默认 1（学过）
+  Future<void> insertLearningWord(String wordId, {double? stability, int state = 1}) async {
     await db.learningWordsDao.saveEntity(LearningWord(
       userId: userId,
       wordId: wordId,
@@ -136,6 +137,7 @@ void main() {
       learnedTimes: 1,
       todayLearnedTimes: 0,
       stability: stability,
+      state: state,
       createTime: now,
       updateTime: now,
     ), false);
@@ -214,6 +216,19 @@ void main() {
       expect(ids.toSet(), {'w_house', 'w_horse'});
     });
 
+    test('learning_words 中 state=0（加入学习范围但未评分）不算锚点', () async {
+      await seedHouseHorse(); // house(5)、horse(5) 均在学习范围
+      // w_house：state=1 已评分 → 锚点
+      await insertLearningWord('w_house', state: 1);
+      // w_horse：state=0 未评分 → 不是锚点，但作为 house 的相近词（同长 5、距离 1）进入词表
+      await insertLearningWord('w_horse', state: 0);
+
+      final ids = await WordBo().getConfusableWordIds(userId);
+      // 若 w_horse 是锚点，簇式输出为锚点字典序 ['w_horse', 'w_house']（horse < house）；
+      // 实际 w_horse 是相近词，归属 house 簇 → ['w_house', 'w_horse']（锚点在前）
+      expect(ids, ['w_house', 'w_horse']);
+    });
+
     test('阈值边界：dist=1 含、dist=2 不含、长度不同不含、len<3 锚点不在词表', () async {
       await insertDict('d1');
       await insertLearningDict('d1');
@@ -254,7 +269,7 @@ void main() {
   });
 
   group('getConfusableWordIds - 聚合去重与排序', () {
-    test('跨词书重叠单词只算一次，排序结果与 confusableSort 直接调用一致', () async {
+    test('跨词书重叠单词只算一次，排序结果与 confusableClusterSort 直接调用一致', () async {
       await insertDict('d1');
       await insertDict('d2');
       await insertLearningDict('d1');
@@ -286,14 +301,23 @@ void main() {
       expect(ids.length, 5);
       expect(ids.toSet(), {'w_cat', 'w_cart', 'w_cot', 'w_cut', 'w_there'});
 
-      // 与 confusableSort 直接调用严格一致
-      final expected = confusableSort(const [
-        (id: 'w_cat', spell: 'cat'),
-        (id: 'w_cart', spell: 'cart'),
-        (id: 'w_cot', spell: 'cot'),
-        (id: 'w_cut', spell: 'cut'),
-        (id: 'w_there', spell: 'there'),
-      ]);
+      // 与 confusableClusterSort 直接调用严格一致（5 词全为锚点 → 按锚点字典序成簇）
+      final expected = confusableClusterSort(
+        const {
+          (id: 'w_cat', spell: 'cat'),
+          (id: 'w_cart', spell: 'cart'),
+          (id: 'w_cot', spell: 'cot'),
+          (id: 'w_cut', spell: 'cut'),
+          (id: 'w_there', spell: 'there'),
+        },
+        const [
+          (id: 'w_cat', spell: 'cat'),
+          (id: 'w_cart', spell: 'cart'),
+          (id: 'w_cot', spell: 'cot'),
+          (id: 'w_cut', spell: 'cut'),
+          (id: 'w_there', spell: 'there'),
+        ],
+      );
       expect(ids, expected);
     });
 
@@ -316,7 +340,7 @@ void main() {
       await insertLearningWord('w2');
 
       final wordBo = WordBo();
-      // 贪心：起始为字典序最小的 cart，然后 cat
+      // 簇式：锚点按字典序 cart → cat（w2=cart < w1=cat）
       final list1 = await wordBo.getConfusableWordIds(userId);
       expect(list1, ['w2', 'w1']);
       expect(WordBo.isConfusableSortReady(userId), true);

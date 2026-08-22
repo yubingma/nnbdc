@@ -10,8 +10,9 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 /// 易混淆单词：以用户学习过的词（学习记录 ∪ 已掌握）为锚点，聚合学习词书内
-/// 锚点及与锚点拼写相近（编辑距离 ≤ 1 且长度相同且 ≥ 3 字母）的单词，按拼写相似度
-/// 贪心最近邻排序的动态虚拟词表。纯浏览视图：不落库、不产生 DbLog、不触发同步。
+/// 锚点及与锚点拼写相近（编辑距离 ≤ 1 且长度相同且 ≥ 3 字母）的单词，按簇式排序
+/// （锚点成簇、组内同长度、组间不接龙）的动态虚拟词表。纯浏览视图：不落库、
+/// 不产生 DbLog、不触发同步。
 class ConfusableWordsProvider with WordsProvider {
   /// 注意：不要缓存 `MyDatabase.instance`。
   /// 数据库在 `wipeAllTables()` / `closeDatabase()` 后会重建实例，
@@ -19,7 +20,7 @@ class ConfusableWordsProvider with WordsProvider {
   MyDatabase get _db => MyDatabase.instance;
 
   /// 固定原始序：返回 semantic 会触发控制器 TSP 排序分支，必须避免。
-  /// 排序由 provider 内部的拼写贪心决定，与排序设置无关。
+  /// 排序由 provider 内部的簇式排序决定，与排序设置无关。
   @override
   Future<WordSortAlg> getSortAlg() async => WordSortAlg.original;
 

@@ -121,7 +121,7 @@ void main() {
     ));
   }
 
-  /// 插入一条 learning_words 学习记录（锚点：学习过的词）
+  /// 插入一条 learning_words 学习记录（锚点：确实学过的词，state>0 表示已评分）
   Future<void> insertLearningWord(String wordId) async {
     await db.learningWordsDao.saveEntity(LearningWord(
       userId: userId,
@@ -132,6 +132,7 @@ void main() {
       isTodayNewWord: false,
       learnedTimes: 1,
       todayLearnedTimes: 0,
+      state: 1, // 已评分（Learning），离开 New → 算学过
       createTime: now,
       updateTime: now,
     ), false);
@@ -154,7 +155,7 @@ void main() {
     ));
   }
 
-  /// 构造 5 词（cat/cart/cot/cut/there 同族）的学习词书数据，并返回 confusableSort 期望顺序
+  /// 构造 5 词（cat/cart/cot/cut/there 同族）的学习词书数据，并返回 confusableClusterSort 期望顺序
   Future<List<String>> seedConfusableData() async {
     await insertDict('d1');
     await insertDict('d2');
@@ -173,17 +174,26 @@ void main() {
       await insertLearningWord(id); // 锚点：5 词全部学习过 → 词表 = 学习范围全量
     }
     await insertDictWord('d2', 'w_cat'); // 跨词书重叠，只算一次
-    return confusableSort(const [
-      (id: 'w_cat', spell: 'cat'),
-      (id: 'w_cart', spell: 'cart'),
-      (id: 'w_cot', spell: 'cot'),
-      (id: 'w_cut', spell: 'cut'),
-      (id: 'w_there', spell: 'there'),
-    ]);
+    return confusableClusterSort(
+      const {
+        (id: 'w_cat', spell: 'cat'),
+        (id: 'w_cart', spell: 'cart'),
+        (id: 'w_cot', spell: 'cot'),
+        (id: 'w_cut', spell: 'cut'),
+        (id: 'w_there', spell: 'there'),
+      },
+      const [
+        (id: 'w_cat', spell: 'cat'),
+        (id: 'w_cart', spell: 'cart'),
+        (id: 'w_cot', spell: 'cot'),
+        (id: 'w_cut', spell: 'cut'),
+        (id: 'w_there', spell: 'there'),
+      ],
+    );
   }
 
   group('ConfusableWordsProvider - 全量加载与切片', () {
-    test('getAPageOfWords(0, 999999) 按贪心排序返回全量单词并附带释义', () async {
+    test('getAPageOfWords(0, 999999) 按簇式排序返回全量单词并附带释义', () async {
       final expected = await seedConfusableData();
 
       final result = await ConfusableWordsProvider().getAPageOfWords(0, 999999);
@@ -232,7 +242,7 @@ void main() {
 
       final result = await ConfusableWordsProvider().getAPageOfWords(0, 999999);
 
-      // 释义缺失词被跳过，其余按贪心序（cart → cat）返回，总数 = 实际返回数
+      // 释义缺失词被跳过，其余按簇式序（锚点 cart → cat，cot 属 cat 簇但被跳过）返回，总数 = 实际返回数
       expect(result.total, 2);
       expect(result.rows.map((w) => w.word.id).toList(), ['w_ok2', 'w_ok1']);
       expect(result.rows.any((w) => w.word.id == 'w_missing'), false);
