@@ -135,7 +135,7 @@
       max-width: 320px;
       aspect-ratio: 9 / 16;
       border-radius: 24px;
-      padding: 24px 22px;
+      padding: 28px 24px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -152,7 +152,7 @@
 
     /* Theme 1: 极简深蓝 */
     .theme-dark {
-      background: radial-gradient(circle at 50% 20%, #151F38 0%, #0B1120 60%, #070B14 100%);
+      background: radial-gradient(circle at 50% 25%, #16203B 0%, #0B1120 60%, #060A12 100%);
       border: 1px solid rgba(99, 102, 241, 0.25);
     }
     .theme-dark .hero-num {
@@ -163,7 +163,7 @@
 
     /* Theme 2: 暖阳晨读 */
     .theme-sunrise {
-      background: radial-gradient(circle at 50% 15%, #FFFDF5 0%, #FEF3C7 50%, #FDE68A 100%);
+      background: radial-gradient(circle at 50% 20%, #FFFDF5 0%, #FEF3C7 50%, #FDE68A 100%);
       border: 1px solid rgba(245, 158, 11, 0.3);
       color: #78350F;
     }
@@ -204,7 +204,7 @@
 
     /* Theme 3: 活力粉紫 */
     .theme-pink {
-      background: radial-gradient(circle at 50% 20%, #23112E 0%, #120A1A 60%, #08050D 100%);
+      background: radial-gradient(circle at 50% 25%, #251230 0%, #130B1B 60%, #08050D 100%);
       border: 1px solid rgba(236, 72, 153, 0.25);
     }
     .theme-pink .hero-num {
@@ -220,7 +220,7 @@
 
     /* Theme 4: 森林墨绿 */
     .theme-green {
-      background: radial-gradient(circle at 50% 20%, #0D2D24 0%, #061914 60%, #030D0A 100%);
+      background: radial-gradient(circle at 50% 25%, #0E2E25 0%, #061A14 60%, #030D0A 100%);
       border: 1px solid rgba(16, 185, 129, 0.25);
     }
     .theme-green .hero-num {
@@ -237,20 +237,21 @@
       border-left-color: #10B981;
     }
 
-    /* Top Bar: Clean & Independent (无任何杂乱背景叠加) */
+    /* Top Bar: Clean & Independent (统一标准 Logo) */
     .poster-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 4px;
+      padding-bottom: 6px;
     }
 
     .brand-group {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 13px;
+      gap: 7px;
+      font-size: 13.5px;
       font-weight: 600;
+      letter-spacing: 0.3px;
     }
 
     .top-date {
@@ -260,24 +261,13 @@
       letter-spacing: 0.5px;
     }
 
-    /* Hero Section: 图形作为有机的视觉中心点缀 */
+    /* Hero Section: 舒展大方、留白充足 */
     .poster-hero {
       text-align: center;
-      margin: 8px 0 4px 0;
+      margin: 12px 0 16px 0;
       display: flex;
       flex-direction: column;
       align-items: center;
-    }
-
-    /* 视觉徽章/图标容器 (和谐融入) */
-    .hero-icon-wrap {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 8px;
     }
 
     .hero-pill {
@@ -287,17 +277,18 @@
       background: rgba(56, 189, 248, 0.12);
       border: 1px solid rgba(56, 189, 248, 0.25);
       color: #38BDF8;
-      padding: 3px 12px;
+      padding: 4px 14px;
       border-radius: 99px;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 500;
-      margin-bottom: 6px;
+      margin-bottom: 12px;
     }
 
     .hero-label {
-      font-size: 12px;
+      font-size: 12.5px;
       opacity: 0.75;
       font-weight: 500;
+      margin-bottom: 2px;
     }
 
     .hero-num-box {
@@ -305,18 +296,18 @@
       align-items: baseline;
       justify-content: center;
       gap: 4px;
-      margin: 2px 0 0 0;
+      margin-top: 2px;
     }
 
     .hero-num {
-      font-size: 4.2rem;
+      font-size: 4.6rem;
       font-weight: 900;
       line-height: 1;
       letter-spacing: -2px;
     }
 
     .hero-unit {
-      font-size: 13px;
+      font-size: 14px;
       opacity: 0.8;
       font-weight: 500;
     }
@@ -327,21 +318,21 @@
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 14px;
-      padding: 10px 8px;
+      padding: 12px 8px;
       display: grid;
       grid-template-columns: 1fr 1px 1fr 1px 1fr;
       align-items: center;
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
 
     .card-divider {
       background: rgba(255, 255, 255, 0.1);
-      height: 22px;
+      height: 24px;
     }
 
     .stat-val {
-      font-size: 16px;
+      font-size: 16.5px;
       font-weight: 700;
       line-height: 1.2;
     }
@@ -353,24 +344,24 @@
     .stat-lbl {
       font-size: 10px;
       opacity: 0.7;
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
     /* Motivational Quote Card */
     .poster-quote {
-      font-size: 11.5px;
+      font-size: 12px;
       line-height: 1.5;
-      padding: 10px 12px;
+      padding: 11px 14px;
       background: rgba(0, 0, 0, 0.22);
-      border-radius: 10px;
+      border-radius: 11px;
       border-left: 3px solid var(--primary);
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       text-align: left;
     }
 
     .poster-quote-main {
       font-weight: 600;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
     }
 
     .poster-quote-sub {
@@ -383,10 +374,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 11px;
+      font-size: 11.5px;
       opacity: 0.8;
       border-top: 1px dashed rgba(255, 255, 255, 0.1);
-      padding-top: 8px;
+      padding-top: 10px;
     }
 
     .user-pill {
@@ -412,7 +403,7 @@
     <header>
       <div class="tag">🫧 简简单单背单词</div>
       <h1>泡泡背单词 · 打卡海报模版</h1>
-      <p class="subtitle">图形作为中心徽标自然融入 · 顶部文字清爽独立 · 绝无任何重叠压字</p>
+      <p class="subtitle">统一标准泡泡 Logo · 移除冗余插图 · 留白透气舒展 · 视觉重心清晰聚焦</p>
     </header>
 
     <!-- 交互控制条 -->
@@ -439,35 +430,27 @@
       </div>
     </div>
 
-    <!-- 4 套全新美感排版的海报阵列 -->
+    <!-- 4 套全新统一 Logo 与通透排版的海报阵列 -->
     <div class="poster-grid">
 
-      <!-- 风格 1: 极简深蓝 (晶莹气泡声波) -->
+      <!-- 风格 1: 极简深蓝 -->
       <div class="poster-wrapper">
-        <div class="poster-label">① 极简深蓝 · 晶莹气泡</div>
+        <div class="poster-label">① 极简深蓝 (大声读出来)</div>
         <div class="poster theme-dark">
-          <!-- 顶部：干干净净，绝不叠图 -->
+          <!-- 顶部：统一的标准泡泡 Logo -->
           <div class="poster-top">
             <div class="brand-group">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
-                <circle cx="8.5" cy="8.5" r="1.5" fill="#38BDF8"></circle>
-                <circle cx="15.5" cy="15.5" r="2" fill="#818CF8" fill-opacity="0.5"></circle>
+                <circle cx="8" cy="9" r="1.5" fill="#38BDF8"></circle>
               </svg>
               <span>泡泡背单词</span>
             </div>
             <div class="top-date" id="dateDisplay1">2026.08.23</div>
           </div>
 
-          <!-- 主视觉区：图标居中作为视觉徽标 -->
+          <!-- 主视觉区：留白通透，大数字聚焦 -->
           <div class="poster-hero">
-            <div class="hero-icon-wrap" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25);">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="1.8">
-                <circle cx="12" cy="12" r="9" stroke="#38BDF8"></circle>
-                <circle cx="8" cy="9" r="2" fill="#38BDF8"></circle>
-                <circle cx="16" cy="14" r="1" fill="#818CF8"></circle>
-              </svg>
-            </div>
             <div class="hero-pill">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2v20M17 6v12M7 8v8"/>
@@ -519,11 +502,11 @@
         </div>
       </div>
 
-      <!-- 风格 2: 暖阳晨读 (小太阳居中徽标) -->
+      <!-- 风格 2: 暖阳晨读 -->
       <div class="poster-wrapper">
-        <div class="poster-label">② 暖阳晨读 · 晨光小太阳 ☀️</div>
+        <div class="poster-label">② 暖阳晨读 (清晨早读)</div>
         <div class="poster theme-sunrise">
-          <!-- 顶部：干干净净 -->
+          <!-- 顶部：统一的标准泡泡 Logo -->
           <div class="poster-top">
             <div class="brand-group">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2">
@@ -535,14 +518,8 @@
             <div class="top-date">MORNING</div>
           </div>
 
-          <!-- 主视觉区：精致小太阳居中展示 -->
+          <!-- 主视觉区 -->
           <div class="poster-hero">
-            <div class="hero-icon-wrap" style="background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.3);">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round">
-                <circle cx="12" cy="12" r="4" fill="#F59E0B" fill-opacity="0.3"></circle>
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-              </svg>
-            </div>
             <div class="hero-pill">
               <span>☀️ 晨读打卡完成</span>
             </div>
@@ -591,28 +568,24 @@
         </div>
       </div>
 
-      <!-- 风格 3: 活力粉紫 (闪电能量徽标) -->
+      <!-- 风格 3: 活力粉紫 -->
       <div class="poster-wrapper">
-        <div class="poster-label">③ 活力粉紫 · 能量闪电 ⚡</div>
+        <div class="poster-label">③ 活力粉紫 (开口不怕忘)</div>
         <div class="poster theme-pink">
-          <!-- 顶部：干干净净 -->
+          <!-- 顶部：统一的标准泡泡 Logo -->
           <div class="poster-top">
             <div class="brand-group" style="color: #F472B6;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F472B6" stroke-width="2">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="8" cy="9" r="1.5" fill="#F472B6"></circle>
               </svg>
               <span>泡泡背单词</span>
             </div>
             <div class="top-date">KEEP GOING</div>
           </div>
 
-          <!-- 主视觉区：闪电能量标居中 -->
+          <!-- 主视觉区 -->
           <div class="poster-hero">
-            <div class="hero-icon-wrap" style="background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.3);">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="#F472B6">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-            </div>
             <div class="hero-pill">
               <span>🗣️ 开口读，不怕忘</span>
             </div>
@@ -661,29 +634,24 @@
         </div>
       </div>
 
-      <!-- 风格 4: 森林墨绿 (生机绿叶徽标) -->
+      <!-- 风格 4: 森林墨绿 -->
       <div class="poster-wrapper">
-        <div class="poster-label">④ 森林墨绿 · 生机绿叶 🌿</div>
+        <div class="poster-label">④ 森林墨绿 (慢慢来比较快)</div>
         <div class="poster theme-green">
-          <!-- 顶部：干干净净 -->
+          <!-- 顶部：统一的标准泡泡 Logo -->
           <div class="poster-top">
             <div class="brand-group" style="color: #34D399;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2">
-                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="8" cy="9" r="1.5" fill="#34D399"></circle>
               </svg>
               <span>泡泡背单词</span>
             </div>
             <div class="top-date">PROGRESS</div>
           </div>
 
-          <!-- 主视觉区：生机绿叶居中 -->
+          <!-- 主视觉区 -->
           <div class="poster-hero">
-            <div class="hero-icon-wrap" style="background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.3);">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
-                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
-              </svg>
-            </div>
             <div class="hero-pill">
               <span>🌿 慢慢来，比较快</span>
             </div>
