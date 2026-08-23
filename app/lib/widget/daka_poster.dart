@@ -525,39 +525,97 @@ class DakaPosterWidget extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
+          // 左侧：用户信息
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.person_outline,
-                size: 13,
-                color: cfg.isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF92400E),
+              Row(
+                children: [
+                  Icon(
+                    Icons.person_outline,
+                    size: 13,
+                    color: cfg.isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF92400E),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    data.userName,
+                    style: TextStyle(
+                      color: cfg.isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF92400E),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
+              const SizedBox(height: 2),
               Text(
-                data.userName,
+                '发音主动记忆 · 记得更牢',
                 style: TextStyle(
-                  color: cfg.isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF92400E),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
+                  color: cfg.isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0x9992400E),
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: cfg.tagBgColor,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '开口背单词',
-              style: TextStyle(
-                color: cfg.tagColor,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
+
+          // 右侧：精致二维码与扫码提示
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '扫码体验',
+                    style: TextStyle(
+                      color: cfg.isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF92400E),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '泡泡单词',
+                    style: TextStyle(
+                      color: cfg.brandColor,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(width: 6),
+              Container(
+                width: 32,
+                height: 32,
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: Image.asset(
+                    'assets/images/nnbdc-android-2dma.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.qr_code, size: 24, color: Colors.black87),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

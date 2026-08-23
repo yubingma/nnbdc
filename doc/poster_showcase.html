@@ -427,31 +427,76 @@
       opacity: 0.75;
     }
 
-    /* Footer: User Pill & Badge */
+    /* Footer: User & QR Code */
     .poster-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 11.5px;
-      opacity: 0.8;
+      font-size: 11px;
+      opacity: 0.85;
       border-top: 1px dashed rgba(255, 255, 255, 0.1);
-      padding-top: 10px;
+      padding-top: 8px;
     }
 
     .user-pill {
       display: flex;
-      align-items: center;
-      gap: 4px;
+      flex-direction: column;
+      gap: 2px;
+      text-align: left;
     }
 
-    .qr-badge {
+    .user-pill-name {
       display: flex;
       align-items: center;
       gap: 4px;
-      font-size: 10px;
-      background: rgba(255, 255, 255, 0.08);
-      padding: 3px 8px;
-      border-radius: 6px;
+      font-weight: 600;
+      font-size: 11.5px;
+    }
+
+    .user-pill-sub {
+      font-size: 9.5px;
+      opacity: 0.65;
+    }
+
+    .qr-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .qr-text {
+      text-align: right;
+      line-height: 1.2;
+    }
+
+    .qr-text-top {
+      font-size: 9.5px;
+      opacity: 0.8;
+      font-weight: 500;
+    }
+
+    .qr-text-brand {
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .qr-box {
+      width: 32px;
+      height: 32px;
+      background: #FFFFFF;
+      border-radius: 4px;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    .qr-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 2px;
     }
   </style>
 </head>
@@ -543,14 +588,25 @@
           </div>
 
           <div class="poster-footer">
-            <div class="user-pill" style="color: #38BDF8;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span class="val-user">Alex</span>
+            <div class="user-pill">
+              <div class="user-pill-name">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="val-user">Alex</span>
+              </div>
+              <div class="user-pill-sub">发音主动记忆 · 记得更牢</div>
             </div>
-            <div class="qr-badge" style="background: rgba(56,189,248,0.15); color: #38BDF8;">开口背单词</div>
+            <div class="qr-wrap">
+              <div class="qr-text">
+                <div class="qr-text-top">扫码体验</div>
+                <div class="qr-text-brand">泡泡单词</div>
+              </div>
+              <div class="qr-box">
+                <img src="../app/assets/images/nnbdc-android-2dma.png" alt="QR" onerror="this.parentElement.innerHTML='<span style=\'font-size:16px;\'>📱</span>'">
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -607,14 +663,25 @@
           </div>
 
           <div class="poster-footer">
-            <div class="user-pill" style="color: #60A5FA;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span class="val-user">Alex</span>
+            <div class="user-pill">
+              <div class="user-pill-name">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="val-user">Alex</span>
+              </div>
+              <div class="user-pill-sub">发音主动记忆 · 记得更牢</div>
             </div>
-            <div class="qr-badge" style="background: rgba(59,130,246,0.15); color: #60A5FA;">泡泡背单词</div>
+            <div class="qr-wrap">
+              <div class="qr-text">
+                <div class="qr-text-top">扫码体验</div>
+                <div class="qr-text-brand">泡泡单词</div>
+              </div>
+              <div class="qr-box">
+                <img src="../app/assets/images/nnbdc-android-2dma.png" alt="QR" onerror="this.parentElement.innerHTML='<span style=\'font-size:16px;\'>📱</span>'">
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -672,13 +739,24 @@
 
           <div class="poster-footer">
             <div class="user-pill">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span class="val-user">Alex</span>
+              <div class="user-pill-name">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="val-user">Alex</span>
+              </div>
+              <div class="user-pill-sub">发音主动记忆 · 记得更牢</div>
             </div>
-            <div class="qr-badge">开口背单词</div>
+            <div class="qr-wrap">
+              <div class="qr-text">
+                <div class="qr-text-top">扫码体验</div>
+                <div class="qr-text-brand">泡泡单词</div>
+              </div>
+              <div class="qr-box">
+                <img src="../app/assets/images/nnbdc-android-2dma.png" alt="QR" onerror="this.parentElement.innerHTML='<span style=\'font-size:16px;\'>📱</span>'">
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -733,13 +811,24 @@
 
           <div class="poster-footer">
             <div class="user-pill">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span class="val-user">Alex</span>
+              <div class="user-pill-name">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="val-user">Alex</span>
+              </div>
+              <div class="user-pill-sub">发音主动记忆 · 记得更牢</div>
             </div>
-            <div class="qr-badge">早读打卡</div>
+            <div class="qr-wrap">
+              <div class="qr-text">
+                <div class="qr-text-top">扫码体验</div>
+                <div class="qr-text-brand" style="color:#D97706;">泡泡单词</div>
+              </div>
+              <div class="qr-box">
+                <img src="../app/assets/images/nnbdc-android-2dma.png" alt="QR" onerror="this.parentElement.innerHTML='<span style=\'font-size:16px;\'>📱</span>'">
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -793,14 +882,25 @@
           </div>
 
           <div class="poster-footer">
-            <div class="user-pill" style="color: #F472B6;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span class="val-user">Alex</span>
+            <div class="user-pill">
+              <div class="user-pill-name">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="val-user">Alex</span>
+              </div>
+              <div class="user-pill-sub">发音主动记忆 · 记得更牢</div>
             </div>
-            <div class="qr-badge" style="background: rgba(236,72,153,0.2); color: #F472B6;">泡泡背单词</div>
+            <div class="qr-wrap">
+              <div class="qr-text">
+                <div class="qr-text-top">扫码体验</div>
+                <div class="qr-text-brand" style="color:#F472B6;">泡泡单词</div>
+              </div>
+              <div class="qr-box">
+                <img src="../app/assets/images/nnbdc-android-2dma.png" alt="QR" onerror="this.parentElement.innerHTML='<span style=\'font-size:16px;\'>📱</span>'">
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -854,14 +954,25 @@
           </div>
 
           <div class="poster-footer">
-            <div class="user-pill" style="color: #34D399;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-              <span class="val-user">Alex</span>
+            <div class="user-pill">
+              <div class="user-pill-name">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="val-user">Alex</span>
+              </div>
+              <div class="user-pill-sub">发音主动记忆 · 记得更牢</div>
             </div>
-            <div class="qr-badge" style="background: rgba(16,185,129,0.2); color: #34D399;">大声背单词</div>
+            <div class="qr-wrap">
+              <div class="qr-text">
+                <div class="qr-text-top">扫码体验</div>
+                <div class="qr-text-brand" style="color:#34D399;">泡泡单词</div>
+              </div>
+              <div class="qr-box">
+                <img src="../app/assets/images/nnbdc-android-2dma.png" alt="QR" onerror="this.parentElement.innerHTML='<span style=\'font-size:16px;\'>📱</span>'">
+              </div>
+            </div>
           </div>
         </div>
       </div>

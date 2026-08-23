@@ -110,6 +110,7 @@ dependencies:
   archive: ^4.0.9
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.6.1
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
