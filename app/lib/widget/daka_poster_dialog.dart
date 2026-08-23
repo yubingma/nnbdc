@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:fluwx/fluwx.dart';
+import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -99,27 +100,40 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
     }
   }
 
-  /// 保存图片并唤起保存/发送
+  /// 直接保存海报图片到手机系统相册
   Future<void> _savePoster() async {
     if (_isExporting) return;
     setState(() => _isExporting = true);
 
     final filePath = await _capturePosterToTempFile();
     if (!mounted) return;
-    setState(() => _isExporting = false);
 
     if (filePath == null) {
-      ToastUtil.error('保存海报失败');
+      setState(() => _isExporting = false);
+      ToastUtil.error('生成海报失败');
       return;
     }
 
     try {
-      await Share.shareXFiles(
-        [XFile(filePath)],
-        text: '泡泡单词打卡海报',
-      );
+      await Gal.putImage(filePath, album: '泡泡单词');
+      if (mounted) {
+        setState(() => _isExporting = false);
+        ToastUtil.success('已保存到手机相册');
+      }
+    } on GalException catch (e) {
+      if (mounted) {
+        setState(() => _isExporting = false);
+        if (e.type == GalExceptionType.accessDenied) {
+          ToastUtil.error('未获得相册权限，请在设置中开启');
+        } else {
+          ToastUtil.error('保存相册失败: ${e.type.message}');
+        }
+      }
     } catch (e) {
-      ToastUtil.error('保存失败');
+      if (mounted) {
+        setState(() => _isExporting = false);
+        ToastUtil.error('保存相册失败');
+      }
     }
   }
 
@@ -337,11 +351,11 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                               label: '朋友圈',
                               onTap: () => _shareToWeChat(WeChatScene.timeline),
                             ),
-                            // 保存图片
+                            // 保存相册
                             _buildChannelButton(
                               icon: Icons.download_rounded,
                               iconColor: const Color(0xFF38BDF8),
-                              label: '保存/发送',
+                              label: '保存相册',
                               onTap: _savePoster,
                             ),
                             // 更多系统分享
