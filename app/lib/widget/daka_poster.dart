@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -299,7 +301,7 @@ class DakaPosterWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 立体金属质感徽章
+        // 立体金属质感徽章 (外圈金环 + 内层虚线环)
         Container(
           width: 125,
           height: 125,
@@ -308,7 +310,6 @@ class DakaPosterWidget extends StatelessWidget {
             gradient: const RadialGradient(
               colors: [Color(0xFF312E81), Color(0xFF1E1B4B), Color(0xFF0F172A)],
             ),
-            border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.7), width: 2),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
@@ -317,30 +318,36 @@ class DakaPosterWidget extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('🔥', style: TextStyle(fontSize: 16)),
-              Text(
-                '${data.continuousDays}',
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFFDE68A),
-                  height: 1.0,
+          child: CustomPaint(
+            painter: const _MedalBadgePainter(
+              outerColor: Color(0xB3F59E0B),
+              dashedColor: Color(0x66F59E0B),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🔥', style: TextStyle(fontSize: 16)),
+                Text(
+                  '${data.continuousDays}',
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFFFDE68A),
+                    height: 1.0,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'DAYS STREAK',
-                style: TextStyle(
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                  color: Color(0xFFFCD34D),
+                const SizedBox(height: 2),
+                const Text(
+                  'DAYS STREAK',
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: Color(0xFFFCD34D),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 
@@ -847,3 +854,54 @@ class _BubbleLogoPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BubbleLogoPainter oldDelegate) => oldDelegate.color != color;
 }
+
+/// 勋章外圈金环与内层精致虚线圆环绘制
+class _MedalBadgePainter extends CustomPainter {
+  final Color outerColor;
+  final Color dashedColor;
+
+  const _MedalBadgePainter({
+    required this.outerColor,
+    required this.dashedColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    // 1. 外圈金环 (实线)
+    final outerPaint = Paint()
+      ..color = outerColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    canvas.drawCircle(center, radius - 1.0, outerPaint);
+
+    // 2. 内圈精致虚线圆环 (距边缘 5px)
+    final innerRadius = radius - 5.5;
+    final dashPaint = Paint()
+      ..color = dashedColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    const dashCount = 36;
+    const sweepAngle = (2 * math.pi) / dashCount;
+    const dashRatio = 0.55;
+
+    for (int i = 0; i < dashCount; i++) {
+      final startAngle = i * sweepAngle;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: innerRadius),
+        startAngle,
+        sweepAngle * dashRatio,
+        false,
+        dashPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MedalBadgePainter oldDelegate) =>
+      oldDelegate.outerColor != outerColor || oldDelegate.dashedColor != dashedColor;
+}
+
