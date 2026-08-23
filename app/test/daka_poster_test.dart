@@ -50,7 +50,7 @@ void main() {
         );
 
         // 验证文本呈现
-        expect(find.text('泡泡背单词'), findsOneWidget);
+        expect(find.text('泡泡单词'), findsOneWidget);
         expect(find.text('28'), findsOneWidget);
         expect(find.text('30 词'), findsOneWidget);
         expect(find.text('98%'), findsOneWidget);

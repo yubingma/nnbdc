@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fluwx/fluwx.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/toast_util.dart';
@@ -79,6 +81,39 @@ class WechatUtil {
     } catch (e, stackTrace) {
       Global.logger.e('微信登录失败', error: e, stackTrace: stackTrace);
       ToastUtil.error('微信登录失败，请重试');
+      return false;
+    }
+  }
+
+  /// 分享图片到微信（好友或朋友圈）
+  static Future<bool> shareImage({
+    required File imageFile,
+    required WeChatScene scene,
+  }) async {
+    try {
+      if (!_initialized) {
+        await init();
+      }
+
+      bool installed = await isWechatInstalled();
+      if (!installed) {
+        ToastUtil.error('请先安装微信客户端');
+        return false;
+      }
+
+      final bytes = await imageFile.readAsBytes();
+      return await _fluwx.share(
+        WeChatShareImageModel(
+          WeChatImageToShare(
+            uint8List: bytes,
+            localImagePath: imageFile.path,
+          ),
+          scene: scene,
+        ),
+      );
+    } catch (e, stackTrace) {
+      Global.logger.e('微信分享失败', error: e, stackTrace: stackTrace);
+      ToastUtil.error('微信分享失败，请重试');
       return false;
     }
   }

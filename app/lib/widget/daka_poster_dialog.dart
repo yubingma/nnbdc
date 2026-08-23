@@ -3,11 +3,13 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:fluwx/fluwx.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../theme/app_theme.dart';
 import '../util/toast_util.dart';
+import '../util/wechat_util.dart';
 import 'daka_poster.dart';
 
 /// 打卡海报分享弹窗
@@ -73,7 +75,57 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
     }
   }
 
-  Future<void> _sharePoster() async {
+  /// 一键分享到微信好友或朋友圈
+  Future<void> _shareToWeChat(WeChatScene scene) async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+
+    final filePath = await _capturePosterToTempFile();
+    if (!mounted) return;
+    setState(() => _isExporting = false);
+
+    if (filePath == null) {
+      ToastUtil.error('生成海报失败，请稍后重试');
+      return;
+    }
+
+    final success = await WechatUtil.shareImage(
+      imageFile: File(filePath),
+      scene: scene,
+    );
+
+    if (success && mounted) {
+      ToastUtil.success(scene == WeChatScene.timeline ? '已前往朋友圈发布' : '已前往微信发送');
+    }
+  }
+
+  /// 保存图片到本地
+  Future<void> _savePoster() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+
+    final filePath = await _capturePosterToTempFile();
+    if (!mounted) return;
+    setState(() => _isExporting = false);
+
+    if (filePath == null) {
+      ToastUtil.error('保存海报失败');
+      return;
+    }
+
+    try {
+      // 也可以唤起系统文件/相册保存或直接分享
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        text: '泡泡单词打卡海报',
+      );
+    } catch (e) {
+      ToastUtil.error('保存失败');
+    }
+  }
+
+  /// 更多系统分享
+  Future<void> _shareSystem() async {
     if (_isExporting) return;
     setState(() => _isExporting = true);
 
@@ -108,8 +160,8 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
           final maxH = constraints.maxHeight.isFinite
               ? constraints.maxHeight
               : MediaQuery.of(context).size.height - 48;
-          // 根据弹窗可用高度动态计算海报区域高度，避免在小屏或低高度设备上发生溢出
-          final posterHeight = (maxH - 175).clamp(220.0, 480.0);
+          // 动态计算海报高度，自适应不同屏幕
+          final posterHeight = (maxH - 180).clamp(220.0, 480.0);
 
           return Container(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -160,7 +212,7 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
 
                 const SizedBox(height: 8),
 
-                // 海报滑动区域
+                // 海报左右滑动区域
                 SizedBox(
                   height: posterHeight,
                   child: PageView.builder(
@@ -222,7 +274,7 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                     );
                   }),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
                 Text(
                   PosterThemeConfig.getConfig(themes[_currentIndex]).name,
                   style: TextStyle(
@@ -233,43 +285,112 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
 
                 const SizedBox(height: 14),
 
-                // 底部操作按钮
+                // 底部清爽专属分享渠道按钮条
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton.icon(
-                      onPressed: _isExporting ? null : _sharePoster,
-                      icon: _isExporting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: _isExporting
+                      ? Container(
+                          height: 48,
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
                               ),
-                            )
-                          : const Icon(Icons.share, size: 18),
-                      label: Text(
-                        _isExporting ? '海报生成中...' : '分享海报',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                              const SizedBox(width: 10),
+                              Text(
+                                '海报生成中...',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // 微信好友
+                            _buildChannelButton(
+                              icon: Icons.chat_bubble_outline,
+                              iconColor: const Color(0xFF07C160),
+                              label: '微信好友',
+                              onTap: () => _shareToWeChat(WeChatScene.session),
+                            ),
+                            // 微信朋友圈
+                            _buildChannelButton(
+                              icon: Icons.camera_outlined,
+                              iconColor: const Color(0xFF07C160),
+                              label: '朋友圈',
+                              onTap: () => _shareToWeChat(WeChatScene.timeline),
+                            ),
+                            // 保存图片
+                            _buildChannelButton(
+                              icon: Icons.download_rounded,
+                              iconColor: const Color(0xFF38BDF8),
+                              label: '保存/发送',
+                              onTap: _savePoster,
+                            ),
+                            // 更多系统分享
+                            _buildChannelButton(
+                              icon: Icons.more_horiz,
+                              iconColor: Colors.white70,
+                              label: '更多',
+                              onTap: _shareSystem,
+                            ),
+                          ],
                         ),
-                        elevation: 4,
-                      ),
-                    ),
-                  ),
                 ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildChannelButton({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
