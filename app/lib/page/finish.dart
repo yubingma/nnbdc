@@ -65,11 +65,22 @@ class FinishPageState extends State<FinishPage> {
     } else if (PlatformUtils.isAndroid) {
       // Android 平台：检测是否安装对应应用市场并设置跳转链接
       try {
-        if (Config.enableHuaweiReview && await AppCheck().isAppInstalled('com.huawei.appmarket')) {
+        final appCheck = AppCheck();
+        if (Config.enableHuaweiReview && await appCheck.isAppInstalled('com.huawei.appmarket')) {
           marketAppUrl = "appmarket://details?id=com.nn.nnbdc.android";
+        } else if (Config.enableXiaomiReview && await appCheck.isAppInstalled('com.xiaomi.market')) {
+          marketAppUrl = "mimarket://details?id=com.nn.nnbdc.android";
+        } else if (Config.enableOppoReview && (await appCheck.isAppInstalled('com.heytap.market') || await appCheck.isAppInstalled('com.oppo.market'))) {
+          marketAppUrl = "market://details?id=com.nn.nnbdc.android";
+        } else if (Config.enableVivoReview && (await appCheck.isAppInstalled('com.bbk.appstore') || await appCheck.isAppInstalled('com.vivo.market'))) {
+          marketAppUrl = "market://details?id=com.nn.nnbdc.android";
+        } else if (Config.enableTencentReview && await appCheck.isAppInstalled('com.tencent.android.qqdownloader')) {
+          marketAppUrl = "market://details?id=com.nn.nnbdc.android";
+        } else if (Config.enableGooglePlayReview && await appCheck.isAppInstalled('com.android.vending')) {
+          marketAppUrl = "market://details?id=com.nn.nnbdc.android";
         }
       } catch (e) {
-        Global.logger.w('检测华为应用市场失败: $e');
+        Global.logger.w('检测应用市场失败: $e');
       }
     }
 

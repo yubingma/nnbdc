@@ -86,8 +86,9 @@ class Config {
   static const String appStoreId = '6756229006';
   static const bool enableAppStoreReview = true;   // Apple App Store (iOS / macOS)
   static const bool enableHuaweiReview = true;     // 华为应用市场 (Huawei AppGallery)
-  static const bool enableXiaomiReview = false;    // 小米应用商店 (预留)
-  static const bool enableOppoReview = false;      // OPPO应用商店 (预留)
-  static const bool enableVivoReview = false;      // vivo应用商店 (预留)
-  static const bool enableGooglePlayReview = false;// Google Play (预留)
+  static const bool enableXiaomiReview = false;    // 小米应用商店 (Xiaomi Mi Market)
+  static const bool enableOppoReview = false;      // OPPO应用商店 (OPPO / HeyTap Market)
+  static const bool enableVivoReview = false;      // vivo应用商店 (vivo App Store)
+  static const bool enableTencentReview = false;   // 腾讯应用宝 (Tencent MyApp)
+  static const bool enableGooglePlayReview = false;// Google Play Store
 }
