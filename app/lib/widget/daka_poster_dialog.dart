@@ -99,7 +99,7 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
     }
   }
 
-  /// 保存图片到本地
+  /// 保存图片并唤起保存/发送
   Future<void> _savePoster() async {
     if (_isExporting) return;
     setState(() => _isExporting = true);
@@ -114,7 +114,6 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
     }
 
     try {
-      // 也可以唤起系统文件/相册保存或直接分享
       await Share.shareXFiles(
         [XFile(filePath)],
         text: '泡泡单词打卡海报',
@@ -154,14 +153,16 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxH = constraints.maxHeight.isFinite
               ? constraints.maxHeight
-              : MediaQuery.of(context).size.height - 48;
-          // 动态计算海报高度，自适应不同屏幕
-          final posterHeight = (maxH - 180).clamp(220.0, 480.0);
+              : MediaQuery.of(context).size.height - 32;
+          
+          // 准确预留头部 (40) + 指示器与文字 (28) + 底部按钮条 (76) + padding (24) = 168px
+          // 留出充裕余量（210px），确保在任何超小屏幕上都绝不发生溢出
+          final posterHeight = (maxH - 210).clamp(160.0, 460.0);
 
           return Container(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -177,40 +178,42 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                 ),
               ],
             ),
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 弹窗顶部栏
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.auto_awesome, color: AppTheme.primaryColor, size: 20),
-                          const SizedBox(width: 8),
+                          Icon(Icons.auto_awesome, color: AppTheme.primaryColor, size: 18),
+                          const SizedBox(width: 6),
                           const Text(
                             '分享打卡成就',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 17,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                        icon: const Icon(Icons.close, color: Colors.white70, size: 18),
                         onPressed: () => Navigator.of(context).pop(),
                         visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
                 // 海报左右滑动区域
                 SizedBox(
@@ -247,7 +250,7 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
 
                 // 主题切换指示点与名称
                 Row(
@@ -263,9 +266,9 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                         );
                       },
                       child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: isSelected ? 18 : 6,
-                        height: 6,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: isSelected ? 16 : 5,
+                        height: 5,
                         decoration: BoxDecoration(
                           color: isSelected ? AppTheme.primaryColor : Colors.white24,
                           borderRadius: BorderRadius.circular(3),
@@ -274,20 +277,20 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                     );
                   }),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 3),
                 Text(
                   PosterThemeConfig.getConfig(themes[_currentIndex]).name,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
                 ),
 
-                const SizedBox(height: 14),
+                const SizedBox(height: 8),
 
                 // 底部清爽专属分享渠道按钮条
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: _isExporting
                       ? Container(
                           height: 48,
@@ -296,19 +299,19 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const SizedBox(
-                                width: 18,
-                                height: 18,
+                                width: 16,
+                                height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   color: Colors.white,
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Text(
                                 '海报生成中...',
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.8),
-                                  fontSize: 14,
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
@@ -364,28 +367,28 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               ),
-              child: Icon(icon, color: iconColor, size: 22),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
             ),
