@@ -3866,6 +3866,24 @@ class _PromoRedemptionWidget extends StatefulWidget {
 class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
   final TextEditingController _controller = TextEditingController();
   bool _isRedeeming = false;
+  PromoActivityVo? _activePromo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActivePromo();
+  }
+
+  Future<void> _loadActivePromo() async {
+    try {
+      final res = await Api.client.getActivePromoActivity();
+      if (res.success && res.data != null && mounted) {
+        setState(() {
+          _activePromo = res.data;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -3918,7 +3936,46 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // 只有在当前确实存在有效活动时才展示兑换组件
+    if (_activePromo == null) {
+      return const SizedBox.shrink();
+    }
+
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+
+    // 计算活动倒计时和剩余数量
+    String? deadlineTip;
+    String? remainingSlotsTip;
+    if (_activePromo!.endTime != null) {
+      final now = DateTime.now();
+      final diff = _activePromo!.endTime!.difference(now);
+      if (diff.isNegative) {
+        // 活动已过截止期，不展示
+        return const SizedBox.shrink();
+      }
+      if (diff.inDays >= 1) {
+        deadlineTip = '距截止剩 ${diff.inDays} 天';
+      } else if (diff.inHours >= 1) {
+        deadlineTip = '距截止剩 ${diff.inHours} 小时';
+      } else if (diff.inMinutes > 0) {
+        deadlineTip = '距截止剩 ${diff.inMinutes} 分钟';
+      } else {
+        deadlineTip = '今日即将截止';
+      }
+    }
+
+    if (_activePromo!.maxRedemptions != null && _activePromo!.maxRedemptions! > 0) {
+      final count = _activePromo!.redemptionCount ?? 0;
+      final remain = math.max(0, _activePromo!.maxRedemptions! - count);
+      if (remain <= 0) {
+        // 兑换名额已满，不展示
+        return const SizedBox.shrink();
+      }
+      remainingSlotsTip = '仅剩 $remain 个名额';
+    }
+
+    final hasPromoBanner = deadlineTip != null || remainingSlotsTip != null || (_activePromo!.name != null && _activePromo!.name!.isNotEmpty);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -3926,39 +3983,129 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
         color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
         border: Border.all(color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade300, width: 1),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: '输入邀请码成为会员',
-                hintStyle: const TextStyle(fontSize: 13),
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+          if (hasPromoBanner) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: isDarkMode ? Colors.amber.withValues(alpha: 0.1) : Colors.amber.shade50,
+                border: Border.all(
+                  color: isDarkMode ? Colors.amber.withValues(alpha: 0.25) : Colors.amber.shade200,
+                  width: 1,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.local_fire_department_rounded, size: 16, color: Colors.amber.shade800),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (_activePromo!.name != null && _activePromo!.name!.isNotEmpty)
+                          Text(
+                            _activePromo!.name!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.amber.shade200 : Colors.amber.shade900,
+                            ),
+                          ),
+                        if (deadlineTip != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
+                              color: Colors.amber.shade700.withValues(alpha: 0.15),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.timer_outlined, size: 12, color: isDarkMode ? Colors.amber.shade300 : Colors.amber.shade900),
+                                const SizedBox(width: 3),
+                                Text(
+                                  deadlineTip,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDarkMode ? Colors.amber.shade300 : Colors.amber.shade900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (remainingSlotsTip != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
+                              color: Colors.deepOrange.withValues(alpha: 0.12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.stars_rounded, size: 12, color: Colors.deepOrange.shade700),
+                                const SizedBox(width: 3),
+                                Text(
+                                  remainingSlotsTip,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.deepOrange.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: _isRedeeming ? null : _redeem,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: '输入邀请码成为会员',
+                    hintStyle: const TextStyle(fontSize: 13),
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                ),
               ),
-            ),
-            child: _isRedeeming
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('兑换', style: TextStyle(fontSize: 13)),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _isRedeeming ? null : _redeem,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isRedeeming
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('兑换', style: TextStyle(fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),

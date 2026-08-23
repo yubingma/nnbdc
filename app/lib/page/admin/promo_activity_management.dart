@@ -49,7 +49,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     }
   }
 
-  Future<void> _createActivity(String name, String code, String? duration, int? maxRedemptions) async {
+  Future<void> _createActivity(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions) async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
@@ -59,6 +59,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
         name,
         code,
         duration,
+        endTime?.millisecondsSinceEpoch,
         maxRedemptions,
       );
       if (result.success) {
@@ -95,6 +96,8 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     final daysController = TextEditingController(text: '30');
     final maxRedemptionsController = TextEditingController();
     bool isPermanent = false;
+    bool hasDeadline = true;
+    DateTime selectedDeadline = DateTime.now().add(const Duration(days: 7));
 
     showDialog(
       context: context,
@@ -164,7 +167,71 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // 最大兑换次数限制
+                  // 活动截止期配置
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: !hasDeadline
+                              ? null
+                              : () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: selectedDeadline,
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(const Duration(days: 3650)),
+                                  );
+                                  if (picked != null) {
+                                    setDialogState(() {
+                                      // 设定为选定日期的 23:59:59
+                                      selectedDeadline = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+                                    });
+                                  }
+                                },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: '活动截止日期',
+                              enabled: hasDeadline,
+                              suffixIcon: const Icon(Icons.calendar_today, size: 18),
+                            ),
+                            child: Text(
+                              hasDeadline
+                                  ? '${selectedDeadline.year}-${selectedDeadline.month.toString().padLeft(2, '0')}-${selectedDeadline.day.toString().padLeft(2, '0')}'
+                                  : '长期有效（无截止期）',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: hasDeadline ? null : Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: !hasDeadline,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                hasDeadline = !(val ?? false);
+                              });
+                            },
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                hasDeadline = !hasDeadline;
+                              });
+                            },
+                            child: const Text('无截止期'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // 限量兑换人数限制
                   TextField(
                     controller: maxRedemptionsController,
                     keyboardType: TextInputType.number,
@@ -206,10 +273,11 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
                     duration = '$days天';
                   }
 
+                  final DateTime? endTime = hasDeadline ? selectedDeadline : null;
                   final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
 
                   Navigator.pop(context);
-                  _createActivity(name, code, duration, maxRedemptions);
+                  _createActivity(name, code, duration, endTime, maxRedemptions);
                 },
                 child: const Text('创建'),
               ),
@@ -309,10 +377,36 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
                       itemBuilder: (context, index) {
                         final activity = _activities[index];
                         final durationText = activity.duration ?? '永久';
-                        final maxRedemptionsText = activity.maxRedemptions == null || activity.maxRedemptions == 0
-                            ? '无限制'
-                            : '${activity.maxRedemptions} 次';
-                        final progress = '${activity.redemptionCount} / $maxRedemptionsText';
+                        final maxRedemptions = activity.maxRedemptions;
+                        final count = activity.redemptionCount ?? 0;
+                        final maxRedemptionsText = maxRedemptions == null || maxRedemptions == 0
+                            ? '不限人数'
+                            : '$maxRedemptions 人';
+                        final remainingSlotsText = maxRedemptions != null && maxRedemptions > 0
+                            ? ' (剩 ${maxRedemptions - count} 人)'
+                            : '';
+                        final progress = '$count / $maxRedemptionsText$remainingSlotsText';
+
+                        String deadlineText = '长期有效';
+                        Color? deadlineColor;
+                        if (activity.endTime != null) {
+                          final now = DateTime.now();
+                          final diff = activity.endTime!.difference(now);
+                          final dateStr = '${activity.endTime!.year}-${activity.endTime!.month.toString().padLeft(2, '0')}-${activity.endTime!.day.toString().padLeft(2, '0')}';
+                          if (diff.isNegative) {
+                            deadlineText = '$dateStr (已截止)';
+                            deadlineColor = Colors.red;
+                          } else if (diff.inDays >= 1) {
+                            deadlineText = '$dateStr (还剩 ${diff.inDays} 天)';
+                            deadlineColor = Colors.orange.shade700;
+                          } else if (diff.inHours >= 1) {
+                            deadlineText = '$dateStr (还剩 ${diff.inHours} 小时)';
+                            deadlineColor = Colors.orange.shade700;
+                          } else {
+                            deadlineText = '$dateStr (今日即将截止)';
+                            deadlineColor = Colors.red;
+                          }
+                        }
 
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -372,7 +466,27 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
                                   children: [
                                     _buildInfoColumn('活动兑换码', activity.activityCode ?? '', isDarkMode),
                                     _buildInfoColumn('赠送时长', durationText, isDarkMode),
-                                    _buildInfoColumn('已兑换次数', progress, isDarkMode),
+                                    _buildInfoColumn('兑换进度', progress, isDarkMode),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '活动截止期：',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDarkMode ? Colors.white60 : Colors.black54,
+                                      ),
+                                    ),
+                                    Text(
+                                      deadlineText,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: deadlineColor ?? (isDarkMode ? Colors.white70 : Colors.black87),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],

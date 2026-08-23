@@ -24,4 +24,14 @@ public class PromoActivityBo extends BaseBo<PromoActivity> {
         String sql = "SELECT * FROM promo_activity WHERE UPPER(activity_code) = UPPER(:code)";
         return queryUnique(sql, Pair.of("code", code.trim()));
     }
+
+    public PromoActivity getLatestActiveActivity() {
+        String sql = "SELECT * FROM promo_activity " +
+                     "WHERE is_active = 1 " +
+                     "AND (start_time IS NULL OR start_time <= NOW()) " +
+                     "AND (end_time IS NULL OR end_time > NOW()) " +
+                     "AND (max_redemptions IS NULL OR max_redemptions = 0 OR redemption_count < max_redemptions) " +
+                     "ORDER BY create_time DESC LIMIT 1";
+        return queryUnique(sql);
+    }
 }

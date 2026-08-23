@@ -85,6 +85,23 @@ public class PromoController {
     }
 
     /**
+     * 获取当前最新的有效推广活动（用于前台展示倒计时与剩余名额）
+     */
+    @GetMapping("/getActivePromoActivity.do")
+    public Result<PromoActivityVo> getActivePromoActivity() {
+        try {
+            PromoActivity activity = promoActivityBo.getLatestActiveActivity();
+            if (activity == null) {
+                return Result.success(null);
+            }
+            PromoActivityVo vo = PoVoUtils.makeVo(activity, PromoActivityVo.class, null);
+            return Result.success(vo);
+        } catch (Exception e) {
+            return Result.fail("获取活动信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 管理员创建推广活动
      */
     @PostMapping("/admin/createPromoActivity.do")
@@ -93,6 +110,7 @@ public class PromoController {
             @RequestParam String name,
             @RequestParam String activityCode,
             @RequestParam(required = false) String duration,
+            @RequestParam(required = false) Long endTime,
             @RequestParam(required = false) Integer maxRedemptions) {
         try {
             User admin = userBo.findById(userId);
@@ -123,6 +141,12 @@ public class PromoController {
                 activity.setDuration(null);
             }
             
+            if (endTime != null && endTime > 0) {
+                activity.setEndTime(new Date(endTime));
+            } else {
+                activity.setEndTime(null);
+            }
+
             activity.setMaxRedemptions(maxRedemptions);
             activity.setRedemptionCount(0);
             activity.setIsActive(true);
