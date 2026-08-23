@@ -9,6 +9,8 @@ import 'package:provider/provider.dart';
 
 import 'package:nnbdc/theme/app_theme.dart';
 
+import 'package:flutter/services.dart';
+
 class PromoActivityManagementPage extends StatefulWidget {
   const PromoActivityManagementPage({super.key});
 
@@ -90,77 +92,130 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
   void _showCreateDialog() {
     final nameController = TextEditingController();
     final codeController = TextEditingController();
-    final durationController = TextEditingController(text: '30天');
+    final daysController = TextEditingController(text: '30');
     final maxRedemptionsController = TextEditingController();
+    bool isPermanent = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('创建运营活动'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: '活动名称',
-                  hintText: '例如：小红书种子用户赠送',
-                ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('创建运营活动'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: '活动名称',
+                      hintText: '例如：小红书种子用户活动',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: codeController,
+                    decoration: const InputDecoration(
+                      labelText: '活动兑换码',
+                      hintText: '例如：XHS666',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // 会员时长配置
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: daysController,
+                          enabled: !isPermanent,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            labelText: '赠送会员时长',
+                            hintText: isPermanent ? '永久有效' : '请输入天数',
+                            suffixText: isPermanent ? null : '天',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: isPermanent,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                isPermanent = val ?? false;
+                              });
+                            },
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                isPermanent = !isPermanent;
+                              });
+                            },
+                            child: const Text('永久'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // 最大兑换次数限制
+                  TextField(
+                    controller: maxRedemptionsController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      labelText: '限量兑换总人数',
+                      hintText: '留空表示不限制总人数',
+                      suffixText: '人',
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: codeController,
-                decoration: const InputDecoration(
-                  labelText: '活动兑换码',
-                  hintText: '例如：XHS666',
-                ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: durationController,
-                decoration: const InputDecoration(
-                  labelText: '会员时长',
-                  hintText: '例如：30天、365天，留空表示永久',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: maxRedemptionsController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: '最大兑换次数限制',
-                  hintText: '留空表示无限制',
-                ),
+              TextButton(
+                onPressed: () {
+                  final name = nameController.text.trim();
+                  final code = codeController.text.trim();
+                  final days = daysController.text.trim();
+                  final maxRedemptionsStr = maxRedemptionsController.text.trim();
+
+                  if (name.isEmpty || code.isEmpty) {
+                    ToastUtil.error('活动名称与活动码不能为空');
+                    return;
+                  }
+
+                  String? duration;
+                  if (isPermanent) {
+                    duration = null; // 永久会员
+                  } else {
+                    if (days.isEmpty || int.tryParse(days) == null || int.parse(days) <= 0) {
+                      ToastUtil.error('请输入有效的会员天数');
+                      return;
+                    }
+                    duration = '$days天';
+                  }
+
+                  final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
+
+                  Navigator.pop(context);
+                  _createActivity(name, code, duration, maxRedemptions);
+                },
+                child: const Text('创建'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              final name = nameController.text.trim();
-              final code = codeController.text.trim();
-              final duration = durationController.text.trim();
-              final maxRedemptionsStr = maxRedemptionsController.text.trim();
-
-              if (name.isEmpty || code.isEmpty) {
-                ToastUtil.error('活动名称与活动码不能为空');
-                return;
-              }
-
-              final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
-
-              Navigator.pop(context);
-              _createActivity(name, code, duration.isEmpty ? null : duration, maxRedemptions);
-            },
-            child: const Text('创建'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
