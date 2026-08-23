@@ -976,45 +976,75 @@ class _MePageState extends State<MePage> {
 
               // 2. 会员状况/订阅入口 (移动至此处)
               Builder(builder: (context) {
-                final isPremium = SubscriptionUtil.isPremium();
                 String? premiumInfoText;
-                if (isPremium) {
-                  final type = SubscriptionUtil.getSubscriptionType();
-                  final expire = SubscriptionUtil.getExpireDate();
-                  final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
+                final type = SubscriptionUtil.getSubscriptionType();
+                final expire = SubscriptionUtil.getExpireDate();
+                final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
 
-                  if (type != null && type.isNotEmpty) {
-                    final typeText = type == 'monthly' ? '月度会员' : '年度会员';
-                    if (expire != null) {
-                      premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
-                    } else {
-                      premiumInfoText = typeText;
-                    }
-                  } else if (isOverride) {
-                    final updateTime = loggedInUser?.premiumOverrideUpdateTime;
-                    final duration = loggedInUser?.premiumOverrideDuration;
-                    if (duration == null) {
-                      premiumInfoText = '会员（永久）';
-                    } else if (updateTime != null) {
-                      final ms = _parseDurationMillis(duration);
-                      if (ms != null && ms > 0) {
-                        final expireTime = updateTime.add(Duration(milliseconds: ms));
-                        premiumInfoText = '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
-                      } else {
-                        premiumInfoText = '会员';
-                      }
-                    } else {
-                      premiumInfoText = '会员';
-                    }
+                if (type != null && type.isNotEmpty) {
+                  final typeText = type == 'monthly' ? '月度会员' : '年度会员';
+                  if (expire != null) {
+                    premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
                   } else {
-                    premiumInfoText = '会员';
+                    premiumInfoText = typeText;
                   }
+                } else if (isOverride) {
+                  final updateTime = loggedInUser?.premiumOverrideUpdateTime;
+                  final duration = loggedInUser?.premiumOverrideDuration;
+                  if (duration == null) {
+                    premiumInfoText = '会员（永久）';
+                  } else if (updateTime != null) {
+                    final ms = _parseDurationMillis(duration);
+                    if (ms != null && ms > 0) {
+                      final expireTime = updateTime.add(Duration(milliseconds: ms));
+                      if (expireTime.isAfter(DateTime.now())) {
+                        premiumInfoText = '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
+                      }
+                    }
+                  }
+                } else if (loggedInUser?.vipExpireDate != null && loggedInUser!.vipExpireDate!.isAfter(DateTime.now())) {
+                  final vipExpire = loggedInUser!.vipExpireDate!;
+                  final vipType = loggedInUser?.vipType;
+                  final typeText = (vipType != null && vipType.isNotEmpty)
+                      ? (vipType == 'monthly' ? '月度会员' : (vipType == 'annual' ? '年度会员' : '会员'))
+                      : '会员';
+                  premiumInfoText = '$typeText，有效期至：${vipExpire.year}年${vipExpire.month}月${vipExpire.day}日';
+                } else if (loggedInUser?.isPremiumIos == true) {
+                  premiumInfoText = 'iOS 会员（永久）';
                 }
 
-                if (!isPremium && PlatformUtils.isIOS) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                if (premiumInfoText != null) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.blue.withValues(alpha: 0.05),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.25), width: 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            premiumInfoText,
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (PlatformUtils.isIOS) ...[
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
@@ -1052,42 +1082,12 @@ class _MePageState extends State<MePage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      _PromoRedemptionWidget(onRedeemSuccess: () {
-                        loadData();
-                      }),
                     ],
-                  );
-                }
-
-
-                if (isPremium && premiumInfoText != null) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.blue.withValues(alpha: 0.05),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.25), width: 1.5),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            premiumInfoText,
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
+                    _PromoRedemptionWidget(onRedeemSuccess: () {
+                      loadData();
+                    }),
+                  ],
+                );
               }),
             ],
           ),
