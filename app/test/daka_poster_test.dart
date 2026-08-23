@@ -24,18 +24,18 @@ void main() {
       expect(testData.dateStr, '2026.08.23');
     });
 
-    test('6 款 PosterThemeConfig 配置完整无误', () {
+    test('4 大 PosterThemeConfig 配置完整无误', () {
+      expect(PosterThemeType.values.length, 4);
       for (final type in PosterThemeType.values) {
         final config = PosterThemeConfig.getConfig(type);
         expect(config.name.isNotEmpty, isTrue);
-        expect(config.tagText.isNotEmpty, isTrue);
-        expect(config.quoteMain.isNotEmpty, isTrue);
-        expect(config.quoteSub.isNotEmpty, isTrue);
-        expect(config.dateTag.isNotEmpty, isTrue);
+        expect(config.brandColor, isNotNull);
+        expect(config.bgGradientStart, isNotNull);
+        expect(config.bgGradientEnd, isNotNull);
       }
     });
 
-    testWidgets('DakaPosterWidget 在所有 6 款主题下均能正确渲染且包含关键数据', (tester) async {
+    testWidgets('DakaPosterWidget 在 4 种标杆范式下均能正确渲染且包含关键数据', (tester) async {
       for (final type in PosterThemeType.values) {
         await tester.pumpWidget(
           MaterialApp(
@@ -49,13 +49,9 @@ void main() {
           ),
         );
 
-        // 验证文本呈现
+        // 验证关键文本呈现
         expect(find.text('泡泡单词'), findsAtLeastNWidgets(1));
         expect(find.text('扫码体验'), findsOneWidget);
-        expect(find.text('28'), findsOneWidget);
-        expect(find.text('30 词'), findsOneWidget);
-        expect(find.text('98%'), findsOneWidget);
-        expect(find.text('1,420'), findsOneWidget);
         expect(find.text('Alex'), findsOneWidget);
       }
     });

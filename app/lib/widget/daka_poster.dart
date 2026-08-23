@@ -22,214 +22,63 @@ class PosterData {
   });
 }
 
-/// 海报主题配置
+/// 4 大主流标杆海报范式
 enum PosterThemeType {
-  glacier,  // ① 冰川湛蓝 (极光纯蓝)
-  cobalt,   // ② 皇家钴蓝 (深邃深蓝)
-  dark,     // ③ 暗夜深邃 (沉浸蓝黑)
-  sunrise,  // ④ 暖阳晨读 (清晨早读)
-  pink,     // ⑤ 活力粉紫 (开口不怕忘)
-  green,    // ⑥ 森林墨绿 (慢慢来比较快)
+  movieCard,    // ① 电影画报 · 晨曦微光 (不背单词风：沉浸画框 + 英文金句)
+  streakMedal,  // ② 自律成就 · 荣耀勋章 (墨墨/多邻国风：立体发光打卡天数勋章)
+  dailyCalendar,// ③ 极简日历 · 晨读手账 (扇贝/豆瓣风：撕页日历 + 复古印章)
+  soundWave,    // ④ 声波能量 · 泡泡光晕 (泡泡独家科技风：发音声波能量图谱)
 }
 
+/// 海报主题配置
 class PosterThemeConfig {
   final String name;
   final Color bgGradientStart;
-  final Color bgGradientMiddle;
   final Color bgGradientEnd;
-  final Color borderColor;
   final Color brandColor;
-  final Color tagColor;
-  final Color tagBgColor;
-  final String tagText;
-  final Color numberColorStart;
-  final Color numberColorEnd;
-  final Color cardBgColor;
-  final Color cardBorderColor;
-  final Color statHighlightColor;
-  final Color quoteTextColor;
-  final Color quoteBgColor;
-  final Color quoteBorderColor;
-  final String quoteMain;
-  final String quoteSub;
-  final String dateTag;
-  final bool isDark;
 
   const PosterThemeConfig({
     required this.name,
     required this.bgGradientStart,
-    required this.bgGradientMiddle,
     required this.bgGradientEnd,
-    required this.borderColor,
     required this.brandColor,
-    required this.tagColor,
-    required this.tagBgColor,
-    required this.tagText,
-    required this.numberColorStart,
-    required this.numberColorEnd,
-    required this.cardBgColor,
-    required this.cardBorderColor,
-    required this.statHighlightColor,
-    required this.quoteTextColor,
-    required this.quoteBgColor,
-    required this.quoteBorderColor,
-    required this.quoteMain,
-    required this.quoteSub,
-    required this.dateTag,
-    this.isDark = true,
   });
 
   static PosterThemeConfig getConfig(PosterThemeType type) {
     switch (type) {
-      case PosterThemeType.glacier:
+      case PosterThemeType.movieCard:
         return const PosterThemeConfig(
-          name: '冰川湛蓝',
-          bgGradientStart: Color(0xFF0A2540),
-          bgGradientMiddle: Color(0xFF06182A),
-          bgGradientEnd: Color(0xFF030D17),
-          borderColor: Color(0x5938BDF8),
+          name: '电影画报 · 晨曦',
+          bgGradientStart: Color(0xFF0F172A),
+          bgGradientEnd: Color(0xFF030712),
           brandColor: Color(0xFF38BDF8),
-          tagColor: Color(0xFF38BDF8),
-          tagBgColor: Color(0x2638BDF8),
-          tagText: '大声开口 记得牢',
-          numberColorStart: Color(0xFFFFFFFF),
-          numberColorEnd: Color(0xFF38BDF8),
-          cardBgColor: Color(0x0AFFFFFF),
-          cardBorderColor: Color(0x14FFFFFF),
-          statHighlightColor: Color(0xFF38BDF8),
-          quoteTextColor: Color(0xFFE2E8F0),
-          quoteBgColor: Color(0x0AFFFFFF),
-          quoteBorderColor: Color(0x3338BDF8),
-          quoteMain: '“多开口读，全感官记忆。”',
-          quoteSub: '每天坚持读一读。',
-          dateTag: 'GLACIER',
-          isDark: true,
         );
-      case PosterThemeType.cobalt:
+      case PosterThemeType.streakMedal:
         return const PosterThemeConfig(
-          name: '皇家钴蓝',
-          bgGradientStart: Color(0xFF1E3A8A),
-          bgGradientMiddle: Color(0xFF172554),
-          bgGradientEnd: Color(0xFF0B1120),
-          borderColor: Color(0x593B82F6),
-          brandColor: Color(0xFF60A5FA),
-          tagColor: Color(0xFF60A5FA),
-          tagBgColor: Color(0x263B82F6),
-          tagText: '嘴巴记住 脑子不忘',
-          numberColorStart: Color(0xFFFFFFFF),
-          numberColorEnd: Color(0xFF60A5FA),
-          cardBgColor: Color(0x0AFFFFFF),
-          cardBorderColor: Color(0x14FFFFFF),
-          statHighlightColor: Color(0xFF60A5FA),
-          quoteTextColor: Color(0xFFE2E8F0),
-          quoteBgColor: Color(0x0AFFFFFF),
-          quoteBorderColor: Color(0x333B82F6),
-          quoteMain: '“嘴巴读得出，心里有底气。”',
-          quoteSub: '每天大声读，踏踏实实积累。',
-          dateTag: 'COBALT',
-          isDark: true,
+          name: '自律成就 · 勋章',
+          bgGradientStart: Color(0xFF1E1B4B),
+          bgGradientEnd: Color(0xFF05050A),
+          brandColor: Color(0xFFFBBF24),
         );
-      case PosterThemeType.dark:
+      case PosterThemeType.dailyCalendar:
         return const PosterThemeConfig(
-          name: '暗夜深邃',
-          bgGradientStart: Color(0xFF16203B),
-          bgGradientMiddle: Color(0xFF0B1120),
-          bgGradientEnd: Color(0xFF060A12),
-          borderColor: Color(0x406366F1),
-          brandColor: Color(0xFF38BDF8),
-          tagColor: Color(0xFF38BDF8),
-          tagBgColor: Color(0x2638BDF8),
-          tagText: '大声开口 记得才牢',
-          numberColorStart: Color(0xFFFFFFFF),
-          numberColorEnd: Color(0xFF93C5FD),
-          cardBgColor: Color(0x0AFFFFFF),
-          cardBorderColor: Color(0x14FFFFFF),
-          statHighlightColor: Color(0xFF38BDF8),
-          quoteTextColor: Color(0xFFE2E8F0),
-          quoteBgColor: Color(0x0AFFFFFF),
-          quoteBorderColor: Color(0x14FFFFFF),
-          quoteMain: '“光看容易忘，大声读才真会。”',
-          quoteSub: '每天十分钟，踏踏实实背完。',
-          dateTag: 'TODAY',
-          isDark: true,
+          name: '极简日历 · 手账',
+          bgGradientStart: Color(0xFF1E293B),
+          bgGradientEnd: Color(0xFF0F172A),
+          brandColor: Color(0xFFFDA4AF),
         );
-      case PosterThemeType.sunrise:
+      case PosterThemeType.soundWave:
         return const PosterThemeConfig(
-          name: '暖阳晨读',
-          bgGradientStart: Color(0xFFFFFDF5),
-          bgGradientMiddle: Color(0xFFFEF3C7),
-          bgGradientEnd: Color(0xFFFDE68A),
-          borderColor: Color(0x4DF59E0B),
-          brandColor: Color(0xFFD97706),
-          tagColor: Color(0xFF92400E),
-          tagBgColor: Color(0x26D97706),
-          tagText: '☀️ 晨读打卡',
-          numberColorStart: Color(0xFFD97706),
-          numberColorEnd: Color(0xFF9A3412),
-          cardBgColor: Color(0xC0FFFFFF),
-          cardBorderColor: Color(0x33F59E0B),
-          statHighlightColor: Color(0xFFB45309),
-          quoteTextColor: Color(0xFF78350F),
-          quoteBgColor: Color(0xA6FFFFFF),
-          quoteBorderColor: Color(0x33F59E0B),
-          quoteMain: '“一天背一点，坚持就很厉害。”',
-          quoteSub: '每天早晨开口读，心里很踏实。',
-          dateTag: 'MORNING',
-          isDark: false,
-        );
-      case PosterThemeType.pink:
-        return const PosterThemeConfig(
-          name: '活力粉紫',
-          bgGradientStart: Color(0xFF251230),
-          bgGradientMiddle: Color(0xFF130B1B),
-          bgGradientEnd: Color(0xFF08050D),
-          borderColor: Color(0x40EC4899),
-          brandColor: Color(0xFFF472B6),
-          tagColor: Color(0xFFF472B6),
-          tagBgColor: Color(0x26EC4899),
-          tagText: '🗣️ 开口读 不怕忘',
-          numberColorStart: Color(0xFFFFFFFF),
-          numberColorEnd: Color(0xFFF472B6),
-          cardBgColor: Color(0x0AFFFFFF),
-          cardBorderColor: Color(0x14FFFFFF),
-          statHighlightColor: Color(0xFFF472B6),
-          quoteTextColor: Color(0xFFE2E8F0),
-          quoteBgColor: Color(0x0AFFFFFF),
-          quoteBorderColor: Color(0x33EC4899),
-          quoteMain: '“嘴巴记住了，脑子就不会忘。”',
-          quoteSub: '大声读一遍，胜过默看十遍。',
-          dateTag: 'KEEP GOING',
-          isDark: true,
-        );
-      case PosterThemeType.green:
-        return const PosterThemeConfig(
-          name: '森林墨绿',
-          bgGradientStart: Color(0xFF0E2E25),
-          bgGradientMiddle: Color(0xFF061A14),
-          bgGradientEnd: Color(0xFF030D0A),
-          borderColor: Color(0x4010B981),
+          name: '声波能量 · 科技',
+          bgGradientStart: Color(0xFF064E3B),
+          bgGradientEnd: Color(0xFF021512),
           brandColor: Color(0xFF34D399),
-          tagColor: Color(0xFF34D399),
-          tagBgColor: Color(0x2610B981),
-          tagText: '🌿 慢慢来 比较快',
-          numberColorStart: Color(0xFFFFFFFF),
-          numberColorEnd: Color(0xFF6EE7B7),
-          cardBgColor: Color(0x0AFFFFFF),
-          cardBorderColor: Color(0x14FFFFFF),
-          statHighlightColor: Color(0xFF34D399),
-          quoteTextColor: Color(0xFFE2E8F0),
-          quoteBgColor: Color(0x0AFFFFFF),
-          quoteBorderColor: Color(0x3310B981),
-          quoteMain: '“背词无捷径，开口是良方。”',
-          quoteSub: '每天完成计划，不知不觉积累。',
-          dateTag: 'PROGRESS',
-          isDark: true,
         );
     }
   }
 }
 
-/// 打卡海报组件
+/// 打卡海报核心渲染组件
 class DakaPosterWidget extends StatelessWidget {
   final PosterData data;
   final PosterThemeType themeType;
@@ -238,69 +87,69 @@ class DakaPosterWidget extends StatelessWidget {
   const DakaPosterWidget({
     super.key,
     required this.data,
-    this.themeType = PosterThemeType.glacier,
-    this.width = 320,
+    required this.themeType,
+    this.width = 270.0,
   });
 
   @override
   Widget build(BuildContext context) {
     final cfg = PosterThemeConfig.getConfig(themeType);
-    final height = width * 16 / 9;
+    final height = width * (16.0 / 9.0);
 
     return Container(
       width: width,
       height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: cfg.borderColor, width: 1.5),
-        gradient: RadialGradient(
-          center: const Alignment(0, -0.5),
-          radius: 1.1,
-          colors: [
-            cfg.bgGradientStart,
-            cfg.bgGradientMiddle,
-            cfg.bgGradientEnd,
-          ],
-          stops: const [0.0, 0.55, 1.0],
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [cfg.bgGradientStart, cfg.bgGradientEnd],
+        ),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.12),
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.6),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // 顶部栏
-          _buildTopBar(cfg),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. 顶部栏 (品牌 Logo + 风格标签)
+            _buildTopBar(cfg),
 
-          // 主视觉打卡天数
-          _buildHeroSection(cfg),
+            // 2. 核心主视觉区 (根据 4 种风格定制)
+            Expanded(
+              child: Center(
+                child: _buildHeroContent(cfg),
+              ),
+            ),
 
-          // 3 栏数据卡片
-          _buildDataCard(cfg),
-
-          // 金句卡片
-          _buildQuoteCard(cfg),
-
-          // 底部用户标识
-          _buildFooter(cfg),
-        ],
+            // 3. 底部用户信息与矢量二维码
+            _buildFooter(cfg),
+          ],
+        ),
       ),
     );
   }
 
+  /// 顶部 Logo 栏
   Widget _buildTopBar(PosterThemeConfig cfg) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 统一的泡泡 Logo
             CustomPaint(
               size: const Size(18, 18),
               painter: _BubbleLogoPainter(color: cfg.brandColor),
@@ -311,17 +160,17 @@ class DakaPosterWidget extends StatelessWidget {
               style: TextStyle(
                 color: cfg.brandColor,
                 fontSize: 13.5,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.3,
               ),
             ),
           ],
         ),
         Text(
-          data.dateStr.isNotEmpty ? data.dateStr : cfg.dateTag,
+          data.dateStr,
           style: TextStyle(
-            color: cfg.isDark ? Colors.white.withValues(alpha: 0.65) : cfg.brandColor.withValues(alpha: 0.75),
-            fontSize: 11,
+            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: 10,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
           ),
@@ -330,115 +179,340 @@ class DakaPosterWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroSection(PosterThemeConfig cfg) {
+  /// 核心主视觉内容生成
+  Widget _buildHeroContent(PosterThemeConfig cfg) {
+    switch (themeType) {
+      case PosterThemeType.movieCard:
+        return _buildMovieHero();
+      case PosterThemeType.streakMedal:
+        return _buildMedalHero();
+      case PosterThemeType.dailyCalendar:
+        return _buildCalendarHero();
+      case PosterThemeType.soundWave:
+        return _buildSoundWaveHero();
+    }
+  }
+
+  /// ① 电影画报风 (不背单词风：沉浸晨光画框 + 英文金句 + 超薄数据胶囊)
+  Widget _buildMovieHero() {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // 药丸微标
+        // 沉浸自然摄影画框
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          width: double.infinity,
+          height: 195,
           decoration: BoxDecoration(
-            color: cfg.tagBgColor,
-            borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: cfg.tagColor.withValues(alpha: 0.3), width: 1),
-          ),
-          child: Text(
-            cfg.tagText,
-            style: TextStyle(
-              color: cfg.tagColor,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w500,
+            borderRadius: BorderRadius.circular(14),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF0284C7),
+                Color(0xFFD97706),
+              ],
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                ),
+                child: const Text(
+                  '🌅 DAWN · 晨光微熹',
+                  style: TextStyle(
+                    color: Color(0xFFBAE6FD),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '“Every word you speak brings the world a step closer.”',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '大声开口读出的每个词，都在悄悄改变你。',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
+
+        const SizedBox(height: 12),
+
+        // 超薄数据胶囊
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildMiniStat('${data.continuousDays} 天', '连续自律'),
+              Container(width: 1, height: 18, color: Colors.white12),
+              _buildMiniStat('${data.todayWords} 词', '今日开口'),
+              Container(width: 1, height: 18, color: Colors.white12),
+              _buildMiniStat('${data.memoryRate}%', '记牢比例'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// ② 荣耀勋章风 (墨墨/多邻国风：立体自律徽章)
+  Widget _buildMedalHero() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 立体金属质感徽章
+        Container(
+          width: 125,
+          height: 125,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const RadialGradient(
+              colors: [Color(0xFF312E81), Color(0xFF1E1B4B), Color(0xFF0F172A)],
+            ),
+            border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.7), width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                blurRadius: 24,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('🔥', style: TextStyle(fontSize: 16)),
+              Text(
+                '${data.continuousDays}',
+                style: const TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFFFDE68A),
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'DAYS STREAK',
+                style: TextStyle(
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: Color(0xFFFCD34D),
+                ),
+              ),
+            ],
+          ),
+        ),
+
         const SizedBox(height: 10),
-        Text(
-          '连续打卡',
+        const Text(
+          '✨ 连续自律打卡 · 达成新里程碑',
           style: TextStyle(
-            color: cfg.isDark ? Colors.white.withValues(alpha: 0.75) : const Color(0xFF78350F),
-            fontSize: 12.5,
+            color: Color(0xFFFDE68A),
+            fontSize: 11,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 12),
+
+        // 3 宫格统计
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
           children: [
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [cfg.numberColorStart, cfg.numberColorEnd],
-              ).createShader(bounds),
-              child: Text(
-                '${data.continuousDays}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 66,
-                  fontWeight: FontWeight.w900,
-                  height: 1.0,
-                  letterSpacing: -2,
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              '天',
-              style: TextStyle(
-                color: cfg.isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF78350F),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Expanded(child: _buildMedalStatCard('${data.todayWords} 词', '今日开口')),
+            const SizedBox(width: 6),
+            Expanded(child: _buildMedalStatCard('${data.memoryRate}%', '牢固度')),
+            const SizedBox(width: 6),
+            Expanded(child: _buildMedalStatCard(_formatNumber(data.totalWords), '累计掌握')),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildDataCard(PosterThemeConfig cfg) {
+  /// ③ 极简日历风 (扇贝/豆瓣风：撕历手账 + 复古印章)
+  Widget _buildCalendarHero() {
+    final now = DateTime.now();
+    final dayStr = now.day.toString().padLeft(2, '0');
+    final monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    final weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    final monthStr = '${monthNames[now.month - 1]} · ${weekNames[now.weekday % 7]}';
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
-        color: cfg.cardBgColor,
+        color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cfg.cardBorderColor, width: 1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: Row(
+      padding: const EdgeInsets.all(14),
+      child: Stack(
         children: [
-          Expanded(
-            child: _buildStatItem(
-              title: '今天读了',
-              value: '${data.todayWords} 词',
-              valueColor: cfg.statHighlightColor,
-              cfg: cfg,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        dayStr,
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFFDA4AF),
+                          height: 1.0,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        monthStr,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDA4AF).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '第 ${data.continuousDays} 天',
+                      style: const TextStyle(
+                        color: Color(0xFFFDA4AF),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              const SizedBox(height: 10),
+              const Text(
+                '“每天大声开口读 10 分钟，不知不觉就走到了很远的地方。”',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  height: 1.45,
+                  color: Color(0xFFF1F5F9),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '今日掌握：${data.todayWords} 词',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  Text(
+                    '正确率：${data.memoryRate}%',
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: Color(0xFFFDA4AF),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          Container(
-            width: 1,
-            height: 24,
-            color: cfg.isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0x33F59E0B),
-          ),
-          Expanded(
-            child: _buildStatItem(
-              title: '掌握率',
-              value: '${data.memoryRate}%',
-              valueColor: cfg.statHighlightColor,
-              cfg: cfg,
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 24,
-            color: cfg.isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0x33F59E0B),
-          ),
-          Expanded(
-            child: _buildStatItem(
-              title: '累计掌握',
-              value: _formatNumber(data.totalWords),
-              valueColor: cfg.isDark ? Colors.white : const Color(0xFF78350F),
-              cfg: cfg,
+
+          // 右下角复古小印章
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Transform.rotate(
+              angle: -0.2,
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFFDA4AF).withValues(alpha: 0.6), width: 1.5),
+                ),
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '已开口',
+                      style: TextStyle(
+                        color: Color(0xFFFDA4AF),
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      'PASSED',
+                      style: TextStyle(
+                        color: Color(0xFFFDA4AF),
+                        fontSize: 6.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -446,68 +520,141 @@ class DakaPosterWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem({
-    required String title,
-    required String value,
-    required Color valueColor,
-    required PosterThemeConfig cfg,
-  }) {
+  /// ④ 声波能量风 (泡泡科技风：发音声波图谱 + 气泡微光)
+  Widget _buildSoundWaveHero() {
+    final bars = [22.0, 38.0, 52.0, 32.0, 48.0, 58.0, 40.0, 26.0];
+
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          value,
+        // 声波能量图谱
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: bars.map((h) {
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2.5),
+              width: 5,
+              height: h,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(99),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF6EE7B7), Color(0xFF059669)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF34D399).withValues(alpha: 0.4),
+                    blurRadius: 6,
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          '🔊 发音主动记忆',
           style: TextStyle(
-            color: valueColor,
-            fontSize: 15.5,
+            color: Color(0xFF6EE7B7),
+            fontSize: 13,
             fontWeight: FontWeight.w700,
-            height: 1.2,
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 2),
         Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          '开口发声 · 调动多感官牢固记忆',
           style: TextStyle(
-            color: cfg.isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF92400E),
-            fontSize: 10,
+            color: const Color(0xFFA7F3D0).withValues(alpha: 0.8),
+            fontSize: 9.5,
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // 科技卡片
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF34D399).withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('连续打卡', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6))),
+                  const SizedBox(height: 2),
+                  Text('${data.continuousDays} 天', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF6EE7B7))),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('牢固度', style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.6))),
+                  const SizedBox(height: 2),
+                  Text('${data.memoryRate}%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF34D399))),
+                ],
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildQuoteCard(PosterThemeConfig cfg) {
+  Widget _buildMiniStat(String value, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF38BDF8),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            color: Colors.white.withValues(alpha: 0.6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMedalStatCard(String value, String label) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: cfg.quoteBgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cfg.quoteBorderColor, width: 1),
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            cfg.quoteMain,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: cfg.quoteTextColor,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              height: 1.4,
+            value,
+            style: const TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFFBBF24),
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
           Text(
-            cfg.quoteSub,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            label,
             style: TextStyle(
-              color: cfg.quoteTextColor.withValues(alpha: 0.75),
-              fontSize: 10.5,
+              fontSize: 9,
+              color: Colors.white.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -515,13 +662,14 @@ class DakaPosterWidget extends StatelessWidget {
     );
   }
 
+  /// 底部用户信息与官方矢量二维码
   Widget _buildFooter(PosterThemeConfig cfg) {
     return Container(
       padding: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: cfg.isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0x33D97706),
+            color: Colors.white.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -540,13 +688,13 @@ class DakaPosterWidget extends StatelessWidget {
                   Icon(
                     Icons.person_outline,
                     size: 13,
-                    color: cfg.isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF92400E),
+                    color: cfg.brandColor,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     data.userName,
                     style: TextStyle(
-                      color: cfg.isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF92400E),
+                      color: cfg.brandColor,
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -557,8 +705,8 @@ class DakaPosterWidget extends StatelessWidget {
               Text(
                 '发音主动记忆 · 记得更牢',
                 style: TextStyle(
-                  color: cfg.isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0x9992400E),
-                  fontSize: 9.5,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 9,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -575,8 +723,8 @@ class DakaPosterWidget extends StatelessWidget {
                   Text(
                     '扫码体验',
                     style: TextStyle(
-                      color: cfg.isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF92400E),
-                      fontSize: 9.5,
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 9,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -597,17 +745,17 @@ class DakaPosterWidget extends StatelessWidget {
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(4),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withValues(alpha: 0.25),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(2),
                   child: QrImageView(
                     data: Config.appDownloadUrl,
                     version: QrVersions.auto,
@@ -648,30 +796,36 @@ class DakaPosterWidget extends StatelessWidget {
   }
 }
 
-/// 绘制标准泡泡 Logo（大圆外轮廓 + 左上小圆点高光）
+/// 泡泡透明标准 Logo 矢量绘制
 class _BubbleLogoPainter extends CustomPainter {
   final Color color;
 
-  _BubbleLogoPainter({required this.color});
+  const _BubbleLogoPainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    final radius = size.width / 2 - 1.0;
 
-    // 外圈圆环
-    final ringPaint = Paint()
+    final bubblePaint = Paint()
+      ..color = color.withValues(alpha: 0.25)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius, bubblePaint);
+
+    final borderPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8;
-    canvas.drawCircle(center, radius - 1, ringPaint);
+      ..strokeWidth = 1.6;
+    canvas.drawCircle(center, radius, borderPaint);
 
-    // 左上小圆点高光
-    final dotPaint = Paint()
-      ..color = color
+    final highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.9)
       ..style = PaintingStyle.fill;
-    final dotCenter = Offset(size.width * 0.35, size.height * 0.35);
-    canvas.drawCircle(dotCenter, 1.8, dotPaint);
+    final highlightCenter = Offset(
+      center.dx - radius * 0.35,
+      center.dy - radius * 0.35,
+    );
+    canvas.drawCircle(highlightCenter, radius * 0.22, highlightPaint);
   }
 
   @override
