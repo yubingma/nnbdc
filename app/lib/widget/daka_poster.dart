@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+
+import '../config.dart';
 
 /// 海报数据实体
 class PosterData {
@@ -605,12 +608,19 @@ class DakaPosterWidget extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: Image.asset(
-                    'assets/images/nnbdc-android-2dma.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.qr_code, size: 24, color: Colors.black87),
+                  child: QrImageView(
+                    data: Config.appDownloadUrl,
+                    version: QrVersions.auto,
+                    size: 28,
+                    padding: EdgeInsets.zero,
+                    backgroundColor: Colors.white,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: Color(0xFF0F172A),
+                    ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: Color(0xFF0F172A),
                     ),
                   ),
                 ),

@@ -84,6 +84,7 @@ class Config {
 
   // App Review Configuration & Switches (各应用市场好评引导开关)
   static const String appStoreId = '6756229006';
+  static String get appDownloadUrl => '$serviceUrl/app'; // 后端智能分发落地页（直达 Java AppDownloadController）
   static const bool enableAppStoreReview = true;   // Apple App Store (iOS / macOS)
   static const bool enableHuaweiReview = true;     // 华为应用市场 (Huawei AppGallery)
   static const bool enableXiaomiReview = false;    // 小米应用商店 (Xiaomi Mi Market)
