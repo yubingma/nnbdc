@@ -65,7 +65,7 @@ class PosterThemeConfig {
           name: '极简日历 · 手账',
           bgGradientStart: Color(0xFF1E293B),
           bgGradientEnd: Color(0xFF0F172A),
-          brandColor: Color(0xFFFDA4AF),
+          brandColor: Color(0xFFFCD34D),
         );
       case PosterThemeType.soundWave:
         return const PosterThemeConfig(
@@ -410,7 +410,7 @@ class DakaPosterWidget extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFFFDA4AF),
+                          color: Color(0xFFF8FAFC),
                           height: 1.0,
                         ),
                       ),
@@ -420,7 +420,7 @@ class DakaPosterWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: const Color(0xFFFCD34D).withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -428,13 +428,14 @@ class DakaPosterWidget extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFDA4AF).withValues(alpha: 0.15),
+                      color: const Color(0xFFFCD34D).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: const Color(0xFFFCD34D).withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       '第 ${data.continuousDays} 天',
                       style: const TextStyle(
-                        color: Color(0xFFFDA4AF),
+                        color: Color(0xFFFCD34D),
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                       ),
@@ -459,17 +460,17 @@ class DakaPosterWidget extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '今日掌握：${data.todayWords} 词',
+                    '今日开口：${data.todayWords} 词',
                     style: TextStyle(
                       fontSize: 10.5,
                       color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
                   Text(
-                    '正确率：${data.memoryRate}%',
+                    '累计掌握：${_formatNumber(data.totalWords)} 词',
                     style: const TextStyle(
                       fontSize: 10.5,
-                      color: Color(0xFFFDA4AF),
+                      color: Color(0xFFFCD34D),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
