@@ -612,7 +612,7 @@ class FinishPageState extends State<FinishPage> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '生成高颜值打卡海报发圈',
+                      '生成精美打卡海报',
                       style: TextStyle(
                         color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
                         fontSize: 12,

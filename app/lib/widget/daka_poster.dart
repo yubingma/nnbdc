@@ -88,7 +88,7 @@ class PosterThemeConfig {
           brandColor: Color(0xFF38BDF8),
           tagColor: Color(0xFF38BDF8),
           tagBgColor: Color(0x2638BDF8),
-          tagText: '开口大声读，记得更牢',
+          tagText: '大声开口 记得牢',
           numberColorStart: Color(0xFFFFFFFF),
           numberColorEnd: Color(0xFF38BDF8),
           cardBgColor: Color(0x0AFFFFFF),
@@ -97,8 +97,8 @@ class PosterThemeConfig {
           quoteTextColor: Color(0xFFE2E8F0),
           quoteBgColor: Color(0x0AFFFFFF),
           quoteBorderColor: Color(0x3338BDF8),
-          quoteMain: '“多开口读几个词，离世界更近一步。”',
-          quoteSub: '每天坚持读一读，心里特别充实。',
+          quoteMain: '“多开口读，全感官记忆。”',
+          quoteSub: '每天坚持读一读。',
           dateTag: 'GLACIER',
           isDark: true,
         );
@@ -112,7 +112,7 @@ class PosterThemeConfig {
           brandColor: Color(0xFF60A5FA),
           tagColor: Color(0xFF60A5FA),
           tagBgColor: Color(0x263B82F6),
-          tagText: '嘴巴记住了，脑子不会忘',
+          tagText: '嘴巴记住 脑子不忘',
           numberColorStart: Color(0xFFFFFFFF),
           numberColorEnd: Color(0xFF60A5FA),
           cardBgColor: Color(0x0AFFFFFF),
@@ -122,7 +122,7 @@ class PosterThemeConfig {
           quoteBgColor: Color(0x0AFFFFFF),
           quoteBorderColor: Color(0x333B82F6),
           quoteMain: '“嘴巴读得出，心里有底气。”',
-          quoteSub: '每天大声读 10 分钟，踏踏实实积累。',
+          quoteSub: '每天大声读，踏踏实实积累。',
           dateTag: 'COBALT',
           isDark: true,
         );
@@ -136,7 +136,7 @@ class PosterThemeConfig {
           brandColor: Color(0xFF38BDF8),
           tagColor: Color(0xFF38BDF8),
           tagBgColor: Color(0x2638BDF8),
-          tagText: '大声开口读，记得才牢',
+          tagText: '大声开口 记得才牢',
           numberColorStart: Color(0xFFFFFFFF),
           numberColorEnd: Color(0xFF93C5FD),
           cardBgColor: Color(0x0AFFFFFF),
@@ -145,8 +145,8 @@ class PosterThemeConfig {
           quoteTextColor: Color(0xFFE2E8F0),
           quoteBgColor: Color(0x0AFFFFFF),
           quoteBorderColor: Color(0x14FFFFFF),
-          quoteMain: '“光看容易忘，大声读出来才真会。”',
-          quoteSub: '每天花 10 分钟，踏踏实实背完。',
+          quoteMain: '“光看容易忘，大声读才真会。”',
+          quoteSub: '每天十分钟，踏踏实实背完。',
           dateTag: 'TODAY',
           isDark: true,
         );
@@ -160,7 +160,7 @@ class PosterThemeConfig {
           brandColor: Color(0xFFD97706),
           tagColor: Color(0xFF92400E),
           tagBgColor: Color(0x26D97706),
-          tagText: '☀️ 晨读打卡完成',
+          tagText: '☀️ 晨读打卡',
           numberColorStart: Color(0xFFD97706),
           numberColorEnd: Color(0xFF9A3412),
           cardBgColor: Color(0xC0FFFFFF),
@@ -169,8 +169,8 @@ class PosterThemeConfig {
           quoteTextColor: Color(0xFF78350F),
           quoteBgColor: Color(0xA6FFFFFF),
           quoteBorderColor: Color(0x33F59E0B),
-          quoteMain: '“一天背一点，坚持下来就很厉害。”',
-          quoteSub: '每天早晨开口读一读，心里特别踏实。',
+          quoteMain: '“一天背一点，坚持就很厉害。”',
+          quoteSub: '每天早晨开口读，心里很踏实。',
           dateTag: 'MORNING',
           isDark: false,
         );
@@ -184,7 +184,7 @@ class PosterThemeConfig {
           brandColor: Color(0xFFF472B6),
           tagColor: Color(0xFFF472B6),
           tagBgColor: Color(0x26EC4899),
-          tagText: '🗣️ 开口读，不怕忘',
+          tagText: '🗣️ 开口读 不怕忘',
           numberColorStart: Color(0xFFFFFFFF),
           numberColorEnd: Color(0xFFF472B6),
           cardBgColor: Color(0x0AFFFFFF),
@@ -194,7 +194,7 @@ class PosterThemeConfig {
           quoteBgColor: Color(0x0AFFFFFF),
           quoteBorderColor: Color(0x33EC4899),
           quoteMain: '“嘴巴记住了，脑子就不会忘。”',
-          quoteSub: '大声读一遍，比默看十遍管用。',
+          quoteSub: '大声读一遍，胜过默看十遍。',
           dateTag: 'KEEP GOING',
           isDark: true,
         );
@@ -208,7 +208,7 @@ class PosterThemeConfig {
           brandColor: Color(0xFF34D399),
           tagColor: Color(0xFF34D399),
           tagBgColor: Color(0x2610B981),
-          tagText: '🌿 慢慢来，比较快',
+          tagText: '🌿 慢慢来 比较快',
           numberColorStart: Color(0xFFFFFFFF),
           numberColorEnd: Color(0xFF6EE7B7),
           cardBgColor: Color(0x0AFFFFFF),
@@ -217,8 +217,8 @@ class PosterThemeConfig {
           quoteTextColor: Color(0xFFE2E8F0),
           quoteBgColor: Color(0x0AFFFFFF),
           quoteBorderColor: Color(0x3310B981),
-          quoteMain: '“背单词没有捷径，开口读就是最好的方法。”',
-          quoteSub: '每天完成计划，不知不觉就积累起来了。',
+          quoteMain: '“背单词无捷径，开口是良方。”',
+          quoteSub: '每天完成计划，不知不觉积累。',
           dateTag: 'PROGRESS',
           isDark: true,
         );
@@ -419,7 +419,7 @@ class DakaPosterWidget extends StatelessWidget {
           ),
           Expanded(
             child: _buildStatItem(
-              title: '读一遍全记住',
+              title: '掌握率',
               value: '${data.memoryRate}%',
               valueColor: cfg.statHighlightColor,
               cfg: cfg,
@@ -432,7 +432,7 @@ class DakaPosterWidget extends StatelessWidget {
           ),
           Expanded(
             child: _buildStatItem(
-              title: '一共记住',
+              title: '累计掌握',
               value: _formatNumber(data.totalWords),
               valueColor: cfg.isDark ? Colors.white : const Color(0xFF78350F),
               cfg: cfg,
@@ -463,6 +463,8 @@ class DakaPosterWidget extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: cfg.isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF92400E),
             fontSize: 10,
@@ -486,6 +488,8 @@ class DakaPosterWidget extends StatelessWidget {
         children: [
           Text(
             cfg.quoteMain,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: cfg.quoteTextColor,
               fontSize: 11.5,
@@ -496,6 +500,8 @@ class DakaPosterWidget extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             cfg.quoteSub,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: cfg.quoteTextColor.withValues(alpha: 0.75),
               fontSize: 10.5,

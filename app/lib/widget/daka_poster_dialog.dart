@@ -89,7 +89,7 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
     try {
       await Share.shareXFiles(
         [XFile(filePath)],
-        text: '我在泡泡背单词连续开口朗读打卡 ${widget.data.continuousDays} 天！',
+        text: '我在泡泡背单词已连续打卡 ${widget.data.continuousDays} 天！',
       );
     } catch (e) {
       ToastUtil.error('唤起分享失败');
@@ -252,7 +252,7 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                             )
                           : const Icon(Icons.share, size: 18),
                       label: Text(
-                        _isExporting ? '正在生成海报...' : '立即分享海报',
+                        _isExporting ? '海报生成中...' : '分享海报',
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                       style: ElevatedButton.styleFrom(
