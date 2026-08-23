@@ -1826,6 +1826,11 @@ class _MePageState extends State<MePage> {
                   onTap: () => context.push('/admin'),
                 ),
                 _buildMenuTile(
+                  icon: Icons.pageview_outlined,
+                  title: '页面查看器',
+                  onTap: () => context.push('/page_viewer'),
+                ),
+                _buildMenuTile(
                   icon: Icons.storage_rounded,
                   title: '数据库查看器',
                   onTap: () => _openDbViewPage(),
