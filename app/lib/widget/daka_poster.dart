@@ -478,39 +478,54 @@ class DakaPosterWidget extends StatelessWidget {
             ],
           ),
 
-          // 右下角复古小印章
+          // 右下角鲜红复古印章 (双环朱砂印泥质感)
           Positioned(
             right: 0,
             bottom: 0,
             child: Transform.rotate(
-              angle: -0.2,
+              angle: -0.26,
               child: Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFFDA4AF).withValues(alpha: 0.6), width: 1.5),
-                ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '已开口',
-                      style: TextStyle(
-                        color: Color(0xFFFDA4AF),
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      'PASSED',
-                      style: TextStyle(
-                        color: Color(0xFFFDA4AF),
-                        fontSize: 6.5,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  color: const Color(0x24EF4444),
+                  border: Border.all(color: const Color(0xFFEF4444), width: 1.8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                      blurRadius: 6,
                     ),
                   ],
+                ),
+                padding: const EdgeInsets.all(2),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0x80EF4444), width: 1.0),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '已开口',
+                        style: TextStyle(
+                          color: Color(0xFFEF4444),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      Text(
+                        'PASSED',
+                        style: TextStyle(
+                          color: Color(0xFFEF4444),
+                          fontSize: 6.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
