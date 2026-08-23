@@ -91,12 +91,15 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
   }
 
   void _showCreateDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _CreatePromoActivityDialog(
-        onCreate: (name, code, duration, endTime, maxRedemptions) {
-          _createActivity(name, code, duration, endTime, maxRedemptions);
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => _CreatePromoActivityPage(
+          onCreate: (name, code, duration, endTime, maxRedemptions) {
+            _createActivity(name, code, duration, endTime, maxRedemptions);
+          },
+        ),
       ),
     );
   }
@@ -337,16 +340,16 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
   }
 }
 
-class _CreatePromoActivityDialog extends StatefulWidget {
+class _CreatePromoActivityPage extends StatefulWidget {
   final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions) onCreate;
 
-  const _CreatePromoActivityDialog({required this.onCreate});
+  const _CreatePromoActivityPage({required this.onCreate});
 
   @override
-  State<_CreatePromoActivityDialog> createState() => _CreatePromoActivityDialogState();
+  State<_CreatePromoActivityPage> createState() => _CreatePromoActivityPageState();
 }
 
-class _CreatePromoActivityDialogState extends State<_CreatePromoActivityDialog> {
+class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   final TextEditingController _daysController = TextEditingController(text: '30');
@@ -380,189 +383,279 @@ class _CreatePromoActivityDialogState extends State<_CreatePromoActivityDialog> 
     super.dispose();
   }
 
+  void _submit() {
+    final name = _nameController.text.trim();
+    final code = _codeController.text.trim();
+    final days = _daysController.text.trim();
+    final maxRedemptionsStr = _maxRedemptionsController.text.trim();
+
+    if (name.isEmpty || code.isEmpty) {
+      ToastUtil.error('活动名称与活动码不能为空');
+      return;
+    }
+
+    String? duration;
+    if (_isPermanent) {
+      duration = null; // 永久会员
+    } else {
+      if (days.isEmpty || int.tryParse(days) == null || int.parse(days) <= 0) {
+        ToastUtil.error('请输入有效的会员天数');
+        return;
+      }
+      duration = '$days天';
+    }
+
+    final DateTime? endTime = _hasDeadline ? _selectedDeadline : null;
+    final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
+
+    Navigator.pop(context);
+    widget.onCreate(name, code, duration, endTime, maxRedemptions);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('创建运营活动'),
-      content: SizedBox(
-        width: 420,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+
+    return Scaffold(
+      appBar: AppTheme.createGradientAppBar(
+        title: '创建运营活动',
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _submit,
+            child: const Text(
+              '创建',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: '活动名称',
-                  hintText: '例如：小红书种子用户活动',
-                  floatingLabelBehavior: FloatingLabelBehavior.always,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _codeController,
-                decoration: const InputDecoration(
-                  labelText: '活动兑换码',
-                  hintText: '例如：XHS666',
-                  floatingLabelBehavior: FloatingLabelBehavior.always,
-                ),
-              ),
-              const SizedBox(height: 12),
-              // 活动截止期配置
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _deadlineController,
-                      readOnly: true,
-                      enabled: _hasDeadline,
-                      onTap: !_hasDeadline
-                          ? null
-                          : () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: _selectedDeadline,
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(const Duration(days: 3650)),
-                              );
-                              if (picked != null && mounted) {
-                                setState(() {
-                                  // 设定为选定日期的 23:59:59
-                                  _selectedDeadline = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
-                                  _updateDeadlineText();
-                                });
-                              }
-                            },
-                      decoration: const InputDecoration(
-                        labelText: '活动截止日期',
-                        suffixIcon: Icon(Icons.calendar_today, size: 18),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+              Card(
+                elevation: isDarkMode ? 0 : 1,
+                color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Checkbox(
-                        value: !_hasDeadline,
-                        onChanged: (val) {
-                          setState(() {
-                            _hasDeadline = !(val ?? false);
-                            _updateDeadlineText();
-                          });
-                        },
+                      Text(
+                        '基本信息',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black87,
+                        ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _hasDeadline = !_hasDeadline;
-                            _updateDeadlineText();
-                          });
-                        },
-                        child: const Text('无截止期'),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: '活动名称',
+                          hintText: '例如：小红书种子用户活动',
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _codeController,
+                        decoration: const InputDecoration(
+                          labelText: '活动兑换码',
+                          hintText: '例如：XHS666',
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // 限量兑换人数限制
-              TextField(
-                controller: _maxRedemptionsController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: '限量兑换总人数',
-                  hintText: '留空表示不限制总人数',
-                  suffixText: '人',
-                  floatingLabelBehavior: FloatingLabelBehavior.always,
                 ),
               ),
-              const SizedBox(height: 12),
-              // 会员时长配置（活动奖励内容）
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _daysController,
-                      enabled: !_isPermanent,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                        labelText: '赠送会员时长',
-                        hintText: _isPermanent ? '永久有效' : '请输入天数',
-                        suffixText: _isPermanent ? null : '天',
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+              const SizedBox(height: 16),
+              Card(
+                elevation: isDarkMode ? 0 : 1,
+                color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Checkbox(
-                        value: _isPermanent,
-                        onChanged: (val) {
-                          setState(() {
-                            _isPermanent = val ?? false;
-                          });
-                        },
+                      Text(
+                        '限制与规模',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black87,
+                        ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isPermanent = !_isPermanent;
-                          });
-                        },
-                        child: const Text('永久'),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _deadlineController,
+                              readOnly: true,
+                              enabled: _hasDeadline,
+                              onTap: !_hasDeadline
+                                  ? null
+                                  : () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: _selectedDeadline,
+                                        firstDate: DateTime.now(),
+                                        lastDate: DateTime.now().add(const Duration(days: 3650)),
+                                      );
+                                      if (picked != null && mounted) {
+                                        setState(() {
+                                          _selectedDeadline = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+                                          _updateDeadlineText();
+                                        });
+                                      }
+                                    },
+                              decoration: const InputDecoration(
+                                labelText: '活动截止日期',
+                                suffixIcon: Icon(Icons.calendar_today, size: 18),
+                                floatingLabelBehavior: FloatingLabelBehavior.always,
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: !_hasDeadline,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _hasDeadline = !(val ?? false);
+                                    _updateDeadlineText();
+                                  });
+                                },
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _hasDeadline = !_hasDeadline;
+                                    _updateDeadlineText();
+                                  });
+                                },
+                                child: const Text('无截止期'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _maxRedemptionsController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        decoration: const InputDecoration(
+                          labelText: '限量兑换总人数',
+                          hintText: '留空表示不限制总人数',
+                          suffixText: '人',
+                          floatingLabelBehavior: FloatingLabelBehavior.always,
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                     ],
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: isDarkMode ? 0 : 1,
+                color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '活动奖励内容',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _daysController,
+                              enabled: !_isPermanent,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              decoration: InputDecoration(
+                                labelText: '赠送会员时长',
+                                hintText: _isPermanent ? '永久有效' : '请输入天数',
+                                suffixText: _isPermanent ? null : '天',
+                                floatingLabelBehavior: FloatingLabelBehavior.always,
+                                border: const OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _isPermanent,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _isPermanent = val ?? false;
+                                  });
+                                },
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _isPermanent = !_isPermanent;
+                                  });
+                                },
+                                child: const Text('永久'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('立即创建活动', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        TextButton(
-          onPressed: () {
-            final name = _nameController.text.trim();
-            final code = _codeController.text.trim();
-            final days = _daysController.text.trim();
-            final maxRedemptionsStr = _maxRedemptionsController.text.trim();
-
-            if (name.isEmpty || code.isEmpty) {
-              ToastUtil.error('活动名称与活动码不能为空');
-              return;
-            }
-
-            String? duration;
-            if (_isPermanent) {
-              duration = null; // 永久会员
-            } else {
-              if (days.isEmpty || int.tryParse(days) == null || int.parse(days) <= 0) {
-                ToastUtil.error('请输入有效的会员天数');
-                return;
-              }
-              duration = '$days天';
-            }
-
-            final DateTime? endTime = _hasDeadline ? _selectedDeadline : null;
-            final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
-
-            Navigator.pop(context);
-            widget.onCreate(name, code, duration, endTime, maxRedemptions);
-          },
-          child: const Text('创建'),
-        ),
-      ],
     );
   }
 }
