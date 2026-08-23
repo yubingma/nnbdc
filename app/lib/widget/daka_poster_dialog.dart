@@ -103,160 +103,173 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 420),
-        decoration: BoxDecoration(
-          color: const Color(0xFF131A2A),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.6),
-              blurRadius: 30,
-              offset: const Offset(0, 15),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxH = constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : MediaQuery.of(context).size.height - 48;
+          // 根据弹窗可用高度动态计算海报区域高度，避免在小屏或低高度设备上发生溢出
+          final posterHeight = (maxH - 175).clamp(220.0, 480.0);
+
+          return Container(
+            constraints: const BoxConstraints(maxWidth: 420),
+            decoration: BoxDecoration(
+              color: const Color(0xFF131A2A),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                ),
+              ],
             ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 弹窗顶部栏
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 弹窗顶部栏
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.auto_awesome, color: AppTheme.primaryColor, size: 20),
-                      const SizedBox(width: 8),
-                      const Text(
-                        '分享打卡成就',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Icon(Icons.auto_awesome, color: AppTheme.primaryColor, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '分享打卡成就',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                        onPressed: () => Navigator.of(context).pop(),
+                        visualDensity: VisualDensity.compact,
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70, size: 20),
-                    onPressed: () => Navigator.of(context).pop(),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ],
-              ),
-            ),
+                ),
 
-            const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
-            // 海报滑动区域
-            SizedBox(
-              height: 480,
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: themes.length,
-                onPageChanged: (index) {
-                  setState(() => _currentIndex = index);
-                },
-                itemBuilder: (context, index) {
-                  final themeType = themes[index];
-                  final isCurrent = index == _currentIndex;
+                // 海报滑动区域
+                SizedBox(
+                  height: posterHeight,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: themes.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      final themeType = themes[index];
+                      final isCurrent = index == _currentIndex;
 
-                  return Center(
-                    child: AnimatedScale(
-                      scale: isCurrent ? 1.0 : 0.92,
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeOutCubic,
-                      child: RepaintBoundary(
-                        key: _posterKeys[index],
-                        child: DakaPosterWidget(
-                          data: widget.data,
-                          themeType: themeType,
-                          width: 270,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // 主题切换指示点与名称
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(themes.length, (index) {
-                final isSelected = index == _currentIndex;
-                return GestureDetector(
-                  onTap: () {
-                    _pageController.animateToPage(
-                      index,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: isSelected ? 18 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.primaryColor : Colors.white24,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              PosterThemeConfig.getConfig(themes[_currentIndex]).name,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 12,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 底部操作按钮
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 46,
-                child: ElevatedButton.icon(
-                  onPressed: _isExporting ? null : _sharePoster,
-                  icon: _isExporting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                      return Center(
+                        child: AnimatedScale(
+                          scale: isCurrent ? 1.0 : 0.92,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: RepaintBoundary(
+                              key: _posterKeys[index],
+                              child: DakaPosterWidget(
+                                data: widget.data,
+                                themeType: themeType,
+                                width: 270,
+                              ),
+                            ),
                           ),
-                        )
-                      : const Icon(Icons.share, size: 18),
-                  label: Text(
-                    _isExporting ? '正在生成海报...' : '立即分享海报',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 4,
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 10),
+
+                // 主题切换指示点与名称
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(themes.length, (index) {
+                    final isSelected = index == _currentIndex;
+                    return GestureDetector(
+                      onTap: () {
+                        _pageController.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: isSelected ? 18 : 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppTheme.primaryColor : Colors.white24,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  PosterThemeConfig.getConfig(themes[_currentIndex]).name,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    fontSize: 12,
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // 底部操作按钮
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: _isExporting ? null : _sharePoster,
+                      icon: _isExporting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.share, size: 18),
+                      label: Text(
+                        _isExporting ? '正在生成海报...' : '立即分享海报',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 4,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
