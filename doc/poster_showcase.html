@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>泡泡背单词 - 高颜值打卡海报模版库</title>
+  <style>
+    :root {
+      --bg: #0B0F19;
+      --card-bg: #151D2F;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --primary: #6366F1;
+      --accent: #EC4899;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 14px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 99px;
+      font-size: 13px;
+      color: #A5B4FC;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #818CF8, #C084FC, #F472B6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    /* Controls Bar */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px 24px;
+      margin-bottom: 40px;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .control-group input, .control-group select {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #FFF;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .control-group input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Posters Grid */
+    .poster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+
+    .poster-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .poster-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Base Poster Card (9:16 Aspect Ratio) */
+    .poster {
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 9 / 16;
+      border-radius: 24px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .poster:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+    }
+
+    /* Theme 1: Midnight Aurora (暗夜极光) */
+    .theme-aurora {
+      background: linear-gradient(170deg, #0D1117 0%, #161B22 40%, #1E1B4B 100%);
+      border: 1px solid rgba(129, 140, 248, 0.2);
+    }
+    .theme-aurora::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.35), transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Theme 2: Sunrise Glow (晨曦晨光) */
+    .theme-sunrise {
+      background: linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 40%, #FED7AA 100%);
+      border: 1px solid rgba(251, 146, 60, 0.3);
+      color: #431407;
+    }
+    .theme-sunrise .poster-app-brand,
+    .theme-sunrise .poster-subtitle,
+    .theme-sunrise .poster-footer {
+      color: #9A3412;
+    }
+    .theme-sunrise .poster-days-num {
+      background: linear-gradient(135deg, #EA580C, #C2410C);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .theme-sunrise .poster-glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(251, 146, 60, 0.2);
+      color: #7C2D12;
+    }
+    .theme-sunrise .poster-quote {
+      color: #431407;
+      border-left-color: #F97316;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Theme 3: Cyberpunk Neon (活力赛博) */
+    .theme-cyber {
+      background: linear-gradient(180deg, #090A0F 0%, #1A0B2E 100%);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+    }
+    .theme-cyber::before {
+      content: '';
+      position: absolute;
+      bottom: -50px;
+      left: -50px;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.3), transparent 70%);
+      pointer-events: none;
+    }
+    .theme-cyber .poster-days-num {
+      background: linear-gradient(135deg, #F43F5E, #EC4899, #A855F7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Theme 4: Forest Emerald (森系墨绿) */
+    .theme-forest {
+      background: linear-gradient(165deg, #06281E 0%, #0B1E19 60%, #031410 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .theme-forest .poster-days-num {
+      background: linear-gradient(135deg, #34D399, #10B981, #059669);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .theme-forest .poster-quote {
+      border-left-color: #10B981;
+    }
+
+    /* Poster Internal Components */
+    .poster-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .poster-app-brand {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .poster-app-logo {
+      font-size: 16px;
+    }
+
+    .poster-date {
+      font-size: 11px;
+      opacity: 0.7;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .poster-hero {
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    .poster-subtitle {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.8;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .poster-days-num {
+      font-size: 3.8rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -1px;
+      margin-bottom: 2px;
+    }
+
+    .poster-days-label {
+      font-size: 13px;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+
+    .poster-glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .stat-val {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
+    .poster-quote {
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      border-left: 3px solid var(--primary);
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .poster-quote-en {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .poster-quote-cn {
+      font-size: 11px;
+      opacity: 0.75;
+    }
+
+    .poster-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      opacity: 0.75;
+      border-top: 1px dashed rgba(255, 255, 255, 0.15);
+      padding-top: 10px;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+    }
+
+    .qr-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    /* Implementation Code Snippet */
+    .code-section {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 40px;
+    }
+
+    .code-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #A5B4FC;
+    }
+
+    pre {
+      background: #090D16;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+      font-size: 13px;
+      color: #E2E8F0;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="tag">🎨 视觉资产库</div>
+      <h1>泡泡背单词 · 高颜值打卡海报模版</h1>
+      <p class="subtitle">实时交互式预览 · 支持不同审美风格 · 纯 Flutter 代码可100%高保真复刻</p>
+    </header>
+
+    <!-- 交互控制条 -->
+    <div class="controls">
+      <div class="control-group">
+        <label>用户昵称：</label>
+        <input type="text" id="inputUser" value="Alex" oninput="updatePosters()">
+      </div>
+      <div class="control-group">
+        <label>打卡天数：</label>
+        <input type="number" id="inputDays" value="28" style="width: 70px;" oninput="updatePosters()">
+      </div>
+      <div class="control-group">
+        <label>今日词数：</label>
+        <input type="number" id="inputToday" value="30" style="width: 70px;" oninput="updatePosters()">
+      </div>
+      <div class="control-group">
+        <label>总掌握词汇：</label>
+        <input type="number" id="inputTotal" value="1420" style="width: 90px;" oninput="updatePosters()">
+      </div>
+    </div>
+
+    <!-- 4 套不同风格的海报阵列 -->
+    <div class="poster-grid">
+
+      <!-- 风格 1: 暗夜极光 -->
+      <div class="poster-wrapper">
+        <div class="poster-label">① 暗夜极光 (Midnight Aurora)</div>
+        <div class="poster theme-aurora">
+          <div class="poster-top">
+            <div class="poster-app-brand">
+              <span class="poster-app-logo">🫧</span>
+              <span>泡泡背单词</span>
+            </div>
+            <div class="poster-date" id="dateDisplay1">TODAY</div>
+          </div>
+          <div class="poster-hero">
+            <div class="poster-subtitle">Daily Focus</div>
+            <div class="poster-days-num" style="background: linear-gradient(135deg, #818CF8, #C084FC); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><span class="val-days">28</span></div>
+            <div class="poster-days-label">已连续自律打卡 (Days)</div>
+          </div>
+          <div class="poster-glass-card">
+            <div>
+              <div class="stat-val"><span class="val-today">30</span> 词</div>
+              <div class="stat-lbl">今日完成</div>
+            </div>
+            <div style="width: 1px; background: rgba(255,255,255,0.15);"></div>
+            <div>
+              <div class="stat-val"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">累计掌握词量</div>
+            </div>
+          </div>
+          <div class="poster-quote">
+            <div class="poster-quote-en">“Consistency is the DNA of mastery.”</div>
+            <div class="poster-quote-cn">日拱一卒，功不唐捐。</div>
+          </div>
+          <div class="poster-footer">
+            <div class="user-pill">👤 <span class="val-user">Alex</span></div>
+            <div class="qr-badge">FSRS 科学记忆</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 风格 2: 晨曦暖阳 -->
+      <div class="poster-wrapper">
+        <div class="poster-label">② 晨曦晨光 (Sunrise Minimal)</div>
+        <div class="poster theme-sunrise">
+          <div class="poster-top">
+            <div class="poster-app-brand">
+              <span class="poster-app-logo">🫧</span>
+              <span>泡泡背单词</span>
+            </div>
+            <div class="poster-date">MORNING</div>
+          </div>
+          <div class="poster-hero">
+            <div class="poster-subtitle">Keep Growing</div>
+            <div class="poster-days-num"><span class="val-days">28</span></div>
+            <div class="poster-days-label">连续打卡天数</div>
+          </div>
+          <div class="poster-glass-card">
+            <div>
+              <div class="stat-val" style="color: #C2410C;"><span class="val-today">30</span> 词</div>
+              <div class="stat-lbl">今日背词</div>
+            </div>
+            <div style="width: 1px; background: rgba(251, 146, 60, 0.2);"></div>
+            <div>
+              <div class="stat-val" style="color: #C2410C;"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">词汇总量</div>
+            </div>
+          </div>
+          <div class="poster-quote">
+            <div class="poster-quote-en">“Every sunrise brings new words and growth.”</div>
+            <div class="poster-quote-cn">晨光熹微，奔赴热爱。</div>
+          </div>
+          <div class="poster-footer">
+            <div class="user-pill" style="color: #7C2D12;">☀️ <span class="val-user">Alex</span></div>
+            <div class="qr-badge" style="background: rgba(251, 146, 60, 0.2); color: #7C2D12;">自律打卡</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 风格 3: 活力赛博 -->
+      <div class="poster-wrapper">
+        <div class="poster-label">③ 活力多巴胺 (Cyber Sunset)</div>
+        <div class="poster theme-cyber">
+          <div class="poster-top">
+            <div class="poster-app-brand" style="color: #F472B6;">
+              <span class="poster-app-logo">✨</span>
+              <span>泡泡背单词</span>
+            </div>
+            <div class="poster-date">LEVEL UP</div>
+          </div>
+          <div class="poster-hero">
+            <div class="poster-subtitle" style="color: #F472B6;">Streak Day</div>
+            <div class="poster-days-num"><span class="val-days">28</span></div>
+            <div class="poster-days-label" style="color: #E2E8F0;">连续进阶第 <span class="val-days">28</span> 天</div>
+          </div>
+          <div class="poster-glass-card">
+            <div>
+              <div class="stat-val" style="color: #F472B6;">+<span class="val-today">30</span></div>
+              <div class="stat-lbl">今日斩获</div>
+            </div>
+            <div style="width: 1px; background: rgba(255,255,255,0.15);"></div>
+            <div>
+              <div class="stat-val" style="color: #A855F7;"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">词汇库容量</div>
+            </div>
+          </div>
+          <div class="poster-quote" style="border-left-color: #EC4899;">
+            <div class="poster-quote-en">“Doubt kills more dreams than failure ever will.”</div>
+            <div class="poster-quote-cn">种一棵树最好的时间是十年前，其次是现在。</div>
+          </div>
+          <div class="poster-footer">
+            <div class="user-pill" style="color: #F472B6;">🚀 <span class="val-user">Alex</span></div>
+            <div class="qr-badge" style="background: rgba(236,72,153,0.2); color: #F472B6;">越背越聪明</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 风格 4: 森系翡翠 -->
+      <div class="poster-wrapper">
+        <div class="poster-label">④ 沉静森系 (Forest Emerald)</div>
+        <div class="poster theme-forest">
+          <div class="poster-top">
+            <div class="poster-app-brand" style="color: #34D399;">
+              <span class="poster-app-logo">🌿</span>
+              <span>泡泡背单词</span>
+            </div>
+            <div class="poster-date">MOMENTUM</div>
+          </div>
+          <div class="poster-hero">
+            <div class="poster-subtitle" style="color: #34D399;">Study Habit</div>
+            <div class="poster-days-num"><span class="val-days">28</span></div>
+            <div class="poster-days-label" style="color: #D1FAE5;">专注背词，静水流深</div>
+          </div>
+          <div class="poster-glass-card">
+            <div>
+              <div class="stat-val" style="color: #34D399;"><span class="val-today">30</span> 词</div>
+              <div class="stat-lbl">今日吸收</div>
+            </div>
+            <div style="width: 1px; background: rgba(255,255,255,0.15);"></div>
+            <div>
+              <div class="stat-val" style="color: #34D399;"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">掌握词库</div>
+            </div>
+          </div>
+          <div class="poster-quote">
+            <div class="poster-quote-en">“Small daily improvements over time lead to stunning results.”</div>
+            <div class="poster-quote-cn">时间的复利，看得见。</div>
+          </div>
+          <div class="poster-footer">
+            <div class="user-pill" style="color: #34D399;">🌱 <span class="val-user">Alex</span></div>
+            <div class="qr-badge" style="background: rgba(16,185,129,0.2); color: #34D399;">FSRS 稳步提分</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Flutter 实现要点提示 -->
+    <div class="code-section">
+      <div class="code-title">💡 Flutter 端落地实现方案（极低成本）：</div>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 12px;">
+        在 Flutter 中无需引入复杂的第三方图形引擎，只需使用普通的 <code>Container</code> + <code>LinearGradient</code> + <code>RepaintBoundary</code>，点击分享按钮时调用 <code>boundary.toImage()</code> 即可生成无损超清海报。
+      </p>
+      <pre>
+// 1. 用 RepaintBoundary 包裹海报组件
+final GlobalKey _posterKey = GlobalKey();
+
+RepaintBoundary(
+  key: _posterKey,
+  child: DakaPosterWidget(
+    continuousDays: user.continuousDakaDayCount,
+    todayWordCount: 30,
+    totalWords: user.masteredWordsCount,
+    theme: PosterTheme.aurora,
+  ),
+);
+
+// 2. 点击分享时将 Widget 转换为图片并调用原生分享
+Future<void> sharePoster() async {
+  RenderRepaintBoundary boundary = _posterKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+  ui.Image image = await boundary.toImage(pixelRatio: 3.0); // 3x超清
+  ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  // 使用 share_plus 分享图片到微信 / 朋友圈 / 保存相册
+}</pre>
+    </div>
+
+  </div>
+
+  <script>
+    function updatePosters() {
+      const user = document.getElementById('inputUser').value || 'Alex';
+      const days = document.getElementById('inputDays').value || '1';
+      const today = document.getElementById('inputToday').value || '0';
+      const total = Number(document.getElementById('inputTotal').value || 0).toLocaleString();
+
+      document.querySelectorAll('.val-user').forEach(el => el.textContent = user);
+      document.querySelectorAll('.val-days').forEach(el => el.textContent = days);
+      document.querySelectorAll('.val-today').forEach(el => el.textContent = today);
+      document.querySelectorAll('.val-total').forEach(el => el.textContent = total);
+    }
+
+    // 设置今日日期
+    const today = new Date();
+    const dateStr = today.getFullYear() + '.' + String(today.getMonth() + 1).padStart(2, '0') + '.' + String(today.getDate()).padStart(2, '0');
+    const el = document.getElementById('dateDisplay1');
+    if (el) el.textContent = dateStr;
+  </script>
+</body>
+</html>
