@@ -7,6 +7,8 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/state.dart';
 import 'package:provider/provider.dart';
 
+import 'package:nnbdc/theme/app_theme.dart';
+
 class PromoActivityManagementPage extends StatefulWidget {
   const PromoActivityManagementPage({super.key});
 
@@ -168,99 +170,163 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('运营推广活动管理'),
+      appBar: AppTheme.createGradientAppBar(
+        title: '运营推广活动管理',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: '刷新',
+            onPressed: () {
+              setState(() => _isLoading = true);
+              _loadActivities();
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
+            tooltip: '创建活动',
             onPressed: _showCreateDialog,
           ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _activities.isEmpty
-              ? const Center(
-                  child: Text('暂无推广活动'),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _activities.length,
-                  itemBuilder: (context, index) {
-                    final activity = _activities[index];
-                    final durationText = activity.duration ?? '永久';
-                    final maxRedemptionsText = activity.maxRedemptions == null || activity.maxRedemptions == 0
-                        ? '无限制'
-                        : '${activity.maxRedemptions} 次';
-                    final progress = '${activity.redemptionCount} / $maxRedemptionsText';
-
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
+          : RefreshIndicator(
+              onRefresh: _loadActivities,
+              child: _activities.isEmpty
+                  ? Center(
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    activity.name ?? '',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDarkMode ? Colors.white : Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('删除活动'),
-                                        content: Text('你确定要删除活动“${activity.name}”吗？此操作不可撤销。'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: const Text('取消'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              if (activity.id != null) {
-                                                _deleteActivity(activity.id!);
-                                              }
-                                            },
-                                            child: const Text('确定', style: TextStyle(color: Colors.red)),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.campaign_rounded,
+                                size: 64,
+                                color: Theme.of(context).primaryColor,
+                              ),
                             ),
-                            const Divider(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildInfoColumn('活动兑换码', activity.activityCode ?? '', isDarkMode),
-                                _buildInfoColumn('赠送时长', durationText, isDarkMode),
-                                _buildInfoColumn('已兑换次数', progress, isDarkMode),
-                              ],
+                            const SizedBox(height: 20),
+                            Text(
+                              '暂无运营推广活动',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '您可以创建专属活动兑换码，指定赠送会员时长与最大兑换次数，分发给用户进行推广获客。',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDarkMode ? Colors.white60 : Colors.black54,
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: _showCreateDialog,
+                              icon: const Icon(Icons.add_rounded),
+                              label: const Text('创建首个推广活动'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    );
-                  },
-                ),
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(12),
+                      itemCount: _activities.length,
+                      itemBuilder: (context, index) {
+                        final activity = _activities[index];
+                        final durationText = activity.duration ?? '永久';
+                        final maxRedemptionsText = activity.maxRedemptions == null || activity.maxRedemptions == 0
+                            ? '无限制'
+                            : '${activity.maxRedemptions} 次';
+                        final progress = '${activity.redemptionCount} / $maxRedemptionsText';
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        activity.name ?? '',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: isDarkMode ? Colors.white : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text('删除活动'),
+                                            content: Text('你确定要删除活动“${activity.name}”吗？此操作不可撤销。'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text('取消'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                  if (activity.id != null) {
+                                                    _deleteActivity(activity.id!);
+                                                  }
+                                                },
+                                                child: const Text('确定', style: TextStyle(color: Colors.red)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                const Divider(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _buildInfoColumn('活动兑换码', activity.activityCode ?? '', isDarkMode),
+                                    _buildInfoColumn('赠送时长', durationText, isDarkMode),
+                                    _buildInfoColumn('已兑换次数', progress, isDarkMode),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
     );
   }
 
