@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:appcheck/appcheck.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../api/result.dart';
+import '../config.dart';
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
@@ -53,18 +55,23 @@ class FinishPageState extends State<FinishPage> {
   }
 
   Future<void> loadData() async {
-    /*
-    // 检测手机上安装的应用市场
-    if (PlatformUtils.isAndroid) {
-      if (await AppCheck().isAppInstalled('com.huawei.appmarket')) {
-        marketAppUrl = "appmarket://details?id=com.nn.nnbdc.android";
-      }
-    }
-    */
-
     // 检查是否从页面查看器进入，如果是则模拟打卡但不入库
     final arguments = GoRouterState.of(context).extra;
     final isFromPageViewer = arguments is Map && arguments['fromPageViewer'] == true;
+
+    // iOS/macOS 平台：设置 App Store 评分跳转链接
+    if ((PlatformUtils.isIOS || PlatformUtils.isMacOS) && Config.enableAppStoreReview) {
+      marketAppUrl = "https://apps.apple.com/app/id${Config.appStoreId}?action=write-review";
+    } else if (PlatformUtils.isAndroid) {
+      // Android 平台：检测是否安装对应应用市场并设置跳转链接
+      try {
+        if (Config.enableHuaweiReview && await AppCheck().isAppInstalled('com.huawei.appmarket')) {
+          marketAppUrl = "appmarket://details?id=com.nn.nnbdc.android";
+        }
+      } catch (e) {
+        Global.logger.w('检测华为应用市场失败: $e');
+      }
+    }
 
     if (!isFromPageViewer) {
       // 正常流程：执行打卡逻辑
@@ -98,7 +105,7 @@ class FinishPageState extends State<FinishPage> {
         }
 
         // iOS/macOS 平台：打卡成功后请求应用内评分
-        if (PlatformUtils.isIOS || PlatformUtils.isMacOS) {
+        if ((PlatformUtils.isIOS || PlatformUtils.isMacOS) && Config.enableAppStoreReview) {
           _requestAppReview();
         }
       }
@@ -111,6 +118,7 @@ class FinishPageState extends State<FinishPage> {
       dakaResult = Result("SUCCESS", "页面查看器模式（模拟打卡，数据未入库）", true);
     }
 
+    if (!mounted) return;
     setState(() {
       dataLoaded = true;
     });
@@ -625,7 +633,7 @@ class FinishPageState extends State<FinishPage> {
                     ),
                   ),
                   onPressed: () {
-                    launchUrl(Uri.parse(marketAppUrl!));
+                    launchUrl(Uri.parse(marketAppUrl!), mode: LaunchMode.externalApplication);
                   },
                 ),
               ],

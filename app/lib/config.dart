@@ -81,4 +81,13 @@ class Config {
 
   // Toggle warning logs for frame janks and thread blocks
   static const bool enablePerformanceJankWarning = false;
+
+  // App Review Configuration & Switches (各应用市场好评引导开关)
+  static const String appStoreId = '6756229006';
+  static const bool enableAppStoreReview = true;   // Apple App Store (iOS / macOS)
+  static const bool enableHuaweiReview = true;     // 华为应用市场 (Huawei AppGallery)
+  static const bool enableXiaomiReview = false;    // 小米应用商店 (预留)
+  static const bool enableOppoReview = false;      // OPPO应用商店 (预留)
+  static const bool enableVivoReview = false;      // vivo应用商店 (预留)
+  static const bool enableGooglePlayReview = false;// Google Play (预留)
 }

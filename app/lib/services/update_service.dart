@@ -353,7 +353,7 @@ exit
   }
 
   Future<void> openAppStore() async {
-    await launchUrl(Uri.parse('https://apps.apple.com/app/id6756229006'), mode: LaunchMode.externalApplication);
+    await launchUrl(Uri.parse('https://apps.apple.com/app/id${Config.appStoreId}'), mode: LaunchMode.externalApplication);
   }
 }
 
