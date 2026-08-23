@@ -19,6 +19,8 @@ import '../theme/app_theme.dart';
 import '../util/analytics_util.dart';
 import '../util/notification_util.dart';
 import '../util/platform_util.dart';
+import '../widget/daka_poster.dart';
+import '../widget/daka_poster_dialog.dart';
 import 'index.dart';
 
 class FinishPage extends StatefulWidget {
@@ -574,6 +576,80 @@ class FinishPageState extends State<FinishPage> {
           ),
         ),
 
+        // 分享打卡海报卡片
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '坚持开口，值得记录',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '生成高颜值打卡海报发圈',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                icon: const Icon(
+                  Icons.share_outlined,
+                  size: 18.0,
+                ),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                ),
+                label: const Text(
+                  '打卡海报',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                onPressed: _openSharePosterDialog,
+              ),
+            ],
+          ),
+        ),
+
         // 给个好评卡片（如果存在）
         if (marketAppUrl != null) ...[
           const SizedBox(height: 12),
@@ -653,6 +729,33 @@ class FinishPageState extends State<FinishPage> {
         ],
       ],
     );
+  }
+
+  /// 打开海报分享弹窗
+  void _openSharePosterDialog() {
+    final user = Global.getLoggedInUser();
+    final nick = user?.nickName;
+    final uName = user?.userName;
+    final userName = (nick != null && nick.isNotEmpty)
+        ? nick
+        : ((uName != null && uName.isNotEmpty) ? uName : '学习者');
+    final continuousDays = user?.continuousDakaDayCount ?? 1;
+    const todayWords = 30;
+    final memoryRate = (user?.dakaRatio != null && (user!.dakaRatio! > 0)) ? user.dakaRatio!.round() : 98;
+    final totalWords = user?.masteredWordsCount ?? 0;
+    final now = DateTime.now();
+    final dateStr = '${now.year}.${now.month.toString().padLeft(2, '0')}.${now.day.toString().padLeft(2, '0')}';
+
+    final posterData = PosterData(
+      userName: userName,
+      continuousDays: continuousDays,
+      todayWords: todayWords,
+      memoryRate: memoryRate,
+      totalWords: totalWords,
+      dateStr: dateStr,
+    );
+
+    DakaPosterDialog.show(context, posterData);
   }
 
   @override
