@@ -217,7 +217,7 @@ class PosterThemeConfig {
           quoteTextColor: Color(0xFFE2E8F0),
           quoteBgColor: Color(0x0AFFFFFF),
           quoteBorderColor: Color(0x3310B981),
-          quoteMain: '“背单词无捷径，开口是良方。”',
+          quoteMain: '“背词无捷径，开口是良方。”',
           quoteSub: '每天完成计划，不知不觉积累。',
           dateTag: 'PROGRESS',
           isDark: true,
@@ -304,7 +304,7 @@ class DakaPosterWidget extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              '泡泡背单词',
+              '泡泡单词',
               style: TextStyle(
                 color: cfg.brandColor,
                 fontSize: 13.5,
