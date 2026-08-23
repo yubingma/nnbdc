@@ -37,7 +37,20 @@ public class AppDownloadControllerTest {
     }
 
     @Test
-    public void testHuaweiDeviceRedirectsToHuaweiMarket() throws IOException {
+    public void testHuaweiDeviceInWeChatRedirectsToHuaweiMarket() throws IOException {
+        // 关键测试：华为手机即使在微信内置浏览器内扫码，也优先直达华为应用市场
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 12; HUAWEI NOH-AN00) AppleWebKit/537.36 MicroMessenger/8.0.38");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        controller.downloadRedirect(request, response);
+
+        assertEquals(302, response.getStatus());
+        assertEquals(AppDownloadController.HUAWEI_MARKET_URL, response.getRedirectedUrl());
+    }
+
+    @Test
+    public void testHuaweiDeviceInBrowserRedirectsToHuaweiMarket() throws IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 12; HUAWEI NOH-AN00) AppleWebKit/537.36 Chrome/99.0.4844.88 Mobile");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -49,9 +62,9 @@ public class AppDownloadControllerTest {
     }
 
     @Test
-    public void testXiaomiDeviceRedirectsToXiaomiMarket() throws IOException {
+    public void testXiaomiDeviceInWeChatRedirectsToXiaomiMarket() throws IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 14; 23127PN0CC; Xiaomi) AppleWebKit/537.36 Mobile");
+        request.addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 14; 23127PN0CC; Xiaomi) AppleWebKit/537.36 MicroMessenger/8.0.38");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         controller.downloadRedirect(request, response);
@@ -61,9 +74,9 @@ public class AppDownloadControllerTest {
     }
 
     @Test
-    public void testWeChatAndroidRedirectsToTencentMyApp() throws IOException {
+    public void testGenericAndroidInWeChatRedirectsToTencentMyApp() throws IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 13; OPPO Find X6) MicroMessenger/8.0.38");
+        request.addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 13; GenericPhone) AppleWebKit/537.36 MicroMessenger/8.0.38");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         controller.downloadRedirect(request, response);
@@ -73,7 +86,7 @@ public class AppDownloadControllerTest {
     }
 
     @Test
-    public void testGenericAndroidRedirectsToSystemMarket() throws IOException {
+    public void testGenericAndroidInBrowserRedirectsToSystemMarket() throws IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile");
         MockHttpServletResponse response = new MockHttpServletResponse();
