@@ -18,7 +18,7 @@ aliyun:
   sms:
     access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:your_access_key_id}
     access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:your_access_key_secret}
-    sign-name: 牛牛背单词
+    sign-name: 泡泡单词
     region-id: cn-hangzhou
     template-codes:
       register: SMS_123456789
