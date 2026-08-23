@@ -44,15 +44,32 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
   int _currentIndex = 0;
   late final PageController _pageController;
   bool _isExporting = false;
+  FluwxCancelable? _weChatShareCancelable;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.85);
+
+    // 订阅微信分享结果回调，发表成功后即时给予成功反馈
+    _weChatShareCancelable = WechatUtil.addSubscriber((response) {
+      if (!mounted) return;
+      if (response is WeChatShareResponse) {
+        if (response.errCode == 0) {
+          ToastUtil.success('🎉 打卡海报分享成功！');
+          Navigator.of(context).pop();
+        } else if (response.errCode == -2) {
+          // 用户取消分享，无需提示错误
+        } else {
+          ToastUtil.error('分享未完成: ${response.errStr ?? "未知错误"}');
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
+    _weChatShareCancelable?.cancel();
     _pageController.dispose();
     super.dispose();
   }
