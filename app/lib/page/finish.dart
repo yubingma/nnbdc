@@ -740,7 +740,7 @@ class FinishPageState extends State<FinishPage> {
         ? nick
         : ((uName != null && uName.isNotEmpty) ? uName : '学习者');
     final continuousDays = user?.continuousDakaDayCount ?? 1;
-    const todayWords = 30;
+    final todayWords = user?.wordsPerDay ?? 30;
     final memoryRate = (user?.dakaRatio != null && (user!.dakaRatio! > 0)) ? user.dakaRatio!.round() : 98;
     final totalWords = user?.masteredWordsCount ?? 0;
     final now = DateTime.now();
