@@ -235,12 +235,15 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
                           curve: Curves.easeOutCubic,
                           child: FittedBox(
                             fit: BoxFit.contain,
-                            child: RepaintBoundary(
-                              key: _posterKeys[index],
-                              child: DakaPosterWidget(
-                                data: widget.data,
-                                themeType: themeType,
-                                width: 270,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: RepaintBoundary(
+                                key: _posterKeys[index],
+                                child: DakaPosterWidget(
+                                  data: widget.data,
+                                  themeType: themeType,
+                                  width: 270,
+                                ),
                               ),
                             ),
                           ),
