@@ -65,7 +65,7 @@
     .subtitle {
       color: var(--text-muted);
       font-size: 1rem;
-      max-width: 600px;
+      max-width: 650px;
       margin: 0 auto;
     }
 
@@ -150,7 +150,54 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
     }
 
-    /* Theme 1: 极简深蓝 */
+    /* Theme 1: 冰川湛蓝 (Glacier Sapphire · 极光深海纯蓝) 【全新升级】 */
+    .theme-glacier {
+      background: radial-gradient(circle at 50% 20%, #0A2540 0%, #06182A 55%, #030D17 100%);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .theme-glacier .poster-top {
+      color: #38BDF8;
+    }
+    .theme-glacier .hero-num {
+      background: linear-gradient(180deg, #FFFFFF 0%, #38BDF8 60%, #0284C7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .theme-glacier .hero-pill {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: #38BDF8;
+    }
+    .theme-glacier .stat-highlight {
+      color: #38BDF8;
+    }
+    .theme-glacier .poster-quote {
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    /* Theme 2: 皇家钴蓝 (Cobalt Blue · 经典深邃蓝) */
+    .theme-cobalt {
+      background: radial-gradient(circle at 50% 25%, #1E3A8A 0%, #172554 55%, #0B1120 100%);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+    .theme-cobalt .hero-num {
+      background: linear-gradient(180deg, #FFFFFF 0%, #60A5FA 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .theme-cobalt .hero-pill {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #60A5FA;
+    }
+    .theme-cobalt .stat-highlight {
+      color: #60A5FA;
+    }
+    .theme-cobalt .poster-quote {
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    /* Theme 3: 极简暗夜黑蓝 */
     .theme-dark {
       background: radial-gradient(circle at 50% 25%, #16203B 0%, #0B1120 60%, #060A12 100%);
       border: 1px solid rgba(99, 102, 241, 0.25);
@@ -161,7 +208,7 @@
       -webkit-text-fill-color: transparent;
     }
 
-    /* Theme 2: 暖阳晨读 */
+    /* Theme 4: 暖阳晨读 */
     .theme-sunrise {
       background: radial-gradient(circle at 50% 20%, #FFFDF5 0%, #FEF3C7 50%, #FDE68A 100%);
       border: 1px solid rgba(245, 158, 11, 0.3);
@@ -190,8 +237,8 @@
     }
     .theme-sunrise .poster-quote {
       color: #78350F;
-      border-left-color: #F59E0B;
-      background: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(245, 158, 11, 0.2);
     }
     .theme-sunrise .poster-footer {
       color: #92400E;
@@ -202,7 +249,7 @@
       color: #92400E;
     }
 
-    /* Theme 3: 活力粉紫 */
+    /* Theme 5: 活力粉紫 */
     .theme-pink {
       background: radial-gradient(circle at 50% 25%, #251230 0%, #130B1B 60%, #08050D 100%);
       border: 1px solid rgba(236, 72, 153, 0.25);
@@ -217,8 +264,11 @@
       border-color: rgba(236, 72, 153, 0.3);
       color: #F472B6;
     }
+    .theme-pink .poster-quote {
+      border: 1px solid rgba(236, 72, 153, 0.2);
+    }
 
-    /* Theme 4: 森林墨绿 */
+    /* Theme 6: 森林墨绿 */
     .theme-green {
       background: radial-gradient(circle at 50% 25%, #0E2E25 0%, #061A14 60%, #030D0A 100%);
       border: 1px solid rgba(16, 185, 129, 0.25);
@@ -234,10 +284,10 @@
       color: #34D399;
     }
     .theme-green .poster-quote {
-      border-left-color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.2);
     }
 
-    /* Top Bar: Clean & Independent (统一标准 Logo) */
+    /* Top Bar: Clean & Independent */
     .poster-top {
       display: flex;
       justify-content: space-between;
@@ -347,14 +397,15 @@
       margin-top: 3px;
     }
 
-    /* Motivational Quote Card */
+    /* 全对称、四周平滑无单侧粗线微透卡片 */
     .poster-quote {
       font-size: 12px;
       line-height: 1.5;
-      padding: 11px 14px;
-      background: rgba(0, 0, 0, 0.22);
-      border-radius: 11px;
-      border-left: 3px solid var(--primary);
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
       margin-bottom: 16px;
       text-align: left;
     }
@@ -402,8 +453,8 @@
   <div class="container">
     <header>
       <div class="tag">🫧 简简单单背单词</div>
-      <h1>泡泡背单词 · 打卡海报模版</h1>
-      <p class="subtitle">统一标准泡泡 Logo · 移除冗余插图 · 留白透气舒展 · 视觉重心清晰聚焦</p>
+      <h1>泡泡背单词 · 打卡海报模版库</h1>
+      <p class="subtitle">全新冰川湛蓝 · 统一标准 Logo · 纯粹对称圆角 · 开阔舒展留白</p>
     </header>
 
     <!-- 交互控制条 -->
@@ -430,14 +481,141 @@
       </div>
     </div>
 
-    <!-- 4 套全新统一 Logo 与通透排版的海报阵列 -->
+    <!-- 6 套纯正高级质感的海报阵列 -->
     <div class="poster-grid">
 
-      <!-- 风格 1: 极简深蓝 -->
+      <!-- 风格 1: 冰川湛蓝 (Glacier Sapphire · 极光纯蓝) 【全新替换】 -->
       <div class="poster-wrapper">
-        <div class="poster-label">① 极简深蓝 (大声读出来)</div>
+        <div class="poster-label">① 冰川湛蓝 (极光纯蓝)</div>
+        <div class="poster theme-glacier">
+          <div class="poster-top">
+            <div class="brand-group">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="8" cy="9" r="1.5" fill="#38BDF8"></circle>
+              </svg>
+              <span>泡泡背单词</span>
+            </div>
+            <div class="top-date">GLACIER</div>
+          </div>
+
+          <div class="poster-hero">
+            <div class="hero-pill">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 6v12M7 8v8"/>
+              </svg>
+              <span>开口大声读，记得更牢</span>
+            </div>
+            <div class="hero-label">连续自律打卡</div>
+            <div class="hero-num-box">
+              <span class="hero-num val-days">28</span>
+              <span class="hero-unit">天</span>
+            </div>
+          </div>
+
+          <div class="poster-glass-card">
+            <div>
+              <div class="stat-val stat-highlight"><span class="val-voice">30</span> 词</div>
+              <div class="stat-lbl">今天读了</div>
+            </div>
+            <div class="card-divider"></div>
+            <div>
+              <div class="stat-val stat-highlight"><span class="val-score">98</span>%</div>
+              <div class="stat-lbl">读一遍全记住</div>
+            </div>
+            <div class="card-divider"></div>
+            <div>
+              <div class="stat-val stat-highlight"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">一共记住</div>
+            </div>
+          </div>
+
+          <div class="poster-quote">
+            <div class="poster-quote-main">“多开口读几个词，离世界更近一步。”</div>
+            <div class="poster-quote-sub">每天坚持读一读，心里特别充实。</div>
+          </div>
+
+          <div class="poster-footer">
+            <div class="user-pill" style="color: #38BDF8;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span class="val-user">Alex</span>
+            </div>
+            <div class="qr-badge" style="background: rgba(56,189,248,0.15); color: #38BDF8;">开口背单词</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 风格 2: 经典皇家钴蓝 (APP 官方深蓝) -->
+      <div class="poster-wrapper">
+        <div class="poster-label">② 皇家钴蓝 (官方主色 · 深蓝)</div>
+        <div class="poster theme-cobalt">
+          <div class="poster-top">
+            <div class="brand-group" style="color: #60A5FA;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="8" cy="9" r="1.5" fill="#60A5FA"></circle>
+              </svg>
+              <span>泡泡背单词</span>
+            </div>
+            <div class="top-date">COBALT</div>
+          </div>
+
+          <div class="poster-hero">
+            <div class="hero-pill">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 6v12M7 8v8"/>
+              </svg>
+              <span>嘴巴记住了，脑子不会忘</span>
+            </div>
+            <div class="hero-label">坚持打卡</div>
+            <div class="hero-num-box">
+              <span class="hero-num val-days">28</span>
+              <span class="hero-unit">天</span>
+            </div>
+          </div>
+
+          <div class="poster-glass-card">
+            <div>
+              <div class="stat-val stat-highlight"><span class="val-voice">30</span> 词</div>
+              <div class="stat-lbl">今天读完</div>
+            </div>
+            <div class="card-divider"></div>
+            <div>
+              <div class="stat-val stat-highlight"><span class="val-score">98</span>%</div>
+              <div class="stat-lbl">牢固度</div>
+            </div>
+            <div class="card-divider"></div>
+            <div>
+              <div class="stat-val"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">掌握单词</div>
+            </div>
+          </div>
+
+          <div class="poster-quote">
+            <div class="poster-quote-main">“嘴巴读得出，心里有底气。”</div>
+            <div class="poster-quote-sub">每天大声读 10 分钟，踏踏实实积累。</div>
+          </div>
+
+          <div class="poster-footer">
+            <div class="user-pill" style="color: #60A5FA;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span class="val-user">Alex</span>
+            </div>
+            <div class="qr-badge" style="background: rgba(59,130,246,0.15); color: #60A5FA;">泡泡背单词</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 风格 3: 极简深蓝夜 -->
+      <div class="poster-wrapper">
+        <div class="poster-label">③ 暗夜深邃 (沉浸蓝黑)</div>
         <div class="poster theme-dark">
-          <!-- 顶部：统一的标准泡泡 Logo -->
           <div class="poster-top">
             <div class="brand-group">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2">
@@ -449,7 +627,6 @@
             <div class="top-date" id="dateDisplay1">2026.08.23</div>
           </div>
 
-          <!-- 主视觉区：留白通透，大数字聚焦 -->
           <div class="poster-hero">
             <div class="hero-pill">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -464,7 +641,6 @@
             </div>
           </div>
 
-          <!-- 数据卡片 -->
           <div class="poster-glass-card">
             <div>
               <div class="stat-val stat-highlight"><span class="val-voice">30</span> 词</div>
@@ -482,13 +658,11 @@
             </div>
           </div>
 
-          <!-- 金句 -->
           <div class="poster-quote">
             <div class="poster-quote-main">“光看容易忘，大声读出来才真会。”</div>
             <div class="poster-quote-sub">每天花 10 分钟，踏踏实实背完。</div>
           </div>
 
-          <!-- 底部 -->
           <div class="poster-footer">
             <div class="user-pill">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -502,11 +676,10 @@
         </div>
       </div>
 
-      <!-- 风格 2: 暖阳晨读 -->
+      <!-- 风格 4: 暖阳晨读 -->
       <div class="poster-wrapper">
-        <div class="poster-label">② 暖阳晨读 (清晨早读)</div>
+        <div class="poster-label">④ 暖阳晨读 (清晨早读)</div>
         <div class="poster theme-sunrise">
-          <!-- 顶部：统一的标准泡泡 Logo -->
           <div class="poster-top">
             <div class="brand-group">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2">
@@ -518,7 +691,6 @@
             <div class="top-date">MORNING</div>
           </div>
 
-          <!-- 主视觉区 -->
           <div class="poster-hero">
             <div class="hero-pill">
               <span>☀️ 晨读打卡完成</span>
@@ -530,7 +702,6 @@
             </div>
           </div>
 
-          <!-- 数据卡片 -->
           <div class="poster-glass-card">
             <div>
               <div class="stat-val stat-highlight"><span class="val-voice">30</span> 词</div>
@@ -548,13 +719,11 @@
             </div>
           </div>
 
-          <!-- 金句 -->
           <div class="poster-quote">
             <div class="poster-quote-main">“一天背一点，坚持下来就很厉害。”</div>
             <div class="poster-quote-sub">每天早晨开口读一读，心里特别踏实。</div>
           </div>
 
-          <!-- 底部 -->
           <div class="poster-footer">
             <div class="user-pill">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -568,11 +737,10 @@
         </div>
       </div>
 
-      <!-- 风格 3: 活力粉紫 -->
+      <!-- 风格 5: 活力粉紫 -->
       <div class="poster-wrapper">
-        <div class="poster-label">③ 活力粉紫 (开口不怕忘)</div>
+        <div class="poster-label">⑤ 活力粉紫 (开口不怕忘)</div>
         <div class="poster theme-pink">
-          <!-- 顶部：统一的标准泡泡 Logo -->
           <div class="poster-top">
             <div class="brand-group" style="color: #F472B6;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F472B6" stroke-width="2">
@@ -584,7 +752,6 @@
             <div class="top-date">KEEP GOING</div>
           </div>
 
-          <!-- 主视觉区 -->
           <div class="poster-hero">
             <div class="hero-pill">
               <span>🗣️ 开口读，不怕忘</span>
@@ -596,7 +763,6 @@
             </div>
           </div>
 
-          <!-- 数据卡片 -->
           <div class="poster-glass-card">
             <div>
               <div class="stat-val" style="color: #F472B6;">+<span class="val-voice">30</span></div>
@@ -614,13 +780,11 @@
             </div>
           </div>
 
-          <!-- 金句 -->
-          <div class="poster-quote" style="border-left-color: #EC4899;">
+          <div class="poster-quote">
             <div class="poster-quote-main">“嘴巴记住了，脑子就不会忘。”</div>
             <div class="poster-quote-sub">大声读一遍，比默看十遍管用。</div>
           </div>
 
-          <!-- 底部 -->
           <div class="poster-footer">
             <div class="user-pill" style="color: #F472B6;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -634,11 +798,10 @@
         </div>
       </div>
 
-      <!-- 风格 4: 森林墨绿 -->
+      <!-- 风格 6: 森林墨绿 -->
       <div class="poster-wrapper">
-        <div class="poster-label">④ 森林墨绿 (慢慢来比较快)</div>
+        <div class="poster-label">⑥ 森林墨绿 (慢慢来比较快)</div>
         <div class="poster theme-green">
-          <!-- 顶部：统一的标准泡泡 Logo -->
           <div class="poster-top">
             <div class="brand-group" style="color: #34D399;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2">
@@ -650,7 +813,6 @@
             <div class="top-date">PROGRESS</div>
           </div>
 
-          <!-- 主视觉区 -->
           <div class="poster-hero">
             <div class="hero-pill">
               <span>🌿 慢慢来，比较快</span>
@@ -662,7 +824,6 @@
             </div>
           </div>
 
-          <!-- 数据卡片 -->
           <div class="poster-glass-card">
             <div>
               <div class="stat-val" style="color: #34D399;"><span class="val-voice">30</span> 词</div>
@@ -680,13 +841,11 @@
             </div>
           </div>
 
-          <!-- 金句 -->
           <div class="poster-quote">
             <div class="poster-quote-main">“背单词没有捷径，开口读就是最好的方法。”</div>
             <div class="poster-quote-sub">每天完成计划，不知不觉就积累起来了。</div>
           </div>
 
-          <!-- 底部 -->
           <div class="poster-footer">
             <div class="user-pill" style="color: #34D399;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
