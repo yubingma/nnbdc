@@ -8,6 +8,7 @@ import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../global.dart';
 import '../theme/app_theme.dart';
 import '../util/toast_util.dart';
 import '../util/wechat_util.dart';
@@ -110,29 +111,47 @@ class _DakaPosterDialogState extends State<DakaPosterDialog> {
 
     if (filePath == null) {
       setState(() => _isExporting = false);
+      Global.logger.e('[DakaPosterDialog] 截图导出临时图片失败: filePath is null');
       ToastUtil.error('生成海报失败');
       return;
     }
 
     try {
-      await Gal.putImage(filePath, album: '泡泡单词');
+      // 1. 检查并请求相册权限
+      final hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        final granted = await Gal.requestAccess();
+        if (!granted) {
+          if (mounted) {
+            setState(() => _isExporting = false);
+            ToastUtil.error('未获得相册权限，请在设置中开启');
+          }
+          return;
+        }
+      }
+
+      // 2. 保存图片至系统相册
+      await Gal.putImage(filePath);
+      Global.logger.i('[DakaPosterDialog] 海报已成功保存至系统相册: $filePath');
       if (mounted) {
         setState(() => _isExporting = false);
         ToastUtil.success('已保存到手机相册');
       }
-    } on GalException catch (e) {
+    } on GalException catch (e, stackTrace) {
+      Global.logger.e('[DakaPosterDialog] 保存相册发生 GalException: ${e.type.message}', error: e, stackTrace: stackTrace);
       if (mounted) {
         setState(() => _isExporting = false);
         if (e.type == GalExceptionType.accessDenied) {
-          ToastUtil.error('未获得相册权限，请在设置中开启');
+          ToastUtil.error('未获得相册权限，请在系统设置中允许访问相册');
         } else {
           ToastUtil.error('保存相册失败: ${e.type.message}');
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      Global.logger.e('[DakaPosterDialog] 保存相册发生未知异常', error: e, stackTrace: stackTrace);
       if (mounted) {
         setState(() => _isExporting = false);
-        ToastUtil.error('保存相册失败');
+        ToastUtil.error('保存相册失败，请重试');
       }
     }
   }
