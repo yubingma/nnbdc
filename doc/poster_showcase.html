@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>泡泡背单词 - 高颜值打卡海报模版库</title>
+  <title>泡泡背单词 - 语音开口背词 · 高颜值打卡海报模版库</title>
   <style>
     :root {
       --bg: #0B0F19;
@@ -12,6 +12,7 @@
       --text-muted: #94A3B8;
       --primary: #6366F1;
       --accent: #EC4899;
+      --voice: #06B6D4;
     }
 
     * {
@@ -35,25 +36,27 @@
 
     header {
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 36px;
     }
 
     .tag {
-      display: inline-block;
-      padding: 4px 14px;
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 16px;
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.3);
       border-radius: 99px;
       font-size: 13px;
-      color: #A5B4FC;
-      margin-bottom: 12px;
+      color: #67E8F9;
+      margin-bottom: 14px;
       font-weight: 600;
     }
 
     h1 {
       font-size: 2.2rem;
       font-weight: 800;
-      background: linear-gradient(135deg, #818CF8, #C084FC, #F472B6);
+      background: linear-gradient(135deg, #38BDF8, #818CF8, #C084FC);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 8px;
@@ -61,7 +64,9 @@
 
     .subtitle {
       color: var(--text-muted);
-      font-size: 1rem;
+      font-size: 1.05rem;
+      max-width: 720px;
+      margin: 0 auto;
     }
 
     /* Controls Bar */
@@ -73,8 +78,9 @@
       background: var(--card-bg);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 16px;
-      padding: 16px 24px;
+      padding: 18px 24px;
       margin-bottom: 40px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
     }
 
     .control-group {
@@ -86,9 +92,10 @@
     .control-group label {
       font-size: 13px;
       color: var(--text-muted);
+      font-weight: 500;
     }
 
-    .control-group input, .control-group select {
+    .control-group input {
       background: rgba(0, 0, 0, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: #FFF;
@@ -96,10 +103,11 @@
       border-radius: 8px;
       font-size: 13px;
       outline: none;
+      transition: border-color 0.2s;
     }
 
     .control-group input:focus {
-      border-color: var(--primary);
+      border-color: var(--voice);
     }
 
     /* Posters Grid */
@@ -129,7 +137,7 @@
       max-width: 320px;
       aspect-ratio: 9 / 16;
       border-radius: 24px;
-      padding: 28px 24px;
+      padding: 26px 22px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -144,50 +152,66 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
     }
 
-    /* Theme 1: Midnight Aurora (暗夜极光) */
-    .theme-aurora {
-      background: linear-gradient(170deg, #0D1117 0%, #161B22 40%, #1E1B4B 100%);
-      border: 1px solid rgba(129, 140, 248, 0.2);
+    /* Theme 1: Voice Pulse (声波科技 · 突出端侧AI识别) */
+    .theme-voice {
+      background: linear-gradient(170deg, #090E17 0%, #0F172A 50%, #082F49 100%);
+      border: 1px solid rgba(6, 182, 212, 0.3);
     }
-    .theme-aurora::before {
+    .theme-voice::before {
       content: '';
       position: absolute;
       top: -40px;
       right: -40px;
       width: 180px;
       height: 180px;
-      background: radial-gradient(circle, rgba(139, 92, 246, 0.35), transparent 70%);
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.25), transparent 70%);
       pointer-events: none;
     }
+    .theme-voice .poster-days-num {
+      background: linear-gradient(135deg, #38BDF8, #818CF8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
-    /* Theme 2: Sunrise Glow (晨曦晨光) */
+    /* Theme 2: Sunrise Vocal (晨读发声 · 温暖治愈) */
     .theme-sunrise {
-      background: linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 40%, #FED7AA 100%);
-      border: 1px solid rgba(251, 146, 60, 0.3);
-      color: #431407;
+      background: linear-gradient(160deg, #FFFBEB 0%, #FEF3C7 45%, #FDE68A 100%);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #78350F;
     }
     .theme-sunrise .poster-app-brand,
     .theme-sunrise .poster-subtitle,
     .theme-sunrise .poster-footer {
-      color: #9A3412;
+      color: #92400E;
     }
     .theme-sunrise .poster-days-num {
-      background: linear-gradient(135deg, #EA580C, #C2410C);
+      background: linear-gradient(135deg, #D97706, #B45309);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
+    .theme-sunrise .voice-wave-pill {
+      background: rgba(217, 119, 6, 0.15);
+      border-color: rgba(217, 119, 6, 0.3);
+      color: #92400E;
+    }
+    .theme-sunrise .wave-bar {
+      background: #D97706;
+    }
     .theme-sunrise .poster-glass-card {
       background: rgba(255, 255, 255, 0.7);
-      border: 1px solid rgba(251, 146, 60, 0.2);
-      color: #7C2D12;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #78350F;
+    }
+    .theme-sunrise .stat-highlight {
+      color: #B45309;
     }
     .theme-sunrise .poster-quote {
-      color: #431407;
-      border-left-color: #F97316;
-      background: rgba(255, 255, 255, 0.5);
+      color: #78350F;
+      border-left-color: #F59E0B;
+      background: rgba(255, 255, 255, 0.55);
     }
 
-    /* Theme 3: Cyberpunk Neon (活力赛博) */
+    /* Theme 3: Cyber Studio (专业电台 · 动感潮牌) */
     .theme-cyber {
       background: linear-gradient(180deg, #090A0F 0%, #1A0B2E 100%);
       border: 1px solid rgba(236, 72, 153, 0.3);
@@ -207,19 +231,32 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-
-    /* Theme 4: Forest Emerald (森系墨绿) */
-    .theme-forest {
-      background: linear-gradient(165deg, #06281E 0%, #0B1E19 60%, #031410 100%);
-      border: 1px solid rgba(16, 185, 129, 0.25);
+    .theme-cyber .voice-wave-pill {
+      background: rgba(236, 72, 153, 0.15);
+      border-color: rgba(236, 72, 153, 0.35);
+      color: #F472B6;
     }
-    .theme-forest .poster-days-num {
-      background: linear-gradient(135deg, #34D399, #10B981, #059669);
+    .theme-cyber .wave-bar {
+      background: #EC4899;
+    }
+
+    /* Theme 4: Deep Aurora (暗夜深邃 · 专注力量) */
+    .theme-aurora {
+      background: linear-gradient(170deg, #0F172A 0%, #1E1B4B 60%, #172554 100%);
+      border: 1px solid rgba(129, 140, 248, 0.3);
+    }
+    .theme-aurora .poster-days-num {
+      background: linear-gradient(135deg, #A5B4FC, #C084FC);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .theme-forest .poster-quote {
-      border-left-color: #10B981;
+    .theme-aurora .voice-wave-pill {
+      background: rgba(129, 140, 248, 0.15);
+      border-color: rgba(129, 140, 248, 0.35);
+      color: #A5B4FC;
+    }
+    .theme-aurora .wave-bar {
+      background: #818CF8;
     }
 
     /* Poster Internal Components */
@@ -251,20 +288,58 @@
 
     .poster-hero {
       text-align: center;
-      margin: 16px 0;
+      margin: 12px 0 10px 0;
+    }
+
+    /* Voice Wave Pill 声音徽章 */
+    .voice-wave-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: #67E8F9;
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .wave-bars {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      height: 12px;
+    }
+
+    .wave-bar {
+      width: 2.5px;
+      background: #06B6D4;
+      border-radius: 2px;
+    }
+
+    .bar-1 { height: 6px; animation: pulse 1.2s ease-in-out infinite; }
+    .bar-2 { height: 12px; animation: pulse 0.8s ease-in-out infinite 0.2s; }
+    .bar-3 { height: 8px; animation: pulse 1.0s ease-in-out infinite 0.4s; }
+    .bar-4 { height: 11px; animation: pulse 0.9s ease-in-out infinite 0.1s; }
+
+    @keyframes pulse {
+      0%, 100% { transform: scaleY(0.6); }
+      50% { transform: scaleY(1.2); }
     }
 
     .poster-subtitle {
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 2px;
       text-transform: uppercase;
       opacity: 0.8;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       font-weight: 600;
     }
 
     .poster-days-num {
-      font-size: 3.8rem;
+      font-size: 3.6rem;
       font-weight: 900;
       line-height: 1;
       letter-spacing: -1px;
@@ -272,49 +347,62 @@
     }
 
     .poster-days-label {
-      font-size: 13px;
+      font-size: 12px;
       opacity: 0.85;
       font-weight: 500;
     }
 
+    /* 3-Column Glass Card with Voice Metric */
     .poster-glass-card {
       background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 14px;
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-around;
+      padding: 10px 8px;
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr 1px 1fr;
+      align-items: center;
       text-align: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
+    }
+
+    .card-divider {
+      background: rgba(255, 255, 255, 0.12);
+      height: 24px;
     }
 
     .stat-val {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       line-height: 1.2;
     }
 
-    .stat-lbl {
-      font-size: 11px;
-      opacity: 0.7;
-      margin-top: 2px;
+    .stat-highlight {
+      color: #38BDF8;
     }
 
+    .stat-lbl {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    /* Motivational Voice Quote */
     .poster-quote {
-      font-size: 12px;
-      line-height: 1.5;
+      font-size: 11.5px;
+      line-height: 1.45;
       padding: 10px 12px;
       background: rgba(0, 0, 0, 0.25);
       border-radius: 10px;
-      border-left: 3px solid var(--primary);
-      margin-bottom: 16px;
+      border-left: 3px solid var(--voice);
+      margin-bottom: 14px;
       text-align: left;
     }
 
     .poster-quote-en {
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
     .poster-quote-cn {
@@ -327,9 +415,9 @@
       justify-content: space-between;
       align-items: center;
       font-size: 11px;
-      opacity: 0.75;
+      opacity: 0.8;
       border-top: 1px dashed rgba(255, 255, 255, 0.15);
-      padding-top: 10px;
+      padding-top: 9px;
     }
 
     .user-pill {
@@ -347,6 +435,7 @@
       background: rgba(255, 255, 255, 0.1);
       padding: 3px 8px;
       border-radius: 6px;
+      font-weight: 500;
     }
 
     /* Implementation Code Snippet */
@@ -362,7 +451,7 @@
       font-size: 1.1rem;
       font-weight: 700;
       margin-bottom: 12px;
-      color: #A5B4FC;
+      color: #38BDF8;
     }
 
     pre {
@@ -382,9 +471,9 @@
 
   <div class="container">
     <header>
-      <div class="tag">🎨 视觉资产库</div>
-      <h1>泡泡背单词 · 高颜值打卡海报模版</h1>
-      <p class="subtitle">实时交互式预览 · 支持不同审美风格 · 纯 Flutter 代码可100%高保真复刻</p>
+      <div class="tag">🎙️ 独特卖点 · 语音开口背词特色</div>
+      <h1>泡泡背单词 · 开口打卡海报模版库</h1>
+      <p class="subtitle">深度突出“端侧本地 AI 实时语音识别 & 发音评测” · 告别哑巴英语 · 纯 Flutter 代码可无损渲染</p>
     </header>
 
     <!-- 交互控制条 -->
@@ -394,26 +483,30 @@
         <input type="text" id="inputUser" value="Alex" oninput="updatePosters()">
       </div>
       <div class="control-group">
-        <label>打卡天数：</label>
-        <input type="number" id="inputDays" value="28" style="width: 70px;" oninput="updatePosters()">
+        <label>连续天数：</label>
+        <input type="number" id="inputDays" value="28" style="width: 65px;" oninput="updatePosters()">
       </div>
       <div class="control-group">
-        <label>今日词数：</label>
-        <input type="number" id="inputToday" value="30" style="width: 70px;" oninput="updatePosters()">
+        <label>今日开口读：</label>
+        <input type="number" id="inputVoiceCount" value="30" style="width: 65px;" oninput="updatePosters()">
       </div>
       <div class="control-group">
-        <label>总掌握词汇：</label>
-        <input type="number" id="inputTotal" value="1420" style="width: 90px;" oninput="updatePosters()">
+        <label>发音平均分：</label>
+        <input type="number" id="inputVoiceScore" value="98" style="width: 65px;" oninput="updatePosters()">
+      </div>
+      <div class="control-group">
+        <label>掌握词汇：</label>
+        <input type="number" id="inputTotal" value="1420" style="width: 85px;" oninput="updatePosters()">
       </div>
     </div>
 
-    <!-- 4 套不同风格的海报阵列 -->
+    <!-- 4 套突出语音识别风格的海报阵列 -->
     <div class="poster-grid">
 
-      <!-- 风格 1: 暗夜极光 -->
+      <!-- 风格 1: 声波科技 (Voice Pulse) -->
       <div class="poster-wrapper">
-        <div class="poster-label">① 暗夜极光 (Midnight Aurora)</div>
-        <div class="poster theme-aurora">
+        <div class="poster-label">① 声波科技 (Voice Pulse · 强烈推荐)</div>
+        <div class="poster theme-voice">
           <div class="poster-top">
             <div class="poster-app-brand">
               <span class="poster-app-logo">🫧</span>
@@ -422,35 +515,49 @@
             <div class="poster-date" id="dateDisplay1">TODAY</div>
           </div>
           <div class="poster-hero">
-            <div class="poster-subtitle">Daily Focus</div>
-            <div class="poster-days-num" style="background: linear-gradient(135deg, #818CF8, #C084FC); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"><span class="val-days">28</span></div>
-            <div class="poster-days-label">已连续自律打卡 (Days)</div>
+            <div class="voice-wave-pill">
+              <span class="wave-bars">
+                <span class="wave-bar bar-1"></span>
+                <span class="wave-bar bar-2"></span>
+                <span class="wave-bar bar-3"></span>
+                <span class="wave-bar bar-4"></span>
+              </span>
+              <span>AI 发音评测 <span class="val-score">98</span> 分</span>
+            </div>
+            <div class="poster-subtitle">Speak Out Loud</div>
+            <div class="poster-days-num"><span class="val-days">28</span></div>
+            <div class="poster-days-label">已连续大声说英语 (Days)</div>
           </div>
           <div class="poster-glass-card">
             <div>
-              <div class="stat-val"><span class="val-today">30</span> 词</div>
-              <div class="stat-lbl">今日完成</div>
+              <div class="stat-val stat-highlight"><span class="val-voice">30</span> 次</div>
+              <div class="stat-lbl">今日开口读</div>
             </div>
-            <div style="width: 1px; background: rgba(255,255,255,0.15);"></div>
+            <div class="card-divider"></div>
+            <div>
+              <div class="stat-val stat-highlight"><span class="val-score">98</span>%</div>
+              <div class="stat-lbl">发音准确率</div>
+            </div>
+            <div class="card-divider"></div>
             <div>
               <div class="stat-val"><span class="val-total">1,420</span></div>
-              <div class="stat-lbl">累计掌握词量</div>
+              <div class="stat-lbl">掌握词汇量</div>
             </div>
           </div>
           <div class="poster-quote">
-            <div class="poster-quote-en">“Consistency is the DNA of mastery.”</div>
-            <div class="poster-quote-cn">日拱一卒，功不唐捐。</div>
+            <div class="poster-quote-en">“Say it out loud. Muscle memory never forgets.”</div>
+            <div class="poster-quote-cn">大声读出来的单词，才真正刻进肌肉记忆里。</div>
           </div>
           <div class="poster-footer">
-            <div class="user-pill">👤 <span class="val-user">Alex</span></div>
-            <div class="qr-badge">FSRS 科学记忆</div>
+            <div class="user-pill">🎙️ <span class="val-user">Alex</span></div>
+            <div class="qr-badge">端侧 AI 语音背词</div>
           </div>
         </div>
       </div>
 
-      <!-- 风格 2: 晨曦暖阳 -->
+      <!-- 风格 2: 晨读清晨 (Sunrise Vocal) -->
       <div class="poster-wrapper">
-        <div class="poster-label">② 晨曦晨光 (Sunrise Minimal)</div>
+        <div class="poster-label">② 晨读暖阳 (Sunrise Vocal · 清新治愈)</div>
         <div class="poster theme-sunrise">
           <div class="poster-top">
             <div class="poster-app-brand">
@@ -460,137 +567,160 @@
             <div class="poster-date">MORNING</div>
           </div>
           <div class="poster-hero">
-            <div class="poster-subtitle">Keep Growing</div>
+            <div class="voice-wave-pill">
+              <span class="wave-bars">
+                <span class="wave-bar bar-1"></span>
+                <span class="wave-bar bar-2"></span>
+                <span class="wave-bar bar-3"></span>
+                <span class="wave-bar bar-4"></span>
+              </span>
+              <span>晨读发音评分 <span class="val-score">98</span> 分</span>
+            </div>
+            <div class="poster-subtitle">Morning Speech</div>
             <div class="poster-days-num"><span class="val-days">28</span></div>
-            <div class="poster-days-label">连续打卡天数</div>
+            <div class="poster-days-label">清晨专注自律打卡</div>
           </div>
           <div class="poster-glass-card">
             <div>
-              <div class="stat-val" style="color: #C2410C;"><span class="val-today">30</span> 词</div>
-              <div class="stat-lbl">今日背词</div>
+              <div class="stat-val stat-highlight"><span class="val-voice">30</span> 遍</div>
+              <div class="stat-lbl">晨读跟读</div>
             </div>
-            <div style="width: 1px; background: rgba(251, 146, 60, 0.2);"></div>
+            <div class="card-divider" style="background: rgba(245, 158, 11, 0.2);"></div>
             <div>
-              <div class="stat-val" style="color: #C2410C;"><span class="val-total">1,420</span></div>
-              <div class="stat-lbl">词汇总量</div>
+              <div class="stat-val stat-highlight"><span class="val-score">98</span> 分</div>
+              <div class="stat-lbl">发音均分</div>
+            </div>
+            <div class="card-divider" style="background: rgba(245, 158, 11, 0.2);"></div>
+            <div>
+              <div class="stat-val stat-highlight"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">累计词量</div>
             </div>
           </div>
           <div class="poster-quote">
-            <div class="poster-quote-en">“Every sunrise brings new words and growth.”</div>
-            <div class="poster-quote-cn">晨光熹微，奔赴热爱。</div>
+            <div class="poster-quote-en">“Morning voice, sharp mind. Speak fearlessly.”</div>
+            <div class="poster-quote-cn">晨光初现，大声朗读，告别哑巴英语。</div>
           </div>
           <div class="poster-footer">
-            <div class="user-pill" style="color: #7C2D12;">☀️ <span class="val-user">Alex</span></div>
-            <div class="qr-badge" style="background: rgba(251, 146, 60, 0.2); color: #7C2D12;">自律打卡</div>
+            <div class="user-pill" style="color: #92400E;">☀️ <span class="val-user">Alex</span></div>
+            <div class="qr-badge" style="background: rgba(245,158,11,0.2); color: #92400E;">大声背单词</div>
           </div>
         </div>
       </div>
 
-      <!-- 风格 3: 活力赛博 -->
+      <!-- 风格 3: 动感赛博 (Cyber Studio) -->
       <div class="poster-wrapper">
-        <div class="poster-label">③ 活力多巴胺 (Cyber Sunset)</div>
+        <div class="poster-label">③ 潮流电台 (Cyber Studio · 爆发感)</div>
         <div class="poster theme-cyber">
           <div class="poster-top">
             <div class="poster-app-brand" style="color: #F472B6;">
-              <span class="poster-app-logo">✨</span>
+              <span class="poster-app-logo">🎙️</span>
               <span>泡泡背单词</span>
             </div>
-            <div class="poster-date">LEVEL UP</div>
+            <div class="poster-date">VOICE ON</div>
           </div>
           <div class="poster-hero">
-            <div class="poster-subtitle" style="color: #F472B6;">Streak Day</div>
+            <div class="voice-wave-pill">
+              <span class="wave-bars">
+                <span class="wave-bar bar-1"></span>
+                <span class="wave-bar bar-2"></span>
+                <span class="wave-bar bar-3"></span>
+                <span class="wave-bar bar-4"></span>
+              </span>
+              <span>纯正美音命中 <span class="val-score">98</span>%</span>
+            </div>
+            <div class="poster-subtitle" style="color: #F472B6;">Voice Power</div>
             <div class="poster-days-num"><span class="val-days">28</span></div>
-            <div class="poster-days-label" style="color: #E2E8F0;">连续进阶第 <span class="val-days">28</span> 天</div>
+            <div class="poster-days-label" style="color: #E2E8F0;">大声开口连击第 <span class="val-days">28</span> 天</div>
           </div>
           <div class="poster-glass-card">
             <div>
-              <div class="stat-val" style="color: #F472B6;">+<span class="val-today">30</span></div>
-              <div class="stat-lbl">今日斩获</div>
+              <div class="stat-val" style="color: #F472B6;">+<span class="val-voice">30</span></div>
+              <div class="stat-lbl">开口通关</div>
             </div>
-            <div style="width: 1px; background: rgba(255,255,255,0.15);"></div>
+            <div class="card-divider"></div>
             <div>
-              <div class="stat-val" style="color: #A855F7;"><span class="val-total">1,420</span></div>
-              <div class="stat-lbl">词汇库容量</div>
+              <div class="stat-val" style="color: #A855F7;"><span class="val-score">98</span>%</div>
+              <div class="stat-lbl">AI 识别率</div>
+            </div>
+            <div class="card-divider"></div>
+            <div>
+              <div class="stat-val" style="color: #38BDF8;"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">词库容量</div>
             </div>
           </div>
           <div class="poster-quote" style="border-left-color: #EC4899;">
-            <div class="poster-quote-en">“Doubt kills more dreams than failure ever will.”</div>
-            <div class="poster-quote-cn">种一棵树最好的时间是十年前，其次是现在。</div>
+            <div class="poster-quote-en">“Don't just memorize silently. Speak it to life!”</div>
+            <div class="poster-quote-cn">不要默默死记，开口让每个单词生动起来！</div>
           </div>
           <div class="poster-footer">
-            <div class="user-pill" style="color: #F472B6;">🚀 <span class="val-user">Alex</span></div>
-            <div class="qr-badge" style="background: rgba(236,72,153,0.2); color: #F472B6;">越背越聪明</div>
+            <div class="user-pill" style="color: #F472B6;">⚡ <span class="val-user">Alex</span></div>
+            <div class="qr-badge" style="background: rgba(236,72,153,0.2); color: #F472B6;">本地离线 AI 识别</div>
           </div>
         </div>
       </div>
 
-      <!-- 风格 4: 森系翡翠 -->
+      <!-- 风格 4: 暗夜深邃 (Deep Aurora) -->
       <div class="poster-wrapper">
-        <div class="poster-label">④ 沉静森系 (Forest Emerald)</div>
-        <div class="poster theme-forest">
+        <div class="poster-label">④ 暗夜极光 (Deep Aurora · 专注质感)</div>
+        <div class="poster theme-aurora">
           <div class="poster-top">
-            <div class="poster-app-brand" style="color: #34D399;">
-              <span class="poster-app-logo">🌿</span>
+            <div class="poster-app-brand">
+              <span class="poster-app-logo">🫧</span>
               <span>泡泡背单词</span>
             </div>
-            <div class="poster-date">MOMENTUM</div>
+            <div class="poster-date">FOCUS</div>
           </div>
           <div class="poster-hero">
-            <div class="poster-subtitle" style="color: #34D399;">Study Habit</div>
+            <div class="voice-wave-pill">
+              <span class="wave-bars">
+                <span class="wave-bar bar-1"></span>
+                <span class="wave-bar bar-2"></span>
+                <span class="wave-bar bar-3"></span>
+                <span class="wave-bar bar-4"></span>
+              </span>
+              <span>语音识别评测 <span class="val-score">98</span> 分</span>
+            </div>
+            <div class="poster-subtitle">Night Reading</div>
             <div class="poster-days-num"><span class="val-days">28</span></div>
-            <div class="poster-days-label" style="color: #D1FAE5;">专注背词，静水流深</div>
+            <div class="poster-days-label">日拱一卒 · 静水流深</div>
           </div>
           <div class="poster-glass-card">
             <div>
-              <div class="stat-val" style="color: #34D399;"><span class="val-today">30</span> 词</div>
-              <div class="stat-lbl">今日吸收</div>
+              <div class="stat-val" style="color: #A5B4FC;"><span class="val-voice">30</span> 词</div>
+              <div class="stat-lbl">大声跟读</div>
             </div>
-            <div style="width: 1px; background: rgba(255,255,255,0.15);"></div>
+            <div class="card-divider"></div>
             <div>
-              <div class="stat-val" style="color: #34D399;"><span class="val-total">1,420</span></div>
-              <div class="stat-lbl">掌握词库</div>
+              <div class="stat-val" style="color: #A5B4FC;"><span class="val-score">98</span> 分</div>
+              <div class="stat-lbl">平均发音</div>
+            </div>
+            <div class="card-divider"></div>
+            <div>
+              <div class="stat-val" style="color: #A5B4FC;"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">已掌握</div>
             </div>
           </div>
-          <div class="poster-quote">
-            <div class="poster-quote-en">“Small daily improvements over time lead to stunning results.”</div>
-            <div class="poster-quote-cn">时间的复利，看得见。</div>
+          <div class="poster-quote" style="border-left-color: #818CF8;">
+            <div class="poster-quote-en">“Hearing your own voice builds real fluency.”</div>
+            <div class="poster-quote-cn">听到自己的声音，是建立真正语感的第一步。</div>
           </div>
           <div class="poster-footer">
-            <div class="user-pill" style="color: #34D399;">🌱 <span class="val-user">Alex</span></div>
-            <div class="qr-badge" style="background: rgba(16,185,129,0.2); color: #34D399;">FSRS 稳步提分</div>
+            <div class="user-pill" style="color: #A5B4FC;">🎧 <span class="val-user">Alex</span></div>
+            <div class="qr-badge" style="background: rgba(129,140,248,0.2); color: #A5B4FC;">FSRS + 语音识别</div>
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- Flutter 实现要点提示 -->
+    <!-- 落地优势分析 -->
     <div class="code-section">
-      <div class="code-title">💡 Flutter 端落地实现方案（极低成本）：</div>
-      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 12px;">
-        在 Flutter 中无需引入复杂的第三方图形引擎，只需使用普通的 <code>Container</code> + <code>LinearGradient</code> + <code>RepaintBoundary</code>，点击分享按钮时调用 <code>boundary.toImage()</code> 即可生成无损超清海报。
-      </p>
-      <pre>
-// 1. 用 RepaintBoundary 包裹海报组件
-final GlobalKey _posterKey = GlobalKey();
-
-RepaintBoundary(
-  key: _posterKey,
-  child: DakaPosterWidget(
-    continuousDays: user.continuousDakaDayCount,
-    todayWordCount: 30,
-    totalWords: user.masteredWordsCount,
-    theme: PosterTheme.aurora,
-  ),
-);
-
-// 2. 点击分享时将 Widget 转换为图片并调用原生分享
-Future<void> sharePoster() async {
-  RenderRepaintBoundary boundary = _posterKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-  ui.Image image = await boundary.toImage(pixelRatio: 3.0); // 3x超清
-  ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-  // 使用 share_plus 分享图片到微信 / 朋友圈 / 保存相册
-}</pre>
+      <div class="code-title">🔥 为什么加入“语音识别”后传播力成倍提升？</div>
+      <ul style="list-style: none; display: grid; gap: 10px; font-size: 14px; color: #CBD5E1; margin-top: 12px;">
+        <li>✦ <strong>炫耀维度从单一升级为立体</strong>：以前只能晒天数，现在能晒“发音评测 98 分 + 开口朗读 30 次”，极具自律与高水平感。</li>
+        <li>✦ <strong>引发社交评论区自然互动</strong>：朋友看到会好奇评论 <em>“这个 App 能测口语发音？”、“能开口背单词吗？”</em>，直接形成私域种草。</li>
+        <li>✦ <strong>牢牢占据‘告别哑巴英语’的心智</strong>：在小红书、备考打卡群里一眼就能认出是【泡泡背单词】，品牌辨识度极高。</li>
+      </ul>
     </div>
 
   </div>
@@ -599,12 +729,14 @@ Future<void> sharePoster() async {
     function updatePosters() {
       const user = document.getElementById('inputUser').value || 'Alex';
       const days = document.getElementById('inputDays').value || '1';
-      const today = document.getElementById('inputToday').value || '0';
+      const voice = document.getElementById('inputVoiceCount').value || '0';
+      const score = document.getElementById('inputVoiceScore').value || '95';
       const total = Number(document.getElementById('inputTotal').value || 0).toLocaleString();
 
       document.querySelectorAll('.val-user').forEach(el => el.textContent = user);
       document.querySelectorAll('.val-days').forEach(el => el.textContent = days);
-      document.querySelectorAll('.val-today').forEach(el => el.textContent = today);
+      document.querySelectorAll('.val-voice').forEach(el => el.textContent = voice);
+      document.querySelectorAll('.val-score').forEach(el => el.textContent = score);
       document.querySelectorAll('.val-total').forEach(el => el.textContent = total);
     }
 
