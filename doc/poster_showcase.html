@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>泡泡背单词 - 发音主动记忆 · 高颜值打卡海报模版库</title>
+  <title>泡泡背单词 - 打卡海报模版库</title>
   <style>
     :root {
       --bg: #0B0F19;
@@ -44,13 +44,13 @@
       align-items: center;
       gap: 6px;
       padding: 5px 16px;
-      background: rgba(6, 182, 212, 0.15);
-      border: 1px solid rgba(6, 182, 212, 0.3);
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
       border-radius: 99px;
       font-size: 13px;
-      color: #67E8F9;
+      color: #A5B4FC;
       margin-bottom: 14px;
-      font-weight: 600;
+      font-weight: 500;
     }
 
     h1 {
@@ -64,8 +64,8 @@
 
     .subtitle {
       color: var(--text-muted);
-      font-size: 1.05rem;
-      max-width: 720px;
+      font-size: 1rem;
+      max-width: 600px;
       margin: 0 auto;
     }
 
@@ -78,7 +78,7 @@
       background: var(--card-bg);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 16px;
-      padding: 18px 24px;
+      padding: 16px 24px;
       margin-bottom: 40px;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
     }
@@ -92,7 +92,6 @@
     .control-group label {
       font-size: 13px;
       color: var(--text-muted);
-      font-weight: 500;
     }
 
     .control-group input {
@@ -103,11 +102,10 @@
       border-radius: 8px;
       font-size: 13px;
       outline: none;
-      transition: border-color 0.2s;
     }
 
     .control-group input:focus {
-      border-color: var(--voice);
+      border-color: var(--primary);
     }
 
     /* Posters Grid */
@@ -127,7 +125,7 @@
 
     .poster-label {
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--text-muted);
     }
 
@@ -152,28 +150,18 @@
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
     }
 
-    /* Theme 1: Voice Pulse (声波科技 · 发音主动唤醒) */
-    .theme-voice {
-      background: linear-gradient(170deg, #090E17 0%, #0F172A 50%, #082F49 100%);
-      border: 1px solid rgba(6, 182, 212, 0.3);
+    /* Theme 1: 极简深色 */
+    .theme-dark {
+      background: linear-gradient(170deg, #090E17 0%, #0F172A 50%, #1E1B4B 100%);
+      border: 1px solid rgba(129, 140, 248, 0.25);
     }
-    .theme-voice::before {
-      content: '';
-      position: absolute;
-      top: -40px;
-      right: -40px;
-      width: 180px;
-      height: 180px;
-      background: radial-gradient(circle, rgba(6, 182, 212, 0.25), transparent 70%);
-      pointer-events: none;
-    }
-    .theme-voice .poster-days-num {
+    .theme-dark .poster-days-num {
       background: linear-gradient(135deg, #38BDF8, #818CF8);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    /* Theme 2: Sunrise Vocal (晨读发声 · 温暖治愈) */
+    /* Theme 2: 暖阳晨读 */
     .theme-sunrise {
       background: linear-gradient(160deg, #FFFBEB 0%, #FEF3C7 45%, #FDE68A 100%);
       border: 1px solid rgba(245, 158, 11, 0.3);
@@ -194,9 +182,6 @@
       border-color: rgba(217, 119, 6, 0.3);
       color: #92400E;
     }
-    .theme-sunrise .wave-bar {
-      background: #D97706;
-    }
     .theme-sunrise .poster-glass-card {
       background: rgba(255, 255, 255, 0.7);
       border: 1px solid rgba(245, 158, 11, 0.25);
@@ -211,52 +196,39 @@
       background: rgba(255, 255, 255, 0.55);
     }
 
-    /* Theme 3: Cyber Studio (专业电台 · 动感潮牌) */
-    .theme-cyber {
+    /* Theme 3: 活力粉紫 */
+    .theme-pink {
       background: linear-gradient(180deg, #090A0F 0%, #1A0B2E 100%);
       border: 1px solid rgba(236, 72, 153, 0.3);
     }
-    .theme-cyber::before {
-      content: '';
-      position: absolute;
-      bottom: -50px;
-      left: -50px;
-      width: 200px;
-      height: 200px;
-      background: radial-gradient(circle, rgba(236, 72, 153, 0.3), transparent 70%);
-      pointer-events: none;
-    }
-    .theme-cyber .poster-days-num {
+    .theme-pink .poster-days-num {
       background: linear-gradient(135deg, #F43F5E, #EC4899, #A855F7);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .theme-cyber .voice-wave-pill {
+    .theme-pink .voice-wave-pill {
       background: rgba(236, 72, 153, 0.15);
       border-color: rgba(236, 72, 153, 0.35);
       color: #F472B6;
     }
-    .theme-cyber .wave-bar {
-      background: #EC4899;
-    }
 
-    /* Theme 4: Deep Aurora (暗夜深邃 · 专注力量) */
-    .theme-aurora {
-      background: linear-gradient(170deg, #0F172A 0%, #1E1B4B 60%, #172554 100%);
-      border: 1px solid rgba(129, 140, 248, 0.3);
+    /* Theme 4: 森林墨绿 */
+    .theme-green {
+      background: linear-gradient(170deg, #051F18 0%, #0D2820 60%, #031410 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
     }
-    .theme-aurora .poster-days-num {
-      background: linear-gradient(135deg, #A5B4FC, #C084FC);
+    .theme-green .poster-days-num {
+      background: linear-gradient(135deg, #34D399, #10B981);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .theme-aurora .voice-wave-pill {
-      background: rgba(129, 140, 248, 0.15);
-      border-color: rgba(129, 140, 248, 0.35);
-      color: #A5B4FC;
+    .theme-green .voice-wave-pill {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34D399;
     }
-    .theme-aurora .wave-bar {
-      background: #818CF8;
+    .theme-green .poster-quote {
+      border-left-color: #10B981;
     }
 
     /* Poster Internal Components */
@@ -271,19 +243,13 @@
       align-items: center;
       gap: 6px;
       font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-
-    .poster-app-logo {
-      font-size: 16px;
+      font-weight: 600;
     }
 
     .poster-date {
       font-size: 11px;
       opacity: 0.7;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
     .poster-hero {
@@ -291,68 +257,39 @@
       margin: 12px 0 10px 0;
     }
 
-    /* Voice Wave Pill 声音徽章 */
     .voice-wave-pill {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(6, 182, 212, 0.12);
-      border: 1px solid rgba(6, 182, 212, 0.3);
-      color: #67E8F9;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38BDF8;
       padding: 4px 12px;
       border-radius: 99px;
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 500;
       margin-bottom: 8px;
     }
 
-    .wave-bars {
-      display: inline-flex;
-      align-items: center;
-      gap: 2px;
-      height: 12px;
-    }
-
-    .wave-bar {
-      width: 2.5px;
-      background: #06B6D4;
-      border-radius: 2px;
-    }
-
-    .bar-1 { height: 6px; animation: pulse 1.2s ease-in-out infinite; }
-    .bar-2 { height: 12px; animation: pulse 0.8s ease-in-out infinite 0.2s; }
-    .bar-3 { height: 8px; animation: pulse 1.0s ease-in-out infinite 0.4s; }
-    .bar-4 { height: 11px; animation: pulse 0.9s ease-in-out infinite 0.1s; }
-
-    @keyframes pulse {
-      0%, 100% { transform: scaleY(0.6); }
-      50% { transform: scaleY(1.2); }
-    }
-
     .poster-subtitle {
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      font-size: 12px;
       opacity: 0.8;
       margin-bottom: 2px;
-      font-weight: 600;
     }
 
     .poster-days-num {
       font-size: 3.6rem;
       font-weight: 900;
       line-height: 1;
-      letter-spacing: -1px;
       margin-bottom: 2px;
     }
 
     .poster-days-label {
       font-size: 12px;
       opacity: 0.85;
-      font-weight: 500;
     }
 
-    /* 3-Column Glass Card with Voice Metric */
+    /* 3-Column Glass Card */
     .poster-glass-card {
       background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(10px);
@@ -385,27 +322,26 @@
       font-size: 10px;
       opacity: 0.7;
       margin-top: 2px;
-      white-space: nowrap;
     }
 
-    /* Motivational Voice Quote */
+    /* Plain, Honest Motivational Quote */
     .poster-quote {
-      font-size: 11.5px;
-      line-height: 1.45;
+      font-size: 12px;
+      line-height: 1.5;
       padding: 10px 12px;
       background: rgba(0, 0, 0, 0.25);
       border-radius: 10px;
-      border-left: 3px solid var(--voice);
+      border-left: 3px solid var(--primary);
       margin-bottom: 14px;
       text-align: left;
     }
 
-    .poster-quote-en {
+    .poster-quote-main {
       font-weight: 600;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
-    .poster-quote-cn {
+    .poster-quote-sub {
       font-size: 11px;
       opacity: 0.75;
     }
@@ -424,7 +360,6 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      font-weight: 600;
     }
 
     .qr-badge {
@@ -435,10 +370,9 @@
       background: rgba(255, 255, 255, 0.1);
       padding: 3px 8px;
       border-radius: 6px;
-      font-weight: 500;
     }
 
-    /* Implementation Code Snippet */
+    /* Simple Explanation Box */
     .code-section {
       background: var(--card-bg);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -449,21 +383,23 @@
 
     .code-title {
       font-size: 1.1rem;
-      font-weight: 700;
+      font-weight: 600;
       margin-bottom: 12px;
-      color: #38BDF8;
+      color: #A5B4FC;
     }
 
-    pre {
-      background: #090D16;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      padding: 16px;
-      border-radius: 10px;
-      overflow-x: auto;
-      font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
-      font-size: 13px;
-      color: #E2E8F0;
-      line-height: 1.6;
+    .code-list {
+      list-style: none;
+      display: grid;
+      gap: 10px;
+      font-size: 14px;
+      color: #CBD5E1;
+    }
+
+    .code-list li::before {
+      content: "• ";
+      color: #818CF8;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -471,255 +407,231 @@
 
   <div class="container">
     <header>
-      <div class="tag">🗣️ 发音主动记忆 · 声音肌肉连接</div>
-      <h1>泡泡背单词 · 发音主动记忆海报模版</h1>
-      <p class="subtitle">让声音成为激活记忆的钥匙 · 用嘴巴读出声建立肌肉记忆 · 告别看懂却记不住的“假熟”状态</p>
+      <div class="tag">🫧 简简单单背单词</div>
+      <h1>泡泡背单词 · 打卡海报模版</h1>
+      <p class="subtitle">用朴素大白话展示自律打卡 · 突出“开口读出来背”的真实效果</p>
     </header>
 
     <!-- 交互控制条 -->
     <div class="controls">
       <div class="control-group">
-        <label>用户昵称：</label>
+        <label>我的名字：</label>
         <input type="text" id="inputUser" value="Alex" oninput="updatePosters()">
       </div>
       <div class="control-group">
-        <label>连续天数：</label>
+        <label>打卡天数：</label>
         <input type="number" id="inputDays" value="28" style="width: 65px;" oninput="updatePosters()">
       </div>
       <div class="control-group">
-        <label>今日发音唤醒：</label>
+        <label>今天读了：</label>
         <input type="number" id="inputVoiceCount" value="30" style="width: 65px;" oninput="updatePosters()">
       </div>
       <div class="control-group">
-        <label>主动唤醒深度：</label>
+        <label>记牢比例：</label>
         <input type="number" id="inputVoiceScore" value="98" style="width: 65px;" oninput="updatePosters()">
       </div>
       <div class="control-group">
-        <label>累计声音连接：</label>
+        <label>一共记住：</label>
         <input type="number" id="inputTotal" value="1420" style="width: 85px;" oninput="updatePosters()">
       </div>
     </div>
 
-    <!-- 4 套发音主动记忆风格的海报阵列 -->
+    <!-- 4 套朴素大方的海报阵列 -->
     <div class="poster-grid">
 
-      <!-- 风格 1: 声波科技 (Voice Pulse) -->
+      <!-- 风格 1: 极简深蓝 -->
       <div class="poster-wrapper">
-        <div class="poster-label">① 声波科技 (Active Recall · 发音主动唤醒)</div>
-        <div class="poster theme-voice">
+        <div class="poster-label">① 极简深蓝 (大声读出来)</div>
+        <div class="poster theme-dark">
           <div class="poster-top">
             <div class="poster-app-brand">
-              <span class="poster-app-logo">🫧</span>
+              <span>🫧</span>
               <span>泡泡背单词</span>
             </div>
             <div class="poster-date" id="dateDisplay1">TODAY</div>
           </div>
           <div class="poster-hero">
             <div class="voice-wave-pill">
-              <span class="wave-bars">
-                <span class="wave-bar bar-1"></span>
-                <span class="wave-bar bar-2"></span>
-                <span class="wave-bar bar-3"></span>
-                <span class="wave-bar bar-4"></span>
-              </span>
-              <span>发音主动唤醒率 <span class="val-score">98</span>%</span>
+              <span>🎙️ 大声开口读，记得才牢</span>
             </div>
-            <div class="poster-subtitle">Active Recall by Speaking</div>
+            <div class="poster-subtitle">连续打卡</div>
             <div class="poster-days-num"><span class="val-days">28</span></div>
-            <div class="poster-days-label">已连续发音主动记忆 (Days)</div>
+            <div class="poster-days-label">天</div>
           </div>
           <div class="poster-glass-card">
             <div>
               <div class="stat-val stat-highlight"><span class="val-voice">30</span> 词</div>
-              <div class="stat-lbl">今日发音唤醒</div>
+              <div class="stat-lbl">今天读了</div>
             </div>
             <div class="card-divider"></div>
             <div>
               <div class="stat-val stat-highlight"><span class="val-score">98</span>%</div>
-              <div class="stat-lbl">声音神经连接</div>
+              <div class="stat-lbl">读一遍全记住</div>
             </div>
             <div class="card-divider"></div>
             <div>
               <div class="stat-val"><span class="val-total">1,420</span></div>
-              <div class="stat-lbl">累计肌肉记忆</div>
+              <div class="stat-lbl">一共记住</div>
             </div>
           </div>
           <div class="poster-quote">
-            <div class="poster-quote-en">“Say it out loud. Muscle memory never forgets.”</div>
-            <div class="poster-quote-cn">读出声的那一秒，大脑才真正启动了主动记忆。</div>
+            <div class="poster-quote-main">“光看容易忘，大声读出来才真会。”</div>
+            <div class="poster-quote-sub">每天花 10 分钟，踏踏实实背完。</div>
           </div>
           <div class="poster-footer">
-            <div class="user-pill">🎙️ <span class="val-user">Alex</span></div>
-            <div class="qr-badge">发音主动记忆法</div>
+            <div class="user-pill">👤 <span class="val-user">Alex</span></div>
+            <div class="qr-badge">开口背单词</div>
           </div>
         </div>
       </div>
 
-      <!-- 风格 2: 晨读清晨 (Sunrise Vocal) -->
+      <!-- 风格 2: 暖阳清晨 -->
       <div class="poster-wrapper">
-        <div class="poster-label">② 晨光发声 (Sunrise Vocal · 清晨唤醒)</div>
+        <div class="poster-label">② 暖阳清晨 (早起读单词)</div>
         <div class="poster theme-sunrise">
           <div class="poster-top">
             <div class="poster-app-brand">
-              <span class="poster-app-logo">🫧</span>
+              <span>🫧</span>
               <span>泡泡背单词</span>
             </div>
             <div class="poster-date">MORNING</div>
           </div>
           <div class="poster-hero">
             <div class="voice-wave-pill">
-              <span class="wave-bars">
-                <span class="wave-bar bar-1"></span>
-                <span class="wave-bar bar-2"></span>
-                <span class="wave-bar bar-3"></span>
-                <span class="wave-bar bar-4"></span>
-              </span>
-              <span>声音记忆连接度 <span class="val-score">98</span>%</span>
+              <span>☀️ 晨读打卡完成</span>
             </div>
-            <div class="poster-subtitle">Morning Active Memory</div>
+            <div class="poster-subtitle">坚持背单词</div>
             <div class="poster-days-num"><span class="val-days">28</span></div>
-            <div class="poster-days-label">清晨用声音唤醒单词</div>
+            <div class="poster-days-label">天</div>
           </div>
           <div class="poster-glass-card">
             <div>
               <div class="stat-val stat-highlight"><span class="val-voice">30</span> 词</div>
-              <div class="stat-lbl">清晨读出</div>
+              <div class="stat-lbl">早上读完</div>
             </div>
             <div class="card-divider" style="background: rgba(245, 158, 11, 0.2);"></div>
             <div>
               <div class="stat-val stat-highlight"><span class="val-score">98</span>%</div>
-              <div class="stat-lbl">记忆牢固度</div>
+              <div class="stat-lbl">掌握得很好</div>
             </div>
             <div class="card-divider" style="background: rgba(245, 158, 11, 0.2);"></div>
             <div>
               <div class="stat-val stat-highlight"><span class="val-total">1,420</span></div>
-              <div class="stat-lbl">声音词库</div>
+              <div class="stat-lbl">累计单词</div>
             </div>
           </div>
           <div class="poster-quote">
-            <div class="poster-quote-en">“Words spoken are words truly owned.”</div>
-            <div class="poster-quote-cn">用声音唤醒记忆，比眼看默背深刻 10 倍。</div>
+            <div class="poster-quote-main">“一天背一点，坚持下来就很厉害。”</div>
+            <div class="poster-quote-sub">每天早晨开口读一读，心里特别踏实。</div>
           </div>
           <div class="poster-footer">
             <div class="user-pill" style="color: #92400E;">☀️ <span class="val-user">Alex</span></div>
-            <div class="qr-badge" style="background: rgba(245,158,11,0.2); color: #92400E;">用嘴巴背单词</div>
+            <div class="qr-badge" style="background: rgba(245,158,11,0.2); color: #92400E;">早读打卡</div>
           </div>
         </div>
       </div>
 
-      <!-- 风格 3: 动感赛博 (Cyber Studio) -->
+      <!-- 风格 3: 简单清爽 -->
       <div class="poster-wrapper">
-        <div class="poster-label">③ 动感潮流 (Cyber Recall · 肌肉爆发)</div>
-        <div class="poster theme-cyber">
+        <div class="poster-label">③ 活力粉紫 (看得懂更要读得出)</div>
+        <div class="poster theme-pink">
           <div class="poster-top">
             <div class="poster-app-brand" style="color: #F472B6;">
-              <span class="poster-app-logo">⚡</span>
+              <span>✨</span>
               <span>泡泡背单词</span>
             </div>
-            <div class="poster-date">VOICE ON</div>
+            <div class="poster-date">KEEP GOING</div>
           </div>
           <div class="poster-hero">
             <div class="voice-wave-pill">
-              <span class="wave-bars">
-                <span class="wave-bar bar-1"></span>
-                <span class="wave-bar bar-2"></span>
-                <span class="wave-bar bar-3"></span>
-                <span class="wave-bar bar-4"></span>
-              </span>
-              <span>发音主动检索 <span class="val-score">98</span>%</span>
+              <span>🗣️ 开口读，不怕忘</span>
             </div>
-            <div class="poster-subtitle" style="color: #F472B6;">Muscle Memory</div>
+            <div class="poster-subtitle" style="color: #F472B6;">打卡记录</div>
             <div class="poster-days-num"><span class="val-days">28</span></div>
-            <div class="poster-days-label" style="color: #E2E8F0;">发音主动记忆连击第 <span class="val-days">28</span> 天</div>
+            <div class="poster-days-label" style="color: #E2E8F0;">天</div>
           </div>
           <div class="poster-glass-card">
             <div>
               <div class="stat-val" style="color: #F472B6;">+<span class="val-voice">30</span></div>
-              <div class="stat-lbl">开口唤醒</div>
+              <div class="stat-lbl">今天搞定</div>
             </div>
             <div class="card-divider"></div>
             <div>
               <div class="stat-val" style="color: #A855F7;"><span class="val-score">98</span>%</div>
-              <div class="stat-lbl">记忆检索率</div>
+              <div class="stat-lbl">今天正确率</div>
             </div>
             <div class="card-divider"></div>
             <div>
               <div class="stat-val" style="color: #38BDF8;"><span class="val-total">1,420</span></div>
-              <div class="stat-lbl">肌肉词库容量</div>
+              <div class="stat-lbl">总词汇量</div>
             </div>
           </div>
           <div class="poster-quote" style="border-left-color: #EC4899;">
-            <div class="poster-quote-en">“Don't let your eyes deceive you. Speak it to remember.”</div>
-            <div class="poster-quote-cn">眼睛看懂只是浅层熟悉，开口读出才是真记住。</div>
+            <div class="poster-quote-main">“嘴巴记住了，脑子就不会忘。”</div>
+            <div class="poster-quote-sub">大声读一遍，比默看十遍管用。</div>
           </div>
           <div class="poster-footer">
-            <div class="user-pill" style="color: #F472B6;">⚡ <span class="val-user">Alex</span></div>
-            <div class="qr-badge" style="background: rgba(236,72,153,0.2); color: #F472B6;">发音主动记忆</div>
+            <div class="user-pill" style="color: #F472B6;">🎯 <span class="val-user">Alex</span></div>
+            <div class="qr-badge" style="background: rgba(236,72,153,0.2); color: #F472B6;">泡泡背单词</div>
           </div>
         </div>
       </div>
 
-      <!-- 风格 4: 暗夜深邃 (Deep Aurora) -->
+      <!-- 风格 4: 墨绿沉静 -->
       <div class="poster-wrapper">
-        <div class="poster-label">④ 暗夜极光 (Deep Aurora · 专注连接)</div>
-        <div class="poster theme-aurora">
+        <div class="poster-label">④ 墨绿沉静 (每天进步一点点)</div>
+        <div class="poster theme-green">
           <div class="poster-top">
             <div class="poster-app-brand">
-              <span class="poster-app-logo">🫧</span>
+              <span>🌱</span>
               <span>泡泡背单词</span>
             </div>
-            <div class="poster-date">DEEP RECALL</div>
+            <div class="poster-date">PROGRESS</div>
           </div>
           <div class="poster-hero">
             <div class="voice-wave-pill">
-              <span class="wave-bars">
-                <span class="wave-bar bar-1"></span>
-                <span class="wave-bar bar-2"></span>
-                <span class="wave-bar bar-3"></span>
-                <span class="wave-bar bar-4"></span>
-              </span>
-              <span>神经突触连接度 <span class="val-score">98</span>%</span>
+              <span>🌿 慢慢来，比较快</span>
             </div>
-            <div class="poster-subtitle">Sound Recall</div>
+            <div class="poster-subtitle">专注背单词</div>
             <div class="poster-days-num"><span class="val-days">28</span></div>
-            <div class="poster-days-label">用声音加固记忆突触</div>
+            <div class="poster-days-label">天</div>
           </div>
           <div class="poster-glass-card">
             <div>
-              <div class="stat-val" style="color: #A5B4FC;"><span class="val-voice">30</span> 词</div>
-              <div class="stat-lbl">今日读音唤醒</div>
+              <div class="stat-val" style="color: #34D399;"><span class="val-voice">30</span> 词</div>
+              <div class="stat-lbl">今日背完</div>
             </div>
             <div class="card-divider"></div>
             <div>
-              <div class="stat-val" style="color: #A5B4FC;"><span class="val-score">98</span>%</div>
-              <div class="stat-lbl">声音记忆深度</div>
+              <div class="stat-val" style="color: #34D399;"><span class="val-score">98</span>%</div>
+              <div class="stat-lbl">熟练度</div>
             </div>
             <div class="card-divider"></div>
             <div>
-              <div class="stat-val" style="color: #A5B4FC;"><span class="val-total">1,420</span></div>
-              <div class="stat-lbl">已形成肌肉记忆</div>
+              <div class="stat-val" style="color: #34D399;"><span class="val-total">1,420</span></div>
+              <div class="stat-lbl">单词总数</div>
             </div>
           </div>
-          <div class="poster-quote" style="border-left-color: #818CF8;">
-            <div class="poster-quote-en">“Your vocal cords are the ultimate memory anchor.”</div>
-            <div class="poster-quote-cn">发声是记忆最坚固的锚点，读出来的单词终身难忘。</div>
+          <div class="poster-quote">
+            <div class="poster-quote-main">“背单词没有捷径，开口读就是最好的方法。”</div>
+            <div class="poster-quote-sub">每天完成计划，不知不觉就积累起来了。</div>
           </div>
           <div class="poster-footer">
-            <div class="user-pill" style="color: #A5B4FC;">🎧 <span class="val-user">Alex</span></div>
-            <div class="qr-badge" style="background: rgba(129,140,248,0.2); color: #A5B4FC;">FSRS + 发音主动记忆</div>
+            <div class="user-pill" style="color: #34D399;">📖 <span class="val-user">Alex</span></div>
+            <div class="qr-badge" style="background: rgba(16,185,129,0.2); color: #34D399;">大声背单词</div>
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- 核心记忆法理念 -->
+    <!-- 朴素的文案总结 -->
     <div class="code-section">
-      <div class="code-title">🧠 为什么‘发音主动记忆’比普通背单词深刻 10 倍？</div>
-      <ul style="list-style: none; display: grid; gap: 10px; font-size: 14px; color: #CBD5E1; margin-top: 12px;">
-        <li>✦ <strong>主动提取（Active Recall）</strong>：看选项选中文只是被动识别（Recognition），容易产生“看懂了以为自己会”的错觉；通过发音主动读出来，才是真正的大脑记忆检索（Recall）。</li>
-        <li>✦ <strong>声音与肌肉记忆（Muscle Memory）</strong>：声带与喉部肌肉的运动会强化大脑运动皮层与听觉皮层的神经突触连接，背过的单词会成为直觉。</li>
-        <li>✦ <strong>独一无二的自传播点</strong>：朋友看到打卡图上的 <em>“今日发音主动唤醒 30 词 · 声音记忆深度 98%”</em>，会直接理解到这是一种全新的高效记忆法，而非普通做题软件。</li>
+      <div class="code-title">💬 朴素真诚的朋友圈 / 打卡文案：</div>
+      <ul class="code-list">
+        <li>「打卡第 28 天！以前背单词光用眼睛看，隔天全忘光。现在跟着泡泡大声读出来背，记得特别牢，今天又搞定 30 个词～继续加油！#泡泡背单词」</li>
+        <li>「早起背单词打卡！大声读一遍确实比默看管用得多，不知不觉背了快 1500 个词了，每天 10 分钟很充实。#泡泡背单词 #背单词打卡」</li>
+        <li>「今天背完 30 个词！嘴巴读得顺，脑子就记得住，再也不背哑巴英语了。坚持就是胜利！✨」</li>
       </ul>
     </div>
 
