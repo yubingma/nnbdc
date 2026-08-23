@@ -1,14 +1,84 @@
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/user_helper.dart';
 
 class NotificationUtil {
   static final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  static const String keyReminderEnabled = 'setting_daily_reminder_enabled';
+  static const String keyReminderHour = 'setting_daily_reminder_hour';
+  static const String keyReminderMinute = 'setting_daily_reminder_minute';
+
+  static bool isReminderEnabled() => Prefs.read<bool>(keyReminderEnabled) ?? true;
+  static int getReminderHour() => Prefs.read<int>(keyReminderHour) ?? 20;
+  static int getReminderMinute() => Prefs.read<int>(keyReminderMinute) ?? 0;
+  static TimeOfDay getReminderTime() => TimeOfDay(hour: getReminderHour(), minute: getReminderMinute());
+
+  static Future<void> updateReminderSettings({
+    required bool enabled,
+    required int hour,
+    required int minute,
+  }) async {
+    await Prefs.write(keyReminderEnabled, enabled);
+    await Prefs.write(keyReminderHour, hour);
+    await Prefs.write(keyReminderMinute, minute);
+
+    if (enabled) {
+      await scheduleDailyReminder();
+    } else {
+      await cancelDailyReminder();
+    }
+  }
+
+  static Future<void> cancelDailyReminder() async {
+    try {
+      await flutterLocalNotificationsPlugin.cancel(id: 0);
+      Global.logger.i('Daily reminder cancelled');
+    } catch (e) {
+      Global.logger.e('Failed to cancel daily reminder: $e');
+    }
+  }
+
+  static Future<void> showTestNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'daily_study_reminder_channel',
+      '学习提醒',
+      channelDescription: '每天定时提醒背单词',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: 'ic_launcher',
+    );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: DarwinNotificationDetails(),
+      macOS: DarwinNotificationDetails(),
+    );
+
+    final user = Global.getLoggedInUser();
+    final messageBody = _getReminderMessage(user);
+
+    try {
+      await flutterLocalNotificationsPlugin.show(
+        id: 999,
+        title: '${Global.appName} - 学习提醒测试',
+        body: messageBody,
+        notificationDetails: platformChannelSpecifics,
+      );
+      Global.logger.i('Test notification sent successfully');
+    } catch (e) {
+      Global.logger.e('Failed to show test notification: $e');
+      rethrow;
+    }
+  }
 
   static Future<void> init() async {
     try {
@@ -55,6 +125,11 @@ class NotificationUtil {
   static Future<void> scheduleDailyReminder() async {
     if (Global.isGuest) return;
 
+    if (!isReminderEnabled()) {
+      await cancelDailyReminder();
+      return;
+    }
+
     final user = Global.getLoggedInUser();
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -74,19 +149,21 @@ class NotificationUtil {
     );
 
     String messageBody = _getReminderMessage(user);
+    final hour = getReminderHour();
+    final minute = getReminderMinute();
 
     try {
       await flutterLocalNotificationsPlugin.cancel(id: 0);
 
-      // 设置在每天晚上20:00提醒
+      // 设置在用户指定的时间提醒
       var now = tz.TZDateTime.now(tz.local);
-      var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, 20);
+      var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
       
       // 精确打击：如果用户今天已经完成了打卡学习，就直接将提醒顺延到明天
       if (user != null && UserHelper.isTodayLearningFinishedFromUser(user)) {
-        Global.logger.i('NotificationUtil: 用户今日已完成学习，提醒顺延至明天20:00');
+        Global.logger.i('NotificationUtil: 用户今日已完成学习，提醒顺延至明天 $hour:${minute.toString().padLeft(2, '0')}');
         var tomorrow = now.add(const Duration(days: 1));
-        scheduledDate = tz.TZDateTime(tz.local, tomorrow.year, tomorrow.month, tomorrow.day, 20);
+        scheduledDate = tz.TZDateTime(tz.local, tomorrow.year, tomorrow.month, tomorrow.day, hour, minute);
       } else if (scheduledDate.isBefore(now)) {
         scheduledDate = scheduledDate.add(const Duration(days: 1));
       }
@@ -100,7 +177,7 @@ class NotificationUtil {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-      Global.logger.i('Daily reminder scheduled at 20:00');
+      Global.logger.i('Daily reminder scheduled at $hour:${minute.toString().padLeft(2, '0')}');
     } catch (e) {
       Global.logger.e('Failed to schedule daily reminder: $e');
     }

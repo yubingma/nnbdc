@@ -40,6 +40,7 @@ import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:nnbdc/util/notification_util.dart';
 import '../util/permission_util.dart';
 import 'dart:ui' as ui;
 import 'package:provider/provider.dart';
@@ -1724,6 +1725,35 @@ class _MePageState extends State<MePage> {
                     context,
                     MaterialPageRoute(builder: (context) => const FeatureRequestWallPage()),
                   );
+                },
+              ),
+              _buildMenuTile(
+                icon: Icons.notifications_active_outlined,
+                title: '学习提醒',
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      NotificationUtil.isReminderEnabled()
+                          ? '每天 ${NotificationUtil.getReminderHour().toString().padLeft(2, '0')}:${NotificationUtil.getReminderMinute().toString().padLeft(2, '0')}'
+                          : '已关闭',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: subtitleColor,
+                        fontFamily: 'Roboto',
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
+                      size: 18,
+                    ),
+                  ],
+                ),
+                onTap: () async {
+                  await context.push('/reminder_settings');
+                  if (mounted) setState(() {});
                 },
               ),
               _buildMenuTile(
