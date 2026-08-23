@@ -26,8 +26,8 @@ public class AppDownloadController {
     /** 苹果 App Store 地址 */
     public static final String APP_STORE_URL = "https://apps.apple.com/app/id6756229006";
 
-    /** 华为应用市场地址（在华为手机/微信中均可直接无缝呼起华为应用市场客户端） */
-    public static final String HUAWEI_MARKET_URL = "https://appgallery.huawei.com/app/C104576303";
+    /** 华为应用市场协议（直接基于真实包名直达应用详情页） */
+    public static final String HUAWEI_MARKET_URL = "appmarket://details?id=" + ANDROID_PACKAGE_NAME;
 
     /** 小米应用商店协议 */
     public static final String XIAOMI_MARKET_URL = "mimarket://details?id=" + ANDROID_PACKAGE_NAME;
