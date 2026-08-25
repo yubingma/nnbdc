@@ -130,13 +130,55 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
   }
 
   List<UserBadgeVo> get _filteredBadges {
-    if (_selectedCategory == 'ALL') {
-      return _allBadges;
-    }
-    return _allBadges.where((b) {
-      final cat = b.badge?.category?.toUpperCase();
-      return cat == _selectedCategory;
-    }).toList();
+    final list = _selectedCategory == 'ALL'
+        ? List<UserBadgeVo>.from(_allBadges)
+        : _allBadges.where((b) {
+            final cat = b.badge?.category?.toUpperCase();
+            return cat == _selectedCategory;
+          }).toList();
+
+    // 🎯 按照完成度与达成状态智能排序
+    list.sort((a, b) {
+      // 1. 已佩戴置顶的优先排在最前
+      final aEquipped = a.isEquipped == true ? 1 : 0;
+      final bEquipped = b.isEquipped == true ? 1 : 0;
+      if (aEquipped != bEquipped) {
+        return bEquipped.compareTo(aEquipped);
+      }
+
+      // 2. 已解锁 vs 未解锁 (已解锁在前)
+      final aUnlocked = a.isUnlocked == true ? 1 : 0;
+      final bUnlocked = b.isUnlocked == true ? 1 : 0;
+      if (aUnlocked != bUnlocked) {
+        return bUnlocked.compareTo(aUnlocked);
+      }
+
+      // 3. 如果都已解锁：优先比较叠层次数，其次解锁时间
+      if (a.isUnlocked == true) {
+        final aCount = a.obtainCount ?? 1;
+        final bCount = b.obtainCount ?? 1;
+        if (aCount != bCount) {
+          return bCount.compareTo(aCount);
+        }
+        if (a.unlockedAt != null && b.unlockedAt != null) {
+          return b.unlockedAt!.compareTo(a.unlockedAt!);
+        }
+      }
+
+      // 4. 如果都未解锁：按完成度百分比从高到低排序 (例如 80% > 50% > 0%)
+      final aPercent = a.progressPercent ?? 0.0;
+      final bPercent = b.progressPercent ?? 0.0;
+      if ((aPercent - bPercent).abs() > 0.001) {
+        return bPercent.compareTo(aPercent);
+      }
+
+      // 5. 完成度相同时，目标阈值小的在前（更容易达成）
+      final aTarget = a.progressTarget ?? 0;
+      final bTarget = b.progressTarget ?? 0;
+      return aTarget.compareTo(bTarget);
+    });
+
+    return list;
   }
 
   int get _unlockedCount => _allBadges.where((b) => b.isUnlocked == true).length;
