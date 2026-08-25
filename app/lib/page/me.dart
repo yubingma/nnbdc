@@ -25,7 +25,6 @@ import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
 import 'package:nnbdc/page/review_distribution.dart';
 import 'package:nnbdc/page/badge/badge_wall_page.dart';
-import 'package:nnbdc/widget/badge_svg_assets.dart';
 
 
 import 'package:nnbdc/services/sync_log_service.dart';
@@ -1042,17 +1041,16 @@ class _MePageState extends State<MePage> {
                   ),
                   child: Row(
                     children: [
-                      // 精致单一纯矢量勋章图标容器 (清爽大方，与下方卡片对称)
+                      // 荣耀勋章墙专属入口图标容器 (与勋章墙图鉴保持语义一致)
                       Container(
                         width: 44,
                         height: 44,
-                        padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
                           color: const Color(0xFF6366F1).withValues(alpha: isDarkModeEnabled ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Center(
-                          child: BadgeSvgAssets.renderBadge(code: 'STREAK_3', size: 38),
+                        child: const Center(
+                          child: Text('🎖', style: TextStyle(fontSize: 24)),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -1093,7 +1091,7 @@ class _MePageState extends State<MePage> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '点亮自律里程碑 · 赢取魔法泡泡',
+                              '点亮自律里程碑 · 见证背词成长',
                               style: TextStyle(
                                 color: isDarkModeEnabled ? const Color(0xFFA5B4FC) : const Color(0xFF4F46E5),
                                 fontSize: 11,
@@ -1898,36 +1896,6 @@ class _MePageState extends State<MePage> {
                 icon: Icons.person_outline_rounded,
                 title: '个人信息',
                 onTap: () => showUpdateUserInfoDlg(),
-              ),
-              _buildMenuTile(
-                icon: Icons.military_tech_outlined,
-                title: '我的勋章墙',
-                iconColor: const Color(0xFFFBBF24),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      '荣耀图鉴',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFFFBBF24),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
-                      size: 18,
-                    ),
-                  ],
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const BadgeWallPage()),
-                  );
-                },
               ),
               _buildMenuTile(
                 icon: Icons.chat_bubble_outline_rounded,
