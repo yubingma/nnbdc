@@ -1,0 +1,19 @@
+name: textfield_build_scheduled_repro
+description: 最小复现：TextField 输入时触发 "Build scheduled during frame" 断言（Flutter 框架内部竞态）
+publish_to: "none"
+version: 1.0.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
