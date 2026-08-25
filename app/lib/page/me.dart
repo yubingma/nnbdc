@@ -930,11 +930,12 @@ class _MePageState extends State<MePage> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  // 昵称信息
+                  // 昵称信息及名言（横跨完整宽度）
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // 顶部行：昵称在左，等级徽章在右
                         Row(
                           children: [
                             Flexible(
@@ -955,9 +956,44 @@ class _MePageState extends State<MePage> {
                               const SizedBox(width: 6),
                               const Icon(Icons.verified, color: Color(0xFF2196F3), size: 18),
                             ],
+                            const SizedBox(width: 8),
+                            const Spacer(),
+                            // 右上角浮动气泡/等级
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (context) => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1)));
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      studyProgress!.level.figure ?? '',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      studyProgress!.level.name!,
+                                      style: TextStyle(
+                                        color: accentColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 4),
+                        // 名言（独占下半部整行可用宽度，不再被右上角徽章压缩）
                         Text(
                           LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1),
                           maxLines: 2,
@@ -970,38 +1006,6 @@ class _MePageState extends State<MePage> {
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // 右上角浮动气泡/等级
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1)));
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            studyProgress!.level.figure ?? '',
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            studyProgress!.level.name!,
-                            style: TextStyle(
-                              color: accentColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
