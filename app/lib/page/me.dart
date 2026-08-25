@@ -1042,31 +1042,20 @@ class _MePageState extends State<MePage> {
                   ),
                   child: Row(
                     children: [
-                      // 微缩立体勋章叠层展示
-                      SizedBox(
-                        width: 54,
-                        height: 40,
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              left: 0,
-                              top: 4,
-                              child: BadgeSvgAssets.renderBadge(code: 'STREAK_100', size: 30),
-                            ),
-                            Positioned(
-                              left: 13,
-                              top: 0,
-                              child: BadgeSvgAssets.renderBadge(code: 'STREAK_365', size: 34),
-                            ),
-                            Positioned(
-                              left: 27,
-                              top: 6,
-                              child: BadgeSvgAssets.renderBadge(code: 'PERFECT_SCORE', size: 26),
-                            ),
-                          ],
+                      // 精致单一纯矢量勋章图标容器 (清爽大方，与下方卡片对称)
+                      Container(
+                        width: 44,
+                        height: 44,
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: isDarkModeEnabled ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: BadgeSvgAssets.renderBadge(code: 'STREAK_3', size: 38),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
