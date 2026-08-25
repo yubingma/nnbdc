@@ -1713,6 +1713,7 @@ class UserBaseDataVo {
 }
 
 @JsonSerializable()
+@CustomDateTimeConverter()
 class PromoActivityVo {
   String? id;
   String? activityCode;

@@ -3970,12 +3970,15 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
   Future<void> _loadActivePromo() async {
     try {
       final res = await Api.client.getActivePromoActivity();
-      if (res.success && res.data != null && mounted) {
+      Global.logger.i('获取当前有效推广活动: success=${res.success}, name=${res.data?.name}, msg=${res.msg}');
+      if (res.success && mounted) {
         setState(() {
           _activePromo = res.data;
         });
       }
-    } catch (_) {}
+    } catch (e, stackTrace) {
+      Global.logger.e('获取当前有效推广活动异常: $e', stackTrace: stackTrace);
+    }
   }
 
   @override
@@ -4029,45 +4032,54 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // 只有在当前确实存在有效活动时才展示兑换组件
-    if (_activePromo == null) {
-      return const SizedBox.shrink();
-    }
-
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
     // 计算活动倒计时和剩余数量
     String? deadlineTip;
     String? remainingSlotsTip;
-    if (_activePromo!.endTime != null) {
-      final now = DateTime.now();
-      final diff = _activePromo!.endTime!.difference(now);
-      if (diff.isNegative) {
-        // 活动已过截止期，不展示
-        return const SizedBox.shrink();
+    bool isPromoValid = false;
+
+    if (_activePromo != null) {
+      bool expired = false;
+      bool full = false;
+
+      if (_activePromo!.endTime != null) {
+        final now = DateTime.now();
+        final diff = _activePromo!.endTime!.difference(now);
+        if (diff.isNegative) {
+          expired = true;
+        } else if (diff.inDays >= 1) {
+          deadlineTip = '距截止剩 ${diff.inDays} 天';
+        } else if (diff.inHours >= 1) {
+          deadlineTip = '距截止剩 ${diff.inHours} 小时';
+        } else if (diff.inMinutes > 0) {
+          deadlineTip = '距截止剩 ${diff.inMinutes} 分钟';
+        } else {
+          deadlineTip = '今日即将截止';
+        }
       }
-      if (diff.inDays >= 1) {
-        deadlineTip = '距截止剩 ${diff.inDays} 天';
-      } else if (diff.inHours >= 1) {
-        deadlineTip = '距截止剩 ${diff.inHours} 小时';
-      } else if (diff.inMinutes > 0) {
-        deadlineTip = '距截止剩 ${diff.inMinutes} 分钟';
-      } else {
-        deadlineTip = '今日即将截止';
+
+      if (_activePromo!.maxRedemptions != null && _activePromo!.maxRedemptions! > 0) {
+        final count = _activePromo!.redemptionCount ?? 0;
+        final remain = math.max(0, _activePromo!.maxRedemptions! - count);
+        if (remain <= 0) {
+          full = true;
+        } else {
+          remainingSlotsTip = '仅剩 $remain 个名额';
+        }
       }
+
+      isPromoValid = !expired && !full;
     }
 
-    if (_activePromo!.maxRedemptions != null && _activePromo!.maxRedemptions! > 0) {
-      final count = _activePromo!.redemptionCount ?? 0;
-      final remain = math.max(0, _activePromo!.maxRedemptions! - count);
-      if (remain <= 0) {
-        // 兑换名额已满，不展示
-        return const SizedBox.shrink();
-      }
-      remainingSlotsTip = '仅剩 $remain 个名额';
+    // 只有在当前确实存在有效活动时才展示兑换组件
+    if (!isPromoValid || _activePromo == null) {
+      return const SizedBox.shrink();
     }
 
-    final hasPromoBanner = deadlineTip != null || remainingSlotsTip != null || (_activePromo!.name != null && _activePromo!.name!.isNotEmpty);
+    final hasPromoBanner = deadlineTip != null ||
+        remainingSlotsTip != null ||
+        (_activePromo?.name != null && _activePromo!.name!.isNotEmpty);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -4080,7 +4092,7 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (hasPromoBanner) ...[
+          if (hasPromoBanner && _activePromo != null) ...[
             Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
