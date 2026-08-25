@@ -782,8 +782,8 @@ class _MePageState extends State<MePage> {
       final duration = loggedInUser?.premiumOverrideDuration;
       if (duration == null) {
         return {
-          'type': '永久会员 (特权覆盖)',
-          'desc': '后台手动开通 · 永久有效',
+          'type': '永久会员',
+          'desc': '永久有效',
           'isPremium': true,
           'tag': '永久VIP',
         };
@@ -793,7 +793,7 @@ class _MePageState extends State<MePage> {
           final expireTime = updateTime.add(Duration(milliseconds: ms));
           final isValid = expireTime.isAfter(DateTime.now());
           return {
-            'type': isValid ? '限时会员 (特权覆盖)' : '特权覆盖已过期',
+            'type': isValid ? '限时会员' : '会员已过期',
             'desc': '有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日',
             'isPremium': isValid,
             'tag': isValid ? '限时VIP' : '已过期',
