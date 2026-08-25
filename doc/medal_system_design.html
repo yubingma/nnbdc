@@ -962,7 +962,7 @@
         <div class="step-box">
           <div class="step-num">×N</div>
           <h4>1. 实时计数叠层 (Stacking)</h4>
-          <p>勋章左上角常驻显示获得次数（如 <code class="code-tag">×12</code>）。每次再次达成，均弹出「百发百中 +1」并获得常规牛词币奖励。</p>
+          <p>勋章左上角常驻显示获得次数（如 <code class="code-tag">×12</code>）。每次再次达成，均弹出「百发百中 +1」并获得常规魔法泡泡奖励。</p>
         </div>
         <div class="step-box">
           <div class="step-num">★</div>
@@ -1533,9 +1533,9 @@
 
         <div class="flywheel-item medium">
           <span class="flywheel-tag">权益 2 · 经济体系奖励</span>
-          <h3>牛词币与实用道具</h3>
+          <h3>魔法泡泡与实用道具</h3>
           <p>
-            解锁勋章及多次获得时附赠牛词币、补签卡、免广告特权等，直接回馈用户的背词努力，强化“付出即有收获”的正向回路。
+            解锁勋章及多次获得时附赠魔法泡泡、补签卡、免广告特权等，直接回馈用户的背词努力，强化“付出即有收获”的正向回路。
           </p>
         </div>
 
@@ -1604,8 +1604,8 @@
           <tbody>
             <tr>
               <td><span class="code-tag">badge_definition</span></td>
-              <td><code>id, code, name, category, tier, svg_code, is_stackable, condition_type, target_value, reward_coins</code></td>
-              <td>勋章元数据配置表（<code>is_stackable=1</code> 标识精进类可多次获得勋章）</td>
+              <td><code>id, code, name, category, tier, svg_code, is_stackable, condition_type, target_value, reward_bubbles</code></td>
+              <td>勋章元数据配置表（<code>is_stackable=1</code> 标识精进类可多次获得勋章，<code>reward_bubbles</code> 奖励魔法泡泡）</td>
             </tr>
             <tr>
               <td><span class="code-tag">user_badge</span></td>
@@ -1663,7 +1663,7 @@
 
       <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">解锁奖励</div>
       <div class="modal-rewards" id="mRewards">
-        <span class="reward-pill">牛词币 +80</span>
+        <span class="reward-pill">魔法泡泡 +80</span>
       </div>
 
       <div class="modal-btn-group">
@@ -1678,75 +1678,75 @@
     const badgeDetails = {
       'badge-1': {
         name: '萌芽初醒', category: '恒心 · 打卡印记', tier: '青铜', tierColor: '#C25E3E',
-        condition: '累计连续打卡背单词满 3 天', rewards: ['牛词币 +50', '专属打卡动态贴纸'], progress: '3 / 3 (已达成)'
+        condition: '累计连续打卡背单词满 3 天', rewards: ['魔法泡泡 +50', '专属打卡动态贴纸'], progress: '3 / 3 (已达成)'
       },
       'badge-2': {
         name: '习惯微光', category: '恒心 · 打卡印记', tier: '白银', tierColor: '#94A3B8',
-        condition: '累计连续打卡背单词满 21 天', rewards: ['牛词币 +150', '补签卡 x1'], progress: '14 / 21 天'
+        condition: '累计连续打卡背单词满 21 天', rewards: ['魔法泡泡 +150', '补签卡 x1'], progress: '14 / 21 天'
       },
       'badge-3': {
         name: '百日筑基', category: '恒心 · 打卡印记', tier: '黄金', tierColor: '#FBBF24',
-        condition: '累计连续打卡背单词满 100 天', rewards: ['牛词币 +500', '「百日自律」头像框', '高光海报'], progress: '14 / 100 天'
+        condition: '累计连续打卡背单词满 100 天', rewards: ['魔法泡泡 +500', '「百日自律」头像框', '高光海报'], progress: '14 / 100 天'
       },
       'badge-4': {
         name: '星火长明', category: '恒心 · 打卡印记', tier: '传说', tierColor: '#C084FC',
-        condition: '累计连续打卡背单词满 365 天', rewards: ['牛词币 +2000', '「年轮宗师」动态流光挂件', '终身荣誉称号'], progress: '14 / 365 天'
+        condition: '累计连续打卡背单词满 365 天', rewards: ['魔法泡泡 +2000', '「年轮宗师」动态流光挂件', '终身荣誉称号'], progress: '14 / 365 天'
       },
       'badge-5': {
         name: '破冰启航', category: '博学 · 词汇殿堂', tier: '青铜', tierColor: '#C25E3E',
-        condition: '掌握并复习牢记 100 个核心词汇', rewards: ['牛词币 +60', '词库探险家称号'], progress: '100 / 100 (已达成)'
+        condition: '掌握并复习牢记 100 个核心词汇', rewards: ['魔法泡泡 +60', '词库探险家称号'], progress: '100 / 100 (已达成)'
       },
       'badge-6': {
         name: '千词过海', category: '博学 · 词汇殿堂', tier: '白银', tierColor: '#94A3B8',
-        condition: '掌握并复习牢记 1,000 个核心词汇', rewards: ['牛词币 +200', '词汇达人专属徽章'], progress: '680 / 1000 词'
+        condition: '掌握并复习牢记 1,000 个核心词汇', rewards: ['魔法泡泡 +200', '词汇达人专属徽章'], progress: '680 / 1000 词'
       },
       'badge-7': {
         name: '词海踏浪', category: '博学 · 词汇殿堂', tier: '黄金', tierColor: '#FBBF24',
-        condition: '掌握并复习牢记 5,000 个单词', rewards: ['牛词币 +800', '「学海无涯」专属主题背景'], progress: '680 / 5000 词'
+        condition: '掌握并复习牢记 5,000 个单词', rewards: ['魔法泡泡 +800', '「学海无涯」专属主题背景'], progress: '680 / 5000 词'
       },
       'badge-8': {
         name: '全书通关斩', category: '博学 · 词汇殿堂', tier: '传说', tierColor: '#C084FC',
-        condition: '将任意一本词书（如考研/托福）完整背诵并全量通关', rewards: ['牛词币 +1500', '通关全书证书', '通关流光勋章'], progress: '0 / 1 本'
+        condition: '将任意一本词书（如考研/托福）完整背诵并全量通关', rewards: ['魔法泡泡 +1500', '通关全书证书', '通关流光勋章'], progress: '0 / 1 本'
       },
       'badge-9': {
         name: '百发百中', category: '精进 · 巅峰学霸 (可累加)', tier: '青铜 · 2星', tierColor: '#C25E3E',
         condition: '单次测验/复习达到 100% 正确率（每次满分均可重复累加）',
-        rewards: ['每次奖励牛词币 +20', '首次达成 +80', '升至3星送专属称号'],
+        rewards: ['每次奖励魔法泡泡 +20', '首次达成 +80', '升至3星送专属称号'],
         progress: '已累计获得 12 次 (★★☆☆☆ 2星学霸，升3星需达到30次)'
       },
       'badge-10': {
         name: '极速心流', category: '精进 · 巅峰学霸 (可累加)', tier: '白银 · 1星', tierColor: '#94A3B8',
         condition: '平均反应时间 < 1.2 秒且连对 30 词（可重复累加获得）',
-        rewards: ['每次奖励牛词币 +30', '首次达成 +180', '心流加速卡'],
+        rewards: ['每次奖励魔法泡泡 +30', '首次达成 +180', '心流加速卡'],
         progress: '已累计获得 5 次 (★☆☆☆☆ 1星心流，升2星需达到10次)'
       },
       'badge-11': {
         name: '破晓之翼', category: '精进 · 巅峰学霸 (可累加)', tier: '黄金 · 1星', tierColor: '#FBBF24',
         condition: '早晨 6:00 ~ 7:30 之间完成每日背词（可重复累加获得）',
-        rewards: ['每次达成牛词币 +30', '升至2星送「晨曦学神」称号'],
+        rewards: ['每次达成魔法泡泡 +30', '升至2星送「晨曦学神」称号'],
         progress: '已累计获得 4 次 (★☆☆☆☆ 1星晨曦，升2星需达到10次)'
       },
       'badge-12': {
         name: '夜行学者', category: '精进 · 巅峰学霸 (可累加)', tier: '黄金 · 1星', tierColor: '#FBBF24',
         condition: '深夜 23:00 之后自律复习完成计划（可重复累加获得）',
-        rewards: ['每次达成牛词币 +30', '升至2星送「暗夜星光」专属卡面'],
+        rewards: ['每次达成魔法泡泡 +30', '升至2星送「暗夜星光」专属卡面'],
         progress: '已累计获得 8 次 (★☆☆☆☆ 1星守夜，升2星需达到10次)'
       },
       'badge-13': {
         name: '布道同行', category: '共鸣 · 探索先锋', tier: '青铜', tierColor: '#C25E3E',
-        condition: '成功邀请 1 位好友加入背单词', rewards: ['牛词币 +100', '补签卡 x1'], progress: '1 / 1 (已达成)'
+        condition: '成功邀请 1 位好友加入背单词', rewards: ['魔法泡泡 +100', '补签卡 x1'], progress: '1 / 1 (已达成)'
       },
       'badge-14': {
         name: '自习室合伙人', category: '共鸣 · 探索先锋', tier: '白银', tierColor: '#94A3B8',
-        condition: '在在线自习室与同伴累计专注学习超过 20 小时', rewards: ['牛词币 +250', '自习室专属前排坐席'], progress: '9.5 / 20 小时'
+        condition: '在在线自习室与同伴累计专注学习超过 20 小时', rewards: ['魔法泡泡 +250', '自习室专属前排坐席'], progress: '9.5 / 20 小时'
       },
       'badge-15': {
         name: '登顶时刻', category: '共鸣 · 探索先锋', tier: '黄金', tierColor: '#FBBF24',
-        condition: '登上所在班级或全站周背词排行榜 TOP 3', rewards: ['牛词币 +600', '「周榜榜首」金色铭牌 (保留7天)'], progress: '历史最高第 5 名'
+        condition: '登上所在班级或全站周背词排行榜 TOP 3', rewards: ['魔法泡泡 +600', '「周榜榜首」金色铭牌 (保留7天)'], progress: '历史最高第 5 名'
       },
       'badge-16': {
         name: 'AI 智囊伙伴', category: '共鸣 · 探索先锋', tier: '传说', tierColor: '#C084FC',
-        condition: '累计使用 AI 生成趣味记忆法/语境造句 100 次', rewards: ['牛词币 +1000', '永久解锁 AI 高级专属助手模型'], progress: '32 / 100 次'
+        condition: '累计使用 AI 生成趣味记忆法/语境造句 100 次', rewards: ['魔法泡泡 +1000', '永久解锁 AI 高级专属助手模型'], progress: '32 / 100 次'
       }
     };
 
