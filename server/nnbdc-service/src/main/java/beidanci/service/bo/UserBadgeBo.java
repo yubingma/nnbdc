@@ -5,23 +5,19 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import beidanci.service.dao.UserBadgeDao;
+import beidanci.service.dao.BaseDao;
 import beidanci.service.po.UserBadge;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class UserBadgeBo extends BaseBo<UserBadge> {
 
-    @Autowired
-    private UserBadgeDao userBadgeDao;
-
     @PostConstruct
     public void init() {
-        setDao(userBadgeDao);
+        setDao(new BaseDao<UserBadge>() {});
     }
 
     public List<UserBadge> findByUserId(String userId) {

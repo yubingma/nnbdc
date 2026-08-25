@@ -47,7 +47,7 @@ public class BadgeBo {
         }
 
         int streakDays = (user != null && user.getContinuousDakaDayCount() != null) ? user.getContinuousDakaDayCount() : 0;
-        int masteredWords = (user != null) ? getMasteredWordCountOfUser(user.getId()) : 0;
+        int masteredWords = (user != null && user.getId() != null) ? getMasteredWordCountOfUser(user.getId()) : 0;
 
         List<UserBadgeVo> resultList = new ArrayList<>();
         for (Badge badge : Badge.values()) {
