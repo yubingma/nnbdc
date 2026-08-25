@@ -1190,12 +1190,14 @@ class _MePageState extends State<MePage> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    _PromoRedemptionWidget(
-                      activePromo: _activePromo,
-                      onRedeemSuccess: () {
-                        loadData();
-                      },
-                    ),
+                    if (!isPremium) ...[
+                      _PromoRedemptionWidget(
+                        activePromo: _activePromo,
+                        onRedeemSuccess: () {
+                          loadData();
+                        },
+                      ),
+                    ],
                   ],
                 );
               }),
