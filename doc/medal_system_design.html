@@ -11,9 +11,10 @@
       --primary-dark: #4F46E5;
       --accent: #EC4899;
       --accent-glow: rgba(236, 72, 153, 0.35);
-      --gold: #F59E0B;
-      --gold-glow: rgba(245, 158, 11, 0.4);
-      --bronze: #D97706;
+      --gold: #FBBF24;
+      --gold-glow: rgba(251, 191, 36, 0.45);
+      --bronze: #C25E3E;
+      --bronze-glow: rgba(194, 94, 62, 0.4);
       --silver: #94A3B8;
       --legendary: #A855F7;
       --legendary-glow: rgba(168, 85, 247, 0.5);
@@ -29,9 +30,9 @@
       --text-muted: #64748B;
       
       --gradient-primary: linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #EC4899 100%);
-      --gradient-gold: linear-gradient(135deg, #FDE68A 0%, #F59E0B 50%, #B45309 100%);
+      --gradient-gold: linear-gradient(135deg, #FFFBEB 0%, #FBBF24 45%, #B45309 100%);
       --gradient-silver: linear-gradient(135deg, #F1F5F9 0%, #94A3B8 50%, #475569 100%);
-      --gradient-bronze: linear-gradient(135deg, #FED7AA 0%, #D97706 50%, #78350F 100%);
+      --gradient-bronze: linear-gradient(135deg, #FFC2A8 0%, #C25E3E 50%, #5E2010 100%);
       --gradient-legendary: linear-gradient(135deg, #E879F9 0%, #8B5CF6 50%, #3B82F6 100%);
     }
 
@@ -393,7 +394,7 @@
     }
 
     .badge-bronze .badge-icon-box svg {
-      filter: drop-shadow(0 6px 18px rgba(217, 119, 6, 0.3));
+      filter: drop-shadow(0 6px 18px rgba(194, 94, 62, 0.4));
     }
 
     .badge-silver .badge-icon-box svg {
@@ -401,7 +402,7 @@
     }
 
     .badge-gold .badge-icon-box svg {
-      filter: drop-shadow(0 8px 22px rgba(245, 158, 11, 0.45));
+      filter: drop-shadow(0 8px 24px rgba(251, 191, 36, 0.55));
     }
 
     .badge-legendary .badge-icon-box svg {
@@ -806,15 +807,16 @@
   <!-- 全局 SVG 渐变与滤镜定义库 -->
   <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <!-- 青铜金属渐变 -->
+      <!-- 青铜/红铜金属渐变 (古典红铜/赤铜质感，与黄金形成鲜明色相对比) -->
       <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#FDBA74"/>
-        <stop offset="40%" stop-color="#D97706"/>
-        <stop offset="100%" stop-color="#78350F"/>
+        <stop offset="0%" stop-color="#FFC2A8"/>
+        <stop offset="35%" stop-color="#E07A5F"/>
+        <stop offset="70%" stop-color="#C25E3E"/>
+        <stop offset="100%" stop-color="#5E2010"/>
       </linearGradient>
       <linearGradient id="bronzeInner" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#381E11"/>
-        <stop offset="100%" stop-color="#1F1109"/>
+        <stop offset="0%" stop-color="#3A170C"/>
+        <stop offset="100%" stop-color="#1A0702"/>
       </linearGradient>
 
       <!-- 白银金属渐变 -->
@@ -828,15 +830,17 @@
         <stop offset="100%" stop-color="#0F172A"/>
       </linearGradient>
 
-      <!-- 黄金金属渐变 -->
+      <!-- 黄金金属渐变 (璀璨耀目纯金黄色) -->
       <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#FEF08A"/>
-        <stop offset="45%" stop-color="#F59E0B"/>
-        <stop offset="100%" stop-color="#78350F"/>
+        <stop offset="0%" stop-color="#FFFBEB"/>
+        <stop offset="25%" stop-color="#FEF08A"/>
+        <stop offset="60%" stop-color="#FBBF24"/>
+        <stop offset="85%" stop-color="#F59E0B"/>
+        <stop offset="100%" stop-color="#92400E"/>
       </linearGradient>
       <linearGradient id="goldInner" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#2D1A05"/>
-        <stop offset="100%" stop-color="#120A02"/>
+        <stop offset="0%" stop-color="#382103"/>
+        <stop offset="100%" stop-color="#170D01"/>
       </linearGradient>
 
       <!-- 传说幻彩渐变 -->
@@ -984,16 +988,16 @@
 
       <div class="tier-bar">
         <div class="tier-card">
-          <div class="tier-name" style="color: #D97706;"><span class="tier-dot" style="background:#D97706;"></span>青铜 · Bronze</div>
-          <div class="tier-ratio">圆环铜盾 · 达成率 ~60% (新手基础)</div>
+          <div class="tier-name" style="color: #C25E3E;"><span class="tier-dot" style="background:#C25E3E;"></span>青铜 · Bronze</div>
+          <div class="tier-ratio">圆环红铜盾 · 达成率 ~60% (新手基础)</div>
         </div>
         <div class="tier-card">
           <div class="tier-name" style="color: #94A3B8;"><span class="tier-dot" style="background:#94A3B8;"></span>白银 · Silver</div>
-          <div class="tier-ratio">八角菱盾 · 达成率 ~25% (进阶习惯)</div>
+          <div class="tier-ratio">八角银菱盾 · 达成率 ~25% (进阶习惯)</div>
         </div>
         <div class="tier-card">
-          <div class="tier-name" style="color: #F59E0B;"><span class="tier-dot" style="background:#F59E0B;"></span>黄金 · Gold</div>
-          <div class="tier-ratio">十角圣徽 · 达成率 ~10% (学霸突破)</div>
+          <div class="tier-name" style="color: #FBBF24;"><span class="tier-dot" style="background:#FBBF24;"></span>黄金 · Gold</div>
+          <div class="tier-ratio">十角纯金圣徽 · 达成率 ~10% (学霸突破)</div>
         </div>
         <div class="tier-card">
           <div class="tier-name" style="color: #C084FC;"><span class="tier-dot" style="background:#C084FC;"></span>传说 · Legendary</div>
@@ -1673,7 +1677,7 @@
     // 勋章数据字典
     const badgeDetails = {
       'badge-1': {
-        name: '萌芽初醒', category: '恒心 · 打卡印记', tier: '青铜', tierColor: '#D97706',
+        name: '萌芽初醒', category: '恒心 · 打卡印记', tier: '青铜', tierColor: '#C25E3E',
         condition: '累计连续打卡背单词满 3 天', rewards: ['牛词币 +50', '专属打卡动态贴纸'], progress: '3 / 3 (已达成)'
       },
       'badge-2': {
@@ -1681,7 +1685,7 @@
         condition: '累计连续打卡背单词满 21 天', rewards: ['牛词币 +150', '补签卡 x1'], progress: '14 / 21 天'
       },
       'badge-3': {
-        name: '百日筑基', category: '恒心 · 打卡印记', tier: '黄金', tierColor: '#F59E0B',
+        name: '百日筑基', category: '恒心 · 打卡印记', tier: '黄金', tierColor: '#FBBF24',
         condition: '累计连续打卡背单词满 100 天', rewards: ['牛词币 +500', '「百日自律」头像框', '高光海报'], progress: '14 / 100 天'
       },
       'badge-4': {
@@ -1689,7 +1693,7 @@
         condition: '累计连续打卡背单词满 365 天', rewards: ['牛词币 +2000', '「年轮宗师」动态流光挂件', '终身荣誉称号'], progress: '14 / 365 天'
       },
       'badge-5': {
-        name: '破冰启航', category: '博学 · 词汇殿堂', tier: '青铜', tierColor: '#D97706',
+        name: '破冰启航', category: '博学 · 词汇殿堂', tier: '青铜', tierColor: '#C25E3E',
         condition: '掌握并复习牢记 100 个核心词汇', rewards: ['牛词币 +60', '词库探险家称号'], progress: '100 / 100 (已达成)'
       },
       'badge-6': {
@@ -1697,7 +1701,7 @@
         condition: '掌握并复习牢记 1,000 个核心词汇', rewards: ['牛词币 +200', '词汇达人专属徽章'], progress: '680 / 1000 词'
       },
       'badge-7': {
-        name: '词海踏浪', category: '博学 · 词汇殿堂', tier: '黄金', tierColor: '#F59E0B',
+        name: '词海踏浪', category: '博学 · 词汇殿堂', tier: '黄金', tierColor: '#FBBF24',
         condition: '掌握并复习牢记 5,000 个单词', rewards: ['牛词币 +800', '「学海无涯」专属主题背景'], progress: '680 / 5000 词'
       },
       'badge-8': {
@@ -1705,7 +1709,7 @@
         condition: '将任意一本词书（如考研/托福）完整背诵并全量通关', rewards: ['牛词币 +1500', '通关全书证书', '通关流光勋章'], progress: '0 / 1 本'
       },
       'badge-9': {
-        name: '百发百中', category: '精进 · 巅峰学霸 (可累加)', tier: '青铜 · 2星', tierColor: '#D97706',
+        name: '百发百中', category: '精进 · 巅峰学霸 (可累加)', tier: '青铜 · 2星', tierColor: '#C25E3E',
         condition: '单次测验/复习达到 100% 正确率（每次满分均可重复累加）',
         rewards: ['每次奖励牛词币 +20', '首次达成 +80', '升至3星送专属称号'],
         progress: '已累计获得 12 次 (★★☆☆☆ 2星学霸，升3星需达到30次)'
@@ -1717,19 +1721,19 @@
         progress: '已累计获得 5 次 (★☆☆☆☆ 1星心流，升2星需达到10次)'
       },
       'badge-11': {
-        name: '破晓之翼', category: '精进 · 巅峰学霸 (可累加)', tier: '黄金 · 1星', tierColor: '#F59E0B',
+        name: '破晓之翼', category: '精进 · 巅峰学霸 (可累加)', tier: '黄金 · 1星', tierColor: '#FBBF24',
         condition: '早晨 6:00 ~ 7:30 之间完成每日背词（可重复累加获得）',
         rewards: ['每次达成牛词币 +30', '升至2星送「晨曦学神」称号'],
         progress: '已累计获得 4 次 (★☆☆☆☆ 1星晨曦，升2星需达到10次)'
       },
       'badge-12': {
-        name: '夜行学者', category: '精进 · 巅峰学霸 (可累加)', tier: '黄金 · 1星', tierColor: '#F59E0B',
+        name: '夜行学者', category: '精进 · 巅峰学霸 (可累加)', tier: '黄金 · 1星', tierColor: '#FBBF24',
         condition: '深夜 23:00 之后自律复习完成计划（可重复累加获得）',
         rewards: ['每次达成牛词币 +30', '升至2星送「暗夜星光」专属卡面'],
         progress: '已累计获得 8 次 (★☆☆☆☆ 1星守夜，升2星需达到10次)'
       },
       'badge-13': {
-        name: '布道同行', category: '共鸣 · 探索先锋', tier: '青铜', tierColor: '#D97706',
+        name: '布道同行', category: '共鸣 · 探索先锋', tier: '青铜', tierColor: '#C25E3E',
         condition: '成功邀请 1 位好友加入背单词', rewards: ['牛词币 +100', '补签卡 x1'], progress: '1 / 1 (已达成)'
       },
       'badge-14': {
@@ -1737,7 +1741,7 @@
         condition: '在在线自习室与同伴累计专注学习超过 20 小时', rewards: ['牛词币 +250', '自习室专属前排坐席'], progress: '9.5 / 20 小时'
       },
       'badge-15': {
-        name: '登顶时刻', category: '共鸣 · 探索先锋', tier: '黄金', tierColor: '#F59E0B',
+        name: '登顶时刻', category: '共鸣 · 探索先锋', tier: '黄金', tierColor: '#FBBF24',
         condition: '登上所在班级或全站周背词排行榜 TOP 3', rewards: ['牛词币 +600', '「周榜榜首」金色铭牌 (保留7天)'], progress: '历史最高第 5 名'
       },
       'badge-16': {
