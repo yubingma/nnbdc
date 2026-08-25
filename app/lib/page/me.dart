@@ -24,6 +24,7 @@ import 'package:nnbdc/page/level_path_page.dart';
 import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
 import 'package:nnbdc/page/review_distribution.dart';
+import 'package:nnbdc/page/badge/badge_wall_page.dart';
 
 
 import 'package:nnbdc/services/sync_log_service.dart';
@@ -1794,6 +1795,36 @@ class _MePageState extends State<MePage> {
                 icon: Icons.person_outline_rounded,
                 title: '个人信息',
                 onTap: () => showUpdateUserInfoDlg(),
+              ),
+              _buildMenuTile(
+                icon: Icons.military_tech_outlined,
+                title: '我的勋章墙',
+                iconColor: const Color(0xFFFBBF24),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '荣耀图鉴',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFFFBBF24),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
+                      size: 18,
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const BadgeWallPage()),
+                  );
+                },
               ),
               _buildMenuTile(
                 icon: Icons.chat_bubble_outline_rounded,

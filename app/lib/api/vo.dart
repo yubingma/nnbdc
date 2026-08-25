@@ -1765,4 +1765,72 @@ class PayPreOrderVo {
   Map<String, dynamic> toJson() => _$PayPreOrderVoToJson(this);
 }
 
+@JsonSerializable()
+class BadgeVo {
+  final String? id;
+  final String? code;
+  final String? name;
+  final String? category;
+  final String? tier;
+  final bool? isStackable;
+  final String? conditionType;
+  final int? targetValue;
+  final int? rewardBubbles;
+  final String? iconSvg;
+  final String? description;
+  final int? displayOrder;
 
+  BadgeVo({
+    this.id,
+    this.code,
+    this.name,
+    this.category,
+    this.tier,
+    this.isStackable,
+    this.conditionType,
+    this.targetValue,
+    this.rewardBubbles,
+    this.iconSvg,
+    this.description,
+    this.displayOrder,
+  });
+
+  factory BadgeVo.fromJson(Map<String, dynamic> json) => _$BadgeVoFromJson(json);
+  Map<String, dynamic> toJson() => _$BadgeVoToJson(this);
+}
+
+@JsonSerializable()
+class UserBadgeVo {
+  final String? id;
+  final String? userId;
+  final String? badgeCode;
+  final BadgeVo? badge;
+  final int? obtainCount;
+  final int? starLevel;
+  final DateTime? unlockedAt;
+  final bool? isEquipped;
+  final bool? isViewed;
+  final bool? isUnlocked;
+  final int? progressCurrent;
+  final int? progressTarget;
+  final double? progressPercent;
+
+  UserBadgeVo({
+    this.id,
+    this.userId,
+    this.badgeCode,
+    this.badge,
+    this.obtainCount,
+    this.starLevel,
+    this.unlockedAt,
+    this.isEquipped,
+    this.isViewed,
+    this.isUnlocked,
+    this.progressCurrent,
+    this.progressTarget,
+    this.progressPercent,
+  });
+
+  factory UserBadgeVo.fromJson(Map<String, dynamic> json) => _$UserBadgeVoFromJson(json);
+  Map<String, dynamic> toJson() => _$UserBadgeVoToJson(this);
+}
