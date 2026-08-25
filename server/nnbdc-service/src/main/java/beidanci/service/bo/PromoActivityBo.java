@@ -27,7 +27,7 @@ public class PromoActivityBo extends BaseBo<PromoActivity> {
 
     public PromoActivity getLatestActiveActivity() {
         String sql = "SELECT * FROM promo_activity " +
-                     "WHERE is_active = 1 " +
+                     "WHERE is_active IS TRUE " +
                      "AND (start_time IS NULL OR start_time <= NOW()) " +
                      "AND (end_time IS NULL OR end_time > NOW()) " +
                      "AND (max_redemptions IS NULL OR max_redemptions = 0 OR redemption_count < max_redemptions) " +

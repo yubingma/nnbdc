@@ -76,6 +76,7 @@ class _MePageState extends State<MePage> {
   List<String>? last30DaysDakaStatus;
 
   UserVo? loggedInUser;
+  PromoActivityVo? _activePromo;
   final bool _isSyncing = false;
   late Function(String event, List args) _socketEventListener;
   StreamSubscription<List<PurchaseDetails>>? _subscriptionStreamSubscription;
@@ -511,6 +512,19 @@ class _MePageState extends State<MePage> {
           }
         } catch (e) {
           Global.logger.w('获取消息计数失败 (静默忽略): $e');
+        }
+
+        // 3. 获取当前生效的推广活动
+        try {
+          var promoResult = await Api.client.getActivePromoActivity();
+          Global.logger.i('loadData 获取生效推广活动: success=${promoResult.success}, name=${promoResult.data?.name}');
+          if (promoResult.success && mounted) {
+            setState(() {
+              _activePromo = promoResult.data;
+            });
+          }
+        } catch (e) {
+          Global.logger.w('获取当前生效推广活动失败: $e');
         }
       }
     } catch (e, stackTrace) {
@@ -1176,9 +1190,12 @@ class _MePageState extends State<MePage> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    _PromoRedemptionWidget(onRedeemSuccess: () {
-                      loadData();
-                    }),
+                    _PromoRedemptionWidget(
+                      activePromo: _activePromo,
+                      onRedeemSuccess: () {
+                        loadData();
+                      },
+                    ),
                   ],
                 );
               }),
@@ -3948,9 +3965,13 @@ class ThreeSegmentProgressPainter extends CustomPainter {
 }
 
 class _PromoRedemptionWidget extends StatefulWidget {
+  final PromoActivityVo? activePromo;
   final VoidCallback onRedeemSuccess;
 
-  const _PromoRedemptionWidget({required this.onRedeemSuccess});
+  const _PromoRedemptionWidget({
+    this.activePromo,
+    required this.onRedeemSuccess,
+  });
 
   @override
   State<_PromoRedemptionWidget> createState() => _PromoRedemptionWidgetState();
@@ -3959,27 +3980,6 @@ class _PromoRedemptionWidget extends StatefulWidget {
 class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
   final TextEditingController _controller = TextEditingController();
   bool _isRedeeming = false;
-  PromoActivityVo? _activePromo;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadActivePromo();
-  }
-
-  Future<void> _loadActivePromo() async {
-    try {
-      final res = await Api.client.getActivePromoActivity();
-      Global.logger.i('获取当前有效推广活动: success=${res.success}, name=${res.data?.name}, msg=${res.msg}');
-      if (res.success && mounted) {
-        setState(() {
-          _activePromo = res.data;
-        });
-      }
-    } catch (e, stackTrace) {
-      Global.logger.e('获取当前有效推广活动异常: $e', stackTrace: stackTrace);
-    }
-  }
 
   @override
   void dispose() {
@@ -4032,6 +4032,12 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final activePromo = widget.activePromo;
+    // 只有在当前确实存在有效活动时才展示兑换组件
+    if (activePromo == null) {
+      return const SizedBox.shrink();
+    }
+
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
     // 计算活动倒计时和剩余数量
@@ -4039,47 +4045,45 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
     String? remainingSlotsTip;
     bool isPromoValid = false;
 
-    if (_activePromo != null) {
-      bool expired = false;
-      bool full = false;
+    bool expired = false;
+    bool full = false;
 
-      if (_activePromo!.endTime != null) {
-        final now = DateTime.now();
-        final diff = _activePromo!.endTime!.difference(now);
-        if (diff.isNegative) {
-          expired = true;
-        } else if (diff.inDays >= 1) {
-          deadlineTip = '距截止剩 ${diff.inDays} 天';
-        } else if (diff.inHours >= 1) {
-          deadlineTip = '距截止剩 ${diff.inHours} 小时';
-        } else if (diff.inMinutes > 0) {
-          deadlineTip = '距截止剩 ${diff.inMinutes} 分钟';
-        } else {
-          deadlineTip = '今日即将截止';
-        }
+    if (activePromo.endTime != null) {
+      final now = DateTime.now();
+      final diff = activePromo.endTime!.difference(now);
+      if (diff.isNegative) {
+        expired = true;
+      } else if (diff.inDays >= 1) {
+        deadlineTip = '距截止剩 ${diff.inDays} 天';
+      } else if (diff.inHours >= 1) {
+        deadlineTip = '距截止剩 ${diff.inHours} 小时';
+      } else if (diff.inMinutes > 0) {
+        deadlineTip = '距截止剩 ${diff.inMinutes} 分钟';
+      } else {
+        deadlineTip = '今日即将截止';
       }
-
-      if (_activePromo!.maxRedemptions != null && _activePromo!.maxRedemptions! > 0) {
-        final count = _activePromo!.redemptionCount ?? 0;
-        final remain = math.max(0, _activePromo!.maxRedemptions! - count);
-        if (remain <= 0) {
-          full = true;
-        } else {
-          remainingSlotsTip = '仅剩 $remain 个名额';
-        }
-      }
-
-      isPromoValid = !expired && !full;
     }
 
+    if (activePromo.maxRedemptions != null && activePromo.maxRedemptions! > 0) {
+      final count = activePromo.redemptionCount ?? 0;
+      final remain = math.max(0, activePromo.maxRedemptions! - count);
+      if (remain <= 0) {
+        full = true;
+      } else {
+        remainingSlotsTip = '仅剩 $remain 个名额';
+      }
+    }
+
+    isPromoValid = !expired && !full;
+
     // 只有在当前确实存在有效活动时才展示兑换组件
-    if (!isPromoValid || _activePromo == null) {
+    if (!isPromoValid) {
       return const SizedBox.shrink();
     }
 
     final hasPromoBanner = deadlineTip != null ||
         remainingSlotsTip != null ||
-        (_activePromo?.name != null && _activePromo!.name!.isNotEmpty);
+        (activePromo.name != null && activePromo.name!.isNotEmpty);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -4092,7 +4096,7 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (hasPromoBanner && _activePromo != null) ...[
+          if (hasPromoBanner) ...[
             Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -4114,9 +4118,9 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
                       runSpacing: 4,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        if (_activePromo!.name != null && _activePromo!.name!.isNotEmpty)
+                        if (activePromo.name != null && activePromo.name!.isNotEmpty)
                           Text(
-                            _activePromo!.name!,
+                            activePromo.name!,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,

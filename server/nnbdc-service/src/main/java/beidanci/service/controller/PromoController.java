@@ -3,6 +3,8 @@ package beidanci.service.controller;
 import java.util.Date;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +23,8 @@ import beidanci.service.util.PoVoUtils;
 
 @RestController
 public class PromoController {
+
+    private static final Logger log = LoggerFactory.getLogger(PromoController.class);
 
     @Autowired
     private UserBo userBo;
@@ -92,11 +96,14 @@ public class PromoController {
         try {
             PromoActivity activity = promoActivityBo.getLatestActiveActivity();
             if (activity == null) {
+                log.info("getActivePromoActivity: 当前无生效活动");
                 return Result.success(null);
             }
             PromoActivityVo vo = PoVoUtils.makeVo(activity, PromoActivityVo.class, null);
+            log.info("getActivePromoActivity: 成功获取有效活动 name={}, code={}", vo.getName(), vo.getActivityCode());
             return Result.success(vo);
         } catch (Exception e) {
+            log.error("getActivePromoActivity: 获取活动信息失败", e);
             return Result.fail("获取活动信息失败: " + e.getMessage());
         }
     }
