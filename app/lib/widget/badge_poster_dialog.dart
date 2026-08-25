@@ -120,15 +120,28 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
         return;
       }
 
-      // 桌面端 (macOS / Windows / Linux)：直接保存到 Downloads 文件夹
+      // 桌面端 (macOS / Windows / Linux)：优先保存到 Downloads 文件夹，遇到沙盒限制平滑降级
       if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-        final downloadsDir = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
         final badgeName = widget.userBadge.badge?.name ?? 'medal';
         final fileName = 'bubble_badge_${badgeName}_${DateTime.now().millisecondsSinceEpoch}.png';
-        final targetPath = '${downloadsDir.path}/$fileName';
-        await File(imagePath).copy(targetPath);
-        ToastUtil.success('✅ 已保存至「下载」文件夹: $fileName');
-        return;
+        final bytes = await File(imagePath).readAsBytes();
+
+        try {
+          final downloadsDir = await getDownloadsDirectory();
+          if (downloadsDir != null) {
+            final targetFile = File('${downloadsDir.path}/$fileName');
+            await targetFile.writeAsBytes(bytes);
+            ToastUtil.success('✅ 已保存至「下载」文件夹: $fileName');
+            return;
+          }
+        } catch (_) {
+          // 沙盒限制，降级保存至应用文档目录
+          final docsDir = await getApplicationDocumentsDirectory();
+          final targetFile = File('${docsDir.path}/$fileName');
+          await targetFile.writeAsBytes(bytes);
+          ToastUtil.success('✅ 已保存至文档目录: $fileName');
+          return;
+        }
       }
 
       // 移动端 (iOS / Android)：保存至手机系统相册
