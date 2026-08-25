@@ -74,6 +74,33 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     }
   }
 
+  Future<void> _updateActivity(String activityId, String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser) async {
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+
+    try {
+      final result = await Api.client.updatePromoActivity(
+        user.id,
+        activityId,
+        name,
+        code,
+        duration,
+        endTime?.millisecondsSinceEpoch,
+        maxRedemptions,
+        showCodeToUser,
+        true,
+      );
+      if (result.success) {
+        ToastUtil.success('修改活动成功');
+        _loadActivities();
+      } else {
+        ToastUtil.error(result.msg ?? '修改活动失败');
+      }
+    } catch (e) {
+      ToastUtil.error('报错: $e');
+    }
+  }
+
   Future<void> _deleteActivity(String activityId) async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
@@ -96,9 +123,26 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (context) => _CreatePromoActivityPage(
-          onCreate: (name, code, duration, endTime, maxRedemptions, showCodeToUser) {
+        builder: (context) => _CreateOrEditPromoActivityPage(
+          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser) {
             _createActivity(name, code, duration, endTime, maxRedemptions, showCodeToUser);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showEditDialog(PromoActivityVo activity) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => _CreateOrEditPromoActivityPage(
+          initialActivity: activity,
+          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser) {
+            if (activity.id != null) {
+              _updateActivity(activity.id!, name, code, duration, endTime, maxRedemptions, showCodeToUser);
+            }
           },
         ),
       ),
@@ -274,32 +318,43 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
                                         ],
                                       ),
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: const Text('删除活动'),
-                                            content: Text('你确定要删除活动“${activity.name}”吗？此操作不可撤销。'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(context),
-                                                child: const Text('取消'),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                                          tooltip: '修改活动',
+                                          onPressed: () => _showEditDialog(activity),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                          tooltip: '删除活动',
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('删除活动'),
+                                                content: Text('你确定要删除活动“${activity.name}”吗？此操作不可撤销。'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context),
+                                                    child: const Text('取消'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                      if (activity.id != null) {
+                                                        _deleteActivity(activity.id!);
+                                                      }
+                                                    },
+                                                    child: const Text('确定', style: TextStyle(color: Colors.red)),
+                                                  ),
+                                                ],
                                               ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                  if (activity.id != null) {
-                                                    _deleteActivity(activity.id!);
-                                                  }
-                                                },
-                                                child: const Text('确定', style: TextStyle(color: Colors.red)),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
+                                            );
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -367,16 +422,20 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
   }
 }
 
-class _CreatePromoActivityPage extends StatefulWidget {
-  final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser) onCreate;
+class _CreateOrEditPromoActivityPage extends StatefulWidget {
+  final PromoActivityVo? initialActivity;
+  final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser) onSave;
 
-  const _CreatePromoActivityPage({required this.onCreate});
+  const _CreateOrEditPromoActivityPage({
+    this.initialActivity,
+    required this.onSave,
+  });
 
   @override
-  State<_CreatePromoActivityPage> createState() => _CreatePromoActivityPageState();
+  State<_CreateOrEditPromoActivityPage> createState() => _CreateOrEditPromoActivityPageState();
 }
 
-class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
+class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivityPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   final TextEditingController _daysController = TextEditingController(text: '30');
@@ -387,9 +446,32 @@ class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
   bool _showCodeToUser = false;
   DateTime _selectedDeadline = DateTime.now().add(const Duration(days: 7));
 
+  bool get _isEditing => widget.initialActivity != null;
+
   @override
   void initState() {
     super.initState();
+    final init = widget.initialActivity;
+    if (init != null) {
+      _nameController.text = init.name ?? '';
+      _codeController.text = init.activityCode ?? '';
+      if (init.duration == null || init.duration!.isEmpty) {
+        _isPermanent = true;
+      } else {
+        _isPermanent = false;
+        _daysController.text = init.duration!.replaceAll('天', '').replaceAll('d', '').trim();
+      }
+      if (init.endTime != null) {
+        _hasDeadline = true;
+        _selectedDeadline = init.endTime!;
+      } else {
+        _hasDeadline = false;
+      }
+      if (init.maxRedemptions != null && init.maxRedemptions! > 0) {
+        _maxRedemptionsController.text = init.maxRedemptions.toString();
+      }
+      _showCodeToUser = init.showCodeToUser == true;
+    }
     _updateDeadlineText();
   }
 
@@ -437,7 +519,7 @@ class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
     final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
 
     Navigator.pop(context);
-    widget.onCreate(name, code, duration, endTime, maxRedemptions, _showCodeToUser);
+    widget.onSave(name, code, duration, endTime, maxRedemptions, _showCodeToUser);
   }
 
   @override
@@ -446,7 +528,7 @@ class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
 
     return Scaffold(
       appBar: AppTheme.createGradientAppBar(
-        title: '创建运营活动',
+        title: _isEditing ? '修改运营活动' : '创建运营活动',
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -454,9 +536,9 @@ class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
         actions: [
           TextButton(
             onPressed: _submit,
-            child: const Text(
-              '创建',
-              style: TextStyle(
+            child: Text(
+              _isEditing ? '保存' : '创建',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -700,7 +782,7 @@ class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('立即创建活动', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text(_isEditing ? '保存修改' : '立即创建活动', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

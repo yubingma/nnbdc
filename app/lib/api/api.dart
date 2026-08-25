@@ -963,5 +963,18 @@ abstract class RestClient {
   Future<Result<void>> deletePromoActivity(
       @Field("userId") String userId,
       @Field("activityId") String activityId);
+
+  @POST("/admin/updatePromoActivity.do")
+  @FormUrlEncoded()
+  Future<Result<void>> updatePromoActivity(
+      @Field("userId") String userId,
+      @Field("activityId") String activityId,
+      @Field("name") String name,
+      @Field("activityCode") String activityCode,
+      @Field("duration") String? duration,
+      @Field("endTime") int? endTime,
+      @Field("maxRedemptions") int? maxRedemptions,
+      @Field("showCodeToUser") bool? showCodeToUser,
+      @Field("isActive") bool? isActive);
 }
 

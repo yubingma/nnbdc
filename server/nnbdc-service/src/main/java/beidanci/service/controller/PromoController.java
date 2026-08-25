@@ -214,7 +214,80 @@ public class PromoController {
             promoActivityBo.deleteEntity(activity);
             return Result.success(null);
         } catch (Exception e) {
-            return Result.fail("删除活动失败: " + e.getMessage());
+            return Result.fail("删除失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 管理员修改推广活动
+     */
+    @PostMapping("/admin/updatePromoActivity.do")
+    public Result<Void> updatePromoActivity(
+            @RequestParam String userId,
+            @RequestParam String activityId,
+            @RequestParam String name,
+            @RequestParam String activityCode,
+            @RequestParam(required = false) String duration,
+            @RequestParam(required = false) Long endTime,
+            @RequestParam(required = false) Integer maxRedemptions,
+            @RequestParam(required = false, defaultValue = "false") Boolean showCodeToUser,
+            @RequestParam(required = false) Boolean isActive) {
+        try {
+            User admin = userBo.findById(userId);
+            if (admin == null || !admin.getIsAdmin()) {
+                return Result.fail("无权限");
+            }
+
+            if (activityId == null || activityId.trim().isEmpty()) {
+                return Result.fail("活动ID不能为空");
+            }
+            if (name == null || name.trim().isEmpty()) {
+                return Result.fail("活动名称不能为空");
+            }
+            if (activityCode == null || activityCode.trim().isEmpty()) {
+                return Result.fail("活动码不能为空");
+            }
+
+            PromoActivity activity = promoActivityBo.findById(activityId);
+            if (activity == null) {
+                return Result.fail("活动不存在");
+            }
+
+            // 检查活动码是否被其他活动占用
+            PromoActivity existingWithCode = promoActivityBo.findByCode(activityCode.trim());
+            if (existingWithCode != null && !existingWithCode.getId().equals(activityId)) {
+                return Result.fail("活动码已被其他活动使用");
+            }
+
+            activity.setName(name.trim());
+            activity.setActivityCode(activityCode.trim());
+
+            if (duration != null && !duration.trim().isEmpty()) {
+                activity.setDuration(duration.trim());
+            } else {
+                activity.setDuration(null);
+            }
+
+            if (endTime != null && endTime > 0) {
+                activity.setEndTime(new Date(endTime));
+            } else {
+                activity.setEndTime(null);
+            }
+
+            activity.setMaxRedemptions(maxRedemptions);
+            if (showCodeToUser != null) {
+                activity.setShowCodeToUser(showCodeToUser);
+            }
+            if (isActive != null) {
+                activity.setIsActive(isActive);
+            }
+            activity.setUpdateTime(new Date());
+
+            promoActivityBo.updateEntity(activity);
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("修改活动失败", e);
+            return Result.fail("修改活动失败: " + e.getMessage());
         }
     }
 }
