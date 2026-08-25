@@ -49,7 +49,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     }
   }
 
-  Future<void> _createActivity(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions) async {
+  Future<void> _createActivity(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser) async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
@@ -61,6 +61,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
         duration,
         endTime?.millisecondsSinceEpoch,
         maxRedemptions,
+        showCodeToUser,
       );
       if (result.success) {
         ToastUtil.success('创建活动成功');
@@ -96,8 +97,8 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (context) => _CreatePromoActivityPage(
-          onCreate: (name, code, duration, endTime, maxRedemptions) {
-            _createActivity(name, code, duration, endTime, maxRedemptions);
+          onCreate: (name, code, duration, endTime, maxRedemptions, showCodeToUser) {
+            _createActivity(name, code, duration, endTime, maxRedemptions, showCodeToUser);
           },
         ),
       ),
@@ -238,13 +239,39 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        activity.name ?? '',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: isDarkMode ? Colors.white : Colors.black87,
-                                        ),
+                                      child: Wrap(
+                                        crossAxisAlignment: WrapCrossAlignment.center,
+                                        spacing: 8,
+                                        runSpacing: 4,
+                                        children: [
+                                          Text(
+                                            activity.name ?? '',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDarkMode ? Colors.white : Colors.black87,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(4),
+                                              color: activity.showCodeToUser == true
+                                                  ? Colors.green.withValues(alpha: 0.15)
+                                                  : Colors.grey.withValues(alpha: 0.15),
+                                            ),
+                                            child: Text(
+                                              activity.showCodeToUser == true ? '直接显示码' : '隐藏码',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: activity.showCodeToUser == true
+                                                    ? Colors.green.shade700
+                                                    : (isDarkMode ? Colors.white60 : Colors.black54),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                     IconButton(
@@ -341,7 +368,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
 }
 
 class _CreatePromoActivityPage extends StatefulWidget {
-  final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions) onCreate;
+  final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser) onCreate;
 
   const _CreatePromoActivityPage({required this.onCreate});
 
@@ -357,6 +384,7 @@ class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
   final TextEditingController _deadlineController = TextEditingController();
   bool _isPermanent = false;
   bool _hasDeadline = true;
+  bool _showCodeToUser = false;
   DateTime _selectedDeadline = DateTime.now().add(const Duration(days: 7));
 
   @override
@@ -409,7 +437,7 @@ class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
     final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
 
     Navigator.pop(context);
-    widget.onCreate(name, code, duration, endTime, maxRedemptions);
+    widget.onCreate(name, code, duration, endTime, maxRedemptions, _showCodeToUser);
   }
 
   @override
@@ -479,6 +507,28 @@ class _CreatePromoActivityPageState extends State<_CreatePromoActivityPage> {
                           floatingLabelBehavior: FloatingLabelBehavior.always,
                           border: OutlineInputBorder(),
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('直接向用户展示活动码', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        subtitle: Text(
+                          _showCodeToUser
+                              ? '已开启：普通用户在“我的”页面可以直接看到活动码并一键兑换（适合全员公开福利）'
+                              : '已关闭：普通用户需手动输入活动码（适合小红书/公众号私域引流）',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _showCodeToUser ? Colors.green.shade700 : (isDarkMode ? Colors.white60 : Colors.black54),
+                          ),
+                        ),
+                        value: _showCodeToUser,
+                        activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+                        activeThumbColor: AppTheme.primaryColor,
+                        onChanged: (val) {
+                          setState(() {
+                            _showCodeToUser = val;
+                          });
+                        },
                       ),
                     ],
                   ),

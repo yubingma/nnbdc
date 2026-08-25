@@ -1724,6 +1724,7 @@ class PromoActivityVo {
   int? maxRedemptions;
   int? redemptionCount;
   bool? isActive;
+  bool? showCodeToUser;
   DateTime? createTime;
   DateTime? updateTime;
 
@@ -1737,6 +1738,7 @@ class PromoActivityVo {
     this.maxRedemptions,
     this.redemptionCount,
     this.isActive,
+    this.showCodeToUser,
     this.createTime,
     this.updateTime,
   });

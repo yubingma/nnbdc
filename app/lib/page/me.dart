@@ -4186,6 +4186,61 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
               ),
             ),
           ],
+          if (activePromo.showCodeToUser == true &&
+              activePromo.activityCode != null &&
+              activePromo.activityCode!.isNotEmpty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: isDarkMode ? Colors.blue.withValues(alpha: 0.12) : Colors.blue.shade50,
+                border: Border.all(
+                  color: isDarkMode ? Colors.blue.withValues(alpha: 0.25) : Colors.blue.shade200,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.card_giftcard_rounded, size: 15, color: Colors.blue.shade700),
+                  const SizedBox(width: 6),
+                  Text(
+                    '活动码：',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDarkMode ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                  SelectableText(
+                    activePromo.activityCode!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                      color: isDarkMode ? Colors.blue.shade300 : Colors.blue.shade800,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      _controller.text = activePromo.activityCode!;
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: Colors.blue.shade700,
+                      ),
+                      child: const Text(
+                        '自动填入',
+                        style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           Row(
             children: [
               Expanded(

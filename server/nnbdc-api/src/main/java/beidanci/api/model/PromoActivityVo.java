@@ -11,6 +11,7 @@ public class PromoActivityVo extends UuidVo {
     private Integer maxRedemptions;
     private Integer redemptionCount;
     private Boolean isActive;
+    private Boolean showCodeToUser;
 
     public PromoActivityVo() {
     }
@@ -77,5 +78,13 @@ public class PromoActivityVo extends UuidVo {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Boolean getShowCodeToUser() {
+        return showCodeToUser;
+    }
+
+    public void setShowCodeToUser(Boolean showCodeToUser) {
+        this.showCodeToUser = showCodeToUser;
     }
 }

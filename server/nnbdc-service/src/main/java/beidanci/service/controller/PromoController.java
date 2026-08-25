@@ -100,7 +100,11 @@ public class PromoController {
                 return Result.success(null);
             }
             PromoActivityVo vo = PoVoUtils.makeVo(activity, PromoActivityVo.class, null);
-            log.info("getActivePromoActivity: 成功获取有效活动 name={}, code={}", vo.getName(), vo.getActivityCode());
+            // 如果不直接向用户展示活动码，将 activityCode 清空以防止接口抓包泄露
+            if (vo.getShowCodeToUser() == null || !vo.getShowCodeToUser()) {
+                vo.setActivityCode(null);
+            }
+            log.info("getActivePromoActivity: 成功获取有效活动 name={}, showCodeToUser={}", vo.getName(), vo.getShowCodeToUser());
             return Result.success(vo);
         } catch (Exception e) {
             log.error("getActivePromoActivity: 获取活动信息失败", e);
@@ -118,7 +122,8 @@ public class PromoController {
             @RequestParam String activityCode,
             @RequestParam(required = false) String duration,
             @RequestParam(required = false) Long endTime,
-            @RequestParam(required = false) Integer maxRedemptions) {
+            @RequestParam(required = false) Integer maxRedemptions,
+            @RequestParam(required = false, defaultValue = "false") Boolean showCodeToUser) {
         try {
             User admin = userBo.findById(userId);
             if (admin == null || !admin.getIsAdmin()) {
@@ -156,6 +161,7 @@ public class PromoController {
 
             activity.setMaxRedemptions(maxRedemptions);
             activity.setRedemptionCount(0);
+            activity.setShowCodeToUser(showCodeToUser != null ? showCodeToUser : false);
             activity.setIsActive(true);
             activity.setCreateTime(new Date());
             activity.setUpdateTime(new Date());

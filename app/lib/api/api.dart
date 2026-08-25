@@ -948,7 +948,8 @@ abstract class RestClient {
       @Field("activityCode") String activityCode,
       @Field("duration") String? duration,
       @Field("endTime") int? endTime,
-      @Field("maxRedemptions") int? maxRedemptions);
+      @Field("maxRedemptions") int? maxRedemptions,
+      @Field("showCodeToUser") bool? showCodeToUser);
 
   @GET("/getActivePromoActivity.do")
   Future<Result<PromoActivityVo?>> getActivePromoActivity();

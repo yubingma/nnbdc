@@ -33,10 +33,13 @@ public class PromoActivity extends UuidPo {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "show_code_to_user", nullable = false)
+    private Boolean showCodeToUser = false;
+
     public PromoActivity() {
     }
 
-    public PromoActivity(String id, String activityCode, String name, String duration, Date startTime, Date endTime, Integer maxRedemptions) {
+    public PromoActivity(String id, String activityCode, String name, String duration, Date startTime, Date endTime, Integer maxRedemptions, Boolean showCodeToUser) {
         this.id = id;
         this.activityCode = activityCode;
         this.name = name;
@@ -46,6 +49,7 @@ public class PromoActivity extends UuidPo {
         this.maxRedemptions = maxRedemptions;
         this.redemptionCount = 0;
         this.isActive = true;
+        this.showCodeToUser = showCodeToUser != null ? showCodeToUser : false;
     }
 
     public String getActivityCode() {
@@ -110,5 +114,13 @@ public class PromoActivity extends UuidPo {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Boolean getShowCodeToUser() {
+        return showCodeToUser;
+    }
+
+    public void setShowCodeToUser(Boolean showCodeToUser) {
+        this.showCodeToUser = showCodeToUser;
     }
 }

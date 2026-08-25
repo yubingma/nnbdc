@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS promo_activity (
     max_redemptions INT,
     redemption_count INT NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    show_code_to_user BOOLEAN NOT NULL DEFAULT FALSE,
     create_time TIMESTAMP NOT NULL,
     update_time TIMESTAMP NOT NULL
 );
