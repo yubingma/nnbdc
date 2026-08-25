@@ -105,6 +105,9 @@ public class UserDbSyncBo {
     private UserStudyDailyStatBo userStudyDailyStatBo;
 
     @Autowired
+    private UserBadgeBo userBadgeBo;
+
+    @Autowired
     private WordBo wordBo;
 
     @Autowired
@@ -399,6 +402,7 @@ public class UserDbSyncBo {
             case "meaning_item" -> processMeaningItemSync(userId, recordJson, operation);
             case "learning_log" -> processLearningLogSync(userId, recordJson, operation);
             case "user_study_daily_stat" -> processUserStudyDailyStatSync(userId, recordJson, operation);
+            case "user_badge" -> processUserBadgeSync(userId, recordJson, operation);
             default -> {
                 String errorMsg = String.format("不支持的表同步: %s, 记录ID: %s, 操作: %s", tableName, log.getRecordId(),
                         operation);
@@ -793,6 +797,41 @@ public class UserDbSyncBo {
                     }
                 }
                 case "DELETE" -> userStudyDailyStatBo.deleteEntity(stats);
+            }
+        }
+    }
+
+    /**
+     * 处理用户勋章同步
+     */
+    private void processUserBadgeSync(String userId, String recordJson, String operation) throws IllegalAccessException {
+        if ("BATCH_DELETE".equals(operation)) {
+            userBadgeBo.batchDeleteUserRecords(userId, recordJson);
+        } else {
+            UserBadgeDto badgeDto = JsonUtils.makeObject(recordJson, UserBadgeDto.class);
+            badgeDto.setUserId(userId);
+            UserBadge userBadge = userBadgeBo.fromDto(badgeDto);
+            switch (operation) {
+                case "INSERT", "UPDATE" -> {
+                    UserBadge existing = userBadgeBo.findById(userBadge.getId());
+                    if (existing == null && userBadge.getBadgeCode() != null) {
+                        existing = userBadgeBo.findByUserAndBadgeCode(userId, userBadge.getBadgeCode());
+                    }
+                    if (existing == null) {
+                        userBadgeBo.createEntity(userBadge);
+                    } else {
+                        userBadgeBo.updateEntity(userBadge);
+                    }
+                }
+                case "DELETE" -> {
+                    UserBadge existing = userBadgeBo.findById(userBadge.getId());
+                    if (existing == null && userBadge.getBadgeCode() != null) {
+                        existing = userBadgeBo.findByUserAndBadgeCode(userId, userBadge.getBadgeCode());
+                    }
+                    if (existing != null) {
+                        userBadgeBo.deleteEntity(existing);
+                    }
+                }
             }
         }
     }
@@ -1394,6 +1433,22 @@ public class UserDbSyncBo {
                 logs.add(log);
             }
 
+            // 生成用户勋章全量日志
+            List<UserBadgeDto> userBadgeDtos = userBadgeBo.getUserBadgeDtosOfUser(userId);
+            for (UserBadgeDto dto : userBadgeDtos) {
+                UserDbLogDto log = new UserDbLogDto(
+                        Util.uuid(),
+                        userId,
+                        userDbVersion,
+                        "INSERT",
+                        "user_badge",
+                        dto.getId(),
+                        JsonUtils.toJson(dto),
+                        dto.getCreateTime(),
+                        dto.getUpdateTime());
+                logs.add(log);
+            }
+
             // 打印全量同步日志分类统计（便于定位日志量过大的原因）
             // 注意：tblName 需要与客户端同步消费的表名保持一致
             Map<String, Integer> counts = new HashMap<>();
@@ -1419,6 +1474,7 @@ public class UserDbSyncBo {
             ordered.put("user_cow_dung_log", counts.getOrDefault("user_cow_dung_log", 0));
             ordered.put("learning_log", counts.getOrDefault("learning_log", 0));
             ordered.put("user_study_daily_stats", counts.getOrDefault("user_study_daily_stats", 0));
+            ordered.put("user_badge", counts.getOrDefault("user_badge", 0));
 
             // 输出未在固定列表中的表名（如果有）
             Map<String, Integer> extra = new LinkedHashMap<>();
