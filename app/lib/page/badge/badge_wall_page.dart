@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:nnbdc/api/api.dart';
-import 'package:nnbdc/api/vo.dart';
+import '../../api/api.dart';
+import '../../api/vo.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
@@ -97,7 +96,6 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     final isStackable = badge?.isStackable ?? false;
     final obtainCount = vo.obtainCount ?? 0;
     final starLevel = vo.starLevel ?? 1;
-    final svgCode = BadgeSvgAssets.getSvgByCode(badge?.code);
 
     showModalBottomSheet(
       context: context,
@@ -129,50 +127,48 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                 alignment: Alignment.center,
                 children: [
                   Container(
-                    width: 100,
-                    height: 100,
+                    width: 110,
+                    height: 110,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: isUnlocked ? tierColor.withValues(alpha: 0.35) : Colors.transparent,
-                          blurRadius: 30,
-                          spreadRadius: 5,
+                          color: isUnlocked ? BadgeSvgAssets.getTierGlowColor(tier).withValues(alpha: 0.4) : Colors.transparent,
+                          blurRadius: 36,
+                          spreadRadius: 8,
                         ),
                       ],
                     ),
                   ),
-                  ColorFiltered(
-                    colorFilter: isUnlocked
-                        ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
-                        : const ColorFilter.matrix(<double>[
-                            0.2126, 0.7152, 0.0722, 0, 0,
-                            0.2126, 0.7152, 0.0722, 0, 0,
-                            0.2126, 0.7152, 0.0722, 0, 0,
-                            0, 0, 0, 0.4, 0,
-                          ]),
-                    child: SizedBox(
-                      width: 90,
-                      height: 90,
-                      child: SvgPicture.string(svgCode),
-                    ),
+                  BadgeSvgAssets.renderBadge(
+                    code: badge?.code,
+                    size: 96,
+                    isUnlocked: isUnlocked,
                   ),
                   if (isStackable && isUnlocked && obtainCount > 1)
                     Positioned(
                       top: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEC4899),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFEC4899), Color(0xFFBE185D)],
+                          ),
                           borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFEC4899).withValues(alpha: 0.45),
+                              blurRadius: 8,
+                            ),
+                          ],
                         ),
                         child: Text(
                           '×$obtainCount',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -466,7 +462,6 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                           final isStackable = badge?.isStackable ?? false;
                           final obtainCount = vo.obtainCount ?? 0;
                           final starLevel = vo.starLevel ?? 1;
-                          final svgCode = BadgeSvgAssets.getSvgByCode(badge?.code);
 
                           return InkWell(
                             onTap: () => _showBadgeDetail(vo),
@@ -474,19 +469,32 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E293B).withValues(alpha: 0.7),
+                                gradient: isUnlocked
+                                    ? RadialGradient(
+                                        center: const Alignment(0, -0.3),
+                                        radius: 0.85,
+                                        colors: [
+                                          BadgeSvgAssets.getTierGlowColor(tier).withValues(alpha: 0.22),
+                                          const Color(0xFF1E293B).withValues(alpha: 0.85),
+                                        ],
+                                      )
+                                    : const LinearGradient(
+                                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
                                 borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
                                   color: isUnlocked
-                                      ? tierColor.withValues(alpha: 0.4)
-                                      : Colors.white.withValues(alpha: 0.06),
+                                      ? tierColor.withValues(alpha: 0.5)
+                                      : Colors.white.withValues(alpha: 0.08),
                                   width: isUnlocked ? 1.5 : 1,
                                 ),
                                 boxShadow: isUnlocked
                                     ? [
                                         BoxShadow(
-                                          color: tierColor.withValues(alpha: 0.12),
-                                          blurRadius: 12,
+                                          color: tierColor.withValues(alpha: 0.2),
+                                          blurRadius: 16,
                                           offset: const Offset(0, 4),
                                         ),
                                       ]
@@ -499,20 +507,10 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                                   Stack(
                                     alignment: Alignment.center,
                                     children: [
-                                      ColorFiltered(
-                                        colorFilter: isUnlocked
-                                            ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
-                                            : const ColorFilter.matrix(<double>[
-                                                0.2126, 0.7152, 0.0722, 0, 0,
-                                                0.2126, 0.7152, 0.0722, 0, 0,
-                                                0.2126, 0.7152, 0.0722, 0, 0,
-                                                0, 0, 0, 0.35, 0,
-                                              ]),
-                                        child: SizedBox(
-                                          width: 68,
-                                          height: 68,
-                                          child: SvgPicture.string(svgCode),
-                                        ),
+                                      BadgeSvgAssets.renderBadge(
+                                        code: badge?.code,
+                                        size: 72,
+                                        isUnlocked: isUnlocked,
                                       ),
                                       if (isStackable && isUnlocked && obtainCount > 1)
                                         Positioned(
@@ -521,15 +519,23 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFEC4899),
+                                              gradient: const LinearGradient(
+                                                colors: [Color(0xFFEC4899), Color(0xFFBE185D)],
+                                              ),
                                               borderRadius: BorderRadius.circular(8),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFFEC4899).withValues(alpha: 0.4),
+                                                  blurRadius: 6,
+                                                ),
+                                              ],
                                             ),
                                             child: Text(
                                               '×$obtainCount',
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 10,
-                                                fontWeight: FontWeight.bold,
+                                                fontWeight: FontWeight.w900,
                                               ),
                                             ),
                                           ),
@@ -539,10 +545,16 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                                           bottom: 0,
                                           left: 0,
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFF10B981),
                                               borderRadius: BorderRadius.circular(6),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                                                  blurRadius: 6,
+                                                ),
+                                              ],
                                             ),
                                             child: const Text(
                                               '佩戴中',

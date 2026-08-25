@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:nnbdc/api/vo.dart';
+import '../../api/vo.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
 
@@ -48,8 +47,6 @@ class BadgeAwardDialog extends StatelessWidget {
     final isStackable = badge?.isStackable ?? false;
     final rewardBubbles = badge?.rewardBubbles ?? 0;
     final description = badge?.description ?? '';
-
-    final svgCode = BadgeSvgAssets.getSvgByCode(code);
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -106,23 +103,23 @@ class BadgeAwardDialog extends StatelessWidget {
                 children: [
                   // 背景呼吸光晕
                   Container(
-                    width: 120,
-                    height: 120,
+                    width: 130,
+                    height: 130,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: tierColor.withValues(alpha: 0.35),
-                          blurRadius: 40,
-                          spreadRadius: 10,
+                          color: BadgeSvgAssets.getTierGlowColor(tier).withValues(alpha: 0.45),
+                          blurRadius: 45,
+                          spreadRadius: 12,
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(
-                    width: 110,
-                    height: 110,
-                    child: SvgPicture.string(svgCode),
+                  BadgeSvgAssets.renderBadge(
+                    code: code,
+                    size: 116,
+                    isUnlocked: true,
                   ),
                   // 多次获得角标
                   if (isStackable && obtainCount > 1)
@@ -130,19 +127,24 @@ class BadgeAwardDialog extends StatelessWidget {
                       top: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEC4899),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFEC4899), Color(0xFFBE185D)],
+                          ),
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black38, blurRadius: 4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFEC4899).withValues(alpha: 0.5),
+                              blurRadius: 10,
+                            ),
                           ],
                         ),
                         child: Text(
                           '×$obtainCount',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w900,
                           ),
                         ),

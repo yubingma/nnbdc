@@ -1,30 +1,439 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-/// 16 枚核心勋章的高清矢量 SVG 图鉴与样式配置
 class BadgeSvgAssets {
-  /// 获取勋章 SVG 代码，若无则使用兜底矢量
+  /// 全局高保真渐变与材质滤镜定义池 (与 HTML 方案 100% 对齐)
+  static const String _globalDefs = '''
+  <defs>
+    <!-- 青铜/红铜金属渐变 (古典红铜/赤铜质感) -->
+    <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFC2A8"/>
+      <stop offset="35%" stop-color="#E07A5F"/>
+      <stop offset="70%" stop-color="#C25E3E"/>
+      <stop offset="100%" stop-color="#5E2010"/>
+    </linearGradient>
+    <linearGradient id="bronzeInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3A170C"/>
+      <stop offset="100%" stop-color="#1A0702"/>
+    </linearGradient>
+
+    <!-- 白银金属渐变 (皓月清辉质感) -->
+    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="50%" stop-color="#94A3B8"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <linearGradient id="silverInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+
+    <!-- 黄金金属渐变 (璀璨纯正金黄色) -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB"/>
+      <stop offset="25%" stop-color="#FEF08A"/>
+      <stop offset="60%" stop-color="#FBBF24"/>
+      <stop offset="85%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#92400E"/>
+    </linearGradient>
+    <linearGradient id="goldInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#382103"/>
+      <stop offset="100%" stop-color="#170D01"/>
+    </linearGradient>
+
+    <!-- 传说幻彩渐变 (极光紫粉晶彩) -->
+    <linearGradient id="legendGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F472B6"/>
+      <stop offset="50%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="legendInner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2E1065"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+
+    <!-- 翡翠光渐变 -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6EE7B7"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- 烈焰红霞渐变 -->
+    <linearGradient id="fireGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCA5A5"/>
+      <stop offset="50%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#991B1B"/>
+    </linearGradient>
+
+    <!-- 极光蓝青渐变 -->
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67E8F9"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+  </defs>
+''';
+
+  /// 16 枚独创矢量勋章的核心多层 SVG 内容 (纯矢量绘制)
+  static final Map<String, String> _badgeSvgMap = {
+    // 1. 萌芽初醒 (STREAK_3)
+    'STREAK_3': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 外环铜饰 -->
+  <circle cx="50" cy="50" r="44" stroke="url(#bronzeGrad)" stroke-width="4" fill="url(#bronzeInner)"/>
+  <circle cx="50" cy="50" r="37" stroke="rgba(253, 186, 116, 0.3)" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <!-- 晨露地脉光晕 -->
+  <ellipse cx="50" cy="68" rx="22" ry="6" fill="#10B981" opacity="0.25"/>
+  <!-- 破土初芽 -->
+  <path d="M50 72 C50 56 46 44 32 38 C32 54 42 66 50 72 Z" fill="url(#emeraldGrad)"/>
+  <path d="M49 68 C52 52 64 42 70 44 C72 58 58 68 49 68 Z" fill="#34D399"/>
+  <!-- 晨露水滴 -->
+  <circle cx="34" cy="38" r="3" fill="#67E8F9"/>
+  <!-- 四角星辉微光 -->
+  <path d="M50 18 L52 24 L58 26 L52 28 L50 34 L48 28 L42 26 L48 24 Z" fill="#FDE68A"/>
+</svg>
+''',
+
+    // 2. 习惯微光 (STREAK_21)
+    'STREAK_21': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 八角银菱底盾 -->
+  <path d="M50 6 L62 18 L79 18 L82 35 L94 48 L82 61 L79 78 L62 80 L50 92 L38 80 L21 78 L18 61 L6 48 L18 35 L21 18 L38 18 Z" fill="url(#silverInner)" stroke="url(#silverGrad)" stroke-width="3"/>
+  <!-- 能量内环 -->
+  <circle cx="50" cy="49" r="28" stroke="rgba(148, 163, 184, 0.4)" stroke-width="1.5"/>
+  <!-- 闪电习惯聚能符 -->
+  <path d="M54 26 L38 48 L48 48 L44 72 L62 46 L50 46 Z" fill="url(#cyanGrad)"/>
+  <!-- 聚能光点 -->
+  <circle cx="50" cy="49" r="4" fill="#FFFFFF"/>
+</svg>
+''',
+
+    // 3. 百日筑基 (STREAK_100)
+    'STREAK_100': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 十二芒黄金星耀底座 -->
+  <path d="M50 4 L57 16 L71 11 L74 25 L88 26 L85 40 L97 47 L89 59 L96 72 L82 77 L82 91 L68 89 L60 100 L49 93 L39 100 L32 89 L18 91 L18 77 L4 72 L11 59 L3 47 L15 40 L12 26 L26 25 L29 11 L43 16 Z" fill="url(#goldInner)" stroke="url(#goldGrad)" stroke-width="2.5"/>
+  <!-- 圣盾中央纹章 -->
+  <path d="M50 24 C62 24 70 30 70 46 C70 66 50 78 50 78 C50 78 30 66 30 46 C30 30 38 24 50 24 Z" fill="url(#goldGrad)"/>
+  <!-- 罗马百日刻印 "100" 与日晷指针 -->
+  <path d="M44 38 L44 60 M52 38 C56 38 58 43 58 49 C58 55 56 60 52 60 C48 60 48 38 52 38 Z M62 38 C66 38 68 43 68 49 C68 55 66 60 62 60 C58 60 58 38 62 38 Z" stroke="#2D1A05" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 光芒闪耀 -->
+  <circle cx="50" cy="24" r="3" fill="#FFFFFF"/>
+</svg>
+''',
+
+    // 4. 星火长明 (STREAK_365)
+    'STREAK_365': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 幻彩星轨光环 -->
+  <circle cx="50" cy="50" r="46" stroke="url(#legendGrad)" stroke-width="3" stroke-dasharray="8 4"/>
+  <!-- 永恒皇冠底座 -->
+  <path d="M50 16 L60 32 L78 28 L72 52 L82 72 L50 86 L18 72 L28 52 L22 28 L40 32 Z" fill="url(#legendInner)" stroke="url(#legendGrad)" stroke-width="2.5"/>
+  <!-- 永恒不死鸟星火 -->
+  <path d="M50 30 C56 42 66 48 64 62 C62 74 50 78 50 78 C50 78 38 74 36 62 C34 48 44 42 50 30 Z" fill="url(#fireGrad)"/>
+  <path d="M50 44 C53 52 58 56 56 64 C55 70 50 72 50 72 C50 72 45 70 44 64 C42 56 47 52 50 44 Z" fill="#FDE68A"/>
+  <!-- 冠顶宝石 -->
+  <polygon points="50,14 55,22 50,26 45,22" fill="#E879F9"/>
+  <polygon points="22,26 27,33 23,37 18,33" fill="#60A5FA"/>
+  <polygon points="78,26 83,33 77,37 73,33" fill="#60A5FA"/>
+</svg>
+''',
+
+    // 5. 破冰启航 (VOCAB_100)
+    'VOCAB_100': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 青铜罗盘圆盘 -->
+  <circle cx="50" cy="50" r="44" fill="url(#bronzeInner)" stroke="url(#bronzeGrad)" stroke-width="4"/>
+  <!-- 罗盘刻度星轨 -->
+  <circle cx="50" cy="50" r="36" stroke="rgba(253, 186, 116, 0.4)" stroke-width="1.5" stroke-dasharray="2 4"/>
+  <!-- 破浪风帆战船 -->
+  <path d="M48 24 L48 64 L28 64 Z" fill="url(#bronzeGrad)"/>
+  <path d="M52 20 L52 64 L74 64 Z" fill="#FED7AA"/>
+  <!-- 破冰船首 -->
+  <path d="M22 66 L78 66 L68 76 L32 76 Z" fill="url(#bronzeGrad)"/>
+  <!-- 浪花与浮冰 -->
+  <path d="M16 78 C24 74 34 82 44 78 C54 74 64 82 74 78 C80 76 86 80 88 80" stroke="#67E8F9" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
+''',
+
+    // 6. 千词过海 (VOCAB_1000)
+    'VOCAB_1000': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 八角航海银章 -->
+  <rect x="14" y="14" width="72" height="72" rx="16" transform="rotate(45 50 50)" fill="url(#silverInner)" stroke="url(#silverGrad)" stroke-width="3"/>
+  <!-- 展开的魔法飞书 -->
+  <path d="M50 36 C58 30 72 32 78 36 L78 68 C72 64 58 62 50 68 Z" fill="url(#cyanGrad)"/>
+  <path d="M50 36 C42 30 28 32 22 36 L22 68 C28 64 42 62 50 68 Z" fill="#38BDF8"/>
+  <!-- 书脊与书页光线 -->
+  <line x1="50" y1="36" x2="50" y2="72" stroke="#FFFFFF" stroke-width="2"/>
+  <!-- "1000" 浮空金字 -->
+  <text x="50" y="56" font-size="14" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">1000</text>
+  <!-- 翻腾的波浪 -->
+  <path d="M22 76 C32 72 40 80 50 76 C60 72 68 80 78 76" stroke="url(#silverGrad)" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
+''',
+
+    // 7. 词海踏浪 (VOCAB_5000)
+    'VOCAB_5000': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 雅典神殿金盾 -->
+  <circle cx="50" cy="50" r="45" fill="url(#goldInner)" stroke="url(#goldGrad)" stroke-width="3"/>
+  <!-- 桂冠枝叶左 -->
+  <path d="M26 36 C24 46 26 62 38 72 M22 42 C28 44 32 40 32 40 M24 54 C30 56 34 52 34 52" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <!-- 桂冠枝叶右 -->
+  <path d="M74 36 C76 46 74 62 62 72 M78 42 C72 44 68 40 68 40 M76 54 C70 56 66 52 66 52" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <!-- 智慧神殿门柱与金羽笔 -->
+  <path d="M36 40 L36 66 M45 40 L45 66 M55 40 L55 66 M64 40 L64 66" stroke="url(#goldGrad)" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32 40 L68 40 L50 26 Z" fill="url(#goldGrad)"/>
+  <rect x="30" y="66" width="40" height="5" rx="2" fill="url(#goldGrad)"/>
+  <!-- 5K 徽章宝石 -->
+  <circle cx="50" cy="53" r="10" fill="#2D1A05" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="50" y="57" font-size="10" font-weight="900" fill="#FDE68A" text-anchor="middle">5K</text>
+</svg>
+''',
+
+    // 8. 全书通关斩 (VOCAB_FINISH_BOOK)
+    'VOCAB_FINISH_BOOK': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 传说魔法阵 -->
+  <polygon points="50,6 63,18 80,18 84,35 96,48 84,61 80,78 63,78 50,90 37,78 20,78 16,61 4,48 16,35 20,18 37,18" fill="url(#legendInner)" stroke="url(#legendGrad)" stroke-width="2.5"/>
+  <!-- 厚重典籍 -->
+  <rect x="28" y="28" width="44" height="52" rx="4" fill="url(#legendGrad)"/>
+  <rect x="32" y="32" width="36" height="44" rx="2" fill="#1E1B4B"/>
+  <!-- 斩断一切的圣剑 (贯穿整书) -->
+  <path d="M50 14 L53 30 L50 78 L47 30 Z" fill="#FFFFFF"/>
+  <path d="M40 26 L60 26 L50 30 Z" fill="#FDE68A"/>
+  <circle cx="50" cy="20" r="3" fill="#E879F9"/>
+  <!-- 通关金锁解开特效 -->
+  <circle cx="50" cy="54" r="7" fill="none" stroke="#FDE68A" stroke-width="2"/>
+  <path d="M47 54 L53 54" stroke="#FDE68A" stroke-width="2"/>
+</svg>
+''',
+
+    // 9. 百发百中 (PERFECT_SCORE)
+    'PERFECT_SCORE': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 青铜靶心底座 -->
+  <circle cx="50" cy="50" r="44" fill="url(#bronzeInner)" stroke="url(#bronzeGrad)" stroke-width="3.5"/>
+  <circle cx="50" cy="50" r="32" fill="none" stroke="rgba(253, 186, 116, 0.5)" stroke-width="2"/>
+  <circle cx="50" cy="50" r="18" fill="none" stroke="rgba(253, 186, 116, 0.8)" stroke-width="2"/>
+  <!-- 准心十字准星 -->
+  <line x1="50" y1="10" x2="50" y2="90" stroke="url(#bronzeGrad)" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <line x1="10" y1="50" x2="90" y2="50" stroke="url(#bronzeGrad)" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <!-- 正中红心神箭 -->
+  <circle cx="50" cy="50" r="7" fill="#EF4444"/>
+  <path d="M74 26 L52 48 M74 26 L64 26 M74 26 L74 36" stroke="#FED7AA" stroke-width="3" stroke-linecap="round"/>
+</svg>
+''',
+
+    // 10. 极速心流 (EASY_FLOW)
+    'EASY_FLOW': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 双环超速轨道 -->
+  <ellipse cx="50" cy="50" rx="42" ry="20" transform="rotate(-30 50 50)" stroke="url(#silverGrad)" stroke-width="3" fill="none"/>
+  <ellipse cx="50" cy="50" rx="42" ry="20" transform="rotate(30 50 50)" stroke="url(#cyanGrad)" stroke-width="3" fill="none"/>
+  <!-- 核心心流反应堆 -->
+  <circle cx="50" cy="50" r="18" fill="url(#silverInner)" stroke="#38BDF8" stroke-width="2"/>
+  <!-- 光速脉冲离子球 -->
+  <circle cx="50" cy="50" r="10" fill="#67E8F9"/>
+  <circle cx="50" cy="50" r="5" fill="#FFFFFF"/>
+  <!-- 秒表光标与加速粒子 -->
+  <path d="M50 38 L50 50 L58 50" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
+''',
+
+    // 11. 破晓之翼 (DAWN_LEARN)
+    'DAWN_LEARN': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 黄金朝阳圆徽 -->
+  <circle cx="50" cy="50" r="44" fill="url(#goldInner)" stroke="url(#goldGrad)" stroke-width="3"/>
+  <!-- 破晓旭日万丈光芒 -->
+  <circle cx="50" cy="62" r="22" fill="url(#fireGrad)"/>
+  <path d="M50 18 L50 26 M26 30 L32 35 M74 30 L68 35 M16 50 L24 50 M84 50 L76 50" stroke="#FDE68A" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 展翅高飞的雄鹰金翼 -->
+  <path d="M50 48 C40 34 24 38 18 46 C28 54 38 52 50 64 C62 52 72 54 82 46 C76 38 60 34 50 48 Z" fill="url(#goldGrad)"/>
+  <polygon points="50,42 53,49 47,49" fill="#FFFFFF"/>
+</svg>
+''',
+
+    // 12. 夜行学者 (NIGHT_LEARN)
+    'NIGHT_LEARN': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 暗夜苍穹星盘 -->
+  <circle cx="50" cy="50" r="44" fill="#0B0F19" stroke="url(#goldGrad)" stroke-width="3"/>
+  <!-- 唯美一弯金月 -->
+  <path d="M54 22 C38 22 26 36 26 52 C26 68 38 80 54 80 C44 74 38 64 38 52 C38 40 44 28 54 22 Z" fill="url(#goldGrad)"/>
+  <!-- 守夜猫头鹰智慧之眼 -->
+  <circle cx="64" cy="46" r="10" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
+  <circle cx="64" cy="46" r="4" fill="#FDE68A"/>
+  <!-- 漫天星斗星座连线 -->
+  <circle cx="48" cy="34" r="2" fill="#FFFFFF"/>
+  <circle cx="68" cy="26" r="1.5" fill="#FFFFFF"/>
+  <circle cx="76" cy="66" r="2" fill="#FFFFFF"/>
+  <line x1="48" y1="34" x2="68" y2="26" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+</svg>
+''',
+
+    // 13. 布道同行 (INVITE_FRIEND)
+    'INVITE_FRIEND': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 青铜同心圆徽 -->
+  <circle cx="50" cy="50" r="44" fill="url(#bronzeInner)" stroke="url(#bronzeGrad)" stroke-width="4"/>
+  <!-- 紧密相扣的双子星手印/引力桥 -->
+  <circle cx="38" cy="42" r="10" fill="url(#bronzeGrad)"/>
+  <circle cx="62" cy="42" r="10" fill="#FED7AA"/>
+  <!-- 携手共进的身躯 -->
+  <path d="M24 72 C24 58 34 56 42 58 L46 72 Z" fill="url(#bronzeGrad)"/>
+  <path d="M76 72 C76 58 66 56 58 58 L54 72 Z" fill="#FED7AA"/>
+  <!-- 友谊之光芒中心 -->
+  <polygon points="50,44 53,51 60,52 55,57 56,64 50,60 44,64 45,57 40,52 47,51" fill="#FDE68A"/>
+</svg>
+''',
+
+    // 14. 并肩同行 (GROUP_CHECKIN)
+    'GROUP_CHECKIN': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 八角专注圣徽 -->
+  <rect x="14" y="14" width="72" height="72" rx="14" transform="rotate(45 50 50)" fill="url(#silverInner)" stroke="url(#silverGrad)" stroke-width="3"/>
+  <!-- 沉浸自律的沙漏 -->
+  <path d="M34 26 L66 26 L52 48 L66 70 L34 70 L48 48 Z" fill="none" stroke="url(#silverGrad)" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M38 30 L62 30 L50 46 Z" fill="url(#cyanGrad)"/>
+  <path d="M42 66 L58 66 L50 56 Z" fill="#67E8F9"/>
+  <!-- 专注力场光环 -->
+  <circle cx="50" cy="50" r="32" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5" stroke-dasharray="3 3"/>
+</svg>
+''',
+
+    // 15. 登顶时刻 (RANK_TOP3)
+    'RANK_TOP3': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 十角王者圣徽 -->
+  <circle cx="50" cy="50" r="45" fill="url(#goldInner)" stroke="url(#goldGrad)" stroke-width="3"/>
+  <!-- 胜利月桂环 -->
+  <circle cx="50" cy="50" r="36" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <!-- 璀璨冠军奖杯 -->
+  <path d="M36 30 L64 30 L58 54 C58 60 54 64 50 64 C46 64 42 60 42 54 Z" fill="url(#goldGrad)"/>
+  <!-- 奖杯双耳 -->
+  <path d="M36 34 C26 34 26 48 38 48 M64 34 C74 34 74 48 62 48" stroke="url(#goldGrad)" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- 奖杯底座 -->
+  <rect x="46" y="64" width="8" height="8" fill="#F59E0B"/>
+  <rect x="38" y="72" width="24" height="6" rx="2" fill="url(#goldGrad)"/>
+  <!-- 榜首荣耀星芒 -->
+  <polygon points="50,34 52,39 58,40 54,44 55,50 50,47 45,50 46,44 42,40 48,39" fill="#FFFFFF"/>
+</svg>
+''',
+
+    // 16. AI 智囊伙伴 (AI_ORACLE)
+    'AI_ORACLE': '''
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  $_globalDefs
+  <!-- 赛博量子多面体底座 -->
+  <polygon points="50,6 88,28 88,72 50,94 12,72 12,28" fill="url(#legendInner)" stroke="url(#legendGrad)" stroke-width="3"/>
+  <!-- 悬浮全息量子晶核 -->
+  <polygon points="50,22 74,36 74,64 50,78 26,64 26,36" fill="url(#legendGrad)" opacity="0.6"/>
+  <!-- AI 神经网络突触与眼眸 -->
+  <circle cx="50" cy="50" r="10" fill="#FFFFFF"/>
+  <circle cx="50" cy="50" r="5" fill="#3B82F6"/>
+  <!-- 神经元辐射节点 -->
+  <line x1="50" y1="50" x2="32" y2="38" stroke="#E879F9" stroke-width="2"/>
+  <line x1="50" y1="50" x2="68" y2="38" stroke="#60A5FA" stroke-width="2"/>
+  <line x1="50" y1="50" x2="50" y2="70" stroke="#34D399" stroke-width="2"/>
+  <circle cx="32" cy="38" r="3" fill="#E879F9"/>
+  <circle cx="68" cy="38" r="3" fill="#60A5FA"/>
+  <circle cx="50" cy="70" r="3" fill="#34D399"/>
+</svg>
+''',
+  };
+
+  /// 获取对应勋章的完整高保真 SVG 字符串
   static String getSvgByCode(String? code) {
-    if (code == null) return _defaultSvg;
-    return _svgMap[code] ?? _defaultSvg;
+    if (code == null) return _getDefaultPlaceholder();
+    final normalizedCode = code.trim().toUpperCase();
+    return _badgeSvgMap[normalizedCode] ?? _getDefaultPlaceholder();
   }
 
-  /// 获取品质对应主色调
+  /// 渲染高质感勋章 Widget (包含锁定灰阶处理与尺寸控制)
+  static Widget renderBadge({
+    required String? code,
+    double size = 64,
+    bool isUnlocked = true,
+    BoxFit fit = BoxFit.contain,
+  }) {
+    final svgString = getSvgByCode(code);
+
+    Widget svgWidget = SvgPicture.string(
+      svgString,
+      width: size,
+      height: size,
+      fit: fit,
+    );
+
+    if (!isUnlocked) {
+      // 未解锁状态：应用优雅的半透明和轻微暗淡
+      return Opacity(
+        opacity: 0.38,
+        child: ColorFiltered(
+          colorFilter: const ColorFilter.matrix(<double>[
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0,      0,      0,      0.9, 0,
+          ]),
+          child: svgWidget,
+        ),
+      );
+    }
+
+    return svgWidget;
+  }
+
+  /// 获取品质主色
   static Color getTierColor(String? tier) {
     switch (tier?.toUpperCase()) {
       case 'BRONZE':
-        return const Color(0xFFC25E3E); // 古典红铜
+        return const Color(0xFFC25E3E); // 古典红铜色
       case 'SILVER':
-        return const Color(0xFF94A3B8); // 皓月白银
+        return const Color(0xFF94A3B8); // 皓月白银色
       case 'GOLD':
-        return const Color(0xFFFBBF24); // 纯正耀金
+        return const Color(0xFFFBBF24); // 纯正璀璨黄金色
       case 'LEGENDARY':
-        return const Color(0xFFA855F7); // 炫彩紫金
+        return const Color(0xFFC084FC); // 幻彩紫晶传说色
+      default:
+        return const Color(0xFF94A3B8);
+    }
+  }
+
+  /// 获取品质径向辉光色 (用于卡片与弹窗的梦幻流光背景)
+  static Color getTierGlowColor(String? tier) {
+    switch (tier?.toUpperCase()) {
+      case 'BRONZE':
+        return const Color(0xFFE07A5F);
+      case 'SILVER':
+        return const Color(0xFF38BDF8);
+      case 'GOLD':
+        return const Color(0xFFFBBF24);
+      case 'LEGENDARY':
+        return const Color(0xFFA855F7);
       default:
         return const Color(0xFF64748B);
     }
   }
 
-  /// 获取品质中文名称
+  /// 获取品质中文标签
   static String getTierName(String? tier) {
     switch (tier?.toUpperCase()) {
       case 'BRONZE':
@@ -36,11 +445,11 @@ class BadgeSvgAssets {
       case 'LEGENDARY':
         return '传说';
       default:
-        return '基础';
+        return '常规';
     }
   }
 
-  /// 获取分类中文名称
+  /// 获取分类中文标签
   static String getCategoryName(String? category) {
     switch (category?.toUpperCase()) {
       case 'HABIT':
@@ -52,272 +461,18 @@ class BadgeSvgAssets {
       case 'SOCIAL':
         return '共鸣 · 探索先锋';
       default:
-        return '荣耀勋章';
+        return '成就徽章';
     }
   }
 
-  static const String _defaultSvg = '''
+  static String _getDefaultPlaceholder() {
+    return '''
 <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="50" r="40" stroke="#94A3B8" stroke-width="4" fill="#1E293B"/>
-  <path d="M50 25 L58 41 L76 43 L62 56 L66 74 L50 65 L34 74 L38 56 L24 43 L42 41 Z" fill="#FBBF24"/>
+  $_globalDefs
+  <circle cx="50" cy="50" r="44" stroke="url(#silverGrad)" stroke-width="3" fill="url(#silverInner)"/>
+  <circle cx="50" cy="50" r="20" fill="none" stroke="#64748B" stroke-width="2"/>
+  <text x="50" y="56" font-size="20" font-weight="900" fill="#94A3B8" text-anchor="middle">?</text>
 </svg>
 ''';
-
-  static final Map<String, String> _svgMap = {
-    // 1. 萌芽初醒 (STREAK_3)
-    'STREAK_3': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_s3_b" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E27D60"/><stop offset="100%" stop-color="#8B3A2B"/>
-    </linearGradient>
-    <linearGradient id="g_s3_g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4ADE80"/><stop offset="100%" stop-color="#15803D"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_s3_b)" stroke-width="4" stroke-dasharray="6 3" fill="#18151D"/>
-  <circle cx="50" cy="50" r="36" fill="#241E26" stroke="#4A3428" stroke-width="2"/>
-  <path d="M50 72 C50 72 44 54 44 44 C44 32 50 24 50 24 C50 24 56 32 56 44 C56 54 50 72 50 72 Z" fill="url(#g_s3_g)"/>
-  <path d="M50 48 C42 45 32 46 28 52 C26 55 30 62 38 60 C46 58 49 52 50 48 Z" fill="#22C55E"/>
-  <path d="M50 40 C58 37 68 38 72 44 C74 47 70 54 62 52 C54 50 51 44 50 40 Z" fill="#86EFAC"/>
-  <ellipse cx="50" cy="30" rx="3" ry="5" fill="#BAF7D0"/>
-</svg>
-''',
-
-    // 2. 习惯微光 (STREAK_21)
-    'STREAK_21': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_s21_s" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/><stop offset="50%" stop-color="#CBD5E1"/><stop offset="100%" stop-color="#475569"/>
-    </linearGradient>
-  </defs>
-  <polygon points="50,6 92,50 50,94 8,50" stroke="url(#g_s21_s)" stroke-width="4" fill="#0F172A"/>
-  <polygon points="50,16 82,50 50,84 18,50" fill="#1E293B" stroke="#64748B" stroke-width="2"/>
-  <circle cx="50" cy="50" r="16" fill="#38BDF8" opacity="0.2"/>
-  <path d="M53 26 L39 48 L49 48 L45 74 L61 48 L50 48 Z" fill="#38BDF8" stroke="#FFFFFF" stroke-width="1.5"/>
-</svg>
-''',
-
-    // 3. 百日筑基 (STREAK_100)
-    'STREAK_100': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_s100_g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFBEB"/><stop offset="50%" stop-color="#FBBF24"/><stop offset="100%" stop-color="#D97706"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_s100_g)" stroke-width="4" fill="#1E1B18"/>
-  <circle cx="50" cy="50" r="38" stroke="#78350F" stroke-width="2" stroke-dasharray="3 3" fill="#2E2415"/>
-  <polygon points="50,18 58,34 76,34 62,45 67,62 50,52 33,62 38,45 24,34 42,34" fill="url(#g_s100_g)" stroke="#78350F" stroke-width="1.5"/>
-  <text x="50" y="78" text-anchor="middle" font-size="11" font-weight="900" fill="#FDE68A" font-family="sans-serif">100 DAYS</text>
-</svg>
-''',
-
-    // 4. 星火长明 (STREAK_365)
-    'STREAK_365': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_s365_p" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E879F9"/><stop offset="100%" stop-color="#7E22CE"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="45" stroke="url(#g_s365_p)" stroke-width="4" fill="#180D24"/>
-  <path d="M50 16 C30 36 34 56 42 66 C42 66 38 60 40 52 C42 44 48 40 50 36 C52 40 58 44 60 52 C62 60 58 66 58 66 C66 56 70 36 50 16 Z" fill="#F43F5E"/>
-  <path d="M50 32 C42 44 44 56 48 62 C48 62 46 58 47 53 C48 48 51 46 50 44 C52 46 54 48 55 53 C56 58 54 62 54 62 C58 56 60 44 50 32 Z" fill="#FBBF24"/>
-  <circle cx="50" cy="74" r="5" fill="#38BDF8"/>
-</svg>
-''',
-
-    // 5. 破冰启航 (VOCAB_100)
-    'VOCAB_100': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_v100_b" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E27D60"/><stop offset="100%" stop-color="#8B3A2B"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_v100_b)" stroke-width="4" fill="#171C24"/>
-  <circle cx="50" cy="50" r="37" fill="#1F2937" stroke="#374151" stroke-width="2"/>
-  <path d="M22 68 Q50 78 78 68 L70 56 L30 56 Z" fill="url(#g_v100_b)"/>
-  <path d="M48 22 L48 54 L68 54 Z" fill="#38BDF8"/>
-  <path d="M44 30 L44 54 L30 54 Z" fill="#67E8F9"/>
-</svg>
-''',
-
-    // 6. 千词过海 (VOCAB_1000)
-    'VOCAB_1000': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_v1k_s" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#475569"/>
-    </linearGradient>
-  </defs>
-  <polygon points="50,8 88,26 88,74 50,92 12,74 12,26" stroke="url(#g_v1k_s)" stroke-width="3.5" fill="#0F172A"/>
-  <path d="M50 36 C42 28 26 30 22 32 L22 64 C26 62 42 60 50 68 C58 60 74 62 78 64 L78 32 C74 30 58 28 50 36 Z" fill="#1E293B" stroke="#94A3B8" stroke-width="2"/>
-  <text x="50" y="55" text-anchor="middle" font-size="13" font-weight="900" fill="#38BDF8" font-family="sans-serif">1000</text>
-</svg>
-''',
-
-    // 7. 词海踏浪 (VOCAB_5000)
-    'VOCAB_5000': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_v5k_g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFBEB"/><stop offset="50%" stop-color="#FBBF24"/><stop offset="100%" stop-color="#D97706"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_v5k_g)" stroke-width="4" fill="#1E1B18"/>
-  <circle cx="50" cy="50" r="36" fill="#2E2415" stroke="#78350F" stroke-width="2"/>
-  <path d="M50 22 L66 30 L34 30 Z" fill="url(#g_v5k_g)"/>
-  <rect x="36" y="32" width="5" height="26" fill="#FBBF24"/>
-  <rect x="44.5" y="32" width="5" height="26" fill="#FBBF24"/>
-  <rect x="53" y="32" width="5" height="26" fill="#FBBF24"/>
-  <rect x="61.5" y="32" width="5" height="26" fill="#FBBF24"/>
-  <text x="50" y="74" text-anchor="middle" font-size="12" font-weight="900" fill="#FDE68A" font-family="sans-serif">5000</text>
-</svg>
-''',
-
-    // 8. 全书通关斩 (VOCAB_FINISH_BOOK)
-    'VOCAB_FINISH_BOOK': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_vfb_p" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F43F5E"/><stop offset="100%" stop-color="#881337"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="45" stroke="url(#g_vfb_p)" stroke-width="4" fill="#180D1B"/>
-  <path d="M50 40 C42 32 26 34 20 36 L20 68 C26 66 42 64 50 72 C58 64 74 66 80 68 L80 36 C74 34 58 32 50 40 Z" fill="#2A142D" stroke="#E11D48" stroke-width="2"/>
-  <path d="M50 14 L54 66 L50 74 L46 66 Z" fill="#F43F5E" stroke="#FFFFFF" stroke-width="1.5"/>
-  <path d="M38 34 L62 34" stroke="#FDE047" stroke-width="3" stroke-linecap="round"/>
-</svg>
-''',
-
-    // 9. 百发百中 (PERFECT_SCORE)
-    'PERFECT_SCORE': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_mp_b" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E27D60"/><stop offset="100%" stop-color="#8B3A2B"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_mp_b)" stroke-width="4" fill="#1C1819"/>
-  <circle cx="50" cy="50" r="32" stroke="#EF4444" stroke-width="2" fill="none" stroke-dasharray="4 2"/>
-  <circle cx="50" cy="50" r="18" fill="#EF4444"/>
-  <circle cx="50" cy="50" r="8" fill="#FFFFFF"/>
-  <path d="M22 22 L78 78 M72 78 L78 78 L78 72" stroke="#FBBF24" stroke-width="3.5" stroke-linecap="round"/>
-</svg>
-''',
-
-    // 10. 极速心流 (EASY_FLOW)
-    'EASY_FLOW': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_mf_s" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#475569"/>
-    </linearGradient>
-  </defs>
-  <ellipse cx="50" cy="50" rx="42" ry="20" transform="rotate(-30 50 50)" stroke="url(#g_mf_s)" stroke-width="3" fill="none"/>
-  <ellipse cx="50" cy="50" rx="42" ry="20" transform="rotate(30 50 50)" stroke="#38BDF8" stroke-width="3" fill="none"/>
-  <circle cx="50" cy="50" r="18" fill="#0F172A" stroke="#38BDF8" stroke-width="2"/>
-  <circle cx="50" cy="50" r="8" fill="#67E8F9"/>
-  <path d="M50 40 L50 50 L57 50" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
-</svg>
-''',
-
-    // 11. 破晓之翼 (DAWN_LEARN)
-    'DAWN_LEARN': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_md_g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFBEB"/><stop offset="50%" stop-color="#FBBF24"/><stop offset="100%" stop-color="#D97706"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_md_g)" stroke-width="4" fill="#1E1912"/>
-  <circle cx="50" cy="62" r="22" fill="#F59E0B"/>
-  <path d="M50 26 L60 48 L40 48 Z" fill="#FBBF24"/>
-  <path d="M50 46 C34 32 16 38 12 50 C24 50 38 56 46 62 Z" fill="url(#g_md_g)"/>
-  <path d="M50 46 C66 32 84 38 88 50 C76 50 62 56 54 62 Z" fill="url(#g_md_g)"/>
-</svg>
-''',
-
-    // 12. 夜行学者 (NIGHT_LEARN)
-    'NIGHT_LEARN': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_mn_g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FDE047"/><stop offset="100%" stop-color="#CA8A04"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_mn_g)" stroke-width="4" fill="#0B0F19"/>
-  <path d="M54 22 C38 24 26 38 28 54 C30 68 44 78 58 76 C50 72 44 60 46 48 C48 36 56 26 66 24 C62 22 58 22 54 22 Z" fill="url(#g_mn_g)"/>
-  <circle cx="68" cy="46" r="5" fill="#38BDF8"/>
-  <circle cx="56" cy="60" r="4" fill="#818CF8"/>
-</svg>
-''',
-
-    // 13. 布道同行 (INVITE_FRIEND)
-    'INVITE_FRIEND': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_si_b" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E27D60"/><stop offset="100%" stop-color="#8B3A2B"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_si_b)" stroke-width="4" fill="#1C181A"/>
-  <circle cx="36" cy="42" r="12" fill="#E27D60"/>
-  <circle cx="64" cy="42" r="12" fill="#38BDF8"/>
-  <path d="M22 72 C22 58 50 58 50 72 Z" fill="#E27D60"/>
-  <path d="M50 72 C50 58 78 58 78 72 Z" fill="#38BDF8"/>
-</svg>
-''',
-
-    // 14. 并肩同行 (GROUP_CHECKIN)
-    'GROUP_CHECKIN': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_sg_s" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#475569"/>
-    </linearGradient>
-  </defs>
-  <polygon points="50,6 94,50 50,94 6,50" stroke="url(#g_sg_s)" stroke-width="4" fill="#0F172A"/>
-  <path d="M34 28 L66 28 L56 50 L66 72 L34 72 L44 50 Z" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
-  <polygon points="45,64 55,64 50,56" fill="#38BDF8"/>
-  <circle cx="50" cy="52" r="2" fill="#FFFFFF"/>
-</svg>
-''',
-
-    // 15. 登顶时刻 (RANK_TOP3)
-    'RANK_TOP3': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_sr_g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFFBEB"/><stop offset="50%" stop-color="#FBBF24"/><stop offset="100%" stop-color="#D97706"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="44" stroke="url(#g_sr_g)" stroke-width="4" fill="#1E1B18"/>
-  <path d="M32 26 L68 26 L62 56 C62 64 50 68 50 68 C50 68 38 64 38 56 Z" fill="url(#g_sr_g)"/>
-  <rect x="46" y="68" width="8" height="12" fill="#FBBF24"/>
-  <rect x="36" y="80" width="28" height="6" rx="2" fill="url(#g_sr_g)"/>
-  <path d="M32 32 C22 34 22 46 34 48" stroke="#FBBF24" stroke-width="3" fill="none"/>
-  <path d="M68 32 C78 34 78 46 66 48" stroke="#FBBF24" stroke-width="3" fill="none"/>
-</svg>
-''',
-
-    // 16. AI 智囊伙伴 (AI_ORACLE)
-    'AI_ORACLE': '''
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g_sa_p" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#6366F1"/>
-    </linearGradient>
-  </defs>
-  <circle cx="50" cy="50" r="45" stroke="url(#g_sa_p)" stroke-width="4" fill="#120D24"/>
-  <polygon points="50,18 78,34 78,66 50,82 22,66 22,34" stroke="#818CF8" stroke-width="2.5" fill="#1E1B4B"/>
-  <circle cx="50" cy="50" r="14" fill="#6366F1"/>
-  <circle cx="50" cy="50" r="7" fill="#A5B4FC"/>
-  <path d="M50 20 L50 36 M76 35 L62 43 M76 65 L62 57 M50 80 L50 64 M24 65 L38 57 M24 35 L38 43" stroke="#C084FC" stroke-width="2"/>
-</svg>
-'''
-  };
+  }
 }
