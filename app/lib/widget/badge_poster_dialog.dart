@@ -139,7 +139,7 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
 
       await Share.shareXFiles(
         [XFile(imagePath)],
-        text: '我在「念念不忘背单词」点亮了【${widget.userBadge.badge?.name}】勋章！',
+        text: '我在「泡泡单词」点亮了【${widget.userBadge.badge?.name}】勋章！',
       );
     } catch (e) {
       Global.logger.w('系统分享异常: $e');
@@ -236,7 +236,7 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const Text(
-                              '在念念不忘背单词达成荣耀里程碑',
+                              '在泡泡单词达成荣耀里程碑',
                               style: TextStyle(
                                 color: Color(0xFFA5B4FC),
                                 fontSize: 10,
@@ -345,7 +345,7 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
                           Row(
                             children: const [
                               Text(
-                                '念念不忘背单词',
+                                '泡泡单词',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
