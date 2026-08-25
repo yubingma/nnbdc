@@ -632,6 +632,24 @@ class UserWrongWords extends Table {
   Set<Column>? get primaryKey => {userId, wordId};
 }
 
+/// 用户勋章表 (本地缓存与离线优先)
+class UserBadges extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get badgeCode => text()();
+  IntColumn get obtainCount => integer().withDefault(const Constant(1))();
+  IntColumn get starLevel => integer().withDefault(const Constant(1))();
+  DateTimeColumn get unlockedAt => dateTime()();
+  BoolColumn get isEquipped => boolean().withDefault(const Constant(false))();
+  BoolColumn get isViewed => boolean().withDefault(const Constant(false))();
+
+  DateTimeColumn get createTime => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updateTime => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column>? get primaryKey => {id};
+}
+
 
 /// 系统数据版本表（单例表，只有一条记录）
 class SysDbVersion extends Table {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../api/api.dart';
 import '../../api/vo.dart';
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
@@ -32,20 +32,97 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
   }
 
   Future<void> _loadBadges() async {
-    setState(() => _loading = true);
+    final user = Global.getLoggedInUser();
+    if (user == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+
     try {
-      final user = Global.getLoggedInUser();
-      final res = await Api.client.getMyBadges(user?.id);
-      if (res.success && res.data != null) {
-        setState(() {
-          _allBadges = res.data!;
-        });
-      } else {
-        ToastUtil.error(res.msg ?? '加载勋章失败');
+      // 1. 查询本地 user_badges 记录
+      final localRecords = await MyDatabase.instance.userBadgesDao.getBadgesByUserId(user.id);
+      final Map<String, UserBadge> localMap = {for (var item in localRecords) item.badgeCode: item};
+
+      // 2. 获取客观指标数据
+      final streakDays = user.continuousDakaDayCount;
+      final masteredWords = user.masteredWordsCount;
+
+      // 3. 本地全量装配 16 枚勋章，并自动对齐历史已达标勋章
+      final List<UserBadgeVo> list = [];
+      for (final def in BadgeSvgAssets.allBadgeDefinitions) {
+        final code = def['code'] as String;
+        final targetValue = def['targetValue'] as int;
+        final conditionType = def['conditionType'] as String;
+        final isStackable = def['isStackable'] as bool;
+        final rewardBubbles = def['rewardBubbles'] as int;
+
+        var ub = localMap[code];
+
+        // 计算当前客观进度
+        int current = 0;
+        if (conditionType == 'STREAK_DAYS') {
+          current = streakDays;
+        } else if (conditionType == 'MASTERED_WORDS') {
+          current = masteredWords;
+        }
+
+        // 🌟 自动对齐/懒解锁历史已达标勋章 (例如老用户已掌握 815 词，本地立即点亮并记录同步日志)
+        if (ub == null && targetValue > 0 && current >= targetValue) {
+          final newId = '${user.id}_$code';
+          final newUb = UserBadge(
+            id: newId,
+            userId: user.id,
+            badgeCode: code,
+            obtainCount: 1,
+            starLevel: 1,
+            unlockedAt: DateTime.now(),
+            isEquipped: false,
+            isViewed: false,
+            createTime: DateTime.now(),
+            updateTime: DateTime.now(),
+          );
+          await MyDatabase.instance.userBadgesDao.saveEntity(newUb, true);
+          ub = newUb;
+          localMap[code] = newUb;
+        }
+
+        final isUnlocked = ub != null;
+        final vo = UserBadgeVo(
+          id: ub?.id,
+          userId: user.id,
+          badgeCode: code,
+          obtainCount: ub?.obtainCount ?? 0,
+          starLevel: ub?.starLevel ?? 1,
+          unlockedAt: ub?.unlockedAt,
+          isEquipped: ub?.isEquipped ?? false,
+          isViewed: ub?.isViewed ?? false,
+          isUnlocked: isUnlocked,
+          progressCurrent: isUnlocked ? targetValue : current,
+          progressTarget: targetValue,
+          progressPercent: isUnlocked ? 1.0 : (targetValue > 0 ? (current / targetValue).clamp(0.0, 1.0) : 0.0),
+          badge: BadgeVo(
+            code: code,
+            name: def['name'] as String,
+            category: def['category'] as String,
+            tier: def['tier'] as String,
+            isStackable: isStackable,
+            rewardBubbles: rewardBubbles,
+            description: def['description'] as String,
+            targetValue: targetValue,
+            conditionType: conditionType,
+          ),
+        );
+        list.add(vo);
       }
-    } catch (e) {
-      ToastUtil.error('网络连接异常');
-    } finally {
+
+      if (mounted) {
+        setState(() {
+          _allBadges = list;
+          _loading = false;
+        });
+      }
+    } catch (e, s) {
+      Global.logger.e('加载本地勋章失败: $e', stackTrace: s);
       if (mounted) {
         setState(() => _loading = false);
       }
@@ -74,12 +151,10 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     final newStatus = !currentlyEquipped;
 
     try {
-      final res = await Api.client.equipBadge(user.id, badgeCode, newStatus);
-      if (res.success) {
+      final success = await MyDatabase.instance.userBadgesDao.toggleEquipBadge(user.id, badgeCode, newStatus);
+      if (success) {
         ToastUtil.success(newStatus ? '已置顶佩戴该勋章' : '已取消佩戴');
         _loadBadges();
-      } else {
-        ToastUtil.error(res.msg ?? '操作失败');
       }
     } catch (e) {
       ToastUtil.error('操作失败');

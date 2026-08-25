@@ -69,13 +69,7 @@ public class BadgeBo {
                 vo.setProgressTarget(badge.getTargetValue());
                 vo.setProgressPercent(1.0);
             } else {
-                vo.setIsUnlocked(false);
-                vo.setObtainCount(0);
-                vo.setStarLevel(1);
-                vo.setIsEquipped(false);
-                vo.setIsViewed(false);
-
-                // 计算未解锁进度
+                // 计算当前进度指标
                 int current = 0;
                 int target = badge.getTargetValue();
                 if ("STREAK_DAYS".equalsIgnoreCase(badge.getConditionType())) {
@@ -83,10 +77,58 @@ public class BadgeBo {
                 } else if ("MASTERED_WORDS".equalsIgnoreCase(badge.getConditionType())) {
                     current = masteredWords;
                 }
-                vo.setProgressCurrent(current);
-                vo.setProgressTarget(target);
-                double percent = (target > 0) ? Math.min(1.0, (double) current / target) : 0.0;
-                vo.setProgressPercent(percent);
+
+                // 🌟 自动补发/对齐历史已达标的勋章 (例如老用户已掌握 815 词，自动解锁 100 词勋章)
+                if (user != null && target > 0 && current >= target) {
+                    try {
+                        ub = new UserBadge();
+                        ub.setId(UUID.randomUUID().toString().replace("-", ""));
+                        ub.setUserId(user.getId());
+                        ub.setBadgeCode(badge.name());
+                        ub.setObtainCount(1);
+                        ub.setStarLevel(1);
+                        ub.setUnlockedAt(new Date());
+                        ub.setIsEquipped(false);
+                        ub.setIsViewed(false);
+                        ub.setCreateTime(new Date());
+                        ub.setUpdateTime(new Date());
+                        userBadgeBo.createEntity(ub);
+
+                        // 发放首次解锁奖励
+                        if (badge.getRewardBubbles() > 0) {
+                            userBo.adjustCowDung(user, badge.getRewardBubbles(), "BadgeAutoUnlock:" + badge.getDisplayName());
+                        }
+
+                        vo.setId(ub.getId());
+                        vo.setUserId(ub.getUserId());
+                        vo.setIsUnlocked(true);
+                        vo.setObtainCount(1);
+                        vo.setStarLevel(1);
+                        vo.setUnlockedAt(ub.getUnlockedAt());
+                        vo.setIsEquipped(false);
+                        vo.setIsViewed(false);
+                        vo.setProgressCurrent(target);
+                        vo.setProgressTarget(target);
+                        vo.setProgressPercent(1.0);
+                        log.info("用户 [{}] 自动补发已达标勋章: {} ({}/{})", user.getUserName(), badge.getDisplayName(), current, target);
+                    } catch (Exception e) {
+                        log.error("自动补发勋章失败", e);
+                        vo.setIsUnlocked(false);
+                        vo.setProgressCurrent(current);
+                        vo.setProgressTarget(target);
+                        vo.setProgressPercent(1.0);
+                    }
+                } else {
+                    vo.setIsUnlocked(false);
+                    vo.setObtainCount(0);
+                    vo.setStarLevel(1);
+                    vo.setIsEquipped(false);
+                    vo.setIsViewed(false);
+                    vo.setProgressCurrent(current);
+                    vo.setProgressTarget(target);
+                    double percent = (target > 0) ? Math.min(1.0, (double) current / target) : 0.0;
+                    vo.setProgressPercent(percent);
+                }
             }
             resultList.add(vo);
         }

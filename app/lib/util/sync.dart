@@ -266,6 +266,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           return 5;
         case 'userStudyDailyStats':
           return 5;
+        case 'userBadges':
+          return 5;
         case 'pcaProjectionConfigs':
           return 1;
         default:
@@ -493,6 +495,11 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
             } else if (log.operate == 'DELETE') {
               await (db.delete(db.pcaProjectionConfigs)..where((c) => c.id.equals(entity.id))).go();
             }
+          } else if (log.tblName == 'userBadges' || log.tblName == 'user_badge') {
+            final entity = UserBadge.fromJson(entityJson);
+            if (log.operate == 'INSERT' || log.operate == 'UPDATE') {
+              await db.userBadgesDao.saveEntity(entity, false);
+            }
           } else if (log.tblName != 'users' &&
               log.tblName != 'dicts' &&
               log.tblName != 'words' &&
@@ -509,6 +516,8 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               log.tblName != 'meaningItems' &&
               log.tblName != 'learningLogs' &&
               log.tblName != 'userStudyDailyStats' &&
+              log.tblName != 'userBadges' &&
+              log.tblName != 'user_badge' &&
               log.tblName != 'pcaProjectionConfigs') {
             Global.logger.w("⚠️ 不支持的表: ${log.tblName}");
             // 不弹出错误提示，只记录日志

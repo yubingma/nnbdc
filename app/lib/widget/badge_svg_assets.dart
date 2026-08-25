@@ -2,6 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class BadgeSvgAssets {
+  /// 16 枚核心勋章元数据配置池 (自包含、离线优先)
+  static const List<Map<String, dynamic>> allBadgeDefinitions = [
+    // 1. 恒心打卡
+    {'code': 'STREAK_3', 'name': '萌芽初醒', 'category': 'HABIT', 'tier': 'BRONZE', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 3, 'rewardBubbles': 50, 'description': '千里之行始于足下，连续背单词 3 天'},
+    {'code': 'STREAK_21', 'name': '习惯微光', 'category': 'HABIT', 'tier': 'SILVER', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 21, 'rewardBubbles': 150, 'description': '21天习惯养成，让自律成为你的第二天性'},
+    {'code': 'STREAK_100', 'name': '百日筑基', 'category': 'HABIT', 'tier': 'GOLD', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 100, 'rewardBubbles': 500, 'description': '风雨无阻连续打卡100天，意志如磐石'},
+    {'code': 'STREAK_365', 'name': '星火长明', 'category': 'HABIT', 'tier': 'LEGENDARY', 'isStackable': false, 'conditionType': 'STREAK_DAYS', 'targetValue': 365, 'rewardBubbles': 2000, 'description': '整整一年的坚持，足以重塑一个人的人生'},
+
+    // 2. 博学词汇
+    {'code': 'VOCAB_100', 'name': '破冰启航', 'category': 'VOCAB', 'tier': 'BRONZE', 'isStackable': false, 'conditionType': 'MASTERED_WORDS', 'targetValue': 100, 'rewardBubbles': 60, 'description': '成功掌握前 100 个词，跨过背词起跑线'},
+    {'code': 'VOCAB_1000', 'name': '千词过海', 'category': 'VOCAB', 'tier': 'SILVER', 'isStackable': false, 'conditionType': 'MASTERED_WORDS', 'targetValue': 1000, 'rewardBubbles': 200, 'description': '掌握千词，日常简单英文交流与阅读畅通无阻'},
+    {'code': 'VOCAB_5000', 'name': '词海踏浪', 'category': 'VOCAB', 'tier': 'GOLD', 'isStackable': false, 'conditionType': 'MASTERED_WORDS', 'targetValue': 5000, 'rewardBubbles': 800, 'description': '掌握五千词，四六级/考研英语词汇轻松驾驭'},
+    {'code': 'VOCAB_FINISH_BOOK', 'name': '全书通关斩', 'category': 'VOCAB', 'tier': 'LEGENDARY', 'isStackable': false, 'conditionType': 'FINISH_BOOK', 'targetValue': 1, 'rewardBubbles': 1500, 'description': '将一整本词书从头背到尾并全部掌握，无懈可击'},
+
+    // 3. 精进学霸 (可重复累加 ×N)
+    {'code': 'PERFECT_SCORE', 'name': '百发百中', 'category': 'MASTERY', 'tier': 'BRONZE', 'isStackable': true, 'conditionType': 'PERFECT_SCORE', 'targetValue': 1, 'rewardBubbles': 20, 'description': '单次复习或测验100%全对，每次达成均可重复累加'},
+    {'code': 'EASY_FLOW', 'name': '极速心流', 'category': 'MASTERY', 'tier': 'SILVER', 'isStackable': true, 'conditionType': 'EASY_STREAK', 'targetValue': 30, 'rewardBubbles': 30, 'description': '单次背词连续 30 词测评判定为「轻松」，行云流水'},
+    {'code': 'DAWN_LEARN', 'name': '破晓之翼', 'category': 'MASTERY', 'tier': 'GOLD', 'isStackable': true, 'conditionType': 'DAWN_CHECKIN', 'targetValue': 1, 'rewardBubbles': 30, 'description': '早晨 6:00 ~ 7:30 间完成背词打卡，见证清晨自律'},
+    {'code': 'NIGHT_LEARN', 'name': '夜行学者', 'category': 'MASTERY', 'tier': 'GOLD', 'isStackable': true, 'conditionType': 'NIGHT_CHECKIN', 'targetValue': 1, 'rewardBubbles': 30, 'description': '深夜 23:00 后自律复习，万籁俱寂唯有求知欲'},
+
+    // 4. 共鸣探索
+    {'code': 'INVITE_FRIEND', 'name': '布道同行', 'category': 'SOCIAL', 'tier': 'BRONZE', 'isStackable': false, 'conditionType': 'INVITE_FRIEND', 'targetValue': 1, 'rewardBubbles': 100, 'description': '一人行速，二人行远。分享知识的光芒'},
+    {'code': 'GROUP_CHECKIN', 'name': '并肩同行', 'category': 'SOCIAL', 'tier': 'SILVER', 'isStackable': false, 'conditionType': 'GROUP_CHECKIN', 'targetValue': 20, 'rewardBubbles': 250, 'description': '在学习小组/班级中与同伴共同自律打卡满 20 次'},
+    {'code': 'RANK_TOP3', 'name': '登顶时刻', 'category': 'SOCIAL', 'tier': 'GOLD', 'isStackable': false, 'conditionType': 'RANK_TOP3', 'targetValue': 1, 'rewardBubbles': 600, 'description': '登上所在班级或全站周背词排行榜 TOP 3'},
+    {'code': 'AI_ORACLE', 'name': 'AI 智囊伙伴', 'category': 'SOCIAL', 'tier': 'LEGENDARY', 'isStackable': false, 'conditionType': 'AI_ASSIST', 'targetValue': 100, 'rewardBubbles': 1000, 'description': '拥抱 AI 时代学习方式，人机协同背诵词汇'},
+  ];
+
   /// 全局高保真渐变与材质滤镜定义池 (与 HTML 方案 100% 对齐)
   static const String _globalDefs = '''
   <defs>

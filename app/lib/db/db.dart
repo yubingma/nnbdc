@@ -46,6 +46,7 @@ part 'db.g.dart';
   LearningLogs,
   UserStudyDailyStats,
   PcaProjectionConfigs,
+  UserBadges,
 ], daos: [
   UsersDao,
   LocalParamsDao,
@@ -79,6 +80,7 @@ part 'db.g.dart';
   LocalExceptionsDao,
   LearningLogsDao,
   UserStudyDailyStatsDao,
+  UserBadgesDao,
 ])
 class MyDatabase extends _$MyDatabase {
   MyDatabase(super.e);
@@ -249,7 +251,7 @@ class MyDatabase extends _$MyDatabase {
   // you should bump this number whenever you change or add a table definition. Migrations
   // are covered later in this readme.
   @override
-  int get schemaVersion => 50;
+  int get schemaVersion => 51;
 
   @override
   MigrationStrategy get migration {
@@ -410,6 +412,9 @@ class MyDatabase extends _$MyDatabase {
           }
           if (from < 50) {
             await _migrateFromV48ToV49UserStudyStepsThreeGroup(m);
+          }
+          if (from < 51) {
+            await _migrateFromV50ToV51AddUserBadges(m);
           }
         } catch (e, stackTrace) {
           // 升级失败，记录错误日志
@@ -611,6 +616,13 @@ class MyDatabase extends _$MyDatabase {
   Future<void> _migrateFromV46ToV47(Migrator m) async {
     await transaction(() async {
       await m.addColumn(dictWords, dictWords.semanticSeq);
+    });
+  }
+
+  /// 从版本 50 升级到版本 51：创建用户勋章表 user_badges
+  Future<void> _migrateFromV50ToV51AddUserBadges(Migrator m) async {
+    await transaction(() async {
+      await m.createTable(userBadges);
     });
   }
 

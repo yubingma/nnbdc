@@ -2542,3 +2542,58 @@ class UserStudyDailyStatsDao extends DatabaseAccessor<MyDatabase> with _$UserStu
   }
 }
 
+@DriftAccessor(tables: [UserBadges])
+class UserBadgesDao extends DatabaseAccessor<MyDatabase> with _$UserBadgesDaoMixin {
+  UserBadgesDao(super.db);
+
+  Future<void> saveEntity(UserBadge userBadge, bool genLog) async {
+    await into(userBadges).insertOnConflictUpdate(userBadge);
+    if (genLog) {
+      await DbLogUtil.logOperation(
+        userBadge.userId,
+        'INSERT',
+        'userBadges',
+        userBadge.id,
+        userBadge,
+      );
+    }
+  }
+
+  Future<List<UserBadge>> getBadgesByUserId(String userId) async {
+    return (select(userBadges)..where((u) => u.userId.equals(userId))).get();
+  }
+
+  Future<UserBadge?> getBadgeByUserAndCode(String userId, String badgeCode) async {
+    return (select(userBadges)
+          ..where((u) => u.userId.equals(userId) & u.badgeCode.equals(badgeCode)))
+        .getSingleOrNull();
+  }
+
+  Future<bool> toggleEquipBadge(String userId, String badgeCode, bool isEquipped) async {
+    final existing = await getBadgeByUserAndCode(userId, badgeCode);
+    if (existing == null) return false;
+
+    if (isEquipped) {
+      final equippedList = await (select(userBadges)
+            ..where((u) => u.userId.equals(userId) & u.isEquipped.equals(true))
+            ..orderBy([(u) => OrderingTerm(expression: u.updateTime, mode: OrderingMode.asc)]))
+          .get();
+      if (equippedList.length >= 3) {
+        final oldest = equippedList.first;
+        await saveEntity(oldest.copyWith(isEquipped: false, updateTime: DateTime.now()), true);
+      }
+    }
+
+    final updated = existing.copyWith(
+      isEquipped: isEquipped,
+      updateTime: DateTime.now(),
+    );
+    await saveEntity(updated, true);
+    return true;
+  }
+
+  Future<void> batchDeleteUserRecords(String userId) async {
+    await (delete(userBadges)..where((u) => u.userId.equals(userId))).go();
+  }
+}
+

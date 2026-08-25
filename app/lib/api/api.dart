@@ -976,16 +976,5 @@ abstract class RestClient {
       @Field("maxRedemptions") int? maxRedemptions,
       @Field("showCodeToUser") bool? showCodeToUser,
       @Field("isActive") bool? isActive);
-
-  @GET("/badge/getMyBadges.do")
-  Future<Result<List<UserBadgeVo>>> getMyBadges(
-      @Query("userId") String? userId);
-
-  @POST("/badge/equipBadge.do")
-  @FormUrlEncoded()
-  Future<Result<bool>> equipBadge(
-      @Field("userId") String userId,
-      @Field("badgeCode") String badgeCode,
-      @Field("isEquipped") bool isEquipped);
 }
 
