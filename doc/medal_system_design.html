@@ -899,6 +899,7 @@
       <a href="#section-rewards" class="nav-tab">🎁 勋章权益与社交裂变</a>
       <a href="#section-flow" class="nav-tab">⚡️ 触发与交互体验</a>
       <a href="#section-tech" class="nav-tab">🛠 数据模型与规则引擎</a>
+      <a href="#section-feasibility" class="nav-tab" style="border-color: #38BDF8; color: #38BDF8;">📋 现有能力适配与落地建议</a>
     </div>
 
     <!-- 1. 核心激励机制与心理学设计 -->
@@ -1296,7 +1297,7 @@
           </div>
         </div>
 
-        <!-- 10. 学霸 - 极速心流 (白银 · 多次获得 ×5) -->
+        <!-- 10. 学霸 - 极速心流 (白银 · 基于测评「轻松」秒选 · 多次获得 ×5) -->
         <div class="badge-card badge-silver" data-cat="mastery" onclick="openBadgeModal('badge-10')">
           <div class="badge-multiplier">已达成 ×5</div>
           <div class="status-tag unlocked">已解锁</div>
@@ -1317,7 +1318,7 @@
           <div class="badge-category">精进 · 巅峰学霸 (可累加)</div>
           <div class="badge-name">极速心流</div>
           <div class="star-rating">★☆☆☆☆ (1星心流)</div>
-          <div class="badge-desc">平均反应时间 < 1.2 秒且连对 30 词</div>
+          <div class="badge-desc">单次背词连续 30 词测评判定为「轻松」，行云流水</div>
           <div class="progress-bar-wrap">
             <div class="progress-bar-fill" style="width: 50%; background: linear-gradient(135deg, #EC4899, #38BDF8);"></div>
           </div>
@@ -1418,7 +1419,7 @@
           </div>
         </div>
 
-        <!-- 14. 社交 - 自习室合伙人 (白银) -->
+        <!-- 14. 社交 - 同袍同行 (白银 · 基于现有StudyGroup体系) -->
         <div class="badge-card badge-silver" data-cat="social" onclick="openBadgeModal('badge-14')">
           <div class="status-tag in-progress">进行中</div>
           <div class="badge-icon-box" id="svg-badge-14">
@@ -1434,14 +1435,14 @@
             </svg>
           </div>
           <div class="badge-category">共鸣 · 探索先锋</div>
-          <div class="badge-name">自习室合伙人</div>
-          <div class="badge-desc">在在线自习室与同伴累计专注学习超过 20 小时</div>
+          <div class="badge-name">同袍同行</div>
+          <div class="badge-desc">在学习小组/班级中与同伴共同自律打卡满 20 次</div>
           <div class="progress-bar-wrap">
-            <div class="progress-bar-fill" style="width: 47.5%;"></div>
+            <div class="progress-bar-fill" style="width: 45%;"></div>
           </div>
           <div class="progress-text">
-            <span>9.5 / 20 小时</span>
-            <span>47%</span>
+            <span>9 / 20 次</span>
+            <span>45%</span>
           </div>
         </div>
 
@@ -1635,6 +1636,97 @@
       </div>
     </section>
 
+    <!-- 8. 现有系统功能匹配度与低成本落地实施建议 (务实落地) -->
+    <section id="section-feasibility" class="section-card">
+      <div class="section-header">
+        <div>
+          <div class="section-title">📋 现有系统功能匹配度与落地建议</div>
+          <div class="section-desc">结合泡泡背单词当前代码库真实能力，区分「现成可用」、「轻量扩展」与「进阶建议」</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 22%;">方案设计项</th>
+              <th style="width: 18%;">当前 App 现状</th>
+              <th style="width: 14%;">适配状态</th>
+              <th>落地调整建议 / 低成本实现方案</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>连续打卡天数</strong><br>(萌芽/习惯/百日/星火)</td>
+              <td>已有 <code>userDakaLog</code> 打卡日历与天数统计</td>
+              <td><span class="status-tag unlocked" style="position:static;">✅ 100% 现成</span></td>
+              <td>打卡完成时直接读取连续天数并触发判定，零额外改造成本。</td>
+            </tr>
+            <tr>
+              <td><strong>掌握词汇量 & 整书通关</strong><br>(破冰/千词/五千/通关)</td>
+              <td>已有 <code>UserWordOrder</code> 词汇掌握进度与选书通关体系</td>
+              <td><span class="status-tag unlocked" style="position:static;">✅ 100% 现成</span></td>
+              <td>背词提交时读取掌握单词总量与词书进度，直接触发对应勋章。</td>
+            </tr>
+            <tr>
+              <td><strong>测试满分 100% 正确率</strong><br>(百发百中 · 可叠层)</td>
+              <td>已有复习/测验完成结算，具备正确率统计</td>
+              <td><span class="status-tag unlocked" style="position:static;">✅ 100% 现成</span></td>
+              <td>测验结算如果 <code>wrongCount == 0 && total >= 20</code>，直接发放勋章并 <code>obtain_count + 1</code>。</td>
+            </tr>
+            <tr>
+              <td><strong>早起/深夜自律背词</strong><br>(破晓之翼 / 夜行学者)</td>
+              <td>打卡记录携带时间戳 <code>theTime</code></td>
+              <td><span class="status-tag unlocked" style="position:static;">✅ 100% 现成</span></td>
+              <td>在打卡时间落在 6:00~7:30 或 23:00 之后时，累加对应自律次数。</td>
+            </tr>
+            <tr>
+              <td><strong>魔法泡泡奖励发放</strong></td>
+              <td>已有 <code>userBo.adjustCowDung()</code> 与流水日志</td>
+              <td><span class="status-tag unlocked" style="position:static;">✅ 100% 现成</span></td>
+              <td>勋章发放时直接调用泡泡增加接口，完美对接现有账户流水。</td>
+            </tr>
+            <tr>
+              <td><strong>海报生成与朋友圈分享</strong></td>
+              <td>已有 <code>daka_poster.dart</code> 打卡海报组件</td>
+              <td><span class="status-tag unlocked" style="position:static;">✅ 100% 现成</span></td>
+              <td>直接复用现有海报绘制能力，只需在海报底部叠加一枚最新获得/佩戴的矢量勋章戳记。</td>
+            </tr>
+            <tr>
+              <td><strong>学习小组/班级自律</strong><br>(同袍同行)</td>
+              <td>已有 <code>StudyGroup</code> 学习小组/班级体系</td>
+              <td><span class="status-tag unlocked" style="position:static;">✅ 100% 现成</span></td>
+              <td><strong>文案已调整</strong>：从原“虚拟自习室”平替为“学习小组共同打卡满 20 次”，直接使用现有小组数据。</td>
+            </tr>
+            <tr>
+              <td><strong>极速心流 (秒级轻松掌握)</strong><br>(极速心流 · 可叠层)</td>
+              <td>已有背词/复习测评反馈与熟练度判定</td>
+              <td><span class="status-tag unlocked" style="position:static;">✅ 100% 现成</span></td>
+              <td><strong>精准适配现有能力</strong>：直接基于用户的测评结果，只要单次学习中连续 30 个单词评定为「轻松（秒级认识）」，即可判定达成，无需额外采集毫秒硬件时间。</td>
+            </tr>
+            <tr>
+              <td><strong>AI 助记互动</strong><br>(AI 智囊伙伴)</td>
+              <td>已有 <code>AiBo</code> / <code>ai_activation.dart</code> AI 助记生成</td>
+              <td><span class="status-tag in-progress" style="position:static;">⚡️ 轻量扩展</span></td>
+              <td>在用户每次成功调用 AI 生成助记例句时，在 Redis/DB 累加 <code>ai_use_count + 1</code> 即可。</td>
+            </tr>
+            <tr>
+              <td><strong>个人头像框/流光挂件</strong><br>(稀有勋章权益)</td>
+              <td>现有用户头像 <code>UserAvatar</code>，暂无挂件层</td>
+              <td><span class="status-tag in-progress" style="position:static;">⚡️ 轻量扩展</span></td>
+              <td><strong>实现建议</strong>：在 Flutter 的 <code>UserAvatar</code> 外包一层 <code>Stack</code>，若 <code>user.equippedBadge != null</code> 则叠加一层 SVG 挂件边框（仅需 20 行代码）。</td>
+            </tr>
+            <tr>
+              <td><strong>补签卡道具</strong></td>
+              <td>现有打卡支持补签，但未独立道具背包</td>
+              <td><span class="status-tag in-progress" style="position:static;">⚡️ 轻量扩展</span></td>
+              <td><strong>建议</strong>：第一期奖励全部折算为充沛的「魔法泡泡」；后续如需补签卡，只需在用户表加 <code>recheck_card_count</code> 字段。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- 底部操作区 -->
     <div class="action-banner">
       <h3>方案审核与下一步落地</h3>
@@ -1716,7 +1808,7 @@
       },
       'badge-10': {
         name: '极速心流', category: '精进 · 巅峰学霸 (可累加)', tier: '白银 · 1星', tierColor: '#94A3B8',
-        condition: '平均反应时间 < 1.2 秒且连对 30 词（可重复累加获得）',
+        condition: '单次背词/复习中，连续 30 个单词测评判定为「轻松（秒级掌握）」',
         rewards: ['每次奖励魔法泡泡 +30', '首次达成 +180', '心流加速卡'],
         progress: '已累计获得 5 次 (★☆☆☆☆ 1星心流，升2星需达到10次)'
       },
@@ -1737,8 +1829,8 @@
         condition: '成功邀请 1 位好友加入背单词', rewards: ['魔法泡泡 +100', '补签卡 x1'], progress: '1 / 1 (已达成)'
       },
       'badge-14': {
-        name: '自习室合伙人', category: '共鸣 · 探索先锋', tier: '白银', tierColor: '#94A3B8',
-        condition: '在在线自习室与同伴累计专注学习超过 20 小时', rewards: ['魔法泡泡 +250', '自习室专属前排坐席'], progress: '9.5 / 20 小时'
+        name: '同袍同行', category: '共鸣 · 探索先锋', tier: '白银', tierColor: '#94A3B8',
+        condition: '在学习小组/班级中与同伴共同自律打卡满 20 次', rewards: ['魔法泡泡 +250', '小组专属荣誉铭牌'], progress: '9 / 20 次'
       },
       'badge-15': {
         name: '登顶时刻', category: '共鸣 · 探索先锋', tier: '黄金', tierColor: '#FBBF24',
