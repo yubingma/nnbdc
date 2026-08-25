@@ -663,7 +663,6 @@ class _MePageState extends State<MePage> {
             continue;
           }
           Global.logger.i("系统词书内容缺失，准备下载: ${learningDict.dictId}");
-          
           if (!dictsToDownload.any((d) => d.id == learningDict.dictId)) {
             dictsToDownload.add(DictVo(
               id: learningDict.dictId,
@@ -718,6 +717,107 @@ class _MePageState extends State<MePage> {
     } catch (e, stackTrace) {
       Global.logger.e("检查词书下载失败: $e", stackTrace: stackTrace);
     }
+  }
+
+  /// 获取当前用户账户类型信息（用于UI展示和排查）
+  Map<String, dynamic> _getUserAccountTypeInfo() {
+    if (Global.isGuest || loggedInUser == null) {
+      return {
+        'type': '游客模式',
+        'desc': '未登录',
+        'isPremium': false,
+        'tag': '游客',
+      };
+    }
+
+    if (loggedInUser?.isSuperAdmin == true) {
+      return {
+        'type': '超级管理员',
+        'desc': '系统全部权限',
+        'isPremium': true,
+        'tag': '超管',
+      };
+    }
+
+    if (loggedInUser?.isAdmin == true) {
+      return {
+        'type': '管理员',
+        'desc': '系统管理权限',
+        'isPremium': true,
+        'tag': '管理员',
+      };
+    }
+
+    final type = SubscriptionUtil.getSubscriptionType();
+    final expire = SubscriptionUtil.getExpireDate();
+    final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
+
+    if (type != null && type.isNotEmpty) {
+      final typeText = type == 'monthly' ? 'iOS 月度会员' : (type == 'yearly' || type == 'annual' ? 'iOS 年度会员' : 'iOS 订阅会员');
+      final desc = expire != null ? '有效期至：${expire.year}年${expire.month}月${expire.day}日' : '订阅生效中';
+      return {
+        'type': typeText,
+        'desc': desc,
+        'isPremium': true,
+        'tag': 'VIP',
+      };
+    }
+
+    if (isOverride) {
+      final updateTime = loggedInUser?.premiumOverrideUpdateTime;
+      final duration = loggedInUser?.premiumOverrideDuration;
+      if (duration == null) {
+        return {
+          'type': '永久会员 (特权覆盖)',
+          'desc': '后台手动开通 · 永久有效',
+          'isPremium': true,
+          'tag': '永久VIP',
+        };
+      } else if (updateTime != null) {
+        final ms = _parseDurationMillis(duration);
+        if (ms != null && ms > 0) {
+          final expireTime = updateTime.add(Duration(milliseconds: ms));
+          final isValid = expireTime.isAfter(DateTime.now());
+          return {
+            'type': isValid ? '限时会员 (特权覆盖)' : '特权覆盖已过期',
+            'desc': '有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日',
+            'isPremium': isValid,
+            'tag': isValid ? '限时VIP' : '已过期',
+          };
+        }
+      }
+    }
+
+    if (loggedInUser?.vipExpireDate != null) {
+      final vipExpire = loggedInUser!.vipExpireDate!;
+      final isValid = vipExpire.isAfter(DateTime.now());
+      final vipType = loggedInUser?.vipType;
+      final typeText = (vipType != null && vipType.isNotEmpty)
+          ? (vipType == 'monthly' ? '月度会员' : (vipType == 'annual' ? '年度会员' : 'VIP 会员'))
+          : 'VIP 会员';
+      return {
+        'type': isValid ? typeText : '$typeText (已过期)',
+        'desc': '有效期至：${vipExpire.year}年${vipExpire.month}月${vipExpire.day}日',
+        'isPremium': isValid,
+        'tag': isValid ? 'VIP' : '已过期',
+      };
+    }
+
+    if (loggedInUser?.isPremiumIos == true) {
+      return {
+        'type': 'iOS 会员 (永久)',
+        'desc': '永久有效',
+        'isPremium': true,
+        'tag': 'iOS VIP',
+      };
+    }
+
+    return {
+      'type': '普通用户',
+      'desc': '未开通会员',
+      'isPremium': false,
+      'tag': '普通用户',
+    };
   }
 
   /// 解析形如：10天 / 360秒 / 15分钟 的时长字符串，返回毫秒；解析失败返回 null
@@ -973,78 +1073,71 @@ class _MePageState extends State<MePage> {
                 ),
                 const SizedBox(height: 12),
               ],
-
-              // 2. 会员状况/订阅入口 (移动至此处)
+              // 2. 会员状况/订阅入口/账户类型
               Builder(builder: (context) {
-                String? premiumInfoText;
-                final type = SubscriptionUtil.getSubscriptionType();
-                final expire = SubscriptionUtil.getExpireDate();
-                final isOverride = loggedInUser?.premiumOverrideEnabled == true && (loggedInUser?.isPremiumIos != true);
-
-                if (type != null && type.isNotEmpty) {
-                  final typeText = type == 'monthly' ? '月度会员' : '年度会员';
-                  if (expire != null) {
-                    premiumInfoText = '$typeText，有效期至：${expire.year}年${expire.month}月${expire.day}日';
-                  } else {
-                    premiumInfoText = typeText;
-                  }
-                } else if (isOverride) {
-                  final updateTime = loggedInUser?.premiumOverrideUpdateTime;
-                  final duration = loggedInUser?.premiumOverrideDuration;
-                  if (duration == null) {
-                    premiumInfoText = '会员（永久）';
-                  } else if (updateTime != null) {
-                    final ms = _parseDurationMillis(duration);
-                    if (ms != null && ms > 0) {
-                      final expireTime = updateTime.add(Duration(milliseconds: ms));
-                      if (expireTime.isAfter(DateTime.now())) {
-                        premiumInfoText = '会员，有效期至：${expireTime.year}年${expireTime.month}月${expireTime.day}日';
-                      }
-                    }
-                  }
-                } else if (loggedInUser?.vipExpireDate != null && loggedInUser!.vipExpireDate!.isAfter(DateTime.now())) {
-                  final vipExpire = loggedInUser!.vipExpireDate!;
-                  final vipType = loggedInUser?.vipType;
-                  final typeText = (vipType != null && vipType.isNotEmpty)
-                      ? (vipType == 'monthly' ? '月度会员' : (vipType == 'annual' ? '年度会员' : '会员'))
-                      : '会员';
-                  premiumInfoText = '$typeText，有效期至：${vipExpire.year}年${vipExpire.month}月${vipExpire.day}日';
-                } else if (loggedInUser?.isPremiumIos == true) {
-                  premiumInfoText = 'iOS 会员（永久）';
-                }
-
-                if (premiumInfoText != null) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.blue.withValues(alpha: 0.05),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.25), width: 1.5),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.verified_user_rounded, color: Colors.blue, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            premiumInfoText,
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                final accountInfo = _getUserAccountTypeInfo();
+                final isPremium = accountInfo['isPremium'] as bool;
+                final accountType = accountInfo['type'] as String;
+                final accountDesc = accountInfo['desc'] as String?;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (PlatformUtils.isIOS) ...[
+                    // 账户类型信息条 (便于查看和排查)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: isPremium
+                            ? Colors.blue.withValues(alpha: 0.05)
+                            : (isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.grey.shade100),
+                        border: Border.all(
+                          color: isPremium
+                              ? Colors.blue.withValues(alpha: 0.25)
+                              : (isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade300),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isPremium ? Icons.verified_user_rounded : Icons.account_circle_outlined,
+                            color: isPremium ? Colors.blue : subtitleColor,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '账户类型：$accountType',
+                                    style: TextStyle(
+                                      color: isPremium ? Colors.blue : textColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'NotoSansSC',
+                                    ),
+                                  ),
+                                  if (accountDesc != null && accountDesc.isNotEmpty)
+                                    TextSpan(
+                                      text: ' ($accountDesc)',
+                                      style: TextStyle(
+                                        color: isPremium ? Colors.blue.shade700 : subtitleColor,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.normal,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (!isPremium && PlatformUtils.isIOS) ...[
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
