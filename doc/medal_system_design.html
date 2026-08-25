@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>泡泡背单词 - 勋章激励系统全景方案 (Badge & Achievement System)</title>
+  <title>泡泡背单词 - 勋章激励系统全景方案 (Vector Badge & Gamification)</title>
   <style>
     :root {
       --primary: #6366F1;
@@ -13,16 +13,16 @@
       --accent-glow: rgba(236, 72, 153, 0.35);
       --gold: #F59E0B;
       --gold-glow: rgba(245, 158, 11, 0.4);
-      --bronze: #CD7F32;
+      --bronze: #D97706;
       --silver: #94A3B8;
       --legendary: #A855F7;
       --legendary-glow: rgba(168, 85, 247, 0.5);
       
-      --bg: #0B0F19;
-      --card-bg: rgba(30, 41, 59, 0.7);
-      --card-hover: rgba(51, 65, 85, 0.85);
+      --bg: #070B14;
+      --card-bg: rgba(17, 24, 39, 0.75);
+      --card-hover: rgba(30, 41, 59, 0.9);
       --card-border: rgba(255, 255, 255, 0.08);
-      --card-border-glow: rgba(99, 102, 241, 0.3);
+      --card-border-glow: rgba(99, 102, 241, 0.35);
       
       --text-main: #F8FAFC;
       --text-sub: #94A3B8;
@@ -49,14 +49,14 @@
       padding: 40px 20px 80px;
       min-height: 100vh;
       background-image: 
-        radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.15) 0px, transparent 40%),
-        radial-gradient(at 90% 90%, rgba(236, 72, 153, 0.12) 0px, transparent 45%),
-        radial-gradient(at 50% 50%, rgba(245, 158, 11, 0.06) 0px, transparent 60%);
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
+        radial-gradient(at 50% 30%, rgba(168, 85, 247, 0.08) 0px, transparent 60%);
       background-attachment: fixed;
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 0 auto;
     }
 
@@ -71,9 +71,9 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 16px;
+      padding: 6px 18px;
       background: rgba(99, 102, 241, 0.12);
-      border: 1px solid rgba(99, 102, 241, 0.3);
+      border: 1px solid rgba(99, 102, 241, 0.35);
       border-radius: 9999px;
       font-size: 13px;
       font-weight: 600;
@@ -83,7 +83,7 @@
     }
 
     h1 {
-      font-size: 38px;
+      font-size: 40px;
       font-weight: 800;
       letter-spacing: -0.5px;
       margin-bottom: 14px;
@@ -95,7 +95,7 @@
     .subtitle {
       font-size: 16px;
       color: var(--text-sub);
-      max-width: 760px;
+      max-width: 800px;
       margin: 0 auto;
       line-height: 1.7;
     }
@@ -110,8 +110,8 @@
     }
 
     .nav-tab {
-      padding: 10px 20px;
-      background: rgba(30, 41, 59, 0.6);
+      padding: 10px 22px;
+      background: rgba(17, 24, 39, 0.7);
       border: 1px solid var(--card-border);
       border-radius: 12px;
       color: var(--text-sub);
@@ -123,7 +123,7 @@
     }
 
     .nav-tab:hover, .nav-tab.active {
-      background: rgba(99, 102, 241, 0.2);
+      background: rgba(99, 102, 241, 0.25);
       border-color: var(--primary);
       color: #FFF;
       transform: translateY(-2px);
@@ -132,21 +132,21 @@
     /* 区域模块通用卡片 */
     .section-card {
       background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 32px;
-      margin-bottom: 36px;
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      border-radius: 24px;
+      padding: 36px;
+      margin-bottom: 40px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
     }
 
     .section-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
+      margin-bottom: 28px;
+      padding-bottom: 18px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
@@ -167,18 +167,23 @@
     /* 核心机制三层飞轮 */
     .flywheel-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 20px;
       margin-top: 20px;
     }
 
     .flywheel-item {
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(11, 15, 25, 0.7);
       border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 24px;
+      border-radius: 18px;
+      padding: 26px;
       position: relative;
       overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .flywheel-item:hover {
+      transform: translateY(-3px);
     }
 
     .flywheel-item::before {
@@ -226,17 +231,17 @@
       margin-bottom: 24px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 860px) {
       .tier-bar { grid-template-columns: repeat(2, 1fr); }
     }
 
     .tier-card {
-      padding: 16px;
-      border-radius: 14px;
-      background: rgba(15, 23, 42, 0.6);
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(11, 15, 25, 0.7);
       border: 1px solid var(--card-border);
       text-align: center;
-      transition: transform 0.2s;
+      transition: all 0.2s;
     }
 
     .tier-card:hover {
@@ -266,14 +271,14 @@
     .filter-group {
       display: flex;
       gap: 10px;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
       flex-wrap: wrap;
     }
 
     .filter-btn {
-      padding: 8px 16px;
+      padding: 9px 18px;
       border-radius: 20px;
-      background: rgba(15, 23, 42, 0.8);
+      background: rgba(11, 15, 25, 0.8);
       border: 1px solid var(--card-border);
       color: var(--text-sub);
       font-size: 13px;
@@ -286,31 +291,32 @@
       background: var(--primary);
       border-color: var(--primary-light);
       color: #FFF;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
     }
 
     /* 勋章网格 */
     .badge-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 22px;
     }
 
     .badge-card {
-      background: rgba(15, 23, 42, 0.7);
+      background: rgba(15, 23, 42, 0.85);
       border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 22px 18px;
+      border-radius: 20px;
+      padding: 26px 20px;
       text-align: center;
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .badge-card:hover {
-      transform: translateY(-6px);
+      transform: translateY(-8px);
       border-color: var(--card-border-glow);
-      box-shadow: 0 12px 28px -8px rgba(99, 102, 241, 0.25);
+      box-shadow: 0 16px 36px -10px rgba(99, 102, 241, 0.3);
     }
 
     .badge-card.locked {
@@ -319,60 +325,49 @@
     }
 
     .badge-card.locked:hover {
-      filter: grayscale(0.5);
-      opacity: 0.9;
+      filter: grayscale(0.4);
+      opacity: 0.95;
     }
 
-    .badge-icon-wrapper {
-      width: 76px;
-      height: 76px;
+    .badge-icon-box {
+      width: 100px;
+      height: 100px;
       margin: 0 auto 16px;
-      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 36px;
       position: relative;
       transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    .badge-card:hover .badge-icon-wrapper {
-      transform: scale(1.12) rotate(6deg);
+    .badge-card:hover .badge-icon-box {
+      transform: scale(1.14) rotate(4deg);
     }
 
-    /* 勋章色彩与光环 */
-    .badge-bronze .badge-icon-wrapper {
-      background: radial-gradient(circle, rgba(217, 119, 6, 0.25) 0%, rgba(120, 53, 15, 0.1) 70%);
-      border: 2px solid #D97706;
-      box-shadow: 0 0 15px rgba(217, 119, 6, 0.2);
+    .badge-icon-box svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.4));
     }
 
-    .badge-silver .badge-icon-wrapper {
-      background: radial-gradient(circle, rgba(148, 163, 184, 0.25) 0%, rgba(71, 85, 105, 0.1) 70%);
-      border: 2px solid #94A3B8;
-      box-shadow: 0 0 15px rgba(148, 163, 184, 0.2);
+    .badge-bronze .badge-icon-box svg {
+      filter: drop-shadow(0 6px 18px rgba(217, 119, 6, 0.3));
     }
 
-    .badge-gold .badge-icon-wrapper {
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, rgba(180, 83, 9, 0.1) 70%);
-      border: 2px solid #F59E0B;
-      box-shadow: 0 0 20px var(--gold-glow);
+    .badge-silver .badge-icon-box svg {
+      filter: drop-shadow(0 6px 18px rgba(148, 163, 184, 0.35));
     }
 
-    .badge-legendary .badge-icon-wrapper {
-      background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, rgba(59, 130, 246, 0.15) 70%);
-      border: 2px solid #C084FC;
-      box-shadow: 0 0 25px var(--legendary-glow);
-      animation: pulseLegend 3s infinite alternate;
+    .badge-gold .badge-icon-box svg {
+      filter: drop-shadow(0 8px 22px rgba(245, 158, 11, 0.45));
     }
 
-    @keyframes pulseLegend {
-      0% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
-      100% { box-shadow: 0 0 30px rgba(236, 72, 153, 0.6); }
+    .badge-legendary .badge-icon-box svg {
+      filter: drop-shadow(0 8px 26px rgba(168, 85, 247, 0.6));
     }
 
     .badge-name {
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 700;
       color: #FFF;
       margin-bottom: 6px;
@@ -390,9 +385,9 @@
     .badge-desc {
       font-size: 12px;
       color: var(--text-sub);
-      line-height: 1.4;
-      margin-bottom: 12px;
-      height: 34px;
+      line-height: 1.45;
+      margin-bottom: 14px;
+      height: 36px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -418,19 +413,19 @@
     .progress-text {
       font-size: 11px;
       color: var(--text-muted);
-      margin-top: 5px;
+      margin-top: 6px;
       display: flex;
       justify-content: space-between;
     }
 
     .status-tag {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 12px;
+      right: 12px;
       font-size: 10px;
       font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 10px;
+      padding: 3px 9px;
+      border-radius: 12px;
     }
 
     .status-tag.unlocked {
@@ -452,8 +447,8 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(3, 7, 18, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(3, 7, 18, 0.88);
+      backdrop-filter: blur(16px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -470,16 +465,16 @@
 
     .modal-box {
       width: 90%;
-      max-width: 440px;
+      max-width: 460px;
       background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 28px;
-      padding: 36px 28px;
+      padding: 36px 30px;
       text-align: center;
       position: relative;
       transform: scale(0.85) translateY(20px);
       transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.2);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 50px rgba(99, 102, 241, 0.25);
     }
 
     .modal-overlay.active .modal-box {
@@ -509,26 +504,30 @@
       color: #FFF;
     }
 
-    .modal-shine {
-      width: 110px;
-      height: 110px;
+    .modal-icon-wrap {
+      width: 140px;
+      height: 140px;
       margin: 0 auto 20px;
-      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 54px;
       position: relative;
-      animation: floatBadge 3s ease-in-out infinite;
+      animation: floatBadge 3.2s ease-in-out infinite;
+    }
+
+    .modal-icon-wrap svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 12px 28px rgba(99, 102, 241, 0.45));
     }
 
     @keyframes floatBadge {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.03); }
     }
 
     .modal-title {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 800;
       margin-bottom: 6px;
     }
@@ -536,32 +535,34 @@
     .modal-tier {
       font-size: 12px;
       font-weight: 700;
-      padding: 4px 12px;
+      padding: 4px 14px;
       border-radius: 12px;
       display: inline-block;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
 
     .modal-condition {
       font-size: 14px;
       color: var(--text-sub);
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 12px;
-      padding: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 14px;
+      padding: 14px;
       margin-bottom: 18px;
       line-height: 1.5;
+      text-align: left;
     }
 
     .modal-rewards {
       display: flex;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 24px;
+      flex-wrap: wrap;
     }
 
     .reward-pill {
       background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.3);
+      border: 1px solid rgba(99, 102, 241, 0.35);
       padding: 6px 14px;
       border-radius: 20px;
       font-size: 13px;
@@ -576,7 +577,7 @@
 
     .modal-btn {
       flex: 1;
-      padding: 12px;
+      padding: 13px;
       border-radius: 14px;
       font-size: 14px;
       font-weight: 700;
@@ -588,12 +589,12 @@
     .btn-share {
       background: var(--gradient-primary);
       color: #FFF;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
     }
 
     .btn-share:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+      box-shadow: 0 6px 22px rgba(99, 102, 241, 0.6);
     }
 
     .btn-wear {
@@ -620,7 +621,7 @@
     }
 
     th {
-      background: rgba(15, 23, 42, 0.8);
+      background: rgba(11, 15, 25, 0.8);
       color: var(--text-sub);
       font-weight: 600;
       padding: 14px 16px;
@@ -640,14 +641,14 @@
     .code-tag {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 12px;
-      background: rgba(0, 0, 0, 0.35);
+      background: rgba(0, 0, 0, 0.4);
       color: #38BDF8;
       padding: 3px 8px;
       border-radius: 6px;
       border: 1px solid rgba(56, 189, 248, 0.2);
     }
 
-    /* 交互与流程卡片 */
+    /* 流程步骤 */
     .step-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -656,16 +657,16 @@
     }
 
     .step-box {
-      background: rgba(15, 23, 42, 0.5);
+      background: rgba(11, 15, 25, 0.6);
       border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 20px;
+      border-radius: 16px;
+      padding: 22px;
       position: relative;
     }
 
     .step-num {
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       background: var(--primary);
       color: #FFF;
@@ -689,25 +690,25 @@
       line-height: 1.5;
     }
 
-    /* 底部按钮与反馈 */
+    /* 底部操作区 */
     .action-banner {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      border-radius: 20px;
-      padding: 32px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.18) 0%, rgba(236, 72, 153, 0.18) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 24px;
+      padding: 36px;
       text-align: center;
       margin-top: 40px;
     }
 
     .action-banner h3 {
-      font-size: 20px;
+      font-size: 22px;
       margin-bottom: 10px;
     }
 
     .action-banner p {
       color: var(--text-sub);
       font-size: 14px;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
 
     .btn-primary {
@@ -716,39 +717,113 @@
       gap: 8px;
       background: var(--gradient-primary);
       color: #FFF;
-      padding: 12px 28px;
-      border-radius: 12px;
+      padding: 13px 32px;
+      border-radius: 14px;
       font-size: 15px;
       font-weight: 700;
       text-decoration: none;
       cursor: pointer;
-      box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45);
       border: none;
       transition: all 0.2s;
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
+      box-shadow: 0 8px 28px rgba(99, 102, 241, 0.65);
     }
   </style>
 </head>
 <body>
 
+  <!-- 全局 SVG 渐变与滤镜定义库 -->
+  <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- 青铜金属渐变 -->
+      <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FDBA74"/>
+        <stop offset="40%" stop-color="#D97706"/>
+        <stop offset="100%" stop-color="#78350F"/>
+      </linearGradient>
+      <linearGradient id="bronzeInner" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#381E11"/>
+        <stop offset="100%" stop-color="#1F1109"/>
+      </linearGradient>
+
+      <!-- 白银金属渐变 -->
+      <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FFFFFF"/>
+        <stop offset="50%" stop-color="#94A3B8"/>
+        <stop offset="100%" stop-color="#334155"/>
+      </linearGradient>
+      <linearGradient id="silverInner" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#1E293B"/>
+        <stop offset="100%" stop-color="#0F172A"/>
+      </linearGradient>
+
+      <!-- 黄金金属渐变 -->
+      <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FEF08A"/>
+        <stop offset="45%" stop-color="#F59E0B"/>
+        <stop offset="100%" stop-color="#78350F"/>
+      </linearGradient>
+      <linearGradient id="goldInner" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#2D1A05"/>
+        <stop offset="100%" stop-color="#120A02"/>
+      </linearGradient>
+
+      <!-- 传说幻彩渐变 -->
+      <linearGradient id="legendGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#F472B6"/>
+        <stop offset="50%" stop-color="#A855F7"/>
+        <stop offset="100%" stop-color="#3B82F6"/>
+      </linearGradient>
+      <linearGradient id="legendInner" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#2E1065"/>
+        <stop offset="100%" stop-color="#0F172A"/>
+      </linearGradient>
+
+      <!-- 翡翠光渐变 -->
+      <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#6EE7B7"/>
+        <stop offset="100%" stop-color="#059669"/>
+      </linearGradient>
+
+      <!-- 烈焰红霞渐变 -->
+      <linearGradient id="fireGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FCA5A5"/>
+        <stop offset="50%" stop-color="#EF4444"/>
+        <stop offset="100%" stop-color="#991B1B"/>
+      </linearGradient>
+
+      <!-- 极光蓝青渐变 -->
+      <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#67E8F9"/>
+        <stop offset="100%" stop-color="#0284C7"/>
+      </linearGradient>
+
+      <!-- 柔和发光滤镜 -->
+      <filter id="badgeGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="4" result="blur"/>
+        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+      </filter>
+    </defs>
+  </svg>
+
   <div class="container">
     <!-- Header -->
     <header>
-      <div class="tag">🚀 PRODUCT & GAMIFICATION DESIGN</div>
-      <h1>泡泡背单词 · 勋章激励系统方案</h1>
+      <div class="tag">✨ 矢量勋章美学 · GAMIFICATION DESIGN</div>
+      <h1>泡泡背单词 · 勋章激励系统全景方案</h1>
       <p class="subtitle">
-        针对背单词「周期长、见效慢、易放弃」的用户心理痛点，打造集「短期高频正反馈、中期能力跃迁、长期荣誉认同」于一体的成就勋章激励闭环。
+        告别普通单调的 Emoji 表情，打造具备独特神韵、金属质感与故事寓意的<b>高保真矢量勋章图鉴</b>。构建「短期高频反馈 + 中期能力跃迁 + 长期荣誉认同」三层动力飞轮。
       </p>
     </header>
 
     <!-- 导航 Anchor -->
     <div class="nav-tabs">
       <a href="#section-framework" class="nav-tab">💡 激励飞轮机制</a>
-      <a href="#section-matrix" class="nav-tab active">🎖 勋章矩阵与图鉴 (可交互)</a>
+      <a href="#section-matrix" class="nav-tab active">🎖 矢量勋章矩阵 (点击查看动效)</a>
       <a href="#section-rewards" class="nav-tab">🎁 勋章权益与社交裂变</a>
       <a href="#section-flow" class="nav-tab">⚡️ 触发与交互体验</a>
       <a href="#section-tech" class="nav-tab">🛠 数据模型与规则引擎</a>
@@ -768,7 +843,7 @@
           <span class="flywheel-tag">Short-Term · 短期即时反馈 (1~7天)</span>
           <h3>多巴胺快速唤醒</h3>
           <p>
-            降低第一步阻力。完成首次背词、连续打卡3天、复习首测满分即发勋章，让新用户在最初的 72 小时内收获强烈的掌控感与成就感。
+            降低起步阻力。完成首次背词、连续打卡3天、复习首测满分即发勋章，让新用户在最初的 72 小时内收获强烈的掌控感与成就感。
           </p>
         </div>
 
@@ -776,7 +851,7 @@
           <span class="flywheel-tag">Mid-Term · 中期习惯巩固 (21~100天)</span>
           <h3>里程碑与能力跃迁</h3>
           <p>
-            突破词汇瓶颈期。设立「千词过海」、「通关整书」、「晨曦微光」等勋章，结合补签卡保护机制，化解放弃焦虑，固化学习习惯。
+            突破词汇瓶颈期。设立「千词过海」、「通关整书」、「晨曦破晓」等勋章，结合补签卡保护机制，化解放弃焦虑，固化学习习惯。
           </p>
         </div>
 
@@ -784,7 +859,7 @@
           <span class="flywheel-tag">Long-Term · 长期荣誉认同 (100+天)</span>
           <h3>自豪感与社交炫耀</h3>
           <p>
-            高光展柜与身份象征。解锁传说级稀有勋章、专属头像框挂件、高颜值分享海报，促使用户在朋友圈与自习室自发传播炫耀。
+            高光展柜与身份象征。解锁传说级稀有勋章、专属流光头像框挂件、高颜值分享海报，促使用户在朋友圈与自习室自发传播炫耀。
           </p>
         </div>
       </div>
@@ -795,26 +870,26 @@
       <div class="section-header">
         <div>
           <div class="section-title">✨ 勋章稀有度与视觉设计规范</div>
-          <div class="section-desc">分级明确，高稀有度具备专属动效与炫目光效</div>
+          <div class="section-desc">分级明确，几何外构型由简洁圆环逐步演化为星芒王冠与流光阵法</div>
         </div>
       </div>
 
       <div class="tier-bar">
         <div class="tier-card">
           <div class="tier-name" style="color: #D97706;"><span class="tier-dot" style="background:#D97706;"></span>青铜 · Bronze</div>
-          <div class="tier-ratio">获得率 ~60% (新手基础)</div>
+          <div class="tier-ratio">圆环铜盾 · 达成率 ~60% (新手基础)</div>
         </div>
         <div class="tier-card">
           <div class="tier-name" style="color: #94A3B8;"><span class="tier-dot" style="background:#94A3B8;"></span>白银 · Silver</div>
-          <div class="tier-ratio">获得率 ~25% (进阶习惯)</div>
+          <div class="tier-ratio">八角菱盾 · 达成率 ~25% (进阶习惯)</div>
         </div>
         <div class="tier-card">
           <div class="tier-name" style="color: #F59E0B;"><span class="tier-dot" style="background:#F59E0B;"></span>黄金 · Gold</div>
-          <div class="tier-ratio">获得率 ~10% (学霸突破)</div>
+          <div class="tier-ratio">十角圣徽 · 达成率 ~10% (学霸突破)</div>
         </div>
         <div class="tier-card">
           <div class="tier-name" style="color: #C084FC;"><span class="tier-dot" style="background:#C084FC;"></span>传说 · Legendary</div>
-          <div class="tier-ratio">获得率 ~3% (毅力王者)</div>
+          <div class="tier-ratio">幻彩曜晶 · 达成率 ~3% (毅力王者)</div>
         </div>
       </div>
     </section>
@@ -823,8 +898,8 @@
     <section id="section-matrix" class="section-card">
       <div class="section-header">
         <div>
-          <div class="section-title">🎖 勋章矩阵交互预览 (点击任意勋章查看详情)</div>
-          <div class="section-desc">包含四大核心维度，支持分类筛选与实时点亮效果预览</div>
+          <div class="section-title">🎖 矢量勋章矩阵交互预览 (点击任意勋章查看详情与动效)</div>
+          <div class="section-desc">纯 SVG 绘制的高清多层矢量勋章，包含四大核心维度，支持分类筛选</div>
         </div>
       </div>
 
@@ -840,21 +915,25 @@
       <!-- 勋章卡片网格 -->
       <div class="badge-grid" id="badgeGrid">
 
-        <!-- 恒心系列 -->
-        <div class="badge-card badge-bronze" data-cat="habit" onclick="openBadgeModal({
-          name: '萌芽初醒',
-          category: '恒心 · 打卡印记',
-          tier: '青铜',
-          tierColor: '#D97706',
-          icon: '🌱',
-          condition: '累计连续打卡背单词满 3 天',
-          rewards: ['牛词币 +50', '专属打卡动态贴纸'],
-          progress: '3 / 3 (已达成)',
-          percent: 100,
-          unlocked: true
-        })">
+        <!-- 1. 恒心 - 萌芽初醒 (青铜) -->
+        <div class="badge-card badge-bronze" data-cat="habit" onclick="openBadgeModal('badge-1')">
           <div class="status-tag unlocked">已解锁</div>
-          <div class="badge-icon-wrapper">🌱</div>
+          <div class="badge-icon-box" id="svg-badge-1">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 外环铜饰 -->
+              <circle cx="50" cy="50" r="44" stroke="url(#bronzeGrad)" stroke-width="4" fill="url(#bronzeInner)"/>
+              <circle cx="50" cy="50" r="37" stroke="rgba(253, 186, 116, 0.3)" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <!-- 晨露地脉光晕 -->
+              <ellipse cx="50" cy="68" rx="22" ry="6" fill="#10B981" opacity="0.25"/>
+              <!-- 破土初芽 -->
+              <path d="M50 72 C50 56 46 44 32 38 C32 54 42 66 50 72 Z" fill="url(#emeraldGrad)"/>
+              <path d="M49 68 C52 52 64 42 70 44 C72 58 58 68 49 68 Z" fill="#34D399"/>
+              <!-- 晨露水滴 -->
+              <circle cx="34" cy="38" r="3" fill="#67E8F9" filter="url(#badgeGlow)"/>
+              <!-- 四角星辉微光 -->
+              <path d="M50 18 L52 24 L58 26 L52 28 L50 34 L48 28 L42 26 L48 24 Z" fill="#FDE68A"/>
+            </svg>
+          </div>
           <div class="badge-category">恒心 · 打卡印记</div>
           <div class="badge-name">萌芽初醒</div>
           <div class="badge-desc">千里之行始于足下，连续背单词 3 天</div>
@@ -867,20 +946,21 @@
           </div>
         </div>
 
-        <div class="badge-card badge-silver" data-cat="habit" onclick="openBadgeModal({
-          name: '习惯微光',
-          category: '恒心 · 打卡印记',
-          tier: '白银',
-          tierColor: '#94A3B8',
-          icon: '⚡️',
-          condition: '累计连续打卡背单词满 21 天',
-          rewards: ['牛词币 +150', '补签卡 x1'],
-          progress: '14 / 21 天',
-          percent: 66,
-          unlocked: false
-        })">
+        <!-- 2. 恒心 - 习惯微光 (白银) -->
+        <div class="badge-card badge-silver" data-cat="habit" onclick="openBadgeModal('badge-2')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">⚡️</div>
+          <div class="badge-icon-box" id="svg-badge-2">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 八角银菱底盾 -->
+              <path d="M50 6 L62 18 L79 18 L82 35 L94 48 L82 61 L79 78 L62 80 L50 92 L38 80 L21 78 L18 61 L6 48 L18 35 L21 18 L38 18 Z" fill="url(#silverInner)" stroke="url(#silverGrad)" stroke-width="3"/>
+              <!-- 能量内环 -->
+              <circle cx="50" cy="49" r="28" stroke="rgba(148, 163, 184, 0.4)" stroke-width="1.5"/>
+              <!-- 闪电习惯聚能符 -->
+              <path d="M54 26 L38 48 L48 48 L44 72 L62 46 L50 46 Z" fill="url(#cyanGrad)" filter="url(#badgeGlow)"/>
+              <!-- 聚能光点 -->
+              <circle cx="50" cy="49" r="4" fill="#FFFFFF"/>
+            </svg>
+          </div>
           <div class="badge-category">恒心 · 打卡印记</div>
           <div class="badge-name">习惯微光</div>
           <div class="badge-desc">21天习惯养成，让自律成为你的第二天性</div>
@@ -893,20 +973,21 @@
           </div>
         </div>
 
-        <div class="badge-card badge-gold" data-cat="habit" onclick="openBadgeModal({
-          name: '百日筑基',
-          category: '恒心 · 打卡印记',
-          tier: '黄金',
-          tierColor: '#F59E0B',
-          icon: '🛡️',
-          condition: '累计连续打卡背单词满 100 天',
-          rewards: ['牛词币 +500', '「百日自律」头像框', '高光海报'],
-          progress: '14 / 100 天',
-          percent: 14,
-          unlocked: false
-        })">
+        <!-- 3. 恒心 - 百日筑基 (黄金) -->
+        <div class="badge-card badge-gold" data-cat="habit" onclick="openBadgeModal('badge-3')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">🛡️</div>
+          <div class="badge-icon-box" id="svg-badge-3">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 十二芒黄金星耀底座 -->
+              <path d="M50 4 L57 16 L71 11 L74 25 L88 26 L85 40 L97 47 L89 59 L96 72 L82 77 L82 91 L68 89 L60 100 L49 93 L39 100 L32 89 L18 91 L18 77 L4 72 L11 59 L3 47 L15 40 L12 26 L26 25 L29 11 L43 16 Z" fill="url(#goldInner)" stroke="url(#goldGrad)" stroke-width="2.5"/>
+              <!-- 圣盾中央纹章 -->
+              <path d="M50 24 C62 24 70 30 70 46 C70 66 50 78 50 78 C50 78 30 66 30 46 C30 30 38 24 50 24 Z" fill="url(#goldGrad)"/>
+              <!-- 罗马百日刻印 "100" 与日晷指针 -->
+              <path d="M44 38 L44 60 M52 38 C56 38 58 43 58 49 C58 55 56 60 52 60 C48 60 48 38 52 38 Z M62 38 C66 38 68 43 68 49 C68 55 66 60 62 60 C58 60 58 38 62 38 Z" stroke="#2D1A05" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- 光芒闪耀 -->
+              <circle cx="50" cy="24" r="3" fill="#FFFFFF" filter="url(#badgeGlow)"/>
+            </svg>
+          </div>
           <div class="badge-category">恒心 · 打卡印记</div>
           <div class="badge-name">百日筑基</div>
           <div class="badge-desc">风雨无阻连续打卡100天，意志如磐石</div>
@@ -919,20 +1000,24 @@
           </div>
         </div>
 
-        <div class="badge-card badge-legendary locked" data-cat="habit" onclick="openBadgeModal({
-          name: '星火长明',
-          category: '恒心 · 打卡印记',
-          tier: '传说',
-          tierColor: '#C084FC',
-          icon: '👑',
-          condition: '累计连续打卡背单词满 365 天',
-          rewards: ['牛词币 +2000', '「年轮宗师」动态流光挂件', '终身荣誉称号'],
-          progress: '14 / 365 天',
-          percent: 4,
-          unlocked: false
-        })">
+        <!-- 4. 恒心 - 星火长明 (传说) -->
+        <div class="badge-card badge-legendary locked" data-cat="habit" onclick="openBadgeModal('badge-4')">
           <div class="status-tag in-progress">传说秘宝</div>
-          <div class="badge-icon-wrapper">👑</div>
+          <div class="badge-icon-box" id="svg-badge-4">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 幻彩星轨光环 -->
+              <circle cx="50" cy="50" r="46" stroke="url(#legendGrad)" stroke-width="3" stroke-dasharray="8 4"/>
+              <!-- 永恒皇冠底座 -->
+              <path d="M50 16 L60 32 L78 28 L72 52 L82 72 L50 86 L18 72 L28 52 L22 28 L40 32 Z" fill="url(#legendInner)" stroke="url(#legendGrad)" stroke-width="2.5"/>
+              <!-- 永恒不死鸟星火 -->
+              <path d="M50 30 C56 42 66 48 64 62 C62 74 50 78 50 78 C50 78 38 74 36 62 C34 48 44 42 50 30 Z" fill="url(#fireGrad)" filter="url(#badgeGlow)"/>
+              <path d="M50 44 C53 52 58 56 56 64 C55 70 50 72 50 72 C50 72 45 70 44 64 C42 56 47 52 50 44 Z" fill="#FDE68A"/>
+              <!-- 冠顶宝石 -->
+              <polygon points="50,14 55,22 50,26 45,22" fill="#E879F9"/>
+              <polygon points="22,26 27,33 23,37 18,33" fill="#60A5FA"/>
+              <polygon points="78,26 83,33 77,37 73,33" fill="#60A5FA"/>
+            </svg>
+          </div>
           <div class="badge-category">恒心 · 打卡印记</div>
           <div class="badge-name">星火长明</div>
           <div class="badge-desc">整整一年的坚持，足以重塑一个人的人生</div>
@@ -945,21 +1030,24 @@
           </div>
         </div>
 
-        <!-- 词汇系列 -->
-        <div class="badge-card badge-bronze" data-cat="vocab" onclick="openBadgeModal({
-          name: '破冰启航',
-          category: '博学 · 词汇殿堂',
-          tier: '青铜',
-          tierColor: '#D97706',
-          icon: '⛵️',
-          condition: '掌握并复习牢记 100 个核心词汇',
-          rewards: ['牛词币 +60', '词库探险家称号'],
-          progress: '100 / 100 (已达成)',
-          percent: 100,
-          unlocked: true
-        })">
+        <!-- 5. 词汇 - 破冰启航 (青铜) -->
+        <div class="badge-card badge-bronze" data-cat="vocab" onclick="openBadgeModal('badge-5')">
           <div class="status-tag unlocked">已解锁</div>
-          <div class="badge-icon-wrapper">⛵️</div>
+          <div class="badge-icon-box" id="svg-badge-5">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 青铜罗盘圆盘 -->
+              <circle cx="50" cy="50" r="44" fill="url(#bronzeInner)" stroke="url(#bronzeGrad)" stroke-width="4"/>
+              <!-- 罗盘刻度星轨 -->
+              <circle cx="50" cy="50" r="36" stroke="rgba(253, 186, 116, 0.4)" stroke-width="1.5" stroke-dasharray="2 4"/>
+              <!-- 破浪风帆战船 -->
+              <path d="M48 24 L48 64 L28 64 Z" fill="url(#bronzeGrad)"/>
+              <path d="M52 20 L52 64 L74 64 Z" fill="#FED7AA"/>
+              <!-- 破冰船首 -->
+              <path d="M22 66 L78 66 L68 76 L32 76 Z" fill="url(#bronzeGrad)"/>
+              <!-- 浪花与浮冰 -->
+              <path d="M16 78 C24 74 34 82 44 78 C54 74 64 82 74 78 C80 76 86 80 88 80" stroke="#67E8F9" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="badge-category">博学 · 词汇殿堂</div>
           <div class="badge-name">破冰启航</div>
           <div class="badge-desc">成功掌握前 100 个词，跨过背词起跑线</div>
@@ -972,20 +1060,24 @@
           </div>
         </div>
 
-        <div class="badge-card badge-silver" data-cat="vocab" onclick="openBadgeModal({
-          name: '千词过海',
-          category: '博学 · 词汇殿堂',
-          tier: '白银',
-          tierColor: '#94A3B8',
-          icon: '🌊',
-          condition: '掌握并复习牢记 1,000 个核心词汇',
-          rewards: ['牛词币 +200', '词汇达人专属徽章'],
-          progress: '680 / 1000 词',
-          percent: 68,
-          unlocked: false
-        })">
+        <!-- 6. 词汇 - 千词过海 (白银) -->
+        <div class="badge-card badge-silver" data-cat="vocab" onclick="openBadgeModal('badge-6')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">🌊</div>
+          <div class="badge-icon-box" id="svg-badge-6">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 八角航海银章 -->
+              <rect x="14" y="14" width="72" height="72" rx="16" transform="rotate(45 50 50)" fill="url(#silverInner)" stroke="url(#silverGrad)" stroke-width="3"/>
+              <!-- 展开的魔法飞书 -->
+              <path d="M50 36 C58 30 72 32 78 36 L78 68 C72 64 58 62 50 68 Z" fill="url(#cyanGrad)"/>
+              <path d="M50 36 C42 30 28 32 22 36 L22 68 C28 64 42 62 50 68 Z" fill="#38BDF8"/>
+              <!-- 书脊与书页光线 -->
+              <line x1="50" y1="36" x2="50" y2="72" stroke="#FFFFFF" stroke-width="2"/>
+              <!-- "1K" 浮空金字 -->
+              <text x="50" y="56" font-size="14" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">1000</text>
+              <!-- 翻腾的波浪 -->
+              <path d="M22 76 C32 72 40 80 50 76 C60 72 68 80 78 76" stroke="url(#silverGrad)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="badge-category">博学 · 词汇殿堂</div>
           <div class="badge-name">千词过海</div>
           <div class="badge-desc">掌握千词，日常简单英文交流与阅读畅通无阻</div>
@@ -998,20 +1090,26 @@
           </div>
         </div>
 
-        <div class="badge-card badge-gold" data-cat="vocab" onclick="openBadgeModal({
-          name: '词海踏浪',
-          category: '博学 · 词汇殿堂',
-          tier: '黄金',
-          tierColor: '#F59E0B',
-          icon: '🏛️',
-          condition: '掌握并复习牢记 5,000 个单词',
-          rewards: ['牛词币 +800', '「学海无涯」专属主题背景'],
-          progress: '680 / 5000 词',
-          percent: 13.6,
-          unlocked: false
-        })">
+        <!-- 7. 词汇 - 词海踏浪 (黄金) -->
+        <div class="badge-card badge-gold" data-cat="vocab" onclick="openBadgeModal('badge-7')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">🏛️</div>
+          <div class="badge-icon-box" id="svg-badge-7">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 雅典神殿金盾 -->
+              <circle cx="50" cy="50" r="45" fill="url(#goldInner)" stroke="url(#goldGrad)" stroke-width="3"/>
+              <!-- 桂冠枝叶左 -->
+              <path d="M26 36 C24 46 26 62 38 72 M22 42 C28 44 32 40 32 40 M24 54 C30 56 34 52 34 52" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+              <!-- 桂冠枝叶右 -->
+              <path d="M74 36 C76 46 74 62 62 72 M78 42 C72 44 68 40 68 40 M76 54 C70 56 66 52 66 52" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+              <!-- 智慧神殿门柱与金羽笔 -->
+              <path d="M36 40 L36 66 M45 40 L45 66 M55 40 L55 66 M64 40 L64 66" stroke="url(#goldGrad)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M32 40 L68 40 L50 26 Z" fill="url(#goldGrad)"/>
+              <rect x="30" y="66" width="40" height="5" rx="2" fill="url(#goldGrad)"/>
+              <!-- 5K 徽章宝石 -->
+              <circle cx="50" cy="53" r="10" fill="#2D1A05" stroke="#F59E0B" stroke-width="1.5"/>
+              <text x="50" y="57" font-size="10" font-weight="900" fill="#FDE68A" text-anchor="middle">5K</text>
+            </svg>
+          </div>
           <div class="badge-category">博学 · 词汇殿堂</div>
           <div class="badge-name">词海踏浪</div>
           <div class="badge-desc">掌握五千词，四六级/考研英语词汇轻松驾驭</div>
@@ -1024,20 +1122,25 @@
           </div>
         </div>
 
-        <div class="badge-card badge-legendary locked" data-cat="vocab" onclick="openBadgeModal({
-          name: '全书通关斩',
-          category: '博学 · 词汇殿堂',
-          tier: '传说',
-          tierColor: '#C084FC',
-          icon: '🏆',
-          condition: '将任意一本词书（如考研/托福）完整背诵并全量通关',
-          rewards: ['牛词币 +1500', '通关全书证书', '通关流光勋章'],
-          progress: '0 / 1 本',
-          percent: 0,
-          unlocked: false
-        })">
+        <!-- 8. 词汇 - 全书通关斩 (传说) -->
+        <div class="badge-card badge-legendary locked" data-cat="vocab" onclick="openBadgeModal('badge-8')">
           <div class="status-tag in-progress">传说成就</div>
-          <div class="badge-icon-wrapper">🏆</div>
+          <div class="badge-icon-box" id="svg-badge-8">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 传说魔法阵 -->
+              <polygon points="50,6 63,18 80,18 84,35 96,48 84,61 80,78 63,78 50,90 37,78 20,78 16,61 4,48 16,35 20,18 37,18" fill="url(#legendInner)" stroke="url(#legendGrad)" stroke-width="2.5"/>
+              <!-- 厚重典籍 -->
+              <rect x="28" y="28" width="44" height="52" rx="4" fill="url(#legendGrad)"/>
+              <rect x="32" y="32" width="36" height="44" rx="2" fill="#1E1B4B"/>
+              <!-- 斩断一切的圣剑 (贯穿整书) -->
+              <path d="M50 14 L53 30 L50 78 L47 30 Z" fill="#FFFFFF" filter="url(#badgeGlow)"/>
+              <path d="M40 26 L60 26 L50 30 Z" fill="#FDE68A"/>
+              <circle cx="50" cy="20" r="3" fill="#E879F9"/>
+              <!-- 通关金锁解开特效 -->
+              <circle cx="50" cy="54" r="7" fill="none" stroke="#FDE68A" stroke-width="2"/>
+              <path d="M47 54 L53 54" stroke="#FDE68A" stroke-width="2"/>
+            </svg>
+          </div>
           <div class="badge-category">博学 · 词汇殿堂</div>
           <div class="badge-name">全书通关斩</div>
           <div class="badge-desc">将一整本词书从头背到尾并全部掌握，无懈可击</div>
@@ -1050,21 +1153,23 @@
           </div>
         </div>
 
-        <!-- 学霸与准确率系列 -->
-        <div class="badge-card badge-bronze" data-cat="mastery" onclick="openBadgeModal({
-          name: '百发百中',
-          category: '精进 · 巅峰学霸',
-          tier: '青铜',
-          tierColor: '#D97706',
-          icon: '🎯',
-          condition: '单次单词测验/复习（不少于20词）达到 100% 正确率',
-          rewards: ['牛词币 +80'],
-          progress: '已达成 1 次',
-          percent: 100,
-          unlocked: true
-        })">
+        <!-- 9. 学霸 - 百发百中 (青铜) -->
+        <div class="badge-card badge-bronze" data-cat="mastery" onclick="openBadgeModal('badge-9')">
           <div class="status-tag unlocked">已解锁</div>
-          <div class="badge-icon-wrapper">🎯</div>
+          <div class="badge-icon-box" id="svg-badge-9">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 青铜靶心底座 -->
+              <circle cx="50" cy="50" r="44" fill="url(#bronzeInner)" stroke="url(#bronzeGrad)" stroke-width="3.5"/>
+              <circle cx="50" cy="50" r="32" fill="none" stroke="rgba(253, 186, 116, 0.5)" stroke-width="2"/>
+              <circle cx="50" cy="50" r="18" fill="none" stroke="rgba(253, 186, 116, 0.8)" stroke-width="2"/>
+              <!-- 准心十字准星 -->
+              <line x1="50" y1="10" x2="50" y2="90" stroke="url(#bronzeGrad)" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <line x1="10" y1="50" x2="90" y2="50" stroke="url(#bronzeGrad)" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <!-- 正中红心神箭 -->
+              <circle cx="50" cy="50" r="7" fill="#EF4444" filter="url(#badgeGlow)"/>
+              <path d="M74 26 L52 48 M74 26 L64 26 M74 26 L74 36" stroke="#FED7AA" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="badge-category">精进 · 巅峰学霸</div>
           <div class="badge-name">百发百中</div>
           <div class="badge-desc">专注即力量，单次测验全对无失误</div>
@@ -1077,20 +1182,23 @@
           </div>
         </div>
 
-        <div class="badge-card badge-silver" data-cat="mastery" onclick="openBadgeModal({
-          name: '极速心流',
-          category: '精进 · 巅峰学霸',
-          tier: '白银',
-          tierColor: '#94A3B8',
-          icon: '⚡️',
-          condition: '平均单词反应时间 < 1.2 秒且连对 30 词',
-          rewards: ['牛词币 +180', '心流加速卡'],
-          progress: '最高连对 18 词',
-          percent: 60,
-          unlocked: false
-        })">
+        <!-- 10. 学霸 - 极速心流 (白银) -->
+        <div class="badge-card badge-silver" data-cat="mastery" onclick="openBadgeModal('badge-10')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">⚡️</div>
+          <div class="badge-icon-box" id="svg-badge-10">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 双环超速轨道 -->
+              <ellipse cx="50" cy="50" rx="42" ry="20" transform="rotate(-30 50 50)" stroke="url(#silverGrad)" stroke-width="3" fill="none"/>
+              <ellipse cx="50" cy="50" rx="42" ry="20" transform="rotate(30 50 50)" stroke="url(#cyanGrad)" stroke-width="3" fill="none"/>
+              <!-- 核心心流反应堆 -->
+              <circle cx="50" cy="50" r="18" fill="url(#silverInner)" stroke="#38BDF8" stroke-width="2"/>
+              <!-- 光速脉冲离子球 -->
+              <circle cx="50" cy="50" r="10" fill="#67E8F9" filter="url(#badgeGlow)"/>
+              <circle cx="50" cy="50" r="5" fill="#FFFFFF"/>
+              <!-- 秒表光标与加速粒子 -->
+              <path d="M50 38 L50 50 L58 50" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="badge-category">精进 · 巅峰学霸</div>
           <div class="badge-name">极速心流</div>
           <div class="badge-desc">肌肉记忆般的反应速度，条件反射直接秒选</div>
@@ -1103,20 +1211,21 @@
           </div>
         </div>
 
-        <div class="badge-card badge-gold" data-cat="mastery" onclick="openBadgeModal({
-          name: '破晓之翼',
-          category: '精进 · 巅峰学霸',
-          tier: '黄金',
-          tierColor: '#F59E0B',
-          icon: '🌅',
-          condition: '在早晨 6:00 ~ 7:30 之间完成每日背词任务累计 10 次',
-          rewards: ['牛词币 +300', '「晨曦学神」称号'],
-          progress: '4 / 10 次',
-          percent: 40,
-          unlocked: false
-        })">
+        <!-- 11. 学霸 - 破晓之翼 (黄金) -->
+        <div class="badge-card badge-gold" data-cat="mastery" onclick="openBadgeModal('badge-11')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">🌅</div>
+          <div class="badge-icon-box" id="svg-badge-11">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 黄金朝阳圆徽 -->
+              <circle cx="50" cy="50" r="44" fill="url(#goldInner)" stroke="url(#goldGrad)" stroke-width="3"/>
+              <!-- 破晓旭日万丈光芒 -->
+              <circle cx="50" cy="62" r="22" fill="url(#fireGrad)" filter="url(#badgeGlow)"/>
+              <path d="M50 18 L50 26 M26 30 L32 35 M74 30 L68 35 M16 50 L24 50 M84 50 L76 50" stroke="#FDE68A" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- 展翅高飞的雄鹰金翼 -->
+              <path d="M50 48 C40 34 24 38 18 46 C28 54 38 52 50 64 C62 52 72 54 82 46 C76 38 60 34 50 48 Z" fill="url(#goldGrad)"/>
+              <polygon points="50,42 53,49 47,49" fill="#FFFFFF"/>
+            </svg>
+          </div>
           <div class="badge-category">精进 · 巅峰学霸</div>
           <div class="badge-name">破晓之翼</div>
           <div class="badge-desc">与朝阳同步，清晨高效自律的见证</div>
@@ -1129,20 +1238,25 @@
           </div>
         </div>
 
-        <div class="badge-card badge-gold" data-cat="mastery" onclick="openBadgeModal({
-          name: '夜行学者',
-          category: '精进 · 巅峰学霸',
-          tier: '黄金',
-          tierColor: '#F59E0B',
-          icon: '🦉',
-          condition: '在深夜 23:00 之后自律复习并完成当日计划累计 10 次',
-          rewards: ['牛词币 +300', '「暗夜星光」专属卡面'],
-          progress: '8 / 10 次',
-          percent: 80,
-          unlocked: false
-        })">
+        <!-- 12. 学霸 - 夜行学者 (黄金) -->
+        <div class="badge-card badge-gold" data-cat="mastery" onclick="openBadgeModal('badge-12')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">🦉</div>
+          <div class="badge-icon-box" id="svg-badge-12">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 暗夜苍穹星盘 -->
+              <circle cx="50" cy="50" r="44" fill="#0B0F19" stroke="url(#goldGrad)" stroke-width="3"/>
+              <!-- 唯美一弯金月 -->
+              <path d="M54 22 C38 22 26 36 26 52 C26 68 38 80 54 80 C44 74 38 64 38 52 C38 40 44 28 54 22 Z" fill="url(#goldGrad)"/>
+              <!-- 守夜猫头鹰智慧之眼 -->
+              <circle cx="64" cy="46" r="10" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
+              <circle cx="64" cy="46" r="4" fill="#FDE68A" filter="url(#badgeGlow)"/>
+              <!-- 漫天星斗星座连线 -->
+              <circle cx="48" cy="34" r="2" fill="#FFFFFF"/>
+              <circle cx="68" cy="26" r="1.5" fill="#FFFFFF"/>
+              <circle cx="76" cy="66" r="2" fill="#FFFFFF"/>
+              <line x1="48" y1="34" x2="68" y2="26" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            </svg>
+          </div>
           <div class="badge-category">精进 · 巅峰学霸</div>
           <div class="badge-name">夜行学者</div>
           <div class="badge-desc">万籁俱寂时，唯有求知欲在闪闪发光</div>
@@ -1155,21 +1269,23 @@
           </div>
         </div>
 
-        <!-- 社交与探索系列 -->
-        <div class="badge-card badge-bronze" data-cat="social" onclick="openBadgeModal({
-          name: '布道同行',
-          category: '共鸣 · 探索先锋',
-          tier: '青铜',
-          tierColor: '#D97706',
-          icon: '🤝',
-          condition: '成功邀请 1 位好友加入背单词',
-          rewards: ['牛词币 +100', '补签卡 x1'],
-          progress: '1 / 1 (已达成)',
-          percent: 100,
-          unlocked: true
-        })">
+        <!-- 13. 社交 - 布道同行 (青铜) -->
+        <div class="badge-card badge-bronze" data-cat="social" onclick="openBadgeModal('badge-13')">
           <div class="status-tag unlocked">已解锁</div>
-          <div class="badge-icon-wrapper">🤝</div>
+          <div class="badge-icon-box" id="svg-badge-13">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 青铜同心圆徽 -->
+              <circle cx="50" cy="50" r="44" fill="url(#bronzeInner)" stroke="url(#bronzeGrad)" stroke-width="4"/>
+              <!-- 紧密相扣的双子星手印/引力桥 -->
+              <circle cx="38" cy="42" r="10" fill="url(#bronzeGrad)"/>
+              <circle cx="62" cy="42" r="10" fill="#FED7AA"/>
+              <!-- 携手共进的身躯 -->
+              <path d="M24 72 C24 58 34 56 42 58 L46 72 Z" fill="url(#bronzeGrad)"/>
+              <path d="M76 72 C76 58 66 56 58 58 L54 72 Z" fill="#FED7AA"/>
+              <!-- 友谊之光芒中心 -->
+              <polygon points="50,44 53,51 60,52 55,57 56,64 50,60 44,64 45,57 40,52 47,51" fill="#FDE68A" filter="url(#badgeGlow)"/>
+            </svg>
+          </div>
           <div class="badge-category">共鸣 · 探索先锋</div>
           <div class="badge-name">布道同行</div>
           <div class="badge-desc">一人行速，二人行远。分享知识的光芒</div>
@@ -1182,23 +1298,24 @@
           </div>
         </div>
 
-        <div class="badge-card badge-silver" data-cat="social" onclick="openBadgeModal({
-          name: '自习室合伙人',
-          category: '共鸣 · 探索先锋',
-          tier: '白银',
-          tierColor: '#94A3B8',
-          icon: '☕️',
-          condition: '在在线自习室与同伴累计专注学习超过 20 小时',
-          rewards: ['牛词币 +250', '自习室专属前排坐席'],
-          progress: '9.5 / 20 小时',
-          percent: 47.5,
-          unlocked: false
-        })">
+        <!-- 14. 社交 - 自习室合伙人 (白银) -->
+        <div class="badge-card badge-silver" data-cat="social" onclick="openBadgeModal('badge-14')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">☕️</div>
+          <div class="badge-icon-box" id="svg-badge-14">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 八角专注圣徽 -->
+              <rect x="14" y="14" width="72" height="72" rx="14" transform="rotate(45 50 50)" fill="url(#silverInner)" stroke="url(#silverGrad)" stroke-width="3"/>
+              <!-- 沉浸自律的沙漏 -->
+              <path d="M34 26 L66 26 L52 48 L66 70 L34 70 L48 48 Z" fill="none" stroke="url(#silverGrad)" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M38 30 L62 30 L50 46 Z" fill="url(#cyanGrad)"/>
+              <path d="M42 66 L58 66 L50 56 Z" fill="#67E8F9" filter="url(#badgeGlow)"/>
+              <!-- 专注力场光环 -->
+              <circle cx="50" cy="50" r="32" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.5" stroke-dasharray="3 3"/>
+            </svg>
+          </div>
           <div class="badge-category">共鸣 · 探索先锋</div>
           <div class="badge-name">自习室合伙人</div>
-          <div class="badge-desc">与数千考友在自习室并肩作战，互相督促</div>
+          <div class="badge-desc">在在线自习室与同伴累计专注学习超过 20 小时</div>
           <div class="progress-bar-wrap">
             <div class="progress-bar-fill" style="width: 47.5%;"></div>
           </div>
@@ -1208,23 +1325,29 @@
           </div>
         </div>
 
-        <div class="badge-card badge-gold" data-cat="social" onclick="openBadgeModal({
-          name: '登顶时刻',
-          category: '共鸣 · 探索先锋',
-          tier: '黄金',
-          tierColor: '#F59E0B',
-          icon: '🥇',
-          condition: '登上所在班级或全站周背词排行榜 TOP 3',
-          rewards: ['牛词币 +600', '「周榜榜首」金色铭牌 (保留7天)'],
-          progress: '历史最高第 5 名',
-          percent: 60,
-          unlocked: false
-        })">
+        <!-- 15. 社交 - 登顶时刻 (黄金) -->
+        <div class="badge-card badge-gold" data-cat="social" onclick="openBadgeModal('badge-15')">
           <div class="status-tag in-progress">进行中</div>
-          <div class="badge-icon-wrapper">🥇</div>
+          <div class="badge-icon-box" id="svg-badge-15">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 十角王者圣徽 -->
+              <circle cx="50" cy="50" r="45" fill="url(#goldInner)" stroke="url(#goldGrad)" stroke-width="3"/>
+              <!-- 胜利月桂环 -->
+              <circle cx="50" cy="50" r="36" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4 2"/>
+              <!-- 璀璨冠军奖杯 -->
+              <path d="M36 30 L64 30 L58 54 C58 60 54 64 50 64 C46 64 42 60 42 54 Z" fill="url(#goldGrad)"/>
+              <!-- 奖杯双耳 -->
+              <path d="M36 34 C26 34 26 48 38 48 M64 34 C74 34 74 48 62 48" stroke="url(#goldGrad)" stroke-width="3" stroke-linecap="round" fill="none"/>
+              <!-- 奖杯底座 -->
+              <rect x="46" y="64" width="8" height="8" fill="#F59E0B"/>
+              <rect x="38" y="72" width="24" height="6" rx="2" fill="url(#goldGrad)"/>
+              <!-- 榜首荣耀星芒 -->
+              <polygon points="50,34 52,39 58,40 54,44 55,50 50,47 45,50 46,44 42,40 48,39" fill="#FFFFFF" filter="url(#badgeGlow)"/>
+            </svg>
+          </div>
           <div class="badge-category">共鸣 · 探索先锋</div>
           <div class="badge-name">登顶时刻</div>
-          <div class="badge-desc">实力与勤奋并存，成为万人瞩目的榜首强者</div>
+          <div class="badge-desc">登上所在班级或全站周背词排行榜 TOP 3</div>
           <div class="progress-bar-wrap">
             <div class="progress-bar-fill" style="width: 60%;"></div>
           </div>
@@ -1234,20 +1357,27 @@
           </div>
         </div>
 
-        <div class="badge-card badge-legendary locked" data-cat="social" onclick="openBadgeModal({
-          name: 'AI 智囊伙伴',
-          category: '共鸣 · 探索先锋',
-          tier: '传说',
-          tierColor: '#C084FC',
-          icon: '🔮',
-          condition: '累计使用 AI 生成趣味记忆法/语境造句 100 次',
-          rewards: ['牛词币 +1000', '永久解锁 AI 高级专属助手模型'],
-          progress: '32 / 100 次',
-          percent: 32,
-          unlocked: false
-        })">
+        <!-- 16. 社交 - AI 智囊伙伴 (传说) -->
+        <div class="badge-card badge-legendary locked" data-cat="social" onclick="openBadgeModal('badge-16')">
           <div class="status-tag in-progress">探索大师</div>
-          <div class="badge-icon-wrapper">🔮</div>
+          <div class="badge-icon-box" id="svg-badge-16">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- 赛博量子多面体底座 -->
+              <polygon points="50,6 88,28 88,72 50,94 12,72 12,28" fill="url(#legendInner)" stroke="url(#legendGrad)" stroke-width="3"/>
+              <!-- 悬浮全息量子晶核 -->
+              <polygon points="50,22 74,36 74,64 50,78 26,64 26,36" fill="url(#legendGrad)" opacity="0.6"/>
+              <!-- AI 神经网络突触与眼眸 -->
+              <circle cx="50" cy="50" r="10" fill="#FFFFFF" filter="url(#badgeGlow)"/>
+              <circle cx="50" cy="50" r="5" fill="#3B82F6"/>
+              <!-- 神经元辐射节点 -->
+              <line x1="50" y1="50" x2="32" y2="38" stroke="#E879F9" stroke-width="2"/>
+              <line x1="50" y1="50" x2="68" y2="38" stroke="#60A5FA" stroke-width="2"/>
+              <line x1="50" y1="50" x2="50" y2="70" stroke="#34D399" stroke-width="2"/>
+              <circle cx="32" cy="38" r="3" fill="#E879F9"/>
+              <circle cx="68" cy="38" r="3" fill="#60A5FA"/>
+              <circle cx="50" cy="70" r="3" fill="#34D399"/>
+            </svg>
+          </div>
           <div class="badge-category">共鸣 · 探索先锋</div>
           <div class="badge-name">AI 智囊伙伴</div>
           <div class="badge-desc">拥抱 AI 时代学习方式，人机协同背诵词汇</div>
@@ -1322,7 +1452,7 @@
         <div class="step-box">
           <div class="step-num">3</div>
           <h4>高光全屏弹窗</h4>
-          <p>App 端触发粒子光效 + 震动触感（Haptic）+ 勋章 3D 翻转动效，带来强烈的仪式感与心理满足。</p>
+          <p>App 端触发粒子光效 + 震动触感（Haptic）+ 矢量勋章 3D 翻转动效，带来强烈的仪式感与心理满足。</p>
         </div>
         <div class="step-box">
           <div class="step-num">4</div>
@@ -1354,8 +1484,8 @@
           <tbody>
             <tr>
               <td><span class="code-tag">badge_definition</span></td>
-              <td><code>id, code, name, category, tier, icon_url, condition_type, target_value, reward_coins, reward_item, is_hidden</code></td>
-              <td>勋章元数据配置表（支持后台灵活增删改，无需发版）</td>
+              <td><code>id, code, name, category, tier, svg_code, condition_type, target_value, reward_coins, reward_item</code></td>
+              <td>勋章元数据配置表（支持后台灵活增删改与配置矢量图，无需发版）</td>
             </tr>
             <tr>
               <td><span class="code-tag">user_badge</span></td>
@@ -1372,7 +1502,7 @@
       </div>
 
       <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--primary-light);">2. 规则引擎架构 (Event-Driven Badge Engine)</h3>
-      <div style="background: rgba(15, 23, 42, 0.7); padding: 20px; border-radius: 14px; border: 1px solid var(--card-border);">
+      <div style="background: rgba(11, 15, 25, 0.7); padding: 22px; border-radius: 16px; border: 1px solid var(--card-border);">
         <p style="font-size: 14px; color: var(--text-sub); margin-bottom: 12px;">
           采用 Spring 的 <code class="code-tag">ApplicationEventPublisher</code> 事件驱动机制解耦：
         </p>
@@ -1380,7 +1510,7 @@
           <li><strong>事件发布</strong>：用户打卡完成触发 <code>CheckinSuccessEvent</code>，背词完成触发 <code>WordMasteredEvent</code>。</li>
           <li><strong>异步监听</strong>：<code>BadgeEventListener</code> 接收事件，匹配对应 <code>condition_type</code> 的计算策略器（如 <code>StreakConditionEvaluator</code>, <code>VocabCountEvaluator</code>）。</li>
           <li><strong>幂等发放</strong>：更新进度并检查阈值，满足则写入 <code>user_badge</code> 并标记未读提示。</li>
-          <li><strong>前端消费</strong>：Flutter 端在接口返回或 WebSocket 监听到新勋章时，弹出统一的 <code>BadgeAwardDialog</code>。</li>
+          <li><strong>前端消费</strong>：Flutter 端使用 <code>flutter_svg</code> 原生平滑渲染，弹出统一的 <code>BadgeAwardDialog</code> 仪式感弹窗。</li>
         </ul>
       </div>
     </section>
@@ -1388,7 +1518,7 @@
     <!-- 底部操作区 -->
     <div class="action-banner">
       <h3>方案审核与下一步落地</h3>
-      <p>如方案符合预期，可分阶段落地：第一期上线 12 枚核心打卡与词汇勋章 + 勋章墙 + 弹窗动效。</p>
+      <p>如当前矢量勋章方案与设计思路符合预期，可分阶段落地第一期 16 枚核心勋章 + 勋章墙 + 弹窗动效。</p>
       <button class="btn-primary" onclick="alert('方案审核完毕！你可以直接告诉我您的调整建议或确认进入开发实施。')">
         ✅ 方案审核通过，进入开发规划
       </button>
@@ -1401,7 +1531,9 @@
     <div class="modal-box" onclick="event.stopPropagation()">
       <button class="modal-close" onclick="closeBadgeModal()">&times;</button>
       
-      <div class="modal-shine" id="mIcon">🏅</div>
+      <div class="modal-icon-wrap" id="modalSvgHolder">
+        <!-- 动态注入当前点击的矢量 SVG -->
+      </div>
       <div class="modal-title" id="mTitle">萌芽初醒</div>
       <div class="modal-tier" id="mTier">青铜 · 打卡系列</div>
       
@@ -1422,6 +1554,74 @@
   </div>
 
   <script>
+    // 勋章数据字典
+    const badgeDetails = {
+      'badge-1': {
+        name: '萌芽初醒', category: '恒心 · 打卡印记', tier: '青铜', tierColor: '#D97706',
+        condition: '累计连续打卡背单词满 3 天', rewards: ['牛词币 +50', '专属打卡动态贴纸'], progress: '3 / 3 (已达成)'
+      },
+      'badge-2': {
+        name: '习惯微光', category: '恒心 · 打卡印记', tier: '白银', tierColor: '#94A3B8',
+        condition: '累计连续打卡背单词满 21 天', rewards: ['牛词币 +150', '补签卡 x1'], progress: '14 / 21 天'
+      },
+      'badge-3': {
+        name: '百日筑基', category: '恒心 · 打卡印记', tier: '黄金', tierColor: '#F59E0B',
+        condition: '累计连续打卡背单词满 100 天', rewards: ['牛词币 +500', '「百日自律」头像框', '高光海报'], progress: '14 / 100 天'
+      },
+      'badge-4': {
+        name: '星火长明', category: '恒心 · 打卡印记', tier: '传说', tierColor: '#C084FC',
+        condition: '累计连续打卡背单词满 365 天', rewards: ['牛词币 +2000', '「年轮宗师」动态流光挂件', '终身荣誉称号'], progress: '14 / 365 天'
+      },
+      'badge-5': {
+        name: '破冰启航', category: '博学 · 词汇殿堂', tier: '青铜', tierColor: '#D97706',
+        condition: '掌握并复习牢记 100 个核心词汇', rewards: ['牛词币 +60', '词库探险家称号'], progress: '100 / 100 (已达成)'
+      },
+      'badge-6': {
+        name: '千词过海', category: '博学 · 词汇殿堂', tier: '白银', tierColor: '#94A3B8',
+        condition: '掌握并复习牢记 1,000 个核心词汇', rewards: ['牛词币 +200', '词汇达人专属徽章'], progress: '680 / 1000 词'
+      },
+      'badge-7': {
+        name: '词海踏浪', category: '博学 · 词汇殿堂', tier: '黄金', tierColor: '#F59E0B',
+        condition: '掌握并复习牢记 5,000 个单词', rewards: ['牛词币 +800', '「学海无涯」专属主题背景'], progress: '680 / 5000 词'
+      },
+      'badge-8': {
+        name: '全书通关斩', category: '博学 · 词汇殿堂', tier: '传说', tierColor: '#C084FC',
+        condition: '将任意一本词书（如考研/托福）完整背诵并全量通关', rewards: ['牛词币 +1500', '通关全书证书', '通关流光勋章'], progress: '0 / 1 本'
+      },
+      'badge-9': {
+        name: '百发百中', category: '精进 · 巅峰学霸', tier: '青铜', tierColor: '#D97706',
+        condition: '单次单词测验/复习（不少于20词）达到 100% 正确率', rewards: ['牛词币 +80'], progress: '已达成 1 次'
+      },
+      'badge-10': {
+        name: '极速心流', category: '精进 · 巅峰学霸', tier: '白银', tierColor: '#94A3B8',
+        condition: '平均单词反应时间 < 1.2 秒且连对 30 词', rewards: ['牛词币 +180', '心流加速卡'], progress: '最高连对 18 词'
+      },
+      'badge-11': {
+        name: '破晓之翼', category: '精进 · 巅峰学霸', tier: '黄金', tierColor: '#F59E0B',
+        condition: '在早晨 6:00 ~ 7:30 之间完成每日背词任务累计 10 次', rewards: ['牛词币 +300', '「晨曦学神」称号'], progress: '4 / 10 次'
+      },
+      'badge-12': {
+        name: '夜行学者', category: '精进 · 巅峰学霸', tier: '黄金', tierColor: '#F59E0B',
+        condition: '在深夜 23:00 之后自律复习并完成当日计划累计 10 次', rewards: ['牛词币 +300', '「暗夜星光」专属卡面'], progress: '8 / 10 次'
+      },
+      'badge-13': {
+        name: '布道同行', category: '共鸣 · 探索先锋', tier: '青铜', tierColor: '#D97706',
+        condition: '成功邀请 1 位好友加入背单词', rewards: ['牛词币 +100', '补签卡 x1'], progress: '1 / 1 (已达成)'
+      },
+      'badge-14': {
+        name: '自习室合伙人', category: '共鸣 · 探索先锋', tier: '白银', tierColor: '#94A3B8',
+        condition: '在在线自习室与同伴累计专注学习超过 20 小时', rewards: ['牛词币 +250', '自习室专属前排坐席'], progress: '9.5 / 20 小时'
+      },
+      'badge-15': {
+        name: '登顶时刻', category: '共鸣 · 探索先锋', tier: '黄金', tierColor: '#F59E0B',
+        condition: '登上所在班级或全站周背词排行榜 TOP 3', rewards: ['牛词币 +600', '「周榜榜首」金色铭牌 (保留7天)'], progress: '历史最高第 5 名'
+      },
+      'badge-16': {
+        name: 'AI 智囊伙伴', category: '共鸣 · 探索先锋', tier: '传说', tierColor: '#C084FC',
+        condition: '累计使用 AI 生成趣味记忆法/语境造句 100 次', rewards: ['牛词币 +1000', '永久解锁 AI 高级专属助手模型'], progress: '32 / 100 次'
+      }
+    };
+
     // 分类筛选
     function filterBadges(category, btn) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -1438,8 +1638,15 @@
     }
 
     // 弹窗控制
-    function openBadgeModal(data) {
-      document.getElementById('mIcon').innerText = data.icon;
+    function openBadgeModal(badgeKey) {
+      const data = badgeDetails[badgeKey];
+      if (!data) return;
+
+      const svgOrigin = document.getElementById('svg-' + badgeKey);
+      if (svgOrigin) {
+        document.getElementById('modalSvgHolder').innerHTML = svgOrigin.innerHTML;
+      }
+
       document.getElementById('mTitle').innerText = data.name;
       
       const tierEl = document.getElementById('mTier');
