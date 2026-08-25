@@ -261,7 +261,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
                                                   : Colors.grey.withValues(alpha: 0.15),
                                             ),
                                             child: Text(
-                                              activity.showCodeToUser == true ? '直接显示码' : '隐藏码',
+                                              activity.showCodeToUser == true ? '直接显示活动码' : '隐藏活动码',
                                               style: TextStyle(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.bold,
