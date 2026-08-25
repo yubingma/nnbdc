@@ -98,12 +98,21 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
         return;
       }
 
+      // 桌面端 (macOS / Windows / Linux)：因无移动端OpenSDK协议，直接呼出系统原生分享面板
+      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+        await Share.shareXFiles(
+          [XFile(imagePath)],
+          text: '我在「泡泡单词」点亮了【${widget.userBadge.badge?.name}】勋章！',
+        );
+        return;
+      }
+
       await WechatUtil.shareImage(
         imageFile: File(imagePath),
         scene: scene,
       );
     } catch (e) {
-      ToastUtil.error('微信分享失败: $e');
+      ToastUtil.error('分享失败: $e');
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
