@@ -25,6 +25,7 @@ import 'package:nnbdc/page/subscription.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
 import 'package:nnbdc/page/review_distribution.dart';
 import 'package:nnbdc/page/badge/badge_wall_page.dart';
+import 'package:nnbdc/widget/badge_svg_assets.dart';
 
 
 import 'package:nnbdc/services/sync_log_service.dart';
@@ -1011,7 +1012,120 @@ class _MePageState extends State<MePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // 荣耀勋章墙展台入口 (头像下方专属高光展台)
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const BadgeWallPage())),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: isDarkModeEnabled
+                          ? [const Color(0xFF1E1B4B).withValues(alpha: 0.8), const Color(0xFF312E81).withValues(alpha: 0.5)]
+                          : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(
+                      color: const Color(0xFF818CF8).withValues(alpha: isDarkModeEnabled ? 0.35 : 0.6),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withValues(alpha: isDarkModeEnabled ? 0.15 : 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // 微缩立体勋章叠层展示
+                      SizedBox(
+                        width: 54,
+                        height: 40,
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              left: 0,
+                              top: 4,
+                              child: BadgeSvgAssets.renderBadge(code: 'STREAK_100', size: 30),
+                            ),
+                            Positioned(
+                              left: 13,
+                              top: 0,
+                              child: BadgeSvgAssets.renderBadge(code: 'STREAK_365', size: 34),
+                            ),
+                            Positioned(
+                              left: 27,
+                              top: 6,
+                              child: BadgeSvgAssets.renderBadge(code: 'PERFECT_SCORE', size: 26),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  '荣耀勋章墙',
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'NotoSansSC',
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    '成就图鉴',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '点亮自律里程碑 · 赢取魔法泡泡',
+                              style: TextStyle(
+                                color: isDarkModeEnabled ? const Color(0xFFA5B4FC) : const Color(0xFF4F46E5),
+                                fontSize: 11,
+                                fontFamily: 'NotoSansSC',
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: isDarkModeEnabled ? const Color(0xFFA5B4FC) : const Color(0xFF6366F1),
+                        size: 14,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               
               // 记忆云图入口
               GestureDetector(
