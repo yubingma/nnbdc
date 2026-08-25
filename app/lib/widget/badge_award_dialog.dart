@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../api/vo.dart';
 import 'package:nnbdc/services/dialog_service.dart';
-import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/widget/badge_poster_dialog.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
 
 /// 勋章获得/升级 仪式感恭贺弹窗
@@ -264,7 +264,7 @@ class BadgeAwardDialog extends StatelessWidget {
                       onPressed: () {
                         Navigator.of(context).pop();
                         onShare?.call();
-                        ToastUtil.success('已准备好高清炫耀长图！');
+                        BadgePosterDialog.show(context, userBadge: userBadge);
                       },
                       child: const Text('炫耀一下'),
                     ),

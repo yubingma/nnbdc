@@ -66,26 +66,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
           current = masteredWords;
         }
 
-        // 🌟 自动对齐/懒解锁历史已达标勋章 (例如老用户已掌握 815 词，本地立即点亮并记录同步日志)
-        if (ub == null && targetValue > 0 && current >= targetValue) {
-          final newId = '${user.id}_$code';
-          final newUb = UserBadge(
-            id: newId,
-            userId: user.id,
-            badgeCode: code,
-            obtainCount: 1,
-            starLevel: 1,
-            unlockedAt: DateTime.now(),
-            isEquipped: false,
-            isViewed: false,
-            createTime: DateTime.now(),
-            updateTime: DateTime.now(),
-          );
-          await MyDatabase.instance.userBadgesDao.saveEntity(newUb, true);
-          ub = newUb;
-          localMap[code] = newUb;
-        }
-
+        // 纯粹根据本地数据库状态如实展示
         final isUnlocked = ub != null;
         final vo = UserBadgeVo(
           id: ub?.id,
