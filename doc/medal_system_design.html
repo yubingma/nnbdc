@@ -267,6 +267,48 @@
       color: var(--text-muted);
     }
 
+    /* 精进勋章多次获得与叠层亮点卡片 */
+    .feature-highlight-box {
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(99, 102, 241, 0.15) 100%);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 28px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .feature-highlight-box { flex-direction: column; text-align: center; }
+    }
+
+    .feature-highlight-icon {
+      font-size: 40px;
+      width: 64px;
+      height: 64px;
+      background: rgba(236, 72, 153, 0.2);
+      border: 1px solid rgba(236, 72, 153, 0.4);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .feature-highlight-content h4 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #FFF;
+      margin-bottom: 6px;
+    }
+
+    .feature-highlight-content p {
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.6;
+    }
+
     /* 勋章过滤器与交互展厅 */
     .filter-group {
       display: flex;
@@ -394,6 +436,31 @@
       overflow: hidden;
     }
 
+    /* 多次获得叠层角标 Badge Multiplier */
+    .badge-multiplier {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: linear-gradient(135deg, #EC4899 0%, #EF4444 100%);
+      color: #FFF;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(236, 72, 153, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.5px;
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* 星级评分条 */
+    .star-rating {
+      font-size: 12px;
+      color: #F59E0B;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
     /* 进度条 */
     .progress-bar-wrap {
       background: rgba(255, 255, 255, 0.08);
@@ -465,7 +532,7 @@
 
     .modal-box {
       width: 90%;
-      max-width: 460px;
+      max-width: 480px;
       background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 28px;
@@ -823,6 +890,7 @@
     <!-- 导航 Anchor -->
     <div class="nav-tabs">
       <a href="#section-framework" class="nav-tab">💡 激励飞轮机制</a>
+      <a href="#section-stacking" class="nav-tab">🔥 精进勋章叠层机制 (New)</a>
       <a href="#section-matrix" class="nav-tab active">🎖 矢量勋章矩阵 (点击查看动效)</a>
       <a href="#section-rewards" class="nav-tab">🎁 勋章权益与社交裂变</a>
       <a href="#section-flow" class="nav-tab">⚡️ 触发与交互体验</a>
@@ -865,7 +933,47 @@
       </div>
     </section>
 
-    <!-- 2. 勋章稀有度等级规范 -->
+    <!-- 2. 精进勋章：多次获得与星级进阶机制 (核心设计) -->
+    <section id="section-stacking" class="section-card">
+      <div class="section-header">
+        <div>
+          <div class="section-title">🔥 核心机制亮点：精进勋章「多次获得与星级进阶（Stacking & Star Level）」</div>
+          <div class="section-desc">解决“一次性达成后失去挑战动力”的痛点，让每一次满分复习与早起都持续产生成就感</div>
+        </div>
+      </div>
+
+      <div class="feature-highlight-box">
+        <div class="feature-highlight-icon">🎯</div>
+        <div class="feature-highlight-content">
+          <h4>为什么精进勋章必须支持多次获得？</h4>
+          <p>
+            像「百发百中（100%全对）」、「极速心流（秒答连对）」、「破晓之翼（清晨学习）」属于用户日常高频发生的优秀自律行为。
+            若只能获得一次，用户在第 1 次拿过后，后续的满分测试将再无成就奖励。
+            因此我们设计了<b>「实时计数角标（×N） + 阶段性星级突破（★1~★5）」</b>双重机制！
+          </p>
+        </div>
+      </div>
+
+      <div class="step-grid">
+        <div class="step-box">
+          <div class="step-num">×N</div>
+          <h4>1. 实时计数叠层 (Stacking)</h4>
+          <p>勋章左上角常驻显示获得次数（如 <code class="code-tag">×12</code>）。每次再次达成，均弹出「百发百中 +1」并获得常规牛词币奖励。</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">★</div>
+          <h4>2. 里程碑星级进阶 (Star Tier)</h4>
+          <p>累积达成 1次(★1)、10次(★2)、30次(★3)、60次(★4)、100次(★5满星宗师)。每升一星点亮下方金星并升级光效。</p>
+        </div>
+        <div class="step-box">
+          <div class="step-num">👑</div>
+          <h4>3. 个人主页与排行榜炫耀</h4>
+          <p>个人主页展示「百发百中 ×38 (★★★☆☆)」，学霸威慑力拉满，成为自习室与排行榜上的荣誉象征。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 勋章稀有度等级规范 -->
     <section class="section-card">
       <div class="section-header">
         <div>
@@ -894,7 +1002,7 @@
       </div>
     </section>
 
-    <!-- 3. 交互式勋章展厅与全景矩阵 -->
+    <!-- 4. 交互式勋章展厅与全景矩阵 -->
     <section id="section-matrix" class="section-card">
       <div class="section-header">
         <div>
@@ -908,7 +1016,7 @@
         <button class="filter-btn active" onclick="filterBadges('all', this)">全部勋章 (16)</button>
         <button class="filter-btn" onclick="filterBadges('habit', this)">🔥 恒心·打卡印记 (4)</button>
         <button class="filter-btn" onclick="filterBadges('vocab', this)">📚 博学·词汇殿堂 (4)</button>
-        <button class="filter-btn" onclick="filterBadges('mastery', this)">🎯 精进·巅峰学霸 (4)</button>
+        <button class="filter-btn" onclick="filterBadges('mastery', this)">🎯 精进·巅峰学霸 (支持多枚叠层 ×N)</button>
         <button class="filter-btn" onclick="filterBadges('social', this)">🌟 共鸣·探索先锋 (4)</button>
       </div>
 
@@ -1153,8 +1261,9 @@
           </div>
         </div>
 
-        <!-- 9. 学霸 - 百发百中 (青铜) -->
+        <!-- 9. 学霸 - 百发百中 (青铜 · 多次获得 ×12) -->
         <div class="badge-card badge-bronze" data-cat="mastery" onclick="openBadgeModal('badge-9')">
+          <div class="badge-multiplier">已达成 ×12</div>
           <div class="status-tag unlocked">已解锁</div>
           <div class="badge-icon-box" id="svg-badge-9">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1170,21 +1279,23 @@
               <path d="M74 26 L52 48 M74 26 L64 26 M74 26 L74 36" stroke="#FED7AA" stroke-width="3" stroke-linecap="round"/>
             </svg>
           </div>
-          <div class="badge-category">精进 · 巅峰学霸</div>
+          <div class="badge-category">精进 · 巅峰学霸 (可累加)</div>
           <div class="badge-name">百发百中</div>
-          <div class="badge-desc">专注即力量，单次测验全对无失误</div>
+          <div class="star-rating">★★☆☆☆ (2星学霸)</div>
+          <div class="badge-desc">单次复习100%全对，每次达成均可重复获得</div>
           <div class="progress-bar-wrap">
-            <div class="progress-bar-fill" style="width: 100%;"></div>
+            <div class="progress-bar-fill" style="width: 40%; background: linear-gradient(135deg, #EC4899, #F59E0B);"></div>
           </div>
           <div class="progress-text">
-            <span>1 / 1 次</span>
-            <span style="color:#34D399;">100%</span>
+            <span>下阶星级: 12 / 30 次</span>
+            <span style="color:#F472B6;">升级 3 星</span>
           </div>
         </div>
 
-        <!-- 10. 学霸 - 极速心流 (白银) -->
+        <!-- 10. 学霸 - 极速心流 (白银 · 多次获得 ×5) -->
         <div class="badge-card badge-silver" data-cat="mastery" onclick="openBadgeModal('badge-10')">
-          <div class="status-tag in-progress">进行中</div>
+          <div class="badge-multiplier">已达成 ×5</div>
+          <div class="status-tag unlocked">已解锁</div>
           <div class="badge-icon-box" id="svg-badge-10">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <!-- 双环超速轨道 -->
@@ -1199,20 +1310,22 @@
               <path d="M50 38 L50 50 L58 50" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
             </svg>
           </div>
-          <div class="badge-category">精进 · 巅峰学霸</div>
+          <div class="badge-category">精进 · 巅峰学霸 (可累加)</div>
           <div class="badge-name">极速心流</div>
-          <div class="badge-desc">肌肉记忆般的反应速度，条件反射直接秒选</div>
+          <div class="star-rating">★☆☆☆☆ (1星心流)</div>
+          <div class="badge-desc">平均反应时间 < 1.2 秒且连对 30 词</div>
           <div class="progress-bar-wrap">
-            <div class="progress-bar-fill" style="width: 60%;"></div>
+            <div class="progress-bar-fill" style="width: 50%; background: linear-gradient(135deg, #EC4899, #38BDF8);"></div>
           </div>
           <div class="progress-text">
-            <span>18 / 30 词</span>
-            <span>60%</span>
+            <span>下阶星级: 5 / 10 次</span>
+            <span style="color:#38BDF8;">升级 2 星</span>
           </div>
         </div>
 
-        <!-- 11. 学霸 - 破晓之翼 (黄金) -->
+        <!-- 11. 学霸 - 破晓之翼 (黄金 · 多次获得 ×4) -->
         <div class="badge-card badge-gold" data-cat="mastery" onclick="openBadgeModal('badge-11')">
+          <div class="badge-multiplier">已达成 ×4</div>
           <div class="status-tag in-progress">进行中</div>
           <div class="badge-icon-box" id="svg-badge-11">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1226,20 +1339,22 @@
               <polygon points="50,42 53,49 47,49" fill="#FFFFFF"/>
             </svg>
           </div>
-          <div class="badge-category">精进 · 巅峰学霸</div>
+          <div class="badge-category">精进 · 巅峰学霸 (可累加)</div>
           <div class="badge-name">破晓之翼</div>
-          <div class="badge-desc">与朝阳同步，清晨高效自律的见证</div>
+          <div class="star-rating">★☆☆☆☆ (1星晨曦)</div>
+          <div class="badge-desc">早晨 6:00 ~ 7:30 间完成背词，见证清晨自律</div>
           <div class="progress-bar-wrap">
             <div class="progress-bar-fill" style="width: 40%;"></div>
           </div>
           <div class="progress-text">
-            <span>4 / 10 次</span>
+            <span>下阶星级: 4 / 10 次</span>
             <span>40%</span>
           </div>
         </div>
 
-        <!-- 12. 学霸 - 夜行学者 (黄金) -->
+        <!-- 12. 学霸 - 夜行学者 (黄金 · 多次获得 ×8) -->
         <div class="badge-card badge-gold" data-cat="mastery" onclick="openBadgeModal('badge-12')">
+          <div class="badge-multiplier">已达成 ×8</div>
           <div class="status-tag in-progress">进行中</div>
           <div class="badge-icon-box" id="svg-badge-12">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1257,14 +1372,15 @@
               <line x1="48" y1="34" x2="68" y2="26" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
             </svg>
           </div>
-          <div class="badge-category">精进 · 巅峰学霸</div>
+          <div class="badge-category">精进 · 巅峰学霸 (可累加)</div>
           <div class="badge-name">夜行学者</div>
-          <div class="badge-desc">万籁俱寂时，唯有求知欲在闪闪发光</div>
+          <div class="star-rating">★☆☆☆☆ (1星守夜)</div>
+          <div class="badge-desc">深夜 23:00 后自律复习，万籁俱寂唯有求知欲</div>
           <div class="progress-bar-wrap">
             <div class="progress-bar-fill" style="width: 80%;"></div>
           </div>
           <div class="progress-text">
-            <span>8 / 10 次</span>
+            <span>下阶星级: 8 / 10 次</span>
             <span>80%</span>
           </div>
         </div>
@@ -1393,7 +1509,7 @@
       </div>
     </section>
 
-    <!-- 4. 勋章权益与激励闭环 -->
+    <!-- 5. 勋章权益与激励闭环 -->
     <section id="section-rewards" class="section-card">
       <div class="section-header">
         <div>
@@ -1407,7 +1523,7 @@
           <span class="flywheel-tag">权益 1 · 个人主页与高光展柜</span>
           <h3>置顶荣誉与身份挂件</h3>
           <p>
-            用户可在个人主页挑选 3~5 枚最自豪的勋章置顶展示。高稀有度勋章附带动态流光头像框，在排行榜与自习室发言时具有专属标识。
+            用户可在个人主页挑选 3~5 枚最自豪的勋章置顶展示（支持显示 ×N 计数与星级）。高稀有度勋章附带动态流光头像框，在排行榜与自习室发言时具有专属标识。
           </p>
         </div>
 
@@ -1415,7 +1531,7 @@
           <span class="flywheel-tag">权益 2 · 经济体系奖励</span>
           <h3>牛词币与实用道具</h3>
           <p>
-            解锁勋章附赠牛词币、补签卡、免广告特权等，直接回馈用户的背词努力，强化“付出即有收获”的正向回路。
+            解锁勋章及多次获得时附赠牛词币、补签卡、免广告特权等，直接回馈用户的背词努力，强化“付出即有收获”的正向回路。
           </p>
         </div>
 
@@ -1423,13 +1539,13 @@
           <span class="flywheel-tag">权益 3 · 裂变自传播海报</span>
           <h3>绝美朋友圈炫耀卡</h3>
           <p>
-            勋章解锁瞬间弹出恭贺动效，支持“一键生成绝美海报”，海报嵌入用户昵称、坚持天数、二维码，实现高质量朋友圈自裂变。
+            勋章解锁与升星瞬间弹出恭贺动效，支持“一键生成绝美海报”，海报嵌入用户昵称、坚持天数、二维码，实现高质量朋友圈自裂变。
           </p>
         </div>
       </div>
     </section>
 
-    <!-- 5. 触发机制与产品交互链路 -->
+    <!-- 6. 触发机制与产品交互链路 -->
     <section id="section-flow" class="section-card">
       <div class="section-header">
         <div>
@@ -1447,7 +1563,7 @@
         <div class="step-box">
           <div class="step-num">2</div>
           <h4>实时判定与发放</h4>
-          <p>完成背词/打卡/测试瞬间，后端通过事件监听异步判定，符合条件即刻在响应中返回 <code class="code-tag">new_badges</code> 列表。</p>
+          <p>完成背词/打卡/测试瞬间，后端通过事件监听异步判定，符合条件即刻在响应中返回 <code class="code-tag">new_badges</code> 列表（支持返回多次累加与升星事件）。</p>
         </div>
         <div class="step-box">
           <div class="step-num">3</div>
@@ -1462,7 +1578,7 @@
       </div>
     </section>
 
-    <!-- 6. 极简优雅的数据模型与规则引擎设计 -->
+    <!-- 7. 极简优雅的数据模型与规则引擎设计 -->
     <section id="section-tech" class="section-card">
       <div class="section-header">
         <div>
@@ -1484,13 +1600,13 @@
           <tbody>
             <tr>
               <td><span class="code-tag">badge_definition</span></td>
-              <td><code>id, code, name, category, tier, svg_code, condition_type, target_value, reward_coins, reward_item</code></td>
-              <td>勋章元数据配置表（支持后台灵活增删改与配置矢量图，无需发版）</td>
+              <td><code>id, code, name, category, tier, svg_code, is_stackable, condition_type, target_value, reward_coins</code></td>
+              <td>勋章元数据配置表（<code>is_stackable=1</code> 标识精进类可多次获得勋章）</td>
             </tr>
             <tr>
               <td><span class="code-tag">user_badge</span></td>
-              <td><code>id, user_id, badge_id, unlocked_at, is_equipped, is_viewed</code></td>
-              <td>用户已获得的勋章表（记录解锁时间与佩戴状态）</td>
+              <td><code>id, user_id, badge_id, obtain_count, star_level, unlocked_at, is_equipped, is_viewed</code></td>
+              <td>用户勋章拥有表（<code>obtain_count</code> 记录获得次数，<code>star_level</code> 记录 1~5 星级）</td>
             </tr>
             <tr>
               <td><span class="code-tag">user_badge_progress</span></td>
@@ -1507,8 +1623,8 @@
           采用 Spring 的 <code class="code-tag">ApplicationEventPublisher</code> 事件驱动机制解耦：
         </p>
         <ul style="padding-left: 20px; font-size: 13px; color: var(--text-main); line-height: 1.8;">
-          <li><strong>事件发布</strong>：用户打卡完成触发 <code>CheckinSuccessEvent</code>，背词完成触发 <code>WordMasteredEvent</code>。</li>
-          <li><strong>异步监听</strong>：<code>BadgeEventListener</code> 接收事件，匹配对应 <code>condition_type</code> 的计算策略器（如 <code>StreakConditionEvaluator</code>, <code>VocabCountEvaluator</code>）。</li>
+          <li><strong>事件发布</strong>：用户打卡完成触发 <code>CheckinSuccessEvent</code>，测试满分触发 <code>TestPerfectScoreEvent</code>。</li>
+          <li><strong>异步监听</strong>：<code>BadgeEventListener</code> 接收事件，若为可叠层勋章，执行 <code>obtain_count + 1</code> 并计算是否触发升星门槛。</li>
           <li><strong>幂等发放</strong>：更新进度并检查阈值，满足则写入 <code>user_badge</code> 并标记未读提示。</li>
           <li><strong>前端消费</strong>：Flutter 端使用 <code>flutter_svg</code> 原生平滑渲染，弹出统一的 <code>BadgeAwardDialog</code> 仪式感弹窗。</li>
         </ul>
@@ -1534,8 +1650,8 @@
       <div class="modal-icon-wrap" id="modalSvgHolder">
         <!-- 动态注入当前点击的矢量 SVG -->
       </div>
-      <div class="modal-title" id="mTitle">萌芽初醒</div>
-      <div class="modal-tier" id="mTier">青铜 · 打卡系列</div>
+      <div class="modal-title" id="mTitle">百发百中</div>
+      <div class="modal-tier" id="mTier">青铜 · 精进系列</div>
       
       <div class="modal-condition" id="mCondition">
         条件说明
@@ -1543,7 +1659,7 @@
 
       <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">解锁奖励</div>
       <div class="modal-rewards" id="mRewards">
-        <span class="reward-pill">牛词币 +50</span>
+        <span class="reward-pill">牛词币 +80</span>
       </div>
 
       <div class="modal-btn-group">
@@ -1589,20 +1705,28 @@
         condition: '将任意一本词书（如考研/托福）完整背诵并全量通关', rewards: ['牛词币 +1500', '通关全书证书', '通关流光勋章'], progress: '0 / 1 本'
       },
       'badge-9': {
-        name: '百发百中', category: '精进 · 巅峰学霸', tier: '青铜', tierColor: '#D97706',
-        condition: '单次单词测验/复习（不少于20词）达到 100% 正确率', rewards: ['牛词币 +80'], progress: '已达成 1 次'
+        name: '百发百中', category: '精进 · 巅峰学霸 (可累加)', tier: '青铜 · 2星', tierColor: '#D97706',
+        condition: '单次测验/复习达到 100% 正确率（每次满分均可重复累加）',
+        rewards: ['每次奖励牛词币 +20', '首次达成 +80', '升至3星送专属称号'],
+        progress: '已累计获得 12 次 (★★☆☆☆ 2星学霸，升3星需达到30次)'
       },
       'badge-10': {
-        name: '极速心流', category: '精进 · 巅峰学霸', tier: '白银', tierColor: '#94A3B8',
-        condition: '平均单词反应时间 < 1.2 秒且连对 30 词', rewards: ['牛词币 +180', '心流加速卡'], progress: '最高连对 18 词'
+        name: '极速心流', category: '精进 · 巅峰学霸 (可累加)', tier: '白银 · 1星', tierColor: '#94A3B8',
+        condition: '平均反应时间 < 1.2 秒且连对 30 词（可重复累加获得）',
+        rewards: ['每次奖励牛词币 +30', '首次达成 +180', '心流加速卡'],
+        progress: '已累计获得 5 次 (★☆☆☆☆ 1星心流，升2星需达到10次)'
       },
       'badge-11': {
-        name: '破晓之翼', category: '精进 · 巅峰学霸', tier: '黄金', tierColor: '#F59E0B',
-        condition: '在早晨 6:00 ~ 7:30 之间完成每日背词任务累计 10 次', rewards: ['牛词币 +300', '「晨曦学神」称号'], progress: '4 / 10 次'
+        name: '破晓之翼', category: '精进 · 巅峰学霸 (可累加)', tier: '黄金 · 1星', tierColor: '#F59E0B',
+        condition: '早晨 6:00 ~ 7:30 之间完成每日背词（可重复累加获得）',
+        rewards: ['每次达成牛词币 +30', '升至2星送「晨曦学神」称号'],
+        progress: '已累计获得 4 次 (★☆☆☆☆ 1星晨曦，升2星需达到10次)'
       },
       'badge-12': {
-        name: '夜行学者', category: '精进 · 巅峰学霸', tier: '黄金', tierColor: '#F59E0B',
-        condition: '在深夜 23:00 之后自律复习并完成当日计划累计 10 次', rewards: ['牛词币 +300', '「暗夜星光」专属卡面'], progress: '8 / 10 次'
+        name: '夜行学者', category: '精进 · 巅峰学霸 (可累加)', tier: '黄金 · 1星', tierColor: '#F59E0B',
+        condition: '深夜 23:00 之后自律复习完成计划（可重复累加获得）',
+        rewards: ['每次达成牛词币 +30', '升至2星送「暗夜星光」专属卡面'],
+        progress: '已累计获得 8 次 (★☆☆☆☆ 1星守夜，升2星需达到10次)'
       },
       'badge-13': {
         name: '布道同行', category: '共鸣 · 探索先锋', tier: '青铜', tierColor: '#D97706',
@@ -1658,7 +1782,7 @@
       document.getElementById('mCondition').innerHTML = `
         <div style="font-size:12px; color:#94A3B8; margin-bottom:4px;">达成条件</div>
         <div style="font-weight:600; color:#FFF;">${data.condition}</div>
-        <div style="font-size:12px; color:#38BDF8; margin-top:8px;">当前进度: ${data.progress}</div>
+        <div style="font-size:12px; color:#EC4899; margin-top:8px; font-weight:600;">当前状态: ${data.progress}</div>
       `;
 
       const rewardsContainer = document.getElementById('mRewards');
