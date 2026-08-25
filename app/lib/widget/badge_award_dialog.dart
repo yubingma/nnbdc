@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../api/vo.dart';
+import 'package:nnbdc/services/dialog_service.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
 
@@ -17,15 +18,18 @@ class BadgeAwardDialog extends StatelessWidget {
   });
 
   static Future<void> show(
-    BuildContext context, {
+    BuildContext? context, {
     required UserBadgeVo userBadge,
     VoidCallback? onEquip,
     VoidCallback? onShare,
   }) {
+    final ctx = context ?? DialogService.navigatorKey.currentContext;
+    if (ctx == null) return Future.value();
     return showDialog(
-      context: context,
+      context: ctx,
+      useRootNavigator: true,
       barrierDismissible: true,
-      builder: (ctx) => BadgeAwardDialog(
+      builder: (c) => BadgeAwardDialog(
         userBadge: userBadge,
         onEquip: onEquip,
         onShare: onShare,
