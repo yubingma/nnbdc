@@ -116,14 +116,36 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
     try {
       final imagePath = await _capturePosterToTempFile();
       if (imagePath == null) {
-        ToastUtil.error('保存失败，请重试');
+        ToastUtil.error('生成海报失败，请重试');
         return;
+      }
+
+      // 桌面端 (macOS / Windows / Linux)：直接保存到 Downloads 文件夹
+      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+        final downloadsDir = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+        final badgeName = widget.userBadge.badge?.name ?? 'medal';
+        final fileName = 'bubble_badge_${badgeName}_${DateTime.now().millisecondsSinceEpoch}.png';
+        final targetPath = '${downloadsDir.path}/$fileName';
+        await File(imagePath).copy(targetPath);
+        ToastUtil.success('✅ 已保存至「下载」文件夹: $fileName');
+        return;
+      }
+
+      // 移动端 (iOS / Android)：保存至手机系统相册
+      final hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        final granted = await Gal.requestAccess();
+        if (!granted) {
+          ToastUtil.error('未获得相册权限，请在系统设置中允许');
+          return;
+        }
       }
 
       await Gal.putImage(imagePath);
       ToastUtil.success('✅ 荣誉海报已保存至相册！');
     } catch (e) {
-      ToastUtil.error('保存到相册失败');
+      Global.logger.e('保存勋章海报失败: $e');
+      ToastUtil.error('保存失败: $e');
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
@@ -408,7 +430,7 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
               const SizedBox(width: 16),
               _buildShareActionBtn(
                 icon: Icons.download_rounded,
-                label: '存相册',
+                label: (Platform.isMacOS || Platform.isWindows || Platform.isLinux) ? '存电脑' : '存相册',
                 color: const Color(0xFF6366F1),
                 onTap: _saveToGallery,
               ),
