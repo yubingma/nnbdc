@@ -126,22 +126,32 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
         final fileName = 'bubble_badge_${badgeName}_${DateTime.now().millisecondsSinceEpoch}.png';
         final bytes = await File(imagePath).readAsBytes();
 
+        String savedPath = '';
         try {
           final downloadsDir = await getDownloadsDirectory();
           if (downloadsDir != null) {
             final targetFile = File('${downloadsDir.path}/$fileName');
             await targetFile.writeAsBytes(bytes);
-            ToastUtil.success('✅ 已保存至「下载」文件夹: $fileName');
-            return;
+            savedPath = targetFile.path;
           }
         } catch (_) {
           // 沙盒限制，降级保存至应用文档目录
           final docsDir = await getApplicationDocumentsDirectory();
           final targetFile = File('${docsDir.path}/$fileName');
           await targetFile.writeAsBytes(bytes);
-          ToastUtil.success('✅ 已保存至文档目录: $fileName');
-          return;
+          savedPath = targetFile.path;
         }
+
+        if (savedPath.isNotEmpty) {
+          ToastUtil.success('✅ 已保存至: $savedPath');
+          // macOS / Windows 自动在访达/资源管理器中选中高亮该图片
+          if (Platform.isMacOS) {
+            Process.run('open', ['-R', savedPath]);
+          } else if (Platform.isWindows) {
+            Process.run('explorer.exe', ['/select,', savedPath]);
+          }
+        }
+        return;
       }
 
       // 移动端 (iOS / Android)：保存至手机系统相册
