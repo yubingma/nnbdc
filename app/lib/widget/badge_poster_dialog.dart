@@ -183,6 +183,35 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
     }
   }
 
+  Future<void> _copyPosterToClipboard() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
+
+    try {
+      final imagePath = await _capturePosterToTempFile();
+      if (imagePath == null) {
+        ToastUtil.error('生成海报失败，请重试');
+        return;
+      }
+
+      if (Platform.isMacOS) {
+        // macOS 原生 AppleScript 将图片文件写入系统剪贴板，支持在微信聊天框直接 ⌘V 粘贴
+        await Process.run('osascript', [
+          '-e',
+          'set the clipboard to (read (POSIX file "$imagePath") as «class PNGf»)',
+        ]);
+        ToastUtil.success('📋 海报已复制！可直接在微信中 ⌘V 粘贴发送');
+      } else {
+        ToastUtil.success('✅ 海报已就绪');
+      }
+    } catch (e) {
+      Global.logger.e('复制海报失败: $e');
+      ToastUtil.error('复制失败: $e');
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
   Future<void> _shareToSystem() async {
     if (_isExporting) return;
     setState(() => _isExporting = true);
@@ -442,38 +471,61 @@ class _BadgePosterDialogState extends State<BadgePosterDialog> {
 
           const SizedBox(height: 20),
 
-          // 底部分享操作按钮栏
+          // 底部分享操作按钮栏 (桌面端与移动端针对性定制)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildShareActionBtn(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: '微信好友',
-                color: const Color(0xFF07C160),
-                onTap: () => _shareToWeChat(WeChatScene.session),
-              ),
-              const SizedBox(width: 16),
-              _buildShareActionBtn(
-                icon: Icons.camera_rounded,
-                label: '朋友圈',
-                color: const Color(0xFF10B981),
-                onTap: () => _shareToWeChat(WeChatScene.timeline),
-              ),
-              const SizedBox(width: 16),
-              _buildShareActionBtn(
-                icon: Icons.download_rounded,
-                label: (Platform.isMacOS || Platform.isWindows || Platform.isLinux) ? '存电脑' : '存相册',
-                color: const Color(0xFF6366F1),
-                onTap: _saveToGallery,
-              ),
-              const SizedBox(width: 16),
-              _buildShareActionBtn(
-                icon: Icons.share_rounded,
-                label: '更多',
-                color: const Color(0xFF64748B),
-                onTap: _shareToSystem,
-              ),
-            ],
+            children: (Platform.isMacOS || Platform.isWindows || Platform.isLinux)
+                ? [
+                    _buildShareActionBtn(
+                      icon: Icons.download_rounded,
+                      label: '存电脑',
+                      color: const Color(0xFF6366F1),
+                      onTap: _saveToGallery,
+                    ),
+                    const SizedBox(width: 20),
+                    _buildShareActionBtn(
+                      icon: Icons.copy_rounded,
+                      label: '复制海报',
+                      color: const Color(0xFF07C160),
+                      onTap: _copyPosterToClipboard,
+                    ),
+                    const SizedBox(width: 20),
+                    _buildShareActionBtn(
+                      icon: Icons.share_rounded,
+                      label: '系统分享',
+                      color: const Color(0xFF64748B),
+                      onTap: _shareToSystem,
+                    ),
+                  ]
+                : [
+                    _buildShareActionBtn(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      label: '微信好友',
+                      color: const Color(0xFF07C160),
+                      onTap: () => _shareToWeChat(WeChatScene.session),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildShareActionBtn(
+                      icon: Icons.camera_rounded,
+                      label: '朋友圈',
+                      color: const Color(0xFF10B981),
+                      onTap: () => _shareToWeChat(WeChatScene.timeline),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildShareActionBtn(
+                      icon: Icons.download_rounded,
+                      label: '存相册',
+                      color: const Color(0xFF6366F1),
+                      onTap: _saveToGallery,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildShareActionBtn(
+                      icon: Icons.share_rounded,
+                      label: '更多',
+                      color: const Color(0xFF64748B),
+                      onTap: _shareToSystem,
+                    ),
+                  ],
           ),
         ],
       ),
