@@ -15,6 +15,7 @@ import 'word_list.dart';
 import 'dict_words.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
+import 'package:nnbdc/services/badge_service.dart';
 
 class WordListController extends ChangeNotifier {
   final WordListPageArgs args;
@@ -581,6 +582,9 @@ class WordListController extends ChangeNotifier {
 
     if (value) {
       EventBus.publishWordMastered(WordMasteredEvent(wordId: word.word.id.toString()));
+
+      // 实时检测是否达成词汇量勋章 (如破冰启航 100 词等)，并在达成时自动弹出高光授勋仪式弹窗
+      BadgeService().checkMasteredWords();
 
       final String providerType = args.wordsProvider.runtimeType.toString();
       final bool isTodayTask = providerType == 'StageWordsProvider' ||

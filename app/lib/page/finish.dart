@@ -21,6 +21,7 @@ import '../util/notification_util.dart';
 import '../util/platform_util.dart';
 import '../widget/daka_poster.dart';
 import '../widget/daka_poster_dialog.dart';
+import 'package:nnbdc/services/badge_service.dart';
 import 'index.dart';
 
 class FinishPage extends StatefulWidget {
@@ -112,6 +113,9 @@ class FinishPageState extends State<FinishPage> {
           
           // 漏斗：用户成功打卡完成
           AnalyticsUtil.trackFinishDaka(cowDung, user.data!.continuousDakaDayCount ?? 0);
+
+          // 🌟 实时检测是否达成连续打卡勋章 (如萌芽初醒 3天, 习惯微光 21天, 百日筑基 100天, 早起/深夜打卡等)
+          BadgeService().checkStreakDays(context: mounted ? context : null);
         } else {
           cowDung = 0; // 确保失败时为0
           ToastUtil.error(result.msg!);
