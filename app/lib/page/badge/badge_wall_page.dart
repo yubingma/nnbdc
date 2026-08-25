@@ -392,7 +392,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
               const SizedBox(height: 20),
 
               // 底部佩戴与关闭按钮
-              if (isUnlocked)
+              if (isUnlocked) ...[
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -416,6 +416,40 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                     ),
                   ),
                 ),
+
+                // 🛠️ 管理员专属：重置/删除此勋章（便于调试与测试弹窗）
+                if (Global.getLoggedInUser()?.isAdmin == true) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFEF4444),
+                        side: const BorderSide(color: Color(0xFFEF4444), width: 1.2),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                      label: const Text(
+                        '删除此勋章（管理员调试）',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () async {
+                        final user = Global.getLoggedInUser();
+                        final badgeCode = vo.badgeCode ?? vo.badge?.code;
+                        if (user != null && badgeCode != null) {
+                          Navigator.of(ctx).pop();
+                          await MyDatabase.instance.userBadgesDao.deleteBadge(user.id, badgeCode, true);
+                          ToastUtil.success('已删除勋章: $badgeCode');
+                          _loadBadges();
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ],
             ],
           ),
         );

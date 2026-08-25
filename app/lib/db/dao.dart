@@ -2592,6 +2592,24 @@ class UserBadgesDao extends DatabaseAccessor<MyDatabase> with _$UserBadgesDaoMix
     return true;
   }
 
+  Future<void> deleteBadge(String userId, String badgeCode, bool genLog) async {
+    final existing = await getBadgeByUserAndCode(userId, badgeCode);
+    if (existing != null) {
+      await (delete(userBadges)
+            ..where((u) => u.userId.equals(userId) & u.badgeCode.equals(badgeCode)))
+          .go();
+      if (genLog) {
+        await DbLogUtil.logOperation(
+          userId,
+          'DELETE',
+          'userBadges',
+          existing.id,
+          existing,
+        );
+      }
+    }
+  }
+
   Future<void> batchDeleteUserRecords(String userId) async {
     await (delete(userBadges)..where((u) => u.userId.equals(userId))).go();
   }
