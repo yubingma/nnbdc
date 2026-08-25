@@ -10,6 +10,7 @@ void main() {
       expect(Util.localTableNameToRemote('userStudySteps'), equals('user_study_step'));
       expect(Util.localTableNameToRemote('userOpers'), equals('user_oper'));
       expect(Util.localTableNameToRemote('dictWords'), equals('dict_word'));
+      expect(Util.localTableNameToRemote('userBadges'), equals('user_badge'));
     });
 
     test('远程表名到本地表名', () {
@@ -18,6 +19,7 @@ void main() {
       expect(Util.remoteTableNameToLocal('user_study_step'), equals('userStudySteps'));
       expect(Util.remoteTableNameToLocal('user_oper'), equals('userOpers'));
       expect(Util.remoteTableNameToLocal('dict_word'), equals('dictWords'));
+      expect(Util.remoteTableNameToLocal('user_badge'), equals('userBadges'));
     });
   });
 
