@@ -88,63 +88,109 @@ def get_upload_url(access_token, app_id, client_id, suffix="apk"):
     
     # Check for specific "Client token auth failed" error (205524993)
     if response.status_code != 200:
-        err_code = response.json().get("ret", {}).get("code")
-        if err_code == 205524993:
-            print(f"Attempt 1 failed with 'client token auth failed'. Retrying with 'clientId' header...")
-            # Try 2: CamelCase clientId
-            headers["clientId"] = client_id
-            del headers["client_id"]
-            response = session.get(url, params=params, headers=headers)
+        try:
+            err_json = response.json()
+            err_code = err_json.get("ret", {}).get("code")
+            if err_code == 205524993:
+                print(f"Attempt 1 failed with 'client token auth failed'. Retrying with 'clientId' header...")
+                # Try 2: CamelCase clientId
+                headers["clientId"] = client_id
+                del headers["client_id"]
+                response = session.get(url, params=params, headers=headers)
+        except Exception:
+            pass
 
     if response.status_code == 200:
-        result = response.json()
+        try:
+            result = response.json()
+        except Exception as e:
+            print(f"Failed to parse JSON response: {e}, Response: {response.text}")
+            sys.exit(1)
+
         if result.get("ret", {}).get("code") == 0:
             return result.get("uploadUrl"), result.get("authCode")
         else:
             print(f"Error getting upload URL: {result}")
             sys.exit(1)
     else:
-        print(f"Failed to get upload URL. Status: {response.status_code}, Response: {response.text}")
+        print(f"\n❌ Failed to get upload URL. HTTP Status: {response.status_code}")
+        if response.status_code == 403:
+            print("\n[403 Forbidden 排查指南]")
+            print("1. 华为 AGC 中创建 API 客户端时，【项目 (Project)】必须选择 【N/A】（不要绑定到具体项目，否则调用发布 API 会被 403 拒绝）。")
+            print("2. API 客户端的【角色 (Role)】必须具有【管理员】或【App 管理员】权限。")
+            print("3. 确认当前 API 客户端（Client ID）属于该应用所在的企业团队账号，并且已授权访问该应用。")
+        if response.text:
+            print(f"Response: {response.text}")
         sys.exit(1)
 
 def upload_file(upload_url, auth_code, file_path):
     """
-    Uploads the file to the provided URL.
+    Uploads the file to the provided URL using streaming multipart upload with progress bar.
     """
-    print(f"Uploading file: {file_path}...")
+    import os
+    from requests_toolbelt import MultipartEncoder, MultipartEncoderMonitor
+    from tqdm import tqdm
+
+    file_name = os.path.basename(file_path)
+    file_size = os.path.getsize(file_path)
+    print(f"Uploading file: {file_path} ({file_size / (1024 * 1024):.2f} MB)...")
     
-    # The file upload requires multipart/form-data
-    # authCode needs to be part of the form data
-    
-    with open(file_path, 'rb') as f:
-        files = {
-            'file': f,
-        }
-        data = {
-            'authCode': auth_code,
-            'fileCount': 1
-        }
-        
-        # Note: Do not set Content-Type header manually for multipart, access token not needed here usually
-        # We use a standard session here, possibly don't need the custom SSL one for the upload URL 
-        # as it might change domains, but likely safe to use it or just standard requests if domain differs significantly.
-        # The upload URL is usually different. Let's start with standard requests for upload unless it fails.
-        # But to be safe, let's use a basic session.
-        response = requests.post(upload_url, files=files, data=data)
-        
-    if response.status_code == 200:
-        result = response.json()
-        result_content = result.get("result", {})
-        # Check both resultCode (standard) and UploadFileRsp.ifSuccess (sometimes used)
-        if str(result_content.get("resultCode")) == "0" or result_content.get("UploadFileRsp", {}).get("ifSuccess") == 1:
-             print("File uploaded successfully.")
-             return result_content.get("UploadFileRsp", {}).get("fileInfoList")[0]
-        else:
-             print(f"Error during upload: {result}")
-             sys.exit(1)
-    else:
-        print(f"Upload failed. Status: {response.status_code}, Response: {response.text}")
-        sys.exit(1)
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        if attempt > 1:
+            print(f"\nRetrying upload (attempt {attempt}/{max_retries})...")
+            time.sleep(3)
+        try:
+            with open(file_path, 'rb') as f:
+                encoder = MultipartEncoder(
+                    fields={
+                        'authCode': auth_code,
+                        'fileCount': '1',
+                        'file': (file_name, f, 'application/octet-stream')
+                    }
+                )
+                
+                with tqdm(total=encoder.len, unit='B', unit_scale=True, unit_divisor=1024, desc="Upload Progress") as pbar:
+                    def callback(monitor):
+                        pbar.update(monitor.bytes_read - pbar.n)
+
+                    monitor = MultipartEncoderMonitor(encoder, callback)
+                    headers = {
+                        'Content-Type': monitor.content_type
+                    }
+                    
+                    response = requests.post(
+                        upload_url,
+                        data=monitor,
+                        headers=headers,
+                        timeout=(30, 1800)  # 30s connect timeout, 30m read timeout
+                    )
+
+            if response.status_code == 200:
+                try:
+                    result = response.json()
+                except Exception as e:
+                    print(f"Failed to parse JSON response: {e}, Response: {response.text}")
+                    sys.exit(1)
+
+                result_content = result.get("result", {})
+                if str(result_content.get("resultCode")) == "0" or result_content.get("UploadFileRsp", {}).get("ifSuccess") == 1:
+                    print("\n✅ File uploaded successfully.")
+                    return result_content.get("UploadFileRsp", {}).get("fileInfoList")[0]
+                else:
+                    print(f"\n❌ Error during upload: {result}")
+                    sys.exit(1)
+            else:
+                print(f"\n❌ Upload failed. Status: {response.status_code}, Response: {response.text}")
+                if attempt == max_retries:
+                    sys.exit(1)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            print(f"\n⚠️ Upload connection error on attempt {attempt}: {e}")
+            if attempt == max_retries:
+                print("\n[上传失败排查建议]")
+                print("1. 如果您开启了本地代理（如 Clash/Surge 等 VPN/代理软件），请尝试临时关闭代理，或将华为域名加入直连规则（代理软件常会限制大文件 POST 长连接）。")
+                print("2. 检查网络连接是否稳定。")
+                sys.exit(1)
 
 def update_app_file_info(access_token, app_id, client_id, file_info, file_name):
     """
@@ -185,7 +231,12 @@ def update_app_file_info(access_token, app_id, client_id, file_info, file_name):
     response = session.put(url, json=payload, headers=headers, params={'appId': app_id})
     
     if response.status_code == 200:
-        result = response.json()
+        try:
+            result = response.json()
+        except Exception as e:
+            print(f"Failed to parse JSON response: {e}, Response: {response.text}")
+            sys.exit(1)
+
         if result.get("ret", {}).get("code") == 0:
             print("App file info updated successfully.")
         else:
