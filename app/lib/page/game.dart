@@ -18,12 +18,10 @@ class GamePage extends StatefulWidget {
   State<StatefulWidget> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
+class _GamePageState extends State<GamePage> {
   static const double leftPadding = 0;
   static const double rightPadding = 0;
   GetGameHallDataResult? gameHallDataResult;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
   // 辅助：小按钮与输入房号
   Widget _buildSmallActionButton({required String label, required IconData icon, required VoidCallback onTap, required bool enabled}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -101,19 +99,11 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
     loadData();
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -163,72 +153,6 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
     }
   }
 
-  // 获取在线状态信息
-  ({Color color, String text, IconData icon}) _getStatusInfo(int userCount) {
-    if (userCount == 0) {
-      return (color: Colors.grey, text: '空闲', icon: Icons.schedule);
-    } else if (userCount < 50) {
-      return (color: Colors.green, text: '畅通', icon: Icons.signal_cellular_4_bar);
-    } else if (userCount < 100) {
-      return (color: Colors.orange, text: '繁忙', icon: Icons.signal_cellular_alt);
-    } else {
-      return (color: Colors.red, text: '拥挤', icon: Icons.signal_cellular_off);
-    }
-  }
-
-  Widget _buildOnlineIndicator(int userCount) {
-    final status = _getStatusInfo(userCount);
-    final hasUsers = userCount > 0;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedBuilder(
-          animation: _pulseAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: hasUsers ? _pulseAnimation.value : 1.0,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: status.color,
-                  shape: BoxShape.circle,
-                  boxShadow: hasUsers
-                      ? [
-                          BoxShadow(
-                            color: status.color.withValues(alpha: 0.6),
-                            blurRadius: 2,
-                            spreadRadius: 0.5,
-                          ),
-                        ]
-                      : null,
-                ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(width: 4),
-        Icon(status.icon, size: 12, color: status.color),
-        const SizedBox(width: 2),
-        Flexible(
-          child: Text(
-            status.text,
-            textScaler: TextScaler.linear(1.0),
-            style: TextStyle(
-              color: status.color,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-              letterSpacing: 0.3,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
   // 构建游戏图标
   Widget _buildGameIcon() {
     return Container(
@@ -258,47 +182,18 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
   }
 
   // 构建大厅信息
-  Widget _buildHallInfo(GameHallVo hall, Color textColor, Color? subtitleColor) {
+  Widget _buildHallInfo(GameHallVo hall, Color textColor) {
     return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            hall.hallName,
-            textScaler: TextScaler.linear(1.0),
-            style: TextStyle(
-              color: textColor,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (Global.getLoggedInUser()?.isAdmin == true)
-            Row(
-              children: [
-                Icon(Icons.people, size: 16, color: subtitleColor),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    '${hall.userCount} 人在线',
-                    textScaler: TextScaler.linear(1.0),
-                    style: TextStyle(
-                      color: subtitleColor,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      height: 1.3,
-                      letterSpacing: 0.3,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(child: _buildOnlineIndicator(hall.userCount)),
-              ],
-            ),
-        ],
+      child: Text(
+        hall.hallName,
+        textScaler: TextScaler.linear(1.0),
+        style: TextStyle(
+          color: textColor,
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+          height: 1.4,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -393,7 +288,6 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
   Widget _buildHallCard(GameHallVo hall, bool isDarkMode) {
     final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
     final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -405,7 +299,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hall.userCount > 0 ? AppTheme.primaryColor.withValues(alpha: 0.3) : (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!),
+          color: isDarkMode ? Colors.grey[700]! : Colors.grey[200]!,
           width: 1.5,
         ),
         boxShadow: [
@@ -425,7 +319,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               children: [
                 _buildGameIcon(),
                 const SizedBox(width: 16),
-                _buildHallInfo(hall, textColor, subtitleColor),
+                _buildHallInfo(hall, textColor),
               ],
             ),
             const SizedBox(height: 14),
@@ -452,95 +346,6 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
     );
   }
 
-  // 构建在线人数指示器（动画版本）
-  Widget _buildGroupUserCountBadge(HallGroupVo group, Color accentColor) {
-    final isLoggedInUserAdmin = Global.getLoggedInUser()?.isAdmin == true;
-    final hasUsers = isLoggedInUserAdmin ? group.userCount > 0 : false;
-    final badgeColor = hasUsers ? accentColor : Colors.grey;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: hasUsers
-              ? [accentColor.withValues(alpha: 0.15), accentColor.withValues(alpha: 0.08)]
-              : [Colors.grey.withValues(alpha: 0.1), Colors.grey.withValues(alpha: 0.05)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: hasUsers ? accentColor.withValues(alpha: 0.4) : Colors.grey.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-        boxShadow: hasUsers
-            ? [
-                BoxShadow(
-                  color: accentColor.withValues(alpha: 0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: hasUsers ? _pulseAnimation.value : 1.0,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    shape: BoxShape.circle,
-                    boxShadow: hasUsers
-                        ? [
-                            BoxShadow(
-                              color: accentColor.withValues(alpha: 0.6),
-                              blurRadius: 3,
-                              spreadRadius: 1,
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          Icon(Icons.people, size: 18, color: badgeColor),
-          const SizedBox(width: 6),
-          Text(
-            isLoggedInUserAdmin ? '${group.userCount}' : '?',
-            textScaler: TextScaler.linear(1.0),
-            style: TextStyle(
-              color: badgeColor,
-              fontSize: 17,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'NotoSansSC',
-              height: 1.3,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '在线',
-            textScaler: TextScaler.linear(1.0),
-            style: TextStyle(
-              color: hasUsers ? accentColor.withValues(alpha: 0.8) : Colors.grey.withValues(alpha: 0.7),
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 构建组标题
   Widget _buildGroupTitle(HallGroupVo group, Color textColor, Color accentColor) {
     return Padding(
@@ -562,7 +367,6 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
               ),
             ),
           ),
-          if (Global.getLoggedInUser()?.isAdmin == true) _buildGroupUserCountBadge(group, accentColor),
         ],
       ),
     );
