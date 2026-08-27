@@ -1402,6 +1402,27 @@ extension BdcPageStateUIComponents on BdcPageState {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.record_voice_over_outlined,
+                            size: 15,
+                            color: _cachedIsDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '请说出中文释义：',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: _cachedIsDarkMode
+                                  ? const Color(0xFFD1D5DB)
+                                  : const Color(0xFF4B5563),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
                       ...renderAsrMeaningItems(state.wordWrapper!,
                           isDarkMode: context.read<DarkMode>().isDarkMode),
                       const SizedBox(height: 16),
@@ -1412,15 +1433,25 @@ extension BdcPageStateUIComponents on BdcPageState {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '说出单词发音 或 直接拼写：',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: _cachedIsDarkMode
-                              ? const Color(0xFFD1D5DB)
-                              : const Color(0xFF4B5563),
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.record_voice_over_outlined,
+                            size: 15,
+                            color: _cachedIsDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '请说出单词发音 或 直接拼写：',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: _cachedIsDarkMode
+                                  ? const Color(0xFFD1D5DB)
+                                  : const Color(0xFF4B5563),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       _buildSpellingExerciseButton(isDarkMode),

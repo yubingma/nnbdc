@@ -2790,9 +2790,11 @@ class BdcNotifier extends _$BdcNotifier {
   List<Tab> get dynamicTabs {
     List<Tab> tabs = [];
     if (_shouldShowSpeakTab) {
-      tabs.add(const Tab(child: Row(children: [Icon(Icons.mic, size: 18), SizedBox(width: 4), Text('说')])));
+      final isEn2Ch = state.studyStep == StudyStep.en2Ch.json || state.studyStep == StudyStep.enSentence2Ch.json;
+      final speakLabel = isEn2Ch ? '说释义' : '说发音';
+      tabs.add(Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.mic, size: 18), const SizedBox(width: 4), Text(speakLabel)])));
     }
-    tabs.add(const Tab(child: Row(children: [Icon(Icons.touch_app, size: 18), SizedBox(width: 4), Text('选')])));
+    tabs.add(const Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.touch_app, size: 18), SizedBox(width: 4), Text('选')])));
     return tabs;
   }
 

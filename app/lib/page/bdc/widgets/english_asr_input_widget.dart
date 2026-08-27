@@ -96,7 +96,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
         break;
       case AsrState.initialized:
       case AsrState.stopped:
-        statusText = "发音评分";
+        statusText = widget.isSentenceStep ? "请说例句英文" : "请说单词发音";
         break;
     }
 
@@ -220,13 +220,13 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
-                        width: 65,
+                        width: 80,
                         child: Text(
                           statusText,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 10,
-                            color: isDarkMode ? Colors.white38 : Colors.black26,
+                            color: isDarkMode ? Colors.white54 : Colors.black45,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

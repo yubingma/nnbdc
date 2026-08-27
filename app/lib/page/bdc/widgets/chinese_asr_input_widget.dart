@@ -96,7 +96,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
         break;
       case AsrState.initialized:
       case AsrState.stopped:
-        statusText = "";
+        statusText = widget.isSentenceStep ? "请说例句中文" : "请说中文释义";
         break;
     }
 
@@ -220,13 +220,13 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
-                        width: 65,
+                        width: 80,
                         child: Text(
                           statusText,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 10,
-                            color: isDarkMode ? Colors.white38 : Colors.black26,
+                            color: isDarkMode ? Colors.white54 : Colors.black45,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
