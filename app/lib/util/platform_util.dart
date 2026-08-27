@@ -72,9 +72,32 @@ class PlatformUtils {
     return isAndroid || isIOS;
   }
 
+  /// 测试专用：覆盖卓易通环境判定（null = 自动检测）
+  @visibleForTesting
+  static bool? zhuoyiTongOverride;
+
+  /// 判断当前是否运行在鸿蒙卓易通等容器兼容环境中
+  static bool get isZhuoyiTong {
+    if (zhuoyiTongOverride != null) return zhuoyiTongOverride!;
+    if (!isAndroid) return false;
+    try {
+      final cgroupFile = File('/proc/self/cgroup');
+      if (cgroupFile.existsSync()) {
+        final content = cgroupFile.readAsStringSync().toLowerCase();
+        if (content.contains('isulad') ||
+            content.contains('droi') ||
+            content.contains('zhuoyi') ||
+            content.contains('卓易通')) {
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
+  }
+
   static String get platformLabel {
     if (isWeb) return 'Web';
-    if (isAndroid) return 'Android';
+    if (isAndroid) return isZhuoyiTong ? 'Android (卓易通)' : 'Android';
     if (isIOS) return 'iOS';
     if (isMacOS) return 'macOS';
     if (isWindows) return 'Windows';

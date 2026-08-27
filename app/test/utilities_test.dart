@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/page/bdc/providers/bdc_notifier.dart';
 
 void main() {
@@ -48,6 +49,20 @@ void main() {
       final res = BdcNotifier.stitchTexts("我爱苹果", "香蕉很好吃", isEnglish: false);
       // 无重叠的阶段性结果用空格分隔，避免多个阶段识别文本黏连（与 bdc_notifier_test 断言一致）
       expect(res, equals("我爱苹果 香蕉很好吃"));
+    });
+  });
+
+  group('PlatformUtils 卓易通检测测试', () {
+    tearDown(() {
+      PlatformUtils.zhuoyiTongOverride = null;
+    });
+
+    test('zhuoyiTongOverride 覆盖检测', () {
+      PlatformUtils.zhuoyiTongOverride = true;
+      expect(PlatformUtils.isZhuoyiTong, isTrue);
+
+      PlatformUtils.zhuoyiTongOverride = false;
+      expect(PlatformUtils.isZhuoyiTong, isFalse);
     });
   });
 } 

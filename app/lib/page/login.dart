@@ -78,6 +78,14 @@ class LoginPageState extends State<LoginPage>
   }
 
   Future<void> _checkWechatInstallation() async {
+    if (PlatformUtils.isZhuoyiTong) {
+      if (mounted) {
+        setState(() {
+          _isWechatInstalled = false;
+        });
+      }
+      return;
+    }
     if (PlatformUtils.isIOS) {
       bool installed = await WechatUtil.isWechatInstalled();
       if (mounted) {
@@ -307,9 +315,10 @@ class LoginPageState extends State<LoginPage>
                               ),
                             ),
                           ),
-                        if (PlatformUtils.isIOS || PlatformUtils.isAndroid)
-                          if (!PlatformUtils.isIOS || _isWechatInstalled)
-                            Container(
+                        if ((PlatformUtils.isIOS || PlatformUtils.isAndroid) &&
+                            !PlatformUtils.isZhuoyiTong &&
+                            (!PlatformUtils.isIOS || _isWechatInstalled))
+                          Container(
                             width: double.infinity,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
@@ -360,25 +369,75 @@ class LoginPageState extends State<LoginPage>
                               ),
                             ),
                           ),
-                        const SizedBox(height: 20),
+                        if (!PlatformUtils.isIOS &&
+                            (PlatformUtils.isZhuoyiTong || !_isWechatInstalled))
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0284C7)
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton.icon(
+                              onPressed: (_isWechatLoading ||
+                                      _isAppleLoading ||
+                                      _isGuestLoading)
+                                  ? null
+                                  : _onEmailLoginPressed,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                splashFactory: InkSparkle.splashFactory,
+                              ),
+                              icon: const Icon(Icons.email_outlined,
+                                  color: Colors.white, size: 24),
+                              label: const Text(
+                                '邮箱验证码登录',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
 
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildMinorButton('邮箱登录', () {
-                              if (!_approved) {
-                                ToastUtil.error("请先同意[使用协议]和[隐私政策]");
-                                return;
-                              }
-                              context.push('/email_login',
-                                  extra: {'approved': _approved});
-                            }),
-                            Container(
-                              width: 1,
-                              height: 14,
-                              margin: const EdgeInsets.symmetric(horizontal: 8),
-                              color: Colors.white24,
-                            ),
+                            if (!(!PlatformUtils.isIOS &&
+                                (PlatformUtils.isZhuoyiTong ||
+                                    !_isWechatInstalled))) ...[
+                              _buildMinorButton('邮箱登录', _onEmailLoginPressed),
+                              Container(
+                                width: 1,
+                                height: 14,
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                color: Colors.white24,
+                              ),
+                            ],
                             _buildMinorButton(
                                 _isGuestLoading ? '正在登录...' : '先去逛逛', () async {
                               if (_isGuestLoading) return;
@@ -422,6 +481,18 @@ class LoginPageState extends State<LoginPage>
                             }),
                           ],
                         ),
+                        if (PlatformUtils.isZhuoyiTong)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text(
+                              '卓易通兼容环境暂不支持微信登录，请使用邮箱登录',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
 
                         const SizedBox(height: 40),
 
@@ -554,9 +625,21 @@ class LoginPageState extends State<LoginPage>
   void showPrivacyPage() => context.push("/privacy");
   void showProtocolPage() => context.push("/protocol");
 
+  void _onEmailLoginPressed() {
+    if (!_approved) {
+      ToastUtil.error("请先同意[使用协议]和[隐私政策]");
+      return;
+    }
+    context.push('/email_login', extra: {'approved': _approved});
+  }
+
   void wechatLoginPressed() async {
     if (!_approved) {
       ToastUtil.error("请先同意[使用协议]和[隐私政策]");
+      return;
+    }
+    if (PlatformUtils.isZhuoyiTong) {
+      ToastUtil.info("卓易通兼容环境暂不支持微信登录，请使用邮箱登录");
       return;
     }
     setState(() => _isWechatLoading = true);
