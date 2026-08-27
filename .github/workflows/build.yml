@@ -131,6 +131,8 @@ jobs:
         with:
           # 改为 true (非递归) 并增加 fetch-depth 以提高拉取子模块的成功率
           submodules: true
+          # 开启 Git LFS 支持
+          lfs: true
           # 必须显式设置凭据，以防子模块拉取失败（尤其是在 windows/macos 上）
           persist-credentials: true
           token: ${{ github.token }}
