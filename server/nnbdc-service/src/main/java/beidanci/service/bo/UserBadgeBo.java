@@ -104,9 +104,9 @@ public class UserBadgeBo extends BaseBo<UserBadge> {
     }
 
     public void batchDeleteUserRecords(String userId, String filtersJson) {
-        StringBuilder sql = new StringBuilder("DELETE FROM user_badge WHERE user_id = :userId");
+        String sql = "DELETE FROM user_badge WHERE user_id = :userId";
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("userId", userId);
-        namedParameterJdbcTemplate.update(sql.toString(), parameters);
+        namedParameterJdbcTemplate.update(sql, parameters);
     }
 }
