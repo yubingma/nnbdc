@@ -373,7 +373,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
           _sanitizeEntityJson(log.tblName, entityJson);
           Util.fixJsonDates(entityJson);
 
-          if (log.tblName == 'users') {
+          if (log.tblName == 'users' || log.tblName == 'user') {
             User entity = User.fromJson(entityJson);
             Global.logger.d('📥 [Sync-User] 接收到用户同步: id=${entity.id}, userName=${entity.userName}, '
                 'todayStudyStarted=${entity.todayStudyStarted}, lastLearningDate=${entity.lastLearningDate}, '
@@ -501,6 +501,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
               await db.userBadgesDao.saveEntity(entity, false);
             }
           } else if (log.tblName != 'users' &&
+              log.tblName != 'user' &&
               log.tblName != 'dicts' &&
               log.tblName != 'words' &&
               log.tblName != 'learningDicts' &&
