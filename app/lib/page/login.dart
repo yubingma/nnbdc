@@ -563,9 +563,11 @@ class LoginPageState extends State<LoginPage>
     try {
       bool handled = false;
       late final FluwxCancelable cancelable;
+      Timer? timeoutTimer;
       cancelable = WechatUtil.addSubscriber((response) async {
         if (handled || response is! WeChatAuthResponse) return;
         handled = true;
+        timeoutTimer?.cancel();
         cancelable.cancel();
         if (response.code != null) {
           try {
@@ -612,10 +614,22 @@ class LoginPageState extends State<LoginPage>
         }
         if (mounted) setState(() => _isWechatLoading = false);
       });
+      // 设置超时保护，若微信未响应或被特殊环境拦截，8秒后自动取消并重置状态
+      timeoutTimer = Timer(const Duration(seconds: 8), () {
+        if (!handled) {
+          handled = true;
+          cancelable.cancel();
+          if (mounted) {
+            setState(() => _isWechatLoading = false);
+          }
+        }
+      });
       if (!await WechatUtil.login()) {
         handled = true;
+        timeoutTimer.cancel();
         cancelable.cancel();
         setState(() => _isWechatLoading = false);
+        return;
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginByWechat');
