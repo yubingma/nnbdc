@@ -251,9 +251,8 @@ public class MsgBo extends BaseBo<Msg> {
     }
 
     public User sendAdvice(String content, String clientType, User fromUser) {
-        String trimmedContent = content != null ? content.trim() : "";
-        PromoActivity activity = (promoActivityBo != null && !trimmedContent.isEmpty())
-                ? promoActivityBo.findByCode(trimmedContent)
+        PromoActivity activity = (promoActivityBo != null && content != null && !content.trim().isEmpty())
+                ? promoActivityBo.findMatchingActivityInContent(content)
                 : null;
 
         if (activity != null) {

@@ -73,8 +73,8 @@ public class MsgBoAdviceRedeemTest {
 
         PromoActivityBo mockPromoActivityBo = new PromoActivityBo() {
             @Override
-            public PromoActivity findByCode(String code) {
-                if ("VIP888".equals(code)) {
+            public PromoActivity findMatchingActivityInContent(String content) {
+                if (content != null && content.toUpperCase().contains("VIP888")) {
                     return activeActivity;
                 }
                 return null;
@@ -102,14 +102,14 @@ public class MsgBoAdviceRedeemTest {
         redemptionBoField.setAccessible(true);
         redemptionBoField.set(msgBo, mockPromoRedemptionBo);
 
-        // 测试输入带首尾空格的兑换码
-        User updated = msgBo.sendAdvice("  VIP888  ", "FLUTTER_ANDROID", testUser);
+        // 测试包含额外文字或小写情况的兑换码输入："你好，我的兑换码是 vip888 谢谢！"
+        User updated = msgBo.sendAdvice("你好，我的兑换码是 vip888 谢谢！", "FLUTTER_ANDROID", testUser);
 
         assertNotNull(updated);
         assertTrue(Boolean.TRUE.equals(updated.getPremiumOverrideEnabled()));
         assertEquals(2, createdMsgs.size());
         assertEquals(MsgType.Advice, createdMsgs.get(0).getMsgType());
-        assertEquals("  VIP888  ", createdMsgs.get(0).getContent());
+        assertEquals("你好，我的兑换码是 vip888 谢谢！", createdMsgs.get(0).getContent());
 
         assertEquals(MsgType.AdviceReply, createdMsgs.get(1).getMsgType());
         assertTrue(createdMsgs.get(1).getContent().contains("恭喜您！已成功兑换【测试赠送VIP】"));
@@ -126,8 +126,8 @@ public class MsgBoAdviceRedeemTest {
 
         PromoActivityBo mockPromoActivityBo = new PromoActivityBo() {
             @Override
-            public PromoActivity findByCode(String code) {
-                if ("USED123".equals(code)) {
+            public PromoActivity findMatchingActivityInContent(String content) {
+                if (content != null && content.toUpperCase().contains("USED123")) {
                     return activeActivity;
                 }
                 return null;
@@ -149,7 +149,7 @@ public class MsgBoAdviceRedeemTest {
         redemptionBoField.setAccessible(true);
         redemptionBoField.set(msgBo, mockPromoRedemptionBo);
 
-        msgBo.sendAdvice("USED123", "FLUTTER_IOS", testUser);
+        msgBo.sendAdvice("已使用码: USED123", "FLUTTER_IOS", testUser);
 
         assertEquals(2, createdMsgs.size());
         assertEquals(MsgType.AdviceReply, createdMsgs.get(1).getMsgType());
@@ -167,8 +167,8 @@ public class MsgBoAdviceRedeemTest {
 
         PromoActivityBo mockPromoActivityBo = new PromoActivityBo() {
             @Override
-            public PromoActivity findByCode(String code) {
-                if ("EXPIRED".equals(code)) {
+            public PromoActivity findMatchingActivityInContent(String content) {
+                if (content != null && content.toUpperCase().contains("EXPIRED")) {
                     return expiredActivity;
                 }
                 return null;

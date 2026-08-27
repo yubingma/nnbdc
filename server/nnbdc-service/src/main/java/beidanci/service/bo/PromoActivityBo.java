@@ -1,5 +1,6 @@
 package beidanci.service.bo;
 
+import java.util.List;
 import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,32 @@ public class PromoActivityBo extends BaseBo<PromoActivity> {
         }
         String sql = "SELECT * FROM promo_activity WHERE UPPER(activity_code) = UPPER(:code)";
         return queryUnique(sql, Pair.of("code", code.trim()));
+    }
+
+    /**
+     * 从文本内容中匹配活动兑换码（支持用户在内容中夹带文字，忽略大小写，优先匹配最长兑换码）
+     */
+    public PromoActivity findMatchingActivityInContent(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return null;
+        }
+        List<PromoActivity> allActivities = queryAll(null, null, null, false);
+        if (allActivities == null || allActivities.isEmpty()) {
+            return null;
+        }
+        String upperContent = content.toUpperCase();
+        PromoActivity bestMatch = null;
+        for (PromoActivity act : allActivities) {
+            if (act.getActivityCode() != null && !act.getActivityCode().trim().isEmpty()) {
+                String code = act.getActivityCode().trim().toUpperCase();
+                if (upperContent.contains(code)) {
+                    if (bestMatch == null || code.length() > bestMatch.getActivityCode().trim().length()) {
+                        bestMatch = act;
+                    }
+                }
+            }
+        }
+        return bestMatch;
     }
 
     public PromoActivity getLatestActiveActivity() {
