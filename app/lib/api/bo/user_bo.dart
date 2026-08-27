@@ -266,7 +266,7 @@ class UserBo {
 
   Future<String?> getUserId() async => Global.getLoggedInUser()?.id;
 
-  Future<Result> sendAdvice(String content, String userId) async {
+  Future<Result<UserVo?>> sendAdvice(String content, String userId) async {
     return await Api.client.sendAdvice(content, getClientType().name, userId);
   }
 

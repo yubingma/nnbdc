@@ -1913,8 +1913,9 @@ class _MePageState extends State<MePage> {
                         ),
                       )
                     : null,
-                onTap: () {
-                  context.push('/msg');
+                onTap: () async {
+                  await context.push('/msg');
+                  loadData();
                 },
               ),
               // 我的小天地 - 仅管理员可见

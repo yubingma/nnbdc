@@ -457,7 +457,7 @@ abstract class RestClient {
 
   @POST("/sendAdvice.do")
   @FormUrlEncoded()
-  Future<Result> sendAdvice(@Field("content") String content,
+  Future<Result<UserVo?>> sendAdvice(@Field("content") String content,
       @Field("clientType") String clientType, @Query("userId") String userId);
 
   // 系统/公共词书资源（可走 CDN）

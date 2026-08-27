@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:provider/provider.dart';
 
@@ -57,6 +58,10 @@ class MsgPageState extends State<MsgPage> {
       final clientType = getClientType();
       final result = await Api.client.sendAdvice(_messageController.text.trim(), clientType.name, Global.getLoggedInUser()!.id);
       if (result.success) {
+        if (result.data != null) {
+          // 意见建议兑换会员成功，立即更新本地数据库与内存用户状态
+          await MyDatabase.instance.usersDao.saveUser(userVo2User(result.data!), false);
+        }
         _messageController.clear();
         ToastUtil.info("发送成功");
         // 重新加载消息列表

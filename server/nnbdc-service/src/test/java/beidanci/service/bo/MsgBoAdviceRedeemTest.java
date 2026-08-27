@@ -103,8 +103,10 @@ public class MsgBoAdviceRedeemTest {
         redemptionBoField.set(msgBo, mockPromoRedemptionBo);
 
         // 测试输入带首尾空格的兑换码
-        msgBo.sendAdvice("  VIP888  ", "FLUTTER_ANDROID", testUser);
+        User updated = msgBo.sendAdvice("  VIP888  ", "FLUTTER_ANDROID", testUser);
 
+        assertNotNull(updated);
+        assertTrue(Boolean.TRUE.equals(updated.getPremiumOverrideEnabled()));
         assertEquals(2, createdMsgs.size());
         assertEquals(MsgType.Advice, createdMsgs.get(0).getMsgType());
         assertEquals("  VIP888  ", createdMsgs.get(0).getContent());

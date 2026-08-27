@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import beidanci.api.Result;
 import beidanci.api.model.MsgCountVo;
 import beidanci.api.model.MsgVo;
+import beidanci.api.model.UserVo;
 import beidanci.service.bo.MsgBo;
 import beidanci.service.bo.UserBo;
 import beidanci.service.po.Msg;
@@ -34,7 +35,7 @@ public class MsgController {
 
     @PostMapping("/sendAdvice.do")
     @ResponseBody
-    public Result<Void> sendAdvice(String content, String clientType, String userId) throws EmailException {
+    public Result<UserVo> sendAdvice(String content, String clientType, String userId) throws Exception {
         System.out.println("DEBUG: MsgController.sendAdvice - content: " + content);
         System.out.println("DEBUG: MsgController.sendAdvice - clientType: " + clientType);
         System.out.println("DEBUG: MsgController.sendAdvice - userId: " + userId);
@@ -48,9 +49,15 @@ public class MsgController {
             return Result.fail("用户未登录");
         }
         
-        msgBo.sendAdvice(content, clientType, loggedInUser);
+        User updatedUser = msgBo.sendAdvice(content, clientType, loggedInUser);
+        UserVo userVo = null;
+        if (updatedUser != null) {
+            userVo = PoVoUtils.makeVo(updatedUser, UserVo.class,
+                    new String[] { "invitedBy", "StudyGroupVo.creator", "StudyGroupVo.users",
+                            "StudyGroupVo.managers", "studyGroupPosts", "userGames" });
+        }
 
-        return Result.success(null);
+        return Result.success(userVo);
     }
 
     private void shrinkUserInfoForMsgVos(List<MsgVo> vos) throws IllegalAccessException {

@@ -250,7 +250,7 @@ public class MsgBo extends BaseBo<Msg> {
         }
     }
 
-    public void sendAdvice(String content, String clientType, User fromUser) {
+    public User sendAdvice(String content, String clientType, User fromUser) {
         String trimmedContent = content != null ? content.trim() : "";
         PromoActivity activity = (promoActivityBo != null && !trimmedContent.isEmpty())
                 ? promoActivityBo.findByCode(trimmedContent)
@@ -262,6 +262,7 @@ public class MsgBo extends BaseBo<Msg> {
 
             String replyMsg;
             Date now = new Date();
+            User updatedUser = null;
             if (!Boolean.TRUE.equals(activity.getIsActive())) {
                 replyMsg = "该活动码已下线或暂未启用。";
             } else if (activity.getStartTime() != null && activity.getStartTime().after(now)) {
@@ -275,7 +276,7 @@ public class MsgBo extends BaseBo<Msg> {
                 replyMsg = "您已兑换过该活动码，不能重复兑换。";
             } else {
                 try {
-                    promoRedemptionBo.redeem(fromUser, activity);
+                    updatedUser = promoRedemptionBo.redeem(fromUser, activity);
                     String durationStr = (activity.getDuration() != null && !activity.getDuration().trim().isEmpty())
                             ? activity.getDuration().trim()
                             : "永久";
@@ -289,11 +290,12 @@ public class MsgBo extends BaseBo<Msg> {
 
             replyAdvice(replyMsg, fromUser, userBo);
             // 命中兑换码不发送邮件给客服，避免干扰
-            return;
+            return updatedUser;
         }
 
         createMsg(content, MsgType.Advice, clientType, fromUser, userBo.getSysUser_sys(false));
         Util.sendEmailToNnbdcCustomerSerivce(String.format("来自[%s]的意见", fromUser.getNickName()), content);
+        return null;
     }
 
     public void replyAdvice(String content, User toUser, UserBo userBo) {
