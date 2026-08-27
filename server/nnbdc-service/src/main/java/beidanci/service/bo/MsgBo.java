@@ -24,6 +24,7 @@ import beidanci.api.model.PagedResults;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.Msg;
+import beidanci.service.po.PromoActivity;
 import beidanci.service.po.User;
 import beidanci.service.socket.SocketService;
 import beidanci.service.util.Util;
@@ -36,6 +37,12 @@ public class MsgBo extends BaseBo<Msg> {
 
     @Autowired
     UserBo userBo;
+
+    @Autowired
+    private PromoActivityBo promoActivityBo;
+
+    @Autowired
+    private PromoRedemptionBo promoRedemptionBo;
 
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -244,6 +251,47 @@ public class MsgBo extends BaseBo<Msg> {
     }
 
     public void sendAdvice(String content, String clientType, User fromUser) {
+        String trimmedContent = content != null ? content.trim() : "";
+        PromoActivity activity = (promoActivityBo != null && !trimmedContent.isEmpty())
+                ? promoActivityBo.findByCode(trimmedContent)
+                : null;
+
+        if (activity != null) {
+            // 用户输入了活动兑换码，记录意见建议
+            createMsg(content, MsgType.Advice, clientType, fromUser, userBo.getSysUser_sys(false));
+
+            String replyMsg;
+            Date now = new Date();
+            if (!Boolean.TRUE.equals(activity.getIsActive())) {
+                replyMsg = "该活动码已下线或暂未启用。";
+            } else if (activity.getStartTime() != null && activity.getStartTime().after(now)) {
+                replyMsg = "该活动尚未开始。";
+            } else if (activity.getEndTime() != null && activity.getEndTime().before(now)) {
+                replyMsg = "该活动已结束。";
+            } else if (activity.getMaxRedemptions() != null && activity.getMaxRedemptions() > 0
+                    && activity.getRedemptionCount() >= activity.getMaxRedemptions()) {
+                replyMsg = "该活动码兑换次数已达上限。";
+            } else if (promoRedemptionBo.hasRedeemed(fromUser.getId(), activity.getId())) {
+                replyMsg = "您已兑换过该活动码，不能重复兑换。";
+            } else {
+                try {
+                    promoRedemptionBo.redeem(fromUser, activity);
+                    String durationStr = (activity.getDuration() != null && !activity.getDuration().trim().isEmpty())
+                            ? activity.getDuration().trim()
+                            : "永久";
+                    replyMsg = String.format("恭喜您！已成功兑换【%s】，获得会员时长：%s。感谢您的支持！",
+                            activity.getName(), durationStr);
+                } catch (Exception e) {
+                    logger.error("意见建议兑换会员失败: userId={}, activityCode={}", fromUser.getId(), activity.getActivityCode(), e);
+                    replyMsg = "兑换失败，请稍后重试。";
+                }
+            }
+
+            replyAdvice(replyMsg, fromUser, userBo);
+            // 命中兑换码不发送邮件给客服，避免干扰
+            return;
+        }
+
         createMsg(content, MsgType.Advice, clientType, fromUser, userBo.getSysUser_sys(false));
         Util.sendEmailToNnbdcCustomerSerivce(String.format("来自[%s]的意见", fromUser.getNickName()), content);
     }

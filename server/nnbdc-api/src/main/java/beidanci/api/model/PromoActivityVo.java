@@ -12,6 +12,7 @@ public class PromoActivityVo extends UuidVo {
     private Integer redemptionCount;
     private Boolean isActive;
     private Boolean showCodeToUser;
+    private Boolean showRedeemUi;
 
     public PromoActivityVo() {
     }
@@ -86,5 +87,13 @@ public class PromoActivityVo extends UuidVo {
 
     public void setShowCodeToUser(Boolean showCodeToUser) {
         this.showCodeToUser = showCodeToUser;
+    }
+
+    public Boolean getShowRedeemUi() {
+        return showRedeemUi;
+    }
+
+    public void setShowRedeemUi(Boolean showRedeemUi) {
+        this.showRedeemUi = showRedeemUi;
     }
 }

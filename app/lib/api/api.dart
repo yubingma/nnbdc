@@ -949,7 +949,8 @@ abstract class RestClient {
       @Field("duration") String? duration,
       @Field("endTime") int? endTime,
       @Field("maxRedemptions") int? maxRedemptions,
-      @Field("showCodeToUser") bool? showCodeToUser);
+      @Field("showCodeToUser") bool? showCodeToUser,
+      @Field("showRedeemUi") bool? showRedeemUi);
 
   @GET("/getActivePromoActivity.do")
   Future<Result<PromoActivityVo?>> getActivePromoActivity();
@@ -975,6 +976,7 @@ abstract class RestClient {
       @Field("endTime") int? endTime,
       @Field("maxRedemptions") int? maxRedemptions,
       @Field("showCodeToUser") bool? showCodeToUser,
+      @Field("showRedeemUi") bool? showRedeemUi,
       @Field("isActive") bool? isActive);
 }
 

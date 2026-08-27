@@ -104,7 +104,8 @@ public class PromoController {
             if (vo.getShowCodeToUser() == null || !vo.getShowCodeToUser()) {
                 vo.setActivityCode(null);
             }
-            log.info("getActivePromoActivity: 成功获取有效活动 name={}, showCodeToUser={}", vo.getName(), vo.getShowCodeToUser());
+            log.info("getActivePromoActivity: 成功获取有效活动 name={}, showCodeToUser={}, showRedeemUi={}",
+                    vo.getName(), vo.getShowCodeToUser(), vo.getShowRedeemUi());
             return Result.success(vo);
         } catch (Exception e) {
             log.error("getActivePromoActivity: 获取活动信息失败", e);
@@ -123,7 +124,8 @@ public class PromoController {
             @RequestParam(required = false) String duration,
             @RequestParam(required = false) Long endTime,
             @RequestParam(required = false) Integer maxRedemptions,
-            @RequestParam(required = false, defaultValue = "false") Boolean showCodeToUser) {
+            @RequestParam(required = false, defaultValue = "false") Boolean showCodeToUser,
+            @RequestParam(required = false, defaultValue = "false") Boolean showRedeemUi) {
         try {
             User admin = userBo.findById(userId);
             if (admin == null || !admin.getIsAdmin()) {
@@ -162,6 +164,7 @@ public class PromoController {
             activity.setMaxRedemptions(maxRedemptions);
             activity.setRedemptionCount(0);
             activity.setShowCodeToUser(showCodeToUser != null ? showCodeToUser : false);
+            activity.setShowRedeemUi(showRedeemUi != null ? showRedeemUi : false);
             activity.setIsActive(true);
             activity.setCreateTime(new Date());
             activity.setUpdateTime(new Date());
@@ -174,7 +177,7 @@ public class PromoController {
     }
 
     /**
-     * 管理员获取所有推广活动
+     * 管理员获取所有活动列表
      */
     @GetMapping("/admin/listPromoActivities.do")
     public Result<List<PromoActivityVo>> listPromoActivities(
@@ -214,7 +217,7 @@ public class PromoController {
             promoActivityBo.deleteEntity(activity);
             return Result.success(null);
         } catch (Exception e) {
-            return Result.fail("删除失败: " + e.getMessage());
+            return Result.fail("删除活动失败: " + e.getMessage());
         }
     }
 
@@ -231,6 +234,7 @@ public class PromoController {
             @RequestParam(required = false) Long endTime,
             @RequestParam(required = false) Integer maxRedemptions,
             @RequestParam(required = false, defaultValue = "false") Boolean showCodeToUser,
+            @RequestParam(required = false, defaultValue = "false") Boolean showRedeemUi,
             @RequestParam(required = false) Boolean isActive) {
         try {
             User admin = userBo.findById(userId);
@@ -277,6 +281,9 @@ public class PromoController {
             activity.setMaxRedemptions(maxRedemptions);
             if (showCodeToUser != null) {
                 activity.setShowCodeToUser(showCodeToUser);
+            }
+            if (showRedeemUi != null) {
+                activity.setShowRedeemUi(showRedeemUi);
             }
             if (isActive != null) {
                 activity.setIsActive(isActive);

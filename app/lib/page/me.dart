@@ -1296,7 +1296,7 @@ class _MePageState extends State<MePage> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    if (!isPremium) ...[
+                    if (!isPremium && _activePromo?.showRedeemUi == true) ...[
                       _PromoRedemptionWidget(
                         activePromo: _activePromo,
                         onRedeemSuccess: () {
@@ -4141,8 +4141,8 @@ class _PromoRedemptionWidgetState extends State<_PromoRedemptionWidget> {
   @override
   Widget build(BuildContext context) {
     final activePromo = widget.activePromo;
-    // 只有在当前确实存在有效活动时才展示兑换组件
-    if (activePromo == null) {
+    // 只有在当前确实存在有效活动且开启了展示兑换框时才展示兑换组件
+    if (activePromo == null || activePromo.showRedeemUi != true) {
       return const SizedBox.shrink();
     }
 

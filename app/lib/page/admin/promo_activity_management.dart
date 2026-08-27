@@ -49,7 +49,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     }
   }
 
-  Future<void> _createActivity(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser) async {
+  Future<void> _createActivity(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi) async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
@@ -62,6 +62,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
         endTime?.millisecondsSinceEpoch,
         maxRedemptions,
         showCodeToUser,
+        showRedeemUi,
       );
       if (result.success) {
         ToastUtil.success('创建活动成功');
@@ -74,7 +75,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
     }
   }
 
-  Future<void> _updateActivity(String activityId, String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser) async {
+  Future<void> _updateActivity(String activityId, String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi) async {
     final user = Global.getLoggedInUser();
     if (user == null) return;
 
@@ -88,6 +89,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
         endTime?.millisecondsSinceEpoch,
         maxRedemptions,
         showCodeToUser,
+        showRedeemUi,
         true,
       );
       if (result.success) {
@@ -124,8 +126,8 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (context) => _CreateOrEditPromoActivityPage(
-          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser) {
-            _createActivity(name, code, duration, endTime, maxRedemptions, showCodeToUser);
+          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi) {
+            _createActivity(name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi);
           },
         ),
       ),
@@ -139,9 +141,9 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
         fullscreenDialog: true,
         builder: (context) => _CreateOrEditPromoActivityPage(
           initialActivity: activity,
-          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser) {
+          onSave: (name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi) {
             if (activity.id != null) {
-              _updateActivity(activity.id!, name, code, duration, endTime, maxRedemptions, showCodeToUser);
+              _updateActivity(activity.id!, name, code, duration, endTime, maxRedemptions, showCodeToUser, showRedeemUi);
             }
           },
         ),
@@ -385,6 +387,25 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
                                         color: deadlineColor ?? (isDarkMode ? Colors.white70 : Colors.black87),
                                       ),
                                     ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: activity.showRedeemUi == true
+                                            ? Colors.green.withValues(alpha: 0.15)
+                                            : Colors.grey.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        activity.showRedeemUi == true ? '我的页面兑换框: 开启' : '我的页面兑换框: 隐藏',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: activity.showRedeemUi == true
+                                              ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
+                                              : (isDarkMode ? Colors.white60 : Colors.black54),
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -424,7 +445,7 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
 
 class _CreateOrEditPromoActivityPage extends StatefulWidget {
   final PromoActivityVo? initialActivity;
-  final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser) onSave;
+  final void Function(String name, String code, String? duration, DateTime? endTime, int? maxRedemptions, bool showCodeToUser, bool showRedeemUi) onSave;
 
   const _CreateOrEditPromoActivityPage({
     this.initialActivity,
@@ -444,6 +465,7 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
   bool _isPermanent = false;
   bool _hasDeadline = true;
   bool _showCodeToUser = false;
+  bool _showRedeemUi = false;
   DateTime _selectedDeadline = DateTime.now().add(const Duration(days: 7));
 
   bool get _isEditing => widget.initialActivity != null;
@@ -471,6 +493,7 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
         _maxRedemptionsController.text = init.maxRedemptions.toString();
       }
       _showCodeToUser = init.showCodeToUser == true;
+      _showRedeemUi = init.showRedeemUi == true;
     }
     _updateDeadlineText();
   }
@@ -519,7 +542,7 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
     final maxRedemptions = maxRedemptionsStr.isEmpty ? null : int.tryParse(maxRedemptionsStr);
 
     Navigator.pop(context);
-    widget.onSave(name, code, duration, endTime, maxRedemptions, _showCodeToUser);
+    widget.onSave(name, code, duration, endTime, maxRedemptions, _showCodeToUser, _showRedeemUi);
   }
 
   @override
@@ -593,11 +616,33 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
                       const SizedBox(height: 12),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
+                        title: const Text('在“我的”页面展示兑换框', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        subtitle: Text(
+                          _showRedeemUi
+                              ? '已开启：“我的”页面显示兑换码输入框及兑换按钮'
+                              : '已关闭：“我的”页面隐藏兑换输入框（推荐：用户可在“意见建议”输入兑换码静默兑换）',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _showRedeemUi ? Colors.green.shade700 : (isDarkMode ? Colors.white60 : Colors.black54),
+                          ),
+                        ),
+                        value: _showRedeemUi,
+                        activeTrackColor: AppTheme.primaryColor.withValues(alpha: 0.5),
+                        activeThumbColor: AppTheme.primaryColor,
+                        onChanged: (val) {
+                          setState(() {
+                            _showRedeemUi = val;
+                          });
+                        },
+                      ),
+                      const Divider(height: 16),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
                         title: const Text('直接向用户展示活动码', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                         subtitle: Text(
                           _showCodeToUser
-                              ? '已开启：普通用户在“我的”页面可以直接看到活动码并一键兑换（适合全员公开福利）'
-                              : '已关闭：普通用户需手动输入活动码（适合小红书/公众号私域引流）',
+                              ? '已开启：若开启了兑换框，普通用户在“我的”页面可以直接看到活动码并一键填入'
+                              : '已关闭：活动码对普通用户隐藏（适合私域引流或意见建议兑换）',
                           style: TextStyle(
                             fontSize: 12,
                             color: _showCodeToUser ? Colors.green.shade700 : (isDarkMode ? Colors.white60 : Colors.black54),
