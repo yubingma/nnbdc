@@ -593,9 +593,6 @@ extension BdcPageStateDialogs on BdcPageState {
                                 localAutoJumpAfterCorrectCh2En);
                             notifier.updateAutoJumpEn2Ch(
                                 localAutoJumpAfterCorrectEn2Ch);
-                            if (PlatformUtils.isIOS) {
-                              unawaited(StudyAudioSessionController.instance.forceReconfigureSession());
-                            }
                             Navigator.pop(context, true);
                           }
                         },

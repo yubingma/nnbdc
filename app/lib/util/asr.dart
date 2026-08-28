@@ -49,6 +49,9 @@ class Asr {
   /// 避免多个已失效的监听器继续处理结果，导致目标单词长期停留在旧值
   StreamSubscription? _eventSubscription;
 
+  /// 当前绑定的 ASR 结果监听器
+  void Function(dynamic asrResult)? _currentListener;
+
   /// 当前 ASR 使用的语言，用于在启动时判断是否需要切换语言
   AsrLanguage? _currentLanguage;
 
@@ -92,6 +95,7 @@ class Asr {
       }
     }
     _disposed = true;
+    _currentListener = null;
     _stateListeners.clear();
     _eventSubscription?.cancel();
     _eventSubscription = null;
@@ -345,39 +349,26 @@ class Asr {
 
   /// 初始化语音识别事件监听
   Future<void> initAsr(void Function(dynamic asrResult)? asrListener) async {
-    if (_isInitializing || _isStarting) {
-      Global.logger.w(
-          'ASR: initAsr 跳过，isInitializing=$_isInitializing, isStarting=$_isStarting');
-      return;
+    _disposed = false;
+    if (asrListener != null) {
+      _currentListener = asrListener;
     }
 
-    // 恢复事件分发开关（重要！单例在退出页面后必定为 true，会导致此后再也推不出状态给新页面）
-    _disposed = false;
-    _isInitializing = true;
-
     if (!PlatformUtils.isAsrSupported()) {
-      _isInitializing = false;
       return;
     }
 
     if (asrListener == null) {
-      Global.logger.w('ASR: initAsr 被调用，但 asrListener 为 null，跳过初始化');
-      _isInitializing = false;
+      Global.logger.w('ASR: initAsr 被调用，但 asrListener 为 null');
       return;
     }
 
-    try {
-      Global.logger.i('ASR: 重新初始化事件监听，取消旧订阅');
-      final oldSubscription = _eventSubscription;
-      _eventSubscription = null;
-      if (oldSubscription != null) {
-        await oldSubscription.cancel();
-      }
-
+    if (_eventSubscription == null) {
+      if (_isInitializing) return;
+      _isInitializing = true;
       try {
         final stream = asrEventChannel.receiveBroadcastStream();
         final subscriptionId = AppClock.now().millisecondsSinceEpoch;
-        final savedListener = asrListener;
 
         _eventSubscription = stream.listen(
           (event) {
@@ -385,7 +376,9 @@ class Asr {
             Global.logger.d(
                 '~~~~~ASR: [Event] Received result from platform at ${receiveTime.toIso8601String()}: $event');
             try {
-              savedListener(event);
+              if (!_disposed) {
+                _currentListener?.call(event);
+              }
               final processTime = AppClock.now();
               Global.logger.d(
                   'ASR: [Event] Listener callback finished at ${processTime.toIso8601String()} (duration: ${processTime.difference(receiveTime).inMilliseconds}ms)');
@@ -400,23 +393,21 @@ class Asr {
           onDone: () {
             Global.logger
                 .w('ASR: 事件流已关闭 (onDone, subscriptionId=$subscriptionId)');
+            _eventSubscription = null;
           },
           cancelOnError: false,
         );
-        Global.logger.i('ASR: 事件监听已重新绑定 ... 订阅ID: $subscriptionId');
-
-        if (_eventSubscription != null) {
-          if (_state != AsrState.started) {
-            setState(AsrState.initialized);
-          }
-        }
+        Global.logger.i('ASR: 事件监听已初始化绑定 ... 订阅ID: $subscriptionId');
       } catch (e, stackTrace) {
         Global.logger.e('ASR: 创建事件订阅时出错: $e', stackTrace: stackTrace);
-
         rethrow;
+      } finally {
+        _isInitializing = false;
       }
-    } finally {
-      _isInitializing = false;
+    }
+
+    if (_state != AsrState.started && _state != AsrState.stopping) {
+      setState(AsrState.initialized);
     }
   }
 
@@ -624,6 +615,9 @@ class Asr {
         await asrMethodChannel
             .invokeMethod('reset')
             .timeout(const Duration(seconds: 2));
+        if (_state == AsrState.started) {
+          setState(AsrState.initialized);
+        }
       } on PlatformException catch (e) {
         ToastUtil.error("ASR异常6: '${e.message}'.");
       } on TimeoutException catch (_) {

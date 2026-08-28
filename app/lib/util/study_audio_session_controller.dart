@@ -356,10 +356,17 @@ class StudyAudioSessionController {
     bool bypassStartDebounce = false,
   }) async {
     final now = AppClock.now();
+    // 仅在 ASR 已处于运行状态且未强制绕过时，才做防抖拦截（避免高频重复 startAsr）
+    // 若当前未处于 record 状态或 ASR 处于非 started 态，必须确保执行启动
     if (!bypassStartDebounce &&
+        _activeMode == AudioMode.record &&
+        _asr.state == AsrState.started &&
         _lastAsrStartAt != null &&
         now.difference(_lastAsrStartAt!).inMilliseconds < 600) {
-      debugPrint('⚡ [SessionController] 拦截 startSession：与上次启动时间间隔过近 (${now.difference(_lastAsrStartAt!).inMilliseconds}ms)，防止串行二次启动颤音');
+      debugPrint('⚡ [SessionController] 拦截 startSession：ASR 已处于活动中且启动间隔过近 (${now.difference(_lastAsrStartAt!).inMilliseconds}ms)，仅更新热词');
+      if (phrases.isNotEmpty) {
+        await _asr.setContextualStrings(phrases);
+      }
       return;
     }
     _lastAsrStartAt = now;

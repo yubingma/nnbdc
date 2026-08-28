@@ -1189,13 +1189,6 @@ class BdcNotifier extends _$BdcNotifier {
     if (state.history.isEmpty) return;
 
     _saveCurrentWordState();
-    await StudyAudioSessionController.instance.syncHardwareIntent(
-      isInSpeakTab: false,
-      isAnsweringActive: false,
-      language: AsrLanguage.english,
-      phrases: [],
-      caller: this,
-    );
     await StudyAudioSessionController.instance.cancelPlayback();
 
     int nextIndex;
@@ -1222,13 +1215,6 @@ class BdcNotifier extends _$BdcNotifier {
     }
 
     _saveCurrentWordState();
-    await StudyAudioSessionController.instance.syncHardwareIntent(
-      isInSpeakTab: false,
-      isAnsweringActive: false,
-      language: AsrLanguage.english,
-      phrases: [],
-      caller: this,
-    );
     await StudyAudioSessionController.instance.cancelPlayback();
     
     state = state.copyWith(historyIndex: -1);
@@ -2844,24 +2830,21 @@ class BdcNotifier extends _$BdcNotifier {
   /// 当配置改变（例如设置弹窗关闭）时，安全地刷新当前配置并重建 ASR 语音识别
   Future<void> refreshConfigAndAsr() async {
     try {
-      // 1. 通过状态机强行停止当前的麦克风，确保不会占用和通道冲突，同时更新 _activeMode
-      await StudyAudioSessionController.instance.stopSession(forceStopMicrophone: true);
-      
-      // 2. 重新加载当前用户的 StudyConfig
+      // 1. 重新加载当前用户的 StudyConfig
       final studyConfig = StudyConfig.fromCurrentUser();
       
-      // 3. 重新配置 ASR 缓存参数
+      // 2. 重新配置 ASR 缓存参数
       state = state.copyWith(
         asrPassRuleCache: studyConfig.asrPassRule,
       );
       
-      // 4. 重置并初始化 ASR 状态
+      // 3. 确保 ASR 事件监听已绑定
       await asr.initAsr(onAsrResult);
       
-      // 5. 根据当前的 Tab 状态，安全触发录音的开启或关闭
-      _handleTabChangeForAsr();
+      // 4. 根据当前状态，以 bypassStartDebounce 立即同步底层硬件
+      _syncAudioHardware(bypassStartDebounce: true);
       
-      // 6. 主动触发状态更新以重绘界面
+      // 5. 主动触发状态更新以重绘界面
       state = state.copyWith();
     } catch (e, stackTrace) {
       Global.logger.e('🔊 [BDC-ASR] 刷新设置与重构语音识别失败: $e', error: e, stackTrace: stackTrace);
