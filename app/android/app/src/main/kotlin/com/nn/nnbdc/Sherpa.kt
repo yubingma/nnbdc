@@ -571,10 +571,10 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             }
 
             if (ret > 0) {
-                // 1. 计算电平 (分贝对数归一化，与 iOS 保持一致)
+                // 1. 计算电平 (加入 3.5x 硬件增益补偿与分贝对数归一化，与 iOS 灵敏度完全对齐)
                 var sumSquares = 0.0
                 for (i in 0 until ret) {
-                    val s = buffer[i].toDouble() / 32768.0
+                    val s = (buffer[i].toDouble() / 32768.0) * 3.5
                     sumSquares += s * s
                 }
                 val rms = sqrt(sumSquares / ret).toFloat()
@@ -585,7 +585,7 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 val norm = (1.0f - kotlin.math.abs(db) / kotlin.math.abs(minDb)).coerceIn(0.0f, 1.0f)
                 
                 val now = System.currentTimeMillis()
-                if (now - lastMeterSentTime >= 40) {
+                if (now - lastMeterSentTime >= 35) {
                     lastMeterSentTime = now
                     activity.runOnUiThread {
                         meterEvents?.success(norm.toDouble())

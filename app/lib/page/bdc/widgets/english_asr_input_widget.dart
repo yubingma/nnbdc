@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/util/asr.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/state.dart';
 
@@ -35,7 +36,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
   late AnimationController _waveController;
   StreamSubscription<double>? _meterSubscription;
   double _currentLevel = 0.0;
-  static const List<double> _weights = [0.35, 0.6, 0.85, 1.0, 1.0, 0.85, 0.6, 0.35];
+  static const List<double> _weights = [0.35, 0.65, 0.9, 1.0, 1.0, 0.9, 0.65, 0.35];
 
   @override
   void initState() {
@@ -45,19 +46,29 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
       duration: const Duration(milliseconds: 1500),
     );
 
-    _meterSubscription = Asr().meterStream().listen((level) {
-      if (mounted) {
-        setState(() {
-          // 音频电平平滑滤波：快速响应上升 (Attack)，平缓衰减回落 (Decay)
-          if (level > _currentLevel) {
-            _currentLevel = _currentLevel * 0.35 + level * 0.65;
-          } else {
-            _currentLevel = _currentLevel * 0.82 + level * 0.18;
-          }
-        });
-      }
-    });
+    StudyAudioSessionController.instance.meterLevelNotifier.addListener(_onMeterNotifierChanged);
+    _meterSubscription = Asr().meterStream().listen(_onDirectLevelReceived);
     _syncWaveAnimation();
+  }
+
+  void _onMeterNotifierChanged() {
+    final v = StudyAudioSessionController.instance.meterLevelNotifier.value;
+    _applyLevel(v);
+  }
+
+  void _onDirectLevelReceived(double level) {
+    _applyLevel(level);
+  }
+
+  void _applyLevel(double target) {
+    if (!mounted) return;
+    final clamped = target.clamp(0.0, 1.0);
+    // 快速起跳 (Attack 0.75)，平缓自然衰减 (Decay 0.2)
+    if (clamped > _currentLevel) {
+      _currentLevel = _currentLevel * 0.25 + clamped * 0.75;
+    } else {
+      _currentLevel = _currentLevel * 0.8 + clamped * 0.2;
+    }
   }
 
   @override
@@ -78,6 +89,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
 
   @override
   void dispose() {
+    StudyAudioSessionController.instance.meterLevelNotifier.removeListener(_onMeterNotifierChanged);
     _waveController.dispose();
     _meterSubscription?.cancel();
     super.dispose();
@@ -147,31 +159,34 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
     final waveformWidget = SizedBox(
       height: 20,
       child: AnimatedBuilder(
-        animation: _waveController,
+        animation: Listenable.merge([_waveController, StudyAudioSessionController.instance.meterLevelNotifier]),
         builder: (context, child) {
           return Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(8, (index) {
-              // 默认静止状态
-              double height = 4.0;
-              double alpha = 0.2;
+              // 默认静止状态 (纤细微型条)
+              double height = 2.5;
+              double alpha = 0.25;
 
-              // 动态聆听状态：仅识别进行中(started)才波动。
+              // 动态聆听状态：仅识别进行中(started)才波动
               if (widget.asrState == AsrState.started) {
                 final double weight = _weights[index];
-                final double phase = (_waveController.value * 2 * pi) + (index * 0.28 * pi);
-                final double idleWave = (sin(phase) + 1.0) / 2.0; // 0.0 ~ 1.0
+                final double phase = (_waveController.value * 2 * pi) + (index * 0.3 * pi);
+                final double idleBreath = (sin(phase) + 1.0) / 2.0; // 0.0 ~ 1.0
                 
-                // 基础呼吸高度 (3.5 ~ 6.5)
-                final double idleHeight = 3.5 + 3.0 * idleWave * weight;
+                // 基础静音呼吸高度 (2.5 ~ 4.5 像素，纤细精致)
+                final double baseHeight = 2.5 + 2.0 * idleBreath * weight;
                 
-                // 说话电平连续激励 (随声浪自然起伏，最高可达 16.5)
-                final double activeWave = (sin(phase * 1.5 + index * 0.2) + 1.0) / 2.0;
-                final double voiceBoost = _currentLevel * 10.0 * weight * (0.6 + 0.4 * activeWave);
+                // 说话电平驱动增益 (Voice Dynamic Boost)
+                // 说话时电平驱动波形瞬间高涨跃动 (高度可达到 12 ~ 18.5 像素)，视觉反馈极为充沛
+                final double notifierVal = StudyAudioSessionController.instance.meterLevelNotifier.value;
+                final double effectiveLevel = max(_currentLevel, notifierVal).clamp(0.0, 1.0);
+                final double voiceWave = (sin(phase * 1.8 + index * 0.35) + 1.0) / 2.0;
+                final double voiceBoost = effectiveLevel * 18.0 * weight * (0.4 + 0.6 * voiceWave);
                 
-                height = (idleHeight + voiceBoost).clamp(3.5, 18.0);
-                alpha = (0.35 + 0.25 * idleWave + 0.4 * _currentLevel).clamp(0.2, 1.0);
+                height = (baseHeight + voiceBoost).clamp(2.5, 19.0);
+                alpha = (0.35 + 0.25 * idleBreath + 0.4 * effectiveLevel).clamp(0.2, 1.0);
               }
 
               return Container(
