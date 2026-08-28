@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import beidanci.api.model.UserBadgeDto;
 import beidanci.service.dao.BaseDao;
 import beidanci.service.po.UserBadge;
+import beidanci.service.util.Util;
 
 @Service
 @Transactional(rollbackFor = Throwable.class)
@@ -52,7 +53,7 @@ public class UserBadgeBo extends BaseBo<UserBadge> {
             return null;
         }
         UserBadge entity = null;
-        if (dto.getId() != null) {
+        if (dto.getId() != null && dto.getId().length() <= 32) {
             entity = findById(dto.getId());
         }
         if (entity == null && dto.getUserId() != null && dto.getBadgeCode() != null) {
@@ -60,7 +61,11 @@ public class UserBadgeBo extends BaseBo<UserBadge> {
         }
         if (entity == null) {
             entity = new UserBadge();
-            entity.setId(dto.getId());
+            String id = dto.getId();
+            if (id == null || id.length() > 32) {
+                id = Util.uuid();
+            }
+            entity.setId(id);
             entity.setUserId(dto.getUserId());
             entity.setBadgeCode(dto.getBadgeCode());
         }

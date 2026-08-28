@@ -820,6 +820,7 @@ public class UserDbSyncBo {
                     if (existing == null) {
                         userBadgeBo.createEntity(userBadge);
                     } else {
+                        userBadge.setId(existing.getId());
                         userBadgeBo.updateEntity(userBadge);
                     }
                 }

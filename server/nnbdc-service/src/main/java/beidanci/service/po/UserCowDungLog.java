@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import beidanci.api.model.UserCowDungLogDto;
+import beidanci.service.util.Util;
 
 @Entity
 @Table(name = "user_cow_dung_log")
@@ -93,7 +94,11 @@ public class UserCowDungLog extends UuidPo {
         UserCowDungLog log = new UserCowDungLog();
 
         // 设置属性
-        log.setId(dto.getId());
+        String id = dto.getId();
+        if (id == null || id.length() > 32) {
+            id = Util.uuid();
+        }
+        log.setId(id);
         log.setCowDung(dto.getCowDung());
         log.setDelta(dto.getDelta());
         log.setReason(dto.getReason());
