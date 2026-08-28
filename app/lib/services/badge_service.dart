@@ -3,6 +3,7 @@ import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/services/dialog_service.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/badge_award_dialog.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
 
@@ -109,7 +110,7 @@ class BadgeService {
         );
         await MyDatabase.instance.userBadgesDao.saveEntity(updated, true);
       } else {
-        final newId = '${userId}_$badgeCode';
+        final newId = Util.uuid();
         final newUb = UserBadge(
           id: newId,
           userId: userId,
@@ -189,7 +190,7 @@ class BadgeService {
       // 如果尚未解锁且当前值满足条件
       if (!existingMap.containsKey(code) && targetValue > 0 && currentValue >= targetValue) {
         try {
-          final newId = '${userId}_$code';
+          final newId = Util.uuid();
           final newUb = UserBadge(
             id: newId,
             userId: userId,
@@ -262,7 +263,7 @@ class BadgeService {
       final newTotal = current + bubbles;
 
       final log = UserCowDungLog(
-        id: '${userId}_${DateTime.now().millisecondsSinceEpoch}',
+        id: Util.uuid(),
         userId: userId,
         delta: bubbles,
         cowDung: newTotal,
