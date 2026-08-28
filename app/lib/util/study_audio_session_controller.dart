@@ -12,6 +12,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/pinyin.dart';
 import 'package:nnbdc/util/study_config.dart';
+import 'package:nnbdc/util/tts.dart';
 import 'package:nnbdc/global.dart';
 
 /// 全局唯一的音频会话控制器。
@@ -56,6 +57,7 @@ class StudyAudioSessionController {
   /// 内部持有的 ASR 实例。生产环境为全局单例 [Asr]。
   /// 测试可通过 [debugSetAsrForTesting] 替换为 Mock。
   Asr _asr;
+  final Tts _tts = Tts();
   final ja.AudioPlayer _audioPlayer;
   ja.AudioPlayer? _asrHintPlayer;
   final _SessionMutex _queueLock = _SessionMutex();
@@ -269,7 +271,7 @@ class StudyAudioSessionController {
     return _queueLock.protect(() async {
       final player = SoundUtil.createAudioPlayer();
       _watchPlayer(player);
-      await playSoundByUrl(Util.getWordSoundUrl(spell), player, true);
+      await playSoundByUrl(Util.getWordSoundUrl(spell), player, true, fallbackText: spell);
     });
   }
 
@@ -716,10 +718,10 @@ class StudyAudioSessionController {
   // ============================================================
 
   Future<void> playSoundByUrl(String soundUrl, ja.AudioPlayer player, bool disposeWhenFinish,
-      {int loadTimeoutMs = 10000, int playTimeoutMs = 20000, double speed = 1.0, Future<void>? preWaitFuture}) async {
+      {int loadTimeoutMs = 10000, int playTimeoutMs = 20000, double speed = 1.0, Future<void>? preWaitFuture, String? fallbackText}) async {
     if (PlatformUtils.isTesting) return;
     final totalSw = Stopwatch()..start();
-    debugPrint('🕵️ [AudioDiag] playSoundByUrl.enter | url=$soundUrl');
+    debugPrint('🕵️ [AudioDiag] playSoundByUrl.enter | url=$soundUrl fallbackText=$fallbackText');
     try {
       if (!_audioSessionConfigured) await configureSession();
       if (PlatformUtils.isWeb) await _ensureWebAudioUnlocked();
@@ -750,42 +752,85 @@ class StudyAudioSessionController {
       } catch (_) {}
 
       final loadSw = Stopwatch()..start();
+      bool loaded = false;
       if (PlatformUtils.isWeb) {
-        await player.setUrl(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+        try {
+          await player.setUrl(soundUrl).timeout(Duration(milliseconds: loadTimeoutMs));
+          loaded = true;
+        } catch (_) {}
       } else {
         final cacheManager = DefaultCacheManager();
-        Future<bool> tryLoadFromCache(String filePath) async {
+
+        // 1. 尝试从本地缓存加载（带坏缓存自愈：0 字节/损坏文件自动清除）
+        Future<bool> tryLoadFromCache(String filePath, String url) async {
           try {
+            final file = File(filePath);
+            if (!await file.exists()) return false;
+            final length = await file.length();
+            if (length <= 200) {
+              debugPrint('⚠️ [AudioHealing] 检测到损坏/空缓存 (size=${length}B)，自动驱逐: $url');
+              await cacheManager.removeFile(url);
+              try { await file.delete(); } catch (_) {}
+              return false;
+            }
+
             await player.setAudioSource(ja.AudioSource.uri(Uri.file(filePath)))
                 .timeout(Duration(milliseconds: loadTimeoutMs));
             return player.processingState == ja.ProcessingState.ready ||
                    player.processingState == ja.ProcessingState.loading;
-          } catch (_) {}
-          return false;
+          } catch (e) {
+            debugPrint('⚠️ [AudioHealing] 缓存加载失败，自动清除坏缓存: $url, 错误: $e');
+            try { await cacheManager.removeFile(url); } catch (_) {}
+            return false;
+          }
         }
 
+        // 2. 尝试从网络 URL 加载（带静默重试自愈）
         Future<bool> tryLoadFromUrl(String url) async {
-          try {
-            await player.setUrl(url).timeout(Duration(milliseconds: loadTimeoutMs));
-            return player.processingState == ja.ProcessingState.ready ||
-                   player.processingState == ja.ProcessingState.loading ||
-                   player.processingState == ja.ProcessingState.buffering;
-          } catch (_) {}
+          for (int attempt = 1; attempt <= 2; attempt++) {
+            try {
+              await player.setUrl(url).timeout(Duration(milliseconds: loadTimeoutMs));
+              if (player.processingState == ja.ProcessingState.ready ||
+                  player.processingState == ja.ProcessingState.loading ||
+                  player.processingState == ja.ProcessingState.buffering) {
+                return true;
+              }
+            } catch (e) {
+              if (attempt < 2) {
+                debugPrint('⚠️ [AudioHealing] 网络音频加载尝试 $attempt 失败，100ms 后重试: $url');
+                await Future.delayed(const Duration(milliseconds: 100));
+              }
+            }
+          }
           return false;
         }
 
-        FileInfo? fileInfo = await cacheManager.getFileFromCache(soundUrl);
+        FileInfo? fileInfo;
+        try {
+          fileInfo = await cacheManager.getFileFromCache(soundUrl);
+        } catch (_) {}
         final String targetFilePath = fileInfo?.file.path ?? '';
-        bool loaded = false;
-        if (targetFilePath.isNotEmpty && await File(targetFilePath).exists()) {
-          loaded = await tryLoadFromCache(targetFilePath);
+        if (targetFilePath.isNotEmpty) {
+          loaded = await tryLoadFromCache(targetFilePath, soundUrl);
         }
         if (!loaded) {
           loaded = await tryLoadFromUrl(soundUrl);
         }
-        if (!loaded) {
-          throw Exception('Failed to load audio source.');
+      }
+
+      // 3. 终极自愈：若本地和网络音频均无法加载，且提供了 fallbackText，使用系统原生 TTS 兜底朗读
+      if (!loaded) {
+        if (fallbackText != null && fallbackText.trim().isNotEmpty) {
+          debugPrint('🎙️ [AudioHealing] 音频资源加载失败，启动 TTS 终极兜底朗读: "$fallbackText"');
+          try {
+            await _tts.speak(fallbackText.trim());
+            _logicallyFinishedPlayers.add(player);
+            return;
+          } catch (ttsErr) {
+            Global.logger.e('TTS 兜底朗读失败: $ttsErr');
+          }
         }
+        throw Exception('Failed to load audio source.');
       }
       
       debugPrint('⏱️ [Latency-Sound] 资源加载耗时: ${loadSw.elapsedMilliseconds}ms');
@@ -842,6 +887,13 @@ class StudyAudioSessionController {
         Global.logger.i('🔊 [SessionController] 播放中止: $soundUrl');
       } else {
         Global.logger.e('播放异常: $soundUrl', error: e, stackTrace: st);
+        // 播放过程异常且非主动中止时，尝试 TTS 容灾兜底
+        if (fallbackText != null && fallbackText.trim().isNotEmpty) {
+          try {
+            debugPrint('🎙️ [AudioHealing] 播放异常触发 TTS 容灾兜底: "$fallbackText"');
+            await _tts.speak(fallbackText.trim());
+          } catch (_) {}
+        }
       }
     } finally {
       if (disposeWhenFinish) {
@@ -1063,7 +1115,7 @@ class StudyAudioSessionController {
 
   Future<void> _playPronounceSound2(WordVo word, ja.AudioPlayer player, {Future<void>? preWaitFuture}) async {
     var soundUrl = Util.getWordSoundUrl(word.spell, word: word);
-    await playSoundByUrl(soundUrl, player, false, preWaitFuture: preWaitFuture);
+    await playSoundByUrl(soundUrl, player, false, preWaitFuture: preWaitFuture, fallbackText: word.spell);
   }
   
   Future<void> _playSentenceSound2(String englishDigest, ja.AudioPlayer player, {double speed = 1.0, Future<void>? preWaitFuture}) async {
