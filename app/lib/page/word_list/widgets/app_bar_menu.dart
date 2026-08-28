@@ -117,7 +117,7 @@ class WordListAppBarMenu extends StatelessWidget {
       case menuSpeakEnglish:
         return Icons.record_voice_over;
       case menuTranslateSentence:
-        return Icons.translate;
+        return Icons.hearing;
       case menuWriteSpell:
         return Icons.edit;
       default:

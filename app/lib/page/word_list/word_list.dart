@@ -2400,7 +2400,7 @@ class WordListPageState extends State<WordListPage>
                                   icon = Icons.record_voice_over;
                                   break;
                                 case menuTranslateSentence:
-                                  icon = Icons.translate;
+                                  icon = Icons.hearing;
                                   break;
                                 case menuWriteSpellTyping:
                                   icon = Icons.keyboard;
@@ -2707,18 +2707,6 @@ class WordListPageState extends State<WordListPage>
                                     handlingAsrChinese = "";
                                     studyMode = WordListStudyMode.translateSentence;
                                   });
-                                  final currIdx = getBookMarkUiPosition();
-                                  if (currIdx >= 0 && currIdx < words.length) {
-                                    await _prepareSentenceForWord(words[currIdx]);
-                                    if (words[currIdx].currentSentence != null &&
-                                        (words[currIdx].currentSentence!.englishDigest ?? '').isNotEmpty) {
-                                      await _sessionController.playSentenceSound(
-                                          words[currIdx].currentSentence!.englishDigest!);
-                                    } else {
-                                      await _sessionController.playWordSound(words[currIdx].word);
-                                    }
-                                  }
-                                  await _startAsr(decideAsrLanguage());
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   jumpToBookMark(force: true);
