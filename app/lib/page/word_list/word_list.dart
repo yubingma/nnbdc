@@ -282,6 +282,11 @@ class WordListPageState extends State<WordListPage>
   /// 是否可以离开当前单词（用户回答正确的释义数量达到要求）
   bool canLeaveCurrWord = false;
 
+  Timer? _aiRefereeDebounceTimer;
+  bool _isAiRefereeJudging = false;
+  final Set<String> _failedAiEvaluationsForCurrentWord = {};
+  int _aiEvaluationCountForCurrentWord = 0;
+
   final ItemScrollController itemScrollController = ItemScrollController();
   final ItemPositionsListener itemPositionsListener =
       ItemPositionsListener.create();
@@ -665,6 +670,7 @@ class WordListPageState extends State<WordListPage>
 
           final bool isMatch = score >= 60 || fuzzyChineseContains(asrResult, targetChinese);
           if (isMatch) {
+            _aiRefereeDebounceTimer?.cancel();
             canLeaveCurrWord = true;
             words[currWordIndex].answeredAllMeanings = true;
             words[currWordIndex].sentenceTranslatedPassed = true;
@@ -679,6 +685,9 @@ class WordListPageState extends State<WordListPage>
             } catch (e) {
               Global.logger.d("停止ASR失败: $e");
             }
+          } else {
+            // 本地未直接判定通过：当用户停止说话一小段时间后，由大模型裁判进行智能容错二次判定
+            _scheduleAiRefereeCheck(currWordIndex, words[currWordIndex], asrResult);
           }
         }
       } else {
@@ -811,6 +820,7 @@ class WordListPageState extends State<WordListPage>
   @override
   void dispose() {
     final sw = Stopwatch()..start();
+    _aiRefereeDebounceTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
 
     // 停止 ASR：不再检查 studyMode，只要页面销毁就无条件尝试停止识别引擎并转换状态机到 idle
@@ -1300,6 +1310,10 @@ class WordListPageState extends State<WordListPage>
         // 切换到新单词时，重置“背英文”和“翻译例句”模式的临时状态
         if (studyMode == WordListStudyMode.speakEnglish ||
             studyMode == WordListStudyMode.translateSentence) {
+          _aiRefereeDebounceTimer?.cancel();
+          _failedAiEvaluationsForCurrentWord.clear();
+          _aiEvaluationCountForCurrentWord = 0;
+          _isAiRefereeJudging = false;
           asrResult = "";
           word.pronunciationScore = null;
           word.lastAsrResult = null;
@@ -1384,6 +1398,163 @@ class WordListPageState extends State<WordListPage>
         final rand = Random();
         word.currentSentence = sentences[rand.nextInt(sentences.length)];
       }
+    }
+  }
+
+  /// 当用户停顿一小段时间后，触发大模型裁判对翻译进行智能容错二次判决
+  void _scheduleAiRefereeCheck(int wordIndex, WordWrapper wordWrapper, String asrText) {
+    _aiRefereeDebounceTimer?.cancel();
+    if (wordWrapper.sentenceTranslatedPassed) return;
+
+    // 【防护1：输入清洗与有效长度门槛过滤】避免环境杂音、单字助词（如“啊/嗯/这”）触发大模型
+    final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+    if (cleanInput.length < 2) return;
+
+    // 【防护2：目标长度比例门槛】如果目标释义较长，识别输入至少达到 30% 长度才判决，避免过短碎片触发
+    final targetChinese = wordWrapper.currentSentence?.chinese ?? wordWrapper.word.getMeaningStr();
+    final cleanTarget = targetChinese.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+    if (cleanTarget.length >= 5 && cleanInput.length < (cleanTarget.length * 0.3).ceil()) {
+      return;
+    }
+
+    // 【防护3：相同输入去重缓存】若当前单词已对相同识别文本评判过且判定为错误，坚决不重复请求
+    if (_failedAiEvaluationsForCurrentWord.contains(cleanInput)) return;
+
+    // 【防护4：单词请求频次上限】单个单词最多允许自动调用 5 次大模型裁判
+    if (_aiEvaluationCountForCurrentWord >= 5) return;
+
+    // 【防护5：防抖 1800ms】确保用户完全停止说话后才发起单次请求，避免边说边请求
+    _aiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1800), () async {
+      if (!mounted) return;
+      if (studyMode != WordListStudyMode.translateSentence) return;
+      if (wordWrapper.sentenceTranslatedPassed) return;
+      if (_isAiRefereeJudging) return;
+      final currentIdx = getBookMarkUiPosition();
+      if (currentIdx != wordIndex) return;
+
+      await _evaluateSentenceWithAiReferee(wordIndex, wordWrapper, asrText, cleanInput);
+    });
+  }
+
+  /// 执行大模型翻译智能裁决
+  Future<void> _evaluateSentenceWithAiReferee(
+      int wordIndex, WordWrapper wordWrapper, String userInput, String cleanInput) async {
+    if (_isAiRefereeJudging) return;
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+
+    final targetSentence = wordWrapper.currentSentence;
+    final sourceEnglish = targetSentence?.english ?? wordWrapper.word.spell;
+    final referenceChinese = targetSentence?.chinese ?? wordWrapper.word.getMeaningStr();
+    if (sourceEnglish.isEmpty || referenceChinese.isEmpty) return;
+
+    final checkWordId = wordWrapper.word.id;
+    _isAiRefereeJudging = true;
+    _aiEvaluationCountForCurrentWord++;
+    Global.logger.d('~~~~~[AI裁判] 启动大模型裁判(第$_aiEvaluationCountForCurrentWord次): source="$sourceEnglish", target="$referenceChinese", input="$userInput"');
+
+    try {
+      final systemPrompt = '''
+You are an expert bilingual translation referee. Your task is to judge whether the user's Chinese translation accurately conveys the meaning of the source English sentence.
+
+CRITICAL INSTRUCTIONS ON SPEECH RECOGNITION (ASR) TOLERANCE:
+1. The user's answer is captured via Speech Recognition (ASR). It may contain speech-to-text recognition artifacts, homophone substitutions, pinyin/pronunciation-similar character errors, missing punctuation, or colloquial particle variations.
+2. In Chinese, pronouns (她/他/它 - all pronounced "tā") and structural particles (的/得/地 - all pronounced "de", 在/再, 座/做/作, 像/向/相, 进/近) must be treated as completely interchangeable.
+3. For words that have similar Chinese pronunciation or pinyin in the sentence context (e.g. ASR misrecognizing "苹果" as "平果/苹过", "香蕉" as "相交", etc.), you MUST intelligently tolerate the speech recognition acoustic error and judge based on intended semantic meaning.
+4. As long as the core semantic meaning of the source English sentence is faithfully translated (even with synonymous expressions, different wording, or natural Chinese sentence restructuring), you MUST judge it as correct.
+
+Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
+{"isCorrect": true} if the translation is semantically correct.
+{"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
+''';
+
+      final userPrompt = '''
+Source Sentence: $sourceEnglish
+Reference Translation: $referenceChinese
+User's Speech-to-Text Input: $userInput
+''';
+
+      final messages = [
+        {"role": "system", "content": systemPrompt},
+        {"role": "user", "content": userPrompt}
+      ];
+
+      final messagesJson = jsonEncode(messages);
+      final result = await Api.client.aiChat(messagesJson, user.id);
+
+      if (!mounted) return;
+      if (studyMode != WordListStudyMode.translateSentence) return;
+      if (getBookMarkUiPosition() != wordIndex || words[wordIndex].word.id != checkWordId) {
+        Global.logger.d('~~~~~[AI裁判] 单词已切换，放弃本次AI裁判结果');
+        return;
+      }
+
+      if (result.success && result.data != null) {
+        String cleanJson = result.data!.trim();
+        if (cleanJson.contains('```')) {
+          final regExp = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```');
+          final match = regExp.firstMatch(cleanJson);
+          if (match != null) {
+            cleanJson = match.group(1) ?? cleanJson;
+          }
+        }
+        final startIdx = cleanJson.indexOf('{');
+        final endIdx = cleanJson.lastIndexOf('}');
+        if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
+          cleanJson = cleanJson.substring(startIdx, endIdx + 1);
+        }
+
+        final parsed = jsonDecode(cleanJson.trim());
+        final isCorrect = parsed['isCorrect'] as bool? ?? false;
+        Global.logger.d('~~~~~[AI裁判] 裁判结果: isCorrect=$isCorrect, response=${result.data}');
+
+        if (isCorrect) {
+          setState(() {
+            wordWrapper.sentenceTranslatedPassed = true;
+            wordWrapper.answeredAllMeanings = true;
+            wordWrapper.pronunciationScore = 100;
+          });
+
+          try {
+            await _sessionController.stopSession(forceStopMicrophone: false).timeout(
+              const Duration(milliseconds: 500),
+              onTimeout: () {
+                Global.logger.w('停止ASR超时');
+              },
+            );
+          } catch (e) {
+            Global.logger.d("停止ASR失败: $e");
+          }
+
+          var nextWordIndex = wordIndex + 1;
+          while (nextWordIndex < words.length) {
+            if (!words[nextWordIndex].answeredAllMeanings) break;
+            nextWordIndex += 1;
+          }
+
+          if (words.every((w) => w.answeredAllMeanings)) {
+            ToastUtil.info("恭喜，你答对了所有单词");
+            return;
+          }
+
+          if (nextWordIndex < words.length) {
+            jumpToNextWord(nextWordIndex - 1, true, () {
+              asrResult = "";
+              handlingAsrChinese = "";
+            });
+          }
+        } else {
+          // 判定错误，加入去重缓存，避免对相同内容重复调用
+          _failedAiEvaluationsForCurrentWord.add(cleanInput);
+        }
+      } else {
+        _failedAiEvaluationsForCurrentWord.add(cleanInput);
+      }
+    } catch (e, st) {
+      Global.logger.w('~~~~~[AI裁判] 评判异常: $e', error: e, stackTrace: st);
+      _failedAiEvaluationsForCurrentWord.add(cleanInput);
+    } finally {
+      _isAiRefereeJudging = false;
     }
   }
 
@@ -1965,6 +2136,10 @@ class WordListPageState extends State<WordListPage>
       // 在背英文和翻译例句模式下，清除提示时也清空识别结果
       if (studyMode == WordListStudyMode.speakEnglish ||
           studyMode == WordListStudyMode.translateSentence) {
+        _aiRefereeDebounceTimer?.cancel();
+        _failedAiEvaluationsForCurrentWord.clear();
+        _aiEvaluationCountForCurrentWord = 0;
+        _isAiRefereeJudging = false;
         asrResult = "";
         word.pronunciationScore = null;
         word.lastAsrResult = null;
