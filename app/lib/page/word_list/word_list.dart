@@ -580,12 +580,15 @@ class WordListPageState extends State<WordListPage>
   void _unifiedOnAsrResult(dynamic event) {
     if (!mounted) return;
     if (isMenuOpen || showGuide) return;
+    if (asr.state != AsrState.started) return;
     
     final bookmarkedIndex = getBookMarkUiPosition();
-    final targetWord = (bookmarkedIndex >= 0 && bookmarkedIndex < words.length)
-        ? words[bookmarkedIndex]
-        : null;
-    final targetSpell = targetWord?.word.spell ?? "";
+    if (bookmarkedIndex < 0 || bookmarkedIndex >= words.length) return;
+    final targetWord = words[bookmarkedIndex];
+    if (studyMode == WordListStudyMode.translateSentence && targetWord.sentenceTranslatedPassed) {
+      return;
+    }
+    final targetSpell = targetWord.word.spell;
 
     asrController.onAsrResult(
       event,
@@ -766,6 +769,7 @@ class WordListPageState extends State<WordListPage>
         jumpToNextWord(nextWordIndex - 1, true, () {
           asrResult = "";
           handlingAsrChinese = "";
+          asrController.resetResult();
           // _startAsr 由 onWordPressed 统一调用，此处不再重复触发
         });
       }
@@ -1318,6 +1322,23 @@ class WordListPageState extends State<WordListPage>
           word.pronunciationScore = null;
           word.lastAsrResult = null;
           handlingAsrChinese = "";
+          asrController.resetResult();
+        }
+      } else {
+        // 同一单词或重入时，确保重置识别控制器的累积状态
+        if (studyMode == WordListStudyMode.speakEnglish ||
+            studyMode == WordListStudyMode.translateSentence) {
+          _aiRefereeDebounceTimer?.cancel();
+          _failedAiEvaluationsForCurrentWord.clear();
+          _aiEvaluationCountForCurrentWord = 0;
+          _isAiRefereeJudging = false;
+          asrResult = "";
+          if (!word.sentenceTranslatedPassed) {
+            word.pronunciationScore = null;
+            word.lastAsrResult = null;
+          }
+          handlingAsrChinese = "";
+          asrController.resetResult();
         }
       }
 
@@ -1541,6 +1562,7 @@ User's Speech-to-Text Input: $userInput
             jumpToNextWord(nextWordIndex - 1, true, () {
               asrResult = "";
               handlingAsrChinese = "";
+              asrController.resetResult();
             });
           }
         } else {
