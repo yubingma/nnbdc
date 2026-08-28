@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/util/asr_util.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 void main() {
@@ -38,6 +39,14 @@ void main() {
     test('Empty input or target returns 0', () {
       expect(getChineseSentenceMatchScore('', '今天天气很好'), equals(0));
       expect(getChineseSentenceMatchScore('今天天气很好', ''), equals(0));
+    });
+
+    test('AsrUtil.mergeAsrText merges overlapping Chinese text chunks correctly', () {
+      final merged1 = AsrUtil.mergeAsrText('今天天气很', '天气很好我们出去玩');
+      expect(merged1, equals('今天天气很好我们出去玩'));
+
+      final merged2 = AsrUtil.mergeAsrText('今天天气很好', '我们出去玩');
+      expect(merged2, equals('今天天气很好 我们出去玩'));
     });
   });
 

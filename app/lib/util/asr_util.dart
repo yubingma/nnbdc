@@ -454,4 +454,117 @@ class AsrUtil {
 
     return allowPhrases;
   }
+
+  /// 智能合并 ASR 文本片段（跨分段/端点重置保护）
+  static String mergeAsrText(String prev, String next, {bool isEnglish = false}) {
+    if (PlatformUtils.isIOS) {
+      if (prev.length > next.length && prev.contains(next)) return prev;
+      return next;
+    }
+    return stitchTexts(prev, next, isEnglish: isEnglish);
+  }
+
+  /// 智能重叠拼接算法：寻找并融合 prev 末尾与 next 开头的重合重叠部分
+  static String stitchTexts(String prev, String next, {bool isEnglish = false}) {
+    final p = prev.trim();
+    final n = next.trim();
+    if (p.isEmpty) return n;
+    if (n.isEmpty) return p;
+
+    if (isEnglish) {
+      final pWords = p.split(RegExp(r'\s+'));
+      final nWords = n.split(RegExp(r'\s+'));
+
+      final cleanPWords = pWords
+          .map((w) => w.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase())
+          .toList();
+      final cleanNWords = nWords
+          .map((w) => w.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toLowerCase())
+          .toList();
+
+      cleanPWords.removeWhere((w) => w.isEmpty);
+      cleanNWords.removeWhere((w) => w.isEmpty);
+
+      if (cleanPWords.isEmpty) return n;
+      if (cleanNWords.isEmpty) return p;
+
+      int maxCleanOverlap = 0;
+      final minLen = cleanPWords.length < cleanNWords.length
+          ? cleanPWords.length
+          : cleanNWords.length;
+
+      for (int i = 1; i <= minLen; i++) {
+        final pTail = cleanPWords.sublist(cleanPWords.length - i).join(' ');
+        final nHead = cleanNWords.sublist(0, i).join(' ');
+
+        if (pTail == nHead) {
+          maxCleanOverlap = i;
+        }
+      }
+
+      if (maxCleanOverlap > 0) {
+        int count = 0;
+        int sliceIdx = 0;
+        final validReg = RegExp(r'[a-zA-Z0-9]');
+
+        for (int i = 0; i < nWords.length; i++) {
+          if (validReg.hasMatch(nWords[i])) {
+            count++;
+            if (count == maxCleanOverlap) {
+              sliceIdx = i + 1;
+              break;
+            }
+          }
+        }
+
+        final remainingN = nWords.sublist(sliceIdx).join(' ');
+        return remainingN.isEmpty ? p : "$p $remainingN";
+      } else {
+        return "$p $n";
+      }
+    } else {
+      final cleanP = p.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '');
+      final cleanN = n.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '');
+
+      if (cleanP.isEmpty) return n;
+      if (cleanN.isEmpty) return p;
+
+      int maxCleanOverlap = 0;
+      final minLen = cleanP.length < cleanN.length ? cleanP.length : cleanN.length;
+
+      for (int i = 1; i <= minLen; i++) {
+        final pTail = cleanP.substring(cleanP.length - i);
+        final nHead = cleanN.substring(0, i);
+
+        if (pTail == nHead) {
+          maxCleanOverlap = i;
+        }
+      }
+
+      if (maxCleanOverlap > 0) {
+        int count = 0;
+        int sliceIdx = 0;
+        final validReg = RegExp(r'[\u4e00-\u9fa5a-zA-Z0-9]');
+
+        for (int i = 0; i < n.length; i++) {
+          if (validReg.hasMatch(n[i])) {
+            count++;
+            if (count == maxCleanOverlap) {
+              sliceIdx = i + 1;
+              break;
+            }
+          }
+        }
+
+        while (sliceIdx < n.length && !validReg.hasMatch(n[sliceIdx])) {
+          sliceIdx++;
+        }
+
+        final remainingN = n.substring(sliceIdx);
+        return remainingN.isEmpty ? p : "$p$remainingN";
+      } else {
+        return "$p $n";
+      }
+    }
+  }
 }

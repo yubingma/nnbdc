@@ -172,13 +172,13 @@ class TranslateSentenceModeItem extends StatelessWidget {
               ),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Flexible(
+                Expanded(
                   child: Text(
                     displayText,
                     textScaler: const TextScaler.linear(1.0),
+                    softWrap: true,
                     style: TextStyle(
                       fontSize: 14,
                       color: hasLiveAsr
@@ -186,7 +186,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
                           : (isPlaceholder
                               ? (isDarkMode ? Colors.white38 : Colors.black38)
                               : (isDarkMode ? Colors.white70 : const Color(0xFF4B5563))),
-                      height: 1.3,
+                      height: 1.35,
                       letterSpacing: 0.5,
                       fontStyle: (isPlaceholder && !hasLiveAsr) ? FontStyle.italic : FontStyle.normal,
                     ),
@@ -194,7 +194,10 @@ class TranslateSentenceModeItem extends StatelessWidget {
                 ),
                 if (score != null && score > 0) ...[
                   const SizedBox(width: 6),
-                  _buildScoreBadge(score),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: _buildScoreBadge(score),
+                  ),
                 ],
               ],
             ),
@@ -216,10 +219,9 @@ class TranslateSentenceModeItem extends StatelessWidget {
     final score = word.pronunciationScore;
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Flexible(
+        Expanded(
           child: translation.isEmpty
               ? Text('已通过', textScaler: const TextScaler.linear(1.0), style: baseStyle)
               : _buildRichSentence(
@@ -230,7 +232,10 @@ class TranslateSentenceModeItem extends StatelessWidget {
         ),
         if (score != null && score > 0) ...[
           const SizedBox(width: 6),
-          _buildScoreBadge(score),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: _buildScoreBadge(score),
+          ),
         ],
       ],
     );

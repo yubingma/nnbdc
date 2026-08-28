@@ -56,8 +56,11 @@ class WordListAsrController extends ChangeNotifier {
     meterLevelNotifier.value = v;
   }
 
+  String _accumulatedSentenceAsr = "";
+
   void resetResult() {
     asrResult = "";
+    _accumulatedSentenceAsr = "";
     handlingAsrChinese = "";
     detectedSimilarWord = null;
     notifyListeners();
@@ -128,6 +131,28 @@ class WordListAsrController extends ChangeNotifier {
     String newAsrResult = "";
     if (studyMode == WordListStudyMode.speakEnglish) {
       newAsrResult = processedEvent;
+    } else if (studyMode == WordListStudyMode.translateSentence) {
+      final cleanChunk = AsrUtil.preprocess(processedEvent);
+      if (cleanChunk.isNotEmpty) {
+        if (_accumulatedSentenceAsr.isNotEmpty) {
+          final merged = AsrUtil.mergeAsrText(_accumulatedSentenceAsr, cleanChunk, isEnglish: false);
+          final targetChinese = activeWord?.currentSentence?.chinese ?? activeWord?.word.getMeaningStr() ?? '';
+          if (targetChinese.isNotEmpty) {
+            final oldScore = getChineseSentenceMatchScore(_accumulatedSentenceAsr, targetChinese);
+            final newScore = getChineseSentenceMatchScore(merged, targetChinese);
+            if (newScore < oldScore && merged.length < _accumulatedSentenceAsr.length) {
+              // 保持原有累积
+            } else {
+              _accumulatedSentenceAsr = merged;
+            }
+          } else {
+            _accumulatedSentenceAsr = merged;
+          }
+        } else {
+          _accumulatedSentenceAsr = cleanChunk;
+        }
+      }
+      newAsrResult = _accumulatedSentenceAsr;
     } else {
       newAsrResult = AsrUtil.preprocess(processedEvent);
     }
