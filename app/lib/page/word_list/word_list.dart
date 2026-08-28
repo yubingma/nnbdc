@@ -22,6 +22,7 @@ import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:nnbdc/util/pinyin.dart';
 import 'package:nnbdc/util/ocr_service.dart';
 import 'package:nnbdc/widget/handwriting_board.dart';
 import 'package:provider/provider.dart';
@@ -44,6 +45,7 @@ import 'edit_meaning_dialog.dart';
 import 'word_list_actions.dart';
 import 'modes/list_mode_item.dart';
 import 'modes/speak_mode_item.dart';
+import 'modes/translate_sentence_mode_item.dart';
 import 'modes/typing_mode_item.dart';
 import 'modes/handwriting_mode_item.dart';
 import 'modes/hide_mode_item.dart';
@@ -56,6 +58,7 @@ const String menuWordList = '浏览词表';
 const String menuWalkman = '随身听';
 const String menuSpeakChinese = '说中文';
 const String menuSpeakEnglish = '说英文';
+const String menuTranslateSentence = '翻译例句';
 const String menuWriteSpellTyping = '拼写(打字)';
 const String menuWriteSpellHandwriting = '拼写(手写)';
 const String menuImportFromBook = '从词书导入';
@@ -751,6 +754,34 @@ class WordListPageState extends State<WordListPage>
             Global.logger.d("播放发音失败: $e");
           }
         }
+      } else if (studyMode == WordListStudyMode.translateSentence) {
+        // 翻译例句模式：检查例句中文翻译
+        final targetSentence = words[currWordIndex].currentSentence;
+        final targetChinese = targetSentence?.chinese ?? words[currWordIndex].word.getMeaningStr();
+
+        if (targetChinese.isNotEmpty) {
+          final score = getChineseSentenceMatchScore(asrResult, targetChinese);
+          words[currWordIndex].pronunciationScore = score;
+          Global.logger.d('翻译例句模式检查: asrResult=$asrResult, targetChinese=$targetChinese, score=$score');
+
+          final bool isMatch = score >= 60 || fuzzyChineseContains(asrResult, targetChinese);
+          if (isMatch) {
+            canLeaveCurrWord = true;
+            words[currWordIndex].answeredAllMeanings = true;
+            words[currWordIndex].sentenceTranslatedPassed = true;
+
+            try {
+              await _sessionController.stopSession(forceStopMicrophone: false).timeout(
+                const Duration(milliseconds: 500),
+                onTimeout: () {
+                  Global.logger.w('停止ASR超时');
+                },
+              );
+            } catch (e) {
+              Global.logger.d("停止ASR失败: $e");
+            }
+          }
+        }
       } else {
         // 背中文模式：检查中文释义
         late MeaningMatchResult result;
@@ -1173,6 +1204,8 @@ class WordListPageState extends State<WordListPage>
         if (targetWord != null) phrases.add(targetWord.spell);
       } else if (studyMode == WordListStudyMode.speakChinese) {
         if (targetWord != null) phrases.addAll(AsrUtil.extractContextualPhrases(targetWord.meaningItems ?? []));
+      } else if (studyMode == WordListStudyMode.translateSentence) {
+        if (targetWord != null) phrases.addAll(AsrUtil.extractContextualPhrases(targetWord.meaningItems ?? []));
       }
 
       if (phrases.isNotEmpty) {
@@ -1365,9 +1398,9 @@ class WordListPageState extends State<WordListPage>
         canLeaveCurrWord = false;
         _detectedSimilarWord = null;
 
-        // 切换到新单词时，重置“背英文”模式的临时状态，避免显示上一个单词的识别/结果
-        if (studyMode == WordListStudyMode.speakEnglish) {
-          // 切换到新单词时，重置 ASR 识别结果和分数，但保留已通过状态（如果之前已通过）
+        // 切换到新单词时，重置“背英文”和“翻译例句”模式的临时状态
+        if (studyMode == WordListStudyMode.speakEnglish ||
+            studyMode == WordListStudyMode.translateSentence) {
           asrResult = "";
           word.pronunciationScore = null;
           handlingAsrChinese = "";
@@ -1377,7 +1410,8 @@ class WordListPageState extends State<WordListPage>
       if (studyMode == WordListStudyMode.dictation ||
           studyMode == WordListStudyMode.dictationHandwriting ||
           studyMode == WordListStudyMode.speakChinese ||
-          studyMode == WordListStudyMode.speakEnglish) {
+          studyMode == WordListStudyMode.speakEnglish ||
+          studyMode == WordListStudyMode.translateSentence) {
         scrollToWord(index);
       }
     });
@@ -1396,13 +1430,19 @@ class WordListPageState extends State<WordListPage>
       });
     }
 
-    // 在背中文或背英文模式下，手动切换单词时也清空语音识别缓存
+    // 在背中文、背英文或翻译例句模式下，手动切换单词时也清空语音识别缓存
     // 使用 stopAsr 进行热停止以维持麦克风保温状态，完全消除高频物理切流延迟
     if (studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish) {
+        studyMode == WordListStudyMode.speakEnglish ||
+        studyMode == WordListStudyMode.translateSentence) {
       await asr.stopAsr();
       await asr.reset(); // 清除缓冲区
       debugPrint('⏱️ [Latency] stopAsr+reset 完成: +${sw.elapsedMilliseconds}ms');
+    }
+
+    // 如果是翻译例句模式，确保当前单词已选定随机例句
+    if (studyMode == WordListStudyMode.translateSentence) {
+      await _prepareSentenceForWord(word);
     }
 
     // 播放单词发音（背英文模式/默写模式进入时不播放由调用者控制，避免泄露答案）
@@ -1413,7 +1453,13 @@ class WordListPageState extends State<WordListPage>
 
     if (shouldPlaySound) {
       debugPrint('⏱️ [Latency] 开始播放发音: +${sw.elapsedMilliseconds}ms');
-      await _sessionController.playWordSound(word.word);
+      if (studyMode == WordListStudyMode.translateSentence &&
+          word.currentSentence != null &&
+          (word.currentSentence!.englishDigest ?? '').isNotEmpty) {
+        await _sessionController.playSentenceSound(word.currentSentence!.englishDigest!);
+      } else {
+        await _sessionController.playWordSound(word.word);
+      }
       debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms');
       soundFinishListener?.call();
     } else {
@@ -1423,9 +1469,21 @@ class WordListPageState extends State<WordListPage>
 
     // 在语音模式下，播放完成后启动语音识别
     if (studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish) {
+        studyMode == WordListStudyMode.speakEnglish ||
+        studyMode == WordListStudyMode.translateSentence) {
       debugPrint('⏱️ [Latency] 开始 _startAsr: +${sw.elapsedMilliseconds}ms');
       _startAsr(decideAsrLanguage());
+    }
+  }
+
+  /// 确保当前单词已选取一个随机例句
+  Future<void> _prepareSentenceForWord(WordWrapper word) async {
+    if (word.currentSentence == null) {
+      final sentences = await word.word.getSentences();
+      if (sentences.isNotEmpty) {
+        final rand = Random();
+        word.currentSentence = sentences[rand.nextInt(sentences.length)];
+      }
     }
   }
 
@@ -1459,6 +1517,11 @@ class WordListPageState extends State<WordListPage>
     } else if (studyMode == WordListStudyMode.speakEnglish) {
       if (!word.speakEnglishPassed) {
         word.speakEnglishPassed = true;
+        word.isAnswerProvidedBySystem = true;
+      }
+    } else if (studyMode == WordListStudyMode.translateSentence) {
+      if (!word.sentenceTranslatedPassed) {
+        word.sentenceTranslatedPassed = true;
         word.isAnswerProvidedBySystem = true;
       }
     } else if (studyMode == WordListStudyMode.dictation || studyMode == WordListStudyMode.dictationHandwriting) {
@@ -1886,6 +1949,19 @@ class WordListPageState extends State<WordListPage>
           slidableActions: slidableActions,
           audioLevelBar: _audioLevelBar(),
         );
+      case WordListStudyMode.translateSentence:
+        return TranslateSentenceModeItem(
+          word: word,
+          index: i,
+          baseIndex: baseIndex ?? 0,
+          isBookmarked: isBookmarked,
+          isDarkMode: isDarkMode,
+          learningStatus: learningStatus,
+          showWordProgress: args.showWordProgress,
+          actions: this,
+          slidableActions: slidableActions,
+          audioLevelBar: _audioLevelBar(),
+        );
       case WordListStudyMode.dictation:
         return TypingModeItem(
           word: word,
@@ -1952,6 +2028,7 @@ class WordListPageState extends State<WordListPage>
       }
       if (studyMode == WordListStudyMode.speakChinese ||
           studyMode == WordListStudyMode.speakEnglish ||
+          studyMode == WordListStudyMode.translateSentence ||
           studyMode == WordListStudyMode.dictation ||
           studyMode == WordListStudyMode.dictationHandwriting) {
         scrollToWord(currWordIndex + 1);
@@ -1974,6 +2051,7 @@ class WordListPageState extends State<WordListPage>
       }
       if (studyMode == WordListStudyMode.speakChinese ||
           studyMode == WordListStudyMode.speakEnglish ||
+          studyMode == WordListStudyMode.translateSentence ||
           studyMode == WordListStudyMode.dictation ||
           studyMode == WordListStudyMode.dictationHandwriting) {
         scrollToWord(currWordIndex - 1);
@@ -1984,11 +2062,16 @@ class WordListPageState extends State<WordListPage>
   void clearHint(WordWrapper word) {
     setState(() {
       word.hintLetterCount = 0;
-      // 在背英文模式下，清除提示时也清空识别结果，以便显示默认提示文字
-      if (studyMode == WordListStudyMode.speakEnglish) {
+      // 在背英文和翻译例句模式下，清除提示时也清空识别结果
+      if (studyMode == WordListStudyMode.speakEnglish ||
+          studyMode == WordListStudyMode.translateSentence) {
         asrResult = "";
         word.pronunciationScore = null;
-        word.speakEnglishPassed = false;
+        if (studyMode == WordListStudyMode.speakEnglish) {
+          word.speakEnglishPassed = false;
+        } else {
+          word.sentenceTranslatedPassed = false;
+        }
       }
     });
   }
@@ -1999,7 +2082,7 @@ class WordListPageState extends State<WordListPage>
         if (word.hintLetterCount < word.word.spell.length) {
           word.hintLetterCount++;
         }
-      } else if (studyMode == WordListStudyMode.speakChinese) {
+      } else if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.translateSentence) {
         word.hintLetterCount++;
       } else if (studyMode == WordListStudyMode.speakEnglish) {
         if (word.hintLetterCount < word.word.spell.length) {
@@ -2015,7 +2098,7 @@ class WordListPageState extends State<WordListPage>
           studyMode == WordListStudyMode.dictationHandwriting ||
           studyMode == WordListStudyMode.speakEnglish) {
         word.hintLetterCount = word.word.spell.length;
-      } else if (studyMode == WordListStudyMode.speakChinese) {
+      } else if (studyMode == WordListStudyMode.speakChinese || studyMode == WordListStudyMode.translateSentence) {
         word.hintLetterCount = 999;
       }
     });
@@ -2365,6 +2448,9 @@ class WordListPageState extends State<WordListPage>
                           if (PlatformUtils.isEnglishAsrSupported()) {
                             menuItems.add(menuSpeakEnglish);
                           }
+                          if (PlatformUtils.isAsrSupported()) {
+                            menuItems.add(menuTranslateSentence);
+                          }
                           menuItems.add(menuWriteSpellTyping);
                           menuItems.add(menuWriteSpellHandwriting);
                           menuItems.add(menuHideChinese);
@@ -2419,6 +2505,9 @@ class WordListPageState extends State<WordListPage>
                                 case menuSpeakEnglish:
                                   icon = Icons.record_voice_over;
                                   break;
+                                case menuTranslateSentence:
+                                  icon = Icons.translate;
+                                  break;
                                 case menuWriteSpellTyping:
                                   icon = Icons.keyboard;
                                   break;
@@ -2470,6 +2559,10 @@ class WordListPageState extends State<WordListPage>
                                 case menuSpeakEnglish:
                                   isSelected = studyMode ==
                                       WordListStudyMode.speakEnglish;
+                                  break;
+                                case menuTranslateSentence:
+                                  isSelected = studyMode ==
+                                      WordListStudyMode.translateSentence;
                                   break;
                                 case menuWriteSpellTyping:
                                   isSelected =
@@ -2705,6 +2798,32 @@ class WordListPageState extends State<WordListPage>
                                     handlingAsrChinese = "";
                                     studyMode = WordListStudyMode.speakEnglish;
                                   });
+                                  await _startAsr(decideAsrLanguage());
+                                }
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  jumpToBookMark(force: true);
+                                });
+                                break;
+                              case menuTranslateSentence:
+                                if (studyMode != WordListStudyMode.translateSentence) {
+                                  await _sessionController.stopSession(forceStopMicrophone: true);
+                                  setState(() {
+                                    clearWordStates();
+                                    asrResult = "";
+                                    handlingAsrChinese = "";
+                                    studyMode = WordListStudyMode.translateSentence;
+                                  });
+                                  final currIdx = getBookMarkUiPosition();
+                                  if (currIdx >= 0 && currIdx < words.length) {
+                                    await _prepareSentenceForWord(words[currIdx]);
+                                    if (words[currIdx].currentSentence != null &&
+                                        (words[currIdx].currentSentence!.englishDigest ?? '').isNotEmpty) {
+                                      await _sessionController.playSentenceSound(
+                                          words[currIdx].currentSentence!.englishDigest!);
+                                    } else {
+                                      await _sessionController.playWordSound(words[currIdx].word);
+                                    }
+                                  }
                                   await _startAsr(decideAsrLanguage());
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {

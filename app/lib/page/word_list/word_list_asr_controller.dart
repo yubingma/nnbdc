@@ -159,7 +159,9 @@ class WordListAsrController extends ChangeNotifier {
     required String caller,
     required List<String> phrases,
   }) async {
-    if (studyMode != WordListStudyMode.speakChinese && studyMode != WordListStudyMode.speakEnglish) {
+    if (studyMode != WordListStudyMode.speakChinese &&
+        studyMode != WordListStudyMode.speakEnglish &&
+        studyMode != WordListStudyMode.translateSentence) {
       return;
     }
 

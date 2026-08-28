@@ -91,11 +91,17 @@ class WordWrapper {
   /// 当前学习状态（UI 展现的状态）
   bool? currentLearningStatus;
 
-  /// 发音评分（背英文模式）
+  /// 发音评分（背英文/翻译例句模式）
   int? pronunciationScore;
 
   /// 在“隐藏答案”模式下，答案是否已展示
   bool isAnswerRevealed = false;
+
+  /// 在“翻译例句”模式下当前随机抽中的例句
+  SentenceVo? currentSentence;
+
+  /// 在“翻译例句”模式下是否已答对
+  bool sentenceTranslatedPassed = false;
 
   /// 最近一次的语音识别结果（用于展示）
   String? lastAsrResult;
@@ -137,6 +143,8 @@ class WordWrapper {
       ..currentLearningStatus = currentLearningStatus
       ..pronunciationScore = pronunciationScore
       ..isAnswerRevealed = isAnswerRevealed
+      ..currentSentence = currentSentence
+      ..sentenceTranslatedPassed = sentenceTranslatedPassed
       ..lastAsrResult = lastAsrResult
       ..currentProgress = currentProgress
       ..maxProgress = maxProgress;
@@ -376,4 +384,33 @@ List<Widget> renderMeaningItemParts(
     }
   }
   return partWidgets;
+}
+
+/// 计算输入中文与目标中文句子的匹配得分 (0~100)
+int getChineseSentenceMatchScore(String input, String target) {
+  String clean(String s) => s.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+  // 同音字归一化：她/他/它 (tā)、的/地/得 (de) 发音完全相同，语音识别无法区分
+  String normalizeHomophones(String s) => s.split('').map((ch) {
+    if (ch == '她' || ch == '它') return '他';
+    if (ch == '地' || ch == '得') return '的';
+    return ch;
+  }).join('');
+  final cleanInput = normalizeHomophones(clean(input));
+  final cleanTarget = normalizeHomophones(clean(target));
+  if (cleanTarget.isEmpty) return 0;
+
+  List<List<int>> dp = List.generate(
+      cleanInput.length + 1, (_) => List.filled(cleanTarget.length + 1, 0));
+  for (int i = 1; i <= cleanInput.length; i++) {
+    for (int j = 1; j <= cleanTarget.length; j++) {
+      if (cleanInput[i - 1] == cleanTarget[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
+      }
+    }
+  }
+  final lcs = dp[cleanInput.length][cleanTarget.length];
+  final ratio = lcs / cleanTarget.length;
+  return (ratio * 100).round();
 }

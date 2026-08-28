@@ -22,6 +22,7 @@ class WordListAppBarMenu extends StatelessWidget {
   static const String menuWalkman = '随身听';
   static const String menuSpeakChinese = '背中文';
   static const String menuSpeakEnglish = '背英文';
+  static const String menuTranslateSentence = '翻译例句';
   static const String menuWriteSpell = '默写';
 
   @override
@@ -50,6 +51,9 @@ class WordListAppBarMenu extends StatelessWidget {
     }
     if (isEnglishAsrSupported) {
       menus.add(menuSpeakEnglish);
+    }
+    if (isAsrSupported) {
+      menus.add(menuTranslateSentence);
     }
     menus.add(menuWriteSpell);
 
@@ -94,6 +98,8 @@ class WordListAppBarMenu extends StatelessWidget {
         return studyMode == WordListStudyMode.speakChinese;
       case menuSpeakEnglish:
         return studyMode == WordListStudyMode.speakEnglish;
+      case menuTranslateSentence:
+        return studyMode == WordListStudyMode.translateSentence;
       case menuWriteSpell:
         return studyMode == WordListStudyMode.dictation;
       default:
@@ -110,6 +116,8 @@ class WordListAppBarMenu extends StatelessWidget {
       case menuSpeakChinese:
       case menuSpeakEnglish:
         return Icons.record_voice_over;
+      case menuTranslateSentence:
+        return Icons.translate;
       case menuWriteSpell:
         return Icons.edit;
       default:
