@@ -7,7 +7,8 @@ import 'mode_components.dart';
 import 'word_list_item_layout.dart';
 
 /// 翻译例句模式列表项组件：
-/// 左侧展示随机选出的英文例句（带加粗高亮），右侧展示例句的中文翻译（未答对前隐藏/展示提示，答对后高亮显示中文翻译）。
+/// 左侧展示随机选出的英文例句（带加粗高亮），右侧展示例句的中文翻译。
+/// 说话过程中实时展示语音识别结果与匹配得分，未答对前支持提示与占位引导，答对后高亮显示中文翻译。
 class TranslateSentenceModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;
@@ -134,14 +135,22 @@ class TranslateSentenceModeItem extends StatelessWidget {
   Widget _buildTranslateNotPassed() {
     final rawChinese = word.currentSentence?.chinese ?? word.word.getMeaningStr();
     final targetChinese = rawChinese.replaceAll(RegExp(r'<[^>]*>'), '');
-    String hintText = '';
-    if (word.hintLetterCount > 0) {
+    final bool hasLiveAsr = isBookmarked && (word.lastAsrResult != null && word.lastAsrResult!.isNotEmpty);
+    final String liveAsrText = word.lastAsrResult ?? '';
+
+    String displayText = '';
+    if (hasLiveAsr) {
+      displayText = liveAsrText;
+    } else if (word.hintLetterCount > 0) {
       final cleanTarget = targetChinese.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
       final count = word.hintLetterCount.clamp(0, cleanTarget.length);
-      hintText = cleanTarget.substring(0, count);
+      displayText = cleanTarget.substring(0, count);
     } else if (isBookmarked) {
-      hintText = '请说出例句翻译';
+      displayText = '请说出例句翻译';
     }
+
+    final bool isPlaceholder = !hasLiveAsr && word.hintLetterCount == 0 && isBookmarked;
+    final int? score = hasLiveAsr ? word.pronunciationScore : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,20 +164,39 @@ class TranslateSentenceModeItem extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: isDarkMode ? Colors.white38 : Colors.grey[500]!,
-                  width: 1.0,
+                  color: hasLiveAsr
+                      ? const Color(0xFF0097A7)
+                      : (isDarkMode ? Colors.white38 : Colors.grey[500]!),
+                  width: hasLiveAsr ? 1.5 : 1.0,
                 ),
               ),
             ),
-            child: Text(
-              hintText,
-              textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                fontSize: 14,
-                color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
-                height: 1.3,
-                letterSpacing: 0.5,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    displayText,
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: hasLiveAsr
+                          ? (isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7))
+                          : (isPlaceholder
+                              ? (isDarkMode ? Colors.white38 : Colors.black38)
+                              : (isDarkMode ? Colors.white70 : const Color(0xFF4B5563))),
+                      height: 1.3,
+                      letterSpacing: 0.5,
+                      fontStyle: (isPlaceholder && !hasLiveAsr) ? FontStyle.italic : FontStyle.normal,
+                    ),
+                  ),
+                ),
+                if (score != null && score > 0) ...[
+                  const SizedBox(width: 6),
+                  _buildScoreBadge(score),
+                ],
+              ],
             ),
           ),
         ),
@@ -185,18 +213,51 @@ class TranslateSentenceModeItem extends StatelessWidget {
       height: 1.35,
     );
 
-    if (translation.isEmpty) {
-      return Text(
-        '已通过',
-        textScaler: const TextScaler.linear(1.0),
-        style: baseStyle,
-      );
-    }
+    final score = word.pronunciationScore;
 
-    return _buildRichSentence(
-      translation,
-      baseStyle,
-      boldStyle: baseStyle.copyWith(fontWeight: FontWeight.bold),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Flexible(
+          child: translation.isEmpty
+              ? Text('已通过', textScaler: const TextScaler.linear(1.0), style: baseStyle)
+              : _buildRichSentence(
+                  translation,
+                  baseStyle,
+                  boldStyle: baseStyle.copyWith(fontWeight: FontWeight.bold),
+                ),
+        ),
+        if (score != null && score > 0) ...[
+          const SizedBox(width: 6),
+          _buildScoreBadge(score),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildScoreBadge(int score) {
+    final bool isGood = score >= 60;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        color: (isGood ? Colors.green : Colors.orange).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: (isGood ? Colors.green : Colors.orange).withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        '$score',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: isGood
+              ? (isDarkMode ? const Color(0xFF4ADE80) : const Color(0xFF16A34A))
+              : Colors.orange,
+        ),
+      ),
     );
   }
 

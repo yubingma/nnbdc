@@ -438,6 +438,10 @@ class WordListPageState extends State<WordListPage>
 
     _sessionController = StudyAudioSessionController();
     asrController = WordListAsrController();
+    asrController.addListener(() {
+      if (!mounted) return;
+      setState(() {});
+    });
     asrController.asr.addStateListener((state) {
       if (!mounted) return;
       setState(() {});
@@ -656,6 +660,7 @@ class WordListPageState extends State<WordListPage>
         if (targetChinese.isNotEmpty) {
           final score = getChineseSentenceMatchScore(asrResult, targetChinese);
           words[currWordIndex].pronunciationScore = score;
+          words[currWordIndex].lastAsrResult = asrResult;
           Global.logger.d('翻译例句模式检查: asrResult=$asrResult, targetChinese=$targetChinese, score=$score');
 
           final bool isMatch = score >= 60 || fuzzyChineseContains(asrResult, targetChinese);
@@ -1297,6 +1302,7 @@ class WordListPageState extends State<WordListPage>
             studyMode == WordListStudyMode.translateSentence) {
           asrResult = "";
           word.pronunciationScore = null;
+          word.lastAsrResult = null;
           handlingAsrChinese = "";
         }
       }
@@ -1961,6 +1967,7 @@ class WordListPageState extends State<WordListPage>
           studyMode == WordListStudyMode.translateSentence) {
         asrResult = "";
         word.pronunciationScore = null;
+        word.lastAsrResult = null;
         if (studyMode == WordListStudyMode.speakEnglish) {
           word.speakEnglishPassed = false;
         } else {
