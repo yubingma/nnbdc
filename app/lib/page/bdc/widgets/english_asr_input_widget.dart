@@ -35,7 +35,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
   late AnimationController _waveController;
   StreamSubscription<double>? _meterSubscription;
   double _currentLevel = 0.0;
-  final _random = Random();
+  static const List<double> _weights = [0.35, 0.6, 0.85, 1.0, 1.0, 0.85, 0.6, 0.35];
 
   @override
   void initState() {
@@ -48,8 +48,12 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
     _meterSubscription = Asr().meterStream().listen((level) {
       if (mounted) {
         setState(() {
-          // 增加平滑处理，避免剧烈抖动
-          _currentLevel = _currentLevel * 0.8 + level * 0.2;
+          // 音频电平平滑滤波：快速响应上升 (Attack)，平缓衰减回落 (Decay)
+          if (level > _currentLevel) {
+            _currentLevel = _currentLevel * 0.35 + level * 0.65;
+          } else {
+            _currentLevel = _currentLevel * 0.82 + level * 0.18;
+          }
         });
       }
     });
@@ -154,21 +158,20 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
               double alpha = 0.2;
 
               // 动态聆听状态：仅识别进行中(started)才波动。
-              // initialized 只是模型就绪(未录音/未按住PTT),不应波动。
               if (widget.asrState == AsrState.started) {
-                final double breath = sin(
-                    (_waveController.value + (index * 0.125)) * pi * 2);
-
-                if (_currentLevel > 0.12) {
-                  final randomFactor = 0.5 + _random.nextDouble();
-                  height = 6.0 + (35 * _currentLevel * randomFactor);
-                  if (height > 20) height = 20;
-                  alpha = 0.6 + (2.0 * _currentLevel);
-                  if (alpha > 1.0) alpha = 1.0;
-                } else {
-                  height = 5.0 + (6.0 * (breath + 1) / 2);
-                  alpha = 0.4 + (0.3 * (breath + 1) / 2);
-                }
+                final double weight = _weights[index];
+                final double phase = (_waveController.value * 2 * pi) + (index * 0.28 * pi);
+                final double idleWave = (sin(phase) + 1.0) / 2.0; // 0.0 ~ 1.0
+                
+                // 基础呼吸高度 (3.5 ~ 6.5)
+                final double idleHeight = 3.5 + 3.0 * idleWave * weight;
+                
+                // 说话电平连续激励 (随声浪自然起伏，最高可达 16.5)
+                final double activeWave = (sin(phase * 1.5 + index * 0.2) + 1.0) / 2.0;
+                final double voiceBoost = _currentLevel * 10.0 * weight * (0.6 + 0.4 * activeWave);
+                
+                height = (idleHeight + voiceBoost).clamp(3.5, 18.0);
+                alpha = (0.35 + 0.25 * idleWave + 0.4 * _currentLevel).clamp(0.2, 1.0);
               }
 
               return Container(
