@@ -20,6 +20,10 @@
 
 ## 不要使用一些 取巧/牺牲体验 的方式解决问题, 不是头疼医头脚疼医脚, 而是要根治问题
 
+## 实体主键 ID 生成规范
+- 所有同步业务表实体的主键 ID 必须使用标准的 32 位 UUID（客户端统一使用 `Util.uuid()`，服务端使用 `Util.uuid()`）。
+- 严禁通过字符串拼接（例如 `${userId}_${code}` 或 `${userId}_${timestamp}`）作为实体 ID，以防止超出数据库 `VARCHAR(32)` 限制并在端云同步时导致入库异常或主键分裂。
+
 ## Think Before Coding
 
 Don't assume. Don't hide confusion. Surface tradeoffs.
