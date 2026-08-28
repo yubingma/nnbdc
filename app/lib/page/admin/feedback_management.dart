@@ -684,7 +684,16 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                   TextButton.icon(
+                  TextButton.icon(
+                    onPressed: () => _deleteMessage(message),
+                    icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                    label: const Text(
+                      '删除',
+                      style: TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
                     onPressed: () => _setAsPermanentMemberForUser(message.fromUser),
                     icon: Icon(
                       message.fromUser.premiumOverrideEnabled == true ? Icons.star : Icons.star_border,
@@ -723,6 +732,55 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     );
   }
 
+  Future<void> _deleteMessage(MsgVo message) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除消息'),
+        content: const Text('确定要删除该条反馈消息吗？此操作不可撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('确定删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final userId = Global.getLoggedInUser()?.id ?? "";
+      final result = await LoadingUtils.withApiLoading(operation: () async {
+        return await Api.client.deleteMsg(message.id, userId);
+      });
+
+      if (result.success) {
+        ToastUtil.success('删除成功');
+        setState(() {
+          _messages.removeWhere((m) => m.id == message.id);
+          if (message.clientType != null && _clientTypeStats.containsKey(message.clientType)) {
+            final current = _clientTypeStats[message.clientType!] ?? 0;
+            if (current <= 1) {
+              _clientTypeStats.remove(message.clientType!);
+            } else {
+              _clientTypeStats[message.clientType!] = current - 1;
+            }
+          }
+        });
+      } else {
+        ToastUtil.error(result.msg ?? '删除失败');
+      }
+    } catch (e) {
+      ToastUtil.error('删除失败: $e');
+    }
+  }
+
   void _showImagePreview(BuildContext context, String url) {
     showDialog(
       context: context,
@@ -739,11 +797,17 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     );
   }
 
-  void _replyToMessage(MsgVo message) {
-    showDialog(
+  Future<void> _replyToMessage(MsgVo message) async {
+    await showDialog(
       context: context,
-      builder: (context) => _ReplyDialog(message: message),
+      builder: (context) => _ReplyDialog(
+        message: message,
+        onMessageDeleted: () => _loadMessages(),
+      ),
     );
+    if (mounted) {
+      _loadMessages();
+    }
   }
 
   Future<void> _setAsPermanentMemberForUser(UserVo user) async {
@@ -953,8 +1017,9 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 // 回复对话框
 class _ReplyDialog extends StatefulWidget {
   final MsgVo message;
+  final VoidCallback? onMessageDeleted;
 
-  const _ReplyDialog({required this.message});
+  const _ReplyDialog({required this.message, this.onMessageDeleted});
 
   @override
   State<_ReplyDialog> createState() => _ReplyDialogState();
@@ -1281,11 +1346,14 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                       color: isDarkMode ? Colors.grey[800] : Colors.grey[200],
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _buildDialogContent(msg.content, textColor, false),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            _buildDialogContent(msg.content, textColor, false),
-                                            const SizedBox(height: 4),
                                             Text(
                                               DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()),
                                               style: TextStyle(
@@ -1293,7 +1361,22 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                                 fontSize: 10,
                                               ),
                                             ),
+                                            const SizedBox(width: 6),
+                                            InkWell(
+                                              onTap: () => _deleteConversationMessage(msg),
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(2),
+                                                child: Icon(
+                                                  Icons.delete_outline,
+                                                  size: 13,
+                                                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                                                ),
+                                              ),
+                                            ),
                                           ],
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -1306,16 +1389,34 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                       color: AppTheme.primaryColor,
                                       borderRadius: BorderRadius.circular(16),
                                     ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        _buildDialogContent(msg.content, Colors.white, true),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            _buildDialogContent(msg.content, Colors.white, true),
-                                            const SizedBox(height: 4),
+                                            InkWell(
+                                              onTap: () => _deleteConversationMessage(msg),
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: const Padding(
+                                                padding: EdgeInsets.all(2),
+                                                child: Icon(
+                                                  Icons.delete_outline,
+                                                  size: 13,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
                                             Text(
                                               DateFormat('yyyy-MM-dd HH:mm').format(msg.createTime.toLocal()),
                                               style: const TextStyle(color: Colors.white70, fontSize: 10),
                                             ),
                                           ],
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -1436,6 +1537,48 @@ class _ReplyDialogState extends State<_ReplyDialog> {
           _isSending = false;
         });
       }
+    }
+  }
+
+  Future<void> _deleteConversationMessage(MsgVo msg) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除消息'),
+        content: const Text('确定要删除此条消息吗？此操作不可撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('确定删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final userId = Global.getLoggedInUser()?.id ?? "";
+      final result = await LoadingUtils.withApiLoading(operation: () async {
+        return await Api.client.deleteMsg(msg.id, userId);
+      });
+
+      if (result.success) {
+        ToastUtil.success('删除成功');
+        setState(() {
+          _conversationHistory.removeWhere((m) => m.id == msg.id);
+        });
+        widget.onMessageDeleted?.call();
+      } else {
+        ToastUtil.error(result.msg ?? '删除失败');
+      }
+    } catch (e) {
+      ToastUtil.error('删除失败: $e');
     }
   }
 

@@ -170,4 +170,23 @@ public class MsgController {
         int deletedCount = msgBo.cleanupOldAdvice(daysAge);
         return Result.success(deletedCount);
     }
+
+    /**
+     * 删除单条消息（管理员功能）
+     *
+     * @param msgId 消息ID
+     * @param adminUserId 管理员ID
+     * @return 操作结果
+     */
+    @DeleteMapping("/deleteMsg.do")
+    public Result<Void> deleteMsg(@RequestParam(name = "msgId") String msgId,
+                                 @RequestParam(name = "adminUserId") String adminUserId) {
+        User adminUser = userBo.findById(adminUserId);
+        if (adminUser == null || !adminUser.getIsAdmin()) {
+            return Result.fail("管理员权限不足");
+        }
+
+        msgBo.deleteMsg(msgId);
+        return Result.success(null);
+    }
 }

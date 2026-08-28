@@ -384,4 +384,16 @@ public class MsgBo extends BaseBo<Msg> {
         logger.info("清理了 {} 条 {} 天前的意见建议消息", deletedCount, daysAge);
         return deletedCount;
     }
+
+    /**
+     * 删除指定消息
+     *
+     * @param msgId 消息ID
+     */
+    public void deleteMsg(String msgId) {
+        String sql = "DELETE FROM msg WHERE id = :id";
+        MapSqlParameterSource params = new MapSqlParameterSource("id", msgId);
+        namedParameterJdbcTemplate.update(sql, params);
+        logger.info("已删除消息: msgId={}", msgId);
+    }
 }

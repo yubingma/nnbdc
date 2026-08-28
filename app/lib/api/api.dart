@@ -562,6 +562,10 @@ abstract class RestClient {
   Future<Result<int>> cleanupOldAdvice(
       @Query("daysAge") int daysAge, @Query("adminUserId") String adminUserId);
 
+  @DELETE("/deleteMsg.do")
+  Future<Result> deleteMsg(
+      @Query("msgId") String msgId, @Query("adminUserId") String adminUserId);
+
   @POST("/replyAdvice.do")
   @FormUrlEncoded()
   Future<Result> replyAdvice(
