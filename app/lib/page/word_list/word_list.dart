@@ -38,6 +38,7 @@ import '../../util/phoneme_util.dart';
 import '../../util/platform_util.dart';
 import '../../util/word_util.dart';
 import '../index.dart';
+import 'widgets/audio_level_bar.dart';
 import '../walkman.dart';
 import '../word_detail.dart';
 import 'dict_words.dart';
@@ -361,6 +362,13 @@ class WordListPageState extends State<WordListPage>
 
   /// 用于获取右上角菜单按钮的坐标
   final GlobalKey _menuKey = GlobalKey();
+  Widget _audioLevelBar({bool showDebugValue = false}) {
+    return AudioLevelBar(
+      waveLevels: _waveLevels,
+      meterLevelNotifier: _meterLevelNotifier,
+      showDebugValue: showDebugValue,
+    );
+  }
   OverlayEntry? _guideOverlay;
   Rect? _menuRect;
   final GlobalKey _overlayKey = GlobalKey();
@@ -405,120 +413,6 @@ class WordListPageState extends State<WordListPage>
     return controller.getLastVisibleListItem();
   }
 
-
-
-  Widget _audioLevelBar({bool showDebugValue = false}) {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-    const barCount = 8; // 更易辨识的紧凑柱数
-    return SizedBox(
-      height: 48, // 高度再加倍
-      child: ValueListenableBuilder<double>(
-        valueListenable: _meterLevelNotifier,
-        builder: (context, _, __) {
-          // 取最后 N 个样本，分桶至 barCount（每柱代表一个时间桶最大值）
-          final List<double> samples = List<double>.from(_waveLevels);
-          if (samples.isEmpty) {
-            return _wavePlaceholder(isDarkMode);
-          }
-          final int n = samples.length;
-          final int bars = barCount;
-          final double bucketSize = n / bars;
-          final List<double> buckets = List<double>.generate(bars, (i) {
-            final start = (i * bucketSize).floor();
-            final end = (((i + 1) * bucketSize).ceil()).clamp(start + 1, n);
-            double maxv = 0.0;
-            for (int k = start; k < end; k++) {
-              if (samples[k] > maxv) maxv = samples[k];
-            }
-            return maxv;
-          });
-
-          final barsRow = Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: List.generate(bars, (i) {
-              final v = buckets[i].clamp(0.0, 1.0);
-              final h = 1.0 + v * 47.0; // 1..48 px 高度（v=0 时几乎不可见）
-              final isReady = asr.state == AsrState.started;
-              return Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: double.infinity,
-                    height: h,
-                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
-                    decoration: BoxDecoration(
-                      color: isReady
-                          ? Color.lerp(AppTheme.gradientStartColor,
-                              AppTheme.gradientEndColor, v)
-                          : (isDarkMode ? Colors.white10 : Colors.black12),
-                      borderRadius: BorderRadius.circular(2),
-                      boxShadow: isReady && v > 0.5
-                          ? [
-                              BoxShadow(
-                                color: AppTheme.gradientStartColor
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              )
-                            ]
-                          : null,
-                    ),
-                  ),
-                ),
-              );
-            }),
-          );
-
-          if (!showDebugValue) return barsRow;
-          // 叠加调试值显示
-          return Stack(
-            children: [
-              barsRow,
-              Positioned.fill(
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    color: Colors.transparent,
-                    child: Text(
-                      _meterLevelNotifier.value.toStringAsFixed(2),
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: isDarkMode ? Colors.white70 : Colors.black54,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _wavePlaceholder(bool isDarkMode) {
-    return Row(
-      children: List.generate(
-          16,
-          (i) => Expanded(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(horizontal: 0.5),
-                  decoration: BoxDecoration(
-                    color: asr.state == AsrState.started
-                        ? AppTheme.gradientStartColor.withValues(alpha: 0.3)
-                        : (isDarkMode
-                            ? const Color(0xFF2A2A2A)
-                            : const Color(0xFFEAEAEA)),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              )),
-    );
-  }
 
 
 
