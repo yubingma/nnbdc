@@ -23,6 +23,11 @@ void main() {
       expect(score, equals(100));
     });
 
+    test('Ignores <b> tags in target chinese sentence', () {
+      final score = getChineseSentenceMatchScore('我吃了一个苹果', '我吃了一个<b>苹果</b>。');
+      expect(score, equals(100));
+    });
+
     test('Partial match calculates correct percentage', () {
       // 目标 6 个字，匹配 4 个字 -> 4/6 = 67分
       final score = getChineseSentenceMatchScore('今天天气', '今天天气很好');

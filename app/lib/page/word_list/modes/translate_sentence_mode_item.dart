@@ -7,7 +7,7 @@ import 'mode_components.dart';
 import 'word_list_item_layout.dart';
 
 /// 翻译例句模式列表项组件：
-/// 左侧展示随机选出的英文例句，右侧展示例句的中文翻译（未答对前隐藏/展示提示，答对后高亮显示中文翻译）。
+/// 左侧展示随机选出的英文例句（带加粗高亮），右侧展示例句的中文翻译（未答对前隐藏/展示提示，答对后高亮显示中文翻译）。
 class TranslateSentenceModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;
@@ -86,15 +86,22 @@ class TranslateSentenceModeItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (sentenceEn != null && sentenceEn.isNotEmpty) ...[
-          Text(
+          _buildRichSentence(
             sentenceEn,
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
+            TextStyle(
               color: isBookmarked
                   ? const Color(0xFF0097A7)
                   : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
               fontSize: 14,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
+              height: 1.35,
+            ),
+            boldStyle: TextStyle(
+              color: isBookmarked
+                  ? const Color(0xFF0097A7)
+                  : (isDarkMode ? Colors.white : const Color(0xFF111827)),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
               height: 1.35,
             ),
           ),
@@ -125,7 +132,8 @@ class TranslateSentenceModeItem extends StatelessWidget {
   }
 
   Widget _buildTranslateNotPassed() {
-    final targetChinese = word.currentSentence?.chinese ?? word.word.getMeaningStr();
+    final rawChinese = word.currentSentence?.chinese ?? word.word.getMeaningStr();
+    final targetChinese = rawChinese.replaceAll(RegExp(r'<[^>]*>'), '');
     String hintText = '';
     if (word.hintLetterCount > 0) {
       final cleanTarget = targetChinese.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
@@ -170,15 +178,74 @@ class TranslateSentenceModeItem extends StatelessWidget {
 
   Widget _buildTranslatedPassed() {
     final translation = word.currentSentence?.chinese ?? word.word.getMeaningStr();
-    return Text(
-      translation.isNotEmpty ? translation : '已通过',
+    final baseStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      color: isDarkMode ? const Color(0xFF4ADE80) : const Color(0xFF16A34A),
+      height: 1.35,
+    );
+
+    if (translation.isEmpty) {
+      return Text(
+        '已通过',
+        textScaler: const TextScaler.linear(1.0),
+        style: baseStyle,
+      );
+    }
+
+    return _buildRichSentence(
+      translation,
+      baseStyle,
+      boldStyle: baseStyle.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+
+  /// 解析包含 <b>...</b> 或其他 XML/HTML 标签的句子并渲染为富文本
+  Widget _buildRichSentence(
+    String text,
+    TextStyle baseStyle, {
+    TextStyle? boldStyle,
+  }) {
+    final List<TextSpan> spans = [];
+    final RegExp regExp = RegExp(r"<b>(.*?)</b>", caseSensitive: false);
+    int lastMatchEnd = 0;
+
+    for (final match in regExp.allMatches(text)) {
+      if (match.start > lastMatchEnd) {
+        final beforeText = text
+            .substring(lastMatchEnd, match.start)
+            .replaceAll(RegExp(r'<[^>]*>'), '');
+        if (beforeText.isNotEmpty) {
+          spans.add(TextSpan(text: beforeText, style: baseStyle));
+        }
+      }
+      final boldText =
+          (match.group(1) ?? '').replaceAll(RegExp(r'<[^>]*>'), '');
+      if (boldText.isNotEmpty) {
+        spans.add(TextSpan(
+          text: boldText,
+          style: boldStyle ?? baseStyle.copyWith(fontWeight: FontWeight.bold),
+        ));
+      }
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < text.length) {
+      final afterText =
+          text.substring(lastMatchEnd).replaceAll(RegExp(r'<[^>]*>'), '');
+      if (afterText.isNotEmpty) {
+        spans.add(TextSpan(text: afterText, style: baseStyle));
+      }
+    }
+
+    if (spans.isEmpty) {
+      final cleanText = text.replaceAll(RegExp(r'<[^>]*>'), '');
+      spans.add(TextSpan(text: cleanText, style: baseStyle));
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
       textScaler: const TextScaler.linear(1.0),
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: isDarkMode ? const Color(0xFF4ADE80) : const Color(0xFF16A34A),
-        height: 1.35,
-      ),
     );
   }
 }
