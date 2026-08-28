@@ -95,12 +95,23 @@ void main() async {
             stackString.contains('ImageDecoder') ||
             stackString.contains('decodeImage');
 
+        final contextString = details.context?.toString() ?? '';
+        final isTextFieldBuildScheduledRace = exceptionString.contains('Build scheduled during frame') &&
+            (contextString.contains('TextEditingController') ||
+                stackString.contains('TextEditingController') ||
+                stackString.contains('EditableTextState'));
+
         if (isImageError) {
           // 图像错误只记录到日志，不输出到控制台（避免干扰）
           Global.logger.w(
             '【图像加载错误】${details.exceptionAsString()}',
             error: details.exception,
             stackTrace: details.stack,
+          );
+        } else if (isTextFieldBuildScheduledRace) {
+          // 框架 TextField 与输入法/语义刷新竞态错误（仅 debug 断言触发，非业务 bug），避免控制台刷屏打扰开发调试
+          Global.logger.w(
+            '【框架已知竞态】忽略输入法/语义同步时的 TextEditingController 构建调度断言: ${details.exceptionAsString()}',
           );
         } else {
           // 其他错误正常处理
