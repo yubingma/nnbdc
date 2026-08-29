@@ -219,6 +219,9 @@ class WordListPageState extends State<WordListPage>
   void onToggleAnswer(WordWrapper word, int index) {
     setState(() {
       word.isAnswerRevealed = !word.isAnswerRevealed;
+      if (studyMode == WordListStudyMode.translateSentence) {
+        word.sentenceTranslatedPassed = word.isAnswerRevealed;
+      }
     });
 
     if (word.isAnswerRevealed && studyMode == WordListStudyMode.hideEnglish) {

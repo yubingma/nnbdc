@@ -9,7 +9,7 @@ import 'word_list_item_layout.dart';
 
 /// 翻译例句模式列表项组件（上下排版）：
 /// 上半部分展示英文例句（带核心词加粗高亮）及单词拼写与发音指示器；
-/// 下半部分展示例句的中文翻译（实时语音识别/得分回显/通过高亮显示）。
+/// 下半部分展示例句的中文翻译（当前激活单词显示“请说出例句翻译”与“显示答案”按钮/实时识别回显/通过高亮显示）。
 class TranslateSentenceModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;
@@ -38,6 +38,9 @@ class TranslateSentenceModeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPassed = word.sentenceTranslatedPassed || word.isAnswerRevealed;
+    final bool showBottomArea = isPassed || isBookmarked;
+
     return WordListItemLayout(
       word: word,
       index: index,
@@ -63,22 +66,22 @@ class TranslateSentenceModeItem extends StatelessWidget {
               onLongPress: () => actions.onWordLongPress(word, index),
               child: _buildEnglishSentenceArea(),
             ),
-            const SizedBox(height: 6),
-            // 下半部分：中文翻译 / 语音识别回显
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                if (isBookmarked) {
-                  actions.onGiveHint(word);
-                } else {
-                  actions.onWordTap(word, index);
-                }
-              },
-              onLongPress: () => actions.onWordLongPress(word, index),
-              child: word.sentenceTranslatedPassed
-                  ? _buildTranslatedPassed()
-                  : _buildTranslateNotPassed(),
-            ),
+            if (showBottomArea) ...[
+              const SizedBox(height: 6),
+              // 下半部分：中文翻译 / 语音识别回显 / 提示区
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (!isBookmarked) {
+                    actions.onWordTap(word, index);
+                  }
+                },
+                onLongPress: () => actions.onWordLongPress(word, index),
+                child: isPassed
+                    ? _buildTranslatedPassed()
+                    : _buildTranslateNotPassed(),
+              ),
+            ],
           ],
         ),
       ),
@@ -206,28 +209,13 @@ class TranslateSentenceModeItem extends StatelessWidget {
   }
 
   Widget _buildTranslateNotPassed() {
-    final rawChinese = word.currentSentence?.chinese ?? word.word.getMeaningStr();
-    final targetChinese = rawChinese.replaceAll(RegExp(r'<[^>]*>'), '');
     final bool hasLiveAsr = isBookmarked && (word.lastAsrResult != null && word.lastAsrResult!.isNotEmpty);
     final String liveAsrText = word.lastAsrResult ?? '';
-
-    String displayText = '';
-    if (hasLiveAsr) {
-      displayText = liveAsrText;
-    } else if (word.hintLetterCount > 0) {
-      final cleanTarget = targetChinese.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
-      final count = word.hintLetterCount.clamp(0, cleanTarget.length);
-      displayText = cleanTarget.substring(0, count);
-    } else if (isBookmarked) {
-      displayText = '请说出例句翻译';
-    }
-
-    final bool isPlaceholder = !hasLiveAsr && word.hintLetterCount == 0 && isBookmarked;
     final int? score = hasLiveAsr ? word.pronunciationScore : null;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
         color: hasLiveAsr
             ? (isDarkMode ? const Color(0xFF0097A7).withValues(alpha: 0.12) : const Color(0xFFE0F7FA))
@@ -245,19 +233,17 @@ class TranslateSentenceModeItem extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              displayText.isEmpty ? (isBookmarked ? '请说出例句翻译' : '点击查看或提示翻译') : displayText,
+              hasLiveAsr ? liveAsrText : '请说出例句翻译',
               textScaler: const TextScaler.linear(1.0),
               softWrap: true,
               style: TextStyle(
                 fontSize: 13.5,
                 color: hasLiveAsr
                     ? (isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7))
-                    : (isPlaceholder
-                        ? (isDarkMode ? Colors.white38 : Colors.black38)
-                        : (isDarkMode ? Colors.white70 : const Color(0xFF4B5563))),
+                    : (isDarkMode ? Colors.white38 : Colors.black38),
                 height: 1.35,
                 letterSpacing: 0.3,
-                fontStyle: (isPlaceholder && !hasLiveAsr) ? FontStyle.italic : FontStyle.normal,
+                fontStyle: hasLiveAsr ? FontStyle.normal : FontStyle.italic,
               ),
             ),
           ),
@@ -265,6 +251,43 @@ class TranslateSentenceModeItem extends StatelessWidget {
             const SizedBox(width: 6),
             _buildScoreBadge(score),
           ],
+          const SizedBox(width: 8),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => actions.onToggleAnswer(word, index),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white24 : Colors.black12,
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility_outlined,
+                    size: 13,
+                    color: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    '显示答案',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -283,7 +306,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
         color: isDarkMode
             ? const Color(0xFF4ADE80).withValues(alpha: 0.08)
