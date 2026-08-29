@@ -122,6 +122,29 @@ public class DataSanitizeBo {
     }
 
     /**
+     * 单独清洗单词配图（清理损坏/无效的图片文件并生成同步日志）
+     */
+    public SystemHealthFixResult sanitizeWordImagesOnly() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        int totalFixedCount = 0;
+
+        try {
+            totalFixedCount += sanitizeWordImages(fixed);
+            if (totalFixedCount == 0) {
+                fixed.add("全库配图数据完整有效，未发现损坏或缺失的配图文件。");
+            } else {
+                fixed.add(String.format("配图清洗完成，共清理 %d 条损坏或无效的配图记录。", totalFixedCount));
+            }
+        } catch (Exception e) {
+            logger.error("配图清洗失败", e);
+            errors.add("配图清洗过程中出错: " + e.getMessage());
+        }
+
+        return new SystemHealthFixResult(totalFixedCount, errors, fixed);
+    }
+
+    /**
      * 检查系统数据规范性情况
      */
     public SystemHealthCheckResult checkDataSanitization() {

@@ -705,6 +705,9 @@ abstract class RestClient {
   @POST("/admin/sanitizeData.do")
   Future<Result<SystemHealthFixResult>> sanitizeData();
 
+  @POST("/admin/sanitizeWordImages.do")
+  Future<Result<SystemHealthFixResult>> sanitizeWordImages();
+
   @POST("/admin/sanitizeWordPopularity.do")
   Future<Result<SystemHealthFixResult>> sanitizeWordPopularity();
 

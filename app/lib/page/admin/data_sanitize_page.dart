@@ -18,6 +18,7 @@ class DataSanitizePage extends StatefulWidget {
 class _DataSanitizePageState extends State<DataSanitizePage> {
   bool _isSanitizing = false;
   bool _isChecking = false;
+  bool _isImageSanitizing = false;
   bool _isPopularitySanitizing = false;
   SystemHealthFixResult? _fixResult;
   SystemHealthCheckResult? _checkResult;
@@ -248,6 +249,68 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
     }
   }
 
+  Future<void> _runWordImageSanitizing() async {
+    if (_isSanitizing || _isChecking || _isPopularitySanitizing || _isImageSanitizing) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('单词配图清洗确认'),
+        content: const Text(
+            '该操作将扫描全库单词配图：\n'
+            '1. 检查所有配图物理文件是否存在及数据完整性\n'
+            '2. 识别并删除非图片/损坏文件（如 HTML 错误页）\n'
+            '3. 清理对应的数据库记录并生成同步日志，修复客户端数据\n\n'
+            '是否立即开始？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.purple[700]),
+            child: const Text('开始清洗', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    setState(() {
+      _isImageSanitizing = true;
+      _fixResult = null;
+    });
+
+    try {
+      final res = await LoadingUtils.withApiLoading(operation: () async {
+        return await Api.client.sanitizeWordImages();
+      });
+
+      if (!mounted) return;
+
+      if (res.success) {
+        setState(() {
+          _fixResult = res.data;
+          _checkResult = null;
+        });
+        ToastUtil.success('单词配图清洗完成');
+      } else {
+        ToastUtil.error('清洗失败: ${res.msg}');
+      }
+    } catch (e) {
+      if (mounted) ToastUtil.error('发生错误: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isImageSanitizing = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
@@ -281,7 +344,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   }
 
   Widget _buildActionButtons() {
-    final isAnyRunning = _isChecking || _isSanitizing || _isPopularitySanitizing;
+    final isAnyRunning = _isChecking || _isSanitizing || _isImageSanitizing || _isPopularitySanitizing;
     return Center(
       child: Column(
         children: [
@@ -310,6 +373,21 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.orange[800],
                 side: BorderSide(color: Colors.orange[800]!),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: 220,
+            height: 50,
+            child: OutlinedButton.icon(
+              onPressed: isAnyRunning ? null : _runWordImageSanitizing,
+              icon: Icon(_isImageSanitizing ? Icons.hourglass_empty : Icons.broken_image_outlined),
+              label: Text(_isImageSanitizing ? '正在清洗配图...' : '清洗单词配图'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.purple[800],
+                side: BorderSide(color: Colors.purple[800]!),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               ),
             ),
@@ -358,6 +436,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             const SizedBox(height: 10),
             _buildBulletPoint('自动移除音标首尾的 /、[、] 等符号。'),
             _buildBulletPoint('清理单词、释义、词性及例句末尾残留的逗号。'),
+            _buildBulletPoint('清理损坏或无效的单词配图（如非图片文件、404错误HTML等）。'),
             _buildBulletPoint('同步海词(dict.cn)释义频率占比，更新释义常用度。'),
             _buildBulletPoint('自动对齐并补全缺失的高频释义（频率 >= 10%）并配套生成例句与发音。'),
             _buildBulletPoint('修复后的数据将生成同步日志，确保客户端数据一致。'),
