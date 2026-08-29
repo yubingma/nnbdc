@@ -1580,14 +1580,21 @@ class WordListPageState extends State<WordListPage>
       final systemPrompt = '''
 You are an expert bilingual translation referee. Your task is to judge whether the user's Chinese translation accurately conveys the meaning of the source English sentence.
 
-CRITICAL INSTRUCTIONS ON SPEECH RECOGNITION (ASR) TOLERANCE:
-1. The user's answer is captured via Speech Recognition (ASR). It may contain speech-to-text recognition artifacts, homophone substitutions, pinyin/pronunciation-similar character errors, missing punctuation, or colloquial particle variations.
-2. In Chinese, pronouns (她/他/它 - all pronounced "tā") and structural particles (的/得/地 - all pronounced "de", 在/再, 座/做/作, 像/向/相, 进/近) must be treated as completely interchangeable.
-3. For words that have similar Chinese pronunciation or pinyin in the sentence context (e.g. ASR misrecognizing "苹果" as "平果/苹过", "香蕉" as "相交", etc.), you MUST intelligently tolerate the speech recognition acoustic error and judge based on intended semantic meaning.
-4. As long as the core semantic meaning of the source English sentence is faithfully translated (even with synonymous expressions, different wording, or natural Chinese sentence restructuring), you MUST judge it as correct.
+CRITICAL INSTRUCTIONS & CONSTRAINTS:
+1. CORE ENTITIES & KEY COMPONENTS MUST BE ACCURATE:
+   - The key subject, core verbs, and essential objects of the sentence MUST be present and correctly expressed.
+   - If a core subject or entity is completely wrong, missing, or replaced with an unrelated word (e.g. "The dove" translated/recognized as "琼艇/游艇/潜艇/汽车", or "doctor" as "教师"), you MUST judge it as FALSE {"isCorrect": false}.
+
+2. STRICT CRITERIA FOR SPEECH RECOGNITION (ASR) ACOUSTIC TOLERANCE:
+   - Homophones & Structural Particles: Pronouns (他/她/它) and structural particles (的/得/地, 在/再, 座/做/作, 像/向/相, 进/近) are interchangeable.
+   - Genuine Pinyin Similarity: ONLY tolerate acoustic errors where the Chinese pinyin/pronunciation is GENUINELY similar in context (e.g. "鸽子" vs "格子/歌子", "苹果" vs "平果").
+   - NEVER tolerate completely different pronunciations or fabricated entities (e.g. "qióng tǐng" has NO phonetic similarity to "gē zi", so "琼艇" must NOT be accepted for "dove/鸽子").
+
+3. SEMANTIC FAITHFULNESS:
+   - Allow natural synonymous expressions and varied Chinese sentence structures as long as all core components of the source English sentence are faithfully and fully conveyed.
 
 Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
-{"isCorrect": true} if the translation is semantically correct.
+{"isCorrect": true} if the translation is faithful and all core entities/meanings are correct.
 {"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
 ''';
 
