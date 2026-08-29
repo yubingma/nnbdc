@@ -780,6 +780,7 @@ class WordListPageState extends State<WordListPage>
 
         final swJump = Stopwatch()..start();
         debugPrint('⏱️ [Latency] 答对！开始跳转流程...');
+        _playCorrectSound();
         // 立即重置标志位，防止重复跳转 (防抖)
         canLeaveCurrWord = false;
 
@@ -1467,6 +1468,23 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
+  DateTime? _lastCorrectSoundTime;
+
+  /// 答对时播放激励提示音
+  void _playCorrectSound() {
+    final now = DateTime.now();
+    if (_lastCorrectSoundTime != null &&
+        now.difference(_lastCorrectSoundTime!) < const Duration(milliseconds: 600)) {
+      return;
+    }
+    _lastCorrectSoundTime = now;
+    if (PlatformUtils.isIOS) {
+      _sessionController.playSoundEffect('correct_ios.wav', speed: 1.0, volume: 0.3);
+    } else {
+      _sessionController.playSoundEffect('correct.wav', speed: 1.0, volume: 1.0);
+    }
+  }
+
   /// 确保当前单词已选取一个随机例句
   Future<void> _prepareSentenceForWord(WordWrapper word) async {
     if (word.currentSentence == null) {
@@ -1513,6 +1531,7 @@ class WordListPageState extends State<WordListPage>
       final score = getChineseSentenceMatchScore(asrText, targetChinese);
       if (score >= 65 && (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.5).ceil())) {
         Global.logger.d('~~~~~[翻译例句] 用户停顿后本地匹配判定通过(score=$score): asrText="$asrText"');
+        _playCorrectSound();
         setState(() {
           wordWrapper.sentenceTranslatedPassed = true;
           wordWrapper.answeredAllMeanings = true;
@@ -1639,6 +1658,7 @@ User's Speech-to-Text Input: $userInput
         Global.logger.d('~~~~~[AI裁判] 裁判结果: isCorrect=$isCorrect, response=${result.data}');
 
         if (isCorrect) {
+          _playCorrectSound();
           setState(() {
             wordWrapper.sentenceTranslatedPassed = true;
             wordWrapper.answeredAllMeanings = true;
