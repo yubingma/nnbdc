@@ -1527,10 +1527,10 @@ class WordListPageState extends State<WordListPage>
       final currentIdx = getBookMarkUiPosition();
       if (currentIdx != wordIndex) return;
 
-      // 1. 用户停顿后，先检查本地算法得分：若达到合格线（>=65分且长度>=50%），直接判定通过并自动跳转到下一词
+      // 1. 用户停顿后，先检查本地算法得分：若达到高置信度高分线（>=85分且长度>=70%），直接判定通过并自动跳转到下一词
       final score = getChineseSentenceMatchScore(asrText, targetChinese);
-      if (score >= 65 && (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.5).ceil())) {
-        Global.logger.d('~~~~~[翻译例句] 用户停顿后本地匹配判定通过(score=$score): asrText="$asrText"');
+      if (score >= 85 && (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.7).ceil())) {
+        Global.logger.d('~~~~~[翻译例句] 用户停顿后本地高分匹配判定通过(score=$score): asrText="$asrText"');
         _playCorrectSound();
         setState(() {
           wordWrapper.sentenceTranslatedPassed = true;
