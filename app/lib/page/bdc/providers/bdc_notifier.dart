@@ -1957,6 +1957,9 @@ class BdcNotifier extends _$BdcNotifier {
             final ratingResult = _calculateRating(method);
             _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
           }
+        } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling && !_isPttPressed) {
+          // 本地未匹配通过且非按住中：触发例句 AI 裁判防抖判定
+          _scheduleSentenceAiRefereeCheck(inputs);
         }
       }
       Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
@@ -2092,61 +2095,6 @@ class BdcNotifier extends _$BdcNotifier {
           // 此处无需重复 stopSession 以防底层硬件频繁配置冲突产生轻微爆音
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-        }
-      }
-    } else if (state.studyStep == StudyStep.enSentence2Ch.json || state.studyStep == StudyStep.chSentence2En.json) {
-      final isEn2Ch = state.studyStep == StudyStep.enSentence2Ch.json;
-      final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
-          ? state.word!.sentences!.first
-          : null;
-      if (sentence != null) {
-        final targetText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
-        final isFromAsr = asrInput != null || sentenceAnswerController.text == _handlingChinese;
-        final inputs = isFromAsr ? state.currentAsrCandidates : [sentenceAnswerController.text];
-        final cleanTarget = targetText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
-
-        // 1. 本地快速匹配（字面完全匹配或核心词+高分匹配）
-        bool isLocalMatch = false;
-        for (final input in inputs) {
-          final cleanInput = input.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
-          if (cleanInput.isNotEmpty && cleanTarget.isNotEmpty) {
-            if (cleanInput == cleanTarget) {
-              isLocalMatch = true;
-              break;
-            }
-            if (isEn2Ch) {
-              final score = getChineseSentenceMatchScore(input, targetText);
-              final isCoreMatched = isChineseSentenceCoreKeywordsMatched(
-                input,
-                targetText,
-                state.word!,
-                targetPinyinsCache: state.wordWrapper?.targetPinyinsCache,
-              );
-              if (score >= 60 && isCoreMatched) {
-                isLocalMatch = true;
-                break;
-              }
-            }
-          }
-        }
-
-        if (isLocalMatch) {
-          _sentenceAiRefereeDebounceTimer?.cancel();
-          _isAnswerCorrectHandling = true;
-          if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-            await StudyAudioSessionController.instance.syncHardwareIntent(
-              isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
-              isAnsweringActive: false,
-              language: AsrLanguage.english,
-              phrases: [],
-              caller: this,
-            );
-          }
-          final ratingResult = _calculateRating(method);
-          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-        } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
-          // 本地未完全命中：触发例句 AI 裁判防抖判定
-          _scheduleSentenceAiRefereeCheck(inputs);
         }
       }
     }
