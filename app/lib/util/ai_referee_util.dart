@@ -19,8 +19,12 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
    - Homophones & Near-Homophones: Tolerate common Chinese homophones or near-homophones if the spoken sound genuinely corresponds to a valid meaning (e.g., "工资本" vs "工资", "心水/新水" vs "薪水", "薪资" vs "新资").
    - NEVER accept phonetically and semantically unrelated inputs (e.g., completely different words).
 
+3. INTENDED MEANING EXTRACTION ("intendedMeaning"):
+   - If the user's spoken answer is already a valid Chinese word, synonym, or phrasing (e.g., user said "在一旁" for "beside", or "工资"/"月薪" for "salary"), "intendedMeaning" MUST preserve the user's valid phrasing (e.g. "在一旁", "工资"), DO NOT replace it with the dictionary's reference text (e.g. do NOT change "在一旁" to "在旁边").
+   - ONLY correct acoustic/homophone transcription errors into proper Chinese characters (e.g., if ASR recognized "公子/工资本" for "工资", return "intendedMeaning": "工资"; if ASR recognized "再一旁", return "intendedMeaning": "在一旁").
+
 Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
-{"isCorrect": true, "intendedMeaning": "Corrected/standard Chinese meaning (e.g. 工资 or 薪水)"} if the answer is a valid meaning or acoustically matching translation of the word.
+{"isCorrect": true, "intendedMeaning": "Preserved user synonym or phonetically corrected Chinese meaning (e.g. 在一旁 or 工资)"} if the answer is a valid meaning or acoustically matching translation of the word.
 {"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
 ''';
 
