@@ -52,6 +52,7 @@ class BdcState extends Equatable {
   final bool autoJumpAfterCorrectEn2Ch;
   final bool autoJumpAfterCorrectChSentence2En;
   final bool autoJumpAfterCorrectEnSentence2Ch;
+  final bool showWordDetailAfterCorrect;
   final String asrPassRuleCache;
   final FsrsRating? lowestRatingForCurrentWord;
   final FsrsRating? assessmentRating;
@@ -119,6 +120,7 @@ class BdcState extends Equatable {
     this.autoJumpAfterCorrectEn2Ch = true,
     this.autoJumpAfterCorrectChSentence2En = true,
     this.autoJumpAfterCorrectEnSentence2Ch = true,
+    this.showWordDetailAfterCorrect = false,
     this.asrPassRuleCache = 'ONE',
     this.lowestRatingForCurrentWord,
     this.assessmentRating,
@@ -192,6 +194,7 @@ class BdcState extends Equatable {
     bool? autoJumpAfterCorrectEn2Ch,
     bool? autoJumpAfterCorrectChSentence2En,
     bool? autoJumpAfterCorrectEnSentence2Ch,
+    bool? showWordDetailAfterCorrect,
     String? asrPassRuleCache,
     Object? lowestRatingForCurrentWord = _sentinel,
     Object? assessmentRating = _sentinel,
@@ -251,6 +254,7 @@ class BdcState extends Equatable {
       autoJumpAfterCorrectEn2Ch: autoJumpAfterCorrectEn2Ch ?? this.autoJumpAfterCorrectEn2Ch,
       autoJumpAfterCorrectChSentence2En: autoJumpAfterCorrectChSentence2En ?? this.autoJumpAfterCorrectChSentence2En,
       autoJumpAfterCorrectEnSentence2Ch: autoJumpAfterCorrectEnSentence2Ch ?? this.autoJumpAfterCorrectEnSentence2Ch,
+      showWordDetailAfterCorrect: showWordDetailAfterCorrect ?? this.showWordDetailAfterCorrect,
       asrPassRuleCache: asrPassRuleCache ?? this.asrPassRuleCache,
       lowestRatingForCurrentWord: lowestRatingForCurrentWord == _sentinel ? this.lowestRatingForCurrentWord : (lowestRatingForCurrentWord as FsrsRating?),
       assessmentRating: assessmentRating == _sentinel ? this.assessmentRating : (assessmentRating as FsrsRating?),
@@ -313,6 +317,7 @@ class BdcState extends Equatable {
     autoJumpAfterCorrectEn2Ch,
     autoJumpAfterCorrectChSentence2En,
     autoJumpAfterCorrectEnSentence2Ch,
+    showWordDetailAfterCorrect,
     asrPassRuleCache,
     lowestRatingForCurrentWord,
     assessmentRating,

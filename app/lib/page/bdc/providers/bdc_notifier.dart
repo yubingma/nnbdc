@@ -289,6 +289,7 @@ class BdcNotifier extends _$BdcNotifier {
         autoJumpAfterCorrectEn2Ch: studyConfig.autoJumpAfterCorrectEn2Ch,
         autoJumpAfterCorrectChSentence2En: studyConfig.autoJumpAfterCorrectChSentence2En,
         autoJumpAfterCorrectEnSentence2Ch: studyConfig.autoJumpAfterCorrectEnSentence2Ch,
+        showWordDetailAfterCorrect: studyConfig.showWordDetailAfterCorrect,
       );
 
       state = state.copyWith(loadError: null);
@@ -907,7 +908,7 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext context, {FsrsRating? fsrsRating, String? reason}) async {
+  Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext? context, {FsrsRating? fsrsRating, String? reason}) async {
     debugPrint('🕵️ [AudioDiag] showWordDetail.enter | word=${word.spell} isAnswerWrong=$isAnswerWrong');
     // 强制并平滑地关闭正在播放的音频与清理 ASR。通过 Future.wait 并行执行，并设置 1.5s 的硬超时，
     // 防止底层系统音频驱动卡死阻塞跳转页面。
@@ -2115,6 +2116,19 @@ class BdcNotifier extends _$BdcNotifier {
       _playCorrectSound();
     }
 
+    final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json ||
+        state.studyStep == StudyStep.chSentence2En.json;
+    if (state.showWordDetailAfterCorrect && !isSentenceStep && state.word != null && state.historyIndex == -1) {
+      final showDelayMs = state.studyStep == StudyStep.ch2En.json ? 200 : 500;
+      Future.delayed(Duration(milliseconds: showDelayMs), () {
+        if (!_isDisposed && state.word != null) {
+          showWordDetail(state.word!, false, null, fsrsRating: rating, reason: reason);
+        }
+      });
+      Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
+      return;
+    }
+
     bool autoJump = state.autoJumpAfterCorrect;
     if (autoJump && state.historyIndex == -1) {
       // 中英模式发音已完整播完，仅需 400ms 短暂缓冲即可舒适跳转；
@@ -2715,6 +2729,10 @@ class BdcNotifier extends _$BdcNotifier {
     state = state.copyWith(autoJumpAfterCorrectEnSentence2Ch: value);
   }
 
+  void updateShowWordDetailAfterCorrect(bool value) {
+    state = state.copyWith(showWordDetailAfterCorrect: value);
+  }
+
   void updateFlippedAnswerIndices(Set<int> indices) {
     state = state.copyWith(flippedAnswerIndices: indices);
   }
@@ -2833,9 +2851,10 @@ class BdcNotifier extends _$BdcNotifier {
       // 1. 重新加载当前用户的 StudyConfig
       final studyConfig = StudyConfig.fromCurrentUser();
       
-      // 2. 重新配置 ASR 缓存参数
+      // 2. 重新配置 ASR 缓存参数与答对详情展示
       state = state.copyWith(
         asrPassRuleCache: studyConfig.asrPassRule,
+        showWordDetailAfterCorrect: studyConfig.showWordDetailAfterCorrect,
       );
       
       // 3. 确保 ASR 事件监听已绑定

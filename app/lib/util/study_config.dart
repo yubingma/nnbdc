@@ -17,6 +17,7 @@ class StudyConfig {
   bool preferKeyboardInSpelling;
   String distractorStrategy;
   bool mixWithOthersForIos;
+  bool showWordDetailAfterCorrect;
   Map<String, dynamic>? walkman;
   int minNewWordsPerDay;
 
@@ -34,6 +35,7 @@ class StudyConfig {
     this.preferKeyboardInSpelling = false,
     this.distractorStrategy = 'RecentlyLearned',
     this.mixWithOthersForIos = false,
+    this.showWordDetailAfterCorrect = false,
     this.walkman,
     this.minNewWordsPerDay = 0,
   });
@@ -53,6 +55,7 @@ class StudyConfig {
       preferKeyboardInSpelling: _toBool(json['preferKeyboardInSpelling'], false),
       distractorStrategy: json['distractorStrategy'] is String ? json['distractorStrategy'] : 'RecentlyLearned',
       mixWithOthersForIos: _toBool(json['mixWithOthersForIos'], false),
+      showWordDetailAfterCorrect: _toBool(json['showWordDetailAfterCorrect'], false),
       walkman: json['walkman'] is Map<String, dynamic> ? json['walkman'] : null,
       minNewWordsPerDay: _toInt(json['minNewWordsPerDay']),
     );
@@ -97,6 +100,7 @@ class StudyConfig {
       'preferKeyboardInSpelling': preferKeyboardInSpelling,
       'distractorStrategy': distractorStrategy,
       'mixWithOthersForIos': mixWithOthersForIos,
+      'showWordDetailAfterCorrect': showWordDetailAfterCorrect,
       if (walkman != null) 'walkman': walkman,
       'minNewWordsPerDay': minNewWordsPerDay,
     };

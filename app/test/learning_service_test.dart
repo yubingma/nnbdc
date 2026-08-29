@@ -1179,6 +1179,21 @@ void main() {
     });
   });
 
+  group('StudyConfig - showWordDetailAfterCorrect 序列化', () {
+    test('showWordDetailAfterCorrect 字段 round-trip', () {
+      final config = StudyConfig(showWordDetailAfterCorrect: true);
+      final json = config.toJson();
+      expect(json['showWordDetailAfterCorrect'], true);
+      final restored = StudyConfig.fromJson(json);
+      expect(restored.showWordDetailAfterCorrect, isTrue);
+    });
+
+    test('缺失字段时默认 false', () {
+      final restored = StudyConfig.fromJson({});
+      expect(restored.showWordDetailAfterCorrect, isFalse);
+    });
+  });
+
   group('LearningService - 今日最少新词数量配置', () {
     Future<void> seedDueReviewWords(int count) async {
       final pastDate = now.subtract(const Duration(days: 3));

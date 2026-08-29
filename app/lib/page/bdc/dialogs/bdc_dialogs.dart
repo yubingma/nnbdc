@@ -256,6 +256,7 @@ extension BdcPageStateDialogs on BdcPageState {
 
     var localDistractorStrategy = studyConfig.distractorStrategy;
     var localMixWithOthersForIos = studyConfig.mixWithOthersForIos;
+    var localShowWordDetailAfterCorrect = studyConfig.showWordDetailAfterCorrect;
 
     if (!mounted) return;
 
@@ -431,6 +432,15 @@ extension BdcPageStateDialogs on BdcPageState {
                                       });
                                     },
                                   ),
+                                  _buildSettingItem(
+                                    '答对后显示单词详情',
+                                    localShowWordDetailAfterCorrect,
+                                    (value) {
+                                      setState(() {
+                                        localShowWordDetailAfterCorrect = value;
+                                      });
+                                    },
+                                  ),
                                   _buildSectionHeader(
                                     '极速模式',
                                     subtitle: '答对后直接进入下一词',
@@ -583,6 +593,8 @@ extension BdcPageStateDialogs on BdcPageState {
                             studyConfigToSave.enableWordImage = localEnableWordImage;
                             studyConfigToSave.distractorStrategy = localDistractorStrategy;
                             studyConfigToSave.mixWithOthersForIos = localMixWithOthersForIos;
+                            studyConfigToSave.showWordDetailAfterCorrect =
+                                localShowWordDetailAfterCorrect;
                             await studyConfigToSave.saveToCurrentUser();
                           }
 
@@ -593,6 +605,8 @@ extension BdcPageStateDialogs on BdcPageState {
                                 localAutoJumpAfterCorrectCh2En);
                             notifier.updateAutoJumpEn2Ch(
                                 localAutoJumpAfterCorrectEn2Ch);
+                            notifier.updateShowWordDetailAfterCorrect(
+                                localShowWordDetailAfterCorrect);
                             Navigator.pop(context, true);
                           }
                         },
