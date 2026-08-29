@@ -224,6 +224,7 @@ class WordListPageState extends State<WordListPage>
         setState(() {
           word.isAnswerRevealed = false;
           word.sentenceTranslatedPassed = false;
+          word.isAiEvaluatedPassed = false;
           word.answeredAllMeanings = false;
           word.lastAsrResult = null;
           word.pronunciationScore = null;
@@ -1373,6 +1374,7 @@ class WordListPageState extends State<WordListPage>
           if (studyMode == WordListStudyMode.translateSentence) {
             word.isAnswerRevealed = false;
             word.sentenceTranslatedPassed = false;
+            word.isAiEvaluatedPassed = false;
             word.isAnswerProvidedBySystem = false;
           }
         }
@@ -1609,7 +1611,7 @@ User's Speech-to-Text Input: $userInput
           setState(() {
             wordWrapper.sentenceTranslatedPassed = true;
             wordWrapper.answeredAllMeanings = true;
-            wordWrapper.pronunciationScore = 100;
+            wordWrapper.isAiEvaluatedPassed = true;
           });
 
           try {

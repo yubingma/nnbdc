@@ -103,6 +103,9 @@ class WordWrapper {
   /// 在“翻译例句”模式下是否已答对
   bool sentenceTranslatedPassed = false;
 
+  /// 在“翻译例句”模式下是否由大模型裁判判定通过
+  bool isAiEvaluatedPassed = false;
+
   /// 最近一次的语音识别结果（用于展示）
   String? lastAsrResult;
 
@@ -145,6 +148,7 @@ class WordWrapper {
       ..isAnswerRevealed = isAnswerRevealed
       ..currentSentence = currentSentence
       ..sentenceTranslatedPassed = sentenceTranslatedPassed
+      ..isAiEvaluatedPassed = isAiEvaluatedPassed
       ..lastAsrResult = lastAsrResult
       ..currentProgress = currentProgress
       ..maxProgress = maxProgress;

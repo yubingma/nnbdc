@@ -991,6 +991,7 @@ class Util {
       'learning_word': 'learningWords',
       'learning_dict': 'learningDicts',
       'user': 'users',
+      'users': 'users', // 兼容历史异常数据
       'book_mark': 'bookMarks',
       'mastered_word': 'masteredWords',
       'user_cow_dung_log': 'userCowDungLogs',

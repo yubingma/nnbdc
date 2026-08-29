@@ -24,6 +24,12 @@
 - 所有同步业务表实体的主键 ID 必须使用标准的 32 位 UUID（客户端统一使用 `Util.uuid()`，服务端使用 `Util.uuid()`）。
 - 严禁通过字符串拼接（例如 `${userId}_${code}` 或 `${userId}_${timestamp}`）作为实体 ID，以防止超出数据库 `VARCHAR(32)` 限制并在端云同步时导致入库异常或主键分裂。
 
+## 端云同步表名与日志规范
+- 服务端数据库表名与同步日志中的 `tbl_name` 必须严格统一使用**单数下划线命名**（例如 `user`、`daka`、`user_study_step`、`learning_dict`、`dict` 等，与服务端 JPA `@Table(name = "...")` 保持完全一致）。
+- 严禁在服务端代码中向 `user_db_log` / `sys_db_log` 写入复数或不一致的表名（例如严禁将 `user` 错写为 `users`）。
+- 客户端与服务端维护的双向表名映射（如客户端 `Util.localTableNameToRemote` 和 `Util.remoteTableNameToLocal`）必须保持严格对齐；新增或修改同步表时需同步检查两端映射，避免产生客户端无法解析的非法表名导致同步中断。
+
+
 ## Think Before Coding
 
 Don't assume. Don't hide confusion. Surface tradeoffs.

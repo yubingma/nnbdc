@@ -835,7 +835,7 @@ public class UserBo extends BaseBo<User> {
         log.setVersion(nextVersion);
         log.setCreateTime(new Date());
         log.setUpdateTime(new Date());
-        log.setTable("users");
+        log.setTable("user");
         log.setOperate("UPDATE");
         log.setRecordId(user.getId());
         log.setRecord(JsonUtils.toJson(user.toDto()));
