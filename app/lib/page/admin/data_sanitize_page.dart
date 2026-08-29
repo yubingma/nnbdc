@@ -23,18 +23,68 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   SystemHealthFixResult? _fixResult;
   SystemHealthCheckResult? _checkResult;
   SystemHealthFixResult? _popularityFixResult;
+  SystemHealthFixResult? _imageFixResult;
   Timer? _statusTimer;
+  Timer? _imageStatusTimer;
 
   @override
   void initState() {
     super.initState();
     _checkInitialPopularitySanitizeStatus();
+    _checkInitialWordImageSanitizeStatus();
   }
 
   @override
   void dispose() {
     _statusTimer?.cancel();
+    _imageStatusTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _checkInitialWordImageSanitizeStatus() async {
+    try {
+      final res = await Api.client.getWordImageSanitizeStatus();
+      if (!mounted) return;
+      if (res.success && res.data != null) {
+        final isRunning = res.data!.fixedCount == 1;
+        if (isRunning) {
+          setState(() {
+            _isImageSanitizing = true;
+            _imageFixResult = res.data;
+          });
+          _startPollingWordImageStatus();
+        }
+      }
+    } catch (e) {
+      // Ignore initial check error
+    }
+  }
+
+  void _startPollingWordImageStatus() {
+    _imageStatusTimer?.cancel();
+    _imageStatusTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      try {
+        final res = await Api.client.getWordImageSanitizeStatus();
+        if (!mounted) return;
+        if (res.success && res.data != null) {
+          final isRunning = res.data!.fixedCount == 1;
+          setState(() {
+            _imageFixResult = res.data;
+            _isImageSanitizing = isRunning;
+          });
+          if (!isRunning) {
+            timer.cancel();
+            ToastUtil.success('单词配图清洗完成');
+          }
+        }
+      } catch (e) {
+        // Ignore background errors
+      }
+    });
   }
 
   Future<void> _checkInitialPopularitySanitizeStatus() async {
@@ -257,8 +307,8 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
       builder: (context) => AlertDialog(
         title: const Text('单词配图清洗确认'),
         content: const Text(
-            '该操作将扫描全库单词配图：\n'
-            '1. 检查所有配图物理文件是否存在及数据完整性\n'
+            '该操作将启动后台异步任务，对全库单词配图进行清洗：\n'
+            '1. 快速检查所有配图物理文件是否存在及数据格式合法性\n'
             '2. 识别并删除非图片/损坏文件（如 HTML 错误页）\n'
             '3. 清理对应的数据库记录并生成同步日志，修复客户端数据\n\n'
             '是否立即开始？'),
@@ -281,7 +331,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
 
     setState(() {
       _isImageSanitizing = true;
-      _fixResult = null;
+      _imageFixResult = null;
     });
 
     try {
@@ -293,17 +343,19 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
 
       if (res.success) {
         setState(() {
-          _fixResult = res.data;
-          _checkResult = null;
+          _imageFixResult = res.data;
         });
-        ToastUtil.success('单词配图清洗完成');
+        ToastUtil.success('配图清洗任务已在后台启动');
+        _startPollingWordImageStatus();
       } else {
-        ToastUtil.error('清洗失败: ${res.msg}');
+        ToastUtil.error('启动失败: ${res.msg}');
+        setState(() {
+          _isImageSanitizing = false;
+        });
       }
     } catch (e) {
-      if (mounted) ToastUtil.error('发生错误: $e');
-    } finally {
       if (mounted) {
+        ToastUtil.error('发生错误: $e');
         setState(() {
           _isImageSanitizing = false;
         });
@@ -334,6 +386,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
             const SizedBox(height: 20),
             if (_checkResult != null) _buildCheckResultCard(isDarkMode),
             if (_fixResult != null) _buildFixResultCard(isDarkMode),
+            if (_imageFixResult != null) _buildWordImageFixResultCard(isDarkMode),
             if (_popularityFixResult != null) _buildPopularityFixResultCard(isDarkMode),
             const SizedBox(height: 30),
             _buildActionButtons(),
@@ -538,6 +591,53 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               const SizedBox(height: 15),
               const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
               ..._fixResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWordImageFixResultCard(bool isDarkMode) {
+    if (_imageFixResult == null) return const SizedBox.shrink();
+    
+    return Card(
+      elevation: 2,
+      color: isDarkMode ? Colors.purple.withValues(alpha: 0.1) : Colors.purple[50],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.purple.withValues(alpha: 0.3)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _isImageSanitizing ? Icons.hourglass_top : Icons.done_all, 
+                  color: Colors.purple[700]
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _isImageSanitizing ? '单词配图清洗执行中' : '单词配图清洗完成报告', 
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.purple[800])
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            ..._imageFixResult!.fixed.map((msg) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                _isImageSanitizing ? msg : '✓ $msg', 
+                style: const TextStyle(fontSize: 14)
+              ),
+            )),
+            if (_imageFixResult!.errors.isNotEmpty) ...[
+              const SizedBox(height: 15),
+              const Text('错误信息：', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ..._imageFixResult!.errors.map((err) => Text('! $err', style: const TextStyle(color: Colors.red, fontSize: 13))),
             ],
           ],
         ),
