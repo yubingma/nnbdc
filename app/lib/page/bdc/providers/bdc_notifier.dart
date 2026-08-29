@@ -1789,13 +1789,25 @@ class BdcNotifier extends _$BdcNotifier {
                 : meaningController.text];
         int maxScore = 0;
 
+        bool passedThreshold = false;
         if (step == StudyStep.enSentence2Ch.json) {
           // 例句英中：说中文，匹对 sentence.chinese
           final targetCh = sentence.chinese ?? "";
+          bool coreMatched = false;
           for (final input in inputs) {
             final score = getChineseSentenceMatchScore(input, targetCh);
             if (score > maxScore) maxScore = score;
+            if (!coreMatched && state.word != null) {
+              coreMatched = isChineseSentenceCoreKeywordsMatched(
+                input,
+                targetCh,
+                state.word!,
+                targetPinyinsCache: state.wordWrapper?.targetPinyinsCache,
+              );
+            }
           }
+          // 例句英中模式：通过需要得分达到及格线且核心考察词已答对
+          passedThreshold = maxScore >= 60 && coreMatched;
         } else {
           // 例句中英：说英文，匹对 sentence.english
           final targetEn = sentence.english ?? "";
@@ -1803,17 +1815,17 @@ class BdcNotifier extends _$BdcNotifier {
             final score = await getEnglishSentenceMatchScore(input, targetEn);
             if (score > maxScore) maxScore = score;
           }
+          passedThreshold = maxScore >= 60;
         }
 
         // 实时更新 currentScore，让 UI 实时显示得分！
         state = state.copyWith(currentScore: maxScore);
-        Global.logger.d('[PTT] score更新: isPracticeMode=$_isPracticeMode maxScore=$maxScore');
+        Global.logger.d('[PTT] score更新: isPracticeMode=$_isPracticeMode maxScore=$maxScore, passedThreshold=$passedThreshold');
 
         final bool isMatch;
         // 将英文例句通过的得分阈值放宽到 60 分，增加口音与吞音容错率
         // ⚡ 体验优化：为了防止最后一个单词没有显示完整就提前通关并掐断识别，
         // 对于语音识别（isVoice），必须等待最后一帧 isFinal 为 true 时才执行 Match 通过，以保证单词在 UI 上完整展现。
-        final bool passedThreshold = maxScore >= 60;
         isMatch = passedThreshold && (!isVoice || isFinal);
         Global.logger.d('[PTT] checkAsrResult isPttPressed=$_isPttPressed isFinal=$isFinal score=$maxScore passedThreshold=$passedThreshold isMatch=$isMatch inputs=$inputs');
 
@@ -3043,7 +3055,26 @@ class BdcNotifier extends _$BdcNotifier {
       final sourceText = isEn2Ch ? (sentence.english ?? "") : (sentence.chinese ?? "");
       final referenceText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
 
-      final systemPrompt = 'You are an AI referee. Judge if the user\'s translation is semantically correct. IMPORTANT: In Chinese, 她/他/它 (she/he/it) are all pronounced "tā" and speech recognition cannot distinguish them. Treat them as completely interchangeable — a difference in this pronoun alone does NOT make the answer incorrect. Respond in raw JSON format with: {"isCorrect": true} if correct, or {"isCorrect": false, "explanation": "Chinese explanation (max 12 words)"} if incorrect. Do NOT explain if correct. Do NOT include markdown format like ```json.';
+      final systemPrompt = '''
+You are an expert bilingual translation referee. Your task is to judge whether the user's translation accurately conveys the meaning of the source sentence.
+
+CRITICAL INSTRUCTIONS & CONSTRAINTS:
+1. CORE ENTITIES & KEY COMPONENTS MUST BE ACCURATE:
+   - The key subject, core verbs, and essential objects of the sentence MUST be present and correctly expressed.
+   - If a core subject or entity is completely wrong, missing, or replaced with an unrelated word (e.g. "The dove" translated/recognized as "琼艇/游艇/潜艇/汽车", or "doctor" as "教师"), you MUST judge it as FALSE {"isCorrect": false}.
+
+2. STRICT CRITERIA FOR SPEECH RECOGNITION (ASR) ACOUSTIC TOLERANCE:
+   - In Chinese: Homophones & Structural Particles (他/她/它, 的/得/地, 在/再, 座/做/作, 像/向/相, 进/近) are interchangeable.
+   - Genuine Pinyin/Phonetic Similarity: ONLY tolerate acoustic errors where the pronunciation is GENUINELY similar in context (e.g. "鸽子" vs "格子/歌子", "苹果" vs "平果").
+   - NEVER tolerate completely different pronunciations or fabricated entities (e.g. "qióng tǐng" has NO phonetic similarity to "gē zi", so "琼艇" must NOT be accepted for "dove/鸽子").
+
+3. SEMANTIC FAITHFULNESS:
+   - Allow natural synonymous expressions and varied natural syntax as long as all core components of the source sentence are faithfully and fully conveyed.
+
+Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
+{"isCorrect": true} if the translation is faithful and all core entities/meanings are correct.
+{"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
+''';
       final userPrompt = 'Exercise Type: ${state.studyStep}\nSource Sentence: $sourceText\nReference Translation: $referenceText\nUser Answer: $userInput';
 
       final messages = [
