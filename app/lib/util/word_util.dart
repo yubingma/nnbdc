@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/pinyin.dart';
+import 'package:nnbdc/util/phoneme_util.dart';
 import 'package:nnbdc/global.dart';
 import '../api/vo.dart';
 
@@ -463,3 +464,62 @@ bool isChineseSentenceCoreKeywordsMatched(
 
   return false;
 }
+
+/// 检查用户的英文识别结果中是否说出了目标核心词（加粗部分 <b>...</b> 或单词本身拼写）
+Future<bool> isEnglishSentenceCoreKeywordsMatched(
+  String input,
+  String targetEnglish,
+  WordVo word,
+) async {
+  List<String> getWords(String s) {
+    return s
+        .toLowerCase()
+        .split(RegExp(r"[^a-zA-Z\d\u0027]"))
+        .where((w) => w.isNotEmpty && (w == 'a' || w == 'i' || (w != "'s" && w != "s" && w.length > 1)))
+        .toList();
+  }
+
+  final inputWords = getWords(input);
+  if (inputWords.isEmpty) return false;
+
+  // 1. 优先提取加粗核心词 <b>...</b>
+  final boldRegExp = RegExp(r'<b>(.*?)</b>', caseSensitive: false);
+  final boldMatches = boldRegExp
+      .allMatches(targetEnglish)
+      .map((m) => m.group(1)?.trim() ?? '')
+      .where((s) => s.isNotEmpty)
+      .toList();
+
+  final List<String> coreTargetWords = [];
+  if (boldMatches.isNotEmpty) {
+    for (final bold in boldMatches) {
+      coreTargetWords.addAll(getWords(bold));
+    }
+  } else {
+    coreTargetWords.addAll(getWords(word.spell));
+  }
+
+  if (coreTargetWords.isEmpty) return true;
+
+  // 目标中的核心词必须在用户的输入中有字面一致或音素相似（>=75）的对应词
+  for (final targetCore in coreTargetWords) {
+    bool matched = false;
+    for (final inputWord in inputWords) {
+      if (inputWord == targetCore) {
+        matched = true;
+        break;
+      }
+      final sim = await PhonemeUtil.similarity(inputWord, targetCore);
+      if (sim >= 75) {
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      return false;
+    }
+  }
+
+  return true;
+}
+

@@ -5,6 +5,8 @@ import 'package:nnbdc/util/asr_util.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Translate Sentence - Scoring Algorithm', () {
     test('Exact match yields 100 score', () {
       final score = getChineseSentenceMatchScore('今天天气很好', '今天天气很好');
@@ -66,6 +68,18 @@ void main() {
       // 3. 输入命中了单词其他释义“店员” -> 匹配成功
       final match3 = isChineseSentenceCoreKeywordsMatched('前面台子上的那位店员会帮助你', '前面台子上的那位<b>职员</b>会帮助你。', wordVo);
       expect(match3, isTrue);
+    });
+
+    test('isEnglishSentenceCoreKeywordsMatched validates bold core words and missing keywords correctly', () async {
+      final wordVo = WordVo.c2('laughter');
+
+      // 1. 输入包含了加粗核心词“laughter” -> 匹配成功
+      final match1 = await isEnglishSentenceCoreKeywordsMatched('Her laughter filled the room.', 'Her <b>laughter</b> filled the room.', wordVo);
+      expect(match1, isTrue);
+
+      // 2. 输入中漏掉了核心词（如识别成 Her field is the room） -> 匹配失败
+      final match2 = await isEnglishSentenceCoreKeywordsMatched('Her field is the room', 'Her <b>laughter</b> filled the room.', wordVo);
+      expect(match2, isFalse);
     });
   });
 

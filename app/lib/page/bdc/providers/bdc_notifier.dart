@@ -1811,11 +1811,20 @@ class BdcNotifier extends _$BdcNotifier {
         } else {
           // 例句中英：说英文，匹对 sentence.english
           final targetEn = sentence.english ?? "";
+          bool coreMatched = false;
           for (final input in inputs) {
             final score = await getEnglishSentenceMatchScore(input, targetEn);
             if (score > maxScore) maxScore = score;
+            if (!coreMatched && state.word != null) {
+              coreMatched = await isEnglishSentenceCoreKeywordsMatched(
+                input,
+                targetEn,
+                state.word!,
+              );
+            }
           }
-          passedThreshold = maxScore >= 60;
+          // 例句中英模式：通过需要得分达到及格线且英文核心考察词已答对
+          passedThreshold = maxScore >= 60 && coreMatched;
         }
 
         // 实时更新 currentScore，让 UI 实时显示得分！
