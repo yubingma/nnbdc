@@ -2138,9 +2138,7 @@ class BdcNotifier extends _$BdcNotifier {
       _playCorrectSound();
     }
 
-    final bool isSentenceStep = state.studyStep == StudyStep.enSentence2Ch.json ||
-        state.studyStep == StudyStep.chSentence2En.json;
-    if (state.showWordDetailAfterCorrect && !isSentenceStep && state.word != null && state.historyIndex == -1) {
+    if (state.showWordDetailAfterCorrect && state.word != null && state.historyIndex == -1) {
       final showDelayMs = state.studyStep == StudyStep.ch2En.json ? 200 : 500;
       Future.delayed(Duration(milliseconds: showDelayMs), () {
         if (!_isDisposed && state.word != null) {
