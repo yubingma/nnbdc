@@ -1302,6 +1302,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   builder: (context, ref, child) {
                     final currentAsrState = ref.watch(bdcNotifierProvider.select((s) => s.asrState));
                     final currentScore = ref.watch(bdcNotifierProvider.select((s) => s.currentScore));
+                    final isScorePassed = ref.watch(bdcNotifierProvider.select((s) => s.isScorePassed || s.hasFinishedAnswering));
                     
                     final bool isChineseInput = state.studyStep == StudyStep.en2Ch.json ||
                                                 state.studyStep == StudyStep.enSentence2Ch.json;
@@ -1316,6 +1317,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isKeyboardVisible: state.isKeyboardVisible,
                             focusNode: _meaningFocusNode,
                             score: currentScore,
+                            isScorePassed: isScorePassed,
                             isSentenceStep: isSentence,
                           )
                         : EnglishAsrInputWidget(
@@ -1326,6 +1328,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             isKeyboardVisible: state.isKeyboardVisible,
                             focusNode: _meaningFocusNode,
                             score: currentScore,
+                            isScorePassed: isScorePassed,
                             isSentenceStep: isSentence,
                           );
                   },

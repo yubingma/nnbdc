@@ -13,8 +13,9 @@ class ChineseAsrInputWidget extends StatefulWidget {
   final Function(AsrLanguage) onStartAsr;
   final bool isKeyboardVisible;
   final FocusNode focusNode;
-  final int? score; // 新增：匹配度得分
-  final bool isSentenceStep; // 新增：是否是例句练习步骤
+  final int? score; // 匹配度得分
+  final bool isScorePassed; // 当前得分是否满足通过条件（含核心词匹配）
+  final bool isSentenceStep; // 是否是例句练习步骤
 
   const ChineseAsrInputWidget({
     super.key,
@@ -24,6 +25,7 @@ class ChineseAsrInputWidget extends StatefulWidget {
     required this.isKeyboardVisible,
     required this.focusNode,
     this.score,
+    this.isScorePassed = false,
     this.isSentenceStep = false,
   });
 
@@ -74,30 +76,37 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
   @override
   void didUpdateWidget(covariant ChineseAsrInputWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncWaveAnimation();
+    if (oldWidget.asrState != widget.asrState) {
+      _syncWaveAnimation();
+    }
   }
 
   /// 波形动画按需启停：仅识别进行中(started)时运行，其余状态停止，
   /// 避免 AnimationController 无限 repeat 在非识别状态空转浪费资源。
   void _syncWaveAnimation() {
     if (widget.asrState == AsrState.started) {
-      if (!_waveController.isAnimating) _waveController.repeat();
+      if (!_waveController.isAnimating) {
+        _waveController.repeat();
+      }
     } else {
-      if (_waveController.isAnimating) _waveController.stop();
+      if (_waveController.isAnimating) {
+        _waveController.stop();
+        _waveController.reset();
+      }
     }
   }
 
   @override
   void dispose() {
     StudyAudioSessionController.instance.meterLevelNotifier.removeListener(_onMeterNotifierChanged);
-    _waveController.dispose();
     _meterSubscription?.cancel();
+    _waveController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final accentColor = AppTheme.primaryColor;
 
     // 状态驱动反馈文字
@@ -116,6 +125,8 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
         break;
     }
 
+    final bool isPassed = widget.isScorePassed || (widget.isSentenceStep ? false : (widget.score ?? 0) >= 60);
+
     final scoreWidget = Visibility(
       visible: widget.score != null && widget.score! > 0,
       maintainSize: true,
@@ -127,11 +138,11 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
           decoration: BoxDecoration(
-            color: (widget.score ?? 0) >= 60
+            color: isPassed
                 ? Colors.green.withValues(alpha: 0.1)
                 : Colors.orange.withValues(alpha: 0.1),
             border: Border.all(
-              color: (widget.score ?? 0) >= 60
+              color: isPassed
                   ? Colors.green.withValues(alpha: 0.5)
                   : Colors.orange.withValues(alpha: 0.5),
               width: 1,
@@ -145,7 +156,7 @@ class _ChineseAsrInputWidgetState extends State<ChineseAsrInputWidget>
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: (widget.score ?? 0) >= 60
+                  color: isPassed
                       ? Colors.green
                       : Colors.orange,
                 ),

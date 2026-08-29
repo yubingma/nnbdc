@@ -212,6 +212,14 @@ class TranslateSentenceModeItem extends StatelessWidget {
     final bool hasLiveAsr = isBookmarked && (word.lastAsrResult != null && word.lastAsrResult!.isNotEmpty);
     final String liveAsrText = word.lastAsrResult ?? '';
     final int? score = hasLiveAsr ? word.pronunciationScore : null;
+    final bool isCoreMatched = hasLiveAsr
+        ? isChineseSentenceCoreKeywordsMatched(
+            liveAsrText,
+            word.currentSentence?.chinese ?? word.word.getMeaningStr(),
+            word.word,
+            targetPinyinsCache: word.targetPinyinsCache,
+          )
+        : false;
 
     return Container(
       width: double.infinity,
@@ -252,7 +260,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
             _buildAiJudgingBadge(),
           ] else if (score != null && score > 0) ...[
             const SizedBox(width: 6),
-            _buildScoreBadge(score),
+            _buildScoreBadge(score, isCoreMatched: isCoreMatched, isPassed: word.sentenceTranslatedPassed),
           ],
           const SizedBox(width: 8),
           GestureDetector(
@@ -339,7 +347,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
             _buildAiRefereeBadge(),
           ] else if (score != null && score > 0) ...[
             const SizedBox(width: 6),
-            _buildScoreBadge(score),
+            _buildScoreBadge(score, isCoreMatched: true, isPassed: true),
           ],
           const SizedBox(width: 8),
           GestureDetector(
@@ -456,8 +464,8 @@ class TranslateSentenceModeItem extends StatelessWidget {
     );
   }
 
-  Widget _buildScoreBadge(int score) {
-    final bool isGood = score >= 60;
+  Widget _buildScoreBadge(int score, {bool isCoreMatched = false, bool isPassed = false}) {
+    final bool isGood = isPassed || (score >= 60 && isCoreMatched);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
       decoration: BoxDecoration(

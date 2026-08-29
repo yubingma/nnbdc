@@ -1828,7 +1828,7 @@ class BdcNotifier extends _$BdcNotifier {
         }
 
         // 实时更新 currentScore，让 UI 实时显示得分！
-        state = state.copyWith(currentScore: maxScore);
+        state = state.copyWith(currentScore: maxScore, isScorePassed: passedThreshold);
         Global.logger.d('[PTT] score更新: isPracticeMode=$_isPracticeMode maxScore=$maxScore, passedThreshold=$passedThreshold');
 
         final bool isMatch;
@@ -1850,7 +1850,7 @@ class BdcNotifier extends _$BdcNotifier {
           // 已松开时正常通过;按住期间(isMatch 不可能成立,因 isFinal=false)
           // 若意外成立则等待松开
           if (_isPttPressed) {
-            state = state.copyWith(currentScore: maxScore);
+            state = state.copyWith(currentScore: maxScore, isScorePassed: passedThreshold);
             Global.logger.d('[PTT] 识别已达标但按住中,等待松开判定. score=$maxScore');
             return;
           }
@@ -1880,6 +1880,7 @@ class BdcNotifier extends _$BdcNotifier {
               hasFinishedAnswering: true, // 自动显示正确答案,便于用户比对纠错
               canLeaveCurrWord: true,
               currentScore: maxScore,
+              isScorePassed: true,
             );
           } else {
             final ratingResult = _calculateRating(method);

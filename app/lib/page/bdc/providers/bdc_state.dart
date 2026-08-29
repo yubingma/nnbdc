@@ -27,6 +27,7 @@ class BdcState extends Equatable {
   
   final String meaningText;
   final int? currentScore;
+  final bool isScorePassed;
   final bool showSentenceTranslation;
   final int tabIndex;
   
@@ -100,6 +101,7 @@ class BdcState extends Equatable {
     this.flippedAnswerIndices = const {},
     this.meaningText = "",
     this.currentScore,
+    this.isScorePassed = false,
     this.showSentenceTranslation = false,
     this.tabIndex = 0,
     this.history = const [],
@@ -172,8 +174,9 @@ class BdcState extends Equatable {
     Object? selectedAnswerIndex = _sentinel,
     Object? correctAnswerIndex = _sentinel,
     Set<int>? flippedAnswerIndices,
-    String? meaningText,
+    Object? meaningText = _sentinel,
     Object? currentScore = _sentinel,
+    bool? isScorePassed,
     bool? showSentenceTranslation,
     int? tabIndex,
     List<GetWordResult>? history,
@@ -232,8 +235,9 @@ class BdcState extends Equatable {
       selectedAnswerIndex: selectedAnswerIndex == _sentinel ? this.selectedAnswerIndex : (selectedAnswerIndex as int?),
       correctAnswerIndex: correctAnswerIndex == _sentinel ? this.correctAnswerIndex : (correctAnswerIndex as int?),
       flippedAnswerIndices: flippedAnswerIndices ?? this.flippedAnswerIndices,
-      meaningText: meaningText ?? this.meaningText,
+      meaningText: meaningText == _sentinel ? this.meaningText : (meaningText as String? ?? ""),
       currentScore: currentScore == _sentinel ? this.currentScore : (currentScore as int?),
+      isScorePassed: isScorePassed ?? this.isScorePassed,
       showSentenceTranslation: showSentenceTranslation ?? this.showSentenceTranslation,
       tabIndex: tabIndex ?? this.tabIndex,
       history: history ?? this.history,
@@ -297,6 +301,7 @@ class BdcState extends Equatable {
     flippedAnswerIndices,
     meaningText,
     currentScore,
+    isScorePassed,
     showSentenceTranslation,
     tabIndex,
     history,
