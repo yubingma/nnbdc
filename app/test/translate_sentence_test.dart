@@ -48,6 +48,25 @@ void main() {
       final merged2 = AsrUtil.mergeAsrText('今天天气很好', '我们出去玩');
       expect(merged2, equals('今天天气很好 我们出去玩'));
     });
+
+    test('isChineseSentenceCoreKeywordsMatched validates bold core words and meanings correctly', () {
+      final wordVo = WordVo.c2('clerk');
+      wordVo.meaningItems = [
+        MeaningItemVo.from('n.', '职员，店员'),
+      ];
+
+      // 1. 输入包含了加粗核心词“职员” -> 匹配成功
+      final match1 = isChineseSentenceCoreKeywordsMatched('前面台子上的那位职员会帮助你', '前面台子上的那位<b>职员</b>会帮助你。', wordVo);
+      expect(match1, isTrue);
+
+      // 2. 输入中的核心词被误识为“煅” -> 匹配失败 (触发AI裁判)
+      final match2 = isChineseSentenceCoreKeywordsMatched('前面台子上的那位煅会帮助你', '前面台子上的那位<b>职员</b>会帮助你。', wordVo);
+      expect(match2, isFalse);
+
+      // 3. 输入命中了单词其他释义“店员” -> 匹配成功
+      final match3 = isChineseSentenceCoreKeywordsMatched('前面台子上的那位店员会帮助你', '前面台子上的那位<b>职员</b>会帮助你。', wordVo);
+      expect(match3, isTrue);
+    });
   });
 
   group('Translate Sentence - WordWrapper State & Clone', () {

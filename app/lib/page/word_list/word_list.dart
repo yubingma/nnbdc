@@ -714,8 +714,16 @@ class WordListPageState extends State<WordListPage>
           final cleanInput = asrResult.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
           final cleanTarget = targetChinese.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
 
-          // 立即判定通过条件：高匹配度（>=85分）且用户说出的字数充分（>= 目标长度的 70%），防止用户只说了前半句就被提前截断判定通过
+          final isCoreMatched = isChineseSentenceCoreKeywordsMatched(
+            asrResult,
+            targetChinese,
+            words[currWordIndex].word,
+            targetPinyinsCache: words[currWordIndex].targetPinyinsCache,
+          );
+
+          // 立即判定通过条件：高匹配度（>=85分）且核心考察词已答对且用户说出的字数充分（>= 目标长度的 70%）
           final bool isImmediateMatch = score >= 85 &&
+              isCoreMatched &&
               (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.7).ceil());
 
           if (isImmediateMatch) {
@@ -1527,10 +1535,18 @@ class WordListPageState extends State<WordListPage>
       final currentIdx = getBookMarkUiPosition();
       if (currentIdx != wordIndex) return;
 
-      // 1. 用户停顿后，先检查本地算法得分：若达到高置信度高分线（>=85分且长度>=70%），直接判定通过并自动跳转到下一词
+      // 1. 用户停顿后，先检查本地算法得分与核心词：
+      // 若达到及格线（>=60分且长度>=50%）且【核心考察词已答对】，直接判定通过并自动跳转到下一词；
+      // 否则（核心词未字面命中、或用同义词表达），平滑交给大模型智能裁判进行语义二次判决！
       final score = getChineseSentenceMatchScore(asrText, targetChinese);
-      if (score >= 85 && (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.7).ceil())) {
-        Global.logger.d('~~~~~[翻译例句] 用户停顿后本地高分匹配判定通过(score=$score): asrText="$asrText"');
+      final isCoreMatched = isChineseSentenceCoreKeywordsMatched(
+        asrText,
+        targetChinese,
+        wordWrapper.word,
+        targetPinyinsCache: wordWrapper.targetPinyinsCache,
+      );
+      if (score >= 60 && isCoreMatched && (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.5).ceil())) {
+        Global.logger.d('~~~~~[翻译例句] 用户停顿后本地匹配判定通过(score=$score, isCoreMatched=true): asrText="$asrText"');
         _playCorrectSound();
         setState(() {
           wordWrapper.sentenceTranslatedPassed = true;

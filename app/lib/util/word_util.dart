@@ -422,3 +422,44 @@ int getChineseSentenceMatchScore(String input, String target) {
   final ratio = lcs / cleanTarget.length;
   return (ratio * 100).round();
 }
+
+/// 检查用户的中文识别结果中是否说出了目标词释义（参考背单词页面英中模式的判定逻辑，基于 fuzzyChineseContains 与释义项子项匹配）
+bool isChineseSentenceCoreKeywordsMatched(
+  Object asrInput,
+  String targetChinese,
+  WordVo word, {
+  Map<String, List<List<PinyinParser>>>? targetPinyinsCache,
+}) {
+  // 1. 优先检查 targetChinese 中的加粗核心词 <b>...</b>
+  final boldRegExp = RegExp(r'<b>(.*?)</b>', caseSensitive: false);
+  final boldMatches = boldRegExp.allMatches(targetChinese)
+      .map((m) => m.group(1)?.trim() ?? '')
+      .where((s) => s.isNotEmpty)
+      .toList();
+
+  for (final boldWord in boldMatches) {
+    if (fuzzyChineseContains(asrInput, boldWord, targetPinyinsCache: targetPinyinsCache)) {
+      return true;
+    }
+  }
+
+  // 2. 参考背单词英中模式：检查是否命中目标单词的任意释义子项
+  final meaningItems = word.getMergedMeaningItems();
+  for (final meaningItem in meaningItems) {
+    if (meaningItem.meaning == null) continue;
+    final parts = splitMeaning2Parts(meaningItem.meaning!);
+    for (final part in parts) {
+      if (_isWholeBracketed(part)) continue;
+      if (fuzzyChineseContains(asrInput, part, targetPinyinsCache: targetPinyinsCache)) {
+        return true;
+      }
+    }
+  }
+
+  // 如果目标句无 <b> 加粗且单词无释义项，默认视为通过
+  if (boldMatches.isEmpty && meaningItems.isEmpty) {
+    return true;
+  }
+
+  return false;
+}
