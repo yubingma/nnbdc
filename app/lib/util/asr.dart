@@ -560,14 +560,34 @@ class Asr {
     }
   }
 
+  Future<void>? _pendingStopMicrophoneFuture;
+
   /// 物理关停麦克风与 ASR 引擎，不再越权配置全局音频会话
   Future<void> stopMicrophone() async {
-    debugPrint('💡 [ASR] stopMicrophone() 触发关停。当前状态: $state。');
     if (PlatformUtils.isWeb ||
         PlatformUtils.isWindows ||
         PlatformUtils.isMacOS) {
       return;
     }
+
+    if (_pendingStopMicrophoneFuture != null) {
+      debugPrint('💡 [ASR] stopMicrophone() 已有正在进行的关停操作，复用该 Future。');
+      return _pendingStopMicrophoneFuture;
+    }
+
+    final future = _doStopMicrophone();
+    _pendingStopMicrophoneFuture = future;
+    try {
+      await future;
+    } finally {
+      if (_pendingStopMicrophoneFuture == future) {
+        _pendingStopMicrophoneFuture = null;
+      }
+    }
+  }
+
+  Future<void> _doStopMicrophone() async {
+    debugPrint('💡 [ASR] stopMicrophone() 触发关停。当前状态: $state。');
 
     // stopped/initialized/unknown 不能直接 return：原生层可能因为 pre-warm 优化
     // 仍然保有活跃的 audio engine tap，导致后续 playback 模式切换永远触发 !pri。
@@ -581,6 +601,8 @@ class Asr {
         debugPrint('💡 [ASR] stopMicrophone() 穿透调用完成，原生引擎已释放。');
       } catch (e) {
         Global.logger.e('ASR: Exception during stopMicrophone ($state passthrough): $e');
+      } finally {
+        setState(AsrState.stopped);
       }
       return;
     }
@@ -594,10 +616,10 @@ class Asr {
       await asrMethodChannel
           .invokeMethod('stopMicrophone')
           .timeout(const Duration(seconds: 3));
-      setState(AsrState.stopped);
       Global.logger.i('ASR: Microphone and engine stopped successfully');
     } catch (e) {
       Global.logger.e('ASR: Exception during stopMicrophone: $e');
+    } finally {
       setState(AsrState.stopped);
     }
   }

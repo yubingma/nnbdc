@@ -151,8 +151,19 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                     }
                 }
                 "stopMicrophone" -> {
-                    stopMicrophone()
-                    result.success(null)
+                    thread {
+                        try {
+                            stopMicrophone()
+                            activity.runOnUiThread {
+                                result.success(null)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to stopMicrophone asynchronously", e)
+                            activity.runOnUiThread {
+                                result.success(null)
+                            }
+                        }
+                    }
                 }
                 "reset" -> {
                     synchronized(this) {
@@ -810,16 +821,27 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     }
 
     private fun stopMicrophone() {
+        if (!isRecording && audioRecord == null && recordingThread == null && currentStream == null) {
+            return
+        }
         Log.i(TAG, "Stopping Microphone (Cold Stop)...")
         isRecording = false
         isAsrStopped = true
         
         try {
-            recordingThread?.join(1000)
+            recordingThread?.join(500)
             recordingThread = null
             
-            audioRecord?.stop()
-            audioRecord?.release()
+            try {
+                audioRecord?.stop()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error stopping audioRecord: ${e.message}")
+            }
+            try {
+                audioRecord?.release()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error releasing audioRecord: ${e.message}")
+            }
             audioRecord = null
             
             synchronized(this) {
