@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
-import 'package:provider/provider.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/theme/app_theme.dart';
-import 'package:nnbdc/state.dart';
 
 class EnglishAsrInputWidget extends StatefulWidget {
   final TextEditingController controller;

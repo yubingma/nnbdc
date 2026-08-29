@@ -18,6 +18,7 @@ import 'package:nnbdc/page/word_list/batch_words.dart';
 import 'package:nnbdc/page/word_list/word_list.dart';
 import 'package:nnbdc/router.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
@@ -68,6 +69,10 @@ class BdcNotifier extends _$BdcNotifier {
   Timer? _learningTimer;
   Timer? _persistTimer;
   Timer? _checkAsrDebounceTimer;
+  Timer? _wordAiRefereeDebounceTimer;
+  final Set<String> _failedWordAiEvaluationsForCurrentWord = {};
+  int _wordAiEvaluationCountForCurrentWord = 0;
+  bool _isWordAiRefereeJudging = false;
   /// 播放取消令牌：每次换词或用户手动操作时递增，使旧延迟 callback 失效。
   int _playToken = 0;
   /// 页面过渡屏障：详情页弹出时，让音频播放等待页面动画完成再启动，
@@ -112,6 +117,7 @@ class BdcNotifier extends _$BdcNotifier {
       _learningTimer?.cancel();
       _persistTimer?.cancel();
       _checkAsrDebounceTimer?.cancel();
+      _wordAiRefereeDebounceTimer?.cancel();
       progressBarTapTimer?.cancel();
       _syncLearningTimeToDb();
       asr.removeStateListener(_onAsrStateChanged);
@@ -469,6 +475,10 @@ class BdcNotifier extends _$BdcNotifier {
     if (getWordResult == null) return false;
     _isAnswerCorrectHandling = false; // 新词开始，安全重置答对锁
     _lastCorrectSoundTime = null; // 重置正确反馈音播放时间
+    _wordAiRefereeDebounceTimer?.cancel();
+    _failedWordAiEvaluationsForCurrentWord.clear();
+    _wordAiEvaluationCountForCurrentWord = 0;
+    _isWordAiRefereeJudging = false;
     final totalStopwatch = Stopwatch()..start();
     
     // 防止处理同一个结果引发的循环
@@ -1957,6 +1967,7 @@ class BdcNotifier extends _$BdcNotifier {
       Global.logger.d('[PERF] checkAsrResult -> matchInputChineseWithMeaningItems cost: ${matchStopwatch.elapsedMilliseconds}ms');
       
       if (result.newMatchCount > 0) {
+        _wordAiRefereeDebounceTimer?.cancel(); // 本地匹配命中，取消待触发的AI裁判
         state = state.copyWith(
           canLeaveCurrWord: true,
           wordWrapper: clonedWrapper,
@@ -1979,6 +1990,9 @@ class BdcNotifier extends _$BdcNotifier {
         } else {
           _playCorrectSound();
         }
+      } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
+        // 本地未匹配成功：触发单词 AI 裁判防抖判定
+        _scheduleWordAiRefereeCheck(inputs);
       }
     } else if (state.studyStep == StudyStep.ch2En.json) {
       if (isSpellingMatch) {
@@ -3051,6 +3065,122 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
+  /// 当用户说出中文释义但本地未命中时，触发大模型裁判防抖调度（1500ms）
+  void _scheduleWordAiRefereeCheck(List<String> inputs) {
+    _wordAiRefereeDebounceTimer?.cancel();
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling || _isWordAiRefereeJudging) return;
+    if (state.studyStep != StudyStep.en2Ch.json) return;
+
+    final String asrText = inputs.isNotEmpty ? inputs.first : meaningController.text;
+    final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+    if (cleanInput.isEmpty) return;
+
+    // 过滤同词已判错的文本
+    if (_failedWordAiEvaluationsForCurrentWord.contains(cleanInput)) return;
+
+    // 单词请求频次上限
+    if (_wordAiEvaluationCountForCurrentWord >= 5) return;
+
+    _wordAiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
+      await _evaluateWordWithAiReferee(cleanInput, rawInput: asrText, candidates: inputs);
+    });
+  }
+
+  /// 执行单词中文释义大模型智能裁决
+  Future<void> _evaluateWordWithAiReferee(
+    String cleanInput, {
+    String? rawInput,
+    List<String>? candidates,
+    BuildContext? context,
+  }) async {
+    if (_isDisposed || _isWordAiRefereeJudging) return;
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+    final word = state.word;
+    final wordWrapper = state.wordWrapper;
+    if (word == null || wordWrapper == null) return;
+
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+
+    final checkWordId = word.id;
+    _isWordAiRefereeJudging = true;
+    _wordAiEvaluationCountForCurrentWord++;
+    wordWrapper.isAiEvaluating = true;
+    state = state.copyWith(isAiEvaluating: true);
+
+    final targetWord = word.spell;
+    final referenceMeanings = word.getMeaningStr();
+    final userInput = rawInput ?? cleanInput;
+
+    Global.logger.d('~~~~~[AI裁判-单词] 启动大模型裁判(第$_wordAiEvaluationCountForCurrentWord次): word="$targetWord", meanings="$referenceMeanings", input="$userInput"');
+
+    try {
+      final refereeResult = await AiRefereeUtil.judgeWordMeaning(
+        targetWord: targetWord,
+        referenceMeanings: referenceMeanings,
+        userInput: userInput,
+        candidates: candidates,
+        userId: user.id,
+      );
+
+      if (_isDisposed || state.word?.id != checkWordId) {
+        Global.logger.d('~~~~~[AI裁判-单词] 单词已切换或已销毁，丢弃裁判结果');
+        return;
+      }
+
+      final isCorrect = refereeResult.isCorrect;
+      final explanation = refereeResult.explanation;
+      Global.logger.d('~~~~~[AI裁判-单词] 裁判结果: isCorrect=$isCorrect, response=${refereeResult.rawResponse}');
+
+      if (isCorrect) {
+        wordWrapper.isAiEvaluating = false;
+        wordWrapper.markAllMeaningsAsAiMatched(approvedAnswer: cleanInput.isNotEmpty ? cleanInput : userInput);
+
+        state = state.copyWith(
+          isAiEvaluating: false,
+          canLeaveCurrWord: true,
+          isScorePassed: true,
+          wordWrapper: wordWrapper,
+        );
+
+        if (context != null && context.mounted) {
+          await showAiRefereeDialog(context, isCorrect: true, explanation: '');
+        }
+
+        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+          await StudyAudioSessionController.instance.syncHardwareIntent(
+            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isAnsweringActive: false,
+            language: AsrLanguage.english,
+            phrases: [],
+            caller: this,
+          );
+        }
+        final ratingResult = _calculateRating("AI裁判");
+        _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+      } else {
+        _failedWordAiEvaluationsForCurrentWord.add(cleanInput);
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+        if (context != null && context.mounted) {
+          await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
+          if (!_isDisposed) _handleTabChangeForAsr();
+        }
+      }
+    } catch (e, st) {
+      Global.logger.e("AI单词裁判判分出错", error: e, stackTrace: st);
+      if (!_isDisposed) {
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+      }
+      if (context != null && context.mounted) {
+        ToastUtil.error("AI 裁判开小差了，请重试");
+      }
+    } finally {
+      _isWordAiRefereeJudging = false;
+    }
+  }
+
   Future<void> evaluateWithAiReferee(BuildContext context) async {
     final userResponseTime = state.wordStartTime != null
         ? AppClock.now().difference(state.wordStartTime!).inSeconds
@@ -3058,6 +3188,41 @@ class BdcNotifier extends _$BdcNotifier {
 
     final word = state.word;
     if (word == null) return;
+
+    // 单词英中模式：调用单词 AI 裁判
+    if (state.studyStep == StudyStep.en2Ch.json) {
+      final recognizedText = state.currentAsrCandidates.isNotEmpty
+          ? state.currentAsrCandidates.first
+          : '';
+      final userInput = recognizedText.isNotEmpty
+          ? recognizedText
+          : meaningController.text;
+
+      if (userInput.trim().isEmpty) {
+        ToastUtil.error("请先回答问题");
+        return;
+      }
+
+      try {
+        await asr.stopAsr();
+      } catch (_) {}
+
+      await Api.loadingService.show(status: 'AI裁判裁决中...');
+      try {
+        if (!context.mounted) return;
+        final cleanInput = userInput.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+        await _evaluateWordWithAiReferee(
+          cleanInput,
+          rawInput: userInput,
+          candidates: state.currentAsrCandidates,
+          context: context,
+        );
+      } finally {
+        await Api.loadingService.dismiss();
+      }
+      return;
+    }
+
     final sentence = (word.sentences != null && word.sentences!.isNotEmpty)
         ? word.sentences!.first
         : null;
@@ -3097,83 +3262,37 @@ class BdcNotifier extends _$BdcNotifier {
       final sourceText = isEn2Ch ? (sentence.english ?? "") : (sentence.chinese ?? "");
       final referenceText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
 
-      final systemPrompt = '''
-You are an expert bilingual translation referee. Your task is to judge whether the user's translation accurately conveys the meaning of the source sentence.
-
-CRITICAL INSTRUCTIONS & CONSTRAINTS:
-1. CORE ENTITIES & KEY COMPONENTS MUST BE ACCURATE:
-   - The key subject, core verbs, and essential objects of the sentence MUST be present and correctly expressed.
-   - If a core subject or entity is completely wrong, missing, or replaced with an unrelated word (e.g. "The dove" translated/recognized as "琼艇/游艇/潜艇/汽车", or "doctor" as "教师"), you MUST judge it as FALSE {"isCorrect": false}.
-
-2. STRICT CRITERIA FOR SPEECH RECOGNITION (ASR) ACOUSTIC TOLERANCE:
-   - In Chinese: Homophones & Structural Particles (他/她/它, 的/得/地, 在/再, 座/做/作, 像/向/相, 进/近) are interchangeable.
-   - Genuine Pinyin/Phonetic Similarity: ONLY tolerate acoustic errors where the pronunciation is GENUINELY similar in context (e.g. "鸽子" vs "格子/歌子", "苹果" vs "平果").
-   - NEVER tolerate completely different pronunciations or fabricated entities (e.g. "qióng tǐng" has NO phonetic similarity to "gē zi", so "琼艇" must NOT be accepted for "dove/鸽子").
-
-3. SEMANTIC FAITHFULNESS:
-   - Allow natural synonymous expressions and varied natural syntax as long as all core components of the source sentence are faithfully and fully conveyed.
-
-Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
-{"isCorrect": true} if the translation is faithful and all core entities/meanings are correct.
-{"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
-''';
-      final userPrompt = 'Exercise Type: ${state.studyStep}\nSource Sentence: $sourceText\nReference Translation: $referenceText\nUser Answer: $userInput';
-
-      final messages = [
-        {"role": "system", "content": systemPrompt},
-        {"role": "user", "content": userPrompt}
-      ];
-      final messagesJson = jsonEncode(messages);
-
-      final result = await Api.client.aiChat(messagesJson, user.id);
+      final refereeResult = await AiRefereeUtil.judgeSentenceTranslation(
+        sourceSentence: sourceText,
+        referenceTranslation: referenceText,
+        userInput: userInput,
+        exerciseType: state.studyStep,
+        userId: user.id,
+      );
 
       await Api.loadingService.dismiss();
 
-      if (result.success && result.data != null) {
-        final responseText = result.data!.trim();
-        String cleanJson = responseText;
-        if (cleanJson.contains('```')) {
-          final regExp = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```');
-          final match = regExp.firstMatch(cleanJson);
-          if (match != null) {
-            cleanJson = match.group(1) ?? cleanJson;
-          }
+      if (!context.mounted) return;
+
+      if (refereeResult.isCorrect) {
+        // 判定通过:对话框告知结果,关闭后进入答对流程
+        await showAiRefereeDialog(context, isCorrect: true, explanation: '');
+        _isAnswerCorrectHandling = true;
+        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+          await StudyAudioSessionController.instance.syncHardwareIntent(
+            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isAnsweringActive: false,
+            language: AsrLanguage.english,
+            phrases: [],
+            caller: this,
+          );
         }
-
-        final startIdx = cleanJson.indexOf('{');
-        final endIdx = cleanJson.lastIndexOf('}');
-        if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
-          cleanJson = cleanJson.substring(startIdx, endIdx + 1);
-        }
-
-        final parsed = jsonDecode(cleanJson.trim());
-        final isCorrect = parsed['isCorrect'] as bool? ?? false;
-        final explanation = parsed['explanation'] as String? ?? '';
-
-        if (!context.mounted) return; // async 间隙后确保 context 仍有效
-
-        if (isCorrect) {
-          // 判定通过:对话框告知结果,关闭后进入答对流程
-          await showAiRefereeDialog(context, isCorrect: true, explanation: '');
-          _isAnswerCorrectHandling = true;
-          if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-            await StudyAudioSessionController.instance.syncHardwareIntent(
-              isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
-              isAnsweringActive: false,
-              language: AsrLanguage.english,
-              phrases: [],
-              caller: this,
-            );
-          }
-          final ratingResult = _calculateRating("AI裁判", customResponseTime: userResponseTime);
-          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-        } else {
-          // 判定失败:对话框显示解释,关闭后自动重启 ASR 让用户重试
-          await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
-          if (!_isDisposed) _handleTabChangeForAsr();
-        }
+        final ratingResult = _calculateRating("AI裁判", customResponseTime: userResponseTime);
+        _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
       } else {
-        ToastUtil.error(result.msg ?? "调用 AI 裁判失败");
+        // 判定失败:对话框显示解释,关闭后自动重启 ASR 让用户重试
+        await showAiRefereeDialog(context, isCorrect: false, explanation: refereeResult.explanation);
+        if (!_isDisposed) _handleTabChangeForAsr();
       }
     } catch (e, st) {
       await Api.loadingService.dismiss();

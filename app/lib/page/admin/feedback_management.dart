@@ -1279,12 +1279,16 @@ class _ReplyDialogState extends State<_ReplyDialog> {
           children: [
             const Icon(Icons.chat_bubble_outline),
             const SizedBox(width: 8),
-            Text(
-              '与 ${widget.message.fromUser.nickName ?? widget.message.fromUser.userName} 的对话',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: textColor,
+            Expanded(
+              child: Text(
+                '与 ${widget.message.fromUser.nickName ?? widget.message.fromUser.userName} 的对话',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
               ),
             ),
           ],

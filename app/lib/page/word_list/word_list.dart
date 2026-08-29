@@ -13,6 +13,7 @@ import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/sort_alg.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/constants.dart';
+import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/asr_util.dart';
 import 'package:nnbdc/util/loading_utils.dart';
@@ -759,6 +760,7 @@ class WordListPageState extends State<WordListPage>
         });
 
         if (result.newMatchCount > 0) {
+          _aiRefereeDebounceTimer?.cancel();
           bool isPass = false;
           switch (asrPassRule) {
             case 'HALF':
@@ -775,6 +777,9 @@ class WordListPageState extends State<WordListPage>
           if (isPass) {
             canLeaveCurrWord = true;
           }
+        } else if (!words[currWordIndex].answeredAllMeanings) {
+          // 本地未命中：触发单词 AI 裁判防抖判定
+          _scheduleWordAiRefereeCheck(currWordIndex, words[currWordIndex], asrResult);
         }
       }
 
@@ -1507,6 +1512,119 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
+  /// 当用户停顿一小段时间后，触发单词大模型裁判对释义进行智能容错判决
+  void _scheduleWordAiRefereeCheck(int wordIndex, WordWrapper wordWrapper, String asrText) {
+    _aiRefereeDebounceTimer?.cancel();
+    if (wordWrapper.answeredAllMeanings) return;
+
+    final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+    if (cleanInput.isEmpty) return;
+
+    if (_failedAiEvaluationsForCurrentWord.contains(cleanInput)) return;
+    if (_aiEvaluationCountForCurrentWord >= 5) return;
+
+    _aiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
+      if (!mounted) return;
+      if (studyMode != WordListStudyMode.speakChinese) return;
+      if (wordWrapper.answeredAllMeanings) return;
+      if (_isAiRefereeJudging) return;
+      final currentIdx = getBookMarkUiPosition();
+      if (currentIdx != wordIndex) return;
+
+      await _evaluateWordWithAiReferee(wordIndex, wordWrapper, asrText, cleanInput);
+    });
+  }
+
+  /// 执行单词中文释义大模型智能裁决
+  Future<void> _evaluateWordWithAiReferee(
+      int wordIndex, WordWrapper wordWrapper, String userInput, String cleanInput) async {
+    if (_isAiRefereeJudging) return;
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+
+    final targetWord = wordWrapper.word.spell;
+    final referenceMeanings = wordWrapper.word.getMeaningStr();
+    if (targetWord.isEmpty) return;
+
+    final checkWordId = wordWrapper.word.id;
+    _isAiRefereeJudging = true;
+    _aiEvaluationCountForCurrentWord++;
+    setState(() {
+      wordWrapper.isAiEvaluating = true;
+    });
+    Global.logger.d('~~~~~[AI裁判-单词] 启动大模型裁判(第$_aiEvaluationCountForCurrentWord次): word="$targetWord", meanings="$referenceMeanings", input="$userInput"');
+
+    try {
+      final refereeResult = await AiRefereeUtil.judgeWordMeaning(
+        targetWord: targetWord,
+        referenceMeanings: referenceMeanings,
+        userInput: userInput,
+        userId: user.id,
+      );
+
+      if (!mounted) return;
+      if (studyMode != WordListStudyMode.speakChinese) return;
+      if (getBookMarkUiPosition() != wordIndex || words[wordIndex].word.id != checkWordId) {
+        Global.logger.d('~~~~~[AI裁判-单词] 单词已切换，放弃本次AI裁判结果');
+        return;
+      }
+
+      final isCorrect = refereeResult.isCorrect;
+      Global.logger.d('~~~~~[AI裁判-单词] 裁判结果: isCorrect=$isCorrect, response=${refereeResult.rawResponse}');
+
+      if (isCorrect) {
+        _playCorrectSound();
+        setState(() {
+          wordWrapper.markAllMeaningsAsAiMatched(approvedAnswer: cleanInput.isNotEmpty ? cleanInput : userInput);
+        });
+
+        try {
+          await _sessionController.stopSession(forceStopMicrophone: false).timeout(
+            const Duration(milliseconds: 500),
+            onTimeout: () {
+              Global.logger.w('停止ASR超时');
+            },
+          );
+        } catch (e) {
+          Global.logger.d("停止ASR失败: $e");
+        }
+
+        var nextWordIndex = wordIndex + 1;
+        while (nextWordIndex < words.length) {
+          if (!words[nextWordIndex].answeredAllMeanings) break;
+          nextWordIndex += 1;
+        }
+
+        if (words.every((w) => w.answeredAllMeanings)) {
+          ToastUtil.info("恭喜，你答对了所有单词");
+          return;
+        }
+
+        if (nextWordIndex < words.length) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (!mounted) return;
+            jumpToNextWord(nextWordIndex - 1, true, () {
+              asrResult = "";
+              handlingAsrChinese = "";
+              asrController.resetResult();
+            });
+          });
+        }
+      } else {
+        _failedAiEvaluationsForCurrentWord.add(cleanInput);
+      }
+    } catch (e, st) {
+      Global.logger.e("AI单词裁判判分出错", error: e, stackTrace: st);
+    } finally {
+      _isAiRefereeJudging = false;
+      if (mounted) {
+        setState(() {
+          wordWrapper.isAiEvaluating = false;
+        });
+      }
+    }
+  }
+
   /// 当用户停顿一小段时间后，触发大模型裁判对翻译进行智能容错二次判决
   void _scheduleAiRefereeCheck(int wordIndex, WordWrapper wordWrapper, String asrText) {
     _aiRefereeDebounceTimer?.cancel();
@@ -1618,40 +1736,13 @@ class WordListPageState extends State<WordListPage>
     Global.logger.d('~~~~~[AI裁判] 启动大模型裁判(第$_aiEvaluationCountForCurrentWord次): source="$sourceEnglish", target="$referenceChinese", input="$userInput"');
 
     try {
-      final systemPrompt = '''
-You are an expert bilingual translation referee. Your task is to judge whether the user's Chinese translation accurately conveys the meaning of the source English sentence.
-
-CRITICAL INSTRUCTIONS & CONSTRAINTS:
-1. CORE ENTITIES & KEY COMPONENTS MUST BE ACCURATE:
-   - The key subject, core verbs, and essential objects of the sentence MUST be present and correctly expressed.
-   - If a core subject or entity is completely wrong, missing, or replaced with an unrelated word (e.g. "The dove" translated/recognized as "琼艇/游艇/潜艇/汽车", or "doctor" as "教师"), you MUST judge it as FALSE {"isCorrect": false}.
-
-2. STRICT CRITERIA FOR SPEECH RECOGNITION (ASR) ACOUSTIC TOLERANCE:
-   - Homophones & Structural Particles: Pronouns (他/她/它) and structural particles (的/得/地, 在/再, 座/做/作, 像/向/相, 进/近) are interchangeable.
-   - Genuine Pinyin Similarity: ONLY tolerate acoustic errors where the Chinese pinyin/pronunciation is GENUINELY similar in context (e.g. "鸽子" vs "格子/歌子", "苹果" vs "平果").
-   - NEVER tolerate completely different pronunciations or fabricated entities (e.g. "qióng tǐng" has NO phonetic similarity to "gē zi", so "琼艇" must NOT be accepted for "dove/鸽子").
-
-3. SEMANTIC FAITHFULNESS:
-   - Allow natural synonymous expressions and varied Chinese sentence structures as long as all core components of the source English sentence are faithfully and fully conveyed.
-
-Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
-{"isCorrect": true} if the translation is faithful and all core entities/meanings are correct.
-{"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
-''';
-
-      final userPrompt = '''
-Source Sentence: $sourceEnglish
-Reference Translation: $referenceChinese
-User's Speech-to-Text Input: $userInput
-''';
-
-      final messages = [
-        {"role": "system", "content": systemPrompt},
-        {"role": "user", "content": userPrompt}
-      ];
-
-      final messagesJson = jsonEncode(messages);
-      final result = await Api.client.aiChat(messagesJson, user.id);
+      final refereeResult = await AiRefereeUtil.judgeSentenceTranslation(
+        sourceSentence: sourceEnglish,
+        referenceTranslation: referenceChinese,
+        userInput: userInput,
+        exerciseType: 'SentenceTranslation',
+        userId: user.id,
+      );
 
       if (!mounted) return;
       if (studyMode != WordListStudyMode.translateSentence) return;
@@ -1660,68 +1751,48 @@ User's Speech-to-Text Input: $userInput
         return;
       }
 
-      if (result.success && result.data != null) {
-        String cleanJson = result.data!.trim();
-        if (cleanJson.contains('```')) {
-          final regExp = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```');
-          final match = regExp.firstMatch(cleanJson);
-          if (match != null) {
-            cleanJson = match.group(1) ?? cleanJson;
-          }
+      final isCorrect = refereeResult.isCorrect;
+      Global.logger.d('~~~~~[AI裁判] 裁判结果: isCorrect=$isCorrect, response=${refereeResult.rawResponse}');
+
+      if (isCorrect) {
+        _playCorrectSound();
+        setState(() {
+          wordWrapper.sentenceTranslatedPassed = true;
+          wordWrapper.answeredAllMeanings = true;
+          wordWrapper.isAiEvaluatedPassed = true;
+        });
+
+        try {
+          await _sessionController.stopSession(forceStopMicrophone: false).timeout(
+            const Duration(milliseconds: 500),
+            onTimeout: () {
+              Global.logger.w('停止ASR超时');
+            },
+          );
+        } catch (e) {
+          Global.logger.d("停止ASR失败: $e");
         }
-        final startIdx = cleanJson.indexOf('{');
-        final endIdx = cleanJson.lastIndexOf('}');
-        if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
-          cleanJson = cleanJson.substring(startIdx, endIdx + 1);
+
+        var nextWordIndex = wordIndex + 1;
+        while (nextWordIndex < words.length) {
+          if (!words[nextWordIndex].answeredAllMeanings) break;
+          nextWordIndex += 1;
         }
 
-        final parsed = jsonDecode(cleanJson.trim());
-        final isCorrect = parsed['isCorrect'] as bool? ?? false;
-        Global.logger.d('~~~~~[AI裁判] 裁判结果: isCorrect=$isCorrect, response=${result.data}');
+        if (words.every((w) => w.answeredAllMeanings)) {
+          ToastUtil.info("恭喜，你答对了所有单词");
+          return;
+        }
 
-        if (isCorrect) {
-          _playCorrectSound();
-          setState(() {
-            wordWrapper.sentenceTranslatedPassed = true;
-            wordWrapper.answeredAllMeanings = true;
-            wordWrapper.isAiEvaluatedPassed = true;
-          });
-
-          try {
-            await _sessionController.stopSession(forceStopMicrophone: false).timeout(
-              const Duration(milliseconds: 500),
-              onTimeout: () {
-                Global.logger.w('停止ASR超时');
-              },
-            );
-          } catch (e) {
-            Global.logger.d("停止ASR失败: $e");
-          }
-
-          var nextWordIndex = wordIndex + 1;
-          while (nextWordIndex < words.length) {
-            if (!words[nextWordIndex].answeredAllMeanings) break;
-            nextWordIndex += 1;
-          }
-
-          if (words.every((w) => w.answeredAllMeanings)) {
-            ToastUtil.info("恭喜，你答对了所有单词");
-            return;
-          }
-
-          if (nextWordIndex < words.length) {
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (!mounted) return;
-              jumpToNextWord(nextWordIndex - 1, true, () {
-                asrResult = "";
-                handlingAsrChinese = "";
-                asrController.resetResult();
-              });
+        if (nextWordIndex < words.length) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (!mounted) return;
+            jumpToNextWord(nextWordIndex - 1, true, () {
+              asrResult = "";
+              handlingAsrChinese = "";
+              asrController.resetResult();
             });
-          }
-        } else {
-          // 判定错误，加入去重缓存，避免对相同内容重复调用
-          _failedAiEvaluationsForCurrentWord.add(cleanInput);
+          });
         }
       } else {
         _failedAiEvaluationsForCurrentWord.add(cleanInput);

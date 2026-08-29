@@ -84,6 +84,9 @@ class BdcState extends Equatable {
   /// 例句环节 PTT(按下说话)按钮是否处于按住状态
   final bool isPttPressed;
 
+  /// 大模型裁判是否正在判定中（单词中英/例句环节通用）
+  final bool isAiEvaluating;
+
   const BdcState({
     this.dataLoaded = false,
     this.isGettingNextWord = false,
@@ -144,6 +147,7 @@ class BdcState extends Equatable {
     this.loadError,
     this.isSelectModePreferred = false,
     this.isPttPressed = false,
+    this.isAiEvaluating = false,
   });
 
   bool get autoJumpAfterCorrect {
@@ -219,6 +223,7 @@ class BdcState extends Equatable {
     Object? loadError = _sentinel,
     bool? isSelectModePreferred,
     bool? isPttPressed,
+    bool? isAiEvaluating,
   }) {
     return BdcState(
       dataLoaded: dataLoaded ?? this.dataLoaded,
@@ -280,6 +285,7 @@ class BdcState extends Equatable {
       loadError: loadError == _sentinel ? this.loadError : (loadError as String?),
       isSelectModePreferred: isSelectModePreferred ?? this.isSelectModePreferred,
       isPttPressed: isPttPressed ?? this.isPttPressed,
+      isAiEvaluating: isAiEvaluating ?? this.isAiEvaluating,
     );
   }
 
@@ -344,5 +350,6 @@ class BdcState extends Equatable {
     loadError,
     isSelectModePreferred,
     isPttPressed,
+    isAiEvaluating,
   ];
 }

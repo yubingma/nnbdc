@@ -813,7 +813,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        if (isSentence && !state.hasFinishedAnswering && hasInput) ...[
+        if ((isSentence || state.studyStep == StudyStep.en2Ch.json) && !state.hasFinishedAnswering && hasInput) ...[
           ElevatedButton.icon(
             icon: const Icon(Icons.gavel_rounded, size: 18),
             label: const Text('AI裁判', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1303,6 +1303,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     final currentAsrState = ref.watch(bdcNotifierProvider.select((s) => s.asrState));
                     final currentScore = ref.watch(bdcNotifierProvider.select((s) => s.currentScore));
                     final isScorePassed = ref.watch(bdcNotifierProvider.select((s) => s.isScorePassed || s.hasFinishedAnswering));
+                    final isAiEvaluating = ref.watch(bdcNotifierProvider.select((s) => s.isAiEvaluating));
                     
                     final bool isChineseInput = state.studyStep == StudyStep.en2Ch.json ||
                                                 state.studyStep == StudyStep.enSentence2Ch.json;
@@ -1319,6 +1320,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             score: currentScore,
                             isScorePassed: isScorePassed,
                             isSentenceStep: isSentence,
+                            isAiEvaluating: isAiEvaluating,
                           )
                         : EnglishAsrInputWidget(
                             controller: notifier.meaningController,
@@ -1423,6 +1425,10 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   : const Color(0xFF4B5563),
                             ),
                           ),
+                          if (state.isAiEvaluating) ...[
+                            const SizedBox(width: 8),
+                            _buildAiJudgingBadge(_cachedIsDarkMode),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -1485,6 +1491,44 @@ extension BdcPageStateUIComponents on BdcPageState {
       }
     }
     return buffer.toString();
+  }
+
+  Widget _buildAiJudgingBadge(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: const Color(0xFF8B5CF6).withValues(alpha: 0.6),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 8.5,
+            height: 8.5,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+            ),
+          ),
+          const SizedBox(width: 3.5),
+          Text(
+            'AI判定中...',
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSpellingExerciseButton(bool isDarkMode) {

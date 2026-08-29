@@ -110,6 +110,9 @@ class WordWrapper {
   /// 在“翻译例句”模式下大模型裁判是否正在判定中
   bool isAiEvaluating = false;
 
+  /// 大模型裁判认可的用户回答（例如词库为"薪水"，用户回答"工资"被 AI 认可）
+  String? aiApprovedAnswer;
+
   /// 最近一次的语音识别结果（用于展示）
   String? lastAsrResult;
 
@@ -118,6 +121,25 @@ class WordWrapper {
   double? maxProgress;
 
   WordWrapper(this.word, this.tag);
+  
+  /// 标记所有释义项为已被 AI 认可并全部匹配
+  void markAllMeaningsAsAiMatched({String? approvedAnswer}) {
+    isAiEvaluatedPassed = true;
+    aiApprovedAnswer = approvedAnswer;
+    answeredAllMeanings = true;
+    var meaningItems = word.getMergedMeaningItems();
+    for (var i = 0; i < meaningItems.length; i++) {
+      var meaningItem = meaningItems[i];
+      if (meaningItem.meaning == null) continue;
+      var parts = splitMeaning2Parts(meaningItem.meaning!);
+      for (var j = 0; j < parts.length; j++) {
+        var pair = Pair(i, j);
+        if (!asrMatchedMeaningItemParts.contains(pair)) {
+          asrMatchedMeaningItemParts.add(pair);
+        }
+      }
+    }
+  }
   
   /// 揭示所有尚未匹配的释义项（标记为自动展现）
   void revealAllRemainingMeanings() {
@@ -154,6 +176,7 @@ class WordWrapper {
       ..sentenceTranslatedPassed = sentenceTranslatedPassed
       ..isAiEvaluatedPassed = isAiEvaluatedPassed
       ..isAiEvaluating = isAiEvaluating
+      ..aiApprovedAnswer = aiApprovedAnswer
       ..lastAsrResult = lastAsrResult
       ..currentProgress = currentProgress
       ..maxProgress = maxProgress;
@@ -260,6 +283,46 @@ bool _isWholeBracketed(String s) {
 List<Widget> renderAsrMeaningItems(WordWrapper word,
     {bool isDarkMode = false}) {
   List<Widget> items = [];
+
+  // 如果是由大模型裁判认可的回答，在顶部展示 AI 认可回显气泡
+  if (word.aiApprovedAnswer != null && word.aiApprovedAnswer!.isNotEmpty) {
+    items.add(
+      Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+          decoration: BoxDecoration(
+            color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.auto_awesome,
+                size: 13,
+                color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+              ),
+              const SizedBox(width: 4.5),
+              Text(
+                'AI 认可回答: "${word.aiApprovedAnswer}"',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<MeaningItemVo> meaningItems = word.word.getMergedMeaningItems();
   for (var i = 0; i < meaningItems.length; i++) {
     var meaningItem = meaningItems[i];
