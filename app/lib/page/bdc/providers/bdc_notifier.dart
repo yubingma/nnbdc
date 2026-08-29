@@ -3361,14 +3361,12 @@ class BdcNotifier extends _$BdcNotifier {
         _failedWordAiEvaluationsForCurrentWord.add(cleanInput);
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);
-        if (context != null && context.mounted) {
-          if (isSynonym && explanation.isNotEmpty) {
-            ToastUtil.info(explanation);
-          } else {
-            await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
-          }
-          if (!_isDisposed) _handleTabChangeForAsr();
+        if (isSynonym && explanation.isNotEmpty) {
+          ToastUtil.info(explanation, autoCloseDuration: const Duration(seconds: 4));
+        } else if (context != null && context.mounted) {
+          await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
         }
+        if (!_isDisposed) _handleTabChangeForAsr();
       }
     } catch (e, st) {
       Global.logger.e("AI中英单词裁判判分出错", error: e, stackTrace: st);
