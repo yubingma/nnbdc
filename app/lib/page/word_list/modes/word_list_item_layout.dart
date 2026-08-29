@@ -68,8 +68,14 @@ class WordListItemLayout extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    if (centerContent != null) Expanded(flex: 2, child: centerContent!),
-                    if (rightContent != null) Expanded(flex: 3, child: rightContent!),
+                    if (centerContent != null && rightContent != null) ...[
+                      Expanded(flex: 2, child: centerContent!),
+                      Expanded(flex: 3, child: rightContent!),
+                    ] else if (centerContent != null) ...[
+                      Expanded(child: centerContent!),
+                    ] else if (rightContent != null) ...[
+                      Expanded(child: rightContent!),
+                    ],
                   ],
                 ),
               ),
