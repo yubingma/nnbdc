@@ -489,6 +489,13 @@ class WordListPageState extends State<WordListPage>
         _restoreAsrIfNeeded(caller);
       },
     );
+
+    if (studyMode == WordListStudyMode.translateSentence) {
+      final curIdx = getBookMarkUiPosition();
+      if (curIdx >= 0 && curIdx < words.length) {
+        onWordPressed(words[curIdx], curIdx, true, null);
+      }
+    }
   }
 
   /// 检查并显示新手引导
@@ -881,7 +888,8 @@ class WordListPageState extends State<WordListPage>
     if (_isAsrProcessing) return;
 
     if (studyMode == WordListStudyMode.speakChinese ||
-        studyMode == WordListStudyMode.speakEnglish) {
+        studyMode == WordListStudyMode.speakEnglish ||
+        studyMode == WordListStudyMode.translateSentence) {
       if (asr.state != AsrState.started && asr.state != AsrState.stopping) {
         Global.logger
             .d('$caller: 检测到ASR未启动（当前状态: ${asr.state}），尝试恢复ASR，模式: $studyMode');
@@ -2914,6 +2922,10 @@ User's Speech-to-Text Input: $userInput
                                 }
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   jumpToBookMark(force: true);
+                                  final curIdx = getBookMarkUiPosition();
+                                  if (curIdx >= 0 && curIdx < words.length) {
+                                    onWordPressed(words[curIdx], curIdx, true, null);
+                                  }
                                 });
                                 break;
                                 case menuWalkman:

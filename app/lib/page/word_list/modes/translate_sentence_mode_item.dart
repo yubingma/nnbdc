@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/enum.dart';
+import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 import '../word_list_actions.dart';
@@ -79,55 +80,106 @@ class TranslateSentenceModeItem extends StatelessWidget {
   }
 
   Widget _buildEnglishSentenceArea() {
-    final sentenceEn = word.currentSentence?.english;
-    final spell = word.word.spell;
+    if (word.currentSentence != null && (word.currentSentence!.english ?? '').isNotEmpty) {
+      return _buildSentenceContent(word.currentSentence!.english!);
+    }
 
+    if (word.word.sentences != null && word.word.sentences!.isNotEmpty) {
+      word.currentSentence = word.word.sentences!.first;
+      if ((word.currentSentence!.english ?? '').isNotEmpty) {
+        return _buildSentenceContent(word.currentSentence!.english!);
+      }
+    }
+
+    return FutureBuilder<List<SentenceVo>>(
+      future: word.word.getSentences(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData &&
+            snapshot.data!.isNotEmpty) {
+          word.currentSentence ??= snapshot.data!.first;
+          if ((word.currentSentence!.english ?? '').isNotEmpty) {
+            return _buildSentenceContent(word.currentSentence!.english!);
+          }
+        }
+        if (snapshot.connectionState == ConnectionState.done) {
+          return _buildNoSentenceHeader();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode),
+            const SizedBox(height: 2),
+            Text(
+              '加载例句中...',
+              textScaler: const TextScaler.linear(1.0),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDarkMode ? Colors.white38 : Colors.black38,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSentenceContent(String sentenceEn) {
+    final spell = word.word.spell;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (sentenceEn != null && sentenceEn.isNotEmpty) ...[
-          _buildRichSentence(
-            sentenceEn,
-            TextStyle(
-              color: isBookmarked
-                  ? const Color(0xFF0097A7)
-                  : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              height: 1.35,
-            ),
-            boldStyle: TextStyle(
-              color: isBookmarked
-                  ? const Color(0xFF0097A7)
-                  : (isDarkMode ? Colors.white : const Color(0xFF111827)),
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              height: 1.35,
-            ),
+        _buildRichSentence(
+          sentenceEn,
+          TextStyle(
+            color: isBookmarked
+                ? const Color(0xFF0097A7)
+                : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            height: 1.35,
           ),
-          const SizedBox(height: 3),
-          Text(
-            spell,
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontSize: 11,
-              color: isDarkMode ? Colors.white38 : Colors.black38,
-              fontStyle: FontStyle.italic,
-            ),
+          boldStyle: TextStyle(
+            color: isBookmarked
+                ? const Color(0xFF0097A7)
+                : (isDarkMode ? Colors.white : const Color(0xFF111827)),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            height: 1.35,
           ),
-        ] else ...[
-          ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode),
-          const SizedBox(height: 2),
-          Text(
-            '（暂无例句）',
-            textScaler: const TextScaler.linear(1.0),
-            style: TextStyle(
-              fontSize: 12,
-              color: isDarkMode ? Colors.white38 : Colors.black38,
-            ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          spell,
+          textScaler: const TextScaler.linear(1.0),
+          style: TextStyle(
+            fontSize: 11,
+            color: isDarkMode ? Colors.white38 : Colors.black38,
+            fontStyle: FontStyle.italic,
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNoSentenceHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode),
+        const SizedBox(height: 2),
+        Text(
+          '（暂无例句）',
+          textScaler: const TextScaler.linear(1.0),
+          style: TextStyle(
+            fontSize: 12,
+            color: isDarkMode ? Colors.white38 : Colors.black38,
+          ),
+        ),
       ],
     );
   }
