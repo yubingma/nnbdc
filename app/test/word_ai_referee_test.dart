@@ -108,15 +108,15 @@ void main() {
     });
 
     test('AiRefereeUtil.parseRefereeResponse parses ch2En synonym correctly with friendly hint', () {
-      const rawAiResponse = '{"isCorrect": false, "isSynonym": true, "explanation": "「buy」意思正确，但请尝试读出目标词「purchase」"}';
+      const rawAiResponse = '{"isCorrect": false, "isSynonym": true, "explanation": "「buy」意思相近，但请尝试回忆本词"}';
       final parsed = AiRefereeUtil.parseRefereeResponse(rawAiResponse);
       expect(parsed.isCorrect, isFalse);
       expect(parsed.isSynonym, isTrue);
-      expect(parsed.explanation, contains('「buy」意思正确'));
+      expect(parsed.explanation, contains('「buy」意思相近'));
     });
 
     test('AiRefereeUtil.parseRefereeResponse parses ch2En polysemy cross-domain overlap correctly', () {
-      const rawAiResponse = '{"isCorrect": false, "isSynonym": true, "explanation": "「orbit」多指天体轨道，铁轨请尝试读出「railway」"}';
+      const rawAiResponse = '{"isCorrect": false, "isSynonym": true, "explanation": "「orbit」多指天体轨道，请回想本词"}';
       final parsed = AiRefereeUtil.parseRefereeResponse(rawAiResponse);
       expect(parsed.isCorrect, isFalse);
       expect(parsed.isSynonym, isTrue);
