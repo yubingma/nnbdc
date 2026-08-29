@@ -108,14 +108,16 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
    - If the user's input consists of phonetically similar syllables, sound fragments, or common ASR transcription errors of the TARGET WORD (e.g. for "beside": "be side", "besides", "biside", "be side of"; for "discipline": "displain", "disiplin"; for "think": "sink", "fink"; for "walked": "walk"), you MUST judge as TRUE {"isCorrect": true}.
 
 2. SEMANTIC SYNONYM OR CHINESE POLYSEMY OVERLAP (JUDGE FALSE with FRIENDLY EXPLANATION):
-   - If the user spoke a COMPLETELY DIFFERENT English word that is NOT a phonetic approximation of the target word, BUT:
+   - The user input may also be an ASR phonetic transcription artifact of a synonym or polysemous word (e.g., ASR transcribed "albeit" / "albe" / "all bit" when user spoke "orbit"; or "bye" for "buy").
+   - If the user's spoken input (or its obvious acoustic intent, considering Chinese ESL pronunciation) corresponds to:
      a. Direct Synonym: It matches the exact semantic meaning of the target word (e.g., Target is "purchase", user said "buy"; Target is "gigantic", user said "huge/big"; Target is "child", user said "kid").
-     b. Chinese Polysemous / Cross-Domain Overlap: The user's word corresponds to one literal sense of a polysemous Chinese word in the dictionary definition, but belongs to a different domain/context (e.g., Target is "railway" with Chinese definition "铁路；轨道", user said "orbit" which means celestial orbit; or Target is "interest" with definition "利息；兴趣", user said "hobby").
+     b. Chinese Polysemous / Cross-Domain Overlap: The user's intended word corresponds to one literal sense of a polysemous Chinese word in the dictionary definition, but belongs to a different domain/context (e.g., Target is "railway" with Chinese definition "铁路；轨道", user intended "orbit" (or ASR transcribed "albeit"); or Target is "interest" with definition "利息；兴趣", user intended "hobby").
    - You MUST judge as FALSE with isSynonym: true:
      {"isCorrect": false, "isSynonym": true, "explanation": "「orbit」多指天体轨道，请回想本词"}
      or {"isCorrect": false, "isSynonym": true, "explanation": "「buy」意思相近，但请尝试回忆本词"}
+   - In the explanation, prefer using the intended English word (e.g., use "orbit" instead of the acoustic artifact "albeit").
    - CRITICAL CONSTRAINT: NEVER reveal, hint the spelling of, or write out the target English word in the explanation!
-   - The explanation MUST be concise, polite and encouraging in Chinese (max 18 words), only mentioning the user's spoken word.
+   - The explanation MUST be concise, polite and encouraging in Chinese (max 18 words).
 
 3. COMPLETELY UNRELATED OR WRONG:
    - If the spoken input is neither phonetically similar to the target word nor related to any literal Chinese meaning:
@@ -123,7 +125,7 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
 
 Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 {"isCorrect": true}
-{"isCorrect": false, "isSynonym": true, "explanation": "「spoken_word」多指...，请尝试回忆本词"}
+{"isCorrect": false, "isSynonym": true, "explanation": "「intended_word」多指...，请尝试回忆本词"}
 {"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}
 ''';
 
