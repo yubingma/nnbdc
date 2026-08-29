@@ -822,11 +822,14 @@ class WordListPageState extends State<WordListPage>
         }
 
         debugPrint('跳转到下一个单词：$nextWordIndex');
-        jumpToNextWord(nextWordIndex - 1, true, () {
-          asrResult = "";
-          handlingAsrChinese = "";
-          asrController.resetResult();
-          // _startAsr 由 onWordPressed 统一调用，此处不再重复触发
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          jumpToNextWord(nextWordIndex - 1, true, () {
+            asrResult = "";
+            handlingAsrChinese = "";
+            asrController.resetResult();
+            // _startAsr 由 onWordPressed 统一调用，此处不再重复触发
+          });
         });
       }
     } catch (e) {
@@ -1577,10 +1580,13 @@ class WordListPageState extends State<WordListPage>
         }
 
         if (nextWordIndex < words.length) {
-          jumpToNextWord(nextWordIndex - 1, true, () {
-            asrResult = "";
-            handlingAsrChinese = "";
-            asrController.resetResult();
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (!mounted) return;
+            jumpToNextWord(nextWordIndex - 1, true, () {
+              asrResult = "";
+              handlingAsrChinese = "";
+              asrController.resetResult();
+            });
           });
         }
         return;
@@ -1704,10 +1710,13 @@ User's Speech-to-Text Input: $userInput
           }
 
           if (nextWordIndex < words.length) {
-            jumpToNextWord(nextWordIndex - 1, true, () {
-              asrResult = "";
-              handlingAsrChinese = "";
-              asrController.resetResult();
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (!mounted) return;
+              jumpToNextWord(nextWordIndex - 1, true, () {
+                asrResult = "";
+                handlingAsrChinese = "";
+                asrController.resetResult();
+              });
             });
           }
         } else {
