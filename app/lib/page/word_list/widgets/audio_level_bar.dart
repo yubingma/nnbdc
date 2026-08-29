@@ -114,7 +114,13 @@ class _AudioLevelBarState extends State<AudioLevelBar>
             }),
           );
 
-          if (!widget.showDebugValue) return barsRow;
+          final content = FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: barsRow,
+          );
+
+          if (!widget.showDebugValue) return content;
 
           return Stack(
             alignment: Alignment.center,

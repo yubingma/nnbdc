@@ -175,8 +175,8 @@ class TranslateSentenceModeItem extends StatelessWidget {
             if (isBookmarked && audioLevelBar != null) ...[
               const SizedBox(width: 8),
               SizedBox(
-                width: 28,
-                height: 10,
+                width: 32,
+                height: 12,
                 child: audioLevelBar,
               ),
             ],
