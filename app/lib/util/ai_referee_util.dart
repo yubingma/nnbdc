@@ -107,18 +107,23 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
    - The user input comes from an automatic speech recognition (ASR) system (phoneme/acoustic model) and Chinese learners' natural pronunciation.
    - If the user's input consists of phonetically similar syllables, sound fragments, or common ASR transcription errors of the TARGET WORD (e.g. for "beside": "be side", "besides", "biside", "be side of"; for "discipline": "displain", "disiplin"; for "think": "sink", "fink"; for "walked": "walk"), you MUST judge as TRUE {"isCorrect": true}.
 
-2. SEMANTIC SYNONYM OF DIFFERENT WORD (JUDGE FALSE with FRIENDLY EXPLANATION):
-   - If the user clearly spoke a COMPLETELY DIFFERENT English word that is NOT a phonetic approximation of the target word, BUT this word matches the Chinese meaning of the target word (e.g. Target word is "purchase" and Chinese meaning is "购买", but user said "buy"; or Target is "gigantic" and user said "huge" or "big"; or Target is "child" and user said "kid"):
-   - You MUST judge as FALSE {"isCorrect": false, "isSynonym": true, "explanation": "「buy」意思正确，但请尝试读出目标词「purchase」"}
-   - The explanation MUST be concise, polite and encouraging in Chinese (max 18 words), naming the spoken word and the target word.
+2. SEMANTIC SYNONYM OR CHINESE POLYSEMY OVERLAP (JUDGE FALSE with FRIENDLY EXPLANATION):
+   - If the user spoke a COMPLETELY DIFFERENT English word that is NOT a phonetic approximation of the target word, BUT:
+     a. Direct Synonym: It matches the exact semantic meaning of the target word (e.g., Target is "purchase", user said "buy"; Target is "gigantic", user said "huge/big"; Target is "child", user said "kid").
+     b. Chinese Polysemous / Cross-Domain Overlap: The user's word corresponds to one literal sense of a polysemous Chinese word in the dictionary definition, but belongs to a different domain/context (e.g., Target is "railway" with Chinese definition "铁路；轨道", user said "orbit" which means celestial orbit; or Target is "interest" with definition "利息；兴趣", user said "hobby").
+   - You MUST judge as FALSE with isSynonym: true:
+     {"isCorrect": false, "isSynonym": true, "explanation": "「orbit」多指天体轨道，请回想本词"}
+     or {"isCorrect": false, "isSynonym": true, "explanation": "「buy」意思相近，但请尝试回忆本词"}
+   - CRITICAL CONSTRAINT: NEVER reveal, hint the spelling of, or write out the target English word in the explanation!
+   - The explanation MUST be concise, polite and encouraging in Chinese (max 18 words), only mentioning the user's spoken word.
 
 3. COMPLETELY UNRELATED OR WRONG:
-   - If the spoken input is neither phonetically similar to the target word nor a valid semantic synonym of the Chinese meaning:
+   - If the spoken input is neither phonetically similar to the target word nor related to any literal Chinese meaning:
    - Judge as FALSE {"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}
 
 Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 {"isCorrect": true}
-{"isCorrect": false, "isSynonym": true, "explanation": "「spoken_word」意思正确，但请尝试读出目标词「target_word」"}
+{"isCorrect": false, "isSynonym": true, "explanation": "「spoken_word」多指...，请尝试回忆本词"}
 {"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}
 ''';
 

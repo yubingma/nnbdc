@@ -115,6 +115,14 @@ void main() {
       expect(parsed.explanation, contains('「buy」意思正确'));
     });
 
+    test('AiRefereeUtil.parseRefereeResponse parses ch2En polysemy cross-domain overlap correctly', () {
+      const rawAiResponse = '{"isCorrect": false, "isSynonym": true, "explanation": "「orbit」多指天体轨道，铁轨请尝试读出「railway」"}';
+      final parsed = AiRefereeUtil.parseRefereeResponse(rawAiResponse);
+      expect(parsed.isCorrect, isFalse);
+      expect(parsed.isSynonym, isTrue);
+      expect(parsed.explanation, contains('「orbit」多指天体轨道'));
+    });
+
     test('AiRefereeUtil.parseRefereeResponse parses unrelated wrong word correctly', () {
       const rawAiResponse = '{"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}';
       final parsed = AiRefereeUtil.parseRefereeResponse(rawAiResponse);
