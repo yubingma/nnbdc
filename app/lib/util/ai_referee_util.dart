@@ -20,7 +20,7 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
    - NEVER accept phonetically and semantically unrelated inputs (e.g., completely different words).
 
 Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
-{"isCorrect": true} if the answer is a valid meaning or acoustically matching translation of the word.
+{"isCorrect": true, "intendedMeaning": "Corrected/standard Chinese meaning (e.g. 工资 or 薪水)"} if the answer is a valid meaning or acoustically matching translation of the word.
 {"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
 ''';
 
@@ -47,9 +47,9 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 ''';
 
   /// 解析大模型返回的 JSON 判决结果
-  static ({bool isCorrect, String explanation}) parseRefereeResponse(String? rawResponse) {
+  static ({bool isCorrect, String explanation, String? intendedMeaning}) parseRefereeResponse(String? rawResponse) {
     if (rawResponse == null || rawResponse.trim().isEmpty) {
-      return (isCorrect: false, explanation: '无裁判结果');
+      return (isCorrect: false, explanation: '无裁判结果', intendedMeaning: null);
     }
 
     try {
@@ -71,15 +71,16 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
       final parsed = jsonDecode(cleanJson.trim());
       final isCorrect = parsed['isCorrect'] as bool? ?? false;
       final explanation = parsed['explanation'] as String? ?? '';
-      return (isCorrect: isCorrect, explanation: explanation);
+      final intendedMeaning = parsed['intendedMeaning'] as String?;
+      return (isCorrect: isCorrect, explanation: explanation, intendedMeaning: intendedMeaning);
     } catch (e) {
       Global.logger.w('解析 AI 裁判结果异常: rawResponse=$rawResponse', error: e);
-      return (isCorrect: false, explanation: '解析裁判结果失败');
+      return (isCorrect: false, explanation: '解析裁判结果失败', intendedMeaning: null);
     }
   }
 
   /// 请求大模型进行单词释义裁判
-  static Future<({bool isCorrect, String explanation, String? rawResponse})> judgeWordMeaning({
+  static Future<({bool isCorrect, String explanation, String? intendedMeaning, String? rawResponse})> judgeWordMeaning({
     required String targetWord,
     required String referenceMeanings,
     required String userInput,
@@ -105,9 +106,14 @@ ASR Candidate List: $candidateStr
     final result = await Api.client.aiChat(jsonEncode(messages), userId);
     if (result.success && result.data != null) {
       final parsed = parseRefereeResponse(result.data);
-      return (isCorrect: parsed.isCorrect, explanation: parsed.explanation, rawResponse: result.data);
+      return (
+        isCorrect: parsed.isCorrect,
+        explanation: parsed.explanation,
+        intendedMeaning: parsed.intendedMeaning,
+        rawResponse: result.data,
+      );
     } else {
-      return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', rawResponse: null);
+      return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', intendedMeaning: null, rawResponse: null);
     }
   }
 

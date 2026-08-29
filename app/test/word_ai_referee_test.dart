@@ -33,6 +33,18 @@ void main() {
       expect(parsed['isCorrect'], isTrue);
     });
 
+    test('Parse intendedMeaning when AI corrects homophone / phonetic error', () {
+      const rawAiResponse = '''
+{
+  "isCorrect": true,
+  "intendedMeaning": "工资"
+}
+''';
+      final parsed = jsonDecode(rawAiResponse.trim()) as Map<String, dynamic>;
+      expect(parsed['isCorrect'], isTrue);
+      expect(parsed['intendedMeaning'], equals('工资'));
+    });
+
     test('Incorrect JSON parsing with explanation for unrelated input', () {
       const rawAiResponse = '{"isCorrect": false, "explanation": "与salary含义不符"}';
 

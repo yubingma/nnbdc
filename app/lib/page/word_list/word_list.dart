@@ -1574,8 +1574,11 @@ class WordListPageState extends State<WordListPage>
 
       if (isCorrect) {
         _playCorrectSound();
+        final approvedText = refereeResult.intendedMeaning?.trim().isNotEmpty == true
+            ? refereeResult.intendedMeaning!.trim()
+            : (cleanInput.isNotEmpty ? cleanInput : userInput);
         setState(() {
-          wordWrapper.markAllMeaningsAsAiMatched(approvedAnswer: cleanInput.isNotEmpty ? cleanInput : userInput);
+          wordWrapper.markAllMeaningsAsAiMatched(approvedAnswer: approvedText);
         });
 
         try {

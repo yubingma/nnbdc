@@ -3207,7 +3207,10 @@ class BdcNotifier extends _$BdcNotifier {
 
       if (isCorrect) {
         wordWrapper.isAiEvaluating = false;
-        wordWrapper.markAllMeaningsAsAiMatched(approvedAnswer: cleanInput.isNotEmpty ? cleanInput : userInput);
+        final approvedText = refereeResult.intendedMeaning?.trim().isNotEmpty == true
+            ? refereeResult.intendedMeaning!.trim()
+            : (cleanInput.isNotEmpty ? cleanInput : userInput);
+        wordWrapper.markAllMeaningsAsAiMatched(approvedAnswer: approvedText);
 
         state = state.copyWith(
           isAiEvaluating: false,

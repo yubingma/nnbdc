@@ -309,7 +309,7 @@ List<Widget> renderAsrMeaningItems(WordWrapper word,
               ),
               const SizedBox(width: 4.5),
               Text(
-                'AI 认可回答: "${word.aiApprovedAnswer}"',
+                'AI 认可释义: "${word.aiApprovedAnswer}"',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
