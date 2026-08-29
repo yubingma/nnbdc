@@ -107,9 +107,48 @@ public class MyImage {
         return null;
     }
 
+    public static boolean isValidImage(File imageFile) {
+        if (imageFile == null || !imageFile.exists() || !imageFile.isFile() || imageFile.length() < 12) {
+            return false;
+        }
+        try {
+            byte[] header = new byte[12];
+            try (InputStream is = Files.newInputStream(imageFile.toPath())) {
+                int read = is.read(header);
+                if (read < 12) {
+                    return false;
+                }
+            }
+            // 排除明显的文本 / HTML / JSON / XML 等
+            if (header[0] == '<' || header[0] == '{' || header[0] == '[' || header[0] == ' ' || header[0] == '\n' || header[0] == '\r') {
+                return false;
+            }
+            String format = detectFormat(header);
+            if (format == null) {
+                return false;
+            }
+            // 针对非 WebP 格式尝试 ImageIO 解码验证图片有效性
+            if (!"WEBP".equalsIgnoreCase(format)) {
+                BufferedImage img = ImageIO.read(imageFile);
+                return img != null && img.getWidth() > 0 && img.getHeight() > 0;
+            }
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     public static String detectFormat(File imageFile) throws IOException {
-        byte[] header = Files.readAllBytes(imageFile.toPath());
-        // 仅读取前几个字节也足够，但这里简化处理
+        if (imageFile == null || !imageFile.exists() || !imageFile.isFile() || imageFile.length() < 12) {
+            return null;
+        }
+        byte[] header = new byte[12];
+        try (InputStream is = Files.newInputStream(imageFile.toPath())) {
+            int read = is.read(header);
+            if (read < 12) {
+                return null;
+            }
+        }
         return detectFormat(header);
     }
 

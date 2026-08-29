@@ -196,7 +196,8 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
         content: const Text(
             '该操作将扫描全库并自动修复不规范的数据格式：\n'
             '1. 移除音标前后的斜线(/)和方括号([])\n'
-            '2. 移除单词、释义、例句末尾的多余逗号\n\n'
+            '2. 移除单词、释义、例句末尾的多余逗号\n'
+            '3. 清理损坏或无效的单词配图（如非图片文件、404错误HTML等）\n\n'
             '修复后将产生同步日志。是否立即开始？'),
         actions: [
           TextButton(

@@ -1,5 +1,6 @@
 package beidanci.service.bo;
 
+import java.io.File;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import beidanci.service.dao.UserDbVersionDao;
 import beidanci.service.po.*;
 import beidanci.util.Constants;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.util.MyImage;
 import beidanci.service.util.Util;
 import beidanci.service.util.SysParamUtil;
 
@@ -339,7 +341,7 @@ public class SystemHealthCheckBo {
     }
 
     /**
-     * 检查单词配图完整性 (检查配图文件是否存在)
+     * 检查单词配图完整性 (检查配图文件是否存在及数据是否有效)
      */
     public SystemHealthCheckResult checkWordImageIntegrity() {
         List<SystemHealthIssue> issues = new ArrayList<>();
@@ -356,21 +358,24 @@ public class SystemHealthCheckBo {
             );
             
             String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
-            int missingCount = 0;
+            int missingOrInvalidCount = 0;
             
             for (Object[] image : images) {
                 String fileName = (String) image[1];
-                
-                java.io.File file = new java.io.File(baseDir + fileName);
-                if (!file.exists()) {
-                    missingCount++;
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    missingOrInvalidCount++;
+                    continue;
+                }
+                File file = new File(baseDir + fileName);
+                if (!MyImage.isValidImage(file)) {
+                    missingOrInvalidCount++;
                 }
             }
             
-            if (missingCount > 0) {
+            if (missingOrInvalidCount > 0) {
                 issues.add(new SystemHealthIssue(
-                    "配图文件缺失",
-                    String.format("发现 %d 条配图记录对应的物理文件不存在", missingCount),
+                    "配图文件缺失或损坏",
+                    String.format("发现 %d 条配图记录对应的物理文件不存在或为损坏/非有效图片（如 HTML 错误页）", missingOrInvalidCount),
                     "word_image_integrity"
                 ));
             }
@@ -589,12 +594,12 @@ public class SystemHealthCheckBo {
     }
 
     /**
-     * 修复单词配图完整性 (删除对应的 db 记录并记录日志)
+     * 修复单词配图完整性 (删除缺失或损坏的配图记录及脏文件，并记录同步日志)
      */
     private int fixWordImageIntegrity(List<String> fixed) {
         int fixedCount = 0;
         try {
-            // 这里为了安全，先查出所有记录，再逐个确认文件缺失
+            // 这里为了安全，先查出所有记录，再逐个确认文件缺失或损坏
             String sql = "SELECT id, image_file FROM word_image";
             List<Object[]> images = namedParameterJdbcTemplate.query(sql, new MapSqlParameterSource(), (rs, rowNum) -> 
                 new Object[]{
@@ -609,11 +614,19 @@ public class SystemHealthCheckBo {
                 String id = (String) image[0];
                 String fileName = (String) image[1];
                 
-                java.io.File file = new java.io.File(baseDir + fileName);
-                if (!file.exists()) {
-                    // 文件确实不存在
+                boolean invalid = false;
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    invalid = true;
+                } else {
+                    File file = new File(baseDir + fileName);
+                    if (!MyImage.isValidImage(file)) {
+                        invalid = true;
+                    }
+                }
+
+                if (invalid) {
                     try {
-                        // 使用 wordImageBo 的删除逻辑，它会记录 sys_db_log 并清理事件记录
+                        // 使用 wordImageBo 的删除逻辑，它会记录 sys_db_log 并清理事件记录及删除物理文件
                         // 管理员身份删除 (sys_user_id)
                         String sysUserId = userBo.getSysUser_sys(false).getId();
                         User sysUser = userBo.findById(sysUserId);
@@ -626,7 +639,7 @@ public class SystemHealthCheckBo {
             }
             
             if (fixedCount > 0) {
-                fixed.add(String.format("成功清理了 %d 条缺失物理文件的配图记录，并已生成同步日志。", fixedCount));
+                fixed.add(String.format("成功清理了 %d 条缺失或损坏的配图记录，并已生成同步日志。", fixedCount));
             }
         } catch (Exception e) {
             fixed.add("修复单词配图完整性时出错: " + e.getMessage());

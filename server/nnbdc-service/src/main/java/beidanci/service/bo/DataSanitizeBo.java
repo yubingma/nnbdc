@@ -1,5 +1,6 @@
 package beidanci.service.bo;
 
+import java.io.File;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -24,6 +25,8 @@ import beidanci.service.po.Sentence;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.util.JsonUtils;
+import beidanci.service.util.MyImage;
+import beidanci.service.util.SysParamUtil;
 import beidanci.service.util.Util;
 import beidanci.util.Constants;
 import okhttp3.OkHttpClient;
@@ -45,6 +48,12 @@ public class DataSanitizeBo {
 
     @Autowired
     private SentenceBo sentenceBo;
+
+    @Autowired
+    private WordImageBo wordImageBo;
+
+    @Autowired
+    private SysParamUtil sysParamUtil;
 
     @Autowired
     private SysDbSyncBo sysDbSyncBo;
@@ -79,7 +88,7 @@ public class DataSanitizeBo {
         "OR (word_meaning ~ '[,，]\\s*$') OR (part_of_speech ~ '[,，]\\s*$')";
 
     /**
-     * 清洗系统数据（修复AI导入产生的多余逗号和斜线）
+     * 清洗系统数据（修复AI导入产生的多余逗号和斜线，清理损坏/无效的单词配图等）
      */
     public SystemHealthFixResult sanitizeData() {
         List<String> fixed = new ArrayList<>();
@@ -95,6 +104,9 @@ public class DataSanitizeBo {
 
             // 3. 清洗例句
             totalFixedCount += sanitizeSentences(fixed);
+
+            // 4. 清洗损坏或无效的单词配图
+            totalFixedCount += sanitizeWordImages(fixed);
 
             if (totalFixedCount == 0) {
                 fixed.add("未发现需要清洗的数据。");
@@ -135,6 +147,12 @@ public class DataSanitizeBo {
                 issues.add(new SystemHealthIssue("例句不规范", String.format("发现 %d 个例句文本或关联释义以逗号结尾", sentenceCount), "data_sanitization"));
             }
 
+            // 4. 检查损坏或缺失的单词配图
+            int invalidImageCount = countInvalidWordImages();
+            if (invalidImageCount > 0) {
+                issues.add(new SystemHealthIssue("单词配图损坏或缺失", String.format("发现 %d 条配图记录对应的物理文件不存在或为损坏/非图片数据（如 HTML 错误页）", invalidImageCount), "data_sanitization"));
+            }
+
         } catch (Exception e) {
             logger.error("检查数据规范性失败", e);
             errors.add("检查数据规范性过程中出错: " + e.getMessage());
@@ -148,6 +166,67 @@ public class DataSanitizeBo {
         String sql = String.format("SELECT COUNT(*) FROM %s WHERE %s", table, where);
         Integer count = namedParameterJdbcTemplate.queryForObject(sql, new MapSqlParameterSource(), Integer.class);
         return count != null ? count : 0;
+    }
+
+    private int countInvalidWordImages() {
+        String sql = "SELECT id, image_file FROM word_image";
+        List<Map<String, Object>> images = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
+        String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
+        int count = 0;
+        for (Map<String, Object> map : images) {
+            String fileName = (String) map.get("image_file");
+            if (fileName == null || fileName.trim().isEmpty()) {
+                count++;
+                continue;
+            }
+            File file = new File(baseDir + fileName);
+            if (!MyImage.isValidImage(file)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int sanitizeWordImages(List<String> fixed) {
+        int count = 0;
+        String sql = "SELECT id, image_file FROM word_image";
+        List<Map<String, Object>> images = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
+        String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
+
+        User sysUser = null;
+        try {
+            String sysUserId = userBo.getSysUser_sys(false).getId();
+            sysUser = userBo.findById(sysUserId);
+        } catch (Exception e) {
+            logger.error("获取系统用户失败", e);
+        }
+
+        for (Map<String, Object> map : images) {
+            String id = (String) map.get("id");
+            String fileName = (String) map.get("image_file");
+            boolean invalid = false;
+            if (fileName == null || fileName.trim().isEmpty()) {
+                invalid = true;
+            } else {
+                File file = new File(baseDir + fileName);
+                if (!MyImage.isValidImage(file)) {
+                    invalid = true;
+                }
+            }
+
+            if (invalid) {
+                try {
+                    wordImageBo.deleteWordImage(id, sysUser, false);
+                    count++;
+                } catch (Exception e) {
+                    logger.error("清洗单词配图失败, id=" + id, e);
+                }
+            }
+        }
+        if (count > 0) {
+            fixed.add(String.format("清理了 %d 张损坏或无效的单词配图记录，并已生成同步日志。", count));
+        }
+        return count;
     }
 
     private int sanitizeWordPhonetics(List<String> fixed) throws Exception {
