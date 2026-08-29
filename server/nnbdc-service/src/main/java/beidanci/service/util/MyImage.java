@@ -124,15 +124,7 @@ public class MyImage {
                 return false;
             }
             String format = detectFormat(header);
-            if (format == null) {
-                return false;
-            }
-            // 针对非 WebP 格式尝试 ImageIO 解码验证图片有效性
-            if (!"WEBP".equalsIgnoreCase(format)) {
-                BufferedImage img = ImageIO.read(imageFile);
-                return img != null && img.getWidth() > 0 && img.getHeight() > 0;
-            }
-            return true;
+            return format != null;
         } catch (Throwable t) {
             return false;
         }

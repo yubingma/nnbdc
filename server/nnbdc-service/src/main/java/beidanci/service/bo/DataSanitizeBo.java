@@ -69,6 +69,12 @@ public class DataSanitizeBo {
     private static volatile int popularitySanitizeProcessed = 0;
     private static volatile String popularitySanitizeLog = "";
 
+    private static volatile boolean isWordImageSanitizing = false;
+    private static volatile int wordImageSanitizeTotal = 0;
+    private static volatile int wordImageSanitizeProcessed = 0;
+    private static volatile int wordImageSanitizeFixedCount = 0;
+    private static volatile String wordImageSanitizeLog = "";
+
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
@@ -122,26 +128,111 @@ public class DataSanitizeBo {
     }
 
     /**
-     * 单独清洗单词配图（清理损坏/无效的图片文件并生成同步日志）
+     * 单独清洗单词配图（后台异步线程执行，清理损坏/无效的图片文件并生成同步日志）
      */
     public SystemHealthFixResult sanitizeWordImagesOnly() {
         List<String> fixed = new ArrayList<>();
         List<String> errors = new ArrayList<>();
-        int totalFixedCount = 0;
 
-        try {
-            totalFixedCount += sanitizeWordImages(fixed);
-            if (totalFixedCount == 0) {
-                fixed.add("全库配图数据完整有效，未发现损坏或缺失的配图文件。");
-            } else {
-                fixed.add(String.format("配图清洗完成，共清理 %d 条损坏或无效的配图记录。", totalFixedCount));
-            }
-        } catch (Exception e) {
-            logger.error("配图清洗失败", e);
-            errors.add("配图清洗过程中出错: " + e.getMessage());
+        if (isWordImageSanitizing) {
+            errors.add("单词配图清洗任务正在后台运行中，请勿重复触发。");
+            fixed.add(String.format("当前进度: %d/%d。详情: %s", 
+                    wordImageSanitizeProcessed, wordImageSanitizeTotal, wordImageSanitizeLog));
+            return new SystemHealthFixResult(0, errors, fixed);
         }
 
-        return new SystemHealthFixResult(totalFixedCount, errors, fixed);
+        isWordImageSanitizing = true;
+        wordImageSanitizeTotal = 0;
+        wordImageSanitizeProcessed = 0;
+        wordImageSanitizeFixedCount = 0;
+        wordImageSanitizeLog = "准备扫描单词配图...";
+
+        new Thread(() -> {
+            try {
+                executeWordImageSanitization();
+            } finally {
+                isWordImageSanitizing = false;
+            }
+        }).start();
+
+        fixed.add("单词配图清洗任务已成功在后台启动。");
+        return new SystemHealthFixResult(0, errors, fixed);
+    }
+
+    /**
+     * 获取单词配图清洗状态及进度
+     */
+    public SystemHealthFixResult getWordImageSanitizeStatus() {
+        List<String> fixed = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        
+        if (isWordImageSanitizing) {
+            fixed.add(String.format("当前进度: %d/%d。已清理: %d 条。详情: %s", 
+                    wordImageSanitizeProcessed, wordImageSanitizeTotal, wordImageSanitizeFixedCount, wordImageSanitizeLog));
+            return new SystemHealthFixResult(1, errors, fixed);
+        } else {
+            if (wordImageSanitizeTotal > 0) {
+                fixed.add(String.format("配图清洗完成。总扫描: %d 条，共清理 %d 条损坏或无效配图记录。", 
+                        wordImageSanitizeTotal, wordImageSanitizeFixedCount));
+            } else {
+                fixed.add("任务未运行。");
+            }
+            return new SystemHealthFixResult(0, errors, fixed);
+        }
+    }
+
+    private void executeWordImageSanitization() {
+        try {
+            wordImageSanitizeLog = "正在查询单词配图列表...";
+            String sql = "SELECT id, image_file FROM word_image";
+            List<Map<String, Object>> images = namedParameterJdbcTemplate.queryForList(sql, new MapSqlParameterSource());
+            wordImageSanitizeTotal = images.size();
+            wordImageSanitizeProcessed = 0;
+            wordImageSanitizeFixedCount = 0;
+            String baseDir = sysParamUtil.getImageBaseDir() + "/word/";
+
+            User sysUser = null;
+            try {
+                String sysUserId = userBo.getSysUser_sys(false).getId();
+                sysUser = userBo.findById(sysUserId);
+            } catch (Exception e) {
+                logger.error("获取系统用户失败", e);
+            }
+
+            for (int i = 0; i < images.size(); i++) {
+                Map<String, Object> map = images.get(i);
+                String id = (String) map.get("id");
+                String fileName = (String) map.get("image_file");
+                boolean invalid = false;
+                if (fileName == null || fileName.trim().isEmpty()) {
+                    invalid = true;
+                } else {
+                    File file = new File(baseDir + fileName);
+                    if (!MyImage.isValidImage(file)) {
+                        invalid = true;
+                    }
+                }
+
+                if (invalid) {
+                    try {
+                        wordImageBo.deleteWordImage(id, sysUser, false);
+                        wordImageSanitizeFixedCount++;
+                    } catch (Exception e) {
+                        logger.error("清洗单词配图失败, id=" + id, e);
+                    }
+                }
+
+                wordImageSanitizeProcessed++;
+                if (i % 100 == 0 || i == images.size() - 1) {
+                    wordImageSanitizeLog = String.format("正在扫描配图文件 (%d/%d)...", wordImageSanitizeProcessed, wordImageSanitizeTotal);
+                }
+            }
+            wordImageSanitizeLog = String.format("清洗完成，扫描 %d 条，共清理 %d 条损坏或无效配图。", wordImageSanitizeTotal, wordImageSanitizeFixedCount);
+            logger.info("单词配图清洗完成: 总数={}, 清理数={}", wordImageSanitizeTotal, wordImageSanitizeFixedCount);
+        } catch (Exception e) {
+            logger.error("执行单词配图清洗异常", e);
+            wordImageSanitizeLog = "清洗过程中出错: " + e.getMessage();
+        }
     }
 
     /**
