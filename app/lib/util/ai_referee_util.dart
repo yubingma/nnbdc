@@ -45,6 +45,14 @@ CRITICAL INSTRUCTIONS & CONSTRAINTS:
 3. SEMANTIC FAITHFULNESS:
    - Allow natural synonymous expressions and varied natural syntax as long as all core components of the source sentence are faithfully and fully conveyed.
 
+4. CHINESE EFL (ENGLISH AS FOREIGN LANGUAGE) ACOUSTIC & ASR TOLERANCE:
+   - When the user speaks English, take into account common Chinese accent and ASR transcription artifacts:
+     a. TH-Fronting/Stopping: 'th' (/θ/, /ð/) transcribed as /s/, /f/, /d/, /z/ (e.g. "think" -> "sink/fink", "with" -> "wid/wiz", "the" -> "de").
+     b. Final Consonant & Past-tense Deletion: Unstressed or weak word-final stops/clusters like -ed, -d, -t, -s, -k (e.g. "walked" -> "walk", "stopped" -> "stop", "and" -> "an").
+     c. Consonant Confusion: /v/ vs /w/ (e.g. "very" -> "wary"), /l/ vs /n/ vs /r/ (e.g. "light" -> "night"), /s/ vs /z/.
+     d. Vowel Quality/Length & ASR Phonetic Approximations (e.g. "beside" -> "be side/besides", "discipline" -> "displain").
+   - If the user's transcribed English is clearly a phonetic approximation of the intended English sentence due to these known accent patterns, judge as TRUE {"isCorrect": true}.
+
 Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 {"isCorrect": true} if the translation is faithful and all core entities/meanings are correct.
 {"isCorrect": false, "explanation": "Brief reason in Chinese (max 12 words)"} if incorrect.
