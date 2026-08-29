@@ -14,6 +14,7 @@ class EnglishAsrInputWidget extends StatefulWidget {
   final int? score; // 新增：评分
   final bool isScorePassed; // 当前得分是否满足通过条件（含核心词匹配）
   final bool isSentenceStep; // 新增：是否是例句练习步骤
+  final bool isAiEvaluating; // 是否正在进行大模型裁判
 
   const EnglishAsrInputWidget({
     super.key,
@@ -25,6 +26,7 @@ class EnglishAsrInputWidget extends StatefulWidget {
     this.score,
     this.isScorePassed = false,
     this.isSentenceStep = false,
+    this.isAiEvaluating = false,
   });
 
   @override
@@ -100,6 +102,44 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
     _meterSubscription?.cancel();
     _waveController.dispose();
     super.dispose();
+  }
+
+  Widget _buildAiJudgingBadge(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: const Color(0xFF8B5CF6).withValues(alpha: 0.6),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 8.5,
+            height: 8.5,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+            ),
+          ),
+          const SizedBox(width: 3.5),
+          Text(
+            'AI判定中...',
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -203,7 +243,9 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                 width: 2.5,
                 height: height,
                 decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: alpha),
+                  color: widget.isAiEvaluating
+                      ? (isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED)).withValues(alpha: 0.8)
+                      : accentColor.withValues(alpha: alpha),
                   borderRadius: BorderRadius.circular(1.5),
                 ),
               );
@@ -225,16 +267,20 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                 children: [
                   waveformWidget,
                   const SizedBox(width: 12),
-                  Text(
-                    statusText,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isDarkMode ? Colors.white38 : Colors.black26,
-                      fontWeight: FontWeight.w500,
+                  if (widget.isAiEvaluating) ...[
+                    _buildAiJudgingBadge(isDarkMode),
+                  ] else ...[
+                    Text(
+                      statusText,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isDarkMode ? Colors.white38 : Colors.black26,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  scoreWidget,
+                    const SizedBox(width: 6),
+                    scoreWidget,
+                  ],
                 ],
               )
             : Column(
@@ -243,25 +289,28 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                 children: [
                   waveformWidget,
                   const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          statusText,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isDarkMode ? Colors.white54 : Colors.black45,
-                            fontWeight: FontWeight.w500,
+                  if (widget.isAiEvaluating)
+                    _buildAiJudgingBadge(isDarkMode)
+                  else
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            statusText,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isDarkMode ? Colors.white54 : Colors.black45,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      scoreWidget,
-                    ],
-                  ),
+                        const SizedBox(width: 4),
+                        scoreWidget,
+                      ],
+                    ),
                 ],
               ),
       ),

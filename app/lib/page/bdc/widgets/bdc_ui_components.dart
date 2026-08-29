@@ -1308,6 +1308,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             score: currentScore,
                             isScorePassed: isScorePassed,
                             isSentenceStep: isSentence,
+                            isAiEvaluating: isAiEvaluating,
                           );
                   },
                 ),
