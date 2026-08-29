@@ -73,6 +73,11 @@ class BdcNotifier extends _$BdcNotifier {
   final Set<String> _failedWordAiEvaluationsForCurrentWord = {};
   int _wordAiEvaluationCountForCurrentWord = 0;
   bool _isWordAiRefereeJudging = false;
+
+  Timer? _sentenceAiRefereeDebounceTimer;
+  final Set<String> _failedSentenceAiEvaluationsForCurrentWord = {};
+  int _sentenceAiEvaluationCountForCurrentWord = 0;
+  bool _isSentenceAiRefereeJudging = false;
   /// 播放取消令牌：每次换词或用户手动操作时递增，使旧延迟 callback 失效。
   int _playToken = 0;
   /// 页面过渡屏障：详情页弹出时，让音频播放等待页面动画完成再启动，
@@ -112,12 +117,20 @@ class BdcNotifier extends _$BdcNotifier {
       });
     });
 
+    sentenceAnswerController.addListener(() {
+      _checkAsrDebounceTimer?.cancel();
+      _checkAsrDebounceTimer = Timer(const Duration(milliseconds: 150), () {
+        checkAsrResult();
+      });
+    });
+
     ref.onDispose(() {
       _isDisposed = true;
       _learningTimer?.cancel();
       _persistTimer?.cancel();
       _checkAsrDebounceTimer?.cancel();
       _wordAiRefereeDebounceTimer?.cancel();
+      _sentenceAiRefereeDebounceTimer?.cancel();
       progressBarTapTimer?.cancel();
       _syncLearningTimeToDb();
       asr.removeStateListener(_onAsrStateChanged);
@@ -479,6 +492,11 @@ class BdcNotifier extends _$BdcNotifier {
     _failedWordAiEvaluationsForCurrentWord.clear();
     _wordAiEvaluationCountForCurrentWord = 0;
     _isWordAiRefereeJudging = false;
+
+    _sentenceAiRefereeDebounceTimer?.cancel();
+    _failedSentenceAiEvaluationsForCurrentWord.clear();
+    _sentenceAiEvaluationCountForCurrentWord = 0;
+    _isSentenceAiRefereeJudging = false;
     final totalStopwatch = Stopwatch()..start();
     
     // 防止处理同一个结果引发的循环
@@ -2031,6 +2049,61 @@ class BdcNotifier extends _$BdcNotifier {
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         }
       }
+    } else if (state.studyStep == StudyStep.enSentence2Ch.json || state.studyStep == StudyStep.chSentence2En.json) {
+      final isEn2Ch = state.studyStep == StudyStep.enSentence2Ch.json;
+      final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
+          ? state.word!.sentences!.first
+          : null;
+      if (sentence != null) {
+        final targetText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
+        final isFromAsr = asrInput != null || sentenceAnswerController.text == _handlingChinese;
+        final inputs = isFromAsr ? state.currentAsrCandidates : [sentenceAnswerController.text];
+        final cleanTarget = targetText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+
+        // 1. 本地快速匹配（字面完全匹配或核心词+高分匹配）
+        bool isLocalMatch = false;
+        for (final input in inputs) {
+          final cleanInput = input.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+          if (cleanInput.isNotEmpty && cleanTarget.isNotEmpty) {
+            if (cleanInput == cleanTarget) {
+              isLocalMatch = true;
+              break;
+            }
+            if (isEn2Ch) {
+              final score = getChineseSentenceMatchScore(input, targetText);
+              final isCoreMatched = isChineseSentenceCoreKeywordsMatched(
+                input,
+                targetText,
+                state.word!,
+                targetPinyinsCache: state.wordWrapper?.targetPinyinsCache,
+              );
+              if (score >= 60 && isCoreMatched) {
+                isLocalMatch = true;
+                break;
+              }
+            }
+          }
+        }
+
+        if (isLocalMatch) {
+          _sentenceAiRefereeDebounceTimer?.cancel();
+          _isAnswerCorrectHandling = true;
+          if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+            await StudyAudioSessionController.instance.syncHardwareIntent(
+              isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+              isAnsweringActive: false,
+              language: AsrLanguage.english,
+              phrases: [],
+              caller: this,
+            );
+          }
+          final ratingResult = _calculateRating(method);
+          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+        } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling) {
+          // 本地未完全命中：触发例句 AI 裁判防抖判定
+          _scheduleSentenceAiRefereeCheck(inputs);
+        }
+      }
     }
     Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
   }
@@ -3181,11 +3254,143 @@ class BdcNotifier extends _$BdcNotifier {
     }
   }
 
-  Future<void> evaluateWithAiReferee(BuildContext context) async {
-    final userResponseTime = state.wordStartTime != null
-        ? AppClock.now().difference(state.wordStartTime!).inSeconds
-        : 0;
+  /// 当用户停顿一小段时间后，触发例句大模型裁判对翻译进行智能容错判决
+  void _scheduleSentenceAiRefereeCheck(List<String> inputs) {
+    _sentenceAiRefereeDebounceTimer?.cancel();
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
 
+    final word = state.word;
+    final wordWrapper = state.wordWrapper;
+    if (word == null || wordWrapper == null) return;
+
+    final sentence = (word.sentences != null && word.sentences!.isNotEmpty)
+        ? word.sentences!.first
+        : null;
+    if (sentence == null) return;
+
+    final rawInput = inputs.isNotEmpty ? inputs.first : sentenceAnswerController.text;
+    final cleanInput = rawInput.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+    if (cleanInput.length < 2) return;
+
+    if (_failedSentenceAiEvaluationsForCurrentWord.contains(cleanInput)) return;
+    if (_sentenceAiEvaluationCountForCurrentWord >= 5) return;
+
+    _sentenceAiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
+      if (_isDisposed) return;
+      if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+      if (_isSentenceAiRefereeJudging) return;
+      if (state.word?.id != word.id) return;
+
+      await _evaluateSentenceWithAiReferee(
+        cleanInput,
+        rawInput: rawInput,
+        candidates: inputs,
+      );
+    });
+  }
+
+  /// 执行例句翻译大模型智能裁决
+  Future<void> _evaluateSentenceWithAiReferee(
+    String cleanInput, {
+    String? rawInput,
+    List<String>? candidates,
+    BuildContext? context,
+  }) async {
+    if (_isSentenceAiRefereeJudging) return;
+    final word = state.word;
+    final wordWrapper = state.wordWrapper;
+    if (word == null || wordWrapper == null) return;
+
+    final sentence = (word.sentences != null && word.sentences!.isNotEmpty)
+        ? word.sentences!.first
+        : null;
+    if (sentence == null) return;
+
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+
+    final checkWordId = word.id;
+    _isSentenceAiRefereeJudging = true;
+    _sentenceAiEvaluationCountForCurrentWord++;
+    wordWrapper.isAiEvaluating = true;
+    state = state.copyWith(isAiEvaluating: true);
+
+    final isEn2Ch = state.studyStep == StudyStep.enSentence2Ch.json;
+    final sourceText = isEn2Ch ? (sentence.english ?? "") : (sentence.chinese ?? "");
+    final referenceText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
+    final userInput = rawInput ?? cleanInput;
+
+    Global.logger.d('~~~~~[AI裁判-例句] 启动大模型裁判(第$_sentenceAiEvaluationCountForCurrentWord次): source="$sourceText", ref="$referenceText", input="$userInput"');
+
+    try {
+      final refereeResult = await AiRefereeUtil.judgeSentenceTranslation(
+        sourceSentence: sourceText,
+        referenceTranslation: referenceText,
+        userInput: userInput,
+        exerciseType: state.studyStep,
+        userId: user.id,
+      );
+
+      if (_isDisposed || state.word?.id != checkWordId) {
+        Global.logger.d('~~~~~[AI裁判-例句] 单词已切换或已销毁，丢弃裁判结果');
+        return;
+      }
+
+      final isCorrect = refereeResult.isCorrect;
+      final explanation = refereeResult.explanation;
+      Global.logger.d('~~~~~[AI裁判-例句] 裁判结果: isCorrect=$isCorrect, response=${refereeResult.rawResponse}');
+
+      if (isCorrect) {
+        wordWrapper.isAiEvaluating = false;
+        wordWrapper.sentenceTranslatedPassed = true;
+        wordWrapper.isAiEvaluatedPassed = true;
+
+        state = state.copyWith(
+          isAiEvaluating: false,
+          canLeaveCurrWord: true,
+          isScorePassed: true,
+          wordWrapper: wordWrapper,
+        );
+
+        if (context != null && context.mounted) {
+          await showAiRefereeDialog(context, isCorrect: true, explanation: '');
+        }
+
+        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+          await StudyAudioSessionController.instance.syncHardwareIntent(
+            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isAnsweringActive: false,
+            language: AsrLanguage.english,
+            phrases: [],
+            caller: this,
+          );
+        }
+        final ratingResult = _calculateRating("AI裁判");
+        _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+      } else {
+        _failedSentenceAiEvaluationsForCurrentWord.add(cleanInput);
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+        if (context != null && context.mounted) {
+          await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
+          if (!_isDisposed) _handleTabChangeForAsr();
+        }
+      }
+    } catch (e, st) {
+      Global.logger.e("AI例句裁判判分出错", error: e, stackTrace: st);
+      if (!_isDisposed) {
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+      }
+      if (context != null && context.mounted) {
+        ToastUtil.error("AI 裁判开小差了，请重试");
+      }
+    } finally {
+      _isSentenceAiRefereeJudging = false;
+    }
+  }
+
+  Future<void> evaluateWithAiReferee(BuildContext context) async {
     final word = state.word;
     if (word == null) return;
 
@@ -3223,81 +3428,35 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
 
-    final sentence = (word.sentences != null && word.sentences!.isNotEmpty)
-        ? word.sentences!.first
-        : null;
-    if (sentence == null) {
-      ToastUtil.error("当前单词没有例句，无法进行AI裁判");
-      return;
-    }
-
+    // 例句模式：调用例句 AI 裁判
     final recognizedText = state.currentAsrCandidates.isNotEmpty
         ? state.currentAsrCandidates.first
         : '';
     final userInput = recognizedText.isNotEmpty
         ? recognizedText
-        : meaningController.text;
+        : sentenceAnswerController.text;
 
     if (userInput.trim().isEmpty) {
       ToastUtil.error("请先回答问题");
       return;
     }
 
-    // 停止 ASR 录音，冻结当前识别文本用于评判
     try {
       await asr.stopAsr();
     } catch (_) {}
 
-    // 显示 Loading
     await Api.loadingService.show(status: 'AI裁判裁决中...');
-
     try {
-      final user = Global.getLoggedInUser();
-      if (user == null) {
-        ToastUtil.error("请先登录");
-        return;
-      }
-
-      final isEn2Ch = state.studyStep == StudyStep.enSentence2Ch.json;
-      final sourceText = isEn2Ch ? (sentence.english ?? "") : (sentence.chinese ?? "");
-      final referenceText = isEn2Ch ? (sentence.chinese ?? "") : (sentence.english ?? "");
-
-      final refereeResult = await AiRefereeUtil.judgeSentenceTranslation(
-        sourceSentence: sourceText,
-        referenceTranslation: referenceText,
-        userInput: userInput,
-        exerciseType: state.studyStep,
-        userId: user.id,
-      );
-
-      await Api.loadingService.dismiss();
-
       if (!context.mounted) return;
-
-      if (refereeResult.isCorrect) {
-        // 判定通过:对话框告知结果,关闭后进入答对流程
-        await showAiRefereeDialog(context, isCorrect: true, explanation: '');
-        _isAnswerCorrectHandling = true;
-        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-          await StudyAudioSessionController.instance.syncHardwareIntent(
-            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
-            isAnsweringActive: false,
-            language: AsrLanguage.english,
-            phrases: [],
-            caller: this,
-          );
-        }
-        final ratingResult = _calculateRating("AI裁判", customResponseTime: userResponseTime);
-        _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-      } else {
-        // 判定失败:对话框显示解释,关闭后自动重启 ASR 让用户重试
-        await showAiRefereeDialog(context, isCorrect: false, explanation: refereeResult.explanation);
-        if (!_isDisposed) _handleTabChangeForAsr();
-      }
-    } catch (e, st) {
+      final cleanInput = userInput.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
+      await _evaluateSentenceWithAiReferee(
+        cleanInput,
+        rawInput: userInput,
+        candidates: state.currentAsrCandidates,
+        context: context,
+      );
+    } finally {
       await Api.loadingService.dismiss();
-      Global.logger.e("AI裁判判分出错", error: e, stackTrace: st);
-      ToastUtil.error("AI 裁判开小差了，请重试");
     }
   }
 
