@@ -681,49 +681,53 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
               const SizedBox(height: 12),
               _buildMessageContent(message.content, textColor),
               const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => _deleteMessage(message),
-                    icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
-                    label: const Text(
-                      '删除',
-                      style: TextStyle(color: Colors.redAccent),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () => _setAsPermanentMemberForUser(message.fromUser),
-                    icon: Icon(
-                      message.fromUser.premiumOverrideEnabled == true ? Icons.star : Icons.star_border,
-                      size: 16,
-                      color: message.fromUser.premiumOverrideEnabled == true ? const Color(0xFF2196F3) : Colors.grey[600],
-                    ),
-                    label: Text(
-                      message.fromUser.premiumOverrideEnabled == true ? '已是会员' : '设为会员',
-                      style: TextStyle(
-                        color: message.fromUser.premiumOverrideEnabled == true ? const Color(0xFF2196F3) : Colors.grey[600],
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _deleteMessage(message),
+                      icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                      label: const Text(
+                        '删除',
+                        style: TextStyle(color: Colors.redAccent),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: () async {
-                      if (!message.viewed) {
-                        await _markMsgsAsViewed([message.id]);
-                      }
-                      if (mounted) {
-                        _replyToMessage(message);
-                      }
-                    },
-                    icon: const Icon(Icons.reply, size: 16),
-                    label: const Text('回复'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppTheme.primaryColor,
+                    TextButton.icon(
+                      onPressed: () => _setAsPermanentMemberForUser(message.fromUser),
+                      icon: Icon(
+                        message.fromUser.premiumOverrideEnabled == true ? Icons.star : Icons.star_border,
+                        size: 16,
+                        color: message.fromUser.premiumOverrideEnabled == true ? const Color(0xFF2196F3) : Colors.grey[600],
+                      ),
+                      label: Text(
+                        message.fromUser.premiumOverrideEnabled == true ? '已是会员' : '设为会员',
+                        style: TextStyle(
+                          color: message.fromUser.premiumOverrideEnabled == true ? const Color(0xFF2196F3) : Colors.grey[600],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    TextButton.icon(
+                      onPressed: () async {
+                        if (!message.viewed) {
+                          await _markMsgsAsViewed([message.id]);
+                        }
+                        if (mounted) {
+                          _replyToMessage(message);
+                        }
+                      },
+                      icon: const Icon(Icons.reply, size: 16),
+                      label: const Text('回复'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
