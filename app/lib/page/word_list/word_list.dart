@@ -217,11 +217,39 @@ class WordListPageState extends State<WordListPage>
 
   @override
   void onToggleAnswer(WordWrapper word, int index) {
+    if (studyMode == WordListStudyMode.translateSentence) {
+      final bool currentlyShowingAnswer = word.sentenceTranslatedPassed || word.isAnswerRevealed;
+      if (currentlyShowingAnswer) {
+        // 用户点击“隐藏答案”：收起答案，重置状态，并重新开始本单词的例句发音与语音识别
+        setState(() {
+          word.isAnswerRevealed = false;
+          word.sentenceTranslatedPassed = false;
+          word.answeredAllMeanings = false;
+          word.lastAsrResult = null;
+          word.pronunciationScore = null;
+          _aiRefereeDebounceTimer?.cancel();
+          _failedAiEvaluationsForCurrentWord.clear();
+          _aiEvaluationCountForCurrentWord = 0;
+          _isAiRefereeJudging = false;
+          asrResult = "";
+          handlingAsrChinese = "";
+          asrController.resetResult();
+        });
+        onWordPressed(word, index, true, null);
+      } else {
+        // 用户点击“显示答案”：展开答案并停止本单词的语音识别
+        setState(() {
+          word.isAnswerRevealed = true;
+          word.sentenceTranslatedPassed = true;
+          _aiRefereeDebounceTimer?.cancel();
+        });
+        _sessionController.stopSession(forceStopMicrophone: false);
+      }
+      return;
+    }
+
     setState(() {
       word.isAnswerRevealed = !word.isAnswerRevealed;
-      if (studyMode == WordListStudyMode.translateSentence) {
-        word.sentenceTranslatedPassed = word.isAnswerRevealed;
-      }
     });
 
     if (word.isAnswerRevealed && studyMode == WordListStudyMode.hideEnglish) {
