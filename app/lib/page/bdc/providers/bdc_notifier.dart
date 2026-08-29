@@ -73,6 +73,8 @@ class BdcNotifier extends _$BdcNotifier {
   final Set<String> _failedWordAiEvaluationsForCurrentWord = {};
   int _wordAiEvaluationCountForCurrentWord = 0;
   bool _isWordAiRefereeJudging = false;
+  String _wordAccumulatedAsrText = "";
+  String _wordLastFinalAsrText = "";
 
   Timer? _sentenceAiRefereeDebounceTimer;
   final Set<String> _failedSentenceAiEvaluationsForCurrentWord = {};
@@ -492,6 +494,8 @@ class BdcNotifier extends _$BdcNotifier {
     _failedWordAiEvaluationsForCurrentWord.clear();
     _wordAiEvaluationCountForCurrentWord = 0;
     _isWordAiRefereeJudging = false;
+    _wordAccumulatedAsrText = "";
+    _wordLastFinalAsrText = "";
 
     _sentenceAiRefereeDebounceTimer?.cancel();
     _failedSentenceAiEvaluationsForCurrentWord.clear();
@@ -1717,12 +1721,51 @@ class BdcNotifier extends _$BdcNotifier {
             processedResult = AsrUtil.preprocessEnglish(result.text, state.word!.spell);
             _updateState(state.copyWith(currentScore: result.score, currentAsrCandidates: candidates), tag: 'asr-result');
           } else {
-            processedResult = AsrUtil.preprocess(best);
-            _updateState(state.copyWith(currentAsrCandidates: candidates), tag: 'asr-candidate');
+            // 单词英中模式：支持跨端点（Endpoint reset）分段增量拼接
+            final rawBest = best.trim();
+            if (rawBest.isNotEmpty) {
+              _wordAccumulatedAsrText = mergeAsrText(_wordLastFinalAsrText, rawBest, isEnglish: false);
+              if (isFinal) {
+                _wordLastFinalAsrText = _wordAccumulatedAsrText;
+              }
+            }
+            final uniqueCandidates = <String>[];
+            if (_wordAccumulatedAsrText.isNotEmpty) {
+              uniqueCandidates.add(_wordAccumulatedAsrText);
+            }
+            for (final c in candidates) {
+              if (!uniqueCandidates.contains(c)) {
+                uniqueCandidates.add(c);
+              }
+            }
+            if (uniqueCandidates.isEmpty) {
+              uniqueCandidates.add(best);
+            }
+            processedResult = AsrUtil.preprocess(_wordAccumulatedAsrText.isNotEmpty ? _wordAccumulatedAsrText : best);
+            _updateState(state.copyWith(currentAsrCandidates: uniqueCandidates), tag: 'asr-candidate');
           }
         } else {
-          processedResult = AsrUtil.preprocess(best);
-          _updateState(state.copyWith(currentAsrCandidates: candidates), tag: 'asr-candidate');
+          final rawBest = best.trim();
+          if (rawBest.isNotEmpty) {
+            _wordAccumulatedAsrText = mergeAsrText(_wordLastFinalAsrText, rawBest, isEnglish: false);
+            if (isFinal) {
+              _wordLastFinalAsrText = _wordAccumulatedAsrText;
+            }
+          }
+          final uniqueCandidates = <String>[];
+          if (_wordAccumulatedAsrText.isNotEmpty) {
+            uniqueCandidates.add(_wordAccumulatedAsrText);
+          }
+          for (final c in candidates) {
+            if (!uniqueCandidates.contains(c)) {
+              uniqueCandidates.add(c);
+            }
+          }
+          if (uniqueCandidates.isEmpty) {
+            uniqueCandidates.add(best);
+          }
+          processedResult = AsrUtil.preprocess(_wordAccumulatedAsrText.isNotEmpty ? _wordAccumulatedAsrText : best);
+          _updateState(state.copyWith(currentAsrCandidates: uniqueCandidates), tag: 'asr-candidate');
         }
       }
     } catch (e, stackTrace) {
@@ -1986,6 +2029,8 @@ class BdcNotifier extends _$BdcNotifier {
       
       if (result.newMatchCount > 0) {
         _wordAiRefereeDebounceTimer?.cancel(); // 本地匹配命中，取消待触发的AI裁判
+        _wordAccumulatedAsrText = "";
+        _wordLastFinalAsrText = "";
         state = state.copyWith(
           canLeaveCurrWord: true,
           wordWrapper: clonedWrapper,

@@ -153,6 +153,16 @@ class WordListAsrController extends ChangeNotifier {
         }
       }
       newAsrResult = _accumulatedSentenceAsr;
+    } else if (studyMode == WordListStudyMode.speakChinese) {
+      final cleanChunk = AsrUtil.preprocess(processedEvent);
+      if (cleanChunk.isNotEmpty) {
+        if (_accumulatedSentenceAsr.isNotEmpty) {
+          _accumulatedSentenceAsr = AsrUtil.mergeAsrText(_accumulatedSentenceAsr, cleanChunk, isEnglish: false);
+        } else {
+          _accumulatedSentenceAsr = cleanChunk;
+        }
+      }
+      newAsrResult = _accumulatedSentenceAsr;
     } else {
       newAsrResult = AsrUtil.preprocess(processedEvent);
     }
