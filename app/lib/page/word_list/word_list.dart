@@ -1507,7 +1507,7 @@ class WordListPageState extends State<WordListPage>
       final currentIdx = getBookMarkUiPosition();
       if (currentIdx != wordIndex) return;
 
-      // 1. 用户停顿后，先检查本地算法得分：若达到合格线（>=65分且长度>=50%），直接判定通过，无需调用大模型
+      // 1. 用户停顿后，先检查本地算法得分：若达到合格线（>=65分且长度>=50%），直接判定通过并自动跳转到下一词
       final score = getChineseSentenceMatchScore(asrText, targetChinese);
       if (score >= 65 && (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.5).ceil())) {
         Global.logger.d('~~~~~[翻译例句] 用户停顿后本地匹配判定通过(score=$score): asrText="$asrText"');
@@ -1526,6 +1526,25 @@ class WordListPageState extends State<WordListPage>
           );
         } catch (e) {
           Global.logger.d("停止ASR失败: $e");
+        }
+
+        var nextWordIndex = wordIndex + 1;
+        while (nextWordIndex < words.length) {
+          if (!words[nextWordIndex].answeredAllMeanings) break;
+          nextWordIndex += 1;
+        }
+
+        if (words.every((w) => w.answeredAllMeanings)) {
+          ToastUtil.info("恭喜，你答对了所有单词");
+          return;
+        }
+
+        if (nextWordIndex < words.length) {
+          jumpToNextWord(nextWordIndex - 1, true, () {
+            asrResult = "";
+            handlingAsrChinese = "";
+            asrController.resetResult();
+          });
         }
         return;
       }
