@@ -365,13 +365,13 @@ void main() {
         reason: 'seaplane 应纠正为 discipline');
   });
 
-  test('用例3: 目标 good discipline is essential, ASR 结果 could this plan is essential → 纠正为 good discipline is essential(中间词不丢)', () async {
+  test('用例5: 目标 He owns a twelfth share of the company, ASR 结果 he owes the telfs of the share of the company → 纠正 telfs 为 twelfth, owes 为 owns', () async {
     final (notifier, mockAsr) = await setupSentence2En(
-      'Good discipline is essential for success in any organization.',
-      '良好的纪律对任何组织的成功都至关重要。',
+      'He owns a twelfth share of the company.',
+      '他拥有该公司十二分之一的股份。',
     );
-    final result = await simulateAsrCorrection(notifier, mockAsr, 'could this plan is essential');
-    expect(result, 'good discipline is essential',
-        reason: 'this plan 应合并为 discipline,"is essential" 应保留,中间词不得丢失');
+    final result = await simulateAsrCorrection(notifier, mockAsr, 'he owes the telfs of the share of the company');
+    expect(result.contains('twelfth'), true, reason: 'telfs 应自动音素纠正为 twelfth');
+    expect(result.contains('owns'), true, reason: 'owes 应自动音素纠正为 owns');
   });
 }

@@ -2239,18 +2239,18 @@ class BdcNotifier extends _$BdcNotifier {
     final targetWords = _extractEnglishWords(targetSentence);
     if (targetWords.isEmpty) return input;
 
-    // 如果输入已经高度匹配目标句（≥80% 词精确命中），跳过纠错
-    final targetLowerSet = targetWords.map((w) => w.toLowerCase()).toSet();
-    int exactHits = 0;
-    for (final iw in inputWords) {
-      if (targetLowerSet.contains(iw.toLowerCase())) exactHits++;
+    // 如果输入已经与目标句完全一致（词数相同且字面全部匹配），直接返回无需纠错
+    if (inputWords.length == targetWords.length) {
+      bool allExact = true;
+      for (int i = 0; i < inputWords.length; i++) {
+        if (inputWords[i].toLowerCase() != targetWords[i].toLowerCase()) {
+          allExact = false;
+          break;
+        }
+      }
+      if (allExact) return input;
     }
-    final hitRatio = inputWords.isNotEmpty ? exactHits / inputWords.length : 0.0;
-    if (hitRatio >= 0.8) {
-      Global.logger.d('~~~~~[CORRECT] SKIP (exact hits: $exactHits/${inputWords.length}=${(hitRatio*100).round()}%) input=[$input]→target=[$targetSentence]');
-      return input;
-    }
-    Global.logger.d('~~~~~[CORRECT] START input=[$input] target=[$targetSentence] exactHits=$exactHits/${inputWords.length}');
+    Global.logger.d('~~~~~[CORRECT] START input=[$input] target=[$targetSentence]');
 
     const int matchThreshold = 55;
     const int maxLenDiff = 3;
@@ -2262,21 +2262,55 @@ class BdcNotifier extends _$BdcNotifier {
       'and', 'or', 'but', 'with', 'as', 'by', 'from', 'up', 'out', 'do', 'does',
     };
 
-    // 步骤 1：位置感知对齐。为每个 input 词在 target 中找精确匹配，
-    // 优先匹配位置相近的，避免 "for"(句尾) 匹配到 "towed"(句中)。
-    final inputAlign = List<int?>.filled(inputWords.length, null); // → targetIndex
-    final targetUsed = List<bool>.filled(targetWords.length, false);
-    for (int i = 0; i < inputWords.length; i++) {
-      final iw = inputWords[i].toLowerCase();
-      int bestJ = -1, bestDist = 999;
-      for (int j = 0; j < targetWords.length; j++) {
-        if (targetUsed[j]) continue;
-        if (iw == targetWords[j].toLowerCase()) {
-          final dist = (i - j).abs();
-          if (dist < bestDist) { bestDist = dist; bestJ = j; }
+    // 步骤 1：基于 DP 的单调递增位置感知对齐（杜绝逆序或交叉匹配）
+    // 实词（非功能词）匹配权重更高（10分），功能词权重较低（2分），并叠加位置距离惩罚
+    final int n = inputWords.length;
+    final int m = targetWords.length;
+    final dp = List.generate(n + 1, (_) => List<double>.filled(m + 1, 0.0));
+    final choice = List.generate(n + 1, (_) => List<int>.filled(m + 1, 0)); // 1: skip input, 2: skip target, 3: match
+
+    for (int i = 1; i <= n; i++) {
+      final iw = inputWords[i - 1].toLowerCase();
+      final isFuncI = functionWords.contains(iw);
+      for (int j = 1; j <= m; j++) {
+        final tw = targetWords[j - 1].toLowerCase();
+        double bestScore = dp[i - 1][j];
+        int bestChoice = 1;
+
+        if (dp[i][j - 1] > bestScore) {
+          bestScore = dp[i][j - 1];
+          bestChoice = 2;
         }
+
+        if (iw == tw) {
+          final double baseWeight = isFuncI ? 2.0 : 10.0;
+          final double distPenalty = ((i - 1) * m / n - (j - 1)).abs() * 0.1;
+          final double matchScore = dp[i - 1][j - 1] + (baseWeight - distPenalty).clamp(0.5, 10.0);
+          if (matchScore > bestScore) {
+            bestScore = matchScore;
+            bestChoice = 3;
+          }
+        }
+
+        dp[i][j] = bestScore;
+        choice[i][j] = bestChoice;
       }
-      if (bestJ >= 0) { inputAlign[i] = bestJ; targetUsed[bestJ] = true; }
+    }
+
+    final inputAlign = List<int?>.filled(n, null);
+    final targetUsed = List<bool>.filled(m, false);
+    int currI = n, currJ = m;
+    while (currI > 0 && currJ > 0) {
+      if (choice[currI][currJ] == 3) {
+        inputAlign[currI - 1] = currJ - 1;
+        targetUsed[currJ - 1] = true;
+        currI--;
+        currJ--;
+      } else if (choice[currI][currJ] == 1) {
+        currI--;
+      } else {
+        currJ--;
+      }
     }
 
     // 日志：对齐结果
