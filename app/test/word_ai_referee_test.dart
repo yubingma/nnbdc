@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/util/ai_referee_util.dart';
 import 'package:nnbdc/util/word_util.dart';
 
 void main() {
@@ -97,6 +98,29 @@ void main() {
       expect(widgets.isNotEmpty, isTrue);
       // 第一个 widget 应当是包含 AI 认可回答的组件
       expect(widgets.length, equals(3)); // 1 个 AI 认可 badge + 2 个词性 Wrap
+    });
+
+    test('AiRefereeUtil.parseRefereeResponse parses ch2En phonetic match correctly', () {
+      const rawAiResponse = '{"isCorrect": true}';
+      final parsed = AiRefereeUtil.parseRefereeResponse(rawAiResponse);
+      expect(parsed.isCorrect, isTrue);
+      expect(parsed.isSynonym, isFalse);
+    });
+
+    test('AiRefereeUtil.parseRefereeResponse parses ch2En synonym correctly with friendly hint', () {
+      const rawAiResponse = '{"isCorrect": false, "isSynonym": true, "explanation": "「buy」意思正确，但请尝试读出目标词「purchase」"}';
+      final parsed = AiRefereeUtil.parseRefereeResponse(rawAiResponse);
+      expect(parsed.isCorrect, isFalse);
+      expect(parsed.isSynonym, isTrue);
+      expect(parsed.explanation, contains('「buy」意思正确'));
+    });
+
+    test('AiRefereeUtil.parseRefereeResponse parses unrelated wrong word correctly', () {
+      const rawAiResponse = '{"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}';
+      final parsed = AiRefereeUtil.parseRefereeResponse(rawAiResponse);
+      expect(parsed.isCorrect, isFalse);
+      expect(parsed.isSynonym, isFalse);
+      expect(parsed.explanation, equals('发音与目标词不符'));
     });
   });
 }

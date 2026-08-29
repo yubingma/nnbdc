@@ -2096,6 +2096,10 @@ class BdcNotifier extends _$BdcNotifier {
           final ratingResult = _calculateRating(method);
           _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
         }
+      } else if (!state.hasFinishedAnswering && !_isAnswerCorrectHandling && isVoice) {
+        final isFromAsr = asrInput != null || meaningController.text == _handlingChinese;
+        final inputs = isFromAsr ? state.currentAsrCandidates : [_handlingChinese];
+        _scheduleCh2EnAiRefereeCheck(inputs);
       }
     }
     Global.logger.d('[PERF] checkAsrResult total cost: ${stopwatch.elapsedMilliseconds}ms');
@@ -3238,6 +3242,136 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } catch (e, st) {
       Global.logger.e("AI单词裁判判分出错", error: e, stackTrace: st);
+      if (!_isDisposed) {
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+      }
+      if (context != null && context.mounted) {
+        ToastUtil.error("AI 裁判开小差了，请重试");
+      }
+    } finally {
+      _isWordAiRefereeJudging = false;
+    }
+  }
+
+  /// 当用户说英文停顿一小段时间后，触发单词中英（ch2En）大模型发音与同义词智能裁判
+  void _scheduleCh2EnAiRefereeCheck(List<String> inputs) {
+    _wordAiRefereeDebounceTimer?.cancel();
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+
+    final word = state.word;
+    final wordWrapper = state.wordWrapper;
+    if (word == null || wordWrapper == null) return;
+
+    final rawInput = inputs.isNotEmpty ? inputs.first : meaningController.text;
+    final cleanInput = rawInput.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (cleanInput.length < 2) return;
+
+    if (_failedWordAiEvaluationsForCurrentWord.contains(cleanInput)) return;
+    if (_wordAiEvaluationCountForCurrentWord >= 5) return;
+
+    _wordAiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
+      if (_isDisposed) return;
+      if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+      if (_isWordAiRefereeJudging) return;
+      if (state.word?.id != word.id) return;
+
+      await _evaluateCh2EnWithAiReferee(
+        cleanInput,
+        rawInput: rawInput,
+        candidates: inputs,
+      );
+    });
+  }
+
+  /// 执行单词中英（ch2En）大模型智能裁决
+  Future<void> _evaluateCh2EnWithAiReferee(
+    String cleanInput, {
+    String? rawInput,
+    List<String>? candidates,
+    BuildContext? context,
+  }) async {
+    if (_isDisposed || _isWordAiRefereeJudging) return;
+    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+    final word = state.word;
+    final wordWrapper = state.wordWrapper;
+    if (word == null || wordWrapper == null) return;
+
+    final user = Global.getLoggedInUser();
+    if (user == null) return;
+
+    final checkWordId = word.id;
+    _isWordAiRefereeJudging = true;
+    _wordAiEvaluationCountForCurrentWord++;
+    wordWrapper.isAiEvaluating = true;
+    state = state.copyWith(isAiEvaluating: true);
+
+    final targetWord = word.spell;
+    final referenceMeanings = word.getMeaningStr();
+    final userInput = rawInput ?? cleanInput;
+
+    Global.logger.d('~~~~~[AI裁判-中英单词] 启动大模型裁判(第$_wordAiEvaluationCountForCurrentWord次): word="$targetWord", meanings="$referenceMeanings", input="$userInput"');
+
+    try {
+      final refereeResult = await AiRefereeUtil.judgeWordEnglish(
+        targetWord: targetWord,
+        referenceMeanings: referenceMeanings,
+        userInput: userInput,
+        candidates: candidates,
+        userId: user.id,
+      );
+
+      if (_isDisposed || state.word?.id != checkWordId) {
+        Global.logger.d('~~~~~[AI裁判-中英单词] 单词已切换或已销毁，丢弃裁判结果');
+        return;
+      }
+
+      final isCorrect = refereeResult.isCorrect;
+      final isSynonym = refereeResult.isSynonym;
+      final explanation = refereeResult.explanation;
+      Global.logger.d('~~~~~[AI裁判-中英单词] 裁判结果: isCorrect=$isCorrect, isSynonym=$isSynonym, response=${refereeResult.rawResponse}');
+
+      if (isCorrect) {
+        wordWrapper.isAiEvaluating = false;
+        meaningController.text = targetWord;
+
+        state = state.copyWith(
+          isAiEvaluating: false,
+          canLeaveCurrWord: true,
+          isScorePassed: true,
+          wordWrapper: wordWrapper,
+        );
+
+        if (context != null && context.mounted) {
+          await showAiRefereeDialog(context, isCorrect: true, explanation: '');
+        }
+
+        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+          await StudyAudioSessionController.instance.syncHardwareIntent(
+            isInSpeakTab: _shouldShowSpeakTab && state.tabIndex == 0,
+            isAnsweringActive: false,
+            language: AsrLanguage.english,
+            phrases: [],
+            caller: this,
+          );
+        }
+        final ratingResult = _calculateRating("AI裁判");
+        _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+      } else {
+        _failedWordAiEvaluationsForCurrentWord.add(cleanInput);
+        wordWrapper.isAiEvaluating = false;
+        state = state.copyWith(isAiEvaluating: false);
+        if (context != null && context.mounted) {
+          if (isSynonym && explanation.isNotEmpty) {
+            ToastUtil.info(explanation);
+          } else {
+            await showAiRefereeDialog(context, isCorrect: false, explanation: explanation);
+          }
+          if (!_isDisposed) _handleTabChangeForAsr();
+        }
+      }
+    } catch (e, st) {
+      Global.logger.e("AI中英单词裁判判分出错", error: e, stackTrace: st);
       if (!_isDisposed) {
         wordWrapper.isAiEvaluating = false;
         state = state.copyWith(isAiEvaluating: false);

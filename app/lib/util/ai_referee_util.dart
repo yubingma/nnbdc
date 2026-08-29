@@ -59,9 +59,9 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 ''';
 
   /// 解析大模型返回的 JSON 判决结果
-  static ({bool isCorrect, String explanation, String? intendedMeaning}) parseRefereeResponse(String? rawResponse) {
+  static ({bool isCorrect, bool isSynonym, String explanation, String? intendedMeaning}) parseRefereeResponse(String? rawResponse) {
     if (rawResponse == null || rawResponse.trim().isEmpty) {
-      return (isCorrect: false, explanation: '无裁判结果', intendedMeaning: null);
+      return (isCorrect: false, isSynonym: false, explanation: '无裁判结果', intendedMeaning: null);
     }
 
     try {
@@ -82,16 +82,47 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 
       final parsed = jsonDecode(cleanJson.trim());
       final isCorrect = parsed['isCorrect'] as bool? ?? false;
+      final isSynonym = parsed['isSynonym'] as bool? ?? false;
       final explanation = parsed['explanation'] as String? ?? '';
       final intendedMeaning = parsed['intendedMeaning'] as String?;
-      return (isCorrect: isCorrect, explanation: explanation, intendedMeaning: intendedMeaning);
+      return (
+        isCorrect: isCorrect,
+        isSynonym: isSynonym,
+        explanation: explanation,
+        intendedMeaning: intendedMeaning,
+      );
     } catch (e) {
       Global.logger.w('解析 AI 裁判结果异常: rawResponse=$rawResponse', error: e);
-      return (isCorrect: false, explanation: '解析裁判结果失败', intendedMeaning: null);
+      return (isCorrect: false, isSynonym: false, explanation: '解析裁判结果失败', intendedMeaning: null);
     }
   }
 
-  /// 请求大模型进行单词释义裁判
+  /// 单词中英（ch2En）裁判系统提示词（音素近似/发音容错与同义词区分引导）
+  static const String ch2EnWordRefereeSystemPrompt = '''
+You are an expert English pronunciation and vocabulary referee for Chinese ESL learners.
+Your task is to judge whether the user's spoken input represents an attempt to pronounce the target English word, or if they said a different synonym word.
+
+CRITICAL INSTRUCTIONS & CONSTRAINTS:
+1. PHONETIC / ACOUSTIC APPROXIMATION OF TARGET WORD (MUST ACCEPT as TRUE):
+   - The user input comes from an automatic speech recognition (ASR) system (phoneme/acoustic model) and Chinese learners' natural pronunciation.
+   - If the user's input consists of phonetically similar syllables, sound fragments, or common ASR transcription errors of the TARGET WORD (e.g. for "beside": "be side", "besides", "biside", "be side of"; for "discipline": "displain", "disiplin"; for "think": "sink", "fink"; for "walked": "walk"), you MUST judge as TRUE {"isCorrect": true}.
+
+2. SEMANTIC SYNONYM OF DIFFERENT WORD (JUDGE FALSE with FRIENDLY EXPLANATION):
+   - If the user clearly spoke a COMPLETELY DIFFERENT English word that is NOT a phonetic approximation of the target word, BUT this word matches the Chinese meaning of the target word (e.g. Target word is "purchase" and Chinese meaning is "购买", but user said "buy"; or Target is "gigantic" and user said "huge" or "big"; or Target is "child" and user said "kid"):
+   - You MUST judge as FALSE {"isCorrect": false, "isSynonym": true, "explanation": "「buy」意思正确，但请尝试读出目标词「purchase」"}
+   - The explanation MUST be concise, polite and encouraging in Chinese (max 18 words), naming the spoken word and the target word.
+
+3. COMPLETELY UNRELATED OR WRONG:
+   - If the spoken input is neither phonetically similar to the target word nor a valid semantic synonym of the Chinese meaning:
+   - Judge as FALSE {"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}
+
+Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
+{"isCorrect": true}
+{"isCorrect": false, "isSynonym": true, "explanation": "「spoken_word」意思正确，但请尝试读出目标词「target_word」"}
+{"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}
+''';
+
+  /// 请求大模型进行单词释义裁判（英中 en2Ch）
   static Future<({bool isCorrect, String explanation, String? intendedMeaning, String? rawResponse})> judgeWordMeaning({
     required String targetWord,
     required String referenceMeanings,
@@ -126,6 +157,44 @@ ASR Candidate List: $candidateStr
       );
     } else {
       return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', intendedMeaning: null, rawResponse: null);
+    }
+  }
+
+  /// 请求大模型进行单词中英（ch2En）发音与同义词裁判
+  static Future<({bool isCorrect, bool isSynonym, String explanation, String? rawResponse})> judgeWordEnglish({
+    required String targetWord,
+    required String referenceMeanings,
+    required String userInput,
+    List<String>? candidates,
+    required String userId,
+  }) async {
+    final candidateStr = (candidates != null && candidates.length > 1)
+        ? candidates.join(', ')
+        : userInput;
+
+    final userPrompt = '''
+Target English Word: $targetWord
+Dictionary Chinese Meanings: $referenceMeanings
+User's Speech-to-Text Input: $userInput
+ASR Candidate List: $candidateStr
+''';
+
+    final messages = [
+      {"role": "system", "content": ch2EnWordRefereeSystemPrompt},
+      {"role": "user", "content": userPrompt}
+    ];
+
+    final result = await Api.client.aiChat(jsonEncode(messages), userId);
+    if (result.success && result.data != null) {
+      final parsed = parseRefereeResponse(result.data);
+      return (
+        isCorrect: parsed.isCorrect,
+        isSynonym: parsed.isSynonym,
+        explanation: parsed.explanation,
+        rawResponse: result.data,
+      );
+    } else {
+      return (isCorrect: false, isSynonym: false, explanation: result.msg ?? '调用 AI 裁判失败', rawResponse: null);
     }
   }
 
