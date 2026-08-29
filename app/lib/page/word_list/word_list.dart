@@ -681,8 +681,14 @@ class WordListPageState extends State<WordListPage>
           words[currWordIndex].lastAsrResult = asrResult;
           Global.logger.d('翻译例句模式检查: asrResult=$asrResult, targetChinese=$targetChinese, score=$score');
 
-          final bool isMatch = score >= 60 || fuzzyChineseContains(asrResult, targetChinese);
-          if (isMatch) {
+          final cleanInput = asrResult.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+          final cleanTarget = targetChinese.replaceAll(RegExp(r'[^\u4e00-\u9fa5]'), '');
+
+          // 立即判定通过条件：高匹配度（>=85分）且用户说出的字数充分（>= 目标长度的 70%），防止用户只说了前半句就被提前截断判定通过
+          final bool isImmediateMatch = score >= 85 &&
+              (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.7).ceil());
+
+          if (isImmediateMatch) {
             _aiRefereeDebounceTimer?.cancel();
             canLeaveCurrWord = true;
             words[currWordIndex].answeredAllMeanings = true;
@@ -699,7 +705,8 @@ class WordListPageState extends State<WordListPage>
               Global.logger.d("停止ASR失败: $e");
             }
           } else {
-            // 本地未直接判定通过：当用户停止说话一小段时间后，由大模型裁判进行智能容错二次判定
+            // 用户仍在说话或尚未达到高分完整匹配：
+            // 调度防抖（1500ms），当用户完全停顿后再进行完整判定（本地合格直接通过，否则交由大模型智能裁判）
             _scheduleAiRefereeCheck(currWordIndex, words[currWordIndex], asrResult);
           }
         }
@@ -1334,6 +1341,12 @@ class WordListPageState extends State<WordListPage>
           word.lastAsrResult = null;
           handlingAsrChinese = "";
           asrController.resetResult();
+
+          if (studyMode == WordListStudyMode.translateSentence) {
+            word.isAnswerRevealed = false;
+            word.sentenceTranslatedPassed = false;
+            word.isAnswerProvidedBySystem = false;
+          }
         }
       } else {
         // 同一单词或重入时，确保重置识别控制器的累积状态
@@ -1455,8 +1468,8 @@ class WordListPageState extends State<WordListPage>
     // 【防护4：单词请求频次上限】单个单词最多允许自动调用 5 次大模型裁判
     if (_aiEvaluationCountForCurrentWord >= 5) return;
 
-    // 【防护5：防抖 1800ms】确保用户完全停止说话后才发起单次请求，避免边说边请求
-    _aiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1800), () async {
+    // 【防护5：防抖 1500ms】确保用户完全停止说话后才发起判定，避免中途截断
+    _aiRefereeDebounceTimer = Timer(const Duration(milliseconds: 1500), () async {
       if (!mounted) return;
       if (studyMode != WordListStudyMode.translateSentence) return;
       if (wordWrapper.sentenceTranslatedPassed) return;
@@ -1464,6 +1477,30 @@ class WordListPageState extends State<WordListPage>
       final currentIdx = getBookMarkUiPosition();
       if (currentIdx != wordIndex) return;
 
+      // 1. 用户停顿后，先检查本地算法得分：若达到合格线（>=65分且长度>=50%），直接判定通过，无需调用大模型
+      final score = getChineseSentenceMatchScore(asrText, targetChinese);
+      if (score >= 65 && (cleanTarget.isEmpty || cleanInput.length >= (cleanTarget.length * 0.5).ceil())) {
+        Global.logger.d('~~~~~[翻译例句] 用户停顿后本地匹配判定通过(score=$score): asrText="$asrText"');
+        setState(() {
+          wordWrapper.sentenceTranslatedPassed = true;
+          wordWrapper.answeredAllMeanings = true;
+          wordWrapper.pronunciationScore = score;
+        });
+
+        try {
+          await _sessionController.stopSession(forceStopMicrophone: false).timeout(
+            const Duration(milliseconds: 500),
+            onTimeout: () {
+              Global.logger.w('停止ASR超时');
+            },
+          );
+        } catch (e) {
+          Global.logger.d("停止ASR失败: $e");
+        }
+        return;
+      }
+
+      // 2. 本地分数未达到合格线，由大模型裁判进行智能容错二次判定
       await _evaluateSentenceWithAiReferee(wordIndex, wordWrapper, asrText, cleanInput);
     });
   }

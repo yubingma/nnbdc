@@ -335,6 +335,43 @@ class TranslateSentenceModeItem extends StatelessWidget {
             const SizedBox(width: 6),
             _buildScoreBadge(score),
           ],
+          const SizedBox(width: 8),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => actions.onToggleAnswer(word, index),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white24 : Colors.black12,
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.visibility_off_outlined,
+                    size: 13,
+                    color: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    '隐藏答案',
+                    textScaler: const TextScaler.linear(1.0),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
