@@ -71,6 +71,7 @@ void main() {
       wrapper.currentSentence = sentence;
       wrapper.sentenceTranslatedPassed = true;
       wrapper.isAiEvaluatedPassed = true;
+      wrapper.isAiEvaluating = true;
       wrapper.pronunciationScore = 95;
 
       final cloned = wrapper.clone();
@@ -79,6 +80,7 @@ void main() {
       expect(cloned.currentSentence?.chinese, equals('我吃了一个苹果。'));
       expect(cloned.sentenceTranslatedPassed, isTrue);
       expect(cloned.isAiEvaluatedPassed, isTrue);
+      expect(cloned.isAiEvaluating, isTrue);
       expect(cloned.pronunciationScore, equals(95));
     });
 

@@ -247,7 +247,10 @@ class TranslateSentenceModeItem extends StatelessWidget {
               ),
             ),
           ),
-          if (score != null && score > 0) ...[
+          if (word.isAiEvaluating) ...[
+            const SizedBox(width: 6),
+            _buildAiJudgingBadge(),
+          ] else if (score != null && score > 0) ...[
             const SizedBox(width: 6),
             _buildScoreBadge(score),
           ],
@@ -373,6 +376,44 @@ class TranslateSentenceModeItem extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAiJudgingBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: const Color(0xFF8B5CF6).withValues(alpha: 0.6),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 8.5,
+            height: 8.5,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+            ),
+          ),
+          const SizedBox(width: 3.5),
+          Text(
+            'AI判定中...',
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
             ),
           ),
         ],

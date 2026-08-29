@@ -225,6 +225,7 @@ class WordListPageState extends State<WordListPage>
           word.isAnswerRevealed = false;
           word.sentenceTranslatedPassed = false;
           word.isAiEvaluatedPassed = false;
+          word.isAiEvaluating = false;
           word.answeredAllMeanings = false;
           word.lastAsrResult = null;
           word.pronunciationScore = null;
@@ -1375,6 +1376,7 @@ class WordListPageState extends State<WordListPage>
             word.isAnswerRevealed = false;
             word.sentenceTranslatedPassed = false;
             word.isAiEvaluatedPassed = false;
+            word.isAiEvaluating = false;
             word.isAnswerProvidedBySystem = false;
           }
         }
@@ -1569,6 +1571,9 @@ class WordListPageState extends State<WordListPage>
     final checkWordId = wordWrapper.word.id;
     _isAiRefereeJudging = true;
     _aiEvaluationCountForCurrentWord++;
+    setState(() {
+      wordWrapper.isAiEvaluating = true;
+    });
     Global.logger.d('~~~~~[AI裁判] 启动大模型裁判(第$_aiEvaluationCountForCurrentWord次): source="$sourceEnglish", target="$referenceChinese", input="$userInput"');
 
     try {
@@ -1674,6 +1679,11 @@ User's Speech-to-Text Input: $userInput
       _failedAiEvaluationsForCurrentWord.add(cleanInput);
     } finally {
       _isAiRefereeJudging = false;
+      if (mounted) {
+        setState(() {
+          wordWrapper.isAiEvaluating = false;
+        });
+      }
     }
   }
 
