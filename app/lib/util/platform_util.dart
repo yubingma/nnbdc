@@ -84,10 +84,12 @@ class PlatformUtils {
       final cgroupFile = File('/proc/self/cgroup');
       if (cgroupFile.existsSync()) {
         final content = cgroupFile.readAsStringSync().toLowerCase();
-        if (content.contains('isulad') ||
-            content.contains('droi') ||
-            content.contains('zhuoyi') ||
-            content.contains('卓易通')) {
+        // 关键：先移除 'android' 单词，避免 'android' 中的 'droi' 子串误命中导致普通安卓设备被误判
+        final sanitized = content.replaceAll('android', '');
+        if (sanitized.contains('isulad') ||
+            sanitized.contains('droi') ||
+            sanitized.contains('zhuoyi') ||
+            sanitized.contains('卓易通')) {
           return true;
         }
       }
