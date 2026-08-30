@@ -6,10 +6,11 @@
   <title>今日学习计划 - 不背单词风格极致美学原型</title>
   <style>
     :root {
-      /* 不背单词风格：极致纯净、空灵留白、零多余嵌套框 */
-      --bg: #FAFAFB;
+      /* 高级克制调色盘：黑白灰中性调 + 极低饱和度微点缀 */
+      --bg: #F9FAFB;
       --card-bg: #FFFFFF;
-      --card-subtle: #F4F5F7;
+      --card-subtle: #F3F4F6;
+      --card-active: #E5E7EB;
       --divider: rgba(0, 0, 0, 0.06);
       
       --text-primary: #111827;
@@ -17,21 +18,24 @@
       --text-muted: #9CA3AF;
       --text-faint: #D1D5DB;
 
-      --accent: #2563EB;
-      --accent-soft: rgba(37, 99, 235, 0.08);
-      --green: #10B981;
-      --green-soft: rgba(16, 185, 129, 0.09);
-      --amber: #F59E0B;
-      --amber-soft: rgba(245, 158, 11, 0.09);
+      /* 克制微辅色（低饱和度、不抢戏） */
+      --accent: #1F2937;
+      --accent-soft: rgba(0, 0, 0, 0.04);
       
-      --shadow-subtle: 0 8px 30px rgba(0, 0, 0, 0.04);
-      --shadow-btn: 0 8px 20px -4px rgba(17, 24, 39, 0.25);
+      --green-text: #059669;
+      --green-bg: rgba(5, 150, 105, 0.08);
+      --amber-text: #D97706;
+      --amber-bg: rgba(217, 119, 6, 0.08);
+      
+      --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.03);
+      --shadow-btn: 0 6px 18px -2px rgba(17, 24, 39, 0.2);
     }
 
     [data-theme="dark"] {
-      --bg: #0A0D14;
-      --card-bg: #121722;
-      --card-subtle: #19202E;
+      --bg: #090B10;
+      --card-bg: #11141D;
+      --card-subtle: #181C28;
+      --card-active: #232838;
       --divider: rgba(255, 255, 255, 0.06);
       
       --text-primary: #F9FAFB;
@@ -39,15 +43,16 @@
       --text-muted: #6B7280;
       --text-faint: #374151;
 
-      --accent: #60A5FA;
-      --accent-soft: rgba(96, 165, 250, 0.12);
-      --green: #34D399;
-      --green-soft: rgba(52, 211, 153, 0.12);
-      --amber: #FBBF24;
-      --amber-soft: rgba(251, 191, 36, 0.12);
+      --accent: #F9FAFB;
+      --accent-soft: rgba(255, 255, 255, 0.06);
 
-      --shadow-subtle: 0 12px 36px rgba(0, 0, 0, 0.4);
-      --shadow-btn: 0 8px 20px -4px rgba(0, 0, 0, 0.6);
+      --green-text: #34D399;
+      --green-bg: rgba(52, 211, 153, 0.1);
+      --amber-text: #FBBF24;
+      --amber-bg: rgba(251, 191, 36, 0.1);
+
+      --shadow-subtle: 0 8px 30px rgba(0, 0, 0, 0.4);
+      --shadow-btn: 0 6px 18px -2px rgba(0, 0, 0, 0.6);
     }
 
     * {
@@ -139,7 +144,7 @@
       padding: 12px 24px 36px 24px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 22px;
     }
 
     /* 极简顶栏 */
@@ -186,7 +191,7 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      padding: 8px 0 2px 0;
+      padding: 6px 0 0 0;
     }
 
     /* 今日目标超大数字 */
@@ -239,7 +244,7 @@
     .hero-progress-wrap {
       width: 100%;
       max-width: 260px;
-      margin: 16px 0 18px 0;
+      margin: 14px 0 16px 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -265,13 +270,13 @@
       color: var(--text-muted);
     }
 
-    /* 三列极简数据（无框平铺） */
+    /* 三列极简纯色数据（去除花哨杂乱彩点） */
     .metrics-row {
       width: 100%;
       display: flex;
       justify-content: space-around;
       align-items: center;
-      padding: 10px 0 20px 0;
+      padding: 8px 0 18px 0;
       border-top: 1px solid var(--divider);
       border-bottom: 1px solid var(--divider);
     }
@@ -297,20 +302,15 @@
     }
     .metric-label {
       font-size: 12px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text-muted);
       display: flex;
       align-items: center;
       gap: 4px;
     }
-    .metric-indicator {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-    }
     .metric-divider {
       width: 1px;
-      height: 24px;
+      height: 20px;
       background: var(--divider);
     }
 
@@ -338,7 +338,7 @@
       transform: scale(0.97);
     }
 
-    /* --- 学习轨道：纯无框极简分叉流（FRAMELESS FORK FLOW） --- */
+    /* --- 学习轨道：极简纯净分叉树（克制中性色调） --- */
     .section-block {
       display: flex;
       flex-direction: column;
@@ -367,12 +367,12 @@
       font-weight: 500;
     }
 
-    /* 模式切换小按钮 */
+    /* 模式切换小按钮（中性素雅调） */
     .btn-mode-toggle {
       font-size: 12px;
-      font-weight: 700;
-      color: var(--accent);
-      background: var(--accent-soft);
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--card-subtle);
       border: none;
       padding: 4px 12px;
       border-radius: 14px;
@@ -383,25 +383,25 @@
       gap: 4px;
     }
     .btn-mode-toggle:hover {
-      opacity: 0.85;
+      background: var(--card-active);
     }
 
     /* ========================================================
-       【纯无框极简分叉树卡片】
+       【纯无框克制分叉树卡片】
        ======================================================== */
     .tree-card {
       background: var(--card-bg);
       border-radius: 24px;
-      padding: 16px 18px 20px 18px;
+      padding: 16px 18px 18px 18px;
       box-shadow: var(--shadow-subtle);
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
       cursor: pointer;
       transition: box-shadow 0.2s ease;
     }
     .tree-card:hover {
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
     }
 
     .track-section {
@@ -424,14 +424,14 @@
       letter-spacing: 0.02em;
     }
 
-    /* 纯无框分叉流布局：左主节点 + Bezier 导线 + 右纯胶囊流 */
+    /* 纯无框分叉流布局 */
     .frameless-fork-tree {
       display: flex;
       align-items: stretch;
       position: relative;
     }
 
-    /* 测评节点：轻巧的极简药丸（垂直居中） */
+    /* 测评节点：素雅中性卡片（去除浓重蓝边） */
     .origin-col-wrap {
       display: flex;
       flex-direction: column;
@@ -440,8 +440,8 @@
       flex-shrink: 0;
     }
     .origin-pill-box {
-      background: var(--accent-soft);
-      border: 1.5px solid var(--accent);
+      background: var(--card-subtle);
+      border: 1px solid var(--divider);
       padding: 6px 10px;
       border-radius: 12px;
       display: flex;
@@ -453,7 +453,7 @@
     .origin-pill-tag {
       font-size: 9px;
       font-weight: 800;
-      color: var(--accent);
+      color: var(--text-muted);
       letter-spacing: 0.5px;
     }
     .origin-pill-name {
@@ -463,7 +463,7 @@
       white-space: nowrap;
     }
 
-    /* 中间 Bezier 导线 SVG（自适应拉伸） */
+    /* 中间 Bezier 导线 SVG（使用极淡中性线） */
     .fork-svg-wrap {
       width: 22px;
       position: relative;
@@ -478,29 +478,29 @@
       display: block;
     }
 
-    /* 右侧纯粹的上下分支列（无任何大外框！纯靠小胶囊呼吸排布） */
+    /* 右侧纯胶囊流 */
     .branches-pure-col {
       flex: 1;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       min-width: 0;
     }
 
-    /* 单行分支流：左侧微型标签 + 右侧自适应胶囊群 */
+    /* 单行分支流 */
     .pure-branch-row {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 6px;
-      row-gap: 6px;
+      gap: 5px;
+      row-gap: 5px;
     }
 
-    /* 极简分支标签（绿/橙小微标） */
+    /* 克制微标（低饱和、高级） */
     .mini-status-badge {
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 700;
       display: inline-flex;
       align-items: center;
       gap: 2px;
@@ -509,19 +509,19 @@
       white-space: nowrap;
     }
     .mini-status-badge.correct {
-      color: var(--green);
-      background: var(--green-soft);
+      color: var(--green-text);
+      background: var(--green-bg);
     }
     .mini-status-badge.wrong {
-      color: var(--amber);
-      background: var(--amber-soft);
+      color: var(--amber-text);
+      background: var(--amber-bg);
     }
 
-    /* 环节小胶囊（纯净浮雕质感，无厚重外壳） */
+    /* 环节小胶囊 */
     .pure-step-pill {
       background: var(--card-subtle);
       color: var(--text-primary);
-      padding: 4px 9px;
+      padding: 4px 8px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
@@ -530,7 +530,7 @@
     .pure-step-arrow {
       color: var(--text-muted);
       font-size: 9px;
-      font-weight: 800;
+      font-weight: 700;
     }
 
     /* ========================================================
@@ -598,8 +598,8 @@
     .config-val-pill {
       font-size: 13px;
       font-weight: 600;
-      color: var(--accent);
-      background: var(--accent-soft);
+      color: var(--text-primary);
+      background: var(--card-subtle);
       padding: 4px 10px;
       border-radius: 12px;
       cursor: pointer;
@@ -630,22 +630,22 @@
       font-size: 12px;
       font-weight: 700;
     }
-    .branch-dot-title.correct { color: var(--green); }
-    .branch-dot-title.wrong { color: var(--amber); }
+    .branch-dot-title.correct { color: var(--green-text); }
+    .branch-dot-title.wrong { color: var(--amber-text); }
     .dot-mini {
       width: 6px;
       height: 6px;
       border-radius: 50%;
     }
-    .dot-mini.correct { background: var(--green); }
-    .dot-mini.wrong { background: var(--amber); }
+    .dot-mini.correct { background: var(--green-text); }
+    .dot-mini.wrong { background: var(--amber-text); }
 
     .btn-action-text {
       background: none;
       border: none;
       font-size: 12px;
       font-weight: 600;
-      color: var(--accent);
+      color: var(--text-secondary);
       cursor: pointer;
     }
 
@@ -691,7 +691,7 @@
 
   <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
-    <span>🌿 纯无框极简分叉流</span>
+    <span>🌿 高级克制中性色调</span>
     <button onclick="toggleTheme()">
       <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
     </button>
@@ -730,7 +730,7 @@
         </button>
       </div>
 
-      <!-- 不背单词核心：空灵留白仪表盘 -->
+      <!-- 核心大仪表盘（纯净素雅） -->
       <div class="hero-container">
         <!-- 今日目标超大数字 -->
         <div class="goal-hero-box" onclick="cycleGoal()">
@@ -755,30 +755,21 @@
           </div>
         </div>
 
-        <!-- 纯排版三列数据 -->
+        <!-- 三列极简纯色数据（去除花哨多色彩点） -->
         <div class="metrics-row">
           <div class="metric-col" onclick="alert('跳转至：今日总词列表')">
             <span class="metric-val">20</span>
-            <span class="metric-label">
-              <span class="metric-indicator" style="background: var(--accent);"></span>
-              今日总词
-            </span>
+            <span class="metric-label">今日总词</span>
           </div>
           <div class="metric-divider"></div>
           <div class="metric-col" onclick="alert('跳转至：新词列表')">
             <span class="metric-val">8</span>
-            <span class="metric-label">
-              <span class="metric-indicator" style="background: #8B5CF6;"></span>
-              新词
-            </span>
+            <span class="metric-label">新词</span>
           </div>
           <div class="metric-divider"></div>
           <div class="metric-col" onclick="alert('跳转至：复习列表')">
             <span class="metric-val">12</span>
-            <span class="metric-label">
-              <span class="metric-indicator" style="background: var(--green);"></span>
-              复习
-            </span>
+            <span class="metric-label">复习</span>
           </div>
         </div>
 
@@ -789,7 +780,7 @@
         </button>
       </div>
 
-      <!-- 学习轨道（纯无框自适应分叉树） -->
+      <!-- 学习轨道（纯净中性色分叉树） -->
       <div class="section-block">
         <div class="section-header-row">
           <div class="section-heading-wrap">
@@ -802,7 +793,7 @@
           </button>
         </div>
 
-        <!-- 【图形化纯无框分叉卡片】：没有任何笨重大外框，极简轻盈！ -->
+        <!-- 【纯净中性色分叉卡片】：消除廉价浓重彩色，呈现高级克制调 -->
         <div class="tree-card" id="display-mode-view" onclick="toggleEditMode()">
           
           <!-- 新词学习轨道 -->
@@ -812,27 +803,24 @@
               <span style="font-size: 11px; color: var(--text-muted);">点击配置 ❯</span>
             </div>
 
-            <!-- 纯无框分叉结构 -->
             <div class="frameless-fork-tree">
-              <!-- 测评起点 -->
+              <!-- 测评起点（中性素雅） -->
               <div class="origin-col-wrap">
                 <div class="origin-pill-box">
-                  <span class="origin-pill-tag">🎯 测评</span>
+                  <span class="origin-pill-tag">测评</span>
                   <span class="origin-pill-name">英译汉</span>
                 </div>
               </div>
 
-              <!-- 纤细 Bezier 导线 -->
+              <!-- 极淡中性 Bezier 导线 -->
               <div class="fork-svg-wrap">
                 <svg class="fork-svg-line" viewBox="0 0 22 64" fill="none">
-                  <!-- 正确上分曲线 -->
-                  <path d="M 0 32 C 11 32, 11 12, 22 12" stroke="var(--green)" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85"/>
-                  <!-- 错误下分曲线 -->
-                  <path d="M 0 32 C 11 32, 11 52, 22 52" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85"/>
+                  <path d="M 0 32 C 11 32, 11 12, 22 12" stroke="var(--divider)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                  <path d="M 0 32 C 11 32, 11 52, 22 52" stroke="var(--divider)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
                 </svg>
               </div>
 
-              <!-- 右侧纯胶囊流（演示配置 4 个环节的自然流动排布） -->
+              <!-- 右侧纯胶囊流（克制微色） -->
               <div class="branches-pure-col">
                 <!-- 答对分支 -->
                 <div class="pure-branch-row">
@@ -840,7 +828,7 @@
                   <span class="pure-step-pill">汉译英</span>
                 </div>
 
-                <!-- 答错分支：配置 4 个环节（例句英译汉 ➔ 例句汉译英 ➔ 单词拼写 ➔ 听音辨意） -->
+                <!-- 答错分支 -->
                 <div class="pure-branch-row">
                   <span class="mini-status-badge wrong">✕ 答错</span>
                   <span class="pure-step-pill">例句英译汉</span>
@@ -860,20 +848,22 @@
           <!-- 旧词复习轨道 -->
           <div class="track-section">
             <div class="track-badge-row">
-              <span class="track-badge">旧词复习轨道</span>
+              <span class="track-badge">旧词轨道</span>
               <span style="font-size: 11px; color: var(--text-muted);">点击配置 ❯</span>
             </div>
 
             <div class="frameless-fork-tree">
-              <div class="origin-pill-box">
-                <span class="origin-pill-tag">🎯 测评</span>
-                <span class="origin-pill-name">英译汉</span>
+              <div class="origin-col-wrap">
+                <div class="origin-pill-box">
+                  <span class="origin-pill-tag">测评</span>
+                  <span class="origin-pill-name">英译汉</span>
+                </div>
               </div>
 
               <div class="fork-svg-wrap">
                 <svg class="fork-svg-line" viewBox="0 0 22 64" fill="none">
-                  <path d="M 0 32 C 11 32, 11 12, 22 12" stroke="var(--green)" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85"/>
-                  <path d="M 0 32 C 11 32, 11 52, 22 52" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.85"/>
+                  <path d="M 0 32 C 11 32, 11 12, 22 12" stroke="var(--divider)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                  <path d="M 0 32 C 11 32, 11 52, 22 52" stroke="var(--divider)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
                 </svg>
               </div>
 
@@ -903,7 +893,6 @@
           <!-- 测评环节 -->
           <div class="config-row-item">
             <div class="config-row-left">
-              <span style="font-size: 14px;">🎯</span>
               <span class="config-title">测评环节</span>
             </div>
             <div class="config-val-pill" onclick="alert('修改测评环节')">
