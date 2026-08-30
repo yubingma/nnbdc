@@ -383,6 +383,12 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildMainContent() {
     final sw = Stopwatch()..start();
+    final isChoiceStep = state.studyStep == StudyStep.en2Ch.json ||
+        state.studyStep == StudyStep.ch2En.json;
+    final isAnswered =
+        state.selectedAnswerIndex != null || state.hasFinishedAnswering;
+    final bool expandChoiceArea = isChoiceStep && isAnswered;
+
     final result = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -616,9 +622,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         _buildTopButtonsRow(),
         // 顶部按钮和题目区之间的间距
         const SizedBox(height: 8),
-        // 题目区 - 使用flex=1
+        // 题目区 - 答题后自动缩小题目区 flex 以增大做题区
         Expanded(
-          flex: 1,
+          flex: expandChoiceArea ? 2 : 5,
           child: Consumer(
             builder: (context, ref, child) {
               // 物理隔离：只监听会影响卡片渲染的核心状态
@@ -664,9 +670,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
         // 题目区和做题区之间的统一间距
         SizedBox(height: BdcPageState._questionAnswerGap),
-        // 做题区 - 使用flex=1
+        // 做题区 - 答题后自动增大高度比例（flex=5）
         Expanded(
-          flex: 1,
+          flex: expandChoiceArea ? 5 : 5,
           child: Consumer(
             builder: (context, ref, child) {
               final wordId = ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
