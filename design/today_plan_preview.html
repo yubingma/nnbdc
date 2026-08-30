@@ -139,10 +139,10 @@
       padding: 12px 24px 36px 24px;
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 24px;
     }
 
-    /* 极简顶栏：纯文字无边框 */
+    /* 极简顶栏 */
     .app-header {
       display: flex;
       justify-content: space-between;
@@ -186,7 +186,7 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      padding: 16px 0 8px 0;
+      padding: 12px 0 4px 0;
     }
 
     /* 今日目标超大数字 */
@@ -239,7 +239,7 @@
     .hero-progress-wrap {
       width: 100%;
       max-width: 260px;
-      margin: 20px 0 24px 0;
+      margin: 18px 0 20px 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -271,7 +271,7 @@
       display: flex;
       justify-content: space-around;
       align-items: center;
-      padding: 12px 0 24px 0;
+      padding: 12px 0 22px 0;
       border-top: 1px solid var(--divider);
       border-bottom: 1px solid var(--divider);
     }
@@ -339,11 +339,11 @@
       box-shadow: none;
     }
 
-    /* --- 学习配置区：极简 iOS / 不背单词风格列表 --- */
+    /* --- 学习环节模式：显示模式 (Display) vs 编辑模式 (Edit) --- */
     .section-block {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
     .section-header-row {
       display: flex;
@@ -352,24 +352,136 @@
       padding: 0 2px;
     }
     .section-heading {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--text-secondary);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
-    /* 极简无边分段选择 */
+    /* 模式切换小按钮 */
+    .btn-mode-toggle {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      padding: 4px 12px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-mode-toggle:hover {
+      opacity: 0.85;
+    }
+
+    /* ========================================================
+       模式 1：显示模式（DISPLAY MODE）—— 极简纯粹，无任何输入框
+       ======================================================== */
+    .display-mode-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .display-mode-card:hover {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    }
+    
+    .pipeline-summary-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .pipeline-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: var(--card-subtle);
+      color: var(--text-secondary);
+    }
+    
+    .pipeline-flow-preview {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .flow-badge {
+      background: var(--card-subtle);
+      padding: 4px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .flow-badge.check {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .flow-arrow {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+    .flow-branch-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .flow-branch-group.correct { color: var(--green); }
+    .flow-branch-group.wrong { color: var(--amber); }
+
+    /* ========================================================
+       模式 2：编辑模式（EDIT MODE）—— 用户点击编辑时展开
+       ======================================================== */
+    .edit-mode-panel {
+      display: none; /* 默认显示模式，点击可展开 */
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow-subtle);
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 极简分段器 */
     .subtle-tabs {
       display: flex;
       gap: 4px;
       background: var(--card-subtle);
       padding: 3px;
       border-radius: 20px;
+      width: fit-content;
+      margin-bottom: 4px;
     }
     .subtle-tab-btn {
-      padding: 4px 12px;
+      padding: 4px 14px;
       border-radius: 16px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text-muted);
       border: none;
@@ -384,17 +496,6 @@
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     }
 
-    /* 纯净设置卡：只有一层极轻柔的卡片或直接作为列表 */
-    .clean-config-card {
-      background: var(--card-bg);
-      border-radius: 24px;
-      padding: 16px 18px;
-      box-shadow: var(--shadow-subtle);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
     /* 测评项：一行通透的 iOS 单元格风格 */
     .config-row-item {
       display: flex;
@@ -406,18 +507,10 @@
     .config-row-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
     .config-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
+      font-size: 14px;
     }
     .config-title {
       font-size: 14px;
@@ -490,10 +583,6 @@
       font-size: 13px;
       font-weight: 600;
       color: var(--text-secondary);
-      transition: background-color 0.15s;
-    }
-    .step-item-pill:hover {
-      background: rgba(0, 0, 0, 0.04);
     }
     .step-left {
       display: flex;
@@ -524,9 +613,9 @@
 </head>
 <body>
 
-  <!-- 设计器控制栏 -->
+  <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
-    <span>✨ 不背单词风格美学</span>
+    <span>✨ 显示模式 / 编辑模式分离</span>
     <button onclick="toggleTheme()">
       <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
     </button>
@@ -565,12 +654,12 @@
         </button>
       </div>
 
-      <!-- 不背单词核心：空灵留白仪式感仪表盘 -->
+      <!-- 不背单词核心：空灵留白仪表盘 -->
       <div class="hero-container">
         <!-- 今日目标超大数字 -->
         <div class="goal-hero-box" onclick="cycleGoal()">
           <div class="goal-hero-badge">
-            <span>今日学习目标</span>
+            <span>今日目标</span>
             <span class="pill-tag">点击修改 ▾</span>
           </div>
           <div class="hero-number-wrap">
@@ -624,21 +713,60 @@
         </button>
       </div>
 
-      <!-- 学习环节设置：通透列表 -->
+      <!-- 学习环节设置：显示模式与编辑模式分离 -->
       <div class="section-block">
         <div class="section-header-row">
-          <span class="section-heading">学习环节配置</span>
-          <div class="subtle-tabs">
-            <button class="subtle-tab-btn active" id="tab-new" onclick="switchTab(0)">新词</button>
-            <button class="subtle-tab-btn" id="tab-review" onclick="switchTab(1)">旧词</button>
+          <span class="section-heading">学习规则</span>
+          <button class="btn-mode-toggle" id="btn-toggle-edit" onclick="toggleEditMode()">
+            <span id="edit-btn-icon">⚙️</span>
+            <span id="edit-btn-text">自定义规则</span>
+          </button>
+        </div>
+
+        <!-- 【模式 1：显示模式】极简高雅，一览流程流水线，没有任何编辑输入框 -->
+        <div class="display-mode-card" id="display-mode-view" onclick="toggleEditMode()">
+          <!-- 新词轨道流水线 -->
+          <div>
+            <div class="pipeline-summary-row" style="margin-bottom: 6px;">
+              <span class="pipeline-tag">新词学习轨道</span>
+            </div>
+            <div class="pipeline-flow-preview">
+              <span class="flow-badge check">🎯 测评：英译汉</span>
+              <span class="flow-arrow">➔</span>
+              <span class="flow-branch-group correct">✔ 汉译英</span>
+              <span class="flow-arrow">/</span>
+              <span class="flow-branch-group wrong">✕ 例句英译汉 ➔ 例句汉译英</span>
+            </div>
+          </div>
+
+          <div style="height: 1px; background: var(--divider);"></div>
+
+          <!-- 旧词复习轨道流水线 -->
+          <div>
+            <div class="pipeline-summary-row" style="margin-bottom: 6px;">
+              <span class="pipeline-tag">旧词复习轨道</span>
+            </div>
+            <div class="pipeline-flow-preview">
+              <span class="flow-badge check">🎯 测评：英译汉</span>
+              <span class="flow-arrow">➔</span>
+              <span class="flow-branch-group correct">✔ 答对完成</span>
+              <span class="flow-arrow">/</span>
+              <span class="flow-branch-group wrong">✕ 汉译英</span>
+            </div>
           </div>
         </div>
 
-        <div class="clean-config-card">
+        <!-- 【模式 2：编辑模式】用户点击“自定义规则”后平滑展开，提供完整拖拽排序与编辑功能 -->
+        <div class="edit-mode-panel" id="edit-mode-view">
+          <div class="subtle-tabs">
+            <button class="subtle-tab-btn active" id="tab-new" onclick="switchTab(0)">新词配置</button>
+            <button class="subtle-tab-btn" id="tab-review" onclick="switchTab(1)">旧词配置</button>
+          </div>
+
           <!-- 测评环节 -->
           <div class="config-row-item">
             <div class="config-row-left">
-              <div class="config-icon">🎯</div>
+              <span class="config-icon">🎯</span>
               <span class="config-title">测评环节</span>
             </div>
             <div class="config-val-pill" onclick="alert('修改测评环节')">
@@ -694,7 +822,12 @@
               </div>
             </div>
           </div>
+
+          <button style="width: 100%; height: 38px; border-radius: 12px; background: var(--card-subtle); color: var(--text-primary); border: none; font-size: 13px; font-weight: 700; cursor: pointer;" onclick="toggleEditMode()">
+            完成并收起
+          </button>
         </div>
+
       </div>
 
       <div class="tip-bottom">
@@ -704,6 +837,28 @@
   </div>
 
   <script>
+    let isEditMode = false;
+
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const displayEl = document.getElementById('display-mode-view');
+      const editEl = document.getElementById('edit-mode-view');
+      const btnText = document.getElementById('edit-btn-text');
+      const btnIcon = document.getElementById('edit-btn-icon');
+
+      if (isEditMode) {
+        displayEl.style.display = 'none';
+        editEl.style.display = 'flex';
+        btnText.textContent = '完成';
+        btnIcon.textContent = '✓';
+      } else {
+        displayEl.style.display = 'flex';
+        editEl.style.display = 'none';
+        btnText.textContent = '自定义规则';
+        btnIcon.textContent = '⚙️';
+      }
+    }
+
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');
       if (current === 'dark') {
