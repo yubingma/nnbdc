@@ -1215,47 +1215,57 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final cardBg = isDarkMode ? const Color(0xFF11141D) : Colors.white;
     final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _isEditingTracks = true),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.03),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // 新词轨道
-            _buildVisualForkTree(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 新词轨道（点击精准定位至新词轨道配置 Tab）
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() {
+              _studyStepsTab = 0;
+              _isEditingTracks = true;
+            }),
+            child: _buildVisualForkTree(
               title: '新词轨道',
               checkStep: _newCheckStep ?? 'En2Ch',
               correctSteps: _newCorrectSteps,
               wrongSteps: _newWrongSteps,
               isDarkMode: isDarkMode,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Container(height: 1, color: dividerColor),
-            ),
-            // 旧词轨道
-            _buildVisualForkTree(
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Container(height: 1, color: dividerColor),
+          ),
+          // 旧词轨道（点击精准定位至旧词轨道配置 Tab）
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() {
+              _studyStepsTab = 1;
+              _isEditingTracks = true;
+            }),
+            child: _buildVisualForkTree(
               title: '旧词轨道',
               checkStep: _reviewCheckStep ?? 'En2Ch',
               correctSteps: _reviewCorrectSteps,
               wrongSteps: _reviewWrongSteps,
               isDarkMode: isDarkMode,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -784,10 +784,10 @@
         </div>
 
         <!-- 【纯净中性色分叉卡片】：消除廉价浓重彩色，呈现高级克制调 -->
-        <div class="tree-card" id="display-mode-view" onclick="toggleEditMode()">
+        <div class="tree-card" id="display-mode-view">
           
           <!-- 新词学习轨道 -->
-          <div class="track-section">
+          <div class="track-section" style="cursor: pointer;" onclick="openTrackEdit(0)">
             <div class="track-badge-row">
               <span class="track-badge">新词轨道</span>
               <span style="font-size: 11px; color: var(--text-muted);">点击配置 ❯</span>
@@ -836,7 +836,7 @@
           <div style="height: 1px; background: var(--divider); margin: 2px 0;"></div>
 
           <!-- 旧词复习轨道 -->
-          <div class="track-section">
+          <div class="track-section" style="cursor: pointer;" onclick="openTrackEdit(1)">
             <div class="track-badge-row">
               <span class="track-badge">旧词轨道</span>
               <span style="font-size: 11px; color: var(--text-muted);">点击配置 ❯</span>
@@ -873,73 +873,45 @@
 
         </div>
 
-        <!-- 【编辑模式面板】 -->
-        <div class="edit-mode-panel" id="edit-mode-view">
-          <div class="subtle-tabs">
-            <button class="subtle-tab-btn active" id="tab-new" onclick="switchTab(0)">新词轨道配置</button>
-            <button class="subtle-tab-btn" id="tab-review" onclick="switchTab(1)">旧词轨道配置</button>
+        <!-- 【编辑模式】：精简扁平 Tab 与步骤选择器 -->
+        <div class="edit-track-card" id="edit-mode-view" style="display: none; flex-direction: column; gap: 16px;">
+          <div class="subtle-tab-row" style="display: flex; gap: 8px;">
+            <div class="subtle-tab-btn active" id="tab-new" onclick="switchTab(0)">新词轨道配置</div>
+            <div class="subtle-tab-btn" id="tab-review" onclick="switchTab(1)">旧词轨道配置</div>
           </div>
 
-          <!-- 测评环节 -->
-          <div class="config-row-item">
-            <div class="config-row-left">
-              <span class="config-title">测评环节</span>
-            </div>
-            <div class="config-val-pill" onclick="alert('修改测评环节')">
-              <span>英译汉</span>
-              <span style="font-size: 10px;">▾</span>
-            </div>
-          </div>
-
-          <!-- 分支流线 -->
-          <div class="branch-list-group">
-            <div class="branch-cell">
-              <div class="branch-cell-top">
-                <div class="branch-dot-title correct">
-                  <span class="dot-mini correct"></span>
-                  <span>答对后环节</span>
-                </div>
-                <button class="btn-action-text" onclick="alert('添加答对后环节')">+ 添加</button>
-              </div>
-              <div class="step-item-pill">
-                <div class="step-left">
-                  <span class="step-handle">⠿</span>
-                  <span>汉译英 (Ch2En)</span>
-                </div>
-                <button class="step-del" onclick="this.parentElement.remove()">✕</button>
-              </div>
-            </div>
-
-            <div class="branch-cell">
-              <div class="branch-cell-top">
-                <div class="branch-dot-title wrong">
-                  <span class="dot-mini wrong"></span>
-                  <span>答错后环节</span>
-                </div>
-                <button class="btn-action-text" onclick="alert('添加答错后环节')">+ 添加</button>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 6px;">
-                <div class="step-item-pill">
-                  <div class="step-left">
-                    <span class="step-handle">⠿</span>
-                    <span>例句英译汉 (EnSentence2Ch)</span>
-                  </div>
-                  <button class="step-del" onclick="this.parentElement.remove()">✕</button>
-                </div>
-                <div class="step-item-pill">
-                  <div class="step-left">
-                    <span class="step-handle">⠿</span>
-                    <span>例句汉译英 (ChSentence2En)</span>
-                  </div>
-                  <button class="step-del" onclick="this.parentElement.remove()">✕</button>
-                </div>
-              </div>
+          <div class="selector-card">
+            <div class="selector-title">1. 首轮测验环节</div>
+            <div class="selector-desc">新词首次出现时的考查方式</div>
+            <div class="selector-chips">
+              <span class="step-chip active">英译汉</span>
+              <span class="step-chip">汉译英</span>
             </div>
           </div>
 
-          <button style="width: 100%; height: 42px; border-radius: 14px; background: var(--text-primary); color: var(--bg); border: none; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 4px;" onclick="toggleEditMode()">
-            完成配置
-          </button>
+          <div class="selector-card">
+            <div class="selector-title">2. 测验答对后后续环节</div>
+            <div class="selector-desc">掌握牢固时，可直接完成或进入下一考查</div>
+            <div class="selector-chips">
+              <span class="step-chip">直接完成</span>
+              <span class="step-chip active">汉译英</span>
+              <span class="step-chip">+ 添加环节</span>
+            </div>
+          </div>
+
+          <div class="selector-card">
+            <div class="selector-title">3. 测验答错后强化环节</div>
+            <div class="selector-desc">记忆薄弱时，依次强化的环节流（支持拖拽排序）</div>
+            <div class="selector-chips">
+              <span class="step-chip active">例句英译汉</span>
+              <span class="step-chip active">例句汉译英</span>
+              <span class="step-chip active">单词拼写</span>
+              <span class="step-chip active">听音辨意</span>
+              <span class="step-chip">+ 添加环节</span>
+            </div>
+          </div>
+
+          <button class="save-track-btn" onclick="toggleEditMode()" style="width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--text-primary); color: var(--bg); font-weight: 600; cursor: pointer;">完成配置</button>
         </div>
 
       </div>
@@ -953,8 +925,18 @@
   <script>
     let isEditMode = false;
 
+    function openTrackEdit(tabIdx) {
+      isEditMode = true;
+      switchTab(tabIdx);
+      applyEditModeUI();
+    }
+
     function toggleEditMode() {
       isEditMode = !isEditMode;
+      applyEditModeUI();
+    }
+
+    function applyEditModeUI() {
       const displayEl = document.getElementById('display-mode-view');
       const editEl = document.getElementById('edit-mode-view');
       const btnText = document.getElementById('edit-btn-text');
