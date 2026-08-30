@@ -1,7 +1,7 @@
 source 'https://cdn.cocoapods.org/'
 
 # Uncomment this line to define a global platform for your project
-platform :ios, '13.0'
+platform :ios, '15.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -69,7 +69,7 @@ post_install do |installer|
       config.build_settings['DEVELOPMENT_TEAM'] = 'FYU9ZT6D7N'
       config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
       
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       config.build_settings['ENABLE_BITCODE'] = 'NO'
 
       # 配置 permission_handler 权限宏，使得 iOS 真机和模拟器可以正常弹出相应权限申请框
