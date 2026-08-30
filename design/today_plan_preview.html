@@ -3,63 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>今日学习计划 - 极简轻盈设计原型</title>
+  <title>今日学习计划 - 不背单词风格极致美学原型</title>
   <style>
     :root {
-      /* 亮色模式：通透、纯净、极简、无厚重嵌套 */
-      --bg: #F8FAFC;
+      /* 不背单词风格：极致纯净、空灵留白、艺术级排版 */
+      --bg: #FAFAFB;
       --card-bg: #FFFFFF;
-      --card-subtle: #F8FAFC;
-      --border: #E2E8F0;
-      --border-subtle: #F1F5F9;
-      --text-primary: #0F172A;
-      --text-secondary: #475569;
-      --text-muted: #94A3B8;
+      --card-subtle: #F4F5F7;
+      --divider: rgba(0, 0, 0, 0.06);
       
-      --primary: #0284C7;
-      --primary-hover: #0369A1;
-      --primary-light: #E0F2FE;
-      --primary-text: #0369A1;
+      --text-primary: #111827;
+      --text-secondary: #4B5563;
+      --text-muted: #9CA3AF;
+      --text-faint: #D1D5DB;
 
-      --accent-purple: #7C3AED;
-      --accent-purple-light: #F5F3FF;
-      --accent-green: #059669;
-      --accent-green-light: #ECFDF5;
-      --accent-amber: #D97706;
-      --accent-amber-light: #FFFBEB;
-
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-      --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-      --radius-xl: 20px;
-      --radius-lg: 14px;
-      --radius-md: 10px;
+      --accent: #2563EB;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --green: #10B981;
+      --green-soft: rgba(16, 185, 129, 0.08);
+      --amber: #F59E0B;
+      --amber-soft: rgba(245, 158, 11, 0.08);
+      
+      --shadow-subtle: 0 8px 30px rgba(0, 0, 0, 0.04);
+      --shadow-btn: 0 8px 20px -4px rgba(17, 24, 39, 0.25);
     }
 
     [data-theme="dark"] {
-      /* 暗色模式：深邃、沉静、低视觉疲劳 */
-      --bg: #090D16;
-      --card-bg: #111827;
-      --card-subtle: #161F30;
-      --border: #1F293D;
-      --border-subtle: #192233;
-      --text-primary: #F8FAFC;
-      --text-secondary: #94A3B8;
-      --text-muted: #64748B;
+      --bg: #0A0D14;
+      --card-bg: #121722;
+      --card-subtle: #19202E;
+      --divider: rgba(255, 255, 255, 0.06);
+      
+      --text-primary: #F9FAFB;
+      --text-secondary: #9CA3AF;
+      --text-muted: #6B7280;
+      --text-faint: #374151;
 
-      --primary: #38BDF8;
-      --primary-hover: #7DD3FC;
-      --primary-light: rgba(56, 189, 248, 0.12);
-      --primary-text: #38BDF8;
+      --accent: #60A5FA;
+      --accent-soft: rgba(96, 165, 250, 0.12);
+      --green: #34D399;
+      --green-soft: rgba(52, 211, 153, 0.12);
+      --amber: #FBBF24;
+      --amber-soft: rgba(251, 191, 36, 0.12);
 
-      --accent-purple: #A78BFA;
-      --accent-purple-light: rgba(167, 139, 250, 0.12);
-      --accent-green: #34D399;
-      --accent-green-light: rgba(52, 211, 153, 0.12);
-      --accent-amber: #FBBF24;
-      --accent-amber-light: rgba(251, 191, 36, 0.12);
-
-      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-      --shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.35);
+      --shadow-subtle: 0 12px 36px rgba(0, 0, 0, 0.4);
+      --shadow-btn: 0 8px 20px -4px rgba(0, 0, 0, 0.6);
     }
 
     * {
@@ -70,54 +58,55 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
-      background-color: #E2E8F0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
+      background-color: #E5E7EB;
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: flex-start;
       padding: 24px 16px;
       color: var(--text-primary);
-      transition: background-color 0.25s ease;
+      transition: background-color 0.3s ease;
+      letter-spacing: -0.01em;
     }
 
     /* 模拟手机容器 */
     .device-mockup {
       width: 100%;
-      max-width: 410px;
+      max-width: 390px;
       background-color: var(--bg);
-      border-radius: 40px;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2), 0 0 0 10px #1E293B;
+      border-radius: 48px;
+      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.25), 0 0 0 12px #111827;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      min-height: 840px;
+      min-height: 844px;
       position: relative;
-      transition: background-color 0.25s ease;
+      transition: background-color 0.3s ease;
     }
 
-    /* 顶部操作条（设计器控制栏） */
+    /* 设计师控制栏 */
     .designer-toolbar {
       position: fixed;
       top: 20px;
       right: 20px;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(17, 24, 39, 0.88);
+      backdrop-filter: blur(16px);
       padding: 8px 14px;
       border-radius: 30px;
       display: flex;
       align-items: center;
       gap: 12px;
       z-index: 1000;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
       color: white;
       font-size: 13px;
       font-weight: 500;
     }
     .designer-toolbar button {
-      background: #0284C7;
+      background: rgba(255,255,255,0.15);
       color: white;
-      border: none;
+      border: 1px solid rgba(255,255,255,0.1);
       padding: 6px 14px;
       border-radius: 20px;
       font-size: 12px;
@@ -129,408 +118,421 @@
       transition: all 0.2s;
     }
     .designer-toolbar button:hover {
-      background: #0369A1;
+      background: rgba(255,255,255,0.25);
       transform: scale(1.02);
     }
 
-    /* 状态栏模拟 */
+    /* 状态栏 */
     .status-bar {
-      height: 44px;
-      padding: 0 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: -0.2px;
-    }
-
-    /* 页面主要滚动区域 */
-    .app-content {
-      padding: 4px 18px 28px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    /* 顶部标题栏：清爽通透，无多余大色块 */
-    .page-header {
+      height: 48px;
+      padding: 0 28px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      padding: 6px 4px 0 4px;
+      padding-bottom: 4px;
+      font-size: 13px;
+      font-weight: 600;
     }
-    .page-title {
-      font-size: 22px;
+
+    /* 主页面 */
+    .app-body {
+      padding: 12px 24px 36px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* 极简顶栏：纯文字无边框 */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 4px;
+    }
+    .header-greeting {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .header-title {
+      font-size: 24px;
       font-weight: 800;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
     }
-    .page-date {
+    .header-action-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: transform 0.15s;
+    }
+    .header-action-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* --- 不背单词核心：空灵大仪表盘（无厚重外框） --- */
+    .hero-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 16px 0 8px 0;
+    }
+
+    /* 今日目标超大数字 */
+    .goal-hero-box {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s;
+    }
+    .goal-hero-box:active {
+      transform: scale(0.98);
+    }
+    .goal-hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 11px;
-      color: var(--text-muted);
-      font-weight: 500;
-      margin-top: 2px;
-      cursor: pointer;
-    }
-
-    /* --- 核心看板：极简通透（去嵌套、轻卡片） --- */
-    .hero-card {
-      background: var(--card-bg);
-      border-radius: var(--radius-xl);
-      padding: 20px 20px 18px 20px;
-      box-shadow: var(--shadow-card);
-      border: 1px solid var(--border);
-      transition: all 0.2s ease;
-    }
-
-    /* 目标行 */
-    .goal-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    .goal-info {
-      display: flex;
-      flex-direction: column;
-    }
-    .goal-label {
       font-size: 12px;
       font-weight: 600;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      margin-bottom: 6px;
     }
-    .goal-value {
+    .goal-hero-badge span.pill-tag {
+      background: var(--card-subtle);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .hero-number-wrap {
       display: flex;
       align-items: baseline;
-      gap: 4px;
-      margin-top: 2px;
+      justify-content: center;
+      gap: 6px;
     }
-    .goal-number {
-      font-size: 32px;
+    .hero-big-number {
+      font-size: 64px;
       font-weight: 900;
-      letter-spacing: -1px;
+      letter-spacing: -0.05em;
       line-height: 1;
       color: var(--text-primary);
     }
-    .goal-unit {
-      font-size: 13px;
+    .hero-unit {
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-muted);
     }
 
-    /* 右侧目标选择器药丸 */
-    .goal-pill {
+    /* 极细微流线进度 */
+    .hero-progress-wrap {
+      width: 100%;
+      max-width: 260px;
+      margin: 20px 0 24px 0;
       display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--card-subtle);
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.15s ease;
+      flex-direction: column;
+      gap: 8px;
     }
-    .goal-pill:hover {
-      border-color: var(--primary);
-      color: var(--primary-text);
-    }
-
-    /* 进度条：极简流线 */
-    .progress-section {
-      margin-bottom: 20px;
-    }
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-bottom: 6px;
-      font-weight: 600;
-    }
-    .progress-title {
-      color: var(--text-secondary);
-    }
-    .progress-percent {
-      color: var(--primary);
-      font-weight: 800;
-    }
-    .progress-track {
-      height: 6px;
-      background: var(--border-subtle);
-      border-radius: 6px;
+    .hero-progress-track {
+      height: 4px;
+      background: var(--divider);
+      border-radius: 4px;
       overflow: hidden;
-      position: relative;
     }
-    .progress-bar {
+    .hero-progress-fill {
       height: 100%;
       width: 45%;
-      background: linear-gradient(90deg, var(--primary), #38BDF8);
-      border-radius: 6px;
-      transition: width 0.4s ease;
+      background: var(--text-primary);
+      border-radius: 4px;
+      transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
-    /* 三个数据看板（轻量平铺，无厚重内外双层框） */
-    .stats-trio {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-    .stat-box {
-      background: var(--card-subtle);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: 12px 8px;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.15s, border-color 0.15s, background-color 0.15s;
-    }
-    .stat-box:active {
-      transform: scale(0.97);
-    }
-    .stat-box:hover {
-      border-color: var(--border);
-    }
-    .stat-num {
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-      color: var(--text-primary);
-      margin-bottom: 2px;
-    }
-    .stat-tag {
+    .hero-progress-labels {
+      display: flex;
+      justify-content: space-between;
       font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
+    }
+
+    /* 三列极简数据（无框平铺，纯排版之美） */
+    .metrics-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 12px 0 24px 0;
+      border-top: 1px solid var(--divider);
+      border-bottom: 1px solid var(--divider);
+    }
+    .metric-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      padding: 4px 0;
+      transition: opacity 0.15s;
+    }
+    .metric-col:active {
+      opacity: 0.6;
+    }
+    .metric-val {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin-bottom: 2px;
+    }
+    .metric-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 4px;
     }
-    .dot {
-      width: 6px;
-      height: 6px;
+    .metric-indicator {
+      width: 5px;
+      height: 5px;
       border-radius: 50%;
-      display: inline-block;
     }
-    .dot.blue { background-color: var(--primary); }
-    .dot.purple { background-color: var(--accent-purple); }
-    .dot.green { background-color: var(--accent-green); }
+    .metric-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--divider);
+    }
 
-    /* 主操作按钮：轻奢质感 */
-    .btn-start {
+    /* 开始学习：饱满圆润的高级大胶囊 */
+    .btn-study-hero {
       width: 100%;
-      height: 48px;
-      border-radius: var(--radius-lg);
+      height: 54px;
+      border-radius: 27px;
       background: var(--text-primary);
-      color: var(--card-bg);
+      color: var(--bg);
       border: none;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.02em;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-      transition: all 0.2s ease;
+      box-shadow: var(--shadow-btn);
+      margin-top: 4px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .btn-start:hover {
-      opacity: 0.92;
-      transform: translateY(-1px);
-    }
-    .btn-start:active {
-      transform: translateY(0);
+    .btn-study-hero:active {
+      transform: scale(0.97);
+      box-shadow: none;
     }
 
-    /* --- 学习环节设置：轻量流程轨道（消除深层卡片嵌套） --- */
-    .steps-card {
-      background: var(--card-bg);
-      border-radius: var(--radius-xl);
-      padding: 18px 20px;
-      box-shadow: var(--shadow-card);
-      border: 1px solid var(--border);
+    /* --- 学习配置区：极简 iOS / 不背单词风格列表 --- */
+    .section-block {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
-    .steps-header {
+    .section-header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      padding: 0 2px;
     }
-    .section-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--text-primary);
-      letter-spacing: -0.2px;
+    .section-heading {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
     }
 
-    /* 极简 iOS 风格滑动分段器 */
-    .segmented-tabs {
+    /* 极简无边分段选择 */
+    .subtle-tabs {
       display: flex;
+      gap: 4px;
       background: var(--card-subtle);
       padding: 3px;
       border-radius: 20px;
-      border: 1px solid var(--border-subtle);
     }
-    .seg-tab {
-      padding: 4px 14px;
+    .subtle-tab-btn {
+      padding: 4px 12px;
       border-radius: 16px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s ease;
       border: none;
       background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    .seg-tab.active {
+    .subtle-tab-btn.active {
       background: var(--card-bg);
       color: var(--text-primary);
       font-weight: 700;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     }
 
-    /* 测评环节行 */
-    .node-row {
+    /* 纯净设置卡：只有一层极轻柔的卡片或直接作为列表 */
+    .clean-config-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 测评项：一行通透的 iOS 单元格风格 */
+    .config-row-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .config-row-left {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      background: var(--card-subtle);
-      border-radius: var(--radius-md);
-      margin-bottom: 12px;
-      border: 1px solid var(--border-subtle);
+      gap: 10px;
     }
-    .node-label {
+    .config-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+    .config-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .config-val-pill {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 4px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* 分支列表组 */
+    .branch-list-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .branch-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .branch-cell-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .branch-dot-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .branch-dot-title.correct { color: var(--green); }
+    .branch-dot-title.wrong { color: var(--amber); }
+    .dot-mini {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .dot-mini.correct { background: var(--green); }
+    .dot-mini.wrong { background: var(--amber); }
+
+    .btn-action-text {
+      background: none;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* 拖拽步骤项（通透小胶囊条，无笨重黑线） */
+    .step-item-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-subtle);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: background-color 0.15s;
+    }
+    .step-item-pill:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    .step-left {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-primary);
     }
-    .node-icon {
-      font-size: 14px;
-      color: var(--primary);
-    }
-    .select-pill {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--primary-text);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* 分支列表（去框化，采用清晰的流线引导） */
-    .branch-group {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .branch-block {
-      border-left: 2px solid var(--border);
-      padding-left: 12px;
-      margin-left: 6px;
-      position: relative;
-    }
-    .branch-block.correct { border-left-color: var(--accent-green); }
-    .branch-block.wrong { border-left-color: var(--accent-amber); }
-
-    .branch-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .branch-badge {
-      font-size: 11px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .branch-badge.correct { color: var(--accent-green); }
-    .branch-badge.wrong { color: var(--accent-amber); }
-
-    .btn-add-step {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--primary);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 2px 6px;
-    }
-
-    .step-pill-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--card-subtle);
-      border: 1px solid var(--border-subtle);
-      padding: 8px 10px;
-      border-radius: var(--radius-md);
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
-    }
-    .step-drag-handle {
+    .step-handle {
       color: var(--text-muted);
       cursor: grab;
-      margin-right: 6px;
       font-size: 13px;
     }
-    .step-close-btn {
-      color: var(--text-muted);
+    .step-del {
       background: none;
       border: none;
+      color: var(--text-muted);
       cursor: pointer;
       font-size: 14px;
-      line-height: 1;
       padding: 2px;
     }
-    .step-empty-text {
-      font-size: 11px;
-      color: var(--text-muted);
-      padding: 4px 0;
-    }
 
-    /* 底部辅助说明 */
-    .footer-hint {
+    .tip-bottom {
       text-align: center;
       font-size: 11px;
       color: var(--text-muted);
-      margin-top: 4px;
+      padding-top: 4px;
     }
   </style>
 </head>
 <body>
 
-  <!-- 设计师控制栏 -->
+  <!-- 设计器控制栏 -->
   <div class="designer-toolbar">
-    <span>💡 极简轻盈方案预览</span>
+    <span>✨ 不背单词风格美学</span>
     <button onclick="toggleTheme()">
-      <span id="theme-icon">🌙</span> <span id="theme-text">切换暗黑模式</span>
+      <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
     </button>
   </div>
 
-  <!-- 手机原型容器 -->
+  <!-- 手机预览容器 -->
   <div class="device-mockup">
     <!-- 状态栏 -->
     <div class="status-bar">
@@ -541,170 +543,188 @@
       </div>
     </div>
 
-    <div class="app-content">
-      <!-- 页面顶部 Header -->
-      <div class="page-header">
+    <div class="app-body">
+      <!-- 极简顶栏 -->
+      <div class="app-header">
         <div>
-          <h1 class="page-title">今日学习计划</h1>
-          <div class="page-date">
-            <span>2026年8月30日 星期日 23:12</span>
-            <span>ℹ️</span>
-          </div>
+          <div class="header-greeting">TODAY'S MISSION</div>
+          <div class="header-title">今日学习计划</div>
         </div>
-      </div>
-
-      <!-- 核心任务看板（Hero Card） -->
-      <div class="hero-card">
-        <!-- 目标与调节 -->
-        <div class="goal-row">
-          <div class="goal-info">
-            <span class="goal-label">今日目标</span>
-            <div class="goal-value">
-              <span class="goal-number" id="goal-count">20</span>
-              <span class="goal-unit">个单词</span>
-            </div>
-          </div>
-          <div class="goal-pill" onclick="cycleGoal()">
-            <span>20 词 / 天</span>
-            <span style="font-size: 10px;">▼</span>
-          </div>
-        </div>
-
-        <!-- 进度条 -->
-        <div class="progress-section">
-          <div class="progress-header">
-            <span class="progress-title">学习进度：<b id="progress-steps">18 / 40</b> 环节</span>
-            <span class="progress-percent" id="progress-pct">45%</span>
-          </div>
-          <div class="progress-track">
-            <div class="progress-bar" id="progress-bar-el"></div>
-          </div>
-        </div>
-
-        <!-- 三维词量平铺数据（轻量清爽，不加重框） -->
-        <div class="stats-trio">
-          <div class="stat-box" onclick="alert('跳转至：今日总词列表')">
-            <div class="stat-num">20</div>
-            <div class="stat-tag"><span class="dot blue"></span>今日总词</div>
-          </div>
-          <div class="stat-box" onclick="alert('跳转至：新词列表')">
-            <div class="stat-num">8</div>
-            <div class="stat-tag"><span class="dot purple"></span>新词</div>
-          </div>
-          <div class="stat-box" onclick="alert('跳转至：复习词列表')">
-            <div class="stat-num">12</div>
-            <div class="stat-tag"><span class="dot green"></span>复习</div>
-          </div>
-        </div>
-
-        <!-- 主开始按钮 -->
-        <button class="btn-start" onclick="alert('开始今日学习！')">
-          <span>开始学习</span>
-          <span style="font-size: 16px;">→</span>
+        <button class="header-action-btn" title="高级设置" onclick="alert('高级设置：最少新词数量等')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
         </button>
       </div>
 
-      <!-- 学习环节设置（Flow Pipeline） -->
-      <div class="steps-card">
-        <div class="steps-header">
-          <span class="section-title">学习环节配置</span>
-          <!-- 滑动分段器 -->
-          <div class="segmented-tabs">
-            <button class="seg-tab active" id="tab-new" onclick="switchTab(0)">新词</button>
-            <button class="seg-tab" id="tab-review" onclick="switchTab(1)">旧词</button>
+      <!-- 不背单词核心：空灵留白仪式感仪表盘 -->
+      <div class="hero-container">
+        <!-- 今日目标超大数字 -->
+        <div class="goal-hero-box" onclick="cycleGoal()">
+          <div class="goal-hero-badge">
+            <span>今日学习目标</span>
+            <span class="pill-tag">点击修改 ▾</span>
+          </div>
+          <div class="hero-number-wrap">
+            <span class="hero-big-number" id="goal-count">20</span>
+            <span class="hero-unit">WORDS</span>
           </div>
         </div>
 
-        <!-- 测评环节 -->
-        <div class="node-row">
-          <div class="node-label">
-            <span class="node-icon">🎯</span>
-            <span>测评环节</span>
+        <!-- 极细微流线进度 -->
+        <div class="hero-progress-wrap">
+          <div class="hero-progress-track">
+            <div class="hero-progress-fill" id="progress-fill"></div>
           </div>
-          <div class="select-pill" onclick="alert('选择测评环节')">
-            <span>英译汉 (En2Ch)</span>
-            <span style="font-size: 9px;">▼</span>
+          <div class="hero-progress-labels">
+            <span>环节进度 18 / 40</span>
+            <span style="font-weight: 800; color: var(--text-primary);">45%</span>
           </div>
         </div>
 
-        <!-- 分支流程 -->
-        <div class="branch-group">
-          <!-- 答对后 -->
-          <div class="branch-block correct">
-            <div class="branch-header">
-              <span class="branch-badge correct">● 答对后</span>
-              <button class="btn-add-step" onclick="alert('添加答对后环节')">+ 添加</button>
+        <!-- 纯排版三列数据：无框、无矩形堆叠 -->
+        <div class="metrics-row">
+          <div class="metric-col" onclick="alert('跳转至：今日总词列表')">
+            <span class="metric-val">20</span>
+            <span class="metric-label">
+              <span class="metric-indicator" style="background: var(--accent);"></span>
+              今日总词
+            </span>
+          </div>
+          <div class="metric-divider"></div>
+          <div class="metric-col" onclick="alert('跳转至：新词列表')">
+            <span class="metric-val">8</span>
+            <span class="metric-label">
+              <span class="metric-indicator" style="background: #8B5CF6;"></span>
+              新词
+            </span>
+          </div>
+          <div class="metric-divider"></div>
+          <div class="metric-col" onclick="alert('跳转至：复习列表')">
+            <span class="metric-val">12</span>
+            <span class="metric-label">
+              <span class="metric-indicator" style="background: var(--green);"></span>
+              复习
+            </span>
+          </div>
+        </div>
+
+        <!-- 饱满沉浸主操作按钮 -->
+        <button class="btn-study-hero" onclick="alert('开始背单词！')">
+          <span>开始学习</span>
+          <span style="font-size: 18px;">→</span>
+        </button>
+      </div>
+
+      <!-- 学习环节设置：通透列表 -->
+      <div class="section-block">
+        <div class="section-header-row">
+          <span class="section-heading">学习环节配置</span>
+          <div class="subtle-tabs">
+            <button class="subtle-tab-btn active" id="tab-new" onclick="switchTab(0)">新词</button>
+            <button class="subtle-tab-btn" id="tab-review" onclick="switchTab(1)">旧词</button>
+          </div>
+        </div>
+
+        <div class="clean-config-card">
+          <!-- 测评环节 -->
+          <div class="config-row-item">
+            <div class="config-row-left">
+              <div class="config-icon">🎯</div>
+              <span class="config-title">测评环节</span>
             </div>
-            <div id="correct-steps-container">
-              <div class="step-pill-item">
-                <div>
-                  <span class="step-drag-handle">⠿</span>
+            <div class="config-val-pill" onclick="alert('修改测评环节')">
+              <span>英译汉</span>
+              <span style="font-size: 10px;">▾</span>
+            </div>
+          </div>
+
+          <!-- 分支流线 -->
+          <div class="branch-list-group">
+            <!-- 答对后 -->
+            <div class="branch-cell">
+              <div class="branch-cell-top">
+                <div class="branch-dot-title correct">
+                  <span class="dot-mini correct"></span>
+                  <span>答对后环节</span>
+                </div>
+                <button class="btn-action-text" onclick="alert('添加答对后环节')">+ 添加</button>
+              </div>
+              <div class="step-item-pill">
+                <div class="step-left">
+                  <span class="step-handle">⠿</span>
                   <span>汉译英 (Ch2En)</span>
                 </div>
-                <button class="step-close-btn" onclick="this.parentElement.remove()">×</button>
+                <button class="step-del" onclick="this.parentElement.remove()">✕</button>
               </div>
             </div>
-          </div>
 
-          <!-- 答错后 -->
-          <div class="branch-block wrong">
-            <div class="branch-header">
-              <span class="branch-badge wrong">● 答错后</span>
-              <button class="btn-add-step" onclick="alert('添加答错后环节')">+ 添加</button>
-            </div>
-            <div id="wrong-steps-container">
-              <div class="step-pill-item">
-                <div>
-                  <span class="step-drag-handle">⠿</span>
-                  <span>例句英译汉 (EnSentence2Ch)</span>
+            <!-- 答错后 -->
+            <div class="branch-cell">
+              <div class="branch-cell-top">
+                <div class="branch-dot-title wrong">
+                  <span class="dot-mini wrong"></span>
+                  <span>答错后环节</span>
                 </div>
-                <button class="step-close-btn" onclick="this.parentElement.remove()">×</button>
+                <button class="btn-action-text" onclick="alert('添加答错后环节')">+ 添加</button>
               </div>
-              <div class="step-pill-item">
-                <div>
-                  <span class="step-drag-handle">⠿</span>
-                  <span>例句汉译英 (ChSentence2En)</span>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div class="step-item-pill">
+                  <div class="step-left">
+                    <span class="step-handle">⠿</span>
+                    <span>例句英译汉 (EnSentence2Ch)</span>
+                  </div>
+                  <button class="step-del" onclick="this.parentElement.remove()">✕</button>
                 </div>
-                <button class="step-close-btn" onclick="this.parentElement.remove()">×</button>
+                <div class="step-item-pill">
+                  <div class="step-left">
+                    <span class="step-handle">⠿</span>
+                    <span>例句汉译英 (ChSentence2En)</span>
+                  </div>
+                  <button class="step-del" onclick="this.parentElement.remove()">✕</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="footer-hint">
-        点击上方卡片可微调学习计划，学习开始后将锁定目标。
+      <div class="tip-bottom">
+        学习未开始前可随时调整目标 · 开始后将自动锁定
       </div>
-
     </div>
   </div>
 
   <script>
-    // 主题切换
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');
       if (current === 'dark') {
         document.documentElement.removeAttribute('data-theme');
         document.getElementById('theme-icon').textContent = '🌙';
-        document.getElementById('theme-text').textContent = '切换暗黑模式';
+        document.getElementById('theme-text').textContent = '暗黑模式';
       } else {
         document.documentElement.setAttribute('data-theme', 'dark');
         document.getElementById('theme-icon').textContent = '☀️';
-        document.getElementById('theme-text').textContent = '切换明亮模式';
+        document.getElementById('theme-text').textContent = '明亮模式';
       }
     }
 
-    // 目标词量循环切换演示
     const goals = [10, 20, 30, 50, 100];
     let goalIdx = 1;
     function cycleGoal() {
       goalIdx = (goalIdx + 1) % goals.length;
       const g = goals[goalIdx];
       document.getElementById('goal-count').textContent = g;
-      document.querySelector('.goal-pill span').textContent = g + ' 词 / 天';
     }
 
-    // Tab 切换演示
     function switchTab(tab) {
       document.getElementById('tab-new').classList.toggle('active', tab === 0);
       document.getElementById('tab-review').classList.toggle('active', tab === 1);
