@@ -23,7 +23,6 @@ class BdcState extends Equatable {
   final bool canLeaveCurrWord;
   final int? selectedAnswerIndex;
   final int? correctAnswerIndex;
-  final Set<int> flippedAnswerIndices;
   
   final String meaningText;
   final int? currentScore;
@@ -101,7 +100,6 @@ class BdcState extends Equatable {
     this.canLeaveCurrWord = false,
     this.selectedAnswerIndex,
     this.correctAnswerIndex,
-    this.flippedAnswerIndices = const {},
     this.meaningText = "",
     this.currentScore,
     this.isScorePassed = false,
@@ -177,7 +175,6 @@ class BdcState extends Equatable {
     bool? canLeaveCurrWord,
     Object? selectedAnswerIndex = _sentinel,
     Object? correctAnswerIndex = _sentinel,
-    Set<int>? flippedAnswerIndices,
     Object? meaningText = _sentinel,
     Object? currentScore = _sentinel,
     bool? isScorePassed,
@@ -239,7 +236,6 @@ class BdcState extends Equatable {
       canLeaveCurrWord: canLeaveCurrWord ?? this.canLeaveCurrWord,
       selectedAnswerIndex: selectedAnswerIndex == _sentinel ? this.selectedAnswerIndex : (selectedAnswerIndex as int?),
       correctAnswerIndex: correctAnswerIndex == _sentinel ? this.correctAnswerIndex : (correctAnswerIndex as int?),
-      flippedAnswerIndices: flippedAnswerIndices ?? this.flippedAnswerIndices,
       meaningText: meaningText == _sentinel ? this.meaningText : (meaningText as String? ?? ""),
       currentScore: currentScore == _sentinel ? this.currentScore : (currentScore as int?),
       isScorePassed: isScorePassed ?? this.isScorePassed,
@@ -304,7 +300,6 @@ class BdcState extends Equatable {
     canLeaveCurrWord,
     selectedAnswerIndex,
     correctAnswerIndex,
-    flippedAnswerIndices,
     meaningText,
     currentScore,
     isScorePassed,

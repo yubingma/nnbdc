@@ -1251,8 +1251,9 @@ void main() {
 
   test('BdcNotifier - 修改今日评分:复习词(今天之前加入)改评分应基于测评前状态重算', () async {
     // 模拟复习词:昨天加入(addTime=昨天)、昨天学过(stability=5.8, scheduledDays=6)
-    final testNow = AppClock.now();
-    final yesterday = testNow.subtract(const Duration(days: 1));
+    final today = AppClock.today();
+    final testNow = today.add(const Duration(hours: 10));
+    final yesterday = today.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
           stability: const Value(5.8),

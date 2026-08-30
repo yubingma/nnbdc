@@ -443,7 +443,6 @@ class BdcNotifier extends _$BdcNotifier {
           canLeaveCurrWord: stateJson['canLeaveCurrWord'] ?? false,
           showSentenceTranslation: stateJson['showSentenceTranslation'] ?? false,
           selectedAnswerIndex: stateJson['selectedAnswerIndex'],
-          flippedAnswerIndices: Set<int>.from(stateJson['flippedAnswerIndices'] ?? []),
           tabIndex: stateJson['tabIndex'] ?? 0,
           currentScore: stateJson['currentScore'],
           meaningText: stateJson['meaningText'] ?? '',
@@ -648,7 +647,6 @@ class BdcNotifier extends _$BdcNotifier {
       selectedAnswerIndex: null,
       correctAnswerIndex: null,
       words: null,
-      flippedAnswerIndices: {},
       showAnswerButtons: false,
       showSentenceTranslation: false,
       currentScore: null,
@@ -900,30 +898,14 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void onAnswerClicked(int index, BuildContext context) async {
-    if (state.selectedAnswerIndex != null) {
+    if (state.selectedAnswerIndex != null || state.hasFinishedAnswering) {
       int wordIdx = index - 1;
       if (state.words != null && wordIdx >= 0 && wordIdx < state.words!.length) {
-        if (state.words![wordIdx].spell == "[ 都不对 ]") return;
-        final flipped = Set<int>.from(state.flippedAnswerIndices);
-        if (flipped.contains(wordIdx)) {
-          flipped.remove(wordIdx);
-        } else {
-          flipped.add(wordIdx);
-        }
-        state = state.copyWith(flippedAnswerIndices: flipped);
-      }
-      return;
-    }
-    
-    if (state.hasFinishedAnswering) {
-      int wordIdx = index - 1;
-      final flipped = Set<int>.from(state.flippedAnswerIndices);
-      if (state.words != null && wordIdx >= 0 && wordIdx < state.words!.length) {
-        if (state.words![wordIdx].spell != "[ 都不对 ]") {
-          flipped.add(wordIdx);
+        final word = state.words![wordIdx];
+        if (word.spell != "[ 都不对 ]") {
+          StudyAudioSessionController.instance.playWordSound(word);
         }
       }
-      state = state.copyWith(selectedAnswerIndex: index, flippedAnswerIndices: flipped);
       return;
     }
 
@@ -1280,7 +1262,6 @@ class BdcNotifier extends _$BdcNotifier {
           'canLeaveCurrWord': uiState.canLeaveCurrWord,
           'showSentenceTranslation': uiState.showSentenceTranslation,
           'selectedAnswerIndex': uiState.selectedAnswerIndex,
-          'flippedAnswerIndices': uiState.flippedAnswerIndices.toList(),
           'tabIndex': uiState.tabIndex,
           'currentScore': uiState.currentScore,
           'meaningText': uiState.meaningText,
@@ -1322,7 +1303,6 @@ class BdcNotifier extends _$BdcNotifier {
             'canLeaveCurrWord': uiState.canLeaveCurrWord,
             'showSentenceTranslation': uiState.showSentenceTranslation,
             'selectedAnswerIndex': uiState.selectedAnswerIndex,
-            'flippedAnswerIndices': uiState.flippedAnswerIndices.toList(),
             'tabIndex': uiState.tabIndex,
             'currentScore': uiState.currentScore,
             'meaningText': uiState.meaningText,
@@ -1370,7 +1350,6 @@ class BdcNotifier extends _$BdcNotifier {
           canLeaveCurrWord: uiState.canLeaveCurrWord,
           showSentenceTranslation: uiState.showSentenceTranslation,
           selectedAnswerIndex: uiState.selectedAnswerIndex,
-          flippedAnswerIndices: uiState.flippedAnswerIndices,
           tabIndex: uiState.tabIndex,
           currentScore: uiState.currentScore,
           words: uiState.words,
@@ -1393,7 +1372,6 @@ class BdcNotifier extends _$BdcNotifier {
           hasFinishedAnswering: false,
           canLeaveCurrWord: false,
           selectedAnswerIndex: null,
-          flippedAnswerIndices: {},
           currentScore: null,
           lastFsrsRating: uiState.lastFsrsRating,
           fsrsItem: uiState.fsrsItem,
@@ -1500,7 +1478,6 @@ class BdcNotifier extends _$BdcNotifier {
       isGettingNextWord: true,
       selectedAnswerIndex: null,
       hasFinishedAnswering: false,
-      flippedAnswerIndices: {},
       showAnswerButtons: false,
     );
     try {
@@ -1573,7 +1550,6 @@ class BdcNotifier extends _$BdcNotifier {
         canLeaveCurrWord: state.canLeaveCurrWord,
         showSentenceTranslation: state.showSentenceTranslation,
         selectedAnswerIndex: state.selectedAnswerIndex,
-        flippedAnswerIndices: Set<int>.from(state.flippedAnswerIndices),
         tabIndex: state.tabIndex,
         currentScore: state.currentScore,
         meaningText: meaningController.text,
@@ -2869,10 +2845,6 @@ class BdcNotifier extends _$BdcNotifier {
 
   void updateShowWordDetailAfterCorrect(bool value) {
     state = state.copyWith(showWordDetailAfterCorrect: value);
-  }
-
-  void updateFlippedAnswerIndices(Set<int> indices) {
-    state = state.copyWith(flippedAnswerIndices: indices);
   }
 
   Future<List<LearningLog>>? learningHistoryFuture;

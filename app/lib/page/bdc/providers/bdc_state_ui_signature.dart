@@ -11,7 +11,6 @@ class BdcStateUiSignature {
   final bool canLeaveCurrWord;
   final int? selectedAnswerIndex;
   final int? correctAnswerIndex;
-  final int flippedAnswerIndicesLength;
   final bool showSentenceTranslation;
   final int tabIndex;
   final int historyIndex;
@@ -39,7 +38,6 @@ class BdcStateUiSignature {
         canLeaveCurrWord = s.canLeaveCurrWord,
         selectedAnswerIndex = s.selectedAnswerIndex,
         correctAnswerIndex = s.correctAnswerIndex,
-        flippedAnswerIndicesLength = s.flippedAnswerIndices.length,
         showSentenceTranslation = s.showSentenceTranslation,
         tabIndex = s.tabIndex,
         historyIndex = s.historyIndex,
@@ -70,7 +68,6 @@ class BdcStateUiSignature {
         canLeaveCurrWord == other.canLeaveCurrWord &&
         selectedAnswerIndex == other.selectedAnswerIndex &&
         correctAnswerIndex == other.correctAnswerIndex &&
-        flippedAnswerIndicesLength == other.flippedAnswerIndicesLength &&
         showSentenceTranslation == other.showSentenceTranslation &&
         tabIndex == other.tabIndex &&
         historyIndex == other.historyIndex &&
@@ -100,7 +97,6 @@ class BdcStateUiSignature {
         canLeaveCurrWord,
         selectedAnswerIndex,
         correctAnswerIndex,
-        flippedAnswerIndicesLength,
         showSentenceTranslation,
         tabIndex,
         historyIndex,

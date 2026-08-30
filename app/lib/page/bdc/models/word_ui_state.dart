@@ -9,7 +9,6 @@ class WordUIState {
   final bool canLeaveCurrWord;
   final bool showSentenceTranslation;
   final int? selectedAnswerIndex;
-  final Set<int> flippedAnswerIndices;
   final int tabIndex;
   final int? currentScore;
   final String meaningText;
@@ -30,7 +29,6 @@ class WordUIState {
     required this.canLeaveCurrWord,
     required this.showSentenceTranslation,
     this.selectedAnswerIndex,
-    required this.flippedAnswerIndices,
     required this.tabIndex,
     this.currentScore,
     required this.meaningText,

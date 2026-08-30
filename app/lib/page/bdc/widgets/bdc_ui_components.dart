@@ -1136,11 +1136,113 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
 
+  Widget _buildSecondaryAnswerContent(WordVo? word, bool isCh2En) {
+    if (word == null || word.spell == "[ 都不对 ]") return const SizedBox.shrink();
+    final isDarkMode = _cachedIsDarkMode;
+
+    if (isCh2En) {
+      final text = word.getMeaningStr();
+      if (text.isEmpty) return const SizedBox.shrink();
+      final lines = text.split("\n");
+      List<Widget> widgets = [];
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        if (line.isEmpty) continue;
+        final ciXingRegex = RegExp(r"^([a-z]+\.)");
+        final match = ciXingRegex.firstMatch(line);
+        if (match != null) {
+          String ciXing = match.group(1)!;
+          String meaning = line.substring(match.end);
+          widgets.add(
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: "$ciXing ",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode ? Colors.white54 : const Color(0xFF64748B),
+                    ),
+                  ),
+                  TextSpan(
+                    text: meaning,
+                    style: TextStyle(
+                      fontFamily: "NotoSansSC",
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else {
+          widgets.add(
+            Text(
+              line,
+              style: TextStyle(
+                fontFamily: "NotoSansSC",
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
+              ),
+            ),
+          );
+        }
+        if (i < lines.length - 1) {
+          widgets.add(const SizedBox(width: 8));
+        }
+      }
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: widgets,
+        ),
+      );
+    } else {
+      final spell = word.spell;
+      if (spell.isEmpty) return const SizedBox.shrink();
+      final pronounce = word.pronounce;
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            spell,
+            style: TextStyle(
+              fontFamily: "NotoSansSC",
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
+            ),
+          ),
+          if (pronounce != null && pronounce.isNotEmpty) ...[
+            const SizedBox(width: 6),
+            Text(
+              '/$pronounce/',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+  }
+
   Widget _buildChoiceList() {
     if (!(state.studyStep == StudyStep.en2Ch.json ||
         state.studyStep == StudyStep.ch2En.json)) {
       return const SizedBox.shrink();
     }
+
+    final isAnswered = state.selectedAnswerIndex != null || state.hasFinishedAnswering;
+    final isCh2En = state.studyStep == StudyStep.ch2En.json;
 
     return Column(
       children: [
@@ -1150,6 +1252,8 @@ extension BdcPageStateUIComponents on BdcPageState {
               Color bgColor;
               Color borderColor;
               final isDarkMode = _cachedIsDarkMode;
+              final word = state.words?[index];
+              final isNoneOfAbove = word?.spell == "[ 都不对 ]";
 
               if (state.selectedAnswerIndex != null) {
                 if ((index + 1) == state.correctAnswerIndex) {
@@ -1168,9 +1272,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               }
 
               return Padding(
-                padding: state.studyStep == StudyStep.ch2En.json
-                    ? const EdgeInsets.symmetric(vertical: 3)
-                    : const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: SizedBox(
                   width: double.infinity,
                   child: Container(
@@ -1189,37 +1291,34 @@ extension BdcPageStateUIComponents on BdcPageState {
                         onTap: () => notifier.onAnswerClicked(index + 1, context),
                         child: Stack(
                           children: [
-                            AnimatedCrossFade(
-                              duration: const Duration(milliseconds: 300),
-                          crossFadeState: state.flippedAnswerIndices.contains(index)
-                              ? CrossFadeState.showSecond
-                              : CrossFadeState.showFirst,
-                          firstChild: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            child: _buildAnswerContent(
-                              state.studyStep == StudyStep.ch2En.json
-                                  ? (state.words?[index].spell.isNotEmpty == true ? state.words![index].spell : '无对应英文')
-                                  : (state.words?[index].getMeaningStr().isNotEmpty == true ? state.words![index].getMeaningStr() : '无对应释义'),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: isAnswered && !isNoneOfAbove ? 10 : 14,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildAnswerContent(
+                                    isCh2En
+                                        ? (word?.spell.isNotEmpty == true ? word!.spell : "无对应英文")
+                                        : (word?.getMeaningStr().isNotEmpty == true ? word!.getMeaningStr() : "无对应释义"),
+                                  ),
+                                  if (isAnswered && !isNoneOfAbove) ...[
+                                    const SizedBox(height: 4),
+                                    _buildSecondaryAnswerContent(word, isCh2En),
+                                  ],
+                                ],
+                              ),
                             ),
-                          ),
-                          secondChild: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            child: _buildAnswerContent(
-                              state.studyStep == StudyStep.ch2En.json
-                                  ? (state.words?[index].getMeaningStr().isNotEmpty == true ? state.words![index].getMeaningStr() : '无对应释义')
-                                  : (state.words?[index].spell.isNotEmpty == true ? state.words![index].spell : '无对应英文'),
-                            ),
-                          ),
-                        ),
-                            if ((state.hasFinishedAnswering || state.selectedAnswerIndex != null) &&
-                                (state.words?[index].spell != "[ 都不对 ]"))
+                            if (isAnswered && !isNoneOfAbove)
                               Positioned(
                                 top: 8,
                                 right: 8,
                                 child: Icon(
-                                  Icons.sync,
+                                  Icons.volume_up_rounded,
                                   size: 16,
                                   color: isDarkMode ? Colors.white30 : Colors.black26,
                                 ),
