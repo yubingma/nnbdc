@@ -446,7 +446,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     subtitle: '答对后直接进入下一词',
                                   ),
                                   _buildSettingItem(
-                                    '单词 ・ 中→英',
+                                    '汉译英',
                                     localAutoJumpAfterCorrectCh2En,
                                     (value) {
                                       setState(() {
@@ -456,7 +456,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     indent: 36,
                                   ),
                                   _buildSettingItem(
-                                    '单词 ・ 英→中',
+                                    '英译汉',
                                     localAutoJumpAfterCorrectEn2Ch,
                                     (value) {
                                       setState(() {
@@ -466,7 +466,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     indent: 36,
                                   ),
                                   _buildSettingItem(
-                                    '例句 ・ 中→英',
+                                    '例句汉译英',
                                     localAutoJumpAfterCorrectChSentence2En,
                                     (value) {
                                       setState(() {
@@ -476,7 +476,7 @@ extension BdcPageStateDialogs on BdcPageState {
                                     indent: 36,
                                   ),
                                   _buildSettingItem(
-                                    '例句 ・ 英→中',
+                                    '例句英译汉',
                                     localAutoJumpAfterCorrectEnSentence2Ch,
                                     (value) {
                                       setState(() {
