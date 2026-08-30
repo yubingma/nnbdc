@@ -633,8 +633,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   '${user?.effectiveWordsPerDay ?? 0}',
                   style: TextStyle(
                     color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                    fontSize: 76,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 52,
+                    fontWeight: FontWeight.w800,
                     fontFamilyFallback: const ['.SF Pro Display', 'SF Pro Display', 'Helvetica Neue', 'Roboto', 'PingFang SC', 'sans-serif'],
                     letterSpacing: -1.0,
                     height: 1.0,
@@ -820,8 +820,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               '$count',
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
                 fontFamilyFallback: const ['.SF Pro Display', 'SF Pro Display', 'Helvetica Neue', 'Roboto', 'PingFang SC', 'sans-serif'],
                 letterSpacing: -0.5,
                 height: 1.1,
