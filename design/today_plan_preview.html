@@ -201,50 +201,46 @@
       flex-direction: column;
       align-items: center;
       transition: transform 0.2s;
+      padding: 4px 0;
     }
     .goal-hero-box:active {
       transform: scale(0.98);
-    }
-    .goal-hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-    .goal-hero-badge span.pill-tag {
-      background: var(--card-subtle);
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 11px;
-      color: var(--text-secondary);
     }
     .hero-number-wrap {
       display: flex;
       align-items: baseline;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
     }
     .hero-big-number {
-      font-size: 64px;
+      font-size: 72px;
       font-weight: 900;
       letter-spacing: -0.05em;
       line-height: 1;
       color: var(--text-primary);
     }
-    .hero-unit {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-muted);
+    .hero-unit-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+      background: var(--card-subtle);
+      padding: 3px 8px;
+      border-radius: 10px;
+      transition: background-color 0.2s;
+    }
+    .goal-hero-box:hover .hero-unit-tag {
+      background: var(--card-active);
     }
 
     /* 极细微流线进度 */
     .hero-progress-wrap {
       width: 100%;
       max-width: 260px;
-      margin: 14px 0 16px 0;
+      margin: 12px 0 16px 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -270,13 +266,13 @@
       color: var(--text-muted);
     }
 
-    /* 三列极简纯色数据（去除花哨杂乱彩点） */
+    /* 双列极简纯色数据（新词 | 复习，去除冗余的今日总词） */
     .metrics-row {
       width: 100%;
       display: flex;
       justify-content: space-around;
       align-items: center;
-      padding: 8px 0 18px 0;
+      padding: 10px 0 18px 0;
       border-top: 1px solid var(--divider);
       border-bottom: 1px solid var(--divider);
     }
@@ -293,7 +289,7 @@
       opacity: 0.6;
     }
     .metric-val {
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 800;
       letter-spacing: -0.03em;
       color: var(--text-primary);
@@ -310,7 +306,7 @@
     }
     .metric-divider {
       width: 1px;
-      height: 20px;
+      height: 22px;
       background: var(--divider);
     }
 
@@ -732,36 +728,30 @@
 
       <!-- 核心大仪表盘（纯净素雅） -->
       <div class="hero-container">
-        <!-- 今日目标超大数字 -->
-        <div class="goal-hero-box" onclick="cycleGoal()">
-          <div class="goal-hero-badge">
-            <span>今日学习目标</span>
-            <span class="pill-tag">点击修改 ▾</span>
-          </div>
+        <!-- 今日目标超大数字（点击切换/修改目标） -->
+        <div class="goal-hero-box" onclick="cycleGoal()" title="点击修改每日词数">
           <div class="hero-number-wrap">
             <span class="hero-big-number" id="goal-count">20</span>
-            <span class="hero-unit">WORDS</span>
+            <span class="hero-unit-tag">
+              <span>WORDS</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><path d="M6 9l6 6 6-6"/></svg>
+            </span>
           </div>
         </div>
 
-        <!-- 极细微流线进度 -->
+        <!-- 极细微流线进度（统一浅色低调雅致） -->
         <div class="hero-progress-wrap">
           <div class="hero-progress-track">
             <div class="hero-progress-fill" id="progress-fill"></div>
           </div>
           <div class="hero-progress-labels">
             <span>环节进度 18 / 40</span>
-            <span style="font-weight: 800; color: var(--text-primary);">45%</span>
+            <span>45%</span>
           </div>
         </div>
 
-        <!-- 三列极简纯色数据（去除花哨多色彩点） -->
+        <!-- 双列极简纯色数据（新词 | 复习，已移除冗余的今日总词） -->
         <div class="metrics-row">
-          <div class="metric-col" onclick="alert('跳转至：今日总词列表')">
-            <span class="metric-val">20</span>
-            <span class="metric-label">今日总词</span>
-          </div>
-          <div class="metric-divider"></div>
           <div class="metric-col" onclick="alert('跳转至：新词列表')">
             <span class="metric-val">8</span>
             <span class="metric-label">新词</span>
