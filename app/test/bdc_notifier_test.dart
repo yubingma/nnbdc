@@ -1229,7 +1229,8 @@ void main() {
 
   test('BdcNotifier - 修改今日评分:复习词(今天之前加入)改评分应基于测评前状态重算', () async {
     // 模拟复习词:昨天加入(addTime=昨天)、昨天学过(stability=5.8, scheduledDays=6)
-    final yesterday = AppClock.now().subtract(const Duration(days: 1));
+    final testNow = AppClock.now();
+    final yesterday = testNow.subtract(const Duration(days: 1));
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
           stability: const Value(5.8),
@@ -1239,6 +1240,10 @@ void main() {
           state: const Value(2), // Review
           addTime: Value(yesterday),
           addDay: const Value(2),
+          isTodayNewWord: const Value(false),
+          lastLearningDate: Value(yesterday),
+          learnedTimes: const Value(1),
+          todayLearnedTimes: const Value(0),
         ));
     // 昨天(测评前)的记录
     await db.learningLogsDao.saveEntity(LearningLog(
@@ -1265,8 +1270,8 @@ void main() {
       difficulty: 2.11,
       elapsedDays: 1,
       scheduledDays: 13,
-      createTime: now,
-      updateTime: now,
+      createTime: testNow,
+      updateTime: testNow,
     ), false);
     StudyCacheManager().clear();
 
@@ -1289,19 +1294,23 @@ void main() {
 
     // 把 easy 改成 good:复习词应基于"测评前状态"(昨天 stability=5.8, elapsedDays=1)重算
     notifier.updateFsrsRating(FsrsRating.good);
-    await Future.delayed(const Duration(milliseconds: 100));
-    state = container.read(bdcNotifierProvider);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 9) break;
+    }
     expect(state.fsrsItem, isNot(null));
     // 基于测评前状态(stability=5.8, elapsedDays=1) next(good):
     // 真实 FSRS 计算结果 ≈ 9 天(不是停留在测评后的 6 天)
     expect(state.fsrsItem!.scheduledDays, 9,
         reason: '复习词改评分应基于测评前状态(5.8)重算,预期 9 天,实际 ${state.fsrsItem!.scheduledDays}');
 
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 50));
   });
 
   test('BdcNotifier - 修改今日评分:连续修改(good->easy->hard)结果稳定不漂移', () async {
     // 今日新词(addTime=今天), 模拟测评 easy 提交
+    final testNow = AppClock.now();
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
           stability: const Value(5.8),
@@ -1319,8 +1328,8 @@ void main() {
       difficulty: 2.11,
       elapsedDays: 0,
       scheduledDays: 6,
-      createTime: now,
-      updateTime: now,
+      createTime: testNow,
+      updateTime: testNow,
     ), false);
     StudyCacheManager().clear();
 
@@ -1343,33 +1352,45 @@ void main() {
 
     // good -> 2 天 (init(good)=2.4)
     notifier.updateFsrsRating(FsrsRating.good);
-    await Future.delayed(const Duration(milliseconds: 80));
-    state = container.read(bdcNotifierProvider);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 2) break;
+    }
     expect(state.fsrsItem!.scheduledDays, 2,
         reason: '第一次改 good 应为 2 天,实际 ${state.fsrsItem!.scheduledDays}');
 
     // 再改 easy -> 6 天 (init(easy)=5.8)
     notifier.updateFsrsRating(FsrsRating.easy);
-    await Future.delayed(const Duration(milliseconds: 80));
-    state = container.read(bdcNotifierProvider);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 6) break;
+    }
     expect(state.fsrsItem!.scheduledDays, 6,
         reason: '再改 easy 应为 6 天,实际 ${state.fsrsItem!.scheduledDays}');
 
     // 再改 hard -> 1 天 (init(hard)=0.6)
     notifier.updateFsrsRating(FsrsRating.hard);
-    await Future.delayed(const Duration(milliseconds: 80));
-    state = container.read(bdcNotifierProvider);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 1) break;
+    }
     expect(state.fsrsItem!.scheduledDays, 1,
         reason: '再改 hard 应为 1 天,实际 ${state.fsrsItem!.scheduledDays}');
 
     // 改回 easy -> 6 天 (不漂移!)
     notifier.updateFsrsRating(FsrsRating.easy);
-    await Future.delayed(const Duration(milliseconds: 80));
-    state = container.read(bdcNotifierProvider);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 6) break;
+    }
     expect(state.fsrsItem!.scheduledDays, 6,
         reason: '改回 easy 应稳定回到 6 天,实际 ${state.fsrsItem!.scheduledDays}');
 
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 50));
   });
 
   test('BdcNotifier - 复习词测评答错进入恢复环节(isRestoreStep)→答对进入列表页', () async {
