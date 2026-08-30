@@ -20,9 +20,9 @@ class PermissionUtil {
     required VoidCallback onGranted,
     VoidCallback? onDenied,
   }) async {
-    final status = await permission.status;
+    final bool isGranted = await _checkPermissionGranted(permission);
     
-    if (status.isGranted) {
+    if (isGranted) {
       onGranted();
       return;
     }
@@ -119,7 +119,7 @@ class PermissionUtil {
     );
 
     if (result == true) {
-      final newStatus = await permission.request();
+      final newStatus = await _requestPermission(permission);
       if (newStatus.isGranted) {
         onGranted();
       } else {
@@ -131,5 +131,37 @@ class PermissionUtil {
     } else {
       if (onDenied != null) onDenied();
     }
+  }
+
+  /// 检查权限是否已授予（兼容 Android 各版本相册/存储权限差异）
+  static Future<bool> _checkPermissionGranted(Permission permission) async {
+    if (Platform.isAndroid && permission == Permission.photos) {
+      // Android 13+ 使用 READ_MEDIA_IMAGES (Permission.photos)
+      if (await Permission.photos.isGranted) return true;
+      // Android 12 及以下使用 READ_EXTERNAL_STORAGE (Permission.storage)
+      if (await Permission.storage.isGranted) return true;
+      return false;
+    }
+    return await permission.isGranted;
+  }
+
+  /// 请求权限（兼容 Android 跨版本相册/存储权限申请）
+  static Future<PermissionStatus> _requestPermission(Permission permission) async {
+    if (Platform.isAndroid && permission == Permission.photos) {
+      // 1. 先尝试 Android 13+ 的相册权限
+      final photoStatus = await Permission.photos.request();
+      if (photoStatus.isGranted) return photoStatus;
+
+      // 2. 如果 photos 无法授权（Android 12- 会直接返回 denied），再尝试 Android 12- 的存储权限
+      final storageStatus = await Permission.storage.request();
+      if (storageStatus.isGranted) return storageStatus;
+
+      // 若其中任一被永久拒绝，则返回 permanentlyDenied 以便引导去设置页
+      if (photoStatus.isPermanentlyDenied || storageStatus.isPermanentlyDenied) {
+        return PermissionStatus.permanentlyDenied;
+      }
+      return photoStatus;
+    }
+    return await permission.request();
   }
 }
