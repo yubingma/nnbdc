@@ -427,11 +427,18 @@
     /* 纯无框分叉流布局：左主节点 + Bezier 导线 + 右纯胶囊流 */
     .frameless-fork-tree {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       position: relative;
     }
 
-    /* 测评节点：轻巧的极简药丸 */
+    /* 测评节点：轻巧的极简药丸（垂直居中） */
+    .origin-col-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+    }
     .origin-pill-box {
       background: var(--accent-soft);
       border: 1.5px solid var(--accent);
@@ -441,7 +448,6 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
       z-index: 2;
     }
     .origin-pill-tag {
@@ -457,16 +463,18 @@
       white-space: nowrap;
     }
 
-    /* 中间 Bezier 导线 SVG（纤细优雅） */
+    /* 中间 Bezier 导线 SVG（自适应拉伸） */
     .fork-svg-wrap {
       width: 22px;
-      height: 64px;
       position: relative;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
     }
     .fork-svg-line {
       width: 100%;
       height: 100%;
+      min-height: 70px;
       display: block;
     }
 
@@ -807,9 +815,11 @@
             <!-- 纯无框分叉结构 -->
             <div class="frameless-fork-tree">
               <!-- 测评起点 -->
-              <div class="origin-pill-box">
-                <span class="origin-pill-tag">🎯 测评</span>
-                <span class="origin-pill-name">英译汉</span>
+              <div class="origin-col-wrap">
+                <div class="origin-pill-box">
+                  <span class="origin-pill-tag">🎯 测评</span>
+                  <span class="origin-pill-name">英译汉</span>
+                </div>
               </div>
 
               <!-- 纤细 Bezier 导线 -->
@@ -822,7 +832,7 @@
                 </svg>
               </div>
 
-              <!-- 右侧纯胶囊流（零包裹框，纯净呼吸） -->
+              <!-- 右侧纯胶囊流（演示配置 4 个环节的自然流动排布） -->
               <div class="branches-pure-col">
                 <!-- 答对分支 -->
                 <div class="pure-branch-row">
@@ -830,12 +840,16 @@
                   <span class="pure-step-pill">汉译英</span>
                 </div>
 
-                <!-- 答错分支（多环节自动自然排列，无框包裹） -->
+                <!-- 答错分支：配置 4 个环节（例句英译汉 ➔ 例句汉译英 ➔ 单词拼写 ➔ 听音辨意） -->
                 <div class="pure-branch-row">
                   <span class="mini-status-badge wrong">✕ 答错</span>
                   <span class="pure-step-pill">例句英译汉</span>
                   <span class="pure-step-arrow">➔</span>
                   <span class="pure-step-pill">例句汉译英</span>
+                  <span class="pure-step-arrow">➔</span>
+                  <span class="pure-step-pill">单词拼写</span>
+                  <span class="pure-step-arrow">➔</span>
+                  <span class="pure-step-pill">听音辨意</span>
                 </div>
               </div>
             </div>
