@@ -2735,48 +2735,29 @@ extension BdcPageStateUIComponents on BdcPageState {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 释义
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      for (var i = 0;
-                          i <
-                              state.currentGetWordResult!.learningWord!.word
-                                  .getMergedMeaningItems()
-                                  .length;
-                          i++)
-                        Padding(
-                          padding: EdgeInsets.only(
-                              right: i ==
-                                      state.currentGetWordResult!.learningWord!.word
-                                              .getMergedMeaningItems()
-                                              .length -
-                                          1
-                                  ? 0
-                                  : 4.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final item in state.currentGetWordResult!.learningWord!.word
+                        .getMergedMeaningItems())
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if ((item.ciXing ?? '').isNotEmpty) ...[
                               Text(
-                                state.currentGetWordResult!.learningWord!.word
-                                        .getMergedMeaningItems()[i]
-                                        .ciXing ??
-                                    '',
+                                item.ciXing!,
                                 style: const TextStyle(
                                     color: Color(0xFF999999),
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600),
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                notifier.hideParenthesesContent(state.currentGetWordResult!
-                                        .learningWord!.word
-                                        .getMergedMeaningItems()[i]
-                                        .meaning ??
-                                    ''),
+                            ],
+                            Expanded(
+                              child: Text(
+                                notifier.hideParenthesesContent(item.meaning ?? ''),
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
@@ -2785,11 +2766,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                                       : const Color(0xFF2D3748),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
                 // 图片 (仅对管理员开放)
                 if (StudyConfig.fromCurrentUser().enableWordImage &&
