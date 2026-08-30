@@ -196,10 +196,14 @@ void main() async {
           // SocketIoClient改为延迟连接，只在需要时才连接（如进入russia页面）
           LocalWordCache.instance;
 
-          // 预加载当前用户数据并处理自动登录业务逻辑
+          // 预加载当前用户数据并处理自动登录业务逻辑（游客不进行自动登录，启动时清除游客会话）
           final user = await Global.loadUserFromDb();
           if (user != null) {
-            await UserBo().handleAutoLogin(user.id);
+            if (user.id != Global.guestId) {
+              await UserBo().handleAutoLogin(user.id);
+            } else {
+              await Global.logout();
+            }
           }
 
           // 检查并强制执行会员限制（非会员每日单词限额 20）

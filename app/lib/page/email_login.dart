@@ -52,7 +52,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
 
   loadData() async {
     var user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
-    if (user != null && user.email != null) {
+    if (user != null && user.email != null && user.id != Global.guestId) {
       setState(() {
         email.text = user.email!;
         _approved = true;
@@ -78,7 +78,7 @@ class EmailLoginPageState extends State<EmailLoginPage> {
       final db = MyDatabase.instance;
       final users = await db.usersDao.allUsers;
       final emails = users
-          .where((user) => user.email != null && user.email!.isNotEmpty)
+          .where((user) => user.email != null && user.email!.isNotEmpty && user.id != Global.guestId)
           .map((user) => user.email!)
           .toSet() // 去重
           .toList();

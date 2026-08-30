@@ -12,6 +12,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/analytics_util.dart';
 
 import 'api/vo.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/api/bo/study_bo.dart';
 
@@ -160,40 +161,49 @@ class Global {
   // 访客登录
   static Future<void> loginAsGuest() async {
     final now = AppClock.now();
-    // 创建访客用户Vo
-    final guestVo = UserVo(guestId, 'guest@nnbdc.com');
-    // 设置其他属性
-    guestVo.nickName = '游客';
-    guestVo.displayNickName = '游客';
-    guestVo.email = 'guest@nnbdc.com';
-    guestVo.lastLoginTime = now;
-    guestVo.wordsPerDay = 20;
-    guestVo.totalScore = 0;
-
-    // 初始化其他必要字段，防止 userVo2User 转换时通过 ! 强转空值导致 crash
-    guestVo.cowDung = 0;
-    guestVo.gameScore = 0;
-    guestVo.inviteAwardTaken = false;
-    guestVo.isAdmin = false;
-    guestVo.isInputor = false;
-    guestVo.isSuperAdmin = false;
-
-    guestVo.learnedDays = 0;
-    guestVo.learningFinished = false;
-    guestVo.masteredWordsCount = 0;
-    guestVo.maxContinuousDakaDayCount = 0;
-    guestVo.throwDiceChance = 0;
-    guestVo.isPremiumIos = false;
-    guestVo.premiumOverrideEnabled = false;
-
-    // missing initialized fields fix null exceptions
-    guestVo.continuousDakaDayCount = 0;
-    guestVo.dakaDayCount = 0;
-    guestVo.dakaScore = 0; 
-
-    // 保存到本地数据库
     final db = MyDatabase.instance;
-    await db.usersDao.saveUser(userVo2User(guestVo), false);
+    final existingGuest = await db.usersDao.getUserById(guestId);
+
+    UserVo guestVo;
+    if (existingGuest != null) {
+      // 若本地已存在游客记录，延续已有数据并更新最后登录时间
+      final updatedUser = existingGuest.copyWith(lastLoginTime: Value(now));
+      await db.usersDao.saveUser(updatedUser, false);
+      guestVo = UserVo.fromUser(updatedUser);
+    } else {
+      // 首次以游客登录，创建并初始化访客用户Vo
+      guestVo = UserVo(guestId, 'guest@nnbdc.com');
+      guestVo.nickName = '游客';
+      guestVo.displayNickName = '游客';
+      guestVo.email = 'guest@nnbdc.com';
+      guestVo.lastLoginTime = now;
+      guestVo.wordsPerDay = 20;
+      guestVo.totalScore = 0;
+
+      // 初始化其他必要字段，防止 userVo2User 转换时通过 ! 强转空值导致 crash
+      guestVo.cowDung = 0;
+      guestVo.gameScore = 0;
+      guestVo.inviteAwardTaken = false;
+      guestVo.isAdmin = false;
+      guestVo.isInputor = false;
+      guestVo.isSuperAdmin = false;
+
+      guestVo.learnedDays = 0;
+      guestVo.learningFinished = false;
+      guestVo.masteredWordsCount = 0;
+      guestVo.maxContinuousDakaDayCount = 0;
+      guestVo.throwDiceChance = 0;
+      guestVo.isPremiumIos = false;
+      guestVo.premiumOverrideEnabled = false;
+
+      // missing initialized fields fix null exceptions
+      guestVo.continuousDakaDayCount = 0;
+      guestVo.dakaDayCount = 0;
+      guestVo.dakaScore = 0;
+
+      // 保存到本地数据库
+      await db.usersDao.saveUser(userVo2User(guestVo), false);
+    }
 
     // 为访客创建"生词本"和"已掌握"词书（与后端 createNewUser 对齐）
     // 仅在首次创建访客时生成，避免重复登录时产生重复词书

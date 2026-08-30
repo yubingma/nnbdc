@@ -155,7 +155,8 @@ class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMi
     try {
       final user = await MyDatabase.instance.usersDao.getLastLoggedInUser();
 
-      if (user != null) {
+      // 如果是游客账号，不自动登录，清除会话后直接进入登录页
+      if (user != null && user.id != Global.guestId) {
         // 自动登录逻辑...
         final result = await UserBo().getLoggedInUser();
         if (result.success && result.data != null) {
@@ -166,6 +167,9 @@ class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMi
           if (mounted) context.go("/login");
         }
       } else {
+        if (user?.id == Global.guestId) {
+          await Global.logout();
+        }
         if (mounted) context.go("/login");
       }
     } catch (e) {
