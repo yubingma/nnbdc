@@ -1286,36 +1286,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: badgeBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
-                ),
-              ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: badgeBg,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '点击配置',
-                  style: TextStyle(fontSize: 11, color: subColor, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(width: 2),
-                Icon(Icons.chevron_right_rounded, size: 14, color: subColor),
-              ],
-            ),
-          ],
+          ),
         ),
         const SizedBox(height: 10),
         Row(
