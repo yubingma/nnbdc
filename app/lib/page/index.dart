@@ -32,7 +32,6 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
   int? _lastProcessedIndexFromExtra;
   int get currentIndex => _currentIndex;
   List<NavigationIconView>? _navigationViews; 
-  late List<Widget> _pages;
 
   @override
   void initState() {
@@ -47,15 +46,6 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
       NavigationIconView(icon: const Icon(Icons.search_rounded), title: "查词", vsync: this),
       if (!Global.isGuest) NavigationIconView(icon: const Icon(Icons.sports_esports), title: "比赛", vsync: this),
       NavigationIconView(icon: const Icon(Icons.person_rounded), title: "我", vsync: this),
-    ];
-
-    // 初始化页面列表
-    _pages = [
-      const TodayPlanPage(),
-      const WordListsPage(),
-      const SearchPage(),
-      if (!Global.isGuest) const GamePage(),
-      const MePage(),
     ];
   }
 
@@ -161,10 +151,20 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      const TodayPlanPage(),
+      const WordListsPage(),
+      const SearchPage(),
+      if (!Global.isGuest) const GamePage(),
+      const MePage(),
+    ];
+
     int actualCurrentIndex = _currentIndex;
     if (Global.isGuest && _currentIndex > 3) {
       actualCurrentIndex = _currentIndex - 1;
     }
+    actualCurrentIndex = actualCurrentIndex.clamp(0, pages.isEmpty ? 0 : pages.length - 1);
+
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : Colors.white;
 
@@ -196,7 +196,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     return Scaffold(
       body: Stack(
         children: [
-          IndexedStack(index: actualCurrentIndex, children: _pages),
+          IndexedStack(index: actualCurrentIndex, children: pages),
           ValueListenableBuilder<int>(
             valueListenable: Global.activeRequestCount,
             builder: (context, count, child) {

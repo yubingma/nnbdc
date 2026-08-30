@@ -70,8 +70,33 @@ class MsgPageState extends State<MsgPage> {
 
     final user = Global.getLoggedInUser();
     if (user == null || Global.isGuest) {
-      ToastUtil.info('请先登录账号，以便接收客服回复与活动兑换');
-      context.push('/login');
+      final shouldLogin = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('温馨提示', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: const Text(
+            '当前处于游客模式，登录后方可提交意见并接收客服回复与活动兑换。\n\n是否前往登录？',
+            style: TextStyle(height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('取消', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('前往登录'),
+            ),
+          ],
+        ),
+      );
+      if (shouldLogin == true && mounted) {
+        context.push('/login');
+      }
       return;
     }
 
