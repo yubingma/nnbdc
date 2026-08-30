@@ -622,9 +622,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         _buildTopButtonsRow(),
         // 顶部按钮和题目区之间的间距
         const SizedBox(height: 8),
-        // 题目区 - 答题后自动缩小题目区 flex 以增大做题区
+        // 题目区 - 答题后适度微调 flex（4:5），保持紧凑匀称
         Expanded(
-          flex: expandChoiceArea ? 2 : 5,
+          flex: expandChoiceArea ? 4 : 5,
           child: Consumer(
             builder: (context, ref, child) {
               // 物理隔离：只监听会影响卡片渲染的核心状态
@@ -670,9 +670,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         ),
         // 题目区和做题区之间的统一间距
         SizedBox(height: BdcPageState._questionAnswerGap),
-        // 做题区 - 答题后自动增大高度比例（flex=5）
+        // 做题区 - 答题后适度分配更多空间（flex=5）
         Expanded(
-          flex: expandChoiceArea ? 5 : 5,
+          flex: 5,
           child: Consumer(
             builder: (context, ref, child) {
               final wordId = ref.watch(bdcNotifierProvider.select((s) => s.word?.id));
@@ -1278,7 +1278,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               }
 
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: 3),
                 child: SizedBox(
                   width: double.infinity,
                   child: Container(
@@ -1301,7 +1301,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                               width: double.infinity,
                               padding: EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: isAnswered && !isNoneOfAbove ? 10 : 14,
+                                vertical: isAnswered && !isNoneOfAbove ? 9 : 13,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
