@@ -1141,29 +1141,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    '学习轨道',
-                    style: TextStyle(
-                      color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '自适应环节流转',
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+              Text(
+                '学习轨道',
+                style: TextStyle(
+                  color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
+                ),
               ),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
