@@ -32,7 +32,6 @@ import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/db/learning_word_extensions.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
 import 'package:nnbdc/widget/dict_download_dialog.dart';
-import 'package:nnbdc/widget/dynamic_clock_text.dart';
 import 'package:nnbdc/widget/study_date_explanation_dialog.dart';
 import 'package:provider/provider.dart';
 
@@ -63,6 +62,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   Set<String> _masteredWordIds = {};
   /// 学习环节设置 tab：0=新词（学习轨道配置），1=旧词（复习轨道配置）
   int _studyStepsTab = 0;
+  /// 学习轨道是否处于编辑模式（默认 false 为极简图形化显示模式，true 为完整配置编辑模式）
+  bool _isEditingTracks = false;
   /// 新词三组规则（显式设置）；_newConfigSaved=false 表示未落库（当前为默认规则）
   String? _newCheckStep;
   List<String> _newCorrectSteps = [];
@@ -454,11 +455,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     if (mounted) setState(() {});
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
+    final backgroundColor = isDarkMode ? const Color(0xFF090B10) : const Color(0xFFF9FAFB);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -468,351 +468,370 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: 48,
-                    height: 48,
+                    width: 40,
+                    height: 40,
                     child: CircularProgressIndicator(
-                        strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9))),
+                      strokeWidth: 2.2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isDarkMode ? Colors.white70 : const Color(0xFF111827),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
                   Text(
                     _isSyncingFromCloud ? 'SYNCING FROM CLOUD...' : 'LOADING PLAN',
                     style: TextStyle(
-                      color: isDarkMode ? Colors.white54 : const Color(0xFF64748B),
+                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
                       fontSize: 11,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                       letterSpacing: 2.0,
                     ),
                   ),
                 ],
               ),
             )
-          : CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                SliverAppBar(
-                  pinned: true,
-                  backgroundColor: backgroundColor,
-                  surfaceTintColor: Colors.transparent,
-                  elevation: 0,
-                  automaticallyImplyLeading: false,
-                  centerTitle: true,
-                  toolbarHeight: 56,
-                  title: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '今日学习计划',
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          if (_isSyncingFromCloud) ...[
-                            const SizedBox(width: 12),
-                            SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  isDarkMode ? Colors.white70 : Colors.black45,
-                                ),
+          : SafeArea(
+              bottom: false,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 极简顶栏（与原型 1:1 对齐：TODAY'S PLAN + 今日学习计划 + 右侧高级设置图标）
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => StudyDateExplanationDialog.show(context),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "TODAY'S PLAN",
+                                    style: TextStyle(
+                                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.help_outline_rounded,
+                                    size: 11,
+                                    color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                                  ),
+                                ],
                               ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Text(
+                                  '今日学习计划',
+                                  style: TextStyle(
+                                    color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -0.8,
+                                  ),
+                                ),
+                                if (_isSyncingFromCloud) ...[
+                                  const SizedBox(width: 8),
+                                  SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.8,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        isDarkMode ? Colors.white54 : Colors.black45,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          DynamicClockText(
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.white38 : Colors.black38,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 1.0,
+                        ),
+                        // 右侧高级设置按钮（圆形微背景）
+                        GestureDetector(
+                          onTap: () => _showAdvancedSettingsDialog(),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.tune_rounded,
+                              size: 18,
+                              color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
                             ),
                           ),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => StudyDateExplanationDialog.show(context),
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(4, 8, 12, 8),
-                              child: Icon(
-                                Icons.help_outline_rounded,
-                                size: 12,
-                                color: isDarkMode ? Colors.white38 : Colors.black38,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  bottom: PreferredSize(
-                    preferredSize: const Size.fromHeight(1),
-                    child: Container(
-                      color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-                      height: 1,
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 10),
-                        renderMissionCard(),
-                        const SizedBox(height: 12),
-                        renderStudySteps(),
-                        const SizedBox(height: 12),
+                        ),
                       ],
                     ),
-                  ),
+
+                    const SizedBox(height: 22),
+
+                    // 核心大仪表盘
+                    renderMissionCard(),
+
+                    const SizedBox(height: 22),
+
+                    // 学习轨道区域
+                    renderStudySteps(),
+
+                    const SizedBox(height: 20),
+
+                    // 底部辅助说明
+                    Center(
+                      child: Text(
+                        '学习未开始前可随时调整目标 · 开始后将自动锁定',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
     );
   }
 
   Widget renderMissionCard() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardBg = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
     final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
+    final isStarted = user?.todayStudyStarted == true;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Goal Setting
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '今日目标',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Text(
-                          '${user?.effectiveWordsPerDay ?? 0} 个单词',
-                          style: TextStyle(
-                            color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        if (user?.todayStudyStarted == true) ...[
-                          const SizedBox(width: 4),
-                          Tooltip(
-                            message: '已开始今日学习，单词数已锁定。',
-                            triggerMode: TooltipTriggerMode.tap,
-                            preferBelow: true,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: isDarkMode ? const Color(0xFF334155) : const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            textStyle: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              child: Icon(
-                                Icons.lock_outline_rounded,
-                                color: isDarkMode ? Colors.white38 : Colors.black26,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: '高级设置',
-                      icon: Icon(
-                        Icons.tune_rounded,
-                        size: 20,
-                        color: isDarkMode ? Colors.white54 : Colors.black45,
-                      ),
-                      onPressed: () => _showAdvancedSettingsDialog(),
-                    ),
-                    renderGoalDropdown(),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Progress Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '进度: $_completedStepCount / $_totalStepCount',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.white60 : const Color(0xFF94A3B8),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '${(progress * 100).toInt()}%',
-                      style: TextStyle(
-                        color: isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0891B2),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 8,
-                    backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isDarkMode ? const Color(0xFF06B6D4) : const Color(0xFF0891B2),
+    return Column(
+      children: [
+        // 今日目标超大数字
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: isStarted
+              ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
+              : () => _showWordsSelectionBottomSheet(),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '今日学习目标',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white60 : const Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // Stats Grid
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    _buildStatItem('今日总词', todayWordCount ?? 0, Icons.auto_awesome_rounded, const Color(0xFF0EA5E9)),
-                    const SizedBox(width: 8),
-                    _buildStatItem('新词', newWordCount ?? 0, Icons.fiber_new_rounded, const Color(0xFF8B5CF6)),
-                    const SizedBox(width: 8),
-                    _buildStatItem('复习', oldWordCount ?? 0, Icons.history_rounded, const Color(0xFF10B981)),
-                  ],
-                ),
-                if (!(user?.todayStudyStarted ?? false))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      '未开始学习前，可点击上方数字调整单词',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.white54 : Colors.black45,
-                        fontSize: 11,
-                      ),
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ), 
-              ],
-            ),
-          ),
-
-          // Supplement Hint
-          if (prepareResult != null &&
-              prepareResult!.success &&
-              (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
-              !_hasTriedSupplement)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline_rounded, color: Colors.orange, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '任务量不足，建议补充单词',
-                        style: TextStyle(
-                          color: isDarkMode ? Colors.orange.shade300 : Colors.orange.shade900,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isStarted ? '已锁定' : '点击修改',
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white54 : const Color(0xFF4B5563),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
+                        if (!isStarted)
+                          Icon(
+                            Icons.arrow_drop_down_rounded,
+                            size: 13,
+                            color: isDarkMode ? Colors.white54 : const Color(0xFF4B5563),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.only(left: 2),
+                            child: Icon(
+                              Icons.lock_outline_rounded,
+                              size: 10,
+                              color: isDarkMode ? Colors.white38 : Colors.black38,
+                            ),
+                          ),
+                      ],
                     ),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-                        foregroundColor: isDarkMode ? Colors.white : Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: () => loadData(forceSupplement: true),
-                      child: const Text('补充'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '${user?.effectiveWordsPerDay ?? 0}',
+                    style: TextStyle(
+                      color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                      fontSize: 64,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -2.0,
+                      height: 1.0,
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'WORDS',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // 极细进度条（260px 宽度，4px 高度）
+        SizedBox(
+          width: 260,
+          child: Column(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  minHeight: 4,
+                  backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                  ),
                 ),
               ),
-            ),
-
-          // Action Button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-            child: (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
-                ? renderErrorActions()
-                : renderStartButton(),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '环节进度 $_completedStepCount / $_totalStepCount',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).toInt()}%',
+                    style: TextStyle(
+                      color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // 三列纯排版数据（上下发丝线）
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+              bottom: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+            ),
+          ),
+          child: Row(
+            children: [
+              _buildStatItem('今日总词', todayWordCount ?? 0),
+              Container(width: 1, height: 20, color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+              _buildStatItem('新词', newWordCount ?? 0),
+              Container(width: 1, height: 20, color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+              _buildStatItem('复习', oldWordCount ?? 0),
+            ],
+          ),
+        ),
+
+        // 任务量不足提示
+        if (prepareResult != null &&
+            prepareResult!.success &&
+            (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
+            !_hasTriedSupplement)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF2E1A05) : const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDarkMode ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '任务量不足，建议补充单词',
+                      style: TextStyle(
+                        color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                      foregroundColor: isDarkMode ? Colors.white : Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => loadData(forceSupplement: true),
+                    child: const Text('补充', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        const SizedBox(height: 14),
+
+        // 主操作按钮（52px 高度大胶囊）
+        (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
+            ? renderErrorActions()
+            : renderStartButton(),
+      ],
     );
   }
 
-  Widget _buildStatItem(String label, int count, IconData icon, Color accentColor) {
+  Widget _buildStatItem(String label, int count) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return Expanded(
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           if (label == '今日总词') {
             toTodayWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
@@ -822,114 +841,130 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             toTodayOldWordsListPage(true)?.then((_) => Future.delayed(Duration.zero, () => loadData(isReturnFromStudy: true)));
           }
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
-              width: 1,
+        child: Column(
+          children: [
+            Text(
+              '$count',
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                height: 1.1,
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 18, color: accentColor.withValues(alpha: 0.8)),
-              const SizedBox(height: 6),
-              Text(
-                '$count',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget renderGoalDropdown() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final bool isStarted = user?.todayStudyStarted == true;
+  void _showWordsSelectionBottomSheet() {
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final currentValue = user?.effectiveWordsPerDay ?? 20;
 
-    return GestureDetector(
-      onTap: isStarted ? () => ToastUtil.info('今日学习已开始，无法修改计划数量') : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<int>(
-            value: user?.effectiveWordsPerDay ?? 20,
-            isDense: true,
-            icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
-            dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            style: TextStyle(
-              color: isDarkMode ? (isStarted ? Colors.white54 : Colors.white) : (isStarted ? Colors.black26 : const Color(0xFF1E293B)),
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
-            onChanged: isStarted
-                ? null
-                : (value) async {
-                    if (value == null) return;
-                    if (!SubscriptionUtil.isPremium() && value > 20) {
-                      ToastUtil.info('开通会员可选择更多单词数量');
-                      return;
-                    }
-                    setState(() {
-                      user!.wordsPerDay = value;
-                      dataLoaded = false;
-                    });
-                    await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, value);
-                    await Global.loadUserFromDb();
-                    ThrottledDbSyncService().requestSync();
-                    loadData(forceSupplement: false);
-                  },
-            items: [10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500].map((v) {
-              final isPremium = SubscriptionUtil.isPremium();
-              final isRestricted = !isPremium && v > 20;
-              return DropdownMenuItem<int>(
-                value: v,
-                enabled: !isRestricted,
-                child: Row(
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDarkMode ? const Color(0xFF11141D) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('$v'),
-                    if (isRestricted) ...[
-                      const SizedBox(width: 6),
-                      const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 14),
-                      const SizedBox(width: 2),
-                      const Text(
-                        '会员',
-                        style: TextStyle(
-                          color: Colors.amber,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      '选择每日学习词数',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: isDarkMode ? Colors.white : const Color(0xFF111827),
                       ),
-                    ]
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
                   ],
                 ),
-              );
-            }).toList(),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [10, 20, 30, 50, 75, 100, 150, 200, 300].map((v) {
+                    final isSelected = v == currentValue;
+                    final isPremium = SubscriptionUtil.isPremium();
+                    final isRestricted = !isPremium && v > 20;
+
+                    return GestureDetector(
+                      onTap: () async {
+                        if (isRestricted) {
+                          ToastUtil.info('开通会员可选择更多单词数量');
+                          return;
+                        }
+                        Navigator.pop(ctx);
+                        setState(() {
+                          user!.wordsPerDay = v;
+                          dataLoaded = false;
+                        });
+                        await MyDatabase.instance.usersDao.updateWordsPerDay(user!.id!, v);
+                        await Global.loadUserFromDb();
+                        ThrottledDbSyncService().requestSync();
+                        loadData(forceSupplement: false);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? (isDarkMode ? Colors.white : const Color(0xFF111827))
+                              : (isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$v 词',
+                              style: TextStyle(
+                                color: isSelected
+                                    ? (isDarkMode ? Colors.black : Colors.white)
+                                    : (isDarkMode ? Colors.white : const Color(0xFF111827)),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            if (isRestricted) ...[
+                              const SizedBox(width: 4),
+                              const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 13),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -939,22 +974,25 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     if (hasDakaToday && _totalStepCount > 0 && _completedStepCount >= _totalStepCount) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7),
-          borderRadius: BorderRadius.circular(20),
+          color: isDarkMode ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(
+            color: isDarkMode ? const Color(0xFF047857) : const Color(0xFFA7F3D0),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.stars_rounded, color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669), size: 24),
-            const SizedBox(width: 12),
+            Icon(Icons.check_circle_rounded, color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669), size: 20),
+            const SizedBox(width: 8),
             Text(
-              '今日任务圆满达成',
+              '今日目标已达成',
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
@@ -962,27 +1000,15 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       );
     }
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: isDarkMode ? [const Color(0xFF0891B2), const Color(0xFF0EA5E9)] : [const Color(0xFF06B6D4), const Color(0xFF0EA5E9)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0EA5E9).withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+      height: 52,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 11),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+          foregroundColor: isDarkMode ? const Color(0xFF111827) : const Color(0xFFF9FAFB),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         ),
         onPressed: () async {
           if (_newCheckStep == null) {
@@ -1008,16 +1034,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ],
               ),
             );
-            
+
             if (shouldStart != true) {
               return;
             }
-
-
           }
 
           if (user != null) {
-            // 本地数据库和全局缓存必须 await 确保在跳转前更新完成，彻底杜绝转场竞态；而网络同步仍可通过 unawaited 异步执行以防阻塞转场
             try {
               await MyDatabase.instance.userOpersDao.recordStartLearn(user!.id!, remark: "开始学习");
               final dbUser = await MyDatabase.instance.usersDao.getUserById(user!.id!);
@@ -1026,8 +1049,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     dbUser.copyWith(todayStudyStarted: true, lastLearningDate: drift.Value(AppClock.today())), true);
               }
               await Global.loadUserFromDb();
-              
-              // 在转场后台发起增量同步
+
               unawaited(() async {
                 try {
                   ThrottledDbSyncService().requestSync(immediate: true);
@@ -1039,11 +1061,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               Global.logger.e('记录开始学习状态失败', error: e, stackTrace: st);
             }
           }
-          // Prefs 内存写入几乎为 0ms (只做本地 Map 修改)，可以直接 await 确保页面接收，也可不 await
           await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
           if (!mounted) return;
-          // 在页面跳转前启动 iOS 麦克风引擎预热，与导航过渡动画(~300ms)和 BDC 初始化(~250ms)并行。
-          // 预热完成时 startAsr 可直接复用已初始化的引擎，消除首次单词 2.3s 冷启动延迟。
           if (PlatformUtils.isIOS || PlatformUtils.isAndroid) {
             unawaited(Asr().warmupMicrophone());
           }
@@ -1051,14 +1070,20 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             if (mounted && !_isLoadingData) loadData(isReturnFromStudy: true);
           });
         },
-        child: Text(
-          user?.todayStudyStarted == true ? '继续学习' : '开始学习',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 2.0,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              user?.todayStudyStarted == true ? '继续学习' : '开始学习',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Text('➔', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
         ),
       ),
     );
@@ -1074,17 +1099,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             color: Colors.amber.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Row(
+          child: const Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text('词书单词量不足', style: TextStyle(color: Colors.orange, fontSize: 13)),
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text('词书单词量不足', style: TextStyle(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
@@ -1092,25 +1117,25 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 style: OutlinedButton.styleFrom(
                   foregroundColor: isDarkMode ? Colors.white : Colors.black,
                   side: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black12),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () => context.push('/select_book').then((v) {
                   if (mounted) loadData(forceSupplement: true);
                 }),
-                child: const Text('选择词书'),
+                child: const Text('选择词书', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
-            if (todayWordCount! > 0) ...[
-              const SizedBox(width: 12),
+            if ((todayWordCount ?? 0) > 0) ...[
+              const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                    backgroundColor: isDarkMode ? Colors.white : const Color(0xFF111827),
                     foregroundColor: isDarkMode ? Colors.black : Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () async {
                     await Prefs.write("BdcPageArgs", BdcPageArgs('before_bdc').toJson());
@@ -1120,7 +1145,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     }
                     context.push('/bdc');
                   },
-                  child: const Text('就这样吧'),
+                  child: const Text('就这样吧', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -1132,67 +1157,443 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   Widget renderStudySteps() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 标题行：学习环节 —— 新词/旧词 tab —— 拖动排序徽章（单行紧凑布局）
+        // 标题与切换模式按钮
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          padding: const EdgeInsets.only(left: 2, right: 2, bottom: 10),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '学习环节',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(width: 12),
-              DefaultTabController(
-                length: 2,
-                child: SizedBox(
-                  width: 132,
-                  child: TabBar(
-                    dividerColor: Colors.transparent,
-                    labelPadding: EdgeInsets.zero,
-                    onTap: (i) => setState(() => _studyStepsTab = i),
-                    tabs: const [
-                      Tab(text: '新词'),
-                      Tab(text: '旧词'),
-                    ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '学习轨道',
+                    style: TextStyle(
+                      color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '自适应环节流转',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
-              Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _isEditingTracks = !_isEditingTracks),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '拖动 ⠿ 排序',
-                  style: TextStyle(
-                    color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isEditingTracks ? Icons.check_rounded : Icons.settings_rounded,
+                        size: 12,
+                        color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _isEditingTracks ? '完成配置' : '调整轨道',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
         ),
-        _buildReviewStepsInfoCard(scope: _studyStepsTab == 0 ? 'new' : 'review', isDarkMode: isDarkMode),
+
+        // 显示模式 vs 编辑模式
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 250),
+          crossFadeState: _isEditingTracks ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          firstChild: _buildTrackDisplayCard(isDarkMode),
+          secondChild: _buildTrackEditCard(isDarkMode),
+        ),
       ],
     );
   }
 
-  /// 旧词 tab：三组显式配置——测评单选下拉 + 答对/答错分支（可视化，分支内环节可拖拽排序）
-  /// 学习规则三组配置卡（scope='new' 新词 / 'review' 旧词，UI 同构）
+  /// 【显示模式】—— 极简纯无框图形化决策树卡片
+  Widget _buildTrackDisplayCard(bool isDarkMode) {
+    final cardBg = isDarkMode ? const Color(0xFF11141D) : Colors.white;
+    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _isEditingTracks = true),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.03),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // 新词轨道
+            _buildVisualForkTree(
+              title: '新词轨道',
+              checkStep: _newCheckStep ?? 'En2Ch',
+              correctSteps: _newCorrectSteps,
+              wrongSteps: _newWrongSteps,
+              isDarkMode: isDarkMode,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Container(height: 1, color: dividerColor),
+            ),
+            // 旧词轨道
+            _buildVisualForkTree(
+              title: '旧词轨道',
+              checkStep: _reviewCheckStep ?? 'En2Ch',
+              correctSteps: _reviewCorrectSteps,
+              wrongSteps: _reviewWrongSteps,
+              isDarkMode: isDarkMode,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 绘制单个轨道的纯无框图形化分叉树（1:1 对齐原型）
+  Widget _buildVisualForkTree({
+    required String title,
+    required String checkStep,
+    required List<String> correctSteps,
+    required List<String> wrongSteps,
+    required bool isDarkMode,
+  }) {
+    final checkDesc = StudyStepExt.fromString(checkStep).description;
+    final subColor = isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF);
+    final badgeBg = isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6);
+    final textPrimary = isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: badgeBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                ),
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '点击配置',
+                  style: TextStyle(fontSize: 11, color: subColor, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(width: 2),
+                Icon(Icons.chevron_right_rounded, size: 14, color: subColor),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 左侧：测评节点
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: badgeBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '测评',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: subColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    checkDesc,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 中间：Bezier 曲线导线
+            SizedBox(
+              width: 22,
+              height: 64,
+              child: CustomPaint(
+                painter: ForkBezierPainter(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                ),
+              ),
+            ),
+
+            // 右侧：纯胶囊自适应流（零多余大外框）
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 答对分支
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 5,
+                    runSpacing: 5,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? const Color(0x1A34D399) : const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '✔ 答对',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
+                          ),
+                        ),
+                      ),
+                      if (correctSteps.isEmpty)
+                        Text(
+                          '直接完成',
+                          style: TextStyle(fontSize: 12, color: subColor, fontWeight: FontWeight.w500),
+                        )
+                      else
+                        ...() {
+                          final items = <Widget>[];
+                          for (int i = 0; i < correctSteps.length; i++) {
+                            items.add(
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: badgeBg,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  StudyStepExt.fromString(correctSteps[i]).description,
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textPrimary),
+                                ),
+                              ),
+                            );
+                            if (i < correctSteps.length - 1) {
+                              items.add(
+                                Text('➔', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: subColor)),
+                              );
+                            }
+                          }
+                          return items;
+                        }(),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // 答错分支
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 5,
+                    runSpacing: 5,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? const Color(0x1AFBBF24) : const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '✕ 答错',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                          ),
+                        ),
+                      ),
+                      if (wrongSteps.isEmpty)
+                        Text(
+                          '明日重现',
+                          style: TextStyle(fontSize: 12, color: subColor, fontWeight: FontWeight.w500),
+                        )
+                      else
+                        ...() {
+                          final items = <Widget>[];
+                          for (int i = 0; i < wrongSteps.length; i++) {
+                            items.add(
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: badgeBg,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  StudyStepExt.fromString(wrongSteps[i]).description,
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textPrimary),
+                                ),
+                              ),
+                            );
+                            if (i < wrongSteps.length - 1) {
+                              items.add(
+                                Text('➔', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: subColor)),
+                              );
+                            }
+                          }
+                          return items;
+                        }(),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 【编辑模式】—— 完整新旧词规则配置卡片
+  Widget _buildTrackEditCard(bool isDarkMode) {
+    final cardBg = isDarkMode ? const Color(0xFF11141D) : Colors.white;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Tab 切换（新词配置 / 旧词配置）
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildSubtleTabBtn('新词轨道配置', 0, isDarkMode),
+                _buildSubtleTabBtn('旧词轨道配置', 1, isDarkMode),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildReviewStepsInfoCard(scope: _studyStepsTab == 0 ? 'new' : 'review', isDarkMode: isDarkMode),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                foregroundColor: isDarkMode ? const Color(0xFF111827) : const Color(0xFFF9FAFB),
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: () => setState(() => _isEditingTracks = false),
+              child: const Text('完成配置', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubtleTabBtn(String title, int tabIndex, bool isDarkMode) {
+    final isSelected = _studyStepsTab == tabIndex;
+    return GestureDetector(
+      onTap: () => setState(() => _studyStepsTab = tabIndex),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDarkMode ? const Color(0xFF232838) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isSelected
+              ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 1))]
+              : null,
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected
+                ? (isDarkMode ? Colors.white : const Color(0xFF111827))
+                : (isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 规则编辑配置内容（测评下拉 + 答对/答错环节列表与拖拽）
   Widget _buildReviewStepsInfoCard({required String scope, required bool isDarkMode}) {
-    final textColor = isDarkMode ? Colors.white70 : Colors.black87;
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF111827);
     const allStepNames = ['En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'];
     String desc(String s) => StudyStepExt.fromString(s).description;
     final isNew = scope == 'new';
@@ -1200,6 +1601,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     String? checkStep() => isNew ? _newCheckStep : _reviewCheckStep;
     List<String> correctSteps() => isNew ? _newCorrectSteps : _reviewCorrectSteps;
     List<String> wrongSteps() => isNew ? _newWrongSteps : _reviewWrongSteps;
+
     void setCheck(String v) => setState(() {
           if (isNew) {
             _newCheckStep = v;
@@ -1214,94 +1616,206 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           fn(isNew ? _newWrongSteps : _reviewWrongSteps);
         });
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDarkMode
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.black.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 测评环节：单选下拉
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 测评环节下拉
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '测评：',
+                '测评环节',
                 style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.bold, color: textColor),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
               ),
-              const SizedBox(width: 8),
-              DropdownButton<String>(
-                value: checkStep() ?? allStepNames.first,
-                underline: const SizedBox.shrink(),
-                style: TextStyle(fontSize: 13, color: textColor),
-                dropdownColor:
-                    isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-                items: [
-                  for (final s in allStepNames)
-                    DropdownMenuItem(value: s, child: Text(desc(s))),
-                ],
-                onChanged: (v) {
-                  if (v != null) {
-                    setCheck(v);
-                    unawaited(saveReviewConfig(scope));
-                  }
-                },
+              DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: checkStep() ?? allStepNames.first,
+                  isDense: true,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor),
+                  dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  items: [
+                    for (final s in allStepNames)
+                      DropdownMenuItem(value: s, child: Text(desc(s))),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) {
+                      setCheck(v);
+                      unawaited(saveReviewConfig(scope));
+                    }
+                  },
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // 答对分支（绿）
-          _buildReviewBranch(
-            title: '答对后',
-            titleColor: Colors.green,
-            emptyHint: isNew ? '空：测评答对即完成' : '空：答对即完成',
-            steps: correctSteps(),
-            allStepNames: allStepNames,
-            isDarkMode: isDarkMode,
-            onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: true),
-            onRemove: (s) {
-              mutateCorrect((list) => list.remove(s));
-              unawaited(saveReviewConfig(scope));
-            },
-            onReorder: (oldIdx, newIdx) {
-              mutateCorrect((list) {
-                if (newIdx > oldIdx) newIdx--;
-                final item = list.removeAt(oldIdx);
-                list.insert(newIdx, item);
-              });
-              unawaited(saveReviewConfig(scope));
-            },
+        ),
+        const SizedBox(height: 12),
+
+        // 答对分支
+        _buildReviewBranch(
+          title: '答对后环节',
+          titleColor: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
+          emptyHint: isNew ? '空：测评答对即完成' : '空：答对即完成',
+          steps: correctSteps(),
+          allStepNames: allStepNames,
+          isDarkMode: isDarkMode,
+          onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: true),
+          onRemove: (s) {
+            mutateCorrect((list) => list.remove(s));
+            unawaited(saveReviewConfig(scope));
+          },
+          onReorder: (oldIdx, newIdx) {
+            mutateCorrect((list) {
+              if (newIdx > oldIdx) newIdx--;
+              final item = list.removeAt(oldIdx);
+              list.insert(newIdx, item);
+            });
+            unawaited(saveReviewConfig(scope));
+          },
+        ),
+        const SizedBox(height: 10),
+
+        // 答错分支
+        _buildReviewBranch(
+          title: '答错后环节',
+          titleColor: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+          emptyHint: isNew ? '空：测评答错即结束，明日重现' : '空：答错即结束，明日重现',
+          steps: wrongSteps(),
+          allStepNames: allStepNames,
+          isDarkMode: isDarkMode,
+          onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: false),
+          onRemove: (s) {
+            mutateWrong((list) => list.remove(s));
+            unawaited(saveReviewConfig(scope));
+          },
+          onReorder: (oldIdx, newIdx) {
+            mutateWrong((list) {
+              if (newIdx > oldIdx) newIdx--;
+              final item = list.removeAt(oldIdx);
+              list.insert(newIdx, item);
+            });
+            unawaited(saveReviewConfig(scope));
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewBranch({
+    required String title,
+    required Color titleColor,
+    required String emptyHint,
+    required List<String> steps,
+    required List<String> allStepNames,
+    required bool isDarkMode,
+    required VoidCallback onAdd,
+    required void Function(String) onRemove,
+    required void Function(int, int) onReorder,
+  }) {
+    final textColor = isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
+    final subColor = isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final bool canAdd = allStepNames.any((s) => !steps.contains(s));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(color: titleColor, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: titleColor,
+                  ),
+                ),
+              ],
+            ),
+            if (canAdd)
+              GestureDetector(
+                onTap: onAdd,
+                child: Text(
+                  '+ 添加',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (steps.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(emptyHint, style: TextStyle(fontSize: 11, color: subColor)),
+          )
+        else
+          ReorderableListView(
+            buildDefaultDragHandles: false,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            // ignore: deprecated_member_use
+            onReorder: onReorder,
+            children: [
+              for (int i = 0; i < steps.length; i++)
+                Container(
+                  key: ValueKey('review_${title}_$i'),
+                  margin: const EdgeInsets.symmetric(vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      ReorderableDragStartListener(
+                        index: i,
+                        child: Icon(Icons.drag_indicator_rounded, size: 16, color: subColor),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          StudyStepExt.fromString(steps[i]).description,
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => onRemove(steps[i]),
+                        child: Icon(Icons.close_rounded, size: 16, color: subColor),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 8),
-          // 答错分支（橙）
-          _buildReviewBranch(
-            title: '答错后',
-            titleColor: Colors.orange,
-            emptyHint: isNew ? '空：测评答错即结束，明日重现' : '空：答错即结束，明日重现',
-            steps: wrongSteps(),
-            allStepNames: allStepNames,
-            isDarkMode: isDarkMode,
-            onAdd: () => _pickReviewStepForBranch(scope, allStepNames, isCorrect: false),
-            onRemove: (s) {
-              mutateWrong((list) => list.remove(s));
-              unawaited(saveReviewConfig(scope));
-            },
-            onReorder: (oldIdx, newIdx) {
-              mutateWrong((list) {
-                if (newIdx > oldIdx) newIdx--;
-                final item = list.removeAt(oldIdx);
-                list.insert(newIdx, item);
-              });
-              unawaited(saveReviewConfig(scope));
-            },
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -1372,121 +1886,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     }
   }
 
-  Widget _buildReviewBranch({
-    required String title,
-    required Color titleColor,
-    required String emptyHint,
-    required List<String> steps,
-    required List<String> allStepNames,
-    required bool isDarkMode,
-    required VoidCallback onAdd,
-    required void Function(String) onRemove,
-    required void Function(int, int) onReorder,
-  }) {
-    final textColor = isDarkMode ? Colors.white70 : Colors.black87;
-    final subColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final bool canAdd = allStepNames.any((s) => !steps.contains(s));
-    return Container(
-      margin: const EdgeInsets.only(left: 8),
-      padding: const EdgeInsets.only(left: 10, bottom: 2),
-      decoration: BoxDecoration(
-        border: Border(
-            left: BorderSide(
-                color: titleColor.withValues(alpha: 0.55), width: 2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration:
-                        BoxDecoration(color: titleColor, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    title,
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: textColor),
-                  ),
-                ],
-              ),
-              if (canAdd)
-                TextButton.icon(
-                  onPressed: onAdd,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('添加', style: TextStyle(fontSize: 12)),
-                ),
-            ],
-          ),
-          if (steps.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Text(emptyHint,
-                  style: TextStyle(fontSize: 11, color: subColor)),
-            )
-          else
-            ReorderableListView(
-              buildDefaultDragHandles: false,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              // ignore: deprecated_member_use
-              onReorder: onReorder,
-              children: [
-                for (int i = 0; i < steps.length; i++)
-                  Container(
-                    key: ValueKey('review_${title}_$i'),
-                    margin: const EdgeInsets.symmetric(vertical: 3),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.05)
-                          : Colors.black.withValues(alpha: 0.03),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        ReorderableDragStartListener(
-                          index: i,
-                          child: const Icon(Icons.drag_indicator,
-                              size: 18, color: Colors.grey),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            StudyStepExt.fromString(steps[i]).description,
-                            style:
-                                TextStyle(fontSize: 13, color: textColor),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 16),
-                          onPressed: () => onRemove(steps[i]),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// 分支"添加环节"：弹窗列出该分支未添加的环节
-
-
   /// 弹出"高级设置"对话框，可配置今日最少新词数量
   void _showAdvancedSettingsDialog() {
-    // 回调上下文必须使用 read 而非 watch（watch 只能在 build 中使用）
     final isDarkMode = context.read<DarkMode>().isDarkMode;
     final isStarted = user?.todayStudyStarted == true;
     final config = StudyConfig.fromCurrentUser();
@@ -1497,12 +1898,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+          backgroundColor: isDarkMode ? const Color(0xFF11141D) : Colors.white,
           title: const Row(
             children: [
-              Icon(Icons.tune_rounded, size: 22),
+              Icon(Icons.tune_rounded, size: 20),
               SizedBox(width: 8),
-              Text('高级设置'),
+              Text('高级设置', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ],
           ),
           content: Column(
@@ -1515,7 +1916,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   Text(
                     '今日最少新词数量',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
                       fontWeight: FontWeight.w600,
                     ),
@@ -1527,7 +1928,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           '$selected',
                           style: TextStyle(
                             color: isDarkMode ? Colors.white70 : const Color(0xFF64748B),
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -1536,22 +1937,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                           message: '今日学习已开始，无法修改最少新词数量',
                           triggerMode: TooltipTriggerMode.tap,
                           preferBelow: false,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0xFF334155) : const Color(0xFF1E293B),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          textStyle: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(2.0),
-                            child: Icon(
-                              Icons.lock_outline_rounded,
-                              size: 16,
-                              color: isDarkMode ? Colors.white38 : Colors.black26,
-                            ),
+                          child: Icon(
+                            Icons.lock_outline_rounded,
+                            size: 14,
+                            color: isDarkMode ? Colors.white38 : Colors.black26,
                           ),
                         ),
                       ],
@@ -1562,10 +1951,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       isDense: true,
                       icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
                       dropdownColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       style: TextStyle(
                         color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w900,
                       ),
                       onChanged: (value) {
@@ -1596,7 +1985,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       config.minNewWordsPerDay = selected;
                       await config.saveToCurrentUser();
                       if (ctx.mounted) Navigator.of(ctx).pop();
-                      // 重新生成今日计划，使配置生效
                       loadData(forceSupplement: true);
                     },
               child: const Text('保存'),
@@ -1606,4 +1994,35 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       ),
     );
   }
+}
+
+/// 绘制极简 Bezier 分叉导线
+class ForkBezierPainter extends CustomPainter {
+  final Color color;
+  const ForkBezierPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final midY = size.height / 2;
+    // 向上扬起连接正确分支
+    final pathUp = Path()
+      ..moveTo(0, midY)
+      ..cubicTo(size.width * 0.5, midY, size.width * 0.5, 12, size.width, 12);
+    canvas.drawPath(pathUp, paint);
+
+    // 向下探入连接错误分支
+    final pathDown = Path()
+      ..moveTo(0, midY)
+      ..cubicTo(size.width * 0.5, midY, size.width * 0.5, size.height - 12, size.width, size.height - 12);
+    canvas.drawPath(pathDown, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant ForkBezierPainter oldDelegate) => oldDelegate.color != color;
 }
