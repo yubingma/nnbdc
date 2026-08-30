@@ -1914,6 +1914,11 @@ class _MePageState extends State<MePage> {
                       )
                     : null,
                 onTap: () async {
+                  if (Global.isGuest || loggedInUser == null) {
+                    ToastUtil.info('请先登录账号，以便接收客服回复与活动兑换');
+                    context.push('/login');
+                    return;
+                  }
                   await context.push('/msg');
                   loadData();
                 },

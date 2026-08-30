@@ -1,5 +1,6 @@
 import 'package:chat_bubbles/chat_bubbles.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -38,15 +39,39 @@ class MsgPageState extends State<MsgPage> {
   }
 
   Future<void> loadData() async {
-    msgs = await Api.client.getLastestMsgsBetweenUserAndSys(Global.getLoggedInUser()!.id, 9999);
+    final user = Global.getLoggedInUser();
+    if (user == null || Global.isGuest) {
+      if (mounted) {
+        setState(() {
+          msgs = [];
+          dataLoaded = true;
+        });
+      }
+      return;
+    }
 
-    setState(() {
-      dataLoaded = true;
-    });
+    try {
+      msgs = await Api.client.getLastestMsgsBetweenUserAndSys(user.id, 9999);
+    } catch (e) {
+      msgs = [];
+    }
+
+    if (mounted) {
+      setState(() {
+        dataLoaded = true;
+      });
+    }
   }
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty || _isSending) {
+      return;
+    }
+
+    final user = Global.getLoggedInUser();
+    if (user == null || Global.isGuest) {
+      ToastUtil.info('请先登录账号，以便接收客服回复与活动兑换');
+      context.push('/login');
       return;
     }
 
@@ -56,7 +81,7 @@ class MsgPageState extends State<MsgPage> {
 
     try {
       final clientType = getClientType();
-      final result = await Api.client.sendAdvice(_messageController.text.trim(), clientType.name, Global.getLoggedInUser()!.id);
+      final result = await Api.client.sendAdvice(_messageController.text.trim(), clientType.name, user.id);
       if (result.success) {
         if (result.data != null) {
           // 意见建议兑换会员成功，立即更新本地数据库与内存用户状态
