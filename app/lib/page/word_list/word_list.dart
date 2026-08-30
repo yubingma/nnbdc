@@ -3162,9 +3162,15 @@ class WordListPageState extends State<WordListPage>
                                     asr.reset();
                                   }
                                   if (!context.mounted) return;
+                                  int? initialIndex;
+                                  if (controller.bookMark != null) {
+                                    initialIndex = controller.bookMark!.position;
+                                  }
                                   context.push('/walkman',
                                       extra:
-                                          WalkmanParams(args.wordsProvider));
+                                          WalkmanParams(args.wordsProvider,
+                                              bookMarkProvider: args.bookMarkProvider,
+                                              initialWordIndex: initialIndex));
 
 
                                   break;

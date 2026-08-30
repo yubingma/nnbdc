@@ -640,6 +640,7 @@ class StudyAudioSessionController {
         androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
         androidWillPauseWhenDucked: true,
       )).timeout(const Duration(milliseconds: 1000));
+      await session.setActive(true);
       _currentSessionCategory = 'playback';
       debugPrint('⏱️ [Latency-Sound] Session 切换到 playback 完成，耗时: ${totalSw.elapsedMilliseconds}ms');
       _logAudioState('会话切换完成(→playback ${totalSw.elapsedMilliseconds}ms)');

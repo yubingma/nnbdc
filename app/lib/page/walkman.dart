@@ -11,7 +11,6 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/word_util.dart';
-import 'package:nnbdc/util/error_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../db/db.dart';
@@ -75,12 +74,14 @@ class WalkmanConfig {
 
 class WalkmanParams {
   WordsProvider wordsProvider;
+  BookMarkProvider? bookMarkProvider;
+  int? initialWordIndex;
 
-  WalkmanParams(this.wordsProvider);
+  WalkmanParams(this.wordsProvider, {this.bookMarkProvider, this.initialWordIndex});
 
   @override
   String toString() {
-    return 'WalkmanParams{wordsProvider: $wordsProvider}';
+    return 'WalkmanParams{wordsProvider: $wordsProvider, bookMarkProvider: $bookMarkProvider, initialWordIndex: $initialWordIndex}';
   }
 }
 
@@ -99,11 +100,12 @@ class WalkmanPageState extends State<WalkmanPage> {
   Color selectedTextColor = Colors.white;
   Color normalTextColor = const Color(0xffaaaaaa);
 
-  Timer? loadWordTimer; // 改为可空类型，避免late风险
   Timer? playWordTimer;
   bool dataLoaded = false;
   WalkmanParams? params; // 改为可空类型，在checkArgs中验证
-  List<WordWrapper> allWords = [];
+  final Map<int, WordWrapper> _wordCache = {};
+  final Set<int> _loadingPages = {};
+  static const int _pageSize = 20;
   int totalWordCount = -1;
   bool shouldStop = false;
   int currWordIndex = 0;
@@ -160,31 +162,15 @@ class WalkmanPageState extends State<WalkmanPage> {
 
     tts = Tts();
     tts?.init();
-
-    // 周期性加载后续单词的 Timer 保持不变
-    loadWordTimer = Timer.periodic(const Duration(milliseconds: 1000), (Timer timer) {
-      if (currWordIndex > allWords.length - 10 && !isAllWordsLoaded()) {
-        try {
-          loadAPageOfRawWords();
-        } catch (e) {
-          timer.cancel();
-          ErrorHandler.handleError(e, null, userMessage: '加载单词失败，请稍后重试', logPrefix: 'Walkman加载单词');
-        }
-      }
-    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!inited) {
-      // 1. 异步加载配置和初始数据
-      loadData().then((_) async {
-        // 2. 只有在数据加载逻辑准备好后，才开始加载第一页单词
-        await loadAPageOfRawWords();
-        
-        // 3. 数据到位后，立即开始播放循环
-        if (mounted) {
+      // 异步加载配置和初始数据，加载成功后立即开始播放循环
+      loadData().then((_) {
+        if (mounted && totalWordCount > 0) {
           playWordTick();
         }
       });
@@ -198,21 +184,21 @@ class WalkmanPageState extends State<WalkmanPage> {
         final studyConfigAll = jsonDecode(user.studyConfig!);
         if (studyConfigAll['walkman'] != null) {
           final config = WalkmanConfig.fromJson(studyConfigAll['walkman']);
-        setState(() {
-          showSpell = config.showSpell;
-          showPronounce = config.showPronounce;
-          showMeaning = config.showMeaning;
-          showSentence = config.showSentence;
-          showChinese = config.showChinese;
-          playPronounce = config.playPronounce;
-          playMeaning = config.playMeaning;
-          playSentence = config.playSentence;
-          playChinese = config.playChinese;
-          repeatCount = config.repeatCount;
-          playInterval = config.playInterval;
-          sentencePlaySpeed = config.sentencePlaySpeed;
-          playSentenceCount = config.playSentenceCount;
-        });
+          setState(() {
+            showSpell = config.showSpell;
+            showPronounce = config.showPronounce;
+            showMeaning = config.showMeaning;
+            showSentence = config.showSentence;
+            showChinese = config.showChinese;
+            playPronounce = config.playPronounce;
+            playMeaning = config.playMeaning;
+            playSentence = config.playSentence;
+            playChinese = config.playChinese;
+            repeatCount = config.repeatCount;
+            playInterval = config.playInterval;
+            sentencePlaySpeed = config.sentencePlaySpeed;
+            playSentenceCount = config.playSentenceCount;
+          });
         }
       } catch (e) {
         Global.logger.e('解析随身听配置失败: $e');
@@ -255,6 +241,75 @@ class WalkmanPageState extends State<WalkmanPage> {
     }
   }
 
+  Future<void> _loadPage(int pageIndex) async {
+    if (_loadingPages.contains(pageIndex)) return;
+    _loadingPages.add(pageIndex);
+    try {
+      final fromIndex = pageIndex * _pageSize;
+      final result = await params?.wordsProvider.getAPageOfWords(fromIndex, _pageSize);
+      if (result != null) {
+        if (totalWordCount != result.total) {
+          if (mounted) {
+            setState(() {
+              totalWordCount = result.total;
+            });
+          } else {
+            totalWordCount = result.total;
+          }
+        }
+        for (int i = 0; i < result.rows.length; i++) {
+          _wordCache[fromIndex + i] = result.rows[i];
+        }
+      }
+    } catch (e) {
+      Global.logger.e('Walkman加载单词失败 (page=$pageIndex): $e');
+    } finally {
+      _loadingPages.remove(pageIndex);
+    }
+  }
+
+  Future<WordWrapper?> getWordAt(int index) async {
+    if (index < 0) return null;
+    if (totalWordCount > 0 && index >= totalWordCount) return null;
+    if (_wordCache.containsKey(index)) {
+      return _wordCache[index];
+    }
+    final pageIndex = index ~/ _pageSize;
+    await _loadPage(pageIndex);
+    return _wordCache[index];
+  }
+
+  void prefetchAround(int index) {
+    if (totalWordCount <= 0) return;
+    // 预加载后一页
+    final nextPage = (index + 5) ~/ _pageSize;
+    if (!_loadingPages.contains(nextPage)) {
+      final nextFrom = nextPage * _pageSize;
+      if (nextFrom < totalWordCount && !_wordCache.containsKey(nextFrom)) {
+        unawaited(_loadPage(nextPage));
+      }
+    }
+    // 预加载前一页（以便向右滑动上一个词时秒开）
+    if (index >= 5) {
+      final prevPage = (index - 5) ~/ _pageSize;
+      if (!_loadingPages.contains(prevPage)) {
+        final prevFrom = prevPage * _pageSize;
+        if (prevFrom >= 0 && !_wordCache.containsKey(prevFrom)) {
+          unawaited(_loadPage(prevPage));
+        }
+      }
+    }
+  }
+
+  Future<void> _saveCurrentPosition(int index, WordWrapper? word) async {
+    if (word == null || params?.bookMarkProvider == null) return;
+    try {
+      await params!.bookMarkProvider!.saveBookMark(BookMarkVo(index, word.word.spell));
+    } catch (e) {
+      Global.logger.w('保存随身听当前位置失败: $e');
+    }
+  }
+
   Future<void> loadData() async {
     if (!await checkArgs()) {
       return;
@@ -265,9 +320,42 @@ class WalkmanPageState extends State<WalkmanPage> {
       Global.logger.e('Walkman: params为空，无法加载数据');
       return;
     }
-    setState(() {
-      inited = true;
-    });
+
+    // 确定起始位置
+    int startPos = 0;
+    if (params!.initialWordIndex != null && params!.initialWordIndex! >= 0) {
+      startPos = params!.initialWordIndex!;
+    } else if (params!.bookMarkProvider != null) {
+      try {
+        final bookmark = await params!.bookMarkProvider!.getBookMark();
+        if (bookmark != null && bookmark.position >= 0) {
+          startPos = bookmark.position;
+        }
+      } catch (e) {
+        Global.logger.w('获取随身听书签失败: $e');
+      }
+    }
+
+    final initialPage = startPos ~/ _pageSize;
+    await _loadPage(initialPage);
+
+    if (totalWordCount > 0 && startPos >= totalWordCount) {
+      startPos = 0;
+      if (!_wordCache.containsKey(0)) {
+        await _loadPage(0);
+      }
+    }
+
+    currWordIndex = startPos;
+    nextWordIndex = startPos;
+    prefetchAround(currWordIndex);
+
+    if (mounted) {
+      setState(() {
+        dataLoaded = true;
+        inited = true;
+      });
+    }
   }
 
   @override
@@ -276,8 +364,13 @@ class WalkmanPageState extends State<WalkmanPage> {
     currentWordPlayShouldStop = true;
 
     // 取消所有计时器
-    loadWordTimer?.cancel();
     playWordTimer?.cancel();
+
+    // 退出时保存最后播放的位置
+    final currentWord = _wordCache[currWordIndex];
+    if (currentWord != null) {
+      _saveCurrentPosition(currWordIndex, currentWord);
+    }
 
     // 退出全屏并恢复默认方向设置
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
@@ -376,12 +469,33 @@ class WalkmanPageState extends State<WalkmanPage> {
       currentWordPlayShouldStop = false;
       currentWordPlayingStopped = false;
 
+      if (totalWordCount <= 0) {
+        currentWordPlayingStopped = true;
+        return;
+      }
+
       // 播放当前单词
-      if (allWords.isNotEmpty && mounted) {
+      if (mounted) {
         setState(() {
           currWordIndex = nextWordIndex;
         });
-        final word = allWords[currWordIndex];
+        if (totalWordCount > 0 && currWordIndex >= totalWordCount) {
+          currWordIndex = 0;
+        }
+
+        WordWrapper? word = _wordCache[currWordIndex];
+        word ??= await getWordAt(currWordIndex);
+
+        if (word == null) {
+          if (expectedSession == _playSessionId) {
+            nextWordIndex = (totalWordCount > 0) ? ((currWordIndex + 1) % totalWordCount) : 0;
+            currentWordPlayingStopped = true;
+          }
+          return;
+        }
+
+        _saveCurrentPosition(currWordIndex, word);
+        prefetchAround(currWordIndex);
 
         // 提前获取例句，确保例句与当前单词匹配
         List<SentenceVo> sentences = [];
@@ -496,7 +610,7 @@ class WalkmanPageState extends State<WalkmanPage> {
         }
 
         if (expectedSession == _playSessionId) {
-          nextWordIndex = currWordIndex + 1 < allWords.length ? currWordIndex + 1 : 0;
+          nextWordIndex = (totalWordCount > 0) ? ((currWordIndex + 1) % totalWordCount) : 0;
           _forceNoWaitOnce = false; // 当前单词播报完毕，重置强制标记
         }
       }
@@ -506,8 +620,8 @@ class WalkmanPageState extends State<WalkmanPage> {
       }
     } catch (e) {
       // 即使出错也要更新nextWordIndex和播放状态，确保播放能继续到下一个单词
-      if (mounted && allWords.isNotEmpty && expectedSession == _playSessionId) {
-        nextWordIndex = currWordIndex + 1 < allWords.length ? currWordIndex + 1 : 0;
+      if (mounted && expectedSession == _playSessionId) {
+        nextWordIndex = (totalWordCount > 0) ? ((currWordIndex + 1) % totalWordCount) : 0;
       }
       if (expectedSession == _playSessionId) {
         currentWordPlayingStopped = true;
@@ -515,21 +629,6 @@ class WalkmanPageState extends State<WalkmanPage> {
       }
       ToastUtil.error("播放异常");
     }
-  }
-
-  loadAPageOfRawWords() async {
-    if (!inited) {
-      return;
-    }
-    var result = await params?.wordsProvider.getAPageOfWords(allWords.length, 10);
-    totalWordCount = result?.total ?? -1;
-    allWords.addAll(result?.rows ?? []);
-    dataLoaded = true;
-    Global.logger.d('加载了${result?.rows.length ?? 0}个单词，缓冲区中共${allWords.length}个单词');
-  }
-
-  bool isAllWordsLoaded() {
-    return totalWordCount != -1 && totalWordCount <= allWords.length;
   }
 
   Widget renderWord(WordWrapper word) {
@@ -661,7 +760,21 @@ class WalkmanPageState extends State<WalkmanPage> {
   }
 
   Widget renderPage() {
-    final word = allWords[currWordIndex];
+    if (totalWordCount == 0) {
+      return const Center(
+        child: Text(
+          '词单暂无单词',
+          style: TextStyle(color: Colors.grey, fontSize: 16.0),
+        ),
+      );
+    }
+    final word = _wordCache[currWordIndex];
+    if (word == null) {
+      getWordAt(currWordIndex).then((w) {
+        if (mounted && w != null) setState(() {});
+      });
+      return const Center(child: CircularProgressIndicator());
+    }
     // 横屏模式下调整外边距
     final horizontalPadding = isLandscape ? 40.0 : 0.0;
 
@@ -688,15 +801,16 @@ class WalkmanPageState extends State<WalkmanPage> {
             });
           },
           onHorizontalDragEnd: (DragEndDetails details) async {
+            if (totalWordCount <= 0) return;
             // 向左滑动, 播放下一个单词
             if (details.velocity.pixelsPerSecond.dx <= -500) {
-              int nextIdx = currWordIndex + 1 < allWords.length ? currWordIndex + 1 : 0;
+              int nextIdx = (currWordIndex + 1) % totalWordCount;
               _handleWordSwitch(nextIdx);
             }
 
             // 向右滑动, 播放上一个单词
             else if (details.velocity.pixelsPerSecond.dx >= 500) {
-              int prevIdx = currWordIndex >= 1 ? currWordIndex - 1 : allWords.length - 1;
+              int prevIdx = currWordIndex >= 1 ? currWordIndex - 1 : totalWordCount - 1;
               _handleWordSwitch(prevIdx);
             }
           },
@@ -1156,11 +1270,22 @@ class WalkmanPageState extends State<WalkmanPage> {
       Global.logger.d("切换单词时停止播放出错: $e");
     }
 
+    if (totalWordCount > 0) {
+      if (newIndex < 0) newIndex = totalWordCount - 1;
+      if (newIndex >= totalWordCount) newIndex = 0;
+    }
+
     // 3. 立即更新 UI 和索引
     setState(() {
       currWordIndex = newIndex;
       nextWordIndex = currWordIndex;
     });
+
+    final word = _wordCache[currWordIndex];
+    if (word != null) {
+      _saveCurrentPosition(currWordIndex, word);
+    }
+    prefetchAround(currWordIndex);
 
     // 4. 重置状态并开启新一轮播放
     _forceNoWaitOnce = true;
