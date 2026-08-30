@@ -55,6 +55,8 @@ public class ReadyState extends RoomState {
     private final Map<String, Boolean> stackAddedOnce = new ConcurrentHashMap<>();
     // 机器人自动开始游戏的定时任务
     private TimerTask botAutoStartTask = null;
+    // 机器人延迟开始游戏的定时任务
+    private TimerTask botDelayStartTask = null;
     // 记录机器人上次的堆叠行数，用于检测是否被攻击
     private int botLastStackRows = 0;
     // 机器人使用道具的延迟任务（避免立即反击, 显得更真实）
@@ -446,6 +448,10 @@ public class ReadyState extends RoomState {
             botAutoStartTask.cancel();
             botAutoStartTask = null;
         }
+        if (botDelayStartTask != null) {
+            botDelayStartTask.cancel();
+            botDelayStartTask = null;
+        }
 
         // 获取系统配置（每局游戏需要支付的魔法泡泡数）
         // 在socket线程中无事务环境，使用newSession方式避免获取currentSession失败
@@ -464,24 +470,39 @@ public class ReadyState extends RoomState {
 
         // 设置用户的游戏状态为"开始"
         UserGameData userPlayData1 = room.getUserPlayData(user);
+        if (userPlayData1 == null) {
+            return;
+        }
         userPlayData1.setMatchStarted(true);
         room.broadcastEvent("userStarted", user.getId());
 
         // 获取另一位玩家的游戏状态信息
         UserVo anotherUser = room.getAnotherUser(user);
-        UserGameData userPlayData2 = room.getUserPlayData(anotherUser);
+        UserGameData userPlayData2 = anotherUser != null ? room.getUserPlayData(anotherUser) : null;
 
         // 如果对手是机器人且机器人还未点击开始，延迟2-5秒后才设置机器人为已开始，让机器人显得更真实
         if (anotherUser != null && anotherUser.getUserName() != null && anotherUser.getUserName().startsWith("bot_")
-                && !userPlayData2.isMatchStarted()) {
+                && userPlayData2 != null && !userPlayData2.isMatchStarted()) {
             // 随机延迟2-5秒（比之前更长，更像真人反应时间）
             long delayMs = 2000L + (long) (Math.random() * 3000L);
             final UserVo bot = anotherUser;
             final UserVo humanUser = user;
-            new Timer(true).schedule(new TimerTask() {
+            botDelayStartTask = new TimerTask() {
                 @Override
                 public void run() {
                     try {
+                        // 确保房间状态仍然是当前的 ReadyState 且游戏未开始
+                        if (room.getState() != ReadyState.this || isPlaying) {
+                            return;
+                        }
+
+                        // 检查机器人和人类玩家是否仍然在房间中
+                        UserGameData botPlayData = room.getUserPlayData(bot);
+                        UserGameData humanPlayData = room.getUserPlayData(humanUser);
+                        if (botPlayData == null || humanPlayData == null) {
+                            return;
+                        }
+
                         // 机器人有10%的概率选择离开而不是开始游戏，更真实
                         // （因为人类已经点击开始，所以离开概率略低于主动开始时的概率）
                         double leaveChance = 0.10;
@@ -501,8 +522,6 @@ public class ReadyState extends RoomState {
                                         Util.getNickNameOfUser(bot)));
 
                         // 设置机器人为已开始状态
-                        UserGameData botPlayData = room.getUserPlayData(bot);
-                        UserGameData humanPlayData = room.getUserPlayData(humanUser);
                         botPlayData.setMatchStarted(true);
 
                         // 检查双方是否都已开始，如果是则开始游戏
@@ -512,14 +531,17 @@ public class ReadyState extends RoomState {
                     } catch (Exception e) {
                         LoggerFactory.getLogger(ReadyState.class)
                                 .error("机器人延迟开始失败", e);
+                    } finally {
+                        botDelayStartTask = null;
                     }
                 }
-            }, delayMs);
+            };
+            fallTimer.schedule(botDelayStartTask, delayMs);
             return; // 机器人需要延迟，直接返回，不继续执行后面的开始游戏逻辑
         }
 
         // 如果两个用户都点击了【开始】按钮，则开始新游戏
-        if (userPlayData1.isMatchStarted() && userPlayData2.isMatchStarted()) {
+        if (userPlayData2 != null && userPlayData1.isMatchStarted() && userPlayData2.isMatchStarted()) {
             startGame(user, anotherUser, userPlayData1, userPlayData2);
         }
     }
@@ -546,8 +568,11 @@ public class ReadyState extends RoomState {
 
         room.broadcastEvent("sysCmd", "BEGIN");
         isPlaying = true;
-        // 清空历史触底计时
-        fallTasks.values().forEach(t -> t.cancel());
+        for (TimerTask task : fallTasks.values()) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
         fallTasks.clear();
         // 清空堆叠标记，避免上一局游戏状态影响新游戏
         stackAddedOnce.clear();
@@ -595,11 +620,30 @@ public class ReadyState extends RoomState {
             botAutoStartTask.cancel();
             botAutoStartTask = null;
         }
+        // 取消机器人延迟开始的任务
+        if (botDelayStartTask != null) {
+            botDelayStartTask.cancel();
+            botDelayStartTask = null;
+        }
         // 取消机器人道具延迟任务
         if (botPropsDelayTask != null) {
             botPropsDelayTask.cancel();
             botPropsDelayTask = null;
         }
+        if (botTimer != null) {
+            botTimer.cancel();
+            botTimer = null;
+        }
+        if (botActionTask != null) {
+            botActionTask.cancel();
+            botActionTask = null;
+        }
+        for (TimerTask task : fallTasks.values()) {
+            if (task != null) {
+                task.cancel();
+            }
+        }
+        fallTasks.clear();
 
         // 游戏正在进行中，用户退出，判为输家，另一方判为赢家
         if (isPlaying) {
@@ -609,8 +653,6 @@ public class ReadyState extends RoomState {
             room.broadcastEvent("loser", loser.getId());
             gameOverProcessor.adjustUserScore(winer, loser);
             isPlaying = false;
-            fallTasks.values().forEach(t -> t.cancel());
-            fallTasks.clear();
             // 清空堆叠标记
             stackAddedOnce.clear();
             room.broadcastUsersInfo();
