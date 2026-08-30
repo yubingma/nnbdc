@@ -12,6 +12,7 @@ import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/tts.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/socket_io.dart';
+import 'package:nnbdc/util/study_steps_service.dart';
 
 /// 进度回调函数类型
 typedef ProgressCallback = void Function(int step, String message, {IntegrityCheckResult? result});
@@ -314,37 +315,32 @@ class DataIntegrityChecker {
   /// 检查用户学习步骤完整性
   Future<void> _checkUserStudySteps(IntegrityCheckResult result, String userId) async {
     try {
-      // 获取用户的所有学习步骤
-      final steps = await _db.userStudyStepsDao.getUserStudySteps(userId);
+      // 检查当前用户的 new 与 review 学习规则是否有效
+      final newCfg = await StudyStepsService().getThreeGroupConfig('new');
+      final reviewCfg = await StudyStepsService().getThreeGroupConfig('review');
 
-      // 检查是否缺少 En2Ch
-      final hasEn2Ch = steps.any((step) => step.studyStep == 'En2Ch');
-      if (!hasEn2Ch) {
-        result.addIssue('学习步骤缺失', '用户缺少学习步骤：En2Ch', 'user_study_steps');
+      if (newCfg.check.isEmpty) {
+        result.addIssue('学习步骤缺失', '新词测评环节 (scope=new, group=check) 缺失', 'user_study_steps');
+      }
+      if (reviewCfg.check.isEmpty) {
+        result.addIssue('学习步骤缺失', '旧词复习测评环节 (scope=review, group=check) 缺失', 'user_study_steps');
       }
 
-      // 检查是否缺少 Ch2En
-      final hasCh2En = steps.any((step) => step.studyStep == 'Ch2En');
-      if (!hasCh2En) {
-        result.addIssue('学习步骤缺失', '用户缺少学习步骤：Ch2En', 'user_study_steps');
-      }
-
-      // 检查是否缺少 EnSentence2Ch
-      final hasEnSentence2Ch = steps.any((step) => step.studyStep == 'EnSentence2Ch');
-      if (!hasEnSentence2Ch) {
-        result.addIssue('学习步骤缺失', '用户缺少学习步骤：EnSentence2Ch', 'user_study_steps');
-      }
-
-      // 检查是否缺少 ChSentence2En
-      final hasChSentence2En = steps.any((step) => step.studyStep == 'ChSentence2En');
-      if (!hasChSentence2En) {
-        result.addIssue('学习步骤缺失', '用户缺少学习步骤：ChSentence2En', 'user_study_steps');
-      }
-
-      // 检查是否缺少 List
-      final hasList = steps.any((step) => step.studyStep == 'List');
-      if (!hasList) {
-        result.addIssue('学习步骤缺失', '用户缺少学习步骤：List', 'user_study_steps');
+      // 检查本地库中若存在该用户的学习步骤记录，字段是否合法
+      final userSteps = await _db.userStudyStepsDao.getUserStudySteps(userId);
+      const validGroups = {'check', 'correct', 'wrong'};
+      const validScopes = {'new', 'review'};
+      const validSteps = {'En2Ch', 'Ch2En', 'EnSentence2Ch', 'ChSentence2En'};
+      for (final step in userSteps) {
+        if (!validScopes.contains(step.scope)) {
+          result.addIssue('学习步骤异常', '发现无效的 scope 字段: ${step.scope}', 'user_study_steps');
+        }
+        if (!validGroups.contains(step.group)) {
+          result.addIssue('学习步骤异常', '发现无效的 group 字段: ${step.group}', 'user_study_steps');
+        }
+        if (!validSteps.contains(step.studyStep)) {
+          result.addIssue('学习步骤异常', '发现未知的 studyStep 字段: ${step.studyStep}', 'user_study_steps');
+        }
       }
     } catch (e, stack) {
       Global.logger.e('检查用户学习步骤时出错', error: e, stackTrace: stack);

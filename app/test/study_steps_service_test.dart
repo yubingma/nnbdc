@@ -5,6 +5,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/study_steps_service.dart';
 import 'package:flutter/services.dart';
+import 'package:nnbdc/util/data_integrity_checker.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -163,4 +164,53 @@ void main() {
       expect(config.wrong, ['Ch2En']);
     });
   });
+
+  group('DataIntegrityChecker 学习步骤完整性检查', () {
+    test('未配置步骤时（运行时默认三组，无例句环节），健康检查通过', () async {
+      final checker = DataIntegrityChecker();
+      final result = await checker.performUserCheck(testUser.id);
+      final studyStepIssues = result.issues.where((i) => i.category == 'user_study_steps');
+      expect(studyStepIssues, isEmpty);
+    });
+
+    test('自定义仅配置词汇环节（无例句环节），健康检查通过', () async {
+      await studyStepsService.saveThreeGroupConfig(
+        scope: 'new',
+        check: 'En2Ch',
+        correct: ['Ch2En'],
+        wrong: ['Ch2En'],
+      );
+      await studyStepsService.saveThreeGroupConfig(
+        scope: 'review',
+        check: 'En2Ch',
+        correct: [],
+        wrong: ['Ch2En'],
+      );
+
+      final checker = DataIntegrityChecker();
+      final result = await checker.performUserCheck(testUser.id);
+      final studyStepIssues = result.issues.where((i) => i.category == 'user_study_steps');
+      expect(studyStepIssues, isEmpty);
+    });
+
+    test('数据库存在非法 group 或 studyStep 时，健康检查报错', () async {
+      final now = AppClock.now();
+      await db.userStudyStepsDao.saveUserStudyStep(UserStudyStep(
+        userId: testUser.id,
+        scope: 'invalid_scope',
+        group: 'invalid_group',
+        studyStep: 'InvalidStep',
+        seq: 0,
+        state: 'Active',
+        createTime: now,
+        updateTime: now,
+      ), false);
+
+      final checker = DataIntegrityChecker();
+      final result = await checker.performUserCheck(testUser.id);
+      final studyStepIssues = result.issues.where((i) => i.category == 'user_study_steps').toList();
+      expect(studyStepIssues.isNotEmpty, isTrue);
+    });
+  });
 }
+
