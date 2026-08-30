@@ -84,12 +84,15 @@ class PlatformUtils {
       final cgroupFile = File('/proc/self/cgroup');
       if (cgroupFile.existsSync()) {
         final content = cgroupFile.readAsStringSync().toLowerCase();
-        // 关键：先移除 'android' 单词，避免 'android' 中的 'droi' 子串误命中导致普通安卓设备被误判
-        final sanitized = content.replaceAll('android', '');
+        // 关键：先移除 'android' 和 'droid' 单词，避免系统原生进程名中的 'droi' 子串误命中
+        final sanitized = content.replaceAll('android', '').replaceAll('droid', '');
+        // 卓易通容器特征：华为 isulad 容器引擎，或包含 zhuoyi、卓易通、droi 特征路径/包名
         if (sanitized.contains('isulad') ||
-            sanitized.contains('droi') ||
             sanitized.contains('zhuoyi') ||
-            sanitized.contains('卓易通')) {
+            sanitized.contains('卓易通') ||
+            sanitized.contains('droi/') ||
+            sanitized.contains('droi_') ||
+            sanitized.contains('com.droi')) {
           return true;
         }
       }
