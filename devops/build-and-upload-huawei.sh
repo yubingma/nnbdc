@@ -164,7 +164,16 @@ if [ -z "$CLIENT_SECRET" ] || [ -z "$APP_ID" ]; then
     exit 1
 fi
 
-# 2. Prepare Config & Build APK
+# 2. Run Unit Tests
+echo ""
+echo "=================================================="
+echo " 🧪 正在运行单元测试 (flutter test)..."
+echo "=================================================="
+cd "$PROJECT_ROOT"
+flutter test -j 1
+echo "✅ 所有测试用例已通过！"
+
+# 3. Prepare Config & Build APK
 CONFIG_FILE="$PROJECT_ROOT/lib/config.dart"
 BACKUP_CONFIG_FILE="${CONFIG_FILE}.bak"
 
@@ -211,7 +220,7 @@ fi
 
 echo "Build successful: $APK_PATH"
 
-# 3. Upload
+# 4. Upload
 echo ""
 echo "Uploading to Huawei AppGallery..."
 "$PYTHON_EXEC" "$UPLOAD_SCRIPT" \

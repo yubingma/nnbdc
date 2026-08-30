@@ -355,6 +355,20 @@ get_flutter_dependencies() {
     print_info "依赖获取完成"
 }
 
+# 运行单元测试
+run_tests() {
+    print_step "正在运行单元测试 (flutter test)..."
+    cd "$APP_DIR"
+    
+    # 运行所有测试项目，使用 -j 1 防止 GetStorage 等本地文件因为并发写入而抛出异常
+    if flutter test -j 1; then
+        print_info "所有测试用例已通过！"
+    else
+        print_error "单元测试失败！"
+        exit 1
+    fi
+}
+
 # 安装 CocoaPods 依赖
 install_pods() {
     print_step "安装 CocoaPods 依赖..."
@@ -713,6 +727,7 @@ main() {
     if [ "$SKIP_BUILD" = false ] && [ "$UPLOAD_ONLY" = false ]; then
         clean_build
         get_flutter_dependencies
+        run_tests
         install_pods
         build_ipa
     else
