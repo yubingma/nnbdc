@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:nnbdc/global.dart';
 
@@ -20,15 +19,9 @@ class NetworkUtil {
       List<ConnectivityResult> connectivityResults = await _connectivity.checkConnectivity();
 
       // 如果没有网络连接
-      if (connectivityResults.isEmpty || connectivityResults.contains(ConnectivityResult.none)) {
+      if (connectivityResults.isEmpty ||
+          connectivityResults.every((r) => r == ConnectivityResult.none)) {
         Global.logger.d('🌐 网络连接检测：无网络连接，静默跳过网络操作');
-        return false;
-      }
-
-      // 检查是否能真正访问互联网（通过ping一个可靠的服务器）
-      bool hasInternet = await _hasInternetAccess();
-      if (!hasInternet) {
-        Global.logger.d('🌐 网络连接检测：有网络但无法访问互联网，静默跳过网络操作');
         return false;
       }
 
@@ -37,34 +30,6 @@ class NetworkUtil {
       Global.logger.e('🌐 网络连接检测失败: $e，跳过所有网络操作');
       return false;
     }
-  }
-
-  /// 检查是否能真正访问互联网
-  /// 通过尝试连接到一个可靠的服务器来验证
-  Future<bool> _hasInternetAccess() async {
-    try {
-      // 尝试连接到一个可靠的服务器
-      final result = await InternetAddress.lookup('www.baidu.com').timeout(Duration(seconds: 5));
-
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        return true;
-      }
-    } catch (e) {
-      Global.logger.d('🌐 互联网访问检测失败: $e');
-    }
-
-    // 如果百度连接失败，尝试连接谷歌DNS
-    try {
-      final result = await InternetAddress.lookup('8.8.8.8').timeout(Duration(seconds: 3));
-
-      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        return true;
-      }
-    } catch (e) {
-      Global.logger.d('🌐 DNS服务器连接检测失败: $e');
-    }
-
-    return false;
   }
 
   /// 监听网络连接状态变化

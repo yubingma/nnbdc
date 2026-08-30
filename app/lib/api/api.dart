@@ -15,7 +15,6 @@ import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/loading_service.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
-import 'package:nnbdc/util/network_interceptor.dart';
 import 'package:retrofit/http.dart' as http;
 import 'package:retrofit/retrofit.dart';
 
@@ -51,17 +50,17 @@ class Api {
     Dio dio;
     if (PlatformUtils.isWeb) {
       dio = Dio(BaseOptions(
-          connectTimeout: Duration(milliseconds: 5000),
-          sendTimeout: Duration(milliseconds: 300000), // 5分钟
-          receiveTimeout: Duration(
+          connectTimeout: const Duration(seconds: 15),
+          sendTimeout: const Duration(milliseconds: 300000), // 5分钟
+          receiveTimeout: const Duration(
               milliseconds: 300000))); // 浏览器会自动协商压缩，禁止手动设置 Accept-Encoding
       (dio.httpClientAdapter as dynamic).withCredentials = true;
     } else {
       dio = Dio(BaseOptions(
-          connectTimeout: Duration(milliseconds: 5000),
-          sendTimeout: Duration(milliseconds: 300000), // 5分钟
+          connectTimeout: const Duration(seconds: 15),
+          sendTimeout: const Duration(milliseconds: 300000), // 5分钟
           receiveTimeout:
-              Duration(milliseconds: 300000))); // 由 Dio/底层库 handle 压缩
+              const Duration(milliseconds: 300000))); // 由 Dio/底层库 handle 压缩
 
       // 在非 Web 平台上绕过 SSL 证书校验，解决生产环境 HandshakeException
       dio.httpClientAdapter = IOHttpClientAdapter(
@@ -180,8 +179,6 @@ class Api {
       },
     ));
 
-    // 添加网络检测拦截器（最先执行）
-    dio.interceptors.add(NetworkInterceptor());
     dio.interceptors.add(CustomInterceptors());
 
     final baseUrl = Api.useProdUrl
