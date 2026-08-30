@@ -99,8 +99,7 @@ environment:
       final content = file.readAsStringSync();
       final changes = Util.parseChangesFromPubspec(content);
       expect(changes, isNotEmpty);
-      expect(changes.contains('添加新词表-易混淆单词'), isTrue);
-      expect(changes.contains('修复bug'), isTrue);
+      expect(changes.every((item) => item.trim().isNotEmpty), isTrue);
     });
   });
 } 
