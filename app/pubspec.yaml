@@ -15,7 +15,7 @@ min_ver_code: 26082001
 # 格式：每行一个更新项，以 "- " 开头
 changes:
   - "添加新词表-易混淆单词"
-  - "修复bug"
+  - "修复bug.."
 
 
 
@@ -141,6 +141,7 @@ flutter:
 
   # To add images to your application, add an images section, like this:
   assets:
+    - pubspec.yaml
     - assets/images/
     - assets/privacy.html
     - assets/privacy_android.html

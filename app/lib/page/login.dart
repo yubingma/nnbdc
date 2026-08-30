@@ -12,6 +12,7 @@ import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/wechat_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
@@ -789,42 +790,62 @@ class LoginPageState extends State<LoginPage>
     try {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       int dbVersion = MyDatabase.instance.schemaVersion;
+      List<String> changes = await Util.getAppChanges();
       if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('应用信息'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('版本: ${packageInfo.version} (${packageInfo.buildNumber})'),
-              const SizedBox(height: 8),
-              StatefulBuilder(builder: (context, setState) {
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('环境: ${Config.profileName}'),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          Config.profileName =
-                              (Config.profileName == 'dev' ? 'prod' : 'dev');
-                          Api.useProdUrl = (Config.profileName == 'prod');
-                        });
-                        Api.resetClient();
-                        SocketIoClient.instance.reset();
-                        Navigator.pop(context);
-                        ToastUtil.success('已切换到 ${Config.profileName}');
-                      },
-                      child: const Text('切换'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('版本: ${packageInfo.version} (${packageInfo.buildNumber})'),
+                const SizedBox(height: 8),
+                StatefulBuilder(builder: (context, setState) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('环境: ${Config.profileName}'),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            Config.profileName =
+                                (Config.profileName == 'dev' ? 'prod' : 'dev');
+                            Api.useProdUrl = (Config.profileName == 'prod');
+                          });
+                          Api.resetClient();
+                          SocketIoClient.instance.reset();
+                          Navigator.pop(context);
+                          ToastUtil.success('已切换到 ${Config.profileName}');
+                        },
+                        child: const Text('切换'),
+                      ),
+                    ],
+                  );
+                }),
+                const SizedBox(height: 8),
+                Text('数据库版本: $dbVersion'),
+                if (changes.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('版本更新说明:'),
+                  const SizedBox(height: 4),
+                  ...changes.map(
+                    (change) => Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 2),
+                      child: Text(
+                        '• $change',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                        ),
+                      ),
                     ),
-                  ],
-                );
-              }),
-              const SizedBox(height: 8),
-              Text('数据库版本: $dbVersion'),
-            ],
+                  ),
+                ],
+              ],
+            ),
           ),
           actions: [
             TextButton(

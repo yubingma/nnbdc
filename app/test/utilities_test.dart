@@ -1,3 +1,4 @@
+import 'dart:io' as io;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/platform_util.dart';
@@ -66,6 +67,40 @@ void main() {
 
       PlatformUtils.zhuoyiTongOverride = false;
       expect(PlatformUtils.isZhuoyiTong, isFalse);
+    });
+  });
+
+  group('pubspec.yaml changes 解析测试', () {
+    test('正常解析带双引号和单引号以及无引号的更新说明', () {
+      const sampleYaml = '''
+name: nnbdc
+version: 26.08.29+26082901
+
+# 版本更新说明
+changes:
+  - "添加新词表-易混淆单词"
+  - '修复bug'
+  - 优化登录页面性能
+
+environment:
+  sdk: ^3.4.0
+''';
+      final changes = Util.parseChangesFromPubspec(sampleYaml);
+      expect(changes, equals([
+        '添加新词表-易混淆单词',
+        '修复bug',
+        '优化登录页面性能',
+      ]));
+    });
+
+    test('解析当前实际 pubspec.yaml 中的 changes', () {
+      final file = io.File('pubspec.yaml');
+      expect(file.existsSync(), isTrue);
+      final content = file.readAsStringSync();
+      final changes = Util.parseChangesFromPubspec(content);
+      expect(changes, isNotEmpty);
+      expect(changes.contains('添加新词表-易混淆单词'), isTrue);
+      expect(changes.contains('修复bug'), isTrue);
     });
   });
 } 

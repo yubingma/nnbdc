@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/state.dart';
@@ -1061,5 +1062,45 @@ class Util {
         }
       }
     }
+  }
+
+  /// 从 pubspec.yaml 获取版本更新说明列表
+  static Future<List<String>> getAppChanges() async {
+    try {
+      final content = await rootBundle.loadString('pubspec.yaml');
+      return parseChangesFromPubspec(content);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// 解析 pubspec.yaml 文本中的 changes 列表
+  static List<String> parseChangesFromPubspec(String yamlContent) {
+    final lines = yamlContent.split('\n');
+    bool inChanges = false;
+    List<String> changes = [];
+    for (var line in lines) {
+      if (RegExp(r'^\s*changes\s*:').hasMatch(line)) {
+        inChanges = true;
+        continue;
+      }
+      if (inChanges) {
+        if (line.trim().isEmpty) continue;
+        if (RegExp(r'^\s+-\s*').hasMatch(line)) {
+          var item = line.trim();
+          item = item.replaceFirst(RegExp(r'^-\s*'), '');
+          if ((item.startsWith('"') && item.endsWith('"')) ||
+              (item.startsWith("'") && item.endsWith("'"))) {
+            item = item.substring(1, item.length - 1);
+          }
+          if (item.isNotEmpty) {
+            changes.add(item);
+          }
+        } else if (!line.trim().startsWith('#')) {
+          break;
+        }
+      }
+    }
+    return changes;
   }
 }
