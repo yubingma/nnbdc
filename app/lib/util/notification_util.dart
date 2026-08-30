@@ -61,6 +61,7 @@ class NotificationUtil {
       android: androidPlatformChannelSpecifics,
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),
+      linux: LinuxNotificationDetails(),
     );
 
     final user = Global.getLoggedInUser();
@@ -106,10 +107,14 @@ class NotificationUtil {
         requestAlertPermission: true,
       );
 
+      const LinuxInitializationSettings initializationSettingsLinux =
+          LinuxInitializationSettings(defaultActionName: 'Open notification');
+
       const InitializationSettings initializationSettings = InitializationSettings(
         android: initializationSettingsAndroid,
         iOS: initializationSettingsDarwin,
         macOS: initializationSettingsDarwin,
+        linux: initializationSettingsLinux,
       );
 
       await flutterLocalNotificationsPlugin.initialize(
@@ -146,6 +151,7 @@ class NotificationUtil {
       android: androidPlatformChannelSpecifics,
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),
+      linux: LinuxNotificationDetails(),
     );
 
     String messageBody = _getReminderMessage(user);

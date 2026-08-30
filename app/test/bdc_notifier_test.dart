@@ -19,6 +19,7 @@ import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:nnbdc/services/study_cache_manager.dart';
+import 'package:nnbdc/services/throttled_sync_service.dart';
 
 // 手写 MockAsr，捕获并拦截所有的原生方法
 class MockAsr implements Asr {
@@ -175,6 +176,7 @@ void main() {
   });
 
   setUp(() async {
+    ThrottledDbSyncService().reset();
     StudyAudioSessionController.instance.audioSessionConfigured = true;
     db = MyDatabase(NativeDatabase.memory());
     MyDatabase.setInstanceForTesting(db);
@@ -303,6 +305,7 @@ void main() {
   });
 
   tearDown(() async {
+    ThrottledDbSyncService().reset();
     await db.close();
   });
 
@@ -1060,6 +1063,7 @@ void main() {
 
   test('BdcNotifier - updateFsrsRating 修改评分后:同步 assessmentRating、持久化 LearningLog 并刷新 learningHistoryFuture', () async {
     // 准备:插入一条已有 LearningLog(模拟测评环节已提交评分 good)
+    final testNow = AppClock.now();
     await db.learningLogsDao.saveEntity(LearningLog(
       id: 'log_1',
       userId: testUser.id,
@@ -1069,8 +1073,8 @@ void main() {
       difficulty: 5.0,
       elapsedDays: 0,
       scheduledDays: 3,
-      createTime: now,
-      updateTime: now,
+      createTime: testNow,
+      updateTime: testNow,
     ), false);
     StudyCacheManager().clear();
 
@@ -1097,10 +1101,14 @@ void main() {
     expect(state.lastFsrsRating, FsrsRating.easy);
 
     // 等待异步持久化完成
-    await Future.delayed(const Duration(milliseconds: 100));
+    List<LearningLog> logs = [];
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
+      if (logs.isNotEmpty && logs.first.rating == FsrsRating.easy.value) break;
+    }
 
     // LearningLog 最新一条已持久化更新为 easy
-    final logs = await db.learningLogsDao.getHistory(testUser.id, 'word_1');
     expect(logs, isNotEmpty, reason: '应有 LearningLog 记录');
     expect(logs.first.rating, FsrsRating.easy.value,
         reason: '修改评分后 LearningLog 最新一条应为新评分,实际为 ${logs.first.rating}');
@@ -1111,11 +1119,12 @@ void main() {
     expect(futureLogs!.first.rating, FsrsRating.easy.value,
         reason: 'learningHistoryFuture 刷新后应返回新评分');
 
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 50));
   });
 
   test('BdcNotifier - 修改今日评分:新词(仅测评一次)改评分应重新 init 计算下次复习天数', () async {
     // 模拟新词已完成测评提交(easy):stability=init(easy)的结果 5.8,reps=1
+    final testNow = AppClock.now();
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
           stability: const Value(5.8),
@@ -1133,8 +1142,8 @@ void main() {
       difficulty: 2.11,
       elapsedDays: 0,
       scheduledDays: 6,
-      createTime: now,
-      updateTime: now,
+      createTime: testNow,
+      updateTime: testNow,
     ), false);
     StudyCacheManager().clear();
 
@@ -1158,8 +1167,11 @@ void main() {
     // 把 easy 改成 good:新词应重新 init(good),下次复习 = init(good).scheduledDays = 2 天
     notifier.updateFsrsRating(FsrsRating.good);
     // 等待异步计算与持久化完成
-    await Future.delayed(const Duration(milliseconds: 100));
-    state = container.read(bdcNotifierProvider);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 2) break;
+    }
     expect(state.fsrsItem, isNot(null));
     expect(state.fsrsItem!.scheduledDays, 2,
         reason: '新词改评分应重新 init 计算,预期 2 天,实际 ${state.fsrsItem!.scheduledDays}');
@@ -1170,12 +1182,13 @@ void main() {
     expect(logs.first.scheduledDays, 2,
         reason: 'LearningLog 持久化的下次复习天数应为 init(good) 的 2 天,实际 ${logs.first.scheduledDays}');
 
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 50));
   });
 
   test('BdcNotifier - 修改今日评分:多环节后新词(reps>1)改评分仍应重新 init 计算下次复习天数', () async {
     // 模拟今天的新词已完成测评+巩固多个环节提交(easy):
     // stability=init(easy) 的结果 5.8,但 reps 已因多环节递增为 4
+    final testNow = AppClock.now();
     await (db.update(db.learningWords)..where((lw) => lw.userId.equals(testUser.id)))
         .write(LearningWordsCompanion(
           stability: const Value(5.8),
@@ -1193,8 +1206,8 @@ void main() {
       difficulty: 2.11,
       elapsedDays: 0,
       scheduledDays: 6,
-      createTime: now,
-      updateTime: now,
+      createTime: testNow,
+      updateTime: testNow,
     ), false);
     // 该词今天之前无任何学习记录(纯新词,仅今天学习)
     StudyCacheManager().clear();
@@ -1218,13 +1231,16 @@ void main() {
 
     // 把 easy 改成 good:即使多环节 reps>1,新词仍应重新 init(good) → 2 天
     notifier.updateFsrsRating(FsrsRating.good);
-    await Future.delayed(const Duration(milliseconds: 100));
-    state = container.read(bdcNotifierProvider);
+    for (int i = 0; i < 50; i++) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      state = container.read(bdcNotifierProvider);
+      if (state.fsrsItem != null && state.fsrsItem!.scheduledDays == 2) break;
+    }
     expect(state.fsrsItem, isNot(null));
     expect(state.fsrsItem!.scheduledDays, 2,
         reason: '多环节后新词改评分仍应重新 init 计算,预期 2 天,实际 ${state.fsrsItem!.scheduledDays}');
 
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 50));
   });
 
   test('BdcNotifier - 修改今日评分:复习词(今天之前加入)改评分应基于测评前状态重算', () async {
