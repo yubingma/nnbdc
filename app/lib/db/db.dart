@@ -93,9 +93,11 @@ class MyDatabase extends _$MyDatabase {
     return _instance!;
   }
 
-  static void setInstanceForTesting(MyDatabase testingInstance) {
-    if (_instance != null) {
-      _instance!.close();
+  static void setInstanceForTesting(MyDatabase? testingInstance) {
+    if (_instance != null && _instance != testingInstance) {
+      try {
+        _instance!.close();
+      } catch (_) {}
     }
     _instance = testingInstance;
   }

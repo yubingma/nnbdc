@@ -177,6 +177,7 @@ void main() {
 
   setUp(() async {
     ThrottledDbSyncService().reset();
+    StudyCacheManager().clear();
     StudyAudioSessionController.instance.audioSessionConfigured = true;
     db = MyDatabase(NativeDatabase.memory());
     MyDatabase.setInstanceForTesting(db);
@@ -306,7 +307,12 @@ void main() {
 
   tearDown(() async {
     ThrottledDbSyncService().reset();
-    await db.close();
+    StudyCacheManager().clear();
+    await Future.delayed(const Duration(milliseconds: 50));
+    try {
+      await db.close();
+    } catch (_) {}
+    MyDatabase.setInstanceForTesting(null);
   });
 
   test('BdcNotifier - loadData 和提示词状态变更单元测试', () async {
