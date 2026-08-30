@@ -357,7 +357,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           allRelatedIds.addAll(similarIds);
           await _checkWordsInDict(allRelatedIds);
 
-          // 按照是否在词书内（在的排前面）和汉明距离（小的排前面）排序
+          // 按照是否在词书内（正体字排在斜体字前面）和形近程度（原始相似度排序）排序形近词
+          _sortSimilarWords();
+
+          // 按照是否在词书内（在的排前面）和汉明距离（小的排前面）排序拓展词
           tempSemanticWords.sort((a, b) {
             final aInDict = _wordInDictStatus[a.id!] ?? true;
             final bInDict = _wordInDictStatus[b.id!] ?? true;
@@ -395,6 +398,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       }
       if (allRelatedIds.isNotEmpty) {
         unawaited(_checkWordsInDict(allRelatedIds).then((_) {
+          _sortSimilarWords();
           if (mounted) setState(() {});
         }));
       }
@@ -675,6 +679,30 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         _wordInDictStatus[id] = true;
       }
     }
+  }
+
+  void _sortSimilarWords() {
+    if (args.word.similarWords == null || args.word.similarWords!.isEmpty) return;
+
+    // 记录原始索引以实现稳定排序（保持形近程度/相似度从高到低的次要顺序）
+    final originalIndices = <String, int>{};
+    for (int i = 0; i < args.word.similarWords!.length; i++) {
+      final id = args.word.similarWords![i].id;
+      if (id != null) {
+        originalIndices[id] = i;
+      }
+    }
+
+    args.word.similarWords!.sort((a, b) {
+      final aInDict = _wordInDictStatus[a.id!] ?? true;
+      final bInDict = _wordInDictStatus[b.id!] ?? true;
+      if (aInDict != bInDict) {
+        return aInDict ? -1 : 1;
+      }
+      final aIndex = originalIndices[a.id!] ?? 0;
+      final bIndex = originalIndices[b.id!] ?? 0;
+      return aIndex.compareTo(bIndex);
+    });
   }
 
   Future<List<WordVo>> _getSimpleWordsByIds(List<String> wordIds) async {
