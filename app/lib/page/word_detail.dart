@@ -2143,20 +2143,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             ),
           ),
 
-        // 底部输入栏
-        Container(
+        // 底部输入栏（极简单层胶囊设计）
+        Padding(
           padding: EdgeInsets.fromLTRB(
-            16, 8, 12,
+            16, 6, 16,
             (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 8),
-          ),
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF13201D) : Colors.white,
-            border: Border(
-              top: BorderSide(
-                color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
-                width: 1,
-              ),
-            ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -2165,9 +2156,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                      color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
                       width: 1,
                     ),
                   ),
@@ -2205,7 +2196,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 child: Container(
                   width: 36,
                   height: 36,
-                  margin: const EdgeInsets.only(bottom: 2),
+                  margin: const EdgeInsets.only(bottom: 1),
                   decoration: BoxDecoration(
                     color: _aiLoading
                         ? (isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA))
@@ -2223,7 +2214,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             ),
                           ),
                         )
-                      : const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 19),
+                      : const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 19),
                 ),
               ),
             ],
