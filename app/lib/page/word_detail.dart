@@ -156,6 +156,73 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   bool _isLoadingSemanticSimilar = false;
   List<String> _semanticSimilarWordIds = [];
 
+  // 生词本收藏状态
+  bool _isInRawWordDict = false;
+  bool _isTogglingRawWord = false;
+
+  Future<void> _checkRawWordStatus() async {
+    final user = Global.getLoggedInUser();
+    if (user != null && args.word.id != null) {
+      final rawDict = await MyDatabase.instance.dictsDao.findUserRawDict(user.id);
+      if (rawDict != null) {
+        final dw = await MyDatabase.instance.dictWordsDao.getById(rawDict.id, args.word.id!);
+        if (mounted) {
+          setState(() {
+            _isInRawWordDict = dw != null;
+          });
+        }
+      }
+    }
+  }
+
+  Future<void> _toggleRawWord() async {
+    if (_isTogglingRawWord) return;
+    final user = Global.getLoggedInUser();
+    if (user == null) {
+      ToastUtil.error('请先登录');
+      return;
+    }
+    setState(() {
+      _isTogglingRawWord = true;
+    });
+    try {
+      if (_isInRawWordDict) {
+        final res = await WordBo().deleteRawWord(args.word.id!);
+        if (res.success) {
+          ToastUtil.info('已移出生词本');
+          if (mounted) {
+            setState(() {
+              _isInRawWordDict = false;
+            });
+          }
+        } else {
+          ToastUtil.error(res.msg ?? '移出生词本失败');
+        }
+      } else {
+        final res = await WordBo().addRawWord(args.word.spell, '详情页收藏');
+        if (res.success) {
+          ToastUtil.info('已加入生词本');
+          if (mounted) {
+            setState(() {
+              _isInRawWordDict = true;
+            });
+          }
+        } else {
+          ToastUtil.error(res.msg ?? '加入生词本失败');
+        }
+      }
+    } catch (e, st) {
+      Global.logger.e('切换生词本状态失败', error: e, stackTrace: st);
+      ToastUtil.error('操作失败');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTogglingRawWord = false;
+        });
+      }
+    }
+  }
+
   void _onTabControllerChanged() {
     if (!mounted) return;
     final index = _tabController.index;
@@ -326,6 +393,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       totalCount = uniqueWordIds.length;
     }
     _totalCigenWordsCount = totalCount;
+    await _checkRawWordStatus();
 
     setState(() {
       final newLength = calcTabsCount();
@@ -956,32 +1024,72 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
                                 ),
                               ),
-                              // 右侧圆形更多按钮
-                              Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(16),
-                                  onTap: () => _showMoreOptions(context),
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
-                                      border: Border.all(
-                                        color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.more_horiz_rounded,
-                                        size: 18,
-                                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                              // 右侧操作区（收藏生词本 + 更多）
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // 圆形收藏生词本按钮
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap: _toggleRawWord,
+                                      child: Container(
+                                        width: 32,
+                                        height: 32,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: _isInRawWordDict
+                                              ? (isDarkMode ? const Color(0x33F59E0B) : const Color(0xFFFEF3C7))
+                                              : (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9)),
+                                          border: Border.all(
+                                            color: _isInRawWordDict
+                                                ? const Color(0xFFF59E0B)
+                                                : (isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA)),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            _isInRawWordDict ? Icons.star_rounded : Icons.star_outline_rounded,
+                                            size: _isInRawWordDict ? 20 : 17,
+                                            color: _isInRawWordDict
+                                                ? const Color(0xFFF59E0B)
+                                                : (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724)),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  // 圆形更多按钮
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap: () => _showMoreOptions(context),
+                                      child: Container(
+                                        width: 32,
+                                        height: 32,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                                          border: Border.all(
+                                            color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.more_horiz_rounded,
+                                            size: 18,
+                                            color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
