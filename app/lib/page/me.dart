@@ -1678,18 +1678,18 @@ class _MePageState extends State<MePage> {
           ),
         ),
 
-        // 账户管理卡片
+        // 5. 设置与工具卡片 (1:1 严格对齐原型结构与文案)
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.0),
+            border: Border.all(color: borderColor, width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
-                blurRadius: 10,
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -1698,28 +1698,40 @@ class _MePageState extends State<MePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '账户管理',
+                '设置与工具',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
                   color: textColor,
                   fontFamily: 'NotoSansSC',
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _buildMenuTile(
                 icon: Icons.person_outline_rounded,
                 title: '个人信息',
+                trailingText: '编辑',
                 onTap: () => showUpdateUserInfoDlg(),
               ),
               _buildMenuTile(
+                icon: Icons.alarm_rounded,
+                title: '学习提醒',
+                trailingText: NotificationUtil.isReminderEnabled()
+                    ? '每天 ${NotificationUtil.getReminderHour().toString().padLeft(2, '0')}:${NotificationUtil.getReminderMinute().toString().padLeft(2, '0')}'
+                    : '已关闭',
+                onTap: () async {
+                  await context.push('/reminder_settings');
+                  if (mounted) setState(() {});
+                },
+              ),
+              _buildMenuTile(
                 icon: Icons.chat_bubble_outline_rounded,
-                title: '意见建议',
+                title: '意见建议 / 客服',
                 trailing: msgCount > 0
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: unreadMsgCount == 0 ? Colors.grey : Colors.redAccent,
+                          color: unreadMsgCount == 0 ? Colors.grey : const Color(0xFFFA6E59),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -1763,97 +1775,11 @@ class _MePageState extends State<MePage> {
                   loadData();
                 },
               ),
-              // 我的小天地 - 仅管理员可见
-              if (loggedInUser?.isAdmin == true)
-                _buildMenuTile(
-                  icon: Icons.eco_outlined,
-                  title: '我的小天地',
-                  onTap: () {
-                    context.push('/farm');
-                  },
-                ),
-              // AI 助教 - 仅管理员可见
-              if (loggedInUser?.isAdmin == true)
-                _buildMenuTile(
-                  icon: Icons.psychology_outlined,
-                  title: 'AI 助教',
-                  onTap: () {
-                    context.push('/ai_activation');
-                  },
-                ),
-              _buildMenuTile(
-                icon: Icons.edit_note_rounded,
-                title: '需求墙',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const FeatureRequestWallPage()),
-                  );
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.notifications_active_outlined,
-                title: '学习提醒',
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      NotificationUtil.isReminderEnabled()
-                          ? '每天 ${NotificationUtil.getReminderHour().toString().padLeft(2, '0')}:${NotificationUtil.getReminderMinute().toString().padLeft(2, '0')}'
-                          : '已关闭',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: subtitleColor,
-                        fontFamily: 'Roboto',
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
-                      size: 18,
-                    ),
-                  ],
-                ),
-                onTap: () async {
-                  await context.push('/reminder_settings');
-                  if (mounted) setState(() {});
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.logout_rounded,
-                title: '切换账号',
-                onTap: () async {
-                  await Global.logout();
-                  if (mounted) context.go('/login');
-                },
-              ),
-              _buildMenuTile(
-                icon: Icons.no_accounts_outlined,
-                title: '注销账号',
-                onTap: () => showUnRegisterDlg(),
-                isDestructive: true,
-              ),
-
-              const SizedBox(height: 12),
-              Text(
-                '系统',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: subtitleColor,
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildMenuTile(
-                icon: Icons.health_and_safety_outlined,
-                title: '健康检查',
-                onTap: () => _navigateToDataDiagnostic(),
-              ),
               _buildMenuTile(
                 icon: Icons.cloud_sync_outlined,
-                title: '云同步${_isLastSyncFailed ? "(失败)" : ""}',
+                title: '端云同步状态',
+                trailingText: _isLastSyncFailed ? '同步失败' : '已是最新',
+                trailingTextColor: _isLastSyncFailed ? const Color(0xFFFA6E59) : const Color(0xFF18BA7C),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -1861,20 +1787,38 @@ class _MePageState extends State<MePage> {
                       builder: (context) => const SyncLogViewerPage(),
                     ),
                   ).then((_) {
-                    // 返回时重新检查同步状态
                     _checkSyncStatus();
                   });
                 },
               ),
               _buildMenuTile(
-                icon: Icons.cleaning_services_outlined,
-                title: '清空本地数据',
-                onTap: () => _showWipeLocalDataDialog(),
-                isDestructive: true,
+                icon: Icons.health_and_safety_outlined,
+                title: '数据健康检查',
+                trailingText: '正常',
+                onTap: () => _navigateToDataDiagnostic(),
               ),
-              // 管理员功能入口
+              _buildMenuTile(
+                icon: Icons.edit_note_rounded,
+                title: '需求墙 / 功能投票',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FeatureRequestWallPage()),
+                  );
+                },
+              ),
+              // 管理员专区
               if (loggedInUser?.isAdmin == true) ...[
-                const Divider(),
+                _buildMenuTile(
+                  icon: Icons.eco_outlined,
+                  title: '我的小天地 (农场)',
+                  onTap: () => context.push('/farm'),
+                ),
+                _buildMenuTile(
+                  icon: Icons.psychology_outlined,
+                  title: '本地 AI 模型配置',
+                  onTap: () => context.push('/ai_activation'),
+                ),
                 _buildMenuTile(
                   icon: Icons.access_time_filled_rounded,
                   title: '快进时间 (当前: ${AppClock.now().toString().substring(0, 10)})',
@@ -1886,7 +1830,7 @@ class _MePageState extends State<MePage> {
                 ),
                 _buildMenuTile(
                   icon: Icons.admin_panel_settings_outlined,
-                  title: '系统管理',
+                  title: '系统管理后台',
                   onTap: () => context.push('/admin'),
                 ),
                 _buildMenuTile(
@@ -1900,6 +1844,28 @@ class _MePageState extends State<MePage> {
                   onTap: () => _openDbViewPage(),
                 ),
               ],
+              _buildMenuTile(
+                icon: Icons.cleaning_services_outlined,
+                title: '重建本地数据',
+                onTap: () => _showWipeLocalDataDialog(),
+                isDestructive: true,
+              ),
+              _buildMenuTile(
+                icon: Icons.logout_rounded,
+                title: '切换账号',
+                trailingText: '切换',
+                onTap: () async {
+                  await Global.logout();
+                  if (mounted) context.go('/login');
+                },
+              ),
+              _buildMenuTile(
+                icon: Icons.no_accounts_outlined,
+                title: '注销账号',
+                onTap: () => showUnRegisterDlg(),
+                isDestructive: true,
+                showDivider: false,
+              ),
             ],
           ),
         ),
@@ -2644,54 +2610,92 @@ class _MePageState extends State<MePage> {
     );
   }
 
-  // 菜单项组件
+  // 菜单项组件 (1:1 对齐原型极简温润风格)
   Widget _buildMenuTile({
     required IconData icon,
     required String title,
+    String? trailingText,
+    Color? trailingTextColor,
     Widget? trailing,
     required VoidCallback onTap,
     bool isDestructive = false,
     Color? iconColor,
+    bool showDivider = true,
   }) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final textColor = isDarkModeEnabled ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+    final iconBgColor = isDarkModeEnabled ? const Color(0xFF1B2825) : const Color(0xFFEDF5F2);
+    final dividerColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.06) : const Color(0x0F000000);
 
-    // 如果没有指定颜色，则使用一个更克制的次级文字颜色，避免“花花绿绿”
     final effectiveIconColor = iconColor ?? (isDestructive ? Colors.redAccent : subtitleColor);
 
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: effectiveIconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: effectiveIconColor,
-            size: 22, // 略微调大图标，提升精致感
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isDestructive ? Colors.redAccent : textColor,
-            fontWeight: FontWeight.w500, // 降低字重，避免过重
-            fontSize: 15,
-            fontFamily: 'NotoSansSC',
-          ),
-        ),
-        trailing: trailing ??
-            Icon(
-              Icons.chevron_right_rounded,
-              color: isDarkModeEnabled ? Colors.white24 : Colors.black26,
-              size: 18,
+    Widget trailingWidget;
+    if (trailing != null) {
+      trailingWidget = trailing;
+    } else {
+      trailingWidget = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trailingText != null) ...[
+            Text(
+              trailingText,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: trailingTextColor ?? subtitleColor,
+                fontFamily: 'NotoSansSC',
+              ),
             ),
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            const SizedBox(width: 4),
+          ],
+          Icon(
+            Icons.chevron_right_rounded,
+            color: subtitleColor.withValues(alpha: 0.6),
+            size: 16,
+          ),
+        ],
+      );
+    }
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        decoration: BoxDecoration(
+          border: showDivider ? Border(bottom: BorderSide(color: dividerColor, width: 0.8)) : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: isDestructive ? Colors.redAccent.withValues(alpha: 0.1) : iconBgColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: effectiveIconColor,
+                size: 17,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: isDestructive ? Colors.redAccent : textColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  fontFamily: 'NotoSansSC',
+                ),
+              ),
+            ),
+            trailingWidget,
+          ],
+        ),
       ),
     );
   }
