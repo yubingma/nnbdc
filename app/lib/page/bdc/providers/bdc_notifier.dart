@@ -915,7 +915,7 @@ class BdcNotifier extends _$BdcNotifier {
       final ratingResult = _calculateRating("选择题");
       _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
     } else {
-      StudyAudioSessionController.instance.playSoundEffect('failed.mp3', speed: 1.5, volume: 1.0);
+      StudyAudioSessionController.instance.playSoundEffect('failed.mp3', speed: 1.5, volume: 0.1);
       showWordDetail(state.word!, true, context,
           fsrsRating: FsrsRating.again,
           reason: "选错了答案");
