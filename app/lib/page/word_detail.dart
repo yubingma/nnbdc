@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/util/prefs.dart';
@@ -878,326 +879,339 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient( 
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: isDarkMode
-              ? [
-                  const Color(0xFF1A1A2E),
-                  const Color(0xFF16213E),
-                ]
-              : [
-                  const Color(0xFFF8F9FA),
-                  const Color(0xFFF1F3F5),
-                ],
-        ),
+        color: isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF5F9F7),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 单词拼写及释义
+          // 顶部单词概览大卡片（带可收起抽屉效果）
           Container(
             constraints: BoxConstraints(
               maxHeight: (MediaQuery.of(context).size.height - MediaQuery.of(context).viewInsets.bottom) * 0.45,
             ),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
+              color: isDarkMode ? const Color(0xFF13201D) : Colors.white,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
+              border: Border(
+                bottom: BorderSide(
+                  color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                  width: 1.2,
+                ),
+              ),
             ),
             child: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
-              child: Column(
-                children: [
-                  Center(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                child: Column(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // 顶部导航栏行
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 0, 16, 0),
+                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               IconButton(
                                 onPressed: () => Navigator.of(context).pop(),
-                                icon: Icon(Icons.arrow_back, color: isDarkMode ? Colors.grey[200] : Colors.grey[700]),
+                                icon: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  size: 19,
+                                  color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                ),
                               ),
-                              Container(),
+                              Text(
+                                '单词详情',
+                                style: TextStyle(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.more_horiz_rounded,
+                                      size: 22,
+                                      color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                                    ),
+                                    onPressed: () => _showMoreOptions(context),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
-                        Text(args.word.spell,
-                            style: TextStyle(
-                                color: isWrongWord ? Colors.red : Global.highlight, 
-                                fontSize: _isTopDrawerExpanded ? 36 : 24, 
-                                fontWeight: FontWeight.w500, 
-                                letterSpacing: 0.5)),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (Util.getWordDefaultPronounce(args.word).isNotEmpty)
-                              Text('[${Util.getWordDefaultPronounce(args.word)}]',
-                                  style: TextStyle(color: isDarkMode ? Colors.grey[200] : Colors.grey[700], fontSize: 16, fontFamily: 'NotoSans')),
-                            Transform.translate(
-                              offset: const Offset(6.0, 2.0),
-                              child: InkWell(
-                                child: AnimatedBuilder(
-                                  animation: _wordSoundController,
-                                  builder: (context, child) {
-                                    return Transform.translate(
-                                      offset: Offset(_wordSoundController.value < 0.5 ? 0 : -2, 0),
-                                      child: Icon(
-                                        _playingStates['word']!.value
-                                            ? (_wordSoundController.value < 0.5 ? Icons.volume_up : Icons.volume_down)
-                                            : Icons.volume_up,
-                                        color: _playingStates['word']!.value ? Colors.teal[300] : Colors.grey[500],
-                                        size: 24,
-                                      ),
-                                    );
-                                  },
+                        // 单词核心信息区（左对齐）
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 2),
+                              // 单词拼写大标题
+                              Text(
+                                args.word.spell,
+                                style: TextStyle(
+                                  color: isWrongWord
+                                      ? Colors.redAccent
+                                      : (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724)),
+                                  fontSize: _isTopDrawerExpanded ? 28 : 22,
+                                  fontWeight: FontWeight.w800,
+                                  fontFamily: 'NotoSansSC',
+                                  letterSpacing: -0.3,
                                 ),
-                                onTap: () {
-                                  if (!_playingStates['word']!.value && !_sessionDisposed) {
-                                    _playWithAnimation(() async {
-                                      try {
-                                        await sessionController.playWordAndSentence(
-                                          args.word,
-                                          sentenceDigest: null,
-                                          playWord: true,
-                                          playSentence: false,
-                                          isSpeakMode: false,
-                                        );
-                                      } catch (e) {
-                                        Global.logger.d("播放发音失败: $e");
-                                      }
-                                    }, 'word');
-                                  }
-                                },
                               ),
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                  
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    alignment: Alignment.topCenter,
-                    child: (_isTopDrawerExpanded && MediaQuery.of(context).viewInsets.bottom <= 0) ? Column(
-                      children: [
-                    // 配图展示
-                    if (StudyConfig.fromCurrentUser().enableWordImage && args.word.images != null && args.word.images!.isNotEmpty)
-                      Builder(
-                        builder: (BuildContext context) {
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          double imageWidth = (screenWidth - leftPadding - rightPadding - 8) / 2.0; // 横排两张的合适宽度
-                          if (imageWidth > 120.0) {
-                            imageWidth = 120.0; // 限制最大宽度，避免图片过大占用太多纵向空间
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.fromLTRB(leftPadding, 16, rightPadding, 8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  spacing: 8, 
-                                  runSpacing: 8,
+                              const SizedBox(height: 8),
+                              // 音标发音胶囊（左对齐）
+                              if (Util.getWordDefaultPronounce(args.word).isNotEmpty)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    ...args.word.images!.take(2).map((image) => Stack(
-                                      children: [
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                                          ),
-                                          child: Builder(
-                                            builder: (context) {
-                                              final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${image.imageFile}');
-                                              Global.logger.d('加载单词图片 [详情页]: $imageUrl');
-                                              return Image.network(
-                                                imageUrl,
-                                                width: imageWidth,
-                                                height: imageWidth * 0.75, // 比例 4:3
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  Global.logger.e('图片加载失败 [详情页]: $imageUrl', error: error);
-                                                  return Container(
-                                                    width: imageWidth,
-                                                    height: imageWidth * 0.75,
-                                                    color: Colors.grey[200],
-                                                    child: const Icon(Icons.broken_image, color: Colors.red),
-                                                  );
-                                                },
+                                    InkWell(
+                                      borderRadius: BorderRadius.circular(20),
+                                      onTap: () {
+                                        if (!_playingStates['word']!.value && !_sessionDisposed) {
+                                          _playWithAnimation(() async {
+                                            try {
+                                              await sessionController.playWordAndSentence(
+                                                args.word,
+                                                sentenceDigest: null,
+                                                playWord: true,
+                                                playSentence: false,
+                                                isSpeakMode: false,
                                               );
+                                            } catch (e) {
+                                              Global.logger.d("播放发音失败: $e");
                                             }
+                                          }, 'word');
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF7F3),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: isDarkMode ? const Color(0xFF233B35) : const Color(0xFFD1EADE),
+                                            width: 1,
                                           ),
                                         ),
-                                        if (image.status == 'PENDING')
-                                          Positioned.fill(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.black.withValues(alpha: 0.5),
-                                                borderRadius: BorderRadius.circular(8),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              '[${Util.getWordDefaultPronounce(args.word)}]',
+                                              style: TextStyle(
+                                                color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57),
+                                                fontSize: 13.5,
+                                                fontFamily: 'NotoSans',
+                                                fontWeight: FontWeight.w500,
                                               ),
-                                              child: const Center(
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    SizedBox(
-                                                      width: 16,
-                                                      height: 16,
-                                                      child: CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            AnimatedBuilder(
+                                              animation: _wordSoundController,
+                                              builder: (context, child) {
+                                                return Icon(
+                                                  _playingStates['word']!.value
+                                                      ? (_wordSoundController.value < 0.5 ? Icons.volume_up_rounded : Icons.volume_down_rounded)
+                                                      : Icons.volume_up_rounded,
+                                                  color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                                                  size: 16,
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              const SizedBox(height: 10),
+                              // 释义区域（左对齐常驻清晰展示）
+                              _buildMeaningSection(isDarkMode),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      alignment: Alignment.topCenter,
+                      child: (_isTopDrawerExpanded && MediaQuery.of(context).viewInsets.bottom <= 0) ? Column(
+                        children: [
+                          // 配图展示
+                          if (StudyConfig.fromCurrentUser().enableWordImage && args.word.images != null && args.word.images!.isNotEmpty)
+                            Builder(
+                              builder: (BuildContext context) {
+                                final screenWidth = MediaQuery.of(context).size.width;
+                                double imageWidth = (screenWidth - leftPadding - rightPadding - 8) / 2.0;
+                                if (imageWidth > 120.0) {
+                                  imageWidth = 120.0;
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(leftPadding, 12, rightPadding, 4),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Wrap(
+                                        spacing: 8, 
+                                        runSpacing: 8,
+                                        children: [
+                                          ...args.word.images!.take(2).map((image) => Stack(
+                                            children: [
+                                              Container(
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                                                ),
+                                                child: Builder(
+                                                  builder: (context) {
+                                                    final imageUrl = Uri.encodeFull('${Config.imgBaseUrl}word/${image.imageFile}');
+                                                    Global.logger.d('加载单词图片 [详情页]: $imageUrl');
+                                                    return Image.network(
+                                                      imageUrl,
+                                                      width: imageWidth,
+                                                      height: imageWidth * 0.75,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (context, error, stackTrace) {
+                                                        Global.logger.e('图片加载失败 [详情页]: $imageUrl', error: error);
+                                                        return Container(
+                                                          width: imageWidth,
+                                                          height: imageWidth * 0.75,
+                                                          color: Colors.grey[200],
+                                                          child: const Icon(Icons.broken_image, color: Colors.red),
+                                                        );
+                                                      },
+                                                    );
+                                                  }
+                                                ),
+                                              ),
+                                              if (image.status == 'PENDING')
+                                                Positioned.fill(
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black.withValues(alpha: 0.5),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: const Center(
+                                                      child: Column(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          SizedBox(
+                                                            width: 16,
+                                                            height: 16,
+                                                            child: CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                            ),
+                                                          ),
+                                                          SizedBox(height: 4),
+                                                          Text('AI审核中', style: TextStyle(color: Colors.white, fontSize: 10)),
+                                                        ],
                                                       ),
                                                     ),
+                                                  ),
+                                                ),
+                                            ],
+                                          )),
+                                          if (args.word.images!.length < 2)
+                                            InkWell(
+                                              onTap: () {
+                                                context.push('/pic_search',
+                                                        extra: PicSearchPageArgs(
+                                                            args.word.id!,
+                                                            args.word.spell))
+                                                    .then((value) => loadData());
+                                              },
+                                              child: Container(
+                                                width: imageWidth,
+                                                height: imageWidth * 0.75,
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                                                  color: Colors.grey.withValues(alpha: 0.05),
+                                                ),
+                                                child: const Column(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.add_photo_alternate_outlined, size: 24, color: Colors.grey),
                                                     SizedBox(height: 4),
-                                                    Text('AI审核中', style: TextStyle(color: Colors.white, fontSize: 10)),
+                                                    Text('添加配图', style: TextStyle(fontSize: 10, color: Colors.grey)),
                                                   ],
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                      ],
-                                    )),
-                                    if (args.word.images!.length < 2)
-                                      InkWell(
-                                        onTap: () {
-                                          context.push('/pic_search',
-                                                  extra: PicSearchPageArgs(
-                                                      args.word.id!,
-                                                      args.word.spell))
-                                              .then((value) => loadData());
-                                        },
-                                        child: Container(
-                                          width: imageWidth,
-                                          height: imageWidth * 0.75,
-                                          decoration: BoxDecoration(
-                                            color: isDarkMode ? Colors.white10 : Colors.grey[100],
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.grey.withValues(alpha: 0.2), style: BorderStyle.none),
-                                          ),
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(Icons.add_a_photo_outlined, color: Colors.grey[500], size: 28),
-                                              const SizedBox(height: 4),
-                                              Text('添加配图', style: TextStyle(color: Colors.grey[500], fontSize: 11)),
-                                            ],
-                                          ),
-                                        ),
+                                        ],
                                       ),
-                                  ],
-                                )
-                              ],
-                            ),
-                          );
-                        }
-                      ),
-                      
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(leftPadding, 8, rightPadding, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('释义', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
-                          const SizedBox(height: 8),
-                          for (var meaningItem in args.word.getMergedMeaningItems())
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if ((meaningItem.ciXing ?? '').isNotEmpty)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        meaningItem.ciXing!,
-                                        style: TextStyle(
-                                          color: AppTheme.primaryColor,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  Flexible(
-                                    child: Text.rich(
-                                      TextSpan(
-                                        children: _buildTextSpans(meaningItem.meaning!),
-                                      ),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        height: 1.4,
-                                        color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
-                                      ),
-                                    ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            )
+                                );
+                              }
+                            ),
                         ],
-                      ),
-                    ), 
-                      ],
-                    ) : const SizedBox(width: double.infinity),
-                  ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      setState(() {
-                        _isTopDrawerExpanded = !_isTopDrawerExpanded;
-                        _cumulativeScroll = 0.0;
-                        _lastDrawerActionTime = DateTime.now();
-                      });
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Center(
-                        child: Container(
-                          width: 32,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white24
-                                : Colors.black12,
-                            borderRadius: BorderRadius.circular(2),
+                      ) : const SizedBox(width: double.infinity),
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        setState(() {
+                          _isTopDrawerExpanded = !_isTopDrawerExpanded;
+                          _cumulativeScroll = 0.0;
+                          _lastDrawerActionTime = DateTime.now();
+                        });
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Center(
+                          child: Container(
+                            width: 36,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? Colors.white24
+                                  : Colors.black12,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ), 
-            ),
+                  ],
+                ), 
+              ),
             ),
           ),
 
-          // 详情/形近词
+          // 详情/形近词等多维 Tab
           Expanded(
             child: Container(
                 key: ValueKey('detail_tabs_${calcTabsCount()}_${args.word.id}'),
-                margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                margin: const EdgeInsets.fromLTRB(14, 12, 14, 8),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF2A2A3E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(16),
+                  color: isDarkMode ? const Color(0xFF13201D) : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                    width: 1.2,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 6,
+                      color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.03),
+                      blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -1208,8 +1222,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.5) : Colors.grey[300]!.withValues(alpha: 0.5),
-                            width: 0.5,
+                            color: isDarkMode ? Colors.white10 : const Color(0x0F18BA7C),
+                            width: 1,
                           ),
                         ),
                       ),
@@ -1217,20 +1231,20 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         isScrollable: true,
                         tabAlignment: TabAlignment.center,
                         controller: _tabController,
-                        labelPadding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 12.0),
                         labelStyle: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.5,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
                         ),
                         unselectedLabelStyle: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.normal,
+                          fontWeight: FontWeight.w500,
                         ),
-                        labelColor: isDarkMode ? Colors.white : Colors.black,
-                        unselectedLabelColor: isDarkMode ? Colors.grey[300] : const Color(0xFF4B5563),
-                        indicatorColor: AppTheme.primaryColor,
-                        indicatorWeight: 2,
+                        labelColor: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                        unselectedLabelColor: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                        indicatorColor: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                        indicatorWeight: 2.5,
                         tabs: [
                           const Tab(text: '详情'),
                           if (hasSimilarWords()) Tab(text: '形近(${args.word.similarWords!.length})'),
@@ -1265,10 +1279,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             final scrollDelta = notification.scrollDelta;
                             if (scrollDelta != null) {
                               if (scrollDelta > 0.0) {
-                                // 用户往下滚动内容（上滑手指）：重置累计值
                                 _cumulativeScroll = 0.0;
-                                
-                                // 如果抽屉处于展开状态，且用户确实向下滚动了一小段距离（避开回弹及微小抖动），则立刻收起
                                 if (_isTopDrawerExpanded && notification.metrics.pixels > 10.0) {
                                   setState(() {
                                     _isTopDrawerExpanded = false;
@@ -1276,7 +1287,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   });
                                 }
                               } else if (scrollDelta < 0.0) {
-                                // 用户往上回看内容（下滑手指）且已到达或接近最顶部
                                 if (notification.metrics.pixels <= 5.0 && !_isTopDrawerExpanded && notification.dragDetails != null) {
                                   _cumulativeScroll += scrollDelta.abs();
                                   if (_cumulativeScroll >= 90.0) {
@@ -1292,7 +1302,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               }
                             }
                           } else if (notification is OverscrollNotification) {
-                            // 当在最顶部继续往下拉时触发 overscroll
                             if (notification.overscroll < 0.0 && !_isTopDrawerExpanded && notification.dragDetails != null) {
                               _cumulativeScroll += notification.overscroll.abs();
                               if (_cumulativeScroll >= 90.0) {
@@ -1304,7 +1313,6 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               }
                             }
                           } else if (notification is ScrollEndNotification) {
-                            // 手指放开或滚动结束时重置累计值
                             _cumulativeScroll = 0.0;
                           }
                           
@@ -1319,7 +1327,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             if (hasSimilarWords()) renderSimilarWords(),
                             if (hasSynonyms()) renderSynonyms(),
                             if (hasCigen()) renderCigenAffix(),
-                            if (hasSemanticSimilarWords()) renderSemanticSimilarWords(),
+                            renderSemanticSimilarWords(),
                             if (_canUseAiAssistant) renderAiExplanation(),
                           ],
                         ),
@@ -1338,7 +1346,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               child: args.bottomBtn!,
             ),
 
-          // 从背单词页面进入时，显示"下一词"按钮
+          // 从背单词页面进入时，显示"下一个单词"按钮
           if (args.showNextWordButton && args.bottomBtn == null
               && !(_canUseAiAssistant && _tabController.index == calcTabsCount() - 1))
             Container(
@@ -1346,16 +1354,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 24.0),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: context.watch<DarkMode>().isDarkMode
-                      ? Colors.white
-                      : AppTheme.primaryColor,
-                  foregroundColor: context.watch<DarkMode>().isDarkMode
-                      ? Colors.black
-                      : Colors.white,
-                  elevation: 0,
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: AppTheme.primaryColor.withValues(alpha: 0.35),
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                 ),
                 onPressed: _isLoadingNextWord
                     ? null
@@ -1375,22 +1381,151 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         }
                       },
                 child: _isLoadingNextWord
-                    ? SizedBox.square(
+                    ? const SizedBox.square(
                         dimension: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: context.watch<DarkMode>().isDarkMode
-                              ? AppTheme.primaryColor
-                              : Colors.white,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('下一词',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '下一个单词',
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.chevron_right_rounded, size: 20),
+                        ],
+                      ),
               ),
             ),
         ],
       ),
     );
+  }
+
+  void _showMoreOptions(BuildContext context) {
+    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDarkMode ? const Color(0xFF13201D) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext bottomSheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 10, bottom: 8),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDarkMode ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy_rounded, color: Color(0xFF18BA7C)),
+                title: const Text('复制单词及释义', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(bottomSheetContext);
+                  final copyText = '${args.word.spell} [${Util.getWordDefaultPronounce(args.word)}]\n${args.word.getMeaningStr()}';
+                  Clipboard.setData(ClipboardData(text: copyText));
+                  ToastUtil.success('已复制到剪贴板');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.image_search_rounded, color: Color(0xFF18BA7C)),
+                title: const Text('更换配图', style: TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () {
+                  Navigator.pop(bottomSheetContext);
+                  context.push('/pic_search',
+                          extra: PicSearchPageArgs(
+                              args.word.id!,
+                              args.word.spell))
+                      .then((value) => loadData());
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMeaningSection(bool isDarkMode) {
+    final mergedItems = args.word.getMergedMeaningItems();
+    if (mergedItems.isNotEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var meaningItem in mergedItems)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if ((meaningItem.ciXing ?? '').isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      margin: const EdgeInsets.only(right: 8, top: 1),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFE3F6EE),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        meaningItem.ciXing!,
+                        style: TextStyle(
+                          color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF139E67),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  Flexible(
+                    child: Text.rich(
+                      TextSpan(
+                        children: _buildTextSpans(meaningItem.meaning ?? ''),
+                      ),
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    }
+
+    // Fallback: 如果结构化释义项为空，直接以高亮解析展示完整释义字符串
+    final fallbackMeaning = args.word.getMeaningStr();
+    if (fallbackMeaning.isNotEmpty) {
+      return Text.rich(
+        TextSpan(
+          children: _buildTextSpans(fallbackMeaning),
+        ),
+        style: TextStyle(
+          fontSize: 14,
+          height: 1.45,
+          color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   int calcTabsCount() {
@@ -2014,13 +2149,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 // 单词讲解
                 if (args.word.shortDesc != null && args.word.shortDesc!.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
-                      borderRadius: BorderRadius.circular(12),
+                      color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[300]!.withValues(alpha: 0.3),
-                        width: 0.5,
+                        color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                        width: 1,
                       ),
                     ),
                     child: Column(
@@ -2028,10 +2163,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.info_outline, size: 16, color: Color(0xFF4A90E2)),
-                            const SizedBox(width: 8),
-                            const Text('讲解',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
+                            Icon(Icons.lightbulb_outline_rounded, size: 17, color: AppTheme.primaryColor),
+                            const SizedBox(width: 6),
+                            const Text('深度讲解',
+                                style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, letterSpacing: 0.2, fontFamily: 'NotoSansSC')),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -2042,7 +2177,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
 
                 // 例句
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
+                  padding: const EdgeInsets.fromLTRB(0, 14, 0, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2051,17 +2186,17 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.format_quote, size: 16, color: Color(0xFF4A90E2)),
-                              const SizedBox(width: 8),
+                              Icon(Icons.format_quote_rounded, size: 18, color: AppTheme.primaryColor),
+                              const SizedBox(width: 6),
                               const Text('短语 & 例句',
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, letterSpacing: 0.5, fontFamily: 'NotoSansSC')),
+                                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, letterSpacing: 0.2, fontFamily: 'NotoSansSC')),
                             ],
                           ),
                           Row(
                             children: [
-                              const Text('编辑', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                              Text('编辑', style: TextStyle(fontSize: 12.5, color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691))),
                               Transform.scale(
-                                scale: 0.7,
+                                scale: 0.75,
                                 child: Switch(
                                   value: isEditMode,
                                   onChanged: (value) {
@@ -2069,14 +2204,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       isEditMode = value;
                                     });
                                   },
-                                  activeThumbColor: const Color(0xFF4A90E2),
+                                  activeThumbColor: AppTheme.primaryColor,
                                 ),
                               ),
                             ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
 
                       // 例句内容或空状态
                       FutureBuilder<List<SentenceVo>>(
@@ -2103,18 +2238,18 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                         ), sent.id);
                                       }
                                     },
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(14),
                                     child: Container(
                                       margin: const EdgeInsets.only(bottom: 10),
-                                      padding: const EdgeInsets.all(16),
+                                      padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
                                         color: isDarkMode
-                                            ? const Color(0xFF1E1E2D).withValues(alpha: 0.95)
-                                            : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
-                                        borderRadius: BorderRadius.circular(12),
+                                            ? const Color(0xFF192C27)
+                                            : const Color(0xFFF7FBF9),
+                                        borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
-                                          color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[300]!.withValues(alpha: 0.3),
-                                          width: 0.5,
+                                          color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                                          width: 1,
                                         ),
                                       ),
                                       child: Column(
