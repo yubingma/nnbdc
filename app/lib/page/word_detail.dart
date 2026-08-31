@@ -917,37 +917,71 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       children: [
                         // 顶部导航栏行
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              IconButton(
-                                onPressed: () => Navigator.of(context).pop(),
-                                icon: Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  size: 19,
-                                  color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                              // 左侧圆形返回按钮
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                                      border: Border.all(
+                                        color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.arrow_back_ios_new_rounded,
+                                        size: 14,
+                                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                               Text(
                                 '单词详情',
                                 style: TextStyle(
-                                  fontSize: 15.5,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w700,
                                   color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.more_horiz_rounded,
-                                      size: 22,
-                                      color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                              // 右侧圆形更多按钮
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () => _showMoreOptions(context),
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                                      border: Border.all(
+                                        color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                                        width: 1,
+                                      ),
                                     ),
-                                    onPressed: () => _showMoreOptions(context),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.more_horiz_rounded,
+                                        size: 18,
+                                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                      ),
+                                    ),
                                   ),
-                                ],
+                                ),
                               ),
                             ],
                           ),
@@ -2395,7 +2429,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       const SizedBox(height: 10),
 
                       // 例句内容或空状态
-                      FutureBuilder<List<SentenceVo>>(
+                        FutureBuilder<List<SentenceVo>>(
                         future: _sentencesFuture,
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -2452,18 +2486,29 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                                   ],
                                                 ),
                                               ),
-                                              AnimatedBuilder(
-                                                animation: _getSentenceController(sent.id),
-                                                builder: (context, child) {
-                                                  return Icon(
-                                                    _playingStates[sent.id]!.value
-                                                        ? (_getSentenceController(sent.id).value < 0.5 ? Icons.volume_up : Icons.volume_down)
-                                                        : Icons.volume_up_outlined,
-                                                    color: _playingStates[sent.id]!.value ? Colors.teal[300] : Colors.grey[400],
-                                                    size: 16,
-                                                  );
-                                                },
-                                              ),
+                                               const SizedBox(width: 8),
+                                               Container(
+                                                 width: 24,
+                                                 height: 24,
+                                                 decoration: BoxDecoration(
+                                                   shape: BoxShape.circle,
+                                                   color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFE8F8F1),
+                                                 ),
+                                                 child: Center(
+                                                   child: AnimatedBuilder(
+                                                     animation: _getSentenceController(sent.id),
+                                                     builder: (context, child) {
+                                                       return Icon(
+                                                         _playingStates[sent.id]!.value
+                                                             ? (_getSentenceController(sent.id).value < 0.5 ? Icons.volume_up_rounded : Icons.volume_down_rounded)
+                                                             : Icons.volume_up_rounded,
+                                                         color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                                                         size: 13,
+                                                       );
+                                                     },
+                                                   ),
+                                                 ),
+                                               ),
                                             ],
                                           ),
                                           renderSentenceChinese(sent.chinese!, sent.id)
@@ -2475,36 +2520,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             );
                           } else {
                             // 没有例句时显示空状态提示
-                            return Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: isDarkMode ? const Color(0xFF1E1E2D).withValues(alpha: 0.95) : const Color(0xFFFAFAFA).withValues(alpha: 0.95),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[300]!.withValues(alpha: 0.3),
-                                  width: 0.5,
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.library_books_outlined,
-                                    size: 48,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    '暂无例句',
-                                    style: TextStyle(fontSize: 16, color: Colors.grey[600], fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC'),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '该单词目前没有例句内容',
-                                    style: TextStyle(fontSize: 14, color: Colors.grey[500], fontFamily: 'NotoSansSC'),
-                                  ),
-                                ],
-                              ),
+                            return _buildTabEmptyState(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.library_books_rounded,
+                              title: '暂无例句',
+                              subtitle: '该单词目前没有收录例句内容',
                             );
                           }
                         },
