@@ -1626,59 +1626,7 @@ class _MePageState extends State<MePage> {
           ),
         ),
 
-        // 4. 夜间模式切换卡片
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor, width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isDarkModeEnabled ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                    color: accentColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    '夜间模式',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: textColor,
-                      fontFamily: 'NotoSansSC',
-                    ),
-                  ),
-                ],
-              ),
-              DayNightSwitcherIcon(
-                isDarkModeEnabled: isDarkMode,
-                onStateChanged: (isDarkModeEnabled) {
-                  setState(() {
-                    isDarkMode = isDarkModeEnabled;
-                  });
-                  MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkModeEnabled);
-                  context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // 5. 设置与工具卡片 (1:1 严格对齐原型结构与文案)
+        // 4. 设置与工具卡片 (1:1 严格对齐原型结构与文案)
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.all(18),
@@ -1712,6 +1660,28 @@ class _MePageState extends State<MePage> {
                 title: '个人信息',
                 trailingText: '编辑',
                 onTap: () => showUpdateUserInfoDlg(),
+              ),
+              _buildMenuTile(
+                icon: isDarkModeEnabled ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                title: '夜间模式',
+                trailing: DayNightSwitcherIcon(
+                  isDarkModeEnabled: isDarkMode,
+                  onStateChanged: (isDarkModeEnabled) {
+                    setState(() {
+                      isDarkMode = isDarkModeEnabled;
+                    });
+                    MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkModeEnabled);
+                    context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
+                  },
+                ),
+                onTap: () {
+                  final newMode = !isDarkMode;
+                  setState(() {
+                    isDarkMode = newMode;
+                  });
+                  MyDatabase.instance.localParamsDao.saveIsDarkMode(newMode);
+                  context.read<DarkMode>().setIsDarkMode(newMode);
+                },
               ),
               _buildMenuTile(
                 icon: Icons.alarm_rounded,
