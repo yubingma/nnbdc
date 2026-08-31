@@ -3,6 +3,7 @@ import 'package:nnbdc/api/api.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
@@ -272,7 +273,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
         leading: CircleAvatar(
           backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
           child: Text(
-            user.nickName?.substring(0, 1).toUpperCase() ?? user.userName?.substring(0, 1).toUpperCase() ?? 'U',
+            Util.getInitial(user.nickName ?? user.userName),
             style: TextStyle(
               color: AppTheme.primaryColor,
               fontWeight: FontWeight.bold,

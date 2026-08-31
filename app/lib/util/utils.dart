@@ -61,6 +61,13 @@ class Util {
     return nickName == '系统用户' ? '泡泡' : nickName;
   }
 
+  /// 安全获取用于头像展示的首字符（兼容 Emoji、多字节 Unicode，避免 UTF-16 代理项截断报错）
+  static String getInitial(String? text, {String fallback = 'U'}) {
+    if (text == null || text.trim().isEmpty) return fallback;
+    final trimmed = text.trim();
+    return trimmed.characters.isNotEmpty ? trimmed.characters.first.toUpperCase() : fallback;
+  }
+
   static String getShortName(String name) {
     if (name.endsWith(".dict")) {
       return name.substring(0, name.lastIndexOf("."));

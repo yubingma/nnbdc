@@ -102,4 +102,28 @@ environment:
       expect(changes.every((item) => item.trim().isNotEmpty), isTrue);
     });
   });
+
+  group('Util.getInitial 测试', () {
+    test('英文字符正常转大写', () {
+      expect(Util.getInitial('alice'), equals('A'));
+      expect(Util.getInitial('Bob'), equals('B'));
+    });
+
+    test('中文字符正常获取首字', () {
+      expect(Util.getInitial('张三'), equals('张'));
+      expect(Util.getInitial(' 泡泡 '), equals('泡'));
+    });
+
+    test('Emoji字符完整获取不截断UTF-16代理项', () {
+      expect(Util.getInitial('😊开心'), equals('😊'));
+      expect(Util.getInitial('🌟星空'), equals('🌟'));
+      expect(Util.getInitial('👨‍👩‍👧家庭'), equals('👨‍👩‍👧'));
+    });
+
+    test('空值与异常值使用 fallback', () {
+      expect(Util.getInitial(null), equals('U'));
+      expect(Util.getInitial(''), equals('U'));
+      expect(Util.getInitial('   ', fallback: '?'), equals('?'));
+    });
+  });
 } 

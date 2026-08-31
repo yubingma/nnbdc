@@ -9,6 +9,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/util/loading_utils.dart';
 import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:provider/provider.dart';
 import 'package:nnbdc/state.dart';
 
@@ -943,12 +944,12 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     final userNickName = message.fromUserNickName;
     final userName = message.fromUserName;
 
-    if (nickName != null && nickName.isNotEmpty) {
-      return nickName.substring(0, 1).toUpperCase();
-    } else if (userNickName != null && userNickName.isNotEmpty) {
-      return userNickName.substring(0, 1).toUpperCase();
-    } else if (userName != null && userName.isNotEmpty) {
-      return userName.substring(0, 1).toUpperCase();
+    if (nickName != null && nickName.trim().isNotEmpty) {
+      return Util.getInitial(nickName);
+    } else if (userNickName != null && userNickName.trim().isNotEmpty) {
+      return Util.getInitial(userNickName);
+    } else if (userName != null && userName.trim().isNotEmpty) {
+      return Util.getInitial(userName);
     } else {
       return 'U';
     }
@@ -1595,12 +1596,12 @@ class _ReplyDialogState extends State<_ReplyDialog> {
     final userNickName = message.fromUserNickName;
     final userName = message.fromUserName;
 
-    if (nickName != null && nickName.isNotEmpty) {
-      return nickName.substring(0, 1).toUpperCase();
-    } else if (userNickName != null && userNickName.isNotEmpty) {
-      return userNickName.substring(0, 1).toUpperCase();
-    } else if (userName != null && userName.isNotEmpty) {
-      return userName.substring(0, 1).toUpperCase();
+    if (nickName != null && nickName.trim().isNotEmpty) {
+      return Util.getInitial(nickName);
+    } else if (userNickName != null && userNickName.trim().isNotEmpty) {
+      return Util.getInitial(userNickName);
+    } else if (userName != null && userName.trim().isNotEmpty) {
+      return Util.getInitial(userName);
     } else {
       return 'U';
     }
