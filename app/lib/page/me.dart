@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift_db_viewer/drift_db_viewer.dart';
 import 'package:email_validator/email_validator.dart';
@@ -1696,17 +1695,34 @@ class _MePageState extends State<MePage> {
                 onTap: () => showUpdateUserInfoDlg(),
               ),
               _buildMenuTile(
-                icon: isDarkModeEnabled ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                icon: isDarkModeEnabled ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                iconColor: isDarkModeEnabled ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
                 title: '夜间模式',
-                trailing: DayNightSwitcherIcon(
-                  isDarkModeEnabled: isDarkMode,
-                  onStateChanged: (isDarkModeEnabled) {
-                    setState(() {
-                      isDarkMode = isDarkModeEnabled;
-                    });
-                    MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkModeEnabled);
-                    context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
-                  },
+                trailing: SizedBox(
+                  height: 28,
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: Switch(
+                      value: isDarkMode,
+                      activeThumbColor: Colors.white,
+                      activeTrackColor: const Color(0xFF18BA7C),
+                      inactiveThumbColor: const Color(0xFF8EA8A3),
+                      inactiveTrackColor: isDarkModeEnabled ? Colors.white12 : const Color(0xFFE2ECE8),
+                      trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return const Color(0xFF18BA7C);
+                        }
+                        return isDarkModeEnabled ? Colors.white24 : const Color(0xFFD0E0DC);
+                      }),
+                      onChanged: (val) {
+                        setState(() {
+                          isDarkMode = val;
+                        });
+                        MyDatabase.instance.localParamsDao.saveIsDarkMode(val);
+                        context.read<DarkMode>().setIsDarkMode(val);
+                      },
+                    ),
+                  ),
                 ),
                 onTap: () {
                   final newMode = !isDarkMode;
