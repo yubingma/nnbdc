@@ -1,19 +1,19 @@
 import 'dart:async';
-import 'package:nnbdc/global.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/global.dart';
 import 'package:nnbdc/local_word_cache.dart';
 import 'package:nnbdc/page/word_detail.dart';
-import 'package:nnbdc/theme/app_theme.dart';
-import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/asr.dart';
 import 'package:nnbdc/util/error_handler.dart';
+import 'package:nnbdc/util/study_audio_session_controller.dart';
+import 'package:nnbdc/util/toast_util.dart';
+import 'package:nnbdc/util/utils.dart';
 import 'package:provider/provider.dart';
 
-import '../util/utils.dart';
 import '../state.dart';
-import '../util/asr.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -44,6 +44,23 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
+  // 常用热词与词根探索推荐
+  static const List<String> _hotWords = [
+    'serendipity',
+    'ephemeral',
+    'resilient',
+    'ubiquitous',
+    'eloquent',
+    'lucid',
+  ];
+
+  static const List<Map<String, String>> _roots = [
+    {'root': 'bene', 'label': 'bene- (善/好)'},
+    {'root': 'mal', 'label': 'mal- (恶/坏)'},
+    {'root': 'spect', 'label': 'spect (看)'},
+    {'root': 'tract', 'label': 'tract (拉/引)'},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -73,7 +90,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     ));
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(0, 0.2),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
@@ -92,7 +109,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     _scrollController.dispose();
     _fadeController.dispose();
     _slideController.dispose();
-    _searchCache.clear(); // 清理缓存
+    _searchCache.clear();
     super.dispose();
   }
 
@@ -102,129 +119,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     });
   }
 
-  Widget renderWord(final int i) {
-    var word = matchedWords[i];
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardColor = isDarkMode ? const Color(0xFF2A2A2A) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
-
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - _fadeAnimation.value)),
-          child: Opacity(
-            opacity: _fadeAnimation.value, 
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-                border: Border.all(
-                  color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[200]!.withValues(alpha: 0.5),
-                  width: 1,
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () async {
-                    try {
-                      var result = await WordBo().searchWordById(word.id!, null);
-                      if (!context.mounted) return;
-                      if (result.word != null) {
-                        context.push('/word_detail', extra: WordDetailPageArgs(result.word!, false, null, false));
-                      } else {
-                        context.push('/word_detail', extra: WordDetailPageArgs(word, true, null, false));
-                      }
-                    } catch (e, st) {
-                      ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
-                      if (!context.mounted) return;
-                      context.push('/word_detail', extra: WordDetailPageArgs(word, true, null, false));
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                word.spell,
-                                style: TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'NotoSansSC',
-                                  height: 1.2,
-                                ),
-                                textScaler: const TextScaler.linear(1.0),
-                              ),
-                            ),
-                            if (word.mergedPronounce.isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode ? Colors.grey[800] : Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  word.mergedPronounce,
-                                  style: TextStyle(
-                                    color: subtitleColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  textScaler: const TextScaler.linear(1.0),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.grey[900]!.withValues(alpha: 0.3) : Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            word.getMeaningStr(),
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 14,
-                              height: 1.4,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textScaler: const TextScaler.linear(1.0),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void onSearchTextChanged(value) async {
-    final query = value.toString().trim();
+  void onSearchTextChanged(String value) async {
+    final query = value.trim();
 
     // 避免重复搜索相同内容
     if (query == _lastSearchQuery) {
@@ -274,7 +170,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         _scrollToTop();
       }
     } catch (e) {
-      // 搜索出错时不更新UI，保持之前的结果
       Global.logger.d('搜索出错: $e');
     } finally {
       _isSearching = false;
@@ -292,94 +187,407 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+  void _applySearchQuery(String text) {
+    spell.text = text;
+    spell.selection = TextSelection.fromPosition(TextPosition(offset: text.length));
+    onSearchTextChanged(text);
+    _focusNode.requestFocus();
+  }
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        toolbarHeight: 88,
-        backgroundColor: backgroundColor,
-        elevation: 0,
-        titleSpacing: 0,
-        automaticallyImplyLeading: false,
-        title: Container(
-          height: 48,
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: TextField(
-            controller: spell,
-            focusNode: _focusNode,
-            onChanged: (value) {
-              onSearchTextChanged(value);
-            },
-            style: TextStyle(
-              color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
-              fontSize: 16,
-              fontFamily: 'NotoSansSC',
-              height: 1.0,
-              fontWeight: FontWeight.w500,
-            ),
-            decoration: InputDecoration(
-              hintText: '输入单词或中文释义',
-              hintStyle: TextStyle(
-                color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.5),
-                fontSize: 16,
+  void _performExactSearch() async {
+    final query = spell.text.trim();
+    if (query.isEmpty) return;
+    try {
+      var result = await WordBo().searchWordLocalOnly(query);
+      if (result.word == null) {
+        ToastUtil.error("单词 $query 不存在");
+      } else {
+        var fullResult = await WordBo().searchWordById(result.word!.id!, null);
+        if (!mounted) return;
+        if (fullResult.word != null) {
+          context.push('/word_detail', extra: WordDetailPageArgs(fullResult.word!, false, null, false));
+        } else {
+          context.push('/word_detail', extra: WordDetailPageArgs(result.word!, false, null, false));
+        }
+      }
+    } catch (e, st) {
+      ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
+    }
+  }
+
+  Widget _buildHighlightedSpell(String wordSpell, String query, bool isDarkMode) {
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+
+    if (query.isNotEmpty && wordSpell.toLowerCase().startsWith(query.toLowerCase())) {
+      final matchPart = wordSpell.substring(0, query.length);
+      final restPart = wordSpell.substring(query.length);
+      return RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: matchPart,
+              style: TextStyle(
+                color: accentGreen,
+                fontSize: 17.5,
+                fontWeight: FontWeight.w800,
                 fontFamily: 'NotoSansSC',
-                height: 1.0,
-                fontWeight: FontWeight.w400,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              suffixIcon: Container(
-                margin: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(18),
+            ),
+            TextSpan(
+              text: restPart,
+              style: TextStyle(
+                color: textMain,
+                fontSize: 17.5,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'NotoSansSC',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Text(
+      wordSpell,
+      style: TextStyle(
+        color: textMain,
+        fontSize: 17.5,
+        fontWeight: FontWeight.w700,
+        fontFamily: 'NotoSansSC',
+        height: 1.2,
+      ),
+      textScaler: const TextScaler.linear(1.0),
+    );
+  }
+
+  Widget _buildMeaningWithTags(String meaningStr, bool isDarkMode) {
+    final textSecondary = isDarkMode ? const Color(0xFFC8DCD8) : const Color(0xFF334B46);
+    final posTagBg = isDarkMode ? const Color(0x262CD88F) : const Color(0xFFE3F6EE);
+    final posTagText = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF139E67);
+
+    // 解析词性标签如 "n. ", "v. ", "adj. ", "adv. ", "vt. ", "vi. "
+    final posRegex = RegExp(r'(n\.|v\.|adj\.|adv\.|vt\.|vi\.|prep\.|conj\.|pron\.|art\.|num\.|int\.)\s*');
+    final matches = posRegex.allMatches(meaningStr);
+
+    if (matches.isEmpty) {
+      return Text(
+        meaningStr.isNotEmpty ? meaningStr : "（暂无释义）",
+        style: TextStyle(
+          color: textSecondary,
+          fontSize: 13.5,
+          height: 1.45,
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textScaler: const TextScaler.linear(1.0),
+      );
+    }
+
+    final List<InlineSpan> spans = [];
+    int lastEnd = 0;
+
+    for (final match in matches) {
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(
+          text: meaningStr.substring(lastEnd, match.start),
+          style: TextStyle(color: textSecondary, fontSize: 13.5, height: 1.45),
+        ));
+      }
+      final posText = match.group(1)!;
+      spans.add(WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: Container(
+          margin: const EdgeInsets.only(right: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          decoration: BoxDecoration(
+            color: posTagBg,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            posText,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: posTagText,
+              height: 1.1,
+            ),
+          ),
+        ),
+      ));
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < meaningStr.length) {
+      spans.add(TextSpan(
+        text: meaningStr.substring(lastEnd),
+        style: TextStyle(color: textSecondary, fontSize: 13.5, height: 1.45),
+      ));
+    }
+
+    return RichText(
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(children: spans),
+    );
+  }
+
+  Widget renderWord(final int i) {
+    var word = matchedWords[i];
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
+    final cardBorder = isDarkMode ? Colors.white10 : const Color(0x1418BA7C);
+    final cardSubtle = isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF7F3);
+    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, 16 * (1 - _fadeAnimation.value)),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4.5),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
+                  color: cardBorder,
+                  width: 1.2,
                 ),
+              ),
+              child: Material(
+                color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                   onTap: () async {
-                    if (spell.text.trim().isEmpty) return;
                     try {
-                      // 先通过spell查找单词ID，然后使用新的查词方法
-                      var result = await WordBo().searchWordLocalOnly(spell.text);
-                      if (result.word == null) {
-                        ToastUtil.error("单词 ${spell.text} 不存在");
+                      var result = await WordBo().searchWordById(word.id!, null);
+                      if (!context.mounted) return;
+                      if (result.word != null) {
+                        context.push('/word_detail', extra: WordDetailPageArgs(result.word!, false, null, false));
                       } else {
-                        // 使用新的根据ID查词方法，用户ID为空表示查词模式
-                        var fullResult = await WordBo().searchWordById(result.word!.id!, null);
-                        if (!context.mounted) return;
-                        if (fullResult.word != null) {
-                          context.push('/word_detail', extra: WordDetailPageArgs(fullResult.word!, false, null, false));
-                        } else {
-                          context.push('/word_detail', extra: WordDetailPageArgs(result.word!, false, null, false));
-                        }
+                        context.push('/word_detail', extra: WordDetailPageArgs(word, true, null, false));
                       }
                     } catch (e, st) {
-                      ErrorHandler.handleDatabaseError(e, st, operation: '本地查词');
+                      ErrorHandler.handleDatabaseError(e, st, operation: '根据ID查词');
+                      if (!context.mounted) return;
+                      context.push('/word_detail', extra: WordDetailPageArgs(word, true, null, false));
                     }
                   },
                   child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Icon(
-                      Icons.search,
-                      color: isDarkMode ? Colors.white : AppTheme.primaryColor,
-                      size: 20,
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  _buildHighlightedSpell(word.spell, spell.text.trim(), isDarkMode),
+                                  if (word.mergedPronounce.isNotEmpty) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: cardSubtle,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '[${word.mergedPronounce}]',
+                                        style: TextStyle(
+                                          color: textSub,
+                                          fontSize: 12,
+                                          fontFamily: 'NotoSans',
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        textScaler: const TextScaler.linear(1.0),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            // 发音小喇叭按钮
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                StudyAudioSessionController().playWordSound(word);
+                              },
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                margin: const EdgeInsets.only(right: 6),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFE8F8F1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.volume_up_rounded,
+                                  size: 16,
+                                  color: accentGreen,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              size: 18,
+                              color: isDarkMode ? Colors.white24 : Colors.black26,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: cardSubtle,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: _buildMeaningWithTags(word.getMeaningStr(), isDarkMode),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF5F9F7);
+    final searchBoxBg = isDarkMode ? const Color(0xFF172623) : Colors.white;
+    final searchBoxBorder = isDarkMode
+        ? (_focusNode.hasFocus ? const Color(0xFF2CD88F) : const Color(0xFF233B35))
+        : (_focusNode.hasFocus ? const Color(0xFF18BA7C) : const Color(0xFFD1EADE));
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        toolbarHeight: 68,
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        titleSpacing: 0,
+        automaticallyImplyLeading: false,
+        title: Container(
+          height: 46,
+          margin: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: searchBoxBg,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: searchBoxBorder,
+              width: _focusNode.hasFocus ? 1.6 : 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _focusNode.hasFocus
+                    ? accentGreen.withValues(alpha: isDarkMode ? 0.2 : 0.15)
+                    : Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
+                blurRadius: _focusNode.hasFocus ? 10 : 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 14),
+              Icon(
+                Icons.search_rounded,
+                color: accentGreen,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: spell,
+                  focusNode: _focusNode,
+                  onChanged: onSearchTextChanged,
+                  onSubmitted: (_) => _performExactSearch(),
+                  style: TextStyle(
+                    color: textMain,
+                    fontSize: 15,
+                    fontFamily: 'NotoSansSC',
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: '输入单词或中文释义...',
+                    hintStyle: TextStyle(
+                      color: (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691)).withValues(alpha: 0.8),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                ),
+              ),
+              if (spell.text.isNotEmpty)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    spell.clear();
+                    onSearchTextChanged('');
+                  },
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    margin: const EdgeInsets.only(right: 6),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.06),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 13,
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                    ),
+                  ),
+                ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _performExactSearch,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  margin: const EdgeInsets.only(right: 4),
+                  decoration: BoxDecoration(
+                    color: accentGreen,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Text(
+                    '查词',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -388,14 +596,13 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             ? _buildEmptyState()
             : ListView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(12, 16, 16, 0),
+                padding: const EdgeInsets.only(top: 6, bottom: 20),
                 itemCount: matchedWords.length,
                 itemBuilder: (context, index) => renderWord(index),
-                // 性能优化设置
                 // ignore: deprecated_member_use
-                cacheExtent: 1000.0, // 预缓存范围
-                addAutomaticKeepAlives: false, // 不自动保持状态
-                addRepaintBoundaries: true, // 添加重绘边界
+                cacheExtent: 1000.0,
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: true,
               ),
       ),
     );
@@ -403,79 +610,209 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
 
   Widget _buildEmptyState() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
+    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final chipBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
+    final chipBorder = isDarkMode ? Colors.white10 : const Color(0x1818BA7C);
 
+    if (spell.text.trim().isNotEmpty) {
+      // 搜索无结果态
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF172623) : const Color(0xFFEBF7F2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.search_off_rounded,
+                size: 32,
+                color: textSub,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '未找到相关单词',
+              style: TextStyle(
+                color: textMain,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '可尝试输入完整单词拼写或核心释义',
+              style: TextStyle(
+                color: textSub,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 默认空状态：插画 + 高频词推荐 + 词根探索
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
         opacity: _fadeAnimation,
-        child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey[100]!.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDarkMode ? Colors.grey[700]!.withValues(alpha: 0.2) : Colors.grey[300]!.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: GestureDetector(
-                  onTap: () {
-                    // 聚焦到输入框
-                    _focusNode.requestFocus();
-                  },
-                  child: Icon(
-                    spell.text.trim().isEmpty ? Icons.search_rounded : Icons.search_off_rounded,
-                    size: 48,
-                    color: textColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                spell.text.trim().isEmpty ? '输入单词开始查词' : '未找到相关单词',
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 18,
-                  fontFamily: 'NotoSansSC',
-                  height: 1.4,
-                  fontWeight: FontWeight.w500,
-                ),
-                textScaler: const TextScaler.linear(1.0),
-              ),
-              if (spell.text.trim().isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.2) : Colors.grey[100]!.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDarkMode ? Colors.grey[700]!.withValues(alpha: 0.2) : Colors.grey[300]!.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    '试试输入完整单词或中文释义',
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 14,
-                      fontFamily: 'NotoSansSC',
-                      height: 1.4,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    textScaler: const TextScaler.linear(1.0),
-                  ),
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 顶部插画展台
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFE8F8F1),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: accentGreen.withValues(alpha: 0.12),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
                 ),
               ],
-            ],
+            ),
+            child: Icon(
+              Icons.manage_search_rounded,
+              size: 34,
+              color: accentGreen,
+            ),
           ),
-        ),
+          const SizedBox(height: 14),
+          Text(
+            '查单词 · 找例句',
+            style: TextStyle(
+              color: textMain,
+              fontSize: 16.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '支持输入英文拼写、中文释义或模糊前缀',
+            style: TextStyle(
+              color: textSub,
+              fontSize: 12.5,
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // 高频热词推荐
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '🔥 高频词推荐',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: textSub,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _hotWords.map((word) {
+                return InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _applySearchQuery(word),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: chipBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: chipBorder, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1.5),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      word,
+                      style: TextStyle(
+                        color: textMain,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 词根探索
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '💡 词根探索',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: textSub,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _roots.map((item) {
+                return InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _applySearchQuery(item['root']!),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: chipBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: chipBorder, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1.5),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      item['label']!,
+                      style: TextStyle(
+                        color: textMain,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
+    ),
+    ),
     );
   }
 }
