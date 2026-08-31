@@ -1384,7 +1384,7 @@ class _MePageState extends State<MePage> {
                 final fetchPercentText = (fetchProgress * 100).toStringAsFixed(1);
 
                 final masteredColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-                final fetchColor = isDarkModeEnabled ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9);
+                final fetchColor = isDarkModeEnabled ? const Color(0xFF6EE7B7) : const Color(0xFF34D399);
 
                 return Container(
                   padding: const EdgeInsets.all(12),
