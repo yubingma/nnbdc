@@ -3,66 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>登录 - 扇贝单词风格极致美学原型</title>
+  <title>登录 - 泡泡单词极致美学原型</title>
   <style>
     :root {
-      /* 扇贝单词经典护眼青绿渐变体系 */
-      --bg-top: #18BA7C;
-      --bg-mid: #129E69;
-      --bg-bottom: #0D7A51;
+      /* 【方案一（默认推荐）：温润护眼纸白极简流】
+         蓝色泡泡在纯净纸白背景上自然呼吸，搭配微信绿/扇贝绿主行动按钮，极度通透、高级、护眼 */
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text-main: #182B28;
+      --text-sub: #64748B;
+      --text-muted: #94A3B8;
       
+      --logo-shadow: 0 10px 30px rgba(74, 144, 226, 0.18), 0 2px 8px rgba(0, 0, 0, 0.04);
+      --btn-wechat: linear-gradient(135deg, #18BA7C 0%, #109E69 100%);
+      --btn-wechat-shadow: 0 10px 24px -4px rgba(24, 186, 124, 0.35);
+      
+      --btn-apple: #111827;
+      --btn-apple-shadow: 0 10px 24px -4px rgba(17, 24, 39, 0.25);
+      
+      --btn-minor-color: #64748B;
+      --minor-divider: #E2E8F0;
+      
+      --check-border: #CBD5E1;
+      --check-bg: #FFFFFF;
+      --check-color: #18BA7C;
+    }
+
+    /* 【方案二：清透天青蓝流】与蓝色泡泡同色系，浑然一体 */
+    [data-theme="sky-blue"] {
+      --bg: linear-gradient(180deg, #38BDF8 0%, #0284C7 50%, #0369A1 100%);
+      --card-bg: rgba(255, 255, 255, 0.15);
+      --text-main: #FFFFFF;
+      --text-sub: #BAE6FD;
+      --text-muted: rgba(255, 255, 255, 0.7);
+      
+      --logo-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+      --btn-wechat: linear-gradient(135deg, #07C160 0%, #05A04F 100%);
+      --btn-wechat-shadow: 0 10px 24px -4px rgba(7, 193, 96, 0.4);
+      
+      --btn-apple: #000000;
+      --btn-apple-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.3);
+      
+      --btn-minor-color: #E0F2FE;
+      --minor-divider: rgba(255, 255, 255, 0.3);
+      
+      --check-border: rgba(255, 255, 255, 0.6);
+      --check-bg: rgba(255, 255, 255, 0.1);
+      --check-color: #0284C7;
+    }
+
+    /* 【方案三：满屏扇贝绿（对比体验原版）】 */
+    [data-theme="shanbay-green"] {
+      --bg: linear-gradient(180deg, #18BA7C 0%, #129E69 50%, #0D7A51 100%);
+      --card-bg: rgba(255, 255, 255, 0.15);
       --text-main: #FFFFFF;
       --text-sub: #D1FAE5;
       --text-muted: rgba(255, 255, 255, 0.7);
       
-      --btn-wechat-1: #07C160;
-      --btn-wechat-2: #05A04F;
+      --logo-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+      --btn-wechat: linear-gradient(135deg, #07C160 0%, #05A04F 100%);
+      --btn-wechat-shadow: 0 10px 24px -4px rgba(7, 193, 96, 0.4);
+      
       --btn-apple: #000000;
-      --btn-email-bg: rgba(255, 255, 255, 0.15);
-      --btn-email-border: rgba(255, 255, 255, 0.3);
+      --btn-apple-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.3);
       
-      --shadow-wechat: 0 10px 24px -4px rgba(7, 193, 96, 0.4);
-      --shadow-apple: 0 10px 24px -4px rgba(0, 0, 0, 0.3);
+      --btn-minor-color: #D1FAE5;
+      --minor-divider: rgba(255, 255, 255, 0.3);
+      
+      --check-border: rgba(255, 255, 255, 0.6);
+      --check-bg: rgba(255, 255, 255, 0.1);
+      --check-color: #18BA7C;
     }
 
-    /* 浅色纸质极简模式（可切换体验） */
-    [data-theme="light-card"] {
-      --bg-top: #F5F9F7;
-      --bg-mid: #EBF5F0;
-      --bg-bottom: #DEF0E8;
-      
-      --text-main: #182B28;
-      --text-sub: #48635F;
-      --text-muted: #7E9B96;
-      
-      --btn-wechat-1: #18BA7C;
-      --btn-wechat-2: #14A06B;
-      --btn-apple: #182B28;
-      --btn-email-bg: #FFFFFF;
-      --btn-email-border: rgba(24, 186, 124, 0.2);
-      
-      --shadow-wechat: 0 10px 24px -4px rgba(24, 186, 124, 0.35);
-      --shadow-apple: 0 10px 24px -4px rgba(24, 43, 40, 0.2);
-    }
-
-    /* 暗黑深翠模式 */
+    /* 暗黑护眼模式 */
     [data-theme="dark"] {
-      --bg-top: #0E1514;
-      --bg-mid: #0B1C17;
-      --bg-bottom: #071410;
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --text-main: #F8FAFC;
+      --text-sub: #94A3B8;
+      --text-muted: #64748B;
       
-      --text-main: #EAF7F3;
-      --text-sub: #8DA8A3;
-      --text-muted: #5D7975;
+      --logo-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+      --btn-wechat: linear-gradient(135deg, #2CD88F 0%, #18BA7C 100%);
+      --btn-wechat-shadow: 0 10px 24px -4px rgba(44, 216, 143, 0.3);
       
-      --btn-wechat-1: #2CD88F;
-      --btn-wechat-2: #1EB876;
-      --btn-apple: #141E1D;
-      --btn-email-bg: rgba(255, 255, 255, 0.06);
-      --btn-email-border: rgba(255, 255, 255, 0.1);
+      --btn-apple: #1E293B;
+      --btn-apple-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5);
       
-      --shadow-wechat: 0 10px 24px -4px rgba(44, 216, 143, 0.3);
-      --shadow-apple: 0 10px 24px -4px rgba(0, 0, 0, 0.5);
+      --btn-minor-color: #94A3B8;
+      --minor-divider: #334155;
+      
+      --check-border: #475569;
+      --check-bg: #1E293B;
+      --check-color: #2CD88F;
     }
 
     * {
@@ -120,7 +153,7 @@
       width: 100%;
       max-width: 412px;
       height: 820px;
-      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 45%, var(--bg-bottom) 100%);
+      background: var(--bg);
       border-radius: 40px;
       box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
       overflow: hidden;
@@ -128,44 +161,6 @@
       flex-direction: column;
       position: relative;
       transition: all 0.4s ease;
-    }
-
-    /* 背景装饰光晕与呼吸气泡 */
-    .decor-glow-1 {
-      position: absolute;
-      top: -60px;
-      right: -60px;
-      width: 260px;
-      height: 260px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
-      pointer-events: none;
-    }
-    .decor-glow-2 {
-      position: absolute;
-      bottom: 120px;
-      left: -80px;
-      width: 300px;
-      height: 300px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(24, 186, 124, 0.3) 0%, rgba(24, 186, 124, 0) 70%);
-      pointer-events: none;
-    }
-
-    .bubble {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(2px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      animation: floatUp 8s infinite linear;
-      pointer-events: none;
-    }
-    @keyframes floatUp {
-      0% { transform: translateY(840px) scale(0.8); opacity: 0; }
-      20% { opacity: 0.6; }
-      80% { opacity: 0.6; }
-      100% { transform: translateY(-100px) scale(1.1); opacity: 0; }
     }
 
     /* 状态栏 */
@@ -196,19 +191,23 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-top: 40px;
+      margin-top: 50px;
     }
     .logo-circle-container {
-      width: 86px;
-      height: 86px;
+      width: 88px;
+      height: 88px;
       border-radius: 50%;
       background: #FFFFFF;
-      padding: 5px;
+      padding: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
-      margin-bottom: 24px;
+      box-shadow: var(--logo-shadow);
+      margin-bottom: 22px;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .logo-circle-container:hover {
+      transform: scale(1.05);
     }
     .logo-img {
       width: 76px;
@@ -218,18 +217,17 @@
       object-fit: cover;
     }
     .app-name {
-      font-size: 30px;
+      font-size: 28px;
       font-weight: 900;
       color: var(--text-main);
       letter-spacing: 2px;
-      margin-bottom: 8px;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+      margin-bottom: 6px;
     }
     .app-slogan {
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       color: var(--text-sub);
-      letter-spacing: 3px;
+      letter-spacing: 2.5px;
     }
 
     /* 操作按钮组 */
@@ -260,24 +258,16 @@
 
     /* 微信登录 */
     .btn-wechat {
-      background: linear-gradient(135deg, var(--btn-wechat-1), var(--btn-wechat-2));
+      background: var(--btn-wechat);
       color: #FFFFFF;
-      box-shadow: var(--shadow-wechat);
+      box-shadow: var(--btn-wechat-shadow);
     }
 
     /* Apple 登录 */
     .btn-apple {
       background: var(--btn-apple);
       color: #FFFFFF;
-      box-shadow: var(--shadow-apple);
-    }
-
-    /* 邮箱验证码登录 */
-    .btn-email {
-      background: var(--btn-email-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--btn-email-border);
-      color: var(--text-main);
+      box-shadow: var(--btn-apple-shadow);
     }
 
     /* 次级小按钮行（邮箱 / 游客） */
@@ -286,12 +276,12 @@
       justify-content: center;
       align-items: center;
       gap: 12px;
-      margin-top: 6px;
+      margin-top: 8px;
     }
     .minor-link {
       font-size: 13px;
       font-weight: 600;
-      color: var(--text-sub);
+      color: var(--btn-minor-color);
       background: none;
       border: none;
       cursor: pointer;
@@ -304,7 +294,7 @@
     .minor-divider {
       width: 1px;
       height: 12px;
-      background: rgba(255, 255, 255, 0.3);
+      background: var(--minor-divider);
     }
 
     /* 协议勾选行 */
@@ -313,7 +303,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      margin-top: 20px;
+      margin-top: 24px;
       font-size: 11px;
       color: var(--text-muted);
       cursor: pointer;
@@ -323,18 +313,18 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      border: 1.5px solid rgba(255, 255, 255, 0.6);
+      border: 1.5px solid var(--check-border);
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.2s;
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--check-bg);
       flex-shrink: 0;
     }
     .agreement-checkbox.checked {
       background: #FFFFFF;
-      border-color: #FFFFFF;
-      color: #18BA7C;
+      border-color: var(--check-color);
+      color: var(--check-color);
     }
     .agreement-text a {
       color: var(--text-main);
@@ -347,24 +337,15 @@
 
   <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
-    <button onclick="toggleVisualTheme()">
-      <span id="theme-icon">🌿</span> <span id="theme-text">扇贝青翠渐变</span>
+    <button onclick="cycleThemeScheme()">
+      <span id="scheme-icon">📄</span> <span id="scheme-text">温润纸白极简（推荐）</span>
     </button>
     <button onclick="toggleDarkMode()">
-      <span id="dark-icon">🌙</span> <span id="dark-text">暗黑深翠</span>
+      <span id="dark-icon">🌙</span> <span id="dark-text">暗黑模式</span>
     </button>
   </div>
 
   <div class="device-mockup" id="mockup-container">
-    <div class="decor-glow-1"></div>
-    <div class="decor-glow-2"></div>
-
-    <!-- 呼吸微气泡 -->
-    <div class="bubble" style="width: 32px; height: 32px; left: 15%; animation-duration: 9s; animation-delay: 0s;"></div>
-    <div class="bubble" style="width: 20px; height: 20px; left: 75%; animation-duration: 7s; animation-delay: 2s;"></div>
-    <div class="bubble" style="width: 40px; height: 40px; left: 45%; animation-duration: 11s; animation-delay: 4s;"></div>
-    <div class="bubble" style="width: 16px; height: 16px; left: 85%; animation-duration: 6s; animation-delay: 1s;"></div>
-
     <!-- 状态栏 -->
     <div class="status-bar">
       <span>09:41</span>
@@ -430,7 +411,12 @@
 
   <script>
     let isAgreed = true;
-    let currentThemeMode = 'gradient'; // 'gradient' | 'light-card' | 'dark'
+    const schemes = [
+      { id: 'default', name: '温润纸白极简（推荐）', icon: '📄' },
+      { id: 'sky-blue', name: '清透天青蓝渐变', icon: '🌊' },
+      { id: 'shanbay-green', name: '满屏扇贝绿（原版对比）', icon: '🌿' }
+    ];
+    let schemeIdx = 0;
 
     function toggleAgreement() {
       isAgreed = !isAgreed;
@@ -446,20 +432,19 @@
       alert('正在唤起: ' + type);
     }
 
-    function toggleVisualTheme() {
+    function cycleThemeScheme() {
+      schemeIdx = (schemeIdx + 1) % schemes.length;
+      const item = schemes[schemeIdx];
       const root = document.documentElement;
-      const icon = document.getElementById('theme-icon');
-      const text = document.getElementById('theme-text');
 
-      if (root.getAttribute('data-theme') === 'light-card') {
+      if (item.id === 'default') {
         root.removeAttribute('data-theme');
-        icon.textContent = '🌿';
-        text.textContent = '扇贝青翠渐变';
       } else {
-        root.setAttribute('data-theme', 'light-card');
-        icon.textContent = '📄';
-        text.textContent = '温润纸白极简';
+        root.setAttribute('data-theme', item.id);
       }
+
+      document.getElementById('scheme-icon').textContent = item.icon;
+      document.getElementById('scheme-text').textContent = item.name;
     }
 
     function toggleDarkMode() {
@@ -470,7 +455,7 @@
       if (root.getAttribute('data-theme') === 'dark') {
         root.removeAttribute('data-theme');
         darkIcon.textContent = '🌙';
-        darkText.textContent = '暗黑深翠';
+        darkText.textContent = '暗黑模式';
       } else {
         root.setAttribute('data-theme', 'dark');
         darkIcon.textContent = '☀️';
