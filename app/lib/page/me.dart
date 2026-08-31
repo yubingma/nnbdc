@@ -48,7 +48,6 @@ import 'package:provider/provider.dart';
 
 import '../global.dart';
 import '../state.dart';
-import '../theme/app_theme.dart';
 import '../util/level_util.dart';
 import '../constants.dart';
 import '../config.dart';
@@ -142,14 +141,14 @@ class _MePageState extends State<MePage> {
             Material(
               type: MaterialType.transparency,
               child: ListTile(
-              leading: Icon(Icons.camera_alt_rounded, color: AppTheme.primaryColor),
+              leading: const Icon(Icons.camera_alt_rounded, color: Color(0xFF18BA7C)),
               title: const Text('拍照', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             )),
             Material(
               type: MaterialType.transparency,
               child: ListTile(
-              leading: Icon(Icons.photo_library_rounded, color: AppTheme.primaryColor),
+              leading: const Icon(Icons.photo_library_rounded, color: Color(0xFF18BA7C)),
               title: const Text('从相册选择', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             )),
@@ -873,7 +872,7 @@ class _MePageState extends State<MePage> {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
     final subtitleColor = isDarkModeEnabled ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final accentColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+    final accentColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
     final cardColor = isDarkModeEnabled ? const Color(0xFF131E1C) : Colors.white;
     final borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
     final subtleBgColor = isDarkModeEnabled ? const Color(0xFF1B2825) : const Color(0xFFEDF5F2);
@@ -901,7 +900,7 @@ class _MePageState extends State<MePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1.1 头像和昵称行 (紧凑对齐)
+              // 1.1 头像和昵称行 (紧凑对齐，1:1 对齐原型头像光圈+小笔头)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -913,22 +912,57 @@ class _MePageState extends State<MePage> {
                         context.go('/login');
                       }
                     },
-                    child: Container(
-                      padding: const EdgeInsets.all(2.0),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: accentColor.withValues(alpha: 0.6), width: 2),
-                      ),
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF1F5F9),
-                        backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
-                            ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
-                            : null,
-                        child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
-                            ? Icon(Icons.person_rounded, color: subtitleColor, size: 26)
-                            : null,
-                      ),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(2.0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: accentColor.withValues(alpha: 0.8), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 26,
+                            backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF1F5F9),
+                            backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
+                                ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
+                                : null,
+                            child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
+                                ? Icon(Icons.person_rounded, color: subtitleColor, size: 26)
+                                : null,
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDarkModeEnabled ? const Color(0xFF131E1C) : Colors.white,
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.edit_rounded,
+                                size: 10,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -1350,7 +1384,7 @@ class _MePageState extends State<MePage> {
                 final masteryPercentText = (masteryProgress * 100).toStringAsFixed(1);
                 final fetchPercentText = (fetchProgress * 100).toStringAsFixed(1);
 
-                final masteredColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+                final masteredColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
                 final fetchColor = isDarkModeEnabled ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9);
 
                 return Container(
@@ -1908,9 +1942,9 @@ class _MePageState extends State<MePage> {
                     // 标题栏
                     Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A90E2),
-                        borderRadius: const BorderRadius.only(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF18BA7C),
+                        borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
@@ -2564,7 +2598,7 @@ class _MePageState extends State<MePage> {
         builder: (context) => Theme(
               data: Theme.of(context).copyWith(
                 appBarTheme: AppBarTheme(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: const Color(0xFF18BA7C),
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -2833,7 +2867,7 @@ class _DictCardState extends State<DictCard> {
 
     final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
     final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final masteredColor = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+    final masteredColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
     final fetchColor = isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399);
     final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
 
@@ -3166,10 +3200,10 @@ class _DictCardState extends State<DictCard> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color: const Color(0xFF18BA7C).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.remove_circle_outline, color: AppTheme.primaryColor, size: 40),
+                  child: const Icon(Icons.remove_circle_outline, color: Color(0xFF18BA7C), size: 40),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -3202,7 +3236,7 @@ class _DictCardState extends State<DictCard> {
                       child: ElevatedButton(
                         onPressed: () => Navigator.of(context).pop(true),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: const Color(0xFF18BA7C),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
