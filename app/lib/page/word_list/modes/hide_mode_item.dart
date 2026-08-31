@@ -80,6 +80,16 @@ class HideModeItem extends StatelessWidget {
       return answerContent;
     }
 
+    final btnBg = isDarkMode
+        ? const Color(0xFF1B2E29)
+        : const Color(0xFFEBF7F2);
+    final btnBorder = isDarkMode
+        ? const Color(0xFF264A3E)
+        : const Color(0xFFC7EBDD);
+    final btnTextColor = isDarkMode
+        ? const Color(0xFF2CD88F)
+        : const Color(0xFF18BA7C);
+
     return Stack(
       alignment: Alignment.centerLeft,
       children: [
@@ -88,14 +98,12 @@ class HideModeItem extends StatelessWidget {
           child: answerContent,
         ),
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
           decoration: BoxDecoration(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.black.withValues(alpha: 0.03),
-            borderRadius: BorderRadius.circular(8),
+            color: btnBg,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDarkMode ? Colors.white10 : Colors.black12,
+              color: btnBorder,
               width: 1,
             ),
           ),
@@ -104,16 +112,16 @@ class HideModeItem extends StatelessWidget {
             children: [
               Icon(
                 Icons.visibility_outlined,
-                size: 14,
-                color: isDarkMode ? Colors.white38 : Colors.black38,
+                size: 13,
+                color: btnTextColor,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Text(
-                isEnglish ? '点击显示英文' : '点击显示中文',
+                isEnglish ? '点击显示英文' : '点击显示释义',
                 style: TextStyle(
-                  fontSize: 13,
-                  color: isDarkMode ? Colors.white54 : Colors.black54,
-                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  color: btnTextColor,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

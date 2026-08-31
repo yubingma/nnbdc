@@ -1929,6 +1929,10 @@ class WordListPageState extends State<WordListPage>
       int group = 0}) {
     final isAsrReady = isBookmarked && asr.state == AsrState.started;
 
+    if (!isAsrReady && group == 0) {
+      return child;
+    }
+
     return AnimatedBuilder(
       animation: _glowController,
       builder: (context, child) {
@@ -1952,20 +1956,11 @@ class WordListPageState extends State<WordListPage>
           ];
         }
 
-        final defaultBorder =
-            isBookmarked
-                ? (isAsrReady
-                    ? AppTheme.gradientStartColor.withValues(alpha: 0.5)
-                    : const Color(0xFF0097A7))
-                : Colors.transparent;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        return Container(
           decoration: BoxDecoration(
             color: _groupBackgroundColor(group, isDarkMode),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: shadows,
-            border: Border.all(color: defaultBorder, width: 1.8),
           ),
           child: child,
         );
@@ -2463,7 +2458,7 @@ class WordListPageState extends State<WordListPage>
         Scaffold(
           resizeToAvoidBottomInset: false, // 禁止分屏或键盘变化导致的布局挤压，提升 iPad 稳定性
           backgroundColor:
-              isDarkMode ? const Color(0xFF121212) : const Color(0xFFF9FAFB),
+              isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF5F9F7),
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,

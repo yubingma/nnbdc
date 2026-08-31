@@ -73,27 +73,31 @@ class HandwritingModeItem extends StatelessWidget {
   }
 
   Widget _buildReadOnlyTextField() {
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final textNormal = isDarkMode ? Colors.white : const Color(0xFF152724);
+
     return TextField(
       readOnly: true,
       enableInteractiveSelection: false,
       controller: word.spellController,
       decoration: InputDecoration(
         isCollapsed: true,
-        border: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+        border: UnderlineInputBorder(borderSide: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black26)),
+        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black26)),
+        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: accentGreen)),
         contentPadding: EdgeInsets.zero,
         hintText: '请在屏幕手写拼写',
-        hintStyle: TextStyle(fontSize: 14, color: isDarkMode ? Colors.white24 : Colors.black26),
+        hintStyle: TextStyle(fontSize: 13, color: isDarkMode ? Colors.white38 : const Color(0xFF8EA8A3)),
       ),
       onTap: () => actions.onWordTap(word, index),
       style: TextStyle(
         fontSize: 16,
+        fontWeight: FontWeight.w600,
         color: Util.equalsIgnoreCase(word.word.spell, word.spellController.text)
             ? word.isAnswerProvidedBySystem
-                ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
-                : Colors.green
-            : Colors.red,
+                ? textNormal
+                : accentGreen
+            : Colors.redAccent,
       ),
     );
   }
@@ -109,22 +113,21 @@ class HandwritingModeItem extends StatelessWidget {
   }
 
   Widget _buildHandwritingButton() {
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => actions.onHandwritingPressed(word, index),
       child: Container(
-        width: 60,
+        width: 50,
         color: Colors.transparent,
         alignment: Alignment.center,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: Icon(
-            Icons.edit_rounded,
-            size: 20,
-            color: isBookmarked
-                ? const Color(0xFF0097A7)
-                : (isDarkMode ? Colors.white38 : Colors.black38),
-          ),
+        child: Icon(
+          Icons.edit_rounded,
+          size: 20,
+          color: isBookmarked
+              ? accentGreen
+              : (isDarkMode ? Colors.white38 : const Color(0xFF789691)),
         ),
       ),
     );

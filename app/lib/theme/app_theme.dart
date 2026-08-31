@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // 新的主题色方案 - 基于开始学习按钮的蓝色系
-  // 主主题色：蓝色，与开始学习按钮保持一致
-  static const Color primaryColor = Color(0xFF4A90E2);
+  // 扇贝护眼主题绿体系
+  // 主品牌色：扇贝翡翠绿
+  static const Color primaryColor = Color(0xFF18BA7C);
 
-  // 主题色的深色版本（用于按钮等）
-  static const Color primaryDarkColor = Color(0xFF357ABD);
+  // 主题色的深色版本（用于按钮阴影、渐变终点等）
+  static const Color primaryDarkColor = Color(0xFF109E69);
 
-  // 主题色的浅色版本
-  static const Color primaryLightColor = Color(0xFF5BA3F5);
+  // 主题色的浅色版本（用于悬浮、高亮等）
+  static const Color primaryLightColor = Color(0xFF2CD88F);
 
   // 渐变开始色
-  static const Color gradientStartColor = Color(0xFF4A90E2);
+  static const Color gradientStartColor = Color(0xFF18BA7C);
 
   // 渐变结束色
-  static const Color gradientEndColor = Color(0xFF357ABD);
+  static const Color gradientEndColor = Color(0xFF109E69);
 
   // 创建亮色主题
   static ThemeData lightTheme() {

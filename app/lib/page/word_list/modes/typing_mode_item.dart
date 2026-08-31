@@ -69,6 +69,9 @@ class TypingModeItem extends StatelessWidget {
   }
 
   Widget _buildTextField() {
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final textNormal = isDarkMode ? Colors.white : const Color(0xFF152724);
+
     return AnimatedBuilder(
       animation: word.focusNode,
       builder: (context, child) {
@@ -81,20 +84,21 @@ class TypingModeItem extends StatelessWidget {
           keyboardType: TextInputType.visiblePassword,
           decoration: InputDecoration(
             isCollapsed: true,
-            border: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-            enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0097A7))),
+            border: UnderlineInputBorder(borderSide: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black26)),
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black26)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: accentGreen, width: 1.5)),
             contentPadding: EdgeInsets.zero,
           ),
           onTap: () => actions.onWordTap(word, index),
           onChanged: (value) => actions.onSpellChanged(word, index, value),
           style: TextStyle(
             fontSize: 16,
+            fontWeight: FontWeight.w600,
             color: Util.equalsIgnoreCase(word.word.spell, word.spellController.text)
                 ? word.isAnswerProvidedBySystem
-                    ? (isDarkMode ? Colors.white : const Color(0xFF1F2937))
-                    : Colors.green
-                : Colors.red,
+                    ? textNormal
+                    : accentGreen
+                : Colors.redAccent,
           ),
         );
       },

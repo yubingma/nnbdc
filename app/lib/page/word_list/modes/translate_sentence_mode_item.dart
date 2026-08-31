@@ -146,18 +146,18 @@ class TranslateSentenceModeItem extends StatelessWidget {
           sentenceEn,
           TextStyle(
             color: isBookmarked
-                ? const Color(0xFF0097A7)
-                : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
+                ? (isDarkMode ? Colors.white : const Color(0xFF152724))
+                : (isDarkMode ? const Color(0xFFC8DCD8) : const Color(0xFF334B46)),
             fontSize: 14.5,
             fontWeight: FontWeight.w400,
             height: 1.35,
           ),
           boldStyle: TextStyle(
             color: isBookmarked
-                ? const Color(0xFF0097A7)
-                : (isDarkMode ? Colors.white : const Color(0xFF111827)),
+                ? (isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C))
+                : (isDarkMode ? Colors.white : const Color(0xFF152724)),
             fontSize: 14.5,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w800,
             height: 1.35,
           ),
         ),

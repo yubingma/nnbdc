@@ -4,6 +4,10 @@ import 'package:nnbdc/util/word_util.dart';
 /// 词表页面通用的子组件（如单词标题、释义等）
 class ModeComponents {
   static Widget buildWordHeader(WordWrapper word, bool isBookmarked, bool isDarkMode) {
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -16,27 +20,25 @@ class ModeComponents {
             softWrap: false,
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
-              color: isBookmarked
-                  ? const Color(0xFF0097A7)
-                  : (isDarkMode ? Colors.white : const Color(0xFF1F2937)),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-              letterSpacing: 0.3,
+              color: isBookmarked ? accentGreen : textMain,
+              fontSize: 16.5,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+              letterSpacing: 0.2,
             ),
           ),
         ),
         if (word.word.mergedPronounce.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             '[${word.word.mergedPronounce}]',
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
-              color: isDarkMode ? Colors.white38 : Colors.black38,
+              color: textSub,
               fontSize: 12,
               fontFamily: 'NotoSans',
               fontWeight: FontWeight.w400,
-              height: 1.3,
+              height: 1.2,
             ),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
@@ -48,6 +50,8 @@ class ModeComponents {
 
   static Widget buildWordMeaning(WordWrapper word, bool isDarkMode, {double topPadding = 8}) {
     final meaning = word.word.getMeaningStr();
+    final textMeaning = isDarkMode ? const Color(0xFFC8DCD8) : const Color(0xFF334B46);
+
     return Padding(
       padding: EdgeInsets.only(top: topPadding),
       child: Container(
@@ -56,11 +60,11 @@ class ModeComponents {
           meaning.isNotEmpty ? meaning : "（暂无释义）",
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13.5,
             fontWeight: FontWeight.w400,
-            color: isDarkMode ? const Color(0xFFD1D5DB) : const Color(0xFF374151),
-            height: 1.5,
-            letterSpacing: 0.3,
+            color: textMeaning,
+            height: 1.45,
+            letterSpacing: 0.15,
           ),
         ),
       ),

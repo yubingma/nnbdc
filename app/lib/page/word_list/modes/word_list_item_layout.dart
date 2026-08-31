@@ -4,7 +4,7 @@ import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
 import '../word_list_actions.dart';
 
-/// 单词列表项的通用布局外壳，处理 Slidable 和左侧边栏
+/// 单词列表项的通用布局外壳，处理 Slidable、扇贝护眼卡片与方案 A 环形熟练度微光环
 class WordListItemLayout extends StatelessWidget {
   final WordWrapper word;
   final int index;
@@ -39,31 +39,52 @@ class WordListItemLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 确定背景色
-    final bgColor = isDarkMode
-        ? (isBookmarked ? const Color(0xFF12353A) : const Color(0xFF1E1E1E))
-        : (isBookmarked ? const Color(0xFFE0F2F1) : Colors.white);
+    // 扇贝护眼双主题色彩
+    final cardBg = isDarkMode
+        ? (isBookmarked ? const Color(0xFF162B25) : const Color(0xFF13201D))
+        : (isBookmarked ? const Color(0xFFEFF9F4) : Colors.white);
 
-    // 获取状态颜色
-    Color? statusColor;
-    if (learningStatus == true) {
-      statusColor = const Color(0xFF4CAF50);
-    } else if (learningStatus == false) {
-      statusColor = Colors.orange;
-    }
+    final borderColor = isDarkMode
+        ? (isBookmarked ? const Color(0xFF2CD88F) : Colors.white10)
+        : (isBookmarked ? const Color(0xFF18BA7C) : const Color(0x1418BA7C));
 
-    Widget itemContent = ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        color: bgColor,
+    final cardShadow = isBookmarked
+        ? [
+            BoxShadow(
+              color: (isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C)).withValues(alpha: isDarkMode ? 0.2 : 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ]
+        : [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.02),
+              blurRadius: 6,
+              offset: const Offset(0, 1.5),
+            ),
+          ];
+
+    Widget itemContent = Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: borderColor,
+          width: isBookmarked ? 1.6 : 1.0,
+        ),
+        boxShadow: cardShadow,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              /// 1. 左侧序号和点
-              _buildLeftColumn(statusColor),
+              /// 1. 左侧序号与环形掌握度光环徽章
+              _buildLeftColumn(),
 
-              /// 2. 中间和右侧内容
+              /// 2. 中间和右侧单词释义与交互内容
               Expanded(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -98,46 +119,31 @@ class WordListItemLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildLeftColumn(Color? statusColor) {
+  Widget _buildLeftColumn() {
+    final sidebarBg = isDarkMode
+        ? (isBookmarked ? const Color(0xFF1B362F) : const Color(0xFF182623))
+        : (isBookmarked ? const Color(0xFFE2F4EB) : const Color(0xFFF4F9F6));
+
+    final dividerColor = isDarkMode ? Colors.white10 : const Color(0x1018BA7C);
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => actions.onWordTap(word, index),
       onLongPress: () => actions.onWordLongPress(word, index),
       child: Container(
-        width: 32,
-        color: isDarkMode
-            ? Colors.white.withValues(alpha: 0.15)
-            : const Color(0xFFE2E8F0),
+        width: 44,
+        decoration: BoxDecoration(
+          color: sidebarBg,
+          border: Border(
+            right: BorderSide(color: dividerColor, width: 1),
+          ),
+        ),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '${baseIndex + index + 1}',
-                textScaler: const TextScaler.linear(1.0),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 9,
-                  height: 1.0,
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode ? Colors.white38 : Colors.black38,
-                ),
-              ),
-              const SizedBox(height: 3),
-              if (statusColor != null)
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              if (showWordProgress)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: _buildWordProgress(width: 22),
-                ),
+              // 方案 A：环形熟练度微光环徽章（序号 + 熟练度光环二合一）
+              _buildRingMasteryBadge(),
               if (audioIndicator != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -150,29 +156,69 @@ class WordListItemLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildWordProgress({required double width}) {
-    // 进度计算逻辑修正
+  /// 方案 A：环形熟练度光环徽章
+  Widget _buildRingMasteryBadge() {
     final double current = word.currentProgress ?? 0;
     final double max = word.maxProgress ?? 100;
-    final progress = (current / max).clamp(0.0, 1.0);
-    
-    return Container(
-      width: width,
-      height: 2,
-      decoration: BoxDecoration(
-        color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(1),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: progress,
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF4DB6AC),
-            borderRadius: BorderRadius.circular(1),
+    double progressRatio = 0.0;
+
+    if (showWordProgress && max > 0) {
+      progressRatio = (current / max).clamp(0.0, 1.0);
+    } else if (learningStatus == true) {
+      progressRatio = 1.0;
+    } else if (learningStatus == false) {
+      progressRatio = 0.5;
+    }
+
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final trackColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.06);
+
+    final numColor = isBookmarked
+        ? accentGreen
+        : (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724));
+
+    return SizedBox(
+      width: 25,
+      height: 25,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 环形外弧
+          if (progressRatio > 0)
+            CircularProgressIndicator(
+              value: progressRatio,
+              strokeWidth: 2.2,
+              backgroundColor: trackColor,
+              valueColor: AlwaysStoppedAnimation(
+                progressRatio >= 1.0
+                    ? accentGreen
+                    : (isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399)),
+              ),
+            )
+          else
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: trackColor, width: 1.5),
+              ),
+            ),
+
+          // 中心序号
+          Text(
+            '${baseIndex + index + 1}',
+            textScaler: const TextScaler.linear(1.0),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: (baseIndex + index + 1) >= 1000 ? 7.5 : ((baseIndex + index + 1) >= 100 ? 8.5 : 9.5),
+              height: 1.0,
+              fontWeight: FontWeight.w800,
+              color: numColor,
+              fontFamily: 'Roboto',
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
+
