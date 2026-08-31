@@ -44,23 +44,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // 常用热词与词根探索推荐
-  static const List<String> _hotWords = [
-    'serendipity',
-    'ephemeral',
-    'resilient',
-    'ubiquitous',
-    'eloquent',
-    'lucid',
-  ];
-
-  static const List<Map<String, String>> _roots = [
-    {'root': 'bene', 'label': 'bene- (善/好)'},
-    {'root': 'mal', 'label': 'mal- (恶/坏)'},
-    {'root': 'spect', 'label': 'spect (看)'},
-    {'root': 'tract', 'label': 'tract (拉/引)'},
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -185,13 +168,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         curve: Curves.easeOutCubic,
       );
     }
-  }
-
-  void _applySearchQuery(String text) {
-    spell.text = text;
-    spell.selection = TextSelection.fromPosition(TextPosition(offset: text.length));
-    onSearchTextChanged(text);
-    _focusNode.requestFocus();
   }
 
   void _performExactSearch() async {
@@ -614,8 +590,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
     final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
     final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final chipBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
-    final chipBorder = isDarkMode ? Colors.white10 : const Color(0x1818BA7C);
 
     if (spell.text.trim().isNotEmpty) {
       // 搜索无结果态
@@ -704,110 +678,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             style: TextStyle(
               color: textSub,
               fontSize: 12.5,
-            ),
-          ),
-          const SizedBox(height: 28),
-
-          // 高频热词推荐
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '🔥 高频词推荐',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: textSub,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _hotWords.map((word) {
-                return InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _applySearchQuery(word),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: chipBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: chipBorder, width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1.5),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      word,
-                      style: TextStyle(
-                        color: textMain,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // 词根探索
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '💡 词根探索',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: textSub,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _roots.map((item) {
-                return InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => _applySearchQuery(item['root']!),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: chipBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: chipBorder, width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1.5),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      item['label']!,
-                      style: TextStyle(
-                        color: textMain,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
             ),
           ),
         ],
