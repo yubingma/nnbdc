@@ -33,7 +33,6 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
 
   // 轻微呼吸动画
   late AnimationController _splashController;
-  final String _splashText = "Progress, not perfection\n进步而非完美";
 
   @override
   void initState() {
@@ -230,8 +229,14 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
+    // 浅色主题绿色彩体系（温润、清爽、通透、护眼）
+    const textMainColor = Color(0xFF152724);
+    const textSubColor = Color(0xFF5A7570);
+    const textMutedColor = Color(0xFF8EA8A3);
+    const accentGreen = Color(0xFF18BA7C);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF18BA7C),
+      backgroundColor: const Color(0xFFF4FBF7),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -240,10 +245,11 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF18BA7C),
-              Color(0xFF109E69),
-              Color(0xFF0D7A51),
+              Color(0xFFE6F6EE), // 顶部薄荷清浅绿
+              Color(0xFFF2FAF6), // 中间温润白绿
+              Color(0xFFFFFFFF), // 底部纯净柔白
             ],
+            stops: [0.0, 0.45, 1.0],
           ),
         ),
         child: Center(
@@ -261,48 +267,66 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
                 child: Container(
                   width: 88,
                   height: 88,
-                  padding: const EdgeInsets.all(5),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0x1818BA7C),
+                      width: 1.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 20,
+                        color: accentGreen.withValues(alpha: 0.16),
+                        blurRadius: 24,
                         offset: const Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: ClipOval(
                     child: Image.asset(
                       "assets/images/logo.png",
-                      width: 78,
-                      height: 78,
+                      width: 76,
+                      height: 76,
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
-                _splashText,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.2,
-                  height: 1.5,
+              const Text(
+                '泡泡单词',
+                style: TextStyle(
+                  color: textMainColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2.5,
                   fontFamily: 'NotoSansSC',
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 6),
+              const Text(
+                'PROGRESS OVER PERFECTION',
+                style: TextStyle(
+                  color: textSubColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2.0,
+                  fontFamily: 'Roboto',
+                ),
+              ),
+              const SizedBox(height: 44),
               _buildStatusIndicator(),
               const SizedBox(height: 24),
               Text(
                 '版本 ${_versionName ?? ''}(${_buildNumber ?? ''})',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                style: const TextStyle(
+                  color: textMutedColor,
                   fontSize: 11,
                   fontFamily: 'Roboto',
                   letterSpacing: 0.5,
@@ -316,38 +340,41 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
   }
 
   Widget _buildStatusIndicator() {
+    const textSubColor = Color(0xFF5A7570);
+    const accentGreen = Color(0xFF18BA7C);
     final err = Global.startupError.value ?? _autoLoginError;
+
     return Column(
       children: [
         if (err == null)
           const SizedBox(
-            width: 20,
-            height: 20,
+            width: 22,
+            height: 22,
             child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation(Colors.white),
+              strokeWidth: 2.2,
+              valueColor: AlwaysStoppedAnimation(accentGreen),
             ),
           ),
         const SizedBox(height: 12),
         Text(
           err ?? _preparingMessage,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.85),
+            color: err == null ? textSubColor : Colors.redAccent,
             fontSize: 13,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
             fontFamily: 'NotoSansSC',
           ),
         ),
         if (err != null)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: 10),
             child: TextButton(
               onPressed: () => _checkPrivacyAndProceed(),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
-                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                backgroundColor: accentGreen,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               ),
               child: const Text('重试', style: TextStyle(fontFamily: 'NotoSansSC', fontWeight: FontWeight.bold)),
             ),
@@ -356,4 +383,5 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
     );
   }
 }
+
 
