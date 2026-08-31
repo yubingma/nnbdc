@@ -316,46 +316,57 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildTabBar() {
-    if (_tabController == null) {
+    if (_tabController == null || _tabController!.length <= 1) {
       return const SizedBox.shrink();
     }
+    final isDarkMode = _cachedIsDarkMode;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: _cachedIsDarkMode
-            ? const Color(0xFF1E1E1E)
-            : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicatorColor: _cachedIsDarkMode
-            ? Colors.white
-            : Colors.black,
-        indicatorWeight: 2,
-        dividerColor: Colors.transparent,
-        dividerHeight: 0,
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-        splashFactory: NoSplash.splashFactory,
-        labelColor: _cachedIsDarkMode
-            ? Colors.white
-            : Colors.black,
-        unselectedLabelColor: _cachedIsDarkMode
-            ? Colors.white54
-            : Colors.grey.shade400,
-        labelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+    return Center(
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.all(3.5),
+        decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(
+            color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+            width: 1,
+          ),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w400,
+        child: TabBar(
+          controller: _tabController,
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicator: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.06),
+                blurRadius: 6,
+                offset: const Offset(0, 1.5),
+              ),
+            ],
+          ),
+          dividerColor: Colors.transparent,
+          dividerHeight: 0,
+          overlayColor: WidgetStateProperty.all(Colors.transparent),
+          splashFactory: NoSplash.splashFactory,
+          labelColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+          unselectedLabelColor: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5B7A75),
+          labelStyle: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+          ),
+          tabs: notifier.dynamicTabs,
+          onTap: (index) {
+            ref.read(bdcNotifierProvider.notifier).updateTabIndex(index);
+          },
         ),
-        tabs: notifier.dynamicTabs,
-        onTap: (index) {
-          ref.read(bdcNotifierProvider.notifier).updateTabIndex(index);
-        },
       ),
     );
   }
@@ -1354,16 +1365,12 @@ extension BdcPageStateUIComponents on BdcPageState {
       children: [
         // 1. 顶栏：音频波纹 + 提示/清除按钮 (固定浮动在上方)
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           decoration: BoxDecoration(
-            color: _cachedIsDarkMode
-                ? const Color(0xFF1E1E1E)
-                : const Color(0xFFF8F9FA),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
             border: Border.all(
-              color: _cachedIsDarkMode
-                  ? Colors.white10
-                  : Colors.black.withValues(alpha: 0.03),
+              color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
               width: 1,
             ),
           ),
@@ -1415,7 +1422,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               const SizedBox(width: 8),
               if (isSentence)
                 _buildPanelButton(
-                  icon: Icons.refresh,
+                  icon: Icons.refresh_rounded,
                   label: '清空',
                   onTap: () => notifier.clearHint(),
                 )
@@ -1424,14 +1431,14 @@ extension BdcPageStateUIComponents on BdcPageState {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildPanelButton(
-                      icon: Icons.emoji_objects_rounded,
+                      icon: Icons.lightbulb_outline_rounded,
                       label: '提示',
                       onTap: () => notifier.giveALittleHint(),
                       onLongPress: () => notifier.giveFullHint(),
                     ),
                     const SizedBox(width: 6),
                     _buildPanelButton(
-                      icon: Icons.refresh,
+                      icon: Icons.refresh_rounded,
                       label: '清除',
                       onTap: () => notifier.clearHint(),
                     ),
@@ -1444,27 +1451,25 @@ extension BdcPageStateUIComponents on BdcPageState {
         // 2. 滚动区域：中文释义 / 拼写提示
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: _cachedIsDarkMode
-                  ? const Color(0xFF1E1E1E).withValues(alpha: 0.8)
-                  : const Color(0xFFF8F9FA).withValues(alpha: 0.8),
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(16)),
+              color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
               border: Border(
                 left: BorderSide(
-                    color: _cachedIsDarkMode
-                        ? Colors.white10
-                        : Colors.black.withValues(alpha: 0.03)),
+                    color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
                 right: BorderSide(
-                    color: _cachedIsDarkMode
-                        ? Colors.white10
-                        : Colors.black.withValues(alpha: 0.03)),
+                    color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
                 bottom: BorderSide(
-                    color: _cachedIsDarkMode
-                        ? Colors.white10
-                        : Colors.black.withValues(alpha: 0.03)),
+                    color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: SingleChildScrollView(
               controller: _speakPanelScrollController,
@@ -1608,6 +1613,7 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildSpellingExerciseButton(bool isDarkMode) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         InkWell(
           onTap: () {
@@ -1617,24 +1623,26 @@ extension BdcPageStateUIComponents on BdcPageState {
             updateUI(() {
               notifier.updateShowHandwritingBoard(true);
             }, tag: 'hw-open');
-            // 进入手势拼写模式前，务必强制彻底停止 ASR 会话，避免在手写时后台仍在倾听或产生提示音
             notifier.asr.stopMicrophone();
           },
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+            padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                    color: _cachedIsDarkMode
-                        ? Colors.white10
-                        : Colors.black.withValues(alpha: 0.05)),
+              color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF0F6F3),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+                width: 1,
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.edit_note,
-                    color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+                Icon(
+                  Icons.edit_rounded,
+                  size: 17,
+                  color: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ValueListenableBuilder<TextEditingValue>(
@@ -1643,12 +1651,11 @@ extension BdcPageStateUIComponents on BdcPageState {
                       final text = value.text;
                       return text.isEmpty
                           ? Text(
-                              '拼写练习',
+                              '点击在此手写或拼写练习',
                               style: TextStyle(
-                                fontSize: 18,
-                                color: (isDarkMode ? Colors.white : Colors.black)
-                                    .withValues(alpha: 0.2),
-                                fontWeight: FontWeight.normal,
+                                fontSize: 14.5,
+                                color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                                fontWeight: FontWeight.w500,
                               ),
                             )
                           : RichText(
@@ -1660,17 +1667,17 @@ extension BdcPageStateUIComponents on BdcPageState {
                                     state.word?.spell ?? "",
                                     text.trim().toLowerCase() !=
                                             (state.word?.spell.toLowerCase() ?? "")
-                                        ? Colors.red
-                                        : (isDarkMode ? Colors.white : Colors.black),
+                                        ? const Color(0xFFFA6E59)
+                                        : (isDarkMode ? Colors.white : const Color(0xFF152724)),
                                     const TextStyle(
-                                        fontSize: 18, fontWeight: FontWeight.bold),
+                                        fontSize: 17, fontWeight: FontWeight.bold),
                                   ),
                                   if (text.length < (state.word?.spell.length ?? 0))
                                     TextSpan(
                                       text:
                                           ' ${_buildUnderlines(state.word?.spell ?? "", text.length)}',
                                       style: TextStyle(
-                                        fontSize: 18,
+                                        fontSize: 17,
                                         fontWeight: FontWeight.bold,
                                         color: isDarkMode
                                             ? Colors.white30
@@ -1688,7 +1695,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
       ],
     );
   }
@@ -2085,13 +2092,35 @@ extension BdcPageStateUIComponents on BdcPageState {
       final String fallbackLabel = state.lastFsrsRating?.label ?? '测评中';
       final bool hasRating = state.lastFsrsRating != null;
       return Container(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: 6),
         child: FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.center,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              if (stageText.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? const Color(0xFF2C2416) : const Color(0xFFFFF8E6),
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: isDarkMode ? const Color(0xFF6B5320) : const Color(0xFFFDE68A),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    stageText.replaceAll('[', '').replaceAll(']', ''),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
               // 有评分时才可点击弹"修改今日评分"对话框;测评中不可点击
               hasRating
                   ? InkWell(
@@ -2101,27 +2130,32 @@ extension BdcPageStateUIComponents on BdcPageState {
                         padding:
                             const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         child: Text(
-                          '$stageText今日测评: $fallbackLabel',
+                          '今日测评: $fallbackLabel',
                           style: TextStyle(
-                            fontSize: 11,
-                            color: hasRating ? AppTheme.primaryColor : textColor,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: hasRating
+                                ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                                : textColor,
                           ),
                         ),
-                      ),
+                      )
                     )
                   : Text(
-                      '$stageText今日测评: 测评中',
-                      style: TextStyle(fontSize: 11, color: textColor),
+                      '今日测评: 测评中',
+                      style: TextStyle(fontSize: 11.5, color: textColor),
                     ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text('|',
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text('·',
                     style: TextStyle(
-                        fontSize: 10, color: textColor.withValues(alpha: 0.3))),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: textColor.withValues(alpha: 0.4))),
               ),
               Text(
                 '下次复习: --天后',
-                style: TextStyle(fontSize: 11, color: textColor),
+                style: TextStyle(fontSize: 11.5, color: textColor),
               ),
             ],
           ),
@@ -2136,74 +2170,93 @@ extension BdcPageStateUIComponents on BdcPageState {
     switch (state.lastFsrsRating) {
       case FsrsRating.again:
         ratingColor =
-            isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F); // 深红色
+            isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFFA6E59); // 珊瑚红
         break;
       case FsrsRating.hard:
         ratingColor =
-            isDarkMode ? Colors.orangeAccent : const Color(0xFFF57C00); // 橘色
+            isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706); // 琥珀黄
         break;
       case FsrsRating.easy:
         ratingColor =
-            isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32); // 深绿色
+            isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C); // 翡翠绿
         break;
       case FsrsRating.good:
       default:
         ratingColor =
-            isDarkMode ? AppTheme.primaryColor : AppTheme.primaryColor;
+            isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
         break;
     }
 
     return Container(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.center,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (stageText.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? const Color(0xFF2C2416) : const Color(0xFFFFF8E6),
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(
+                    color: isDarkMode ? const Color(0xFF6B5320) : const Color(0xFFFDE68A),
+                    width: 0.8,
+                  ),
+                ),
+                child: Text(
+                  stageText.replaceAll('[', '').replaceAll(']', ''),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             InkWell(
               onTap: _showRatingModifyDialog,
               borderRadius: BorderRadius.circular(4),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                child: Row(
-                  children: [
-                    Text(
-                      '$stageText今日测评: $ratingLabel',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: ratingColor,
-                        decoration: TextDecoration.underline,
-                        decorationStyle: TextDecorationStyle.dashed,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  '今日测评: $ratingLabel',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: ratingColor,
+                  ),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text('|',
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text('·',
                   style: TextStyle(
-                      fontSize: 10, color: textColor.withValues(alpha: 0.3))),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: textColor.withValues(alpha: 0.4))),
             ),
             Text.rich(
               TextSpan(
                 children: [
                   TextSpan(
                       text: '下次复习: ',
-                      style: TextStyle(fontSize: 11, color: textColor)),
+                      style: TextStyle(fontSize: 11.5, color: textColor)),
                   TextSpan(
                     text: '${state.fsrsItem!.scheduledDays}',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                      fontSize: 11.5,
+                      color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   TextSpan(
                       text: '天后',
-                      style: TextStyle(fontSize: 11, color: textColor)),
+                      style: TextStyle(fontSize: 11.5, color: textColor)),
                 ],
               ),
             ),
@@ -2261,39 +2314,36 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
     return Container(
       decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
         border: Border.all(
-          color:
-              isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black12,
+          color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(13),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(13),
           onTap: onTap,
           onLongPress: onLongPress,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   icon,
-                  color: isDarkMode
-                      ? const Color(0xFF9CA3AF)
-                      : const Color(0xFF6B7280),
-                  size: 16,
+                  color: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                  size: 13.5,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 3.5),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: isDarkMode
-                        ? const Color(0xFF9CA3AF)
-                        : const Color(0xFF6B7280),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
                   ),
                 ),
               ],
@@ -2731,152 +2781,171 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildMeaningStepCard(BdcState state) {
+    final isDarkMode = _cachedIsDarkMode;
+    final allItems = state.currentGetWordResult!.learningWord!.word.getMergedMeaningItems();
+    final hasCixingItems = allItems.any((item) => (item.ciXing ?? '').trim().isNotEmpty);
+    final displayItems = hasCixingItems
+        ? allItems.where((item) => (item.ciXing ?? '').trim().isNotEmpty).toList()
+        : allItems;
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.transparent,
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-
-          // 释义/图片/配图按钮
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          // 释义温润微卡片
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 释义列表
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final item in state.currentGetWordResult!.learningWord!.word
-                        .getMergedMeaningItems())
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if ((item.ciXing ?? '').isNotEmpty) ...[
-                              Container(
-                                margin: const EdgeInsets.only(top: 2),
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: _cachedIsDarkMode
-                                      ? const Color(0xFF192C27)
-                                      : const Color(0xFFEDF5F2),
-                                  borderRadius: BorderRadius.circular(5),
-                                  border: Border.all(
-                                    color: _cachedIsDarkMode
-                                        ? Colors.white12
-                                        : const Color(0xFFD1EADE),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  item.ciXing!,
-                                  style: TextStyle(
-                                    color: _cachedIsDarkMode
-                                        ? const Color(0xFF2CD88F)
-                                        : const Color(0xFF18BA7C),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 7),
-                            ],
-                            Expanded(
-                              child: Text(
-                                notifier.hideParenthesesContent(item.meaning ?? ''),
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: _cachedIsDarkMode
-                                      ? const Color(0xFFEAF7F4)
-                                      : const Color(0xFF152724),
-                                  height: 1.4,
-                                ),
+                for (final item in displayItems)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if ((item.ciXing ?? '').isNotEmpty) ...[
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? const Color(0xFF192C27)
+                                  : const Color(0xFFEDF5F2),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: isDarkMode
+                                    ? Colors.white12
+                                    : const Color(0xFFD1EADE),
+                                width: 1,
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                // 图片 (仅对管理员开放)
-                if (StudyConfig.fromCurrentUser().enableWordImage &&
-                    (Global.getLoggedInUser()?.isAdmin == true) &&
-                    state.currentGetWordResult?.images != null &&
-                    state.currentGetWordResult!.images!.isNotEmpty)
-                  Column(
-                    children: [
-                      if (state.currentGetWordResult!.images!.isNotEmpty &&
-                          state.studyStep != StudyStep.ch2En.json)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                              '图片: ${state.currentGetWordResult!.images!.length}',
+                            child: Text(
+                              item.ciXing!,
                               style: TextStyle(
-                                  fontSize: 11, color: Colors.grey.shade400)),
+                                color: isDarkMode
+                                    ? const Color(0xFF2CD88F)
+                                    : const Color(0xFF18BA7C),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: Text(
+                            notifier.hideParenthesesContent(item.meaning ?? ''),
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDarkMode
+                                  ? const Color(0xFFEAF7F4)
+                                  : const Color(0xFF152724),
+                              height: 1.45,
+                            ),
+                          ),
                         ),
-                      WordImagesWidget(
-                        images: state.currentGetWordResult!.images!,
-                        isEditMode: state.isEditMode,
-                        highlightedWordImg: state.highlightedWordImg?.imageFile,
-                        maxImages: 2,
-                        onImageTap: (image) {
-                          showImagePreviewWithContext(context, image,
-                              onDeleted: () {
-                            state.currentGetWordResult?.images
-                                ?.removeWhere((e) => e.id == image.id);
-                            updateUI(() {}, tag: 'img-delete');
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                // 配图按钮
-                if (StudyConfig.fromCurrentUser().enableWordImage && state.isEditMode && (state.currentGetWordResult?.learningWord?.word.images?.length ?? 0) < 2)
-                  InkWell(
-                    child: Container(
-                      margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.add, size: 24.0),
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: _cachedIsDarkMode
-                              ? Colors.black
-                              : Colors.white,
-                          backgroundColor: _cachedIsDarkMode
-                              ? Colors.white
-                              : AppTheme.primaryColor,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        label: const Text('添加配图'),
-                        onPressed: () {
-                          if (state.currentGetWordResult?.learningWord?.word.id !=
-                              null) {
-                            context.push('/pic_search',
-                                    extra: PicSearchPageArgs(
-                                        state.currentGetWordResult!
-                                            .learningWord!.word.id!,
-                                        state.currentGetWordResult!
-                                            .learningWord!.word.spell))
-                                .then((value) => notifier.reloadWord());
-                          }
-                        },
-                      ),
+                      ],
                     ),
                   ),
               ],
             ),
           ),
+
+          // 图片 (仅对管理员开放)
+          if (StudyConfig.fromCurrentUser().enableWordImage &&
+              (Global.getLoggedInUser()?.isAdmin == true) &&
+              state.currentGetWordResult?.images != null &&
+              state.currentGetWordResult!.images!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Column(
+              children: [
+                if (state.currentGetWordResult!.images!.isNotEmpty &&
+                    state.studyStep != StudyStep.ch2En.json)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                        '图片: ${state.currentGetWordResult!.images!.length}',
+                        style: TextStyle(
+                            fontSize: 11, color: Colors.grey.shade400)),
+                  ),
+                WordImagesWidget(
+                  images: state.currentGetWordResult!.images!,
+                  isEditMode: state.isEditMode,
+                  highlightedWordImg: state.highlightedWordImg?.imageFile,
+                  maxImages: 2,
+                  onImageTap: (image) {
+                    showImagePreviewWithContext(context, image,
+                        onDeleted: () {
+                      state.currentGetWordResult?.images
+                          ?.removeWhere((e) => e.id == image.id);
+                      updateUI(() {}, tag: 'img-delete');
+                    });
+                  },
+                ),
+              ],
+            ),
+          ],
+
+          // 配图按钮
+          if (StudyConfig.fromCurrentUser().enableWordImage && state.isEditMode && (state.currentGetWordResult?.learningWord?.word.images?.length ?? 0) < 2)
+            InkWell(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add, size: 24.0),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: _cachedIsDarkMode
+                        ? Colors.black
+                        : Colors.white,
+                    backgroundColor: _cachedIsDarkMode
+                        ? Colors.white
+                        : AppTheme.primaryColor,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  label: const Text('添加配图'),
+                  onPressed: () {
+                    if (state.currentGetWordResult?.learningWord?.word.id !=
+                        null) {
+                      context.push('/pic_search',
+                              extra: PicSearchPageArgs(
+                                  state.currentGetWordResult!
+                                      .learningWord!.word.id!,
+                                  state.currentGetWordResult!
+                                      .learningWord!.word.spell))
+                          .then((value) => notifier.reloadWord());
+                    }
+                  },
+                ),
+              ),
+            ),
         ],
       ),
     );
