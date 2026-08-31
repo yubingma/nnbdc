@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>单词详情页 Tab 内容全方位美化预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F3F7F5;
+      --card-bg: #FFFFFF;
+      --card-subtle: #F7FBF9;
+      --card-hover: #EEF8F3;
+      --border-subtle: #E1EFEA;
+      --border-focus: #18BA7C;
+      --divider: #EBF3F0;
+      
+      --text-primary: #152724;
+      --text-secondary: #526E67;
+      --text-muted: #8EA8A3;
+      --text-disabled: #A5BCB7;
+
+      --primary: #18BA7C;
+      --primary-dark: #129A65;
+      --primary-soft: #E8F8F1;
+      --primary-glow: rgba(24, 186, 124, 0.18);
+
+      --blue: #0284C7;
+      --blue-soft: #E0F2FE;
+      --purple: #7C3AED;
+      --purple-soft: #F3E8FF;
+      --amber: #D97706;
+      --amber-soft: #FEF3C7;
+
+      --shadow-sm: 0 2px 6px rgba(18, 154, 101, 0.04);
+      --shadow-md: 0 6px 18px rgba(18, 154, 101, 0.08);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0C1513;
+      --card-bg: #13201D;
+      --card-subtle: #192C27;
+      --card-hover: #203832;
+      --border-subtle: #233C35;
+      --border-focus: #2CD88F;
+      --divider: #1E342E;
+
+      --text-primary: #EAF7F4;
+      --text-secondary: #ADC5BF;
+      --text-muted: #6B8B84;
+      --text-disabled: #4E6A63;
+
+      --primary: #2CD88F;
+      --primary-dark: #18BA7C;
+      --primary-soft: rgba(44, 216, 143, 0.14);
+      --primary-glow: rgba(44, 216, 143, 0.22);
+
+      --blue: #38BDF8;
+      --blue-soft: rgba(56, 189, 248, 0.15);
+      --purple: #C084FC;
+      --purple-soft: rgba(192, 132, 252, 0.15);
+      --amber: #FBBF24;
+      --amber-soft: rgba(251, 191, 36, 0.15);
+
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+      background: #E5ECE9;
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+    }
+
+    /* 顶部控制栏 */
+    .preview-header {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    [data-theme="dark"] .preview-header {
+      background: rgba(19, 32, 29, 0.85);
+      border: 1px solid var(--border-subtle);
+    }
+    .preview-header .title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .theme-toggle-btn {
+      background: var(--primary-soft);
+      border: none;
+      color: var(--primary-dark);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 手机外壳容器 */
+    .phone-wrapper {
+      width: 100%;
+      max-width: 420px;
+      height: 870px;
+      background: var(--bg);
+      border-radius: 40px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    /* 顶部单词大卡片展台（左对齐） */
+    .top-overview-card {
+      background: var(--card-bg);
+      border-bottom: 1.2px solid var(--border-subtle);
+      padding: 14px 18px 12px 18px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+      box-shadow: var(--shadow-sm);
+    }
+    .nav-bar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .back-btn, .more-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .nav-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .word-title-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .word-spell {
+      font-size: 27px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+    }
+    .phonetic-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card-subtle);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .phonetic-capsule svg {
+      color: var(--primary);
+    }
+    .meaning-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .meaning-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: var(--text-primary);
+    }
+    .pos-tag {
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    /* Tab 栏 */
+    .tab-bar-nav {
+      display: flex;
+      background: var(--card-bg);
+      border-bottom: 1.2px solid var(--border-subtle);
+      padding: 0 8px;
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    .tab-bar-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .tab-item {
+      padding: 11px 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-item.active {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 12px;
+      right: 12px;
+      height: 2.5px;
+      background: var(--primary);
+      border-radius: 3px 3px 0 0;
+    }
+
+    /* Tab 内容视窗 */
+    .tab-viewport {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px 20px;
+      position: relative;
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 通用提示 Banner */
+    .info-banner {
+      background: var(--card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .info-banner svg {
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    /* ========== 1. 详情 Tab 美化样式 ========== */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .section-title svg {
+      color: var(--primary);
+    }
+    .section-desc-text {
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+    .section-desc-text strong {
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    /* 例句卡片列表 */
+    .sentence-card {
+      background: var(--card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .sentence-card:hover {
+      border-color: var(--border-focus);
+      background: var(--card-hover);
+    }
+    .sentence-en {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.45;
+      margin-bottom: 5px;
+    }
+    .sentence-en strong {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .sentence-zh-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .sound-play-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    /* ========== 2. 形近词 Tab 美化样式 ========== */
+    .similar-word-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+    .similar-word-card:hover {
+      border-color: var(--border-focus);
+      transform: translateY(-1px);
+    }
+    .similar-word-main {
+      flex: 1;
+    }
+    .similar-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .similar-spell {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .similar-spell.out-dict {
+      color: var(--text-disabled);
+      font-style: italic;
+      font-weight: 500;
+    }
+    .similar-phonetic {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+    .similar-meaning {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+    }
+    .similar-action-icon {
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    /* ========== 3. 近义词 Tab 美化样式 ========== */
+    .synonym-group-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .synonym-meaning-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .synonym-chips-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .synonym-chip {
+      background: var(--card-subtle);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .synonym-chip:hover {
+      background: var(--primary-soft);
+      border-color: var(--border-focus);
+      color: var(--primary-dark);
+    }
+    .synonym-chip svg {
+      color: var(--primary);
+      font-size: 12px;
+    }
+
+    /* ========== 4. 同根词 Tab 美化样式 ========== */
+    .cigen-group-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .cigen-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .cigen-tag-capsule {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .cigen-tag-capsule.root {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+    .cigen-tag-capsule.prefix {
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+    .cigen-tag-capsule.suffix {
+      background: var(--purple-soft);
+      color: var(--purple);
+    }
+    .cigen-root-text {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .cigen-root-meaning {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    .cigen-derivations-list {
+      border-left: 2px dashed var(--border-subtle);
+      padding-left: 14px;
+      margin-left: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cigen-word-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: var(--card-subtle);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cigen-word-item:hover {
+      background: var(--card-hover);
+    }
+    .cigen-word-spell {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .cigen-word-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ========== 5. AI 助教 Tab 美化样式 ========== */
+    .ai-chat-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .ai-msg-bubble {
+      max-width: 90%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+    .ai-msg-bubble.user {
+      align-self: flex-end;
+      background: var(--primary);
+      color: #FFFFFF;
+      border-bottom-right-radius: 4px;
+    }
+    .ai-msg-bubble.assistant {
+      align-self: flex-start;
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      border-bottom-left-radius: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+    .ai-thinking-box {
+      background: var(--card-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .ai-quick-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .prompt-chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .prompt-chip:hover {
+      border-color: var(--border-focus);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    /* 底部单一大按钮 */
+    .bottom-bar {
+      padding: 12px 16px 20px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .next-btn {
+      width: 100%;
+      height: 48px;
+      background: var(--primary);
+      border: none;
+      border-radius: 24px;
+      color: white;
+      font-size: 15.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 控制面板 -->
+  <div class="preview-header">
+    <div class="title">✨ 单词详情页 Tab 内容美化预览</div>
+    <button class="theme-toggle-btn" onclick="toggleTheme()">
+      🌓 切换明暗主题
+    </button>
+  </div>
+
+  <!-- 手机外壳 -->
+  <div class="phone-wrapper">
+    
+    <!-- 顶部概览卡片（左对齐） -->
+    <div class="top-overview-card">
+      <div class="nav-bar-row">
+        <button class="back-btn">‹</button>
+        <span class="nav-title">单词详情</span>
+        <button class="more-btn">⋯</button>
+      </div>
+      <div class="word-title-row">
+        <span class="word-spell">appreciate</span>
+      </div>
+      <div class="phonetic-capsule">
+        <span>[əˈpriːʃieɪt]</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+      </div>
+      <div class="meaning-list">
+        <div class="meaning-row">
+          <span class="pos-tag">v.</span>
+          <span>欣赏，赏识；感激，感谢；理解，领会</span>
+        </div>
+        <div class="meaning-row">
+          <span class="pos-tag">vi.</span>
+          <span>（土地、财产等）增值，升值</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 导航栏 -->
+    <div class="tab-bar-nav">
+      <div class="tab-item active" onclick="switchTab(0)">详情</div>
+      <div class="tab-item" onclick="switchTab(1)">形近 (4)</div>
+      <div class="tab-item" onclick="switchTab(2)">近义 (3)</div>
+      <div class="tab-item" onclick="switchTab(3)">同根 (2)</div>
+      <div class="tab-item" onclick="switchTab(4)">拓展 (6)</div>
+      <div class="tab-item" onclick="switchTab(5)">AI 助教</div>
+    </div>
+
+    <!-- Tab 内容区 -->
+    <div class="tab-viewport">
+
+      <!-- 1. 详情 Tab -->
+      <div class="tab-pane active" id="pane-0">
+        <!-- 深度讲解 -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              <span>深度讲解</span>
+            </div>
+          </div>
+          <div class="section-desc-text">
+            <strong>appreciate</strong> 最核心的意向是“给予充分的价值认可”。当对<strong>人或付出</strong>时表示“感激”；对<strong>艺术或品味</strong>时表示“鉴赏、欣赏”；在<strong>金融经济</strong>中表示“增值”。
+          </div>
+        </div>
+
+        <!-- 经典例句 -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>
+              <span>短语 & 经典例句</span>
+            </div>
+            <span style="font-size: 12px; color: var(--text-muted);">编辑</span>
+          </div>
+
+          <div class="sentence-card">
+            <div class="sentence-en">
+              I really <strong>appreciate</strong> your timely help during my preparation.
+            </div>
+            <div class="sentence-zh-row">
+              <span>我非常感谢你在我准备期间给予的及时帮助。</span>
+              <div class="sound-play-icon">▶</div>
+            </div>
+          </div>
+
+          <div class="sentence-card">
+            <div class="sentence-en">
+              Their land has <strong>appreciated</strong> substantially over the past decade.
+            </div>
+            <div class="sentence-zh-row">
+              <span>在过去的十年里，他们的土地价值大幅增值。</span>
+              <div class="sound-play-icon">▶</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 形近词 Tab -->
+      <div class="tab-pane" id="pane-1">
+        <div class="info-banner">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span>推荐拼写相近的单词。浅色斜体为未选词书词汇。</span>
+        </div>
+
+        <div class="similar-word-card">
+          <div class="similar-word-main">
+            <div class="similar-header">
+              <span class="similar-spell">depreciate</span>
+              <span class="similar-phonetic">[/dɪˈpriːʃieɪt/]</span>
+            </div>
+            <div class="similar-meaning">v. 贬值，跌价；轻视，贬低</div>
+          </div>
+          <span class="similar-action-icon">›</span>
+        </div>
+
+        <div class="similar-word-card">
+          <div class="similar-word-main">
+            <div class="similar-header">
+              <span class="similar-spell out-dict">apprehend</span>
+              <span class="similar-phonetic">[/ˌæprɪˈhend/]</span>
+            </div>
+            <div class="similar-meaning">v. 逮捕，拘押；领会，理解；忧虑</div>
+          </div>
+          <span class="similar-action-icon">›</span>
+        </div>
+
+        <div class="similar-word-card">
+          <div class="similar-word-main">
+            <div class="similar-header">
+              <span class="similar-spell">appropriate</span>
+              <span class="similar-phonetic">[/əˈprəʊpriət/]</span>
+            </div>
+            <div class="similar-meaning">adj. 适当的，恰当的  v. 挪用，拨出</div>
+          </div>
+          <span class="similar-action-icon">›</span>
+        </div>
+      </div>
+
+      <!-- 3. 近义词 Tab -->
+      <div class="tab-pane" id="pane-2">
+        <div class="synonym-group-card">
+          <div class="synonym-meaning-banner">释义：感激，感谢</div>
+          <div class="synonym-chips-grid">
+            <div class="synonym-chip">thank <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg></div>
+            <div class="synonym-chip">acknowledge <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg></div>
+            <div class="synonym-chip">be grateful <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg></div>
+          </div>
+        </div>
+
+        <div class="synonym-group-card">
+          <div class="synonym-meaning-banner">释义：欣赏，赞赏</div>
+          <div class="synonym-chips-grid">
+            <div class="synonym-chip">admire <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg></div>
+            <div class="synonym-chip">value <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg></div>
+            <div class="synonym-chip">cherish <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 同根词 Tab -->
+      <div class="tab-pane" id="pane-3">
+        <div class="cigen-group-card">
+          <div class="cigen-header-row">
+            <div class="cigen-tag-capsule root">词根 ROOT</div>
+          </div>
+          <div class="cigen-root-text">pret / prec / priz</div>
+          <div class="cigen-root-meaning">词源义：价值，价格 (value, price)</div>
+
+          <div class="cigen-derivations-list">
+            <div class="cigen-word-item">
+              <span class="cigen-word-spell">appreciable</span>
+              <span class="cigen-word-desc">adj. 可观的，值得重视的</span>
+            </div>
+            <div class="cigen-word-item">
+              <span class="cigen-word-spell">appreciation</span>
+              <span class="cigen-word-desc">n. 欣赏；感激；升值</span>
+            </div>
+            <div class="cigen-word-item">
+              <span class="cigen-word-spell">depreciation</span>
+              <span class="cigen-word-desc">n. 贬值，折旧</span>
+            </div>
+            <div class="cigen-word-item">
+              <span class="cigen-word-spell">precious</span>
+              <span class="cigen-word-desc">adj. 宝贵的，珍贵的</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 拓展 Tab -->
+      <div class="tab-pane" id="pane-4">
+        <div class="info-banner">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span>系统根据上下文向量算法为您推荐常同频出现的拓展词汇。</span>
+        </div>
+
+        <div class="similar-word-card">
+          <div class="similar-word-main">
+            <div class="similar-header">
+              <span class="similar-spell">gratitude</span>
+              <span class="similar-phonetic">[/ˈɡrætɪtjuːd/]</span>
+            </div>
+            <div class="similar-meaning">n. 感激之情，感谢</div>
+          </div>
+          <span class="similar-action-icon">›</span>
+        </div>
+
+        <div class="similar-word-card">
+          <div class="similar-word-main">
+            <div class="similar-header">
+              <span class="similar-spell">perceive</span>
+              <span class="similar-phonetic">[/pəˈsiːv/]</span>
+            </div>
+            <div class="similar-meaning">v. 感知，察觉；理解</div>
+          </div>
+          <span class="similar-action-icon">›</span>
+        </div>
+
+        <div class="similar-word-card">
+          <div class="similar-word-main">
+            <div class="similar-header">
+              <span class="similar-spell">acknowledge</span>
+              <span class="similar-phonetic">[/əkˈnɒlɪdʒ/]</span>
+            </div>
+            <div class="similar-meaning">v. 承认；对…表示感谢</div>
+          </div>
+          <span class="similar-action-icon">›</span>
+        </div>
+      </div>
+
+      <!-- 6. AI 助教 Tab -->
+      <div class="tab-pane" id="pane-5">
+        <div class="ai-chat-thread">
+          <div class="ai-msg-bubble user">
+            请帮我区分一下 appreciate, value 和 cherish 在表达“珍惜/重视”时的区别？
+          </div>
+          
+          <div class="ai-msg-bubble assistant">
+            <div class="ai-thinking-box">
+              💭 思考过程：正在分析词源侧重点与核心语境差异...
+            </div>
+            这三个词在侧重点上有微妙而清晰的区分：<br><br>
+            1. <strong>appreciate</strong>：强调<strong>知情知性</strong>的理解与认可，通常伴随对对方付出的<strong>感激</strong>或对艺术价值的品味。<br>
+            2. <strong>value</strong>：侧重于从<strong>理性、实用或重要性</strong>角度给予高度评价（如重视时间、重视意见）。<br>
+            3. <strong>cherish</strong>：充满<strong>深厚情感与爱护</strong>，往往带有“生怕失去”的情感色彩（如珍藏回忆、疼爱伴侣）。
+          </div>
+        </div>
+
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); margin-top: 10px;">💡 快捷探索问题：</div>
+        <div class="ai-quick-prompts">
+          <div class="prompt-chip">🎯 这个词的高考/考研常考搭配？</div>
+          <div class="prompt-chip">📖 用这个词讲一个趣味助记小故事</div>
+          <div class="prompt-chip">⚠️ 容易用错的语法陷阱有哪些？</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部按钮 -->
+    <div class="bottom-bar">
+      <button class="next-btn">下一个单词 ›</button>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    }
+
+    function switchTab(index) {
+      const tabs = document.querySelectorAll('.tab-item');
+      const panes = document.querySelectorAll('.tab-pane');
+
+      tabs.forEach((tab, i) => {
+        if (i === index) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+
+      panes.forEach((pane, i) => {
+        if (i === index) {
+          pane.classList.add('active');
+        } else {
+          pane.classList.remove('active');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

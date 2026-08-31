@@ -27,8 +27,8 @@
 ## 端云同步表名与日志规范
 - 服务端数据库表名与同步日志中的 `tbl_name` 必须严格统一使用**单数下划线命名**（例如 `user`、`daka`、`user_study_step`、`learning_dict`、`dict` 等，与服务端 JPA `@Table(name = "...")` 保持完全一致）。
 - 严禁在服务端代码中向 `user_db_log` / `sys_db_log` 写入复数或不一致的表名（例如严禁将 `user` 错写为 `users`）。
-- 客户端与服务端维护的双向表名映射（如客户端 `Util.localTableNameToRemote` 和 `Util.remoteTableNameToLocal`）必须保持严格对齐；新增或修改同步表时需同步检查两端映射，避免产生客户端无法解析的非法表名导致同步中断。
-
+## HTML 原型生成规范
+- 生成 UI 设计与预览 HTML 时，严禁使用 Google Fonts 等外部网络字体链接（避免网络环境限制导致加载阻塞或显示异常），统一使用系统原生跨平台现代字体栈（`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif` 与等宽字体 `ui-monospace, monospace`）。
 
 ## Think Before Coding
 
