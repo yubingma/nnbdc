@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>荣耀勋章墙 - 扇贝护眼美学设计原型</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800;900&family=Roboto:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* 扇贝护眼亮色主题 (Scallop Light Theme) */
+      --bg-primary: #F4F9F6;
+      --card-bg: #FFFFFF;
+      --card-subtle: #EDF5F2;
+      --card-subtle-hover: #E3EFEA;
+      --text-main: #152724;
+      --text-sub: #5A7570;
+      --text-muted: #8EA8A3;
+      --accent-green: #18BA7C;
+      --accent-light-green: #E8F8F1;
+      --border-color: rgba(24, 186, 124, 0.12);
+      --border-light: rgba(0, 0, 0, 0.05);
+      --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.03);
+      --shadow-md: 0 8px 24px rgba(24, 186, 124, 0.08);
+      --shadow-glow: 0 8px 24px rgba(24, 186, 124, 0.18);
+      --hero-gradient: linear-gradient(135deg, #18BA7C 0%, #0F9460 100%);
+      --hero-text-sub: rgba(255, 255, 255, 0.85);
+
+      /* 品阶色彩体系 (Tier Color System) */
+      --tier-bronze: #C25E3E;
+      --tier-bronze-bg: rgba(194, 94, 62, 0.1);
+      --tier-silver: #64748B;
+      --tier-silver-bg: rgba(100, 116, 139, 0.1);
+      --tier-gold: #D97706;
+      --tier-gold-bg: rgba(217, 119, 6, 0.12);
+      --tier-legend: #8B5CF6;
+      --tier-legend-bg: rgba(139, 92, 246, 0.12);
+    }
+
+    [data-theme="dark"] {
+      /* 扇贝暗黑护眼主题 (Scallop Dark Theme) */
+      --bg-primary: #0C1513;
+      --card-bg: #13201D;
+      --card-subtle: #192A26;
+      --card-subtle-hover: #203530;
+      --text-main: #EAF7F4;
+      --text-sub: #8EA8A3;
+      --text-muted: #5A7570;
+      --accent-green: #2CD88F;
+      --accent-light-green: rgba(44, 216, 143, 0.12);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-light: rgba(255, 255, 255, 0.04);
+      --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.45);
+      --shadow-glow: 0 8px 30px rgba(44, 216, 143, 0.25);
+      --hero-gradient: linear-gradient(135deg, #1B352E 0%, #10241F 100%);
+      --hero-text-sub: rgba(234, 247, 244, 0.75);
+
+      --tier-bronze: #E07A5F;
+      --tier-bronze-bg: rgba(224, 122, 95, 0.15);
+      --tier-silver: #94A3B8;
+      --tier-silver-bg: rgba(148, 163, 184, 0.15);
+      --tier-gold: #FBBF24;
+      --tier-gold-bg: rgba(251, 191, 36, 0.15);
+      --tier-legend: #A78BFA;
+      --tier-legend-bg: rgba(167, 139, 250, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-main);
+      font-family: 'NotoSansSC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px 10px 40px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .phone-container {
+      width: 100%;
+      max-width: 414px;
+      background: var(--bg-primary);
+      border-radius: 40px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.15);
+      border: 8px solid var(--card-bg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* 顶部导航条 */
+    .app-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-primary);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(16px);
+    }
+
+    .header-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+    }
+    .header-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    /* 内容滚动区 */
+    .content-scroll {
+      padding: 10px 16px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    /* 1. 顶部 Hero 成就展台 */
+    .hero-banner {
+      background: var(--hero-gradient);
+      border-radius: 24px;
+      padding: 20px 22px;
+      color: #FFFFFF;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      right: -20px;
+      bottom: -30px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(8px);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hero-stats {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero-number-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .hero-number {
+      font-size: 38px;
+      font-weight: 900;
+      font-family: 'Roboto', sans-serif;
+      line-height: 1;
+    }
+
+    .hero-total {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--hero-text-sub);
+    }
+
+    .hero-desc {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--hero-text-sub);
+      font-weight: 500;
+    }
+
+    .hero-trophy {
+      font-size: 52px;
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15));
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* 进度条 */
+    .hero-progress-bg {
+      margin-top: 16px;
+      height: 7px;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .hero-progress-bar {
+      height: 100%;
+      background: #FFFFFF;
+      border-radius: 6px;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+      transition: width 1s ease;
+    }
+
+    /* 2. 分类筛选胶囊栏 */
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0;
+      scrollbar-width: none;
+    }
+    .category-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-chip {
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: var(--card-bg);
+      border: 1.2px solid var(--border-color);
+      color: var(--text-sub);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-sm);
+    }
+    .cat-chip.active {
+      background: var(--accent-green);
+      color: #FFFFFF;
+      border-color: var(--accent-green);
+      box-shadow: 0 4px 14px rgba(24, 186, 124, 0.3);
+      font-weight: 800;
+    }
+
+    /* 3. 勋章网格 */
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .badge-card {
+      background: var(--card-bg);
+      border-radius: 22px;
+      border: 1.5px solid var(--border-color);
+      padding: 16px 12px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-sm);
+    }
+    .badge-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* 勋章已解锁发光边框与暗流光 */
+    .badge-card.unlocked {
+      background: radial-gradient(circle at top, var(--card-subtle) 0%, var(--card-bg) 70%);
+      border-color: var(--accent-green);
+    }
+    .badge-card.locked {
+      opacity: 0.78;
+      background: var(--card-bg);
+    }
+
+    /* 置顶佩戴徽标 */
+    .equipped-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--accent-green);
+      color: #FFFFFF;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      box-shadow: 0 2px 8px rgba(24, 186, 124, 0.35);
+    }
+
+    /* 勋章品阶标签 */
+    .tier-pill {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .tier-bronze { background: var(--tier-bronze-bg); color: var(--tier-bronze); }
+    .tier-silver { background: var(--tier-silver-bg); color: var(--tier-silver); }
+    .tier-gold { background: var(--tier-gold-bg); color: var(--tier-gold); }
+    .tier-legend { background: var(--tier-legend-bg); color: var(--tier-legend); }
+
+    /* 勋章图标容器 */
+    .badge-icon-box {
+      width: 80px;
+      height: 80px;
+      margin: 14px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .badge-svg {
+      width: 72px;
+      height: 72px;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.12));
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .badge-card:hover .badge-svg {
+      transform: scale(1.08) rotate(3deg);
+    }
+
+    .locked .badge-svg {
+      filter: grayscale(1) opacity(0.35);
+    }
+
+    /* 叠层角标 */
+    .stack-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: linear-gradient(135deg, #EC4899 0%, #BE185D 100%);
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 8px;
+      box-shadow: 0 3px 8px rgba(236, 72, 153, 0.4);
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* 锁头蒙层 */
+    .lock-overlay {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(4px);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-size: 11px;
+    }
+
+    .badge-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .badge-category-text {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* 进度条 (未解锁) */
+    .progress-wrap {
+      width: 100%;
+      background: var(--card-subtle);
+      border-radius: 6px;
+      height: 5px;
+      overflow: hidden;
+      margin-top: 4px;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-green);
+      border-radius: 6px;
+    }
+
+    .progress-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-top: 4px;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* 已解锁状态标签 */
+    .unlocked-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent-green);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      margin-top: 4px;
+    }
+
+    /* 4. 勋章详情弹窗 (Modal Bottom Sheet) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      max-width: 414px;
+      background: var(--card-bg);
+      border-radius: 32px 32px 0 0;
+      padding: 24px 24px 34px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.32, 1, 0.23, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .modal-overlay.active .modal-sheet {
+      transform: translateY(0);
+    }
+
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--text-muted);
+      opacity: 0.3;
+      border-radius: 2px;
+      margin-bottom: 20px;
+    }
+
+    .modal-icon-glow {
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .modal-icon-glow::before {
+      content: '';
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      background: radial-gradient(circle, var(--accent-light-green) 0%, rgba(24,186,124,0) 70%);
+      border-radius: 50%;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .modal-tier-pill {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-info-box {
+      width: 100%;
+      background: var(--card-subtle);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .info-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .info-section-desc {
+      font-size: 13px;
+      color: var(--text-main);
+      line-height: 1.45;
+      font-weight: 600;
+    }
+
+    .info-bubble-reward {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0284C7;
+    }
+
+    .modal-btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent-green);
+      color: #FFFFFF;
+      font-size: 15px;
+      font-weight: 800;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(24, 186, 124, 0.35);
+      transition: all 0.2s;
+    }
+    .modal-btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .modal-btn-secondary {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: var(--text-sub);
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* 悬浮主题切换器 */
+    .theme-toggle-fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border-color);
+      border-radius: 30px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      z-index: 200;
+      transition: transform 0.2s;
+    }
+    .theme-toggle-fab:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 手机容器 -->
+  <div class="phone-container">
+    
+    <!-- 顶部导航栏 -->
+    <header class="app-header">
+      <button class="header-btn" onclick="alert('返回上一页')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="header-title">荣耀勋章墙</div>
+      <button class="header-btn" onclick="toggleTheme()">
+        <span id="themeIcon">🌙</span>
+      </button>
+    </header>
+
+    <!-- 可滚动内容 -->
+    <div class="content-scroll">
+
+      <!-- 1. 顶部 Hero 成就殿堂展台 -->
+      <section class="hero-banner">
+        <div class="hero-tag">
+          <span>✨</span> 个人终身成就殿堂
+        </div>
+        <div class="hero-row">
+          <div class="hero-stats">
+            <div class="hero-number-wrap">
+              <span class="hero-number">7</span>
+              <span class="hero-total">/ 16 枚已点亮</span>
+            </div>
+            <div class="hero-desc">坚持自律背词，点亮属于你的星光图鉴</div>
+          </div>
+          <div class="hero-trophy">🎖️</div>
+        </div>
+        <!-- 进度条 -->
+        <div class="hero-progress-bg">
+          <div class="hero-progress-bar" style="width: 43.75%;"></div>
+        </div>
+      </section>
+
+      <!-- 2. 分类筛选胶囊栏 -->
+      <nav class="category-tabs">
+        <button class="cat-chip active" onclick="filterBadges('ALL', this)">全部 (16)</button>
+        <button class="cat-chip" onclick="filterBadges('HABIT', this)">恒心打卡 (4)</button>
+        <button class="cat-chip" onclick="filterBadges('VOCAB', this)">博学词汇 (4)</button>
+        <button class="cat-chip" onclick="filterBadges('MASTERY', this)">精进学霸 (4)</button>
+        <button class="cat-chip" onclick="filterBadges('SOCIAL', this)">共鸣探索 (4)</button>
+      </nav>
+
+      <!-- 3. 勋章网格展示 -->
+      <div class="badge-grid" id="badgeGrid">
+
+        <!-- 勋章 1: 萌芽初醒 (已解锁 + 已置顶佩戴) -->
+        <div class="badge-card unlocked" data-category="HABIT" onclick="openModal('STREAK_3', '萌芽初醒', 'BRONZE', '恒心打卡', '千里之行始于足下，连续背单词 3 天', 50, true, true, 1, 1.0, '2026-08-20')">
+          <div class="equipped-badge">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            佩戴中
+          </div>
+          <div class="tier-pill tier-bronze">青铜</div>
+          <div class="badge-icon-box">
+            <!-- 萌芽初醒 SVG -->
+            <svg class="badge-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="url(#bronzeGrad)" stroke="#5E2010" stroke-width="2"/>
+              <circle cx="50" cy="50" r="36" fill="#3A170C"/>
+              <!-- 绿芽图标 -->
+              <path d="M50 70 V 45 M50 55 C 40 40 30 50 50 45 C 70 40 60 50 50 45" stroke="#6EE7B7" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <circle cx="50" cy="38" r="6" fill="#6EE7B7"/>
+            </svg>
+          </div>
+          <div class="badge-name">萌芽初醒</div>
+          <div class="badge-category-text">恒心打卡 · 连击3天</div>
+          <div class="unlocked-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            已达成
+          </div>
+        </div>
+
+        <!-- 勋章 2: 习惯微光 (已解锁) -->
+        <div class="badge-card unlocked" data-category="HABIT" onclick="openModal('STREAK_21', '习惯微光', 'SILVER', '恒心打卡', '21天习惯养成，让自律成为你的第二天性', 150, true, false, 1, 1.0, '2026-08-25')">
+          <div class="tier-pill tier-silver">白银</div>
+          <div class="badge-icon-box">
+            <svg class="badge-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="url(#silverGrad)" stroke="#334155" stroke-width="2"/>
+              <circle cx="50" cy="50" r="36" fill="#1E293B"/>
+              <!-- 微光火炬 -->
+              <path d="M50 30 Q 60 45 50 60 Q 40 45 50 30 Z" fill="#FBBF24"/>
+              <circle cx="50" cy="45" r="4" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <div class="badge-name">习惯微光</div>
+          <div class="badge-category-text">恒心打卡 · 连击21天</div>
+          <div class="unlocked-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            已达成
+          </div>
+        </div>
+
+        <!-- 勋章 3: 百发百中 (已解锁 + 叠层 ×12) -->
+        <div class="badge-card unlocked" data-category="MASTERY" onclick="openModal('PERFECT_SCORE', '百发百中', 'BRONZE', '精进学霸', '单次复习或测验100%全对，每次达成均可重复累加', 20, true, false, 12, 1.0, '2026-08-30')">
+          <div class="tier-pill tier-bronze">青铜</div>
+          <div class="badge-icon-box">
+            <span class="stack-badge">×12</span>
+            <svg class="badge-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="url(#bronzeGrad)" stroke="#5E2010" stroke-width="2"/>
+              <circle cx="50" cy="50" r="36" fill="#3A170C"/>
+              <!-- 靶心 -->
+              <circle cx="50" cy="50" r="22" stroke="#FCA5A5" stroke-width="2.5" fill="none"/>
+              <circle cx="50" cy="50" r="14" stroke="#EF4444" stroke-width="2.5" fill="none"/>
+              <circle cx="50" cy="50" r="6" fill="#EF4444"/>
+            </svg>
+          </div>
+          <div class="badge-name">百发百中</div>
+          <div class="badge-category-text">精进学霸 · 满分测验</div>
+          <div class="unlocked-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            已达成 12 次
+          </div>
+        </div>
+
+        <!-- 勋章 4: 破冰启航 (已解锁) -->
+        <div class="badge-card unlocked" data-category="VOCAB" onclick="openModal('VOCAB_100', '破冰启航', 'BRONZE', '博学词汇', '成功掌握前 100 个词，跨过背词起跑线', 60, true, false, 1, 1.0, '2026-08-15')">
+          <div class="tier-pill tier-bronze">青铜</div>
+          <div class="badge-icon-box">
+            <svg class="badge-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="url(#bronzeGrad)" stroke="#5E2010" stroke-width="2"/>
+              <circle cx="50" cy="50" r="36" fill="#3A170C"/>
+              <!-- 帆船 -->
+              <path d="M30 65 L 70 65 L 62 75 L 38 75 Z" fill="#6EE7B7"/>
+              <path d="M48 30 L 48 60 L 68 60 Z" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <div class="badge-name">破冰启航</div>
+          <div class="badge-category-text">博学词汇 · 掌握100词</div>
+          <div class="unlocked-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            已达成
+          </div>
+        </div>
+
+        <!-- 勋章 5: 千词过海 (未解锁, 78%) -->
+        <div class="badge-card locked" data-category="VOCAB" onclick="openModal('VOCAB_1000', '千词过海', 'SILVER', '博学词汇', '掌握千词，日常简单英文交流与阅读畅通无阻', 200, false, false, 0, 0.78, null)">
+          <div class="tier-pill tier-silver">白银</div>
+          <div class="badge-icon-box">
+            <div class="lock-overlay">🔒</div>
+            <svg class="badge-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="url(#silverGrad)"/>
+              <circle cx="50" cy="50" r="36" fill="#1E293B"/>
+              <!-- 词海浪花 -->
+              <path d="M25 60 Q 38 45 50 60 Q 62 75 75 60" stroke="#94A3B8" stroke-width="4" fill="none"/>
+            </svg>
+          </div>
+          <div class="badge-name">千词过海</div>
+          <div class="badge-category-text">博学词汇 · 掌握1000词</div>
+          <div class="progress-wrap">
+            <div class="progress-fill" style="width: 78%;"></div>
+          </div>
+          <div class="progress-label">780 / 1000 词 (78%)</div>
+        </div>
+
+        <!-- 勋章 6: 百日筑基 (未解锁, 21%) -->
+        <div class="badge-card locked" data-category="HABIT" onclick="openModal('STREAK_100', '百日筑基', 'GOLD', '恒心打卡', '风雨无阻连续打卡100天，意志如磐石', 500, false, false, 0, 0.21, null)">
+          <div class="tier-pill tier-gold">黄金</div>
+          <div class="badge-icon-box">
+            <div class="lock-overlay">🔒</div>
+            <svg class="badge-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="url(#goldGrad)"/>
+              <circle cx="50" cy="50" r="36" fill="#382103"/>
+              <!-- 金色盾牌 -->
+              <path d="M50 28 L 70 36 V 55 Q 50 72 50 72 Q 50 72 30 55 V 36 Z" fill="#FBBF24"/>
+            </svg>
+          </div>
+          <div class="badge-name">百日筑基</div>
+          <div class="badge-category-text">恒心打卡 · 连击100天</div>
+          <div class="progress-wrap">
+            <div class="progress-fill" style="width: 21%;"></div>
+          </div>
+          <div class="progress-label">21 / 100 天 (21%)</div>
+        </div>
+
+        <!-- 勋章 7: 星火长明 (传说品阶) -->
+        <div class="badge-card locked" data-category="HABIT" onclick="openModal('STREAK_365', '星火长明', 'LEGENDARY', '恒心打卡', '整整一年的坚持，足以重塑一个人的人生', 2000, false, false, 0, 0.05, null)">
+          <div class="tier-pill tier-legend">传说</div>
+          <div class="badge-icon-box">
+            <div class="lock-overlay">🔒</div>
+            <svg class="badge-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="url(#legendGrad)"/>
+              <circle cx="50" cy="50" r="36" fill="#2E1065"/>
+              <!-- 璀璨星火 -->
+              <polygon points="50,25 56,40 72,42 60,54 64,70 50,61 36,70 40,54 28,42 44,40" fill="#A855F7"/>
+            </svg>
+          </div>
+          <div class="badge-name">星火长明</div>
+          <div class="badge-category-text">恒心打卡 · 连击365天</div>
+          <div class="progress-wrap">
+            <div class="progress-fill" style="width: 5%;"></div>
+          </div>
+          <div class="progress-label">21 / 365 天 (5%)</div>
+        </div>
+
+        <!-- 勋章 8: AI 智囊伙伴 (传说品阶) -->
+        <div class="badge-card locked" data-category="SOCIAL" onclick="openModal('AI_ORACLE', 'AI 智囊伙伴', 'LEGENDARY', '共鸣探索', '拥抱 AI 时代学习方式，人机协同背诵词汇', 1000, false, false, 0, 0.35, null)">
+          <div class="tier-pill tier-legend">传说</div>
+          <div class="badge-icon-box">
+            <div class="lock-overlay">🔒</div>
+            <svg class="badge-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="44" fill="url(#legendGrad)"/>
+              <circle cx="50" cy="50" r="36" fill="#2E1065"/>
+              <!-- 芯片脑波 -->
+              <rect x="35" y="35" width="30" height="30" rx="6" fill="#67E8F9"/>
+              <circle cx="50" cy="50" r="6" fill="#FFFFFF"/>
+            </svg>
+          </div>
+          <div class="badge-name">AI 智囊伙伴</div>
+          <div class="badge-category-text">共鸣探索 · AI解析100次</div>
+          <div class="progress-wrap">
+            <div class="progress-fill" style="width: 35%;"></div>
+          </div>
+          <div class="progress-label">35 / 100 次 (35%)</div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- 4. 勋章详情弹窗 Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+
+      <div class="modal-icon-glow" id="modalIconBox">
+        <svg class="badge-svg" style="width: 86px; height: 86px;" viewBox="0 0 100 100" id="modalSvg">
+          <!-- 动态注入 -->
+        </svg>
+      </div>
+
+      <div class="modal-title" id="modalTitle">萌芽初醒</div>
+      <div class="modal-tier-pill" id="modalTierPill">青铜品阶 · 恒心打卡</div>
+
+      <div class="modal-info-box">
+        <div>
+          <div class="info-section-title">📜 达成条件</div>
+          <div class="info-section-desc" id="modalDesc">千里之行始于足下，连续背单词 3 天</div>
+        </div>
+        <div>
+          <div class="info-section-title">🎁 激励回馈</div>
+          <div class="info-bubble-reward" id="modalReward">魔法泡泡 +50</div>
+        </div>
+        <div id="modalUnlockTimeRow">
+          <div class="info-section-title">⏰ 解锁时间</div>
+          <div class="info-section-desc" style="font-size: 12px; color: var(--text-sub);" id="modalUnlockTime">2026-08-20 18:30</div>
+        </div>
+      </div>
+
+      <button class="modal-btn-primary" id="modalActionBtn" onclick="toggleEquipFromModal()">
+        置顶佩戴到主页
+      </button>
+      <button class="modal-btn-secondary" onclick="closeModalDirect()">
+        关闭
+      </button>
+    </div>
+  </div>
+
+  <!-- SVG 全局渐变定义 (隐藏) -->
+  <svg style="position: absolute; width: 0; height: 0; overflow: hidden;">
+    <defs>
+      <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FFC2A8"/>
+        <stop offset="35%" stop-color="#E07A5F"/>
+        <stop offset="70%" stop-color="#C25E3E"/>
+        <stop offset="100%" stop-color="#5E2010"/>
+      </linearGradient>
+      <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FFFFFF"/>
+        <stop offset="50%" stop-color="#94A3B8"/>
+        <stop offset="100%" stop-color="#334155"/>
+      </linearGradient>
+      <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FFFBEB"/>
+        <stop offset="25%" stop-color="#FEF08A"/>
+        <stop offset="60%" stop-color="#FBBF24"/>
+        <stop offset="85%" stop-color="#F59E0B"/>
+        <stop offset="100%" stop-color="#92400E"/>
+      </linearGradient>
+      <linearGradient id="legendGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#F472B6"/>
+        <stop offset="50%" stop-color="#A855F7"/>
+        <stop offset="100%" stop-color="#3B82F6"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- 悬浮日夜切换按钮 -->
+  <div class="theme-toggle-fab" onclick="toggleTheme()">
+    <span id="themeToggleText">切换暗黑夜间模式</span>
+  </div>
+
+  <script>
+    // 主题切换
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      document.getElementById('themeIcon').textContent = next === 'dark' ? '☀️' : '🌙';
+      document.getElementById('themeToggleText').textContent = next === 'dark' ? '切换清爽护眼亮色' : '切换暗黑夜间模式';
+    }
+
+    // 分类筛选
+    function filterBadges(category, btn) {
+      document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cards = document.querySelectorAll('.badge-card');
+      cards.forEach(card => {
+        if (category === 'ALL' || card.getAttribute('data-category') === category) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // 当前选中的勋章状态
+    let currentBadgeState = {};
+
+    // 打开详情弹窗
+    function openModal(code, name, tier, category, desc, bubbles, isUnlocked, isEquipped, count, percent, unlockTime) {
+      currentBadgeState = { code, name, tier, category, desc, bubbles, isUnlocked, isEquipped, count, percent, unlockTime };
+
+      document.getElementById('modalTitle').textContent = name;
+      document.getElementById('modalDesc').textContent = desc;
+      document.getElementById('modalReward').textContent = `魔法泡泡 +${bubbles}`;
+      
+      const tierMap = { 'BRONZE': '青铜', 'SILVER': '白银', 'GOLD': '黄金', 'LEGENDARY': '传说' };
+      const tierName = tierMap[tier] || '青铜';
+      const tierClass = `tier-${tier.toLowerCase()}`;
+      
+      const pill = document.getElementById('modalTierPill');
+      pill.textContent = `${tierName}品阶 · ${category}`;
+      pill.className = `modal-tier-pill ${tierClass}`;
+
+      const unlockTimeRow = document.getElementById('modalUnlockTimeRow');
+      if (isUnlocked && unlockTime) {
+        unlockTimeRow.style.display = 'block';
+        document.getElementById('modalUnlockTime').textContent = unlockTime;
+      } else {
+        unlockTimeRow.style.display = 'none';
+      }
+
+      const actionBtn = document.getElementById('modalActionBtn');
+      if (isUnlocked) {
+        actionBtn.style.display = 'block';
+        actionBtn.textContent = isEquipped ? '取消主页佩戴' : '置顶佩戴到主页';
+        actionBtn.style.background = isEquipped ? 'var(--text-sub)' : 'var(--accent-green)';
+      } else {
+        actionBtn.style.display = 'block';
+        actionBtn.textContent = `进行中 (${Math.round(percent * 100)}%)`;
+        actionBtn.style.background = 'var(--text-muted)';
+      }
+
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal(e) {
+      document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function closeModalDirect() {
+      document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function toggleEquipFromModal() {
+      if (!currentBadgeState.isUnlocked) {
+        alert('该勋章尚未解锁达成！');
+        return;
+      }
+      currentBadgeState.isEquipped = !currentBadgeState.isEquipped;
+      alert(currentBadgeState.isEquipped ? `已成功将【${currentBadgeState.name}】佩戴至个人主页！` : `已取消【${currentBadgeState.name}】的主页佩戴！`);
+      closeModalDirect();
+    }
+  </script>
+</body>
+</html>
