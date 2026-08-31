@@ -2888,18 +2888,19 @@ class _DictCardState extends State<DictCard> {
     final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDarkMode ? const Color(0xFF162320) : const Color(0xFFF5F9F7),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor, width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 第一行：左侧三色环形进度 + 词书全名 + 右侧优先取词微胶囊
+          // 1. 上半部分：左侧环形进度 + 右侧（词书全名 + 掌握/取词统计）
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               TweenAnimationBuilder<double>(
                 tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -2907,8 +2908,8 @@ class _DictCardState extends State<DictCard> {
                 curve: Curves.easeOutCubic,
                 builder: (context, animValue, child) {
                   return SizedBox(
-                    width: 38,
-                    height: 38,
+                    width: 44,
+                    height: 44,
                     child: CustomPaint(
                       painter: ThreeSegmentProgressPainter(
                         masteryProgress: masteryProgress * animValue,
@@ -2917,13 +2918,13 @@ class _DictCardState extends State<DictCard> {
                         fetchColor: fetchColor,
                         backgroundColor: isDarkMode ? Colors.white12 : const Color(0xFFE8F5EE),
                         dividerColor: isDarkMode ? const Color(0xFF162320) : const Color(0xFFF5F9F7),
-                        strokeWidth: 3.5,
+                        strokeWidth: 4.0,
                       ),
                       child: Center(
                         child: Text(
                           '$progressPercent%',
                           style: TextStyle(
-                            fontSize: 9.5,
+                            fontSize: 10,
                             color: masteredColor,
                             fontWeight: FontWeight.w900,
                             fontFamily: 'Roboto',
@@ -2934,23 +2935,46 @@ class _DictCardState extends State<DictCard> {
                   );
                 },
               ),
-              const SizedBox(width: 10),
-              // 词书名称 (拥有整行充裕空间，不被挤压)
+              const SizedBox(width: 12),
+              // 词书信息区：词书名独占第一行，统计文字独占第二行，绝无挤压！
               Expanded(
-                child: Text(
-                  widget.dictInfo.name.replaceAll('.dict', ''),
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    fontFamily: 'NotoSansSC',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.dictInfo.name.replaceAll('.dict', ''),
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'NotoSansSC',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '已掌握 $masteredWords · 已取词 $fetchWords / $totalWords 词',
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'NotoSansSC',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              // 1. 优先取词胶囊
+            ],
+          ),
+          const SizedBox(height: 12),
+          // 2. 下半部分：三个按钮整齐排在同一行
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // 按钮 1：优先取词微胶囊
               GestureDetector(
                 onTap: () async {
                   try {
@@ -2978,52 +3002,42 @@ class _DictCardState extends State<DictCard> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: currentLearningDict.isPrivileged
                         ? (isDarkMode ? masteredColor.withValues(alpha: 0.15) : const Color(0xFFE8F8F1))
-                        : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFEAEAEA)),
+                        : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9)),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: currentLearningDict.isPrivileged
                           ? masteredColor.withValues(alpha: 0.4)
-                          : (isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.08)),
+                          : (isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.06)),
                     ),
                   ),
-                  child: Text(
-                    '优先取词',
-                    style: TextStyle(
-                      color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor,
-                      fontSize: 10,
-                      fontWeight: currentLearningDict.isPrivileged ? FontWeight.w800 : FontWeight.w500,
-                      fontFamily: 'NotoSansSC',
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        currentLearningDict.isPrivileged ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                        size: 12,
+                        color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '优先取词',
+                        style: TextStyle(
+                          color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor,
+                          fontSize: 11,
+                          fontWeight: currentLearningDict.isPrivileged ? FontWeight.w800 : FontWeight.w500,
+                          fontFamily: 'NotoSansSC',
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 第二行：两端对齐：左侧词数统计详情，右侧操作按钮 (词表 + 移出)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // 词数统计
-              Expanded(
-                child: Text(
-                  '已掌握 $masteredWords · 已取词 $fetchWords / $totalWords 词',
-                  style: TextStyle(
-                    color: subtitleColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'NotoSansSC',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
-              // 2. 词表快捷入口
+              // 按钮 2：查看词表
               GestureDetector(
                 onTap: () async {
                   try {
@@ -3034,12 +3048,12 @@ class _DictCardState extends State<DictCard> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.white,
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.08),
+                      color: isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.06),
                     ),
                   ),
                   child: Row(
@@ -3048,10 +3062,10 @@ class _DictCardState extends State<DictCard> {
                       Icon(Icons.format_list_bulleted_rounded, size: 12, color: subtitleColor),
                       const SizedBox(width: 4),
                       Text(
-                        '词表',
+                        '查看',
                         style: TextStyle(
                           color: subtitleColor,
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           fontFamily: 'NotoSansSC',
                         ),
@@ -3060,12 +3074,12 @@ class _DictCardState extends State<DictCard> {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              // 3. 删除/移出词书按钮
+              const SizedBox(width: 8),
+              // 按钮 3：移出书桌
               GestureDetector(
                 onTap: () => _handleDictDataAction(),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                   decoration: BoxDecoration(
                     color: Colors.redAccent.withValues(alpha: isDarkMode ? 0.15 : 0.08),
                     borderRadius: BorderRadius.circular(8),
@@ -3077,16 +3091,16 @@ class _DictCardState extends State<DictCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
-                        Icons.delete_outline_rounded,
-                        size: 12,
+                        Icons.remove_circle_outline_rounded,
+                        size: 13,
                         color: Colors.redAccent,
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 3),
                       const Text(
-                        '移出',
+                        '停学',
                         style: TextStyle(
                           color: Colors.redAccent,
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           fontFamily: 'NotoSansSC',
                         ),
