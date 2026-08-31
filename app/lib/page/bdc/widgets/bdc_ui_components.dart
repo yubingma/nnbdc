@@ -386,15 +386,6 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildMainContent() {
     final sw = Stopwatch()..start();
-    final isChoiceStep = state.studyStep == StudyStep.en2Ch.json ||
-        state.studyStep == StudyStep.ch2En.json;
-    final isAnswered =
-        state.selectedAnswerIndex != null || state.hasFinishedAnswering;
-    // 只有在处于“选”Tab（Tab数量为2时index为1，或仅1个Tab）时，才为多行选项卡片展开做题区高度
-    final bool isAtChoiceTab = (_tabController?.length == 2)
-        ? ((_tabController?.index ?? state.tabIndex) == 1)
-        : true;
-    final bool expandChoiceArea = isChoiceStep && isAnswered && isAtChoiceTab;
 
     final result = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -629,9 +620,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         _buildTopButtonsRow(),
         // 顶部按钮和题目区之间的间距
         const SizedBox(height: 8),
-        // 题目区 - 答题后适度微调 flex（4:5），保持紧凑匀称
+        // 题目区 - 保持固定匀称比例（4:5）
         Expanded(
-          flex: expandChoiceArea ? 4 : 5,
+          flex: 4,
           child: Consumer(
             builder: (context, ref, child) {
               // 物理隔离：只监听会影响卡片渲染的核心状态
