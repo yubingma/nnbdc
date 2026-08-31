@@ -1523,31 +1523,25 @@ class _MePageState extends State<MePage> {
               ),
               const SizedBox(height: 14),
 
-              // 3.1 三个统计微卡片
+              // 3.1 三个统计微卡片 (纯净数值 + 标签，1:1 对齐原型)
               Row(
                 children: [
                   _buildStatBox(
                     isDarkModeEnabled,
                     "打卡天数",
                     studyProgress!.dakaDayCount.toString(),
-                    Icons.event_available_rounded,
-                    accentColor,
                   ),
                   const SizedBox(width: 8),
                   _buildStatBox(
                     isDarkModeEnabled,
                     "已掌握词",
                     studyProgress!.masteredWordsCount.toString(),
-                    Icons.task_alt_rounded,
-                    accentColor,
                   ),
                   const SizedBox(width: 8),
                   _buildStatBox(
                     isDarkModeEnabled,
                     "超越学友",
                     studyProgress!.userOrder! < 0 ? '98.5%' : '${studyProgress!.userOrder!.toStringAsFixed(1)}%',
-                    Icons.trending_up_rounded,
-                    accentColor,
                   ),
                 ],
               ),
@@ -2583,42 +2577,40 @@ class _MePageState extends State<MePage> {
     }
   }
 
-  // 进度项组件
-  Widget _buildStatBox(bool isDarkMode, String label, String value, IconData icon, Color color) {
+  // 统计项小卡片 (1:1 严格对齐原型：大字数值 + 小字标签，无多余图标)
+  Widget _buildStatBox(bool isDarkMode, String label, String value) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF0FAF5),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1418BA7C),
-          ),
+          color: isDarkMode ? const Color(0xFF1B2825) : const Color(0xFFEDF5F2),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: color.withValues(alpha: 0.9)),
-            const SizedBox(height: 10),
             Text(
               value,
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w900,
                 fontFamily: 'Roboto',
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
                 color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570),
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'NotoSansSC',
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
