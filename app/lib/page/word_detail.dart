@@ -116,6 +116,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   late TabController _tabController;
   final List<ChatMessage> _chatMessages = [];
   final TextEditingController _chatInputController = TextEditingController();
+  final FocusNode _chatInputFocusNode = FocusNode();
   final ScrollController _chatScrollController = ScrollController();
 
   bool _aiLoading = false;
@@ -294,6 +295,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
     }
     _tabController.dispose();
     _chatInputController.dispose();
+    _chatInputFocusNode.dispose();
     _chatScrollController.dispose();
 
     _sessionDisposed = true;
@@ -2153,33 +2155,47 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
-                      width: 1,
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: TextField(
-                    controller: _chatInputController,
-                    maxLines: 4,
-                    minLines: 1,
-                    decoration: InputDecoration(
-                      hintText: '向 AI 助教提问关于该词的疑问...',
-                      hintStyle: TextStyle(
-                        fontSize: 13.5,
-                        color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                child: Focus(
+                  onFocusChange: (hasFocus) {
+                    if (mounted) setState(() {});
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: _chatInputFocusNode.hasFocus
+                            ? AppTheme.primaryColor
+                            : (isDarkMode ? Colors.white12 : const Color(0xFFD1EADE)),
+                        width: _chatInputFocusNode.hasFocus ? 1.5 : 1,
                       ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 9),
                     ),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: TextField(
+                      focusNode: _chatInputFocusNode,
+                      controller: _chatInputController,
+                      maxLines: 4,
+                      minLines: 1,
+                      decoration: InputDecoration(
+                        hintText: '向 AI 助教提问关于该词的疑问...',
+                        hintStyle: TextStyle(
+                          fontSize: 13.5,
+                          color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        isDense: true,
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                      ),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                      ),
                     ),
                   ),
                 ),
