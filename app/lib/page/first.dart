@@ -22,7 +22,7 @@ class FirstPage extends ConsumerStatefulWidget {
   FirstPageState createState() => FirstPageState();
 }
 
-class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMixin {
+class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderStateMixin {
   // 版本状态
   String? _buildNumber;
   String? _versionName;
@@ -31,9 +31,8 @@ class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMi
   String _preparingMessage = '正在准备学习环境…';
   String? _autoLoginError;
 
-  // 动画背景
+  // 轻微呼吸动画
   late AnimationController _splashController;
-  late List<_Bubble> _bubbles;
   final String _splashText = "Progress, not perfection\n进步而非完美";
 
   @override
@@ -41,36 +40,10 @@ class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMi
     super.initState();
     Api.setLoadingDisabled(true);
 
-    _initBubbles();
-    _splashController = AnimationController(vsync: this, duration: const Duration(seconds: 20))
-      ..addListener(() => _updateBubbles())
-      ..repeat();
+    _splashController = AnimationController(vsync: this, duration: const Duration(seconds: 4))
+      ..repeat(reverse: true);
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkPrivacyAndProceed());
-  }
-
-  void _initBubbles() {
-    final rnd = math.Random();
-    _bubbles = List.generate(24, (i) {
-      return _Bubble(
-        rnd.nextDouble(),
-        rnd.nextDouble(),
-        6 + rnd.nextDouble() * 18,
-        0.0006 + rnd.nextDouble() * 0.0016,
-        Colors.white.withValues(alpha: 0.05 + rnd.nextDouble() * 0.10),
-      );
-    });
-  }
-
-  void _updateBubbles() {
-    for (final b in _bubbles) {
-      b.y -= b.speed * 16 / 1000 * 60;
-      if (b.y < -0.05) {
-        b.y = 1.1;
-        b.x = math.Random().nextDouble();
-      }
-    }
-    if (mounted) setState(() {});
   }
 
   @override
@@ -184,42 +157,63 @@ class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMi
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('服务协议与隐私政策', style: TextStyle(fontSize: 16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          '服务协议与隐私政策',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'NotoSansSC'),
+        ),
         insetPadding: const EdgeInsets.symmetric(horizontal: 30),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('请阅读并接受：', style: TextStyle(fontSize: 14)),
+            const Text('请阅读并接受：', style: TextStyle(fontSize: 14, fontFamily: 'NotoSansSC')),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 GestureDetector(
                   onTap: () => context.push('/protocol'),
-                  child: const Text('《用户协议》', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    '《用户协议》',
+                    style: TextStyle(color: Color(0xFF18BA7C), fontWeight: FontWeight.bold, fontFamily: 'NotoSansSC'),
+                  ),
                 ),
                 const Text(' 与 '),
                 GestureDetector(
                   onTap: () => context.push('/privacy'),
-                  child: const Text('《隐私政策》', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    '《隐私政策》',
+                    style: TextStyle(color: Color(0xFF18BA7C), fontWeight: FontWeight.bold, fontFamily: 'NotoSansSC'),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            const Text('点击“同意并继续”即表示您已阅读并接受上述协议。', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const Text(
+              '点击“同意并继续”即表示您已阅读并接受上述协议。',
+              style: TextStyle(fontSize: 12, color: Colors.grey, fontFamily: 'NotoSansSC'),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => exit(0), child: const Text('不同意', style: TextStyle(color: Colors.grey))),
+          TextButton(
+            onPressed: () => exit(0),
+            child: const Text('不同意', style: TextStyle(color: Colors.grey, fontFamily: 'NotoSansSC')),
+          ),
           ElevatedButton(
             onPressed: () async {
               await Prefs.write('accepted_privacy_version', 20260310);
               if (context.mounted) Navigator.of(context).pop();
               _initVersion().then((_) => checkNewVersion());
             },
-            style: ElevatedButton.styleFrom(elevation: 0),
-            child: const Text('同意并继续'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF18BA7C),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('同意并继续', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'NotoSansSC')),
           ),
         ],
       ),
@@ -237,37 +231,86 @@ class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0EA5E9),
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF0EA5E9), Color(0xFF075985)],
-              ),
-            ),
+      backgroundColor: const Color(0xFF18BA7C),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF18BA7C),
+              Color(0xFF109E69),
+              Color(0xFF0D7A51),
+            ],
           ),
-          CustomPaint(painter: _BubblesPainter(_bubbles), size: Size.infinite),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Transform.scale(
-                  scale: 1.0 + 0.04 * math.sin(_splashController.value * 2 * math.pi),
-                  child: Image.asset("assets/images/logo.png", width: 90),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedBuilder(
+                animation: _splashController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: 1.0 + 0.03 * math.sin(_splashController.value * math.pi),
+                    child: child,
+                  );
+                },
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      "assets/images/logo.png",
+                      width: 78,
+                      height: 78,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 20),
-                Text(_splashText, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 16)),
-                const SizedBox(height: 40),
-                _buildStatusIndicator(),
-                const SizedBox(height: 20),
-                Text('版本 ${_versionName ?? ''}(${_buildNumber ?? ''})', style: const TextStyle(color: Colors.white54, fontSize: 10)),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _splashText,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                  height: 1.5,
+                  fontFamily: 'NotoSansSC',
+                ),
+              ),
+              const SizedBox(height: 48),
+              _buildStatusIndicator(),
+              const SizedBox(height: 24),
+              Text(
+                '版本 ${_versionName ?? ''}(${_buildNumber ?? ''})',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 11,
+                  fontFamily: 'Roboto',
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -277,33 +320,40 @@ class FirstPageState extends ConsumerState<FirstPage> with TickerProviderStateMi
     return Column(
       children: [
         if (err == null)
-          const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white))),
-        const SizedBox(height: 10),
-        Text(err ?? _preparingMessage, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-        if (err != null) TextButton(onPressed: () => _checkPrivacyAndProceed(), child: const Text('重试', style: TextStyle(color: Colors.white))),
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation(Colors.white),
+            ),
+          ),
+        const SizedBox(height: 12),
+        Text(
+          err ?? _preparingMessage,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.85),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
+        if (err != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: TextButton(
+              onPressed: () => _checkPrivacyAndProceed(),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              ),
+              child: const Text('重试', style: TextStyle(fontFamily: 'NotoSansSC', fontWeight: FontWeight.bold)),
+            ),
+          ),
       ],
     );
   }
 }
 
-class _Bubble {
-  double x, y, radius, speed;
-  Color color;
-  _Bubble(this.x, this.y, this.radius, this.speed, this.color);
-}
-
-class _BubblesPainter extends CustomPainter {
-  final List<_Bubble> bubbles;
-  _BubblesPainter(this.bubbles);
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..isAntiAlias = true;
-    for (var b in bubbles) {
-      paint.color = b.color;
-      canvas.drawCircle(Offset(b.x * size.width, b.y * size.height), b.radius, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter old) => true;
-}
