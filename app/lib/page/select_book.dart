@@ -175,14 +175,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           }
         }
         results.sort((a, b) {
-          if (a.updateTime == null && b.updateTime == null) {
-            return (a.name ?? '').compareTo(b.name ?? '');
-          }
-          if (a.updateTime == null) return 1;
-          if (b.updateTime == null) return -1;
-          int cmp = b.updateTime!.compareTo(a.updateTime!);
-          if (cmp != 0) return cmp;
-          return (a.name ?? '').compareTo(b.name ?? '');
+          final nameA = (a.shortName ?? a.name ?? '').toLowerCase();
+          final nameB = (b.shortName ?? b.name ?? '').toLowerCase();
+          return nameA.compareTo(nameB);
         });
         return results;
       }
@@ -237,6 +232,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
         // C. 组装结果
         if (allDictsInThisCategory.isNotEmpty) {
+          allDictsInThisCategory.sort((a, b) {
+            final nameA = (a.shortName ?? a.name ?? '').toLowerCase();
+            final nameB = (b.shortName ?? b.name ?? '').toLowerCase();
+            return nameA.compareTo(nameB);
+          });
+
           // 如果有多个子分组，或者既有子分组又有直属词书，则需要展示“全部”胶囊以供切换
           if (validChildrenVos.length > 1 || (validChildrenVos.isNotEmpty && directDicts.isNotEmpty)) {
             subGroupVos.add(DictGroupVo(id: 'all_${topGroup.id}', name: '全部', dicts: allDictsInThisCategory));
@@ -265,14 +266,11 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
       customDicts = (await WordBo().getCustomDicts(userId)).where((d) => d.name != '已掌握').toList();
       customDicts!.sort((a, b) {
-        if (a.updateTime == null && b.updateTime == null) {
-          return (a.name ?? '').compareTo(b.name ?? '');
-        }
-        if (a.updateTime == null) return 1;
-        if (b.updateTime == null) return -1;
-        int cmp = b.updateTime!.compareTo(a.updateTime!);
-        if (cmp != 0) return cmp;
-        return (a.name ?? '').compareTo(b.name ?? '');
+        if (a.name == '生词本') return -1;
+        if (b.name == '生词本') return 1;
+        final nameA = (a.name ?? '').toLowerCase();
+        final nameB = (b.name ?? '').toLowerCase();
+        return nameA.compareTo(nameB);
       });
 
       if (!keepSelection) {
