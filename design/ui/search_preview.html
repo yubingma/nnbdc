@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>查词 - 扇贝护眼温润绿美学原型</title>
+  <style>
+    :root {
+      /* 扇贝单词经典护眼温润绿体系 */
+      --bg: #F5F9F7;
+      --card-bg: #FFFFFF;
+      --card-subtle: #EDF7F3;
+      --card-hover: #E3F4EC;
+      --divider: rgba(24, 186, 124, 0.08);
+      
+      --text-primary: #152724;
+      --text-secondary: #425B57;
+      --text-muted: #789691;
+      --text-faint: #B2CDC8;
+
+      /* 扇贝绿主品牌色 */
+      --primary: #18BA7C;
+      --primary-hover: #15A56E;
+      --primary-soft: #E8F8F1;
+      --primary-text: #FFFFFF;
+
+      --pos-tag-bg: #E3F6EE;
+      --pos-tag-text: #139E67;
+
+      --search-box-bg: #FFFFFF;
+      --search-box-border: #D1EADE;
+      --search-box-focus: #18BA7C;
+
+      --shadow-card: 0 4px 16px rgba(24, 186, 124, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+      --shadow-focus: 0 0 0 3px rgba(24, 186, 124, 0.18);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0C1513;
+      --card-bg: #13201D;
+      --card-subtle: #192C27;
+      --card-hover: #203832;
+      --divider: rgba(255, 255, 255, 0.06);
+      
+      --text-primary: #EAF7F4;
+      --text-secondary: #8EA8A3;
+      --text-muted: #5B7A75;
+      --text-faint: #344B48;
+
+      --primary: #2CD88F;
+      --primary-hover: #26C07F;
+      --primary-soft: rgba(44, 216, 143, 0.12);
+      --primary-text: #0A1613;
+
+      --pos-tag-bg: rgba(44, 216, 143, 0.15);
+      --pos-tag-text: #2CD88F;
+
+      --search-box-bg: #172623;
+      --search-box-border: #233B35;
+      --search-box-focus: #2CD88F;
+
+      --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.4);
+      --shadow-focus: 0 0 0 3px rgba(44, 216, 143, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #DFE7E4;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px 12px;
+      color: var(--text-primary);
+      transition: background-color 0.3s;
+    }
+
+    /* 顶部控制栏 */
+    .designer-toolbar {
+      width: 100%;
+      max-width: 412px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      padding: 8px 14px;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .designer-toolbar button {
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .designer-toolbar button:hover {
+      background: #E2E8F0;
+    }
+
+    /* 手机外壳容器 */
+    .device-mockup {
+      width: 100%;
+      max-width: 412px;
+      height: 844px;
+      background: var(--bg);
+      border-radius: 42px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      height: 38px;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      z-index: 10;
+    }
+
+    /* 搜索栏区域 */
+    .search-header-container {
+      padding: 6px 16px 14px 16px;
+      background: var(--bg);
+    }
+    .search-input-box {
+      width: 100%;
+      height: 48px;
+      background: var(--search-box-bg);
+      border: 1.5px solid var(--search-box-border);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+      box-shadow: var(--shadow-card);
+      transition: all 0.2s ease;
+    }
+    .search-input-box.focused {
+      border-color: var(--search-box-focus);
+      box-shadow: var(--shadow-focus);
+    }
+    .search-icon {
+      color: var(--primary);
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+    }
+    .search-input-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .search-input-box input::placeholder {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .btn-clear {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-clear:hover {
+      background: var(--divider);
+      color: var(--text-primary);
+    }
+
+    /* 滚动内容区 */
+    .search-content-body {
+      flex: 1;
+      padding: 4px 16px 30px 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 搜索结果卡片 */
+    .word-result-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1.2px solid var(--divider);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .word-result-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .word-spell-group {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .word-spell-text {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: 0.2px;
+    }
+    .word-spell-text mark {
+      background: transparent;
+      color: var(--primary);
+      font-weight: 800;
+    }
+    .word-phonetic-badge {
+      font-size: 12px;
+      font-family: 'NotoSans', -apple-system, sans-serif;
+      color: var(--text-muted);
+      background: var(--card-subtle);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .card-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-audio-speak {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      border: none;
+      color: var(--primary);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-audio-speak:hover {
+      transform: scale(1.08);
+    }
+    .icon-chevron-right {
+      color: var(--text-faint);
+      font-size: 14px;
+    }
+
+    .card-meaning-box {
+      background: var(--card-subtle);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .pos-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--pos-tag-text);
+      background: var(--pos-tag-bg);
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+
+    /* 空状态与热词推荐 */
+    .empty-state-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .empty-illustration {
+      width: 72px;
+      height: 72px;
+      border-radius: 24px;
+      background: var(--primary-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: var(--primary);
+      margin-bottom: 16px;
+      box-shadow: 0 8px 20px rgba(24, 186, 124, 0.12);
+    }
+    .empty-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .empty-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 240px;
+      line-height: 1.4;
+      margin-bottom: 24px;
+    }
+
+    .recommend-section {
+      width: 100%;
+      text-align: left;
+    }
+    .recommend-header {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chips-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .search-chip {
+      padding: 6px 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--divider);
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .search-chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+      transform: translateY(-1px);
+    }
+
+    /* 底部导航栏模拟 */
+    .app-bottom-tab-bar {
+      height: 60px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--divider);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: 8px;
+    }
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .tab-item.active {
+      color: var(--primary);
+    }
+    .tab-item svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 控制工具栏 -->
+  <div class="designer-toolbar">
+    <div style="font-size: 13px; font-weight: 800; color: #152724; display: flex; align-items: center; gap: 6px;">
+      <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#18BA7C;"></span>
+      查词美学设计
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <button onclick="toggleScenario()">切换场景 (输入中/空状态)</button>
+      <button onclick="toggleTheme()">🌓 切换明暗</button>
+    </div>
+  </div>
+
+  <!-- 手机外壳 -->
+  <div class="device-mockup" id="device">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>09:41</span>
+      <div style="display: flex; gap: 4px; align-items: center;">
+        <span>5G</span>
+        <div style="width: 18px; height: 9px; border: 1.5px solid var(--text-primary); border-radius: 3px; padding: 1px;">
+          <div style="width: 100%; height: 100%; background: var(--text-primary); border-radius: 1px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 顶部搜索栏 -->
+    <div class="search-header-container">
+      <div class="search-input-box focused" id="searchBox">
+        <div class="search-icon">🔍</div>
+        <input type="text" id="searchInput" placeholder="输入单词或中文释义..." value="res" oninput="handleSearch(this.value)">
+        <button class="btn-clear" id="btnClear" onclick="clearSearch()" style="display: flex;">✕</button>
+      </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="search-content-body" id="contentArea">
+
+      <!-- 搜索结果 1 -->
+      <div class="word-result-card" onclick="openDetail('resilient')">
+        <div class="card-top-row">
+          <div class="word-spell-group">
+            <div class="word-spell-text"><mark>res</mark>ilient</div>
+            <div class="word-phonetic-badge">/rɪˈzɪliənt/</div>
+          </div>
+          <div class="card-actions-group">
+            <button class="btn-audio-speak" onclick="event.stopPropagation(); playAudio('resilient')">🔊</button>
+            <span class="icon-chevron-right">›</span>
+          </div>
+        </div>
+        <div class="card-meaning-box">
+          <div><span class="pos-tag">adj.</span>有弹性的；能迅速恢复的；适应力强的</div>
+        </div>
+      </div>
+
+      <!-- 搜索结果 2 -->
+      <div class="word-result-card" onclick="openDetail('resolve')">
+        <div class="card-top-row">
+          <div class="word-spell-group">
+            <div class="word-spell-text"><mark>res</mark>olve</div>
+            <div class="word-phonetic-badge">/rɪˈzɒlv/</div>
+          </div>
+          <div class="card-actions-group">
+            <button class="btn-audio-speak" onclick="event.stopPropagation(); playAudio('resolve')">🔊</button>
+            <span class="icon-chevron-right">›</span>
+          </div>
+        </div>
+        <div class="card-meaning-box">
+          <div><span class="pos-tag">v.</span>解决；决定；分解 <span class="pos-tag">n.</span>决心；坚决</div>
+        </div>
+      </div>
+
+      <!-- 搜索结果 3 -->
+      <div class="word-result-card" onclick="openDetail('resonate')">
+        <div class="card-top-row">
+          <div class="word-spell-group">
+            <div class="word-spell-text"><mark>res</mark>onate</div>
+            <div class="word-phonetic-badge">/ˈrezəneɪt/</div>
+          </div>
+          <div class="card-actions-group">
+            <button class="btn-audio-speak" onclick="event.stopPropagation(); playAudio('resonate')">🔊</button>
+            <span class="icon-chevron-right">›</span>
+          </div>
+        </div>
+        <div class="card-meaning-box">
+          <div><span class="pos-tag">v.</span>产生共鸣；共振；回响</div>
+        </div>
+      </div>
+
+      <!-- 搜索结果 4 -->
+      <div class="word-result-card" onclick="openDetail('resource')">
+        <div class="card-top-row">
+          <div class="word-spell-group">
+            <div class="word-spell-text"><mark>res</mark>ource</div>
+            <div class="word-phonetic-badge">/ˈriːsɔːs/</div>
+          </div>
+          <div class="card-actions-group">
+            <button class="btn-audio-speak" onclick="event.stopPropagation(); playAudio('resource')">🔊</button>
+            <span class="icon-chevron-right">›</span>
+          </div>
+        </div>
+        <div class="card-meaning-box">
+          <div><span class="pos-tag">n.</span>资源；财力；智谋；应急手段</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部 Tab 栏 -->
+    <div class="app-bottom-tab-bar">
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+        <span>学习</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+        <span>复习</span>
+      </div>
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <span>查词</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span>我的</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isDark = false;
+    let isSearchingScenario = true;
+
+    function toggleTheme() {
+      isDark = !isDark;
+      document.getElementById('device').setAttribute('data-theme', isDark ? 'dark' : 'light');
+    }
+
+    function toggleScenario() {
+      isSearchingScenario = !isSearchingScenario;
+      const input = document.getElementById('searchInput');
+      if (isSearchingScenario) {
+        input.value = 'res';
+        handleSearch('res');
+      } else {
+        input.value = '';
+        handleSearch('');
+      }
+    }
+
+    function handleSearch(val) {
+      const btnClear = document.getElementById('btnClear');
+      const content = document.getElementById('contentArea');
+      
+      if (val.trim().length > 0) {
+        btnClear.style.display = 'flex';
+        renderResults(val.trim());
+      } else {
+        btnClear.style.display = 'none';
+        renderEmptyState();
+      }
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('searchInput');
+      input.value = '';
+      input.focus();
+      handleSearch('');
+    }
+
+    function renderEmptyState() {
+      const content = document.getElementById('contentArea');
+      content.innerHTML = `
+        <div class="empty-state-container">
+          <div class="empty-illustration">🔍</div>
+          <div class="empty-title">查单词 · 找例句</div>
+          <div class="empty-subtitle">支持输入英文拼写、中文释义或模糊前缀</div>
+          
+          <div class="recommend-section">
+            <div class="recommend-header">
+              <span>🔥 高频热词推荐</span>
+            </div>
+            <div class="chips-flow">
+              <div class="search-chip" onclick="applySearch('serendipity')">serendipity</div>
+              <div class="search-chip" onclick="applySearch('ephemeral')">ephemeral</div>
+              <div class="search-chip" onclick="applySearch('resilient')">resilient</div>
+              <div class="search-chip" onclick="applySearch('ubiquitous')">ubiquitous</div>
+              <div class="search-chip" onclick="applySearch('eloquent')">eloquent</div>
+              <div class="search-chip" onclick="applySearch('lucid')">lucid</div>
+            </div>
+
+            <div class="recommend-header" style="margin-top: 20px;">
+              <span>💡 词根探索</span>
+            </div>
+            <div class="chips-flow">
+              <div class="search-chip" onclick="applySearch('bene')">bene- (善/好)</div>
+              <div class="search-chip" onclick="applySearch('mal')">mal- (恶/坏)</div>
+              <div class="search-chip" onclick="applySearch('spect')">spect (看)</div>
+              <div class="search-chip" onclick="applySearch('tract')">tract (拉/引)</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function applySearch(word) {
+      const input = document.getElementById('searchInput');
+      input.value = word;
+      handleSearch(word);
+    }
+
+    function renderResults(query) {
+      const words = [
+        { spell: 'resilient', phonetic: '/rɪˈzɪliənt/', meaning: '<span class="pos-tag">adj.</span>有弹性的；能迅速恢复的；适应力强的' },
+        { spell: 'resolve', phonetic: '/rɪˈzɒlv/', meaning: '<span class="pos-tag">v.</span>解决；决定；分解 <span class="pos-tag">n.</span>决心；坚决' },
+        { spell: 'resonate', phonetic: '/ˈrezəneɪt/', meaning: '<span class="pos-tag">v.</span>产生共鸣；共振；回响' },
+        { spell: 'resource', phonetic: '/ˈriːsɔːs/', meaning: '<span class="pos-tag">n.</span>资源；财力；智谋；应急手段' },
+        { spell: 'respect', phonetic: '/rɪˈspekt/', meaning: '<span class="pos-tag">v.</span>尊敬；尊重 <span class="pos-tag">n.</span>敬意；方面' },
+      ];
+
+      const content = document.getElementById('contentArea');
+      content.innerHTML = words.map(w => {
+        let highlightedSpell = w.spell;
+        if (w.spell.toLowerCase().startsWith(query.toLowerCase())) {
+          const matchPart = w.spell.substring(0, query.length);
+          const restPart = w.spell.substring(query.length);
+          highlightedSpell = `<mark>${matchPart}</mark>${restPart}`;
+        }
+        return `
+          <div class="word-result-card" onclick="openDetail('${w.spell}')">
+            <div class="card-top-row">
+              <div class="word-spell-group">
+                <div class="word-spell-text">${highlightedSpell}</div>
+                <div class="word-phonetic-badge">${w.phonetic}</div>
+              </div>
+              <div class="card-actions-group">
+                <button class="btn-audio-speak" onclick="event.stopPropagation(); playAudio('${w.spell}')">🔊</button>
+                <span class="icon-chevron-right">›</span>
+              </div>
+            </div>
+            <div class="card-meaning-box">
+              <div>${w.meaning}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function playAudio(word) {
+      // 模拟发音动画
+    }
+
+    function openDetail(word) {
+      // 模拟进入详情
+    }
+  </script>
+</body>
+</html>
