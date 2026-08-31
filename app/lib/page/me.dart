@@ -969,24 +969,6 @@ class _MePageState extends State<MePage> {
                   textColor,
                   subtitleColor,
                 ),
-                const SizedBox(height: 12),
-                _buildPrivilegeRow(
-                  Icons.cloud_sync_rounded,
-                  '端云数据安全同步',
-                  '学习进度、生词本与打卡数据多端云同步',
-                  accentColor,
-                  textColor,
-                  subtitleColor,
-                ),
-                const SizedBox(height: 12),
-                _buildPrivilegeRow(
-                  Icons.tune_rounded,
-                  'FSRS 记忆算法调优',
-                  '根据个人遗忘规律自适应计算复习间隔',
-                  accentColor,
-                  textColor,
-                  subtitleColor,
-                ),
                 const SizedBox(height: 20),
                 // 底部操作按钮
                 Row(
