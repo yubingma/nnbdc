@@ -568,7 +568,7 @@ class BdcNotifier extends _$BdcNotifier {
         final startIndex = learningOrder != null ? learningOrder - 1 : 0;
         goRouter.pushReplacement('/word_list',
           extra: WordListPageArgs(
-            '本组单词',
+            '本组小结',
             StageWordsProvider(),
             true, // showBackBtn
             true, // showDelBtn
