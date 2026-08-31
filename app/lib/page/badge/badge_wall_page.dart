@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../api/vo.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
+import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
 
@@ -146,7 +148,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
         }
       }
 
-      // 4. 如果都未解锁：按完成度百分比从高到低排序 (例如 80% > 50% > 0%)
+      // 4. 如果都未解锁：按完成度百分比从高到低排序
       final aPercent = a.progressPercent ?? 0.0;
       final bPercent = b.progressPercent ?? 0.0;
       if ((aPercent - bPercent).abs() > 0.001) {
@@ -185,6 +187,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
   }
 
   void _showBadgeDetail(UserBadgeVo vo) {
+    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
     final badge = vo.badge;
     final isUnlocked = vo.isUnlocked == true;
     final tier = badge?.tier ?? 'BRONZE';
@@ -195,26 +198,42 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     final obtainCount = vo.obtainCount ?? 0;
     final starLevel = vo.starLevel ?? 1;
 
+    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
+    final subtleBg = isDarkMode ? const Color(0xFF192A26) : const Color(0xFFEDF5F2);
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) {
         return Container(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1E1B2E),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            border: Border.all(
+              color: isDarkMode ? Colors.white12 : const Color(0x1418BA7C),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.15),
+                blurRadius: 30,
+                offset: const Offset(0, -6),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // 顶部指示条
               Container(
-                width: 40,
+                width: 38,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: isDarkMode ? Colors.white24 : const Color(0xFFD0E0DC),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -225,22 +244,22 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                 alignment: Alignment.center,
                 children: [
                   Container(
-                    width: 110,
-                    height: 110,
+                    width: 108,
+                    height: 108,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: isUnlocked ? BadgeSvgAssets.getTierGlowColor(tier).withValues(alpha: 0.4) : Colors.transparent,
-                          blurRadius: 36,
-                          spreadRadius: 8,
+                          color: isUnlocked ? BadgeSvgAssets.getTierGlowColor(tier).withValues(alpha: 0.35) : Colors.transparent,
+                          blurRadius: 32,
+                          spreadRadius: 6,
                         ),
                       ],
                     ),
                   ),
                   BadgeSvgAssets.renderBadge(
                     code: badge?.code,
-                    size: 96,
+                    size: 92,
                     isUnlocked: isUnlocked,
                   ),
                   if (isStackable && isUnlocked && obtainCount > 1)
@@ -265,41 +284,44 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                           '×$obtainCount',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w900,
+                            fontFamily: 'Roboto',
                           ),
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               // 勋章名称
               Text(
                 badge?.name ?? '',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: textColor,
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'NotoSansSC',
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
 
               // 品阶 & 分类
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
-                  color: tierColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: tierColor.withValues(alpha: 0.4)),
+                  color: tierColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: tierColor.withValues(alpha: 0.35)),
                 ),
                 child: Text(
                   '$tierName · $categoryName',
                   style: TextStyle(
                     color: tierColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'NotoSansSC',
                   ),
                 ),
               ),
@@ -310,7 +332,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(5, (index) {
                     return Icon(
-                      index < starLevel ? Icons.star : Icons.star_border,
+                      index < starLevel ? Icons.star_rounded : Icons.star_border_rounded,
                       color: const Color(0xFFFBBF24),
                       size: 16,
                     );
@@ -323,49 +345,75 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
               // 解锁条件与描述
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.04),
-                  borderRadius: BorderRadius.circular(12),
+                  color: subtleBg,
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '📜 达成条件',
                       style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        color: subtitleColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'NotoSansSC',
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       badge?.description ?? '',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: textColor,
                         fontSize: 13,
-                        height: 1.4,
+                        height: 1.45,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'NotoSansSC',
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
+                    const SizedBox(height: 12),
+                    Text(
                       '🎁 激励回馈',
                       style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        color: subtitleColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'NotoSansSC',
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '魔法泡泡 +${badge?.rewardBubbles ?? 0}',
                       style: const TextStyle(
-                        color: Color(0xFF38BDF8),
+                        color: Color(0xFF0284C7),
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'Roboto',
                       ),
                     ),
+                    if (isUnlocked && vo.unlockedAt != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        '⏰ 解锁时间',
+                        style: TextStyle(
+                          color: subtitleColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'NotoSansSC',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        vo.unlockedAt!.toLocal().toString().split('.')[0],
+                        style: TextStyle(
+                          color: subtitleColor,
+                          fontSize: 12,
+                          fontFamily: 'Roboto',
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -379,12 +427,13 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: (vo.isEquipped == true)
-                          ? const Color(0xFF334155)
-                          : const Color(0xFF4F46E5),
+                          ? (isDarkMode ? const Color(0xFF334155) : const Color(0xFF64748B))
+                          : accentColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     onPressed: () {
@@ -393,12 +442,12 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                     },
                     child: Text(
                       (vo.isEquipped == true) ? '取消主页佩戴' : '置顶佩戴到主页',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, fontFamily: 'NotoSansSC'),
                     ),
                   ),
                 ),
 
-                // 🛠️ 管理员专属：重置/删除此勋章（便于调试与测试弹窗）
+                // 管理员调试删除
                 if (Global.getLoggedInUser()?.isAdmin == true) ...[
                   const SizedBox(height: 10),
                   SizedBox(
@@ -440,133 +489,195 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Provider.of<DarkMode>(context).isDarkMode;
     final filtered = _filteredBadges;
 
+    // 扇贝护眼色彩
+    final bgColor = isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF4F9F6);
+    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
+    final subtleBg = isDarkMode ? const Color(0xFF192A26) : const Color(0xFFEDF5F2);
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final borderColor = isDarkMode ? Colors.white10 : const Color(0x1418BA7C);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: bgColor,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 19),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           '荣耀勋章墙',
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: textColor,
+            fontSize: 17.5,
+            fontWeight: FontWeight.w800,
+            fontFamily: 'NotoSansSC',
+          ),
         ),
         centerTitle: true,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF4F46E5)))
+          ? Center(child: CircularProgressIndicator(color: accentColor))
           : RefreshIndicator(
               onRefresh: _loadBadges,
-              color: const Color(0xFF4F46E5),
+              color: accentColor,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  // 顶部汇总展台
+                  // 1. 顶部 Hero 成就殿堂展台
                   SliverToBoxAdapter(
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
+                        gradient: LinearGradient(
+                          colors: isDarkMode
+                              ? [const Color(0xFF1B352E), const Color(0xFF10241F)]
+                              : [const Color(0xFF18BA7C), const Color(0xFF0F9460)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFF818CF8).withValues(alpha: 0.3),
-                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  '🏆 收集成就进度',
-                                  style: TextStyle(
-                                    color: Color(0xFFA5B4FC),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                                const SizedBox(height: 6),
-                                RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: '$_unlockedCount',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('✨ ', style: TextStyle(fontSize: 11)),
+                                    Text(
+                                      '个人成就殿堂',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        fontFamily: 'NotoSansSC',
                                       ),
-                                      TextSpan(
-                                        text: ' / ${_allBadges.length}',
-                                        style: const TextStyle(
-                                          color: Colors.white54,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  '坚持背词与自律打卡，点亮属于你的星光图鉴',
-                                  style: TextStyle(
-                                    color: Colors.white60,
-                                    fontSize: 12,
-                                  ),
+                              ),
+                              const Text('🎖️', style: TextStyle(fontSize: 32)),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                '$_unlockedCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: 'Roboto',
+                                  height: 1,
                                 ),
-                              ],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '/ ${_allBadges.length} 枚已点亮',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '坚持背词与自律打卡，点亮属于你的星光图鉴',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 12,
+                              fontFamily: 'NotoSansSC',
                             ),
                           ),
-                          const Text('🎖', style: TextStyle(fontSize: 48)),
+                          const SizedBox(height: 14),
+                          // 进度条
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: _allBadges.isNotEmpty ? (_unlockedCount / _allBadges.length) : 0.0,
+                              backgroundColor: Colors.black.withValues(alpha: 0.2),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                              minHeight: 6,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
 
-                  // 分类筛选 Chip
+                  // 2. 分类筛选胶囊栏
                   SliverToBoxAdapter(
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       child: Row(
                         children: _categories.map((cat) {
                           final isSelected = _selectedCategory == cat['key'];
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
-                            child: FilterChip(
-                              label: Text(cat['label']!),
-                              selected: isSelected,
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white60,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 13,
-                              ),
-                              backgroundColor: const Color(0xFF1E293B),
-                              selectedColor: const Color(0xFF4F46E5),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                side: BorderSide(
-                                  color: isSelected
-                                      ? const Color(0xFF818CF8)
-                                      : Colors.white.withValues(alpha: 0.08),
+                            child: InkWell(
+                              onTap: () => setState(() => _selectedCategory = cat['key']!),
+                              borderRadius: BorderRadius.circular(20),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? accentColor : cardBg,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected ? accentColor : borderColor,
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: accentColor.withValues(alpha: 0.3),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ]
+                                      : [],
+                                ),
+                                child: Text(
+                                  cat['label']!,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white : subtitleColor,
+                                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                    fontSize: 12.5,
+                                    fontFamily: 'NotoSansSC',
+                                  ),
                                 ),
                               ),
-                              showCheckmark: false,
-                              onSelected: (_) {
-                                setState(() => _selectedCategory = cat['key']!);
-                              },
                             ),
                           );
                         }).toList(),
@@ -574,15 +685,15 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                     ),
                   ),
 
-                  // 勋章网格 Grid
+                  // 3. 勋章网格展示
                   SliverPadding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                     sliver: SliverGrid(
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        mainAxisSpacing: 14,
-                        crossAxisSpacing: 14,
-                        childAspectRatio: 0.78,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.76,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -591,41 +702,32 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                           final isUnlocked = vo.isUnlocked == true;
                           final tier = badge?.tier ?? 'BRONZE';
                           final tierColor = BadgeSvgAssets.getTierColor(tier);
+                          final tierName = BadgeSvgAssets.getTierName(tier);
                           final isStackable = badge?.isStackable ?? false;
                           final obtainCount = vo.obtainCount ?? 0;
                           final starLevel = vo.starLevel ?? 1;
 
                           return InkWell(
                             onTap: () => _showBadgeDetail(vo),
-                            borderRadius: BorderRadius.circular(18),
-                            child: Container(
+                            borderRadius: BorderRadius.circular(22),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                gradient: isUnlocked
-                                    ? RadialGradient(
-                                        center: const Alignment(0, -0.3),
-                                        radius: 0.85,
-                                        colors: [
-                                          BadgeSvgAssets.getTierGlowColor(tier).withValues(alpha: 0.22),
-                                          const Color(0xFF1E293B).withValues(alpha: 0.85),
-                                        ],
-                                      )
-                                    : const LinearGradient(
-                                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                      ),
-                                borderRadius: BorderRadius.circular(18),
+                                color: isUnlocked
+                                    ? (isDarkMode ? const Color(0xFF162522) : cardBg)
+                                    : (isDarkMode ? const Color(0xFF101B19) : cardBg.withValues(alpha: 0.8)),
+                                borderRadius: BorderRadius.circular(22),
                                 border: Border.all(
                                   color: isUnlocked
-                                      ? tierColor.withValues(alpha: 0.5)
-                                      : Colors.white.withValues(alpha: 0.08),
+                                      ? (vo.isEquipped == true ? accentColor : tierColor.withValues(alpha: isDarkMode ? 0.4 : 0.3))
+                                      : borderColor,
                                   width: isUnlocked ? 1.5 : 1,
                                 ),
                                 boxShadow: isUnlocked
                                     ? [
                                         BoxShadow(
-                                          color: tierColor.withValues(alpha: 0.2),
+                                          color: tierColor.withValues(alpha: isDarkMode ? 0.18 : 0.08),
                                           blurRadius: 16,
                                           offset: const Offset(0, 4),
                                         ),
@@ -635,13 +737,70 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  // 顶部角标区 (左：已佩戴；右：品阶)
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      if (vo.isEquipped == true)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: accentColor,
+                                            borderRadius: BorderRadius.circular(6),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: accentColor.withValues(alpha: 0.35),
+                                                blurRadius: 4,
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.star_rounded, size: 9, color: Colors.white),
+                                              SizedBox(width: 2),
+                                              Text(
+                                                '佩戴中',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontFamily: 'NotoSansSC',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      else
+                                        const SizedBox.shrink(),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: tierColor.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          tierName,
+                                          style: TextStyle(
+                                            color: tierColor,
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w800,
+                                            fontFamily: 'NotoSansSC',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 6),
+
                                   // 勋章 SVG 图标 + 叠层角标
                                   Stack(
                                     alignment: Alignment.center,
                                     children: [
                                       BadgeSvgAssets.renderBadge(
                                         code: badge?.code,
-                                        size: 72,
+                                        size: 68,
                                         isUnlocked: isUnlocked,
                                       ),
                                       if (isStackable && isUnlocked && obtainCount > 1)
@@ -666,40 +825,16 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                                               '×$obtainCount',
                                               style: const TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 10,
+                                                fontSize: 9.5,
                                                 fontWeight: FontWeight.w900,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      if (vo.isEquipped == true)
-                                        Positioned(
-                                          bottom: 0,
-                                          left: 0,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF10B981),
-                                              borderRadius: BorderRadius.circular(6),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                                                  blurRadius: 6,
-                                                ),
-                                              ],
-                                            ),
-                                            child: const Text(
-                                              '佩戴中',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.bold,
+                                                fontFamily: 'Roboto',
                                               ),
                                             ),
                                           ),
                                         ),
                                     ],
                                   ),
+
                                   const SizedBox(height: 8),
 
                                   // 名称
@@ -708,22 +843,23 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: isUnlocked ? Colors.white : Colors.white38,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                      color: isUnlocked ? textColor : subtitleColor.withValues(alpha: 0.6),
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      fontFamily: 'NotoSansSC',
                                     ),
                                   ),
                                   const SizedBox(height: 2),
 
-                                  // 状态 / 星级
+                                  // 状态 / 进度 / 星级
                                   if (isStackable && isUnlocked)
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: List.generate(5, (index) {
                                         return Icon(
-                                          index < starLevel ? Icons.star : Icons.star_border,
+                                          index < starLevel ? Icons.star_rounded : Icons.star_border_rounded,
                                           color: const Color(0xFFFBBF24),
-                                          size: 12,
+                                          size: 13,
                                         );
                                       }),
                                     )
@@ -733,9 +869,10 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                                           ? '已点亮'
                                           : '${vo.progressCurrent ?? 0} / ${vo.progressTarget ?? badge?.targetValue ?? 1}',
                                       style: TextStyle(
-                                        color: isUnlocked ? tierColor : Colors.white30,
-                                        fontSize: 11,
-                                        fontWeight: isUnlocked ? FontWeight.bold : FontWeight.normal,
+                                        color: isUnlocked ? accentColor : subtitleColor.withValues(alpha: 0.7),
+                                        fontSize: 10.5,
+                                        fontWeight: isUnlocked ? FontWeight.w700 : FontWeight.w600,
+                                        fontFamily: isUnlocked ? 'NotoSansSC' : 'Roboto',
                                       ),
                                     ),
 
@@ -747,11 +884,13 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                                       borderRadius: BorderRadius.circular(4),
                                       child: LinearProgressIndicator(
                                         value: vo.progressPercent ?? 0.0,
-                                        backgroundColor: Colors.white10,
-                                        valueColor: AlwaysStoppedAnimation<Color>(tierColor.withValues(alpha: 0.6)),
+                                        backgroundColor: subtleBg,
+                                        valueColor: AlwaysStoppedAnimation<Color>(accentColor.withValues(alpha: 0.7)),
                                         minHeight: 4,
                                       ),
-                                    ),
+                                    )
+                                  else
+                                    const SizedBox(height: 4),
                                 ],
                               ),
                             ),
@@ -761,13 +900,10 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                       ),
                     ),
                   ),
-
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 32),
-                  ),
                 ],
               ),
             ),
     );
   }
 }
+
