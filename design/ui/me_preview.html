@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>我 - 扇贝单词风格极致美学原型</title>
+  <style>
+    :root {
+      /* 扇贝单词经典护眼配色 */
+      --bg: #F5F9F7;
+      --card-bg: #FFFFFF;
+      --card-subtle: #EDF5F2;
+      --card-active: #DFECE7;
+      --divider: rgba(24, 186, 124, 0.09);
+      
+      --text-primary: #182B28;
+      --text-secondary: #48635F;
+      --text-muted: #7E9B96;
+      --text-faint: #BDD4D0;
+
+      /* 扇贝绿主品牌色 */
+      --primary: #18BA7C;
+      --primary-hover: #15A56E;
+      --primary-soft: #E8F8F1;
+      --primary-text: #FFFFFF;
+
+      --accent-badge: #6366F1;
+      --accent-badge-bg: #EEF2FF;
+      
+      --green-text: #18BA7C;
+      --green-bg: #E8F8F1;
+      --amber-text: #FA6E59;
+      --amber-bg: #FEF1EF;
+      
+      --shadow-subtle: 0 4px 20px rgba(24, 186, 124, 0.04);
+      --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.04);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0E1514;
+      --card-bg: #141E1D;
+      --card-subtle: #1C2B29;
+      --card-active: #263A37;
+      --divider: rgba(255, 255, 255, 0.06);
+      
+      --text-primary: #EAF7F3;
+      --text-secondary: #8DA8A3;
+      --text-muted: #5D7975;
+      --text-faint: #344845;
+
+      --primary: #2CD88F;
+      --primary-hover: #26C07F;
+      --primary-soft: rgba(44, 216, 143, 0.12);
+      --primary-text: #0B1714;
+
+      --accent-badge: #818CF8;
+      --accent-badge-bg: rgba(99, 102, 241, 0.15);
+
+      --green-text: #2CD88F;
+      --green-bg: rgba(44, 216, 143, 0.12);
+      --amber-text: #FF7B69;
+      --amber-bg: rgba(255, 123, 105, 0.12);
+
+      --shadow-subtle: 0 8px 30px rgba(0, 0, 0, 0.5);
+      --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #E2E8F0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 12px;
+      color: var(--text-primary);
+      transition: background-color 0.3s;
+    }
+
+    /* 顶部控制栏 */
+    .designer-toolbar {
+      width: 100%;
+      max-width: 412px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      padding: 8px 14px;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .designer-toolbar button {
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .designer-toolbar button:hover {
+      background: #E2E8F0;
+    }
+
+    /* 手机外壳容器 */
+    .device-mockup {
+      width: 100%;
+      max-width: 412px;
+      background: var(--bg);
+      border-radius: 40px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    .status-bar {
+      height: 44px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      z-index: 10;
+    }
+
+    .app-body {
+      padding: 8px 18px 40px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      max-height: 840px;
+    }
+
+    /* 卡片通用 */
+    .card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--divider);
+      transition: all 0.2s ease;
+    }
+
+    /* 1. 个人资料顶栏 */
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .avatar-wrap {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      border: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+      position: relative;
+      cursor: pointer;
+    }
+    .avatar-edit-icon {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      background: var(--primary);
+      color: var(--primary-text);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      border: 2px solid var(--card-bg);
+    }
+    .profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .profile-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .user-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .level-badge {
+      background: var(--primary-soft);
+      color: var(--green-text);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .user-quote {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 双入口高光展台（勋章墙 + 复习分布） */
+    .highlights-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .highlight-cell {
+      background: var(--card-subtle);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      border: 1px solid var(--divider);
+      transition: all 0.2s;
+    }
+    .highlight-cell:hover {
+      background: var(--card-active);
+    }
+    .highlight-icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .highlight-cell.badge-wall .highlight-icon-box {
+      background: var(--accent-badge-bg);
+      color: var(--accent-badge);
+    }
+    .highlight-cell.review-map .highlight-icon-box {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .highlight-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .highlight-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .highlight-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* VIP 状态条 */
+    .vip-strip {
+      background: linear-gradient(135deg, rgba(24, 186, 124, 0.08), rgba(24, 186, 124, 0.02));
+      border: 1px solid rgba(24, 186, 124, 0.15);
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .vip-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .vip-badge-tag {
+      background: var(--primary);
+      color: var(--primary-text);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 800;
+    }
+
+    /* 2. 我的书桌板块 */
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+    .btn-action-sm {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 4px 10px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* 词书总进度条 */
+    .total-progress-box {
+      margin-bottom: 16px;
+      background: var(--card-subtle);
+      padding: 12px;
+      border-radius: 14px;
+    }
+    .total-progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .total-progress-track {
+      height: 6px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+    }
+    .progress-mastered {
+      background: var(--primary);
+      width: 48%;
+      height: 100%;
+    }
+    .progress-fetched {
+      background: #38BDF8;
+      width: 32%;
+      height: 100%;
+    }
+
+    /* 词书卡片项 */
+    .dict-item-card {
+      background: var(--bg);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid var(--divider);
+    }
+    .dict-ring-box {
+      width: 44px;
+      height: 44px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .dict-ring-svg {
+      transform: rotate(-90deg);
+      width: 44px;
+      height: 44px;
+    }
+    .dict-ring-bg {
+      stroke: var(--divider);
+      stroke-width: 4;
+      fill: none;
+    }
+    .dict-ring-val {
+      stroke: var(--primary);
+      stroke-width: 4;
+      stroke-linecap: round;
+      fill: none;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 45;
+    }
+    .dict-ring-text {
+      position: absolute;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .dict-info-col {
+      flex: 1;
+      min-width: 0;
+    }
+    .dict-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+    }
+    .dict-stats {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .dict-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 3px 8px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    /* 3. 统计网格 */
+    .stats-tri-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .stat-box {
+      background: var(--card-subtle);
+      padding: 12px 6px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .stat-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .stat-lbl {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* 30天打卡点阵日历 */
+    .daka-calendar-wrap {
+      background: var(--card-subtle);
+      padding: 14px;
+      border-radius: 16px;
+      margin-top: 10px;
+    }
+    .daka-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .daka-dot {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--divider);
+      transition: all 0.2s;
+    }
+    .daka-dot.done {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(24, 186, 124, 0.3);
+    }
+    .daka-dot.studied {
+      background: var(--amber-text);
+      border-color: var(--amber-text);
+    }
+    .daka-legend-row {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .legend-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 3px;
+    }
+
+    /* 4. 账户设置列表 */
+    .menu-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--divider);
+      cursor: pointer;
+    }
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+    .menu-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .menu-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--card-subtle);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+    .menu-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .menu-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 设计师控制栏 -->
+  <div class="designer-toolbar">
+    <span>🌿 扇贝单词护眼配色体系</span>
+    <button onclick="toggleTheme()">
+      <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
+    </button>
+  </div>
+
+  <div class="device-mockup">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>09:41</span>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <span>5G</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <div class="app-body">
+      
+      <!-- 1. 个人成就顶栏卡片 -->
+      <div class="card">
+        <div class="profile-header">
+          <div class="avatar-wrap" onclick="alert('更换头像')">
+            <span>🦉</span>
+            <div class="avatar-edit-icon">✎</div>
+          </div>
+          <div class="profile-info">
+            <div class="profile-row-top">
+              <div class="user-name">背词大学霸</div>
+              <div class="level-badge" onclick="alert('查看等级成长路径')">
+                <span>🌟</span>
+                <span>英语新秀</span>
+                <span>❯</span>
+              </div>
+            </div>
+            <div class="user-quote">“不积跬步，无以至千里”</div>
+          </div>
+        </div>
+
+        <!-- 荣耀勋章墙 + 记忆云图展台 -->
+        <div class="highlights-grid">
+          <div class="highlight-cell badge-wall" onclick="alert('进入荣耀勋章墙')">
+            <div class="highlight-icon-box">🎖️</div>
+            <div class="highlight-meta">
+              <div class="highlight-title">荣耀勋章墙</div>
+              <div class="highlight-desc">已点亮 12 枚勋章</div>
+            </div>
+          </div>
+          <div class="highlight-cell review-map" onclick="alert('进入复习分布图')">
+            <div class="highlight-icon-box">📊</div>
+            <div class="highlight-meta">
+              <div class="highlight-title">复习分布图</div>
+              <div class="highlight-desc">艾宾浩斯记忆云图</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIP 状态条 -->
+        <div class="vip-strip" onclick="alert('查看会员订阅特权')">
+          <div class="vip-left">
+            <span class="vip-badge-tag">PRO</span>
+            <span>终身会员 · 已解锁全部高级特权</span>
+          </div>
+          <span style="font-size: 12px; color: var(--green-text); font-weight: 700;">特权 ❯</span>
+        </div>
+      </div>
+
+      <!-- 2. 我的书桌板块 -->
+      <div class="card">
+        <div class="section-title-row">
+          <div class="section-title">我的书桌</div>
+          <button class="btn-action-sm" onclick="alert('前往选择词书')">+ 选择词书</button>
+        </div>
+
+        <!-- 词书学习总进度 -->
+        <div class="total-progress-box">
+          <div class="total-progress-labels">
+            <span>词书总进度</span>
+            <span>已掌握 48.5% · 已取词 80.5%</span>
+          </div>
+          <div class="total-progress-track">
+            <div class="progress-mastered"></div>
+            <div class="progress-fetched"></div>
+          </div>
+        </div>
+
+        <!-- 词书列表 -->
+        <div class="dict-item-card">
+          <div class="dict-ring-box">
+            <svg class="dict-ring-svg" viewBox="0 0 36 36">
+              <path class="dict-ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path class="dict-ring-val" stroke-dasharray="65, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            </svg>
+            <div class="dict-ring-text">65%</div>
+          </div>
+          <div class="dict-info-col">
+            <div class="dict-name">考研核心词汇 5500</div>
+            <div class="dict-stats">已掌握 3575 · 已取词 4800 / 5500 词</div>
+          </div>
+          <span class="dict-tag">优先取词</span>
+        </div>
+
+        <div class="dict-item-card">
+          <div class="dict-ring-box">
+            <svg class="dict-ring-svg" viewBox="0 0 36 36">
+              <path class="dict-ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path class="dict-ring-val" stroke-dasharray="28, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            </svg>
+            <div class="dict-ring-text">28%</div>
+          </div>
+          <div class="dict-info-col">
+            <div class="dict-name">生词本</div>
+            <div class="dict-stats">已掌握 42 · 已取词 120 / 150 词</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 成就与打卡统计卡片 -->
+      <div class="card">
+        <div class="section-title-row">
+          <div class="section-title">学习成就统计</div>
+        </div>
+
+        <div class="stats-tri-row">
+          <div class="stat-box">
+            <div class="stat-val">42</div>
+            <div class="stat-lbl">打卡天数</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">3,617</div>
+            <div class="stat-lbl">已掌握词</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val">98.5%</div>
+            <div class="stat-lbl">超越学友</div>
+          </div>
+        </div>
+
+        <!-- 30天打卡情况 -->
+        <div class="daka-calendar-wrap">
+          <div style="font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">
+            最近 30 天打卡记录
+          </div>
+          <div class="daka-grid" id="daka-grid">
+            <!-- 30 个打卡小圆角格 -->
+          </div>
+          <div class="daka-legend-row">
+            <div class="legend-item">
+              <div class="legend-indicator" style="background: var(--primary);"></div>
+              <span>已打卡 (28)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-indicator" style="background: var(--amber-text);"></div>
+              <span>未打卡 (1)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-indicator" style="background: var(--card-bg); border: 1px solid var(--divider);"></div>
+              <span>未学习 (1)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 账户与系统设置 -->
+      <div class="card">
+        <div class="section-title-row">
+          <div class="section-title">设置与工具</div>
+        </div>
+
+        <div class="menu-group">
+          <div class="menu-item" onclick="alert('个人信息')">
+            <div class="menu-left">
+              <div class="menu-icon-box">👤</div>
+              <div class="menu-title">个人信息</div>
+            </div>
+            <div class="menu-right"><span>编辑</span> <span>❯</span></div>
+          </div>
+
+          <div class="menu-item" onclick="alert('学习提醒')">
+            <div class="menu-left">
+              <div class="menu-icon-box">⏰</div>
+              <div class="menu-title">学习提醒</div>
+            </div>
+            <div class="menu-right"><span>每天 20:30</span> <span>❯</span></div>
+          </div>
+
+          <div class="menu-item" onclick="alert('意见建议')">
+            <div class="menu-left">
+              <div class="menu-icon-box">💬</div>
+              <div class="menu-title">意见建议 / 客服</div>
+            </div>
+            <div class="menu-right"><span>❯</span></div>
+          </div>
+
+          <div class="menu-item" onclick="alert('云同步')">
+            <div class="menu-left">
+              <div class="menu-icon-box">☁️</div>
+              <div class="menu-title">端云同步状态</div>
+            </div>
+            <div class="menu-right"><span style="color: var(--green-text); font-weight: 600;">已是最新</span> <span>❯</span></div>
+          </div>
+
+          <div class="menu-item" onclick="alert('健康检查')">
+            <div class="menu-left">
+              <div class="menu-icon-box">🛡️</div>
+              <div class="menu-title">数据健康检查</div>
+            </div>
+            <div class="menu-right"><span>正常</span> <span>❯</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // 渲染 30 天打卡格子
+    const dakaGrid = document.getElementById('daka-grid');
+    for (let i = 0; i < 30; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'daka-dot';
+      if (i === 28) {
+        dot.classList.add('studied'); // 未打卡
+      } else if (i === 29) {
+        // 未学习
+      } else {
+        dot.classList.add('done'); // 已打卡
+      }
+      dakaGrid.appendChild(dot);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('theme-icon').textContent = '🌙';
+        document.getElementById('theme-text').textContent = '暗黑模式';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-icon').textContent = '☀️';
+        document.getElementById('theme-text').textContent = '明亮模式';
+      }
+    }
+  </script>
+</body>
+</html>
