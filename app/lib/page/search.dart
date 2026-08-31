@@ -448,16 +448,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: cardSubtle,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: _buildMeaningWithTags(word.getMeaningStr(), isDarkMode),
-                        ),
+                        const SizedBox(height: 6),
+                        _buildMeaningWithTags(word.getMeaningStr(), isDarkMode),
                       ],
                     ),
                   ),
