@@ -727,9 +727,9 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Row(
           children: [
-            const Text('💡 ', style: TextStyle(fontSize: 18)),
+            const Text('🧠 ', style: TextStyle(fontSize: 18)),
             Text(
-              '复习分布说明',
+              'FSRS 自适应记忆算法',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: textColor,
@@ -743,25 +743,49 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _dialogDescItem(Icons.height_rounded, '纵轴 (时间维度)', '上方为已逾期的任务，中间为今天必复习，下方为未来的复习安排。', accentColor, textColor, subtitleColor),
-            const SizedBox(height: 14),
-            _dialogDescItem(Icons.bar_chart_rounded, '横轴 (单词数量)', '柱状条越长表示该时段复习任务越重，点击可进入对应单词列表。', accentColor, textColor, subtitleColor),
+            _dialogDescItem(
+              Icons.psychology_rounded,
+              '科学动态调度',
+              'FSRS（自由间隔重复算法）基于现代认知模型，根据每个单词的掌握反馈自适应预测最佳复习临界点。',
+              accentColor,
+              textColor,
+              subtitleColor,
+            ),
             const SizedBox(height: 14),
             _dialogDescItem(
-              Icons.color_lens_outlined,
-              '颜色含义',
+              Icons.auto_graph_rounded,
+              'D-S-R 记忆模型',
               RichText(
                 text: TextSpan(
-                  style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.5),
+                  style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.45),
                   children: [
-                    TextSpan(text: '珊瑚红：', style: TextStyle(color: isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '逾期未复习；\n'),
-                    TextSpan(text: '扇贝翠绿：', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '今日核心必复习；\n'),
-                    TextSpan(text: '薄荷绿：', style: TextStyle(color: isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399), fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '未来复习规划；\n'),
-                    TextSpan(text: '柔和紫：', style: TextStyle(color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '新词储备池。'),
+                    TextSpan(text: '• 稳定性 (S)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                    const TextSpan(text: '每次成功回忆，记忆稳固度成倍提升，复习间隔自动延长；\n'),
+                    TextSpan(text: '• 难度 (D)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                    const TextSpan(text: '难词高频巩固，熟词快速通关；\n'),
+                    TextSpan(text: '• 可提取性 (R)：', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                    const TextSpan(text: '始终在记忆即将遗忘的黄金临界点精准唤醒。'),
+                  ],
+                ),
+              ),
+              accentColor,
+              textColor,
+              subtitleColor,
+            ),
+            const SizedBox(height: 14),
+            _dialogDescItem(
+              Icons.access_time_rounded,
+              '分布调度逻辑',
+              RichText(
+                text: TextSpan(
+                  style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.45),
+                  children: [
+                    TextSpan(text: '• 今日必复习：', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '到达最佳复习窗口，效率最高；\n'),
+                    TextSpan(text: '• 已逾期：', style: TextStyle(color: isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '错过黄金复习点，建议优先消灭；\n'),
+                    TextSpan(text: '• 未来分布：', style: TextStyle(color: isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399), fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '科学平滑分散复习量，避免堆积。'),
                   ],
                 ),
               ),

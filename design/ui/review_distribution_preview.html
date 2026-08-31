@@ -725,33 +725,34 @@
 
   <!-- 说明弹窗 Modal -->
   <div class="modal-overlay" id="explainModal" onclick="closeExplainModal(event)">
-    <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-card" style="max-width: 380px;" onclick="event.stopPropagation()">
       <div class="modal-head">
-        <span>💡</span> 复习分布图说明
+        <span>🧠</span> FSRS 自适应记忆算法
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="gap: 14px;">
         <div class="modal-item-row">
-          <div class="modal-item-icon">↕️</div>
+          <div class="modal-item-icon">🎯</div>
           <div>
-            <b style="color: var(--text-main);">纵轴 (时间刻度)</b><br>
-            上方为<b>已逾期</b>的复习任务，中间为<b>今天待复习</b>，下方为<b>未来几天</b>按记忆曲线安排的复习。
+            <b style="color: var(--text-main);">科学动态调度</b><br>
+            FSRS（自由间隔重复算法）基于现代认知科学，根据你对每个单词的掌握反馈，自适应预测遗忘临界点。
           </div>
         </div>
         <div class="modal-item-row">
-          <div class="modal-item-icon">↔️</div>
+          <div class="modal-item-icon">📈</div>
           <div>
-            <b style="color: var(--text-main);">横轴 (柱状宽度)</b><br>
-            柱状条越长，代表该时段需要复习的单词量越大。
+            <b style="color: var(--text-main);">D-S-R 记忆模型</b><br>
+            • <b>稳定性 (S)</b>：每次成功回忆，记忆稳固度成倍提升，复习间隔自动延长（1天 ➜ 3天 ➜ 10天 ➜ 数月）；<br>
+            • <b>难度 (D)</b>：根据背词表现自适应调优，难词高频巩固，熟词快速通关；<br>
+            • <b>可提取性 (R)</b>：始终在记忆即将遗忘的<b>黄金临界点</b>精准唤醒。
           </div>
         </div>
         <div class="modal-item-row">
-          <div class="modal-item-icon">🎨</div>
+          <div class="modal-item-icon">💡</div>
           <div>
-            <b style="color: var(--text-main);">颜色说明</b><br>
-            • <span style="color: var(--color-overdue); font-weight: bold;">珊瑚红</span>：逾期未复习<br>
-            • <span style="color: var(--color-today); font-weight: bold;">扇贝翠绿</span>：今日核心必复习<br>
-            • <span style="color: var(--color-future); font-weight: bold;">薄荷绿</span>：未来计划复习<br>
-            • <span style="color: var(--color-new); font-weight: bold;">柔和紫</span>：新词储备
+            <b style="color: var(--text-main);">分布图调度逻辑</b><br>
+            • <b>今日必复习</b>：已到达最佳复习窗口，效率最高；<br>
+            • <b>已逾期</b>：已错过黄金复习点，建议优先消灭；<br>
+            • <b>未来分布</b>：科学平滑分散复习量，彻底告别考前复习扎堆。
           </div>
         </div>
       </div>
