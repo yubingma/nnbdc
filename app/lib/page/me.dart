@@ -871,38 +871,39 @@ class _MePageState extends State<MePage> {
 
   Widget renderStudyProgress() {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final accentColor = isDarkModeEnabled ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
-    final cardColor = isDarkModeEnabled ? const Color(0xFF1E293B) : Colors.white;
-    final borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02);
+    final textColor = isDarkModeEnabled ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+    final accentColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+    final cardColor = isDarkModeEnabled ? const Color(0xFF131E1C) : Colors.white;
+    final borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
+    final subtleBgColor = isDarkModeEnabled ? const Color(0xFF1B2825) : const Color(0xFFEDF5F2);
 
     return Column(
       children: [
-        // 学习成就卡片 (Achievement Card)
+        // 1. 个人资料 + 高光展台卡片 (Profile & Highlights Card)
         Container(
           margin: EdgeInsets.symmetric(
-            vertical: MediaQuery.of(context).size.width > 600 ? 16 : 12,
+            vertical: MediaQuery.of(context).size.width > 600 ? 16 : 10,
           ),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
-            border: Border.all(color: borderColor, width: 1.0),
+            border: Border.all(color: borderColor, width: 1.2),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. 头像和昵称行
+              // 1.1 头像和昵称行 (紧凑对齐)
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   GestureDetector(
                     onTap: () {
@@ -913,30 +914,30 @@ class _MePageState extends State<MePage> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(2.0),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 2),
+                        border: Border.all(color: accentColor.withValues(alpha: 0.6), width: 2),
                       ),
                       child: CircleAvatar(
-                        radius: MediaQuery.of(context).size.width > 600 ? 32 : 28,
+                        radius: 26,
                         backgroundColor: isDarkModeEnabled ? Colors.white10 : const Color(0xFFF1F5F9),
                         backgroundImage: (loggedInUser?.wechatAvatar != null && loggedInUser!.wechatAvatar!.isNotEmpty)
                             ? CachedNetworkImageProvider(loggedInUser!.wechatAvatar!)
                             : null,
                         child: (loggedInUser?.wechatAvatar == null || loggedInUser!.wechatAvatar!.isEmpty)
-                            ? Icon(Icons.person_rounded, color: subtitleColor, size: 30)
+                            ? Icon(Icons.person_rounded, color: subtitleColor, size: 26)
                             : null,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // 昵称信息及名言（横跨完整宽度）
+                  const SizedBox(width: 14),
+                  // 昵称信息及名言
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 顶部行：昵称在左，等级徽章在右
+                        // 顶部行：昵称 + 认证蓝勾 + 右侧等级徽章
                         Row(
                           children: [
                             Flexible(
@@ -944,9 +945,8 @@ class _MePageState extends State<MePage> {
                                 Util.getNickNameOfUser(loggedInUser),
                                 style: TextStyle(
                                   color: textColor,
-                                  fontSize: 20,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
                                   fontFamily: 'NotoSansSC',
                                 ),
                                 maxLines: 1,
@@ -954,37 +954,38 @@ class _MePageState extends State<MePage> {
                               ),
                             ),
                             if (SubscriptionUtil.isPremium()) ...[
-                              const SizedBox(width: 6),
-                              const Icon(Icons.verified, color: Color(0xFF2196F3), size: 18),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.verified, color: Color(0xFF2196F3), size: 16),
                             ],
-                            const SizedBox(width: 8),
                             const Spacer(),
-                            // 右上角浮动气泡/等级
+                            // 右上角浮动等级胶囊
                             GestureDetector(
                               onTap: () {
                                 Navigator.of(context).push(MaterialPageRoute(
                                     builder: (context) => LevelPathPage(currentLevel: studyProgress!.level.level ?? 1)));
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: accentColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.15) : const Color(0xFFE8F8F1),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    if (studyProgress!.level.figure != null && studyProgress!.level.figure!.isNotEmpty) ...[
+                                      Text(
+                                        studyProgress!.level.figure!,
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      const SizedBox(width: 3),
+                                    ],
                                     Text(
-                                      studyProgress!.level.figure ?? '',
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      studyProgress!.level.name!,
+                                      studyProgress!.level.name ?? 'Lv.1',
                                       style: TextStyle(
                                         color: accentColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w900,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
                                   ],
@@ -994,16 +995,15 @@ class _MePageState extends State<MePage> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        // 名言（独占下半部整行可用宽度，不再被右上角徽章压缩）
+                        // 名言
                         Text(
-                          LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1),
-                          maxLines: 2,
+                          '“${LevelUtil.getTitleQuote(studyProgress!.level.level ?? 1)}”',
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: subtitleColor,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
-                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
@@ -1011,169 +1011,245 @@ class _MePageState extends State<MePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
 
-              // 荣耀勋章墙展台入口 (头像下方专属高光展台)
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const BadgeWallPage())),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      colors: isDarkModeEnabled
-                          ? [const Color(0xFF1E1B4B).withValues(alpha: 0.8), const Color(0xFF312E81).withValues(alpha: 0.5)]
-                          : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    border: Border.all(
-                      color: const Color(0xFF818CF8).withValues(alpha: isDarkModeEnabled ? 0.35 : 0.6),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF6366F1).withValues(alpha: isDarkModeEnabled ? 0.15 : 0.08),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      // 荣耀勋章墙专属入口图标容器 (与勋章墙图鉴保持语义一致)
-                      Container(
-                        width: 44,
-                        height: 44,
+              // 1.2 左右双列横向高光展台 (1:1 严格对齐原型：荣耀勋章墙 + 复习分布图)
+              Row(
+                children: [
+                  // 左：荣耀勋章墙
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const BadgeWallPage())),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withValues(alpha: isDarkModeEnabled ? 0.2 : 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
+                          color: subtleBgColor,
+                          border: Border.all(
+                            color: borderColor,
+                            width: 1.0,
+                          ),
                         ),
-                        child: const Center(
-                          child: Text('🎖', style: TextStyle(fontSize: 24)),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Row(
-                              children: [
-                                Text(
-                                  '荣耀勋章墙',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'NotoSansSC',
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Text(
-                                    '成就图鉴',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6366F1).withValues(alpha: isDarkModeEnabled ? 0.25 : 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Center(
+                                child: Text('🎖', style: TextStyle(fontSize: 16)),
+                              ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '点亮自律里程碑 · 见证背词成长',
-                              style: TextStyle(
-                                color: isDarkModeEnabled ? const Color(0xFFA5B4FC) : const Color(0xFF4F46E5),
-                                fontSize: 11,
-                                fontFamily: 'NotoSansSC',
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.2,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '荣耀勋章墙',
+                                      style: TextStyle(
+                                        color: textColor,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '点亮成就图鉴',
+                                      style: TextStyle(
+                                        color: subtitleColor,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: isDarkModeEnabled ? const Color(0xFFA5B4FC) : const Color(0xFF6366F1),
-                        size: 14,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              
-              // 记忆云图入口
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ReviewDistributionPage())),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
-                    border: Border.all(
-                      color: accentColor.withValues(alpha: 0.25),
-                      width: 1.5,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
+                  const SizedBox(width: 10),
+                  // 右：复习分布图
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ReviewDistributionPage())),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                         decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
+                          color: subtleBgColor,
+                          border: Border.all(
+                            color: borderColor,
+                            width: 1.0,
+                          ),
                         ),
-                        child: Icon(Icons.bubble_chart_rounded, color: accentColor, size: 24),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Text(
-                              '复习分布图',
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'NotoSansSC',
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
+                              child: Icon(Icons.bar_chart_rounded, color: accentColor, size: 20),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '洞察你的复习任务分布',
-                              style: TextStyle(
-                                color: subtitleColor,
-                                fontSize: 11,
-                                fontFamily: 'NotoSansSC',
-                                letterSpacing: 0.2,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '复习分布图',
+                                      style: TextStyle(
+                                        color: textColor,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '艾宾浩斯记忆云图',
+                                      style: TextStyle(
+                                        color: subtitleColor,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: subtitleColor.withValues(alpha: 0.5)),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
 
               const SizedBox(height: 12),
 
-              // 同步状态指示器
+              // 1.3 VIP / 账户类型状态条 (根据真实账户信息动态展示)
+              Builder(builder: (context) {
+                final accountInfo = _getUserAccountTypeInfo();
+                final isPremium = accountInfo['isPremium'] as bool;
+                final accountType = accountInfo['type'] as String;
+                final accountDesc = accountInfo['desc'] as String?;
+                final accountTag = accountInfo['tag'] as String? ?? (isPremium ? 'PRO' : 'USER');
+
+                final displayText = (accountDesc != null && accountDesc.isNotEmpty)
+                    ? '$accountType · $accountDesc'
+                    : '账户类型：$accountType';
+
+                return GestureDetector(
+                  onTap: () {
+                    if (!isPremium && PlatformUtils.isIOS) {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                        loadData();
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.1) : const Color(0xFFE8F8F1),
+                      border: Border.all(
+                        color: accentColor.withValues(alpha: 0.25),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: accentColor,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            accountTag,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            displayText,
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              isPremium ? '特权' : (PlatformUtils.isIOS ? '升级特权' : '详情'),
+                              style: TextStyle(
+                                color: accentColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                fontFamily: 'NotoSansSC',
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(Icons.chevron_right_rounded, size: 14, color: accentColor),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              if (_activePromo?.showRedeemUi == true) ...[
+                const SizedBox(height: 8),
+                _PromoRedemptionWidget(
+                  activePromo: _activePromo,
+                  onRedeemSuccess: () {
+                    loadData();
+                  },
+                ),
+              ],
               if (_isSyncing) ...[
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     SizedBox(
@@ -1191,299 +1267,38 @@ class _MePageState extends State<MePage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
               ],
-              // 2. 会员状况/订阅入口/账户类型
-              Builder(builder: (context) {
-                final accountInfo = _getUserAccountTypeInfo();
-                final isPremium = accountInfo['isPremium'] as bool;
-                final accountType = accountInfo['type'] as String;
-                final accountDesc = accountInfo['desc'] as String?;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 账户类型信息条 (便于查看和排查)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: isPremium
-                            ? Colors.blue.withValues(alpha: 0.05)
-                            : (isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.grey.shade100),
-                        border: Border.all(
-                          color: isPremium
-                              ? Colors.blue.withValues(alpha: 0.25)
-                              : (isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade300),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isPremium ? Icons.verified_user_rounded : Icons.account_circle_outlined,
-                            color: isPremium ? Colors.blue : subtitleColor,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '账户类型：$accountType',
-                                    style: TextStyle(
-                                      color: isPremium ? Colors.blue : textColor,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: 'NotoSansSC',
-                                    ),
-                                  ),
-                                  if (accountDesc != null && accountDesc.isNotEmpty)
-                                    TextSpan(
-                                      text: ' ($accountDesc)',
-                                      style: TextStyle(
-                                        color: isPremium ? Colors.blue.shade700 : subtitleColor,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.normal,
-                                        fontFamily: 'NotoSansSC',
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (!isPremium && PlatformUtils.isIOS) ...[
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
-                            loadData();
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : Colors.amber.shade50.withValues(alpha: 0.3),
-                            border: Border.all(color: Colors.amber.shade300.withValues(alpha: 0.5), width: 1.5),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.stars_rounded, color: Colors.amber.shade700, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '解锁每日单词上限及更多特权',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.normal,
-                                      color: isDarkModeEnabled ? Colors.amber.shade200 : Colors.amber.shade900,
-                                      fontFamily: 'NotoSansSC',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 16),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    if (!isPremium && _activePromo?.showRedeemUi == true) ...[
-                      _PromoRedemptionWidget(
-                        activePromo: _activePromo,
-                        onRedeemSuccess: () {
-                          loadData();
-                        },
-                      ),
-                    ],
-                  ],
-                );
-              }),
             ],
           ),
         ),
 
-        // 2. 我的书桌 (My Desk) - 移动到此处
+        // 2. 我的书桌 (My Desk) - 严格对齐原型图布局
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.0),
+            border: Border.all(color: borderColor, width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 词书总进度 - 移动到此处
-              Builder(builder: (context) {
-                final totalWords = studyProgress!.rawWordCount;
-                final masteredWords = studyProgress!.masteredWordsInSelectedDictsCount;
-                final learningWords = studyProgress!.learningWordsInSelectedDictsCount;
-                final fetchWords = masteredWords + learningWords;
-
-                final masteryProgress = totalWords > 0 ? masteredWords / totalWords : 0.0;
-                final fetchProgress = totalWords > 0 ? fetchWords / totalWords : 0.0;
-
-                final masteryPercentText = (masteryProgress * 100).toStringAsFixed(1);
-                final fetchPercentText = (fetchProgress * 100).toStringAsFixed(1);
-
-                final masteredColor = isDarkModeEnabled ? const Color(0xFF34D399) : const Color(0xFF10B981);
-                final fetchColor = accentColor;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "词书学习总进度",
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                            fontFamily: 'NotoSansSC',
-                          ),
-                        ),
-                        Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '已掌握 ',
-                                style: TextStyle(
-                                  color: subtitleColor,
-                                  fontSize: 10,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
-                              TextSpan(
-                                text: '$masteryPercentText%',
-                                style: TextStyle(
-                                  color: masteredColor,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: 'Roboto',
-                                ),
-                              ),
-                              TextSpan(
-                                text: '  ·  已取词 ',
-                                style: TextStyle(
-                                  color: subtitleColor,
-                                  fontSize: 10,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
-                              TextSpan(
-                                text: '$fetchPercentText%',
-                                style: TextStyle(
-                                  color: fetchColor,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: 'Roboto',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      height: 8,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final clampedMasteryProgress = masteryProgress > 1.0 ? 1.0 : masteryProgress;
-                          final clampedFetchProgress = fetchProgress > 1.0 ? 1.0 : fetchProgress;
-                          return Stack(
-                            children: [
-                              // 1. 底层：取词进度条 (Fetch Progress)
-                              if (clampedFetchProgress > 0)
-                                Container(
-                                  width: constraints.maxWidth * clampedFetchProgress,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [fetchColor, fetchColor.withValues(alpha: 0.6)],
-                                    ),
-                                    borderRadius: BorderRadius.circular(4),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: fetchColor.withValues(alpha: 0.3),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              // 2. 顶层：掌握进度条 (Mastery Progress)
-                              if (clampedMasteryProgress > 0)
-                                Container(
-                                  width: constraints.maxWidth * clampedMasteryProgress,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [masteredColor, masteredColor.withValues(alpha: 0.6)],
-                                    ),
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: const Radius.circular(4),
-                                      bottomLeft: const Radius.circular(4),
-                                      topRight: clampedMasteryProgress >= clampedFetchProgress ? const Radius.circular(4) : Radius.zero,
-                                      bottomRight: clampedMasteryProgress >= clampedFetchProgress ? const Radius.circular(4) : Radius.zero,
-                                    ),
-                                    border: clampedMasteryProgress < clampedFetchProgress
-                                        ? Border(
-                                            right: BorderSide(
-                                              color: cardColor,
-                                              width: 1.5,
-                                            ),
-                                          )
-                                        : null,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: masteredColor.withValues(alpha: 0.3),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              }),
-              const SizedBox(height: 24),
-
+              // 2.1 标题行：左边「我的书桌」 + 右边「+ 选择词书」胶囊
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '我的书桌',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w900,
                       color: textColor,
                       fontFamily: 'NotoSansSC',
@@ -1497,22 +1312,20 @@ class _MePageState extends State<MePage> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(8),
+                        color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.15) : const Color(0xFFE8F8F1),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_circle_outline_rounded, color: subtitleColor, size: 14),
-                          const SizedBox(width: 4),
                           Text(
-                            '选择词书',
+                            '+ 选择词书',
                             style: TextStyle(
                               color: accentColor,
                               fontSize: 12,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w800,
                               fontFamily: 'NotoSansSC',
                             ),
                           ),
@@ -1522,18 +1335,146 @@ class _MePageState extends State<MePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+
+              // 2.2 词书总进度条容器 (浅灰底微容器)
+              Builder(builder: (context) {
+                final totalWords = studyProgress!.rawWordCount;
+                final masteredWords = studyProgress!.masteredWordsInSelectedDictsCount;
+                final learningWords = studyProgress!.learningWordsInSelectedDictsCount;
+                final fetchWords = masteredWords + learningWords;
+
+                final masteryProgress = totalWords > 0 ? masteredWords / totalWords : 0.0;
+                final fetchProgress = totalWords > 0 ? fetchWords / totalWords : 0.0;
+
+                final masteryPercentText = (masteryProgress * 100).toStringAsFixed(1);
+                final fetchPercentText = (fetchProgress * 100).toStringAsFixed(1);
+
+                final masteredColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+                final fetchColor = isDarkModeEnabled ? const Color(0xFF38BDF8) : const Color(0xFF0EA5E9);
+
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: subtleBgColor,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "词书总进度",
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'NotoSansSC',
+                            ),
+                          ),
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: '已掌握 ',
+                                  style: TextStyle(
+                                    color: subtitleColor,
+                                    fontSize: 11,
+                                    fontFamily: 'NotoSansSC',
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '$masteryPercentText%',
+                                  style: TextStyle(
+                                    color: masteredColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: 'Roboto',
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: ' · 已取词 ',
+                                  style: TextStyle(
+                                    color: subtitleColor,
+                                    fontSize: 11,
+                                    fontFamily: 'NotoSansSC',
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '$fetchPercentText%',
+                                  style: TextStyle(
+                                    color: fetchColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: 'Roboto',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 6,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final clampedMasteryProgress = masteryProgress > 1.0 ? 1.0 : masteryProgress;
+                            final clampedFetchProgress = fetchProgress > 1.0 ? 1.0 : fetchProgress;
+                            return Stack(
+                              children: [
+                                if (clampedFetchProgress > 0)
+                                  Container(
+                                    width: constraints.maxWidth * clampedFetchProgress,
+                                    decoration: BoxDecoration(
+                                      color: fetchColor,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                if (clampedMasteryProgress > 0)
+                                  Container(
+                                    width: constraints.maxWidth * clampedMasteryProgress,
+                                    decoration: BoxDecoration(
+                                      color: masteredColor,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 12),
+
+              // 2.3 词书列表
               FutureBuilder<Widget>(
                 future: _learningDictsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator(color: isDarkModeEnabled ? Colors.white24 : Colors.black12));
+                    return Center(child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(color: accentColor, strokeWidth: 2),
+                    ));
                   }
                   if (snapshot.hasError) {
                     return Center(
-                      child: Text(
-                        '加载失败',
-                        style: TextStyle(color: subtitleColor),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          '加载失败',
+                          style: TextStyle(color: subtitleColor),
+                        ),
                       ),
                     );
                   }
@@ -1552,18 +1493,155 @@ class _MePageState extends State<MePage> {
           ),
         ),
 
-        // 3. 夜间模式切换 (简化并移动到账户管理附近更合适，但此处先按逻辑保留一个纯净的控制项)
+        // 3. 学习成就统计卡片 (1:1 对齐原型图：3个微卡片 + 嵌套最近30天打卡记录)
         Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.0),
+            border: Border.all(color: borderColor, width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
-                blurRadius: 10,
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '学习成就统计',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: textColor,
+                  fontFamily: 'NotoSansSC',
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // 3.1 三个统计微卡片
+              Row(
+                children: [
+                  _buildStatBox(
+                    isDarkModeEnabled,
+                    "打卡天数",
+                    studyProgress!.dakaDayCount.toString(),
+                    Icons.event_available_rounded,
+                    accentColor,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildStatBox(
+                    isDarkModeEnabled,
+                    "已掌握词",
+                    studyProgress!.masteredWordsCount.toString(),
+                    Icons.task_alt_rounded,
+                    accentColor,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildStatBox(
+                    isDarkModeEnabled,
+                    "超越学友",
+                    studyProgress!.userOrder! < 0 ? '98.5%' : '${studyProgress!.userOrder!.toStringAsFixed(1)}%',
+                    Icons.trending_up_rounded,
+                    accentColor,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // 3.2 嵌入式「最近 30 天打卡记录」微容器
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: subtleBgColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '最近 30 天打卡记录',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: textColor,
+                            fontFamily: 'NotoSansSC',
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => context.push('/study_stats'),
+                          child: Text(
+                            '更多 >',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: subtitleColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    renderLast30DaysDakaStatus(),
+                    const SizedBox(height: 10),
+                    // 图例
+                    Builder(builder: (context) {
+                      int dakaedCount = 0;
+                      int studiedCount = 0;
+                      int notLoginCount = 0;
+                      if (last30DaysDakaStatus != null) {
+                        for (var s in last30DaysDakaStatus!) {
+                          if (s == UserDayStatus.dakaed.json) {
+                            dakaedCount++;
+                          } else if (s == UserDayStatus.studied.json) {
+                            studiedCount++;
+                          } else {
+                            notLoginCount++;
+                          }
+                        }
+                      }
+                      return Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildLegendItem('已打卡 ($dakaedCount)', dakaStatus2Color(UserDayStatus.dakaed.json)),
+                              const SizedBox(width: 10),
+                              _buildLegendItem('未打卡 ($studiedCount)', dakaStatus2Color(UserDayStatus.studied.json)),
+                              const SizedBox(width: 10),
+                              _buildLegendItem('未学习 ($notLoginCount)', dakaStatus2Color(UserDayStatus.notLogin.json)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 4. 夜间模式切换卡片
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -1578,11 +1656,11 @@ class _MePageState extends State<MePage> {
                     color: accentColor,
                     size: 20,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Text(
                     '夜间模式',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: textColor,
                       fontFamily: 'NotoSansSC',
@@ -1600,265 +1678,6 @@ class _MePageState extends State<MePage> {
                   context.read<DarkMode>().setIsDarkMode(isDarkModeEnabled);
                 },
               ),
-            ],
-          ),
-        ),
-
-        // 打卡统计卡片
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '打卡统计',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: textColor,
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildProgressItem(
-                    '打卡天数',
-                    studyProgress!.dakaDayCount.toString(),
-                  ),
-                  _buildProgressItem(
-                    '打卡率',
-                    '${(studyProgress!.dakaRatio! * 100).toStringAsFixed(1)}%',
-                  ),
-                  _buildProgressItem(
-                    '魔法泡泡',
-                    studyProgress!.cowDung.toString(),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        // 最近30天打卡情况卡片
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '最近30天学习情况',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: textColor,
-                      fontFamily: 'NotoSansSC',
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      context.push('/study_stats');
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '更多',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: accentColor,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                          const SizedBox(width: 2),
-                          Icon(Icons.chevron_right_rounded, size: 14, color: accentColor),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              renderLast30DaysDakaStatus(),
-              const SizedBox(height: 16),
-              // 图例
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  _buildLegendItem('已打卡', dakaStatus2Color(UserDayStatus.dakaed.json)),
-                  const SizedBox(width: 16),
-                  _buildLegendItem('未打卡', dakaStatus2Color(UserDayStatus.studied.json)),
-                  const SizedBox(width: 16),
-                  _buildLegendItem('未学习', dakaStatus2Color(UserDayStatus.notLogin.json)),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        // 学习成就卡片 (Stats & Ranking) - 从上方移至此处
-        Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: borderColor, width: 1.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '成就统计',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: textColor,
-                  fontFamily: 'NotoSansSC',
-                ),
-              ),
-              const SizedBox(height: 20),
-              // 数据小卡片行 (Data Cards)
-              Row(
-                children: [
-                  // 卡片 1: 学习天数
-                  _buildStatBox(
-                    isDarkModeEnabled,
-                    "学习天数",
-                    studyProgress!.existDays.toString(),
-                    Icons.event_available_rounded,
-                    const Color(0xFF0EA5E9),
-                  ),
-                  const SizedBox(width: 12),
-                  // 卡片 2: 已掌握
-                  _buildStatBox(
-                    isDarkModeEnabled,
-                    "已掌握",
-                    studyProgress!.masteredWordsCount.toString(),
-                    Icons.task_alt_rounded,
-                    const Color(0xFF10B981),
-                  ),
-                  const SizedBox(width: 12),
-                  // 卡片 3: 学习时长
-                  _buildStatBox(
-                    isDarkModeEnabled,
-                    "学习小时",
-                    (studyProgress!.totalLearningSeconds / 3600.0).toStringAsFixed(1),
-                    Icons.timer_outlined,
-                    const Color(0xFF8B5CF6),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Vocabulary Ranking Banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "词汇量排名",
-                            style: TextStyle(
-                              color: textColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                const TextSpan(text: "掌握: "),
-                                TextSpan(
-                                  text: "${studyProgress!.masteredWordsCount}",
-                                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
-                                ),
-                                const TextSpan(text: " 词"),
-                                const TextSpan(text: "\n领先: "),
-                                if (studyProgress!.userOrder! < 0)
-                                  const TextSpan(text: '分析中...')
-                                else ...[
-                                  TextSpan(
-                                    text: "${studyProgress!.userOrder!.toStringAsFixed(1)}%",
-                                    style: TextStyle(color: accentColor, fontWeight: FontWeight.w900, fontFamily: 'Roboto'),
-                                  ),
-                                  const TextSpan(text: " 的用户"),
-                                ],
-                              ],
-                            ),
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 12,
-                              height: 1.4,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    _buildVisualRanking(studyProgress!.userOrder ?? -1, accentColor,
-                        isDarkModeEnabled ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02), accentColor),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -2097,26 +1916,26 @@ class _MePageState extends State<MePage> {
   // 图例项组件
   Widget _buildLegendItem(String label, Color color) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final subtitleColor = isDarkModeEnabled ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(3),
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: 5),
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             color: subtitleColor,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             fontFamily: 'NotoSansSC',
           ),
         ),
@@ -2661,71 +2480,72 @@ class _MePageState extends State<MePage> {
 
   Color dakaStatus2Color(String dakaStatus) {
     if (dakaStatus == UserDayStatus.dakaed.json) {
-      return const Color(0xFF10B981); // Emerald Green
+      return AppTheme.primaryColor; // 扇贝绿
     } else if (dakaStatus == UserDayStatus.studied.json) {
-      return const Color(0xFFFACC15); // Amber/Yellow
+      return const Color(0xFFFA6E59); // 珊瑚橙红
     } else {
-      return const Color(0xFF94A3B8).withValues(alpha: 0.3); // Slate Grey
+      return isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF1F5F9); // 未学习底
     }
   }
 
   ///最近30天打卡情况
   Widget renderLast30DaysDakaStatus() {
+    if (last30DaysDakaStatus == null || last30DaysDakaStatus!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        const double boxMargin = 1.0;
-        // 使用可用宽度而不是屏幕宽度，考虑卡片的内边距
+        const double gap = 4.0;
         final availableWidth = constraints.maxWidth;
-        final boxWidth = (availableWidth - 20 * boxMargin) / 10; // 10个盒子，每个盒子左右各有margin
-        final boxHeight = boxWidth * 0.5; // 高度是宽度的一半
+        final boxWidth = (availableWidth - (9 * gap)) / 10;
+        final boxHeight = boxWidth * 0.9;
 
-        var rows = <Widget>[]; // 每行对应10天，共3行
+        var rows = <Widget>[];
         var dayIndex = 0;
         for (int i = 0; i < 3; i++) {
           var dayBoxes = <Widget>[];
           for (int j = 0; j < 10; j++) {
+            if (dayIndex >= last30DaysDakaStatus!.length) break;
+            final status = last30DaysDakaStatus![dayIndex];
+            final isNotLearned = status != UserDayStatus.dakaed.json && status != UserDayStatus.studied.json;
+            
             var box = Container(
-              margin: const EdgeInsets.all(boxMargin),
+              margin: EdgeInsets.only(right: j < 9 ? gap : 0),
               width: boxWidth,
               height: boxHeight,
               decoration: BoxDecoration(
-                color: dakaStatus2Color(last30DaysDakaStatus![dayIndex]),
-                borderRadius: BorderRadius.circular(2),
+                color: dakaStatus2Color(status),
+                borderRadius: BorderRadius.circular(6),
+                border: isNotLearned
+                    ? Border.all(color: isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.05), width: 1)
+                    : null,
               ),
               child: dayIndex == 29
                   ? Center(
                       child: Text(
-                      '今天',
-                      style: const TextStyle(
-                        fontSize: 8,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w400,
-                        height: 1.1,
-                        fontFamily: 'NotoSansSC',
+                        '今天',
+                        style: const TextStyle(
+                          fontSize: 8,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          height: 1.0,
+                          fontFamily: 'NotoSansSC',
+                        ),
+                        textScaler: const TextScaler.linear(1.0),
                       ),
-                      textScaler: const TextScaler.linear(1.0),
-                    ))
-                  : dayIndex == 28
-                      ? Center(
-                          child: Text(
-                          '昨天',
-                          style: const TextStyle(
-                            fontSize: 8,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w400,
-                            height: 1.1,
-                            fontFamily: 'NotoSansSC',
-                          ),
-                          textScaler: const TextScaler.linear(1.0),
-                        ))
-                      : null,
+                    )
+                  : null,
             );
             dayBoxes.add(box);
             dayIndex++;
           }
-          rows.add(Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: dayBoxes,
+          rows.add(Padding(
+            padding: EdgeInsets.only(bottom: i < 2 ? gap : 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: dayBoxes,
+            ),
           ));
         }
         return Column(
@@ -2767,24 +2587,25 @@ class _MePageState extends State<MePage> {
   Widget _buildStatBox(bool isDarkMode, String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.02) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(20),
+          color: isDarkMode ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF0FAF5),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+            color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1418BA7C),
           ),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 20, color: color.withValues(alpha: 0.8)),
-            const SizedBox(height: 12),
+            Icon(icon, size: 20, color: color.withValues(alpha: 0.9)),
+            const SizedBox(height: 10),
             Text(
               value,
               style: TextStyle(
-                color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
+                fontFamily: 'Roboto',
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2793,9 +2614,10 @@ class _MePageState extends State<MePage> {
             Text(
               label,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570),
                 fontSize: 11,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'NotoSansSC',
               ),
             ),
           ],
@@ -2804,35 +2626,6 @@ class _MePageState extends State<MePage> {
     );
   }
 
-  Widget _buildProgressItem(String title, String value) {
-    final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            color: textColor,
-            fontFamily: 'Roboto',
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 12,
-            color: subtitleColor,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'NotoSansSC',
-          ),
-        ),
-      ],
-    );
-  }
 
   // 打开数据库查看器
   void _openDbViewPage() {
@@ -2957,7 +2750,7 @@ class _MePageState extends State<MePage> {
   @override
   Widget build(BuildContext context) {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkModeEnabled ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
+    final backgroundColor = isDarkModeEnabled ? const Color(0xFF0C1312) : const Color(0xFFF5F9F7);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -2978,26 +2771,6 @@ class _MePageState extends State<MePage> {
     );
   }
 
-  Widget _buildVisualRanking(double percentile, Color markerColor, Color containerColor, Color textColor) {
-    return SizedBox(
-      width: 80,
-      height: 60,
-      child: Column(
-        children: [
-          Expanded(
-            child: CustomPaint(
-              size: const Size(double.infinity, double.infinity),
-              painter: RankingPainter(
-                percentile: percentile,
-                markerColor: markerColor,
-                curveColor: textColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // 独立的词书卡片组件，有自己的状态管理
@@ -3090,170 +2863,165 @@ class _DictCardState extends State<DictCard> {
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
-    final masteredColor = isDarkMode ? const Color(0xFF34D399) : const Color(0xFF10B981);
-    final fetchColor = accentColor;
-    final cardBgColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08);
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+    final masteredColor = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+    final fetchColor = isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399);
+    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // 圆形三色进度饼图/环图 (带分割线)
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 1000),
-                curve: Curves.easeOutCubic,
-                builder: (context, animValue, child) {
-                  return SizedBox(
-                    width: 52,
-                    height: 52,
-                    child: CustomPaint(
-                      painter: ThreeSegmentProgressPainter(
-                        masteryProgress: masteryProgress * animValue,
-                        fetchProgress: fetchProgress * animValue,
-                        masteredColor: masteredColor,
-                        fetchColor: fetchColor,
-                        backgroundColor: isDarkMode ? Colors.white12 : const Color(0xFFF1F5F9),
-                        dividerColor: cardBgColor,
-                        strokeWidth: 5.0,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$progressPercent%',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: masteredColor,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'Roboto',
-                          ),
+    return GestureDetector(
+      onTap: () async {
+        try {
+          await toDictWordsListPage(currentLearningDict.dictId, false);
+          widget.onDictChanged();
+        } catch (e) {
+          ToastUtil.error("无法打开词书");
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDarkMode ? const Color(0xFF162320) : const Color(0xFFF5F9F7),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: 1.0),
+        ),
+        child: Row(
+          children: [
+            // 圆形三色进度环图
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutCubic,
+              builder: (context, animValue, child) {
+                return SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: CustomPaint(
+                    painter: ThreeSegmentProgressPainter(
+                      masteryProgress: masteryProgress * animValue,
+                      fetchProgress: fetchProgress * animValue,
+                      masteredColor: masteredColor,
+                      fetchColor: fetchColor,
+                      backgroundColor: isDarkMode ? Colors.white12 : const Color(0xFFE8F5EE),
+                      dividerColor: isDarkMode ? const Color(0xFF162320) : const Color(0xFFF5F9F7),
+                      strokeWidth: 4.0,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$progressPercent%',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: masteredColor,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'Roboto',
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(width: 16),
-              // 词书信息
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.dictInfo.name.replaceAll('.dict', ''),
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                        fontFamily: 'NotoSansSC',
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 12),
+            // 词书信息
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.dictInfo.name.replaceAll('.dict', ''),
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'NotoSansSC',
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '已掌握 $masteredWords · 已取词 $fetchWords / $totalWords 词',
-                      style: TextStyle(
-                        color: subtitleColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '已掌握 $masteredWords · 已取词 $fetchWords / $totalWords 词',
+                    style: TextStyle(
+                      color: subtitleColor,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'NotoSansSC',
                     ),
-                  ],
-                ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // 操作按钮
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: _buildDictCheckbox(
-                  label: '优先取词',
-                  value: currentLearningDict.isPrivileged,
-                  onChanged: (bool? value) async {
-                    if (value != null) {
-                      try {
-                        final newPrivilegedStatus =
-                            await MyDatabase.instance.learningDictsDao.togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
+            ),
+            const SizedBox(width: 8),
+            // 右侧「优先取词」胶囊
+            GestureDetector(
+              onTap: () async {
+                try {
+                  final newPrivilegedStatus = await MyDatabase.instance.learningDictsDao
+                      .togglePrivileged(currentLearningDict.userId, currentLearningDict.dictId, true);
 
-                        if (mounted) {
-                          setState(() {
-                            currentLearningDict = LearningDict(
-                              userId: currentLearningDict.userId,
-                              dictId: currentLearningDict.dictId,
-                              isPrivileged: newPrivilegedStatus,
-                              fetchMastered: currentLearningDict.fetchMastered,
-                              sortAlg: currentLearningDict.sortAlg,
-                              createTime: currentLearningDict.createTime,
-                              updateTime: currentLearningDict.updateTime,
-                            );
-                          });
-                        }
+                  if (mounted) {
+                    setState(() {
+                      currentLearningDict = LearningDict(
+                        userId: currentLearningDict.userId,
+                        dictId: currentLearningDict.dictId,
+                        isPrivileged: newPrivilegedStatus,
+                        fetchMastered: currentLearningDict.fetchMastered,
+                        sortAlg: currentLearningDict.sortAlg,
+                        createTime: currentLearningDict.createTime,
+                        updateTime: currentLearningDict.updateTime,
+                      );
+                    });
+                  }
 
-                        // 触发同步
-                        ThrottledDbSyncService().requestSync();
-                      } catch (error) {
-                        Global.logger.d('切换优先取词状态失败: $error');
-                        ToastUtil.error('操作失败，请重试');
-                      }
-                    }
-                  },
+                  // 触发同步
+                  ThrottledDbSyncService().requestSync();
+                } catch (error) {
+                  Global.logger.d('切换优先取词状态失败: $error');
+                  ToastUtil.error('操作失败，请重试');
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: currentLearningDict.isPrivileged
+                      ? (isDarkMode ? masteredColor.withValues(alpha: 0.15) : const Color(0xFFE8F8F1))
+                      : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9)),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: currentLearningDict.isPrivileged
+                        ? masteredColor.withValues(alpha: 0.4)
+                        : (isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.06)),
+                  ),
+                ),
+                child: Text(
+                  '优先取词',
+                  style: TextStyle(
+                    color: currentLearningDict.isPrivileged ? masteredColor : subtitleColor,
+                    fontSize: 10,
+                    fontWeight: currentLearningDict.isPrivileged ? FontWeight.w800 : FontWeight.w500,
+                    fontFamily: 'NotoSansSC',
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildDictActionButton(
-                  icon: Icons.list_alt_rounded,
-                  label: '单词列表',
-                  isActive: true,
-                  color: const Color(0xFF3B82F6),
-                  onTap: () async {
-                    try {
-                      await toDictWordsListPage(currentLearningDict.dictId, false);
-                      widget.onDictChanged();
-                    } catch (e) {
-                      ToastUtil.error("无法打开词书");
-                    }
-                  },
+            ),
+            const SizedBox(width: 4),
+            // 更多/停止学习小按钮
+            GestureDetector(
+              onTap: () => _handleDictDataAction(),
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Icon(
+                  Icons.more_vert_rounded,
+                  size: 16,
+                  color: subtitleColor.withValues(alpha: 0.6),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildDictActionButton(
-                  icon: Icons.pause_circle_outline_rounded,
-                  label: '停止学习',
-                  isActive: true,
-                  isDestructive: false,
-                  color: const Color(0xFFF59E0B),
-                  onTap: () => _handleDictDataAction(),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -3500,121 +3268,6 @@ class _DictCardState extends State<DictCard> {
 
       ThrottledDbSyncService().requestSync();
     }
-  }
-
-  Widget _buildDictActionButton({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-    Color? color,
-  }) {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-
-    final bgColor = isDarkMode
-        ? (isDestructive ? Colors.red.withValues(alpha: 0.12) : const Color(0xFF334155))
-        : (isDestructive ? Colors.red.withValues(alpha: 0.08) : const Color(0xFFF1F5F9));
-
-    final borderColor = isDarkMode
-        ? (isDestructive ? Colors.red.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1))
-        : (isDestructive ? Colors.red.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.05));
-
-    final contentColor = isDarkMode
-        ? (isDestructive ? Colors.redAccent : (color ?? const Color(0xFFF1F5F9)))
-        : (isDestructive ? Colors.red[700]! : (color ?? const Color(0xFF334155)));
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: borderColor,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isActive ? contentColor : contentColor.withValues(alpha: 0.4),
-              size: 20,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? contentColor : contentColor.withValues(alpha: 0.4),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 1.3,
-                letterSpacing: 0,
-              ),
-              textScaler: const TextScaler.linear(1.0),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDictCheckbox({
-    required String label,
-    required bool value,
-    required ValueChanged<bool?> onChanged,
-  }) {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final accentColor = isDarkMode ? const Color(0xFF22D3EE) : const Color(0xFF0EA5E9);
-
-    final bgColor = isDarkMode ? const Color(0xFF334155) : const Color(0xFFF1F5F9);
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05);
-    final contentColor = isDarkMode ? const Color(0xFFF1F5F9) : const Color(0xFF334155);
-
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: borderColor,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Checkbox(
-              value: value,
-              onChanged: onChanged,
-              activeColor: accentColor,
-              checkColor: Colors.white,
-              side: BorderSide(
-                color: contentColor.withValues(alpha: 0.6),
-                width: 1.5,
-              ),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                color: contentColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 1.3,
-                letterSpacing: 0,
-              ),
-              textScaler: const TextScaler.linear(1.0),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
