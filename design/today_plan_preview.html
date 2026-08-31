@@ -6,7 +6,67 @@
   <title>今日学习计划 - 不背单词风格极致美学原型</title>
   <style>
     :root {
-      /* 高级克制调色盘：黑白灰中性调 + 极低饱和度微点缀 */
+      /* 扇贝单词（Shanbay）经典学习主题：温润青绿 + 舒适护眼米青灰底 + 珊瑚橙辅助 */
+      --bg: #F5F9F7;
+      --card-bg: #FFFFFF;
+      --card-subtle: #EDF5F2;
+      --card-active: #DFECE7;
+      --divider: rgba(24, 186, 124, 0.09);
+      
+      --text-primary: #182B28;
+      --text-secondary: #48635F;
+      --text-muted: #7E9B96;
+      --text-faint: #BDD4D0;
+
+      /* 扇贝标志性温润主绿 */
+      --primary: #18BA7C;
+      --primary-hover: #15A56E;
+      --primary-soft: #E8F8F1;
+      --primary-text: #FFFFFF;
+
+      --accent: #18BA7C;
+      --accent-soft: rgba(24, 186, 124, 0.08);
+      
+      --green-text: #18BA7C;
+      --green-bg: #E8F8F1;
+      --amber-text: #FA6E59;
+      --amber-bg: #FEF1EF;
+      
+      --shadow-subtle: 0 4px 20px rgba(24, 186, 124, 0.04);
+      --shadow-btn: 0 8px 20px -3px rgba(24, 186, 124, 0.35);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0E1514;
+      --card-bg: #141E1D;
+      --card-subtle: #1C2B29;
+      --card-active: #263A37;
+      --divider: rgba(255, 255, 255, 0.06);
+      
+      --text-primary: #EAF7F3;
+      --text-secondary: #8DA8A3;
+      --text-muted: #5D7975;
+      --text-faint: #344845;
+
+      --primary: #2CD88F;
+      --primary-hover: #26C07F;
+      --primary-soft: rgba(44, 216, 143, 0.12);
+      --primary-text: #0B1714;
+
+      --accent: #2CD88F;
+      --accent-soft: rgba(44, 216, 143, 0.1);
+
+      --green-text: #2CD88F;
+      --green-bg: rgba(44, 216, 143, 0.12);
+      --amber-text: #FF7B69;
+      --amber-bg: rgba(255, 123, 105, 0.12);
+
+      --shadow-subtle: 0 8px 30px rgba(0, 0, 0, 0.5);
+      --shadow-btn: 0 8px 22px -3px rgba(44, 216, 143, 0.3);
+    }
+
+    /* 经典中性黑白模式（支持对照体验） */
+    [data-palette="classic"] {
       --bg: #F9FAFB;
       --card-bg: #FFFFFF;
       --card-subtle: #F3F4F6;
@@ -18,8 +78,12 @@
       --text-muted: #9CA3AF;
       --text-faint: #D1D5DB;
 
-      /* 克制微辅色（低饱和度、不抢戏） */
-      --accent: #1F2937;
+      --primary: #111827;
+      --primary-hover: #1F2937;
+      --primary-soft: #F3F4F6;
+      --primary-text: #FFFFFF;
+
+      --accent: #111827;
       --accent-soft: rgba(0, 0, 0, 0.04);
       
       --green-text: #059669;
@@ -31,7 +95,7 @@
       --shadow-btn: 0 6px 18px -2px rgba(17, 24, 39, 0.2);
     }
 
-    [data-theme="dark"] {
+    [data-theme="dark"][data-palette="classic"] {
       --bg: #090B10;
       --card-bg: #11141D;
       --card-subtle: #181C28;
@@ -42,6 +106,11 @@
       --text-secondary: #9CA3AF;
       --text-muted: #6B7280;
       --text-faint: #374151;
+
+      --primary: #F9FAFB;
+      --primary-hover: #FFFFFF;
+      --primary-soft: rgba(255, 255, 255, 0.08);
+      --primary-text: #11141D;
 
       --accent: #F9FAFB;
       --accent-soft: rgba(255, 255, 255, 0.06);
@@ -254,7 +323,7 @@
     .hero-progress-fill {
       height: 100%;
       width: 45%;
-      background: var(--text-primary);
+      background: var(--primary);
       border-radius: 4px;
       transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -266,7 +335,7 @@
       color: var(--text-muted);
     }
 
-    /* 双列极简纯色数据（新词 | 复习，去除冗余的今日总词） */
+    /* 双列极简纯色数据 */
     .metrics-row {
       width: 100%;
       display: flex;
@@ -315,8 +384,8 @@
       width: 100%;
       height: 52px;
       border-radius: 26px;
-      background: var(--text-primary);
-      color: var(--bg);
+      background: var(--primary);
+      color: var(--primary-text);
       border: none;
       font-size: 16px;
       font-weight: 700;
@@ -330,11 +399,15 @@
       margin-top: 4px;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    .btn-study-hero:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
     .btn-study-hero:active {
-      transform: scale(0.97);
+      transform: scale(0.98);
     }
 
-    /* --- 学习轨道：极简纯净分叉树（克制中性色调） --- */
+    /* --- 学习轨道：极简纯净分叉树 --- */
     .section-block {
       display: flex;
       flex-direction: column;
@@ -346,24 +419,14 @@
       align-items: center;
       padding: 0 2px;
     }
-    .section-heading-wrap {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
     .section-heading {
       font-size: 14px;
       font-weight: 800;
       color: var(--text-primary);
       letter-spacing: -0.01em;
     }
-    .section-subheading {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
 
-    /* 模式切换小按钮（中性素雅调） */
+    /* 模式切换小按钮 */
     .btn-mode-toggle {
       font-size: 12px;
       font-weight: 600;
@@ -393,11 +456,10 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      cursor: pointer;
       transition: box-shadow 0.2s ease;
     }
     .tree-card:hover {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 8px 24px rgba(24, 186, 124, 0.08);
     }
 
     .track-section {
@@ -427,7 +489,7 @@
       position: relative;
     }
 
-    /* 测评节点：素雅中性卡片（去除浓重蓝边） */
+    /* 测评节点：素雅中性卡片 */
     .origin-col-wrap {
       display: flex;
       flex-direction: column;
@@ -449,7 +511,7 @@
     .origin-pill-tag {
       font-size: 9px;
       font-weight: 800;
-      color: var(--text-muted);
+      color: var(--green-text);
       letter-spacing: 0.5px;
     }
     .origin-pill-name {
@@ -459,7 +521,7 @@
       white-space: nowrap;
     }
 
-    /* 中间 Bezier 导线 SVG（使用极淡中性线） */
+    /* 中间 Bezier 导线 SVG */
     .fork-svg-wrap {
       width: 22px;
       position: relative;
@@ -493,14 +555,14 @@
       row-gap: 5px;
     }
 
-    /* 克制微标（低饱和、高级） */
+    /* 状态微标 */
     .mini-status-badge {
       font-size: 11px;
       font-weight: 700;
       display: inline-flex;
       align-items: center;
-      gap: 2px;
-      padding: 2px 6px;
+      gap: 3px;
+      padding: 2px 7px;
       border-radius: 6px;
       white-space: nowrap;
     }
@@ -532,12 +594,12 @@
     /* ========================================================
        【编辑模式面板】
        ======================================================== */
-    .edit-mode-panel {
-      display: none;
+    .edit-track-card {
       background: var(--card-bg);
       border-radius: 24px;
       padding: 16px 18px;
       box-shadow: var(--shadow-subtle);
+      display: flex;
       flex-direction: column;
       gap: 16px;
       animation: fadeIn 0.25s ease;
@@ -547,17 +609,16 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .subtle-tabs {
+    .subtle-tab-row {
       display: flex;
       gap: 4px;
       background: var(--card-subtle);
       padding: 3px;
       border-radius: 20px;
       width: fit-content;
-      margin-bottom: 4px;
     }
     .subtle-tab-btn {
-      padding: 4px 14px;
+      padding: 5px 14px;
       border-radius: 16px;
       font-size: 12px;
       font-weight: 600;
@@ -569,110 +630,67 @@
     }
     .subtle-tab-btn.active {
       background: var(--card-bg);
-      color: var(--text-primary);
+      color: var(--primary);
       font-weight: 700;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     }
 
-    .config-row-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--divider);
-    }
-    .config-row-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .config-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-    .config-val-pill {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-primary);
+    .selector-card {
       background: var(--card-subtle);
-      padding: 4px 10px;
-      border-radius: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .branch-list-group {
+      border-radius: 16px;
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-    }
-    .branch-cell {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .branch-cell-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .branch-dot-title {
-      display: flex;
-      align-items: center;
       gap: 6px;
+    }
+    .selector-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .selector-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .selector-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .step-chip {
+      padding: 4px 10px;
+      border-radius: 10px;
       font-size: 12px;
+      font-weight: 600;
+      background: var(--card-bg);
+      color: var(--text-secondary);
+      border: 1px solid var(--divider);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .step-chip.active {
+      background: var(--primary-soft);
+      color: var(--green-text);
+      border-color: var(--primary);
       font-weight: 700;
     }
-    .branch-dot-title.correct { color: var(--green-text); }
-    .branch-dot-title.wrong { color: var(--amber-text); }
-    .dot-mini {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-    }
-    .dot-mini.correct { background: var(--green-text); }
-    .dot-mini.wrong { background: var(--amber-text); }
 
-    .btn-action-text {
-      background: none;
-      border: none;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      cursor: pointer;
-    }
-
-    .step-item-pill {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--card-subtle);
-      padding: 10px 12px;
+    .save-track-btn {
+      width: 100%;
+      padding: 12px;
       border-radius: 14px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-    .step-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .step-handle {
-      color: var(--text-muted);
-      cursor: grab;
-      font-size: 13px;
-    }
-    .step-del {
-      background: none;
       border: none;
-      color: var(--text-muted);
-      cursor: pointer;
+      background: var(--primary);
+      color: var(--primary-text);
+      font-weight: 700;
       font-size: 14px;
-      padding: 2px;
+      cursor: pointer;
+      box-shadow: var(--shadow-btn);
+      transition: all 0.2s;
+    }
+    .save-track-btn:hover {
+      background: var(--primary-hover);
     }
 
     .tip-bottom {
@@ -687,7 +705,9 @@
 
   <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
-    <span>🌿 高级克制中性色调</span>
+    <button onclick="togglePalette()">
+      <span id="palette-icon">🌿</span> <span id="palette-text">扇贝绿主题</span>
+    </button>
     <button onclick="toggleTheme()">
       <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
     </button>
@@ -711,38 +731,32 @@
           <div class="header-greeting">TODAY'S PLAN</div>
           <div class="header-title">今日学习计划</div>
         </div>
-        <button class="header-action-btn" title="高级设置" onclick="alert('高级设置：最少新词数量等')">
+        <button class="header-action-btn" title="查看业务日期与系统时间" onclick="alert('当前业务日期: 2026-08-31\n系统时间: 2026-08-31 13:40:00\n时区: Asia/Shanghai')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" y1="21" x2="4" y2="14"></line>
-            <line x1="4" y1="10" x2="4" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12" y2="3"></line>
-            <line x1="20" y1="21" x2="20" y2="16"></line>
-            <line x1="20" y1="12" x2="20" y2="3"></line>
-            <line x1="1" y1="14" x2="7" y2="14"></line>
-            <line x1="9" y1="8" x2="15" y2="8"></line>
-            <line x1="17" y1="16" x2="23" y2="16"></line>
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
         </button>
       </div>
 
-      <!-- 核心大仪表盘（纯净素雅） -->
+      <!-- 核心仪表盘 -->
       <div class="hero-container">
-        <!-- 今日目标超大数字（点击切换/修改目标） -->
-        <div class="goal-hero-box" onclick="cycleGoal()" title="点击修改每日词数">
+        <!-- 今日目标超大数字（52px 黄金协调字阶） -->
+        <div class="goal-hero-box" onclick="cycleGoal()" title="点击修改今日目标词数">
           <div class="hero-number-wrap">
-            <span class="hero-big-number" id="goal-count">20</span>
-            <span class="hero-unit-tag">
+            <div class="hero-big-number" id="goal-count">20</div>
+            <div class="hero-unit-tag">
               <span>WORDS</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px;"><path d="M6 9l6 6 6-6"/></svg>
-            </span>
+              <span style="font-size: 11px;">▾</span>
+            </div>
           </div>
         </div>
 
-        <!-- 极细微流线进度（统一浅色低调雅致） -->
+        <!-- 极细微流线进度条（扇贝绿填充） -->
         <div class="hero-progress-wrap">
           <div class="hero-progress-track">
-            <div class="hero-progress-fill" id="progress-fill"></div>
+            <div class="hero-progress-fill"></div>
           </div>
           <div class="hero-progress-labels">
             <span>环节进度 18 / 40</span>
@@ -750,23 +764,25 @@
           </div>
         </div>
 
-        <!-- 双列极简纯色数据（新词 | 复习，已移除冗余的今日总词） -->
+        <!-- 双列对称数据（新词 | 复习，已移除冗余的今日总词） -->
         <div class="metrics-row">
-          <div class="metric-col" onclick="alert('跳转至：新词列表')">
-            <span class="metric-val">8</span>
-            <span class="metric-label">新词</span>
+          <div class="metric-col" onclick="alert('查看今日新词列表')">
+            <div class="metric-val">8</div>
+            <div class="metric-label">新词</div>
           </div>
           <div class="metric-divider"></div>
-          <div class="metric-col" onclick="alert('跳转至：复习列表')">
-            <span class="metric-val">12</span>
-            <span class="metric-label">复习</span>
+          <div class="metric-col" onclick="alert('查看今日复习列表')">
+            <div class="metric-val">12</div>
+            <div class="metric-label">复习</div>
           </div>
         </div>
 
-        <!-- 饱满沉浸主操作按钮 -->
-        <button class="btn-study-hero" onclick="alert('开始背单词！')">
+        <!-- 主操作按钮（扇贝绿大胶囊） -->
+        <button class="btn-study-hero" onclick="alert('开始今日背单词！')">
           <span>开始学习</span>
-          <span style="font-size: 18px;">→</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
         </button>
       </div>
 
@@ -780,7 +796,7 @@
           </button>
         </div>
 
-        <!-- 【纯净中性色分叉卡片】：消除廉价浓重彩色，呈现高级克制调 -->
+        <!-- 【纯净中性色分叉卡片】 -->
         <div class="tree-card" id="display-mode-view">
           
           <!-- 新词学习轨道 -->
@@ -790,7 +806,7 @@
             </div>
 
             <div class="frameless-fork-tree">
-              <!-- 测评起点（中性素雅） -->
+              <!-- 测评起点 -->
               <div class="origin-col-wrap">
                 <div class="origin-pill-box">
                   <span class="origin-pill-tag">测评</span>
@@ -798,7 +814,7 @@
                 </div>
               </div>
 
-              <!-- 极淡中性 Bezier 导线 -->
+              <!-- 中间 Bezier 导线 SVG -->
               <div class="fork-svg-wrap">
                 <svg class="fork-svg-line" viewBox="0 0 22 64" fill="none">
                   <path d="M 0 32 C 11 32, 11 12, 22 12" stroke="var(--divider)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
@@ -806,17 +822,23 @@
                 </svg>
               </div>
 
-              <!-- 右侧纯胶囊流（克制微色） -->
+              <!-- 右侧纯胶囊流 -->
               <div class="branches-pure-col">
                 <!-- 答对分支 -->
                 <div class="pure-branch-row">
-                  <span class="mini-status-badge correct">✔ 答对</span>
+                  <span class="mini-status-badge correct">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    答对
+                  </span>
                   <span class="pure-step-pill">汉译英</span>
                 </div>
 
                 <!-- 答错分支 -->
                 <div class="pure-branch-row">
-                  <span class="mini-status-badge wrong">✕ 答错</span>
+                  <span class="mini-status-badge wrong">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    答错
+                  </span>
                   <span class="pure-step-pill">例句英译汉</span>
                   <span class="pure-step-arrow">➔</span>
                   <span class="pure-step-pill">例句汉译英</span>
@@ -854,12 +876,18 @@
 
               <div class="branches-pure-col">
                 <div class="pure-branch-row">
-                  <span class="mini-status-badge correct">✔ 答对</span>
+                  <span class="mini-status-badge correct">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    答对
+                  </span>
                   <span style="font-size: 12px; font-weight: 500; color: var(--text-muted); padding: 4px 2px;">直接完成</span>
                 </div>
 
                 <div class="pure-branch-row">
-                  <span class="mini-status-badge wrong">✕ 答错</span>
+                  <span class="mini-status-badge wrong">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    答错
+                  </span>
                   <span class="pure-step-pill">汉译英</span>
                 </div>
               </div>
@@ -869,10 +897,10 @@
         </div>
 
         <!-- 【编辑模式】：精简扁平 Tab 与步骤选择器 -->
-        <div class="edit-track-card" id="edit-mode-view" style="display: none; flex-direction: column; gap: 16px;">
-          <div class="subtle-tab-row" style="display: flex; gap: 8px;">
-            <div class="subtle-tab-btn active" id="tab-new" onclick="switchTab(0)">新词轨道配置</div>
-            <div class="subtle-tab-btn" id="tab-review" onclick="switchTab(1)">旧词轨道配置</div>
+        <div class="edit-track-card" id="edit-mode-view" style="display: none;">
+          <div class="subtle-tab-row">
+            <button class="subtle-tab-btn active" id="tab-new" onclick="switchTab(0)">新词轨道配置</button>
+            <button class="subtle-tab-btn" id="tab-review" onclick="switchTab(1)">旧词轨道配置</button>
           </div>
 
           <div class="selector-card">
@@ -906,7 +934,7 @@
             </div>
           </div>
 
-          <button class="save-track-btn" onclick="toggleEditMode()" style="width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--text-primary); color: var(--bg); font-weight: 600; cursor: pointer;">完成配置</button>
+          <button class="save-track-btn" onclick="toggleEditMode()">完成配置</button>
         </div>
 
       </div>
@@ -919,6 +947,7 @@
 
   <script>
     let isEditMode = false;
+    let isShanbay = true;
 
     function openTrackEdit(tabIdx) {
       isEditMode = true;
@@ -947,6 +976,23 @@
         editEl.style.display = 'none';
         btnText.textContent = '调整轨道';
         btnIcon.textContent = '⚙️';
+      }
+    }
+
+    function togglePalette() {
+      isShanbay = !isShanbay;
+      const root = document.documentElement;
+      const icon = document.getElementById('palette-icon');
+      const text = document.getElementById('palette-text');
+
+      if (isShanbay) {
+        root.removeAttribute('data-palette');
+        icon.textContent = '🌿';
+        text.textContent = '扇贝绿主题';
+      } else {
+        root.setAttribute('data-palette', 'classic');
+        icon.textContent = '🖤';
+        text.textContent = '经典黑白主题';
       }
     }
 
