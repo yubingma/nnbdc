@@ -1001,6 +1001,10 @@ class WordImagesDao extends DatabaseAccessor<MyDatabase> with _$WordImagesDaoMix
 
     Global.logger.d('✅ 单词图片插入完成, 总数: ${entries.length}');
   }
+
+  Future<int> deleteById(String id) {
+    return (delete(wordImages)..where((wi) => wi.id.equals(id))).go();
+  }
 }
 
 @DriftAccessor(tables: [VerbTenses])

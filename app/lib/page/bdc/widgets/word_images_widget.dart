@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/vo.dart';
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/config.dart';
 import 'package:nnbdc/global.dart';
@@ -147,16 +148,33 @@ void showImagePreviewWithContext(BuildContext context, WordImageVo image,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 作者昵称
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(left: 8, right: 40, bottom: 8),
-                      child: Text(
-                        '上传: ${Util.getNickNameOfUser(image.author)}',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500),
-                      ),
+                    Builder(
+                      builder: (context) {
+                        String authorName = Util.getNickNameOfUser(image.author);
+                        if (authorName.isEmpty) {
+                          final current = Global.getLoggedInUser();
+                          final authorId = image.author.id;
+                          if (current != null && (authorId == current.id || authorId == null || authorId.isEmpty)) {
+                            authorName = (current.nickName != null && current.nickName!.trim().isNotEmpty)
+                                ? current.nickName!.trim()
+                                : current.userName;
+                          }
+                        }
+                        if (authorName.isEmpty || authorName == '系统用户') {
+                          authorName = '泡泡';
+                        }
+                        return Padding(
+                          padding:
+                              const EdgeInsets.only(left: 8, right: 40, bottom: 8),
+                          child: Text(
+                            '上传者: $authorName',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        );
+                      },
                     ),
                     // 大图
                     Builder(
@@ -216,7 +234,13 @@ void showImagePreviewWithContext(BuildContext context, WordImageVo image,
                           image.id, Global.getLoggedInUser()!.id);
                       if (result.success) {
                         ToastUtil.info('删除成功');
-                        // 本地同步移除
+                        // 本地同步移除 SQLite 记录
+                        try {
+                          await MyDatabase.instance.wordImagesDao.deleteById(image.id);
+                        } catch (e, s) {
+                          Global.logger.e('删除本地WordImages失败', error: e, stackTrace: s);
+                        }
+                        // 触发页面即时重绘
                         if (onDeleted != null) {
                           onDeleted();
                         }
