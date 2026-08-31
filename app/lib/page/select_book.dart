@@ -1735,16 +1735,10 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
   Widget _buildFloatingSaveBar(bool isDarkMode) {
     final selectedCount = selectedDictVos?.length ?? 0;
-    int totalWords = 0;
-    if (selectedDictVos != null) {
-      for (var d in selectedDictVos!) {
-        totalWords += d.wordCount ?? 0;
-      }
-    }
 
     return Container(
       padding: EdgeInsets.fromLTRB(
-        16, 10, 16,
+        16, 12, 16,
         (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 6 : 12),
       ),
       decoration: BoxDecoration(
@@ -1767,27 +1761,13 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       child: Row(
         children: [
           Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '已选择 $selectedCount 本词书',
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '共计 ${_formatNumber(totalWords)} 单词',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
-                  ),
-                ),
-              ],
+            child: Text(
+              selectedCount > 0 ? '已选择 $selectedCount 本词书' : '请勾选要学习的词书',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+              ),
             ),
           ),
           const SizedBox(width: 12),
