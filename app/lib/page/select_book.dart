@@ -416,39 +416,163 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     );
   }
 
+  static final List<List<Color>> _bookGradients = [
+    [const Color(0xFF18BA7C), const Color(0xFF0D8255)], // 翡翠绿
+    [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)], // 深海蓝
+    [const Color(0xFFF59E0B), const Color(0xFFD97706)], // 琥珀金
+    [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)], // 紫罗兰
+    [const Color(0xFFEC4899), const Color(0xFFBE185D)], // 玫瑰粉
+    [const Color(0xFF06B6D4), const Color(0xFF0E7490)], // 天青蓝
+    [const Color(0xFF10B981), const Color(0xFF047857)], // 薄荷绿
+  ];
+
+  String _formatNumber(int num) {
+    return num.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
+  Widget _buildBookCover(String title, int index, {bool isCustom = false}) {
+    final gradient = isCustom
+        ? [const Color(0xFF64748B), const Color(0xFF334155)]
+        : _bookGradients[index.abs() % _bookGradients.length];
+    final initial = Util.getInitial(title).toUpperCase();
+
+    return Container(
+      width: 44,
+      height: 58,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradient,
+        ),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: [
+          BoxShadow(
+            color: gradient[0].withValues(alpha: 0.35),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // 书脊暗影效果
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.18),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  bottomLeft: Radius.circular(6),
+                ),
+              ),
+            ),
+          ),
+          // 书脊内侧压线
+          Positioned(
+            left: 4,
+            top: 0,
+            bottom: 0,
+            width: 1,
+            child: Container(
+              color: Colors.white.withValues(alpha: 0.15),
+            ),
+          ),
+          // 封面中央字母与小标
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  initial,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.only(top: 2),
+                  width: 14,
+                  height: 1.5,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubCategoryCapsules(DictGroupVo parentVo, List<DictGroupVo> subGroups, int selectedIndex, bool isDarkMode) {
     return Container(
-      height: 44,
-      margin: const EdgeInsets.only(top: 12, bottom: 4),
+      height: 38,
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         itemCount: subGroups.length,
         itemBuilder: (context, index) {
           final group = subGroups[index];
           final isSelected = index == selectedIndex;
 
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedSubGroupIndex[parentVo.name] = index;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.primaryColor : (isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF2F2F2)),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  group.name,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            padding: const EdgeInsets.only(right: 8),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () {
+                  setState(() {
+                    _selectedSubGroupIndex[parentVo.name] = index;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFFFFFFF)),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : (isDarkMode ? Colors.white12 : const Color(0xFFD1EADE)),
+                      width: 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    group.name,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57)),
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -460,71 +584,148 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   }
 
   Widget _buildBookList(List<DictVo> books, bool isDarkMode) {
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final subtitleColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
-
     final searchLower = _searchText.trim().toLowerCase();
     final visibleBooks = books.where((b) => 
       b.visible == true && 
       (_searchText.isEmpty || _fuzzyMatch(b.name, searchLower) || _fuzzyMatch(b.shortName, searchLower))
     ).toList();
 
+    if (visibleBooks.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_rounded, size: 48, color: isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
+            const SizedBox(height: 12),
+            Text(
+              '没有找到匹配的词书',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
       itemCount: visibleBooks.length,
       itemBuilder: (context, index) {
         final dict = visibleBooks[index];
         final isSelected = isDictSelected(dict);
+        final bookTitle = dict.shortName ?? dict.name ?? '';
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(12),
+            color: isSelected
+                ? (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFEDF8F3))
+                : (isDarkMode ? const Color(0xFF131E1C) : Colors.white),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected
+                  ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                  : (isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
+              width: isSelected ? 1.5 : 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: InkWell(
-            onTap: () => toggleDictSelectedStatus(dict),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          dict.shortName ?? dict.name ?? '',
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => toggleDictSelectedStatus(dict),
+              borderRadius: BorderRadius.circular(14),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // 立体精致封面
+                    _buildBookCover(bookTitle, index),
+                    const SizedBox(width: 14),
+                    // 词书信息
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            bookTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'NotoSansSC',
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${dict.wordCount} 词',
-                          style: TextStyle(
-                            color: subtitleColor,
-                            fontSize: 13,
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFE8F8F1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${_formatNumber(dict.wordCount ?? 0)} 词',
+                                  style: TextStyle(
+                                    color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              if (dict.domain != null && dict.domain!.isNotEmpty) ...[
+                                const SizedBox(width: 6),
+                                Text(
+                                  dict.domain!,
+                                  style: TextStyle(
+                                    color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                                    fontSize: 11.5,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  if (isSelected)
-                    const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 24)
-                  else
-                    Icon(Icons.circle_outlined, color: Colors.grey[300], size: 24),
-                ],
+                    const SizedBox(width: 10),
+                    // 勾选圆形指示器
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected
+                            ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                            : Colors.transparent,
+                        border: Border.all(
+                          color: isSelected
+                              ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                              : (isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: isSelected
+                          ? const Center(
+                              child: Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                            )
+                          : null,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -533,23 +734,57 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     );
   }
 
-
   Widget _buildCustomTabContent(bool isDarkMode, Color backgroundColor, Color textColor, Color? subtitleColor) {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Builder(builder: (context) {
             final restricted = PlatformUtils.isIOS && !SubscriptionUtil.isPremium();
-            return ElevatedButton.icon(
-              onPressed: _showCreateDictDialog,
-              icon: Icon(restricted ? Icons.lock_outline : Icons.add, size: 20),
-              label: const Text('新建单词书'),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                backgroundColor: restricted ? Colors.grey : AppTheme.primaryColor,
-                foregroundColor: Colors.white,
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: _showCreateDictDialog,
+                child: Container(
+                  width: double.infinity,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: restricted
+                        ? (isDarkMode ? const Color(0xFF1F2A28) : const Color(0xFFE2E8F0))
+                        : (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFEDF8F3)),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: restricted
+                          ? Colors.grey
+                          : (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        restricted ? Icons.lock_outline_rounded : Icons.add_rounded,
+                        size: 20,
+                        color: restricted
+                            ? Colors.grey
+                            : (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '新建单词书',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: restricted
+                              ? Colors.grey
+                              : (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             );
           }),
@@ -563,116 +798,172 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
             if (filteredCustomDicts.isEmpty) {
               return Center(
-                child: Text(
-                  _searchText.isEmpty ? '点击上方按钮创建词书' : '没有匹配的自定义词书',
-                  style: TextStyle(color: textColor.withValues(alpha: 0.5)),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.menu_book_rounded, size: 48, color: isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
+                    const SizedBox(height: 12),
+                    Text(
+                      _searchText.isEmpty ? '点击上方按钮创建词书' : '没有匹配的自定义词书',
+                      style: TextStyle(
+                        color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
 
             return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
               itemCount: filteredCustomDicts.length,
               itemBuilder: (context, index) {
                 final dict = filteredCustomDicts[index];
-                    final isSelected = isDictSelected(dict);
+                final isSelected = isDictSelected(dict);
+                final bookTitle = dict.name ?? '未命名';
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: backgroundColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[200]!),
-                          width: isSelected ? 2 : 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (isDarkMode ? Colors.black : Colors.grey).withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFEDF8F3))
+                        : (isDarkMode ? const Color(0xFF131E1C) : Colors.white),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected
+                          ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                          : (isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本' && !isSelected) {
-                              _showPremiumPrompt();
-                              return;
-                            }
-                            toggleDictSelectedStatus(dict);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[600]! : Colors.grey[400]!),
-                                      width: 2,
-                                    ),
-                                    color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                                  ),
-                                  child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () {
+                        if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本' && !isSelected) {
+                          _showPremiumPrompt();
+                          return;
+                        }
+                        toggleDictSelectedStatus(dict);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            _buildBookCover(bookTitle, index, isCustom: true),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            dict.name ?? '未命名',
-                                            style: TextStyle(color: textColor, fontSize: 17, fontWeight: FontWeight.w500),
+                                      Expanded(
+                                        child: Text(
+                                          bookTitle,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: 'NotoSansSC',
                                           ),
-                                          if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') ...[
-                                            const SizedBox(width: 6),
-                                            const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
-                                          ],
-                                        ],
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text('${dict.wordCount} 词', style: TextStyle(color: subtitleColor, fontSize: 14)),
+                                      if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') ...[
+                                        const SizedBox(width: 4),
+                                        const Icon(Icons.lock_outline_rounded, size: 14, color: Colors.grey),
+                                      ],
                                     ],
                                   ),
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.edit_note,
-                                      size: 24,
-                                      color: (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') ? Colors.grey : AppTheme.primaryColor),
-                                  onPressed: () async {
-                                    if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') {
-                                      _showPremiumPrompt();
-                                      return;
-                                    }
-                                    await toDictWordsListPage(dict, true);
-                                    loadData(keepSelection: true);
-                                  },
-                                  tooltip: '管理单词',
-                                ),
-                                if (dict.canDelete != false)
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                                    onPressed: () => _confirmDeleteDict(dict),
-                                    tooltip: '删除词书',
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFE8F8F1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      '${_formatNumber(dict.wordCount ?? 0)} 词',
+                                      style: TextStyle(
+                                        color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
+                            // 操作按钮
+                            IconButton(
+                              icon: Icon(
+                                Icons.edit_note_rounded,
+                                size: 22,
+                                color: (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本')
+                                    ? Colors.grey
+                                    : (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor),
+                              ),
+                              onPressed: () async {
+                                if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') {
+                                  _showPremiumPrompt();
+                                  return;
+                                }
+                                await toDictWordsListPage(dict, true);
+                                loadData(keepSelection: true);
+                              },
+                              tooltip: '管理单词',
+                            ),
+                            if (dict.canDelete != false)
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Color(0xFFEF4444)),
+                                onPressed: () => _confirmDeleteDict(dict),
+                                tooltip: '删除词书',
+                              ),
+                            const SizedBox(width: 4),
+                            // 勾选指示器
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected
+                                    ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                                      : (isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: isSelected
+                                  ? const Center(
+                                      child: Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                                    )
+                                  : null,
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 );
-              }),
+              },
+            );
+          }),
         ),
       ],
     );
@@ -1458,11 +1749,88 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       Global.logger.d('📊 导入词典资源完成 - 总耗时: ${totalStopwatch.elapsedMilliseconds}ms');
     }
   }
+
+  Widget _buildFloatingSaveBar(bool isDarkMode) {
+    final selectedCount = selectedDictVos?.length ?? 0;
+    int totalWords = 0;
+    if (selectedDictVos != null) {
+      for (var d in selectedDictVos!) {
+        totalWords += d.wordCount ?? 0;
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        16, 10, 16,
+        (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 6 : 12),
+      ),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -3),
+          ),
+        ],
+        border: Border(
+          top: BorderSide(
+            color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '已选择 $selectedCount 本词书',
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '共计 ${_formatNumber(totalWords)} 单词',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            onPressed: save,
+            icon: const Icon(Icons.check_rounded, size: 17),
+            label: Text(_hasUserMadeChanges ? '保存并同步' : '完成'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              textStyle: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF333333);
+    final backgroundColor = isDarkMode ? const Color(0xFF0C1312) : const Color(0xFFF5F9F7);
+    final textColor = isDarkMode ? Colors.white : const Color(0xFF152724);
 
     if (_isLoading && (parentCategories == null || parentCategories!.isEmpty)) {
       return Scaffold(
@@ -1474,7 +1842,11 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     if (parentCategories == null || parentCategories!.isEmpty) {
       return Scaffold(
         backgroundColor: backgroundColor,
-        appBar: AppBar(title: const Text('选词书'), centerTitle: true),
+        appBar: AppBar(
+          backgroundColor: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+          title: const Text('选词书'),
+          centerTitle: true,
+        ),
         body: const Center(child: Text('没有可用的词书')),
       );
     }
@@ -1485,51 +1857,92 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
         elevation: 0,
-        // 将搜索框移至 title，使其处于最顶层的全局位置
+        scrolledUnderElevation: 0,
+        titleSpacing: 0,
         title: _buildSearchField(isDarkMode, textColor),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: textColor, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: TextButton(
-              onPressed: save,
-              child: Text(
-                _hasUserMadeChanges ? '完成' : '保存', 
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold, 
-                  fontSize: 16
-                )
+        leading: Center(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                  border: Border.all(
+                    color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 14,
+                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                  ),
+                ),
               ),
             ),
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: save,
+            child: Text(
+              _hasUserMadeChanges ? '完成' : '保存',
+              style: const TextStyle(
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
         ],
-        // 保持 bottom 高度稳定，防止 AppBar 高度跳变导致 title 里的 TextField 失去焦点
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
+          preferredSize: const Size.fromHeight(44),
           child: (tabController != null && filteredCategories.isNotEmpty)
-              ? TabBar(
-                  controller: tabController,
-                  isScrollable: true,
-                  labelColor: AppTheme.primaryColor,
-                  unselectedLabelColor: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  indicatorColor: AppTheme.primaryColor,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  dividerColor: Colors.transparent,
-                  tabAlignment: TabAlignment.start,
-                  tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: TabBar(
+                    controller: tabController,
+                    isScrollable: true,
+                    labelColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                    unselectedLabelColor: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                    indicatorColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    indicatorWeight: 2.5,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14.5),
+                    dividerColor: Colors.transparent,
+                    tabAlignment: TabAlignment.start,
+                    tabs: filteredCategories.map((cat) => Tab(text: cat.name)).toList(),
+                  ),
                 )
-              : const SizedBox(height: 48),
+              : const SizedBox(height: 44),
         ),
       ),
+      bottomNavigationBar: _buildFloatingSaveBar(isDarkMode),
       body: (filteredCategories.isEmpty || tabController == null)
-          ? const Center(child: Text('没有找到匹配的词书'))
+          ? Center(
+              child: Text(
+                '没有找到匹配的词书',
+                style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.black45),
+              ),
+            )
           : TabBarView(
               controller: tabController,
               children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
@@ -1539,16 +1952,23 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
   Widget _buildSearchField(bool isDarkMode, Color textColor) {
     return Container(
-      key: _searchKey, // 绑定稳定 Key
-      height: 40,
-      margin: const EdgeInsets.only(bottom: 4),
+      key: _searchKey,
+      height: 38,
+      margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(
-        color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
+        color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(
+          color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+          width: 1,
+        ),
       ),
       child: TextField(
         controller: _searchController,
-        style: TextStyle(color: textColor, fontSize: 14),
+        style: TextStyle(
+          color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+          fontSize: 13.5,
+        ),
         onChanged: (value) {
           setState(() {
             _searchText = value;
@@ -1556,22 +1976,37 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           });
         },
         decoration: InputDecoration(
-          hintText: '搜索词库...',
-          hintStyle: TextStyle(color: isDarkMode ? Colors.grey[500] : Colors.grey[600], fontSize: 14),
-          prefixIcon: Icon(Icons.search, color: isDarkMode ? Colors.grey[500] : Colors.grey[600], size: 20),
+          hintText: '搜索词库 / 词书名称...',
+          hintStyle: TextStyle(
+            color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+            fontSize: 13.5,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+            size: 18,
+          ),
           suffixIcon: _searchText.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: isDarkMode ? Colors.grey[500] : Colors.grey[600], size: 18),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF6B8B84),
+                    size: 16,
+                  ),
                   onPressed: () {
                     _searchController.clear();
                     setState(() {
                       _searchText = '';
+                      _recomputeFilteredCategories();
                     });
                   },
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 9),
         ),
       ),
     );
