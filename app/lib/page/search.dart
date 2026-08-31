@@ -223,6 +223,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       final matchPart = wordSpell.substring(0, query.length);
       final restPart = wordSpell.substring(query.length);
       return RichText(
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
         text: TextSpan(
           children: [
             TextSpan(
@@ -257,6 +259,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         fontFamily: 'NotoSansSC',
         height: 1.2,
       ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
       textScaler: const TextScaler.linear(1.0),
     );
   }
@@ -393,27 +397,32 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                           children: [
                             Expanded(
                               child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  _buildHighlightedSpell(word.spell, spell.text.trim(), isDarkMode),
+                                  Flexible(
+                                    child: _buildHighlightedSpell(word.spell, spell.text.trim(), isDarkMode),
+                                  ),
                                   if (word.mergedPronounce.isNotEmpty) ...[
                                     const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: cardSubtle,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        '[${word.mergedPronounce}]',
-                                        style: TextStyle(
-                                          color: textSub,
-                                          fontSize: 12,
-                                          fontFamily: 'NotoSans',
-                                          fontWeight: FontWeight.w500,
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: cardSubtle,
+                                          borderRadius: BorderRadius.circular(6),
                                         ),
-                                        textScaler: const TextScaler.linear(1.0),
+                                        child: Text(
+                                          '[${word.mergedPronounce}]',
+                                          style: TextStyle(
+                                            color: textSub,
+                                            fontSize: 12,
+                                            fontFamily: 'NotoSans',
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          textScaler: const TextScaler.linear(1.0),
+                                        ),
                                       ),
                                     ),
                                   ],
