@@ -1134,7 +1134,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                                         extra: PicSearchPageArgs(
                                                             args.word.id!,
                                                             args.word.spell))
-                                                    .then((value) => loadData());
+                                                    .then((value) => _reloadWordData());
                                               },
                                               child: Container(
                                                 width: imageWidth,
@@ -1444,14 +1444,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               ),
               ListTile(
                 leading: const Icon(Icons.image_search_rounded, color: Color(0xFF18BA7C)),
-                title: const Text('更换配图', style: TextStyle(fontWeight: FontWeight.w600)),
+                title: const Text('添加配图', style: TextStyle(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(bottomSheetContext);
                   context.push('/pic_search',
                           extra: PicSearchPageArgs(
                               args.word.id!,
                               args.word.spell))
-                      .then((value) => loadData());
+                      .then((value) => _reloadWordData());
                 },
               ),
               const SizedBox(height: 10),
@@ -1460,6 +1460,24 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
         );
       },
     );
+  }
+
+  Future<void> _reloadWordData() async {
+    try {
+      var result = await WordBo().searchWordById(
+        args.word.id!,
+        Global.getLoggedInUser()?.id,
+        priorityDictIds: args.priorityDictIds,
+      );
+      if (result.word != null && mounted) {
+        setState(() {
+          args.word = result.word!;
+          _isTopDrawerExpanded = true;
+        });
+      }
+    } catch (e, st) {
+      ErrorHandler.handleDatabaseError(e, st, operation: '刷新单词配图');
+    }
   }
 
   Widget _buildMeaningSection(bool isDarkMode) {
