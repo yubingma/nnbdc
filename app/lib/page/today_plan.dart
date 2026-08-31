@@ -614,6 +614,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
     final isStarted = user?.todayStudyStarted == true;
 
+    final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
+    final textPrimary = isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28);
+    final textSecondary = isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F);
+    final textMuted = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
+    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1718BA7C);
+
     return Column(
       children: [
         // 今日目标超大数字（点击整个数字或胶囊均可修改词数）
@@ -632,7 +639,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 Text(
                   '${user?.effectiveWordsPerDay ?? 0}',
                   style: TextStyle(
-                    color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                    color: textPrimary,
                     fontSize: 52,
                     fontWeight: FontWeight.w800,
                     fontFamilyFallback: const ['.SF Pro Display', 'SF Pro Display', 'Helvetica Neue', 'Roboto', 'PingFang SC', 'sans-serif'],
@@ -644,7 +651,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6),
+                    color: badgeBg,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -653,7 +660,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Text(
                         'WORDS',
                         style: TextStyle(
-                          color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                          color: textSecondary,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
@@ -664,13 +671,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         Icon(
                           Icons.arrow_drop_down_rounded,
                           size: 14,
-                          color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                          color: textSecondary,
                         )
                       else
                         Icon(
                           Icons.lock_outline_rounded,
                           size: 11,
-                          color: isDarkMode ? Colors.white38 : Colors.black38,
+                          color: textMuted,
                         ),
                     ],
                   ),
@@ -682,7 +689,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
         const SizedBox(height: 12),
 
-        // 极细进度条（260px 宽度，4px 高度，百分比统一浅色）
+        // 极细进度条（260px 宽度，4px 高度，扇贝绿填充）
         SizedBox(
           width: 260,
           child: Column(
@@ -692,10 +699,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 child: LinearProgressIndicator(
                   value: progress.clamp(0.0, 1.0),
                   minHeight: 4,
-                  backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                  ),
+                  backgroundColor: isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFE3F5EC),
+                  valueColor: AlwaysStoppedAnimation<Color>(shanbayGreen),
                 ),
               ),
               const SizedBox(height: 6),
@@ -705,7 +710,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   Text(
                     '环节进度 $_completedStepCount / $_totalStepCount',
                     style: TextStyle(
-                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: textMuted,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -713,7 +718,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   Text(
                     '${(progress * 100).toInt()}%',
                     style: TextStyle(
-                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                      color: textMuted,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -726,19 +731,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
         const SizedBox(height: 12),
 
-        // 双列极简纯色数据（新词 | 复习，已移除冗余的今日总词）
+        // 双列对称纯色数据（新词 | 复习，已移除冗余的今日总词）
         Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
-              bottom: BorderSide(color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+              top: BorderSide(color: dividerColor),
+              bottom: BorderSide(color: dividerColor),
             ),
           ),
           child: Row(
             children: [
               _buildStatItem('新词', newWordCount ?? 0),
-              Container(width: 1, height: 22, color: isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06)),
+              Container(width: 1, height: 22, color: dividerColor),
               _buildStatItem('复习', oldWordCount ?? 0),
             ],
           ),
@@ -792,7 +797,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
         const SizedBox(height: 14),
 
-        // 主操作按钮（52px 高度大胶囊）
+        // 主操作按钮（52px 高度扇贝绿大胶囊）
         (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
             ? renderErrorActions()
             : renderStartButton(),
@@ -802,6 +807,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   Widget _buildStatItem(String label, int count) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textPrimary = isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28);
+    final textMuted = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
+
     return Expanded(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -819,7 +827,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             Text(
               '$count',
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                color: textPrimary,
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 fontFamilyFallback: const ['.SF Pro Display', 'SF Pro Display', 'Helvetica Neue', 'Roboto', 'PingFang SC', 'sans-serif'],
@@ -831,7 +839,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             Text(
               label,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                color: textMuted,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -979,9 +987,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       height: 52,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-          foregroundColor: isDarkMode ? const Color(0xFF111827) : const Color(0xFFF9FAFB),
-          elevation: 0,
+          backgroundColor: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+          foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+          elevation: 2,
+          shadowColor: (isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C)).withValues(alpha: 0.35),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
         ),
         onPressed: () async {
@@ -1144,7 +1153,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               Text(
                 '学习轨道',
                 style: TextStyle(
-                  color: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
+                  color: isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28),
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
@@ -1156,7 +1165,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6),
+                    color: isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -1165,13 +1174,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Icon(
                         _isEditingTracks ? Icons.check_rounded : Icons.settings_rounded,
                         size: 12,
-                        color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                        color: isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _isEditingTracks ? '完成配置' : '调整轨道',
                         style: TextStyle(
-                          color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                          color: isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1197,8 +1206,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 【显示模式】—— 极简纯无框图形化决策树卡片
   Widget _buildTrackDisplayCard(bool isDarkMode) {
-    final cardBg = isDarkMode ? const Color(0xFF11141D) : Colors.white;
-    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06);
+    final cardBg = isDarkMode ? const Color(0xFF141E1D) : Colors.white;
+    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1718BA7C);
 
     return Container(
       width: double.infinity,
@@ -1264,9 +1273,14 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     required bool isDarkMode,
   }) {
     final checkDesc = StudyStepExt.fromString(checkStep).description;
-    final subColor = isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF);
-    final badgeBg = isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6);
-    final textPrimary = isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
+    final subColor = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
+    final badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
+    final textPrimary = isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28);
+    final textSecondary = isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F);
+    final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final shanbayGreenBg = isDarkMode ? const Color(0x1F2CD88F) : const Color(0xFFE8F8F1);
+    final shanbayCoral = isDarkMode ? const Color(0xFFFF7B69) : const Color(0xFFFA6E59);
+    final shanbayCoralBg = isDarkMode ? const Color(0x1FFF7B69) : const Color(0xFFFEF1EF);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1282,7 +1296,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+              color: textSecondary,
             ),
           ),
         ),
@@ -1297,7 +1311,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 color: badgeBg,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0x1718BA7C),
                 ),
               ),
               child: Column(
@@ -1308,7 +1322,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
-                      color: subColor,
+                      color: shanbayGreen,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -1331,7 +1345,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               height: 64,
               child: CustomPaint(
                 painter: ForkBezierPainter(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0x2818BA7C),
                 ),
               ),
             ),
@@ -1350,7 +1364,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0x1A34D399) : const Color(0xFFECFDF5),
+                          color: shanbayGreenBg,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -1359,7 +1373,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             Icon(
                               Icons.check_rounded,
                               size: 12,
-                              color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
+                              color: shanbayGreen,
                             ),
                             const SizedBox(width: 2),
                             Text(
@@ -1367,7 +1381,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: isDarkMode ? const Color(0xFF34D399) : const Color(0xFF059669),
+                                color: shanbayGreen,
                               ),
                             ),
                           ],
@@ -1415,7 +1429,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0x1AFBBF24) : const Color(0xFFFFFBEB),
+                          color: shanbayCoralBg,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -1424,7 +1438,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             Icon(
                               Icons.close_rounded,
                               size: 12,
-                              color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                              color: shanbayCoral,
                             ),
                             const SizedBox(width: 2),
                             Text(
@@ -1432,7 +1446,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                                color: shanbayCoral,
                               ),
                             ),
                           ],
@@ -1481,7 +1495,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 【编辑模式】—— 完整新旧词规则配置卡片
   Widget _buildTrackEditCard(bool isDarkMode) {
-    final cardBg = isDarkMode ? const Color(0xFF11141D) : Colors.white;
+    final cardBg = isDarkMode ? const Color(0xFF141E1D) : Colors.white;
+    final badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
+    final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
 
     return Container(
       width: double.infinity,
@@ -1504,7 +1520,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           Container(
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6),
+              color: badgeBg,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -1523,8 +1539,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             height: 42,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827),
-                foregroundColor: isDarkMode ? const Color(0xFF111827) : const Color(0xFFF9FAFB),
+                backgroundColor: shanbayGreen,
+                foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
@@ -1539,13 +1555,16 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   Widget _buildSubtleTabBtn(String title, int tabIndex, bool isDarkMode) {
     final isSelected = _studyStepsTab == tabIndex;
+    final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final textMuted = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
+
     return GestureDetector(
       onTap: () => setState(() => _studyStepsTab = tabIndex),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
         decoration: BoxDecoration(
           color: isSelected
-              ? (isDarkMode ? const Color(0xFF232838) : Colors.white)
+              ? (isDarkMode ? const Color(0xFF263A37) : Colors.white)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           boxShadow: isSelected
@@ -1557,9 +1576,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected
-                ? (isDarkMode ? Colors.white : const Color(0xFF111827))
-                : (isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF)),
+            color: isSelected ? shanbayGreen : textMuted,
           ),
         ),
       ),
