@@ -268,31 +268,8 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildQuestionContent(BdcState state) {
     return Container(
-      decoration: BoxDecoration(
-        color: _cachedIsDarkMode
-            ? const Color(0xFF1E1E1E)
-            : const Color(0xFFF8F9FA),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.zero,
-          topRight: Radius.zero,
-          bottomLeft: Radius.circular(12),
-          bottomRight: Radius.circular(12),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _cachedIsDarkMode
-                ? Colors.black.withValues(alpha: 0.4)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: _showBorders
-            ? Border.all(
-                color: const Color.fromARGB(255, 11, 118, 3),
-                width: 10,
-              )
-            : null,
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       child: SingleChildScrollView(
         key: const ValueKey('bdc_question_content_scroll_view'),
@@ -2329,44 +2306,41 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildPhoneticRow(BdcState state) {
-    if (!(state.currentGetWordResult?.learningWord?.word != null &&
-        state.studyStep != StudyStep.en2Ch.json)) {
+    if (state.currentGetWordResult?.learningWord?.word == null ||
+        state.studyStep == StudyStep.en2Ch.json ||
+        state.studyStep == StudyStep.ch2En.json) {
       return const SizedBox.shrink();
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: _cachedIsDarkMode
-            ? const Color(0xFF2C2C2C)
-            : const Color(0xFFF8F9FB),
-        borderRadius: BorderRadius.circular(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (state.studyStep != StudyStep.ch2En.json)
-            Flexible(
-              child: Text(
-                Util.getWordDefaultPronounce(
-                            state.currentGetWordResult!.learningWord!.word)
-                        .isEmpty
-                    ? ''
-                    : '[${Util.getWordDefaultPronounce(state.currentGetWordResult!.learningWord!.word)}]',
-                style: TextStyle(
-                  color: _cachedIsDarkMode
-                      ? const Color(0xFFD1D5DB)
-                      : const Color(0xFF4B5563),
-                  fontFamily: "NotoSans",
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+          Flexible(
+            child: Text(
+              Util.getWordDefaultPronounce(
+                          state.currentGetWordResult!.learningWord!.word)
+                      .isEmpty
+                  ? ''
+                  : '[${Util.getWordDefaultPronounce(state.currentGetWordResult!.learningWord!.word)}]',
+              style: TextStyle(
+                color: _cachedIsDarkMode
+                    ? const Color(0xFFD1D5DB)
+                    : const Color(0xFF4B5563),
+                fontFamily: "NotoSans",
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
             ),
-          if (state.studyStep != StudyStep.ch2En.json)
-            buildWordSoundButton(
-                state.currentGetWordResult!.learningWord!.word, _audioPlayer, state),
+          ),
+          const SizedBox(width: 6),
+          buildWordSoundButton(
+              state.currentGetWordResult!.learningWord!.word, _audioPlayer, state),
         ],
       ),
     );
@@ -2768,40 +2742,62 @@ extension BdcPageStateUIComponents on BdcPageState {
 
           // 释义/图片/配图按钮
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 释义
+                // 释义列表
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (final item in state.currentGetWordResult!.learningWord!.word
                         .getMergedMeaningItems())
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if ((item.ciXing ?? '').isNotEmpty) ...[
-                              Text(
-                                item.ciXing!,
-                                style: const TextStyle(
-                                    color: Color(0xFF999999),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600),
+                              Container(
+                                margin: const EdgeInsets.only(top: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: _cachedIsDarkMode
+                                      ? const Color(0xFF192C27)
+                                      : const Color(0xFFEDF5F2),
+                                  borderRadius: BorderRadius.circular(5),
+                                  border: Border.all(
+                                    color: _cachedIsDarkMode
+                                        ? Colors.white12
+                                        : const Color(0xFFD1EADE),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  item.ciXing!,
+                                  style: TextStyle(
+                                    color: _cachedIsDarkMode
+                                        ? const Color(0xFF2CD88F)
+                                        : const Color(0xFF18BA7C),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 7),
                             ],
                             Expanded(
                               child: Text(
                                 notifier.hideParenthesesContent(item.meaning ?? ''),
+                                textAlign: TextAlign.start,
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 15.5,
                                   fontWeight: FontWeight.w500,
                                   color: _cachedIsDarkMode
-                                      ? Colors.white
-                                      : const Color(0xFF2D3748),
+                                      ? const Color(0xFFEAF7F4)
+                                      : const Color(0xFF152724),
+                                  height: 1.4,
                                 ),
                               ),
                             ),
