@@ -128,496 +128,495 @@ class LoginPageState extends State<LoginPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // 扇贝护眼色彩
+    final bgColor = isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF8FAFC);
+    final textMainColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF182B28);
+    final textSubColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF64748B);
+    final textMutedColor = isDarkMode ? const Color(0xFF5A7570) : const Color(0xFF94A3B8);
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final accentGreenDark = isDarkMode ? const Color(0xFF18BA7C) : const Color(0xFF109E69);
+    final appleBgColor = isDarkMode ? const Color(0xFF192A26) : const Color(0xFF111827);
+    final dividerColor = isDarkMode ? Colors.white12 : const Color(0xFFE2E8F0);
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF0EA5E9), // Sky-500
-              const Color(0xFF0284C7), // Sky-600
-              const Color(0xFF0369A1), // Sky-700
-              const Color(0xFF075985), // Sky-800
-            ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
-        child: Stack(
-          children: [
-            // Decorative background elements
-            Positioned(
-              top: -80,
-              right: -60,
-              child: Container(
-                width: 280,
-                height: 280,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFF7DD3FC).withValues(alpha: 0.15),
-                      const Color(0xFF7DD3FC).withValues(alpha: 0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 100,
-              left: -80,
-              child: Container(
-                width: 320,
-                height: 320,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFF38BDF8).withValues(alpha: 0.12),
-                      const Color(0xFF38BDF8).withValues(alpha: 0),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Animated Bubbles
-            AnimatedBuilder(
-              animation: _bubbleController,
-              builder: (context, child) {
-                return Stack(
-                  children: [
-                    _buildFloatingBubble(0.2, 0.8, 40, 0.08, offset: 0.1),
-                    _buildFloatingBubble(0.7, 0.6, 24, 0.05, offset: 0.4),
-                    _buildFloatingBubble(0.1, 0.2, 32, 0.04, offset: 0.7),
-                    _buildFloatingBubble(0.8, 0.1, 16, 0.06, offset: 0.2),
-                    _buildFloatingBubble(0.5, 0.5, 20, 0.03, offset: 0.9),
-                    _buildFloatingBubble(0.3, 0.9, 28, 0.05, offset: 0.5),
+      backgroundColor: bgColor,
+      body: Stack(
+        children: [
+          // 1. 顶部与底部柔和环境微光
+          Positioned(
+            top: -100,
+            right: -80,
+            child: Container(
+              width: 320,
+              height: 320,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    accentGreen.withValues(alpha: isDarkMode ? 0.12 : 0.08),
+                    accentGreen.withValues(alpha: 0),
                   ],
-                );
-              },
+                ),
+              ),
             ),
+          ),
+          Positioned(
+            bottom: 60,
+            left: -100,
+            child: Container(
+              width: 340,
+              height: 340,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF38BDF8).withValues(alpha: isDarkMode ? 0.08 : 0.06),
+                    const Color(0xFF38BDF8).withValues(alpha: 0),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
-            // Main Content
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Column(
-                  children: [
-                    const Spacer(flex: 3),
+          // 2. 呼吸浮动泡泡
+          AnimatedBuilder(
+            animation: _bubbleController,
+            builder: (context, child) {
+              return Stack(
+                children: [
+                  _buildFloatingBubble(0.15, 0.75, 44, isDarkMode ? 0.04 : 0.06, offset: 0.1, isDark: isDarkMode),
+                  _buildFloatingBubble(0.78, 0.60, 26, isDarkMode ? 0.03 : 0.05, offset: 0.4, isDark: isDarkMode),
+                  _buildFloatingBubble(0.10, 0.25, 34, isDarkMode ? 0.03 : 0.04, offset: 0.7, isDark: isDarkMode),
+                  _buildFloatingBubble(0.85, 0.18, 18, isDarkMode ? 0.04 : 0.06, offset: 0.2, isDark: isDarkMode),
+                  _buildFloatingBubble(0.52, 0.48, 22, isDarkMode ? 0.02 : 0.04, offset: 0.9, isDark: isDarkMode),
+                ],
+              );
+            },
+          ),
 
-                    // Logo & Title Section
-                    GestureDetector(
-                      onDoubleTap: _showVersionAndProfileDialog,
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.12),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Image.asset('assets/images/logo.png',
-                                width: 76, height: 76),
-                          ),
-                          const SizedBox(height: 32),
-                          Text(
-                            Global.appName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 4.0,
-                              fontFamily: 'NotoSansSC',
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0, 4),
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            '进步而非完美',
-                            style: TextStyle(
-                              color: Color(0xFFBAE6FD), // Sky-200
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 2.0,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+          // 3. 核心内容
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                children: [
+                  const Spacer(flex: 3),
 
-                    const Spacer(flex: 4),
-
-                    // Action Section
-                    Column(
+                  // Brand Hero & Logo
+                  GestureDetector(
+                    onDoubleTap: _showVersionAndProfileDialog,
+                    child: Column(
                       children: [
-                        if (PlatformUtils.isIOS)
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.25),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
+                        Container(
+                          width: 88,
+                          height: 88,
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? const Color(0xFF13201D) : Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDarkMode ? Colors.white12 : const Color(0x1418BA7C),
+                              width: 1.5,
                             ),
-                            child: ElevatedButton.icon(
-                              onPressed: (_isWechatLoading ||
-                                      _isAppleLoading ||
-                                      _isGuestLoading)
-                                  ? null
-                                  : appleLoginPressed,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                elevation: 0,
-                                shadowColor: Colors.transparent,
-                                splashFactory: InkSparkle.splashFactory,
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDarkMode ? Colors.black45 : const Color(0x1818BA7C),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
                               ),
-                              icon: const Icon(Icons.apple,
-                                  color: Colors.white, size: 26),
-                              label: Text(
-                                _isAppleLoading ? '正在连接...' : '通过 Apple 登录',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              width: 76,
+                              height: 76,
+                              fit: BoxFit.cover,
                             ),
                           ),
-                        if ((PlatformUtils.isIOS || PlatformUtils.isAndroid) &&
-                            !PlatformUtils.isZhuoyiTong &&
-                            (!PlatformUtils.isIOS || _isWechatInstalled))
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF07C160), Color(0xFF06AD56)],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF07C160)
-                                      .withValues(alpha: 0.25),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton.icon(
-                              onPressed: (_isWechatLoading ||
-                                      _isAppleLoading ||
-                                      _isGuestLoading)
-                                  ? null
-                                  : wechatLoginPressed,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                elevation: 0,
-                                shadowColor: Colors.transparent,
-                                splashFactory: InkSparkle.splashFactory,
-                              ),
-                              icon: const Icon(Icons.wechat,
-                                  color: Colors.white, size: 26),
-                              label: Text(
-                                _isWechatLoading ? '正在连接...' : '微信一键登录',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
-                            ),
+                        ),
+                        const SizedBox(height: 22),
+                        Text(
+                          Global.appName,
+                          style: TextStyle(
+                            color: textMainColor,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 3.0,
+                            fontFamily: 'NotoSansSC',
                           ),
-                        if (!PlatformUtils.isIOS &&
-                            (PlatformUtils.isZhuoyiTong || !_isWechatInstalled))
-                          Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF38BDF8), Color(0xFF0284C7)],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0284C7)
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: ElevatedButton.icon(
-                              onPressed: (_isWechatLoading ||
-                                      _isAppleLoading ||
-                                      _isGuestLoading)
-                                  ? null
-                                  : _onEmailLoginPressed,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                elevation: 0,
-                                shadowColor: Colors.transparent,
-                                splashFactory: InkSparkle.splashFactory,
-                              ),
-                              icon: const Icon(Icons.email_outlined,
-                                  color: Colors.white, size: 24),
-                              label: const Text(
-                                '邮箱验证码登录',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                  fontFamily: 'NotoSansSC',
-                                ),
-                              ),
-                            ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'PROGRESS OVER PERFECTION',
+                          style: TextStyle(
+                            color: textSubColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2.5,
+                            fontFamily: 'Roboto',
                           ),
-                        const SizedBox(height: 16),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                        Row(
+                  const Spacer(flex: 4),
+
+                  // 登录操作区
+                  Column(
+                    children: [
+                      // 微信登录主按钮
+                      if ((PlatformUtils.isIOS || PlatformUtils.isAndroid) &&
+                          !PlatformUtils.isZhuoyiTong &&
+                          (!PlatformUtils.isIOS || _isWechatInstalled))
+                        Container(
+                          width: double.infinity,
+                          height: 52,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(26),
+                            gradient: LinearGradient(
+                              colors: [accentGreen, accentGreenDark],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentGreen.withValues(alpha: isDarkMode ? 0.35 : 0.3),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: (_isWechatLoading || _isAppleLoading || _isGuestLoading)
+                                ? null
+                                : wechatLoginPressed,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              disabledForegroundColor: Colors.white70,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                            ),
+                            icon: _isWechatLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.wechat, color: Colors.white, size: 24),
+                            label: Text(
+                              _isWechatLoading ? '正在连接微信...' : '微信一键登录',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                fontFamily: 'NotoSansSC',
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // Apple 登录按钮
+                      if (PlatformUtils.isIOS)
+                        Container(
+                          width: double.infinity,
+                          height: 52,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            color: appleBgColor,
+                            borderRadius: BorderRadius.circular(26),
+                            border: Border.all(
+                              color: isDarkMode ? Colors.white12 : Colors.transparent,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.15),
+                                blurRadius: 16,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: (_isWechatLoading || _isAppleLoading || _isGuestLoading)
+                                ? null
+                                : appleLoginPressed,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              disabledForegroundColor: Colors.white70,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                            ),
+                            icon: _isAppleLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.apple, color: Colors.white, size: 24),
+                            label: Text(
+                              _isAppleLoading ? '正在连接 Apple...' : '通过 Apple 登录',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                                fontFamily: 'NotoSansSC',
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // 卓易通 / 无微信环境下的邮箱主按钮
+                      if (!PlatformUtils.isIOS && (PlatformUtils.isZhuoyiTong || !_isWechatInstalled))
+                        Container(
+                          width: double.infinity,
+                          height: 52,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(26),
+                            gradient: LinearGradient(
+                              colors: [accentGreen, accentGreenDark],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentGreen.withValues(alpha: isDarkMode ? 0.35 : 0.3),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: (_isWechatLoading || _isAppleLoading || _isGuestLoading)
+                                ? null
+                                : _onEmailLoginPressed,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              disabledForegroundColor: Colors.white70,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                            ),
+                            icon: const Icon(Icons.email_outlined, color: Colors.white, size: 22),
+                            label: const Text(
+                              '邮箱验证码登录',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                fontFamily: 'NotoSansSC',
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // 次级小入口（邮箱 / 游客）
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            if (!(!PlatformUtils.isIOS &&
-                                (PlatformUtils.isZhuoyiTong ||
-                                    !_isWechatInstalled))) ...[
-                              _buildMinorButton('邮箱登录', _onEmailLoginPressed),
+                            if (!(!PlatformUtils.isIOS && (PlatformUtils.isZhuoyiTong || !_isWechatInstalled))) ...[
+                              _buildMinorButton('邮箱登录', _onEmailLoginPressed, textSubColor),
                               Container(
                                 width: 1,
-                                height: 14,
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
-                                color: Colors.white24,
+                                height: 12,
+                                margin: const EdgeInsets.symmetric(horizontal: 10),
+                                color: dividerColor,
                               ),
                             ],
                             _buildMinorButton(
-                                _isGuestLoading ? '正在登录...' : '先去逛逛', () async {
-                              if (_isGuestLoading) return;
-                              if (!_approved) {
-                                ToastUtil.error("请先同意[使用协议]和[隐私政策]");
-                                return;
-                              }
-                              setState(() => _isGuestLoading = true);
-                              try {
-                                await Global.loginAsGuest();
-                                // 访客也尝试同步（虽然目前 Global.isGuest 为真时 syncUserDb 会跳过，但 syncSysDb 仍有用）
-                                ThrottledDbSyncService()
-                                    .requestSync(immediate: true);
-                                // 记录同意了当前隐私政策版本
-                                Prefs.write(
-                                    'accepted_privacy_version', 20260310);
+                              _isGuestLoading ? '正在登录...' : '先去逛逛',
+                              () async {
+                                if (_isGuestLoading) return;
+                                if (!_approved) {
+                                  ToastUtil.error("请先同意[使用协议]和[隐私政策]");
+                                  return;
+                                }
+                                setState(() => _isGuestLoading = true);
+                                try {
+                                  await Global.loginAsGuest();
+                                  ThrottledDbSyncService().requestSync(immediate: true);
+                                  Prefs.write('accepted_privacy_version', 20260310);
 
-                                // 访客登录后初始化统计 SDK (如果是 Android/iOS)
-                                if (PlatformUtils.isAndroid ||
-                                    PlatformUtils.isIOS) {
-                                  try {
-                                    UmengCommonSdk.initCommon(
+                                  if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
+                                    try {
+                                      UmengCommonSdk.initCommon(
                                         Config.umengAndroidAppKey,
                                         Config.umengIosAppKey,
-                                        Config.umengChannel);
-                                  } catch (e) {
-                                    debugPrint('Umeng init error: $e');
+                                        Config.umengChannel,
+                                      );
+                                    } catch (e) {
+                                      debugPrint('Umeng init error: $e');
+                                    }
+                                  }
+
+                                  await SubscriptionUtil.restorePurchases(showToast: false);
+                                  if (context.mounted) context.go('/index');
+                                } catch (e, stackTrace) {
+                                  ErrorHandler.handleNetworkError(e, stackTrace, api: 'loginAsGuest');
+                                  if (mounted) {
+                                    setState(() => _isGuestLoading = false);
                                   }
                                 }
-
-                                await SubscriptionUtil.restorePurchases(
-                                    showToast: false);
-                                if (context.mounted) context.go('/index');
-                              } catch (e, stackTrace) {
-                                ErrorHandler.handleNetworkError(e, stackTrace,
-                                    api: 'loginAsGuest');
-                                if (mounted) {
-                                  setState(() => _isGuestLoading = false);
-                                }
-                              }
-                            }),
+                              },
+                              textSubColor,
+                            ),
                           ],
                         ),
-                        if (PlatformUtils.isZhuoyiTong)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Text(
-                              '卓易通兼容环境暂不支持微信登录，请使用邮箱登录',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
+                      ),
 
-                        const SizedBox(height: 40),
-
-                        // Agreement Section
-                        GestureDetector(
-                          onTap: () => setState(() => _approved = !_approved),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            color: Colors.transparent, // Expand tap area
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _approved
-                                        ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.1),
-                                    border: Border.all(
-                                      color: _approved
-                                          ? Colors.white
-                                          : Colors.white.withValues(alpha: 0.4),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: _approved
-                                      ? const Icon(Icons.check,
-                                          color: Color(0xFF0284C7), size: 12)
-                                      : null,
-                                ),
-                                const SizedBox(width: 10),
-                                const Text('同意 ',
-                                    style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500)),
-                                _buildLink('《用户协议》', showProtocolPage),
-                                const Text(' 与 ',
-                                    style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500)),
-                                _buildLink('《隐私政策》', showPrivacyPage),
-                              ],
+                      if (PlatformUtils.isZhuoyiTong)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            '卓易通兼容环境暂不支持微信登录，请使用邮箱登录',
+                            style: TextStyle(
+                              color: textMutedColor,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'NotoSansSC',
                             ),
                           ),
                         ),
-                        SizedBox(
-                            height: MediaQuery.of(context).padding.bottom + 20),
-                      ],
-                    ),
-                  ],
-                ),
+
+                      const SizedBox(height: 24),
+
+                      // 协议勾选行
+                      GestureDetector(
+                        onTap: () => setState(() => _approved = !_approved),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          color: Colors.transparent,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: 18,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _approved ? accentGreen : Colors.transparent,
+                                  border: Border.all(
+                                    color: _approved
+                                        ? accentGreen
+                                        : (isDarkMode ? Colors.white38 : const Color(0xFFCBD5E1)),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: _approved
+                                    ? const Center(
+                                        child: Icon(Icons.check, color: Colors.white, size: 11),
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '已阅读并同意 ',
+                                style: TextStyle(
+                                  color: textMutedColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                              _buildLink('《用户协议》', showProtocolPage, textMainColor),
+                              Text(
+                                ' 与 ',
+                                style: TextStyle(
+                                  color: textMutedColor,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                              _buildLink('《隐私政策》', showPrivacyPage, textMainColor),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: MediaQuery.of(context).padding.bottom + 12),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMinorButton(String text, VoidCallback onTap, Color textColor) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        minimumSize: Size.zero,
+        foregroundColor: textColor,
+        disabledForegroundColor: textColor.withValues(alpha: 0.5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'NotoSansSC',
+          color: textColor,
         ),
       ),
     );
   }
 
-  Widget _buildMinorButton(String text, VoidCallback onTap) {
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-          minimumSize: Size.zero,
-          foregroundColor: const Color(0xFFE0F2FE),
-          disabledForegroundColor: const Color(0xFFE0F2FE).withValues(alpha: 0.7),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-      child: Text(text,
-          style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500)),
-    );
-  }
-
-  Widget _buildFloatingBubble(double leftPercent, double startBottomPercent,
-      double size, double opacity,
-      {required double offset}) {
+  Widget _buildFloatingBubble(double leftPercent, double startBottomPercent, double size, double opacity,
+      {required double offset, required bool isDark}) {
     double progress = (_bubbleController.value + offset) % 1.0;
-    double bottom =
-        (startBottomPercent + (1.0 - startBottomPercent) * progress) *
-            MediaQuery.of(context).size.height;
-
-    // Fade out as it goes up
+    double bottom = (startBottomPercent + (1.0 - startBottomPercent) * progress) * MediaQuery.of(context).size.height;
     double currentOpacity = opacity * (1.0 - progress * 0.5);
+    final bubbleColor = isDark ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
 
     return Positioned(
       left: leftPercent * MediaQuery.of(context).size.width,
       bottom: bottom,
-      child: _buildBubble(size, currentOpacity),
-    );
-  }
-
-  Widget _buildBubble(double size, double opacity) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: opacity),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: opacity * 1.5),
-          width: 0.8,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: bubbleColor.withValues(alpha: currentOpacity),
+          border: Border.all(
+            color: bubbleColor.withValues(alpha: currentOpacity * 1.6),
+            width: 0.8,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildLink(String text, VoidCallback onTap) {
+  Widget _buildLink(String text, VoidCallback onTap, Color mainColor) {
     return GestureDetector(
       onTap: onTap,
       child: Text(
         text,
-        style: const TextStyle(
-          color: Color(0xFF7DD3FC), // Sky-300
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
+        style: TextStyle(
+          color: mainColor,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
           fontFamily: 'NotoSansSC',
           decoration: TextDecoration.underline,
-          decorationColor: Color(0xFF7DD3FC),
         ),
       ),
     );
