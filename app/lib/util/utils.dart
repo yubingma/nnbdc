@@ -61,10 +61,22 @@ class Util {
     return nickName == '系统用户' ? '泡泡' : nickName;
   }
 
-  /// 安全获取用于头像展示的首字符（兼容 Emoji、多字节 Unicode，避免 UTF-16 代理项截断报错）
+  static final Set<String> _punctuationChars = {
+    '《', '》', '〈', '〉', '（', '）', '(', ')', '[', ']', '【', '】', '〔', '〕', '{', '}', '「', '」', '『', '』',
+    '"', "'", '“', '”', '‘', '’', '‹', '›', '«', '»', '…', '—', '-', '_', '+', '=', '|', r'\', '/', '~', '`',
+    '!', '@', '#', r'$', '%', '^', '&', '*', '•', '·', ',', '.', ':', ';', '?', '！', '￥', '、', '；', '：', '？',
+    ' ', '\t', '\n', '\r'
+  };
+
+  /// 安全获取用于头像/封面展示的首个有效字符（跳过书名号《》、括号、引号等标点符号，提取首个汉字/字母/数字/Emoji）
   static String getInitial(String? text, {String fallback = 'U'}) {
     if (text == null || text.trim().isEmpty) return fallback;
     final trimmed = text.trim();
+    for (final char in trimmed.characters) {
+      if (!_punctuationChars.contains(char) && char.trim().isNotEmpty) {
+        return char.toUpperCase();
+      }
+    }
     return trimmed.characters.isNotEmpty ? trimmed.characters.first.toUpperCase() : fallback;
   }
 

@@ -1890,19 +1890,8 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: save,
-            child: Text(
-              _hasUserMadeChanges ? '完成' : '保存',
-              style: const TextStyle(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
+        actions: const [
+          SizedBox(width: 16),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(44),

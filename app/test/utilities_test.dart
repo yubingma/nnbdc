@@ -120,6 +120,16 @@ environment:
       expect(Util.getInitial('👨‍👩‍👧家庭'), equals('👨‍👩‍👧'));
     });
 
+    test('特殊符号与书名号正常跳过并获取首个有效文字', () {
+      expect(Util.getInitial('《考研英语核心词汇》'), equals('考'));
+      expect(Util.getInitial('[六级]高频词汇'), equals('六'));
+      expect(Util.getInitial('(四级)必备'), equals('四'));
+      expect(Util.getInitial('“新概念英语”'), equals('新'));
+      expect(Util.getInitial('【专八】词汇'), equals('专'));
+      expect(Util.getInitial('99天搞定GRE'), equals('9'));
+      expect(Util.getInitial('《TOEFL听力》'), equals('T'));
+    });
+
     test('空值与异常值使用 fallback', () {
       expect(Util.getInitial(null), equals('U'));
       expect(Util.getInitial(''), equals('U'));
