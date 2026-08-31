@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>单词详情 - 扇贝护眼温润绿美学原型</title>
+  <style>
+    :root {
+      /* 扇贝经典护眼温润绿体系 */
+      --bg: #F5F9F7;
+      --card-bg: #FFFFFF;
+      --card-subtle: #EDF7F3;
+      --card-hover: #E3F4EC;
+      --divider: rgba(24, 186, 124, 0.08);
+      
+      --text-primary: #152724;
+      --text-secondary: #425B57;
+      --text-muted: #789691;
+      --text-faint: #B2CDC8;
+
+      /* 扇贝绿品牌色系 */
+      --primary: #18BA7C;
+      --primary-hover: #15A56E;
+      --primary-soft: #E8F8F1;
+      --primary-border: #D1EADE;
+      --primary-text: #FFFFFF;
+
+      --pos-tag-bg: #E3F6EE;
+      --pos-tag-text: #139E67;
+
+      --shadow-card: 0 4px 16px rgba(24, 186, 124, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
+      --shadow-top: 0 8px 24px rgba(24, 186, 124, 0.08);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0C1513;
+      --card-bg: #13201D;
+      --card-subtle: #192C27;
+      --card-hover: #203832;
+      --divider: rgba(255, 255, 255, 0.06);
+      
+      --text-primary: #EAF7F4;
+      --text-secondary: #8EA8A3;
+      --text-muted: #5B7A75;
+      --text-faint: #344B48;
+
+      --primary: #2CD88F;
+      --primary-hover: #26C07F;
+      --primary-soft: rgba(44, 216, 143, 0.12);
+      --primary-border: #233B35;
+      --primary-text: #0A1613;
+
+      --pos-tag-bg: rgba(44, 216, 143, 0.15);
+      --pos-tag-text: #2CD88F;
+
+      --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.4);
+      --shadow-top: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #DFE7E4;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px 12px;
+      color: var(--text-primary);
+      transition: background-color 0.3s;
+    }
+
+    /* 顶部控制栏 */
+    .designer-toolbar {
+      width: 100%;
+      max-width: 412px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      padding: 8px 14px;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .designer-toolbar button {
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .designer-toolbar button:hover {
+      background: #E2E8F0;
+    }
+
+    /* 手机外壳 */
+    .device-mockup {
+      width: 100%;
+      max-width: 412px;
+      height: 844px;
+      background: var(--bg);
+      border-radius: 42px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    /* 状态栏 & 导航栏 */
+    .app-nav-bar {
+      height: 48px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--divider);
+      z-index: 10;
+    }
+    .nav-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--card-subtle);
+      border: none;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .nav-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* 顶部单词概览大卡片（带可收起抽屉效果） */
+    .top-overview-card {
+      background: var(--card-bg);
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+      padding: 16px 18px 8px 18px;
+      box-shadow: var(--shadow-top);
+      border-bottom: 1.2px solid var(--divider);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 5;
+    }
+
+    .word-headline-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .word-spell {
+      font-size: 27px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+    }
+
+    /* 环形熟练度微光光环徽章 */
+    .mastery-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary-soft);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(24, 186, 124, 0.2);
+    }
+    .mastery-stars {
+      display: flex;
+      gap: 2px;
+      color: var(--primary);
+      font-size: 11px;
+    }
+    .mastery-text {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* 音标胶囊栏 */
+    .phonetic-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .phonetic-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card-subtle);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border: 1px solid var(--divider);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .phonetic-pill:hover, .phonetic-pill.playing {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .phonetic-pill .audio-icon {
+      font-size: 13px;
+    }
+    .phonetic-tag {
+      font-size: 10px;
+      font-weight: 700;
+      opacity: 0.7;
+    }
+
+    /* 结构化释义 */
+    .meanings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .meaning-line {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--text-primary);
+    }
+    .pos-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--pos-tag-text);
+      background: var(--pos-tag-bg);
+      padding: 1px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* 抽屉收缩把手 */
+    .drawer-handle-bar {
+      display: flex;
+      justify-content: center;
+      padding: 4px 0 2px 0;
+      cursor: pointer;
+    }
+    .handle-pill {
+      width: 36px;
+      height: 4px;
+      background: var(--text-faint);
+      border-radius: 2px;
+      opacity: 0.6;
+    }
+
+    /* 中间 Tab 导航栏 */
+    .tabs-header-container {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--divider);
+      display: flex;
+      padding: 0 12px;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs-header-container::-webkit-scrollbar {
+      display: none;
+    }
+    .detail-tab {
+      padding: 11px 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .detail-tab.active {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .detail-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 12px;
+      right: 12px;
+      height: 2.5px;
+      background: var(--primary);
+      border-radius: 3px 3px 0 0;
+    }
+
+    /* 滚动主视图 */
+    .detail-scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px 80px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* 模块通用卡片 */
+    .section-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--divider);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-card);
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .section-icon {
+      font-size: 16px;
+    }
+
+    /* 讲解模块（Short Desc） */
+    .short-desc-text {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+    }
+    .short-desc-text b {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* 例句列表 */
+    .sentence-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--divider);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sentence-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .sentence-en-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .sentence-en-text {
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .sentence-en-text b {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: underline;
+      text-decoration-color: rgba(24, 186, 124, 0.4);
+      text-underline-offset: 3px;
+    }
+    .btn-sentence-speak {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      border: none;
+      color: var(--primary);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .btn-sentence-speak:hover {
+      transform: scale(1.08);
+    }
+    .sentence-cn-text {
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--text-secondary);
+    }
+
+    /* 词根词缀衍生树 (Tab 2) */
+    .cigen-family-box {
+      background: var(--card-subtle);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cigen-root-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cigen-words-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .cigen-word-chip {
+      background: var(--card-bg);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--divider);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cigen-word-chip:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+    .cwc-spell {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .cwc-mean {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* AI 助教对话流 (Tab 3) */
+    .ai-chat-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ai-msg-bubble {
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--divider);
+      padding: 12px 14px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-card);
+    }
+    .ai-msg-bubble.assistant {
+      border-left: 3.5px solid var(--primary);
+    }
+
+    /* 底部悬浮大操作栏 */
+    .floating-bottom-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, rgba(245, 249, 247, 0) 0%, var(--bg) 28%);
+      padding: 14px 18px 20px 18px;
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+    }
+    .btn-bottom-primary {
+      flex: 1;
+      height: 46px;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 23px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 16px rgba(24, 186, 124, 0.3);
+      transition: all 0.15s;
+    }
+    .btn-bottom-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-bottom-subtle {
+      width: 46px;
+      height: 46px;
+      border-radius: 23px;
+      background: var(--card-bg);
+      border: 1.2px solid var(--primary-border);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      box-shadow: var(--shadow-card);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 控制工具栏 -->
+  <div class="designer-toolbar">
+    <div style="font-size: 13px; font-weight: 800; color: #152724; display: flex; align-items: center; gap: 6px;">
+      <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#18BA7C;"></span>
+      单词详情美学设计
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <button onclick="toggleDrawer()">折叠/展开顶部</button>
+      <button onclick="toggleTheme()">🌓 切换明暗</button>
+    </div>
+  </div>
+
+  <!-- 手机外壳 -->
+  <div class="device-mockup" id="device">
+    
+    <!-- 导航栏 -->
+    <div class="app-nav-bar">
+      <button class="nav-btn" onclick="history.back()">‹</button>
+      <div class="nav-title">单词详情</div>
+      <div class="nav-actions">
+        <button class="nav-btn">⭐</button>
+        <button class="nav-btn">⋯</button>
+      </div>
+    </div>
+
+    <!-- 顶部可收起单词概览卡片 -->
+    <div class="top-overview-card" id="topCard">
+      <div class="word-headline-row">
+        <div class="word-spell">resilient</div>
+        <div class="mastery-badge">
+          <div class="mastery-stars">★★★☆☆</div>
+          <div class="mastery-text">Lv.3 熟悉</div>
+        </div>
+      </div>
+
+      <!-- 音标发音胶囊 -->
+      <div class="phonetic-row">
+        <div class="phonetic-pill playing" onclick="playAudio('us')">
+          <span class="phonetic-tag">美</span>
+          <span>/rɪˈzɪliənt/</span>
+          <span class="audio-icon">🔊</span>
+        </div>
+        <div class="phonetic-pill" onclick="playAudio('uk')">
+          <span class="phonetic-tag">英</span>
+          <span>/rɪˈzɪliənt/</span>
+          <span class="audio-icon">🔊</span>
+        </div>
+      </div>
+
+      <!-- 释义 -->
+      <div class="meanings-list" id="meaningList">
+        <div class="meaning-line">
+          <span class="pos-tag">adj.</span>
+          <span>有弹性的；能迅速恢复的；适应力强的</span>
+        </div>
+      </div>
+
+      <!-- 抽屉指示把手 -->
+      <div class="drawer-handle-bar" onclick="toggleDrawer()">
+        <div class="handle-pill"></div>
+      </div>
+    </div>
+
+    <!-- 多维 Tab 导航 -->
+    <div class="tabs-header-container">
+      <div class="detail-tab active" onclick="switchTab(0, this)">详情</div>
+      <div class="detail-tab" onclick="switchTab(1, this)">形近 (3)</div>
+      <div class="detail-tab" onclick="switchTab(2, this)">近义 (4)</div>
+      <div class="detail-tab" onclick="switchTab(3, this)">同根 (8)</div>
+      <div class="detail-tab" onclick="switchTab(4, this)">拓展 (9)</div>
+      <div class="detail-tab" onclick="switchTab(5, this)">✨ AI 助教</div>
+    </div>
+
+    <!-- 滚动内容区 -->
+    <div class="detail-scroll-content" id="scrollBody">
+      
+      <!-- Tab 0: 详情主视图 -->
+      <div id="tabView0" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- 单词深度讲解 -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-icon">💡</span>
+              <span>深度讲解 & 记忆</span>
+            </div>
+          </div>
+          <div class="short-desc-text">
+            <b>resilient</b> 描述人或事物在遭受挫折、压力后能够“迅速反弹恢复原状”的韧性与弹性。词根来自拉丁语 <i>resilire</i>（re- 反 + salire 跳跃）。
+          </div>
+        </div>
+
+        <!-- 经典例句展台 -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-icon">💬</span>
+              <span>短语 & 经典例句</span>
+            </div>
+            <span style="font-size: 11.5px; color: var(--text-muted);">共 3 条</span>
+          </div>
+
+          <div class="sentence-item">
+            <div class="sentence-en-row">
+              <div class="sentence-en-text">He'll get over it—young people are remarkably <b>resilient</b>.</div>
+              <button class="btn-sentence-speak" onclick="playSentence(1)">🔊</button>
+            </div>
+            <div class="sentence-cn-text">他会挺过去的——年轻人恢复力极强。</div>
+          </div>
+
+          <div class="sentence-item">
+            <div class="sentence-en-row">
+              <div class="sentence-en-text">The local economy has proven to be remarkably <b>resilient</b>.</div>
+              <button class="btn-sentence-speak" onclick="playSentence(2)">🔊</button>
+            </div>
+            <div class="sentence-cn-text">当地经济已被证明具有惊人的复苏韧性。</div>
+          </div>
+
+          <div class="sentence-item">
+            <div class="sentence-en-row">
+              <div class="sentence-en-text">Rubber is a <b>resilient</b> material that bounces back into shape.</div>
+              <button class="btn-sentence-speak" onclick="playSentence(3)">🔊</button>
+            </div>
+            <div class="sentence-cn-text">橡胶是一种有弹性的材料，能恢复原状。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: 词根词缀展示视图 (隐藏/切换演示) -->
+      <div id="tabView3" style="display: none; flex-direction: column; gap: 12px;">
+        <div class="section-card">
+          <div class="cigen-family-box">
+            <div class="cigen-root-title">
+              <span>🌱 词根: -sili- / -salt- / -sult- (跳，跳跃)</span>
+            </div>
+            <div class="cigen-words-grid">
+              <div class="cigen-word-chip">
+                <div class="cwc-spell">resilient</div>
+                <div class="cwc-mean">adj. 有弹性的，适应力强的</div>
+              </div>
+              <div class="cigen-word-chip">
+                <div class="cwc-spell">salient</div>
+                <div class="cwc-mean">adj. 显著的，突出的</div>
+              </div>
+              <div class="cigen-word-chip">
+                <div class="cwc-spell">assail</div>
+                <div class="cwc-mean">v. 攻击，质问</div>
+              </div>
+              <div class="cigen-word-chip">
+                <div class="cwc-spell">insult</div>
+                <div class="cwc-mean">v./n. 侮辱，凌辱</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: AI 助教展示视图 -->
+      <div id="tabView5" style="display: none; flex-direction: column; gap: 12px;">
+        <div class="ai-chat-container">
+          <div class="ai-msg-bubble assistant">
+            🤖 <b>AI 助教深度助记：</b><br>
+            我们可以通过拆词谐音法来记住 <b>resilient</b>：<br>
+            • <b>re-</b> (重新、再次) + <b>sili</b> (音似“死里”) + <b>-ent</b> (形容词后缀)<br>
+            👉 记忆法：“从死里重新站起来，复活反弹” ➡️ <b>坚韧不拔的、有弹性的</b>。
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部悬浮操作大按钮 -->
+    <div class="floating-bottom-bar">
+      <button class="btn-bottom-subtle" title="加入生词本">🔖</button>
+      <button class="btn-bottom-primary" onclick="nextWord()">
+        <span>下一个单词</span>
+        <span>›</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let isDark = false;
+    let isDrawerExpanded = true;
+
+    function toggleTheme() {
+      isDark = !isDark;
+      document.getElementById('device').setAttribute('data-theme', isDark ? 'dark' : 'light');
+    }
+
+    function toggleDrawer() {
+      isDrawerExpanded = !isDrawerExpanded;
+      const card = document.getElementById('topCard');
+      const meanings = document.getElementById('meaningList');
+      if (isDrawerExpanded) {
+        meanings.style.display = 'flex';
+      } else {
+        meanings.style.display = 'none';
+      }
+    }
+
+    function switchTab(index, elem) {
+      document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+      elem.classList.add('active');
+
+      const v0 = document.getElementById('tabView0');
+      const v3 = document.getElementById('tabView3');
+      const v5 = document.getElementById('tabView5');
+
+      v0.style.display = 'none';
+      if (v3) v3.style.display = 'none';
+      if (v5) v5.style.display = 'none';
+
+      if (index === 0) {
+        v0.style.display = 'flex';
+      } else if (index === 3) {
+        v3.style.display = 'flex';
+      } else if (index === 5) {
+        v5.style.display = 'flex';
+      } else {
+        v0.style.display = 'flex';
+      }
+    }
+
+    function playAudio(accent) {
+      console.log('Playing ' + accent);
+    }
+
+    function playSentence(id) {
+      console.log('Playing sentence ' + id);
+    }
+
+    function nextWord() {
+      console.log('Next word');
+    }
+  </script>
+</body>
+</html>
