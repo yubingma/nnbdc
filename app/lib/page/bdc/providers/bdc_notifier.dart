@@ -571,7 +571,7 @@ class BdcNotifier extends _$BdcNotifier {
             '本组小结',
             StageWordsProvider(),
             true, // showBackBtn
-            true, // showDelBtn
+            false, // showDelBtn: 本组小结为学习回顾环节，禁用删除操作
             true, // showWordProgress
             '掌握度',
             StageWordsProgressProvider(),
