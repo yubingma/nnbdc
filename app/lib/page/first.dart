@@ -229,29 +229,18 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    // 浅色主题绿色彩体系（温润、清爽、通透、护眼）
+    // 纯白极简体系（与原生启动屏无缝融合）
     const textMainColor = Color(0xFF152724);
     const textSubColor = Color(0xFF5A7570);
     const textMutedColor = Color(0xFF8EA8A3);
     const accentGreen = Color(0xFF18BA7C);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4FBF7),
+      backgroundColor: Colors.white,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE6F6EE), // 顶部薄荷清浅绿
-              Color(0xFFF2FAF6), // 中间温润白绿
-              Color(0xFFFFFFFF), // 底部纯净柔白
-            ],
-            stops: [0.0, 0.45, 1.0],
-          ),
-        ),
+        color: Colors.white,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
