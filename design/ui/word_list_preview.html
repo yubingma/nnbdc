@@ -257,7 +257,7 @@
       box-shadow: var(--shadow-active);
     }
 
-    /* 左侧边栏：序号 + 状态点 */
+    /* 左侧边栏：序号 + 状态点 + 掌握度微进度条 */
     .row-left-sidebar {
       width: 44px;
       background: var(--card-subtle);
@@ -266,11 +266,11 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 3.5px;
       padding: 10px 0;
       flex-shrink: 0;
     }
-    .row-card.active-item .row-left-sidebar {
+    .active-item .row-left-sidebar {
       background: rgba(24, 186, 124, 0.08);
     }
     .row-index-label {
@@ -286,6 +286,20 @@
     }
     .row-status-dot.mastered {
       background: var(--green-dot);
+    }
+    /* 掌握度微进度条 */
+    .item-progress-track {
+      width: 22px;
+      height: 2.5px;
+      background: var(--divider);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 1px;
+    }
+    .item-progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 2px;
     }
 
     /* 中间：单词与音标 */
@@ -416,6 +430,9 @@
         <div class="row-left-sidebar">
           <span class="row-index-label">1</span>
           <span class="row-status-dot"></span>
+          <div class="item-progress-track">
+            <div class="item-progress-fill" style="width: 60%;"></div>
+          </div>
         </div>
         <div class="row-word-body">
           <div class="word-spell-text">silence</div>
@@ -434,6 +451,9 @@
         <div class="row-left-sidebar">
           <span class="row-index-label">2</span>
           <span class="row-status-dot"></span>
+          <div class="item-progress-track">
+            <div class="item-progress-fill" style="width: 40%;"></div>
+          </div>
         </div>
         <div class="row-word-body">
           <div class="word-spell-text">prestige</div>
@@ -452,6 +472,9 @@
         <div class="row-left-sidebar">
           <span class="row-index-label">3</span>
           <span class="row-status-dot"></span>
+          <div class="item-progress-track">
+            <div class="item-progress-fill" style="width: 25%;"></div>
+          </div>
         </div>
         <div class="row-word-body">
           <div class="word-spell-text">stiffen</div>
@@ -470,6 +493,9 @@
         <div class="row-left-sidebar">
           <span class="row-index-label">4</span>
           <span class="row-status-dot"></span>
+          <div class="item-progress-track">
+            <div class="item-progress-fill" style="width: 15%;"></div>
+          </div>
         </div>
         <div class="row-word-body">
           <div class="word-spell-text">vicinity</div>
@@ -488,6 +514,9 @@
         <div class="row-left-sidebar">
           <span class="row-index-label">5</span>
           <span class="row-status-dot"></span>
+          <div class="item-progress-track">
+            <div class="item-progress-fill" style="width: 50%;"></div>
+          </div>
         </div>
         <div class="row-word-body">
           <div class="word-spell-text">meanwhile</div>
@@ -506,6 +535,9 @@
         <div class="row-left-sidebar">
           <span class="row-index-label">6</span>
           <span class="row-status-dot"></span>
+          <div class="item-progress-track">
+            <div class="item-progress-fill" style="width: 80%;"></div>
+          </div>
         </div>
         <div class="row-word-body">
           <div class="word-spell-text">breakdown</div>
@@ -524,6 +556,9 @@
         <div class="row-left-sidebar">
           <span class="row-index-label">7</span>
           <span class="row-status-dot"></span>
+          <div class="item-progress-track">
+            <div class="item-progress-fill" style="width: 35%;"></div>
+          </div>
         </div>
         <div class="row-word-body">
           <div class="word-spell-text">prime</div>
@@ -542,6 +577,9 @@
         <div class="row-left-sidebar">
           <span class="row-index-label">8</span>
           <span class="row-status-dot"></span>
+          <div class="item-progress-track">
+            <div class="item-progress-fill" style="width: 20%;"></div>
+          </div>
         </div>
         <div class="row-word-body">
           <div class="word-spell-text">pedal</div>
