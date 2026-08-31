@@ -708,7 +708,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '环节进度 $_completedStepCount / $_totalStepCount',
+                    '今日进度 $_completedStepCount / $_totalStepCount',
                     style: TextStyle(
                       color: textMuted,
                       fontSize: 11,

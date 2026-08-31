@@ -376,6 +376,9 @@ extension BdcPageStateUIComponents on BdcPageState {
           fontWeight: FontWeight.w400,
         ),
         tabs: notifier.dynamicTabs,
+        onTap: (index) {
+          ref.read(bdcNotifierProvider.notifier).updateTabIndex(index);
+        },
       ),
     );
   }
@@ -387,7 +390,11 @@ extension BdcPageStateUIComponents on BdcPageState {
         state.studyStep == StudyStep.ch2En.json;
     final isAnswered =
         state.selectedAnswerIndex != null || state.hasFinishedAnswering;
-    final bool expandChoiceArea = isChoiceStep && isAnswered;
+    // 只有在处于“选”Tab（Tab数量为2时index为1，或仅1个Tab）时，才为多行选项卡片展开做题区高度
+    final bool isAtChoiceTab = (_tabController?.length == 2)
+        ? ((_tabController?.index ?? state.tabIndex) == 1)
+        : true;
+    final bool expandChoiceArea = isChoiceStep && isAnswered && isAtChoiceTab;
 
     final result = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -808,6 +815,7 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildRatingButtonsRow() {
+    final isDarkMode = _cachedIsDarkMode;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -822,22 +830,26 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_not_know_btn'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _cachedIsDarkMode
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : const Color(0xFFF5F5F5),
-                foregroundColor: _cachedIsDarkMode
-                    ? Colors.white70
-                    : const Color(0xFF666666),
+                backgroundColor: isDarkMode
+                    ? const Color(0xFF192C27)
+                    : const Color(0xFFEDF5F2),
+                foregroundColor: isDarkMode
+                    ? const Color(0xFFEAF7F4)
+                    : const Color(0xFF425B57),
+                side: BorderSide(
+                  color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+                  width: 1,
+                ),
                 elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               ),
               onPressed: () => notifier.showWordDetail(state.word!, true, context,
                   fsrsRating: FsrsRating.again, reason: "主动点击了不再认识，评分: 忘记"),
-              child: const Text('不认识',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
+              child: const Text(
+                '不认识',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              ),
             ),
           ),
         if (state.showAnswerButtons ||
@@ -852,22 +864,26 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_study_again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _cachedIsDarkMode
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : const Color(0xFFF5F5F5),
-                foregroundColor: _cachedIsDarkMode
-                    ? Colors.white70
-                    : const Color(0xFF666666),
+                backgroundColor: isDarkMode
+                    ? const Color(0xFF192C27)
+                    : const Color(0xFFEDF5F2),
+                foregroundColor: isDarkMode
+                    ? const Color(0xFFEAF7F4)
+                    : const Color(0xFF425B57),
+                side: BorderSide(
+                  color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+                  width: 1,
+                ),
                 elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               ),
               onPressed: () => notifier.showWordDetail(state.word!, false, context,
                   fsrsRating: FsrsRating.good, reason: "主动点击了再学学，评分: 良好"),
-              child: const Text('再学学',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
+              child: const Text(
+                '再学学',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+              ),
             ),
           ),
         ],
@@ -875,23 +891,21 @@ extension BdcPageStateUIComponents on BdcPageState {
           const SizedBox(width: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: _cachedIsDarkMode
-                  ? Colors.white
-                  : AppTheme.primaryColor,
-              foregroundColor: _cachedIsDarkMode
-                  ? Colors.black
-                  : Colors.white,
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 11),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              shadowColor: AppTheme.primaryColor.withValues(alpha: 0.35),
             ),
             onPressed: state.isGettingNextWord
                 ? null
                 : () =>
                     notifier.getNextWord(true, fsrsRating: state.lastFsrsRating),
-            child: const Text('下一词',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              '下一词',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+            ),
           ),
         ],
       ],
@@ -907,26 +921,26 @@ extension BdcPageStateUIComponents on BdcPageState {
     final isDarkMode = _cachedIsDarkMode;
 
     return Container(
-      height: 32, // 恢复原高度
-      width: label != null ? null : 32, // 对于无标签的按钮，设置固定宽度形成圆形
+      height: 32,
+      width: label != null ? null : 32,
       padding: EdgeInsets.symmetric(
-        horizontal: label != null ? 8 : 4, // 调整无标签按钮的水平内边距
-        vertical: 4,
+        horizontal: label != null ? 9 : 0,
+        vertical: 0,
       ),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(8),
+        color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDarkMode
-              ? Colors.white10
-              : Colors.black.withValues(alpha: 0.05),
+              ? Colors.white12
+              : const Color(0xFFD1EADE),
           width: 1,
         ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(label != null ? 16 : 16),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -934,19 +948,18 @@ extension BdcPageStateUIComponents on BdcPageState {
             children: [
               Icon(
                 icon,
-                color: isDarkMode ? Colors.white70 : const Color(0xFF333333),
-                size: 14,
+                color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                size: 14.5,
               ),
               if (label != null) ...[
-                const SizedBox(width: 3),
+                const SizedBox(width: 3.5),
                 Text(
                   label,
                   textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                    color:
-                        isDarkMode ? Colors.white70 : const Color(0xFF333333),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
                   ),
                 ),
               ],
@@ -957,47 +970,42 @@ extension BdcPageStateUIComponents on BdcPageState {
     );
   }
 
-
   Widget _buildTopButtonsRow() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0), // 完全移除顶部向上的 padding，让按钮更加贴着进度条
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 返回按钮
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: _cachedIsDarkMode
-                  ? const Color(0xFF2C2C2C)
-                  : const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: _cachedIsDarkMode
-                    ? Colors.white10
-                    : Colors.black.withValues(alpha: 0.05),
-                width: 1,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  if (state.currentGetWordResult != null && state.currentGetWordResult!.progress != null && state.currentGetWordResult!.progress!.length >= 2) {
-                    final completed = state.currentGetWordResult!.progress![0];
-                    final total = state.currentGetWordResult!.progress![1];
-                    AnalyticsUtil.trackStudyQuitEarly(completed, total - completed);
-                  }
-                  Navigator.pop(context);
-                },
-                child: Icon(
-                  Icons.arrow_back_ios_new,
-                  color: _cachedIsDarkMode
-                      ? Colors.white70
-                      : const Color(0xFF333333),
-                  size: 18,
+          // 圆形返回按钮
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                if (state.currentGetWordResult != null && state.currentGetWordResult!.progress != null && state.currentGetWordResult!.progress!.length >= 2) {
+                  final completed = state.currentGetWordResult!.progress![0];
+                  final total = state.currentGetWordResult!.progress![1];
+                  AnalyticsUtil.trackStudyQuitEarly(completed, total - completed);
+                }
+                Navigator.pop(context);
+              },
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _cachedIsDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+                  border: Border.all(
+                    color: _cachedIsDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _cachedIsDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                    size: 14,
+                  ),
                 ),
               ),
             ),
@@ -1012,20 +1020,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                 // 上一个按钮
                 if (state.historyIndex != -1)
                   _buildTopActionButton(
-                    icon: Icons.keyboard_return,
+                    icon: Icons.keyboard_return_rounded,
                     label: '返回',
                     onTap: () => notifier.exitReviewMode(),
                   )
                 else if (state.history.isNotEmpty)
                   _buildTopActionButton(
-                    icon: Icons.skip_previous_outlined,
+                    icon: Icons.skip_previous_rounded,
                     label: '回看',
                     onTap: () => notifier.goToPreviousWord(),
                   ),
 
                 // 已掌握按钮
                 _buildTopActionButton(
-                  icon: Icons.check_circle_outline,
+                  icon: Icons.check_circle_outline_rounded,
                   label: '掌握',
                   onTap: () {
                     notifier.updateHasFinishedAnswering(true);
@@ -1034,8 +1042,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                     notifier.getNextWord(true);
                   },
                 ),
-
-                // 编辑开关 - 仅在meaning模式下且非Web平台显示
 
                 // 报错按钮
                 _buildTopActionButton(
@@ -1257,43 +1263,54 @@ extension BdcPageStateUIComponents on BdcPageState {
             builder: (context) {
               Color bgColor;
               Color borderColor;
+              double borderWidth = 1.0;
               final isDarkMode = _cachedIsDarkMode;
               final word = state.words?[index];
               final isNoneOfAbove = word?.spell == "[ 都不对 ]";
 
               if (state.selectedAnswerIndex != null) {
                 if ((index + 1) == state.correctAnswerIndex) {
-                  bgColor = Colors.green.withValues(alpha: isDarkMode ? 0.25 : 0.15);
-                  borderColor = Colors.green;
+                  bgColor = isDarkMode ? const Color(0xFF152B24) : const Color(0xFFE8F8F1);
+                  borderColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+                  borderWidth = 1.5;
                 } else if ((index + 1) == state.selectedAnswerIndex) {
-                  bgColor = Colors.red.withValues(alpha: isDarkMode ? 0.25 : 0.15);
-                  borderColor = Colors.red;
+                  bgColor = isDarkMode ? const Color(0xFF2A1614) : const Color(0xFFFEF2F0);
+                  borderColor = isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFFA6E59);
+                  borderWidth = 1.5;
                 } else {
-                  bgColor = isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
-                  borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
+                  bgColor = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
+                  borderColor = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
                 }
               } else {
-                bgColor = isDarkMode ? const Color(0xFF2C2C2C) : const Color(0xFFF8F9FA);
-                borderColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05);
+                bgColor = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
+                borderColor = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
               }
 
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
+                padding: const EdgeInsets.symmetric(vertical: 3.5),
                 child: SizedBox(
                   width: double.infinity,
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
                     decoration: BoxDecoration(
                       color: bgColor,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: borderColor,
-                        width: 1,
+                        width: borderWidth,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         onTap: () => notifier.onAnswerClicked(index + 1, context),
                         child: Stack(
                           children: [
@@ -1301,7 +1318,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                               width: double.infinity,
                               padding: EdgeInsets.symmetric(
                                 horizontal: 16,
-                                vertical: isAnswered && !isNoneOfAbove ? 9 : 13,
+                                vertical: isAnswered && !isNoneOfAbove ? 10 : 13.5,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1321,12 +1338,20 @@ extension BdcPageStateUIComponents on BdcPageState {
                             ),
                             if (isAnswered && !isNoneOfAbove)
                               Positioned(
-                                top: 8,
-                                right: 8,
-                                child: Icon(
-                                  Icons.volume_up_rounded,
-                                  size: 16,
-                                  color: isDarkMode ? Colors.white30 : Colors.black26,
+                                top: 10,
+                                right: 10,
+                                child: Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isDarkMode ? Colors.white10 : const Color(0xFFEDF5F2),
+                                  ),
+                                  child: Icon(
+                                    Icons.volume_up_rounded,
+                                    size: 13,
+                                    color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                                  ),
                                 ),
                               ),
                           ],
@@ -2573,6 +2598,10 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildWordStepCard(BdcState state) {
+    final isDarkMode = _cachedIsDarkMode;
+    final primaryTextColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final secondaryTextColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5B7A75);
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.transparent,
@@ -2581,12 +2610,12 @@ extension BdcPageStateUIComponents on BdcPageState {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // 核心单词拼写
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
@@ -2594,16 +2623,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                     state.currentGetWordResult!.learningWord!.word.spell,
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
-                      fontSize: 36,
-                      color: _cachedIsDarkMode
-                          ? Colors.white
-                          : const Color(0xFF1A1A1A),
+                      fontSize: 38,
+                      color: primaryTextColor,
                       fontFamily: 'Roboto',
-                      letterSpacing: 1.5,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
+                // 音标与播音小胶囊
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -2616,18 +2644,16 @@ extension BdcPageStateUIComponents on BdcPageState {
                             ? ''
                             : '[${Util.getWordDefaultPronounce(state.currentGetWordResult!.learningWord!.word)}]',
                         style: TextStyle(
-                          color: _cachedIsDarkMode
-                              ? const Color(0xFFD1D5DB)
-                              : const Color(0xFF4B5563),
+                          color: secondaryTextColor,
                           fontFamily: "NotoSans",
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w600,
                         ),
                         softWrap: true,
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     buildWordSoundButton(
                         state.currentGetWordResult!.learningWord!.word,
                         _audioPlayer,
@@ -2635,84 +2661,99 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ],
                 ),
                 if (state.studyStep == StudyStep.list.json) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
                     state.word?.getMeaningStr() ?? '',
                     style: TextStyle(
                       fontSize: 16,
-                      color: _cachedIsDarkMode
-                          ? Colors.white70
-                          : Colors.black87,
-                      fontWeight: FontWeight.w500,
+                      color: primaryTextColor,
+                      fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 ],
                 if (state.word?.sentences != null &&
                     state.word!.sentences!.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 左侧极简播放前缀按钮
-                      buildSentenceSoundButton(state),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 3), // 微调使第一行文本与左侧图标对齐
-                              child: Util.makeEnglishSpanText(
-                                  state.word!.sentences![0].english!,
-                                  state.word!.spell,
-                                  true,
-                                  context,
-                                  false,
-                                  null,
-                                  true,
-                                  FontWeight.w300),
-                            ),
-                            if (!state.showSentenceTranslation)
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: InkWell(
-                                  onTap: () {
-                                    updateUI(() {
-                                      notifier.updateShowSentenceTranslation(true);
-                                    }, tag: 'sentence-trans');
-                                  },
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                    child: Text(
-                                      '显示翻译',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 左侧极简播放前缀按钮
+                        buildSentenceSoundButton(state),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Util.makeEnglishSpanText(
+                                    state.word!.sentences![0].english!,
+                                    state.word!.spell,
+                                    true,
+                                    context,
+                                    false,
+                                    null,
+                                    true,
+                                    FontWeight.w400),
+                              ),
+                              if (!state.showSentenceTranslation)
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: InkWell(
+                                    onTap: () {
+                                      updateUI(() {
+                                        notifier.updateShowSentenceTranslation(true);
+                                      }, tag: 'sentence-trans');
+                                    },
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      child: Text(
+                                        '显示翻译',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              )
-                            else
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Util.makeChineseSpanText(
-                                  state.word!.sentences![0].chinese ?? '',
-                                  context,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: _cachedIsDarkMode
-                                        ? Colors.white70
-                                        : Colors.black54,
+                                )
+                              else
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6.0),
+                                  child: Util.makeChineseSpanText(
+                                    state.word!.sentences![0].chinese ?? '',
+                                    context,
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      color: secondaryTextColor,
+                                    ),
                                   ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ],
@@ -2901,12 +2942,12 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget buildWordSoundButton(WordVo word, dynamic audioPlayer, BdcState state) {
     final wordPlaying = state.playingStates['word'] ?? false;
+    final isDarkMode = _cachedIsDarkMode;
 
-    // 统一使用极简扁平无边框设计
-    return Transform.translate(
-      offset: const Offset(2.0, 0.0), // 适度右移微调，优化视觉对齐
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           if (!wordPlaying) {
             notifier.playWithAnimation(
@@ -2914,66 +2955,86 @@ extension BdcPageStateUIComponents on BdcPageState {
                 'word');
           }
         },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          child: AnimatedBuilder(
-            animation: _wordSoundController,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(_wordSoundController.value < 0.5 ? 0 : -2, 0), // 发音波纹微晃动位移
-                child: Icon(
-                  wordPlaying
-                      ? (_wordSoundController.value < 0.5
-                          ? Icons.volume_up
-                          : Icons.volume_down)
-                      : Icons.volume_up,
+        child: Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: wordPlaying
+                ? (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFE8F8F1))
+                : (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2)),
+            border: Border.all(
+              color: wordPlaying
+                  ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                  : (isDarkMode ? Colors.white12 : const Color(0xFFD1EADE)),
+              width: 1,
+            ),
+          ),
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _wordSoundController,
+              builder: (context, child) {
+                return Icon(
+                  wordPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                  size: 13,
                   color: wordPlaying
-                      ? Colors.teal[300]
-                      : Colors.grey[500],
-                  size: 22,
-                ),
-              );
-            },
+                      ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                      : (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57)),
+                );
+              },
+            ),
           ),
         ),
       ),
     );
   }
 
-
   Widget buildSentenceSoundButton(BdcState state) {
     final sentencePlaying = state.playingStates['sentence'] ?? false;
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        if (!sentencePlaying &&
-            state.englishDigestOfFirstSentence != null) {
-          notifier.playWithAnimation(
-              () => StudyAudioSessionController.instance.playSentenceSound(
-                  state.englishDigestOfFirstSentence!),
-              'sentence');
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        child: AnimatedBuilder(
-          animation: _sentenceSoundController,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: Offset(_sentenceSoundController.value < 0.5 ? 0 : -2, 0), // 发音微晃动动画位移
-              child: Icon(
-                sentencePlaying
-                    ? (_sentenceSoundController.value < 0.5
-                        ? Icons.volume_up
-                        : Icons.volume_down)
-                    : Icons.volume_up_outlined, // 默认使用更精致的空心发音图标
-                color: sentencePlaying
-                    ? Colors.teal[300]
-                    : Colors.grey[500],
-                size: 20,
-              ),
-            );
-          },
+    final isDarkMode = _cachedIsDarkMode;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          if (!sentencePlaying &&
+              state.englishDigestOfFirstSentence != null) {
+            notifier.playWithAnimation(
+                () => StudyAudioSessionController.instance.playSentenceSound(
+                    state.englishDigestOfFirstSentence!),
+                'sentence');
+          }
+        },
+        child: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: sentencePlaying
+                ? (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFE8F8F1))
+                : (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2)),
+            border: Border.all(
+              color: sentencePlaying
+                  ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                  : (isDarkMode ? Colors.white12 : const Color(0xFFD1EADE)),
+              width: 1,
+            ),
+          ),
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _sentenceSoundController,
+              builder: (context, child) {
+                return Icon(
+                  sentencePlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                  size: 13.5,
+                  color: sentencePlaying
+                      ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                      : (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57)),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );

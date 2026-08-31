@@ -122,7 +122,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     // Initialize TabController with a default length
     _tabController = TabController(length: 2, vsync: this);
     _tabController!.addListener(() {
-      if (!_tabController!.indexIsChanging) {
+      if (_tabController!.index != ref.read(bdcNotifierProvider).tabIndex) {
         ref.read(bdcNotifierProvider.notifier).updateTabIndex(_tabController!.index);
       }
     });
@@ -163,7 +163,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
             _tabController?.dispose();
             _tabController = TabController(length: newLength, vsync: this);
             _tabController!.addListener(() {
-              if (!_tabController!.indexIsChanging) {
+              if (_tabController!.index != ref.read(bdcNotifierProvider).tabIndex) {
                 ref.read(bdcNotifierProvider.notifier).updateTabIndex(_tabController!.index);
               }
             });
@@ -281,8 +281,8 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
         appBar: null,
         body: Container(
           color: _cachedIsDarkMode
-              ? const Color(0xFF121212)
-              : Colors.white,
+              ? const Color(0xFF0C1312)
+              : const Color(0xFFF6F9F8),
           child: pageContent,
         ),
       ),
