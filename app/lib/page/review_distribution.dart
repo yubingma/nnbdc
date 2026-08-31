@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
-import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/page/word_list/bucket_words.dart';
@@ -42,6 +43,21 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  int get _todayReviewCount {
+    for (final item in _barDataList) {
+      if (item.isToday) return item.totalCount;
+    }
+    return 0;
+  }
+
+  int get _overdueReviewCount {
+    int sum = 0;
+    for (final item in _barDataList) {
+      if (item.isOverdue) sum += item.totalCount;
+    }
+    return sum;
   }
 
   Future<void> _loadData() async {
@@ -130,149 +146,441 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
       );
     }).toList();
 
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = Provider.of<DarkMode>(context).isDarkMode;
+
+    final bgColor = isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF4F9F6);
+    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
+    final subtleBg = isDarkMode ? const Color(0xFF192A26) : const Color(0xFFEDF5F2);
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final borderColor = isDarkMode ? Colors.white10 : const Color(0x1418BA7C);
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: bgColor,
       appBar: AppBar(
+        backgroundColor: bgColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 19),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Flexible(
-              child: Text(
-                '复习分布图',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                overflow: TextOverflow.ellipsis,
+            Text(
+              '复习分布图',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: textColor,
+                fontSize: 17.5,
+                fontFamily: 'NotoSansSC',
               ),
             ),
             if (!_isLoading) ...[
-              const SizedBox(width: 4),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: isDarkMode ? const Color(0x242CD88F) : const Color(0xFFE8F8F1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text('$_totalWords 词', style: const TextStyle(fontSize: 10, color: Colors.white)),
+                child: Text(
+                  '$_totalWords 词',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: accentColor,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
               ),
-            ]
+            ],
           ],
         ),
-        elevation: 0,
-        backgroundColor: AppTheme.primaryColor,
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline_rounded, color: Colors.white),
+            icon: Icon(Icons.help_outline_rounded, color: subtitleColor, size: 22),
             onPressed: () => _showExplainDialog(context),
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 24),
-                  sliver: SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _sectionTitle("待学习 (已进入学习池, 但还未开始学习)", context),
-                        const SizedBox(height: 12),
-                        _buildNewWordsBar(isDarkMode),
-                        const SizedBox(height: 32),
-                        _sectionTitle("待复习", context),
-                        const SizedBox(height: 4),
-                      ],
+          ? Center(child: CircularProgressIndicator(color: accentColor))
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              color: accentColor,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // 1. 顶部 Hero 统计态势展台
+                  SliverToBoxAdapter(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDarkMode
+                              ? [const Color(0xFF1B352E), const Color(0xFF10241F)]
+                              : [const Color(0xFF18BA7C), const Color(0xFF0F9460)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('📊 ', style: TextStyle(fontSize: 11)),
+                                    Text(
+                                      'FSRS 记忆曲线调度',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => _showExplainDialog(context),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '图表说明',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.85),
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          // 四维态势小方块
+                          Row(
+                            children: [
+                              _buildHeroStatBox('学习池总词', '$_totalWords', Colors.white, null),
+                              const SizedBox(width: 8),
+                              _buildHeroStatBox('今日待复习', '$_todayReviewCount', Colors.white, Colors.white.withValues(alpha: 0.22)),
+                              const SizedBox(width: 8),
+                              _buildHeroStatBox('逾期未复习', '$_overdueReviewCount', const Color(0xFFFECDD3), null),
+                              const SizedBox(width: 8),
+                              _buildHeroStatBox('新词待学习', '$_totalNewWords', const Color(0xFFDDD6FE), null),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                _barDataList.isEmpty
-                    ? const SliverFillRemaining(child: Center(child: Text("暂无复习任务")))
-                    : SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) => _buildBarRow(_barDataList[index], isDarkMode),
-                            childCount: _barDataList.length,
-                          ),
+
+                  // 2. 图例说明栏
+                  SliverToBoxAdapter(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildLegendItem('今日复习', isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C), subtitleColor),
+                          _buildLegendItem('已逾期', isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), subtitleColor),
+                          _buildLegendItem('未来复习', isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399), subtitleColor),
+                          _buildLegendItem('新词储备', isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6), subtitleColor),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // 3. 待学习新词储备池卡片
+                  if (_totalNewWords > 0)
+                    SliverToBoxAdapter(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: borderColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text('📦 ', style: TextStyle(fontSize: 13)),
+                                    Text(
+                                      '待学习 (新词储备池)',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: textColor,
+                                        fontFamily: 'NotoSansSC',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  '未开始初记',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: subtitleColor,
+                                    fontFamily: 'NotoSansSC',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _buildNewWordsBar(isDarkMode, subtleBg),
+                          ],
                         ),
                       ),
-                const SliverToBoxAdapter(child: SizedBox(height: 40)),
-              ],
+                    ),
+
+                  // 4. 待复习时间分布卡片
+                  SliverToBoxAdapter(
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(16, 6, 16, 32),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    '⏳ ',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: accentColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    '待复习时间分布',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: textColor,
+                                      fontFamily: 'NotoSansSC',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '点击查看单词列表',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: subtitleColor,
+                                  fontFamily: 'NotoSansSC',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          if (_barDataList.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Center(
+                                child: Text(
+                                  '暂无待复习任务',
+                                  style: TextStyle(color: subtitleColor, fontSize: 13),
+                                ),
+                              ),
+                            )
+                          else
+                            ..._barDataList.map((data) => _buildBarRow(data, isDarkMode, subtleBg, textColor, subtitleColor, accentColor)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }
 
-  Widget _sectionTitle(String title, BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-        color: isDarkMode ? Colors.white54 : Colors.black45,
-        letterSpacing: 0.5,
+  Widget _buildHeroStatBox(String label, String value, Color valColor, Color? bgHighlight) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        decoration: BoxDecoration(
+          color: bgHighlight ?? Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: valColor,
+                fontFamily: 'Roboto',
+                height: 1.1,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9.5,
+                color: Colors.white.withValues(alpha: 0.85),
+                fontWeight: FontWeight.w600,
+                fontFamily: 'NotoSansSC',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildNewWordsBar(bool isDarkMode) {
+  Widget _buildLegendItem(String label, Color color, Color textCol) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: textCol,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNewWordsBar(bool isDarkMode, Color subtleBg) {
+    final purpleColor = isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6);
+
     return InkWell(
       onTap: () {
-        // 跳转到新词列表 (sortKey 为 9999 代表新词，这需要 BucketWordsListPage 支持)
         toBucketWordsListPage(9999, "新词库")?.then((_) => _loadData());
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: Row(
           children: [
-            const SizedBox(
+            SizedBox(
               width: 80,
               child: Text(
-                "新词",
-                style: TextStyle(fontSize: 13, color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold),
+                "新词储备",
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: purpleColor,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'NotoSansSC',
+                ),
               ),
             ),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth - 80;
+                  final maxWidth = constraints.maxWidth - 50;
                   final barWidth = _maxCount == 0 ? 0.0 : (_totalNewWords / _maxCount) * maxWidth;
+
                   return Row(
                     children: [
-                      Stack(
+                      Container(
+                        height: 20,
+                        width: maxWidth,
+                        decoration: BoxDecoration(
+                          color: subtleBg,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         alignment: Alignment.centerLeft,
-                        children: [
-                          Container(
-                            height: 30,
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+                        child: Container(
+                          height: 20,
+                          width: barWidth < 6 && _totalNewWords > 0 ? 6 : barWidth,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [purpleColor, purpleColor.withValues(alpha: 0.7)],
                             ),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          Container(
-                            height: 30,
-                            width: barWidth < 1 && _totalNewWords > 0 ? 1 : barWidth,
-                            color: const Color(0xFF8B5CF6),
-                          ),
-                        ],
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        "$_totalNewWords",
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF8B5CF6),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 38,
+                        child: Text(
+                          "$_totalNewWords",
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: purpleColor,
+                            fontFamily: 'Roboto',
+                          ),
                         ),
                       ),
                     ],
@@ -280,6 +588,8 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                 },
               ),
             ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded, size: 16, color: purpleColor.withValues(alpha: 0.6)),
           ],
         ),
       ),
@@ -290,12 +600,35 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     toBucketWordsListPage(data.sortKey, data.label)?.then((_) => _loadData());
   }
 
-  Widget _buildBarRow(BarChartData data, bool isDarkMode) {
+  Widget _buildBarRow(
+    BarChartData data,
+    bool isDarkMode,
+    Color subtleBg,
+    Color textColor,
+    Color subtitleColor,
+    Color accentColor,
+  ) {
+    final overdueColor = isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E);
+    final futureColor = isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399);
+
+    Color labelColor;
+    if (data.isToday) {
+      labelColor = accentColor;
+    } else if (data.isOverdue) {
+      labelColor = overdueColor;
+    } else {
+      labelColor = textColor;
+    }
+
     return InkWell(
       onTap: () => _onBarTap(data),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 6),
+        decoration: BoxDecoration(
+          color: data.isToday ? accentColor.withValues(alpha: isDarkMode ? 0.15 : 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Row(
           children: [
             SizedBox(
@@ -303,58 +636,64 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
               child: Text(
                 data.label,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: data.isToday ? FontWeight.bold : FontWeight.normal,
-                  color: data.isToday ? AppTheme.primaryColor : (data.isOverdue ? Colors.redAccent : (isDarkMode ? Colors.white70 : Colors.black54)),
+                  fontSize: 12.5,
+                  fontWeight: data.isToday ? FontWeight.w900 : FontWeight.w700,
+                  color: labelColor,
+                  fontFamily: 'NotoSansSC',
                 ),
               ),
             ),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final maxWidth = constraints.maxWidth - 80;
+                  final maxWidth = constraints.maxWidth - 50;
                   final barWidth = _maxCount == 0 ? 0.0 : (data.totalCount / _maxCount) * maxWidth;
 
                   return Row(
                     children: [
-                      Stack(
+                      Container(
+                        height: 20,
+                        width: maxWidth,
+                        decoration: BoxDecoration(
+                          color: subtleBg,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         alignment: Alignment.centerLeft,
-                        children: [
-                          Container(
-                            height: 30,
-                            width: maxWidth,
-                            decoration: BoxDecoration(
-                              color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.02),
+                        child: Container(
+                          height: 20,
+                          width: barWidth < 6 && data.totalCount > 0 ? 6 : barWidth,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: data.isToday
+                                  ? [accentColor, futureColor]
+                                  : (data.isOverdue
+                                      ? [overdueColor, overdueColor.withValues(alpha: 0.7)]
+                                      : [futureColor.withValues(alpha: 0.9), futureColor.withValues(alpha: 0.6)]),
                             ),
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: data.isToday
+                                ? [
+                                    BoxShadow(
+                                      color: accentColor.withValues(alpha: 0.35),
+                                      blurRadius: 6,
+                                    ),
+                                  ]
+                                : [],
                           ),
-                          _buildSimpleBar(data, barWidth),
-                        ],
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      RichText(
-                        text: TextSpan(
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 38,
+                        child: Text(
+                          "${data.totalCount}",
+                          textAlign: TextAlign.right,
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'NotoSansSC',
-                            color: isDarkMode ? Colors.white60 : Colors.black54,
+                            fontWeight: FontWeight.w900,
+                            color: labelColor,
+                            fontFamily: 'Roboto',
                           ),
-                          children: [
-                            TextSpan(text: "${data.totalCount - data.newCount}"),
-                            if (data.newCount > 0) ...[
-                              TextSpan(
-                                text: " | ",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.normal,
-                                  color: isDarkMode ? Colors.white24 : Colors.black12,
-                                ),
-                              ),
-                              TextSpan(
-                                text: "${data.newCount}",
-                                style: const TextStyle(color: Color(0xFF8B5CF6)),
-                              ),
-                            ],
-                          ],
                         ),
                       ),
                     ],
@@ -362,98 +701,128 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                 },
               ),
             ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 16,
+              color: data.isToday ? accentColor : subtitleColor.withValues(alpha: 0.4),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSimpleBar(BarChartData data, double totalBarWidth) {
-    if (totalBarWidth <= 0) return const SizedBox.shrink();
-
-    final reviewCount = data.totalCount - data.newCount;
-    final double reviewWidth = (reviewCount / data.totalCount) * totalBarWidth;
-    final double newWidth = (data.newCount / data.totalCount) * totalBarWidth;
-
-    return Row(
-      children: [
-        if (reviewWidth > 0)
-          Container(
-            height: 30,
-            width: reviewWidth < 1 && reviewWidth > 0 ? 1 : reviewWidth, // 确保极短的条也能看见
-            decoration: BoxDecoration(
-              color: data.isToday ? AppTheme.primaryColor : (data.isOverdue ? Colors.redAccent : AppTheme.primaryColor.withValues(alpha: 0.5)),
-            ),
-          ),
-        if (newWidth > 0)
-          Container(
-            height: 30,
-            width: newWidth < 1 && newWidth > 0 ? 1 : newWidth,
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6),
-            ),
-          ),
-      ],
-    );
-  }
-
   void _showExplainDialog(BuildContext context) {
+    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('复习分布说明', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            const Text('💡 ', style: TextStyle(fontSize: 18)),
+            Text(
+              '复习分布说明',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: textColor,
+                fontSize: 17,
+                fontFamily: 'NotoSansSC',
+              ),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _dialogDescItem(Icons.height, '纵轴 (Y轴)', '代表时间维度。上方为已逾期的任务，下方为未来的复习安排。'),
-            const SizedBox(height: 12),
-            _dialogDescItem(Icons.bar_chart, '横轴 (X轴)', '代表单词数量。柱状条越长表示该时段复习任务越重。'),
-            const SizedBox(height: 12),
+            _dialogDescItem(Icons.height_rounded, '纵轴 (时间维度)', '上方为已逾期的任务，中间为今天必复习，下方为未来的复习安排。', accentColor, textColor, subtitleColor),
+            const SizedBox(height: 14),
+            _dialogDescItem(Icons.bar_chart_rounded, '横轴 (单词数量)', '柱状条越长表示该时段复习任务越重，点击可进入对应单词列表。', accentColor, textColor, subtitleColor),
+            const SizedBox(height: 14),
             _dialogDescItem(
               Icons.color_lens_outlined,
               '颜色含义',
               RichText(
                 text: TextSpan(
-                  style: const TextStyle(fontSize: 13, color: Colors.grey, fontFamily: 'NotoSansSC'),
+                  style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.5),
                   children: [
-                    const TextSpan(text: '红色', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '代表逾期待复习，'),
-                    TextSpan(text: '深蓝色', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '代表今日待复习，'),
-                    TextSpan(text: '浅蓝色', style: TextStyle(color: AppTheme.primaryColor.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '代表未来待复习，'),
-                    const TextSpan(text: '紫色', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
-                    const TextSpan(text: '代表新词（从未开始背诵）。'),
+                    TextSpan(text: '珊瑚红：', style: TextStyle(color: isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '逾期未复习；\n'),
+                    TextSpan(text: '扇贝翠绿：', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '今日核心必复习；\n'),
+                    TextSpan(text: '薄荷绿：', style: TextStyle(color: isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399), fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '未来复习规划；\n'),
+                    TextSpan(text: '柔和紫：', style: TextStyle(color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
+                    const TextSpan(text: '新词储备池。'),
                   ],
                 ),
               ),
+              accentColor,
+              textColor,
+              subtitleColor,
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('我知道了', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              '我知道了',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: accentColor,
+                fontFamily: 'NotoSansSC',
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _dialogDescItem(IconData icon, String title, dynamic desc) {
+  Widget _dialogDescItem(IconData icon, String title, dynamic desc, Color accentColor, Color textColor, Color subtitleColor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: AppTheme.primaryColor),
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: accentColor),
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              if (desc is Widget) desc else Text(desc.toString(), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13.5,
+                  color: textColor,
+                  fontFamily: 'NotoSansSC',
+                ),
+              ),
+              const SizedBox(height: 2),
+              if (desc is Widget)
+                desc
+              else
+                Text(
+                  desc.toString(),
+                  style: TextStyle(fontSize: 12.5, color: subtitleColor, fontFamily: 'NotoSansSC', height: 1.4),
+                ),
             ],
           ),
         ),
@@ -461,3 +830,4 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     );
   }
 }
+
