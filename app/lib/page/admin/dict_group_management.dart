@@ -350,9 +350,11 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
   @override
   Widget build(BuildContext context) {
     final filtered = _availableDicts.where((d) => (d.shortName ?? d.name ?? '').toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    final mediaQuery = MediaQuery.of(context);
+    final availableHeight = mediaQuery.size.height - mediaQuery.viewInsets.bottom;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
       child: Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12), // 增加外边距，使其看起来像悬浮卡片
         decoration: BoxDecoration(
@@ -366,7 +368,7 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
             ),
           ],
         ),
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+        constraints: BoxConstraints(maxHeight: availableHeight * 0.8),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: SafeArea(
           top: false,
@@ -383,13 +385,20 @@ class _DictAssignmentSheetState extends State<_DictAssignmentSheet> {
               ),
               const SizedBox(height: 16),
               if (_currentDicts.isNotEmpty) ...[
-                const Text("当前词书:", style: TextStyle(fontWeight: FontWeight.bold)),
-                Wrap(
-                  spacing: 8,
-                  children: _currentDicts.map((d) => Chip(
-                    label: Text(d.shortName ?? d.name ?? '未命名'),
-                    onDeleted: _isUpdating ? null : () => _updateDictGroup(d, null),
-                  )).toList(),
+                Text("当前词书 (${_currentDicts.length}):", style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 120),
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _currentDicts.map((d) => Chip(
+                        label: Text(d.shortName ?? d.name ?? '未命名'),
+                        onDeleted: _isUpdating ? null : () => _updateDictGroup(d, null),
+                      )).toList(),
+                    ),
+                  ),
                 ),
                 const Divider(),
               ],
