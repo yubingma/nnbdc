@@ -867,6 +867,219 @@ class _MePageState extends State<MePage> {
     }
   }
 
+  /// 弹出会员专属特权展示弹窗
+  void _showPrivilegesDialog(BuildContext context, Map<String, dynamic> accountInfo) {
+    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
+    final isPremium = accountInfo['isPremium'] as bool;
+    final accountType = accountInfo['type'] as String;
+    final accountDesc = accountInfo['desc'] as String?;
+    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final cardBg = isDarkMode ? const Color(0xFF1B2825) : Colors.white;
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isDarkMode ? Colors.white12 : const Color(0x1418BA7C),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 顶部图标与标题
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: isPremium
+                        ? accentColor.withValues(alpha: isDarkMode ? 0.2 : 0.12)
+                        : const Color(0xFFFF9800).withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      isPremium ? Icons.verified_rounded : Icons.workspace_premium_rounded,
+                      color: isPremium ? accentColor : const Color(0xFFFF9800),
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  isPremium ? '尊享会员特权' : '会员特权介绍',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'NotoSansSC',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  (accountDesc != null && accountDesc.isNotEmpty)
+                      ? '$accountType · $accountDesc'
+                      : '当前状态：$accountType',
+                  style: TextStyle(
+                    color: subtitleColor,
+                    fontSize: 12,
+                    fontFamily: 'NotoSansSC',
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // 特权列表 (严格契合系统真实权限设计)
+                _buildPrivilegeRow(
+                  Icons.all_inclusive_rounded,
+                  '每日学习新词量无上限',
+                  isPremium ? '已解锁自由设定每日新词量 (无限制)' : '非会员每日计划最多仅可学习 20 个新词',
+                  accentColor,
+                  textColor,
+                  subtitleColor,
+                ),
+                const SizedBox(height: 12),
+                _buildPrivilegeRow(
+                  Icons.psychology_rounded,
+                  'AI 智能助教与深度解析',
+                  isPremium ? '尊享离线/在线模型助教无限量助记与答疑' : '非会员无法使用 AI 助教解析',
+                  accentColor,
+                  textColor,
+                  subtitleColor,
+                ),
+                const SizedBox(height: 12),
+                _buildPrivilegeRow(
+                  Icons.auto_stories_rounded,
+                  '全量官方词书与导入畅学',
+                  isPremium ? '全库海量词书自由畅选，支持自定义导入' : '非会员限制添加与切换新词书',
+                  accentColor,
+                  textColor,
+                  subtitleColor,
+                ),
+                const SizedBox(height: 12),
+                _buildPrivilegeRow(
+                  Icons.cloud_sync_rounded,
+                  '端云数据安全同步',
+                  '学习进度、生词本与打卡数据多端云同步',
+                  accentColor,
+                  textColor,
+                  subtitleColor,
+                ),
+                const SizedBox(height: 12),
+                _buildPrivilegeRow(
+                  Icons.tune_rounded,
+                  'FSRS 记忆算法调优',
+                  '根据个人遗忘规律自适应计算复习间隔',
+                  accentColor,
+                  textColor,
+                  subtitleColor,
+                ),
+                const SizedBox(height: 20),
+                // 底部操作按钮
+                Row(
+                  children: [
+                    if (!isPremium && PlatformUtils.isIOS) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: isDarkMode ? Colors.white24 : const Color(0xFFD0E0DC)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text('稍后再说', style: TextStyle(color: subtitleColor)),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                              loadData();
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('立即开通', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ] else ...[
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            if (PlatformUtils.isIOS) {
+                              Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
+                                loadData();
+                              });
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Text(PlatformUtils.isIOS ? '管理订阅' : '我知道了', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPrivilegeRow(IconData icon, String title, String desc, Color accentColor, Color textColor, Color subtitleColor) {
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: accentColor),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'NotoSansSC')),
+              Text(desc, style: TextStyle(color: subtitleColor, fontSize: 10.5, fontFamily: 'NotoSansSC')),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget renderStudyProgress() {
     final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
     final textColor = isDarkModeEnabled ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
@@ -1203,11 +1416,7 @@ class _MePageState extends State<MePage> {
 
                 return GestureDetector(
                   onTap: () {
-                    if (!isPremium && PlatformUtils.isIOS) {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const SubscriptionPage())).then((_) {
-                        loadData();
-                      });
-                    }
+                    _showPrivilegesDialog(context, accountInfo);
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
