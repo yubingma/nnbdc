@@ -1382,13 +1382,14 @@ class _MePageState extends State<MePage> {
                                   style: TextStyle(
                                     color: subtitleColor,
                                     fontSize: 11,
+                                    fontWeight: FontWeight.w600,
                                     fontFamily: 'NotoSansSC',
                                   ),
                                 ),
                                 TextSpan(
                                   text: '$masteryPercentText%',
                                   style: TextStyle(
-                                    color: masteredColor,
+                                    color: textColor,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w900,
                                     fontFamily: 'Roboto',
@@ -1399,13 +1400,14 @@ class _MePageState extends State<MePage> {
                                   style: TextStyle(
                                     color: subtitleColor,
                                     fontSize: 11,
+                                    fontWeight: FontWeight.w600,
                                     fontFamily: 'NotoSansSC',
                                   ),
                                 ),
                                 TextSpan(
                                   text: '$fetchPercentText%',
                                   style: TextStyle(
-                                    color: fetchColor,
+                                    color: textColor,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w900,
                                     fontFamily: 'Roboto',
@@ -2474,11 +2476,11 @@ class _MePageState extends State<MePage> {
 
   Color dakaStatus2Color(String dakaStatus) {
     if (dakaStatus == UserDayStatus.dakaed.json) {
-      return AppTheme.primaryColor; // 扇贝绿
+      return isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C); // 纯正扇贝翠绿
     } else if (dakaStatus == UserDayStatus.studied.json) {
-      return const Color(0xFFFA6E59); // 珊瑚橙红
+      return const Color(0xFFFA6E59); // 珊瑚暖橙红
     } else {
-      return isDarkMode ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF1F5F9); // 未学习底
+      return isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.white; // 未学习底
     }
   }
 
