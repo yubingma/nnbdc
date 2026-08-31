@@ -31,8 +31,22 @@ class WordListAppBarMenu extends StatelessWidget {
 
     return PopupMenuButton<String>(
       icon: const Icon(
-        Icons.more_vert,
+        Icons.more_vert_rounded,
         color: Colors.white,
+      ),
+      color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+          width: 1,
+        ),
+      ),
+      constraints: const BoxConstraints(
+        minWidth: 148,
+        maxWidth: 175,
       ),
       onSelected: onSelected,
       itemBuilder: (BuildContext context) {
@@ -60,27 +74,57 @@ class WordListAppBarMenu extends StatelessWidget {
     menus.add(menuWalkman);
 
     return menus.map((String choice) {
+      final isSelected = _isSelected(choice);
       return PopupMenuItem<String>(
         value: choice,
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         child: Container(
           decoration: BoxDecoration(
-            color: _isSelected(choice) ? const Color(0xFF0097A7).withValues(alpha: 0.15) : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
+            color: isSelected
+                ? (isDarkMode
+                    ? const Color(0xFF192C27)
+                    : const Color(0xFFEDF8F3))
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: isSelected
+                ? Border.all(
+                    color: isDarkMode
+                        ? Colors.white12
+                        : const Color(0xFFD1EADE),
+                    width: 1,
+                  )
+                : null,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           child: Row(
             children: [
               Icon(
                 _getMenuIcon(choice),
-                size: 20,
-                color: _isSelected(choice) ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : Colors.grey[700]),
+                size: 18,
+                color: isSelected
+                    ? (isDarkMode
+                        ? const Color(0xFF2CD88F)
+                        : const Color(0xFF18BA7C))
+                    : (isDarkMode
+                        ? const Color(0xFF8EA8A3)
+                        : const Color(0xFF5B7A75)),
               ),
               const SizedBox(width: 8),
-              Text(
-                choice,
-                style: TextStyle(
-                  color: _isSelected(choice) ? const Color(0xFF0097A7) : (isDarkMode ? Colors.white : Colors.grey[700]),
-                  fontWeight: _isSelected(choice) ? FontWeight.w600 : FontWeight.normal,
+              Expanded(
+                child: Text(
+                  choice,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isSelected
+                        ? (isDarkMode
+                            ? const Color(0xFF2CD88F)
+                            : const Color(0xFF18BA7C))
+                        : (isDarkMode
+                            ? const Color(0xFFEAF7F4)
+                            : const Color(0xFF152724)),
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  ),
                 ),
               ),
             ],

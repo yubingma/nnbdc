@@ -2105,46 +2105,7 @@ class WordListPageState extends State<WordListPage>
 
 
 
-  Widget _buildLegendForMenu(bool isDarkMode) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _buildLegendItem(Colors.orange, '学习中', isDarkMode),
-          const SizedBox(width: 16),
-          _buildLegendItem(const Color(0xFF4CAF50), '已掌握', isDarkMode),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildLegendItem(Color color, String label, bool isDarkMode) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: isDarkMode ? Colors.white60 : Colors.black54,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
 
 
   Widget renderWord(final int i) {
@@ -2799,172 +2760,194 @@ class WordListPageState extends State<WordListPage>
                             context: capturedContext,
                             position: position,
                             useRootNavigator: true,
+                            color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                            elevation: 8,
+                            shadowColor: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              side: BorderSide(
+                                color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                                width: 1,
+                              ),
+                            ),
                             constraints: const BoxConstraints(
-                              minWidth: 140,
-                              maxWidth: 160,
+                              minWidth: 152,
+                              maxWidth: 180,
                             ),
                             items: [
-                              PopupMenuItem<String>(
-                                enabled: false,
-                                height: 32,
-                                child: _buildLegendForMenu(isDarkMode),
-                              ),
-                              const PopupMenuDivider(height: 1),
                               ...menuItems.map((String choice) {
-                              IconData icon;
-                              switch (choice) {
-                                case menuWordList:
-                                  icon = Icons.list_alt;
-                                  break;
-                                case menuWalkman:
-                                  icon = Icons.headphones;
-                                  break;
-                                case menuImportFromBook:
-                                  icon = Icons.import_contacts;
-                                  break;
-                                case menuImportFromScan:
-                                  icon = Icons.camera_alt;
-                                  break;
-                                case menuSpeakChinese:
-                                  icon = Icons.record_voice_over;
-                                  break;
-                                case menuSpeakEnglish:
-                                  icon = Icons.record_voice_over;
-                                  break;
-                                case menuTranslateSentence:
-                                  icon = Icons.hearing;
-                                  break;
-                                case menuWriteSpellTyping:
-                                  icon = Icons.keyboard;
-                                  break;
-                                case menuWriteSpellHandwriting:
-                                  icon = Icons.gesture;
-                                  break;
-                                case menuHideChinese:
-                                  icon = Icons.visibility_off;
-                                  break;
-                                case menuHideEnglish:
-                                  icon = Icons.visibility_off;
-                                  break;
-                                case menuExportPdf:
-                                  icon = Icons.picture_as_pdf;
-                                  break;
+                                IconData icon;
+                                switch (choice) {
+                                  case menuWordList:
+                                    icon = Icons.list_alt_rounded;
+                                    break;
+                                  case menuWalkman:
+                                    icon = Icons.headphones_rounded;
+                                    break;
+                                  case menuImportFromBook:
+                                    icon = Icons.import_contacts_rounded;
+                                    break;
+                                  case menuImportFromScan:
+                                    icon = Icons.camera_alt_rounded;
+                                    break;
+                                  case menuSpeakChinese:
+                                    icon = Icons.record_voice_over_rounded;
+                                    break;
+                                  case menuSpeakEnglish:
+                                    icon = Icons.mic_none_rounded;
+                                    break;
+                                  case menuTranslateSentence:
+                                    icon = Icons.hearing_rounded;
+                                    break;
+                                  case menuWriteSpellTyping:
+                                    icon = Icons.keyboard_rounded;
+                                    break;
+                                  case menuWriteSpellHandwriting:
+                                    icon = Icons.gesture_rounded;
+                                    break;
+                                  case menuHideChinese:
+                                    icon = Icons.visibility_off_rounded;
+                                    break;
+                                  case menuHideEnglish:
+                                    icon = Icons.visibility_off_rounded;
+                                    break;
+                                  case menuExportPdf:
+                                    icon = Icons.picture_as_pdf_rounded;
+                                    break;
 
-                                case menuAiStory:
-                                  icon = Icons.auto_awesome;
-                                  break;
-                                case menuSettings:
-                                  icon = Icons.settings;
-                                  break;
-                                case menuSortSettings:
-                                  icon = Icons.sort;
-                                  break;
-                                default:
-                                  icon = Icons.help_outline;
-                              }
+                                  case menuAiStory:
+                                    icon = Icons.auto_awesome_rounded;
+                                    break;
+                                  case menuSettings:
+                                    icon = Icons.settings_rounded;
+                                    break;
+                                  case menuSortSettings:
+                                    icon = Icons.sort_rounded;
+                                    break;
+                                  default:
+                                    icon = Icons.help_outline_rounded;
+                                }
 
-                              bool isSelected = false;
-                              switch (choice) {
-                                case menuWordList:
-                                  isSelected =
-                                      studyMode == WordListStudyMode.list;
-                                  break;
-                                case menuHideChinese:
-                                  isSelected =
-                                      studyMode == WordListStudyMode.hideChinese;
-                                  break;
-                                case menuHideEnglish:
-                                  isSelected =
-                                      studyMode == WordListStudyMode.hideEnglish;
-                                  break;
+                                bool isSelected = false;
+                                switch (choice) {
+                                  case menuWordList:
+                                    isSelected =
+                                        studyMode == WordListStudyMode.list;
+                                    break;
+                                  case menuHideChinese:
+                                    isSelected =
+                                        studyMode == WordListStudyMode.hideChinese;
+                                    break;
+                                  case menuHideEnglish:
+                                    isSelected =
+                                        studyMode == WordListStudyMode.hideEnglish;
+                                    break;
 
-                                case menuSpeakChinese:
-                                  isSelected = studyMode ==
-                                      WordListStudyMode.speakChinese;
-                                  break;
-                                case menuSpeakEnglish:
-                                  isSelected = studyMode ==
-                                      WordListStudyMode.speakEnglish;
-                                  break;
-                                case menuTranslateSentence:
-                                  isSelected = studyMode ==
-                                      WordListStudyMode.translateSentence;
-                                  break;
-                                case menuWriteSpellTyping:
-                                  isSelected =
-                                      studyMode == WordListStudyMode.dictation;
-                                  break;
-                                case menuWriteSpellHandwriting:
-                                  isSelected =
-                                      studyMode == WordListStudyMode.dictationHandwriting;
-                                  break;
-                                case menuImportFromBook:
-                                  isSelected =
-                                      false; // it does not represent a state
-                                  break;
-                                case menuImportFromScan:
-                                  isSelected = false;
-                                  break;
-                                case menuAiStory:
-                                  isSelected = false;
-                                  break;
-                                case menuSettings:
-                                  isSelected = false;
-                                  break;
-                                case menuSortSettings:
-                                  isSelected = false;
-                                  break;
-                                case menuExportPdf:
-                                  isSelected = false;
-                                  break;
-                              }
+                                  case menuSpeakChinese:
+                                    isSelected = studyMode ==
+                                        WordListStudyMode.speakChinese;
+                                    break;
+                                  case menuSpeakEnglish:
+                                    isSelected = studyMode ==
+                                        WordListStudyMode.speakEnglish;
+                                    break;
+                                  case menuTranslateSentence:
+                                    isSelected = studyMode ==
+                                        WordListStudyMode.translateSentence;
+                                    break;
+                                  case menuWriteSpellTyping:
+                                    isSelected =
+                                        studyMode == WordListStudyMode.dictation;
+                                    break;
+                                  case menuWriteSpellHandwriting:
+                                    isSelected =
+                                        studyMode == WordListStudyMode.dictationHandwriting;
+                                    break;
+                                  case menuImportFromBook:
+                                    isSelected =
+                                        false;
+                                    break;
+                                  case menuImportFromScan:
+                                    isSelected = false;
+                                    break;
+                                  case menuAiStory:
+                                    isSelected = false;
+                                    break;
+                                  case menuSettings:
+                                    isSelected = false;
+                                    break;
+                                  case menuSortSettings:
+                                    isSelected = false;
+                                    break;
+                                  case menuExportPdf:
+                                    isSelected = false;
+                                    break;
+                                }
 
-                              return PopupMenuItem<String>(
-                                value: choice,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? const Color(0xFF0097A7)
-                                            .withValues(alpha: 0.15)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        icon,
-                                        size: 20,
-                                        color: isSelected
-                                            ? const Color(0xFF0097A7)
-                                            : (isDarkMode
-                                                ? Colors.white
-                                                : Colors.grey[700]),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        choice == menuSortSettings
-                                            ? '排序: ${sortAlg.label}'
-                                            : choice,
-                                        style: TextStyle(
+                                return PopupMenuItem<String>(
+                                  value: choice,
+                                  height: 40,
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? (isDarkMode
+                                              ? const Color(0xFF192C27)
+                                              : const Color(0xFFEDF8F3))
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: isSelected
+                                          ? Border.all(
+                                              color: isDarkMode
+                                                  ? Colors.white12
+                                                  : const Color(0xFFD1EADE),
+                                              width: 1,
+                                            )
+                                          : null,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 7),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          icon,
+                                          size: 18,
                                           color: isSelected
-                                              ? const Color(0xFF0097A7)
+                                              ? (isDarkMode
+                                                  ? const Color(0xFF2CD88F)
+                                                  : AppTheme.primaryColor)
                                               : (isDarkMode
-                                                  ? Colors.white
-                                                  : Colors.grey[700]),
-                                          fontWeight: isSelected
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
+                                                  ? const Color(0xFF8EA8A3)
+                                                  : const Color(0xFF5B7A75)),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            choice == menuSortSettings
+                                                ? '排序: ${sortAlg.label}'
+                                                : choice,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: isSelected
+                                                  ? (isDarkMode
+                                                      ? const Color(0xFF2CD88F)
+                                                      : AppTheme.primaryColor)
+                                                  : (isDarkMode
+                                                      ? const Color(0xFFEAF7F4)
+                                                      : const Color(0xFF152724)),
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
-                            }),
-                          ],
-                        );
+                                );
+                              }),
+                            ],
+                          );
 
                           // 6. 处理选择
                           if (selectedValue != null) {
