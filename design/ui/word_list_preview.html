@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>今日旧词词表 - 真实截屏 1:1 扇贝温润美学原型</title>
+  <style>
+    :root {
+      /* 扇贝单词经典护眼温润绿体系 */
+      --bg: #F5F9F7;
+      --card-bg: #FFFFFF;
+      --card-subtle: #EDF5F2;
+      --card-hover: #E3F2EC;
+      --divider: rgba(24, 186, 124, 0.08);
+      
+      --text-primary: #152724;
+      --text-secondary: #425B57;
+      --text-muted: #789691;
+      --text-faint: #B2CDC8;
+
+      /* 扇贝绿主品牌色 */
+      --primary: #18BA7C;
+      --primary-hover: #15A56E;
+      --primary-soft: #E8F8F1;
+      --primary-text: #FFFFFF;
+
+      --green-text: #18BA7C;
+      --green-bg: #E8F8F1;
+      --green-border: #18BA7C;
+
+      --active-card-bg: #EDF8F3;
+      --active-card-border: #18BA7C;
+      
+      --amber-dot: #F59E0B;
+      --green-dot: #18BA7C;
+
+      --btn-show-bg: #FFFFFF;
+      --btn-show-border: #D1E5DE;
+      --btn-show-text: #5A7B75;
+      
+      --shadow-card: 0 3px 12px rgba(24, 186, 124, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+      --shadow-active: 0 6px 18px rgba(24, 186, 124, 0.12);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0C1312;
+      --card-bg: #131E1C;
+      --card-subtle: #1A2826;
+      --card-hover: #223532;
+      --divider: rgba(255, 255, 255, 0.06);
+      
+      --text-primary: #EAF7F4;
+      --text-secondary: #8EA8A3;
+      --text-muted: #5B7A75;
+      --text-faint: #344B48;
+
+      --primary: #2CD88F;
+      --primary-hover: #26C07F;
+      --primary-soft: rgba(44, 216, 143, 0.12);
+      --primary-text: #0A1613;
+
+      --green-text: #2CD88F;
+      --green-bg: rgba(44, 216, 143, 0.12);
+      --green-border: #2CD88F;
+
+      --active-card-bg: #152B24;
+      --active-card-border: #2CD88F;
+
+      --btn-show-bg: #1A2926;
+      --btn-show-border: #2B4540;
+      --btn-show-text: #8EA8A3;
+
+      --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.4);
+      --shadow-active: 0 8px 24px rgba(44, 216, 143, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #DFE7E4;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px 12px;
+      color: var(--text-primary);
+      transition: background-color 0.3s;
+    }
+
+    /* 顶部控制栏 */
+    .designer-toolbar {
+      width: 100%;
+      max-width: 412px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      padding: 8px 14px;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .designer-toolbar button {
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .designer-toolbar button:hover {
+      background: #E2E8F0;
+    }
+
+    /* 手机外壳容器 */
+    .device-mockup {
+      width: 100%;
+      max-width: 412px;
+      height: 844px;
+      background: var(--bg);
+      border-radius: 42px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      height: 38px;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      z-index: 10;
+    }
+
+    /* 1. 顶部导航栏（原先蓝顶升级为温润高质感顶栏） */
+    .app-top-nav {
+      padding: 6px 16px 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--divider);
+      background: var(--card-bg);
+    }
+    .nav-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-nav-back {
+      font-size: 18px;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: transform 0.15s;
+    }
+    .btn-nav-back:active {
+      transform: scale(0.9);
+    }
+    .nav-title-text {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    /* 右侧书签组 (S / 1 / E + 更多) */
+    .nav-bookmarks-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bookmark-tag {
+      padding: 3px 8px;
+      background: var(--card-subtle);
+      border: 1px solid var(--divider);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.15s;
+    }
+    .bookmark-tag.active {
+      background: var(--primary);
+      color: var(--primary-text);
+      border-color: var(--primary);
+    }
+    .bookmark-tag:hover {
+      border-color: var(--primary);
+    }
+    .btn-more-menu {
+      font-size: 16px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 2px 4px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* 2. 单词列表滚动区域 */
+    .word-cards-scroll-view {
+      flex: 1;
+      padding: 12px 14px 30px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 3. 单词列表项卡片（1:1 还原截屏中的结构） */
+    .word-row-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1.5px solid var(--divider);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .word-row-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    /* 活跃项（第一项 silence） */
+    .word-row-card.active-item {
+      background: var(--active-card-bg);
+      border-color: var(--active-card-border);
+      border-width: 2px;
+      box-shadow: var(--shadow-active);
+    }
+
+    /* 左侧边栏：序号 + 状态点 */
+    .row-left-sidebar {
+      width: 44px;
+      background: var(--card-subtle);
+      border-right: 1px solid var(--divider);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 0;
+      flex-shrink: 0;
+    }
+    .row-card.active-item .row-left-sidebar {
+      background: rgba(24, 186, 124, 0.08);
+    }
+    .row-index-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .row-status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--amber-dot);
+    }
+    .row-status-dot.mastered {
+      background: var(--green-dot);
+    }
+
+    /* 中间：单词与音标 */
+    .row-word-body {
+      flex: 1;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      min-width: 0;
+    }
+    .word-spell-text {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+    .active-item .word-spell-text {
+      color: var(--primary);
+    }
+    .word-phonetic-text {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      font-family: "Lucida Grande", "Segoe UI", sans-serif;
+    }
+
+    /* 右侧：显示中文操作按钮 / 真实释义显示 */
+    .row-action-area {
+      padding: 10px 14px 10px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+    .btn-show-chinese {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 10px;
+      background: var(--btn-show-bg);
+      border: 1px solid var(--btn-show-border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--btn-show-text);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      transition: all 0.15s;
+    }
+    .btn-show-chinese:hover {
+      background: var(--card-hover);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .btn-show-chinese:active {
+      transform: scale(0.96);
+    }
+
+    /* 真实释义展开后展示的容器 */
+    .revealed-meaning-tag {
+      display: none;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      animation: fadeIn 0.2s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 设计师控制栏 -->
+  <div class="designer-toolbar">
+    <span>🌿 真实截屏 1:1 扇贝温润美学原型</span>
+    <button onclick="toggleTheme()">
+      <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
+    </button>
+  </div>
+
+  <div class="device-mockup">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>2:54 📱</span>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <span>5G</span>
+        <span>42%</span>
+      </div>
+    </div>
+
+    <!-- 1. 顶部导航栏 -->
+    <div class="app-top-nav">
+      <div class="nav-title-group">
+        <div class="btn-nav-back" onclick="alert('返回')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </div>
+        <div class="nav-title-text">今日旧词 (63)</div>
+      </div>
+
+      <!-- 右侧书签组与菜单 -->
+      <div class="nav-bookmarks-group">
+        <div class="bookmark-tag" onclick="alert('跳转到首个单词 (S)')">S</div>
+        <div class="bookmark-tag active" onclick="alert('当前所处批次书签 (1)')">1</div>
+        <div class="bookmark-tag" onclick="alert('跳转到末尾单词 (E)')">E</div>
+        <div class="btn-more-menu" onclick="alert('更多菜单: 随身听 / 隐藏英文 / 拼写模式 / 排序设置')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="2"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+            <circle cx="12" cy="19" r="2"></circle>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 词表卡片列表（严格按照截图还原） -->
+    <div class="word-cards-scroll-view">
+      
+      <!-- 1. silence (当前选中活跃项，扇贝绿高亮) -->
+      <div class="word-row-card active-item" onclick="openWord('silence')">
+        <div class="row-left-sidebar">
+          <span class="row-index-label">1</span>
+          <span class="row-status-dot"></span>
+        </div>
+        <div class="row-word-body">
+          <div class="word-spell-text">silence</div>
+          <div class="word-phonetic-text">['saɪləns]</div>
+        </div>
+        <div class="row-action-area">
+          <button class="btn-show-chinese" onclick="event.stopPropagation(); revealMeaning(this, 'n. 沉默；寂静')">
+            <span>👁</span> <span>点击显示中文</span>
+          </button>
+          <span class="revealed-meaning-tag">n. 沉默；寂静</span>
+        </div>
+      </div>
+
+      <!-- 2. prestige -->
+      <div class="word-row-card" onclick="openWord('prestige')">
+        <div class="row-left-sidebar">
+          <span class="row-index-label">2</span>
+          <span class="row-status-dot"></span>
+        </div>
+        <div class="row-word-body">
+          <div class="word-spell-text">prestige</div>
+          <div class="word-phonetic-text">[prɛ'stiʒ, -'stidʒ]</div>
+        </div>
+        <div class="row-action-area">
+          <button class="btn-show-chinese" onclick="event.stopPropagation(); revealMeaning(this, 'n. 威望；声誉')">
+            <span>👁</span> <span>点击显示中文</span>
+          </button>
+          <span class="revealed-meaning-tag">n. 威望；声誉</span>
+        </div>
+      </div>
+
+      <!-- 3. stiffen -->
+      <div class="word-row-card" onclick="openWord('stiffen')">
+        <div class="row-left-sidebar">
+          <span class="row-index-label">3</span>
+          <span class="row-status-dot"></span>
+        </div>
+        <div class="row-word-body">
+          <div class="word-spell-text">stiffen</div>
+          <div class="word-phonetic-text">['stɪfən]</div>
+        </div>
+        <div class="row-action-area">
+          <button class="btn-show-chinese" onclick="event.stopPropagation(); revealMeaning(this, 'v. 变硬；变僵')">
+            <span>👁</span> <span>点击显示中文</span>
+          </button>
+          <span class="revealed-meaning-tag">v. 变硬；变僵</span>
+        </div>
+      </div>
+
+      <!-- 4. vicinity -->
+      <div class="word-row-card" onclick="openWord('vicinity')">
+        <div class="row-left-sidebar">
+          <span class="row-index-label">4</span>
+          <span class="row-status-dot"></span>
+        </div>
+        <div class="row-word-body">
+          <div class="word-spell-text">vicinity</div>
+          <div class="word-phonetic-text">[vɪ'sɪnɪti]</div>
+        </div>
+        <div class="row-action-area">
+          <button class="btn-show-chinese" onclick="event.stopPropagation(); revealMeaning(this, 'n. 邻近；附近')">
+            <span>👁</span> <span>点击显示中文</span>
+          </button>
+          <span class="revealed-meaning-tag">n. 邻近；附近</span>
+        </div>
+      </div>
+
+      <!-- 5. meanwhile -->
+      <div class="word-row-card" onclick="openWord('meanwhile')">
+        <div class="row-left-sidebar">
+          <span class="row-index-label">5</span>
+          <span class="row-status-dot"></span>
+        </div>
+        <div class="row-word-body">
+          <div class="word-spell-text">meanwhile</div>
+          <div class="word-phonetic-text">['min,hwaɪl, -,waɪl]</div>
+        </div>
+        <div class="row-action-area">
+          <button class="btn-show-chinese" onclick="event.stopPropagation(); revealMeaning(this, 'adv. 同时；在此期间')">
+            <span>👁</span> <span>点击显示中文</span>
+          </button>
+          <span class="revealed-meaning-tag">adv. 同时；在此期间</span>
+        </div>
+      </div>
+
+      <!-- 6. breakdown -->
+      <div class="word-row-card" onclick="openWord('breakdown')">
+        <div class="row-left-sidebar">
+          <span class="row-index-label">6</span>
+          <span class="row-status-dot"></span>
+        </div>
+        <div class="row-word-body">
+          <div class="word-spell-text">breakdown</div>
+          <div class="word-phonetic-text">['brek,daʊn]</div>
+        </div>
+        <div class="row-action-area">
+          <button class="btn-show-chinese" onclick="event.stopPropagation(); revealMeaning(this, 'n. 故障；细目')">
+            <span>👁</span> <span>点击显示中文</span>
+          </button>
+          <span class="revealed-meaning-tag">n. 故障；细目</span>
+        </div>
+      </div>
+
+      <!-- 7. prime -->
+      <div class="word-row-card" onclick="openWord('prime')">
+        <div class="row-left-sidebar">
+          <span class="row-index-label">7</span>
+          <span class="row-status-dot"></span>
+        </div>
+        <div class="row-word-body">
+          <div class="word-spell-text">prime</div>
+          <div class="word-phonetic-text">[praɪm]</div>
+        </div>
+        <div class="row-action-area">
+          <button class="btn-show-chinese" onclick="event.stopPropagation(); revealMeaning(this, 'adj. 首要的；最好的')">
+            <span>👁</span> <span>点击显示中文</span>
+          </button>
+          <span class="revealed-meaning-tag">adj. 首要的；最好的</span>
+        </div>
+      </div>
+
+      <!-- 8. pedal -->
+      <div class="word-row-card" onclick="openWord('pedal')">
+        <div class="row-left-sidebar">
+          <span class="row-index-label">8</span>
+          <span class="row-status-dot"></span>
+        </div>
+        <div class="row-word-body">
+          <div class="word-spell-text">pedal</div>
+          <div class="word-phonetic-text">['pɛdl]</div>
+        </div>
+        <div class="row-action-area">
+          <button class="btn-show-chinese" onclick="event.stopPropagation(); revealMeaning(this, 'n. 踏板 v. 踩踏板')">
+            <span>👁</span> <span>点击显示中文</span>
+          </button>
+          <span class="revealed-meaning-tag">n. 踏板 v. 踩踏板</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function openWord(word) {
+      alert('查看单词详情: ' + word);
+    }
+
+    function revealMeaning(btn, meaning) {
+      btn.style.display = 'none';
+      const tag = btn.nextElementSibling;
+      tag.style.display = 'block';
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('theme-icon').textContent = '🌙';
+        document.getElementById('theme-text').textContent = '暗黑模式';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('theme-icon').textContent = '☀️';
+        document.getElementById('theme-text').textContent = '明亮模式';
+      }
+    }
+  </script>
+</body>
+</html>
