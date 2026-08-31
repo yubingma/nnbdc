@@ -52,7 +52,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   int downloadedBytes = 0;
   int totalBytes = 0;
   bool _isLoading = false;
-  bool _hasUserMadeChanges = false; // 用户是否进行了选择动作
   final Map<String, int> _selectedSubGroupIndex = {}; // 记录每个一级分类下选中的二级分类索引
   List<DictGroupVo>? parentCategories;
   List<DictGroupVo> _filteredCategories = [];
@@ -93,7 +92,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     initialSelectedDictVos = {};
     dictGroups = [];
     customDicts = [];
-    _hasUserMadeChanges = false;
     // 注意：不要用 addListener，它会在焦点变化时也触发，导致点击 Tab 时 setState 重置控制器
     // 改为只在 onChanged 中更新，避免 Tab 点击被打断
     Future.microtask(() => loadData());
@@ -330,11 +328,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       } else {
         selectedDictVos!.add(dict);
       }
-
-      // 检查用户是否进行了选择动作
-      if (initialSelectedDictVos != null) {
-        _hasUserMadeChanges = !_setsEqual(selectedDictVos!, initialSelectedDictVos!);
-      }
     });
   }
 
@@ -363,14 +356,6 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     );
   }
 
-  // 比较两个Set是否相等
-  bool _setsEqual(Set<DictVo> set1, Set<DictVo> set2) {
-    if (set1.length != set2.length) return false;
-    for (var item in set1) {
-      if (!set2.any((element) => element.id == item.id)) return false;
-    }
-    return true;
-  }
 
   Widget _buildPrimaryTabContent(DictGroupVo parentVo, bool isDarkMode) {
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F8F8);
@@ -1809,12 +1794,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           ElevatedButton.icon(
             onPressed: save,
             icon: const Icon(Icons.check_rounded, size: 17),
-            label: Text(_hasUserMadeChanges ? '保存并同步' : '完成'),
+            label: const Text('保存'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
               textStyle: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
             ),
