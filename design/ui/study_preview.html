@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>背单词主界面 - 真实截屏 1:1 精确美化原型</title>
+  <title>背单词主界面 - 扇贝温润护眼极致美学原型</title>
   <style>
     :root {
-      /* 扇贝单词经典护眼温润绿体系 */
-      --bg: #F5F9F7;
+      /* 扇贝单词经典护眼温润绿体系 - 极度柔和舒适 */
+      --bg: #F6F9F8;
       --card-bg: #FFFFFF;
-      --card-subtle: #EDF5F2;
-      --card-hover: #E3F2EC;
+      --card-subtle: #F0F6F3;
+      --card-hover: #E6F3ED;
       --divider: rgba(24, 186, 124, 0.08);
       
-      --text-primary: #182B28;
-      --text-secondary: #48635F;
-      --text-muted: #7E9B96;
-      --text-faint: #A8C4BF;
+      --text-primary: #152724;
+      --text-secondary: #425B57;
+      --text-muted: #789691;
+      --text-faint: #B2CDC8;
 
-      /* 扇贝绿主品牌色 */
+      /* 扇贝绿 */
       --primary: #18BA7C;
       --primary-hover: #15A56E;
       --primary-soft: #E8F8F1;
@@ -26,47 +26,49 @@
 
       --green-text: #18BA7C;
       --green-bg: #E8F8F1;
-      --green-border: rgba(24, 186, 124, 0.4);
+      --green-border: rgba(24, 186, 124, 0.3);
       
       --coral-text: #FA6E59;
-      --coral-bg: #FEF1EF;
-      --coral-border: rgba(250, 110, 89, 0.35);
+      --coral-bg: #FEF2F0;
+      --coral-border: rgba(250, 110, 89, 0.25);
 
-      --underline-dash: #A8C4BF;
+      --slot-blank-bg: #E3ECE8;
+      --slot-blank-bar: #9DBEB8;
       
-      --shadow-card: 0 4px 20px rgba(24, 186, 124, 0.04);
-      --shadow-btn: 0 6px 18px -3px rgba(24, 186, 124, 0.3);
+      --shadow-card: 0 8px 24px rgba(24, 186, 124, 0.05), 0 2px 6px rgba(0, 0, 0, 0.02);
+      --shadow-btn: 0 10px 24px -4px rgba(24, 186, 124, 0.38);
     }
 
     [data-theme="dark"] {
-      --bg: #0E1514;
-      --card-bg: #141E1D;
-      --card-subtle: #1C2B29;
-      --card-hover: #233733;
+      --bg: #0C1312;
+      --card-bg: #131E1C;
+      --card-subtle: #1A2826;
+      --card-hover: #223532;
       --divider: rgba(255, 255, 255, 0.06);
       
-      --text-primary: #EAF7F3;
-      --text-secondary: #8DA8A3;
-      --text-muted: #5D7975;
-      --text-faint: #344845;
+      --text-primary: #EAF7F4;
+      --text-secondary: #8EA8A3;
+      --text-muted: #5B7A75;
+      --text-faint: #344B48;
 
       --primary: #2CD88F;
       --primary-hover: #26C07F;
       --primary-soft: rgba(44, 216, 143, 0.12);
-      --primary-text: #0B1714;
+      --primary-text: #0A1613;
 
       --green-text: #2CD88F;
       --green-bg: rgba(44, 216, 143, 0.12);
-      --green-border: rgba(44, 216, 143, 0.4);
+      --green-border: rgba(44, 216, 143, 0.35);
 
-      --coral-text: #FF7B69;
-      --coral-bg: rgba(255, 123, 105, 0.12);
-      --coral-border: rgba(255, 123, 105, 0.4);
+      --coral-text: #FF7E6C;
+      --coral-bg: rgba(255, 126, 108, 0.12);
+      --coral-border: rgba(255, 126, 108, 0.35);
 
-      --underline-dash: #3E5A55;
+      --slot-blank-bg: #1A2826;
+      --slot-blank-bar: #3A5551;
 
-      --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
-      --shadow-btn: 0 8px 22px -3px rgba(44, 216, 143, 0.3);
+      --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.5);
+      --shadow-btn: 0 8px 24px -3px rgba(44, 216, 143, 0.3);
     }
 
     * {
@@ -77,13 +79,13 @@
     }
 
     body {
-      background-color: #E2E8F0;
+      background-color: #DFE7E4;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 20px 12px;
+      padding: 16px 12px;
       color: var(--text-primary);
       transition: background-color 0.3s;
     }
@@ -92,11 +94,11 @@
     .designer-toolbar {
       width: 100%;
       max-width: 412px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(16px);
       padding: 8px 14px;
       border-radius: 14px;
@@ -124,9 +126,9 @@
     .device-mockup {
       width: 100%;
       max-width: 412px;
-      height: 840px;
+      height: 844px;
       background: var(--bg);
-      border-radius: 40px;
+      border-radius: 42px;
       box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 10px #1E293B;
       overflow: hidden;
       display: flex;
@@ -137,13 +139,13 @@
 
     /* 状态栏 */
     .status-bar {
-      height: 38px;
-      padding: 0 20px;
+      height: 40px;
+      padding: 0 22px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-primary);
       z-index: 10;
     }
@@ -151,33 +153,41 @@
     /* 1. 分段批次进度条 */
     .batch-progress-bar {
       display: flex;
-      gap: 4px;
-      padding: 4px 16px 8px 16px;
+      gap: 5px;
+      padding: 2px 16px 8px 16px;
     }
     .batch-segment {
       flex: 1;
-      height: 3.5px;
-      background: var(--divider);
-      border-radius: 3px;
+      height: 4px;
+      background: var(--card-subtle);
+      border-radius: 4px;
       overflow: hidden;
+      position: relative;
     }
     .batch-segment.filled {
       background: var(--primary);
     }
-    .batch-segment.active {
-      background: linear-gradient(90deg, var(--primary) 70%, var(--divider) 70%);
+    .batch-segment.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 65%;
+      background: var(--primary);
+      border-radius: 4px;
     }
 
     /* 2. 顶部工具栏（返回 + 回看 + 掌握 + 报错 + 搜索 + 设置） */
     .nav-toolbar {
-      padding: 2px 16px 12px 16px;
+      padding: 2px 16px 10px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 6px;
     }
     .nav-btn-back {
-      width: 40px;
+      width: 38px;
       height: 36px;
       background: var(--card-bg);
       border: 1px solid var(--divider);
@@ -224,24 +234,24 @@
       height: 36px;
       padding: 0;
       justify-content: center;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     /* 页面主体滚动区 */
     .app-body {
       flex: 1;
-      padding: 0 16px 20px 16px;
+      padding: 0 16px 18px 16px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       overflow-y: auto;
     }
 
-    /* 3. 核心单词题目大卡片 */
+    /* 3. 核心单词英雄大卡片 */
     .word-main-card {
       background: var(--card-bg);
-      border-radius: 24px;
-      padding: 24px 20px 18px 20px;
+      border-radius: 26px;
+      padding: 22px 20px 18px 20px;
       box-shadow: var(--shadow-card);
       border: 1px solid var(--divider);
       display: flex;
@@ -252,46 +262,52 @@
       position: relative;
     }
     .word-spelling {
-      font-size: 38px;
+      font-size: 40px;
       font-weight: 900;
       color: var(--text-primary);
-      letter-spacing: -0.5px;
+      letter-spacing: -0.03em;
       line-height: 1.1;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
     }
-    .phonetic-row {
-      display: flex;
+
+    /* 发音胶囊 */
+    .phonetic-capsule {
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      background: var(--card-subtle);
+      padding: 4px 12px 4px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid var(--divider);
+    }
+    .phonetic-capsule:hover {
+      background: var(--card-hover);
+    }
+    .phonetic-capsule:active {
+      transform: scale(0.96);
     }
     .phonetic-text {
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
       font-family: "Lucida Grande", "Segoe UI", sans-serif;
     }
-    .speaker-btn-inline {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: var(--primary-soft);
+    .speaker-icon-small {
       color: var(--primary);
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      border: none;
-      transition: all 0.15s;
-    }
-    .speaker-btn-inline:active {
-      transform: scale(0.9);
     }
 
-    /* 权威例句区 */
+    /* 权威例句盒（浅色微底更通透） */
     .sentence-block {
       width: 100%;
-      margin-top: 4px;
-      padding-top: 14px;
-      border-top: 1px dashed var(--divider);
+      margin-top: 2px;
+      padding: 14px 16px;
+      background: var(--card-subtle);
+      border-radius: 18px;
       text-align: left;
       display: flex;
       flex-direction: column;
@@ -301,81 +317,97 @@
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      font-size: 15px;
-      line-height: 1.5;
+      font-size: 14.5px;
+      line-height: 1.55;
       color: var(--text-primary);
+      font-weight: 500;
     }
     .sentence-en-row b {
       color: var(--primary);
       font-weight: 800;
+      background: var(--primary-soft);
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+    .sentence-play-btn {
+      color: var(--primary);
+      cursor: pointer;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      transition: transform 0.15s;
+    }
+    .sentence-play-btn:active {
+      transform: scale(0.85);
     }
     .sentence-ch-row {
       font-size: 13px;
       color: var(--text-secondary);
-      line-height: 1.4;
+      line-height: 1.45;
       display: none;
       padding-left: 24px;
-      animation: fadeIn 0.2s ease;
+      animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(3px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .btn-show-trans {
       align-self: flex-end;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11.5px;
+      font-weight: 700;
       color: var(--text-muted);
       background: none;
       border: none;
       cursor: pointer;
-      padding: 4px 6px;
+      padding: 2px 6px;
       transition: color 0.15s;
     }
     .btn-show-trans:hover {
       color: var(--primary);
     }
 
-    /* 4. 做题区 Tab 栏（说释义 / 选） */
-    .tabs-row {
+    /* 4. 做题区 Tab 栏（悬浮分段胶囊流） */
+    .tabs-pill-wrap {
       display: flex;
-      margin-top: 14px;
-      border-bottom: 2px solid var(--divider);
-      padding: 0 8px;
+      background: var(--card-subtle);
+      border-radius: 16px;
+      padding: 3px;
+      margin-top: 12px;
+      border: 1px solid var(--divider);
     }
-    .tab-btn {
-      padding: 8px 18px;
-      font-size: 14px;
+    .tab-pill-btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px 0;
+      font-size: 13.5px;
       font-weight: 700;
       color: var(--text-muted);
+      border-radius: 13px;
       cursor: pointer;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
-      position: relative;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .tab-btn.active {
+    .tab-pill-btn.active {
+      background: var(--card-bg);
       color: var(--text-primary);
-    }
-    .tab-btn.active::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 12px;
-      right: 12px;
-      height: 3px;
-      background: var(--text-primary);
-      border-radius: 3px 3px 0 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
-    /* 5. 做题卡片主体（浅青白圆角大卡片） */
+    /* 5. 做题卡片主体（浅薄荷卡片） */
     .exercise-card {
       background: var(--card-bg);
-      border-radius: 24px;
+      border-radius: 26px;
       padding: 16px 18px;
       box-shadow: var(--shadow-card);
       border: 1px solid var(--divider);
       margin-top: 10px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
 
     /* 收音状态与操作按钮行（提示 + 清除） */
@@ -383,18 +415,18 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 4px;
+      padding: 2px 4px;
     }
     .voice-wave-status {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 8px;
     }
     .audio-bars-wave {
       display: flex;
       align-items: center;
-      gap: 3px;
-      height: 14px;
+      gap: 2.5px;
+      height: 16px;
     }
     .wave-bar {
       width: 3px;
@@ -403,18 +435,18 @@
       animation: soundWave 1.2s infinite ease-in-out;
     }
     .wave-bar:nth-child(1) { height: 6px; animation-delay: 0.1s; }
-    .wave-bar:nth-child(2) { height: 12px; animation-delay: 0.3s; }
-    .wave-bar:nth-child(3) { height: 16px; animation-delay: 0.2s; }
-    .wave-bar:nth-child(4) { height: 10px; animation-delay: 0.4s; }
+    .wave-bar:nth-child(2) { height: 14px; animation-delay: 0.3s; }
+    .wave-bar:nth-child(3) { height: 18px; animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { height: 11px; animation-delay: 0.4s; }
     .wave-bar:nth-child(5) { height: 7px; animation-delay: 0.15s; }
     @keyframes soundWave {
       0%, 100% { transform: scaleY(0.4); }
       50% { transform: scaleY(1); }
     }
     .listening-txt {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
     }
 
     .voice-actions {
@@ -423,17 +455,17 @@
       gap: 8px;
     }
     .btn-action-tool {
-      height: 34px;
-      padding: 0 14px;
+      height: 32px;
+      padding: 0 12px;
       background: var(--card-subtle);
       border: 1px solid var(--divider);
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 600;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
       color: var(--text-secondary);
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
       cursor: pointer;
       transition: all 0.15s;
     }
@@ -445,19 +477,19 @@
       transform: scale(0.96);
     }
 
-    /* 6. 核心：每个释义项的下划线字数占位符 */
+    /* 6. 核心：每个释义项的下划线字数占位符（升级为极工整的 Slot 槽位） */
     .meaning-items-block {
       background: var(--card-subtle);
-      border-radius: 16px;
+      border-radius: 18px;
       padding: 14px 16px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 9px;
     }
     .meaning-prompt-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -465,53 +497,68 @@
     }
     .meaning-line {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 8px;
       font-size: 15px;
-      line-height: 1.6;
     }
-    .cixing-tag {
-      font-size: 13px;
+    .cixing-badge {
+      font-size: 11px;
       font-weight: 800;
-      color: var(--text-muted);
-      min-width: 26px;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 2px 6px;
+      border-radius: 6px;
+      min-width: 28px;
+      text-align: center;
     }
     .underline-group {
       display: inline-flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 2px;
+      gap: 3px;
     }
-    .slot-char {
+    
+    /* 极致工整的字符槽位 */
+    .slot-unit {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 15px;
+      min-width: 17px;
+      height: 22px;
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-primary);
+      position: relative;
     }
-    .slot-char.blank {
-      color: var(--underline-dash);
-      letter-spacing: 2px;
-      font-family: monospace;
+    .slot-unit.blank::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 1px;
+      right: 1px;
+      height: 2px;
+      background: var(--slot-blank-bar);
+      border-radius: 2px;
     }
-    .slot-char.hinted {
+    .slot-unit.hinted {
       color: var(--text-secondary);
       font-weight: 700;
     }
-    .slot-char.matched {
+    .slot-unit.matched {
       color: var(--green-text);
-      font-weight: 800;
+      font-weight: 900;
+      background: var(--green-bg);
+      padding: 0 4px;
+      border-radius: 6px;
     }
 
-    /* 7. FSRS 评测信息微标 */
+    /* 7. FSRS 评测微标信息 */
     .fsrs-info-row {
       text-align: center;
       font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     /* 8. 底部操作按钮组（不认识 / 再学学） */
@@ -524,10 +571,10 @@
     .btn-bottom-primary {
       flex: 1;
       height: 52px;
-      border-radius: 20px;
+      border-radius: 22px;
       border: 1px solid var(--divider);
       font-size: 16px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -539,8 +586,9 @@
       transform: scale(0.98);
     }
     .btn-not-know {
-      background: var(--card-bg);
-      color: var(--text-secondary);
+      background: var(--coral-bg);
+      color: var(--coral-text);
+      border-color: var(--coral-border);
     }
     .btn-study-again {
       background: var(--card-bg);
@@ -558,7 +606,7 @@
 
   <!-- 设计师控制栏 -->
   <div class="designer-toolbar">
-    <span>🌿 真实截屏 1:1 精准扇贝美化</span>
+    <span>🌿 扇贝单词护眼美学 · 深度优化版</span>
     <button onclick="toggleTheme()">
       <span id="theme-icon">🌙</span> <span id="theme-text">暗黑模式</span>
     </button>
@@ -567,10 +615,10 @@
   <div class="device-mockup">
     <!-- 状态栏 -->
     <div class="status-bar">
-      <span>2:32 📱</span>
+      <span>2:32</span>
       <div style="display: flex; gap: 6px; align-items: center;">
-        <span>4G</span>
-        <span>48%</span>
+        <span>5G</span>
+        <span>100%</span>
       </div>
     </div>
 
@@ -582,7 +630,7 @@
       <div class="batch-segment"></div>
     </div>
 
-    <!-- 2. 顶部工具栏（返回 + 回看 + 掌握 + 报错 + 搜索 + 设置） -->
+    <!-- 2. 顶部工具栏 -->
     <div class="nav-toolbar">
       <div class="nav-btn-back" onclick="alert('返回上一级')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -611,23 +659,28 @@
 
     <div class="app-body">
       <div>
-        <!-- 3. 核心单词题目大卡片 -->
+        <!-- 3. 核心单词英雄大卡片 -->
         <div class="word-main-card">
           <div class="word-spelling">brief</div>
           
-          <div class="phonetic-row">
+          <!-- 发音微胶囊 -->
+          <div class="phonetic-capsule" onclick="playPronunciation()">
             <span class="phonetic-text">[brif]</span>
-            <button class="speaker-btn-inline" title="点击发音" onclick="playPronunciation()">
+            <span class="speaker-icon-small">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
               </svg>
-            </button>
+            </span>
           </div>
 
           <!-- 权威双语例句 -->
           <div class="sentence-block">
             <div class="sentence-en-row">
-              <span style="color: var(--primary); cursor: pointer;" onclick="playPronunciation()">🔊</span>
+              <span class="sentence-play-btn" onclick="playPronunciation()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                </svg>
+              </span>
               <div>
                 The manager gave a <b>brief</b> summary of the project.
               </div>
@@ -639,12 +692,12 @@
           </div>
         </div>
 
-        <!-- 4. 做题区 Tab 栏 -->
-        <div class="tabs-row">
-          <div class="tab-btn active">
+        <!-- 4. 做题区 Tab 栏（悬浮分段微胶囊） -->
+        <div class="tabs-pill-wrap">
+          <div class="tab-pill-btn active">
             <span>🎙</span> <span>说释义</span>
           </div>
-          <div class="tab-btn" onclick="alert('切换至选释义模式')">
+          <div class="tab-pill-btn" onclick="alert('切换至选释义模式')">
             <span>👆</span> <span>选</span>
           </div>
         </div>
@@ -674,7 +727,7 @@
             </div>
           </div>
 
-          <!-- 下划线字数占位符列表 -->
+          <!-- 精准下划线字数占位符列表 -->
           <div class="meaning-items-block">
             <div class="meaning-prompt-title">
               <span>👥</span> <span>请说出中文释义：</span>
@@ -682,51 +735,51 @@
 
             <!-- adj. 简短的；短暂的 -->
             <div class="meaning-line">
-              <span class="cixing-tag">adj.</span>
+              <span class="cixing-badge">adj.</span>
               <div class="underline-group" id="meaning-slots-adj">
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char">；</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit">；</span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
               </div>
             </div>
 
             <!-- n. 摘要；简报 -->
             <div class="meaning-line">
-              <span class="cixing-tag">n.</span>
+              <span class="cixing-badge">n.</span>
               <div class="underline-group" id="meaning-slots-n">
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char">；</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit">；</span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
               </div>
             </div>
 
             <!-- v. 向...介绍情况；作简要汇报 -->
             <div class="meaning-line">
-              <span class="cixing-tag">v.</span>
+              <span class="cixing-badge">v.</span>
               <div class="underline-group" id="meaning-slots-v">
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char">；</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char">；</span>
-                <span class="slot-char blank">＿</span>
-                <span class="slot-char blank">＿</span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit">；</span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit">；</span>
+                <span class="slot-unit blank"></span>
+                <span class="slot-unit blank"></span>
               </div>
             </div>
           </div>
 
           <!-- 模拟语音快速验证交互 -->
-          <div style="display: flex; justify-content: center;">
-            <button onclick="simulateSayBrief()" style="background: none; border: none; font-size: 11px; font-weight: 700; color: var(--primary); cursor: pointer; padding: 4px;">
+          <div style="display: flex; justify-content: center; padding-top: 2px;">
+            <button onclick="simulateSayBrief()" style="background: none; border: none; font-size: 11.5px; font-weight: 700; color: var(--primary); cursor: pointer; padding: 4px;">
               🎙️ 模拟说出“简短的”立即答对
             </button>
           </div>
@@ -769,12 +822,12 @@
       wrapAdj.innerHTML = '';
       adj_chars.forEach((c, idx) => {
         if (c === '；') {
-          wrapAdj.innerHTML += `<span class="slot-char">；</span>`;
+          wrapAdj.innerHTML += `<span class="slot-unit">；</span>`;
         } else {
           if (idx < hintCount || (idx >= 4 && (idx - 4) < (hintCount - 1))) {
-            wrapAdj.innerHTML += `<span class="slot-char hinted">${c}</span>`;
+            wrapAdj.innerHTML += `<span class="slot-unit hinted">${c}</span>`;
           } else {
-            wrapAdj.innerHTML += `<span class="slot-char blank">＿</span>`;
+            wrapAdj.innerHTML += `<span class="slot-unit blank"></span>`;
           }
         }
       });
@@ -784,12 +837,12 @@
       wrapN.innerHTML = '';
       n_chars.forEach((c, idx) => {
         if (c === '；') {
-          wrapN.innerHTML += `<span class="slot-char">；</span>`;
+          wrapN.innerHTML += `<span class="slot-unit">；</span>`;
         } else {
           if (idx < (hintCount - 1)) {
-            wrapN.innerHTML += `<span class="slot-char hinted">${c}</span>`;
+            wrapN.innerHTML += `<span class="slot-unit hinted">${c}</span>`;
           } else {
-            wrapN.innerHTML += `<span class="slot-char blank">＿</span>`;
+            wrapN.innerHTML += `<span class="slot-unit blank"></span>`;
           }
         }
       });
@@ -799,12 +852,12 @@
       wrapV.innerHTML = '';
       v_chars.forEach((c, idx) => {
         if (c === '；' || c === '...') {
-          wrapV.innerHTML += `<span class="slot-char">${c}</span>`;
+          wrapV.innerHTML += `<span class="slot-unit">${c}</span>`;
         } else {
           if (idx < (hintCount - 2)) {
-            wrapV.innerHTML += `<span class="slot-char hinted">${c}</span>`;
+            wrapV.innerHTML += `<span class="slot-unit hinted">${c}</span>`;
           } else {
-            wrapV.innerHTML += `<span class="slot-char blank">＿</span>`;
+            wrapV.innerHTML += `<span class="slot-unit blank"></span>`;
           }
         }
       });
@@ -830,22 +883,22 @@
       // 匹配成功：扇贝绿高亮
       const wrapAdj = document.getElementById('meaning-slots-adj');
       wrapAdj.innerHTML = `
-        <span class="slot-char matched">简</span>
-        <span class="slot-char matched">短</span>
-        <span class="slot-char matched">的</span>
-        <span class="slot-char">；</span>
-        <span class="slot-char hinted">短</span>
-        <span class="slot-char hinted">暂</span>
-        <span class="slot-char hinted">的</span>
+        <span class="slot-unit matched">简</span>
+        <span class="slot-unit matched">短</span>
+        <span class="slot-unit matched">的</span>
+        <span class="slot-unit">；</span>
+        <span class="slot-unit hinted">短</span>
+        <span class="slot-unit hinted">暂</span>
+        <span class="slot-unit hinted">的</span>
       `;
 
       const wrapN = document.getElementById('meaning-slots-n');
       wrapN.innerHTML = `
-        <span class="slot-char hinted">摘</span>
-        <span class="slot-char hinted">要</span>
-        <span class="slot-char">；</span>
-        <span class="slot-char hinted">简</span>
-        <span class="slot-char hinted">报</span>
+        <span class="slot-unit hinted">摘</span>
+        <span class="slot-unit hinted">要</span>
+        <span class="slot-unit">；</span>
+        <span class="slot-unit hinted">简</span>
+        <span class="slot-unit hinted">报</span>
       `;
 
       // 展开例句中文
