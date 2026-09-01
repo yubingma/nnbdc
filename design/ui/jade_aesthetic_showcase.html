@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>东方温润 · 玉石质感设计探索 (Jade UI Design)</title>
+  <style>
+    :root {
+      /* 玉石浅色系：白玉 · 羊脂玉 · 浅翠水头 */
+      --jade-bg: #EDF4F1;
+      --jade-bg-gradient: radial-gradient(circle at 50% 0%, #F5FAF8 0%, #E9F2EE 100%);
+      
+      /* 白玉凝脂卡片 (双层次表面散射) */
+      --jade-card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(243, 250, 246, 0.88) 100%);
+      --jade-card-subtle: linear-gradient(145deg, rgba(238, 247, 243, 0.9) 0%, rgba(230, 242, 236, 0.75) 100%);
+      
+      /* 玉石抛光边框：顶部柔光高光 + 底部翡翠微翠线 */
+      --jade-border: rgba(205, 230, 219, 0.85);
+      --jade-border-inner: rgba(255, 255, 255, 0.9);
+      
+      /* 翡翠主色与微光 */
+      --jade-primary: #12A169;
+      --jade-primary-light: #2BD48D;
+      --jade-primary-pill: linear-gradient(135deg, #1DBF7F 0%, #0F9660 100%);
+      --jade-pill-shadow: 0 4px 14px rgba(18, 161, 105, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+
+      /* 玉石漫射柔阴影 (深浅双层透光) */
+      --jade-shadow-card: 0 10px 30px rgba(18, 85, 65, 0.07), 0 2px 8px rgba(0, 0, 0, 0.02), inset 0 1px 1px rgba(255, 255, 255, 0.85);
+      --jade-shadow-elevated: 0 16px 40px rgba(18, 85, 65, 0.12), 0 4px 12px rgba(18, 161, 105, 0.06), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.9);
+
+      --text-main: #132B24;
+      --text-sub: #4A6B62;
+      --text-muted: #7E9E96;
+      --gold-accent: #D97706;
+    }
+
+    [data-theme="dark"] {
+      /* 玉石深色系：墨玉 · 碧玉 · 翠幽微光 */
+      --jade-bg: #0A1210;
+      --jade-bg-gradient: radial-gradient(circle at 50% 0%, #11201C 0%, #070E0C 100%);
+
+      /* 墨玉水头卡片 */
+      --jade-card-bg: linear-gradient(145deg, rgba(22, 38, 33, 0.85) 0%, rgba(14, 25, 22, 0.9) 100%);
+      --jade-card-subtle: linear-gradient(145deg, rgba(27, 48, 42, 0.7) 0%, rgba(18, 33, 29, 0.8) 100%);
+
+      --jade-border: rgba(44, 216, 143, 0.18);
+      --jade-border-inner: rgba(255, 255, 255, 0.08);
+
+      --jade-primary: #2CD88F;
+      --jade-primary-light: #52F0AC;
+      --jade-primary-pill: linear-gradient(135deg, #2CD88F 0%, #1DB878 100%);
+      --jade-pill-shadow: 0 4px 16px rgba(44, 216, 143, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+
+      --jade-shadow-card: 0 12px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      --jade-shadow-elevated: 0 18px 48px rgba(0, 0, 0, 0.7), 0 4px 16px rgba(44, 216, 143, 0.12), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.15);
+
+      --text-main: #EDFAF6;
+      --text-sub: #8EAFA6;
+      --text-muted: #5D7E76;
+      --gold-accent: #FBBF24;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #D3DFDB;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px 12px 40px;
+      color: var(--text-main);
+      transition: all 0.3s;
+    }
+
+    .toolbar {
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 6px;
+    }
+
+    .toolbar-title {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #26433C;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .theme-btn {
+      background: #FFFFFF;
+      border: 1px solid #BFD4CC;
+      color: #1F3832;
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    /* 手机外壳容器 */
+    .phone-container {
+      width: 100%;
+      max-width: 392px;
+      height: 844px;
+      background: var(--jade-bg-gradient);
+      border-radius: 40px;
+      box-shadow: 0 24px 60px rgba(14, 45, 36, 0.22);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      border: 6px solid #162B25;
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      height: 42px;
+      padding: 12px 20px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* 顶部标题栏 */
+    .app-header {
+      padding: 12px 20px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .header-title-box {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .main-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+    }
+    [data-theme="dark"] .main-title {
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    }
+
+    .sub-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* 核心滚动内容 */
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ========================================= */
+    /* 玉石质感核心组件定义                      */
+    /* ========================================= */
+
+    /* 1. 羊脂白玉卡片 (Jade Card) */
+    .jade-card {
+      background: var(--jade-card-bg);
+      border: 1px solid var(--jade-border);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--jade-shadow-card);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    /* 玉石光晕水头微反光条 (Top Bevel Gloss) */
+    .jade-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--jade-border-inner), transparent);
+    }
+
+    /* 2. 翡翠微徽章展台 (Jade Icon Badge) */
+    .jade-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--jade-card-subtle);
+      border: 1px solid var(--jade-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--jade-primary);
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(18, 161, 105, 0.08);
+      flex-shrink: 0;
+    }
+    [data-theme="dark"] .jade-icon-badge {
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 3. 翡翠玉雕胶囊按钮 (Jade Emerald Button) */
+    .jade-button-primary {
+      background: var(--jade-primary-pill);
+      border: none;
+      color: #FFFFFF;
+      padding: 9px 18px;
+      border-radius: 20px;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: var(--jade-pill-shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s;
+    }
+    [data-theme="dark"] .jade-button-primary {
+      color: #071510;
+    }
+    .jade-button-primary:active {
+      transform: scale(0.96);
+    }
+
+    /* 按钮内部水润流光 */
+    .jade-button-primary::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0) 100%);
+      border-radius: 20px 20px 0 0;
+    }
+
+    /* 4. 白玉辅助微按钮 */
+    .jade-button-subtle {
+      background: var(--jade-card-subtle);
+      border: 1px solid var(--jade-border);
+      color: var(--text-sub);
+      padding: 8px 14px;
+      border-radius: 18px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.02);
+      transition: all 0.15s;
+    }
+    [data-theme="dark"] .jade-button-subtle {
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    }
+    .jade-button-subtle:active {
+      transform: scale(0.96);
+    }
+
+    /* 5. 玉石水滴数字胶囊 */
+    .jade-tag {
+      background: var(--jade-card-subtle);
+      border: 1px solid var(--jade-border);
+      color: var(--jade-primary);
+      padding: 3px 9px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* 示例卡片 1: 学习主卡片 */
+    .hero-stat-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .hero-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hero-progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--jade-card-subtle);
+      border: 1px solid var(--jade-border);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .hero-progress-fill {
+      width: 68%;
+      height: 100%;
+      background: var(--jade-primary-pill);
+      border-radius: 4px;
+      box-shadow: 0 0 8px rgba(18, 161, 105, 0.4);
+    }
+
+    /* 示例卡片 2: 词书/场次微卡片 */
+    .jade-item-row {
+      background: var(--jade-card-subtle);
+      border: 1px solid var(--jade-border);
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(0, 0, 0, 0.02);
+      transition: transform 0.15s;
+    }
+    [data-theme="dark"] .jade-item-row {
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+    .jade-item-row:active {
+      transform: scale(0.985);
+    }
+
+    .item-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .item-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .item-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .item-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* 底部导航栏 */
+    .bottom-nav {
+      height: 62px;
+      background: var(--jade-card-bg);
+      border-top: 1px solid var(--jade-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      box-shadow: 0 -6px 20px rgba(18, 85, 65, 0.05);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--text-muted);
+    }
+    .nav-item.active {
+      color: var(--jade-primary);
+    }
+    .nav-item.active .nav-icon-container {
+      background: var(--jade-card-subtle);
+      border: 1px solid var(--jade-border);
+      padding: 4px 12px;
+      border-radius: 12px;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 控制栏 -->
+  <div class="toolbar">
+    <span class="toolbar-title">✨ 东方温润 · 玉石质感 UI 原型</span>
+    <button class="theme-btn" onclick="toggleTheme()">🌓 切换 羊脂玉 / 墨玉</button>
+  </div>
+
+  <!-- 手机容器 -->
+  <div class="phone-container">
+    
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>14:38</span>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span>5G</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <!-- 顶部标题 -->
+    <div class="app-header">
+      <div class="header-title-box">
+        <div class="title-row">
+          <div class="main-title">今日计划</div>
+          <span class="jade-tag">🌿 温润凝脂</span>
+        </div>
+        <span class="sub-title">查漏补缺 · 专项巩固</span>
+      </div>
+      <button class="jade-button-subtle">
+        <span>选词书</span>
+      </button>
+    </div>
+
+    <!-- 滚动区域 -->
+    <div class="scroll-content">
+
+      <!-- 1. 核心看板 (羊脂白玉大卡片 + 翡翠水头) -->
+      <div class="jade-card hero-stat-card">
+        <div class="hero-top-row">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="jade-icon-badge">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 17px; font-weight: 900; color: var(--text-main);">考研必考核心词汇</div>
+              <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">今日目标：30 个单词</div>
+            </div>
+          </div>
+          <span class="jade-tag">68%</span>
+        </div>
+
+        <!-- 水润进度条 -->
+        <div class="hero-progress-bar">
+          <div class="hero-progress-fill"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+          <div style="display: flex; gap: 14px;">
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted);">已掌握</div>
+              <div style="font-size: 16px; font-weight: 900; color: var(--jade-primary);">1,420</div>
+            </div>
+            <div style="width: 1px; height: 24px; background: var(--jade-border); margin-top: 4px;"></div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted);">待复习</div>
+              <div style="font-size: 16px; font-weight: 900; color: var(--gold-accent);">28</div>
+            </div>
+          </div>
+
+          <button class="jade-button-primary">
+            <span>开始学习</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. 词表 / 场次分类列表 (内嵌微雕卡片) -->
+      <div class="jade-card" style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 4px; height: 14px; background: var(--jade-primary); border-radius: 2px;"></div>
+            <span style="font-size: 15px; font-weight: 800; color: var(--text-main);">精选学习词表</span>
+          </div>
+          <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">更多 〉</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          
+          <div class="jade-item-row">
+            <div class="item-info">
+              <div class="jade-icon-badge" style="width: 38px; height: 38px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              <div class="item-texts">
+                <span class="item-title">考研高频 5500 词</span>
+                <span class="item-sub">已背 820 / 5500 词</span>
+              </div>
+            </div>
+            <span class="jade-tag">进行中</span>
+          </div>
+
+          <div class="jade-item-row">
+            <div class="item-info">
+              <div class="jade-icon-badge" style="width: 38px; height: 38px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div class="item-texts">
+                <span class="item-title">今日错词本</span>
+                <span class="item-sub" style="color: #E53E3E;">3 个词待重点消灭</span>
+              </div>
+            </div>
+            <button class="jade-button-primary" style="padding: 5px 12px; font-size: 12px;">攻坚</button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <div class="nav-icon-container">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        </div>
+        <span style="font-size: 10px; font-weight: 800;">学习</span>
+      </div>
+      <div class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span style="font-size: 10px; font-weight: 600;">词表</span>
+      </div>
+      <div class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span style="font-size: 10px; font-weight: 600;">查词</span>
+      </div>
+      <div class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+        <span style="font-size: 10px; font-weight: 600;">比赛</span>
+      </div>
+      <div class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span style="font-size: 10px; font-weight: 600;">我</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -463,42 +464,47 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: (!dataLoaded)
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isDarkMode ? Colors.white70 : const Color(0xFF111827),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: _AuroraMeshBackground(isDarkMode: isDarkMode),
+          ),
+          (!dataLoaded)
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isDarkMode ? Colors.white70 : const Color(0xFF111827),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 20),
+                      Text(
+                        _isSyncingFromCloud ? 'SYNCING FROM CLOUD...' : 'LOADING PLAN',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2.0,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    _isSyncingFromCloud ? 'SYNCING FROM CLOUD...' : 'LOADING PLAN',
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white38 : const Color(0xFF9CA3AF),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : SafeArea(
-              bottom: false,
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                )
+              : SafeArea(
+                  bottom: false,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                     // 极简顶栏（与原型 1:1 对齐：TODAY'S PLAN + 今日学习计划 + 右侧高级设置图标）
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -607,6 +613,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 ),
               ),
             ),
+        ],
+      ),
     );
   }
 
@@ -1379,7 +1387,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 【显示模式】—— 极简纯无框图形化决策树卡片
   Widget _buildTrackDisplayCard(bool isDarkMode) {
-    final cardBg = isDarkMode ? const Color(0xFF141E1D) : Colors.white;
+    final cardBg = isDarkMode ? const Color(0xFF0E1C18).withValues(alpha: 0.72) : Colors.white.withValues(alpha: 0.72);
+    final cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.85);
     final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1718BA7C);
 
     return Container(
@@ -1388,11 +1397,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: cardBorder, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -1668,7 +1678,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 【编辑模式】—— 完整新旧词规则配置卡片
   Widget _buildTrackEditCard(bool isDarkMode) {
-    final cardBg = isDarkMode ? const Color(0xFF141E1D) : Colors.white;
+    final cardBg = isDarkMode ? const Color(0xFF0E1C18).withValues(alpha: 0.72) : Colors.white.withValues(alpha: 0.72);
+    final cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.85);
     final badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
     final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
 
@@ -1678,11 +1689,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: cardBorder, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -2190,4 +2202,92 @@ class ForkBezierPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ForkBezierPainter oldDelegate) => oldDelegate.color != color;
+}
+
+/// 东方温润 / DeepSeek 风格极光流光漫射背景层
+class _AuroraMeshBackground extends StatelessWidget {
+  final bool isDarkMode;
+  const _AuroraMeshBackground({required this.isDarkMode});
+
+  @override
+  Widget build(BuildContext context) {
+    final baseBg = isDarkMode ? const Color(0xFF060D0B) : const Color(0xFFEDF3F1);
+    // 亮色/暗色柔和流光晕染斑块
+    final glowBlue = isDarkMode ? const Color(0x663B82F6) : const Color(0x734E8CFF);
+    final glowCyan = isDarkMode ? const Color(0x662CD88F) : const Color(0x6B1CCEA0);
+    final glowIndigo = isDarkMode ? const Color(0x59818CF8) : const Color(0x4D6366F1);
+    final glowWhite = isDarkMode ? const Color(0x4D1E3A32) : const Color(0xB3FFFFFF);
+
+    return Container(
+      color: baseBg,
+      child: Stack(
+        children: [
+          // 晕染 1：左上天空蓝漫射光斑
+          Positioned(
+            top: -40,
+            left: -60,
+            width: 340,
+            height: 360,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 75, sigmaY: 75),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: glowBlue,
+                ),
+              ),
+            ),
+          ),
+          // 晕染 2：右侧中上翡翠青水晕
+          Positioned(
+            top: 140,
+            right: -70,
+            width: 330,
+            height: 360,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: glowCyan,
+                ),
+              ),
+            ),
+          ),
+          // 晕染 3：左下方柔和幽蓝浅紫
+          Positioned(
+            bottom: 40,
+            left: -30,
+            width: 350,
+            height: 330,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: glowIndigo,
+                ),
+              ),
+            ),
+          ),
+          // 晕染 4：中心透亮高光晕
+          Positioned(
+            top: 260,
+            left: 40,
+            width: 270,
+            height: 270,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: glowWhite,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

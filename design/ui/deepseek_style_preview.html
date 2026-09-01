@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>今日计划 · 极简空灵毛玻璃美学探索</title>
+  <style>
+    :root {
+      /* 浅色系：DeepSeek 级纯净空灵高明度底色 */
+      --bg-base: #F5F9F8;
+      
+      /* 轻柔漫射流光 (低饱和度、高明度、轻盈通透) */
+      --glow-blue: rgba(96, 165, 250, 0.22);    /* 晨曦清爽微蓝 */
+      --glow-cyan: rgba(45, 212, 191, 0.18);    /* 清澈淡翡微青 */
+      --glow-indigo: rgba(165, 180, 252, 0.15); /* 柔和浅靛水光 */
+      --glow-white: rgba(255, 255, 255, 0.95);  /* 中心纯净高光 */
+
+      /* 核心毛玻璃展台卡片 (显著且晶莹的 Frosted Glass) */
+      --glass-card-bg: rgba(255, 255, 255, 0.65);
+      --glass-card-inner: rgba(255, 255, 255, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.9);
+      --glass-border-subtle: rgba(255, 255, 255, 0.55);
+      --glass-shadow: 0 16px 40px rgba(18, 60, 50, 0.05), 0 2px 6px rgba(0, 0, 0, 0.015), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+
+      --text-main: #132420;
+      --text-sub: #4A635D;
+      --text-muted: #7E9B95;
+      
+      --primary: #12A169;
+      --primary-gradient: linear-gradient(135deg, #18BA7C 0%, #0E925E 100%);
+    }
+
+    [data-theme="dark"] {
+      /* 深色系：沉浸深空星云极光 */
+      --bg-base: #070E0C;
+
+      --glow-blue: rgba(59, 130, 246, 0.22);
+      --glow-cyan: rgba(44, 216, 143, 0.20);
+      --glow-indigo: rgba(129, 140, 248, 0.16);
+      --glow-white: rgba(25, 45, 38, 0.6);
+
+      --glass-card-bg: rgba(16, 30, 26, 0.65);
+      --glass-card-inner: rgba(24, 44, 38, 0.5);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --glass-border-subtle: rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+
+      --text-main: #EDFAF6;
+      --text-sub: #92B3AB;
+      --text-muted: #5C7F78;
+
+      --primary: #2CD88F;
+      --primary-gradient: linear-gradient(135deg, #2CD88F 0%, #1BB374 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #DDE6E3;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px 12px 40px;
+      color: var(--text-main);
+      transition: all 0.3s;
+    }
+
+    .toolbar {
+      width: 100%;
+      max-width: 410px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 6px;
+    }
+
+    .toolbar-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #26433C;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .theme-btn {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #BFD4CC;
+      color: #1F3832;
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+
+    /* 手机外壳 (1:1 还原真机比例) */
+    .phone-container {
+      width: 100%;
+      max-width: 396px;
+      height: 850px;
+      background-color: var(--bg-base);
+      border-radius: 40px;
+      box-shadow: 0 24px 60px rgba(14, 45, 36, 0.22);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      border: 6px solid #162B25;
+    }
+
+    /* ============================================================ */
+    /* 空灵流光漫射背景 (Airy Aurora Glow)                          */
+    /* ============================================================ */
+    .aurora-mesh-layer {
+      position: absolute;
+      inset: -60px;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      filter: blur(80px);
+      -webkit-filter: blur(80px);
+    }
+
+    .orb-blue {
+      position: absolute;
+      top: 30px;
+      left: -20px;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: var(--glow-blue);
+      animation: floatA 16s ease-in-out infinite alternate;
+    }
+
+    .orb-cyan {
+      position: absolute;
+      top: 140px;
+      right: -30px;
+      width: 340px;
+      height: 360px;
+      border-radius: 50%;
+      background: var(--glow-cyan);
+      animation: floatA 18s ease-in-out infinite alternate-reverse;
+    }
+
+    .orb-indigo {
+      position: absolute;
+      bottom: 60px;
+      left: 10px;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: var(--glow-indigo);
+      animation: floatA 20s ease-in-out infinite alternate;
+    }
+
+    .orb-white {
+      position: absolute;
+      top: 240px;
+      left: 60px;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: var(--glow-white);
+    }
+
+    @keyframes floatA {
+      0%   { transform: translate(0, 0) scale(1); }
+      50%  { transform: translate(20px, -25px) scale(1.08); }
+      100% { transform: translate(-15px, 15px) scale(0.94); }
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      height: 42px;
+      padding: 12px 22px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      z-index: 5;
+    }
+
+    /* 顶部标题栏 (TODAY'S PLAN + 今日学习计划 + 设置按钮) */
+    .app-header {
+      padding: 10px 22px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 5;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sub-tag {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .main-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--text-main);
+      letter-spacing: -0.6px;
+    }
+
+    .icon-btn-round {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--glass-card-inner);
+      border: 1px solid var(--glass-border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-sub);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      cursor: pointer;
+    }
+
+    /* 滚动主内容 */
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 18px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 5;
+    }
+
+    /* ============================================================ */
+    /* 核心 1：主任务毛玻璃卡片 (Hero Glass Card)                  */
+    /* ============================================================ */
+    .hero-glass-card {
+      background: var(--glass-card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      padding: 22px 20px 20px;
+      box-shadow: var(--glass-shadow);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* 顶部 1px 晶莹高光线 */
+    .hero-glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 15%;
+      right: 15%;
+      height: 1.2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+    }
+
+    /* 200 WORDS 大数字行 */
+    .number-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+
+    .hero-num {
+      font-size: 54px;
+      font-weight: 900;
+      color: var(--text-main);
+      letter-spacing: -1.5px;
+      line-height: 1;
+    }
+
+    .words-pill {
+      background: var(--glass-card-inner);
+      border: 1px solid var(--glass-border-subtle);
+      padding: 3px 9px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-sub);
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6);
+    }
+
+    /* 进度条 */
+    .progress-box {
+      width: 100%;
+      max-width: 270px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 5px;
+      background: var(--glass-card-inner);
+      border: 1px solid var(--glass-border-subtle);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 35%;
+      height: 100%;
+      background: var(--primary-gradient);
+      border-radius: 3px;
+      box-shadow: 0 0 8px rgba(18, 161, 105, 0.4);
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* 新词 / 复习 双指标行 */
+    .stats-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      padding: 12px 0 16px;
+      border-top: 1px solid rgba(18, 161, 105, 0.08);
+      border-bottom: 1px solid rgba(18, 161, 105, 0.08);
+      margin-bottom: 16px;
+    }
+
+    .stat-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+
+    .stat-lbl {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(18, 161, 105, 0.12);
+    }
+
+    /* 开始学习 52px 翡翠大胶囊按钮 */
+    .btn-start-study {
+      width: 100%;
+      height: 50px;
+      background: var(--primary-gradient);
+      border: none;
+      border-radius: 25px;
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 6px 20px rgba(18, 161, 105, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    [data-theme="dark"] .btn-start-study {
+      color: #071510;
+    }
+    .btn-start-study:active {
+      transform: scale(0.98);
+    }
+
+    /* ============================================================ */
+    /* 核心 2：学习轨道毛玻璃卡片 (Track Glass Card)                */
+    /* ============================================================ */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .btn-adjust-track {
+      background: var(--glass-card-inner);
+      border: 1px solid var(--glass-border-subtle);
+      padding: 4px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      backdrop-filter: blur(12px);
+      cursor: pointer;
+    }
+
+    .track-glass-card {
+      background: var(--glass-card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 16px 18px;
+      box-shadow: var(--glass-shadow);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .track-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .track-badge {
+      background: var(--glass-card-inner);
+      border: 1px solid var(--glass-border-subtle);
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      align-self: flex-start;
+    }
+
+    .tree-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .check-node {
+      background: var(--glass-card-inner);
+      border: 1px solid var(--glass-border-subtle);
+      border-radius: 12px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .check-node-title {
+      font-size: 9.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .check-node-desc {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .branches-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .branch-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .pill-correct {
+      background: rgba(18, 161, 105, 0.1);
+      border: 1px solid rgba(18, 161, 105, 0.2);
+      color: var(--primary);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+
+    .pill-wrong {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #EF4444;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 800;
+    }
+
+    .node-item {
+      background: var(--glass-card-inner);
+      border: 1px solid var(--glass-border-subtle);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* 底部导航栏 */
+    .bottom-nav {
+      height: 62px;
+      background: var(--glass-card-bg);
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      z-index: 10;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--text-muted);
+    }
+    .nav-item.active {
+      color: var(--primary);
+    }
+    .nav-item.active .nav-icon-box {
+      background: var(--glass-card-inner);
+      border: 1px solid var(--glass-border-subtle);
+      padding: 4px 12px;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部控制条 -->
+  <div class="toolbar">
+    <span class="toolbar-title">✨ 今日计划 · 空灵高透毛玻璃原型</span>
+    <button class="theme-btn" onclick="toggleTheme()">🌓 切换 亮白 / 深邃</button>
+  </div>
+
+  <!-- 手机外壳 -->
+  <div class="phone-container">
+    
+    <!-- 极轻柔流光极光晕染层 (低饱和度 · 空灵漫射) -->
+    <div class="aurora-mesh-layer">
+      <div class="orb-blue"></div>
+      <div class="orb-cyan"></div>
+      <div class="orb-indigo"></div>
+      <div class="orb-white"></div>
+    </div>
+
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>15:25</span>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span>5G</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <!-- 顶部标题区 (TODAY'S PLAN + 设置) -->
+    <div class="app-header">
+      <div class="header-left">
+        <div class="sub-tag">
+          <span>TODAY'S PLAN</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="main-title">今日学习计划</div>
+      </div>
+      <div class="icon-btn-round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      </div>
+    </div>
+
+    <!-- 滚动主内容 -->
+    <div class="scroll-content">
+
+      <!-- ============================================ -->
+      <!-- 核心 1：主任务毛玻璃卡片 (Hero Glass Card)    -->
+      <!-- ============================================ -->
+      <div class="hero-glass-card">
+        
+        <!-- 200 WORDS -->
+        <div class="number-row">
+          <span class="hero-num">200</span>
+          <div class="words-pill">
+            <span>WORDS</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </div>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-box">
+          <div class="progress-track">
+            <div class="progress-fill"></div>
+          </div>
+          <div class="progress-labels">
+            <span>今日进度 0 / 400</span>
+            <span>0%</span>
+          </div>
+        </div>
+
+        <!-- 新词 / 复习 双指标行 -->
+        <div class="stats-row">
+          <div class="stat-col">
+            <span class="stat-val">32</span>
+            <span class="stat-lbl">新词</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-col">
+            <span class="stat-val">168</span>
+            <span class="stat-lbl">复习</span>
+          </div>
+        </div>
+
+        <!-- 开始学习 50px 翡翠大胶囊按钮 -->
+        <button class="btn-start-study">
+          <span>开始学习</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+
+      </div>
+
+      <!-- ============================================ -->
+      <!-- 核心 2：学习轨道毛玻璃卡片 (Track Glass Card) -->
+      <!-- ============================================ -->
+      <div>
+        <div class="section-header">
+          <span class="section-title">学习轨道</span>
+          <div class="btn-adjust-track">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>调整轨道</span>
+          </div>
+        </div>
+
+        <div class="track-glass-card">
+          
+          <!-- 新词轨道 -->
+          <div class="track-row">
+            <span class="track-badge">新词轨道</span>
+            <div class="tree-box">
+              <div class="check-node">
+                <span class="check-node-title">测评</span>
+                <span class="check-node-desc">英译汉</span>
+              </div>
+              <div class="branches-box">
+                <div class="branch-row">
+                  <span class="pill-correct">✓ 答对</span>
+                  <span class="node-item">汉译英</span>
+                  <span style="font-size:10px; color:var(--text-muted);">➔</span>
+                  <span class="node-item">例句汉译英</span>
+                  <span style="font-size:10px; color:var(--text-muted);">➔</span>
+                  <span class="node-item">例句英译汉</span>
+                </div>
+                <div class="branch-row">
+                  <span class="pill-wrong">✕ 答错</span>
+                  <span class="node-item">汉译英</span>
+                  <span style="font-size:10px; color:var(--text-muted);">➔</span>
+                  <span class="node-item">例句汉译英</span>
+                  <span style="font-size:10px; color:var(--text-muted);">➔</span>
+                  <span class="node-item">例句英译汉</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:1px; background:rgba(18, 161, 105, 0.08);"></div>
+
+          <!-- 旧词轨道 -->
+          <div class="track-row">
+            <span class="track-badge">旧词轨道</span>
+            <div class="tree-box">
+              <div class="check-node">
+                <span class="check-node-title">测评</span>
+                <span class="check-node-desc">英译汉</span>
+              </div>
+              <div class="branches-box">
+                <div class="branch-row">
+                  <span class="pill-correct">✓ 答对</span>
+                  <span style="font-size:11px; color:var(--text-muted); font-weight:600;">直接掌握</span>
+                </div>
+                <div class="branch-row">
+                  <span class="pill-wrong">✕ 答错</span>
+                  <span class="node-item">汉译英</span>
+                  <span style="font-size:10px; color:var(--text-muted);">➔</span>
+                  <span class="node-item">例句汉译英</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 底部辅助说明 -->
+      <div style="text-align:center; font-size:11px; color:var(--text-muted); padding-top:4px;">
+        学习未开始前可随时调整目标 · 开始后将自动锁定
+      </div>
+
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <div class="nav-icon-box">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        </div>
+        <span style="font-size: 10px; font-weight: 800;">学习</span>
+      </div>
+      <div class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span style="font-size: 10px; font-weight: 600;">词表</span>
+      </div>
+      <div class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span style="font-size: 10px; font-weight: 600;">查词</span>
+      </div>
+      <div class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+        <span style="font-size: 10px; font-weight: 600;">比赛</span>
+      </div>
+      <div class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span style="font-size: 10px; font-weight: 600;">我</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }
+  </script>
+</body>
+</html>
