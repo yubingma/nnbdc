@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-/// 应用视觉主题风格枚举
+/// 应用视觉主题风格枚举 (5 款风格截然不同、性格鲜明的专属美学)
 enum AppThemeStyle {
-  /// 晨曦流光 (DeepSeek 空灵风，轻柔 4 色漫射微光 + 科技青蓝 + 高透毛玻璃)
-  aurora('aurora', '晨曦流光', 'DeepSeek 空灵美学', Icons.auto_awesome_rounded),
+  /// 晨曦流光 (DeepSeek 空灵科技，冰川极光冷蓝 + 高透毛玻璃)
+  aurora('aurora', '晨曦流光', '空灵科技冰川蓝', Icons.auto_awesome_rounded),
 
-  /// 经典翡翠 (扇贝温润护眼风，纯净淡雅米白底 + 经典翡翠绿 + 纯净实体微阴影)
-  emerald('emerald', '经典翡翠', '温润护眼专注', Icons.spa_rounded),
+  /// 经典翡翠 (扇贝经典护眼，温润抹茶米底 + 草本翡翠绿)
+  emerald('emerald', '经典翡翠', '温润护眼抹茶绿', Icons.spa_rounded),
 
-  /// 东方羊脂玉 (东方凝脂雅致风，羊脂渐变 + 古典碧青 + 凝脂微透)
-  jade('jade', '羊脂白玉', '东方凝脂雅韵', Icons.lens_blur_rounded),
+  /// 暮色落日 (温暖活力晚霞，落日暖橘 + 蜜桃暖色光晕)
+  sunset('sunset', '暮色落日', '温暖活力晚霞橙', Icons.wb_twilight_rounded),
 
-  /// 极简白墨 (极客专注风，纯白底 + 纯粹曜黑 + 墨水屏高对比)
+  /// 极简白墨 (极客硬朗线条，纯白高对比 + 纯黑墨水屏)
   minimal('minimal', '极简白墨', '极客纯粹高对比', Icons.contrast_rounded),
 
-  /// 深邃曜黑 (沉浸夜间风，深邃曜黑底 + 霓虹翡翠 + 暗黑高透卡片)
+  /// 深邃曜黑 (沉浸夜间赛博，曜黑深空 + 极光霓虹翡翠)
   midnight('midnight', '深邃曜黑', '夜间沉浸护眼', Icons.dark_mode_rounded);
 
   final String code;
@@ -26,6 +26,8 @@ enum AppThemeStyle {
 
   static AppThemeStyle fromCode(String? code) {
     if (code == null) return AppThemeStyle.aurora;
+    // 兼容旧代码 'jade' 映射为 'sunset'
+    if (code == 'jade') return AppThemeStyle.sunset;
     for (final style in AppThemeStyle.values) {
       if (style.code == code) return style;
     }
@@ -68,99 +70,108 @@ class AppThemeConfig {
 
   static AppThemeConfig of(AppThemeStyle style) {
     switch (style) {
+      // 1. 晨曦流光: 科技冰川冷蓝
       case AppThemeStyle.aurora:
         return AppThemeConfig(
           style: style,
-          primaryColor: const Color(0xFF0EA5E9), // 晨曦科技天空蓝
+          primaryColor: const Color(0xFF0284C7), // 鲜明深邃天空科技蓝
           primaryLightColor: const Color(0xFF38BDF8),
-          primaryDarkColor: const Color(0xFF0284C7),
-          textPrimary: const Color(0xFF0F282F),
-          textSecondary: const Color(0xFF3B6771),
-          textMuted: const Color(0xFF6A919B),
-          cardBg: Colors.white.withValues(alpha: 0.68),
-          cardBorder: Colors.white.withValues(alpha: 0.90),
-          subtleBg: Colors.white.withValues(alpha: 0.50),
+          primaryDarkColor: const Color(0xFF0369A1),
+          textPrimary: const Color(0xFF082F49), // 科技黛青
+          textSecondary: const Color(0xFF0369A1),
+          textMuted: const Color(0xFF64748B),
+          cardBg: Colors.white.withValues(alpha: 0.70),
+          cardBorder: Colors.white.withValues(alpha: 0.95),
+          subtleBg: const Color(0xFFE0F2FE).withValues(alpha: 0.65),
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF0284C7).withValues(alpha: 0.06),
+              color: const Color(0xFF0284C7).withValues(alpha: 0.08),
               blurRadius: 28,
               offset: const Offset(0, 8),
             ),
           ],
           isDark: false,
         );
+
+      // 2. 经典翡翠: 扇贝温润草本绿
       case AppThemeStyle.emerald:
         return AppThemeConfig(
           style: style,
-          primaryColor: const Color(0xFF18BA7C), // 扇贝经典护眼绿
-          primaryLightColor: const Color(0xFF2CD88F),
-          primaryDarkColor: const Color(0xFF109E69),
-          textPrimary: const Color(0xFF142823),
-          textSecondary: const Color(0xFF43655D),
-          textMuted: const Color(0xFF73938C),
-          cardBg: Colors.white,
-          cardBorder: const Color(0x1418BA7C),
-          subtleBg: const Color(0xFFEDF5F2),
+          primaryColor: const Color(0xFF10B981), // 经典生机翡翠绿
+          primaryLightColor: const Color(0xFF34D399),
+          primaryDarkColor: const Color(0xFF059669),
+          textPrimary: const Color(0xFF064E3B), // 深沉竹林绿
+          textSecondary: const Color(0xFF047857),
+          textMuted: const Color(0xFF6B7280),
+          cardBg: const Color(0xFFFFFFFF),
+          cardBorder: const Color(0x2E10B981),
+          subtleBg: const Color(0xFFD1FAE5),
           cardShadows: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: const Color(0xFF065F46).withValues(alpha: 0.06),
               blurRadius: 18,
               offset: const Offset(0, 4),
             ),
           ],
           isDark: false,
         );
-      case AppThemeStyle.jade:
+
+      // 3. 暮色落日: 温暖落日活力橘
+      case AppThemeStyle.sunset:
         return AppThemeConfig(
           style: style,
-          primaryColor: const Color(0xFF059669), // 东方典雅碧青
-          primaryLightColor: const Color(0xFF10B981),
-          primaryDarkColor: const Color(0xFF047857),
-          textPrimary: const Color(0xFF1A2522),
-          textSecondary: const Color(0xFF475B56),
-          textMuted: const Color(0xFF7B8F8A),
+          primaryColor: const Color(0xFFF97316), // 活力落日暖橘
+          primaryLightColor: const Color(0xFFFB923C),
+          primaryDarkColor: const Color(0xFFEA580C),
+          textPrimary: const Color(0xFF431407), // 醇厚暖棕黑
+          textSecondary: const Color(0xFF9A3412),
+          textMuted: const Color(0xFF9E7162),
           cardBg: Colors.white.withValues(alpha: 0.88),
-          cardBorder: const Color(0x28059669),
-          subtleBg: const Color(0xFFEBF5F0),
+          cardBorder: const Color(0x3DF97316),
+          subtleBg: const Color(0xFFFFEDD5),
           cardShadows: [
             BoxShadow(
-              color: const Color(0xFF047857).withValues(alpha: 0.07),
+              color: const Color(0xFFEA580C).withValues(alpha: 0.08),
               blurRadius: 24,
               offset: const Offset(0, 6),
             ),
           ],
           isDark: false,
         );
+
+      // 4. 极简白墨: 纯黑白硬朗高对比
       case AppThemeStyle.minimal:
         return AppThemeConfig(
           style: style,
-          primaryColor: const Color(0xFF18181B), // 极简曜黑
-          primaryLightColor: const Color(0xFF27272A),
+          primaryColor: const Color(0xFF18181B), // 极简纯粹曜黑
+          primaryLightColor: const Color(0xFF3F3F46),
           primaryDarkColor: const Color(0xFF09090B),
-          textPrimary: const Color(0xFF09090B),
+          textPrimary: const Color(0xFF09090B), // 纯黑
           textSecondary: const Color(0xFF52525B),
           textMuted: const Color(0xFF71717A),
-          cardBg: Colors.white,
-          cardBorder: const Color(0xFFE4E4E7),
+          cardBg: const Color(0xFFFFFFFF),
+          cardBorder: const Color(0xFFD4D4D8),
           subtleBg: const Color(0xFFF4F4F5),
           cardShadows: const [],
           isDark: false,
         );
+
+      // 5. 深邃曜黑: 赛博暗黑极光荧光绿
       case AppThemeStyle.midnight:
         return AppThemeConfig(
           style: style,
-          primaryColor: const Color(0xFF2CD88F), // 霓虹翡翠
+          primaryColor: const Color(0xFF2CD88F), // 极光霓虹翡翠
           primaryLightColor: const Color(0xFF6EE7B7),
           primaryDarkColor: const Color(0xFF10B981),
-          textPrimary: const Color(0xFFF1F5F9),
+          textPrimary: const Color(0xFFF8FAFC), // 月光高亮白
           textSecondary: const Color(0xFF94A3B8),
           textMuted: const Color(0xFF64748B),
-          cardBg: const Color(0xFF111E1B).withValues(alpha: 0.75),
-          cardBorder: Colors.white.withValues(alpha: 0.12),
-          subtleBg: const Color(0xFF182824),
+          cardBg: const Color(0xFF0F1A17).withValues(alpha: 0.78),
+          cardBorder: const Color(0x3D2CD88F),
+          subtleBg: const Color(0xFF162B24),
           cardShadows: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
+              color: Colors.black.withValues(alpha: 0.55),
               blurRadius: 28,
               offset: const Offset(0, 8),
             ),
@@ -188,7 +199,7 @@ class AppTheme {
         seedColor: cfg.primaryColor,
         primary: cfg.primaryColor,
         primaryContainer: cfg.primaryLightColor,
-        surface: cfg.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        surface: cfg.isDark ? const Color(0xFF14201D) : Colors.white,
         brightness: cfg.isDark ? Brightness.dark : Brightness.light,
       ),
       scaffoldBackgroundColor: Colors.transparent,

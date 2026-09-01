@@ -1196,7 +1196,7 @@ class _MePageState extends State<MePage> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.15) : const Color(0xFFE8F8F1),
+                                  color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.15) : subtleBgColor,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Row(
@@ -1405,7 +1405,7 @@ class _MePageState extends State<MePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.1) : const Color(0xFFE8F8F1),
+                      color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.1) : subtleBgColor,
                       border: Border.all(
                         color: accentColor.withValues(alpha: 0.25),
                         width: 1.0,
@@ -1539,7 +1539,7 @@ class _MePageState extends State<MePage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.15) : const Color(0xFFE8F8F1),
+                        color: isDarkModeEnabled ? accentColor.withValues(alpha: 0.15) : subtleBgColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
@@ -1575,8 +1575,8 @@ class _MePageState extends State<MePage> {
                 final masteryPercentText = (masteryProgress * 100).toStringAsFixed(1);
                 final fetchPercentText = (fetchProgress * 100).toStringAsFixed(1);
 
-                final masteredColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-                final fetchColor = isDarkModeEnabled ? const Color(0xFF6EE7B7) : const Color(0xFF34D399);
+                final masteredColor = accentColor;
+                final fetchColor = accentColor.withValues(alpha: 0.6);
 
                 return Container(
                   padding: const EdgeInsets.all(12),
@@ -2043,7 +2043,7 @@ class _MePageState extends State<MePage> {
                 icon: Icons.cloud_sync_outlined,
                 title: '端云同步状态',
                 trailingText: _isLastSyncFailed ? '同步失败' : '已是最新',
-                trailingTextColor: _isLastSyncFailed ? const Color(0xFFFA6E59) : const Color(0xFF18BA7C),
+                trailingTextColor: _isLastSyncFailed ? const Color(0xFFFA6E59) : accentColor,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -2705,12 +2705,14 @@ class _MePageState extends State<MePage> {
   }
 
   Color dakaStatus2Color(String dakaStatus) {
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
     if (dakaStatus == UserDayStatus.dakaed.json) {
-      return isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C); // 纯正扇贝翠绿
+      return themeConfig.primaryColor;
     } else if (dakaStatus == UserDayStatus.studied.json) {
       return const Color(0xFFFA6E59); // 珊瑚暖橙红
     } else {
-      return isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.white; // 未学习底
+      return themeConfig.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white; // 未学习底
     }
   }
 
@@ -2811,11 +2813,13 @@ class _MePageState extends State<MePage> {
 
   // 统计项小卡片 (1:1 严格对齐原型：大字数值 + 小字标签，无多余图标)
   Widget _buildStatBox(bool isDarkMode, String label, String value) {
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF1B2825) : const Color(0xFFEDF5F2),
+          color: themeConfig.subtleBg,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -2824,7 +2828,7 @@ class _MePageState extends State<MePage> {
             Text(
               value,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                color: themeConfig.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
                 fontFamily: 'Roboto',
@@ -2836,7 +2840,7 @@ class _MePageState extends State<MePage> {
             Text(
               label,
               style: TextStyle(
-                color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570),
+                color: themeConfig.textSecondary,
                 fontSize: 10.5,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'NotoSansSC',
@@ -2886,13 +2890,20 @@ class _MePageState extends State<MePage> {
     Color? iconColor,
     bool showDivider = true,
   }) {
-    final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkModeEnabled ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final iconBgColor = isDarkModeEnabled ? const Color(0xFF1B2825) : const Color(0xFFEDF5F2);
-    final dividerColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.06) : const Color(0x0F000000);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkModeEnabled = themeStyle.isDark;
 
-    final effectiveIconColor = iconColor ?? (isDestructive ? Colors.redAccent : subtitleColor);
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final iconBgColor = isDarkModeEnabled
+        ? themeConfig.primaryColor.withValues(alpha: 0.18)
+        : themeConfig.subtleBg;
+    final dividerColor = isDarkModeEnabled
+        ? Colors.white.withValues(alpha: 0.06)
+        : themeConfig.primaryColor.withValues(alpha: 0.08);
+
+    final effectiveIconColor = iconColor ?? (isDestructive ? Colors.redAccent : themeConfig.primaryColor);
 
     Widget trailingWidget;
     if (trailing != null) {

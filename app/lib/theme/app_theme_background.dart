@@ -2,10 +2,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 
-/// 全局自适应主题背景层组件 (独立 5 大主题)
+/// 全局自适应主题背景层组件 (5 款极具鲜明辨识度的主题专属背景)
 class AppThemeBackground extends StatelessWidget {
   final AppThemeStyle themeStyle;
-  final bool? isDarkMode; // 兼容保留
+  final bool? isDarkMode;
 
   const AppThemeBackground({
     super.key,
@@ -20,8 +20,8 @@ class AppThemeBackground extends StatelessWidget {
         return _buildAuroraBackground();
       case AppThemeStyle.emerald:
         return _buildEmeraldBackground();
-      case AppThemeStyle.jade:
-        return _buildJadeBackground();
+      case AppThemeStyle.sunset:
+        return _buildSunsetBackground();
       case AppThemeStyle.minimal:
         return _buildMinimalBackground();
       case AppThemeStyle.midnight:
@@ -29,13 +29,13 @@ class AppThemeBackground extends StatelessWidget {
     }
   }
 
-  /// 1. 晨曦流光背景 (DeepSeek 空灵风)
+  /// 1. 晨曦流光背景 (冰川冷蓝极光风)
   Widget _buildAuroraBackground() {
-    const baseBg = Color(0xFFF5F9F8);
-    const glowBlue = Color(0x3860A5FA);
-    const glowCyan = Color(0x2E2DD4BF);
-    const glowIndigo = Color(0x26A5B4FC);
-    const glowWhite = Color(0xB8FFFFFF);
+    const baseBg = Color(0xFFF0F7FA);
+    const glowBlue = Color(0x4538BDF8);
+    const glowCyan = Color(0x3D06B6D4);
+    const glowIndigo = Color(0x33818CF8);
+    const glowWhite = Color(0xCCFFFFFF);
 
     return Container(
       color: baseBg,
@@ -106,34 +106,44 @@ class AppThemeBackground extends StatelessWidget {
     );
   }
 
-  /// 2. 经典翡翠背景 (扇贝纯净温润风)
+  /// 2. 经典翡翠背景 (扇贝温润草本抹茶绿底)
   Widget _buildEmeraldBackground() {
-    return Container(color: const Color(0xFFF7FAF8));
-  }
-
-  /// 3. 东方羊脂玉背景 (温润水头微渐变)
-  Widget _buildJadeBackground() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFF8FBF9), Color(0xFFEAF4F0)],
+          colors: [Color(0xFFF2F9F5), Color(0xFFE5F3EB)],
         ),
       ),
       child: Stack(
         children: [
           Positioned(
-            top: 80,
-            right: -60,
-            width: 280,
-            height: 280,
+            top: 60,
+            right: -50,
+            width: 300,
+            height: 300,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 70, sigmaY: 70),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x24059669),
+                  color: Color(0x2E10B981),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 120,
+            left: -40,
+            width: 260,
+            height: 260,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 65, sigmaY: 65),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x2434D399),
                 ),
               ),
             ),
@@ -143,18 +153,80 @@ class AppThemeBackground extends StatelessWidget {
     );
   }
 
-  /// 4. 极简白墨背景 (极客专注风)
-  Widget _buildMinimalBackground() {
-    return Container(color: const Color(0xFFFAFAFA));
+  /// 3. 暮色落日背景 (温暖活力晚霞粉橙光晕)
+  Widget _buildSunsetBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFF7F2), Color(0xFFFFECE0)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 30,
+            right: -40,
+            width: 320,
+            height: 320,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x40FB923C),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 180,
+            left: -40,
+            width: 300,
+            height: 300,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x33F43F5E),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 60,
+            right: 20,
+            width: 280,
+            height: 280,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 75, sigmaY: 75),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x3DFBBF24),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// 5. 深邃曜黑背景 (沉浸夜间风)
+  /// 4. 极简白墨背景 (极客纯白高对比)
+  Widget _buildMinimalBackground() {
+    return Container(color: const Color(0xFFFFFFFF));
+  }
+
+  /// 5. 深邃曜黑背景 (赛博暗黑极光荧光翡翠)
   Widget _buildMidnightBackground() {
-    const baseBg = Color(0xFF080E0C);
+    const baseBg = Color(0xFF060B09);
     const glowBlue = Color(0x383B82F6);
-    const glowCyan = Color(0x332CD88F);
+    const glowCyan = Color(0x402CD88F);
     const glowIndigo = Color(0x26818CF8);
-    const glowCenter = Color(0x33142B24);
+    const glowCenter = Color(0x3810B981);
 
     return Container(
       color: baseBg,

@@ -84,9 +84,10 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
 
   Widget _buildCustomNavItem(IconData icon, String label, int index, int actualCurrentIndex) {
     final isSelected = _currentIndex == index;
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final selectedColor = AppTheme.primaryColor;
-    final unselectedColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final selectedColor = themeConfig.primaryColor;
+    final unselectedColor = themeConfig.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     int actualNewIndex = index;
     if (Global.isGuest && index > 3) {
