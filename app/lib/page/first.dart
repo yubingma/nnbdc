@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../theme/app_theme.dart';
 import '../api/api.dart';
 import '../api/bo/user_bo.dart';
 import '../config.dart';
@@ -207,7 +208,7 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
               _initVersion().then((_) => checkNewVersion());
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF18BA7C),
+              backgroundColor: context.primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -229,119 +230,114 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    // 纯白极简体系（与原生启动屏无缝融合）
-    const textMainColor = Color(0xFF152724);
-    const textSubColor = Color(0xFF5A7570);
-    const textMutedColor = Color(0xFF8EA8A3);
-    const accentGreen = Color(0xFF18BA7C);
+    final isDarkMode = context.isDarkMode;
+    final themeConfig = context.themeConfig;
+    final textMainColor = themeConfig.textPrimary;
+    final textSubColor = themeConfig.textSecondary;
+    final textMutedColor = isDarkMode ? Colors.white38 : const Color(0xFF94A3B8);
+    final accentColor = context.primaryColor;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: Colors.white,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedBuilder(
-                animation: _splashController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: 1.0 + 0.03 * math.sin(_splashController.value * math.pi),
-                    child: child,
-                  );
-                },
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0x1818BA7C),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: accentGreen.withValues(alpha: 0.16),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+    return AppScaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedBuilder(
+              animation: _splashController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: 1.0 + 0.03 * math.sin(_splashController.value * math.pi),
+                  child: child,
+                );
+              },
+              child: Container(
+                width: 88,
+                height: 88,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.18),
+                    width: 1.5,
                   ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      "assets/images/logo.png",
-                      width: 76,
-                      height: 76,
-                      fit: BoxFit.cover,
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.16),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
                     ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    "assets/images/logo.png",
+                    width: 76,
+                    height: 76,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                '泡泡单词',
-                style: TextStyle(
-                  color: textMainColor,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2.5,
-                  fontFamily: 'NotoSansSC',
-                ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              '泡泡单词',
+              style: TextStyle(
+                color: textMainColor,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2.5,
+                fontFamily: 'NotoSansSC',
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'PROGRESS OVER PERFECTION',
-                style: TextStyle(
-                  color: textSubColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 2.0,
-                  fontFamily: 'Roboto',
-                ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'PROGRESS OVER PERFECTION',
+              style: TextStyle(
+                color: textSubColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2.0,
+                fontFamily: 'Roboto',
               ),
-              const SizedBox(height: 44),
-              _buildStatusIndicator(),
-              const SizedBox(height: 24),
-              Text(
-                '版本 ${_versionName ?? ''}(${_buildNumber ?? ''})',
-                style: const TextStyle(
-                  color: textMutedColor,
-                  fontSize: 11,
-                  fontFamily: 'Roboto',
-                  letterSpacing: 0.5,
-                ),
+            ),
+            const SizedBox(height: 44),
+            _buildStatusIndicator(),
+            const SizedBox(height: 24),
+            Text(
+              '版本 ${_versionName ?? ''}(${_buildNumber ?? ''})',
+              style: TextStyle(
+                color: textMutedColor,
+                fontSize: 11,
+                fontFamily: 'Roboto',
+                letterSpacing: 0.5,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildStatusIndicator() {
-    const textSubColor = Color(0xFF5A7570);
-    const accentGreen = Color(0xFF18BA7C);
+    final textSubColor = context.themeConfig.textSecondary;
+    final accentColor = context.primaryColor;
     final err = Global.startupError.value ?? _autoLoginError;
 
     return Column(
       children: [
         if (err == null)
-          const SizedBox(
+          SizedBox(
             width: 22,
             height: 22,
             child: CircularProgressIndicator(
               strokeWidth: 2.2,
-              valueColor: AlwaysStoppedAnimation(accentGreen),
+              valueColor: AlwaysStoppedAnimation(accentColor),
             ),
           ),
         const SizedBox(height: 12),
@@ -361,7 +357,7 @@ class FirstPageState extends ConsumerState<FirstPage> with SingleTickerProviderS
               onPressed: () => _checkPrivacyAndProceed(),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
-                backgroundColor: accentGreen,
+                backgroundColor: accentColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               ),

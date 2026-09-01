@@ -18,6 +18,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import '../theme/app_theme.dart';
 import '../config.dart';
 import '../global.dart';
 import '../socket_io.dart';
@@ -99,15 +100,9 @@ class LoginPageState extends State<LoginPage>
 
   Future<void> _requestTrackingPermission() async {
     if (PlatformUtils.isIOS) {
-      try {
-        final status = await AppTrackingTransparency.trackingAuthorizationStatus;
-        if (status == TrackingStatus.notDetermined) {
-          // 等待一秒钟，确保页面已经渲染
-          await Future.delayed(const Duration(milliseconds: 1000));
-          await AppTrackingTransparency.requestTrackingAuthorization();
-        }
-      } catch (e) {
-        debugPrint('Error requesting tracking permission: $e');
+      TrackingStatus status = await AppTrackingTransparency.trackingAuthorizationStatus;
+      if (status == TrackingStatus.notDetermined) {
+        await AppTrackingTransparency.requestTrackingAuthorization();
       }
     }
   }
@@ -128,20 +123,17 @@ class LoginPageState extends State<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = context.isDarkMode;
+    final themeConfig = context.themeConfig;
 
-    // 扇贝护眼色彩
-    final bgColor = isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF8FAFC);
-    final textMainColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF182B28);
-    final textSubColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF64748B);
-    final textMutedColor = isDarkMode ? const Color(0xFF5A7570) : const Color(0xFF94A3B8);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final accentGreenDark = isDarkMode ? const Color(0xFF18BA7C) : const Color(0xFF109E69);
+    final textMainColor = themeConfig.textPrimary;
+    final textSubColor = themeConfig.textSecondary;
+    final textMutedColor = isDarkMode ? Colors.white38 : const Color(0xFF94A3B8);
+    final accentColor = themeConfig.primaryColor;
     final appleBgColor = isDarkMode ? const Color(0xFF192A26) : const Color(0xFF111827);
-    final dividerColor = isDarkMode ? Colors.white12 : const Color(0xFFE2E8F0);
+    final dividerColor = themeConfig.cardBorder;
 
-    return Scaffold(
-      backgroundColor: bgColor,
+    return AppScaffold(
       body: Stack(
         children: [
           // 1. 顶部与底部柔和环境微光
@@ -155,8 +147,8 @@ class LoginPageState extends State<LoginPage>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    accentGreen.withValues(alpha: isDarkMode ? 0.12 : 0.08),
-                    accentGreen.withValues(alpha: 0),
+                    accentColor.withValues(alpha: isDarkMode ? 0.15 : 0.09),
+                    accentColor.withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -172,8 +164,8 @@ class LoginPageState extends State<LoginPage>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF38BDF8).withValues(alpha: isDarkMode ? 0.08 : 0.06),
-                    const Color(0xFF38BDF8).withValues(alpha: 0),
+                    accentColor.withValues(alpha: isDarkMode ? 0.09 : 0.06),
+                    accentColor.withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -186,11 +178,11 @@ class LoginPageState extends State<LoginPage>
             builder: (context, child) {
               return Stack(
                 children: [
-                  _buildFloatingBubble(0.15, 0.75, 44, isDarkMode ? 0.04 : 0.06, offset: 0.1, isDark: isDarkMode),
-                  _buildFloatingBubble(0.78, 0.60, 26, isDarkMode ? 0.03 : 0.05, offset: 0.4, isDark: isDarkMode),
-                  _buildFloatingBubble(0.10, 0.25, 34, isDarkMode ? 0.03 : 0.04, offset: 0.7, isDark: isDarkMode),
-                  _buildFloatingBubble(0.85, 0.18, 18, isDarkMode ? 0.04 : 0.06, offset: 0.2, isDark: isDarkMode),
-                  _buildFloatingBubble(0.52, 0.48, 22, isDarkMode ? 0.02 : 0.04, offset: 0.9, isDark: isDarkMode),
+                  _buildFloatingBubble(0.15, 0.75, 44, isDarkMode ? 0.04 : 0.06, offset: 0.1, isDark: isDarkMode, color: accentColor),
+                  _buildFloatingBubble(0.78, 0.60, 26, isDarkMode ? 0.03 : 0.05, offset: 0.4, isDark: isDarkMode, color: accentColor),
+                  _buildFloatingBubble(0.10, 0.25, 34, isDarkMode ? 0.03 : 0.04, offset: 0.7, isDark: isDarkMode, color: accentColor),
+                  _buildFloatingBubble(0.85, 0.18, 18, isDarkMode ? 0.04 : 0.06, offset: 0.2, isDark: isDarkMode, color: accentColor),
+                  _buildFloatingBubble(0.52, 0.48, 22, isDarkMode ? 0.02 : 0.04, offset: 0.9, isDark: isDarkMode, color: accentColor),
                 ],
               );
             },
@@ -279,13 +271,13 @@ class LoginPageState extends State<LoginPage>
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(26),
                             gradient: LinearGradient(
-                              colors: [accentGreen, accentGreenDark],
+                              colors: context.appBarGradient,
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: accentGreen.withValues(alpha: isDarkMode ? 0.35 : 0.3),
+                                color: accentColor.withValues(alpha: isDarkMode ? 0.35 : 0.3),
                                 blurRadius: 18,
                                 offset: const Offset(0, 6),
                               ),
@@ -384,13 +376,13 @@ class LoginPageState extends State<LoginPage>
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(26),
                             gradient: LinearGradient(
-                              colors: [accentGreen, accentGreenDark],
+                              colors: context.appBarGradient,
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: accentGreen.withValues(alpha: isDarkMode ? 0.35 : 0.3),
+                                color: accentColor.withValues(alpha: isDarkMode ? 0.35 : 0.3),
                                 blurRadius: 18,
                                 offset: const Offset(0, 6),
                               ),
@@ -509,10 +501,10 @@ class LoginPageState extends State<LoginPage>
                                 height: 18,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _approved ? accentGreen : Colors.transparent,
+                                  color: _approved ? accentColor : Colors.transparent,
                                   border: Border.all(
                                     color: _approved
-                                        ? accentGreen
+                                        ? accentColor
                                         : (isDarkMode ? Colors.white38 : const Color(0xFFCBD5E1)),
                                     width: 1.5,
                                   ),
@@ -582,11 +574,10 @@ class LoginPageState extends State<LoginPage>
   }
 
   Widget _buildFloatingBubble(double leftPercent, double startBottomPercent, double size, double opacity,
-      {required double offset, required bool isDark}) {
+      {required double offset, required bool isDark, required Color color}) {
     double progress = (_bubbleController.value + offset) % 1.0;
     double bottom = (startBottomPercent + (1.0 - startBottomPercent) * progress) * MediaQuery.of(context).size.height;
     double currentOpacity = opacity * (1.0 - progress * 0.5);
-    final bubbleColor = isDark ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
 
     return Positioned(
       left: leftPercent * MediaQuery.of(context).size.width,
@@ -596,9 +587,9 @@ class LoginPageState extends State<LoginPage>
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: bubbleColor.withValues(alpha: currentOpacity),
+          color: color.withValues(alpha: currentOpacity),
           border: Border.all(
-            color: bubbleColor.withValues(alpha: currentOpacity * 1.6),
+            color: color.withValues(alpha: currentOpacity * 1.6),
             width: 0.8,
           ),
         ),
