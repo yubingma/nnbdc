@@ -2749,9 +2749,9 @@ class _MePageState extends State<MePage> {
                   ? Center(
                       child: Text(
                         '今天',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 8,
-                          color: Colors.white,
+                          color: isNotLearned ? context.textSecondary : Colors.white,
                           fontWeight: FontWeight.w700,
                           height: 1.0,
                           fontFamily: 'NotoSansSC',

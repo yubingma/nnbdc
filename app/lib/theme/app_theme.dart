@@ -53,9 +53,11 @@ class AppThemeConfig {
   final Color cardBg;
   final Color cardBorder;
   final Color subtleBg;
-  final Color dakaStudiedColor;
   final List<BoxShadow> cardShadows;
   final bool isDark;
+
+  /// 未打卡（学习中）状态色：跟随当前主题已打卡主色，但明显浅淡（同色系层级）
+  Color get dakaStudiedColor => primaryColor.withValues(alpha: isDark ? 0.45 : 0.36);
 
   const AppThemeConfig({
     required this.style,
@@ -68,7 +70,6 @@ class AppThemeConfig {
     required this.cardBg,
     required this.cardBorder,
     required this.subtleBg,
-    required this.dakaStudiedColor,
     required this.cardShadows,
     required this.isDark,
   });
@@ -88,7 +89,6 @@ class AppThemeConfig {
           cardBg: Colors.white.withValues(alpha: 0.70),
           cardBorder: Colors.white.withValues(alpha: 0.95),
           subtleBg: const Color(0xFFE0F2FE).withValues(alpha: 0.65),
-          dakaStudiedColor: const Color(0xFFF59E0B), // 暖琥珀橙金
           cardShadows: [
             BoxShadow(
               color: const Color(0xFF0284C7).withValues(alpha: 0.08),
@@ -112,7 +112,6 @@ class AppThemeConfig {
           cardBg: const Color(0xFFFFFFFF),
           cardBorder: const Color(0x2E10B981),
           subtleBg: const Color(0xFFD1FAE5),
-          dakaStudiedColor: const Color(0xFFFA6E59), // 珊瑚暖橙红
           cardShadows: [
             BoxShadow(
               color: const Color(0xFF065F46).withValues(alpha: 0.06),
@@ -136,7 +135,6 @@ class AppThemeConfig {
           cardBg: Colors.white.withValues(alpha: 0.88),
           cardBorder: const Color(0x3DF97316),
           subtleBg: const Color(0xFFFFEDD5),
-          dakaStudiedColor: const Color(0xFF8B5CF6), // 晚霞暮光紫（与活力落日暖橘对比鲜明，同时避免与晨曦流光已打卡冷蓝产生混淆）
           cardShadows: [
             BoxShadow(
               color: const Color(0xFFEA580C).withValues(alpha: 0.08),
@@ -160,7 +158,6 @@ class AppThemeConfig {
           cardBg: const Color(0xFFFFFFFF),
           cardBorder: const Color(0xFFD4D4D8),
           subtleBg: const Color(0xFFF4F4F5),
-          dakaStudiedColor: const Color(0xFFF59E0B), // 暖琥珀金
           cardShadows: const [],
           isDark: false,
         );
@@ -178,7 +175,6 @@ class AppThemeConfig {
           cardBg: const Color(0xFF0F1A17).withValues(alpha: 0.78),
           cardBorder: const Color(0x3D2CD88F),
           subtleBg: const Color(0xFF162B24),
-          dakaStudiedColor: const Color(0xFFFB923C), // 暖夕阳珊瑚橘
           cardShadows: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.55),
