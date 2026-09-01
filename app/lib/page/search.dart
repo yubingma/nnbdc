@@ -15,7 +15,6 @@ import 'package:provider/provider.dart';
 
 import '../state.dart';
 import '../theme/app_theme.dart';
-import '../theme/app_theme_background.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -456,8 +455,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final accentColor = themeConfig.primaryColor;
     final textMain = themeConfig.textPrimary;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    return AppScaffold(
       appBar: AppBar(
         toolbarHeight: 68,
         backgroundColor: Colors.transparent,
@@ -566,28 +564,19 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: AppThemeBackground(
-              themeStyle: themeStyle,
-            ),
-          ),
-          SafeArea(
-            child: matchedWords.isEmpty
-                ? _buildEmptyState(themeConfig)
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.only(top: 6, bottom: 20),
-                    itemCount: matchedWords.length,
-                    itemBuilder: (context, index) => renderWord(index),
-                    // ignore: deprecated_member_use
-                    cacheExtent: 1000.0,
-                    addAutomaticKeepAlives: false,
-                    addRepaintBoundaries: true,
-                  ),
-          ),
-        ],
+      body: SafeArea(
+        child: matchedWords.isEmpty
+            ? _buildEmptyState(themeConfig)
+            : ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.only(top: 6, bottom: 20),
+                itemCount: matchedWords.length,
+                itemBuilder: (context, index) => renderWord(index),
+                // ignore: deprecated_member_use
+                cacheExtent: 1000.0,
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: true,
+              ),
       ),
     );
   }
@@ -639,54 +628,69 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     }
 
     // 默认空状态：插画 + 高频词推荐 + 词根探索
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 顶部插画展台
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: themeConfig.subtleBg,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withValues(alpha: 0.12),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: SizedBox(
+                width: double.infinity,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 顶部插画展台
+                    Container(
+                      width: 68,
+                      height: 68,
+                      decoration: BoxDecoration(
+                        color: themeConfig.subtleBg,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: themeConfig.cardBorder,
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: 0.15),
+                            blurRadius: 18,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.manage_search_rounded,
+                        size: 36,
+                        color: accentColor,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '查单词 · 找例句',
+                      style: TextStyle(
+                        color: textMain,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '支持输入英文拼写、中文释义或模糊前缀',
+                      style: TextStyle(
+                        color: textSub,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
-                child: Icon(
-                  Icons.manage_search_rounded,
-                  size: 34,
-                  color: accentColor,
-                ),
               ),
-              const SizedBox(height: 14),
-              Text(
-                '查单词 · 找例句',
-                style: TextStyle(
-                  color: textMain,
-                  fontSize: 16.5,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '支持输入英文拼写、中文释义或模糊前缀',
-                style: TextStyle(
-                  color: textSub,
-                  fontSize: 12.5,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
