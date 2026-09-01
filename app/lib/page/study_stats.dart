@@ -275,9 +275,9 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
     if (status == UserDayStatus.dakaed.json) {
       return themeConfig.primaryColor;
     } else if (status == UserDayStatus.studied.json) {
-      return const Color(0xFFFA6E59); // 珊瑚暖橙红
+      return themeConfig.dakaStudiedColor;
     } else {
-      return isDarkMode ? Colors.white.withValues(alpha: 0.08) : themeConfig.subtleBg;
+      return isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9);
     }
   }
 }

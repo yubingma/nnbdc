@@ -2139,9 +2139,6 @@ class _MePageState extends State<MePage> {
 
   // 图例项组件
   Widget _buildLegendItem(String label, Color color) {
-    final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -2158,7 +2155,7 @@ class _MePageState extends State<MePage> {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: subtitleColor,
+            color: context.textSecondary,
             fontWeight: FontWeight.w600,
             fontFamily: 'NotoSansSC',
           ),
@@ -2705,12 +2702,13 @@ class _MePageState extends State<MePage> {
   Color dakaStatus2Color(String dakaStatus) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkModeEnabled = themeStyle.isDark || context.watch<DarkMode>().isDarkMode;
     if (dakaStatus == UserDayStatus.dakaed.json) {
       return themeConfig.primaryColor;
     } else if (dakaStatus == UserDayStatus.studied.json) {
-      return const Color(0xFFFA6E59); // 珊瑚暖橙红
+      return themeConfig.dakaStudiedColor;
     } else {
-      return themeConfig.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white; // 未学习底
+      return isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9);
     }
   }
 
