@@ -1,6 +1,6 @@
 part of '../bdc.dart';
 
-Color _getRatingColor(FsrsRating rating, bool isDarkMode) {
+Color _getRatingColor(FsrsRating rating, bool isDarkMode, [Color? primaryColor]) {
   switch (rating) {
     case FsrsRating.again:
       return isDarkMode ? Colors.redAccent : const Color(0xFFD32F2F);
@@ -9,7 +9,7 @@ Color _getRatingColor(FsrsRating rating, bool isDarkMode) {
     case FsrsRating.easy:
       return isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
     case FsrsRating.good:
-      return AppTheme.primaryColor;
+      return primaryColor ?? AppTheme.primaryColor;
   }
 }
 
@@ -1340,10 +1340,10 @@ extension BdcPageStateDialogs on BdcPageState {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                          color: context.primaryColor.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                            color: context.primaryColor.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
@@ -1374,7 +1374,7 @@ extension BdcPageStateDialogs on BdcPageState {
                     ratingColor = isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
                     break;
                   case FsrsRating.good:
-                    ratingColor = AppTheme.primaryColor;
+                    ratingColor = context.primaryColor;
                     break;
                 }
 
@@ -1454,7 +1454,7 @@ extension BdcPageStateDialogs on BdcPageState {
                           ratingColor = Colors.orangeAccent;
                           break;
                         case FsrsRating.good:
-                          ratingColor = AppTheme.primaryColor;
+                          ratingColor = context.primaryColor;
                           break;
                         case FsrsRating.easy:
                           ratingColor = Colors.greenAccent;
@@ -1544,7 +1544,7 @@ extension BdcPageStateDialogs on BdcPageState {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('关闭', style: TextStyle(color: AppTheme.primaryColor)),
+              child: Text('关闭', style: TextStyle(color: context.primaryColor)),
             ),
           ],
           shape:
@@ -2279,10 +2279,10 @@ extension BdcPageStateDialogs on BdcPageState {
 
     return Text.rich(
       TextSpan(children: spans),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         height: 1.4,
-        color: AppTheme.primaryColor,
+        color: context.primaryColor,
         fontFamily: "NotoSansSC",
       ),
     );

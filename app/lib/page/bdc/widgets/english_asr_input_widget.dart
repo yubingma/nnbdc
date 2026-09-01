@@ -145,7 +145,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = AppTheme.primaryColor;
+    final accentColor = context.primaryColor;
 
     // 状态驱动反馈文字
     String statusText;

@@ -1311,12 +1311,12 @@ extension BdcPageStateUIComponents on BdcPageState {
                                   height: 22,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: isDarkMode ? Colors.white10 : const Color(0xFFEDF5F2),
+                                    color: context.subtleBg,
                                   ),
                                   child: Icon(
                                     Icons.volume_up_rounded,
                                     size: 13,
-                                    color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                                    color: context.primaryColor,
                                   ),
                                 ),
                               ),
@@ -2462,7 +2462,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               IconButton(
                 icon: Icon(
                   Icons.volume_up_rounded,
-                  color: isDarkMode ? const Color(0xFF22D3EE) : AppTheme.primaryColor,
+                  color: context.primaryColor,
                   size: 28,
                 ),
                 onPressed: () {
@@ -2545,7 +2545,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               IconButton(
                 icon: Icon(
                   Icons.volume_up_rounded,
-                  color: isDarkMode ? const Color(0xFF22D3EE) : AppTheme.primaryColor,
+                  color: context.primaryColor,
                   size: 28,
                 ),
                 onPressed: () {
@@ -2911,7 +2911,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                         : Colors.white,
                     backgroundColor: _cachedIsDarkMode
                         ? Colors.white
-                        : AppTheme.primaryColor,
+                        : context.primaryColor,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
