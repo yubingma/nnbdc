@@ -6,6 +6,7 @@ import "package:go_router/go_router.dart";
 import "package:nnbdc/util/prefs.dart";
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
+import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -1002,20 +1003,192 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           if (!(user?.todayStudyStarted ?? false)) {
             final shouldStart = await showDialog<bool>(
               context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text('准备开始今日学习'),
-                content: const Text('一旦开始，今日计划将无法修改。\n确认现在开始背单词吗？'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    child: const Text('稍等修改'),
+              barrierColor: Colors.black.withValues(alpha: 0.55),
+              builder: (ctx) {
+                final isDarkMode = ctx.watch<DarkMode>().isDarkMode;
+                final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
+                final cardBorder = isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA);
+                final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+                final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5B7A75);
+                final subtleBg = isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF0F6F3);
+                final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+                final primarySoft = isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3);
+                final amberColor = isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+
+                return Dialog(
+                  backgroundColor: Colors.transparent,
+                  insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: cardBorder, width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.12),
+                          blurRadius: 36,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 顶部火箭图标展台
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            color: primarySoft,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: cardBorder, width: 1),
+                          ),
+                          child: Icon(
+                            Icons.rocket_launch_rounded,
+                            size: 26,
+                            color: accentGreen,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 标题
+                        Text(
+                          '开启今日学习旅程',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: textMain,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // 副标题
+                        Text(
+                          '今日学习计划已就绪，准备好专注背单词了吗？',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: textSub,
+                            height: 1.45,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 锁定规则提示微卡片
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: subtleBg,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: cardBorder, width: 0.8),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: 16,
+                                color: amberColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '一旦开启，今日的单词量与测评环节将锁定生效，助你保持专注节奏。',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: textSub,
+                                    height: 1.45,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+
+                        // 双操作按钮
+                        Row(
+                          children: [
+                            // 取消按钮
+                            Expanded(
+                              flex: 1,
+                              child: SizedBox(
+                                height: 44,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: subtleBg,
+                                    foregroundColor: textSub,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                      side: BorderSide(color: cardBorder, width: 1),
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  onPressed: () => Navigator.of(ctx).pop(false),
+                                  child: Text(
+                                    '稍等修改',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: textSub,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+
+                            // 确认按钮
+                            Expanded(
+                              flex: 1,
+                              child: SizedBox(
+                                height: 44,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: accentGreen,
+                                    foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                                    elevation: 2,
+                                    shadowColor: accentGreen.withValues(alpha: 0.35),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  onPressed: () => Navigator.of(ctx).pop(true),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '马上开始',
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 14,
+                                        color: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(true),
-                    child: const Text('马上开始'),
-                  ),
-                ],
-              ),
+                );
+              },
             );
 
             if (shouldStart != true) {
