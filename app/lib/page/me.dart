@@ -39,6 +39,7 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:nnbdc/util/notification_util.dart';
@@ -1064,13 +1065,62 @@ class _MePageState extends State<MePage> {
   }
 
   Widget renderStudyProgress() {
-    final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
+    final darkModeState = context.watch<DarkMode>();
+    final isDarkModeEnabled = darkModeState.isDarkMode;
+    final themeStyle = darkModeState.themeStyle;
     final textColor = isDarkModeEnabled ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
     final subtitleColor = isDarkModeEnabled ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
     final accentColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final cardColor = isDarkModeEnabled ? const Color(0xFF131E1C) : Colors.white;
-    final borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
-    final subtleBgColor = isDarkModeEnabled ? const Color(0xFF1B2825) : const Color(0xFFEDF5F2);
+
+    Color cardColor;
+    Color borderColor;
+    Color subtleBgColor;
+    List<BoxShadow> cardShadow;
+
+    switch (themeStyle) {
+      case AppThemeStyle.aurora:
+        cardColor = isDarkModeEnabled ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
+        borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
+        subtleBgColor = isDarkModeEnabled ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.45);
+        cardShadow = [
+          BoxShadow(
+            color: const Color(0xFF123C32).withValues(alpha: isDarkModeEnabled ? 0.4 : 0.05),
+            blurRadius: 28,
+            offset: const Offset(0, 8),
+          ),
+        ];
+        break;
+      case AppThemeStyle.emerald:
+        cardColor = isDarkModeEnabled ? const Color(0xFF14201D) : Colors.white;
+        borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
+        subtleBgColor = isDarkModeEnabled ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
+        cardShadow = [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.03),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ];
+        break;
+      case AppThemeStyle.jade:
+        cardColor = isDarkModeEnabled ? const Color(0xFF162822).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.90);
+        borderColor = isDarkModeEnabled ? const Color(0x282CD88F) : const Color(0x2818BA7C);
+        subtleBgColor = isDarkModeEnabled ? const Color(0xFF1C2B29) : const Color(0xFFEBF5F0);
+        cardShadow = [
+          BoxShadow(
+            color: const Color(0xFF125541).withValues(alpha: isDarkModeEnabled ? 0.4 : 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+        ];
+        break;
+      case AppThemeStyle.minimal:
+        cardColor = isDarkModeEnabled ? const Color(0xFF141414) : Colors.white;
+        borderColor = isDarkModeEnabled ? const Color(0xFF262626) : const Color(0xFFE5E5E5);
+        subtleBgColor = isDarkModeEnabled ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6);
+        cardShadow = [];
+        break;
+    }
 
     return Column(
       children: [
@@ -1083,13 +1133,7 @@ class _MePageState extends State<MePage> {
           decoration: BoxDecoration(
             color: cardColor,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            boxShadow: cardShadow,
             border: Border.all(color: borderColor, width: 1.2),
           ),
           child: Column(
@@ -1924,6 +1968,7 @@ class _MePageState extends State<MePage> {
                               onTap: () {
                                 context.read<DarkMode>().setThemeStyle(style);
                                 MyDatabase.instance.localParamsDao.saveThemeStyle(style);
+                                ToastUtil.info('已切换至「${style.label}」主题');
                               },
                               child: Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -3049,25 +3094,37 @@ class _MePageState extends State<MePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkModeEnabled = context.watch<DarkMode>().isDarkMode;
+    final darkModeState = context.watch<DarkMode>();
+    final isDarkModeEnabled = darkModeState.isDarkMode;
+    final themeStyle = darkModeState.themeStyle;
     final backgroundColor = isDarkModeEnabled ? const Color(0xFF0C1312) : const Color(0xFFF5F9F7);
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: (studyProgress == null || last30DaysDakaStatus == null)
-          ? const Center(child: CircularProgressIndicator())
-          : CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 0),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      renderStudyProgress(),
-                    ]),
-                  ),
-                ),
-              ],
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: AppThemeBackground(
+              isDarkMode: isDarkModeEnabled,
+              themeStyle: themeStyle,
             ),
+          ),
+          (studyProgress == null || last30DaysDakaStatus == null)
+              ? const Center(child: CircularProgressIndicator())
+              : CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 0),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          renderStudyProgress(),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
+        ],
+      ),
     );
   }
 

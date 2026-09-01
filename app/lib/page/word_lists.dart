@@ -12,6 +12,7 @@ import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
@@ -121,18 +122,28 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final darkModeState = context.watch<DarkMode>();
+    final isDarkMode = darkModeState.isDarkMode;
+    final themeStyle = darkModeState.themeStyle;
     final backgroundColor = isDarkMode ? const Color(0xFF0C1312) : const Color(0xFFF6F9F8);
     final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
     final textSubColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: SafeArea(
-        bottom: false,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-          slivers: [
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: AppThemeBackground(
+              isDarkMode: isDarkMode,
+              themeStyle: themeStyle,
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              slivers: [
             // 1. 顶部大标题栏
             SliverToBoxAdapter(
               child: Padding(
@@ -222,6 +233,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }
