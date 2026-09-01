@@ -4,7 +4,6 @@ import 'dart:core';
 import 'dart:math';
 import 'dart:ui' show ImageFilter;
 
-import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
