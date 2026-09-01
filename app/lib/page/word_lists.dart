@@ -12,7 +12,6 @@ import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
 import 'package:nnbdc/theme/app_theme.dart';
-import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
@@ -124,26 +123,18 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   Widget build(BuildContext context) {
     final darkModeState = context.watch<DarkMode>();
     final themeStyle = darkModeState.themeStyle;
-    final isDarkMode = themeStyle.isDark;
     final themeConfig = AppThemeConfig.of(themeStyle);
 
     final textColor = themeConfig.textPrimary;
     final textSubColor = themeConfig.textSecondary;
+    final isDarkMode = themeStyle.isDark;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: AppThemeBackground(
-              themeStyle: themeStyle,
-            ),
-          ),
-          SafeArea(
-            bottom: false,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-              slivers: [
+    return AppScaffold(
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          slivers: [
             // 1. 顶部大标题栏
             SliverToBoxAdapter(
               child: Padding(
@@ -156,17 +147,17 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '词表',
+                          '词表总览',
                           style: TextStyle(
                             color: textColor,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
                             letterSpacing: -0.5,
                           ),
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '查漏补缺 · 专项巩固',
+                          '系统化词库与今日学习进度',
                           style: TextStyle(
                             color: textSubColor,
                             fontSize: 12,
@@ -233,8 +224,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             ),
           ],
         ),
-      ),
-        ],
       ),
     );
   }

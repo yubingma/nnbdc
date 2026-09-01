@@ -96,20 +96,12 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final isDarkMode = context.isDarkMode;
+    final textColor = context.textPrimary;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          '用户管理',
-          textScaler: TextScaler.linear(1.0),
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+    return AppScaffold(
+      appBar: AppAppBar(
+        title: '用户管理',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -184,7 +176,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: AppTheme.primaryColor,
+                    color: context.primaryColor,
                     width: 2,
                   ),
                 ),
@@ -271,11 +263,11 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         leading: CircleAvatar(
-          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+          backgroundColor: context.primaryColor.withValues(alpha: 0.1),
           child: Text(
             Util.getInitial(user.nickName ?? user.userName),
             style: TextStyle(
-              color: AppTheme.primaryColor,
+              color: context.primaryColor,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -333,7 +325,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
               icon: Icon(
                 Icons.settings,
                 size: 24,
-                color: AppTheme.primaryColor,
+                color: context.primaryColor,
               ),
               tooltip: '设置权限',
             ),
@@ -386,10 +378,10 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.2) : Colors.transparent,
+          color: isSelected ? context.primaryColor.withValues(alpha: 0.2) : Colors.transparent,
           border: Border(
             bottom: BorderSide(
-              color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+              color: isSelected ? context.primaryColor : Colors.transparent,
               width: 2,
             ),
           ),
@@ -399,7 +391,7 @@ class _UserManagementWidgetState extends State<UserManagementWidget> {
           label,
           textScaler: const TextScaler.linear(1.0),
           style: TextStyle(
-            color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+            color: isSelected ? context.primaryColor : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             fontFamily: 'NotoSansSC',
@@ -770,7 +762,7 @@ class _EditPermissionDialogState extends State<_EditPermissionDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _savePermission,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: context.primaryColor,
             foregroundColor: Colors.white,
           ),
           child: _isLoading

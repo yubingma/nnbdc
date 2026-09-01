@@ -324,16 +324,11 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final isDarkMode = context.isDarkMode;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text('意见建议管理'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+    return AppScaffold(
+      appBar: AppAppBar(
+        title: '意见建议管理',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -450,7 +445,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
           _membershipFilter = value;
         });
       },
-      selectedColor: AppTheme.primaryColor,
+      selectedColor: context.primaryColor,
       backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[100],
       checkmarkColor: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -458,7 +453,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? AppTheme.primaryColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
+          color: isSelected ? context.primaryColor : (isDarkMode ? Colors.grey[700]! : Colors.grey[300]!),
           width: 0.5,
         ),
       ),
@@ -469,7 +464,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+      color: context.primaryColor.withValues(alpha: 0.1),
       child: TextField(
         controller: _searchController,
         autofocus: true,
@@ -477,7 +472,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
         decoration: InputDecoration(
           hintText: '搜索昵称、用户、内容...',
           hintStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
-          prefixIcon: Icon(Icons.search, color: AppTheme.primaryColor),
+          prefixIcon: Icon(Icons.search, color: context.primaryColor),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear),
@@ -606,7 +601,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                 children: [
                   CircleAvatar(
                     radius: 16,
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: context.primaryColor,
                     child: Text(
                       _getUserInitial(message),
                       style: const TextStyle(
@@ -724,7 +719,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
                       icon: const Icon(Icons.reply, size: 16),
                       label: const Text('回复'),
                       style: TextButton.styleFrom(
-                        foregroundColor: AppTheme.primaryColor,
+                        foregroundColor: context.primaryColor,
                       ),
                     ),
                   ],
@@ -867,7 +862,7 @@ class _FeedbackManagementWidgetState extends State<FeedbackManagementWidget> {
             children: [
               Icon(
                 Icons.analytics,
-                color: AppTheme.primaryColor,
+                color: context.primaryColor,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -1336,7 +1331,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                 // 用户头像
                                 CircleAvatar(
                                   radius: 16,
-                                  backgroundColor: AppTheme.primaryColor,
+                                  backgroundColor: context.primaryColor,
                                   child: Text(
                                     _getUserInitial(msg),
                                     style: const TextStyle(
@@ -1395,7 +1390,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor,
+                                      color: context.primaryColor,
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Column(

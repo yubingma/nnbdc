@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state.dart';
+export '../widget/app_scaffold.dart';
 
 /// 应用视觉主题风格枚举 (5 款风格截然不同、性格鲜明的专属美学)
 enum AppThemeStyle {
@@ -203,16 +204,19 @@ class AppTheme {
         seedColor: cfg.primaryColor,
         primary: cfg.primaryColor,
         primaryContainer: cfg.primaryLightColor,
+        secondary: cfg.primaryColor,
         surface: cfg.isDark ? const Color(0xFF14201D) : Colors.white,
         brightness: cfg.isDark ? Brightness.dark : Brightness.light,
       ),
       scaffoldBackgroundColor: Colors.transparent,
       useMaterial3: true,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: cfg.primaryColor,
@@ -227,6 +231,31 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: cfg.primaryColor,
+        unselectedLabelColor: cfg.textSecondary,
+        indicatorColor: cfg.primaryColor,
+        indicatorSize: TabBarIndicatorSize.label,
+        dividerColor: Colors.transparent,
+      ),
+      chipTheme: ChipThemeData(
+        selectedColor: cfg.primaryColor,
+        backgroundColor: cfg.subtleBg,
+        labelStyle: TextStyle(
+          color: cfg.textPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: cfg.cardBorder),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -244,6 +273,16 @@ class AppTheme {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
         ),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return cfg.primaryColor;
+          return null;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return cfg.primaryColor.withValues(alpha: 0.5);
+          return null;
+        }),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: cfg.primaryColor,
