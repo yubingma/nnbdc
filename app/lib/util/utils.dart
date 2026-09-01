@@ -18,6 +18,7 @@ import 'package:uuid/uuid.dart';
 import '../api/vo.dart';
 import '../config.dart';
 import '../global.dart';
+import '../theme/app_theme.dart';
 import 'app_clock.dart';
 
 class Util {
@@ -521,7 +522,7 @@ class Util {
         spans.add(TextSpan(
             text: token,
             style: TextStyle(
-                color: boldWordIndices.contains(i) ? Global.highlight : null,
+                color: boldWordIndices.contains(i) ? context.primaryColor : null,
                 fontSize: fontSize,
                 fontWeight: boldWordIndices.contains(i) ? FontWeight.bold : fontWeight)));
       } else {
@@ -533,7 +534,7 @@ class Util {
             : TextSpan(
                 text: boldWordIndices.contains(i) && maskHighlightWord ? ''.padRight(token.length, '_') : token,
                 style: TextStyle(
-                    color: boldWordIndices.contains(i) ? Global.highlight : null,
+                    color: boldWordIndices.contains(i) ? context.primaryColor : null,
                     fontSize: fontSize,
                     fontWeight: boldWordIndices.contains(i) ? FontWeight.bold : fontWeight),
                 recognizer: TapGestureRecognizer()

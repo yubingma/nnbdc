@@ -888,8 +888,6 @@ extension BdcPageStateUIComponents on BdcPageState {
     String? label,
     required VoidCallback onTap,
   }) {
-    final isDarkMode = _cachedIsDarkMode;
-
     return Container(
       height: 32,
       width: label != null ? null : 32,
@@ -898,12 +896,10 @@ extension BdcPageStateUIComponents on BdcPageState {
         vertical: 0,
       ),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+        color: context.subtleBg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode
-              ? Colors.white12
-              : const Color(0xFFD1EADE),
+          color: context.cardBorder,
           width: 1,
         ),
       ),
@@ -918,7 +914,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             children: [
               Icon(
                 icon,
-                color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                color: context.primaryColor,
                 size: 14.5,
               ),
               if (label != null) ...[
@@ -929,7 +925,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                    color: context.textPrimary,
                   ),
                 ),
               ],
@@ -964,16 +960,16 @@ extension BdcPageStateUIComponents on BdcPageState {
                 height: 32,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _cachedIsDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+                  color: context.subtleBg,
                   border: Border.all(
-                    color: _cachedIsDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+                    color: context.cardBorder,
                     width: 1,
                   ),
                 ),
                 child: Center(
                   child: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: _cachedIsDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                    color: context.textPrimary,
                     size: 14,
                   ),
                 ),
@@ -2735,7 +2731,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         '显示翻译',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                                          color: context.primaryColor,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
