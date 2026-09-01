@@ -6,6 +6,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/widget/badge_svg_assets.dart';
+import '../../theme/app_theme.dart';
 
 class BadgeWallPage extends StatefulWidget {
   const BadgeWallPage({super.key});
@@ -197,12 +198,14 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
     final isStackable = badge?.isStackable ?? false;
     final obtainCount = vo.obtainCount ?? 0;
     final starLevel = vo.starLevel ?? 1;
+    final themeStyle = Provider.of<DarkMode>(context, listen: false).themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
 
-    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
-    final subtleBg = isDarkMode ? const Color(0xFF192A26) : const Color(0xFFEDF5F2);
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final cardBg = themeConfig.cardBg;
+    final subtleBg = themeConfig.subtleBg;
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
 
     showModalBottomSheet(
       context: context,
@@ -215,7 +218,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
             color: cardBg,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             border: Border.all(
-              color: isDarkMode ? Colors.white12 : const Color(0x1418BA7C),
+              color: themeConfig.cardBorder,
             ),
             boxShadow: [
               BoxShadow(
@@ -489,22 +492,21 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Provider.of<DarkMode>(context).isDarkMode;
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
     final filtered = _filteredBadges;
 
-    // 扇贝护眼色彩
-    final bgColor = isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF4F9F6);
-    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
-    final subtleBg = isDarkMode ? const Color(0xFF192A26) : const Color(0xFFEDF5F2);
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final borderColor = isDarkMode ? Colors.white10 : const Color(0x1418BA7C);
+    final cardBg = themeConfig.cardBg;
+    final subtleBg = themeConfig.subtleBg;
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final borderColor = themeConfig.cardBorder;
 
-    return Scaffold(
-      backgroundColor: bgColor,
+    return AppScaffold(
       appBar: AppBar(
-        backgroundColor: bgColor,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -537,9 +539,7 @@ class _BadgeWallPageState extends State<BadgeWallPage> {
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: isDarkMode
-                              ? [const Color(0xFF1B352E), const Color(0xFF10241F)]
-                              : [const Color(0xFF18BA7C), const Color(0xFF0F9460)],
+                          colors: themeConfig.appBarGradient,
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),

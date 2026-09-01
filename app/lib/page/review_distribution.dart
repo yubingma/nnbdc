@@ -6,6 +6,7 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/date_utils.dart' as app_date;
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/page/word_list/bucket_words.dart';
+import '../theme/app_theme.dart';
 
 class ReviewDistributionPage extends StatefulWidget {
   const ReviewDistributionPage({super.key});
@@ -155,44 +156,44 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Provider.of<DarkMode>(context).isDarkMode;
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
 
-    final bgColor = isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF4F9F6);
-    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
-    final subtleBg = isDarkMode ? const Color(0xFF192A26) : const Color(0xFFEDF5F2);
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final borderColor = isDarkMode ? Colors.white10 : const Color(0x1418BA7C);
+    final cardBg = themeConfig.cardBg;
+    final subtleBg = themeConfig.subtleBg;
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final borderColor = themeConfig.cardBorder;
 
-    return Scaffold(
-      backgroundColor: bgColor,
+    return AppScaffold(
       appBar: AppBar(
-        backgroundColor: bgColor,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 19),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '复习分布图',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: textColor,
-                fontSize: 17.5,
-                fontFamily: 'NotoSansSC',
-              ),
-            ),
-            if (!_isLoading) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        title: Text(
+          '复习分布图',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: textColor,
+            fontSize: 17.5,
+            fontFamily: 'NotoSansSC',
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          if (!_isLoading)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(right: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0x242CD88F) : const Color(0xFFE8F8F1),
+                  color: subtleBg,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -205,15 +206,12 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                   ),
                 ),
               ),
-            ],
-          ],
-        ),
-        centerTitle: true,
-        actions: [
+            ),
           IconButton(
             icon: Icon(Icons.help_outline_rounded, color: subtitleColor, size: 22),
             onPressed: () => _showExplainDialog(context),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: _isLoading
@@ -231,9 +229,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: isDarkMode
-                              ? [const Color(0xFF1B352E), const Color(0xFF10241F)]
-                              : [const Color(0xFF18BA7C), const Color(0xFF0F9460)],
+                          colors: themeConfig.appBarGradient,
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -330,7 +326,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildLegendItem('今日复习', isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C), subtitleColor),
+                          _buildLegendItem('今日复习', accentColor, subtitleColor),
                           _buildLegendItem('已逾期', isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), subtitleColor),
                           _buildLegendItem('未来复习', isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399), subtitleColor),
                           _buildLegendItem('新词储备', isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6), subtitleColor),
@@ -714,11 +710,14 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
   }
 
   void _showExplainDialog(BuildContext context) {
-    final isDarkMode = Provider.of<DarkMode>(context, listen: false).isDarkMode;
-    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final themeStyle = Provider.of<DarkMode>(context, listen: false).themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
+
+    final cardBg = themeConfig.cardBg;
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
 
     showDialog(
       context: context,

@@ -7,6 +7,7 @@ import 'package:nnbdc/state.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../theme/app_theme.dart';
 
 enum HeatmapDisplayMode { date, time, count }
 
@@ -52,15 +53,15 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF0C1312) : const Color(0xFFF5F9F7);
-    final cardColor = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
+    final cardColor = themeConfig.cardBg;
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
+    return AppScaffold(
       appBar: AppBar(
         title: Text('学习统计', style: TextStyle(fontWeight: FontWeight.w900, color: textColor, fontFamily: 'NotoSansSC')),
         backgroundColor: Colors.transparent,
@@ -78,7 +79,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeatmapSection(isDarkMode, cardColor, textColor, subtitleColor, accentColor),
+                  _buildHeatmapSection(isDarkMode, cardColor, textColor, subtitleColor, accentColor, themeConfig),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -86,22 +87,15 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
     );
   }
 
-  Widget _buildHeatmapSection(bool isDarkMode, Color cardColor, Color textColor, Color subtitleColor, Color accentColor) {
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
+  Widget _buildHeatmapSection(bool isDarkMode, Color cardColor, Color textColor, Color subtitleColor, Color accentColor, AppThemeConfig themeConfig) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: themeConfig.cardBorder, width: 1.2),
+        boxShadow: themeConfig.cardShadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,9 +116,9 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
             ],
           ),
           const SizedBox(height: 20),
-          _buildHeatmapGrid(isDarkMode),
+          _buildHeatmapGrid(isDarkMode, themeConfig),
           const SizedBox(height: 16),
-          _buildLegend(isDarkMode, subtitleColor),
+          _buildLegend(isDarkMode, subtitleColor, themeConfig),
         ],
       ),
     );
@@ -172,7 +166,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
     );
   }
 
-  Widget _buildHeatmapGrid(bool isDarkMode) {
+  Widget _buildHeatmapGrid(bool isDarkMode, AppThemeConfig themeConfig) {
     final startDate = AppClock.today().subtract(const Duration(days: 29));
     
     return LayoutBuilder(
@@ -192,7 +186,7 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
             final dateStr = DateFormat('yyyy-MM-dd').format(date);
             final status = _last30DaysDakaStatus.length > index ? _last30DaysDakaStatus[index] : UserDayStatus.notLogin.json;
             final isNotLearned = status != UserDayStatus.dakaed.json && status != UserDayStatus.studied.json;
-            final color = _dakaStatus2Color(status, isDarkMode);
+            final color = _dakaStatus2Color(status, isDarkMode, themeConfig);
             final count = countMap[dateStr] ?? 0;
             
             String displayText = '';
@@ -238,15 +232,15 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
     );
   }
 
-  Widget _buildLegend(bool isDarkMode, Color subtitleColor) {
+  Widget _buildLegend(bool isDarkMode, Color subtitleColor, AppThemeConfig themeConfig) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        _buildLegendItem('已打卡', _dakaStatus2Color(UserDayStatus.dakaed.json, isDarkMode), subtitleColor),
+        _buildLegendItem('已打卡', _dakaStatus2Color(UserDayStatus.dakaed.json, isDarkMode, themeConfig), subtitleColor),
         const SizedBox(width: 12),
-        _buildLegendItem('未打卡', _dakaStatus2Color(UserDayStatus.studied.json, isDarkMode), subtitleColor),
+        _buildLegendItem('未打卡', _dakaStatus2Color(UserDayStatus.studied.json, isDarkMode, themeConfig), subtitleColor),
         const SizedBox(width: 12),
-        _buildLegendItem('未学习', _dakaStatus2Color(UserDayStatus.notLogin.json, isDarkMode), subtitleColor),
+        _buildLegendItem('未学习', _dakaStatus2Color(UserDayStatus.notLogin.json, isDarkMode, themeConfig), subtitleColor),
       ],
     );
   }
@@ -277,13 +271,13 @@ class _StudyStatsPageState extends State<StudyStatsPage> {
     );
   }
 
-  Color _dakaStatus2Color(String status, bool isDarkMode) {
+  Color _dakaStatus2Color(String status, bool isDarkMode, AppThemeConfig themeConfig) {
     if (status == UserDayStatus.dakaed.json) {
-      return isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C); // 纯正扇贝翠绿
+      return themeConfig.primaryColor;
     } else if (status == UserDayStatus.studied.json) {
       return const Color(0xFFFA6E59); // 珊瑚暖橙红
     } else {
-      return isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFEDF5F2); // 浅灰微底
+      return isDarkMode ? Colors.white.withValues(alpha: 0.08) : themeConfig.subtleBg;
     }
   }
 }
