@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>词表与词库中心 - 扇贝温润极致美学原型</title>
+  <style>
+    :root {
+      /* 扇贝单词经典护眼温润绿体系 */
+      --bg: #F6F9F8;
+      --card-bg: #FFFFFF;
+      --card-subtle: #F0F6F3;
+      --card-border: #E1EFEA;
+      
+      --text-primary: #152724;
+      --text-secondary: #425B57;
+      --text-muted: #789691;
+      --text-faint: #B2CDC8;
+
+      /* 扇贝翡翠绿 */
+      --primary: #18BA7C;
+      --primary-hover: #15A56E;
+      --primary-soft: #EDF8F3;
+      --primary-border: #D1EADE;
+      
+      /* 功能柔和语义色 (告别高饱和刺眼渐变) */
+      --coral-text: #E54D3B;
+      --coral-bg: #FEF3F2;
+      --coral-border: #FCD5D2;
+
+      --amber-text: #D97706;
+      --amber-bg: #FFF8E6;
+      --amber-border: #FDE68A;
+
+      --blue-text: #2563EB;
+      --blue-bg: #EFF6FF;
+      --blue-border: #DBEAFE;
+
+      --purple-text: #7C3AED;
+      --purple-bg: #F5F3FF;
+      --purple-border: #DDD6FE;
+
+      --shadow-card: 0 4px 16px rgba(24, 186, 124, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0C1312;
+      --card-bg: #131E1C;
+      --card-subtle: #192C27;
+      --card-border: rgba(255, 255, 255, 0.08);
+      
+      --text-primary: #EAF7F4;
+      --text-secondary: #8EA8A3;
+      --text-muted: #5B7A75;
+      --text-faint: #344B48;
+
+      --primary: #2CD88F;
+      --primary-hover: #26C07F;
+      --primary-soft: rgba(44, 216, 143, 0.12);
+      --primary-border: rgba(44, 216, 143, 0.3);
+
+      --coral-text: #FF7E6C;
+      --coral-bg: rgba(255, 126, 108, 0.12);
+      --coral-border: rgba(255, 126, 108, 0.3);
+
+      --amber-text: #FBBF24;
+      --amber-bg: rgba(217, 119, 6, 0.15);
+      --amber-border: rgba(251, 191, 36, 0.3);
+
+      --blue-text: #60A5FA;
+      --blue-bg: rgba(37, 99, 235, 0.12);
+      --blue-border: rgba(96, 165, 250, 0.3);
+
+      --purple-text: #A78BFA;
+      --purple-bg: rgba(124, 58, 237, 0.12);
+      --purple-border: rgba(167, 139, 250, 0.3);
+
+      --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #DFE7E4;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px 12px;
+      color: var(--text-primary);
+      transition: background-color 0.3s;
+    }
+
+    /* 顶部控制栏 */
+    .designer-toolbar {
+      width: 100%;
+      max-width: 412px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 6px;
+    }
+
+    .toolbar-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #35534E;
+    }
+
+    .theme-toggle-btn {
+      background: #FFFFFF;
+      border: 1px solid #CFDDD8;
+      color: #24413C;
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+    }
+
+    /* 手机外壳容器 */
+    .phone-container {
+      width: 100%;
+      max-width: 392px;
+      height: 844px;
+      background-color: var(--bg);
+      border-radius: 38px;
+      box-shadow: 0 24px 60px rgba(18, 38, 33, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    /* 顶部状态栏 */
+    .status-bar {
+      height: 42px;
+      padding: 12px 20px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      z-index: 10;
+    }
+
+    /* 顶部大标题栏 */
+    .app-header {
+      padding: 10px 20px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .header-titles {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .header-main-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-sub-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s;
+    }
+    .header-icon-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* 滚动主内容区 */
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 分组模块 */
+    .section-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2px;
+    }
+
+    .section-header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-dot {
+      width: 4px;
+      height: 12px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.2px;
+    }
+
+    .section-action-btn {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 3px 9px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .section-action-btn:active {
+      opacity: 0.75;
+    }
+
+
+
+    /* 2. 今日学习 2x2 网格卡片 */
+    .grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .grid-card-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 13px 14px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 84px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .grid-card-item:active {
+      transform: scale(0.97);
+    }
+
+    .grid-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .icon-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-badge svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .icon-badge.green { background: var(--primary-soft); color: var(--primary); }
+    .icon-badge.amber { background: var(--amber-bg); color: var(--amber-text); }
+    .icon-badge.coral { background: var(--coral-bg); color: var(--coral-text); }
+    .icon-badge.blue  { background: var(--blue-bg); color: var(--blue-text); }
+    .icon-badge.purple{ background: var(--purple-bg); color: var(--purple-text); }
+
+    .card-arrow {
+      color: var(--text-faint);
+      transition: transform 0.15s;
+    }
+    .grid-card-item:hover .card-arrow,
+    .horizontal-card-item:hover .card-arrow,
+    .desk-book-card:hover .card-arrow {
+      transform: translateX(2px);
+      color: var(--primary);
+    }
+
+    .grid-card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .card-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .card-count {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-secondary);
+      font-family: ui-monospace, sans-serif;
+    }
+    .card-count.alert {
+      color: var(--coral-text);
+    }
+
+    /* 3. 核心词库 横向大卡片列表 */
+    .list-cards-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .horizontal-card-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 13px 15px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .horizontal-card-item:active {
+      transform: scale(0.98);
+    }
+
+    .h-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .h-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .h-card-icon svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .h-card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .h-card-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .h-card-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .h-card-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .count-pill {
+      background: var(--card-subtle);
+      border: 1px solid var(--card-border);
+      padding: 3px 8px;
+      border-radius: 9px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      font-family: ui-monospace, sans-serif;
+    }
+
+    /* 底部导航栏 (Bottom Navigation Bar) */
+    .bottom-nav {
+      height: 60px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      z-index: 10;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .nav-item.active {
+      color: var(--primary);
+    }
+
+    .nav-item svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .nav-label {
+      font-size: 10.5px;
+      font-weight: 600;
+    }
+
+    /* 设计对比说明卡片 */
+    .design-notes {
+      width: 100%;
+      max-width: 392px;
+      margin-top: 14px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #425B57;
+      border: 1px solid #CFDDD8;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+    .design-notes h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #152724;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 设计器切换栏 -->
+  <div class="designer-toolbar">
+    <span class="toolbar-title">🌿 词表与词库中心 - 融合书桌词书</span>
+    <button class="theme-toggle-btn" onclick="toggleTheme()">🌓 切换深色模式</button>
+  </div>
+
+  <!-- 手机外壳 -->
+  <div class="phone-container">
+    
+    <!-- 顶部状态栏 -->
+    <div class="status-bar">
+      <span>11:25</span>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span>5G</span>
+        <span>92%</span>
+      </div>
+    </div>
+
+    <!-- 顶部大标题栏 -->
+    <div class="app-header">
+      <div class="header-titles">
+        <div class="header-main-title">
+          <span>词表</span>
+        </div>
+        <span class="header-sub-title">查漏补缺 · 专项巩固</span>
+      </div>
+      <div class="header-icon-btn" title="搜索词库">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 滚动主内容 -->
+    <div class="scroll-content">
+
+      <!-- 1. 我的书桌 (用户学习的词书) -->
+      <div class="section-group">
+        <div class="section-header">
+          <div class="section-header-left">
+            <div class="section-dot"></div>
+            <span class="section-title">我的书桌</span>
+          </div>
+          <span class="section-action-btn">+ 选词书</span>
+        </div>
+
+        <div class="list-cards-stack">
+          <!-- 词书 1 -->
+          <div class="horizontal-card-item">
+            <div class="h-card-left">
+              <div class="h-card-icon green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              </div>
+              <div class="h-card-text">
+                <span class="h-card-title">考研英语大纲核心词汇</span>
+                <span class="h-card-desc">正在学习的主线词书</span>
+              </div>
+            </div>
+            <div class="h-card-right">
+              <span class="count-pill">5,500 词</span>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- 词书 2 (如果有多本) -->
+          <div class="horizontal-card-item">
+            <div class="h-card-left">
+              <div class="h-card-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              </div>
+              <div class="h-card-text">
+                <span class="h-card-title">大学英语六级 CET-6 核心词</span>
+                <span class="h-card-desc">备选进阶词库</span>
+              </div>
+            </div>
+            <div class="h-card-right">
+              <span class="count-pill">2,080 词</span>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 2. 今日学习 (2x2 精致网格) -->
+      <div class="section-group">
+        <div class="section-header">
+          <div class="section-header-left">
+            <div class="section-dot" style="background:var(--amber-text);"></div>
+            <span class="section-title">今日学习</span>
+          </div>
+        </div>
+        <div class="grid-2x2">
+          
+          <!-- 今日单词 -->
+          <div class="grid-card-item">
+            <div class="grid-card-top">
+              <div class="icon-badge green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="grid-card-bottom">
+              <span class="card-name">今日单词</span>
+              <span class="card-count">45</span>
+            </div>
+          </div>
+
+          <!-- 今日新词 -->
+          <div class="grid-card-item">
+            <div class="grid-card-top">
+              <div class="icon-badge amber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="grid-card-bottom">
+              <span class="card-name">今日新词</span>
+              <span class="card-count">15</span>
+            </div>
+          </div>
+
+          <!-- 今日旧词 -->
+          <div class="grid-card-item">
+            <div class="grid-card-top">
+              <div class="icon-badge blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              </div>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="grid-card-bottom">
+              <span class="card-name">今日旧词</span>
+              <span class="card-count">30</span>
+            </div>
+          </div>
+
+          <!-- 今日错词 -->
+          <div class="grid-card-item">
+            <div class="grid-card-top">
+              <div class="icon-badge coral">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="grid-card-bottom">
+              <span class="card-name">今日错词</span>
+              <span class="card-count alert">3</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 3. 核心词库 (纵向温润微卡片) -->
+      <div class="section-group">
+        <div class="section-header">
+          <div class="section-header-left">
+            <div class="section-dot" style="background:var(--blue-text);"></div>
+            <span class="section-title">核心词库</span>
+          </div>
+        </div>
+        <div class="list-cards-stack">
+          
+          <!-- 学习中 -->
+          <div class="horizontal-card-item">
+            <div class="h-card-left">
+              <div class="h-card-icon green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              <div class="h-card-text">
+                <span class="h-card-title">学习中</span>
+                <span class="h-card-desc">正在记忆与巩固中的词汇</span>
+              </div>
+            </div>
+            <div class="h-card-right">
+              <span class="count-pill">238 词</span>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- 已掌握 -->
+          <div class="horizontal-card-item">
+            <div class="h-card-left">
+              <div class="h-card-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div class="h-card-text">
+                <span class="h-card-title">已掌握</span>
+                <span class="h-card-desc">已完全牢固掌握的高频词</span>
+              </div>
+            </div>
+            <div class="h-card-right">
+              <span class="count-pill">1,420 词</span>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- 生词本 -->
+          <div class="horizontal-card-item">
+            <div class="h-card-left">
+              <div class="h-card-icon amber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div class="h-card-text">
+                <span class="h-card-title">生词本</span>
+                <span class="h-card-desc">自主收藏与重点标记单词</span>
+              </div>
+            </div>
+            <div class="h-card-right">
+              <span class="count-pill">64 词</span>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 4. 专项突破 (专项强化) -->
+      <div class="section-group">
+        <div class="section-header">
+          <div class="section-header-left">
+            <div class="section-dot" style="background:var(--purple-text);"></div>
+            <span class="section-title">专项突破</span>
+          </div>
+        </div>
+        <div class="list-cards-stack">
+          
+          <!-- 易混淆单词 -->
+          <div class="horizontal-card-item">
+            <div class="h-card-left">
+              <div class="h-card-icon purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+              </div>
+              <div class="h-card-text">
+                <span class="h-card-title">易混淆单词</span>
+                <span class="h-card-desc">形近词、同义辨析强化攻坚</span>
+              </div>
+            </div>
+            <div class="h-card-right">
+              <span class="count-pill">18 组</span>
+              <svg class="card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        <span class="nav-label">学习</span>
+      </div>
+      <div class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span class="nav-label">词表</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="nav-label">查词</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+        <span class="nav-label">比赛</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="nav-label">我</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 设计要点说明 -->
+  <div class="design-notes">
+    <h3>✨ 词表与词库中心重构要点</h3>
+    <p>1. <strong>全域普通词表卡片统一规范</strong>：书桌词书采用与其他词表完全一致的温润微卡片（书本图标 + 词书全称 + 说明 + 数量微胶囊 + 箭头），风格平整纯净，无突兀异构感。</p>
+    <p>2. <strong>今日学习 (2×2 网格)</strong>：今日单词、新词、旧词、错词（配以轻柔语义色标与数字，触手可及）。</p>
+    <p>3. <strong>核心词库 (纵向卡片)</strong>：学习中、已掌握、生词本（星标收藏词库）。</p>
+    <p>4. <strong>专项突破</strong>：易混淆单词专项强化攻坚。</p>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      if (current === 'dark') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    }
+  </script>
+</body>
+</html>

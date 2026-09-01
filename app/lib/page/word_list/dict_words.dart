@@ -398,10 +398,21 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
     DictVo dict;
     if (dictOrId is DictVo) {
       dict = dictOrId;
+    } else if (dictOrId is Dict) {
+      // 传入的是 Drift 本地实体对象
+      dict = DictVo.c2(dictOrId.id);
+      dict.name = dictOrId.name;
+      dict.shortName = Util.getShortName(dictOrId.name);
+      dict.wordCount = dictOrId.wordCount;
+      dict.isReady = dictOrId.isReady;
+      dict.isShared = dictOrId.isShared;
+      dict.visible = dictOrId.visible;
+      dict.editable = dictOrId.editable;
     } else {
+      final String dictId = dictOrId is String ? dictOrId : dictOrId.toString();
       // 从本地数据库获取词典信息
       var db = MyDatabase.instance;
-      final dictQuery = db.select(db.dicts)..where((d) => d.id.equals(dictOrId.toString()));
+      final dictQuery = db.select(db.dicts)..where((d) => d.id.equals(dictId));
       final dictEntry = await dictQuery.getSingleOrNull();
 
       if (dictEntry != null) {
@@ -416,7 +427,7 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
         dict.editable = dictEntry.editable;
       } else {
         // 如果本地没有，创建一个默认词典对象
-        dict = DictVo.c2(dictOrId.toString());
+        dict = DictVo.c2(dictId);
         dict.name = "词典(本地模式)";
         dict.shortName = "词典";
         dict.isReady = true;

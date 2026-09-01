@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
+import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/page/word_list/confusable_words.dart';
 import 'package:nnbdc/page/word_list/dict_words.dart';
 import 'package:nnbdc/page/word_list/learning_words.dart';
@@ -9,6 +11,7 @@ import 'package:nnbdc/page/word_list/today_new_words.dart';
 import 'package:nnbdc/page/word_list/today_old_words.dart';
 import 'package:nnbdc/page/word_list/today_words.dart';
 import 'package:nnbdc/page/word_list/wrong_words.dart';
+import 'package:nnbdc/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 
 import '../api/vo.dart';
@@ -26,9 +29,8 @@ class WordListsPage extends StatefulWidget {
 class WordListsPageState extends State<WordListsPage> implements RefreshableTab {
   static WordListsPageState? instance;
   bool dataLoaded = false;
-  late List<WordList> wordLists;
-  static const double leftPadding = 16;
-  static const double rightPadding = 16;
+  List<WordList> wordLists = [];
+  List<Dict> deskDicts = [];
   bool _isDirty = false;
   StreamSubscription? _subscription;
 
@@ -67,187 +69,647 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
   Future<void> loadData() async {
     Global.logger.d('[EventBus Debug] === loadData 开始异步加载数据 ===');
-    wordLists = (await WordBo().getWordLists()).data!;
-    Global.logger.d('[EventBus Debug] === loadData 加载完成，数据长度: ${wordLists.length} ===');
+    try {
+      final listsResult = await WordBo().getWordLists();
+      final lists = listsResult.data ?? [];
 
-    if (mounted) {
-      setState(() {
-        dataLoaded = true;
-      });
-      Global.logger.d('[EventBus Debug] loadData() 已触发 UI 刷新 (setState)');
-    } else {
-      Global.logger.d('[EventBus Debug] loadData() mounted=false, 跳过 UI 刷新');
+      // 加载用户书桌上的词书
+      final user = Global.getLoggedInUser();
+      final loadedDeskDicts = <Dict>[];
+      if (user != null) {
+        final db = MyDatabase.instance;
+        final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user.id);
+        for (final ld in learningDicts) {
+          final d = await db.dictsDao.findById(ld.dictId);
+          if (d != null) {
+            loadedDeskDicts.add(d);
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          wordLists = lists;
+          deskDicts = loadedDeskDicts;
+          dataLoaded = true;
+        });
+        Global.logger.d('[EventBus Debug] loadData() 已触发 UI 刷新 (setState)');
+      }
+    } catch (e, st) {
+      Global.logger.e('词表页 loadData 失败: $e', stackTrace: st);
+      if (mounted) {
+        setState(() {
+          dataLoaded = true;
+        });
+      }
     }
   }
 
-  double contentWidth() {
-    final size = MediaQuery.of(context).size;
-    final width = size.width - leftPadding - rightPadding;
-    return width;
-  }
-
-  List<Color> gradientColorsByIndex(var wordListIndex) {
-    switch (wordListIndex) {
-      case 0:
-        return [const Color(0xFFE53E3E), const Color(0xFFFC8181)]; // 红色渐变
-      case 1:
-        return [const Color(0xFFFF6B35), const Color(0xFFFF8E53)]; // 橙红渐变
-      case 2:
-        return [const Color(0xFFFFB347), const Color(0xFFFFD93D)]; // 橙黄渐变
-      case 3:
-        return [const Color(0xFF38A169), const Color(0xFF68D391)]; // 绿色渐变
-      case 4:
-        return [const Color(0xFF00B5D8), const Color(0xFF63B3ED)]; // 青色渐变
-      case 5:
-        return [const Color(0xFF3182CE), const Color(0xFF63B3ED)]; // 蓝色渐变
-      case 6:
-        return [const Color(0xFF805AD5), const Color(0xFFB794F6)]; // 紫色渐变
-      default:
-        return [const Color(0xFF38A169), const Color(0xFF68D391)]; // 默认绿色
+  String _cleanDictName(String name) {
+    if (name.endsWith('.dict')) {
+      return name.substring(0, name.lastIndexOf('.'));
     }
+    return name;
   }
 
-  IconData iconByIndex(var wordListIndex) {
-    switch (wordListIndex) {
-      case 0:
-        return Icons.error_outline; // 今日错词
-      case 1:
-        return Icons.fiber_new; // 今日新词
-      case 2:
-        return Icons.refresh; // 今日旧词
-      case 3:
-        return Icons.today; // 今日单词
-      case 4:
-        return Icons.school; // 学习中
-      case 5:
-        return Icons.book; // 生词本
-      case 6:
-        return Icons.check_circle; // 已掌握
-      default:
-        return Icons.list_alt;
+  WordList? _findListByName(String name) {
+    for (final l in wordLists) {
+      if (l.name == name) return l;
     }
+    return null;
   }
 
-  Widget renderAWordList(WordList wordList, var index) {
-    final gradientColors = gradientColorsByIndex(index);
-    final icon = iconByIndex(index);
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final backgroundColor = isDarkMode ? const Color(0xFF0C1312) : const Color(0xFFF6F9F8);
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final textSubColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          slivers: [
+            // 1. 顶部大标题栏
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '词表',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '查漏补缺 · 专项巩固',
+                          style: TextStyle(
+                            color: textSubColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 2. 主体内容区
+            SliverToBoxAdapter(
+              child: !dataLoaded
+                  ? SizedBox(
+                      height: 320,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              '正在加载词表...',
+                              style: TextStyle(
+                                color: textSubColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. 我的书桌板块
+                          _buildDeskBooksSection(isDarkMode),
+                          const SizedBox(height: 20),
+
+                          // 2. 今日学习板块 (2x2 网格)
+                          _buildTodayStudySection(isDarkMode),
+                          const SizedBox(height: 20),
+
+                          // 3. 核心词库板块 (纵向普通词表卡片)
+                          _buildCoreDictsSection(isDarkMode),
+                          const SizedBox(height: 20),
+
+                          // 4. 专项突破板块 (易混淆单词)
+                          _buildSpecialSection(isDarkMode),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 1. 我的书桌板块 (用户正在背的词书)
+  Widget _buildDeskBooksSection(bool isDarkMode) {
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+    final primarySoft = isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 标头部
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: accentGreen,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '我的书桌',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+            InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                context.push('/select_book').then((_) => loadData());
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: primarySoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '+ 选词书',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: accentGreen,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // 词书列表
+        if (deskDicts.isEmpty)
+          _buildEmptyDeskCard(isDarkMode)
+        else
+          Column(
+            children: [
+              for (int i = 0; i < deskDicts.length; i++) ...[
+                if (i > 0) const SizedBox(height: 9),
+                _buildHorizontalWordListCard(
+                  isDarkMode: isDarkMode,
+                  icon: Icons.auto_stories_rounded,
+                  iconBgColor: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
+                  iconColor: accentGreen,
+                  title: _cleanDictName(deskDicts[i].name),
+                  subtitle: i == 0 ? '正在学习的主线词书' : '书桌备选词书',
+                  countText: '${deskDicts[i].wordCount} 词',
+                  onTap: () async {
+                    await toDictWordsListPage(deskDicts[i].id, true);
+                    loadData();
+                  },
+                ),
+              ],
+            ],
+          ),
+      ],
+    );
+  }
+
+  /// 空书桌引导卡片
+  Widget _buildEmptyDeskCard(bool isDarkMode) {
+    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
+    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
+    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
+    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        context.push('/select_book').then((_) => loadData());
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: cardBorder, width: 1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(Icons.bookmark_add_outlined, size: 18, color: accentGreen),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '书桌暂无词书，点击挑选一本加入学习',
+                style: TextStyle(fontSize: 13, color: textSub, fontWeight: FontWeight.w500),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: textSub.withValues(alpha: 0.6)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 2. 今日学习板块 (2x2 网格)
+  Widget _buildTodayStudySection(bool isDarkMode) {
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final amberColor = isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+
+    final todayList = _findListByName('今日单词');
+    final todayNewList = _findListByName('今日新词');
+    final todayOldList = _findListByName('今日旧词');
+    final wrongList = _findListByName('今日错词');
+
+    final todayCount = todayList?.wordCount ?? 0;
+    final newCount = todayNewList?.wordCount ?? 0;
+    final oldCount = todayOldList?.wordCount ?? 0;
+    final wrongCount = wrongList?.wordCount ?? 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 12,
+              decoration: BoxDecoration(
+                color: amberColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '今日学习',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // 2x2 网格
+        Row(
+          children: [
+            Expanded(
+              child: _buildGridWordListCard(
+                isDarkMode: isDarkMode,
+                title: '今日单词',
+                count: todayCount,
+                icon: Icons.calendar_today_rounded,
+                iconBgColor: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
+                iconColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                onTap: () {
+                  toTodayWordsListPage(true)?.then((_) => loadData());
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildGridWordListCard(
+                isDarkMode: isDarkMode,
+                title: '今日新词',
+                count: newCount,
+                icon: Icons.auto_awesome_rounded,
+                iconBgColor: isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFFF8E6),
+                iconColor: amberColor,
+                onTap: () {
+                  toTodayNewWordsListPage(true)?.then((_) => loadData());
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildGridWordListCard(
+                isDarkMode: isDarkMode,
+                title: '今日旧词',
+                count: oldCount,
+                icon: Icons.replay_rounded,
+                iconBgColor: isDarkMode ? const Color(0x2660A5FA) : const Color(0xFFEFF6FF),
+                iconColor: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                onTap: () {
+                  toTodayOldWordsListPage(true)?.then((_) => loadData());
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildGridWordListCard(
+                isDarkMode: isDarkMode,
+                title: '今日错词',
+                count: wrongCount,
+                icon: Icons.error_outline_rounded,
+                iconBgColor: isDarkMode ? const Color(0x26FF7E6C) : const Color(0xFFFEF3F2),
+                iconColor: isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B),
+                isAlert: wrongCount > 0,
+                onTap: () {
+                  toWrongWordsListPage()?.then((_) => loadData());
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 3. 核心词库板块 (纵向普通词表卡片)
+  Widget _buildCoreDictsSection(bool isDarkMode) {
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final blueColor = isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+
+    final learningList = _findListByName('学习中');
+    final masteredList = _findListByName('已掌握');
+    final rawDictList = _findListByName('生词本');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 12,
+              decoration: BoxDecoration(
+                color: blueColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '核心词库',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        Column(
+          children: [
+            _buildHorizontalWordListCard(
+              isDarkMode: isDarkMode,
+              icon: Icons.school_rounded,
+              iconBgColor: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
+              iconColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+              title: '学习中',
+              subtitle: '正在记忆与巩固中的词汇',
+              countText: '${learningList?.wordCount ?? 0} 词',
+              onTap: () {
+                toLearningWordsListPage(true)?.then((_) => loadData());
+              },
+            ),
+            const SizedBox(height: 9),
+            _buildHorizontalWordListCard(
+              isDarkMode: isDarkMode,
+              icon: Icons.check_circle_rounded,
+              iconBgColor: isDarkMode ? const Color(0x2660A5FA) : const Color(0xFFEFF6FF),
+              iconColor: blueColor,
+              title: '已掌握',
+              subtitle: '已完全牢固掌握的高频词',
+              countText: '${masteredList?.wordCount ?? 0} 词',
+              onTap: () {
+                toMasteredWordsListPage(true)?.then((_) => loadData());
+              },
+            ),
+            const SizedBox(height: 9),
+            _buildHorizontalWordListCard(
+              isDarkMode: isDarkMode,
+              icon: Icons.bookmark_rounded,
+              iconBgColor: isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFFF8E6),
+              iconColor: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+              title: '生词本',
+              subtitle: '自主收藏与重点标记单词',
+              countText: '${rawDictList?.wordCount ?? 0} 词',
+              onTap: () async {
+                final dict = await WordBo().getRawWordDict();
+                await toDictWordsListPage(dict, true);
+                loadData();
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 4. 专项突破板块 (易混淆单词)
+  Widget _buildSpecialSection(bool isDarkMode) {
+    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final purpleColor = isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED);
+    final confusableList = _findListByName('易混淆单词');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 12,
+              decoration: BoxDecoration(
+                color: purpleColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '专项突破',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        _buildHorizontalWordListCard(
+          isDarkMode: isDarkMode,
+          icon: Icons.compare_arrows_rounded,
+          iconBgColor: isDarkMode ? const Color(0x26A78BFA) : const Color(0xFFF5F3FF),
+          iconColor: purpleColor,
+          title: '易混淆单词',
+          subtitle: '形近词、同义辨析强化攻坚',
+          countText: '${confusableList?.wordCount ?? 0} 组',
+          onTap: () {
+            toConfusableWordsListPage()?.then((_) => loadData());
+          },
+        ),
+      ],
+    );
+  }
+
+  /// 通用横向词表微卡片
+  Widget _buildHorizontalWordListCard({
+    required bool isDarkMode,
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String countText,
+    required VoidCallback onTap,
+  }) {
+    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
+    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
+    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
+    final pillBg = isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF0F6F3);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: cardBorder, width: 1),
         boxShadow: [
           BoxShadow(
-            color: gradientColors[0].withValues(alpha: 0.3),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.025),
             blurRadius: 12,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () async {
-            if (wordList.name == '今日错词') {
-              toWrongWordsListPage()?.then((value) => loadData());
-            } else if (wordList.name == '今日新词') {
-              toTodayNewWordsListPage(true)!.then((value) => loadData());
-            } else if (wordList.name == '今日旧词') {
-              toTodayOldWordsListPage(true)!.then((value) => loadData());
-            } else if (wordList.name == '今日单词') {
-              toTodayWordsListPage(true)!.then((value) => loadData());
-            } else if (wordList.name == '学习中') {
-              toLearningWordsListPage(true)!.then((value) => loadData());
-            } else if (wordList.name == '生词本') {
-              var dict = await WordBo().getRawWordDict();
-              toDictWordsListPage(dict, true)!.then((value) => loadData());
-            } else if (wordList.name == '已掌握') {
-              toMasteredWordsListPage(true)!.then((value) => loadData());
-            } else if (wordList.name == '易混淆单词') {
-              toConfusableWordsListPage()!.then((value) => loadData());
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
-                // 图标容器
+                // 左侧图标容器
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
+                    color: iconBgColor,
+                    borderRadius: BorderRadius.circular(11),
                   ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 22,
-                  ),
+                  child: Icon(icon, size: 18, color: iconColor),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
 
-                // 文字内容
+                // 中间文字
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        wordList.name,
-                        textScaler: TextScaler.linear(1.0),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w400,
-                          height: 1.3,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${wordList.wordCount} 个单词',
-                        textScaler: TextScaler.linear(1.0),
+                        title,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w300,
-                          height: 1.5,
-                          letterSpacing: 0.8,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: textMain,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: textSub,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
 
-                // 箭头图标
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                // 右侧数量胶囊 + 箭头
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: pillBg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: cardBorder, width: 0.8),
+                      ),
+                      child: Text(
+                        countText,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: textSub,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 13,
+                      color: textSub.withValues(alpha: 0.6),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -257,86 +719,95 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    Global.logger.d('[EventBus Debug] WordListsPage build() 正在执行！！！');
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F7FA);
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF2C3E50);
+  /// 通用 2x2 网格词表微卡片
+  Widget _buildGridWordListCard({
+    required bool isDarkMode,
+    required String title,
+    required int count,
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    required VoidCallback onTap,
+    bool isAlert = false,
+  }) {
+    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
+    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
+    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final textSecondary = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57);
+    final alertColor = isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B);
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          // 美化的AppBar
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: backgroundColor,
-            elevation: 0,
-            centerTitle: false,
-            automaticallyImplyLeading: false,
-            title: Row(
-              mainAxisSize: MainAxisSize.min,
+    return Container(
+      height: 84,
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: cardBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.025),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.library_books_rounded,
-                  color: (isDarkMode ? Colors.white : const Color(0xFF2C3E50)).withValues(alpha: 0.8),
-                  size: 20,
+                // 顶部行：图标 + 箭头
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: iconBgColor,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Icon(icon, size: 15, color: iconColor),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 12,
+                      color: isDarkMode ? Colors.white24 : Colors.black26,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '词表管理',
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white : const Color(0xFF2C3E50),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.2,
-                  ),
+
+                // 底部行：标题 + 数量
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: textMain,
+                      ),
+                    ),
+                    Text(
+                      count.toString(),
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: isAlert ? alertColor : textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-
-            // 内容区域
-            SliverToBoxAdapter(
-              child: !dataLoaded
-                  ? SizedBox(
-                      height: 200,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                const Color(0xFF0097A7),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '正在加载词表...',
-                              textScaler: TextScaler.linear(1.0),
-                              style: TextStyle(
-                                color: textColor.withValues(alpha: 0.7),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w300,
-                                height: 1.5,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.fromLTRB(leftPadding, 24, rightPadding, 24),
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < wordLists.length; i++) renderAWordList(wordLists[i], i),
-                        ],
-                      ),
-                    ),
-            ),
-        ],
+        ),
       ),
     );
   }
