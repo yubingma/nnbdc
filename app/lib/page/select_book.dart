@@ -732,6 +732,11 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Builder(builder: (context) {
             final restricted = PlatformUtils.isIOS && !SubscriptionUtil.isPremium();
+            final themeStyle = context.watch<DarkMode>().themeStyle;
+            final themeConfig = AppThemeConfig.of(themeStyle);
+            final primaryColor = themeConfig.primaryColor;
+            final subtleBg = themeConfig.subtleBg;
+
             return Material(
               color: Colors.transparent,
               child: InkWell(
@@ -743,12 +748,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                   decoration: BoxDecoration(
                     color: restricted
                         ? (isDarkMode ? const Color(0xFF1F2A28) : const Color(0xFFE2E8F0))
-                        : (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFEDF8F3)),
+                        : (isDarkMode ? primaryColor.withValues(alpha: 0.15) : subtleBg),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: restricted
                           ? Colors.grey
-                          : (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor),
+                          : primaryColor,
                       width: 1.2,
                     ),
                   ),
@@ -760,7 +765,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                         size: 20,
                         color: restricted
                             ? Colors.grey
-                            : (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor),
+                            : primaryColor,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -770,7 +775,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                           fontWeight: FontWeight.w700,
                           color: restricted
                               ? Colors.grey
-                              : (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor),
+                              : primaryColor,
                         ),
                       ),
                     ],
@@ -814,27 +819,28 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                 final isSelected = isDictSelected(dict);
                 final bookTitle = dict.name ?? '未命名';
 
+                final themeStyle = context.watch<DarkMode>().themeStyle;
+                final themeConfig = AppThemeConfig.of(themeStyle);
+                final primaryColor = themeConfig.primaryColor;
+                final subtleBg = themeConfig.subtleBg;
+                final cardBg = themeConfig.cardBg;
+                final cardBorder = themeConfig.cardBorder;
+
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFEDF8F3))
-                        : (isDarkMode ? const Color(0xFF131E1C) : Colors.white),
+                        ? (isDarkMode ? primaryColor.withValues(alpha: 0.18) : subtleBg)
+                        : cardBg,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isSelected
-                          ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                          : (isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
+                          ? primaryColor
+                          : cardBorder,
                       width: isSelected ? 1.5 : 1,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.03),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: themeConfig.cardShadows,
                   ),
                   child: Material(
                     color: Colors.transparent,
@@ -865,7 +871,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
-                                            color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                            color: themeConfig.textPrimary,
                                             fontSize: 15,
                                             fontWeight: FontWeight.w700,
                                             fontFamily: 'NotoSansSC',
@@ -882,13 +888,13 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFE8F8F1),
+                                      color: subtleBg,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
                                       '${_formatNumber(dict.wordCount ?? 0)} 词',
                                       style: TextStyle(
-                                        color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                                        color: primaryColor,
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -904,7 +910,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                                 size: 22,
                                 color: (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本')
                                     ? Colors.grey
-                                    : (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor),
+                                    : primaryColor,
                               ),
                               onPressed: () async {
                                 if (PlatformUtils.isIOS && !SubscriptionUtil.isPremium() && dict.name != '生词本') {
@@ -931,12 +937,12 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: isSelected
-                                    ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                                    ? primaryColor
                                     : Colors.transparent,
                                 border: Border.all(
                                   color: isSelected
-                                      ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                                      : (isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
+                                      ? primaryColor
+                                      : (isDarkMode ? Colors.white24 : themeConfig.cardBorder),
                                   width: 1.5,
                                 ),
                               ),
@@ -1925,22 +1931,25 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   }
 
   Widget _buildSearchField(bool isDarkMode, Color textColor) {
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+
     return Container(
       key: _searchKey,
       height: 38,
       margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+        color: themeConfig.cardBg,
         borderRadius: BorderRadius.circular(19),
         border: Border.all(
-          color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+          color: themeConfig.cardBorder,
           width: 1,
         ),
       ),
       child: TextField(
         controller: _searchController,
         style: TextStyle(
-          color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+          color: themeConfig.textPrimary,
           fontSize: 13.5,
         ),
         onChanged: (value) {
@@ -1952,19 +1961,19 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         decoration: InputDecoration(
           hintText: '搜索词库 / 词书名称...',
           hintStyle: TextStyle(
-            color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+            color: themeConfig.textMuted,
             fontSize: 13.5,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
-            color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+            color: themeConfig.textSecondary,
             size: 18,
           ),
           suffixIcon: _searchText.isNotEmpty
               ? IconButton(
                   icon: Icon(
                     Icons.close_rounded,
-                    color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF6B8B84),
+                    color: themeConfig.textSecondary,
                     size: 16,
                   ),
                   onPressed: () {

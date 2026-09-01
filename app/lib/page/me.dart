@@ -3146,19 +3146,22 @@ class _DictCardState extends State<DictCard> {
 
     final progressPercent = (masteryProgress * 100).toInt();
 
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
 
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final masteredColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final fetchColor = isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399);
-    final borderColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final masteredColor = themeConfig.primaryColor;
+    final fetchColor = themeConfig.primaryColor.withValues(alpha: 0.65);
+    final borderColor = themeConfig.cardBorder;
+    final cardBg = themeConfig.subtleBg;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF162320) : const Color(0xFFF5F9F7),
+        color: cardBg,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor, width: 1.0),
       ),
@@ -3183,8 +3186,8 @@ class _DictCardState extends State<DictCard> {
                         fetchProgress: fetchProgress * animValue,
                         masteredColor: masteredColor,
                         fetchColor: fetchColor,
-                        backgroundColor: isDarkMode ? Colors.white12 : const Color(0xFFE8F5EE),
-                        dividerColor: isDarkMode ? const Color(0xFF162320) : const Color(0xFFF5F9F7),
+                        backgroundColor: isDarkMode ? Colors.white10 : masteredColor.withValues(alpha: 0.12),
+                        dividerColor: cardBg,
                         strokeWidth: 4.0,
                       ),
                       child: Center(
@@ -3272,13 +3275,13 @@ class _DictCardState extends State<DictCard> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: currentLearningDict.isPrivileged
-                        ? (isDarkMode ? masteredColor.withValues(alpha: 0.15) : const Color(0xFFE8F8F1))
-                        : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9)),
+                        ? (isDarkMode ? masteredColor.withValues(alpha: 0.2) : masteredColor.withValues(alpha: 0.12))
+                        : (isDarkMode ? Colors.white.withValues(alpha: 0.05) : themeConfig.cardBg),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: currentLearningDict.isPrivileged
-                          ? masteredColor.withValues(alpha: 0.4)
-                          : (isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.06)),
+                          ? masteredColor.withValues(alpha: 0.5)
+                          : themeConfig.cardBorder,
                     ),
                   ),
                   child: Row(
@@ -3317,10 +3320,10 @@ class _DictCardState extends State<DictCard> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : themeConfig.cardBg,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isDarkMode ? Colors.white12 : Colors.black.withValues(alpha: 0.06),
+                      color: themeConfig.cardBorder,
                     ),
                   ),
                   child: Row(
