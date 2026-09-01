@@ -3263,25 +3263,25 @@ class _DictCardState extends State<DictCard> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                   decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha: isDarkMode ? 0.15 : 0.08),
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : themeConfig.cardBg,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.redAccent.withValues(alpha: isDarkMode ? 0.25 : 0.15),
+                      color: themeConfig.cardBorder,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.remove_circle_outline_rounded,
                         size: 13,
-                        color: Colors.redAccent,
+                        color: subtitleColor,
                       ),
                       const SizedBox(width: 3),
-                      const Text(
+                      Text(
                         '停学',
                         style: TextStyle(
-                          color: Colors.redAccent,
+                          color: subtitleColor,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           fontFamily: 'NotoSansSC',
