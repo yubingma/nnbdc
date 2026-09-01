@@ -29,6 +29,7 @@ import '../api/bo/word_bo.dart';
 import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_theme_background.dart';
 
 class SelectBookPage extends StatefulWidget {
   const SelectBookPage({super.key});
@@ -522,42 +523,46 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                     _selectedSubGroupIndex[parentVo.name] = index;
                   });
                 },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppTheme.primaryColor
-                        : (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFFFFFFF)),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
+                child: Builder(builder: (context) {
+                  final themeStyle = context.watch<DarkMode>().themeStyle;
+                  final themeConfig = AppThemeConfig.of(themeStyle);
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
                       color: isSelected
-                          ? AppTheme.primaryColor
-                          : (isDarkMode ? Colors.white12 : const Color(0xFFD1EADE)),
-                      width: 1,
+                          ? themeConfig.primaryColor
+                          : (isDarkMode ? themeConfig.cardBg : const Color(0xFFFFFFFF)),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isSelected
+                            ? themeConfig.primaryColor
+                            : themeConfig.cardBorder,
+                        width: 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: themeConfig.primaryColor.withValues(alpha: 0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    group.name,
-                    style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57)),
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    alignment: Alignment.center,
+                    child: Text(
+                      group.name,
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : themeConfig.textSecondary,
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                }),
               ),
             ),
           );
@@ -600,119 +605,122 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         final isSelected = isDictSelected(dict);
         final bookTitle = dict.shortName ?? dict.name ?? '';
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFEDF8F3))
-                : (isDarkMode ? const Color(0xFF131E1C) : Colors.white),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
+        return Builder(builder: (context) {
+          final themeStyle = context.watch<DarkMode>().themeStyle;
+          final themeConfig = AppThemeConfig.of(themeStyle);
+          final primaryColor = themeConfig.primaryColor;
+          final subtleBg = themeConfig.subtleBg;
+          final cardBg = themeConfig.cardBg;
+          final cardBorder = themeConfig.cardBorder;
+
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
               color: isSelected
-                  ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                  : (isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
-              width: isSelected ? 1.5 : 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => toggleDictSelectedStatus(dict),
+                  ? (isDarkMode ? primaryColor.withValues(alpha: 0.18) : subtleBg)
+                  : cardBg,
               borderRadius: BorderRadius.circular(14),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    // 立体精致封面
-                    _buildBookCover(bookTitle, index),
-                    const SizedBox(width: 14),
-                    // 词书信息
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            bookTitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'NotoSansSC',
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFE8F8F1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '${_formatNumber(dict.wordCount ?? 0)} 词',
-                                  style: TextStyle(
-                                    color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+              border: Border.all(
+                color: isSelected
+                    ? primaryColor
+                    : cardBorder,
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow: themeConfig.cardShadows,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => toggleDictSelectedStatus(dict),
+                borderRadius: BorderRadius.circular(14),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      // 立体精致封面
+                      _buildBookCover(bookTitle, index),
+                      const SizedBox(width: 14),
+                      // 词书信息
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              bookTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: themeConfig.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'NotoSansSC',
                               ),
-                              if (dict.domain != null && dict.domain!.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                Text(
-                                  dict.domain!,
-                                  style: TextStyle(
-                                    color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
-                                    fontSize: 11.5,
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: subtleBg,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '${_formatNumber(dict.wordCount ?? 0)} 词',
+                                    style: TextStyle(
+                                      color: primaryColor,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
+                                if (dict.domain != null && dict.domain!.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    dict.domain!,
+                                    style: TextStyle(
+                                      color: themeConfig.textSecondary,
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    // 勾选圆形指示器
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isSelected
-                            ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                            : Colors.transparent,
-                        border: Border.all(
-                          color: isSelected
-                              ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                              : (isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
-                          width: 1.5,
+                            ),
+                          ],
                         ),
                       ),
-                      child: isSelected
-                          ? const Center(
-                              child: Icon(Icons.check_rounded, size: 14, color: Colors.white),
-                            )
-                          : null,
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      // 勾选圆形指示器
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected
+                              ? primaryColor
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: isSelected
+                                ? primaryColor
+                                : (isDarkMode ? Colors.white24 : const Color(0xFFB2CDC8)),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: isSelected
+                            ? const Center(
+                                child: Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
@@ -1735,6 +1743,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
   Widget _buildFloatingSaveBar(bool isDarkMode) {
     final selectedCount = selectedDictVos?.length ?? 0;
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final accentColor = themeConfig.primaryColor;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -1742,7 +1753,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 6 : 12),
       ),
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+        color: themeConfig.cardBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
@@ -1753,7 +1764,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         ],
         border: Border(
           top: BorderSide(
-            color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+            color: themeConfig.cardBorder,
             width: 1,
           ),
         ),
@@ -1766,7 +1777,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                color: themeConfig.textPrimary,
               ),
             ),
           ),
@@ -1776,7 +1787,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
             icon: const Icon(Icons.check_rounded, size: 17),
             label: const Text('保存'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: accentColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -1791,8 +1802,11 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.white : const Color(0xFF152724);
+    final darkModeState = context.watch<DarkMode>();
+    final themeStyle = darkModeState.themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
+    final textColor = themeConfig.textPrimary;
 
     if (_isLoading && (parentCategories == null || parentCategories!.isEmpty)) {
       return const Scaffold(
@@ -1805,7 +1819,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
       return Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor: isDarkMode ? const Color(0xFF131E1C).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85),
+          backgroundColor: Colors.transparent,
           title: const Text('选词书'),
           centerTitle: true,
         ),
@@ -1819,7 +1833,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: isDarkMode ? const Color(0xFF131E1C).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 0,
@@ -1835,9 +1849,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                 height: 32,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                  color: themeConfig.cardBg,
                   border: Border.all(
-                    color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                    color: themeConfig.cardBorder,
                     width: 1,
                   ),
                 ),
@@ -1845,7 +1859,7 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                   child: Icon(
                     Icons.arrow_back_ios_new_rounded,
                     size: 14,
-                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                    color: themeConfig.textPrimary,
                   ),
                 ),
               ),
@@ -1860,10 +1874,10 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
           child: (tabController != null && filteredCategories.isNotEmpty)
               ? Container(
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                    color: Colors.transparent,
                     border: Border(
                       bottom: BorderSide(
-                        color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+                        color: themeConfig.cardBorder,
                         width: 1,
                       ),
                     ),
@@ -1871,9 +1885,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
                   child: TabBar(
                     controller: tabController,
                     isScrollable: true,
-                    labelColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
-                    unselectedLabelColor: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
-                    indicatorColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                    labelColor: themeConfig.primaryColor,
+                    unselectedLabelColor: themeConfig.textSecondary,
+                    indicatorColor: themeConfig.primaryColor,
                     indicatorSize: TabBarIndicatorSize.label,
                     indicatorWeight: 2.5,
                     labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
@@ -1887,17 +1901,26 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
         ),
       ),
       bottomNavigationBar: _buildFloatingSaveBar(isDarkMode),
-      body: (filteredCategories.isEmpty || tabController == null)
-          ? Center(
-              child: Text(
-                '没有找到匹配的词书',
-                style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.black45),
-              ),
-            )
-          : TabBarView(
-              controller: tabController,
-              children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: AppThemeBackground(
+              themeStyle: themeStyle,
             ),
+          ),
+          (filteredCategories.isEmpty || tabController == null)
+              ? Center(
+                  child: Text(
+                    '没有找到匹配的词书',
+                    style: TextStyle(color: themeConfig.textSecondary),
+                  ),
+                )
+              : TabBarView(
+                  controller: tabController,
+                  children: filteredCategories.map((cat) => _buildPrimaryTabContent(cat, isDarkMode)).toList(),
+                ),
+        ],
+      ),
     );
   }
 

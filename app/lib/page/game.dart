@@ -9,6 +9,7 @@ import 'package:nnbdc/state.dart';
 import '../api/vo.dart';
 import '../global.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_theme_background.dart';
 import '../util/error_handler.dart';
 
 class GamePage extends StatefulWidget {
@@ -75,13 +76,14 @@ class _GamePageState extends State<GamePage> {
 
   Future<int?> _promptRoomId(BuildContext context) async {
     final controller = TextEditingController();
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-    final cardBorder = isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5B7A75);
-    final subtleBg = isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF0F6F3);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+    final themeStyle = context.read<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final subtleBg = themeConfig.subtleBg;
+    final accentColor = themeConfig.primaryColor;
 
     return showDialog<int>(
       context: context,
@@ -96,13 +98,7 @@ class _GamePageState extends State<GamePage> {
               color: cardBg,
               borderRadius: BorderRadius.circular(22),
               border: Border.all(color: cardBorder, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.12),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              boxShadow: themeConfig.cardShadows,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -114,13 +110,13 @@ class _GamePageState extends State<GamePage> {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: isDarkMode ? const Color(0x2660A5FA) : const Color(0xFFEFF6FF),
+                        color: subtleBg,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         Icons.vpn_key_rounded,
                         size: 20,
-                        color: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                        color: accentColor,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -134,9 +130,14 @@ class _GamePageState extends State<GamePage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
+                Text(
+                  '请输入好友创建的数字房间号以进入专属对战房间：',
+                  style: TextStyle(fontSize: 12.5, color: textSub, height: 1.4),
+                ),
+                const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                   decoration: BoxDecoration(
                     color: subtleBg,
                     borderRadius: BorderRadius.circular(14),
@@ -146,12 +147,20 @@ class _GamePageState extends State<GamePage> {
                     controller: controller,
                     autofocus: true,
                     keyboardType: TextInputType.number,
-                    style: TextStyle(color: textMain, fontSize: 15, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: textMain,
+                      letterSpacing: 2,
+                    ),
                     decoration: InputDecoration(
-                      hintText: '请输入 3~6 位房间号',
-                      hintStyle: TextStyle(color: textSub.withValues(alpha: 0.7), fontSize: 13.5),
+                      hintText: '如：1024',
+                      hintStyle: TextStyle(
+                        color: textSub.withValues(alpha: 0.6),
+                        fontSize: 14,
+                        letterSpacing: 0,
+                      ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
@@ -161,31 +170,26 @@ class _GamePageState extends State<GamePage> {
                     Expanded(
                       child: SizedBox(
                         height: 42,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: subtleBg,
-                            foregroundColor: textSub,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(21),
-                              side: BorderSide(color: cardBorder, width: 1),
-                            ),
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: cardBorder),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
                           ),
                           onPressed: () => Navigator.of(ctx).pop(),
-                          child: const Text('取消', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          child: Text('取消', style: TextStyle(color: textSub, fontWeight: FontWeight.w700)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
                         height: 42,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: accentGreen,
-                            foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                            backgroundColor: accentColor,
+                            foregroundColor: themeStyle.isDark ? const Color(0xFF0B1714) : Colors.white,
                             elevation: 2,
-                            shadowColor: accentGreen.withValues(alpha: 0.35),
+                            shadowColor: accentColor.withValues(alpha: 0.35),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(21)),
                           ),
                           onPressed: () {
@@ -208,12 +212,13 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _showGameRuleDialog(BuildContext context) {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-    final cardBorder = isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5B7A75);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+    final themeStyle = context.read<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
 
     showDialog(
       context: context,
@@ -228,13 +233,7 @@ class _GamePageState extends State<GamePage> {
               color: cardBg,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: cardBorder, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.5 : 0.12),
-                  blurRadius: 36,
-                  offset: const Offset(0, 12),
-                ),
-              ],
+              boxShadow: themeConfig.cardShadows,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -249,10 +248,10 @@ class _GamePageState extends State<GamePage> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
+                            color: themeConfig.subtleBg,
                             borderRadius: BorderRadius.circular(11),
                           ),
-                          child: Icon(Icons.help_outline_rounded, size: 20, color: accentGreen),
+                          child: Icon(Icons.help_outline_rounded, size: 20, color: accentColor),
                         ),
                         const SizedBox(width: 10),
                         Text(
@@ -283,8 +282,8 @@ class _GamePageState extends State<GamePage> {
                   height: 44,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: accentGreen,
-                      foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                      backgroundColor: accentColor,
+                      foregroundColor: themeStyle.isDark ? const Color(0xFF0B1714) : Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                     ),
@@ -331,73 +330,93 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSubColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
-    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
+    final darkModeState = context.watch<DarkMode>();
+    final themeStyle = darkModeState.themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
+
+    final textColor = themeConfig.textPrimary;
+    final textSubColor = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final cardBorder = themeConfig.cardBorder;
 
     if (Global.isGuest) {
       return Scaffold(
         backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Icon(Icons.sports_esports_rounded, size: 36, color: accentGreen),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    '单词PK竞技场',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '实时对战功能需登录后方可体验，快来与全网学友一较高下吧！',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: textSubColor, height: 1.5),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: 160,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () => context.go('/login'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: accentGreen,
-                        foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
-                        elevation: 2,
-                        shadowColor: accentGreen.withValues(alpha: 0.35),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                      ),
-                      child: const Text('前往登录', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                    ),
-                  ),
-                ],
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: AppThemeBackground(
+                themeStyle: themeStyle,
               ),
             ),
-          ),
+            SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: themeConfig.subtleBg,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Icon(Icons.sports_esports_rounded, size: 36, color: accentColor),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        '单词PK竞技场',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: textColor),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '实时对战功能需登录后方可体验，快来与全网学友一较高下吧！',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: textSubColor, height: 1.5),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: 160,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => context.go('/login'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentColor,
+                            foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
+                            elevation: 2,
+                            shadowColor: accentColor.withValues(alpha: 0.35),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                          ),
+                          child: const Text('前往登录', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: SafeArea(
-        bottom: false,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-          slivers: [
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: AppThemeBackground(
+              themeStyle: themeStyle,
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              slivers: [
             // 1. 顶部大标题栏
             SliverToBoxAdapter(
               child: Padding(
@@ -435,9 +454,10 @@ class _GamePageState extends State<GamePage> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                          color: themeConfig.cardBg,
                           border: Border.all(color: cardBorder, width: 1),
                           borderRadius: BorderRadius.circular(12),
+                          boxShadow: themeConfig.cardShadows,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -482,7 +502,7 @@ class _GamePageState extends State<GamePage> {
                             icon: const Icon(Icons.refresh_rounded, size: 16),
                             label: const Text('重新加载', style: TextStyle(fontWeight: FontWeight.w700)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: accentGreen,
+                              backgroundColor: accentColor,
                               foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -500,7 +520,7 @@ class _GamePageState extends State<GamePage> {
                               children: [
                                 CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(accentGreen),
+                                  valueColor: AlwaysStoppedAnimation<Color>(accentColor),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
@@ -516,7 +536,7 @@ class _GamePageState extends State<GamePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ...gameHallDataResult!.hallGroups.map((group) => _buildGroupCard(group, isDarkMode)),
+                              ...gameHallDataResult!.hallGroups.map((group) => _buildGroupCard(group, themeConfig)),
                             ],
                           ),
                         )),
@@ -524,17 +544,19 @@ class _GamePageState extends State<GamePage> {
           ],
         ),
       ),
+        ],
+      ),
     );
   }
 
   /// 大厅分组折叠卡片
-  Widget _buildGroupCard(HallGroupVo group, bool isDarkMode) {
-    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
-    final pillBg = isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF0F6F3);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+  Widget _buildGroupCard(HallGroupVo group, AppThemeConfig themeConfig) {
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final pillBg = themeConfig.subtleBg;
+    final accentColor = themeConfig.primaryColor;
 
     // 默认展开
     _expandedGroups[group.groupName] ??= true;
@@ -546,13 +568,7 @@ class _GamePageState extends State<GamePage> {
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: cardBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.025),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: themeConfig.cardShadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,7 +595,7 @@ class _GamePageState extends State<GamePage> {
                         width: 4,
                         height: 14,
                         decoration: BoxDecoration(
-                          color: accentGreen,
+                          color: accentColor,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -622,7 +638,7 @@ class _GamePageState extends State<GamePage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: Column(
-                children: group.gameHalls.map((hall) => _buildHallItem(hall, isDarkMode)).toList(),
+                children: group.gameHalls.map((hall) => _buildHallItem(hall, themeConfig)).toList(),
               ),
             ),
         ],
@@ -631,12 +647,13 @@ class _GamePageState extends State<GamePage> {
   }
 
   /// 单个大厅竞技场项目
-  Widget _buildHallItem(GameHallVo hall, bool isDarkMode) {
-    final itemBg = isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF0F6F3);
-    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+  Widget _buildHallItem(GameHallVo hall, AppThemeConfig themeConfig) {
+    final itemBg = themeConfig.subtleBg;
+    final cardBorder = themeConfig.cardBorder;
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final isDarkMode = themeConfig.isDark;
 
     return Container(
       margin: const EdgeInsets.only(top: 8),
@@ -653,11 +670,11 @@ class _GamePageState extends State<GamePage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+              color: themeConfig.cardBg,
               borderRadius: BorderRadius.circular(11),
               border: Border.all(color: cardBorder, width: 0.8),
             ),
-            child: Icon(Icons.sports_esports_rounded, size: 18, color: accentGreen),
+            child: Icon(Icons.sports_esports_rounded, size: 18, color: accentColor),
           ),
           const SizedBox(width: 10),
 
@@ -722,7 +739,7 @@ class _GamePageState extends State<GamePage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                    color: themeConfig.cardBg,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: cardBorder, width: 1),
                   ),
@@ -747,7 +764,7 @@ class _GamePageState extends State<GamePage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                    color: themeConfig.cardBg,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: cardBorder, width: 1),
                   ),
@@ -768,11 +785,11 @@ class _GamePageState extends State<GamePage> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                   decoration: BoxDecoration(
-                    color: accentGreen,
+                    color: accentColor,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: accentGreen.withValues(alpha: 0.3),
+                        color: accentColor.withValues(alpha: 0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),

@@ -2401,7 +2401,10 @@ class WordListPageState extends State<WordListPage>
     activeWordIndexNotifier.value = _tempHandwritingSelectedIndex ?? getBookMarkUiPosition();
 
     super.build(context); // 必须调用，因为使用了 AutomaticKeepAliveClientMixin
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final darkModeState = context.watch<DarkMode>();
+    final themeStyle = darkModeState.themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
 
     // 在页面build时，检查页面是否可见，如果可见且在语音模式下，确保ASR已启动
     // 如果不可见且在语音模式下，停止ASR（用于从页面离开时停止）
@@ -2425,17 +2428,14 @@ class WordListPageState extends State<WordListPage>
             elevation: 0,
             flexibleSpace: Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    AppTheme.gradientStartColor,
-                    AppTheme.gradientEndColor,
-                  ],
+                gradient: LinearGradient(
+                  colors: themeConfig.appBarGradient,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                    color: themeConfig.primaryColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),

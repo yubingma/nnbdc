@@ -123,19 +123,19 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   @override
   Widget build(BuildContext context) {
     final darkModeState = context.watch<DarkMode>();
-    final isDarkMode = darkModeState.isDarkMode;
     final themeStyle = darkModeState.themeStyle;
-    final backgroundColor = isDarkMode ? const Color(0xFF0C1312) : const Color(0xFFF6F9F8);
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSubColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
+    final isDarkMode = themeStyle.isDark;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+
+    final textColor = themeConfig.textPrimary;
+    final textSubColor = themeConfig.textSecondary;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           Positioned.fill(
             child: AppThemeBackground(
-              isDarkMode: isDarkMode,
               themeStyle: themeStyle,
             ),
           ),
@@ -192,7 +192,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                             CircularProgressIndicator(
                               strokeWidth: 2.5,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                                themeConfig.primaryColor,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -241,9 +241,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
   /// 1. 我的书桌板块 (用户正在背的词书)
   Widget _buildDeskBooksSection(bool isDarkMode) {
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
-    final primarySoft = isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+
+    final textColor = themeConfig.textPrimary;
+    final accentColor = themeConfig.primaryColor;
+    final primarySoft = themeConfig.subtleBg;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +261,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                   width: 4,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: accentGreen,
+                    color: accentColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -290,7 +293,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: accentGreen,
+                    color: accentColor,
                   ),
                 ),
               ),
@@ -310,8 +313,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 _buildHorizontalWordListCard(
                   isDarkMode: isDarkMode,
                   icon: Icons.auto_stories_rounded,
-                  iconBgColor: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
-                  iconColor: accentGreen,
+                  iconBgColor: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
+                  iconColor: accentColor,
                   title: _cleanDictName(deskDicts[i].name),
                   subtitle: i == 0 ? '正在学习的主线词书' : '书桌备选词书',
                   countText: '${deskDicts[i].wordCount} 词',
@@ -329,10 +332,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
   /// 空书桌引导卡片
   Widget _buildEmptyDeskCard(bool isDarkMode) {
-    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
 
     return InkWell(
       borderRadius: BorderRadius.circular(18),
@@ -345,6 +350,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           color: cardBg,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: cardBorder, width: 1),
+          boxShadow: themeConfig.cardShadows,
         ),
         child: Row(
           children: [
@@ -352,10 +358,10 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
+                color: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
                 borderRadius: BorderRadius.circular(11),
               ),
-              child: Icon(Icons.bookmark_add_outlined, size: 18, color: accentGreen),
+              child: Icon(Icons.bookmark_add_outlined, size: 18, color: accentColor),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -373,7 +379,9 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
   /// 2. 今日学习板块 (2x2 网格)
   Widget _buildTodayStudySection(bool isDarkMode) {
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final textColor = themeConfig.textPrimary;
     final amberColor = isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
 
     final todayList = _findListByName('今日单词');
@@ -422,8 +430,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日单词',
                 count: todayCount,
                 icon: Icons.calendar_today_rounded,
-                iconBgColor: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
-                iconColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                iconBgColor: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
+                iconColor: themeConfig.primaryColor,
                 onTap: () {
                   toTodayWordsListPage(true)?.then((_) => loadData());
                 },
@@ -484,7 +492,9 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
   /// 3. 核心词库板块 (纵向普通词表卡片)
   Widget _buildCoreDictsSection(bool isDarkMode) {
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final textColor = themeConfig.textPrimary;
     final blueColor = isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
 
     final learningList = _findListByName('学习中');
@@ -523,8 +533,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             _buildHorizontalWordListCard(
               isDarkMode: isDarkMode,
               icon: Icons.school_rounded,
-              iconBgColor: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFEDF8F3),
-              iconColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+              iconBgColor: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
+              iconColor: themeConfig.primaryColor,
               title: '学习中',
               subtitle: '正在记忆与巩固中的词汇',
               countText: '${learningList?.wordCount ?? 0} 词',
@@ -552,7 +562,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               iconBgColor: isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFFF8E6),
               iconColor: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
               title: '生词本',
-              subtitle: '自主收藏与重点标记单词',
+              subtitle: '阅读与查词中标记的高难词',
               countText: '${rawDictList?.wordCount ?? 0} 词',
               onTap: () async {
                 final dict = await WordBo().getRawWordDict();
@@ -568,7 +578,9 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
 
   /// 4. 专项突破板块 (易混淆单词)
   Widget _buildSpecialSection(bool isDarkMode) {
-    final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final textColor = themeConfig.textPrimary;
     final purpleColor = isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED);
     final confusableList = _findListByName('易混淆单词');
 
@@ -626,24 +638,20 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     required String countText,
     required VoidCallback onTap,
   }) {
-    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
-    final pillBg = isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF0F6F3);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final pillBg = themeConfig.subtleBg;
 
     return Container(
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: cardBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.025),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: themeConfig.cardShadows,
       ),
       child: Material(
         color: Colors.transparent,
@@ -743,10 +751,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     required VoidCallback onTap,
     bool isAlert = false,
   }) {
-    final cardBg = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-    final cardBorder = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSecondary = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final textMain = themeConfig.textPrimary;
+    final textSecondary = themeConfig.textSecondary;
     final alertColor = isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B);
 
     return Container(
@@ -755,13 +765,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
         color: cardBg,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: cardBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.025),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: themeConfig.cardShadows,
       ),
       child: Material(
         color: Colors.transparent,
@@ -808,7 +812,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       ),
                     ),
                     Text(
-                      count.toString(),
+                      '$count',
                       style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w800,

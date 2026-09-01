@@ -14,6 +14,8 @@ import 'package:nnbdc/util/utils.dart';
 import 'package:provider/provider.dart';
 
 import '../state.dart';
+import '../theme/app_theme.dart';
+import '../theme/app_theme_background.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -191,9 +193,9 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     }
   }
 
-  Widget _buildHighlightedSpell(String wordSpell, String query, bool isDarkMode) {
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+  Widget _buildHighlightedSpell(String wordSpell, String query, AppThemeConfig themeConfig) {
+    final accentColor = themeConfig.primaryColor;
+    final textMain = themeConfig.textPrimary;
 
     if (query.isNotEmpty && wordSpell.toLowerCase().startsWith(query.toLowerCase())) {
       final matchPart = wordSpell.substring(0, query.length);
@@ -206,7 +208,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             TextSpan(
               text: matchPart,
               style: TextStyle(
-                color: accentGreen,
+                color: accentColor,
                 fontSize: 17.5,
                 fontWeight: FontWeight.w800,
                 fontFamily: 'NotoSansSC',
@@ -241,10 +243,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildMeaningWithTags(String meaningStr, bool isDarkMode) {
-    final textSecondary = isDarkMode ? const Color(0xFFC8DCD8) : const Color(0xFF334B46);
-    final posTagBg = isDarkMode ? const Color(0x262CD88F) : const Color(0xFFE3F6EE);
-    final posTagText = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF139E67);
+  Widget _buildMeaningWithTags(String meaningStr, AppThemeConfig themeConfig) {
+    final textSecondary = themeConfig.textSecondary;
+    final posTagBg = themeConfig.subtleBg;
+    final posTagText = themeConfig.primaryColor;
 
     // 解析词性标签如 "n. ", "v. ", "adj. ", "adv. ", "vt. ", "vi. "
     final posRegex = RegExp(r'(n\.|v\.|adj\.|adv\.|vt\.|vi\.|prep\.|conj\.|pron\.|art\.|num\.|int\.)\s*');
@@ -314,12 +316,13 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
 
   Widget renderWord(final int i) {
     var word = matchedWords[i];
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final cardBg = isDarkMode ? const Color(0xFF13201D) : Colors.white;
-    final cardBorder = isDarkMode ? Colors.white10 : const Color(0x1418BA7C);
-    final cardSubtle = isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF7F3);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final cardSubtle = themeConfig.subtleBg;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
 
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -333,13 +336,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: cardBg,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                boxShadow: themeConfig.cardShadows,
                 border: Border.all(
                   color: cardBorder,
                   width: 1.2,
@@ -376,7 +373,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Flexible(
-                                    child: _buildHighlightedSpell(word.spell, spell.text.trim(), isDarkMode),
+                                    child: _buildHighlightedSpell(word.spell, spell.text.trim(), themeConfig),
                                   ),
                                   if (word.mergedPronounce.isNotEmpty) ...[
                                     const SizedBox(width: 8),
@@ -416,25 +413,25 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                                 height: 30,
                                 margin: const EdgeInsets.only(right: 6),
                                 decoration: BoxDecoration(
-                                  color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFE8F8F1),
+                                  color: cardSubtle,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.volume_up_rounded,
                                   size: 16,
-                                  color: accentGreen,
+                                  color: accentColor,
                                 ),
                               ),
                             ),
                             Icon(
                               Icons.chevron_right_rounded,
                               size: 18,
-                              color: isDarkMode ? Colors.white24 : Colors.black26,
+                              color: themeStyle.isDark ? Colors.white24 : Colors.black26,
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        _buildMeaningWithTags(word.getMeaningStr(), isDarkMode),
+                        _buildMeaningWithTags(word.getMeaningStr(), themeConfig),
                       ],
                     ),
                   ),
@@ -449,13 +446,15 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final searchBoxBg = isDarkMode ? const Color(0xFF172623) : Colors.white;
-    final searchBoxBorder = isDarkMode
-        ? (_focusNode.hasFocus ? const Color(0xFF2CD88F) : const Color(0xFF233B35))
-        : (_focusNode.hasFocus ? const Color(0xFF18BA7C) : const Color(0xFFD1EADE));
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
+    final darkModeState = context.watch<DarkMode>();
+    final themeStyle = darkModeState.themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
+
+    final searchBoxBg = themeConfig.cardBg;
+    final searchBoxBorder = _focusNode.hasFocus ? themeConfig.primaryColor : themeConfig.cardBorder;
+    final accentColor = themeConfig.primaryColor;
+    final textMain = themeConfig.textPrimary;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -478,7 +477,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             boxShadow: [
               BoxShadow(
                 color: _focusNode.hasFocus
-                    ? accentGreen.withValues(alpha: isDarkMode ? 0.2 : 0.15)
+                    ? accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.15)
                     : Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
                 blurRadius: _focusNode.hasFocus ? 10 : 6,
                 offset: const Offset(0, 2),
@@ -490,7 +489,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               const SizedBox(width: 14),
               Icon(
                 Icons.search_rounded,
-                color: accentGreen,
+                color: accentColor,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -509,7 +508,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                   decoration: InputDecoration(
                     hintText: '输入单词或中文释义...',
                     hintStyle: TextStyle(
-                      color: (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691)).withValues(alpha: 0.8),
+                      color: themeConfig.textMuted.withValues(alpha: 0.8),
                       fontSize: 14.5,
                       fontWeight: FontWeight.w400,
                     ),
@@ -550,7 +549,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   margin: const EdgeInsets.only(right: 4),
                   decoration: BoxDecoration(
-                    color: accentGreen,
+                    color: accentColor,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Text(
@@ -567,28 +566,36 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           ),
         ),
       ),
-      body: SafeArea(
-        child: matchedWords.isEmpty
-            ? _buildEmptyState()
-            : ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(top: 6, bottom: 20),
-                itemCount: matchedWords.length,
-                itemBuilder: (context, index) => renderWord(index),
-                // ignore: deprecated_member_use
-                cacheExtent: 1000.0,
-                addAutomaticKeepAlives: false,
-                addRepaintBoundaries: true,
-              ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: AppThemeBackground(
+              themeStyle: themeStyle,
+            ),
+          ),
+          SafeArea(
+            child: matchedWords.isEmpty
+                ? _buildEmptyState(themeConfig)
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(top: 6, bottom: 20),
+                    itemCount: matchedWords.length,
+                    itemBuilder: (context, index) => renderWord(index),
+                    // ignore: deprecated_member_use
+                    cacheExtent: 1000.0,
+                    addAutomaticKeepAlives: false,
+                    addRepaintBoundaries: true,
+                  ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+  Widget _buildEmptyState(AppThemeConfig themeConfig) {
+    final textMain = themeConfig.textPrimary;
+    final textSub = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
 
     if (spell.text.trim().isNotEmpty) {
       // 搜索无结果态
@@ -600,7 +607,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF172623) : const Color(0xFFEBF7F2),
+                color: themeConfig.subtleBg,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -639,50 +646,50 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 顶部插画展台
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0x262CD88F) : const Color(0xFFE8F8F1),
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: accentGreen.withValues(alpha: 0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 顶部插画展台
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: themeConfig.subtleBg,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.12),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Icon(
-              Icons.manage_search_rounded,
-              size: 34,
-              color: accentGreen,
-            ),
+                child: Icon(
+                  Icons.manage_search_rounded,
+                  size: 34,
+                  color: accentColor,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                '查单词 · 找例句',
+                style: TextStyle(
+                  color: textMain,
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '支持输入英文拼写、中文释义或模糊前缀',
+                style: TextStyle(
+                  color: textSub,
+                  fontSize: 12.5,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 14),
-          Text(
-            '查单词 · 找例句',
-            style: TextStyle(
-              color: textMain,
-              fontSize: 16.5,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '支持输入英文拼写、中文释义或模糊前缀',
-            style: TextStyle(
-              color: textSub,
-              fontSize: 12.5,
-            ),
-          ),
-        ],
+        ),
       ),
-    ),
-    ),
     );
   }
 }

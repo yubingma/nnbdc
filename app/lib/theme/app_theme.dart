@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../state.dart';
 
 /// 应用视觉主题风格枚举 (5 款风格截然不同、性格鲜明的专属美学)
 enum AppThemeStyle {
@@ -180,6 +182,8 @@ class AppThemeConfig {
         );
     }
   }
+
+  List<Color> get appBarGradient => [primaryColor, primaryDarkColor];
 }
 
 class AppTheme {
@@ -265,10 +269,23 @@ class AppTheme {
     PreferredSizeWidget? bottom,
     double? toolbarHeight,
     bool automaticallyImplyLeading = true,
+    BuildContext? context,
+    AppThemeStyle? themeStyle,
   }) {
     final titleWidget = title is Widget
         ? title
         : Text(title.toString(), style: const TextStyle(fontWeight: FontWeight.bold));
+
+    List<Color> gradientColors = [gradientStartColor, gradientEndColor];
+    if (themeStyle != null) {
+      gradientColors = AppThemeConfig.of(themeStyle).appBarGradient;
+    } else if (context != null) {
+      try {
+        final currentStyle = context.watch<DarkMode>().themeStyle;
+        gradientColors = AppThemeConfig.of(currentStyle).appBarGradient;
+      } catch (_) {}
+    }
+
     return AppBar(
       title: titleWidget,
       actions: actions,
@@ -280,9 +297,9 @@ class AppTheme {
       automaticallyImplyLeading: automaticallyImplyLeading,
       backgroundColor: Colors.transparent,
       flexibleSpace: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [gradientStartColor, gradientEndColor],
+            colors: gradientColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -297,10 +314,24 @@ class AppTheme {
     List<Color>? colors,
     Alignment begin = Alignment.topLeft,
     Alignment end = Alignment.bottomRight,
+    BuildContext? context,
+    AppThemeStyle? themeStyle,
   }) {
+    List<Color> gradientColors = colors ?? [gradientStartColor, gradientEndColor];
+    if (colors == null) {
+      if (themeStyle != null) {
+        gradientColors = AppThemeConfig.of(themeStyle).appBarGradient;
+      } else if (context != null) {
+        try {
+          final currentStyle = context.watch<DarkMode>().themeStyle;
+          gradientColors = AppThemeConfig.of(currentStyle).appBarGradient;
+        } catch (_) {}
+      }
+    }
+
     return BoxDecoration(
       gradient: LinearGradient(
-        colors: colors ?? [gradientStartColor, gradientEndColor],
+        colors: gradientColors,
         begin: begin,
         end: end,
       ),
