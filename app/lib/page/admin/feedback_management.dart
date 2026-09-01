@@ -1257,23 +1257,47 @@ class _ReplyDialogState extends State<_ReplyDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
+    final textColor = themeConfig.textPrimary;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
+    return AppScaffold(
       appBar: AppBar(
-        backgroundColor: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+        backgroundColor: Colors.transparent,
         foregroundColor: textColor,
         elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back),
+        leading: Center(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: themeConfig.cardBg,
+                  border: Border.all(
+                    color: themeConfig.cardBorder,
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 14,
+                    color: textColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
         title: Row(
           children: [
-            const Icon(Icons.chat_bubble_outline),
+            Icon(Icons.chat_bubble_outline, color: textColor),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1284,6 +1308,7 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textColor,
+                  fontFamily: 'NotoSansSC',
                 ),
               ),
             ),
@@ -1442,10 +1467,10 @@ class _ReplyDialogState extends State<_ReplyDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+                color: themeConfig.cardBg,
                 border: Border(
                   top: BorderSide(
-                    color: isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
+                    color: themeConfig.cardBorder,
                     width: 0.5,
                   ),
                 ),
@@ -1460,11 +1485,11 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                       style: TextStyle(color: textColor),
                       decoration: InputDecoration(
                         hintText: '输入回复内容...',
-                        hintStyle: TextStyle(color: isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+                        hintStyle: TextStyle(color: themeConfig.textMuted),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide(
-                            color: isDarkMode ? Colors.grey[600]! : Colors.grey[300]!,
+                            color: themeConfig.cardBorder,
                           ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1480,8 +1505,8 @@ class _ReplyDialogState extends State<_ReplyDialog> {
                         )
                       : Container(
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppTheme.gradientStartColor, AppTheme.gradientEndColor],
+                            gradient: LinearGradient(
+                              colors: themeConfig.appBarGradient,
                             ),
                             borderRadius: BorderRadius.circular(24),
                           ),

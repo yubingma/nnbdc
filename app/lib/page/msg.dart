@@ -252,18 +252,15 @@ class MsgPageState extends State<MsgPage> {
             const SizedBox(width: 12),
             Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    AppTheme.gradientStartColor,
-                    AppTheme.gradientEndColor,
-                  ],
+                gradient: LinearGradient(
+                  colors: context.appBarGradient,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                    color: context.primaryColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
