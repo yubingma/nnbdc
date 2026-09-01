@@ -271,11 +271,13 @@ class _GamePageState extends State<GamePage> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                _buildRuleItem('1', '实时单词消消乐对战，匹配实力相当的在线学友。', textMain, textSub),
+                _buildRuleItem('1', '下落答题', '上方英文单词持续下落，在触底前点击下方正确的中文释义方块将其消除。', textMain, textSub),
                 const SizedBox(height: 10),
-                _buildRuleItem('2', '根据上方掉落的英文单词，快速点击匹配正确的中文释义方块消除得分。', textMain, textSub),
+                _buildRuleItem('2', '失误惩罚', '答错或未在触底前答对，单词将坠落到底部堆叠，并自动加入生词本。', textMain, textSub),
                 const SizedBox(height: 10),
-                _buildRuleItem('3', '连击可触发攻击方块，加速对手方块堆积，先堆满顶部者判负。', textMain, textSub),
+                _buildRuleItem('3', '道具与胜负', '使用「＋」道具可顶起对手底部方块，使用「－」道具可消除己方底层方块；任一方方块先堆满顶部判负。', textMain, textSub),
+                const SizedBox(height: 10),
+                _buildRuleItem('4', '匹配与开房', '【匹配】自动寻找在线学友快速对战；【开房/进房】房主开房生成房间号，好友输入房间号即可私密切磋。', textMain, textSub),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
@@ -299,14 +301,14 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-  Widget _buildRuleItem(String index, String text, Color textMain, Color textSub) {
+  Widget _buildRuleItem(String index, String title, String desc, Color textMain, Color textSub) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 18,
           height: 18,
-          margin: const EdgeInsets.only(top: 1),
+          margin: const EdgeInsets.only(top: 2),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: textSub.withValues(alpha: 0.15),
@@ -314,14 +316,34 @@ class _GamePageState extends State<GamePage> {
           ),
           child: Text(
             index,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: textMain),
+            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: textMain),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            text,
-            style: TextStyle(fontSize: 12.5, color: textSub, height: 1.45, fontWeight: FontWeight.w500),
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$title：',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: textMain,
+                    height: 1.45,
+                  ),
+                ),
+                TextSpan(
+                  text: desc,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: textSub,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
