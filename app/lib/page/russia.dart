@@ -162,10 +162,18 @@ class RussiaPageState extends State<RussiaPage> {
   @override
   Widget build(BuildContext context) {
     if (!dataLoaded) {
-      return const Center(child: Text('waiting...'));
+      return Container(
+        color: const Color(0xFF0D1117),
+        child: const Center(
+          child: Text('waiting...', style: TextStyle(color: Colors.white70, decoration: TextDecoration.none)),
+        ),
+      );
     }
-    return GameWidget(
-      game: myGame,
+    return Container(
+      color: const Color(0xFF0D1117),
+      child: GameWidget(
+        game: myGame,
+      ),
     );
   }
 }

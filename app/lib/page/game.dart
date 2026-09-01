@@ -332,7 +332,6 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF0C1312) : const Color(0xFFF6F9F8);
     final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
     final textSubColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691);
     final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor;
@@ -340,7 +339,7 @@ class _GamePageState extends State<GamePage> {
 
     if (Global.isGuest) {
       return Scaffold(
-        backgroundColor: backgroundColor,
+        backgroundColor: Colors.transparent,
         body: SafeArea(
           child: Center(
             child: Padding(
@@ -393,7 +392,7 @@ class _GamePageState extends State<GamePage> {
     }
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(

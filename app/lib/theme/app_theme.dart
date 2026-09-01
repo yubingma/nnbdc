@@ -58,7 +58,7 @@ class AppTheme {
         surface: Colors.white,
         brightness: Brightness.light,
       ),
-      scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+      scaffoldBackgroundColor: Colors.transparent,
       useMaterial3: true,
       // 应用栏主题
       appBarTheme: const AppBarTheme(
@@ -124,7 +124,7 @@ class AppTheme {
         surface: const Color(0xFF1E1E1E),
         brightness: Brightness.dark,
       ),
-      scaffoldBackgroundColor: const Color(0xFF121212),
+      scaffoldBackgroundColor: Colors.transparent,
       useMaterial3: true,
       // 应用栏主题
       appBarTheme: const AppBarTheme(

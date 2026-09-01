@@ -166,13 +166,19 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     actualCurrentIndex = actualCurrentIndex.clamp(0, pages.isEmpty ? 0 : pages.length - 1);
 
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF1A1A1A) : Colors.white;
+    final navBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.90) : Colors.white.withValues(alpha: 0.90);
+    final borderTopColor = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
 
     final customBottomNav = Container(
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: navBg,
+        border: Border(top: BorderSide(color: borderTopColor, width: 0.8)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, -2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
+          ),
         ],
       ),
       child: Container(
@@ -194,6 +200,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
     );
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           IndexedStack(index: actualCurrentIndex, children: pages),

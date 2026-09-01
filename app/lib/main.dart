@@ -14,6 +14,7 @@ import 'package:nnbdc/global.dart';
 import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/state.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:nnbdc/util/platform_util.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/services/ai_service.dart';
@@ -474,12 +475,27 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    var themeData = context.watch<DarkMode>().isDarkMode ? AppTheme.darkTheme() : AppTheme.lightTheme();
+    final darkModeState = context.watch<DarkMode>();
+    final themeData = darkModeState.isDarkMode ? AppTheme.darkTheme() : AppTheme.lightTheme();
+
     return MaterialApp.router(
       title: Global.appName,
       debugShowCheckedModeBanner: false,
       theme: themeData,
       routerConfig: goRouter,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: AppThemeBackground(
+                isDarkMode: darkModeState.isDarkMode,
+                themeStyle: darkModeState.themeStyle,
+              ),
+            ),
+            if (child != null) child,
+          ],
+        );
+      },
     );
   }
 }

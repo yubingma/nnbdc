@@ -1297,12 +1297,8 @@ class WalkmanPageState extends State<WalkmanPage> {
     // 全屏
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
 
-    // 根据主题模式设置背景色
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? Colors.black : Colors.white;
-
     return Scaffold(
-      backgroundColor: backgroundColor, // 根据主题模式设置背景色
+      backgroundColor: Colors.transparent,
       body: Container(
         // 横屏模式下调整内边距
         padding: EdgeInsets.fromLTRB(leftPadding, isLandscape ? 8.0 : 16.0, rightPadding, 0),

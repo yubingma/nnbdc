@@ -450,7 +450,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF5F9F7);
     final searchBoxBg = isDarkMode ? const Color(0xFF172623) : Colors.white;
     final searchBoxBorder = isDarkMode
         ? (_focusNode.hasFocus ? const Color(0xFF2CD88F) : const Color(0xFF233B35))
@@ -459,10 +458,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         toolbarHeight: 68,
-        backgroundColor: backgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 0,
         automaticallyImplyLeading: false,

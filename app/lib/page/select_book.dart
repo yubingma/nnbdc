@@ -1792,21 +1792,20 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF0C1312) : const Color(0xFFF5F9F7);
     final textColor = isDarkMode ? Colors.white : const Color(0xFF152724);
 
     if (_isLoading && (parentCategories == null || parentCategories!.isEmpty)) {
-      return Scaffold(
-        backgroundColor: backgroundColor,
-        body: const Center(child: CircularProgressIndicator()),
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (parentCategories == null || parentCategories!.isEmpty) {
       return Scaffold(
-        backgroundColor: backgroundColor,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+          backgroundColor: isDarkMode ? const Color(0xFF131E1C).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85),
           title: const Text('选词书'),
           centerTitle: true,
         ),
@@ -1818,9 +1817,9 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
     final tabController = _primaryTabController;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+        backgroundColor: isDarkMode ? const Color(0xFF131E1C).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.85),
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 0,
