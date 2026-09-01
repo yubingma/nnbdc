@@ -1240,15 +1240,6 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       // 取消超时定时器
       _enterRoomTimer?.cancel();
       _enterRoomTimer = null;
-
-      final args = GoRouterState.of(context).extra;
-      final bool isCreatePrivate = args != null &&
-          (args is List && args.length > 2) &&
-          (args[2] as Map?)?.containsKey('mode') == true &&
-          (args[2] as Map)['mode'] == 'createPrivate';
-      if (isCreatePrivate) {
-        safeShowToast('专属房间已创建！\n房间号【$roomId】已就绪，请告知好友输入该房号进入');
-      }
     });
 
     // 监听魔法泡泡不足事件
@@ -2088,6 +2079,8 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
 
   // 私房提示组件
   late TextComponent privateRoomHint;
+  // 提示告知好友组件
+  late TextComponent privateRoomTellFriendHint;
 
   // 熟人约战提示组件
   late TextComponent friendlyMatchHint;
@@ -2201,48 +2194,87 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
 
     // 初始化熟人约战提示组件
     friendlyMatchHint = TextComponent(
-        text: '👥 熟人约战',
+        text: '👥 熟人专属房间',
         textRenderer: TextPaint(
-            style: TextStyle(color: const Color(0xFF9575CD), fontSize: 14 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
+            style: TextStyle(
+          color: const Color(0xFF2CD88F),
+          fontSize: 14 * s,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'NotoSansSC',
+          shadows: const [
+            Shadow(
+              color: Colors.black87,
+              offset: Offset(1, 1),
+              blurRadius: 2,
+            ),
+          ],
+        )))
       ..anchor = Anchor.center
       ..x = width / 2
-      ..y = height / 2 - 40;
+      ..y = height / 2 - 45;
 
     // 初始化等待提示组件
     waitingHint = TextComponent(
         text: '等待对手进入...',
         textRenderer: TextPaint(
-            style: TextStyle(color: const Color(0xFFFFA726), fontSize: 14 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
+            style: TextStyle(
+          color: const Color(0xFFFFA726),
+          fontSize: 13 * s,
+          fontWeight: FontWeight.w500,
+          fontFamily: 'NotoSansSC',
+          shadows: const [
+            Shadow(
+              color: Colors.black54,
+              offset: Offset(1, 1),
+              blurRadius: 2,
+            ),
+          ],
+        )))
       ..anchor = Anchor.center
       ..x = width / 2
-      ..y = height / 2;
+      ..y = height / 2 - 18;
 
-    // 初始化私房提示组件
+    // 初始化私房提示组件（金色加粗高亮）
     privateRoomHint = TextComponent(
-        text: '房间号：${game.roomId}',
+        text: '🔑 房间号：${game.roomId}',
         textRenderer: TextPaint(
-            style: TextStyle(color: const Color(0xFF64B5F6), fontSize: 14 * s, fontWeight: FontWeight.w500, fontFamily: 'NotoSansSC', shadows: const [
-          Shadow(
-            color: Colors.black54,
-            offset: Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ])))
+            style: TextStyle(
+          color: const Color(0xFFFBBF24),
+          fontSize: 17 * s,
+          fontWeight: FontWeight.w800,
+          fontFamily: 'NotoSansSC',
+          shadows: const [
+            Shadow(
+              color: Colors.black87,
+              offset: Offset(1.5, 1.5),
+              blurRadius: 4,
+            ),
+          ],
+        )))
       ..anchor = Anchor.center
       ..x = width / 2
-      ..y = height / 2 + 40;
+      ..y = height / 2 + 14;
+
+    // 初始化告知好友提示组件
+    privateRoomTellFriendHint = TextComponent(
+        text: '请告知好友房号',
+        textRenderer: TextPaint(
+            style: TextStyle(
+          color: const Color(0xFF90CAF9),
+          fontSize: 11.5 * s,
+          fontWeight: FontWeight.w500,
+          fontFamily: 'NotoSansSC',
+          shadows: const [
+            Shadow(
+              color: Colors.black87,
+              offset: Offset(1, 1),
+              blurRadius: 2,
+            ),
+          ],
+        )))
+      ..anchor = Anchor.center
+      ..x = width / 2
+      ..y = height / 2 + 38;
 
     // 初始化开始状态文本（底部居中）
     startedStatus = TextComponent(
@@ -2307,14 +2339,22 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
         add(waitingHint);
       }
 
-      // 如果是私房模式，显示私房提示
+      // 如果是私房模式，显示私房提示及告知好友提示
       if (isPrivateRoom) {
+        final currentRoomText = game.roomId > 0 ? '🔑 房间号：${game.roomId}' : '🔑 正在获取房间号...';
         if (privateRoomHint.parent == null) {
-          privateRoomHint.text = '房间号：${game.roomId}';
+          privateRoomHint.text = currentRoomText;
           add(privateRoomHint);
+        } else if (privateRoomHint.text != currentRoomText) {
+          privateRoomHint.text = currentRoomText;
+        }
+
+        if (privateRoomTellFriendHint.parent == null) {
+          add(privateRoomTellFriendHint);
         }
       } else {
         privateRoomHint.removeFromParent();
+        privateRoomTellFriendHint.removeFromParent();
       }
 
       // 隐藏其他信息组件
@@ -2331,6 +2371,7 @@ class UserInfoPanel extends PositionComponent with HasGameReference<MyGame> {
       waitingHint.removeFromParent();
       friendlyMatchHint.removeFromParent();
       privateRoomHint.removeFromParent();
+      privateRoomTellFriendHint.removeFromParent();
 
       // 昵称单独一行，限制宽度不超过playground，超出使用省略号 
       final String baseNick = '昵　称： ${player.userGameInfo!.nickName}';
