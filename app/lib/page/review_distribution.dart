@@ -328,7 +328,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                         children: [
                           _buildLegendItem('今日复习', accentColor, subtitleColor),
                           _buildLegendItem('已逾期', isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), subtitleColor),
-                          _buildLegendItem('未来复习', isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399), subtitleColor),
+                          _buildLegendItem('未来复习', isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), subtitleColor),
                           _buildLegendItem('新词储备', isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6), subtitleColor),
                         ],
                       ),
@@ -605,7 +605,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
     Color accentColor,
   ) {
     final overdueColor = isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E);
-    final futureColor = isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399);
+    final futureColor = isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7);
 
     Color labelColor;
     if (data.isToday) {
@@ -661,7 +661,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: data.isToday
-                                  ? [accentColor, futureColor]
+                                  ? [accentColor, accentColor.withValues(alpha: 0.7)]
                                   : (data.isOverdue
                                       ? [overdueColor, overdueColor.withValues(alpha: 0.7)]
                                       : [futureColor.withValues(alpha: 0.9), futureColor.withValues(alpha: 0.6)]),
@@ -783,7 +783,7 @@ class _ReviewDistributionPageState extends State<ReviewDistributionPage> {
                     const TextSpan(text: '到达最佳复习窗口，效率最高；\n'),
                     TextSpan(text: '• 已逾期：', style: TextStyle(color: isDarkMode ? const Color(0xFFFB7185) : const Color(0xFFF43F5E), fontWeight: FontWeight.bold)),
                     const TextSpan(text: '错过黄金复习点，建议优先消灭；\n'),
-                    TextSpan(text: '• 未来分布：', style: TextStyle(color: isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399), fontWeight: FontWeight.bold)),
+                    TextSpan(text: '• 未来分布：', style: TextStyle(color: isDarkMode ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), fontWeight: FontWeight.bold)),
                     const TextSpan(text: '科学平滑分散复习量，避免堆积。'),
                   ],
                 ),
