@@ -2112,7 +2112,6 @@ class _MePageState extends State<MePage> {
                 icon: Icons.cleaning_services_outlined,
                 title: '重建本地数据',
                 onTap: () => _showWipeLocalDataDialog(),
-                isDestructive: true,
               ),
               _buildMenuTile(
                 icon: Icons.logout_rounded,
@@ -2127,7 +2126,6 @@ class _MePageState extends State<MePage> {
                 icon: Icons.no_accounts_outlined,
                 title: '注销账号',
                 onTap: () => showUnRegisterDlg(),
-                isDestructive: true,
                 showDivider: false,
               ),
             ],

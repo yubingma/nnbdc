@@ -371,7 +371,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
-    final amberColor = isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706);
+    final accentColor = themeConfig.primaryColor;
+    final iconBgColor = isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg;
 
     final todayList = _findListByName('今日单词');
     final todayNewList = _findListByName('今日新词');
@@ -392,7 +393,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               width: 4,
               height: 12,
               decoration: BoxDecoration(
-                color: amberColor,
+                color: accentColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -419,8 +420,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日单词',
                 count: todayCount,
                 icon: Icons.calendar_today_rounded,
-                iconBgColor: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
-                iconColor: themeConfig.primaryColor,
+                iconBgColor: iconBgColor,
+                iconColor: accentColor,
                 onTap: () {
                   toTodayWordsListPage(true)?.then((_) => loadData());
                 },
@@ -433,8 +434,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日新词',
                 count: newCount,
                 icon: Icons.auto_awesome_rounded,
-                iconBgColor: isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFFF8E6),
-                iconColor: amberColor,
+                iconBgColor: iconBgColor,
+                iconColor: accentColor,
                 onTap: () {
                   toTodayNewWordsListPage(true)?.then((_) => loadData());
                 },
@@ -451,8 +452,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日旧词',
                 count: oldCount,
                 icon: Icons.replay_rounded,
-                iconBgColor: isDarkMode ? const Color(0x2660A5FA) : const Color(0xFFEFF6FF),
-                iconColor: isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB),
+                iconBgColor: iconBgColor,
+                iconColor: accentColor,
                 onTap: () {
                   toTodayOldWordsListPage(true)?.then((_) => loadData());
                 },
@@ -484,7 +485,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
-    final blueColor = isDarkMode ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+    final accentColor = themeConfig.primaryColor;
+    final iconBgColor = isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg;
 
     final learningList = _findListByName('学习中');
     final masteredList = _findListByName('已掌握');
@@ -499,7 +501,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               width: 4,
               height: 12,
               decoration: BoxDecoration(
-                color: blueColor,
+                color: accentColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -522,8 +524,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             _buildHorizontalWordListCard(
               isDarkMode: isDarkMode,
               icon: Icons.school_rounded,
-              iconBgColor: isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg,
-              iconColor: themeConfig.primaryColor,
+              iconBgColor: iconBgColor,
+              iconColor: accentColor,
               title: '学习中',
               subtitle: '正在记忆与巩固中的词汇',
               countText: '${learningList?.wordCount ?? 0} 词',
@@ -535,8 +537,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             _buildHorizontalWordListCard(
               isDarkMode: isDarkMode,
               icon: Icons.check_circle_rounded,
-              iconBgColor: isDarkMode ? const Color(0x2660A5FA) : const Color(0xFFEFF6FF),
-              iconColor: blueColor,
+              iconBgColor: iconBgColor,
+              iconColor: accentColor,
               title: '已掌握',
               subtitle: '已完全牢固掌握的高频词',
               countText: '${masteredList?.wordCount ?? 0} 词',
@@ -548,8 +550,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             _buildHorizontalWordListCard(
               isDarkMode: isDarkMode,
               icon: Icons.bookmark_rounded,
-              iconBgColor: isDarkMode ? const Color(0x26FBBF24) : const Color(0xFFFFF8E6),
-              iconColor: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+              iconBgColor: iconBgColor,
+              iconColor: accentColor,
               title: '生词本',
               subtitle: '阅读与查词中标记的高难词',
               countText: '${rawDictList?.wordCount ?? 0} 词',
@@ -570,7 +572,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
-    final purpleColor = isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED);
+    final accentColor = themeConfig.primaryColor;
+    final iconBgColor = isDarkMode ? themeConfig.primaryColor.withValues(alpha: 0.18) : themeConfig.subtleBg;
     final confusableList = _findListByName('易混淆单词');
 
     return Column(
@@ -582,7 +585,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               width: 4,
               height: 12,
               decoration: BoxDecoration(
-                color: purpleColor,
+                color: accentColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -603,8 +606,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
         _buildHorizontalWordListCard(
           isDarkMode: isDarkMode,
           icon: Icons.compare_arrows_rounded,
-          iconBgColor: isDarkMode ? const Color(0x26A78BFA) : const Color(0xFFF5F3FF),
-          iconColor: purpleColor,
+          iconBgColor: iconBgColor,
+          iconColor: accentColor,
           title: '易混淆单词',
           subtitle: '形近词、同义辨析强化攻坚',
           countText: '${confusableList?.wordCount ?? 0} 组',
