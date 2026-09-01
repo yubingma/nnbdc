@@ -24,6 +24,7 @@ import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/widget/handwriting_board.dart';
+import 'package:nnbdc/widget/theme_select_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:share_plus/share_plus.dart';
@@ -72,6 +73,7 @@ const String menuLegend = '学习状态图例';
 const String menuHideChinese = '隐藏中文';
 const String menuHideEnglish = '隐藏英文';
 const String menuSortSettings = '排序设置';
+const String menuTheme = '外观主题';
 const String menuExportPdf = '导出为 PDF';
 
 
@@ -2761,6 +2763,7 @@ class WordListPageState extends State<WordListPage>
 
                           // 随身听菜单放在最下面
                           menuItems.add(menuWalkman);
+                          menuItems.add(menuTheme);
                           menuItems.add(menuExportPdf);
 
                           // 5. 显示菜单 (使用 RootNavigator)
@@ -2833,6 +2836,9 @@ class WordListPageState extends State<WordListPage>
                                   case menuSortSettings:
                                     icon = Icons.sort_rounded;
                                     break;
+                                  case menuTheme:
+                                    icon = Icons.palette_outlined;
+                                    break;
                                   default:
                                     icon = Icons.help_outline_rounded;
                                 }
@@ -2886,6 +2892,9 @@ class WordListPageState extends State<WordListPage>
                                     isSelected = false;
                                     break;
                                   case menuSortSettings:
+                                    isSelected = false;
+                                    break;
+                                  case menuTheme:
                                     isSelected = false;
                                     break;
                                   case menuExportPdf:
@@ -3169,6 +3178,10 @@ class WordListPageState extends State<WordListPage>
                                   break;
                                 case menuSortSettings:
                                   await _showSortSettingsDialog();
+                                  break;
+                                case menuTheme:
+                                  if (!context.mounted) return;
+                                  ThemeSelectDialog.show(context);
                                   break;
                                 }
                               } finally {
