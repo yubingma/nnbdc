@@ -876,7 +876,7 @@ class _MePageState extends State<MePage> {
     final isPremium = accountInfo['isPremium'] as bool;
     final accountType = accountInfo['type'] as String;
     final accountDesc = accountInfo['desc'] as String?;
-    final accentColor = context.primaryColor;
+    final accentColor = AppThemeConfig.of(context.read<DarkMode>().themeStyle).primaryColor;
     final cardBg = isDarkMode ? const Color(0xFF1B2825) : Colors.white;
     final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
     final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
