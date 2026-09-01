@@ -142,14 +142,14 @@ class _MePageState extends State<MePage> {
             Material(
               type: MaterialType.transparency,
               child: ListTile(
-              leading: const Icon(Icons.camera_alt_rounded, color: Color(0xFF18BA7C)),
+              leading: Icon(Icons.camera_alt_rounded, color: context.primaryColor),
               title: const Text('拍照', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             )),
             Material(
               type: MaterialType.transparency,
               child: ListTile(
-              leading: const Icon(Icons.photo_library_rounded, color: Color(0xFF18BA7C)),
+              leading: Icon(Icons.photo_library_rounded, color: context.primaryColor),
               title: const Text('从相册选择', style: TextStyle(fontFamily: 'NotoSansSC')),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             )),
@@ -875,7 +875,7 @@ class _MePageState extends State<MePage> {
     final isPremium = accountInfo['isPremium'] as bool;
     final accountType = accountInfo['type'] as String;
     final accountDesc = accountInfo['desc'] as String?;
-    final accentColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final accentColor = context.primaryColor;
     final cardBg = isDarkMode ? const Color(0xFF1B2825) : Colors.white;
     final textColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
     final subtitleColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
@@ -2202,9 +2202,9 @@ class _MePageState extends State<MePage> {
                     // 标题栏
                     Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF18BA7C),
-                        borderRadius: BorderRadius.only(
+                      decoration: BoxDecoration(
+                        color: context.primaryColor,
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                         ),
@@ -3558,10 +3558,10 @@ class _DictCardState extends State<DictCard> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF18BA7C).withValues(alpha: 0.1),
+                    color: context.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.remove_circle_outline, color: Color(0xFF18BA7C), size: 40),
+                  child: Icon(Icons.remove_circle_outline, color: context.primaryColor, size: 40),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -3594,7 +3594,8 @@ class _DictCardState extends State<DictCard> {
                       child: ElevatedButton(
                         onPressed: () => Navigator.of(context).pop(true),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF18BA7C),
+                          backgroundColor: context.primaryColor,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
