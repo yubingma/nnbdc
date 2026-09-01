@@ -136,7 +136,7 @@ class AppThemeConfig {
           cardBg: Colors.white.withValues(alpha: 0.88),
           cardBorder: const Color(0x3DF97316),
           subtleBg: const Color(0xFFFFEDD5),
-          dakaStudiedColor: const Color(0xFF0284C7), // 沉静晴空科技蓝（与落日暖橘形成极佳冷暖互补）
+          dakaStudiedColor: const Color(0xFF8B5CF6), // 晚霞暮光紫（与活力落日暖橘对比鲜明，同时避免与晨曦流光已打卡冷蓝产生混淆）
           cardShadows: [
             BoxShadow(
               color: const Color(0xFFEA580C).withValues(alpha: 0.08),
