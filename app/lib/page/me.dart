@@ -38,6 +38,7 @@ import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:nnbdc/util/notification_util.dart';
@@ -1879,6 +1880,96 @@ class _MePageState extends State<MePage> {
                 ),
               ),
               const SizedBox(height: 12),
+              // 主题风格可视化选择卡片
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDarkModeEnabled ? const Color(0xFF131E1C) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: borderColor, width: 0.8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.palette_outlined, size: 18, color: accentColor),
+                          const SizedBox(width: 8),
+                          Text(
+                            '外观主题风格',
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: AppThemeStyle.values.map((style) {
+                          final isSelected = context.watch<DarkMode>().themeStyle == style;
+                          return Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                context.read<DarkMode>().setThemeStyle(style);
+                                MyDatabase.instance.localParamsDao.saveThemeStyle(style);
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 3),
+                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? (isDarkModeEnabled ? accentColor.withValues(alpha: 0.2) : const Color(0xFFE8F8F1))
+                                      : (isDarkModeEnabled ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8FAF9)),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? accentColor
+                                        : (isDarkModeEnabled ? Colors.white12 : const Color(0xFFE2ECE8)),
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      style.icon,
+                                      size: 20,
+                                      color: isSelected ? accentColor : subtitleColor,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      style.label,
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                        color: isSelected ? accentColor : textColor,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               _buildMenuTile(
                 icon: Icons.person_outline_rounded,
                 title: '个人信息',

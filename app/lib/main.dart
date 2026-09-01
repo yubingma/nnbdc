@@ -465,8 +465,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   loadData() async {
     var isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
+    var themeStyle = await MyDatabase.instance.localParamsDao.getThemeStyle();
     if (mounted) {
       context.read<DarkMode>().setIsDarkMode(isDarkMode);
+      context.read<DarkMode>().setThemeStyle(themeStyle);
     }
   }
 

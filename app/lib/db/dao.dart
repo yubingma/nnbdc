@@ -12,6 +12,7 @@ import 'package:nnbdc/util/utils.dart';
 
 import '../global.dart';
 import '../services/throttled_sync_service.dart';
+import '../theme/app_theme.dart';
 import '../util/error_handler.dart';
 import 'db.dart';
 import '../constants.dart';
@@ -136,6 +137,35 @@ class LocalParamsDao extends DatabaseAccessor<MyDatabase> with _$LocalParamsDaoM
       }
     } catch (e, stackTrace) {
       ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'saveIsDarkMode', showToast: false);
+      rethrow;
+    }
+  }
+
+  Future<AppThemeStyle> getThemeStyle() async {
+    try {
+      var param = await (select(localParams)..where((e) => e.name.equals('themeStyle'))).getSingleOrNull();
+      return AppThemeStyle.fromCode(param?.value);
+    } catch (e) {
+      Global.logger.e('getThemeStyle 失败，使用默认值: $e');
+      return AppThemeStyle.aurora;
+    }
+  }
+
+  Future<void> saveThemeStyle(AppThemeStyle themeStyle) async {
+    try {
+      final existing = await (select(localParams)..where((e) => e.name.equals('themeStyle'))).getSingleOrNull();
+      final value = themeStyle.code;
+      if (existing == null) {
+        await into(localParams).insert(LocalParamsCompanion.insert(
+          name: 'themeStyle',
+          value: value,
+          updateTime: Value(AppClock.now()),
+        ));
+      } else {
+        await (update(localParams)..where((e) => e.name.equals('themeStyle'))).write(LocalParamsCompanion(value: Value(value), updateTime: Value(AppClock.now())));
+      }
+    } catch (e, stackTrace) {
+      ErrorHandler.handleDatabaseError(e, stackTrace, db: this, operation: 'saveThemeStyle', showToast: false);
       rethrow;
     }
   }

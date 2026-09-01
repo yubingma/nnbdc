@@ -1,5 +1,35 @@
 import 'package:flutter/material.dart';
 
+/// 应用视觉主题风格枚举
+enum AppThemeStyle {
+  /// 晨曦流光 (DeepSeek 空灵风，轻柔 4 色漫射微光 + 高透毛玻璃)
+  aurora('aurora', '晨曦流光', 'DeepSeek 空灵美学', Icons.auto_awesome_rounded),
+
+  /// 经典翡翠 (扇贝温润护眼风，纯净淡雅米白底 + 纯净实体微阴影)
+  emerald('emerald', '经典翡翠', '温润护眼专注', Icons.spa_rounded),
+
+  /// 东方羊脂玉 (东方凝脂雅致风，羊脂渐变 + 水头微光)
+  jade('jade', '羊脂白玉', '东方凝脂雅韵', Icons.lens_blur_rounded),
+
+  /// 极简纯黑白 (极客专注风，无光晕纯粹黑白高对比)
+  minimal('minimal', '极简黑白', '极客纯粹高对比', Icons.contrast_rounded);
+
+  final String code;
+  final String label;
+  final String description;
+  final IconData icon;
+
+  const AppThemeStyle(this.code, this.label, this.description, this.icon);
+
+  static AppThemeStyle fromCode(String? code) {
+    if (code == null) return AppThemeStyle.aurora;
+    for (final style in AppThemeStyle.values) {
+      if (style.code == code) return style;
+    }
+    return AppThemeStyle.aurora;
+  }
+}
+
 class AppTheme {
   // 扇贝护眼主题绿体系
   // 主品牌色：扇贝翡翠绿

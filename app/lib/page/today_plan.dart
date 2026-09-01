@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
@@ -8,6 +7,7 @@ import "package:nnbdc/util/prefs.dart";
 import 'package:nnbdc/api/bo/study_bo.dart';
 import 'package:nnbdc/api/bo/user_bo.dart';
 import 'package:nnbdc/theme/app_theme.dart';
+import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -459,7 +459,9 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final darkModeState = context.watch<DarkMode>();
+    final isDarkMode = darkModeState.isDarkMode;
+    final themeStyle = darkModeState.themeStyle;
     final backgroundColor = isDarkMode ? const Color(0xFF090B10) : const Color(0xFFF9FAFB);
 
     return Scaffold(
@@ -467,7 +469,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       body: Stack(
         children: [
           Positioned.fill(
-            child: _AuroraMeshBackground(isDarkMode: isDarkMode),
+            child: AppThemeBackground(
+              isDarkMode: isDarkMode,
+              themeStyle: themeStyle,
+            ),
           ),
           (!dataLoaded)
               ? Center(
@@ -623,18 +628,67 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   Widget renderMissionCard() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final darkModeState = context.watch<DarkMode>();
+    final isDarkMode = darkModeState.isDarkMode;
+    final themeStyle = darkModeState.themeStyle;
     final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
     final isStarted = user?.todayStudyStarted == true;
 
     final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final cardBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
-    final cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
-    final subtleBg = isDarkMode ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.45);
     final textPrimary = isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28);
     final textSecondary = isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F);
     final textMuted = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
     final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1418BA7C);
+
+    Color cardBg;
+    Color cardBorder;
+    Color subtleBg;
+    List<BoxShadow> cardShadows;
+
+    switch (themeStyle) {
+      case AppThemeStyle.aurora:
+        cardBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
+        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
+        subtleBg = isDarkMode ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.45);
+        cardShadows = [
+          BoxShadow(
+            color: const Color(0xFF123C32).withValues(alpha: isDarkMode ? 0.4 : 0.05),
+            blurRadius: 28,
+            offset: const Offset(0, 8),
+          ),
+        ];
+        break;
+      case AppThemeStyle.emerald:
+        cardBg = isDarkMode ? const Color(0xFF14201D) : Colors.white;
+        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
+        subtleBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
+        cardShadows = [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.03),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ];
+        break;
+      case AppThemeStyle.jade:
+        cardBg = isDarkMode ? const Color(0xFF162822).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.90);
+        cardBorder = isDarkMode ? const Color(0x282CD88F) : const Color(0x2818BA7C);
+        subtleBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEBF5F0);
+        cardShadows = [
+          BoxShadow(
+            color: const Color(0xFF125541).withValues(alpha: isDarkMode ? 0.4 : 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+        ];
+        break;
+      case AppThemeStyle.minimal:
+        cardBg = isDarkMode ? const Color(0xFF141414) : Colors.white;
+        cardBorder = isDarkMode ? const Color(0xFF262626) : const Color(0xFFE5E5E5);
+        subtleBg = isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6);
+        cardShadows = [];
+        break;
+    }
 
     return Container(
       width: double.infinity,
@@ -643,13 +697,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         color: cardBg,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: cardBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF123C32).withValues(alpha: isDarkMode ? 0.4 : 0.05),
-            blurRadius: 28,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: cardShadows,
       ),
       child: Column(
         children: [
@@ -1413,9 +1461,53 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 【显示模式】—— 极简纯无框图形化决策树卡片
   Widget _buildTrackDisplayCard(bool isDarkMode) {
-    final cardBg = isDarkMode ? const Color(0xFF0E1C18).withValues(alpha: 0.72) : Colors.white.withValues(alpha: 0.72);
-    final cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.85);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
     final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1718BA7C);
+
+    Color cardBg;
+    Color cardBorder;
+    List<BoxShadow> cardShadows;
+
+    switch (themeStyle) {
+      case AppThemeStyle.aurora:
+        cardBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
+        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
+        cardShadows = [
+          BoxShadow(
+            color: const Color(0xFF123C32).withValues(alpha: isDarkMode ? 0.4 : 0.05),
+            blurRadius: 28,
+            offset: const Offset(0, 8),
+          ),
+        ];
+        break;
+      case AppThemeStyle.emerald:
+        cardBg = isDarkMode ? const Color(0xFF14201D) : Colors.white;
+        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
+        cardShadows = [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.03),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ];
+        break;
+      case AppThemeStyle.jade:
+        cardBg = isDarkMode ? const Color(0xFF162822).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.90);
+        cardBorder = isDarkMode ? const Color(0x282CD88F) : const Color(0x2818BA7C);
+        cardShadows = [
+          BoxShadow(
+            color: const Color(0xFF125541).withValues(alpha: isDarkMode ? 0.4 : 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+        ];
+        break;
+      case AppThemeStyle.minimal:
+        cardBg = isDarkMode ? const Color(0xFF141414) : Colors.white;
+        cardBorder = isDarkMode ? const Color(0xFF262626) : const Color(0xFFE5E5E5);
+        cardShadows = [];
+        break;
+    }
 
     return Container(
       width: double.infinity,
@@ -1424,13 +1516,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         color: cardBg,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: cardBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: cardShadows,
       ),
       child: Column(
         children: [
@@ -1704,10 +1790,58 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   /// 【编辑模式】—— 完整新旧词规则配置卡片
   Widget _buildTrackEditCard(bool isDarkMode) {
-    final cardBg = isDarkMode ? const Color(0xFF0E1C18).withValues(alpha: 0.72) : Colors.white.withValues(alpha: 0.72);
-    final cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.85);
-    final badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
     final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+
+    Color cardBg;
+    Color cardBorder;
+    Color badgeBg;
+    List<BoxShadow> cardShadows;
+
+    switch (themeStyle) {
+      case AppThemeStyle.aurora:
+        cardBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
+        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
+        badgeBg = isDarkMode ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.45);
+        cardShadows = [
+          BoxShadow(
+            color: const Color(0xFF123C32).withValues(alpha: isDarkMode ? 0.4 : 0.05),
+            blurRadius: 28,
+            offset: const Offset(0, 8),
+          ),
+        ];
+        break;
+      case AppThemeStyle.emerald:
+        cardBg = isDarkMode ? const Color(0xFF14201D) : Colors.white;
+        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
+        badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
+        cardShadows = [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.03),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ];
+        break;
+      case AppThemeStyle.jade:
+        cardBg = isDarkMode ? const Color(0xFF162822).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.90);
+        cardBorder = isDarkMode ? const Color(0x282CD88F) : const Color(0x2818BA7C);
+        badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEBF5F0);
+        cardShadows = [
+          BoxShadow(
+            color: const Color(0xFF125541).withValues(alpha: isDarkMode ? 0.4 : 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+        ];
+        break;
+      case AppThemeStyle.minimal:
+        cardBg = isDarkMode ? const Color(0xFF141414) : Colors.white;
+        cardBorder = isDarkMode ? const Color(0xFF262626) : const Color(0xFFE5E5E5);
+        badgeBg = isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6);
+        cardShadows = [];
+        break;
+    }
 
     return Container(
       width: double.infinity,
@@ -1716,13 +1850,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         color: cardBg,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: cardBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: cardShadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2230,90 +2358,3 @@ class ForkBezierPainter extends CustomPainter {
   bool shouldRepaint(covariant ForkBezierPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// 东方温润 / DeepSeek 风格极光流光漫射背景层 (纯净空灵轻量化)
-class _AuroraMeshBackground extends StatelessWidget {
-  final bool isDarkMode;
-  const _AuroraMeshBackground({required this.isDarkMode});
-
-  @override
-  Widget build(BuildContext context) {
-    final baseBg = isDarkMode ? const Color(0xFF070E0C) : const Color(0xFFF5F9F8);
-    // 轻柔漫射流光 (低饱和度、高明度、轻盈通透)
-    final glowBlue = isDarkMode ? const Color(0x383B82F6) : const Color(0x3860A5FA);
-    final glowCyan = isDarkMode ? const Color(0x332CD88F) : const Color(0x2E2DD4BF);
-    final glowIndigo = isDarkMode ? const Color(0x26818CF8) : const Color(0x26A5B4FC);
-    final glowWhite = isDarkMode ? const Color(0x331E3A32) : const Color(0xB8FFFFFF);
-
-    return Container(
-      color: baseBg,
-      child: Stack(
-        children: [
-          // 晕染 1：左上天空微蓝漫射光斑
-          Positioned(
-            top: 20,
-            left: -40,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowBlue,
-                ),
-              ),
-            ),
-          ),
-          // 晕染 2：右侧中上翡翠微青水晕
-          Positioned(
-            top: 130,
-            right: -50,
-            width: 340,
-            height: 360,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowCyan,
-                ),
-              ),
-            ),
-          ),
-          // 晕染 3：左下方柔和幽蓝浅紫
-          Positioned(
-            bottom: 60,
-            left: 0,
-            width: 320,
-            height: 320,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowIndigo,
-                ),
-              ),
-            ),
-          ),
-          // 晕染 4：中心透亮纯净高光
-          Positioned(
-            top: 230,
-            left: 50,
-            width: 280,
-            height: 280,
-            child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 70, sigmaY: 70),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: glowWhite,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
