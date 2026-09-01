@@ -566,15 +566,19 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                           ],
                         ),
-                        // 右侧高级设置按钮（圆形微背景）
+                        // 右侧高级设置按钮（圆形毛玻璃微卡片）
                         GestureDetector(
                           onTap: () => _showAdvancedSettingsDialog(),
                           child: Container(
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6),
+                              color: isDarkMode ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.55),
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDarkMode ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.8),
+                                width: 1,
+                              ),
                             ),
                             child: Icon(
                               Icons.tune_rounded,
@@ -624,193 +628,215 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final isStarted = user?.todayStudyStarted == true;
 
     final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
+    final cardBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
+    final cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
+    final subtleBg = isDarkMode ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.45);
     final textPrimary = isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28);
     final textSecondary = isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F);
     final textMuted = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
-    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1718BA7C);
+    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1418BA7C);
 
-    return Column(
-      children: [
-        // 今日目标超大数字（点击整个数字或胶囊均可修改词数）
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: isStarted
-              ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
-              : () => _showWordsSelectionBottomSheet(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: cardBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF123C32).withValues(alpha: isDarkMode ? 0.4 : 0.05),
+            blurRadius: 28,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 今日目标超大数字（点击整个数字或胶囊均可修改词数）
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: isStarted
+                ? () => ToastUtil.info('今日学习已开始，单词数已锁定')
+                : () => _showWordsSelectionBottomSheet(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '${user?.effectiveWordsPerDay ?? 0}',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 54,
+                      fontWeight: FontWeight.w900,
+                      fontFamilyFallback: const ['.SF Pro Display', 'SF Pro Display', 'Helvetica Neue', 'Roboto', 'PingFang SC', 'sans-serif'],
+                      letterSpacing: -1.5,
+                      height: 1.0,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: subtleBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.6),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'WORDS',
+                          style: TextStyle(
+                            color: textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        if (!isStarted)
+                          Icon(
+                            Icons.arrow_drop_down_rounded,
+                            size: 14,
+                            color: textSecondary,
+                          )
+                        else
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            size: 11,
+                            color: textMuted,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // 极细进度条（260px 宽度，5px 高度，扇贝绿填充）
+          SizedBox(
+            width: 260,
+            child: Column(
               children: [
-                Text(
-                  '${user?.effectiveWordsPerDay ?? 0}',
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontSize: 52,
-                    fontWeight: FontWeight.w800,
-                    fontFamilyFallback: const ['.SF Pro Display', 'SF Pro Display', 'Helvetica Neue', 'Roboto', 'PingFang SC', 'sans-serif'],
-                    letterSpacing: -1.0,
-                    height: 1.0,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress.clamp(0.0, 1.0),
+                    minHeight: 5,
+                    backgroundColor: isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFE3F5EC),
+                    valueColor: AlwaysStoppedAnimation<Color>(shanbayGreen),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: badgeBg,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'WORDS',
-                        style: TextStyle(
-                          color: textSecondary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '今日进度 $_completedStepCount / $_totalStepCount',
+                      style: TextStyle(
+                        color: textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 2),
-                      if (!isStarted)
-                        Icon(
-                          Icons.arrow_drop_down_rounded,
-                          size: 14,
-                          color: textSecondary,
-                        )
-                      else
-                        Icon(
-                          Icons.lock_outline_rounded,
-                          size: 11,
-                          color: textMuted,
-                        ),
-                    ],
-                  ),
+                    ),
+                    Text(
+                      '${(progress * 100).toInt()}%',
+                      style: TextStyle(
+                        color: textMuted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-        ),
 
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
 
-        // 极细进度条（260px 宽度，4px 高度，扇贝绿填充）
-        SizedBox(
-          width: 260,
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  minHeight: 4,
-                  backgroundColor: isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFE3F5EC),
-                  valueColor: AlwaysStoppedAnimation<Color>(shanbayGreen),
-                ),
+          // 双列对称纯色数据（新词 | 复习）
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: dividerColor),
+                bottom: BorderSide(color: dividerColor),
               ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '今日进度 $_completedStepCount / $_totalStepCount',
-                    style: TextStyle(
-                      color: textMuted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '${(progress * 100).toInt()}%',
-                    style: TextStyle(
-                      color: textMuted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // 双列对称纯色数据（新词 | 复习，已移除冗余的今日总词）
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: dividerColor),
-              bottom: BorderSide(color: dividerColor),
+            ),
+            child: Row(
+              children: [
+                _buildStatItem('新词', newWordCount ?? 0),
+                Container(width: 1, height: 22, color: dividerColor),
+                _buildStatItem('复习', oldWordCount ?? 0),
+              ],
             ),
           ),
-          child: Row(
-            children: [
-              _buildStatItem('新词', newWordCount ?? 0),
-              Container(width: 1, height: 22, color: dividerColor),
-              _buildStatItem('复习', oldWordCount ?? 0),
-            ],
-          ),
-        ),
 
-        // 任务量不足提示
-        if (prepareResult != null &&
-            prepareResult!.success &&
-            (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
-            !_hasTriedSupplement)
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF2E1A05) : const Color(0xFFFFFBEB),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDarkMode ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
+          // 任务量不足提示
+          if (prepareResult != null &&
+              prepareResult!.success &&
+              (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 20) &&
+              !_hasTriedSupplement)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? const Color(0xFF2E1A05) : const Color(0xFFFFFBEB),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDarkMode ? const Color(0xFF78350F) : const Color(0xFFFDE68A),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '任务量不足，建议补充单词',
-                      style: TextStyle(
-                        color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '任务量不足，建议补充单词',
+                        style: TextStyle(
+                          color: isDarkMode ? const Color(0xFFFCD34D) : const Color(0xFF92400E),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
-                      foregroundColor: isDarkMode ? Colors.white : Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        backgroundColor: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                        foregroundColor: isDarkMode ? Colors.white : Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () => loadData(forceSupplement: true),
+                      child: const Text('补充', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
-                    onPressed: () => loadData(forceSupplement: true),
-                    child: const Text('补充', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-        const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
-        // 主操作按钮（52px 高度扇贝绿大胶囊）
-        (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
-            ? renderErrorActions()
-            : renderStartButton(),
-      ],
+          // 主操作按钮（50px 高度扇贝绿大胶囊）
+          (prepareResult?.code == "NNBDC-0012" || (_hasTriedSupplement && (todayWordCount ?? 0) < (user?.effectiveWordsPerDay ?? 0)))
+              ? renderErrorActions()
+              : renderStartButton(),
+        ],
+      ),
     );
   }
 
@@ -2204,32 +2230,32 @@ class ForkBezierPainter extends CustomPainter {
   bool shouldRepaint(covariant ForkBezierPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// 东方温润 / DeepSeek 风格极光流光漫射背景层
+/// 东方温润 / DeepSeek 风格极光流光漫射背景层 (纯净空灵轻量化)
 class _AuroraMeshBackground extends StatelessWidget {
   final bool isDarkMode;
   const _AuroraMeshBackground({required this.isDarkMode});
 
   @override
   Widget build(BuildContext context) {
-    final baseBg = isDarkMode ? const Color(0xFF060D0B) : const Color(0xFFEDF3F1);
-    // 亮色/暗色柔和流光晕染斑块
-    final glowBlue = isDarkMode ? const Color(0x663B82F6) : const Color(0x734E8CFF);
-    final glowCyan = isDarkMode ? const Color(0x662CD88F) : const Color(0x6B1CCEA0);
-    final glowIndigo = isDarkMode ? const Color(0x59818CF8) : const Color(0x4D6366F1);
-    final glowWhite = isDarkMode ? const Color(0x4D1E3A32) : const Color(0xB3FFFFFF);
+    final baseBg = isDarkMode ? const Color(0xFF070E0C) : const Color(0xFFF5F9F8);
+    // 轻柔漫射流光 (低饱和度、高明度、轻盈通透)
+    final glowBlue = isDarkMode ? const Color(0x383B82F6) : const Color(0x3860A5FA);
+    final glowCyan = isDarkMode ? const Color(0x332CD88F) : const Color(0x2E2DD4BF);
+    final glowIndigo = isDarkMode ? const Color(0x26818CF8) : const Color(0x26A5B4FC);
+    final glowWhite = isDarkMode ? const Color(0x331E3A32) : const Color(0xB8FFFFFF);
 
     return Container(
       color: baseBg,
       child: Stack(
         children: [
-          // 晕染 1：左上天空蓝漫射光斑
+          // 晕染 1：左上天空微蓝漫射光斑
           Positioned(
-            top: -40,
-            left: -60,
-            width: 340,
-            height: 360,
+            top: 20,
+            left: -40,
+            width: 320,
+            height: 320,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 75, sigmaY: 75),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -2238,14 +2264,14 @@ class _AuroraMeshBackground extends StatelessWidget {
               ),
             ),
           ),
-          // 晕染 2：右侧中上翡翠青水晕
+          // 晕染 2：右侧中上翡翠微青水晕
           Positioned(
-            top: 140,
-            right: -70,
-            width: 330,
+            top: 130,
+            right: -50,
+            width: 340,
             height: 360,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -2256,12 +2282,12 @@ class _AuroraMeshBackground extends StatelessWidget {
           ),
           // 晕染 3：左下方柔和幽蓝浅紫
           Positioned(
-            bottom: 40,
-            left: -30,
-            width: 350,
-            height: 330,
+            bottom: 60,
+            left: 0,
+            width: 320,
+            height: 320,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -2270,14 +2296,14 @@ class _AuroraMeshBackground extends StatelessWidget {
               ),
             ),
           ),
-          // 晕染 4：中心透亮高光晕
+          // 晕染 4：中心透亮纯净高光
           Positioned(
-            top: 260,
-            left: 40,
-            width: 270,
-            height: 270,
+            top: 230,
+            left: 50,
+            width: 280,
+            height: 280,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 70, sigmaY: 70),
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
