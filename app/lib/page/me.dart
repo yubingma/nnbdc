@@ -1925,7 +1925,6 @@ class _MePageState extends State<MePage> {
                               onTap: () {
                                 context.read<DarkMode>().setThemeStyle(style);
                                 MyDatabase.instance.localParamsDao.saveThemeStyle(style);
-                                ToastUtil.info('已切换至「${style.label}」主题');
                               },
                               child: Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 2.5),
