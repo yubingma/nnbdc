@@ -818,8 +818,8 @@ extension BdcPageStateDialogs on BdcPageState {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.report_problem_outlined,
-                        color: Global.highlight, size: 20),
+                    Icon(Icons.feedback_outlined,
+                        color: context.primaryColor, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       '问题反馈',
@@ -828,7 +828,7 @@ extension BdcPageStateDialogs on BdcPageState {
                         fontFamily: "NotoSansSC",
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: Global.highlight,
+                        color: context.primaryColor,
                       ),
                     ),
                   ],

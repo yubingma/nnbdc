@@ -1011,7 +1011,7 @@ extension BdcPageStateUIComponents on BdcPageState {
 
                 // 报错按钮
                 _buildTopActionButton(
-                  icon: Icons.report_problem_outlined,
+                  icon: Icons.feedback_outlined,
                   label: '报错',
                   onTap: () => showErrorReportDlg(),
                 ),

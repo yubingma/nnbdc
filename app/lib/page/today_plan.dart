@@ -571,24 +571,24 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                             ),
                           ],
                         ),
-                        // 右侧高级设置按钮（圆形毛玻璃微卡片）
+                        // 右侧高级设置按钮（圆形微容器）
                         GestureDetector(
                           onTap: () => _showAdvancedSettingsDialog(),
                           child: Container(
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: isDarkMode ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.55),
+                              color: context.subtleBg,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isDarkMode ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.8),
+                                color: context.cardBorder,
                                 width: 1,
                               ),
                             ),
                             child: Icon(
                               Icons.tune_rounded,
                               size: 18,
-                              color: isDarkMode ? Colors.white70 : const Color(0xFF4B5563),
+                              color: context.primaryColor,
                             ),
                           ),
                         ),
@@ -1369,7 +1369,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
               Text(
                 '学习轨道',
                 style: TextStyle(
-                  color: isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28),
+                  color: context.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.2,
@@ -1381,7 +1381,11 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2),
+                    color: context.subtleBg,
+                    border: Border.all(
+                      color: context.cardBorder,
+                      width: 1,
+                    ),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
@@ -1390,13 +1394,13 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                       Icon(
                         _isEditingTracks ? Icons.check_rounded : Icons.settings_rounded,
                         size: 12,
-                        color: isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F),
+                        color: context.primaryColor,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _isEditingTracks ? '完成配置' : '调整轨道',
                         style: TextStyle(
-                          color: isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F),
+                          color: context.textPrimary,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1765,8 +1769,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   Widget _buildSubtleTabBtn(String title, int tabIndex, bool isDarkMode) {
     final isSelected = _studyStepsTab == tabIndex;
-    final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final textMuted = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
+    final selectedColor = context.primaryColor;
+    final textMuted = context.textSecondary;
 
     return GestureDetector(
       onTap: () => setState(() => _studyStepsTab = tabIndex),
@@ -1774,7 +1778,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
         decoration: BoxDecoration(
           color: isSelected
-              ? (isDarkMode ? const Color(0xFF263A37) : Colors.white)
+              ? (isDarkMode ? context.subtleBg : Colors.white)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           boxShadow: isSelected
@@ -1786,7 +1790,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? shanbayGreen : textMuted,
+            color: isSelected ? selectedColor : textMuted,
           ),
         ),
       ),
