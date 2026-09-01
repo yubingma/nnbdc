@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:provider/provider.dart';
+import '../../../../state.dart';
+import '../../../../theme/app_theme.dart';
 
 import '../word_list_actions.dart';
 import 'mode_components.dart';
@@ -36,6 +39,8 @@ class HideModeItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isHideEnglish = studyMode == WordListStudyMode.hideEnglish;
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
 
     return WordListItemLayout(
       word: word,
@@ -56,7 +61,7 @@ class HideModeItem extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(10, 6, 0, 6),
           child: isHideEnglish
               ? ModeComponents.buildWordMeaning(word, isDarkMode, topPadding: 0)
-              : ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode),
+              : ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode, themeConfig: themeConfig),
         ),
       ),
       rightContent: GestureDetector(
@@ -65,30 +70,29 @@ class HideModeItem extends StatelessWidget {
         onLongPress: () => actions.onWordLongPress(word, index),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
-          child: _buildHiddenAnswerArea(isHideEnglish),
+          child: _buildHiddenAnswerArea(isHideEnglish, themeConfig),
         ),
       ),
     );
   }
 
-  Widget _buildHiddenAnswerArea(bool isEnglish) {
+  Widget _buildHiddenAnswerArea(bool isEnglish, AppThemeConfig themeConfig) {
     final Widget answerContent = isEnglish
-        ? ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode)
+        ? ModeComponents.buildWordHeader(word, isBookmarked, isDarkMode, themeConfig: themeConfig)
         : ModeComponents.buildWordMeaning(word, isDarkMode, topPadding: 0);
 
     if (word.isAnswerRevealed) {
       return answerContent;
     }
 
+    final accentColor = themeConfig.primaryColor;
     final btnBg = isDarkMode
-        ? const Color(0xFF1B2E29)
-        : const Color(0xFFEBF7F2);
+        ? accentColor.withValues(alpha: 0.15)
+        : themeConfig.subtleBg;
     final btnBorder = isDarkMode
-        ? const Color(0xFF264A3E)
-        : const Color(0xFFC7EBDD);
-    final btnTextColor = isDarkMode
-        ? const Color(0xFF2CD88F)
-        : const Color(0xFF18BA7C);
+        ? accentColor.withValues(alpha: 0.3)
+        : themeConfig.cardBorder;
+    final btnTextColor = accentColor;
 
     return Stack(
       alignment: Alignment.centerLeft,

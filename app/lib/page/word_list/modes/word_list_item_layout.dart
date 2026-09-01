@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:provider/provider.dart';
+import '../../../state.dart';
+import '../../../theme/app_theme.dart';
 import '../word_list_actions.dart';
 
-/// 单词列表项的通用布局外壳，处理 Slidable、扇贝护眼卡片与方案 A 环形熟练度微光环
+/// 单词列表项的通用布局外壳，处理 Slidable、卡片与环形熟练度微光环
 class WordListItemLayout extends StatelessWidget {
   final WordWrapper word;
   final int index;
@@ -39,30 +42,25 @@ class WordListItemLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 扇贝护眼双主题色彩
-    final cardBg = isDarkMode
-        ? (isBookmarked ? const Color(0xFF162B25) : const Color(0xFF13201D))
-        : (isBookmarked ? const Color(0xFFEFF9F4) : Colors.white);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final accentColor = themeConfig.primaryColor;
 
-    final borderColor = isDarkMode
-        ? (isBookmarked ? const Color(0xFF2CD88F) : Colors.white10)
-        : (isBookmarked ? const Color(0xFF18BA7C) : const Color(0x1418BA7C));
+    final cardBg = isDarkMode
+        ? (isBookmarked ? accentColor.withValues(alpha: 0.18) : themeConfig.cardBg)
+        : (isBookmarked ? accentColor.withValues(alpha: 0.08) : Colors.white);
+
+    final borderColor = isBookmarked ? accentColor : themeConfig.cardBorder;
 
     final cardShadow = isBookmarked
         ? [
             BoxShadow(
-              color: (isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C)).withValues(alpha: isDarkMode ? 0.2 : 0.12),
+              color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.16),
               blurRadius: 12,
               offset: const Offset(0, 3),
             ),
           ]
-        : [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 1.5),
-            ),
-          ];
+        : themeConfig.cardShadows;
 
     Widget itemContent = Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -82,7 +80,7 @@ class WordListItemLayout extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               /// 1. 左侧序号与环形掌握度光环徽章
-              _buildLeftColumn(),
+              _buildLeftColumn(themeConfig),
 
               /// 2. 中间和右侧单词释义与交互内容
               Expanded(
@@ -119,12 +117,13 @@ class WordListItemLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildLeftColumn() {
+  Widget _buildLeftColumn(AppThemeConfig themeConfig) {
+    final accentColor = themeConfig.primaryColor;
     final sidebarBg = isDarkMode
-        ? (isBookmarked ? const Color(0xFF1B362F) : const Color(0xFF182623))
-        : (isBookmarked ? const Color(0xFFE2F4EB) : const Color(0xFFF4F9F6));
+        ? (isBookmarked ? accentColor.withValues(alpha: 0.22) : themeConfig.subtleBg)
+        : (isBookmarked ? accentColor.withValues(alpha: 0.12) : const Color(0xFFF7FBF9));
 
-    final dividerColor = isDarkMode ? Colors.white10 : const Color(0x1018BA7C);
+    final dividerColor = themeConfig.cardBorder;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -142,8 +141,8 @@ class WordListItemLayout extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 方案 A：环形熟练度微光环徽章（序号 + 熟练度光环二合一）
-              _buildRingMasteryBadge(),
+              // 环形熟练度微光环徽章（序号 + 熟练度光环二合一）
+              _buildRingMasteryBadge(themeConfig),
               if (audioIndicator != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -156,8 +155,8 @@ class WordListItemLayout extends StatelessWidget {
     );
   }
 
-  /// 方案 A：环形熟练度光环徽章
-  Widget _buildRingMasteryBadge() {
+  /// 环形熟练度光环徽章
+  Widget _buildRingMasteryBadge(AppThemeConfig themeConfig) {
     final double current = word.currentProgress ?? 0;
     final double max = word.maxProgress ?? 100;
     double progressRatio = 0.0;
@@ -170,12 +169,12 @@ class WordListItemLayout extends StatelessWidget {
       progressRatio = 0.5;
     }
 
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final accentColor = themeConfig.primaryColor;
     final trackColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.06);
 
     final numColor = isBookmarked
-        ? accentGreen
-        : (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724));
+        ? accentColor
+        : themeConfig.textPrimary;
 
     return SizedBox(
       width: 25,
@@ -191,8 +190,8 @@ class WordListItemLayout extends StatelessWidget {
               backgroundColor: trackColor,
               valueColor: AlwaysStoppedAnimation(
                 progressRatio >= 1.0
-                    ? accentGreen
-                    : (isDarkMode ? const Color(0xFF6EE7B7) : const Color(0xFF34D399)),
+                    ? accentColor
+                    : accentColor.withValues(alpha: 0.7),
               ),
             )
           else

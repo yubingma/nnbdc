@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../api/enum.dart';
 import '../../../state.dart';
+import '../../../theme/app_theme.dart';
 
 class WordListAppBarMenu extends StatelessWidget {
   final WordListStudyMode studyMode;
@@ -27,20 +28,22 @@ class WordListAppBarMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
 
     return PopupMenuButton<String>(
       icon: const Icon(
         Icons.more_vert_rounded,
         color: Colors.white,
       ),
-      color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+      color: themeConfig.cardBg,
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+          color: themeConfig.cardBorder,
           width: 1,
         ),
       ),
@@ -50,12 +53,13 @@ class WordListAppBarMenu extends StatelessWidget {
       ),
       onSelected: onSelected,
       itemBuilder: (BuildContext context) {
-        return _buildMenuItems(isDarkMode);
+        return _buildMenuItems(themeConfig);
       },
     );
   }
 
-  List<PopupMenuEntry<String>> _buildMenuItems(bool isDarkMode) {
+  List<PopupMenuEntry<String>> _buildMenuItems(AppThemeConfig themeConfig) {
+    final accentColor = themeConfig.primaryColor;
     List<String> menus = [
       menuWordList,
     ];
@@ -82,16 +86,12 @@ class WordListAppBarMenu extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: isSelected
-                ? (isDarkMode
-                    ? const Color(0xFF192C27)
-                    : const Color(0xFFEDF8F3))
+                ? themeConfig.subtleBg
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: isSelected
                 ? Border.all(
-                    color: isDarkMode
-                        ? Colors.white12
-                        : const Color(0xFFD1EADE),
+                    color: accentColor.withValues(alpha: 0.35),
                     width: 1,
                   )
                 : null,
@@ -103,12 +103,8 @@ class WordListAppBarMenu extends StatelessWidget {
                 _getMenuIcon(choice),
                 size: 18,
                 color: isSelected
-                    ? (isDarkMode
-                        ? const Color(0xFF2CD88F)
-                        : const Color(0xFF18BA7C))
-                    : (isDarkMode
-                        ? const Color(0xFF8EA8A3)
-                        : const Color(0xFF5B7A75)),
+                    ? accentColor
+                    : themeConfig.textSecondary,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -117,12 +113,8 @@ class WordListAppBarMenu extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     color: isSelected
-                        ? (isDarkMode
-                            ? const Color(0xFF2CD88F)
-                            : const Color(0xFF18BA7C))
-                        : (isDarkMode
-                            ? const Color(0xFFEAF7F4)
-                            : const Color(0xFF152724)),
+                        ? accentColor
+                        : themeConfig.textPrimary,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),

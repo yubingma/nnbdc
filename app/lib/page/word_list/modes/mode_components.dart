@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:nnbdc/util/word_util.dart';
+import '../../../../theme/app_theme.dart';
 
 /// 词表页面通用的子组件（如单词标题、释义等）
 class ModeComponents {
-  static Widget buildWordHeader(WordWrapper word, bool isBookmarked, bool isDarkMode) {
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final textMain = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final textSub = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
+  static Widget buildWordHeader(
+    WordWrapper word,
+    bool isBookmarked,
+    bool isDarkMode, {
+    AppThemeConfig? themeConfig,
+  }) {
+    final accentColor = themeConfig?.primaryColor ?? (isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C));
+    final textMain = themeConfig?.textPrimary ?? (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724));
+    final textSub = themeConfig?.textSecondary ?? (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -20,7 +26,7 @@ class ModeComponents {
             softWrap: false,
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
-              color: isBookmarked ? accentGreen : textMain,
+              color: isBookmarked ? accentColor : textMain,
               fontSize: 16.5,
               fontWeight: FontWeight.w700,
               height: 1.25,

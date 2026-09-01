@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/util/word_util.dart';
 import 'package:nnbdc/util/utils.dart';
+import 'package:provider/provider.dart';
+import '../../../../state.dart';
+import '../../../../theme/app_theme.dart';
 import '../word_list_actions.dart';
 import 'word_list_item_layout.dart';
 import 'mode_components.dart';
@@ -33,6 +36,9 @@ class TypingModeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+
     return WordListItemLayout(
       word: word,
       index: index,
@@ -59,7 +65,7 @@ class TypingModeItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildTextField(),
+            _buildTextField(themeConfig),
             if (word.hintLetterCount > 0)
               _buildHint(),
           ],
@@ -68,9 +74,9 @@ class TypingModeItem extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField() {
-    final accentGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final textNormal = isDarkMode ? Colors.white : const Color(0xFF152724);
+  Widget _buildTextField(AppThemeConfig themeConfig) {
+    final accentColor = themeConfig.primaryColor;
+    final textNormal = themeConfig.textPrimary;
 
     return AnimatedBuilder(
       animation: word.focusNode,
@@ -86,7 +92,7 @@ class TypingModeItem extends StatelessWidget {
             isCollapsed: true,
             border: UnderlineInputBorder(borderSide: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black26)),
             enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: isDarkMode ? Colors.white24 : Colors.black26)),
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: accentGreen, width: 1.5)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: accentColor, width: 1.5)),
             contentPadding: EdgeInsets.zero,
           ),
           onTap: () => actions.onWordTap(word, index),
@@ -97,7 +103,7 @@ class TypingModeItem extends StatelessWidget {
             color: Util.equalsIgnoreCase(word.word.spell, word.spellController.text)
                 ? word.isAnswerProvidedBySystem
                     ? textNormal
-                    : accentGreen
+                    : accentColor
                 : Colors.redAccent,
           ),
         );

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:nnbdc/api/enum.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/word_util.dart';
+import 'package:provider/provider.dart';
+import '../../../../state.dart';
+import '../../../../theme/app_theme.dart';
 
 import '../word_list_actions.dart';
 import 'mode_components.dart';
@@ -64,7 +67,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               onTap: () => actions.onWordTap(word, index),
               onLongPress: () => actions.onWordLongPress(word, index),
-              child: _buildEnglishSentenceArea(),
+              child: _buildEnglishSentenceArea(context),
             ),
             if (showBottomArea) ...[
               const SizedBox(height: 6),
@@ -89,27 +92,27 @@ class TranslateSentenceModeItem extends StatelessWidget {
     );
   }
 
-  Widget _buildEnglishSentenceArea() {
+  Widget _buildEnglishSentenceArea(BuildContext context) {
     if (word.currentSentence != null && (word.currentSentence!.english ?? '').isNotEmpty) {
-      return _buildSentenceContent(word.currentSentence!.english!);
+      return _buildSentenceContent(word.currentSentence!.english!, context);
     }
 
     if (word.word.sentences != null && word.word.sentences!.isNotEmpty) {
       word.currentSentence = word.word.sentences!.first;
       if ((word.currentSentence!.english ?? '').isNotEmpty) {
-        return _buildSentenceContent(word.currentSentence!.english!);
+        return _buildSentenceContent(word.currentSentence!.english!, context);
       }
     }
 
     return FutureBuilder<List<SentenceVo>>(
       future: word.word.getSentences(),
-      builder: (context, snapshot) {
+      builder: (ctx, snapshot) {
         if (snapshot.connectionState == ConnectionState.done &&
             snapshot.hasData &&
             snapshot.data!.isNotEmpty) {
           word.currentSentence ??= snapshot.data!.first;
           if ((word.currentSentence!.english ?? '').isNotEmpty) {
-            return _buildSentenceContent(word.currentSentence!.english!);
+            return _buildSentenceContent(word.currentSentence!.english!, ctx);
           }
         }
         if (snapshot.connectionState == ConnectionState.done) {
@@ -136,8 +139,12 @@ class TranslateSentenceModeItem extends StatelessWidget {
     );
   }
 
-  Widget _buildSentenceContent(String sentenceEn) {
+  Widget _buildSentenceContent(String sentenceEn, BuildContext context) {
     final spell = word.word.spell;
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final accentColor = themeConfig.primaryColor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -154,7 +161,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
           ),
           boldStyle: TextStyle(
             color: isBookmarked
-                ? (isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C))
+                ? accentColor
                 : (isDarkMode ? Colors.white : const Color(0xFF152724)),
             fontSize: 14.5,
             fontWeight: FontWeight.w800,

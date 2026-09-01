@@ -34,6 +34,7 @@ import '../../db/db.dart';
 import '../../global.dart';
 import '../../state.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/app_theme_background.dart';
 import '../../util/app_clock.dart';
 import '../../util/phoneme_util.dart';
 import '../../util/platform_util.dart';
@@ -2165,14 +2166,18 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget _buildUnitHeader(int unit, bool isDarkMode) {
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final accentColor = themeConfig.primaryColor;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       margin: const EdgeInsets.only(top: 24, bottom: 8, left: 12, right: 12),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+        color: accentColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border(
-          left: BorderSide(color: AppTheme.primaryColor, width: 4),
+          left: BorderSide(color: accentColor, width: 4),
         ),
       ),
       child: Row(
@@ -2180,7 +2185,7 @@ class WordListPageState extends State<WordListPage>
           Icon(
             Icons.bookmark,
             size: 18,
-            color: AppTheme.primaryColor,
+            color: accentColor,
           ),
           const SizedBox(width: 8),
           Text(
@@ -2419,10 +2424,14 @@ class WordListPageState extends State<WordListPage>
       },
       child: Stack(
       children: [
+        Positioned.fill(
+          child: AppThemeBackground(
+            themeStyle: themeStyle,
+          ),
+        ),
         Scaffold(
           resizeToAvoidBottomInset: false, // 禁止分屏或键盘变化导致的布局挤压，提升 iPad 稳定性
-          backgroundColor:
-              isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF5F9F7),
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -2500,8 +2509,8 @@ class WordListPageState extends State<WordListPage>
                                 'S',
                                 style: TextStyle(
                                     fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppTheme.primaryColor),
+                                    fontWeight: FontWeight.w700,
+                                    color: themeConfig.primaryColor),
                               ),
                             ],
                           ),
@@ -2543,11 +2552,11 @@ class WordListPageState extends State<WordListPage>
                                   textScaler: TextScaler.linear(1.0),
                                   style: TextStyle(
                                       fontSize: 9,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w700,
                                       height: 1.1,
                                       letterSpacing: 0.1,
                                       color: isBookMarkValid(bookMark)
-                                          ? AppTheme.primaryColor
+                                          ? themeConfig.primaryColor
                                           : Colors.red[300]),
                                 ),
                               ],
@@ -2606,8 +2615,8 @@ class WordListPageState extends State<WordListPage>
                                 'E',
                                 style: TextStyle(
                                     fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppTheme.primaryColor),
+                                    fontWeight: FontWeight.w700,
+                                    color: themeConfig.primaryColor),
                               ),
                             ],
                           ),
@@ -3292,6 +3301,9 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget _buildSwitchingModeOverlay(bool isDarkMode, {required String message}) {
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+
     return Positioned.fill(
       child: AbsorbPointer(
         absorbing: true,
@@ -3313,8 +3325,8 @@ class WordListPageState extends State<WordListPage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(themeConfig.primaryColor),
                   ),
                   const SizedBox(height: 16),
                   Text(
