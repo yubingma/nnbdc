@@ -889,7 +889,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
-                  children: [10, 20, 30, 50, 75, 100, 150, 200, 300].map((v) {
+                  children: [2, 3, 5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500].map((v) {
                     final isSelected = v == currentValue;
                     final isPremium = SubscriptionUtil.isPremium();
                     final isRestricted = !isPremium && v > 20;
