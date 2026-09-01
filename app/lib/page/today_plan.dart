@@ -629,66 +629,22 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
 
   Widget renderMissionCard() {
     final darkModeState = context.watch<DarkMode>();
-    final isDarkMode = darkModeState.isDarkMode;
     final themeStyle = darkModeState.themeStyle;
+    final isDarkMode = themeStyle.isDark;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+
     final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
     final isStarted = user?.todayStudyStarted == true;
 
-    final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-    final textPrimary = isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28);
-    final textSecondary = isDarkMode ? const Color(0xFF8DA8A3) : const Color(0xFF48635F);
-    final textMuted = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
-    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1418BA7C);
-
-    Color cardBg;
-    Color cardBorder;
-    Color subtleBg;
-    List<BoxShadow> cardShadows;
-
-    switch (themeStyle) {
-      case AppThemeStyle.aurora:
-        cardBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
-        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
-        subtleBg = isDarkMode ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.45);
-        cardShadows = [
-          BoxShadow(
-            color: const Color(0xFF123C32).withValues(alpha: isDarkMode ? 0.4 : 0.05),
-            blurRadius: 28,
-            offset: const Offset(0, 8),
-          ),
-        ];
-        break;
-      case AppThemeStyle.emerald:
-        cardBg = isDarkMode ? const Color(0xFF14201D) : Colors.white;
-        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
-        subtleBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
-        cardShadows = [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.03),
-            blurRadius: 18,
-            offset: const Offset(0, 4),
-          ),
-        ];
-        break;
-      case AppThemeStyle.jade:
-        cardBg = isDarkMode ? const Color(0xFF162822).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.90);
-        cardBorder = isDarkMode ? const Color(0x282CD88F) : const Color(0x2818BA7C);
-        subtleBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEBF5F0);
-        cardShadows = [
-          BoxShadow(
-            color: const Color(0xFF125541).withValues(alpha: isDarkMode ? 0.4 : 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 6),
-          ),
-        ];
-        break;
-      case AppThemeStyle.minimal:
-        cardBg = isDarkMode ? const Color(0xFF141414) : Colors.white;
-        cardBorder = isDarkMode ? const Color(0xFF262626) : const Color(0xFFE5E5E5);
-        subtleBg = isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6);
-        cardShadows = [];
-        break;
-    }
+    final shanbayGreen = themeConfig.primaryColor;
+    final textPrimary = themeConfig.textPrimary;
+    final textSecondary = themeConfig.textSecondary;
+    final textMuted = themeConfig.textMuted;
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final subtleBg = themeConfig.subtleBg;
+    final cardShadows = themeConfig.cardShadows;
+    final dividerColor = themeStyle.isDark ? Colors.white.withValues(alpha: 0.06) : themeConfig.primaryColor.withValues(alpha: 0.12);
 
     return Container(
       width: double.infinity,
@@ -1462,61 +1418,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 【显示模式】—— 极简纯无框图形化决策树卡片
   Widget _buildTrackDisplayCard(bool isDarkMode) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
-    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : const Color(0x1718BA7C);
-
-    Color cardBg;
-    Color cardBorder;
-    List<BoxShadow> cardShadows;
-
-    switch (themeStyle) {
-      case AppThemeStyle.aurora:
-        cardBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
-        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
-        cardShadows = [
-          BoxShadow(
-            color: const Color(0xFF123C32).withValues(alpha: isDarkMode ? 0.4 : 0.05),
-            blurRadius: 28,
-            offset: const Offset(0, 8),
-          ),
-        ];
-        break;
-      case AppThemeStyle.emerald:
-        cardBg = isDarkMode ? const Color(0xFF14201D) : Colors.white;
-        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
-        cardShadows = [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.03),
-            blurRadius: 18,
-            offset: const Offset(0, 4),
-          ),
-        ];
-        break;
-      case AppThemeStyle.jade:
-        cardBg = isDarkMode ? const Color(0xFF162822).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.90);
-        cardBorder = isDarkMode ? const Color(0x282CD88F) : const Color(0x2818BA7C);
-        cardShadows = [
-          BoxShadow(
-            color: const Color(0xFF125541).withValues(alpha: isDarkMode ? 0.4 : 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 6),
-          ),
-        ];
-        break;
-      case AppThemeStyle.minimal:
-        cardBg = isDarkMode ? const Color(0xFF141414) : Colors.white;
-        cardBorder = isDarkMode ? const Color(0xFF262626) : const Color(0xFFE5E5E5);
-        cardShadows = [];
-        break;
-    }
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final dividerColor = isDarkMode ? Colors.white.withValues(alpha: 0.06) : themeConfig.primaryColor.withValues(alpha: 0.12);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
-        color: cardBg,
+        color: themeConfig.cardBg,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: cardBorder, width: 1),
-        boxShadow: cardShadows,
+        border: Border.all(color: themeConfig.cardBorder, width: 1),
+        boxShadow: themeConfig.cardShadows,
       ),
       child: Column(
         children: [
@@ -1791,66 +1703,17 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   /// 【编辑模式】—— 完整新旧词规则配置卡片
   Widget _buildTrackEditCard(bool isDarkMode) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
-    final shanbayGreen = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
-
-    Color cardBg;
-    Color cardBorder;
-    Color badgeBg;
-    List<BoxShadow> cardShadows;
-
-    switch (themeStyle) {
-      case AppThemeStyle.aurora:
-        cardBg = isDarkMode ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
-        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
-        badgeBg = isDarkMode ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.45);
-        cardShadows = [
-          BoxShadow(
-            color: const Color(0xFF123C32).withValues(alpha: isDarkMode ? 0.4 : 0.05),
-            blurRadius: 28,
-            offset: const Offset(0, 8),
-          ),
-        ];
-        break;
-      case AppThemeStyle.emerald:
-        cardBg = isDarkMode ? const Color(0xFF14201D) : Colors.white;
-        cardBorder = isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
-        badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
-        cardShadows = [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.03),
-            blurRadius: 18,
-            offset: const Offset(0, 4),
-          ),
-        ];
-        break;
-      case AppThemeStyle.jade:
-        cardBg = isDarkMode ? const Color(0xFF162822).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.90);
-        cardBorder = isDarkMode ? const Color(0x282CD88F) : const Color(0x2818BA7C);
-        badgeBg = isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFEBF5F0);
-        cardShadows = [
-          BoxShadow(
-            color: const Color(0xFF125541).withValues(alpha: isDarkMode ? 0.4 : 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 6),
-          ),
-        ];
-        break;
-      case AppThemeStyle.minimal:
-        cardBg = isDarkMode ? const Color(0xFF141414) : Colors.white;
-        cardBorder = isDarkMode ? const Color(0xFF262626) : const Color(0xFFE5E5E5);
-        badgeBg = isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6);
-        cardShadows = [];
-        break;
-    }
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final badgeBg = themeConfig.subtleBg;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardBg,
+        color: themeConfig.cardBg,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: cardBorder, width: 1),
-        boxShadow: cardShadows,
+        border: Border.all(color: themeConfig.cardBorder, width: 1),
+        boxShadow: themeConfig.cardShadows,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1878,7 +1741,7 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
             height: 42,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: shanbayGreen,
+                backgroundColor: themeConfig.primaryColor,
                 foregroundColor: isDarkMode ? const Color(0xFF0B1714) : Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

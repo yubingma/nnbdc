@@ -465,10 +465,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   loadData() async {
-    var isDarkMode = await MyDatabase.instance.localParamsDao.getIsDarkMode();
     var themeStyle = await MyDatabase.instance.localParamsDao.getThemeStyle();
     if (mounted) {
-      context.read<DarkMode>().setIsDarkMode(isDarkMode);
       context.read<DarkMode>().setThemeStyle(themeStyle);
     }
   }
@@ -476,7 +474,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final darkModeState = context.watch<DarkMode>();
-    final themeData = darkModeState.isDarkMode ? AppTheme.darkTheme() : AppTheme.lightTheme();
+    final themeData = AppTheme.getThemeData(darkModeState.themeStyle);
 
     return MaterialApp.router(
       title: Global.appName,
@@ -488,7 +486,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           children: [
             Positioned.fill(
               child: AppThemeBackground(
-                isDarkMode: darkModeState.isDarkMode,
                 themeStyle: darkModeState.themeStyle,
               ),
             ),

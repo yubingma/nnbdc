@@ -1066,61 +1066,17 @@ class _MePageState extends State<MePage> {
 
   Widget renderStudyProgress() {
     final darkModeState = context.watch<DarkMode>();
-    final isDarkModeEnabled = darkModeState.isDarkMode;
     final themeStyle = darkModeState.themeStyle;
-    final textColor = isDarkModeEnabled ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final subtitleColor = isDarkModeEnabled ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570);
-    final accentColor = isDarkModeEnabled ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+    final isDarkModeEnabled = themeStyle.isDark;
+    final themeConfig = AppThemeConfig.of(themeStyle);
 
-    Color cardColor;
-    Color borderColor;
-    Color subtleBgColor;
-    List<BoxShadow> cardShadow;
-
-    switch (themeStyle) {
-      case AppThemeStyle.aurora:
-        cardColor = isDarkModeEnabled ? const Color(0xFF101E1A).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.65);
-        borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.90);
-        subtleBgColor = isDarkModeEnabled ? const Color(0xFF182C26).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.45);
-        cardShadow = [
-          BoxShadow(
-            color: const Color(0xFF123C32).withValues(alpha: isDarkModeEnabled ? 0.4 : 0.05),
-            blurRadius: 28,
-            offset: const Offset(0, 8),
-          ),
-        ];
-        break;
-      case AppThemeStyle.emerald:
-        cardColor = isDarkModeEnabled ? const Color(0xFF14201D) : Colors.white;
-        borderColor = isDarkModeEnabled ? Colors.white.withValues(alpha: 0.08) : const Color(0x1418BA7C);
-        subtleBgColor = isDarkModeEnabled ? const Color(0xFF1C2B29) : const Color(0xFFEDF5F2);
-        cardShadow = [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.35 : 0.03),
-            blurRadius: 18,
-            offset: const Offset(0, 4),
-          ),
-        ];
-        break;
-      case AppThemeStyle.jade:
-        cardColor = isDarkModeEnabled ? const Color(0xFF162822).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.90);
-        borderColor = isDarkModeEnabled ? const Color(0x282CD88F) : const Color(0x2818BA7C);
-        subtleBgColor = isDarkModeEnabled ? const Color(0xFF1C2B29) : const Color(0xFFEBF5F0);
-        cardShadow = [
-          BoxShadow(
-            color: const Color(0xFF125541).withValues(alpha: isDarkModeEnabled ? 0.4 : 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 6),
-          ),
-        ];
-        break;
-      case AppThemeStyle.minimal:
-        cardColor = isDarkModeEnabled ? const Color(0xFF141414) : Colors.white;
-        borderColor = isDarkModeEnabled ? const Color(0xFF262626) : const Color(0xFFE5E5E5);
-        subtleBgColor = isDarkModeEnabled ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6);
-        cardShadow = [];
-        break;
-    }
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final cardColor = themeConfig.cardBg;
+    final borderColor = themeConfig.cardBorder;
+    final subtleBgColor = themeConfig.subtleBg;
+    final cardShadow = themeConfig.cardShadows;
 
     return Column(
       children: [
@@ -1962,6 +1918,7 @@ class _MePageState extends State<MePage> {
                       Row(
                         children: AppThemeStyle.values.map((style) {
                           final isSelected = context.watch<DarkMode>().themeStyle == style;
+                          final cfg = AppThemeConfig.of(style);
                           return Expanded(
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
@@ -1971,18 +1928,18 @@ class _MePageState extends State<MePage> {
                                 ToastUtil.info('已切换至「${style.label}」主题');
                               },
                               child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 3),
-                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? (isDarkModeEnabled ? accentColor.withValues(alpha: 0.2) : const Color(0xFFE8F8F1))
+                                      ? (isDarkModeEnabled ? cfg.primaryColor.withValues(alpha: 0.22) : cfg.primaryColor.withValues(alpha: 0.12))
                                       : (isDarkModeEnabled ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8FAF9)),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: isSelected
-                                        ? accentColor
+                                        ? cfg.primaryColor
                                         : (isDarkModeEnabled ? Colors.white12 : const Color(0xFFE2ECE8)),
-                                    width: isSelected ? 1.5 : 1,
+                                    width: isSelected ? 1.6 : 1,
                                   ),
                                 ),
                                 child: Column(
@@ -1990,16 +1947,16 @@ class _MePageState extends State<MePage> {
                                   children: [
                                     Icon(
                                       style.icon,
-                                      size: 20,
-                                      color: isSelected ? accentColor : subtitleColor,
+                                      size: 19,
+                                      color: isSelected ? cfg.primaryColor : subtitleColor,
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 5),
                                     Text(
                                       style.label,
                                       style: TextStyle(
-                                        fontSize: 11.5,
+                                        fontSize: 11,
                                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                        color: isSelected ? accentColor : textColor,
+                                        color: isSelected ? cfg.primaryColor : textColor,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -2020,45 +1977,6 @@ class _MePageState extends State<MePage> {
                 title: '个人信息',
                 trailingText: '编辑',
                 onTap: () => showUpdateUserInfoDlg(),
-              ),
-              _buildMenuTile(
-                icon: isDarkModeEnabled ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                iconColor: isDarkModeEnabled ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
-                title: '夜间模式',
-                trailing: SizedBox(
-                  height: 28,
-                  child: FittedBox(
-                    fit: BoxFit.contain,
-                    child: Switch(
-                      value: isDarkMode,
-                      activeThumbColor: Colors.white,
-                      activeTrackColor: const Color(0xFF18BA7C),
-                      inactiveThumbColor: const Color(0xFF8EA8A3),
-                      inactiveTrackColor: isDarkModeEnabled ? Colors.white12 : const Color(0xFFE2ECE8),
-                      trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return const Color(0xFF18BA7C);
-                        }
-                        return isDarkModeEnabled ? Colors.white24 : const Color(0xFFD0E0DC);
-                      }),
-                      onChanged: (val) {
-                        setState(() {
-                          isDarkMode = val;
-                        });
-                        MyDatabase.instance.localParamsDao.saveIsDarkMode(val);
-                        context.read<DarkMode>().setIsDarkMode(val);
-                      },
-                    ),
-                  ),
-                ),
-                onTap: () {
-                  final newMode = !isDarkMode;
-                  setState(() {
-                    isDarkMode = newMode;
-                  });
-                  MyDatabase.instance.localParamsDao.saveIsDarkMode(newMode);
-                  context.read<DarkMode>().setIsDarkMode(newMode);
-                },
               ),
               _buildMenuTile(
                 icon: Icons.alarm_rounded,
