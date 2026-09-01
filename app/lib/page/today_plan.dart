@@ -636,7 +636,6 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
     final progress = _totalStepCount > 0 ? (_completedStepCount / _totalStepCount) : 0.0;
     final isStarted = user?.todayStudyStarted == true;
 
-    final shanbayGreen = themeConfig.primaryColor;
     final textPrimary = themeConfig.textPrimary;
     final textSecondary = themeConfig.textSecondary;
     final textMuted = themeConfig.textMuted;
@@ -737,8 +736,8 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                   child: LinearProgressIndicator(
                     value: progress.clamp(0.0, 1.0),
                     minHeight: 5,
-                    backgroundColor: isDarkMode ? const Color(0xFF1C2B29) : const Color(0xFFE3F5EC),
-                    valueColor: AlwaysStoppedAnimation<Color>(shanbayGreen),
+                    backgroundColor: isDarkMode ? Colors.white12 : themeConfig.primaryColor.withValues(alpha: 0.12),
+                    valueColor: AlwaysStoppedAnimation<Color>(themeConfig.primaryColor),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -845,9 +844,10 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   Widget _buildStatItem(String label, int count) {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final textPrimary = isDarkMode ? const Color(0xFFEAF7F3) : const Color(0xFF182B28);
-    final textMuted = isDarkMode ? const Color(0xFF5D7975) : const Color(0xFF7E9B96);
+    final themeStyle = context.watch<DarkMode>().themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final textPrimary = themeConfig.textPrimary;
+    final textMuted = themeConfig.textMuted;
 
     return Expanded(
       child: GestureDetector(
