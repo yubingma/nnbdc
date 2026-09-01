@@ -429,8 +429,8 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppTheme.createGradientAppBar(
+    return AppScaffold(
+      appBar: AppAppBar(
         title: '批量导入管理',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
@@ -557,7 +557,7 @@ class _BatchImportManagementPageState extends State<BatchImportManagementPage> {
                     icon: const Icon(Icons.rocket_launch),
                     label: const Text('提交批量导入任务'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: context.primaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),

@@ -51,15 +51,11 @@ class FarmPage extends StatefulWidget {
 class _FarmPageState extends State<FarmPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F5F8),
-      appBar: AppBar(
-        title: const Text('我的小天地'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+    return const AppScaffold(
+      appBar: AppAppBar(
+        title: '我的小天地',
       ),
-      body: const SafeArea(
+      body: SafeArea(
         child: SizedBox.expand(
           child: PlantGrowthScene(),
         ),

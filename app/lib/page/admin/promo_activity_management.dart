@@ -155,8 +155,8 @@ class _PromoActivityManagementPageState extends State<PromoActivityManagementPag
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
 
-    return Scaffold(
-      appBar: AppTheme.createGradientAppBar(
+    return AppScaffold(
+      appBar: AppAppBar(
         title: '运营推广活动管理',
         actions: [
           IconButton(
@@ -822,7 +822,7 @@ class _CreateOrEditPromoActivityPageState extends State<_CreateOrEditPromoActivi
               ElevatedButton(
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: context.primaryColor,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

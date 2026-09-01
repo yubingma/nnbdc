@@ -159,21 +159,10 @@ class _CdnManagementPageState extends State<CdnManagementPage> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'CDN缓存管理',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w400,
-            fontFamily: 'NotoSansSC',
-          ),
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+    return AppScaffold(
+      appBar: AppAppBar(
+        title: 'CDN缓存管理',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),

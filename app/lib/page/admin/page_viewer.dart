@@ -83,23 +83,12 @@ class _PageViewerPageState extends State<PageViewerPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          '页面查看器',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w400,
-            fontFamily: 'NotoSansSC',
-          ),
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+    return AppScaffold(
+      appBar: AppAppBar(
+        title: '页面查看器',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),

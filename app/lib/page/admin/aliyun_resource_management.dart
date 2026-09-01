@@ -37,22 +37,10 @@ class _AliyunResourceManagementPageState extends State<AliyunResourceManagementP
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          '阿里云资源管理',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w400, // 保持一致的字体粗细，避免变糊
-            fontFamily: 'NotoSansSC',
-          ),
-          textScaler: TextScaler.linear(1.0),
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+    return AppScaffold(
+      appBar: AppAppBar(
+        title: '阿里云资源管理',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),

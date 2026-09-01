@@ -42,15 +42,11 @@ class _GoldenMasterToolPageState extends State<GoldenMasterToolPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text('制作黄金母版数据库'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+    return AppScaffold(
+      appBar: const AppAppBar(
+        title: '制作黄金母版数据库',
       ),
       body: SingleChildScrollView(
         child: Center(

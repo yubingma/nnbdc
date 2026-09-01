@@ -557,7 +557,7 @@ class FinishPageState extends State<FinishPage> {
                 ),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: context.primaryColor,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -634,7 +634,7 @@ class FinishPageState extends State<FinishPage> {
                 ),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: context.primaryColor,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),

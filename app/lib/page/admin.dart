@@ -238,12 +238,10 @@ class _AdminPageState extends State<AdminPage> {
 
   Widget _buildNoPermissionPage() {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppTheme.createGradientAppBar(
+    return AppScaffold(
+      appBar: AppAppBar(
         title: '系统管理',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
@@ -270,11 +268,16 @@ class _AdminPageState extends State<AdminPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '此页面仅对管理员可见',
+              '请使用管理员账号登录',
               style: TextStyle(
                 fontSize: 16,
                 color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
               ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('返回'),
             ),
           ],
         ),
@@ -283,22 +286,9 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   Widget _buildAdminContent() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
-
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          '系统管理',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w400,
-            fontFamily: 'NotoSansSC',
-          ),
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+    return AppScaffold(
+      appBar: AppAppBar(
+        title: '系统管理',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),

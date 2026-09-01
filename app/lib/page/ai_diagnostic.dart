@@ -276,7 +276,7 @@ class _AiDiagnosticPageState extends State<AiDiagnosticPage> {
               icon: const Icon(Icons.refresh),
               label: const Text('重新诊断'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: context.primaryColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -249,17 +249,12 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final cardColor = isDarkMode ? const Color(0xFF2D2D2D) : Colors.white;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text('查词管理', textScaler: TextScaler.linear(1.0)),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+    return AppScaffold(
+      appBar: const AppAppBar(
+        title: '查词管理',
       ),
       body: Column(
         children: [

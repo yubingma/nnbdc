@@ -1509,10 +1509,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 24.0),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: context.primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  shadowColor: AppTheme.primaryColor.withValues(alpha: 0.35),
+                  shadowColor: context.primaryColor.withValues(alpha: 0.35),
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),

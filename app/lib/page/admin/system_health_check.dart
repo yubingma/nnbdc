@@ -71,15 +71,10 @@ class _SystemHealthCheckPageState extends State<SystemHealthCheckPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor =
-        isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text('系统健康检查'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+    return AppScaffold(
+      appBar: AppAppBar(
+        title: '系统健康检查',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),

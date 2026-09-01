@@ -366,11 +366,9 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppTheme.createGradientAppBar(
+    return AppScaffold(
+      appBar: AppAppBar(
         title: '数据清洗工具',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
@@ -409,7 +407,7 @@ class _DataSanitizePageState extends State<DataSanitizePage> {
               icon: Icon(_isChecking ? Icons.hourglass_empty : Icons.search),
               label: Text(_isChecking ? '正在扫描...' : '检查数据清洁状态'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: context.primaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
               ),

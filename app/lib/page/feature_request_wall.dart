@@ -319,7 +319,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [AppTheme.primaryColor, AppTheme.primaryColor.withValues(alpha: 0.8)],
+                      colors: context.appBarGradient,
                     ),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
@@ -485,7 +485,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: context.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                           shape: RoundedRectangleBorder(
@@ -529,18 +529,11 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
   @override
   Widget build(BuildContext context) {
     final isDarkMode = context.watch<DarkMode>().isDarkMode;
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : const Color(0xFFF8F9FA);
     final filteredRequests = _getFilteredRequests();
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          '需求墙',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+    return AppScaffold(
+      appBar: AppAppBar(
+        title: '需求墙',
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -567,7 +560,7 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showCreateDialog,
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: context.primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: SelectionArea(
@@ -707,11 +700,11 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
               children: [
                 CircleAvatar(
                   radius: 12,
-                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  backgroundColor: context.primaryColor.withValues(alpha: 0.2),
                   child: Text(
                     _getUserInitial(request.creator),
                     style: TextStyle(
-                      color: AppTheme.primaryColor,
+                      color: context.primaryColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                     ),
@@ -746,8 +739,8 @@ class _FeatureRequestWallPageState extends State<FeatureRequestWallPage> with Si
                     icon: const Icon(Icons.thumb_up_outlined),
                     label: Text('${request.voteCount ?? 0}'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      foregroundColor: AppTheme.primaryColor,
+                      backgroundColor: context.primaryColor.withValues(alpha: 0.1),
+                      foregroundColor: context.primaryColor,
                       elevation: 0,
                     ),
                   ),
