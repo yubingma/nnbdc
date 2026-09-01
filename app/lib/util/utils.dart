@@ -466,7 +466,7 @@ class Util {
           TextSpan(
             text: parts[i],
             style: boldWordIndices.contains(i)
-                ? baseStyle.copyWith(color: Global.highlight, fontWeight: FontWeight.bold)
+                ? baseStyle.copyWith(color: context.primaryColor, fontWeight: FontWeight.bold)
                 : baseStyle,
           )
       ]),
