@@ -280,6 +280,16 @@ public class UserDbSyncBo {
                 String recordJson = null;
                 try {
                     recordJson = JsonUtils.enrichRecordJson(log.getRecord());
+
+                    // 【防御】历史坏数据可能包含超长 book_mark_name（varchar(255) 上限），强行入库会回滚整个同步事务。
+                    // 对这类无意义的坏数据直接跳过：既不写入业务表，也不生成服务端广播日志（避免扩散到其他设备）。
+                    if ("book_mark".equals(log.getTblName())) {
+                        if (isBookMarkNameTooLong(recordJson)) {
+                            logger.warn("跳过超长书签名的同步, userId: {}, 长度: {}", userId, recordJson.length());
+                            continue;
+                        }
+                    }
+
                     processSyncLog(userId, log, recordJson);
 
                     // 检查record id是否超出长度限制
@@ -712,6 +722,21 @@ public class UserDbSyncBo {
                         throw new IllegalArgumentException(errorMsg);
                     }
                 }
+        }
+    }
+
+    /**
+     * 判断书签同步记录中的 book_mark_name 是否超过服务端 varchar(255) 上限。
+     * 历史坏数据可能产生超长书签名，入库会抛异常回滚整个同步事务，故需在主循环中提前拦截。
+     */
+    private boolean isBookMarkNameTooLong(String recordJson) {
+        try {
+            BookMarkDto bookMarkDto = JsonUtils.makeObject(recordJson, BookMarkDto.class);
+            String bookMarkName = bookMarkDto.getBookMarkName();
+            return bookMarkName != null && bookMarkName.length() > 255;
+        } catch (Exception e) {
+            // 解析失败视为正常数据，交由后续正常同步流程处理（会给出明确报错）
+            return false;
         }
     }
 

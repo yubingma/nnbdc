@@ -869,6 +869,33 @@ Future<void> repairInvalidEntityIds(String userId) async {
   }
 }
 
+/// 同步前自检与自愈：清理历史遗留的超长书签名 (bookMarkName) 坏数据及其待同步日志。
+///
+/// 旧版本客户端 bug 曾用 `'dict_${dict}_words_list'`（整个对象插值）生成远超服务端
+/// varchar(255) 上限的书签名。这类记录无意义且无法入库，若不清理会阻塞整个同步事务。
+/// 清理方式：删除本地坏记录，并丢弃对应的待同步日志（服务端从未成功接收过它们）。
+Future<void> repairInvalidBookMarkNames(String userId) async {
+  final db = MyDatabase.instance;
+  try {
+    final bookmarks = await (db.select(db.bookMarks)..where((b) => b.userId.equals(userId))).get();
+    final invalidIds = bookmarks.where((b) => b.bookMarkName.length > 255).map((b) => b.id).toList();
+    if (invalidIds.isEmpty) return;
+
+    await (db.delete(db.bookMarks)..where((b) => b.id.isIn(invalidIds))).go();
+
+    // 丢弃这些坏记录对应的待同步日志，避免反复上传
+    final pendingLogs = await (db.select(db.userDbLogs)..where((l) => l.userId.equals(userId) & l.tblName.equals('bookMarks'))).get();
+    for (final log in pendingLogs) {
+      if (invalidIds.contains(log.recordId)) {
+        await (db.delete(db.userDbLogs)..where((row) => row.id.equals(log.id))).go();
+      }
+    }
+    Global.logger.w('🧹 已清理 ${invalidIds.length} 条超长书签名坏数据及其待同步日志');
+  } catch (e, s) {
+    Global.logger.w('⚠️ 自愈超长书签名失败: $e', stackTrace: s);
+  }
+}
+
 // 同步指定用户的用户数据库
 Future<void> syncUserDb(String userId) async {
   if (_isSyncUserDbRunning) {
@@ -892,6 +919,10 @@ Future<void> syncUserDb(String userId) async {
 
     // 同步前自检：修复历史遗留超长 ID 实体与日志，避免向服务端同步异常主键
     await repairInvalidEntityIds(userId);
+
+    // 同步前自检：清理历史遗留的超长书签名 (bookMarkName) 坏数据及对应日志，
+    // 避免其超出服务端 book_mark_name 的 varchar(255) 上限而阻塞整个同步事务
+    await repairInvalidBookMarkNames(userId);
 
     // 同步前自检：对当前用户全部词书执行 seq 连续性修复，让历史遗留断裂在上传前自愈，
     // 生成的 UPDATE 日志随本次批次上传，避免触发服务端 DICT_WORD_ORDER_INVALID 校验失败。

@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart' as drift show Value;
 import 'package:drift/drift.dart' hide Value;
 import 'package:nnbdc/router.dart';
+import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/dto.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/db/db.dart';
@@ -426,33 +428,40 @@ Future<dynamic>? toDictWordsListPage(dynamic dictOrId, bool showDelBtn) async {
         dict.visible = dictEntry.visible;
         dict.editable = dictEntry.editable;
       } else {
-        // 如果本地没有，创建一个默认词典对象
-        dict = DictVo.c2(dictId);
-        dict.name = "词典(本地模式)";
-        dict.shortName = "词典";
-        dict.isReady = true;
-        dict.isShared = false;
-        dict.visible = true;
-
-        final now = AppClock.now();
-        // 保存到本地数据库
-        await db.into(db.dicts).insert(
+        // 本地查无此词书：不再静默捏造"词典(本地模式)"占位书并落库
+        // （占位书 ownerId=当前用户且 editable=true，会被"自定义词书"收纳且可编辑，掩盖数据不一致）。
+        // 改为从服务端拉取词书元数据；拉取失败则明确报错，让缺失问题暴露出来。
+        final remote = await Api.client.getDictInfo(dictId);
+        final DictDto? dto = remote.success ? remote.data : null;
+        if (dto == null) {
+          Global.logger.e('❌ 词书数据缺失: 本地无词书(dictId=$dictId) 且服务端拉取失败: ${remote.msg}');
+          ToastUtil.error('词书数据缺失，无法打开词表');
+          return null;
+        }
+        // 补录词书元数据到本地（不生成同步日志：系统词书不由用户同步，此处仅补录而非用户变更）
+        await db.into(db.dicts).insertOnConflictUpdate(
               Dict(
-                id: dict.id,
-                isReady: true,
-                isShared: false,
-                name: dict.name ?? '词典',
-                wordCount: 0,
-                ownerId: Global.getLoggedInUser()?.id ?? 'local',
-                visible: true,
-                editable: dict.name == '生词本' || (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
-                deletable: dict.name != '生词本' &&
-                    dict.name != '已掌握' &&
-                    (Global.getLoggedInUser()?.id != null && Global.getLoggedInUser()?.id != Global.sysUserId),
-                createTime: now,
-                updateTime: now,
+                id: dto.id,
+                isReady: dto.isReady,
+                isShared: dto.isShared,
+                name: dto.name,
+                wordCount: dto.wordCount,
+                ownerId: dto.ownerId,
+                visible: dto.visible,
+                editable: dto.editable ?? false,
+                deletable: dto.deletable ?? true,
+                createTime: dto.createTime,
+                updateTime: dto.updateTime,
               ),
             );
+        dict = DictVo.c2(dto.id);
+        dict.name = dto.name;
+        dict.shortName = Util.getShortName(dto.name);
+        dict.wordCount = dto.wordCount;
+        dict.isReady = dto.isReady;
+        dict.isShared = dto.isShared;
+        dict.visible = dto.visible;
+        dict.editable = dto.editable ?? false;
       }
     }
 
