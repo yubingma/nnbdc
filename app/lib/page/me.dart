@@ -1266,12 +1266,10 @@ class _MePageState extends State<MePage> {
                               width: 34,
                               height: 34,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF6366F1).withValues(alpha: isDarkModeEnabled ? 0.25 : 0.12),
+                                color: accentColor.withValues(alpha: isDarkModeEnabled ? 0.2 : 0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Center(
-                                child: Text('🎖', style: TextStyle(fontSize: 16)),
-                              ),
+                              child: Icon(Icons.emoji_events_rounded, color: accentColor, size: 20),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
