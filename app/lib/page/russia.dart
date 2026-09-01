@@ -1240,6 +1240,15 @@ class MyGame extends FlameGame with HasCollisionDetection, TapCallbacks {
       // 取消超时定时器
       _enterRoomTimer?.cancel();
       _enterRoomTimer = null;
+
+      final args = GoRouterState.of(context).extra;
+      final bool isCreatePrivate = args != null &&
+          (args is List && args.length > 2) &&
+          (args[2] as Map?)?.containsKey('mode') == true &&
+          (args[2] as Map)['mode'] == 'createPrivate';
+      if (isCreatePrivate) {
+        safeShowToast('专属房间已创建！\n房间号【$roomId】已就绪，请告知好友输入该房号进入');
+      }
     });
 
     // 监听魔法泡泡不足事件
