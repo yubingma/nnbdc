@@ -104,14 +104,15 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
     super.dispose();
   }
 
-  Widget _buildAiJudgingBadge(bool isDarkMode) {
+  Widget _buildAiJudgingBadge(BuildContext context) {
+    final accentColor = context.primaryColor;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
       decoration: BoxDecoration(
-        color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+        color: accentColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(
-          color: const Color(0xFF8B5CF6).withValues(alpha: 0.6),
+          color: accentColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -124,7 +125,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
             height: 8.5,
             child: CircularProgressIndicator(
               strokeWidth: 1.5,
-              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+              color: accentColor,
             ),
           ),
           const SizedBox(width: 3.5),
@@ -134,7 +135,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+              color: accentColor,
             ),
           ),
         ],
@@ -244,7 +245,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                 height: height,
                 decoration: BoxDecoration(
                   color: widget.isAiEvaluating
-                      ? (isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED)).withValues(alpha: 0.8)
+                      ? accentColor.withValues(alpha: 0.8)
                       : accentColor.withValues(alpha: alpha),
                   borderRadius: BorderRadius.circular(1.5),
                 ),
@@ -268,7 +269,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                   waveformWidget,
                   const SizedBox(width: 12),
                   if (widget.isAiEvaluating) ...[
-                    _buildAiJudgingBadge(isDarkMode),
+                    _buildAiJudgingBadge(context),
                   ] else ...[
                     Text(
                       statusText,
@@ -290,7 +291,7 @@ class _EnglishAsrInputWidgetState extends State<EnglishAsrInputWidget>
                   waveformWidget,
                   const SizedBox(height: 2),
                   if (widget.isAiEvaluating)
-                    _buildAiJudgingBadge(isDarkMode)
+                    _buildAiJudgingBadge(context)
                   else
                     Row(
                       mainAxisSize: MainAxisSize.min,

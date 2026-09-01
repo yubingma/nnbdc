@@ -181,10 +181,10 @@ extension BdcPageStateUIComponents on BdcPageState {
           Container(
             padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+              color: context.cardBg,
               border: Border(
                 top: BorderSide(
-                  color: isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                  color: context.cardBorder,
                   width: 1,
                 ),
               ),
@@ -1039,7 +1039,6 @@ extension BdcPageStateUIComponents on BdcPageState {
   Widget _buildAnswerContent(String text) {
     if (text.isEmpty) return const SizedBox();
 
-    final isDarkMode = _cachedIsDarkMode;
     final lines = text.split('\n');
     List<Widget> widgets = [];
 
@@ -1066,8 +1065,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color:
-                        isDarkMode ? Colors.white60 : const Color(0xFF64748B),
+                    color: context.textSecondary,
                   ),
                 ),
                 TextSpan(
@@ -1076,7 +1074,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     fontFamily: "NotoSansSC",
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
+                    color: context.textPrimary,
                   ),
                 ),
               ],
@@ -1091,7 +1089,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               fontFamily: "NotoSansSC",
               fontSize: 16,
               fontWeight: FontWeight.w400,
-              color: isDarkMode ? Colors.white : const Color(0xFF2D3748),
+              color: context.textPrimary,
             ),
           ),
         );
@@ -1116,7 +1114,6 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget _buildSecondaryAnswerContent(WordVo? word, bool isCh2En) {
     if (word == null || word.spell == "[ 都不对 ]") return const SizedBox.shrink();
-    final isDarkMode = _cachedIsDarkMode;
 
     if (isCh2En) {
       final text = word.getMeaningStr();
@@ -1140,7 +1137,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDarkMode ? Colors.white54 : const Color(0xFF64748B),
+                      color: context.textSecondary,
                     ),
                   ),
                   TextSpan(
@@ -1149,7 +1146,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       fontFamily: "NotoSansSC",
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
+                      color: context.textSecondary,
                     ),
                   ),
                 ],
@@ -1164,7 +1161,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 fontFamily: "NotoSansSC",
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
-                color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
+                color: context.textSecondary,
               ),
             ),
           );
@@ -1195,7 +1192,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               fontFamily: "NotoSansSC",
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isDarkMode ? Colors.white70 : const Color(0xFF4A5568),
+              color: context.textSecondary,
             ),
           ),
           if (pronounce != null && pronounce.isNotEmpty) ...[
@@ -1204,7 +1201,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               '/$pronounce/',
               style: TextStyle(
                 fontSize: 12,
-                color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                color: context.textSecondary.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -1236,20 +1233,20 @@ extension BdcPageStateUIComponents on BdcPageState {
 
               if (state.selectedAnswerIndex != null) {
                 if ((index + 1) == state.correctAnswerIndex) {
-                  bgColor = isDarkMode ? const Color(0xFF152B24) : const Color(0xFFE8F8F1);
-                  borderColor = isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+                  bgColor = context.subtleBg;
+                  borderColor = context.primaryColor;
                   borderWidth = 1.5;
                 } else if ((index + 1) == state.selectedAnswerIndex) {
                   bgColor = isDarkMode ? const Color(0xFF2A1614) : const Color(0xFFFEF2F0);
                   borderColor = isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFFA6E59);
                   borderWidth = 1.5;
                 } else {
-                  bgColor = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-                  borderColor = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
+                  bgColor = context.cardBg;
+                  borderColor = context.cardBorder;
                 }
               } else {
-                bgColor = isDarkMode ? const Color(0xFF131E1C) : Colors.white;
-                borderColor = isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA);
+                bgColor = context.cardBg;
+                borderColor = context.cardBorder;
               }
 
               return Padding(
@@ -1354,10 +1351,10 @@ extension BdcPageStateUIComponents on BdcPageState {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+            color: context.cardBg,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
             border: Border.all(
-              color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+              color: context.cardBorder,
               width: 1,
             ),
           ),
@@ -1440,15 +1437,12 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+              color: context.cardBg,
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
               border: Border(
-                left: BorderSide(
-                    color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
-                right: BorderSide(
-                    color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
-                bottom: BorderSide(
-                    color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA)),
+                left: BorderSide(color: context.cardBorder),
+                right: BorderSide(color: context.cardBorder),
+                bottom: BorderSide(color: context.cardBorder),
               ),
               boxShadow: [
                 BoxShadow(
@@ -1564,10 +1558,10 @@ extension BdcPageStateUIComponents on BdcPageState {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
       decoration: BoxDecoration(
-        color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+        color: context.primaryColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(
-          color: const Color(0xFF8B5CF6).withValues(alpha: 0.6),
+          color: context.primaryColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -1580,7 +1574,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             height: 8.5,
             child: CircularProgressIndicator(
               strokeWidth: 1.5,
-              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+              color: context.primaryColor,
             ),
           ),
           const SizedBox(width: 3.5),
@@ -1590,7 +1584,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? const Color(0xFFA78BFA) : const Color(0xFF7C3AED),
+              color: context.primaryColor,
             ),
           ),
         ],
@@ -1616,10 +1610,10 @@ extension BdcPageStateUIComponents on BdcPageState {
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF0F6F3),
+              color: context.subtleBg,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+                color: context.cardBorder,
                 width: 1,
               ),
             ),
@@ -1641,7 +1635,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                               '点击在此手写或拼写练习',
                               style: TextStyle(
                                 fontSize: 14.5,
-                                color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
+                                color: context.textSecondary,
                                 fontWeight: FontWeight.w500,
                               ),
                             )
@@ -1655,7 +1649,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                     text.trim().toLowerCase() !=
                                             (state.word?.spell.toLowerCase() ?? "")
                                         ? const Color(0xFFFA6E59)
-                                        : (isDarkMode ? Colors.white : const Color(0xFF152724)),
+                                        : context.textPrimary,
                                     const TextStyle(
                                         fontSize: 17, fontWeight: FontWeight.bold),
                                   ),
@@ -2297,12 +2291,11 @@ extension BdcPageStateUIComponents on BdcPageState {
     required VoidCallback onTap,
     VoidCallback? onLongPress,
   }) {
-    final isDarkMode = _cachedIsDarkMode;
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+        color: context.subtleBg,
         border: Border.all(
-          color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+          color: context.cardBorder,
           width: 1,
         ),
         borderRadius: BorderRadius.circular(13),
@@ -2329,7 +2322,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                    color: context.textPrimary,
                   ),
                 ),
               ],
@@ -2475,7 +2468,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   label: const Text("看答案",
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
-                    foregroundColor: isDarkMode ? Colors.white70 : Colors.black54,
+                    foregroundColor: context.textSecondary,
                   ),
                   onPressed: () {
                     notifier.revealAnswerAndMarkWrong(context);
@@ -2488,7 +2481,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   label: const Text('隐藏答案继续练习',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
-                    foregroundColor: isDarkMode ? Colors.white70 : Colors.black54,
+                    foregroundColor: context.textSecondary,
                   ),
                 ),
             ],
@@ -2501,7 +2494,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: isDarkMode ? const Color(0xFF86EFAC) : const Color(0xFF16A34A),
+                color: context.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -2512,7 +2505,6 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildChSentenceStepCard(BdcState state) {
-    final isDarkMode = _cachedIsDarkMode;
     final sentence = (state.word?.sentences != null && state.word!.sentences!.isNotEmpty)
         ? state.word!.sentences!.first
         : null;
@@ -2532,7 +2524,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 20,
-                color: isDarkMode ? Colors.white : const Color(0xFF1A1A1A),
+                color: context.textPrimary,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -2558,7 +2550,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   label: const Text("看答案",
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
-                    foregroundColor: isDarkMode ? Colors.white70 : Colors.black54,
+                    foregroundColor: context.textSecondary,
                   ),
                   onPressed: () {
                     notifier.revealAnswerAndMarkWrong(context);
@@ -2571,7 +2563,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   label: const Text('隐藏答案继续练习',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   style: TextButton.styleFrom(
-                    foregroundColor: isDarkMode ? Colors.white70 : Colors.black54,
+                    foregroundColor: context.textSecondary,
                   ),
                 ),
             ],
@@ -2589,7 +2581,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               FontWeight.w500,
               fontSize: 16,
               textAlign: TextAlign.center,
-              color: isDarkMode ? const Color(0xFF86EFAC) : const Color(0xFF16A34A),
+              color: context.textSecondary,
             ),
           ],
         ],
@@ -2599,9 +2591,8 @@ extension BdcPageStateUIComponents on BdcPageState {
 
 
   Widget _buildWordStepCard(BdcState state) {
-    final isDarkMode = _cachedIsDarkMode;
-    final primaryTextColor = isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724);
-    final secondaryTextColor = isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5B7A75);
+    final primaryTextColor = context.textPrimary;
+    final secondaryTextColor = context.textSecondary;
 
     return Container(
       decoration: const BoxDecoration(
@@ -2679,15 +2670,15 @@ extension BdcPageStateUIComponents on BdcPageState {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                      color: context.cardBg,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+                        color: context.cardBorder,
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
+                          color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.02),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),

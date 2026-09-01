@@ -316,18 +316,12 @@ extension BdcPageStateDialogs on BdcPageState {
                       ),
                       child: SingleChildScrollView(
                         child: Material(
-                          color:
-                              Theme.of(context).brightness == Brightness.dark
-                                  ? const Color(0xFF1C1C1E)
-                                  : const Color(0xFFF9F9F9),
+                          color: context.subtleBg,
                           clipBehavior: Clip.antiAlias,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                             side: BorderSide(
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.05)
-                                    : Colors.black.withValues(alpha: 0.05),
+                              color: context.cardBorder,
                                 width: 0.5),
                           ),
                           child: Padding(
@@ -857,14 +851,10 @@ extension BdcPageStateDialogs on BdcPageState {
                       const SizedBox(height: 10),
                       DecoratedBox(
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF1F2430)
-                              : const Color(0xFFF7FAFF),
+                          color: context.subtleBg,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : Colors.black.withValues(alpha: 0.06),
+                            color: context.cardBorder,
                           ),
                         ),
                         child: Padding(
@@ -1422,8 +1412,8 @@ extension BdcPageStateDialogs on BdcPageState {
     showDialog(
       context: context,
       builder: (context) {
-        final isDarkMode = _cachedIsDarkMode;
-        final bgColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+        final isDarkMode = context.read<DarkMode>().isDarkMode;
+        final bgColor = context.cardBg;
         final textColor = isDarkMode ? Colors.white70 : Colors.black87;
 
         return AlertDialog(
