@@ -38,6 +38,7 @@ import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/widget/theme_select_dialog.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1880,96 +1881,11 @@ class _MePageState extends State<MePage> {
                 ),
               ),
               const SizedBox(height: 12),
-              // 主题风格可视化选择卡片
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: isDarkModeEnabled ? const Color(0xFF131E1C) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: borderColor, width: 0.8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDarkModeEnabled ? 0.3 : 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.palette_outlined, size: 18, color: accentColor),
-                          const SizedBox(width: 8),
-                          Text(
-                            '外观主题风格',
-                            style: TextStyle(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w700,
-                              color: textColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: AppThemeStyle.values.map((style) {
-                          final isSelected = context.watch<DarkMode>().themeStyle == style;
-                          final cfg = AppThemeConfig.of(style);
-                          return Expanded(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                context.read<DarkMode>().setThemeStyle(style);
-                                MyDatabase.instance.localParamsDao.saveThemeStyle(style);
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? (isDarkModeEnabled ? cfg.primaryColor.withValues(alpha: 0.22) : cfg.primaryColor.withValues(alpha: 0.12))
-                                      : (isDarkModeEnabled ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8FAF9)),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? cfg.primaryColor
-                                        : (isDarkModeEnabled ? Colors.white12 : const Color(0xFFE2ECE8)),
-                                    width: isSelected ? 1.6 : 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      style.icon,
-                                      size: 19,
-                                      color: isSelected ? cfg.primaryColor : subtitleColor,
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      style.label,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                        color: isSelected ? cfg.primaryColor : textColor,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
+              _buildMenuTile(
+                icon: Icons.palette_outlined,
+                title: '外观主题',
+                trailingText: context.watch<DarkMode>().themeStyle.label,
+                onTap: () => ThemeSelectDialog.show(context),
               ),
               _buildMenuTile(
                 icon: Icons.person_outline_rounded,

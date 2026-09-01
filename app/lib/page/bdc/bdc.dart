@@ -41,6 +41,7 @@ import '../../util/study_track.dart';
 import '../../util/performance_watchdog.dart';
 import '../../util/utils.dart';
 import '../../widget/handwriting_board.dart';
+import '../../widget/theme_select_dialog.dart';
 import 'providers/bdc_notifier.dart';
 import 'providers/bdc_state.dart';
 import 'providers/bdc_state_ui_signature.dart';

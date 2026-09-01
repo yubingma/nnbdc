@@ -19,6 +19,7 @@ import '../state.dart';
 import '../theme/app_theme.dart';
 import '../util/study_audio_session_controller.dart';
 import '../util/tts.dart';
+import '../widget/theme_select_dialog.dart';
 import 'index.dart';
 
 class WalkmanConfig {
@@ -1224,13 +1225,9 @@ class WalkmanPageState extends State<WalkmanPage> {
                     ),
                     InkWell(
                         onTap: () {
-                          setState(() {
-                            var isDarkMode = !context.read<DarkMode>().isDarkMode;
-                            MyDatabase.instance.localParamsDao.saveIsDarkMode(isDarkMode);
-                            context.read<DarkMode>().setIsDarkMode(isDarkMode);
-                          });
+                          ThemeSelectDialog.show(context);
                         },
-                        child: Text(context.read<DarkMode>().isDarkMode ? '白天' : '夜间', style: TextStyle(color: selectedTextColor))),
+                        child: Text(context.watch<DarkMode>().themeStyle.label, style: TextStyle(color: selectedTextColor))),
                     InkWell(
                       child: Text(
                         isLandscape ? '竖屏' : '横屏',
