@@ -276,10 +276,7 @@ class BdcPageState extends ConsumerState<BdcPage> with TickerProviderStateMixin 
     }
 
     final result = KeyboardDismissOnTap(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        resizeToAvoidBottomInset: true,
-        appBar: null,
+      child: AppScaffold(
         body: pageContent,
       ),
     );

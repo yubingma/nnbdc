@@ -947,11 +947,18 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Widget renderPage() {
-    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final themeStyle = Provider.of<DarkMode>(context, listen: false).themeStyle;
+    final themeConfig = AppThemeConfig.of(themeStyle);
+    final isDarkMode = themeStyle.isDark;
+    final textColor = themeConfig.textPrimary;
+    final subtitleColor = themeConfig.textSecondary;
+    final accentColor = themeConfig.primaryColor;
+    final cardBg = themeConfig.cardBg;
+    final cardBorder = themeConfig.cardBorder;
+    final subtleBg = themeConfig.subtleBg;
+
     return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF0C1513) : const Color(0xFFF5F9F7),
-      ),
+      color: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -961,18 +968,12 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               maxHeight: (MediaQuery.of(context).size.height - MediaQuery.of(context).viewInsets.bottom) * 0.45,
             ),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF13201D) : Colors.white,
+              color: cardBg,
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+              boxShadow: themeConfig.cardShadows,
               border: Border(
                 bottom: BorderSide(
-                  color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                  color: cardBorder,
                   width: 1.2,
                 ),
               ),
@@ -1002,9 +1003,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                     height: 32,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                                      color: cardBg,
                                       border: Border.all(
-                                        color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                                        color: cardBorder,
                                         width: 1,
                                       ),
                                     ),
@@ -1012,7 +1013,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       child: Icon(
                                         Icons.arrow_back_ios_new_rounded,
                                         size: 14,
-                                        color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                        color: textColor,
                                       ),
                                     ),
                                   ),
@@ -1023,7 +1024,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
-                                  color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                  color: textColor,
+                                  fontFamily: 'NotoSansSC',
                                 ),
                               ),
                               // 右侧操作区（收藏生词本 + 更多）
@@ -1043,11 +1045,11 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                           shape: BoxShape.circle,
                                           color: _isInRawWordDict
                                               ? (isDarkMode ? const Color(0x33F59E0B) : const Color(0xFFFEF3C7))
-                                              : (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9)),
+                                              : cardBg,
                                           border: Border.all(
                                             color: _isInRawWordDict
                                                 ? const Color(0xFFF59E0B)
-                                                : (isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA)),
+                                                : cardBorder,
                                             width: 1,
                                           ),
                                         ),
@@ -1057,7 +1059,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                             size: _isInRawWordDict ? 20 : 17,
                                             color: _isInRawWordDict
                                                 ? const Color(0xFFF59E0B)
-                                                : (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724)),
+                                                : textColor,
                                           ),
                                         ),
                                       ),
@@ -1075,9 +1077,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                         height: 32,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                                          color: cardBg,
                                           border: Border.all(
-                                            color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                                            color: cardBorder,
                                             width: 1,
                                           ),
                                         ),
@@ -1085,7 +1087,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                           child: Icon(
                                             Icons.more_horiz_rounded,
                                             size: 18,
-                                            color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                            color: textColor,
                                           ),
                                         ),
                                       ),
@@ -1109,7 +1111,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 style: TextStyle(
                                   color: isWrongWord
                                       ? Colors.redAccent
-                                      : (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724)),
+                                      : textColor,
                                   fontSize: _isTopDrawerExpanded ? 28 : 22,
                                   fontWeight: FontWeight.w800,
                                   fontFamily: 'NotoSansSC',
@@ -1144,10 +1146,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                                         decoration: BoxDecoration(
-                                          color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF7F3),
+                                          color: subtleBg,
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(
-                                            color: isDarkMode ? const Color(0xFF233B35) : const Color(0xFFD1EADE),
+                                            color: cardBorder,
                                             width: 1,
                                           ),
                                         ),
@@ -1157,7 +1159,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                             Text(
                                               '[${Util.getWordDefaultPronounce(args.word)}]',
                                               style: TextStyle(
-                                                color: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57),
+                                                color: subtitleColor,
                                                 fontSize: 13.5,
                                                 fontFamily: 'NotoSans',
                                                 fontWeight: FontWeight.w500,
@@ -1171,7 +1173,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                                   _playingStates['word']!.value
                                                       ? (_wordSoundController.value < 0.5 ? Icons.volume_up_rounded : Icons.volume_down_rounded)
                                                       : Icons.volume_up_rounded,
-                                                  color: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                                                  color: accentColor,
                                                   size: 16,
                                                 );
                                               },
@@ -1357,19 +1359,13 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 key: ValueKey('detail_tabs_${calcTabsCount()}_${args.word.id}'),
                 margin: const EdgeInsets.fromLTRB(14, 12, 14, 8),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF13201D) : Colors.white,
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                    color: cardBorder,
                     width: 1.2,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  boxShadow: themeConfig.cardShadows,
                 ),
                 child: Column(
                   children: [
@@ -1377,7 +1373,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: isDarkMode ? Colors.white10 : const Color(0x0F18BA7C),
+                            color: cardBorder,
                             width: 1,
                           ),
                         ),
@@ -1396,9 +1392,9 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
-                        labelColor: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
-                        unselectedLabelColor: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF789691),
-                        indicatorColor: isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C),
+                        labelColor: accentColor,
+                        unselectedLabelColor: subtitleColor,
+                        indicatorColor: accentColor,
                         indicatorWeight: 2.5,
                         tabs: [
                           const Tab(text: '详情'),
@@ -1789,7 +1785,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   Icon(
                     Icons.account_tree_outlined,
                     size: 15,
-                    color: AppTheme.primaryColor,
+                    color: context.primaryColor,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -2165,7 +2161,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: _chatInputFocusNode.hasFocus
-                            ? AppTheme.primaryColor
+                            ? context.primaryColor
                             : (isDarkMode ? Colors.white12 : const Color(0xFFD1EADE)),
                         width: _chatInputFocusNode.hasFocus ? 1.5 : 1,
                       ),
@@ -2216,7 +2212,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   decoration: BoxDecoration(
                     color: _aiLoading
                         ? (isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA))
-                        : AppTheme.primaryColor,
+                        : context.primaryColor,
                     shape: BoxShape.circle,
                   ),
                   child: _aiLoading
@@ -2226,7 +2222,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                              valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
                             ),
                           ),
                         )
@@ -2493,7 +2489,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.lightbulb_outline_rounded, size: 17, color: AppTheme.primaryColor),
+                            Icon(Icons.lightbulb_outline_rounded, size: 17, color: context.primaryColor),
                             const SizedBox(width: 6),
                             const Text('深度讲解',
                                 style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, letterSpacing: 0.2, fontFamily: 'NotoSansSC')),
@@ -2516,7 +2512,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.format_quote_rounded, size: 18, color: AppTheme.primaryColor),
+                              Icon(Icons.format_quote_rounded, size: 18, color: context.primaryColor),
                               const SizedBox(width: 6),
                               const Text('短语 & 例句',
                                   style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, letterSpacing: 0.2, fontFamily: 'NotoSansSC')),
@@ -2534,7 +2530,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                       isEditMode = value;
                                     });
                                   },
-                                  activeThumbColor: AppTheme.primaryColor,
+                                  activeThumbColor: context.primaryColor,
                                 ),
                               ),
                             ],
@@ -2814,7 +2810,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+            valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
           ),
         ),
       );
@@ -2843,7 +2839,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   Icon(
                     Icons.explore_outlined,
                     size: 15,
-                    color: AppTheme.primaryColor,
+                    color: context.primaryColor,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -3586,8 +3582,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
       );
     }
 
-    return Scaffold(
-      appBar: null,
+    return AppScaffold(
       body: SafeArea(
         bottom: false,
         child: Container(

@@ -23,9 +23,9 @@ extension BdcPageStateUIComponents on BdcPageState {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
+            CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+              valueColor: AlwaysStoppedAnimation<Color>(context.primaryColor),
             ),
             const SizedBox(height: 24),
             Text(
@@ -237,7 +237,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.lightbulb_outline, color: AppTheme.primaryColor),
+                      icon: Icon(Icons.lightbulb_outline, color: context.primaryColor),
                       onPressed: () {
                         notifier.giveFullHint();
                         // 不自动提交，用户应继续手动拼写答题
@@ -247,7 +247,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
                 Container(
                   height: 2,
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  color: context.primaryColor.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -326,10 +326,10 @@ extension BdcPageStateUIComponents on BdcPageState {
         height: 38,
         padding: const EdgeInsets.all(3.5),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2),
+          color: context.subtleBg,
           borderRadius: BorderRadius.circular(19),
           border: Border.all(
-            color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+            color: context.cardBorder,
             width: 1,
           ),
         ),
@@ -338,7 +338,7 @@ extension BdcPageStateUIComponents on BdcPageState {
           indicatorSize: TabBarIndicatorSize.tab,
           indicator: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+            color: context.cardBg,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.06),
@@ -351,8 +351,8 @@ extension BdcPageStateUIComponents on BdcPageState {
           dividerHeight: 0,
           overlayColor: WidgetStateProperty.all(Colors.transparent),
           splashFactory: NoSplash.splashFactory,
-          labelColor: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
-          unselectedLabelColor: isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5B7A75),
+          labelColor: context.primaryColor,
+          unselectedLabelColor: context.textSecondary,
           labelStyle: const TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
@@ -794,7 +794,6 @@ extension BdcPageStateUIComponents on BdcPageState {
   }
 
   Widget _buildRatingButtonsRow() {
-    final isDarkMode = _cachedIsDarkMode;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -809,14 +808,10 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_not_know_btn'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isDarkMode
-                    ? const Color(0xFF192C27)
-                    : const Color(0xFFEDF5F2),
-                foregroundColor: isDarkMode
-                    ? const Color(0xFFEAF7F4)
-                    : const Color(0xFF425B57),
+                backgroundColor: context.subtleBg,
+                foregroundColor: context.textPrimary,
                 side: BorderSide(
-                  color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+                  color: context.cardBorder,
                   width: 1,
                 ),
                 elevation: 0,
@@ -843,14 +838,10 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_study_again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isDarkMode
-                    ? const Color(0xFF192C27)
-                    : const Color(0xFFEDF5F2),
-                foregroundColor: isDarkMode
-                    ? const Color(0xFFEAF7F4)
-                    : const Color(0xFF425B57),
+                backgroundColor: context.subtleBg,
+                foregroundColor: context.textPrimary,
                 side: BorderSide(
-                  color: isDarkMode ? Colors.white12 : const Color(0xFFD1EADE),
+                  color: context.cardBorder,
                   width: 1,
                 ),
                 elevation: 0,
@@ -870,12 +861,12 @@ extension BdcPageStateUIComponents on BdcPageState {
           const SizedBox(width: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: context.primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 11),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              shadowColor: AppTheme.primaryColor.withValues(alpha: 0.35),
+              shadowColor: context.primaryColor.withValues(alpha: 0.35),
             ),
             onPressed: state.isGettingNextWord
                 ? null
@@ -1641,7 +1632,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 Icon(
                   Icons.edit_rounded,
                   size: 17,
-                  color: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                  color: context.primaryColor,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -1801,7 +1792,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         final isPressed = ref.watch(bdcNotifierProvider.select((s) => s.isPttPressed));
         final bgColor = isPressed
             ? (isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.08))
-            : AppTheme.primaryColor;
+            : context.primaryColor;
         final fgColor = isPressed
             ? (isDarkMode ? Colors.white : Colors.black87)
             : Colors.white;
@@ -1893,7 +1884,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                       assColor = isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
                       break;
                     case FsrsRating.good:
-                      assColor = isDarkMode ? AppTheme.primaryColor : AppTheme.primaryColor;
+                      assColor = context.primaryColor;
                       break;
                   }
                   return Container(
@@ -1950,7 +1941,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: hasRating
-                                          ? AppTheme.primaryColor
+                                          ? context.primaryColor
                                           : textColor,
                                     ),
                                   ),
@@ -1997,8 +1988,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     isDarkMode ? Colors.greenAccent : const Color(0xFF2E7D32);
                 break;
               case FsrsRating.good:
-                ratingColor =
-                    isDarkMode ? AppTheme.primaryColor : AppTheme.primaryColor;
+                ratingColor = context.primaryColor;
                 break;
             }
 
@@ -2135,7 +2125,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
                             color: hasRating
-                                ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
+                                ? context.primaryColor
                                 : textColor,
                           ),
                         ),
@@ -2334,7 +2324,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               children: [
                 Icon(
                   icon,
-                  color: isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor,
+                  color: context.primaryColor,
                   size: 13.5,
                 ),
                 const SizedBox(width: 3.5),
@@ -2998,7 +2988,6 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget buildWordSoundButton(WordVo word, dynamic audioPlayer, BdcState state) {
     final wordPlaying = state.playingStates['word'] ?? false;
-    final isDarkMode = _cachedIsDarkMode;
 
     return Material(
       color: Colors.transparent,
@@ -3017,12 +3006,12 @@ extension BdcPageStateUIComponents on BdcPageState {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: wordPlaying
-                ? (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFE8F8F1))
-                : (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2)),
+                ? context.subtleBg
+                : context.cardBg,
             border: Border.all(
               color: wordPlaying
-                  ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                  : (isDarkMode ? Colors.white12 : const Color(0xFFD1EADE)),
+                  ? context.primaryColor
+                  : context.cardBorder,
               width: 1,
             ),
           ),
@@ -3034,8 +3023,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                   wordPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
                   size: 13,
                   color: wordPlaying
-                      ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                      : (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57)),
+                      ? context.primaryColor
+                      : context.textSecondary,
                 );
               },
             ),
@@ -3047,7 +3036,6 @@ extension BdcPageStateUIComponents on BdcPageState {
 
   Widget buildSentenceSoundButton(BdcState state) {
     final sentencePlaying = state.playingStates['sentence'] ?? false;
-    final isDarkMode = _cachedIsDarkMode;
 
     return Material(
       color: Colors.transparent,
@@ -3068,12 +3056,12 @@ extension BdcPageStateUIComponents on BdcPageState {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: sentencePlaying
-                ? (isDarkMode ? const Color(0xFF152B24) : const Color(0xFFE8F8F1))
-                : (isDarkMode ? const Color(0xFF192C27) : const Color(0xFFEDF5F2)),
+                ? context.subtleBg
+                : context.cardBg,
             border: Border.all(
               color: sentencePlaying
-                  ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                  : (isDarkMode ? Colors.white12 : const Color(0xFFD1EADE)),
+                  ? context.primaryColor
+                  : context.cardBorder,
               width: 1,
             ),
           ),
@@ -3085,8 +3073,8 @@ extension BdcPageStateUIComponents on BdcPageState {
                   sentencePlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
                   size: 13.5,
                   color: sentencePlaying
-                      ? (isDarkMode ? const Color(0xFF2CD88F) : AppTheme.primaryColor)
-                      : (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF425B57)),
+                      ? context.primaryColor
+                      : context.textSecondary,
                 );
               },
             ),
