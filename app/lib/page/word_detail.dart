@@ -2784,22 +2784,28 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         children: [
                           Row(
                             children: [
-                              Text(
-                                word.spell,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                  color: spellColor,
-                                  fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+                              Flexible(
+                                child: Text(
+                                  word.spell,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                    color: spellColor,
+                                    fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               if (Util.getWordDefaultPronounce(word).isNotEmpty) ...[
                                 const SizedBox(width: 8),
-                                Text(
-                                  '[${Util.getWordDefaultPronounce(word)}]',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: context.textSecondary,
+                                Flexible(
+                                  child: Text(
+                                    '[${Util.getWordDefaultPronounce(word)}]',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: context.textSecondary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -2940,22 +2946,28 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                         children: [
                           Row(
                             children: [
-                              Text(
-                                word.spell,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                  color: spellColor,
-                                  fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+                              Flexible(
+                                child: Text(
+                                  word.spell,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                    color: spellColor,
+                                    fontStyle: inDict ? FontStyle.normal : FontStyle.italic,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               if (Util.getWordDefaultPronounce(word).isNotEmpty) ...[
                                 const SizedBox(width: 8),
-                                Text(
-                                  '[${Util.getWordDefaultPronounce(word)}]',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: context.textSecondary,
+                                Flexible(
+                                  child: Text(
+                                    '[${Util.getWordDefaultPronounce(word)}]',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: context.textSecondary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
