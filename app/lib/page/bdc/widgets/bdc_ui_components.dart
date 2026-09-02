@@ -765,7 +765,10 @@ extension BdcPageStateUIComponents on BdcPageState {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 对测评结果进行展示（即便在极速模式下也展示一下，方便用户看下评分情况）
-          _buildFsrsResultPanel(),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: _buildFsrsResultPanel(),
+          ),
           Container(
             // 底部按钮区背景色 - 紫色调
             decoration: BoxDecoration(
