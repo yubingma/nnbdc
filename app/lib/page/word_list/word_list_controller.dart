@@ -193,14 +193,16 @@ class WordListController extends ChangeNotifier {
         Global.logger.w('WordListController: 书签预测未命中或越界，回退查询 getWordIndex, spell: ${bookMark!.spell}');
       }
 
-      if (actualWordIndex == -1) {
-        if (totalWordCount > 0 && bookMark!.position >= totalWordCount) {
+      if (totalWordCount <= 0) {
+        actualWordIndex = 0;
+      } else if (actualWordIndex == -1) {
+        if (bookMark!.position >= totalWordCount) {
           Global.logger.w('WordListController: 书签位置 ${bookMark!.position} 超过了总词数 $totalWordCount，重置为 0');
           actualWordIndex = 0;
         } else {
           actualWordIndex = bookMark!.position;
         }
-      } else if (totalWordCount > 0 && actualWordIndex >= totalWordCount) {
+      } else if (actualWordIndex >= totalWordCount) {
         Global.logger.w('WordListController: 实际书签位置 $actualWordIndex 超过了总词数 $totalWordCount，重置为 0');
         actualWordIndex = 0;
       }
@@ -225,6 +227,11 @@ class WordListController extends ChangeNotifier {
         baseIndex = predQueryIndex;
         initialScrollIndex = actualWordIndex - baseIndex!;
       }
+
+      if (words.isEmpty) {
+        baseIndex = 0;
+        initialScrollIndex = 0;
+      }
       
       bookMark = BookMarkVo(actualWordIndex, bookMark!.spell, bookMark!.sortAlg);
 
@@ -235,6 +242,7 @@ class WordListController extends ChangeNotifier {
     } else {
       // 没有书签：从第一页开始
       baseIndex = 0;
+      initialScrollIndex = 0;
       await doQuery(true, baseIndex!, pageSize, false);
       if (words.isNotEmpty && bookMark == null) {
         final defaultAlg = await getCurrentSortAlg();

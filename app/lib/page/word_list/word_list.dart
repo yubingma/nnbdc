@@ -377,6 +377,12 @@ class WordListPageState extends State<WordListPage>
   set doNotQueryPlease(bool val) { if (_controllerInitialized) controller.doNotQueryPlease = val; }
 
   int? get _initialScrollIndex => _controllerInitialized ? controller.initialScrollIndex : null;
+  int get _safeInitialScrollIndex {
+    final idx = _initialScrollIndex;
+    if (idx == null || idx <= 0 || words.isEmpty) return 0;
+    if (idx >= words.length) return words.length - 1;
+    return idx;
+  }
 
   Asr get asr => asrController.asr;
 
@@ -1001,7 +1007,7 @@ class WordListPageState extends State<WordListPage>
 
 
 
-  Widget renderPage() {
+  Widget renderPage(bool isDarkMode) {
     return Stack(
       children: [
         NotificationListener<ScrollUpdateNotification>(
@@ -1061,26 +1067,38 @@ class WordListPageState extends State<WordListPage>
             children: [
               // _buildLegend(isDarkMode), // 已移动到更多菜单中
               Expanded(
-                child: ScrollablePositionedList.builder(
-                  key: const ValueKey('word_list_scrollable_positioned_list'),
-                  itemCount: words.length,
-                  itemBuilder: (context, index) {
-                    if (index < 0 || index >= words.length) {
-                      return const SizedBox.shrink();
-                    }
-                    return RepaintBoundary(
-                      key: ValueKey('word_${words[index].word.id}_${studyMode.name}'),
-                      child: renderWord(index),
-                    );
-                  },
-                  initialScrollIndex: _initialScrollIndex ?? 0,
-                  itemScrollController: itemScrollController,
-                  itemPositionsListener: itemPositionsListener,
-                  padding: EdgeInsets.only(
-                      top: 20,
-                      bottom: 120 + MediaQuery.of(context).viewInsets.bottom,
-                  ),
-                ),
+                child: words.isEmpty
+                    ? Center(
+                        child: Text(
+                          '词单暂无单词',
+                          style: TextStyle(
+                            color: isDarkMode
+                                ? Colors.white70
+                                : const Color(0xFF7F8C8D),
+                            fontSize: 16,
+                          ),
+                        ),
+                      )
+                    : ScrollablePositionedList.builder(
+                        key: const ValueKey('word_list_scrollable_positioned_list'),
+                        itemCount: words.length,
+                        itemBuilder: (context, index) {
+                          if (index < 0 || index >= words.length) {
+                            return const SizedBox.shrink();
+                          }
+                          return RepaintBoundary(
+                            key: ValueKey('word_${words[index].word.id}_${studyMode.name}'),
+                            child: renderWord(index),
+                          );
+                        },
+                        initialScrollIndex: _safeInitialScrollIndex,
+                        itemScrollController: itemScrollController,
+                        itemPositionsListener: itemPositionsListener,
+                        padding: EdgeInsets.only(
+                          top: 20,
+                          bottom: 120 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
+                      ),
               ),
               // 底部的按钮，固定在页面底部
               if (args.injectedBtn != null)
@@ -3191,7 +3209,7 @@ class WordListPageState extends State<WordListPage>
                       : Padding(
                           padding: const EdgeInsets.fromLTRB(
                               leftPadding, 2, rightPadding, 0),
-                          child: renderPage(),
+                          child: renderPage(isDarkMode),
                         ),
                 ),
               ],
