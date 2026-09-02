@@ -142,7 +142,7 @@ extension BdcPageStateDialogs on BdcPageState {
     );
   }
 
-  /// 发音口音选择项：展示当前口音（美音/英音），点击后下拉切换
+  /// 发音口音选择项：展示当前口音（美音/英音），点击后弹出美化选择弹框
   Widget _buildPronunciationAccentEntry(BuildContext dialogContext, StateSetter setDialogState) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -170,40 +170,17 @@ extension BdcPageStateDialogs on BdcPageState {
               ?.withValues(alpha: 0.6),
         ),
       ),
-      trailing: PopupMenuButton<String>(
-        padding: EdgeInsets.zero,
-        position: PopupMenuPosition.over,
-        onSelected: (accent) async {
-          if (accent != Prefs.pronunciationAccent) {
-            await Prefs.setPronunciationAccent(accent);
-            setDialogState(() {});
-            updateUI(() {}, tag: 'pronunciation-accent-setting');
-            if (state.word != null) {
-              StudyAudioSessionController.instance.playWordSound(state.word!);
-            }
+      trailing: const Icon(Icons.chevron_right, color: Global.highlight),
+      onTap: () async {
+        final newAccent = await PronunciationAccentDialog.show(context);
+        if (newAccent != null) {
+          setDialogState(() {});
+          updateUI(() {}, tag: 'pronunciation-accent-setting');
+          if (state.word != null) {
+            StudyAudioSessionController.instance.playWordSound(state.word!);
           }
-        },
-        itemBuilder: (BuildContext context) => [
-          const PopupMenuItem(
-            value: 'us',
-            child: Text('美音(默认)', style: TextStyle(fontFamily: "NotoSansSC", fontSize: 13)),
-          ),
-          const PopupMenuItem(
-            value: 'uk',
-            child: Text('英音', style: TextStyle(fontFamily: "NotoSansSC", fontSize: 13)),
-          ),
-        ],
-        child: SizedBox(
-          width: 48,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Icon(
-              Icons.arrow_drop_down,
-              color: Global.highlight,
-            ),
-          ),
-        ),
-      ),
+        }
+      },
     );
   }
 

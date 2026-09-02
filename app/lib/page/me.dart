@@ -39,6 +39,7 @@ import 'package:nnbdc/util/user_helper.dart';
 import 'package:nnbdc/util/utils.dart';
 import 'package:nnbdc/util/date_utils.dart' as bdc_date;
 import 'package:nnbdc/widget/dict_download_dialog.dart';
+import 'package:nnbdc/widget/pronunciation_accent_dialog.dart';
 import 'package:nnbdc/widget/theme_select_dialog.dart';
 import 'package:nnbdc/theme/app_theme.dart';
 import 'package:nnbdc/theme/app_theme_background.dart';
@@ -1891,35 +1892,9 @@ class _MePageState extends State<MePage> {
                 title: '发音口音',
                 trailingText: Prefs.pronunciationAccent == 'uk' ? '英音' : '美音',
                 onTap: () async {
-                  final accent = await showDialog<String>(
-                    context: context,
-                    builder: (ctx) => SimpleDialog(
-                      title: const Text('发音口音'),
-                      children: [
-                        for (final (value, label) in [
-                          ('us', '美音(默认)'),
-                          ('uk', '英音'),
-                        ])
-                          SimpleDialogOption(
-                            onPressed: () => Navigator.pop(ctx, value),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontWeight: value == Prefs.pronunciationAccent
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                  if (accent != null && accent != Prefs.pronunciationAccent) {
-                    await Prefs.setPronunciationAccent(accent);
-                    if (mounted) setState(() {});
+                  final accent = await PronunciationAccentDialog.show(context);
+                  if (accent != null && mounted) {
+                    setState(() {});
                   }
                 },
               ),

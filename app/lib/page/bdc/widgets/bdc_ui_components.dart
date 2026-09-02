@@ -1034,23 +1034,6 @@ extension BdcPageStateUIComponents on BdcPageState {
                   onTap: () => showErrorReportDlg(),
                 ),
 
-                // 发音口音切换按钮
-                _buildTopActionButton(
-                  icon: Icons.graphic_eq_rounded,
-                  label: Prefs.pronunciationAccent == 'uk' ? '英音' : '美音',
-                  onTap: () async {
-                    final current = Prefs.pronunciationAccent;
-                    final next = current == 'uk' ? 'us' : 'uk';
-                    await Prefs.setPronunciationAccent(next);
-                    final label = next == 'uk' ? '英音' : '美音';
-                    ToastUtil.info('已切换为$label');
-                    updateUI(() {}, tag: 'pronunciation-accent-switch');
-                    if (state.word != null) {
-                      StudyAudioSessionController.instance.playWordSound(state.word!);
-                    }
-                  },
-                ),
-
                 // 查词按钮
                 _buildTopActionButton(
                   icon: Icons.search_rounded,
