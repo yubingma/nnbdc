@@ -26,6 +26,14 @@ class AppThemeBackground extends StatelessWidget {
         return _buildMinimalBackground();
       case AppThemeStyle.midnight:
         return _buildMidnightBackground();
+      case AppThemeStyle.crimson:
+        return _buildCrimsonBackground();
+      case AppThemeStyle.indigo:
+        return _buildIndigoBackground();
+      case AppThemeStyle.sage:
+        return _buildSageBackground();
+      case AppThemeStyle.twilight:
+        return _buildTwilightBackground();
     }
   }
 
@@ -288,6 +296,208 @@ class AppThemeBackground extends StatelessWidget {
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: glowCenter,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 6. 京都朱砂背景 (和纸质感与朱砂微光 - 纯净雅致)
+  Widget _buildCrimsonBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFCFBF9), Color(0xFFF9F7F5)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 40,
+            right: -40,
+            width: 320,
+            height: 320,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x0DE11D48), // 约 5% 朱砂微光
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 80,
+            left: -30,
+            width: 280,
+            height: 280,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x0DFB7185), // 约 5% 暖粉微光
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 7. 星云深靛背景 (Linear 风格极客冷灰与深靛光晕)
+  Widget _buildIndigoBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF8FAFC), Color(0xFFF1F5F9)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 30,
+            right: -50,
+            width: 340,
+            height: 340,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x146366F1), // 约 8% 深靛冷光
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 200,
+            left: -40,
+            width: 300,
+            height: 300,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x10818CF8), // 约 6% 星云紫蓝
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 8. 鼠尾草森背景 (Gentler Streak 风格治愈海盐青绿漫反射)
+  Widget _buildSageBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFAFBFB), Color(0xFFF0FDF4)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 50,
+            left: -40,
+            width: 320,
+            height: 320,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x120D9488), // 约 7% 海盐青木光
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 90,
+            right: -30,
+            width: 280,
+            height: 280,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x0E2DD4BF), // 约 5% 薄荷微光
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 9. 暮光深空背景 (Arc & Linear 曜石深空星云霓虹紫)
+  Widget _buildTwilightBackground() {
+    const baseBg = Color(0xFF07090E);
+    const glowIndigo = Color(0x38818CF8); // 星云紫蓝
+    const glowDeep = Color(0x284F46E5); // 深邃靛青
+    const glowPurple = Color(0x20A855F7); // 暮光紫罗兰
+
+    return Container(
+      color: baseBg,
+      child: Stack(
+        children: [
+          Positioned(
+            top: 20,
+            right: -40,
+            width: 340,
+            height: 340,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: glowIndigo,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 180,
+            left: -50,
+            width: 320,
+            height: 340,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: glowDeep,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 60,
+            right: 20,
+            width: 280,
+            height: 280,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: glowPurple,
                 ),
               ),
             ),

@@ -18,7 +18,19 @@ enum AppThemeStyle {
   minimal('minimal', '极简白墨', '极客纯粹高对比', Icons.contrast_rounded),
 
   /// 深邃曜黑 (沉浸夜间赛博，曜黑深空 + 极光霓虹翡翠)
-  midnight('midnight', '深邃曜黑', '夜间沉浸护眼', Icons.dark_mode_rounded);
+  midnight('midnight', '深邃曜黑', '夜间沉浸护眼', Icons.dark_mode_rounded),
+
+  /// 京都朱砂 (Bear / 和风书卷，和纸纯粹米白 + 典雅朱砂赤红)
+  crimson('crimson', '京都朱砂', '典雅书卷朱砂红', Icons.menu_book_rounded),
+
+  /// 星云深靛 (Linear & Raycast，数字工艺深靛蓝 + 纯净冷灰)
+  indigo('indigo', '星云深靛', '未来极客星云靛', Icons.blur_on_rounded),
+
+  /// 鼠尾草森 (Gentler Streak / Apple，低饱和海盐青绿 + 视觉疗愈)
+  sage('sage', '鼠尾草森', '海盐青木温润舒缓', Icons.grass_rounded),
+
+  /// 暮光深空 (Arc & Linear Dark，曜石深空黑 + 霓虹紫罗兰光晕)
+  twilight('twilight', '暮光深空', '曜石深空霓虹紫', Icons.nights_stay_rounded);
 
   final String code;
   final String label;
@@ -38,7 +50,7 @@ enum AppThemeStyle {
   }
 
   /// 该主题是否为深底/暗色主题
-  bool get isDark => this == AppThemeStyle.midnight;
+  bool get isDark => this == AppThemeStyle.midnight || this == AppThemeStyle.twilight;
 }
 
 /// 主题全套配色与质感配置模型
@@ -178,6 +190,98 @@ class AppThemeConfig {
           cardShadows: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.55),
+              blurRadius: 28,
+              offset: const Offset(0, 8),
+            ),
+          ],
+          isDark: true,
+        );
+
+      // 6. 京都朱砂: Bear 招牌和风书卷朱砂赤红
+      case AppThemeStyle.crimson:
+        return AppThemeConfig(
+          style: style,
+          primaryColor: const Color(0xFFE11D48), // 优雅朱砂赤红
+          primaryLightColor: const Color(0xFFFB7185),
+          primaryDarkColor: const Color(0xFFBE123C),
+          textPrimary: const Color(0xFF1C1917), // 沉静暖和墨黑
+          textSecondary: const Color(0xFF78716C), // 暖石灰
+          textMuted: const Color(0xFFA8A29E),
+          cardBg: Colors.white.withValues(alpha: 0.98),
+          cardBorder: const Color(0x1FE11D48),
+          subtleBg: const Color(0xFFFFF1F2), // 极淡赤粉柔白
+          cardShadows: [
+            BoxShadow(
+              color: const Color(0xFFBE123C).withValues(alpha: 0.04),
+              blurRadius: 18,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          isDark: false,
+        );
+
+      // 7. 星云深靛: Linear & Raycast 极客工艺星云靛蓝
+      case AppThemeStyle.indigo:
+        return AppThemeConfig(
+          style: style,
+          primaryColor: const Color(0xFF6366F1), // 招牌星云深靛蓝
+          primaryLightColor: const Color(0xFF818CF8),
+          primaryDarkColor: const Color(0xFF4F46E5),
+          textPrimary: const Color(0xFF0F172A), // 深空纯净黑
+          textSecondary: const Color(0xFF475569), // 冷灰次级文字
+          textMuted: const Color(0xFF94A3B8),
+          cardBg: Colors.white.withValues(alpha: 0.97),
+          cardBorder: const Color(0x1F6366F1),
+          subtleBg: const Color(0xFFEEF2FF), // 星云淡蓝白
+          cardShadows: [
+            BoxShadow(
+              color: const Color(0xFF4F46E5).withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          isDark: false,
+        );
+
+      // 8. 鼠尾草森: Gentler Streak 风格治愈海盐青绿
+      case AppThemeStyle.sage:
+        return AppThemeConfig(
+          style: style,
+          primaryColor: const Color(0xFF0D9488), // 舒缓海盐青木绿
+          primaryLightColor: const Color(0xFF2DD4BF),
+          primaryDarkColor: const Color(0xFF0F766E),
+          textPrimary: const Color(0xFF134E4A), // 深青木墨黑
+          textSecondary: const Color(0xFF5E7975),
+          textMuted: const Color(0xFF8FA8A4),
+          cardBg: Colors.white.withValues(alpha: 0.98),
+          cardBorder: const Color(0x1F0D9488),
+          subtleBg: const Color(0xFFF0FDFA), // 海盐薄荷浅底
+          cardShadows: [
+            BoxShadow(
+              color: const Color(0xFF0F766E).withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          isDark: false,
+        );
+
+      // 9. 暮光深空: Arc & Linear 曜石深空霓虹紫
+      case AppThemeStyle.twilight:
+        return AppThemeConfig(
+          style: style,
+          primaryColor: const Color(0xFF818CF8), // 霓虹星云紫蓝
+          primaryLightColor: const Color(0xFFA5B4FC),
+          primaryDarkColor: const Color(0xFF6366F1),
+          textPrimary: const Color(0xFFF8FAFC), // 月光亮白
+          textSecondary: const Color(0xFF94A3B8),
+          textMuted: const Color(0xFF64748B),
+          cardBg: const Color(0xFF111420).withValues(alpha: 0.88),
+          cardBorder: const Color(0x2E818CF8),
+          subtleBg: const Color(0xFF1B2032),
+          cardShadows: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.60),
               blurRadius: 28,
               offset: const Offset(0, 8),
             ),

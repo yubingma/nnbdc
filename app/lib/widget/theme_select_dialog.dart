@@ -57,20 +57,30 @@ class ThemeSelectDialog extends StatelessWidget {
           ],
         ),
       ),
-      content: Row(
-        children: AppThemeStyle.values.map((style) {
-          final cfg = AppThemeConfig.of(style);
-          final isSelected = selectedStyle == style;
-          return Expanded(
-            child: GestureDetector(
+      content: SizedBox(
+        width: double.maxFinite,
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1.15,
+          ),
+          itemCount: AppThemeStyle.values.length,
+          itemBuilder: (context, index) {
+            final style = AppThemeStyle.values[index];
+            final cfg = AppThemeConfig.of(style);
+            final isSelected = selectedStyle == style;
+            return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
                 context.read<DarkMode>().setThemeStyle(style);
                 MyDatabase.instance.localParamsDao.saveThemeStyle(style);
               },
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? cfg.primaryColor.withValues(alpha: isDarkModeEnabled ? 0.22 : 0.12)
@@ -86,20 +96,20 @@ class ThemeSelectDialog extends StatelessWidget {
                   ),
                 ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       style.icon,
-                      size: 20,
+                      size: 22,
                       color: isSelected ? cfg.primaryColor : subtleColor,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 5),
                     Text(
                       style.label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                         color: isSelected ? cfg.primaryColor : textColor,
                       ),
@@ -107,9 +117,9 @@ class ThemeSelectDialog extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          },
+        ),
       ),
       actions: [
         TextButton(
