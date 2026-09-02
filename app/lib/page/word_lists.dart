@@ -465,7 +465,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 isDarkMode: isDarkMode,
                 title: '今日错词',
                 count: wrongCount,
-                icon: Icons.spellcheck_rounded,
+                icon: Icons.cancel_outlined,
                 iconBgColor: iconBgColor,
                 iconColor: accentColor,
                 isAlert: false,
