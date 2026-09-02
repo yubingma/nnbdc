@@ -2096,12 +2096,12 @@ extension BdcPageStateUIComponents on BdcPageState {
             children: [
               if (stageText.isNotEmpty) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
                   decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF2C2416) : const Color(0xFFFFF8E6),
+                    color: context.primaryColor.withValues(alpha: isDarkMode ? 0.18 : 0.08),
                     borderRadius: BorderRadius.circular(5),
                     border: Border.all(
-                      color: isDarkMode ? const Color(0xFF6B5320) : const Color(0xFFFDE68A),
+                      color: context.primaryColor.withValues(alpha: isDarkMode ? 0.35 : 0.22),
                       width: 0.8,
                     ),
                   ),
@@ -2110,7 +2110,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                      color: context.primaryColor,
                     ),
                   ),
                 ),
@@ -2177,8 +2177,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         break;
       case FsrsRating.good:
       default:
-        ratingColor =
-            isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C);
+        ratingColor = context.primaryColor;
         break;
     }
 
@@ -2192,12 +2191,12 @@ extension BdcPageStateUIComponents on BdcPageState {
           children: [
             if (stageText.isNotEmpty) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1.5),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF2C2416) : const Color(0xFFFFF8E6),
+                  color: context.primaryColor.withValues(alpha: isDarkMode ? 0.18 : 0.08),
                   borderRadius: BorderRadius.circular(5),
                   border: Border.all(
-                    color: isDarkMode ? const Color(0xFF6B5320) : const Color(0xFFFDE68A),
+                    color: context.primaryColor.withValues(alpha: isDarkMode ? 0.35 : 0.22),
                     width: 0.8,
                   ),
                 ),
@@ -2206,7 +2205,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: isDarkMode ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                    color: context.primaryColor,
                   ),
                 ),
               ),
@@ -2647,7 +2646,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -2727,93 +2726,96 @@ extension BdcPageStateUIComponents on BdcPageState {
                     textAlign: TextAlign.center,
                   ),
                 ],
-                if (state.word?.sentences != null &&
-                    state.word!.sentences!.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: context.cardBg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: context.cardBorder,
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.02),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 左侧极简播放前缀按钮
-                        buildSentenceSoundButton(state),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Util.makeEnglishSpanText(
-                                    state.word!.sentences![0].english!,
-                                    state.word!.spell,
-                                    true,
-                                    context,
-                                    false,
-                                    null,
-                                    true,
-                                    FontWeight.w400),
-                              ),
-                              if (!state.showSentenceTranslation)
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: InkWell(
-                                    onTap: () {
-                                      updateUI(() {
-                                        notifier.updateShowSentenceTranslation(true);
-                                      }, tag: 'sentence-trans');
-                                    },
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                      child: Text(
-                                        '显示翻译',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              else
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 6.0),
-                                  child: Util.makeChineseSpanText(
-                                    state.word!.sentences![0].chinese ?? '',
-                                    context,
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      color: secondaryTextColor,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
+          if (state.word?.sentences != null &&
+              state.word!.sentences!.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: context.cardBg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: context.cardBorder,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.02),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 左侧极简播放前缀按钮
+                    buildSentenceSoundButton(state),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Util.makeEnglishSpanText(
+                                state.word!.sentences![0].english!,
+                                state.word!.spell,
+                                true,
+                                context,
+                                false,
+                                null,
+                                true,
+                                FontWeight.w400),
+                          ),
+                          if (!state.showSentenceTranslation)
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: InkWell(
+                                onTap: () {
+                                  updateUI(() {
+                                    notifier.updateShowSentenceTranslation(true);
+                                  }, tag: 'sentence-trans');
+                                },
+                                borderRadius: BorderRadius.circular(4),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  child: Text(
+                                    '显示翻译',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6.0),
+                              child: Util.makeChineseSpanText(
+                                state.word!.sentences![0].chinese ?? '',
+                                context,
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  color: secondaryTextColor,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
