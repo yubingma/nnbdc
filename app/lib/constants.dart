@@ -3,20 +3,20 @@ class Constants {
   // ========== 界面元素透明度全局配置 (方便随时微调通透质感) ==========
 
   /// 界面通用元素（矩形卡片框、常规按钮等）的基础不透明度 (0.0 完全透明 - 1.0 完全不透明)
-  /// 数值越小透明度越高。您可在此直接微调此数值体验不同的通透/微透毛玻璃质感（推荐范围 0.65 - 0.85）
-  static const double uiElementOpacity = 0.0;
+  /// 主流微透毛玻璃质感建议 0.80 - 0.88，既能轻盈透出底层流光，又能保证文字阅读的扎实可读性
+  static const double uiElementOpacity = 0.85;
 
   /// 界面矩形卡片框（题目区卡片、做题区卡片、例句框等）的背景不透明度 (0.0 - 1.0)
-  static const double cardOpacity = uiElementOpacity;
+  static const double cardOpacity = 0.85;
 
   /// 次级容器与轻量元素（如输入框、辅助练习卡片、轻底色容器等）的背景不透明度 (0.0 - 1.0)
-  static const double subtleOpacity = uiElementOpacity * 0.85;
+  static const double subtleOpacity = 0.65;
 
   /// 按钮背景不透明度（如“不认识”、“再学学”等操作按钮）
-  static const double buttonOpacity = uiElementOpacity;
+  static const double buttonOpacity = 0.85;
 
   /// 主色高亮按钮（如“下一个”等主行动按钮）的背景不透明度
-  static const double primaryButtonOpacity = 0.8;
+  static const double primaryButtonOpacity = 0.92;
 
   // ========== 音素匹配相关常量 ==========
 
