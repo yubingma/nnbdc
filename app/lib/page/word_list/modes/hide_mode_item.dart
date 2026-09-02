@@ -9,7 +9,7 @@ import '../word_list_actions.dart';
 import 'mode_components.dart';
 import 'word_list_item_layout.dart';
 
-/// 隐藏模式：包含“隐藏中文”或“隐藏英文”，用户点击后才会揭晓答案
+/// 遮挡模式：包含“遮挡中文”或“遮挡英文”，用户点击后才会揭晓答案
 class HideModeItem extends StatelessWidget {
   final WordWrapper word;
   final int index;

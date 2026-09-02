@@ -59,7 +59,7 @@ import 'word_list_actions.dart';
 import 'word_list_asr_controller.dart';
 import 'word_list_controller.dart';
 
-const String menuWordList = '浏览词表';
+const String menuWordList = '浏览模式';
 const String menuWalkman = '随身听';
 const String menuSpeakChinese = '说中文';
 const String menuSpeakEnglish = '说英文';
@@ -71,8 +71,8 @@ const String menuImportFromScan = '扫描导入';
 const String menuAiStory = 'AI短文';
 const String menuSettings = '学习设置';
 const String menuLegend = '学习状态图例';
-const String menuHideChinese = '隐藏中文';
-const String menuHideEnglish = '隐藏英文';
+const String menuHideChinese = '遮挡中文';
+const String menuHideEnglish = '遮挡英文';
 const String menuSortSettings = '排序设置';
 const String menuTheme = '外观主题';
 const String menuExportPdf = '导出为 PDF';
@@ -1053,7 +1053,7 @@ class WordListPageState extends State<WordListPage>
                       return const SizedBox.shrink();
                     }
                     return RepaintBoundary(
-                      key: ValueKey('word_${words[index].word.id}'),
+                      key: ValueKey('word_${words[index].word.id}_${studyMode.name}'),
                       child: renderWord(index),
                     );
                   },
@@ -2680,6 +2680,7 @@ class WordListPageState extends State<WordListPage>
                         color: Colors.white,
                       ),
                       onPressed: () async {
+                        if (isMenuOpen) return;
                         // 1. 设置标志位，屏蔽 ASR 和 Timer 对 UI 的刷新干扰
                         isMenuOpen = true; // 立即生效，屏蔽后续可能的 setState
 
@@ -2928,6 +2929,7 @@ class WordListPageState extends State<WordListPage>
                                   height: 40,
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   child: Container(
+                                    width: double.infinity,
                                     decoration: BoxDecoration(
                                       color: isSelected
                                           ? themeConfig.subtleBg
@@ -2993,6 +2995,10 @@ class WordListPageState extends State<WordListPage>
                               try {
                                 switch (selectedValue) {
                               case menuWordList:
+                                if (studyMode == WordListStudyMode.list) {
+                                  ToastUtil.info('当前已处于浏览模式');
+                                  break;
+                                }
                                 setState(() {
                                   studyMode = WordListStudyMode.list;
                                 });
@@ -3892,8 +3898,8 @@ class WordListPageState extends State<WordListPage>
                     ),
                     const SizedBox(height: 4),
                     buildRadioOption(PdfExportMode.classic, '中英对照表 (常规复习清单)'),
-                    buildRadioOption(PdfExportMode.spellDictation, '拼写默写本 (隐藏英文，保留中文和横线)'),
-                    buildRadioOption(PdfExportMode.meaningDictation, '释义记忆本 (隐藏中文，保留英文和横线)'),
+                    buildRadioOption(PdfExportMode.spellDictation, '拼写默写本 (遮挡英文，保留中文和横线)'),
+                    buildRadioOption(PdfExportMode.meaningDictation, '释义记忆本 (遮挡中文，保留英文和横线)'),
                     const SizedBox(height: 4),
                     Divider(color: isDarkMode ? Colors.white12 : Colors.grey[200]),
                     const SizedBox(height: 4),
