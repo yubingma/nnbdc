@@ -173,13 +173,13 @@ void main() {
       expect(ids.toSet(), {'w_house', 'w_horse'});
     });
 
-    test('都在学习范围内但都没学习过 → 不含（空列表 / 计数 0）', () async {
+    test('都在学习范围内但都没学习过 → 只要在学习范围内均可作为锚点候选，词表包含互邻词（新用户不为空）', () async {
       await seedHouseHorse();
-      // 无 learning_words 记录、无已掌握词书 → 无锚点 → 词表为空
+      // 无 learning_words 记录、无已掌握词书 → 学习范围内单词均可作为锚点 → 词表包含 house+horse
 
       final wordBo = WordBo();
-      expect(await wordBo.getConfusableWordIds(userId), isEmpty);
-      expect(await wordBo.getConfusableWordCount(userId), 0);
+      expect(await wordBo.getConfusableWordIds(userId), ['w_horse', 'w_house']);
+      expect(await wordBo.getConfusableWordCount(userId), 2);
     });
 
     test('有学习词书但无锚点 → 空列表 / 计数 0', () async {
@@ -381,12 +381,12 @@ void main() {
       final list2 = await wordBo.getConfusableWordIds(userId);
       expect(identical(list1, list2), true);
 
-      // 词书新增单词 w3（非锚点，但与锚点距离 1 → 进 C，归属 cat 簇）：B 变、A 不变 → 签名变化重算
+      // 词书新增单词 w3（在学习范围内也是锚点候选，但无学习时间；w1/w2 有学习时间在前）：B 变、A 变 → 签名变化重算
       await insertWord('w3', 'cut');
       await insertDictWord('d1', 'w3');
       final list3 = await wordBo.getConfusableWordIds(userId);
       expect(identical(list1, list3), false);
-      expect(list3, ['w1', 'w3', 'w2']);
+      expect(list3, ['w1', 'w2', 'w3']);
 
       // 删除学习词书 → 签名变化 → 重算为空
       await db.learningDictsDao.deleteEntity(

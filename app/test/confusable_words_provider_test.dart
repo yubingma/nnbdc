@@ -271,21 +271,20 @@ void main() {
       expect(provider.groupIndexOf(2), 3);
       expect(provider.groupIndexOf(99), 0); // 越界 → 默认底色
 
-      // 场景 2：给现有学习词书 d1 加相近词 w_rat（与锚点 cat 一字之差、非锚点）
-      // → cat 簇 [cat, rat]，cot/cut 各自成簇，组号 [1,1,2,3]
+      // 场景 2：给现有学习词书 d1 加相近词 w_rat（在学习范围内同样作为锚点候选）
+      // → cat/cot/cut 有学习时间在前，rat 无学习时间在后，组号 [1,2,3,4]
       await insertWord('w_rat', 'rat');
       await insertCommonMeaning('mi_rat', 'w_rat');
       await insertDictWord('d1', 'w_rat');
 
       provider = ConfusableWordsProvider();
       final result = await provider.getAPageOfWords(0, 999999);
-      // cat 簇 [cat, rat]（相近词按字典序），cot 簇 [cot]，cut 簇 [cut]
       expect(result.rows.map((w) => w.word.id).toList(),
-          ['w_cat', 'w_rat', 'w_cot', 'w_cut']);
+          ['w_cat', 'w_cot', 'w_cut', 'w_rat']);
       expect(provider.groupIndexOf(0), 1);
-      expect(provider.groupIndexOf(1), 1);
-      expect(provider.groupIndexOf(2), 2);
-      expect(provider.groupIndexOf(3), 3);
+      expect(provider.groupIndexOf(1), 2);
+      expect(provider.groupIndexOf(2), 3);
+      expect(provider.groupIndexOf(3), 4);
     });
 
     testWidgets('unmasterWord 返回 false 且 masteredWords 表不变（只读浏览）',

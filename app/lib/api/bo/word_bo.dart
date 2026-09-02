@@ -2772,10 +2772,10 @@ class WordBo {
     return (dictIds: dictIds, wordIds: wordIds);
   }
 
-  /// 锚点 = 学习范围内 ∩（学习记录中"确实学过"的 ∪ 已掌握），并携带**最近学习时间**：
-  /// - learning_words 的 lastLearningDate（最近评分日期，state > 0 才算学过）；
-  /// - 仅已掌握（无学习记录）的锚点取已掌握词书词条 create_time（掌握时间）；
-  /// - 两者都无 → null（排最后）。
+  /// 锚点 = 学习范围内的所有单词（只要在学习范围内均可作为锚点）：
+  /// - 曾学习过的词记录其最近学习时间 lastLearningDate（state > 0）；
+  /// - 仅已掌握（无学习记录）的词取已掌握词书词条 create_time（掌握时间）；
+  /// - 未学过的词时间为 null（排在学过的词之后，按字典序排列）。
   static Future<Map<String, DateTime?>> _loadConfusableAnchors(
       String userId, Set<String> wordIds) async {
     if (wordIds.isEmpty) return {};
@@ -2788,8 +2788,9 @@ class WordBo {
     for (final lw in learnedRows) {
       if (!wordIds.contains(lw.wordId)) continue;
       final cur = anchorTimes[lw.wordId];
-      if (cur == null || (lw.lastLearningDate != null && lw.lastLearningDate!.isAfter(cur))) {
-        anchorTimes[lw.wordId] = lw.lastLearningDate;
+      final date = lw.lastLearningDate ?? lw.updateTime;
+      if (cur == null || date.isAfter(cur)) {
+        anchorTimes[lw.wordId] = date;
       }
     }
     // 仅已掌握的锚点：取已掌握词书词条 create_time 作为掌握时间
@@ -2808,7 +2809,11 @@ class WordBo {
         }
       }
     }
-    return {for (final id in anchorTimes.keys) if (wordIds.contains(id)) id: anchorTimes[id]};
+    // 学习范围内的所有词都可以作为锚点；学过的保留时间戳，未学过的为 null
+    for (final id in wordIds) {
+      anchorTimes.putIfAbsent(id, () => null);
+    }
+    return anchorTimes;
   }
 
   /// 易混淆单词：锚点（学习过的词）∪ 学习范围内与锚点拼写相近（编辑距离 ≤ 1 且
