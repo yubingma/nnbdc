@@ -29,13 +29,13 @@ class AppThemeBackground extends StatelessWidget {
     }
   }
 
-  /// 1. 晨曦流光背景 (冰川冷蓝极光风)
+  /// 1. 晨曦流光背景 (冰川冷蓝极光风 - 极轻透通透漫反射)
   Widget _buildAuroraBackground() {
-    const baseBg = Color(0xFFF0F7FA);
-    const glowBlue = Color(0x4538BDF8);
-    const glowCyan = Color(0x3D06B6D4);
-    const glowIndigo = Color(0x33818CF8);
-    const glowWhite = Color(0xCCFFFFFF);
+    const baseBg = Color(0xFFF8FAFC);
+    const glowBlue = Color(0x1A38BDF8); // 约 10% 轻柔冷蓝
+    const glowCyan = Color(0x1406B6D4); // 约 8% 纯净青蓝
+    const glowIndigo = Color(0x10818CF8); // 约 6% 空灵靛青
+    const glowWhite = Color(0x80FFFFFF);
 
     return Container(
       color: baseBg,
@@ -47,7 +47,7 @@ class AppThemeBackground extends StatelessWidget {
             width: 320,
             height: 320,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
@@ -62,7 +62,7 @@ class AppThemeBackground extends StatelessWidget {
             width: 340,
             height: 360,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 100, sigmaY: 100),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
@@ -77,7 +77,7 @@ class AppThemeBackground extends StatelessWidget {
             width: 320,
             height: 320,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
@@ -92,7 +92,7 @@ class AppThemeBackground extends StatelessWidget {
             width: 280,
             height: 280,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 70, sigmaY: 70),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 75, sigmaY: 75),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
@@ -106,14 +106,14 @@ class AppThemeBackground extends StatelessWidget {
     );
   }
 
-  /// 2. 经典翡翠背景 (扇贝温润草本抹茶绿底)
+  /// 2. 经典翡翠背景 (扇贝温润草本抹茶绿底 - 轻柔通透)
   Widget _buildEmeraldBackground() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFF2F9F5), Color(0xFFE5F3EB)],
+          colors: [Color(0xFFFAFDFB), Color(0xFFF2F7F4)],
         ),
       ),
       child: Stack(
@@ -124,11 +124,11 @@ class AppThemeBackground extends StatelessWidget {
             width: 300,
             height: 300,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 70, sigmaY: 70),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 80, sigmaY: 80),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x2E10B981),
+                  color: Color(0x1210B981), // 约 7% 清透翡翠微光
                 ),
               ),
             ),
@@ -139,11 +139,11 @@ class AppThemeBackground extends StatelessWidget {
             width: 260,
             height: 260,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 65, sigmaY: 65),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 75, sigmaY: 75),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x2434D399),
+                  color: Color(0x0F34D399), // 约 6% 浅草绿微光
                 ),
               ),
             ),
@@ -153,14 +153,14 @@ class AppThemeBackground extends StatelessWidget {
     );
   }
 
-  /// 3. 暮色落日背景 (温暖活力晚霞粉橙光晕)
+  /// 3. 暮色落日背景 (温暖轻柔晚霞光晕 - 清爽微润，杜绝过浓发腻)
   Widget _buildSunsetBackground() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFF7F2), Color(0xFFFFECE0)],
+          colors: [Color(0xFFFCFBF9), Color(0xFFF8F6F2)],
         ),
       ),
       child: Stack(
@@ -171,11 +171,11 @@ class AppThemeBackground extends StatelessWidget {
             width: 320,
             height: 320,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 95, sigmaY: 95),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x40FB923C),
+                  color: Color(0x14FB923C), // 约 8% 温暖晚霞微光
                 ),
               ),
             ),
@@ -186,11 +186,11 @@ class AppThemeBackground extends StatelessWidget {
             width: 300,
             height: 300,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 90, sigmaY: 90),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x33F43F5E),
+                  color: Color(0x0FF43F5E), // 约 6% 浅粉柔光
                 ),
               ),
             ),
@@ -201,11 +201,11 @@ class AppThemeBackground extends StatelessWidget {
             width: 280,
             height: 280,
             child: ImageFiltered(
-              imageFilter: ui.ImageFilter.blur(sigmaX: 75, sigmaY: 75),
+              imageFilter: ui.ImageFilter.blur(sigmaX: 85, sigmaY: 85),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x3DFBBF24),
+                  color: Color(0x10FBBF24), // 约 6% 金黄微光
                 ),
               ),
             ),
