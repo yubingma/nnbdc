@@ -1794,7 +1794,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false}) async {
     if (_isDisposed) return;
-    if ((state.hasFinishedAnswering && !state.showHandwritingBoard) || _isAnswerCorrectHandling) return;
+    if (!state.showHandwritingBoard && (state.hasFinishedAnswering || _isAnswerCorrectHandling)) return;
     final stopwatch = Stopwatch()..start();
     String inputText = asrInput ?? meaningController.text;
 
@@ -2857,6 +2857,9 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   void updateShowHandwritingBoard(bool show) {
+    if (show) {
+      _isAnswerCorrectHandling = false;
+    }
     state = state.copyWith(showHandwritingBoard: show);
     handleTabChangeForAsr();
   }
