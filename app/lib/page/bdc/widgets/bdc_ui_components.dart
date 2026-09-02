@@ -351,8 +351,8 @@ extension BdcPageStateUIComponents on BdcPageState {
           dividerHeight: 0,
           overlayColor: WidgetStateProperty.all(Colors.transparent),
           splashFactory: NoSplash.splashFactory,
-          labelColor: context.primaryColor,
-          unselectedLabelColor: context.textSecondary,
+          labelColor: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+          unselectedLabelColor: isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
           labelStyle: const TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w700,
@@ -808,10 +808,10 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_not_know_btn'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.subtleBg,
-                foregroundColor: context.textPrimary,
+                backgroundColor: context.cardBg,
+                foregroundColor: context.warmAccentColor,
                 side: BorderSide(
-                  color: context.cardBorder,
+                  color: context.warmAccentColor.withValues(alpha: 0.28),
                   width: 1,
                 ),
                 elevation: 0,
@@ -838,7 +838,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_study_again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.subtleBg,
+                backgroundColor: context.cardBg,
                 foregroundColor: context.textPrimary,
                 side: BorderSide(
                   color: context.cardBorder,
@@ -888,6 +888,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     String? label,
     required VoidCallback onTap,
   }) {
+    final isDark = _cachedIsDarkMode;
     return Container(
       height: 32,
       width: label != null ? null : 32,
@@ -896,12 +897,19 @@ extension BdcPageStateUIComponents on BdcPageState {
         vertical: 0,
       ),
       decoration: BoxDecoration(
-        color: context.subtleBg,
+        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: context.cardBorder,
-          width: 1,
+          color: isDark ? Colors.white12 : const Color(0x14000000),
+          width: 0.8,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -914,7 +922,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             children: [
               Icon(
                 icon,
-                color: context.primaryColor,
+                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
                 size: 14.5,
               ),
               if (label != null) ...[
@@ -925,7 +933,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: context.textPrimary,
+                    color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
                   ),
                 ),
               ],
@@ -960,11 +968,18 @@ extension BdcPageStateUIComponents on BdcPageState {
                 height: 32,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: context.subtleBg,
+                  color: _cachedIsDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.85),
                   border: Border.all(
-                    color: context.cardBorder,
-                    width: 1,
+                    color: _cachedIsDarkMode ? Colors.white12 : const Color(0x14000000),
+                    width: 0.8,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: _cachedIsDarkMode ? 0.2 : 0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
                 child: Center(
                   child: Icon(
@@ -1622,7 +1637,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                 Icon(
                   Icons.edit_rounded,
                   size: 17,
-                  color: context.primaryColor,
+                  color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -2313,7 +2328,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               children: [
                 Icon(
                   icon,
-                  color: context.primaryColor,
+                  color: _cachedIsDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
                   size: 13.5,
                 ),
                 const SizedBox(width: 3.5),
@@ -2356,20 +2371,28 @@ extension BdcPageStateUIComponents on BdcPageState {
           children: [
             if (pronInfo.$2.isNotEmpty) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1),
-                margin: const EdgeInsets.only(right: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                margin: const EdgeInsets.only(right: 6),
                 decoration: BoxDecoration(
-                  color: pronInfo.$3
-                      ? Colors.orange.withValues(alpha: 0.15)
-                      : context.primaryColor.withValues(alpha: 0.12),
+                  color: _cachedIsDarkMode
+                      ? Colors.white10
+                      : (pronInfo.$3 ? const Color(0xFFFFF7ED) : const Color(0xFFF1F5F9)),
                   borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: _cachedIsDarkMode
+                        ? Colors.white12
+                        : (pronInfo.$3 ? const Color(0xFFFFEDD5) : const Color(0xFFE2E8F0)),
+                    width: 0.8,
+                  ),
                 ),
                 child: Text(
                   pronInfo.$2,
                   style: TextStyle(
-                    color: pronInfo.$3 ? Colors.orange[800] : context.primaryColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                    color: pronInfo.$3
+                        ? const Color(0xFFEA580C)
+                        : (_cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -2762,7 +2785,7 @@ extension BdcPageStateUIComponents on BdcPageState {
                                         '显示翻译',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: context.primaryColor,
+                                          color: _cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
