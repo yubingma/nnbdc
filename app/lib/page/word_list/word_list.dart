@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -416,6 +415,19 @@ class WordListPageState extends State<WordListPage>
   OverlayEntry? _guideOverlay;
   Rect? _menuRect;
   final GlobalKey _overlayKey = GlobalKey();
+  WordSortAlg _currentSortAlg = WordSortAlg.original;
+
+  Future<void> _updateCurrentSortAlg() async {
+    if (!mounted || !_controllerInitialized) return;
+    try {
+      final alg = await controller.getCurrentSortAlg();
+      if (mounted) {
+        setState(() {
+          _currentSortAlg = alg;
+        });
+      }
+    } catch (_) {}
+  }
 
   void clearQueryResult() {
     if (_controllerInitialized) {
@@ -528,6 +540,7 @@ class WordListPageState extends State<WordListPage>
         _restoreAsrIfNeeded(caller);
       },
     );
+    _updateCurrentSortAlg();
 
     if (studyMode == WordListStudyMode.translateSentence) {
       final curIdx = getBookMarkUiPosition();
@@ -2420,7 +2433,238 @@ class WordListPageState extends State<WordListPage>
     });
   }
 
+  Future<void> _handleMenuSelected(String selectedValue) async {
+    Global.logger.d('【MENU】选择了: $selectedValue');
+    if (selectedValue == menuExportPdf) {
+      _showExportPdfBottomSheet();
+      return;
+    }
 
+    setState(() {
+      _isSwitchingMode = true;
+      _switchingMessage = '模式切换中...';
+    });
+
+    // 利用微任务将沉重的逻辑切分到下一帧开始
+    Future.microtask(() async {
+      if (!mounted) return;
+      try {
+        switch (selectedValue) {
+        case menuWordList:
+        if (studyMode == WordListStudyMode.list) {
+        ToastUtil.info('当前已处于浏览模式');
+        break;
+        }
+        setState(() {
+        studyMode = WordListStudyMode.list;
+        });
+        await _sessionController.stopSession(forceStopMicrophone: true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        jumpToBookMark(force: true);
+        });
+        break;
+        case menuImportFromBook:
+        if (!context.mounted) return;
+        final needRefresh =
+        await context.push('/import_from_book',
+        extra: args.wordsProvider
+        as WordModifier);
+
+        if (needRefresh == true) {
+
+        // 刷新当前页面
+        totalWordCount = -1;
+        baseIndex ??= 0;
+        await doQuery(
+        true, baseIndex!, _pageSize, false);
+        if (!context.mounted) return;
+        setState(() {});
+        }
+        break;
+        case menuImportFromScan:
+        if (!context.mounted) return;
+        final needRefresh =
+        await context.push('/import_from_scan',
+        extra: args.wordsProvider
+        as WordModifier);
+
+        if (needRefresh == true) {
+
+        // 刷新当前页面
+        totalWordCount = -1;
+        baseIndex ??= 0;
+        await doQuery(
+        true, baseIndex!, _pageSize, false);
+        if (!context.mounted) return;
+        setState(() {});
+        }
+        break;
+        case menuWriteSpellTyping:
+        if (studyMode != WordListStudyMode.dictation) {
+        setState(() {
+        studyMode = WordListStudyMode.dictation;
+        for (final w in words) {
+        w.spellController.text = '';
+        w.isAnswerProvidedBySystem = false;
+        w.hintLetterCount = 0;
+        }
+        });
+        await _sessionController.stopSession(forceStopMicrophone: true);
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        jumpToBookMark(force: true);
+        });
+        break;
+        case menuWriteSpellHandwriting:
+        final swOpen = Stopwatch()..start();
+        // 如果已经是在手写模式下再次点击，则不执行重复初始化逻辑
+        if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen) {
+        _handwritingBoardKey.currentState?.clearBoardSilently();
+        } else {
+        Global.openPencilStopwatch.reset();
+        Global.openPencilStopwatch.start();
+        Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [进入听写手写模式] 开始处理...');
+        WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
+        setState(() {
+        studyMode = WordListStudyMode.dictationHandwriting;
+        _isHandwritingOverlayOpen = true;
+        for (final w in words) {
+        w.spellController.clear();
+        w.hintLetterCount = 0;
+        w.isAnswerProvidedBySystem = false;
+        }
+        _detectedSimilarWord = null;
+        asrResult = "";
+        handlingAsrChinese = "";
+        });
+        }
+        // 滚动当前单词到可视区域
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        jumpToBookMark(force: true);
+        });
+        Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
+        await _sessionController.stopSession(forceStopMicrophone: true);
+        swOpen.stop();
+        Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [2. 彻底退出事件体] 耗时: ${swOpen.elapsedMilliseconds}ms');
+        break;
+        case menuHideChinese:
+        setState(() {
+        studyMode = WordListStudyMode.hideChinese;
+        for (final w in words) {
+        w.isAnswerRevealed = false;
+        }
+        });
+        await _sessionController.stopSession(forceStopMicrophone: true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        jumpToBookMark(force: true);
+        });
+        break;
+        case menuHideEnglish:
+        setState(() {
+        studyMode = WordListStudyMode.hideEnglish;
+        for (final w in words) {
+        w.isAnswerRevealed = false;
+        }
+        });
+        await _sessionController.stopSession(forceStopMicrophone: true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        jumpToBookMark(force: true);
+        });
+        break;
+
+        case menuSpeakChinese:
+        if (studyMode != WordListStudyMode.speakChinese) {
+        await _sessionController.stopSession(forceStopMicrophone: true);
+        setState(() {
+        clearWordStates();
+        asrResult = "";
+        handlingAsrChinese = "";
+        studyMode = WordListStudyMode.speakChinese;
+        });
+        await _startAsr(decideAsrLanguage());
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        jumpToBookMark(force: true);
+        });
+        break;
+        case menuSpeakEnglish:
+        if (studyMode != WordListStudyMode.speakEnglish) {
+        await _sessionController.stopSession(forceStopMicrophone: true);
+        setState(() {
+        clearWordStates();
+        asrResult = "";
+        handlingAsrChinese = "";
+        studyMode = WordListStudyMode.speakEnglish;
+        });
+        await _startAsr(decideAsrLanguage());
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        jumpToBookMark(force: true);
+        });
+        break;
+        case menuTranslateSentence:
+        if (studyMode != WordListStudyMode.translateSentence) {
+        await _sessionController.stopSession(forceStopMicrophone: true);
+        setState(() {
+        clearWordStates();
+        asrResult = "";
+        handlingAsrChinese = "";
+        studyMode = WordListStudyMode.translateSentence;
+        });
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+        jumpToBookMark(force: true);
+        final curIdx = getBookMarkUiPosition();
+        if (curIdx >= 0 && curIdx < words.length) {
+        onWordPressed(words[curIdx], curIdx, true, null);
+        }
+        });
+        break;
+        case menuWalkman:
+        if (studyMode ==
+        WordListStudyMode.speakChinese ||
+        studyMode ==
+        WordListStudyMode.speakEnglish) {
+        asr.stopMicrophone();
+        asr.reset();
+        }
+        if (!context.mounted) return;
+        int? initialIndex;
+        if (controller.bookMark != null) {
+        initialIndex = controller.bookMark!.position;
+        }
+        context.push('/walkman',
+        extra:
+        WalkmanParams(args.wordsProvider,
+        bookMarkProvider: args.bookMarkProvider,
+        initialWordIndex: initialIndex));
+
+
+        break;
+        case menuAiStory:
+        _generateAiStory();
+        break;
+        case menuSettings:
+        _showSettingsDialog();
+        break;
+        case menuSortSettings:
+        await _showSortSettingsDialog();
+        await _updateCurrentSortAlg();
+        break;
+        case menuTheme:
+        if (!context.mounted) return;
+        ThemeSelectDialog.show(context);
+        break;
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSwitchingMode = false;
+          });
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2670,591 +2914,224 @@ class WordListPageState extends State<WordListPage>
                         icon: const Icon(Icons.add, color: Colors.white),
                         onPressed: _showAddWordDialog,
                       ),
-                    // 使用GlobalKey包裹图标，便于计算其全局坐标
-                    // 使用 GlobalKey 直挂按钮，确保 iPad Popover 锚定更准确稳定
-                    // 使用 IconButton + showMenu 手动控制菜单，
-                    // 以便在菜单显示期间暂停 ASR 和 UI 更新，防止 iPad Popover 闪退
-                    IconButton(
+                    PopupMenuButton<String>(
                       key: _menuKey,
                       icon: const Icon(
                         Icons.more_vert,
                         color: Colors.white,
                       ),
-                      onPressed: () async {
-                        Global.logger.d('【MENU】IconButton onPressed 点击触发, 当前 isMenuOpen=$isMenuOpen');
-                        if (isMenuOpen) {
-                          Global.logger.w('【MENU】isMenuOpen 为 true, 拦截点击');
-                          return;
-                        }
-                        // 1. 设置标志位，屏蔽 ASR 和 Timer 对 UI 的刷新干扰
-                        isMenuOpen = true; // 立即生效，屏蔽后续可能的 setState
-
-                        // 2. 强制收起键盘并等待更长时间
-                        // iPad 上键盘动画较慢，且布局变化可能导致 Overlay 重绘
-                        // 给予足够的时间让这一过程完全结束
+                      tooltip: '更多',
+                      position: PopupMenuPosition.under,
+                      color: themeConfig.cardBg,
+                      elevation: 8,
+                      shadowColor: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: themeConfig.cardBorder,
+                          width: 1,
+                        ),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 152,
+                        maxWidth: 180,
+                      ),
+                      onOpened: () {
+                        isMenuOpen = true;
                         FocusScope.of(context).unfocus();
-
-                        // 暂停加载动画，确保 UI 每一帧都静止
-                        bool wasAnimating =
-                            _asrModelLoadingController.isAnimating;
-                        if (wasAnimating) {
+                        if (_asrModelLoadingController.isAnimating) {
                           _asrModelLoadingController.stop();
                         }
+                      },
+                      onCanceled: () {
+                        isMenuOpen = false;
+                        if (mounted) {
+                          _asrModelLoadingController.repeat(reverse: true);
+                        }
+                      },
+                      onSelected: (String selectedValue) {
+                        isMenuOpen = false;
+                        if (mounted) {
+                          _asrModelLoadingController.repeat(reverse: true);
+                        }
+                        _handleMenuSelected(selectedValue);
+                      },
+                      itemBuilder: (BuildContext context) {
+                        final List<String> menuItems = [
+                          if (args.wordsProvider.canCustomizeSort)
+                            menuSortSettings,
+                          menuWordList,
+                        ];
+                        if (args.canAddWord &&
+                            args.wordsProvider is WordModifier) {
+                          menuItems.add(menuImportFromBook);
+                          menuItems.add(menuImportFromScan);
+                        }
+                        if (PlatformUtils.isAsrSupported()) {
+                          menuItems.add(menuSpeakChinese);
+                        }
+                        if (PlatformUtils.isEnglishAsrSupported()) {
+                          menuItems.add(menuSpeakEnglish);
+                        }
+                        if (PlatformUtils.isAsrSupported()) {
+                          menuItems.add(menuTranslateSentence);
+                        }
+                        menuItems.add(menuWriteSpellTyping);
+                        menuItems.add(menuWriteSpellHandwriting);
+                        menuItems.add(menuHideChinese);
+                        menuItems.add(menuHideEnglish);
 
-                        // 350ms 延时，足以覆盖大部分 iOS 键盘/过渡动画
-                        final capturedContext = context;
-                        await Future.delayed(const Duration(milliseconds: 350));
-
-                        // 真正的解决 linter 警告：检查 context.mounted
-                        if (!capturedContext.mounted) {
-                          isMenuOpen = false;
-                          return;
+                        if (args.showAiStory) {
+                          menuItems.add(menuAiStory);
+                        }
+                        if (studyMode == WordListStudyMode.speakChinese) {
+                          menuItems.add(menuSettings);
                         }
 
-                        // 将 context 相关的操作移出 try 块，紧接在 mounted 检查之后
-                        // 这样 linter 就能确认 context 的使用是安全的
-                        final RenderBox? button = _menuKey.currentContext
-                            ?.findRenderObject() as RenderBox?;
+                        menuItems.add(menuWalkman);
+                        menuItems.add(menuTheme);
+                        menuItems.add(menuExportPdf);
 
-                        // 预先获取 overlayState，避免在 async gap 后使用 context
-                        final BuildContext overlayContext =
-                            Overlay.of(capturedContext, rootOverlay: true)
-                                .context;
-                        final RenderBox? overlayRenderBox =
-                            overlayContext.findRenderObject() as RenderBox?;
-
-                        if (button == null || overlayRenderBox == null) {
-                          isMenuOpen = false;
-                          return;
-                        }
-
-                        // 修正：确保 overlay 大小获取正确
-                        final overlayRect = Offset.zero & overlayRenderBox.size;
-
-                        final buttonTopLeft = button.localToGlobal(Offset.zero, ancestor: overlayRenderBox);
-                        final buttonBottomRight = button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlayRenderBox);
-
-                        final RelativeRect position = RelativeRect.fromRect(
-                          Rect.fromPoints(
-                            button.localToGlobal(const Offset(0, 50),
-                                ancestor: overlayRenderBox), // 增加垂直偏移
-                            button.localToGlobal(
-                                button.size.bottomRight(Offset.zero) +
-                                    const Offset(0, 50),
-                                ancestor: overlayRenderBox),
-                          ),
-                          overlayRect,
-                        );
-
-                        Global.logger.d('【MENU】button bounds=$buttonTopLeft to $buttonBottomRight, size=${button.size}, overlaySize=${overlayRenderBox.size}, position=$position');
-
-                        void Function(PointerEvent)? menuPointerRoute;
-                        menuPointerRoute = (PointerEvent event) {
-                          if (event is PointerDownEvent) {
-                            final HitTestResult result = HitTestResult();
-                            WidgetsBinding.instance.hitTestInView(result, event.position, event.viewId);
-                            final targets = result.path.map((e) => e.target.runtimeType.toString()).take(8).join(' -> ');
-                            Global.logger.d('【MENU-HIT-TEST】PointerDown pos=${event.position}: $targets');
-                          }
-                        };
-                        WidgetsBinding.instance.pointerRouter.addGlobalRoute(menuPointerRoute);
-
-                        try {
-                          // 再次检查 mounted，确保 showMenu 调用安全 (虽然上面已经检查过，但为了满足 strict linter flow analysis)
-                          if (!capturedContext.mounted) {
-                            isMenuOpen = false;
-                            return;
-                          }
-
-                          final sortAlg = await controller.getCurrentSortAlg();
-                          if (!capturedContext.mounted) {
-                            isMenuOpen = false;
-                            return;
+                        return menuItems.map((String choice) {
+                          IconData icon;
+                          switch (choice) {
+                            case menuWordList:
+                              icon = Icons.list_alt_rounded;
+                              break;
+                            case menuWalkman:
+                              icon = Icons.headphones_rounded;
+                              break;
+                            case menuImportFromBook:
+                              icon = Icons.import_contacts_rounded;
+                              break;
+                            case menuImportFromScan:
+                              icon = Icons.camera_alt_rounded;
+                              break;
+                            case menuSpeakChinese:
+                              icon = Icons.record_voice_over_rounded;
+                              break;
+                            case menuSpeakEnglish:
+                              icon = Icons.mic_none_rounded;
+                              break;
+                            case menuTranslateSentence:
+                              icon = Icons.hearing_rounded;
+                              break;
+                            case menuWriteSpellTyping:
+                              icon = Icons.keyboard_rounded;
+                              break;
+                            case menuWriteSpellHandwriting:
+                              icon = Icons.gesture_rounded;
+                              break;
+                            case menuHideChinese:
+                            case menuHideEnglish:
+                              icon = Icons.visibility_off_rounded;
+                              break;
+                            case menuExportPdf:
+                              icon = Icons.picture_as_pdf_rounded;
+                              break;
+                            case menuAiStory:
+                              icon = Icons.auto_awesome_rounded;
+                              break;
+                            case menuSettings:
+                              icon = Icons.settings_rounded;
+                              break;
+                            case menuSortSettings:
+                              icon = Icons.sort_rounded;
+                              break;
+                            case menuTheme:
+                              icon = Icons.palette_outlined;
+                              break;
+                            default:
+                              icon = Icons.help_outline_rounded;
                           }
 
-                          // 4. 构建菜单项
-                          List<String> menuItems = [
-                            if (args.wordsProvider.canCustomizeSort)
-                              menuSortSettings,
-                            menuWordList,
-                          ];
-                          if (args.canAddWord &&
-                              args.wordsProvider is WordModifier) {
-                            menuItems.add(menuImportFromBook);
-                            menuItems.add(menuImportFromScan);
+                          bool isSelected = false;
+                          switch (choice) {
+                            case menuWordList:
+                              isSelected =
+                                  studyMode == WordListStudyMode.list;
+                              break;
+                            case menuHideChinese:
+                              isSelected =
+                                  studyMode == WordListStudyMode.hideChinese;
+                              break;
+                            case menuHideEnglish:
+                              isSelected =
+                                  studyMode == WordListStudyMode.hideEnglish;
+                              break;
+                            case menuSpeakChinese:
+                              isSelected = studyMode ==
+                                  WordListStudyMode.speakChinese;
+                              break;
+                            case menuSpeakEnglish:
+                              isSelected = studyMode ==
+                                  WordListStudyMode.speakEnglish;
+                              break;
+                            case menuTranslateSentence:
+                              isSelected = studyMode ==
+                                  WordListStudyMode.translateSentence;
+                              break;
+                            case menuWriteSpellTyping:
+                              isSelected =
+                                  studyMode == WordListStudyMode.dictation;
+                              break;
+                            case menuWriteSpellHandwriting:
+                              isSelected =
+                                  studyMode == WordListStudyMode.dictationHandwriting;
+                              break;
                           }
-                          if (PlatformUtils.isAsrSupported()) {
-                            menuItems.add(menuSpeakChinese);
-                          }
-                          if (PlatformUtils.isEnglishAsrSupported()) {
-                            menuItems.add(menuSpeakEnglish);
-                          }
-                          if (PlatformUtils.isAsrSupported()) {
-                            menuItems.add(menuTranslateSentence);
-                          }
-                          menuItems.add(menuWriteSpellTyping);
-                          menuItems.add(menuWriteSpellHandwriting);
-                          menuItems.add(menuHideChinese);
-                          menuItems.add(menuHideEnglish);
 
-                          if (args.showAiStory) {
-                            menuItems.add(menuAiStory);
-                          }
-                          if (studyMode == WordListStudyMode.speakChinese) {
-                            menuItems.add(menuSettings);
-                          }
-
-                          // 随身听菜单放在最下面
-                          menuItems.add(menuWalkman);
-                          menuItems.add(menuTheme);
-                          menuItems.add(menuExportPdf);
-
-                          // 5. 显示菜单 (使用 RootNavigator)
-                          // ignore: use_build_context_synchronously
-                          final String? selectedValue = await showMenu<String>(
-                            context: capturedContext,
-                            position: position,
-                            useRootNavigator: true,
-                            color: themeConfig.cardBg,
-                            elevation: 8,
-                            shadowColor: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              side: BorderSide(
-                                color: themeConfig.cardBorder,
-                                width: 1,
+                          return PopupMenuItem<String>(
+                            value: choice,
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? themeConfig.subtleBg
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                border: isSelected
+                                    ? Border.all(
+                                        color: themeConfig.cardBorder,
+                                        width: 1,
+                                      )
+                                    : null,
                               ),
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 152,
-                              maxWidth: 180,
-                            ),
-                            items: [
-                              ...menuItems.map((String choice) {
-                                IconData icon;
-                                switch (choice) {
-                                  case menuWordList:
-                                    icon = Icons.list_alt_rounded;
-                                    break;
-                                  case menuWalkman:
-                                    icon = Icons.headphones_rounded;
-                                    break;
-                                  case menuImportFromBook:
-                                    icon = Icons.import_contacts_rounded;
-                                    break;
-                                  case menuImportFromScan:
-                                    icon = Icons.camera_alt_rounded;
-                                    break;
-                                  case menuSpeakChinese:
-                                    icon = Icons.record_voice_over_rounded;
-                                    break;
-                                  case menuSpeakEnglish:
-                                    icon = Icons.mic_none_rounded;
-                                    break;
-                                  case menuTranslateSentence:
-                                    icon = Icons.hearing_rounded;
-                                    break;
-                                  case menuWriteSpellTyping:
-                                    icon = Icons.keyboard_rounded;
-                                    break;
-                                  case menuWriteSpellHandwriting:
-                                    icon = Icons.gesture_rounded;
-                                    break;
-                                  case menuHideChinese:
-                                    icon = Icons.visibility_off_rounded;
-                                    break;
-                                  case menuHideEnglish:
-                                    icon = Icons.visibility_off_rounded;
-                                    break;
-                                  case menuExportPdf:
-                                    icon = Icons.picture_as_pdf_rounded;
-                                    break;
-
-                                  case menuAiStory:
-                                    icon = Icons.auto_awesome_rounded;
-                                    break;
-                                  case menuSettings:
-                                    icon = Icons.settings_rounded;
-                                    break;
-                                  case menuSortSettings:
-                                    icon = Icons.sort_rounded;
-                                    break;
-                                  case menuTheme:
-                                    icon = Icons.palette_outlined;
-                                    break;
-                                  default:
-                                    icon = Icons.help_outline_rounded;
-                                }
-
-                                bool isSelected = false;
-                                switch (choice) {
-                                  case menuWordList:
-                                    isSelected =
-                                        studyMode == WordListStudyMode.list;
-                                    break;
-                                  case menuHideChinese:
-                                    isSelected =
-                                        studyMode == WordListStudyMode.hideChinese;
-                                    break;
-                                  case menuHideEnglish:
-                                    isSelected =
-                                        studyMode == WordListStudyMode.hideEnglish;
-                                    break;
-
-                                  case menuSpeakChinese:
-                                    isSelected = studyMode ==
-                                        WordListStudyMode.speakChinese;
-                                    break;
-                                  case menuSpeakEnglish:
-                                    isSelected = studyMode ==
-                                        WordListStudyMode.speakEnglish;
-                                    break;
-                                  case menuTranslateSentence:
-                                    isSelected = studyMode ==
-                                        WordListStudyMode.translateSentence;
-                                    break;
-                                  case menuWriteSpellTyping:
-                                    isSelected =
-                                        studyMode == WordListStudyMode.dictation;
-                                    break;
-                                  case menuWriteSpellHandwriting:
-                                    isSelected =
-                                        studyMode == WordListStudyMode.dictationHandwriting;
-                                    break;
-                                  case menuImportFromBook:
-                                    isSelected =
-                                        false;
-                                    break;
-                                  case menuImportFromScan:
-                                    isSelected = false;
-                                    break;
-                                  case menuAiStory:
-                                    isSelected = false;
-                                    break;
-                                  case menuSettings:
-                                    isSelected = false;
-                                    break;
-                                  case menuSortSettings:
-                                    isSelected = false;
-                                    break;
-                                  case menuTheme:
-                                    isSelected = false;
-                                    break;
-                                  case menuExportPdf:
-                                    isSelected = false;
-                                    break;
-                                }
-
-                                return PopupMenuItem<String>(
-                                  value: choice,
-                                  height: 40,
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  onTap: () {
-                                    Global.logger.d('【MENU】PopupMenuItem.onTap 触发: choice=$choice');
-                                  },
-                                  child: Listener(
-                                    behavior: HitTestBehavior.translucent,
-                                    onPointerDown: (event) {
-                                      Global.logger.d('【MENU-ITEM-DOWN】choice=$choice at local=${event.localPosition}, global=${event.position}');
-                                    },
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () {
-                                        Global.logger.d('【MENU】GestureDetector.onTap 触发: choice=$choice');
-                                        Navigator.of(capturedContext, rootNavigator: true).pop(choice);
-                                      },
-                                      child: Container(
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 7),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    icon,
+                                    size: 18,
+                                    color: isSelected
+                                        ? themeConfig.primaryColor
+                                        : themeConfig.textSecondary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      choice == menuSortSettings
+                                          ? '排序: ${_currentSortAlg.label}'
+                                          : choice,
+                                      style: TextStyle(
+                                        fontSize: 13,
                                         color: isSelected
-                                            ? themeConfig.subtleBg
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: isSelected
-                                            ? Border.all(
-                                                color: themeConfig.cardBorder,
-                                                width: 1,
-                                              )
-                                            : null,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10, vertical: 7),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            icon,
-                                            size: 18,
-                                            color: isSelected
-                                                ? themeConfig.primaryColor
-                                                : themeConfig.textSecondary,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              choice == menuSortSettings
-                                                  ? '排序: ${sortAlg.label}'
-                                                  : choice,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: isSelected
-                                                    ? themeConfig.primaryColor
-                                                    : themeConfig.textPrimary,
-                                                fontWeight: isSelected
-                                                    ? FontWeight.w700
-                                                    : FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                            ? themeConfig.primaryColor
+                                            : themeConfig.textPrimary,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
                                       ),
                                     ),
                                   ),
-                                  ),
-                                );
-                              }),
-                            ],
+                                ],
+                              ),
+                            ),
                           );
-
-                          // 6. 处理选择
-                          Global.logger.d('【MENU】showMenu 返回 selectedValue=$selectedValue');
-                          if (selectedValue != null) {
-                            if (selectedValue == menuExportPdf) {
-                              _showExportPdfBottomSheet();
-                            } else {
-                              setState(() {
-                                _isSwitchingMode = true;
-                                _switchingMessage = '模式切换中...';
-                              });
-
-                              // 利用微任务将沉重的逻辑切分到下一帧开始
-                              Future.microtask(() async {
-                              if (!mounted) return;
-                              
-                              try {
-                                switch (selectedValue) {
-                              case menuWordList:
-                                if (studyMode == WordListStudyMode.list) {
-                                  ToastUtil.info('当前已处于浏览模式');
-                                  break;
-                                }
-                                setState(() {
-                                  studyMode = WordListStudyMode.list;
-                                });
-                                await _sessionController.stopSession(forceStopMicrophone: true);
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark(force: true);
-                                });
-                                break;
-                              case menuImportFromBook:
-                                if (!context.mounted) return;
-                                final needRefresh =
-                                    await context.push('/import_from_book',
-                                        extra: args.wordsProvider
-                                            as WordModifier);
-
-                                if (needRefresh == true) {
-
-                                  // 刷新当前页面
-                                  totalWordCount = -1;
-                                  baseIndex ??= 0;
-                                  await doQuery(
-                                      true, baseIndex!, _pageSize, false);
-                                  if (!context.mounted) return;
-                                  setState(() {});
-                                }
-                                break;
-                              case menuImportFromScan:
-                                if (!context.mounted) return;
-                                final needRefresh =
-                                    await context.push('/import_from_scan',
-                                        extra: args.wordsProvider
-                                            as WordModifier);
-
-                                if (needRefresh == true) {
-
-                                  // 刷新当前页面
-                                  totalWordCount = -1;
-                                  baseIndex ??= 0;
-                                  await doQuery(
-                                      true, baseIndex!, _pageSize, false);
-                                  if (!context.mounted) return;
-                                  setState(() {});
-                                }
-                                break;
-                              case menuWriteSpellTyping:
-                                if (studyMode != WordListStudyMode.dictation) {
-                                  setState(() {
-                                    studyMode = WordListStudyMode.dictation;
-                                    for (final w in words) {
-                                      w.spellController.text = '';
-                                      w.isAnswerProvidedBySystem = false;
-                                      w.hintLetterCount = 0;
-                                    }
-                                  });
-                                  await _sessionController.stopSession(forceStopMicrophone: true);
-                                }
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark(force: true);
-                                });
-                                break;
-                              case menuWriteSpellHandwriting:
-                                final swOpen = Stopwatch()..start();
-                                // 如果已经是在手写模式下再次点击，则不执行重复初始化逻辑
-                                if (studyMode == WordListStudyMode.dictationHandwriting && _isHandwritingOverlayOpen) {
-                                  _handwritingBoardKey.currentState?.clearBoardSilently();
-                                } else {
-                                  Global.openPencilStopwatch.reset();
-                                  Global.openPencilStopwatch.start();
-                                  Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [进入听写手写模式] 开始处理...');
-                                  WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
-                                  setState(() {
-                                    studyMode = WordListStudyMode.dictationHandwriting;
-                                    _isHandwritingOverlayOpen = true;
-                                    for (final w in words) {
-                                      w.spellController.clear();
-                                      w.hintLetterCount = 0;
-                                      w.isAnswerProvidedBySystem = false;
-                                    }
-                                    _detectedSimilarWord = null;
-                                    asrResult = "";
-                                    handlingAsrChinese = "";
-                                  });
-                                }
-                                // 滚动当前单词到可视区域
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark(force: true);
-                                });
-                                Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [1. 状态变更与 setState] 耗时: ${swOpen.elapsedMilliseconds}ms');
-                                await _sessionController.stopSession(forceStopMicrophone: true);
-                                swOpen.stop();
-                                Global.logger.d('🐛 PERF_LOG_OPEN_PENCIL [2. 彻底退出事件体] 耗时: ${swOpen.elapsedMilliseconds}ms');
-                                break;
-                              case menuHideChinese:
-                                setState(() {
-                                  studyMode = WordListStudyMode.hideChinese;
-                                  for (final w in words) {
-                                    w.isAnswerRevealed = false;
-                                  }
-                                });
-                                await _sessionController.stopSession(forceStopMicrophone: true);
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark(force: true);
-                                });
-                                break;
-                              case menuHideEnglish:
-                                setState(() {
-                                  studyMode = WordListStudyMode.hideEnglish;
-                                  for (final w in words) {
-                                    w.isAnswerRevealed = false;
-                                  }
-                                });
-                                await _sessionController.stopSession(forceStopMicrophone: true);
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark(force: true);
-                                });
-                                break;
-
-                              case menuSpeakChinese:
-                                if (studyMode != WordListStudyMode.speakChinese) {
-                                  await _sessionController.stopSession(forceStopMicrophone: true);
-                                  setState(() {
-                                    clearWordStates();
-                                    asrResult = "";
-                                    handlingAsrChinese = "";
-                                    studyMode = WordListStudyMode.speakChinese;
-                                  });
-                                  await _startAsr(decideAsrLanguage());
-                                }
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark(force: true);
-                                });
-                                break;
-                              case menuSpeakEnglish:
-                                if (studyMode != WordListStudyMode.speakEnglish) {
-                                  await _sessionController.stopSession(forceStopMicrophone: true);
-                                  setState(() {
-                                    clearWordStates();
-                                    asrResult = "";
-                                    handlingAsrChinese = "";
-                                    studyMode = WordListStudyMode.speakEnglish;
-                                  });
-                                  await _startAsr(decideAsrLanguage());
-                                }
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark(force: true);
-                                });
-                                break;
-                              case menuTranslateSentence:
-                                if (studyMode != WordListStudyMode.translateSentence) {
-                                  await _sessionController.stopSession(forceStopMicrophone: true);
-                                  setState(() {
-                                    clearWordStates();
-                                    asrResult = "";
-                                    handlingAsrChinese = "";
-                                    studyMode = WordListStudyMode.translateSentence;
-                                  });
-                                }
-                                WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  jumpToBookMark(force: true);
-                                  final curIdx = getBookMarkUiPosition();
-                                  if (curIdx >= 0 && curIdx < words.length) {
-                                    onWordPressed(words[curIdx], curIdx, true, null);
-                                  }
-                                });
-                                break;
-                                case menuWalkman:
-                                  if (studyMode ==
-                                          WordListStudyMode.speakChinese ||
-                                      studyMode ==
-                                          WordListStudyMode.speakEnglish) {
-                                    asr.stopMicrophone();
-                                    asr.reset();
-                                  }
-                                  if (!context.mounted) return;
-                                  int? initialIndex;
-                                  if (controller.bookMark != null) {
-                                    initialIndex = controller.bookMark!.position;
-                                  }
-                                  context.push('/walkman',
-                                      extra:
-                                          WalkmanParams(args.wordsProvider,
-                                              bookMarkProvider: args.bookMarkProvider,
-                                              initialWordIndex: initialIndex));
-
-
-                                  break;
-                                case menuAiStory:
-                                  _generateAiStory();
-                                  break;
-                                case menuSettings:
-                                  _showSettingsDialog();
-                                  break;
-                                case menuSortSettings:
-                                  await _showSortSettingsDialog();
-                                  break;
-                                case menuTheme:
-                                  if (!context.mounted) return;
-                                  ThemeSelectDialog.show(context);
-                                  break;
-                                }
-                              } finally {
-                                if (mounted) {
-                                  setState(() {
-                                    _isSwitchingMode = false;
-                                  });
-                                }
-                              }
-                            });
-                            }
-                          }
-                        } finally {
-                          WidgetsBinding.instance.pointerRouter.removeGlobalRoute(menuPointerRoute);
-                          // 7. 恢复标志位
-                          isMenuOpen = false;
-                          if (wasAnimating && mounted) {
-                            _asrModelLoadingController.repeat(reverse: true);
-                          }
-                        }
+                        }).toList();
                       },
                     ),
                   ],
