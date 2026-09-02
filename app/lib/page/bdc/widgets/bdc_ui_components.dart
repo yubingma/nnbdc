@@ -2346,32 +2346,53 @@ extension BdcPageStateUIComponents on BdcPageState {
       decoration: const BoxDecoration(
         color: Colors.transparent,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Flexible(
-            child: Text(
-              Util.getWordDefaultPronounce(
-                          state.currentGetWordResult!.learningWord!.word)
-                      .isEmpty
-                  ? ''
-                  : '[${Util.getWordDefaultPronounce(state.currentGetWordResult!.learningWord!.word)}]',
-              style: TextStyle(
-                color: _cachedIsDarkMode
-                    ? const Color(0xFFD1D5DB)
-                    : const Color(0xFF4B5563),
-                fontFamily: "NotoSans",
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+      child: () {
+        final currentWord = state.currentGetWordResult?.learningWord?.word;
+        if (currentWord == null) return const SizedBox.shrink();
+        final pronInfo = Util.getWordPronounceWithAccent(currentWord);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (pronInfo.$2.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1),
+                margin: const EdgeInsets.only(right: 5),
+                decoration: BoxDecoration(
+                  color: pronInfo.$3
+                      ? Colors.orange.withValues(alpha: 0.15)
+                      : context.primaryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  pronInfo.$2,
+                  style: TextStyle(
+                    color: pronInfo.$3 ? Colors.orange[800] : context.primaryColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          buildWordSoundButton(
-              state.currentGetWordResult!.learningWord!.word, _audioPlayer, state),
-        ],
-      ),
+            ],
+            if (pronInfo.$1.isNotEmpty)
+              Flexible(
+                child: Text(
+                  '[${pronInfo.$1}]',
+                  style: TextStyle(
+                    color: _cachedIsDarkMode
+                        ? const Color(0xFFD1D5DB)
+                        : const Color(0xFF4B5563),
+                    fontFamily: "NotoSans",
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            const SizedBox(width: 6),
+            buildWordSoundButton(currentWord, _audioPlayer, state),
+          ],
+        );
+      }(),
     );
   }
 
@@ -2624,34 +2645,53 @@ extension BdcPageStateUIComponents on BdcPageState {
                 ),
                 const SizedBox(height: 6),
                 // 音标与播音小胶囊
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        Util.getWordDefaultPronounce(
-                                    state.currentGetWordResult!.learningWord!.word)
-                                .isEmpty
-                            ? ''
-                            : '[${Util.getWordDefaultPronounce(state.currentGetWordResult!.learningWord!.word)}]',
-                        style: TextStyle(
-                          color: secondaryTextColor,
-                          fontFamily: "NotoSans",
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w600,
+                () {
+                  final currentWord = state.currentGetWordResult?.learningWord?.word;
+                  if (currentWord == null) return const SizedBox.shrink();
+                  final pronInfo = Util.getWordPronounceWithAccent(currentWord);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (pronInfo.$2.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1),
+                          margin: const EdgeInsets.only(right: 5),
+                          decoration: BoxDecoration(
+                            color: pronInfo.$3
+                                ? Colors.orange.withValues(alpha: 0.15)
+                                : context.primaryColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            pronInfo.$2,
+                            style: TextStyle(
+                              color: pronInfo.$3 ? Colors.orange[800] : context.primaryColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                        softWrap: true,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    buildWordSoundButton(
-                        state.currentGetWordResult!.learningWord!.word,
-                        _audioPlayer,
-                        state),
-                  ],
-                ),
+                      ],
+                      if (pronInfo.$1.isNotEmpty)
+                        Flexible(
+                          child: Text(
+                            '[${pronInfo.$1}]',
+                            style: TextStyle(
+                              color: secondaryTextColor,
+                              fontFamily: "NotoSans",
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            softWrap: true,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      const SizedBox(width: 6),
+                      buildWordSoundButton(currentWord, _audioPlayer, state),
+                    ],
+                  );
+                }(),
                 if (state.studyStep == StudyStep.list.json) ...[
                   const SizedBox(height: 10),
                   Text(
@@ -2976,48 +3016,75 @@ extension BdcPageStateUIComponents on BdcPageState {
   Widget buildWordSoundButton(WordVo word, dynamic audioPlayer, BdcState state) {
     final wordPlaying = state.playingStates['word'] ?? false;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          if (!wordPlaying) {
-            notifier.playWithAnimation(
-                () => StudyAudioSessionController.instance.playWordSound(word),
-                'word');
-          }
-        },
-        child: Container(
-          width: 22,
-          height: 22,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: wordPlaying
-                ? context.subtleBg
-                : context.cardBg,
-            border: Border.all(
-              color: wordPlaying
-                  ? context.primaryColor
-                  : context.cardBorder,
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: AnimatedBuilder(
-              animation: _wordSoundController,
-              builder: (context, child) {
-                return Icon(
-                  wordPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-                  size: 13,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              if (!wordPlaying) {
+                notifier.playWithAnimation(
+                    () => StudyAudioSessionController.instance.playWordSound(word),
+                    'word');
+              }
+            },
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: wordPlaying
+                    ? context.subtleBg
+                    : context.cardBg,
+                border: Border.all(
                   color: wordPlaying
                       ? context.primaryColor
-                      : context.textSecondary,
-                );
-              },
+                      : context.cardBorder,
+                  width: 1,
+                ),
+              ),
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _wordSoundController,
+                  builder: (context, child) {
+                    return Icon(
+                      wordPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                      size: 13,
+                      color: wordPlaying
+                          ? context.primaryColor
+                          : context.textSecondary,
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        ValueListenableBuilder<AudioPlaybackStatus>(
+          valueListenable: StudyAudioSessionController.instance.playbackStatusNotifier,
+          builder: (context, status, child) {
+            if (status.hasFallback && status.spell == word.spell) {
+              return Container(
+                margin: const EdgeInsets.only(left: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.35), width: 0.5),
+                ),
+                child: Text(
+                  status.fallbackType == AudioFallbackType.ttsFallback ? '系统朗读' : '备用发音',
+                  style: const TextStyle(fontSize: 10, color: Colors.amber, fontWeight: FontWeight.bold),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
+        ),
+      ],
     );
   }
 

@@ -804,13 +804,38 @@ class Util {
   }
 
   static String getWordDefaultPronounce(WordVo word) {
-    final isUk = Prefs.pronunciationAccent == 'uk';
-    final primary = isUk ? (word.britishPronounce ?? '') : (word.americaPronounce ?? '');
-    if (primary.isNotEmpty) return primary;
-    final common = word.pronounce ?? '';
-    if (common.isNotEmpty) return common;
-    final secondary = isUk ? (word.americaPronounce ?? '') : (word.britishPronounce ?? '');
-    return secondary;
+    return getWordPronounceWithAccent(word).$1;
+  }
+
+  /// 获取单词音标及其实际所属口音（例如 '英', '美'）
+  /// 返回 (pronounce, accentLabel, isFallback)
+  /// - pronounce: 音标内容，如 'ˈskedʒuːl'
+  /// - accentLabel: '英' 或 '美' 或 ''
+  /// - isFallback: 是否发生了口音降级（例如用户偏好英音，但展示的是美音音标）
+  static (String pronounce, String accentLabel, bool isFallback) getWordPronounceWithAccent(WordVo word) {
+    final isUkPref = Prefs.pronunciationAccent == 'uk';
+    if (isUkPref) {
+      if (word.britishPronounce != null && word.britishPronounce!.isNotEmpty) {
+        return (word.britishPronounce!, '英', false);
+      }
+      if (word.pronounce != null && word.pronounce!.isNotEmpty) {
+        return (word.pronounce!, '', false);
+      }
+      if (word.americaPronounce != null && word.americaPronounce!.isNotEmpty) {
+        return (word.americaPronounce!, '美', true);
+      }
+    } else {
+      if (word.americaPronounce != null && word.americaPronounce!.isNotEmpty) {
+        return (word.americaPronounce!, '美', false);
+      }
+      if (word.pronounce != null && word.pronounce!.isNotEmpty) {
+        return (word.pronounce!, '', false);
+      }
+      if (word.britishPronounce != null && word.britishPronounce!.isNotEmpty) {
+        return (word.britishPronounce!, '英', true);
+      }
+    }
+    return ('', '', false);
   }
 
   /// 尝试本地查询单词及其变体形式

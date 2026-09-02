@@ -1120,8 +1120,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               ),
                               const SizedBox(height: 8),
                               // 音标发音胶囊（左对齐）
-                              if (Util.getWordDefaultPronounce(args.word).isNotEmpty)
-                                Row(
+                              () {
+                                final pronInfo = Util.getWordPronounceWithAccent(args.word);
+                                if (pronInfo.$1.isEmpty) return const SizedBox.shrink();
+                                return Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     InkWell(
@@ -1144,7 +1146,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                         }
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: subtleBg,
                                           borderRadius: BorderRadius.circular(20),
@@ -1156,8 +1158,28 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
+                                            if (pronInfo.$2.isNotEmpty) ...[
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                margin: const EdgeInsets.only(right: 5),
+                                                decoration: BoxDecoration(
+                                                  color: pronInfo.$3
+                                                      ? Colors.orange.withValues(alpha: 0.15)
+                                                      : accentColor.withValues(alpha: 0.12),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  pronInfo.$2,
+                                                  style: TextStyle(
+                                                    color: pronInfo.$3 ? Colors.orange[800] : accentColor,
+                                                    fontSize: 10.5,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                             Text(
-                                              '[${Util.getWordDefaultPronounce(args.word)}]',
+                                              '[${pronInfo.$1}]',
                                               style: TextStyle(
                                                 color: subtitleColor,
                                                 fontSize: 13.5,
@@ -1178,12 +1200,34 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                                 );
                                               },
                                             ),
+                                            ValueListenableBuilder<AudioPlaybackStatus>(
+                                              valueListenable: StudyAudioSessionController.instance.playbackStatusNotifier,
+                                              builder: (context, status, child) {
+                                                if (status.hasFallback && status.spell == args.word.spell) {
+                                                  return Container(
+                                                    margin: const EdgeInsets.only(left: 6),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.amber.withValues(alpha: 0.15),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                      border: Border.all(color: Colors.amber.withValues(alpha: 0.35), width: 0.5),
+                                                    ),
+                                                    child: Text(
+                                                      status.fallbackType == AudioFallbackType.ttsFallback ? '系统朗读' : '备用发音',
+                                                      style: const TextStyle(fontSize: 10, color: Colors.amber, fontWeight: FontWeight.bold),
+                                                    ),
+                                                  );
+                                                }
+                                                return const SizedBox.shrink();
+                                              },
+                                            ),
                                           ],
                                         ),
                                       ),
                                     ),
                                   ],
-                                ),
+                                );
+                              }(),
                               const SizedBox(height: 10),
                               // 释义区域（左对齐常驻清晰展示）
                               _buildMeaningSection(isDarkMode),

@@ -14,8 +14,31 @@ import 'package:nnbdc/util/pinyin.dart';
 import 'package:nnbdc/util/study_config.dart';
 import 'package:nnbdc/util/tts.dart';
 import 'package:nnbdc/util/prefs.dart';
-import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/global.dart';
+
+/// 音频托底类型
+enum AudioFallbackType {
+  none,
+  accentFallback, // 口音缺失降级（例如英音缺失播美音）
+  ttsFallback,    // 音频加载失败降级（系统 TTS 朗读）
+}
+
+/// 发音状态信息，用于 UI 局部微交互展示（零侵入、无 Toast 打扰）
+class AudioPlaybackStatus {
+  final String spell;
+  final AudioFallbackType fallbackType;
+  final String fallbackLabel;
+
+  const AudioPlaybackStatus({
+    required this.spell,
+    this.fallbackType = AudioFallbackType.none,
+    this.fallbackLabel = '',
+  });
+
+  static const idle = AudioPlaybackStatus(spell: '');
+
+  bool get hasFallback => fallbackType != AudioFallbackType.none;
+}
 
 /// 全局唯一的音频会话控制器。
 ///
@@ -52,21 +75,22 @@ class StudyAudioSessionController {
     _asr.addStateListener(_onAsrStateChange);
   }
 
-  static DateTime? _lastFallbackToastTime;
-  static String? _lastFallbackToastMsg;
+  /// 发音托底状态监听器，提供非阻塞、零打扰的 UI 局部微交互反馈
+  final ValueNotifier<AudioPlaybackStatus> playbackStatusNotifier =
+      ValueNotifier(AudioPlaybackStatus.idle);
 
-  /// 托底提醒：当发生口音降级或系统 TTS 兜底时，给用户明确提示，避免静默掩盖
-  static void _notifyFallback(String msg) {
-    if (PlatformUtils.isTesting) return;
-    final now = DateTime.now();
-    if (_lastFallbackToastMsg == msg &&
-        _lastFallbackToastTime != null &&
-        now.difference(_lastFallbackToastTime!).inSeconds < 4) {
-      return;
+  Timer? _statusResetTimer;
+
+  void _updatePlaybackStatus(AudioPlaybackStatus status) {
+    playbackStatusNotifier.value = status;
+    _statusResetTimer?.cancel();
+    if (status.hasFallback) {
+      _statusResetTimer = Timer(const Duration(milliseconds: 2500), () {
+        if (playbackStatusNotifier.value == status) {
+          playbackStatusNotifier.value = AudioPlaybackStatus.idle;
+        }
+      });
     }
-    _lastFallbackToastTime = now;
-    _lastFallbackToastMsg = msg;
-    ToastUtil.info(msg);
   }
 
   // ============================================================
@@ -853,7 +877,11 @@ class StudyAudioSessionController {
           if (loaded) {
             debugPrint('🔊 [AccentFallback] 回退到备用口音音频成功: $altUrl');
             final isUk = Prefs.pronunciationAccent == 'uk';
-            _notifyFallback(isUk ? '该单词暂无英音发音，已降级播放备用发音' : '该单词暂无美音发音，已降级播放备用发音');
+            _updatePlaybackStatus(AudioPlaybackStatus(
+              spell: fallbackText ?? '',
+              fallbackType: AudioFallbackType.accentFallback,
+              fallbackLabel: isUk ? '美音' : '英音',
+            ));
           }
         }
       }
@@ -862,7 +890,11 @@ class StudyAudioSessionController {
       if (!loaded) {
         if (fallbackText != null && fallbackText.trim().isNotEmpty) {
           debugPrint('🎙️ [AudioHealing] 音频资源加载失败，启动 TTS 终极兜底朗读: "$fallbackText"');
-          _notifyFallback('音频加载失败，已降级使用系统语音朗读');
+          _updatePlaybackStatus(AudioPlaybackStatus(
+            spell: fallbackText.trim(),
+            fallbackType: AudioFallbackType.ttsFallback,
+            fallbackLabel: 'TTS',
+          ));
           try {
             await _tts.speak(fallbackText.trim());
             _logicallyFinishedPlayers.add(player);
