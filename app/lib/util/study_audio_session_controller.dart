@@ -219,6 +219,9 @@ class StudyAudioSessionController {
   @visibleForTesting
   Set<ja.AudioPlayer> get logicallyFinishedPlayers => _logicallyFinishedPlayers;
 
+  @visibleForTesting
+  Future<T> protectQueueForTesting<T>(Future<T> Function() body) => _queueLock.protect(body);
+
   void _watchPlayer(ja.AudioPlayer player) {
     if (!_watchedPlayers.contains(player)) {
       _watchedPlayers.add(player);
@@ -285,9 +288,23 @@ class StudyAudioSessionController {
   // Public API — 发音/例句播放（串行化）
   // ============================================================
 
+  /// 中断当前正在进行的发音播放，并清空所有排队中的旧发音任务（用于用户点击新单词时即时抢占）
+  void interruptPlayback() {
+    _queueLock.cancel();
+    try {
+      if (_audioPlayer.playing) {
+        _audioPlayer.stop();
+      }
+    } catch (_) {}
+  }
+
   /// 播放单词发音。
-  Future<void> playWordSound(WordVo word, {Future<void>? preWaitFuture}) {
+  /// [preempt]: 是否打断当前正在播放的声音并丢弃排队中的旧发音，默认为 true（用户连续点击只播最新单词）。
+  Future<void> playWordSound(WordVo word, {Future<void>? preWaitFuture, bool preempt = true}) {
     cancelIdleTimer();
+    if (preempt) {
+      interruptPlayback();
+    }
     return _queueLock.protect(() async {
       _unsubscribeMeter();
       final sessionFuture = transitTo(AudioMode.playback);
@@ -297,9 +314,13 @@ class StudyAudioSessionController {
   }
 
   /// 播放例句发音。
+  /// [preempt]: 是否打断当前正在播放的声音并丢弃排队中的旧发音，默认为 true。
   Future<void> playSentenceSound(String digest,
-      {double speed = 1.0, Future<void>? preWaitFuture}) {
+      {double speed = 1.0, Future<void>? preWaitFuture, bool preempt = true}) {
     cancelIdleTimer();
+    if (preempt) {
+      interruptPlayback();
+    }
     return _queueLock.protect(() async {
       _unsubscribeMeter();
       final sessionFuture = transitTo(AudioMode.playback);
@@ -309,8 +330,12 @@ class StudyAudioSessionController {
   }
 
   /// 通过拼写播放发音（内部使用一次性播放器，播放后自动释放）。
-  Future<void> playWordSoundBySpell(String spell) {
+  /// [preempt]: 是否打断当前正在播放的声音并丢弃排队中的旧发音，默认为 true。
+  Future<void> playWordSoundBySpell(String spell, {bool preempt = true}) {
     cancelIdleTimer();
+    if (preempt) {
+      interruptPlayback();
+    }
     return _queueLock.protect(() async {
       final player = SoundUtil.createAudioPlayer();
       _watchPlayer(player);
@@ -1350,24 +1375,46 @@ class StudyAudioSessionController {
   }
 }
 
-/// 内部轻量级串行互斥队列锁。
+/// 内部轻量级串行互斥队列锁（支持代际取消与抢占机制）。
 class _SessionMutex {
   Future<void> _chain = Future.value();
+  int _generation = 0;
+  final List<Completer> _pendingCompleters = [];
 
   Future<T> protect<T>(Future<T> Function() body) {
     final completer = Completer<T>();
+    _pendingCompleters.add(completer);
+    final currentGen = _generation;
     _chain = _chain.then((_) async {
+      _pendingCompleters.remove(completer);
+      if (currentGen != _generation) {
+        if (!completer.isCompleted) {
+          completer.complete(null as dynamic);
+        }
+        return;
+      }
       try {
         final result = await body();
-        completer.complete(result);
+        if (!completer.isCompleted) {
+          completer.complete(result);
+        }
       } catch (e, st) {
-        completer.completeError(e, st);
+        if (!completer.isCompleted) {
+          completer.completeError(e, st);
+        }
       }
     }).catchError((_) {});
     return completer.future;
   }
 
   void cancel() {
+    _generation++;
+    for (final c in _pendingCompleters) {
+      if (!c.isCompleted) {
+        c.complete(null as dynamic);
+      }
+    }
+    _pendingCompleters.clear();
     _chain = Future.value();
   }
 }

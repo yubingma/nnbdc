@@ -1473,10 +1473,14 @@ class WordListPageState extends State<WordListPage>
         await _sessionController.playWordSound(word.word);
       }
       debugPrint('⏱️ [Latency] 发音播放完成: +${sw.elapsedMilliseconds}ms');
-      soundFinishListener?.call();
+      if (bookMark?.position == baseIndex! + index) {
+        soundFinishListener?.call();
+      }
     } else {
       // 未播放发音时（如背英文模式），也要触发回调以继续流程（启动ASR等）
-      soundFinishListener?.call();
+      if (bookMark?.position == baseIndex! + index) {
+        soundFinishListener?.call();
+      }
     }
 
     // 在语音模式下，播放完成后启动语音识别

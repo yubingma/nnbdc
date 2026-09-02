@@ -342,5 +342,34 @@ void main() {
       expect(controller.keepMicrophoneWarm, isFalse);
       f2.catchError((_) {});
     });
+
+    test('发音抢占与队列代际取消：连续点击新单词时立即中断并跳过排队的旧任务', () async {
+      final controller = StudyAudioSessionController.instance;
+      final executionOrder = <String>[];
+
+      // 模拟快速连续点击 3 个单词，前 2 个任务带有延时模拟播放过程
+      final f1 = controller.protectQueueForTesting(() async {
+        await Future.delayed(const Duration(milliseconds: 50));
+        executionOrder.add('word1');
+      });
+
+      // 任务 2 尚未开始排队
+      final f2 = controller.protectQueueForTesting(() async {
+        await Future.delayed(const Duration(milliseconds: 50));
+        executionOrder.add('word2');
+      });
+
+      // 模拟用户快速点击了第 3 个单词：触发抢占打断
+      controller.interruptPlayback();
+
+      final f3 = controller.protectQueueForTesting(() async {
+        executionOrder.add('word3');
+      });
+
+      await Future.wait([f1, f2, f3]);
+
+      // word1 与 word2 已被代际取消，直接跳过不执行，只执行最新点击的 word3
+      expect(executionOrder, ['word3']);
+    });
   });
 }
