@@ -833,42 +833,6 @@ Future<void> repairDictWordSequences(String userId) async {
   }
 }
 
-/// 同步前自检与自愈：清理/修复历史版本中可能产生的超长主键（> 32 字符）实体及对应的待同步日志
-Future<void> repairInvalidEntityIds(String userId) async {
-  final db = MyDatabase.instance;
-  try {
-    // 1. 处理 userBadges 中超长 ID
-    final userBadgesList = await (db.select(db.userBadges)..where((u) => u.userId.equals(userId))).get();
-    for (final badge in userBadgesList) {
-      if (badge.id.length > 32) {
-        await (db.delete(db.userBadges)..where((u) => u.id.equals(badge.id))).go();
-        final newBadge = badge.copyWith(id: Util.uuid(), updateTime: DateTime.now());
-        await db.userBadgesDao.saveEntity(newBadge, true);
-      }
-    }
-
-    // 2. 处理 userCowDungLogs 中超长 ID
-    final cowDungLogsList = await (db.select(db.userCowDungLogs)..where((u) => u.userId.equals(userId))).get();
-    for (final log in cowDungLogsList) {
-      if (log.id.length > 32) {
-        await (db.delete(db.userCowDungLogs)..where((u) => u.id.equals(log.id))).go();
-        final newLog = log.copyWith(id: Util.uuid(), updateTime: DateTime.now());
-        await db.userCowDungLogsDao.insertEntity(newLog, true);
-      }
-    }
-
-    // 3. 清理 userDbLogs 中残存的超长 recordId 日志（防止旧的超长日志发往后端）
-    final allUserLogs = await (db.select(db.userDbLogs)..where((l) => l.userId.equals(userId))).get();
-    for (final l in allUserLogs) {
-      if (l.recordId.length > 32) {
-        await (db.delete(db.userDbLogs)..where((row) => row.id.equals(l.id))).go();
-      }
-    }
-  } catch (e, s) {
-    Global.logger.w('⚠️ 自愈超长 ID 失败: $e', stackTrace: s);
-  }
-}
-
 /// 同步前自检与自愈：清理历史遗留的超长书签名 (bookMarkName) 坏数据及其待同步日志。
 ///
 /// 旧版本客户端 bug 曾用 `'dict_${dict}_words_list'`（整个对象插值）生成远超服务端
@@ -916,9 +880,6 @@ Future<void> syncUserDb(String userId) async {
     if (localDbVersion > 0) {
       await _validateCoreData(userId);
     }
-
-    // 同步前自检：修复历史遗留超长 ID 实体与日志，避免向服务端同步异常主键
-    await repairInvalidEntityIds(userId);
 
     // 同步前自检：清理历史遗留的超长书签名 (bookMarkName) 坏数据及对应日志，
     // 避免其超出服务端 book_mark_name 的 varchar(255) 上限而阻塞整个同步事务
