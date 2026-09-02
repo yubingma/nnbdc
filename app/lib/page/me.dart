@@ -1955,7 +1955,7 @@ class _MePageState extends State<MePage> {
               ),
               _buildMenuTile(
                 icon: Icons.cloud_sync_outlined,
-                title: '端云同步状态',
+                title: '云同步状态',
                 trailingText: _isLastSyncFailed ? '同步失败' : '已是最新',
                 trailingTextColor: _isLastSyncFailed ? const Color(0xFFFA6E59) : accentColor,
                 onTap: () {

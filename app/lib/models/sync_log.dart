@@ -138,7 +138,7 @@ class SyncLog {
     );
   }
 
-  bool get isWarning => !success && errorMessage != null && errorMessage!.contains('下次修复');
+  bool get isWarning => !success && errorMessage != null && errorMessage!.contains('下次同步时自动修复');
 
   @override
   String toString() {

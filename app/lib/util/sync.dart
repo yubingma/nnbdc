@@ -603,7 +603,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
             }
 
             // 记录特定异常，数据已保存在阶段A中，下次同步会重试
-            warningExcept = DictWordOrderInvalidWarningException("下次修复");
+            warningExcept = DictWordOrderInvalidWarningException("下次同步时自动修复");
           } else {
             Global.logger.e("❌ 上传到远程数据库失败: ${result.msg}（本地数据已保存，将在下次同步时重试）");
           }
