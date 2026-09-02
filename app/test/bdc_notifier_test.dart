@@ -1534,6 +1534,96 @@ void main() {
 
     await Future.delayed(const Duration(milliseconds: 100));
   });
+
+  test('BdcNotifier - 前一个单词答对后快速点击下一词，自动跳转定时器应被取消，新词不应被误判答对', () async {
+    final now = AppClock.now();
+    // 额外插入第二个单词 word_2
+    await db.into(db.words).insert(Word(
+          id: 'word_2',
+          spell: 'banana',
+          popularity: 90,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.meaningItems).insert(MeaningItem(
+          id: 'mim_2',
+          wordId: 'word_2',
+          dictId: Global.commonDictId,
+          ciXing: 'n.',
+          meaning: '香蕉',
+          popularity: 90,
+          ownerId: Global.sysUserId,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.dictWords).insert(DictWord(
+          dictId: 'mock_dict_1',
+          wordId: 'word_2',
+          seq: 2,
+          unit: 0,
+          createTime: now,
+          updateTime: now,
+        ));
+    await db.into(db.learningWords).insert(LearningWord(
+          userId: 'test_user_id',
+          wordId: 'word_2',
+          addTime: now,
+          addDay: 1,
+          batchId: 1,
+          lastLearningDate: AppClock.today(),
+          stability: 0.0,
+          isTodayNewWord: true,
+          learnedTimes: 0,
+          todayLearnedTimes: 0,
+          learningOrder: 2,
+          createTime: now,
+          updateTime: now,
+        ));
+
+    final mockAsr = MockAsr();
+    final container = ProviderContainer(
+      overrides: [
+        asrProvider.overrideWithValue(mockAsr),
+      ],
+    );
+    final keepAlive = container.listen(bdcNotifierProvider, (_, __) {});
+    addTearDown(() {
+      keepAlive.close();
+      container.dispose();
+    });
+
+    final notifier = container.read(bdcNotifierProvider.notifier);
+    await notifier.loadData(FakeBuildContext());
+    var state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'apple', reason: '初始应加载第一个词 apple');
+    expect(state.hasFinishedAnswering, false);
+
+    // 1. 回答正确第一个单词 (En2Ch: 说出中文 "苹果")
+    await notifier.onAsrResult(jsonEncode({
+      'best': '苹果',
+      'candidates': ['苹果'],
+    }));
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.hasFinishedAnswering, true, reason: '第一个词答对后应标记为已答完');
+    expect(state.canLeaveCurrWord, true, reason: '第一个词答对后允许点击下一词');
+
+    // 2. 模拟用户在自动跳转（1000ms）触发前，快速点击【下一词】按钮
+    await Future.delayed(const Duration(milliseconds: 50));
+    final switchSuccess = await notifier.getNextWord(true, fsrsRating: state.lastFsrsRating);
+    expect(switchSuccess, true, reason: '手动调用 getNextWord 应成功切词');
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'banana', reason: '页面应成功切换到第二个词 banana');
+    expect(state.hasFinishedAnswering, false, reason: '第二个词刚进入时绝不能是已答对状态');
+
+    // 3. 等待足够时长，跨越原本 word_1 的 1000ms 自动跳转定时器
+    await Future.delayed(const Duration(milliseconds: 1200));
+
+    state = container.read(bdcNotifierProvider);
+    expect(state.word!.spell, 'banana', reason: '定时器到期后不应跳过 banana，当前词仍必须是 banana');
+    expect(state.hasFinishedAnswering, false, reason: 'banana 绝不能被上一词的幽灵定时器误判为答对');
+  });
 }
 
 

@@ -70,6 +70,8 @@ class BdcNotifier extends _$BdcNotifier {
   Timer? _persistTimer;
   Timer? _checkAsrDebounceTimer;
   Timer? _wordAiRefereeDebounceTimer;
+  Timer? _autoJumpTimer;
+  Timer? _showWordDetailTimer;
   final Set<String> _failedWordAiEvaluationsForCurrentWord = {};
   int _wordAiEvaluationCountForCurrentWord = 0;
   bool _isWordAiRefereeJudging = false;
@@ -82,6 +84,20 @@ class BdcNotifier extends _$BdcNotifier {
   bool _isSentenceAiRefereeJudging = false;
   /// 播放取消令牌：每次换词或用户手动操作时递增，使旧延迟 callback 失效。
   int _playToken = 0;
+
+  void _cancelPendingWordTimers() {
+    _autoJumpTimer?.cancel();
+    _autoJumpTimer = null;
+    _showWordDetailTimer?.cancel();
+    _showWordDetailTimer = null;
+    _checkAsrDebounceTimer?.cancel();
+    _checkAsrDebounceTimer = null;
+    _wordAiRefereeDebounceTimer?.cancel();
+    _wordAiRefereeDebounceTimer = null;
+    _sentenceAiRefereeDebounceTimer?.cancel();
+    _sentenceAiRefereeDebounceTimer = null;
+  }
+  
   /// 页面过渡屏障：详情页弹出时，让音频播放等待页面动画完成再启动，
   /// 避让 iOS 导航转场动画与 AVAudioSession 初始化在主线线程上冲突导致的爆音。
   Completer<void>? _pageTransitionBarrier;
@@ -130,9 +146,7 @@ class BdcNotifier extends _$BdcNotifier {
       _isDisposed = true;
       _learningTimer?.cancel();
       _persistTimer?.cancel();
-      _checkAsrDebounceTimer?.cancel();
-      _wordAiRefereeDebounceTimer?.cancel();
-      _sentenceAiRefereeDebounceTimer?.cancel();
+      _cancelPendingWordTimers();
       progressBarTapTimer?.cancel();
       _syncLearningTimeToDb();
       asr.removeStateListener(_onAsrStateChanged);
@@ -487,16 +501,15 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<bool> handleWord(GetWordResult? getWordResult, {bool isFromBatchWordList = false}) async {
     if (getWordResult == null) return false;
+    _cancelPendingWordTimers();
     _isAnswerCorrectHandling = false; // 新词开始，安全重置答对锁
     _lastCorrectSoundTime = null; // 重置正确反馈音播放时间
-    _wordAiRefereeDebounceTimer?.cancel();
     _failedWordAiEvaluationsForCurrentWord.clear();
     _wordAiEvaluationCountForCurrentWord = 0;
     _isWordAiRefereeJudging = false;
     _wordAccumulatedAsrText = "";
     _wordLastFinalAsrText = "";
 
-    _sentenceAiRefereeDebounceTimer?.cancel();
     _failedSentenceAiEvaluationsForCurrentWord.clear();
     _sentenceAiEvaluationCountForCurrentWord = 0;
     _isSentenceAiRefereeJudging = false;
@@ -923,6 +936,7 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> showWordDetail(WordVo word, bool isAnswerWrong, BuildContext? context, {FsrsRating? fsrsRating, String? reason}) async {
+    _cancelPendingWordTimers();
     debugPrint('🕵️ [AudioDiag] showWordDetail.enter | word=${word.spell} isAnswerWrong=$isAnswerWrong');
     // 强制并平滑地关闭正在播放的音频与清理 ASR。通过 Future.wait 并行执行，并设置 1.5s 的硬超时，
     // 防止底层系统音频驱动卡死阻塞跳转页面。
@@ -1389,6 +1403,7 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<bool> getNextWord(bool gotoNext, {FsrsRating? fsrsRating, bool fastPath = false}) async {
     if (state.isGettingNextWord) return false;
+    _cancelPendingWordTimers();
     final totalStopwatch = Stopwatch()..start();
     debugPrint('🕵️ [AudioDiag] getNextWord.enter | gotoNext=$gotoNext fastPath=$fastPath word=${state.word?.spell}');
 
@@ -1476,6 +1491,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     state = state.copyWith(
       isGettingNextWord: true,
+      canLeaveCurrWord: false,
       selectedAnswerIndex: null,
       hasFinishedAnswering: false,
       showAnswerButtons: false,
@@ -1569,7 +1585,8 @@ class BdcNotifier extends _$BdcNotifier {
   }
 
   Future<void> onAsrResult(event) async {
-    if (_isDisposed) return;
+    if (_isDisposed || state.isGettingNextWord) return;
+    final currentWordId = state.word?.id;
     final int pttRoundAtEntry = _pttRoundToken;
     String processedResult = "";
     List<String> candidates = [];
@@ -1689,7 +1706,7 @@ class BdcNotifier extends _$BdcNotifier {
         if (resultData != null && resultData.containsKey('candidates')) {
           if (state.studyStep == StudyStep.ch2En.json) {
             final result = await AsrUtil.selectBestCandidateWithPhonemeAndScore(candidates, state.word!.spell);
-            if (_isDisposed) return;
+            if (_isDisposed || state.isGettingNextWord || state.word?.id != currentWordId) return;
             // await 音素计算期间可能并发完成了答对处理，二次守卫防止低分覆盖
             if ((state.hasFinishedAnswering || _isAnswerCorrectHandling) && !_isPracticeMode) {
               return;
@@ -1789,6 +1806,7 @@ class BdcNotifier extends _$BdcNotifier {
     final String judgeInput = (_isSentenceStepActive() && _isPttPressed)
         ? sentenceAnswerController.text
         : processedResult;
+    if (_isDisposed || state.isGettingNextWord || state.word?.id != currentWordId) return;
     checkAsrResult(asrInput: judgeInput, isVoice: true, isFinal: isFinal);
   }
 
@@ -2191,7 +2209,7 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
 
-    _wordAiRefereeDebounceTimer?.cancel();
+    _cancelPendingWordTimers();
     _isWordAiRefereeJudging = false;
     if (state.wordWrapper != null) {
       state.wordWrapper!.isAiEvaluating = false;
@@ -2258,9 +2276,11 @@ class BdcNotifier extends _$BdcNotifier {
 
     if (state.showWordDetailAfterCorrect && state.word != null && state.historyIndex == -1) {
       final showDelayMs = state.studyStep == StudyStep.ch2En.json ? 200 : 500;
-      Future.delayed(Duration(milliseconds: showDelayMs), () {
-        if (!_isDisposed && state.word != null) {
-          showWordDetail(state.word!, false, null, fsrsRating: rating, reason: reason);
+      final correctWord = state.word!;
+      final correctWordId = correctWord.id;
+      _showWordDetailTimer = Timer(Duration(milliseconds: showDelayMs), () {
+        if (!_isDisposed && state.word?.id == correctWordId) {
+          showWordDetail(correctWord, false, null, fsrsRating: rating, reason: reason);
         }
       });
       Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');
@@ -2272,8 +2292,11 @@ class BdcNotifier extends _$BdcNotifier {
       // 中英模式发音已完整播完，仅需 400ms 短暂缓冲即可舒适跳转；
       // 其他模式保留原有 800ms 延迟。
       final jumpDelayMs = state.studyStep == StudyStep.ch2En.json ? 0 : 1000;
-      Future.delayed(Duration(milliseconds: jumpDelayMs), () {
-        getNextWord(true, fsrsRating: rating);
+      final correctWordId = state.word?.id;
+      _autoJumpTimer = Timer(Duration(milliseconds: jumpDelayMs), () {
+        if (!_isDisposed && state.word?.id == correctWordId && state.hasFinishedAnswering) {
+          getNextWord(true, fsrsRating: rating);
+        }
       });
     }
     Global.logger.d('[PERF] _onAnswerCorrect total cost: ${stopwatch.elapsedMilliseconds}ms');

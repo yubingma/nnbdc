@@ -73,32 +73,206 @@
     }
 
     body {
-      background: var(--bg-primary);
+      background: radial-gradient(circle at 50% 20%, #EAF1ED 0%, #D6E3DD 100%);
       color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      padding: 20px 10px 40px;
-      transition: background-color 0.3s ease, color 0.3s ease;
+      padding: 24px 16px 40px;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
-    .phone-container {
+    [data-theme="dark"] body {
+      background: radial-gradient(circle at 50% 20%, #172421 0%, #0A110F 100%);
+    }
+
+    /* 纯净透明真机截图模式：完整保留手机外壳、金属中框、按键与立体阴影，手机壳外部背景 100% 透明 */
+    body.transparent-mode {
+      background: transparent !important;
+      padding: 24px 24px 32px !important;
+      margin: 0 !important;
+      min-height: 100vh !important;
+      height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+    }
+    body.transparent-mode .designer-toolbar {
+      display: none !important;
+    }
+
+    /* 顶部控制工具条 */
+    .designer-toolbar {
       width: 100%;
-      max-width: 414px;
+      max-width: 393px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .toolbar-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .theme-toggle-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+    }
+    .theme-toggle-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* 手机外壳包装容器 (提供按键微凸起与高级立体轮廓) */
+    .device-wrapper {
+      position: relative;
+      margin: 0 auto;
+    }
+
+    /* 侧边物理按键装饰 */
+    .device-button {
+      position: absolute;
+      background: #252D29;
+      border-radius: 3px;
+      z-index: 0;
+    }
+    /* 静音/操作键 (左) */
+    .btn-action {
+      left: -13px;
+      top: 105px;
+      width: 4px;
+      height: 28px;
+    }
+    /* 音量加 (左) */
+    .btn-vol-up {
+      left: -13px;
+      top: 148px;
+      width: 4px;
+      height: 48px;
+    }
+    /* 音量减 (左) */
+    .btn-vol-down {
+      left: -13px;
+      top: 206px;
+      width: 4px;
+      height: 48px;
+    }
+    /* 电源键 (右) */
+    .btn-power {
+      right: -13px;
+      top: 160px;
+      width: 4px;
+      height: 68px;
+    }
+
+    /* 现代旗舰机标准比例容器 (iPhone 15/16 Pro: 393px × 852px, 19.5:9) */
+    .phone-container {
+      width: 393px;
+      height: 852px;
+      max-width: 100%;
       background: var(--bg-primary);
-      border-radius: 40px;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.15);
-      border: 8px solid var(--card-bg);
+      border-radius: 54px;
+      /* 细腻金属微中框 + 高光倒角 + 柔和多层立体投影 */
+      box-shadow: 
+        0 0 0 11px #1A211E,
+        0 0 0 12.5px rgba(255, 255, 255, 0.16),
+        0 0 0 13.5px rgba(0, 0, 0, 0.35),
+        0 30px 70px -12px rgba(10, 30, 24, 0.35),
+        0 12px 30px -6px rgba(0, 0, 0, 0.2);
       overflow: hidden;
       display: flex;
       flex-direction: column;
       position: relative;
+      z-index: 1;
+      border: 3.5px solid #000000;
+    }
+
+    /* 顶部系统状态栏与灵动岛 */
+    .status-bar {
+      height: 44px;
+      min-height: 44px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-primary);
+      position: relative;
+      z-index: 60;
+      color: var(--text-main);
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    /* 灵动岛 (Dynamic Island) */
+    .dynamic-island {
+      position: absolute;
+      left: 50%;
+      top: 10px;
+      transform: translateX(-50%);
+      width: 112px;
+      height: 28px;
+      background: #000000;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 11px;
+      box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.08) inset;
+    }
+
+    .island-camera-lens {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #18273A 0%, #080D14 80%);
+      box-shadow: 0 0 1px 1px rgba(255, 255, 255, 0.15);
+    }
+
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 底部 Home Indicator 触控小横条 */
+    .home-indicator-bar {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 134px;
+      height: 5px;
+      background: var(--text-main);
+      opacity: 0.28;
+      border-radius: 100px;
+      z-index: 60;
+      pointer-events: none;
     }
 
     /* 顶部导航条 */
     .app-header {
-      padding: 16px 20px;
+      padding: 10px 18px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -146,16 +320,21 @@
       font-weight: 800;
       padding: 2px 7px;
       border-radius: 10px;
-      font-family: 'Roboto', sans-serif;
     }
 
     /* 内容滚动区 */
     .content-scroll {
-      padding: 10px 16px 36px;
+      flex: 1;
+      padding: 8px 16px 42px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
       overflow-y: auto;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE */
+    }
+    .content-scroll::-webkit-scrollbar {
+      display: none; /* Chrome/Safari */
     }
 
     /* 1. 顶部 Hero 统计态势展台 */
@@ -167,6 +346,7 @@
       box-shadow: var(--shadow-glow);
       position: relative;
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     .hero-panel::after {
@@ -228,7 +408,7 @@
     .stat-val {
       font-size: 19px;
       font-weight: 900;
-      font-family: 'Roboto', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
       line-height: 1.1;
     }
 
@@ -248,6 +428,7 @@
       padding: 10px 14px;
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
     }
 
     .legend-item {
@@ -279,6 +460,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      flex-shrink: 0;
     }
 
     .section-header {
@@ -381,7 +563,7 @@
       text-align: right;
       font-size: 13px;
       font-weight: 900;
-      font-family: 'Roboto', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
       color: var(--text-main);
       flex-shrink: 0;
     }
@@ -501,25 +683,69 @@
 </head>
 <body>
 
-  <!-- 手机容器 -->
-  <div class="phone-container">
+  <!-- 顶部设计展示控制条 -->
+  <div class="designer-toolbar">
+    <div class="toolbar-info">
+      <span>📱 393 × 852 (19.5:9 黄金屏比)</span>
+    </div>
+    <button class="theme-toggle-btn" onclick="toggleTheme()" id="topThemeToggleBtn">
+      🌓 切换夜间模式
+    </button>
+  </div>
 
-    <!-- 顶部导航栏 -->
-    <header class="app-header">
-      <button class="header-btn" onclick="alert('返回上一页')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-      <div class="header-title-group">
-        <div class="header-title">复习分布图</div>
-        <div class="header-tag">342 词</div>
+  <!-- 手机外壳包装容器 (立体按键与外框) -->
+  <div class="device-wrapper">
+    <!-- 侧边按键 -->
+    <div class="device-button btn-action" title="操作键"></div>
+    <div class="device-button btn-vol-up" title="音量+"></div>
+    <div class="device-button btn-vol-down" title="音量-"></div>
+    <div class="device-button btn-power" title="电源键"></div>
+
+    <!-- 手机真机比例容器 -->
+    <div class="phone-container">
+
+      <!-- 顶部系统状态栏与灵动岛 -->
+      <div class="status-bar">
+        <span>9:41</span>
+        <!-- 灵动岛 (Dynamic Island) -->
+        <div class="dynamic-island">
+          <div class="island-camera-lens"></div>
+        </div>
+        <div class="status-icons">
+          <!-- 信号格 -->
+          <svg width="15" height="11" viewBox="0 0 17 12" fill="currentColor">
+            <rect x="0" y="8" width="2.5" height="4" rx="0.8"/>
+            <rect x="4.5" y="5.5" width="2.5" height="6.5" rx="0.8"/>
+            <rect x="9" y="3" width="2.5" height="9" rx="0.8"/>
+            <rect x="13.5" y="0" width="2.5" height="12" rx="0.8"/>
+          </svg>
+          <!-- 5G 标识 -->
+          <span style="font-size: 11px; font-weight: 800; letter-spacing: -0.3px;">5G</span>
+          <!-- 电池图标 -->
+          <svg width="22" height="11" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="0.9" y="0.9" width="19.2" height="10.2" rx="3.5"/>
+            <rect x="2.5" y="2.5" width="13" height="7" rx="1.8" fill="currentColor"/>
+            <path d="M22 4.5v3" stroke-linecap="round"/>
+          </svg>
+        </div>
       </div>
-      <button class="header-btn" onclick="openExplainModal()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      </button>
-    </header>
 
-    <!-- 可滚动内容 -->
-    <div class="content-scroll">
+      <!-- 顶部导航栏 -->
+      <header class="app-header">
+        <button class="header-btn" onclick="alert('返回上一页')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="header-title-group">
+          <div class="header-title">复习分布图</div>
+          <div class="header-tag">342 词</div>
+        </div>
+        <button class="header-btn" onclick="openExplainModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </button>
+      </header>
+
+      <!-- 可滚动内容 -->
+      <div class="content-scroll">
 
       <!-- 1. 顶部 Hero 统计态势展台 -->
       <section class="hero-panel">
@@ -721,7 +947,11 @@
 
     </div>
 
-  </div>
+    <!-- 底部 Home Indicator 触控条 -->
+    <div class="home-indicator-bar"></div>
+
+  </div> <!-- /phone-container -->
+</div> <!-- /device-wrapper -->
 
   <!-- 说明弹窗 Modal -->
   <div class="modal-overlay" id="explainModal" onclick="closeExplainModal(event)">
@@ -760,17 +990,16 @@
     </div>
   </div>
 
-  <!-- 悬浮日夜切换按钮 -->
-  <div class="theme-toggle-fab" onclick="toggleTheme()">
-    <span id="themeToggleText">切换暗黑夜间模式</span>
-  </div>
-
   <script>
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');
       const next = current === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
-      document.getElementById('themeToggleText').textContent = next === 'dark' ? '切换清爽护眼亮色' : '切换暗黑夜间模式';
+      const isDark = next === 'dark';
+      const topBtn = document.getElementById('topThemeToggleBtn');
+      if (topBtn) {
+        topBtn.textContent = isDark ? '☀️ 切换亮色模式' : '🌓 切换夜间模式';
+      }
     }
 
     function openExplainModal() {
@@ -783,6 +1012,10 @@
 
     function closeExplainModalDirect() {
       document.getElementById('explainModal').classList.remove('active');
+    }
+
+    if (new URLSearchParams(window.location.search).has('transparent')) {
+      document.body.classList.add('transparent-mode');
     }
   </script>
 </body>
