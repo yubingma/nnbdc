@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -2680,7 +2681,11 @@ class WordListPageState extends State<WordListPage>
                         color: Colors.white,
                       ),
                       onPressed: () async {
-                        if (isMenuOpen) return;
+                        Global.logger.d('【MENU】IconButton onPressed 点击触发, 当前 isMenuOpen=$isMenuOpen');
+                        if (isMenuOpen) {
+                          Global.logger.w('【MENU】isMenuOpen 为 true, 拦截点击');
+                          return;
+                        }
                         // 1. 设置标志位，屏蔽 ASR 和 Timer 对 UI 的刷新干扰
                         isMenuOpen = true; // 立即生效，屏蔽后续可能的 setState
 
@@ -2726,6 +2731,9 @@ class WordListPageState extends State<WordListPage>
                         // 修正：确保 overlay 大小获取正确
                         final overlayRect = Offset.zero & overlayRenderBox.size;
 
+                        final buttonTopLeft = button.localToGlobal(Offset.zero, ancestor: overlayRenderBox);
+                        final buttonBottomRight = button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlayRenderBox);
+
                         final RelativeRect position = RelativeRect.fromRect(
                           Rect.fromPoints(
                             button.localToGlobal(const Offset(0, 50),
@@ -2737,6 +2745,19 @@ class WordListPageState extends State<WordListPage>
                           ),
                           overlayRect,
                         );
+
+                        Global.logger.d('【MENU】button bounds=$buttonTopLeft to $buttonBottomRight, size=${button.size}, overlaySize=${overlayRenderBox.size}, position=$position');
+
+                        void Function(PointerEvent)? menuPointerRoute;
+                        menuPointerRoute = (PointerEvent event) {
+                          if (event is PointerDownEvent) {
+                            final HitTestResult result = HitTestResult();
+                            WidgetsBinding.instance.hitTestInView(result, event.position, event.viewId);
+                            final targets = result.path.map((e) => e.target.runtimeType.toString()).take(8).join(' -> ');
+                            Global.logger.d('【MENU-HIT-TEST】PointerDown pos=${event.position}: $targets');
+                          }
+                        };
+                        WidgetsBinding.instance.pointerRouter.addGlobalRoute(menuPointerRoute);
 
                         try {
                           // 再次检查 mounted，确保 showMenu 调用安全 (虽然上面已经检查过，但为了满足 strict linter flow analysis)
@@ -2928,50 +2949,66 @@ class WordListPageState extends State<WordListPage>
                                   value: choice,
                                   height: 40,
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? themeConfig.subtleBg
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: isSelected
-                                          ? Border.all(
-                                              color: themeConfig.cardBorder,
-                                              width: 1,
-                                            )
-                                          : null,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 7),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          icon,
-                                          size: 18,
-                                          color: isSelected
-                                              ? themeConfig.primaryColor
-                                              : themeConfig.textSecondary,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            choice == menuSortSettings
-                                                ? '排序: ${sortAlg.label}'
-                                                : choice,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: isSelected
-                                                  ? themeConfig.primaryColor
-                                                  : themeConfig.textPrimary,
-                                              fontWeight: isSelected
-                                                  ? FontWeight.w700
-                                                  : FontWeight.w500,
+                                  onTap: () {
+                                    Global.logger.d('【MENU】PopupMenuItem.onTap 触发: choice=$choice');
+                                  },
+                                  child: Listener(
+                                    behavior: HitTestBehavior.translucent,
+                                    onPointerDown: (event) {
+                                      Global.logger.d('【MENU-ITEM-DOWN】choice=$choice at local=${event.localPosition}, global=${event.position}');
+                                    },
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        Global.logger.d('【MENU】GestureDetector.onTap 触发: choice=$choice');
+                                        Navigator.of(capturedContext, rootNavigator: true).pop(choice);
+                                      },
+                                      child: Container(
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? themeConfig.subtleBg
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: isSelected
+                                            ? Border.all(
+                                                color: themeConfig.cardBorder,
+                                                width: 1,
+                                              )
+                                            : null,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 7),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            icon,
+                                            size: 18,
+                                            color: isSelected
+                                                ? themeConfig.primaryColor
+                                                : themeConfig.textSecondary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              choice == menuSortSettings
+                                                  ? '排序: ${sortAlg.label}'
+                                                  : choice,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: isSelected
+                                                    ? themeConfig.primaryColor
+                                                    : themeConfig.textPrimary,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.w700
+                                                    : FontWeight.w500,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
+                                  ),
                                   ),
                                 );
                               }),
@@ -2979,6 +3016,7 @@ class WordListPageState extends State<WordListPage>
                           );
 
                           // 6. 处理选择
+                          Global.logger.d('【MENU】showMenu 返回 selectedValue=$selectedValue');
                           if (selectedValue != null) {
                             if (selectedValue == menuExportPdf) {
                               _showExportPdfBottomSheet();
@@ -3210,6 +3248,7 @@ class WordListPageState extends State<WordListPage>
                             }
                           }
                         } finally {
+                          WidgetsBinding.instance.pointerRouter.removeGlobalRoute(menuPointerRoute);
                           // 7. 恢复标志位
                           isMenuOpen = false;
                           if (wasAnimating && mounted) {
