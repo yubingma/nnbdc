@@ -1809,24 +1809,10 @@ class BdcNotifier extends _$BdcNotifier {
       final isSpellingMatch = inputLower.replaceAll(RegExp(r'[^a-z]'), '') == correctSpell.replaceAll(RegExp(r'[^a-z]'), '');
 
       if (isSpellingMatch) {
-        meaningController.text = state.word!.spell;
-        // 关停麦克风
-        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
-          await StudyAudioSessionController.instance.syncHardwareIntent(
-            isInSpeakTab: false,
-            isAnsweringActive: false,
-            language: AsrLanguage.english,
-            phrases: [],
-            caller: this,
-          );
-        }
-        // 立即退出手写板全屏界面，平滑返回背单词主页面
-        state = state.copyWith(showHandwritingBoard: false);
-        _handleTabChangeForAsr();
-        StudyAudioSessionController.instance.playWordSound(state.word!);
-
-        // 若处于未答题状态且是中译英模式（拼写即作答），判定整道题作答成功
+        // 1. 中译英模式 (Ch2En) 且未完成答题：拼写英文即代表回答该题正确！
         if (!state.hasFinishedAnswering && state.studyStep == StudyStep.ch2En.json) {
+          meaningController.text = state.word!.spell;
+          state = state.copyWith(showHandwritingBoard: false, isKeyboardVisible: false);
           final hintRevealedAll =
               (state.wordWrapper?.hintLetterCount ?? 0) >= (state.word?.spell.length ?? 0);
           if (!hintRevealedAll || isVoice) {
@@ -1834,7 +1820,29 @@ class BdcNotifier extends _$BdcNotifier {
             final ratingResult = _calculateRating(method);
             _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
           }
+          return;
         }
+
+        // 2. 已完成答题状态（无论何种题型）：用户在已掌握或已做完当前词后进行的手写/拼写巩固
+        if (state.hasFinishedAnswering) {
+          meaningController.text = state.word!.spell;
+          state = state.copyWith(showHandwritingBoard: false, isKeyboardVisible: false);
+          _handleTabChangeForAsr();
+          StudyAudioSessionController.instance.playWordSound(state.word!);
+          return;
+        }
+
+        // 3. 英译汉模式 (En2Ch) 或其他模式且【未完成答题】：
+        // 用户只是在未做完英译汉时顺手进行拼写练习。
+        // 拼写正确后退出手写板返回背单词页面，用户必须能够继续正常答题（说中文/选中文）！
+        // 不能把英文留在 meaningController，必须恢复英译汉做题状态并重新唤醒麦克风！
+        meaningController.clear();
+        _handlingChinese = "";
+        state = state.copyWith(showHandwritingBoard: false, isKeyboardVisible: false);
+        
+        // 播放发音，播放完毕后重新唤醒硬件麦克风状态，保证用户回到英译汉页面后能继续正常语音做题
+        await StudyAudioSessionController.instance.playWordSound(state.word!);
+        _handleTabChangeForAsr();
         Global.logger.d('[PERF] checkAsrResult handwriting board spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
         return;
       }
