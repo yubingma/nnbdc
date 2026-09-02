@@ -2793,13 +2793,13 @@ class WordListPageState extends State<WordListPage>
                             context: capturedContext,
                             position: position,
                             useRootNavigator: true,
-                            color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+                            color: themeConfig.cardBg,
                             elevation: 8,
                             shadowColor: Colors.black.withValues(alpha: isDarkMode ? 0.4 : 0.12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                               side: BorderSide(
-                                color: isDarkMode ? Colors.white12 : const Color(0xFFE1EFEA),
+                                color: themeConfig.cardBorder,
                                 width: 1,
                               ),
                             ),
@@ -2930,16 +2930,12 @@ class WordListPageState extends State<WordListPage>
                                   child: Container(
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? (isDarkMode
-                                              ? const Color(0xFF192C27)
-                                              : const Color(0xFFEDF8F3))
+                                          ? themeConfig.subtleBg
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(10),
                                       border: isSelected
                                           ? Border.all(
-                                              color: isDarkMode
-                                                  ? Colors.white12
-                                                  : const Color(0xFFD1EADE),
+                                              color: themeConfig.cardBorder,
                                               width: 1,
                                             )
                                           : null,
@@ -2952,12 +2948,8 @@ class WordListPageState extends State<WordListPage>
                                           icon,
                                           size: 18,
                                           color: isSelected
-                                              ? (isDarkMode
-                                                  ? const Color(0xFF2CD88F)
-                                                  : AppTheme.primaryColor)
-                                              : (isDarkMode
-                                                  ? const Color(0xFF8EA8A3)
-                                                  : const Color(0xFF5B7A75)),
+                                              ? themeConfig.primaryColor
+                                              : themeConfig.textSecondary,
                                         ),
                                         const SizedBox(width: 8),
                                         Expanded(
@@ -2968,12 +2960,8 @@ class WordListPageState extends State<WordListPage>
                                             style: TextStyle(
                                               fontSize: 13,
                                               color: isSelected
-                                                  ? (isDarkMode
-                                                      ? const Color(0xFF2CD88F)
-                                                      : AppTheme.primaryColor)
-                                                  : (isDarkMode
-                                                      ? const Color(0xFFEAF7F4)
-                                                      : const Color(0xFF152724)),
+                                                  ? themeConfig.primaryColor
+                                                  : themeConfig.textPrimary,
                                               fontWeight: isSelected
                                                   ? FontWeight.w700
                                                   : FontWeight.w500,
