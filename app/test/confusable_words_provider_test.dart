@@ -50,6 +50,7 @@ void main() {
     );
     Global.currentUserId = userId;
     Global.updateUserCache(user);
+    await db.into(db.users).insert(user);
   });
 
   tearDown(() async {
@@ -358,16 +359,29 @@ void main() {
     });
   });
 
-  group('ConfusableWordsBookMarkProvider - 内存 no-op', () {
-    test('getBookMark 返回 null，saveBookMark 返回 true 且不落库', () async {
+  group('ConfusableWordsBookMarkProvider - 书签持久化', () {
+    test('saveBookMark 保存书签成功，getBookMark 能正确读取，支持退出恢复', () async {
       final provider = ConfusableWordsBookMarkProvider();
+      // 初始无书签
       expect(await provider.getBookMark(), isNull);
-      expect(await provider.saveBookMark(BookMarkVo(3, 'cat', 'ORIGINAL')),
-          true);
 
-      // 确认没有写入 bookMarks 表
+      // 保存书签到第 48 位单词 oak
+      final ok = await provider.saveBookMark(BookMarkVo(48, 'oak', 'ORIGINAL'));
+      expect(ok, true);
+
+      // 读取书签并验证
+      final bookmark = await provider.getBookMark();
+      expect(bookmark, isNotNull);
+      expect(bookmark!.position, 48);
+      expect(bookmark.spell, 'oak');
+
+      // 确认写入了 bookMarks 表且 bookMarkName 正确
       final rows = await (db.select(db.bookMarks)).get();
-      expect(rows, isEmpty);
+      expect(rows.length, 1);
+      expect(rows.first.bookMarkName, ConfusableWordsBookMarkProvider.bookMarkName);
+      expect(rows.first.position, 48);
+      expect(rows.first.spell, 'oak');
+      expect(rows.first.id.length, 32); // 规范标准的 32 位 UUID
     });
   });
 }

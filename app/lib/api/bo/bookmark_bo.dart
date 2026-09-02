@@ -4,6 +4,7 @@ import 'package:nnbdc/db/db.dart';
 import 'package:nnbdc/global.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/util/app_clock.dart';
+import 'package:nnbdc/util/utils.dart';
 
 class BookmarkBo {
   static final BookmarkBo _instance = BookmarkBo._internal();
@@ -71,7 +72,7 @@ class BookmarkBo {
       final now = AppClock.now();
 
       // 创建或更新书签
-      final id = existingBookmark?.id ?? now.millisecondsSinceEpoch.toString();
+      final id = existingBookmark?.id ?? Util.uuid();
       final bookmark = BookMark(
         id: id,
         userId: userId,

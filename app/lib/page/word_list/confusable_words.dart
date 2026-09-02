@@ -1,3 +1,4 @@
+import 'package:nnbdc/api/bo/bookmark_bo.dart';
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/api/sort_alg.dart';
@@ -212,14 +213,37 @@ class ConfusableWordsProgressProvider implements WordProgressProvider {
   }
 }
 
-/// 内存 no-op 书签：不写 bookMarks 表、不产生 DbLog、不触发同步。
-/// 会话内书签定位由页面内存态维持，不跨会话恢复（与纯浏览视图一致）。
 class ConfusableWordsBookMarkProvider implements BookMarkProvider {
-  @override
-  Future<BookMarkVo?> getBookMark() async => null;
+  static const String bookMarkName = 'confusable_words_list';
 
   @override
-  Future<bool> saveBookMark(BookMarkVo bookMark) async => true;
+  Future<BookMarkVo?> getBookMark() async {
+    final result = await BookmarkBo().getBookMark(bookMarkName);
+    return result.data;
+  }
+
+  @override
+  Future<bool> saveBookMark(BookMarkVo bookMark) async {
+    try {
+      final userId = Global.getLoggedInUser()?.id;
+      if (userId == null) {
+        Global.logger.e('保存易混淆单词书签失败：用户未登录');
+        return false;
+      }
+
+      final result = await BookmarkBo().saveBookMark(
+        bookMarkName,
+        bookMark.spell,
+        bookMark.position,
+        userId,
+        sortAlg: bookMark.sortAlg,
+      );
+      return result.success;
+    } catch (e) {
+      Global.logger.e('保存易混淆单词书签异常: $e');
+      return false;
+    }
+  }
 }
 
 Future<dynamic>? toConfusableWordsListPage() {
