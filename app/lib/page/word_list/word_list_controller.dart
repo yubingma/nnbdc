@@ -174,7 +174,7 @@ class WordListController extends ChangeNotifier {
       initialScrollIndex = predWordIndex - baseIndex!;
       
       // 1. 先进行极其快速的预测分页数据加载
-      await doQuery(true, predQueryIndex, predQuerySize, false);
+      await doQuery(true, predQueryIndex, predQuerySize, false, force: true);
 
       int actualWordIndex = -1;
       int localOffset = predWordIndex - predQueryIndex;
@@ -196,12 +196,8 @@ class WordListController extends ChangeNotifier {
       if (totalWordCount <= 0) {
         actualWordIndex = 0;
       } else if (actualWordIndex == -1) {
-        if (bookMark!.position >= totalWordCount) {
-          Global.logger.w('WordListController: 书签位置 ${bookMark!.position} 超过了总词数 $totalWordCount，重置为 0');
-          actualWordIndex = 0;
-        } else {
-          actualWordIndex = bookMark!.position;
-        }
+        Global.logger.w('WordListController: 书签单词 ${bookMark!.spell} 在当前词表中不存在，重置为 0');
+        actualWordIndex = 0;
       } else if (actualWordIndex >= totalWordCount) {
         Global.logger.w('WordListController: 实际书签位置 $actualWordIndex 超过了总词数 $totalWordCount，重置为 0');
         actualWordIndex = 0;
@@ -218,11 +214,11 @@ class WordListController extends ChangeNotifier {
         actualQuerySize = pageSize * 2;
       }
 
-      // 4. 最终对齐：如果预测的分页区间不对，则需要执行补充加载
-      if (actualQueryIndex != predQueryIndex || actualQuerySize != predQuerySize) {
+      // 4. 最终对齐：如果预测的分页区间不对，或者因预测偏移导致数据为空但总词数大于0，则执行重查加载
+      if (actualQueryIndex != predQueryIndex || actualQuerySize != predQuerySize || (words.isEmpty && totalWordCount > 0)) {
         baseIndex = actualQueryIndex;
         initialScrollIndex = actualWordIndex - baseIndex!; 
-        await doQuery(true, baseIndex!, actualQuerySize, false);
+        await doQuery(true, baseIndex!, actualQuerySize, false, force: true);
       } else {
         baseIndex = predQueryIndex;
         initialScrollIndex = actualWordIndex - baseIndex!;
@@ -233,7 +229,10 @@ class WordListController extends ChangeNotifier {
         initialScrollIndex = 0;
       }
       
-      bookMark = BookMarkVo(actualWordIndex, bookMark!.spell, bookMark!.sortAlg);
+      final currentSpell = (actualWordIndex >= 0 && actualWordIndex < words.length)
+          ? words[actualWordIndex].word.spell
+          : bookMark!.spell;
+      bookMark = BookMarkVo(actualWordIndex, currentSpell, bookMark!.sortAlg);
 
       // 数据和页面都准备好后，执行一次精准跳转
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -314,7 +313,7 @@ class WordListController extends ChangeNotifier {
             words.length >= totalWordCount &&
             words.isNotEmpty) ||
         fromIndex < 0 ||
-        (!force && lastQueryTime != null &&
+        (!force && !clearCurrent && lastQueryTime != null &&
             AppClock.now().difference(lastQueryTime!).inMilliseconds <
                 minQueryInterval)) {
       return;
