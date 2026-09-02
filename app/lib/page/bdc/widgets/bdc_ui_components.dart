@@ -811,7 +811,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_not_know_btn'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.cardBg,
+                backgroundColor: context.buttonBg,
                 foregroundColor: context.warmAccentColor,
                 side: BorderSide(
                   color: context.warmAccentColor.withValues(alpha: 0.28),
@@ -841,7 +841,7 @@ extension BdcPageStateUIComponents on BdcPageState {
             child: ElevatedButton(
               key: const Key('bdc_study_again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.cardBg,
+                backgroundColor: context.buttonBg,
                 foregroundColor: context.textPrimary,
                 side: BorderSide(
                   color: context.cardBorder,
@@ -864,7 +864,7 @@ extension BdcPageStateUIComponents on BdcPageState {
           const SizedBox(width: 12),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: context.primaryColor,
+              backgroundColor: context.primaryColor.withValues(alpha: Constants.primaryButtonOpacity),
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 11),
@@ -2846,10 +2846,10 @@ extension BdcPageStateUIComponents on BdcPageState {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF131E1C) : Colors.white,
+              color: context.cardBg,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+                color: context.cardBorder,
                 width: 1,
               ),
               boxShadow: [

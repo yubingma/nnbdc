@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../constants.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_theme_background.dart';
@@ -11,8 +12,9 @@ extension AppThemeContextExtension on BuildContext {
   AppThemeConfig get themeConfig => AppThemeConfig.of(themeStyle);
 
   Color get primaryColor => themeConfig.primaryColor;
-  Color get subtleBg => themeConfig.subtleBg;
-  Color get cardBg => themeConfig.cardBg;
+  Color get subtleBg => themeConfig.subtleBg.withValues(alpha: Constants.subtleOpacity);
+  Color get cardBg => themeConfig.cardBg.withValues(alpha: Constants.cardOpacity);
+  Color get buttonBg => themeConfig.cardBg.withValues(alpha: Constants.buttonOpacity);
   Color get cardBorder => themeConfig.cardBorder;
   Color get textPrimary => themeConfig.textPrimary;
   Color get textSecondary => themeConfig.textSecondary;
