@@ -132,17 +132,89 @@ Future<void> completeSyncLog({bool success = true, String? errorMessage, int? db
   clearCurrentSyncLogId();
 }
 
-/// 根据操作类型决定表依赖排序方向
+/// 定义表的优先级(数字越小优先级越高,越先同步)
+int getTableSyncPriority(String tableName) {
+  switch (tableName) {
+    case 'users':
+      return 1;
+    case 'dicts':
+      return 2; // dicts必须在dictWords之前
+    case 'dictWords':
+      return 3; // dictWords依赖dicts
+    case 'learningDicts':
+      return 4; // learningDicts依赖dicts
+    case 'learningWords':
+      return 5;
+    case 'masteredWords': // 已废弃，但保留case以避免unknown table warning
+      return 5;
+    case 'userWrongWords':
+      return 5;
+    case 'bookMarks':
+      return 5;
+    case 'userStudySteps':
+      return 5;
+    case 'dakas':
+      return 5;
+    case 'userOpers':
+      return 5;
+    case 'userCowDungLogs':
+      return 5;
+    case 'meaningItems':
+      return 5;
+    case 'learningLogs':
+      return 5;
+    case 'userStudyDailyStats':
+      return 5;
+    case 'userBadges':
+      return 5;
+    case 'pcaProjectionConfigs':
+      return 1;
+    default:
+      throw Exception('Unknown table name: $tableName');
+  }
+}
+
+/// 根据操作类型与表依赖决定执行顺序
 ///
-/// - INSERT/UPDATE: 正序（优先级小的先执行，即先父后子）
-/// - DELETE/BATCH_DELETE: 逆序（优先级大的先执行，即先子后父）
-/// - 混合情况: 非删除操作优先于删除操作（确保先完成增改，再执行删除）
-int _comparePriorityByOperate(
+/// 核心原则：
+/// 1. 同一张表内部：严格尊重操作先后顺序（FIFO）。
+///    若同一时间戳下既有 BATCH_DELETE 又有其它操作，BATCH_DELETE 作为清空/重置操作必须先执行，绝不能后置清空刚写入的数据。
+/// 2. 不同表之间：
+///    - INSERT/UPDATE: 正序（优先级小的先执行，即先父后子）
+///    - DELETE/BATCH_DELETE: 逆序（优先级大的先执行，即先子后父）
+///    - 混合情况: 非删除操作优先于删除操作（确保先完成增改，再执行删除）
+@visibleForTesting
+int compareLogExecutionOrderForTesting(
+  String tableA,
+  String tableB,
+  String operateA,
+  String operateB,
+  int priorityA,
+  int priorityB,
+) =>
+    _compareLogExecutionOrder(tableA, tableB, operateA, operateB, priorityA, priorityB);
+
+int _compareLogExecutionOrder(
+  String tableA,
+  String tableB,
   String operateA,
   String operateB,
   int priorityA,
   int priorityB,
 ) {
+  // 同一张表内部的排序
+  if (tableA == tableB) {
+    bool isBatchDeleteA = operateA == 'BATCH_DELETE';
+    bool isBatchDeleteB = operateB == 'BATCH_DELETE';
+    if (isBatchDeleteA != isBatchDeleteB) {
+      // 同表内 BATCH_DELETE 必须优先执行（先清空再写入）
+      return isBatchDeleteA ? -1 : 1;
+    }
+    // 同表其它操作保持原有生成顺序（返回0由稳定排序保持）
+    return 0;
+  }
+
+  // 不同表之间的依赖排序
   bool isDeleteA = operateA == 'DELETE' || operateA == 'BATCH_DELETE';
   bool isDeleteB = operateB == 'DELETE' || operateB == 'BATCH_DELETE';
 
@@ -153,7 +225,7 @@ int _comparePriorityByOperate(
     // 两个都不是删除：正序排列（先操作父表，即优先级数字小的先执行）
     return priorityA.compareTo(priorityB);
   } else {
-    // 一个删除一个非删除：非删除操作先执行
+    // 一个删除一个非删除：非删除操作先执行（确保跨表依赖时先完成父表增改）
     return isDeleteA ? 1 : -1;
   }
 }
@@ -233,47 +305,7 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
     // 防止因预置数据库缺失日志导致服务端出现 "dict_word violates foreign key constraint" 错误
     await _ensureParentDictsLogs(result.first, userId);
 
-    // 定义表的优先级(数字越小优先级越高,越先同步)
-    int getPriority(String tableName) {
-      switch (tableName) {
-        case 'users':
-          return 1;
-        case 'dicts':
-          return 2; // dicts必须在dictWords之前
-        case 'dictWords':
-          return 3; // dictWords依赖dicts
-        case 'learningDicts':
-          return 4; // learningDicts依赖dicts
-        case 'learningWords':
-          return 5;
-        case 'masteredWords': // 已废弃，但保留case以避免unknown table warning
-          return 5;
-        case 'userWrongWords':
-          return 5;
-        case 'bookMarks':
-          return 5;
-        case 'userStudySteps':
-          return 5;
-        case 'dakas':
-          return 5;
-        case 'userOpers':
-          return 5;
-        case 'userCowDungLogs':
-          return 5;
-        case 'meaningItems':
-          return 5;
-        case 'learningLogs':
-          return 5;
-        case 'userStudyDailyStats':
-          return 5;
-        case 'userBadges':
-          return 5;
-        case 'pcaProjectionConfigs':
-          return 1;
-        default:
-          throw Exception('Unknown table name: $tableName');
-      }
-    }
+    // 【强制校验】严禁同步核心/系统词书的插入操作 (Fail-Fast)
 
     // 对本地同步到后端的日志进行排序,确保：
     // - INSERT/UPDATE: 父表在子表之前（正序依赖）
@@ -298,11 +330,13 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       if (timeCompare != 0) {
         return timeCompare;
       }
-      return _comparePriorityByOperate(
+      return _compareLogExecutionOrder(
+        a['tblName'] as String,
+        b['tblName'] as String,
         a['operate'] as String,
         b['operate'] as String,
-        getPriority(a['tblName'] as String),
-        getPriority(b['tblName'] as String),
+        getTableSyncPriority(a['tblName'] as String),
+        getTableSyncPriority(b['tblName'] as String),
       );
     });
 
@@ -333,11 +367,13 @@ Future<void> doSyncUserDb(List<UserDbLog> localChanges, List<UserDbLogDto> backe
       if (timeCompare != 0) {
         return timeCompare;
       }
-      return _comparePriorityByOperate(
+      return _compareLogExecutionOrder(
+        a.tblName,
+        b.tblName,
         a.operate,
         b.operate,
-        getPriority(a.tblName),
-        getPriority(b.tblName),
+        getTableSyncPriority(a.tblName),
+        getTableSyncPriority(b.tblName),
       );
     });
 

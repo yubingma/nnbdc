@@ -400,5 +400,91 @@ void main() {
       expect(correctResult.first[0]['record']['lastLearningDate'], '2026-05-29T00:00:00.000'); // 保持为今天
       expect(correctResult.second.length, 0); // 服务端旧记录被安全阻断，没有同步到本地覆盖！
     });
+
+    test('同表操作必须遵循先清空后写入：BATCH_DELETE 严禁后置于 UPDATE/INSERT', () {
+      var sameTime = DateTime.parse('2026-09-02T10:30:57.777Z');
+      
+      // 模拟同一时间戳（或同一毫秒批次）内产生的同表日志：
+      // 1. UPDATE 单词 A
+      // 2. BATCH_DELETE 清空词书
+      // 3. UPDATE 单词 B
+      List<Map<String, dynamic>> logs = [
+        {
+          'tblName': 'dictWords',
+          'operate': 'UPDATE',
+          'recordId': 'dict1-word1',
+          'createTime': sameTime,
+        },
+        {
+          'tblName': 'dictWords',
+          'operate': 'BATCH_DELETE',
+          'recordId': 'BATCH_DELETE_DICTWORDS',
+          'createTime': sameTime,
+        },
+        {
+          'tblName': 'dictWords',
+          'operate': 'UPDATE',
+          'recordId': 'dict1-word2',
+          'createTime': sameTime,
+        },
+      ];
+
+      // 按照同步日志的排序逻辑执行排序
+      logs.sort((a, b) {
+        int timeCompare = (a['createTime'] as DateTime).compareTo(b['createTime'] as DateTime);
+        if (timeCompare != 0) {
+          return timeCompare;
+        }
+        return compareLogExecutionOrderForTesting(
+          a['tblName'] as String,
+          b['tblName'] as String,
+          a['operate'] as String,
+          b['operate'] as String,
+          getTableSyncPriority(a['tblName'] as String),
+          getTableSyncPriority(b['tblName'] as String),
+        );
+      });
+
+      // 验证：BATCH_DELETE 必须排在首位，绝对不能把刚 UPDATE 的数据在最后清空！
+      expect(logs[0]['operate'], 'BATCH_DELETE');
+      expect(logs[1]['operate'], 'UPDATE');
+      expect(logs[2]['operate'], 'UPDATE');
+    });
+
+    test('不同表操作依然遵循外键依赖排序：父表先操作，子表后操作', () {
+      var sameTime = DateTime.parse('2026-09-02T10:30:57.777Z');
+      
+      List<Map<String, dynamic>> logs = [
+        {
+          'tblName': 'dictWords', // 子表
+          'operate': 'INSERT',
+          'createTime': sameTime,
+        },
+        {
+          'tblName': 'dicts', // 父表
+          'operate': 'INSERT',
+          'createTime': sameTime,
+        },
+      ];
+
+      logs.sort((a, b) {
+        int timeCompare = (a['createTime'] as DateTime).compareTo(b['createTime'] as DateTime);
+        if (timeCompare != 0) {
+          return timeCompare;
+        }
+        return compareLogExecutionOrderForTesting(
+          a['tblName'] as String,
+          b['tblName'] as String,
+          a['operate'] as String,
+          b['operate'] as String,
+          getTableSyncPriority(a['tblName'] as String),
+          getTableSyncPriority(b['tblName'] as String),
+        );
+      });
+
+      // 跨表插入：父表先插入（优先级数字小），子表后插入
+      expect(logs[0]['tblName'], 'dicts');
+      expect(logs[1]['tblName'], 'dictWords');
+    });
   });
 }
