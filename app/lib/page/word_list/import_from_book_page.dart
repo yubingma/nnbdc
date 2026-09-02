@@ -5,6 +5,7 @@ import '../../api/vo.dart';
 import '../../db/db.dart';
 import '../../global.dart';
 import '../../util/toast_util.dart';
+import '../../widget/app_scaffold.dart';
 import '../select_book.dart';
 import 'word_list.dart';
 
@@ -224,8 +225,8 @@ class ImportFromBookPageState extends State<ImportFromBookPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('从词书导入'),
+      appBar: AppAppBar(
+        title: '从词书导入',
         actions: [
           if (_words.isNotEmpty)
             TextButton(
