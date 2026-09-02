@@ -465,10 +465,10 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 isDarkMode: isDarkMode,
                 title: '今日错词',
                 count: wrongCount,
-                icon: Icons.error_outline_rounded,
-                iconBgColor: isDarkMode ? const Color(0x26FF7E6C) : const Color(0xFFFEF3F2),
-                iconColor: isDarkMode ? const Color(0xFFFF7E6C) : const Color(0xFFE54D3B),
-                isAlert: wrongCount > 0,
+                icon: Icons.spellcheck_rounded,
+                iconBgColor: iconBgColor,
+                iconColor: accentColor,
+                isAlert: false,
                 onTap: () {
                   toWrongWordsListPage()?.then((_) => loadData());
                 },
