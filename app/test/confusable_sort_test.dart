@@ -516,7 +516,7 @@ void main() {
       expect(confusableSortInIsolate(params), isNot(contains('dog')));
     });
 
-    test('无锚点 → 空词表（无学习过的词则无词表）', () {
+    test('isolate 入口：无预设锚点时自动从学习范围候选词成簇（新用户不为空，孤立词 cart/go 剔除）', () {
       const words = [
         (id: 'w_cat', spell: 'cat'),
         (id: 'w_cot', spell: 'cot'),
@@ -527,7 +527,7 @@ void main() {
         [for (final w in words) w.id],
         [for (final w in words) w.spell],
       );
-      expect(confusableSortInIsolate(params), isEmpty);
+      expect(confusableSortInIsolate(params), ['w_cat', 'w_cot']);
 
       final paramsEmptyAnchors = ConfusableSortParams(
         [for (final w in words) w.id],
@@ -535,7 +535,7 @@ void main() {
         anchorIds: const [],
         anchorSpells: const [],
       );
-      expect(confusableSortInIsolate(paramsEmptyAnchors), isEmpty);
+      expect(confusableSortInIsolate(paramsEmptyAnchors), ['w_cat', 'w_cot']);
 
       // 空输入
       expect(confusableSortInIsolate(ConfusableSortParams([], [])), isEmpty);

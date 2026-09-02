@@ -352,11 +352,11 @@ void main() {
       final list1 = await wordBo.getConfusableWordIds(userId);
       expect(list1, ['w_cot', 'w_cat', 'w_cut']);
 
-      // 学习时间更新（w_cut 变成最新）→ 签名含时间分量 → 重算，cut 排最前
+      // 学习时间更新（w_cut 变成最新）→ 签名含时间分量 → 重算，cut 作为簇头排最前，组员按字典序 cat < cot
       await insertLearningWord('w_cut', lastLearningDate: DateTime(2026, 8, 22));
       final list2 = await wordBo.getConfusableWordIds(userId);
       expect(identical(list1, list2), false);
-      expect(list2, ['w_cut', 'w_cot', 'w_cat']);
+      expect(list2, ['w_cut', 'w_cat', 'w_cot']);
     });
   });
 
@@ -624,7 +624,7 @@ void main() {
       final result = await WordBo().getWordLists();
       expect(result.success, true);
       final entry = result.data!.firstWhere((wl) => wl.name == '易混淆单词');
-      expect(entry.wordCount, 2);
+      expect(entry.wordCount, 1); // 真实组数：cat 与 cot 构成 1 组易混淆词
     });
   });
 }

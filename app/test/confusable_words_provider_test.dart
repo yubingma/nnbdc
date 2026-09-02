@@ -262,29 +262,34 @@ void main() {
     });
 
     test('groupIndexOf 按锚点簇分组：每组连续同组号', () async {
-      // 场景 1：全锚点（cat/cot/cut 学习过）→ 每个锚点自成一簇，组号依次递增
+      // 场景 1：cat/cot/cut 互为形近词，聚成 1 个簇（簇头 cat，组员 cot/cut），同组连续同组号 1
       await seedConfusableData();
       var provider = ConfusableWordsProvider();
       await provider.getAPageOfWords(0, 999999);
       expect(provider.groupIndexOf(0), 1);
-      expect(provider.groupIndexOf(1), 2);
-      expect(provider.groupIndexOf(2), 3);
+      expect(provider.groupIndexOf(1), 1);
+      expect(provider.groupIndexOf(2), 1);
       expect(provider.groupIndexOf(99), 0); // 越界 → 默认底色
 
-      // 场景 2：给现有学习词书 d1 加相近词 w_rat（在学习范围内同样作为锚点候选）
-      // → cat/cot/cut 有学习时间在前，rat 无学习时间在后，组号 [1,2,3,4]
-      await insertWord('w_rat', 'rat');
-      await insertCommonMeaning('mi_rat', 'w_rat');
-      await insertDictWord('d1', 'w_rat');
+      // 场景 2：加入另一对独立形近词 dog / fog，聚成第 2 个簇
+      await insertWord('w_dog', 'dog');
+      await insertCommonMeaning('mi_dog', 'w_dog');
+      await insertDictWord('d1', 'w_dog');
+      await insertWord('w_fog', 'fog');
+      await insertCommonMeaning('mi_fog', 'w_fog');
+      await insertDictWord('d1', 'w_fog');
 
       provider = ConfusableWordsProvider();
       final result = await provider.getAPageOfWords(0, 999999);
       expect(result.rows.map((w) => w.word.id).toList(),
-          ['w_cat', 'w_cot', 'w_cut', 'w_rat']);
+          ['w_cat', 'w_cot', 'w_cut', 'w_dog', 'w_fog']);
+      // 簇 1（cat 组）：组号全为 1
       expect(provider.groupIndexOf(0), 1);
-      expect(provider.groupIndexOf(1), 2);
-      expect(provider.groupIndexOf(2), 3);
-      expect(provider.groupIndexOf(3), 4);
+      expect(provider.groupIndexOf(1), 1);
+      expect(provider.groupIndexOf(2), 1);
+      // 簇 2（dog 组）：组号全为 2
+      expect(provider.groupIndexOf(3), 2);
+      expect(provider.groupIndexOf(4), 2);
     });
 
     testWidgets('unmasterWord 返回 false 且 masteredWords 表不变（只读浏览）',

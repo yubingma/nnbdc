@@ -2470,8 +2470,8 @@ class WordBo {
       // 获取全局已掌握单词数量
       final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
       wordLists.add(WordList("已掌握", masteredWordIds.length));
-      // 易混淆单词：词表单词数（锚点 + 范围内相近词；未命中时完整计算一次并缓存，命中复用缓存长度）
-      wordLists.add(WordList("易混淆单词", await getConfusableWordCount(user.id)));
+      // 易混淆单词：词表组数（每一组包含至少 2 个一字之差形近词）
+      wordLists.add(WordList("易混淆单词", await getConfusableGroupCount(user.id)));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
     } catch (e, stackTrace) {
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);
@@ -2878,18 +2878,26 @@ class WordBo {
     final anchorIdsList = anchorIds.toList();
     final anchorSpells = [for (final id in anchorIdsList) spellMap[id] ?? id];
     final anchorTimesList = [for (final id in anchorIdsList) anchorTimes[id]];
-    final sortedIds = await compute<ConfusableSortParams, List<String>>(
-        confusableSortInIsolate,
+    final sortResult = await compute<ConfusableSortParams, ConfusableSortResult>(
+        confusableClusterSortInIsolate,
         ConfusableSortParams(ids, spells,
             anchorIds: anchorIdsList,
             anchorSpells: anchorSpells,
             anchorTimes: anchorTimesList));
+    final sortedIds = sortResult.sortedIds;
+    final realAnchorIds = sortResult.anchorIds.toSet();
     _confusableCache[userId] =
-        _ConfusableCacheEntry(sortedIds, signature, anchorIds);
+        _ConfusableCacheEntry(sortedIds, signature, realAnchorIds);
     return sortedIds;
   }
 
-  /// 易混淆单词计数：与排序共用缓存——缓存命中（签名一致）直接返回长度，
+  /// 易混淆单词组数（簇头数量）：每一组包含至少 2 个一字之差形近词
+  Future<int> getConfusableGroupCount(String userId) async {
+    await getConfusableWordIds(userId);
+    return _confusableCache[userId]?.anchorIds.length ?? 0;
+  }
+
+  /// 易混淆单词总数：与排序共用缓存——缓存命中（签名一致）直接返回长度，
   /// 未命中则完整计算一次（过滤 + 排序，isolate）并缓存。
   Future<int> getConfusableWordCount(String userId) async {
     final ids = await getConfusableWordIds(userId);

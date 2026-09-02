@@ -1911,19 +1911,6 @@ class WordListPageState extends State<WordListPage>
     }
   }
 
-  /// 分组底色：**两种颜色交替**（组 1、3、5… 一种；组 2、4、6… 另一种），
-  /// 只改变卡片背景色，便于看清易混淆词表中每组（锚点簇）的边界；
-  /// 组号 0 = 默认底色。
-  Color _groupBackgroundColor(int group, bool isDarkMode) {
-    if (group <= 0) return isDarkMode ? Colors.black26 : Colors.white;
-    if (isDarkMode) {
-      // 深蓝 ↔ 深橙 交替（色相差异大、对比明显）
-      return (group - 1).isEven ? const Color(0xFF2E3D5C) : const Color(0xFF5C3D24);
-    }
-    // 蓝 100 ↔ 橙 100 交替
-    return (group - 1).isEven ? const Color(0xFFBBDEFB) : const Color(0xFFFFE0B2);
-  }
-
   Widget _buildWordDecoration(
       {required Widget child,
       required bool isBookmarked,
@@ -1932,38 +1919,31 @@ class WordListPageState extends State<WordListPage>
       int group = 0}) {
     final isAsrReady = isBookmarked && asr.state == AsrState.started;
 
-    if (!isAsrReady && group == 0) {
+    if (!isAsrReady) {
       return child;
     }
 
     return AnimatedBuilder(
       animation: _glowController,
       builder: (context, child) {
-        // 计算动态阴影
-        List<BoxShadow>? shadows;
-        if (isAsrReady) {
-          final glow = 1.0 - _glowController.value;
-          shadows = [
-            // 外层大云雾
-            BoxShadow(
-              color: AppTheme.gradientStartColor.withValues(alpha: 0.2 * glow),
-              blurRadius: 15 + 10 * glow,
-              spreadRadius: 2 + 4 * glow,
-            ),
-            // 内层亮色光晕
-            BoxShadow(
-              color: AppTheme.gradientEndColor.withValues(alpha: 0.3 * glow),
-              blurRadius: 8 + 5 * glow,
-              spreadRadius: 1 + 2 * glow,
-            ),
-          ];
-        }
-
+        final glow = 1.0 - _glowController.value;
         return Container(
           decoration: BoxDecoration(
-            color: _groupBackgroundColor(group, isDarkMode),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: shadows,
+            boxShadow: [
+              // 外层大云雾
+              BoxShadow(
+                color: AppTheme.gradientStartColor.withValues(alpha: 0.2 * glow),
+                blurRadius: 15 + 10 * glow,
+                spreadRadius: 2 + 4 * glow,
+              ),
+              // 内层亮色光晕
+              BoxShadow(
+                color: AppTheme.gradientEndColor.withValues(alpha: 0.3 * glow),
+                blurRadius: 8 + 5 * glow,
+                spreadRadius: 1 + 2 * glow,
+              ),
+            ],
           ),
           child: child,
         );
@@ -2122,14 +2102,26 @@ class WordListPageState extends State<WordListPage>
       builder: (context, activeIndex, child) {
         final isBookmarked = activeIndex == i;
 
-        // 基础单词内容；分组词表按锚点簇交替底色（组号由 provider 提供）
+        final currentGroup = args.wordsProvider.groupIndexOf(i);
+        final isNewGroup = i > 0 &&
+            currentGroup > 0 &&
+            currentGroup != args.wordsProvider.groupIndexOf(i - 1);
+
+        // 基础单词内容
         Widget content = _buildWordDecoration(
           isBookmarked: isBookmarked,
           isDarkMode: isDarkMode,
           learningStatus: learningStatus,
-          group: args.wordsProvider.groupIndexOf(i),
+          group: currentGroup,
           child: _renderWordContent(word, i, isBookmarked, isDarkMode, learningStatus),
         );
+
+        if (isNewGroup) {
+          content = Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: content,
+          );
+        }
 
         // 检查是否需要显示单元标题（仅当Provider是DictWordsProvider时）
         if (args.wordsProvider is DictWordsProvider) {
