@@ -10,7 +10,6 @@ class ModeComponents {
     bool isDarkMode, {
     AppThemeConfig? themeConfig,
   }) {
-    final accentColor = themeConfig?.primaryColor ?? (isDarkMode ? const Color(0xFF2CD88F) : const Color(0xFF18BA7C));
     final textMain = themeConfig?.textPrimary ?? (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724));
     final textSub = themeConfig?.textSecondary ?? (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570));
 
@@ -26,7 +25,7 @@ class ModeComponents {
             softWrap: false,
             textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
-              color: isBookmarked ? accentColor : textMain,
+              color: textMain,
               fontSize: 16.5,
               fontWeight: FontWeight.w700,
               height: 1.25,

@@ -56,18 +56,26 @@ class WordListItemLayout extends StatelessWidget {
     final themeConfig = AppThemeConfig.of(themeStyle);
     final accentColor = themeConfig.primaryColor;
 
-    final cardBg = isDarkMode
-        ? (isBookmarked ? accentColor.withValues(alpha: 0.18) : themeConfig.cardBg)
-        : (isBookmarked ? accentColor.withValues(alpha: 0.08) : Colors.white);
+    // 无论是否选中，底色统一保持纯白（暗黑下保持卡片暗底），绝不通体涂绿造成庸俗感
+    final cardBg = isDarkMode ? themeConfig.cardBg : Colors.white;
 
-    final borderColor = isBookmarked ? accentColor : themeConfig.cardBorder;
+    // 选中时使用精致半透的主题微边框 (1.2px)，未选中时为极淡边框
+    final borderColor = isBookmarked
+        ? accentColor.withValues(alpha: isDarkMode ? 0.6 : 0.45)
+        : themeConfig.cardBorder;
 
+    // 选中时赋予优雅微悬浮微光投影，未选中时为常规微投影
     final cardShadow = isBookmarked
         ? [
             BoxShadow(
-              color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.16),
-              blurRadius: 12,
+              color: accentColor.withValues(alpha: isDarkMode ? 0.25 : 0.08),
+              blurRadius: 16,
               offset: const Offset(0, 3),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 1),
             ),
           ]
         : themeConfig.cardShadows;
@@ -95,13 +103,13 @@ class WordListItemLayout extends StatelessWidget {
 
     final borderSide = BorderSide(
       color: borderColor,
-      width: isBookmarked ? 1.6 : 1.0,
+      width: isBookmarked ? 1.2 : 1.0,
     );
 
     final border = switch (groupPosition) {
       GroupCardPosition.single => Border.all(
           color: borderColor,
-          width: isBookmarked ? 1.6 : 1.0,
+          width: isBookmarked ? 1.2 : 1.0,
         ),
       GroupCardPosition.top => Border(
           top: borderSide,
@@ -188,8 +196,8 @@ class WordListItemLayout extends StatelessWidget {
   Widget _buildLeftColumn(AppThemeConfig themeConfig) {
     final accentColor = themeConfig.primaryColor;
     final sidebarBg = isDarkMode
-        ? (isBookmarked ? accentColor.withValues(alpha: 0.22) : themeConfig.subtleBg)
-        : (isBookmarked ? accentColor.withValues(alpha: 0.12) : const Color(0xFFF7FBF9));
+        ? Colors.white.withValues(alpha: 0.04)
+        : const Color(0xFFFAFAFA);
 
     final dividerColor = themeConfig.cardBorder;
 
@@ -205,19 +213,38 @@ class WordListItemLayout extends StatelessWidget {
             right: BorderSide(color: dividerColor, width: 1),
           ),
         ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 环形熟练度微光环徽章（序号 + 熟练度光环二合一）
-              _buildRingMasteryBadge(themeConfig),
-              if (audioIndicator != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: audioIndicator!,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 选中时在卡片最左侧边缘呈现精致的垂直呼吸指示条 (3.5px宽)，安静明确，绝不影响视线
+            if (isBookmarked)
+              Positioned(
+                left: 0,
+                top: 10,
+                bottom: 10,
+                width: 3.5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: accentColor,
+                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(2)),
+                  ),
                 ),
-            ],
-          ),
+              ),
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 环形熟练度微光环徽章（序号 + 熟练度光环二合一）
+                  _buildRingMasteryBadge(themeConfig),
+                  if (audioIndicator != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: audioIndicator!,
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

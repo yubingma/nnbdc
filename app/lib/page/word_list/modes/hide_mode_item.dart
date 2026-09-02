@@ -90,12 +90,14 @@ class HideModeItem extends StatelessWidget {
 
     final accentColor = themeConfig.primaryColor;
     final btnBg = isDarkMode
-        ? accentColor.withValues(alpha: 0.15)
-        : themeConfig.subtleBg;
+        ? (isBookmarked ? accentColor.withValues(alpha: 0.16) : Colors.white.withValues(alpha: 0.05))
+        : (isBookmarked ? accentColor.withValues(alpha: 0.08) : const Color(0xFFF1F5F9));
     final btnBorder = isDarkMode
-        ? accentColor.withValues(alpha: 0.3)
-        : themeConfig.cardBorder;
-    final btnTextColor = accentColor;
+        ? (isBookmarked ? accentColor.withValues(alpha: 0.35) : Colors.white12)
+        : (isBookmarked ? accentColor.withValues(alpha: 0.25) : const Color(0xFFE2E8F0));
+    final btnTextColor = isBookmarked
+        ? accentColor
+        : (isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
 
     return Stack(
       alignment: Alignment.centerLeft,
