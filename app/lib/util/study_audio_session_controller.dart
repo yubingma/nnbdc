@@ -146,6 +146,8 @@ class StudyAudioSessionController {
   final Map<ja.AudioPlayer, Object> _activeCutToken = {};
   final Map<ja.AudioPlayer, Object> _activeVolumeToken = {};
   final Map<ja.AudioPlayer, String> _playerLoadedAsset = {};
+  final Map<ja.AudioPlayer, String> _playerLoadedUrl = {};
+  final Set<String> _failedAudioUrls = {};
 
   // 内部锁
   final _SessionMutex _stateTransitionLock = _SessionMutex();
@@ -204,6 +206,8 @@ class StudyAudioSessionController {
     _activeCutToken.clear();
     _activeVolumeToken.clear();
     _playerLoadedAsset.clear();
+    _playerLoadedUrl.clear();
+    _failedAudioUrls.clear();
     _configureFuture = null;
   }
 
@@ -235,6 +239,7 @@ class StudyAudioSessionController {
     _activeCutToken.remove(player);
     _activeVolumeToken.remove(player);
     _playerLoadedAsset.remove(player);
+    _playerLoadedUrl.remove(player);
     debugPrint('🔊 [SessionController] 已从监视名单安全移除播放器: ${player.hashCode}');
   }
 
@@ -565,13 +570,12 @@ class StudyAudioSessionController {
  
       if (_activeMode == finalTargetMode) {
         if (finalTargetMode == AudioMode.playback) {
-          await _waitForAllPlayers();
           final bool isCategoryChanged = _currentSessionCategory != 'playback';
           if (isCategoryChanged) {
+            await _waitForAllPlayers();
             await _usePlaybackCategory(force: true);
+            await Future.delayed(const Duration(milliseconds: 150));
           }
-          final delayMs = isCategoryChanged ? 150 : 80;
-          await Future.delayed(Duration(milliseconds: delayMs));
         }
         return;
       }
@@ -802,23 +806,27 @@ class StudyAudioSessionController {
         debugPrint('⏱️ [Latency-Sound] 等待并行 Session 切换完成，实耗: ${waitSw.elapsedMilliseconds}ms');
       }
 
+      // 0. 同一音频秒播快速通道（零解码器重建，零网络，0~3ms 极速发音）
+      final bool isSameLoadedUrl = _playerLoadedUrl[player] == soundUrl;
+      if (isSameLoadedUrl && (player.processingState == ja.ProcessingState.ready || player.processingState == ja.ProcessingState.completed)) {
+        try {
+          await player.seek(Duration.zero);
+          await player.setSpeed(speed);
+          await player.setVolume(1.0);
+          unawaited(player.play().catchError((_) {}));
+          _logicallyFinishedPlayers.add(player);
+          debugPrint('⚡ [Latency-Sound] 同一音频瞬时重播命中，开播耗时: ${totalSw.elapsedMilliseconds}ms');
+          return;
+        } catch (e) {
+          debugPrint('⚠️ [Latency-Sound] 瞬时重播异常，回退常规加载: $e');
+        }
+      }
+
       try {
         _logicallyFinishedPlayers.remove(player);
-        await player.setVolume(0.0);
-        final needHardStop = player.playing ||
-            player.processingState == ja.ProcessingState.buffering ||
-            player.processingState == ja.ProcessingState.loading ||
-            player.processingState == ja.ProcessingState.completed;
-        if (needHardStop) {
-          final isCompleted = player.processingState == ja.ProcessingState.completed;
+        if (player.playing) {
           await player.stop();
-          if (isCompleted) {
-            await Future.delayed(const Duration(milliseconds: 30));
-          }
-        } else {
-          await player.pause();
         }
-        await player.seek(Duration.zero);
       } catch (_) {}
 
       final loadSw = Stopwatch()..start();
@@ -838,8 +846,15 @@ class StudyAudioSessionController {
             return false;
           }
 
-          await player.setAudioSource(ja.AudioSource.uri(Uri.file(filePath)))
-              .timeout(Duration(milliseconds: loadTimeoutMs));
+          final isSamePath = _playerLoadedUrl[player] == filePath;
+          if (!isSamePath) {
+            await player.setAudioSource(ja.AudioSource.uri(Uri.file(filePath)))
+                .timeout(Duration(milliseconds: loadTimeoutMs));
+            _playerLoadedUrl[player] = filePath;
+          } else {
+            await player.seek(Duration.zero);
+          }
+          _playerLoadedUrl[player] = soundUrl;
           return player.processingState == ja.ProcessingState.ready ||
                  player.processingState == ja.ProcessingState.loading;
         } catch (e) {
@@ -854,6 +869,7 @@ class StudyAudioSessionController {
         for (int attempt = 1; attempt <= 2; attempt++) {
           try {
             await player.setUrl(url).timeout(Duration(milliseconds: loadTimeoutMs));
+            _playerLoadedUrl[player] = url;
             if (player.processingState == ja.ProcessingState.ready ||
                 player.processingState == ja.ProcessingState.loading ||
                 player.processingState == ja.ProcessingState.buffering) {
@@ -869,13 +885,16 @@ class StudyAudioSessionController {
         return false;
       }
 
-      // 统一音频加载逻辑：Web 直连；Native 优先读本地缓存，缺失则连网
+      // 统一音频加载逻辑：Web 直连；Native 优先读本地缓存，缺失则连网并持久化缓存
       Future<bool> tryLoadAudio(String url) async {
+        if (_failedAudioUrls.contains(url)) return false;
+
         if (PlatformUtils.isWeb) {
           try {
             await player.setUrl(url).timeout(Duration(milliseconds: loadTimeoutMs));
             return true;
           } catch (_) {
+            _failedAudioUrls.add(url);
             return false;
           }
         }
@@ -888,7 +907,25 @@ class StudyAudioSessionController {
           final fromCache = await tryLoadFromCache(targetFilePath, url);
           if (fromCache) return true;
         }
-        return await tryLoadFromUrl(url);
+
+        // 未命中本地缓存时：通过 CacheManager 下载单文件并自动持久化写入本地缓存
+        if (cacheManager != null) {
+          try {
+            final file = await cacheManager.getSingleFile(url).timeout(Duration(milliseconds: loadTimeoutMs));
+            if (await file.exists() && await file.length() > 200) {
+              final fromDownloaded = await tryLoadFromCache(file.path, url);
+              if (fromDownloaded) return true;
+            }
+          } catch (e) {
+            debugPrint('⚠️ [AudioCache] getSingleFile 失败，回退直接流式播放: $url, $e');
+          }
+        }
+
+        final fromUrl = await tryLoadFromUrl(url);
+        if (!fromUrl) {
+          _failedAudioUrls.add(url);
+        }
+        return fromUrl;
       }
 
       // 1. 尝试主口音 URL 加载
@@ -936,7 +973,7 @@ class StudyAudioSessionController {
 
       final volumeToken = Object();
       _activeVolumeToken[player] = volumeToken;
-      await player.setVolume(0.015);
+      await player.setVolume(1.0);
 
       bool hasStartedPlaying = false;
       final playCompletedFuture = player.playerStateStream
@@ -954,18 +991,6 @@ class StudyAudioSessionController {
 
       final playSw = Stopwatch()..start();
       unawaited(player.play().catchError((_) {}));
-
-      // Volume Fade-in
-      unawaited(() async {
-        try {
-          final steps = [0.04, 0.08, 0.15, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0];
-          for (var targetVol in steps) {
-            await Future.delayed(const Duration(milliseconds: 6));
-            if (_activeVolumeToken[player] != volumeToken) return;
-            await player.setVolume(targetVol);
-          }
-        } catch (_) {}
-      }());
 
       if (player.processingState != ja.ProcessingState.completed &&
           player.processingState != ja.ProcessingState.idle) {

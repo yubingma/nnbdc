@@ -100,10 +100,10 @@ class Util {
   }
 
   /// 获取指定单词对应的发音文件Url
-  /// 按全局发音口音偏好拼接 _uk/_us 后缀;若已显式传入 accent,按给定值
+  /// 基础发音库均为无后缀文件（美音）；若偏好英音则优先 _uk，否则使用基础库
   static String getWordSoundUrl(String spell, {WordVo? word, String? accent}) {
     final a = accent ?? Prefs.pronunciationAccent;
-    final suffix = a == 'uk' ? '_uk' : '_us';
+    final suffix = a == 'uk' ? '_uk' : '';
     String url = "${Config.soundBaseUrl}${Util.getFileNameOfWordSound(spell)}$suffix.mp3";
     if (word != null && word.updateTime != null) {
       url += "?v=${word.updateTime!.millisecondsSinceEpoch}";
@@ -111,15 +111,23 @@ class Util {
     return url;
   }
 
-  /// 单词发音 URL 回退序列: 另一口音 → 无后缀旧文件
-  /// 主口音 URL 由 getWordSoundUrl 生成,播放失败时按此序列逐级回退
+  /// 单词发音 URL 回退序列:
+  /// - 英音模式: 基础库无后缀 → 美音 _us
+  /// - 美音模式: 美音 _us → 英音 _uk
   static List<String> getWordSoundFallbackUrls(String spell) {
     final base = Util.getFileNameOfWordSound(spell);
-    final other = Prefs.pronunciationAccent == 'uk' ? '_us' : '_uk';
-    return [
-      "${Config.soundBaseUrl}$base$other.mp3",
-      "${Config.soundBaseUrl}$base.mp3",
-    ];
+    final isUk = Prefs.pronunciationAccent == 'uk';
+    if (isUk) {
+      return [
+        "${Config.soundBaseUrl}$base.mp3",
+        "${Config.soundBaseUrl}${base}_us.mp3",
+      ];
+    } else {
+      return [
+        "${Config.soundBaseUrl}${base}_us.mp3",
+        "${Config.soundBaseUrl}${base}_uk.mp3",
+      ];
+    }
   }
 
   /// 获取指定的例句对应的发音文件Url
