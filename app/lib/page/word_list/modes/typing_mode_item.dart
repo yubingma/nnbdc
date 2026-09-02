@@ -20,6 +20,7 @@ class TypingModeItem extends StatelessWidget {
   final bool showWordProgress;
   final WordListActionHandler actions;
   final List<Widget> slidableActions;
+  final GroupCardPosition groupPosition;
 
   const TypingModeItem({
     super.key,
@@ -32,6 +33,7 @@ class TypingModeItem extends StatelessWidget {
     required this.showWordProgress,
     required this.actions,
     required this.slidableActions,
+    this.groupPosition = GroupCardPosition.single,
   });
 
   @override
@@ -50,6 +52,7 @@ class TypingModeItem extends StatelessWidget {
       showWordProgress: showWordProgress,
       actions: actions,
       slidableActions: slidableActions,
+      groupPosition: groupPosition,
       centerContent: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => actions.onWordTap(word, index),

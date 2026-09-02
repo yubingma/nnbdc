@@ -173,7 +173,7 @@ class WordBo {
       for (final id in sortedAnchorIds)
         '${anchorTimes[id]?.millisecondsSinceEpoch ?? ''}',
     ];
-    final content = 'd:${sortedDictIds.join(',')};w:${sortedWordIds.join(',')};'
+    final content = 'v2;d:${sortedDictIds.join(',')};w:${sortedWordIds.join(',')};'
         'a:${sortedAnchorIds.join(',')};t:${sortedTimes.join(',')}';
     return sha256.convert(utf8.encode(content)).toString();
   }

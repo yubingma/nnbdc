@@ -51,6 +51,7 @@ import 'modes/list_mode_item.dart';
 import 'modes/speak_mode_item.dart';
 import 'modes/translate_sentence_mode_item.dart';
 import 'modes/typing_mode_item.dart';
+import 'modes/word_list_item_layout.dart';
 import 'widgets/audio_level_bar.dart';
 import 'widgets/guide_overlay.dart';
 import 'widgets/handwriting_overlay.dart';
@@ -2103,9 +2104,24 @@ class WordListPageState extends State<WordListPage>
         final isBookmarked = activeIndex == i;
 
         final currentGroup = args.wordsProvider.groupIndexOf(i);
-        final isNewGroup = i > 0 &&
-            currentGroup > 0 &&
-            currentGroup != args.wordsProvider.groupIndexOf(i - 1);
+        final prevGroup = i > 0 ? args.wordsProvider.groupIndexOf(i - 1) : 0;
+        final nextGroup = (i + 1 < words.length) ? args.wordsProvider.groupIndexOf(i + 1) : 0;
+
+        final isGroupStart = currentGroup > 0 && currentGroup != prevGroup;
+        final isGroupEnd = currentGroup > 0 && currentGroup != nextGroup;
+
+        final GroupCardPosition groupPosition;
+        if (currentGroup <= 0) {
+          groupPosition = GroupCardPosition.single;
+        } else if (isGroupStart && isGroupEnd) {
+          groupPosition = GroupCardPosition.single;
+        } else if (isGroupStart) {
+          groupPosition = GroupCardPosition.top;
+        } else if (isGroupEnd) {
+          groupPosition = GroupCardPosition.bottom;
+        } else {
+          groupPosition = GroupCardPosition.middle;
+        }
 
         // 基础单词内容
         Widget content = _buildWordDecoration(
@@ -2113,12 +2129,13 @@ class WordListPageState extends State<WordListPage>
           isDarkMode: isDarkMode,
           learningStatus: learningStatus,
           group: currentGroup,
-          child: _renderWordContent(word, i, isBookmarked, isDarkMode, learningStatus),
+          child: _renderWordContent(word, i, isBookmarked, isDarkMode, learningStatus,
+              groupPosition: groupPosition),
         );
 
-        if (isNewGroup) {
+        if (isGroupStart && i > 0) {
           content = Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: const EdgeInsets.only(top: 14),
             child: content,
           );
         }
@@ -2198,7 +2215,8 @@ class WordListPageState extends State<WordListPage>
   }
 
   Widget _renderWordContent(WordWrapper word, int i, bool isBookmarked,
-      bool isDarkMode, bool? learningStatus) {
+      bool isDarkMode, bool? learningStatus,
+      {GroupCardPosition groupPosition = GroupCardPosition.single}) {
     final slidableActions = _getSlidableActions(word, i, isBookmarked,
         learningStatus: learningStatus);
 
@@ -2214,6 +2232,7 @@ class WordListPageState extends State<WordListPage>
           showWordProgress: args.showWordProgress,
           actions: this,
           slidableActions: slidableActions,
+          groupPosition: groupPosition,
         );
       case WordListStudyMode.speakChinese:
       case WordListStudyMode.speakEnglish:
@@ -2229,6 +2248,7 @@ class WordListPageState extends State<WordListPage>
           actions: this,
           slidableActions: slidableActions,
           audioLevelBar: _audioLevelBar(),
+          groupPosition: groupPosition,
         );
       case WordListStudyMode.translateSentence:
         return TranslateSentenceModeItem(
@@ -2242,6 +2262,7 @@ class WordListPageState extends State<WordListPage>
           actions: this,
           slidableActions: slidableActions,
           audioLevelBar: _audioLevelBar(),
+          groupPosition: groupPosition,
         );
       case WordListStudyMode.dictation:
         return TypingModeItem(
@@ -2254,6 +2275,7 @@ class WordListPageState extends State<WordListPage>
           showWordProgress: args.showWordProgress,
           actions: this,
           slidableActions: slidableActions,
+          groupPosition: groupPosition,
         );
       case WordListStudyMode.dictationHandwriting:
         return HandwritingModeItem(
@@ -2266,6 +2288,7 @@ class WordListPageState extends State<WordListPage>
           showWordProgress: args.showWordProgress,
           actions: this,
           slidableActions: slidableActions,
+          groupPosition: groupPosition,
         );
       case WordListStudyMode.hideChinese:
       case WordListStudyMode.hideEnglish:
@@ -2280,6 +2303,7 @@ class WordListPageState extends State<WordListPage>
           studyMode: studyMode,
           actions: this,
           slidableActions: slidableActions,
+          groupPosition: groupPosition,
         );
       default:
         return ListModeItem(
@@ -2292,6 +2316,7 @@ class WordListPageState extends State<WordListPage>
           showWordProgress: args.showWordProgress,
           actions: this,
           slidableActions: slidableActions,
+          groupPosition: groupPosition,
         );
     }
   }

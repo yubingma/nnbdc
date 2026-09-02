@@ -24,6 +24,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
   final WordListActionHandler actions;
   final List<Widget> slidableActions;
   final Widget? audioLevelBar;
+  final GroupCardPosition groupPosition;
 
   const TranslateSentenceModeItem({
     super.key,
@@ -37,6 +38,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
     required this.actions,
     required this.slidableActions,
     this.audioLevelBar,
+    this.groupPosition = GroupCardPosition.single,
   });
 
   @override
@@ -55,6 +57,7 @@ class TranslateSentenceModeItem extends StatelessWidget {
       showWordProgress: showWordProgress,
       actions: actions,
       slidableActions: slidableActions,
+      groupPosition: groupPosition,
       audioIndicator: null,
       centerContent: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

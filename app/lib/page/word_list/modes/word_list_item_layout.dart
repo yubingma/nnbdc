@@ -7,6 +7,14 @@ import '../../../state.dart';
 import '../../../theme/app_theme.dart';
 import '../word_list_actions.dart';
 
+/// 单词卡片在组内的位置（用于聚合岛设计：首项上圆角、中间直角、尾项下圆角，上下紧凑无缝）
+enum GroupCardPosition {
+  single, // 独立卡片（全圆角）
+  top,    // 组首卡片（上圆角，无下边距）
+  middle, // 组中卡片（全直角，无上下边距）
+  bottom, // 组尾卡片（下圆角，无上边距）
+}
+
 /// 单词列表项的通用布局外壳，处理 Slidable、卡片与环形熟练度微光环
 class WordListItemLayout extends StatelessWidget {
   final WordWrapper word;
@@ -22,6 +30,7 @@ class WordListItemLayout extends StatelessWidget {
   final Widget? rightContent;
   final Widget? audioIndicator;
   final List<Widget> slidableActions;
+  final GroupCardPosition groupPosition;
 
   const WordListItemLayout({
     super.key,
@@ -38,6 +47,7 @@ class WordListItemLayout extends StatelessWidget {
     this.rightContent,
     this.audioIndicator,
     required this.slidableActions,
+    this.groupPosition = GroupCardPosition.single,
   });
 
   @override
@@ -62,25 +72,73 @@ class WordListItemLayout extends StatelessWidget {
           ]
         : themeConfig.cardShadows;
 
-    Widget itemContent = Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
+    final borderRadius = switch (groupPosition) {
+      GroupCardPosition.single => BorderRadius.circular(16),
+      GroupCardPosition.top => const BorderRadius.vertical(top: Radius.circular(16)),
+      GroupCardPosition.middle => BorderRadius.zero,
+      GroupCardPosition.bottom => const BorderRadius.vertical(bottom: Radius.circular(16)),
+    };
+
+    final clipRadius = switch (groupPosition) {
+      GroupCardPosition.single => BorderRadius.circular(15),
+      GroupCardPosition.top => const BorderRadius.vertical(top: Radius.circular(15)),
+      GroupCardPosition.middle => BorderRadius.zero,
+      GroupCardPosition.bottom => const BorderRadius.vertical(bottom: Radius.circular(15)),
+    };
+
+    final margin = switch (groupPosition) {
+      GroupCardPosition.single => const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      GroupCardPosition.top => const EdgeInsets.only(left: 10, right: 10, top: 4, bottom: 0),
+      GroupCardPosition.middle => const EdgeInsets.symmetric(horizontal: 10),
+      GroupCardPosition.bottom => const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 4),
+    };
+
+    final borderSide = BorderSide(
+      color: borderColor,
+      width: isBookmarked ? 1.6 : 1.0,
+    );
+
+    final border = switch (groupPosition) {
+      GroupCardPosition.single => Border.all(
           color: borderColor,
           width: isBookmarked ? 1.6 : 1.0,
         ),
+      GroupCardPosition.top => Border(
+          top: borderSide,
+          left: borderSide,
+          right: borderSide,
+        ),
+      GroupCardPosition.middle => Border(
+          left: borderSide,
+          right: borderSide,
+        ),
+      GroupCardPosition.bottom => Border(
+          top: BorderSide.none,
+          left: borderSide,
+          right: borderSide,
+          bottom: borderSide,
+        ),
+    };
+
+    Widget itemContent = Container(
+      margin: margin,
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: borderRadius,
+        border: border,
         boxShadow: cardShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              /// 1. 左侧序号与环形掌握度光环徽章
-              _buildLeftColumn(themeConfig),
+        borderRadius: clipRadius,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  /// 1. 左侧序号与环形掌握度光环徽章
+                  _buildLeftColumn(themeConfig),
 
               /// 2. 中间和右侧单词释义与交互内容
               Expanded(
@@ -100,6 +158,16 @@ class WordListItemLayout extends StatelessWidget {
               ),
             ],
           ),
+        ),
+            if (groupPosition == GroupCardPosition.top || groupPosition == GroupCardPosition.middle)
+              Container(
+                height: 0.8,
+                margin: const EdgeInsets.only(left: 44),
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.06),
+              ),
+          ],
         ),
       ),
     );

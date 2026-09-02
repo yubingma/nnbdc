@@ -20,6 +20,7 @@ class SpeakModeItem extends StatelessWidget {
   final WordListActionHandler actions;
   final List<Widget> slidableActions;
   final Widget? audioLevelBar;
+  final GroupCardPosition groupPosition;
 
   const SpeakModeItem({
     super.key,
@@ -34,6 +35,7 @@ class SpeakModeItem extends StatelessWidget {
     required this.actions,
     required this.slidableActions,
     this.audioLevelBar,
+    this.groupPosition = GroupCardPosition.single,
   });
 
   @override
@@ -51,6 +53,7 @@ class SpeakModeItem extends StatelessWidget {
       showWordProgress: showWordProgress,
       actions: actions,
       slidableActions: slidableActions,
+      groupPosition: groupPosition,
       audioIndicator: ModeComponents.buildAudioIndicator(word, isBookmarked, audioLevelBar),
       centerContent: GestureDetector(
         behavior: HitTestBehavior.opaque,

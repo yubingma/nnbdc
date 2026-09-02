@@ -21,6 +21,7 @@ class HideModeItem extends StatelessWidget {
   final WordListStudyMode studyMode;
   final WordListActionHandler actions;
   final List<Widget> slidableActions;
+  final GroupCardPosition groupPosition;
 
   const HideModeItem({
     super.key,
@@ -34,6 +35,7 @@ class HideModeItem extends StatelessWidget {
     required this.studyMode,
     required this.actions,
     required this.slidableActions,
+    this.groupPosition = GroupCardPosition.single,
   });
 
   @override
@@ -53,6 +55,7 @@ class HideModeItem extends StatelessWidget {
       showWordProgress: showWordProgress,
       actions: actions,
       slidableActions: slidableActions,
+      groupPosition: groupPosition,
       centerContent: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => actions.onWordTap(word, index),
