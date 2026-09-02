@@ -947,9 +947,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
   }
 
   Widget renderPage() {
-    final themeStyle = Provider.of<DarkMode>(context, listen: false).themeStyle;
-    final themeConfig = AppThemeConfig.of(themeStyle);
-    final isDarkMode = themeStyle.isDark;
+    final themeConfig = context.themeConfig;
+    final isDarkMode = context.isDarkMode;
     final textColor = themeConfig.textPrimary;
     final subtitleColor = themeConfig.textSecondary;
     final accentColor = themeConfig.primaryColor;
@@ -2711,10 +2710,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                color: context.subtleBg,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                  color: context.cardBorder,
                   width: 1,
                 ),
               ),
@@ -2723,7 +2722,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                   Icon(
                     Icons.info_outline_rounded,
                     size: 15,
-                    color: AppTheme.primaryColor,
+                    color: context.primaryColor,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -2731,7 +2730,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       '注：推荐了拼写相近的单词。浅色斜体单词不在当前选择的词书内。',
                       style: TextStyle(
                         fontSize: 11.5,
-                        color: isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67),
+                        color: context.textSecondary,
                         height: 1.35,
                       ),
                     ),
@@ -2740,7 +2739,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     icon: const Icon(Icons.close_rounded, size: 16),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                    color: context.textMuted,
                     onPressed: () async {
                       setState(() {
                         _showSimilarTip = false;
@@ -2756,19 +2755,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           final word = showTip ? similarWords[index - 1] : similarWords[index];
           final inDict = _wordInDictStatus[word.id!] ?? true;
 
-          final Color spellColor = inDict
-              ? (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724))
-              : (isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFFA5BCB7));
-          final Color descColor = inDict
-              ? (isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67))
-              : (isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFFA5BCB7));
+          final Color spellColor = inDict ? context.textPrimary : context.textMuted;
+          final Color descColor = inDict ? context.textSecondary : context.textMuted;
 
           return Container(
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFFFFFFF),
+              color: context.cardBg,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+                color: context.cardBorder,
                 width: 1,
               ),
             ),
@@ -2804,7 +2799,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   '[${Util.getWordDefaultPronounce(word)}]',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                                    color: context.textSecondary,
                                   ),
                                 ),
                               ],
@@ -2826,7 +2821,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                      color: context.textMuted,
                     ),
                   ],
                 ),
@@ -2871,10 +2866,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
               margin: const EdgeInsets.only(bottom: 6),
               decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+                color: context.subtleBg,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+                  color: context.cardBorder,
                   width: 1,
                 ),
               ),
@@ -2891,7 +2886,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                       '注：系统推荐了若干在相似语境中常出现的单词。浅色斜体为未选词书词汇。',
                       style: TextStyle(
                         fontSize: 11.5,
-                        color: isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67),
+                        color: context.textSecondary,
                         height: 1.35,
                       ),
                     ),
@@ -2900,7 +2895,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     icon: const Icon(Icons.close_rounded, size: 16),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                    color: context.textMuted,
                     onPressed: () async {
                       setState(() {
                         _showSemanticTip = false;
@@ -2916,19 +2911,15 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           final word = showTip ? _semanticSimilarWords[index - 1] : _semanticSimilarWords[index];
           final inDict = _wordInDictStatus[word.id!] ?? true;
 
-          final Color spellColor = inDict
-              ? (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724))
-              : (isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFFA5BCB7));
-          final Color descColor = inDict
-              ? (isDarkMode ? const Color(0xFFADC5BF) : const Color(0xFF526E67))
-              : (isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFFA5BCB7));
+          final Color spellColor = inDict ? context.textPrimary : context.textMuted;
+          final Color descColor = inDict ? context.textSecondary : context.textMuted;
 
           return Container(
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFFFFFFF),
+              color: context.cardBg,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDarkMode ? Colors.white10 : const Color(0xFFE1EFEA),
+                color: context.cardBorder,
                 width: 1,
               ),
             ),
@@ -2964,7 +2955,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   '[${Util.getWordDefaultPronounce(word)}]',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                                    color: context.textSecondary,
                                   ),
                                 ),
                               ],
@@ -2986,7 +2977,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                      color: context.textMuted,
                     ),
                   ],
                 ),
@@ -3062,10 +3053,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: isDarkMode ? const Color(0xFF203832) : const Color(0xFFF3FAF7),
+                              color: context.subtleBg,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isDarkMode ? const Color(0x332CD88F) : const Color(0x2618BA7C),
+                                color: context.cardBorder,
                                 width: 1,
                               ),
                             ),
@@ -3076,7 +3067,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                   synonym.spell,
                                   style: TextStyle(
                                     fontSize: 13.5,
-                                    color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                                    color: context.textPrimary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -3084,7 +3075,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 Icon(
                                   Icons.volume_up_rounded,
                                   size: 14,
-                                  color: AppTheme.primaryColor,
+                                  color: context.primaryColor,
                                 ),
                               ],
                             ),
@@ -3120,10 +3111,10 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
           decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF192C27) : const Color(0xFFF7FBF9),
+            color: context.subtleBg,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isDarkMode ? Colors.white10 : const Color(0x1418BA7C),
+              color: context.cardBorder,
               width: 1,
             ),
           ),
@@ -3132,14 +3123,14 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
               Icon(
                 icon,
                 size: 48,
-                color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                color: context.textMuted,
               ),
               const SizedBox(height: 12),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 15.5,
-                  color: isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724),
+                  color: context.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -3148,7 +3139,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                 subtitle,
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDarkMode ? const Color(0xFF6B8B84) : const Color(0xFF8EA8A3),
+                  color: context.textSecondary,
                 ),
               ),
             ],
