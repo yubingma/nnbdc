@@ -794,6 +794,8 @@ class WordListPageState extends State<WordListPage>
           }
           if (isPass) {
             canLeaveCurrWord = true;
+            _isAiRefereeJudging = false;
+            words[currWordIndex].isAiEvaluating = false;
           }
         } else if (!words[currWordIndex].answeredAllMeanings) {
           // 本地未命中：触发单词 AI 裁判防抖判定
@@ -1540,7 +1542,7 @@ class WordListPageState extends State<WordListPage>
     if (wordWrapper.answeredAllMeanings) return;
 
     final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
-    if (cleanInput.isEmpty) return;
+    if (cleanInput.length < 2) return;
 
     if (_failedAiEvaluationsForCurrentWord.contains(cleanInput)) return;
     if (_aiEvaluationCountForCurrentWord >= 5) return;
@@ -1586,8 +1588,9 @@ class WordListPageState extends State<WordListPage>
 
       if (!mounted) return;
       if (studyMode != WordListStudyMode.speakChinese) return;
-      if (getBookMarkUiPosition() != wordIndex || words[wordIndex].word.id != checkWordId) {
-        Global.logger.d('~~~~~[AI裁判-单词] 单词已切换，放弃本次AI裁判结果');
+      if (getBookMarkUiPosition() != wordIndex || words[wordIndex].word.id != checkWordId || words[wordIndex].answeredAllMeanings) {
+        Global.logger.d('~~~~~[AI裁判-单词] 单词已切换或已答对，放弃本次AI裁判结果');
+        wordWrapper.isAiEvaluating = false;
         return;
       }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:nnbdc/api/api.dart';
+import 'package:nnbdc/api/result.dart';
 import 'package:nnbdc/global.dart';
 
 /// AI 裁判统一工具类，消除背单词页面与词表页面在提示词及结果解析上的冗余
@@ -129,6 +130,8 @@ Respond ONLY in raw JSON format (no markdown code blocks, no ```json):
 {"isCorrect": false, "isSynonym": false, "explanation": "发音与目标词不符"}
 ''';
 
+  static const Duration timeoutDuration = Duration(seconds: 10);
+
   /// 请求大模型进行单词释义裁判（英中 en2Ch）
   static Future<({bool isCorrect, String explanation, String? intendedMeaning, String? rawResponse})> judgeWordMeaning({
     required String targetWord,
@@ -153,17 +156,28 @@ ASR Candidate List: $candidateStr
       {"role": "user", "content": userPrompt}
     ];
 
-    final result = await Api.client.aiChat(jsonEncode(messages), userId);
-    if (result.success && result.data != null) {
-      final parsed = parseRefereeResponse(result.data);
-      return (
-        isCorrect: parsed.isCorrect,
-        explanation: parsed.explanation,
-        intendedMeaning: parsed.intendedMeaning,
-        rawResponse: result.data,
-      );
-    } else {
-      return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', intendedMeaning: null, rawResponse: null);
+    try {
+      final result = await Api.client
+          .aiChat(jsonEncode(messages), userId)
+          .timeout(timeoutDuration, onTimeout: () {
+        Global.logger.w('[AI裁判-单词] 请求超时(>${timeoutDuration.inSeconds}s)');
+        return Result('TIMEOUT', 'AI裁判响应超时', false);
+      });
+
+      if (result.success && result.data != null) {
+        final parsed = parseRefereeResponse(result.data);
+        return (
+          isCorrect: parsed.isCorrect,
+          explanation: parsed.explanation,
+          intendedMeaning: parsed.intendedMeaning,
+          rawResponse: result.data,
+        );
+      } else {
+        return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', intendedMeaning: null, rawResponse: null);
+      }
+    } catch (e) {
+      Global.logger.e('[AI裁判-单词] 请求异常: $e');
+      return (isCorrect: false, explanation: 'AI裁判请求异常', intendedMeaning: null, rawResponse: null);
     }
   }
 
@@ -191,17 +205,28 @@ ASR Candidate List: $candidateStr
       {"role": "user", "content": userPrompt}
     ];
 
-    final result = await Api.client.aiChat(jsonEncode(messages), userId);
-    if (result.success && result.data != null) {
-      final parsed = parseRefereeResponse(result.data);
-      return (
-        isCorrect: parsed.isCorrect,
-        isSynonym: parsed.isSynonym,
-        explanation: parsed.explanation,
-        rawResponse: result.data,
-      );
-    } else {
-      return (isCorrect: false, isSynonym: false, explanation: result.msg ?? '调用 AI 裁判失败', rawResponse: null);
+    try {
+      final result = await Api.client
+          .aiChat(jsonEncode(messages), userId)
+          .timeout(timeoutDuration, onTimeout: () {
+        Global.logger.w('[AI裁判-中英单词] 请求超时(>${timeoutDuration.inSeconds}s)');
+        return Result('TIMEOUT', 'AI裁判响应超时', false);
+      });
+
+      if (result.success && result.data != null) {
+        final parsed = parseRefereeResponse(result.data);
+        return (
+          isCorrect: parsed.isCorrect,
+          isSynonym: parsed.isSynonym,
+          explanation: parsed.explanation,
+          rawResponse: result.data,
+        );
+      } else {
+        return (isCorrect: false, isSynonym: false, explanation: result.msg ?? '调用 AI 裁判失败', rawResponse: null);
+      }
+    } catch (e) {
+      Global.logger.e('[AI裁判-中英单词] 请求异常: $e');
+      return (isCorrect: false, isSynonym: false, explanation: 'AI裁判请求异常', rawResponse: null);
     }
   }
 
@@ -225,12 +250,23 @@ User Answer: $userInput
       {"role": "user", "content": userPrompt}
     ];
 
-    final result = await Api.client.aiChat(jsonEncode(messages), userId);
-    if (result.success && result.data != null) {
-      final parsed = parseRefereeResponse(result.data);
-      return (isCorrect: parsed.isCorrect, explanation: parsed.explanation, rawResponse: result.data);
-    } else {
-      return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', rawResponse: null);
+    try {
+      final result = await Api.client
+          .aiChat(jsonEncode(messages), userId)
+          .timeout(timeoutDuration, onTimeout: () {
+        Global.logger.w('[AI裁判-例句] 请求超时(>${timeoutDuration.inSeconds}s)');
+        return Result('TIMEOUT', 'AI裁判响应超时', false);
+      });
+
+      if (result.success && result.data != null) {
+        final parsed = parseRefereeResponse(result.data);
+        return (isCorrect: parsed.isCorrect, explanation: parsed.explanation, rawResponse: result.data);
+      } else {
+        return (isCorrect: false, explanation: result.msg ?? '调用 AI 裁判失败', rawResponse: null);
+      }
+    } catch (e) {
+      Global.logger.e('[AI裁判-例句] 请求异常: $e');
+      return (isCorrect: false, explanation: 'AI裁判请求异常', rawResponse: null);
     }
   }
 }

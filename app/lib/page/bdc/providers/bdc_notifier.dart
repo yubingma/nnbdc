@@ -2010,7 +2010,10 @@ class BdcNotifier extends _$BdcNotifier {
         _wordAiRefereeDebounceTimer?.cancel(); // 本地匹配命中，取消待触发的AI裁判
         _wordAccumulatedAsrText = "";
         _wordLastFinalAsrText = "";
+        _isWordAiRefereeJudging = false;
+        clonedWrapper.isAiEvaluating = false;
         state = state.copyWith(
+          isAiEvaluating: false,
           canLeaveCurrWord: true,
           wordWrapper: clonedWrapper,
         );
@@ -2140,8 +2143,15 @@ class BdcNotifier extends _$BdcNotifier {
       return;
     }
 
+    _wordAiRefereeDebounceTimer?.cancel();
+    _isWordAiRefereeJudging = false;
+    if (state.wordWrapper != null) {
+      state.wordWrapper!.isAiEvaluating = false;
+    }
+
     // 同步立即锁定状态，彻底阻断由于 ASR 连续识别或 re-entry 重复触发导致的回声和并发冲突
     state = state.copyWith(
+      isAiEvaluating: false,
       hasFinishedAnswering: true,
       canLeaveCurrWord: true,
       lastFsrsRating: rating,
@@ -3137,7 +3147,7 @@ class BdcNotifier extends _$BdcNotifier {
 
     final String asrText = inputs.isNotEmpty ? inputs.first : meaningController.text;
     final cleanInput = asrText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9]'), '').trim();
-    if (cleanInput.isEmpty) return;
+    if (cleanInput.length < 2) return; // 避免单字/助词杂音（如“啊/嗯”）浪费大模型Token
 
     // 过滤同词已判错的文本
     if (_failedWordAiEvaluationsForCurrentWord.contains(cleanInput)) return;
@@ -3187,8 +3197,12 @@ class BdcNotifier extends _$BdcNotifier {
         userId: user.id,
       );
 
-      if (_isDisposed || state.word?.id != checkWordId) {
-        Global.logger.d('~~~~~[AI裁判-单词] 单词已切换或已销毁，丢弃裁判结果');
+      if (_isDisposed || state.word?.id != checkWordId || state.hasFinishedAnswering || _isAnswerCorrectHandling) {
+        Global.logger.d('~~~~~[AI裁判-单词] 单词已切换、已答对或已销毁，丢弃裁判结果');
+        wordWrapper.isAiEvaluating = false;
+        if (!_isDisposed && state.isAiEvaluating) {
+          state = state.copyWith(isAiEvaluating: false);
+        }
         return;
       }
 
@@ -3245,6 +3259,12 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } finally {
       _isWordAiRefereeJudging = false;
+      if (!_isDisposed && (state.hasFinishedAnswering || state.word?.id != checkWordId)) {
+        wordWrapper.isAiEvaluating = false;
+        if (state.isAiEvaluating) {
+          state = state.copyWith(isAiEvaluating: false);
+        }
+      }
     }
   }
 
@@ -3315,8 +3335,12 @@ class BdcNotifier extends _$BdcNotifier {
         userId: user.id,
       );
 
-      if (_isDisposed || state.word?.id != checkWordId) {
-        Global.logger.d('~~~~~[AI裁判-中英单词] 单词已切换或已销毁，丢弃裁判结果');
+      if (_isDisposed || state.word?.id != checkWordId || state.hasFinishedAnswering || _isAnswerCorrectHandling) {
+        Global.logger.d('~~~~~[AI裁判-中英单词] 单词已切换、已答对或已销毁，丢弃裁判结果');
+        wordWrapper.isAiEvaluating = false;
+        if (!_isDisposed && state.isAiEvaluating) {
+          state = state.copyWith(isAiEvaluating: false);
+        }
         return;
       }
 
@@ -3373,6 +3397,12 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } finally {
       _isWordAiRefereeJudging = false;
+      if (!_isDisposed && (state.hasFinishedAnswering || state.word?.id != checkWordId)) {
+        wordWrapper.isAiEvaluating = false;
+        if (state.isAiEvaluating) {
+          state = state.copyWith(isAiEvaluating: false);
+        }
+      }
     }
   }
 
@@ -3453,8 +3483,12 @@ class BdcNotifier extends _$BdcNotifier {
         userId: user.id,
       );
 
-      if (_isDisposed || state.word?.id != checkWordId) {
-        Global.logger.d('~~~~~[AI裁判-例句] 单词已切换或已销毁，丢弃裁判结果');
+      if (_isDisposed || state.word?.id != checkWordId || state.hasFinishedAnswering || _isAnswerCorrectHandling) {
+        Global.logger.d('~~~~~[AI裁判-例句] 单词已切换、已答对或已销毁，丢弃裁判结果');
+        wordWrapper.isAiEvaluating = false;
+        if (!_isDisposed && state.isAiEvaluating) {
+          state = state.copyWith(isAiEvaluating: false);
+        }
         return;
       }
 
@@ -3509,6 +3543,12 @@ class BdcNotifier extends _$BdcNotifier {
       }
     } finally {
       _isSentenceAiRefereeJudging = false;
+      if (!_isDisposed && (state.hasFinishedAnswering || state.word?.id != checkWordId)) {
+        wordWrapper.isAiEvaluating = false;
+        if (state.isAiEvaluating) {
+          state = state.copyWith(isAiEvaluating: false);
+        }
+      }
     }
   }
 
