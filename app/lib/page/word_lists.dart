@@ -157,7 +157,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '系统化词库与今日学习进度',
+                          '预习新词 · 及时复习 · 深度巩固',
                           style: TextStyle(
                             color: textSubColor,
                             fontSize: 12,
