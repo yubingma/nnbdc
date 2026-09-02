@@ -766,7 +766,7 @@ extension BdcPageStateUIComponents on BdcPageState {
         children: [
           // 对测评结果进行展示（即便在极速模式下也展示一下，方便用户看下评分情况）
           Padding(
-            padding: const EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.only(top: 8),
             child: _buildFsrsResultPanel(),
           ),
           Container(

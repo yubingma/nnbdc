@@ -1794,9 +1794,51 @@ class BdcNotifier extends _$BdcNotifier {
 
   Future<void> checkAsrResult({String? asrInput, bool isVoice = false, bool isFinal = false}) async {
     if (_isDisposed) return;
-    if (state.hasFinishedAnswering || _isAnswerCorrectHandling) return;
+    if ((state.hasFinishedAnswering && !state.showHandwritingBoard) || _isAnswerCorrectHandling) return;
     final stopwatch = Stopwatch()..start();
     String inputText = asrInput ?? meaningController.text;
+
+    // ==========================================
+    // 优先处理：全屏手写/拼写板练习的拼写匹配
+    // 只要当前开启了手写拼写板，用户的一切输入（手写/键盘）均以当前单词拼写为目标。
+    // 无论当前处于何种题型模式（英中、中英、列表、例句），拼写正确后必须立即退出手写板并返回背单词主页面！
+    // ==========================================
+    if (state.showHandwritingBoard && state.word != null) {
+      final correctSpell = state.word!.spell.toLowerCase();
+      final inputLower = inputText.trim().toLowerCase();
+      final isSpellingMatch = inputLower.replaceAll(RegExp(r'[^a-z]'), '') == correctSpell.replaceAll(RegExp(r'[^a-z]'), '');
+
+      if (isSpellingMatch) {
+        meaningController.text = state.word!.spell;
+        // 关停麦克风
+        if (StudyAudioSessionController.instance.activeMode == AudioMode.record) {
+          await StudyAudioSessionController.instance.syncHardwareIntent(
+            isInSpeakTab: false,
+            isAnsweringActive: false,
+            language: AsrLanguage.english,
+            phrases: [],
+            caller: this,
+          );
+        }
+        // 立即退出手写板全屏界面，平滑返回背单词主页面
+        state = state.copyWith(showHandwritingBoard: false);
+        _handleTabChangeForAsr();
+        StudyAudioSessionController.instance.playWordSound(state.word!);
+
+        // 若处于未答题状态且是中译英模式（拼写即作答），判定整道题作答成功
+        if (!state.hasFinishedAnswering && state.studyStep == StudyStep.ch2En.json) {
+          final hintRevealedAll =
+              (state.wordWrapper?.hintLetterCount ?? 0) >= (state.word?.spell.length ?? 0);
+          if (!hintRevealedAll || isVoice) {
+            String method = isVoice ? "语音识别" : (asrInput != null ? "手写输入" : "键盘输入");
+            final ratingResult = _calculateRating(method);
+            _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
+          }
+        }
+        Global.logger.d('[PERF] checkAsrResult handwriting board spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
+        return;
+      }
+    }
     if (asrInput == null) {
       if (state.studyStep == StudyStep.ch2En.json) {
         // Ch2En 模式：ASR 识别结果可能包含标点（如 "hello."），而
@@ -1982,17 +2024,10 @@ class BdcNotifier extends _$BdcNotifier {
           );
         }
         
-        if (state.hasFinishedAnswering) {
-          // 已经答对了（处于查看详情时的额外练习），直接关闭
-          final ratingResult = _calculateRating(method);
-          _onAnswerCorrect(ratingResult.rating, reason: ratingResult.reason);
-          StudyAudioSessionController.instance.playWordSound(state.word!);
-        } else {
-          // 还没答对（英中模式下的拼写练习），仅关闭界面，不视为答对题目
-          state = state.copyWith(showHandwritingBoard: false);
-          StudyAudioSessionController.instance.playWordSound(state.word!);
-          _handleTabChangeForAsr();
-        }
+        // 退出手写板全屏界面，平滑返回背单词主页面
+        state = state.copyWith(showHandwritingBoard: false);
+        _handleTabChangeForAsr();
+        StudyAudioSessionController.instance.playWordSound(state.word!);
         Global.logger.d('[PERF] checkAsrResult spelling match cost: ${stopwatch.elapsedMilliseconds}ms');
         return;
       }
@@ -2060,7 +2095,12 @@ class BdcNotifier extends _$BdcNotifier {
         }
 
         if (state.hasFinishedAnswering) {
-          // 若已答完，需先等待麦克风关停（含切换至 playback），再播放发音防止回声
+          // 若处于已答完状态（复习或查看详情时的手写/拼写练习），退出手写板并返回背单词页面
+          if (state.showHandwritingBoard) {
+            state = state.copyWith(showHandwritingBoard: false);
+            _handleTabChangeForAsr();
+          }
+          // 需先等待麦克风关停（含切换至 playback），再播放发音防止回声
           await StudyAudioSessionController.instance.syncHardwareIntent(
             isInSpeakTab: false,
             isAnsweringActive: false,
