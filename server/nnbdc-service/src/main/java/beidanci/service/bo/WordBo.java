@@ -174,18 +174,23 @@ public class WordBo extends BaseBo<Word> {
 
         // 更新声音文件（重命名）
         if (!oldSpell.equalsIgnoreCase(wordVo.getSpell())) {
-            File oldSoundFile = new File(
-                    sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(oldSpell) + ".mp3");
-            File newSoundFile = new File(
-                    sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(wordVo.getSpell()) + ".mp3");
-            oldSoundFile.renameTo(newSoundFile);
+            String[] suffixes = {"", "_uk", "_us"};
+            for (String suffix : suffixes) {
+                File oldMp3 = new File(sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(oldSpell, suffix) + ".mp3");
+                File newMp3 = new File(sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(wordVo.getSpell(), suffix) + ".mp3");
+                if (oldMp3.exists()) {
+                    File parent = newMp3.getParentFile();
+                    if (!parent.exists()) parent.mkdirs();
+                    oldMp3.renameTo(newMp3);
+                }
+            }
 
-            oldSoundFile = new File(
-                    sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(oldSpell) + ".oga");
-            newSoundFile = new File(
-                    sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(wordVo.getSpell()) + ".oga");
-            if (oldSoundFile.exists()) {
-                oldSoundFile.renameTo(newSoundFile);
+            File oldOga = new File(sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(oldSpell) + ".oga");
+            File newOga = new File(sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(wordVo.getSpell()) + ".oga");
+            if (oldOga.exists()) {
+                File parent = newOga.getParentFile();
+                if (!parent.exists()) parent.mkdirs();
+                oldOga.renameTo(newOga);
             }
         }
 
@@ -308,6 +313,96 @@ public class WordBo extends BaseBo<Word> {
         });
     }
 
+    /**
+     * 下载单词指定口音的发音 mp3 到 sound 目录。
+     * 优先有道 dictvoice,失败回退 CosyVoice TTS(按口音附加发音指令)。
+     *
+     * @param spell        单词拼写
+     * @param accentSuffix "_uk"(英音) / "_us"(美音) / null(旧版无后缀)
+     * @return 目标文件绝对路径;失败返回 null
+     */
+    public String downloadWordSound(String spell, String accentSuffix) throws Exception {
+        return downloadWordSound(spell, accentSuffix, false);
+    }
+
+    /**
+     * 下载单词指定口音的发音 mp3 到 sound 目录。
+     *
+     * @param spell          单词拼写
+     * @param accentSuffix   "_uk"(英音) / "_us"(美音) / null(旧版无后缀)
+     * @param forceOverwrite 是否强制重新生成并覆盖已有音频文件
+     * @return 目标文件绝对路径;失败返回 null
+     */
+    public String downloadWordSound(String spell, String accentSuffix, boolean forceOverwrite) throws Exception {
+        String pureSpell = Utils.uniformSpellForFilename(spell);
+        if (pureSpell.isEmpty()) return null;
+
+        String relPath = Utils.getFileNameOfWordSound(spell, accentSuffix);
+        File soundFile = new File(sysParamUtil.getSoundPath() + "/" + relPath + ".mp3");
+        if (!forceOverwrite && soundFile.exists() && soundFile.length() > 0) {
+            return soundFile.getAbsolutePath();
+        }
+
+        File dir = soundFile.getParentFile();
+        if (!dir.exists()) dir.mkdirs();
+
+        boolean isUk = "_uk".equals(accentSuffix);
+        // 有道 dictvoice 官方约定: type=1 为英音, type=2 为美音
+        String[] urlStrs = isUk ? new String[]{
+                "http://dict.youdao.com/dictvoice?type=1&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
+                "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8")
+        } : new String[]{
+                "http://dict.youdao.com/dictvoice?type=2&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
+                "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8")
+        };
+
+        for (String urlStr : urlStrs) {
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(urlStr).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(5000);
+
+            if (conn.getResponseCode() == 200) {
+                try (java.io.InputStream is = conn.getInputStream();
+                     java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bytesRead);
+                    }
+                    fos.flush();
+                }
+                if (soundFile.length() > 0) {
+                    log.info("有道发音下载成功: {} (suffix={})", soundFile.getAbsolutePath(), accentSuffix);
+                    return soundFile.getAbsolutePath();
+                } else {
+                    soundFile.delete();
+                }
+            }
+        }
+
+        String ttsInstruction = isUk
+                ? "Speak in a clear British English accent."
+                : "Speak in a clear American English accent.";
+        try {
+            AiBo.TtsResult ttsResult = aiBo.generateSpeech(pureSpell, null, ttsInstruction);
+            if (ttsResult.audioData != null && ttsResult.audioData.length > 0) {
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
+                    fos.write(ttsResult.audioData);
+                    fos.flush();
+                }
+                log.info("TTS 兜底发音成功: {} (suffix={})", soundFile.getAbsolutePath(), accentSuffix);
+                return soundFile.getAbsolutePath();
+            }
+        } catch (Exception e) {
+            log.warn("TTS 兜底发音失败: {} suffix={}", spell, accentSuffix, e);
+        }
+        if (soundFile.exists() && soundFile.length() == 0) {
+            soundFile.delete();
+        }
+        return null;
+    }
+
     public void regeneratePronunciation(String wordId) throws Exception {
         Word word = findById(wordId);
         if (word == null) {
@@ -315,62 +410,10 @@ public class WordBo extends BaseBo<Word> {
         }
 
         String spell = word.getSpell();
-        String pureSpell = Utils.uniformSpellForFilename(spell);
-        if (pureSpell.length() == 0) return;
 
-        String firstChar = pureSpell.substring(0, 1);
-        File dir = new File(sysParamUtil.getSoundPath() + "/" + firstChar);
-        if (!dir.exists()) dir.mkdirs();
-        File soundFile = new File(dir, pureSpell + ".mp3");
-
-        // Try Youdao first
-        try {
-            String[] urlStrs = {
-                    "http://dict.youdao.com/dictvoice?type=2&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
-                    "http://dict.youdao.com/dictvoice?type=1&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
-                    "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8")
-            };
-
-            boolean success = false;
-            for (String urlStr : urlStrs) {
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(urlStr).openConnection();
-                conn.setRequestMethod("GET");
-                conn.setConnectTimeout(3000);
-                conn.setReadTimeout(5000);
-
-                if (conn.getResponseCode() == 200) {
-                    try (java.io.InputStream is = conn.getInputStream();
-                         java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
-                        byte[] buffer = new byte[4096];
-                        int bytesRead;
-                        while ((bytesRead = is.read(buffer)) != -1) {
-                            fos.write(buffer, 0, bytesRead);
-                        }
-                        fos.flush();
-                    }
-                    log.info("Successfully fetched pronunciation from Youdao for word: " + spell);
-                    success = true;
-                    break;
-                }
-            }
-
-            if (!success) {
-                throw new RuntimeException("All youdao URLs failed");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to fetch pronunciation from Youdao for word: " + spell + ", falling back to AI TTS. Error: " + e.getMessage());
-            // Fallback to AI
-            byte[] audioData = aiBo.generateSpeech(spell, null, null).audioData;
-            if (audioData != null && audioData.length > 0) {
-                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(soundFile)) {
-                    fos.write(audioData);
-                    fos.flush();
-                }
-                log.info("Successfully generated AI pronunciation for word: " + spell);
-            } else {
-                throw new RuntimeException("Failed to generate AI pronunciation for word: " + spell);
-            }
-        }
+        downloadWordSound(spell, null, true);
+        downloadWordSound(spell, "_uk", true);
+        downloadWordSound(spell, "_us", true);
 
         // 记录同步日志，并更新数据库中的 update_time
         word.setUpdateTime(new Date());

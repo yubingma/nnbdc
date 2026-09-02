@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:nnbdc/api/bo/word_bo.dart';
 import 'package:nnbdc/state.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:path_provider/path_provider.dart';
@@ -99,12 +100,26 @@ class Util {
   }
 
   /// 获取指定单词对应的发音文件Url
-  static String getWordSoundUrl(String spell, {WordVo? word}) {
-    String url = "${Config.soundBaseUrl}${Util.getFileNameOfWordSound(spell)}.mp3";
+  /// 按全局发音口音偏好拼接 _uk/_us 后缀;若已显式传入 accent,按给定值
+  static String getWordSoundUrl(String spell, {WordVo? word, String? accent}) {
+    final a = accent ?? Prefs.pronunciationAccent;
+    final suffix = a == 'uk' ? '_uk' : '_us';
+    String url = "${Config.soundBaseUrl}${Util.getFileNameOfWordSound(spell)}$suffix.mp3";
     if (word != null && word.updateTime != null) {
       url += "?v=${word.updateTime!.millisecondsSinceEpoch}";
     }
     return url;
+  }
+
+  /// 单词发音 URL 回退序列: 另一口音 → 无后缀旧文件
+  /// 主口音 URL 由 getWordSoundUrl 生成,播放失败时按此序列逐级回退
+  static List<String> getWordSoundFallbackUrls(String spell) {
+    final base = Util.getFileNameOfWordSound(spell);
+    final other = Prefs.pronunciationAccent == 'uk' ? '_us' : '_uk';
+    return [
+      "${Config.soundBaseUrl}$base$other.mp3",
+      "${Config.soundBaseUrl}$base.mp3",
+    ];
   }
 
   /// 获取指定的例句对应的发音文件Url
@@ -789,14 +804,13 @@ class Util {
   }
 
   static String getWordDefaultPronounce(WordVo word) {
-    var pronounce = word.pronounce;
-    if (pronounce == null || pronounce.isEmpty) {
-      pronounce = word.americaPronounce;
-    }
-    if (pronounce == null || pronounce.isEmpty) {
-      pronounce = word.britishPronounce;
-    }
-    return pronounce ?? '';
+    final isUk = Prefs.pronunciationAccent == 'uk';
+    final primary = isUk ? (word.britishPronounce ?? '') : (word.americaPronounce ?? '');
+    if (primary.isNotEmpty) return primary;
+    final common = word.pronounce ?? '';
+    if (common.isNotEmpty) return common;
+    final secondary = isUk ? (word.americaPronounce ?? '') : (word.britishPronounce ?? '');
+    return secondary;
   }
 
   /// 尝试本地查询单词及其变体形式

@@ -655,65 +655,16 @@ public class DictImportBo {
             isPrivateReusing = true;
         }
 
-        // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音
-
-
-        
+        // 无论单词是否刚创建，检查其发音文件是否存在，若不存在则补发音(旧版无后缀 + 英音/美音双轨)
         try {
             String pureSpell = Utils.uniformSpellForFilename(spell);
             if (pureSpell.length() > 0) {
-                String firstChar = pureSpell.substring(0, 1);
-                java.io.File dir = new java.io.File(sysParamUtil.getSoundPath() + "/" + firstChar);
-                if (!dir.exists()) dir.mkdirs();
-                java.io.File soundFile = new java.io.File(dir, pureSpell + ".mp3");
-
-
-                if (!soundFile.exists()) {
-                    try {
-                        String[] urlStrs = {
-                            "http://dict.youdao.com/dictvoice?type=2&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
-                            "http://dict.youdao.com/dictvoice?type=1&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8"),
-                            "http://dict.youdao.com/dictvoice?le=eng&audio=" + java.net.URLEncoder.encode(pureSpell, "UTF-8")
-                        };
-                        
-                        boolean success = false;
-                        for (String urlStr : urlStrs) {
-                            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(urlStr).openConnection();
-                            conn.setRequestMethod("GET");
-                            conn.setConnectTimeout(3000);
-                            conn.setReadTimeout(5000);
-                            
-                            if (conn.getResponseCode() == 200) {
-                                try (InputStream is = conn.getInputStream();
-                                     FileOutputStream fos = new FileOutputStream(soundFile)) {
-                                    byte[] buffer = new byte[4096];
-                                    int bytesRead;
-                                    while ((bytesRead = is.read(buffer)) != -1) {
-                                        fos.write(buffer, 0, bytesRead);
-                                    }
-                                    fos.flush();
-                                }
-                                logger.info("通过真人词库补上了发音文件: " + soundFile.getAbsolutePath() + " using " + urlStr);
-                                success = true;
-                                break;
-                            }
-                        }
-                        
-                        if (!success) {
-                            throw new RuntimeException("All youdao URLs returned 500/404.");
-                        }
-                    } catch (Exception e) {
-                        logger.warn("从有道词典下载真人发音失败 (" + pureSpell + ")，自动回退使用大模型 TTS 合成降级补全: " + e.getMessage());
-                        byte[] audioData = aiBo.generateSpeech(spell, preferredVoices, null).audioData;
-                        if (audioData != null && audioData.length > 0) {
-                            try (FileOutputStream fos = new FileOutputStream(soundFile)) {
-                                fos.write(audioData);
-                                fos.flush();
-                            }
-                            logger.info("通过 AI 大模型补上了缺失的单词发音文件: " + soundFile.getAbsolutePath());
-                        }
-                    }
+                File legacyFile = new File(sysParamUtil.getSoundPath() + "/" + Utils.getFileNameOfWordSound(spell) + ".mp3");
+                if (!legacyFile.exists()) {
+                    wordBo.downloadWordSound(spell, null);
                 }
+                wordBo.downloadWordSound(spell, "_uk");
+                wordBo.downloadWordSound(spell, "_us");
             }
         } catch (Exception e) {
             logger.error("生成单词发音失败: " + spell, e);

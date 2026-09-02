@@ -92,4 +92,14 @@ class Prefs {
     if (_prefs == null) return false;
     return _prefs!.containsKey(key);
   }
+
+  /// 发音口音偏好键:"us"(美音,默认) / "uk"(英音)
+  static const String pronunciationAccentKey = 'pronunciation_accent';
+
+  /// 读取发音口音偏好,默认美音
+  static String get pronunciationAccent => read<String>(pronunciationAccentKey) ?? 'us';
+
+  /// 设置发音口音偏好
+  static Future<bool> setPronunciationAccent(String accent) =>
+      write(pronunciationAccentKey, accent);
 }

@@ -1181,7 +1181,7 @@ extension BdcPageStateUIComponents on BdcPageState {
     } else {
       final spell = word.spell;
       if (spell.isEmpty) return const SizedBox.shrink();
-      final pronounce = word.pronounce;
+      final pronounce = Util.getWordDefaultPronounce(word);
       return Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1195,7 +1195,7 @@ extension BdcPageStateUIComponents on BdcPageState {
               color: context.textSecondary,
             ),
           ),
-          if (pronounce != null && pronounce.isNotEmpty) ...[
+          if (pronounce.isNotEmpty) ...[
             const SizedBox(width: 6),
             Text(
               '/$pronounce/',

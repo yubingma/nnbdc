@@ -32,6 +32,7 @@ import 'package:nnbdc/socket_io.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/error_handler.dart';
 import 'package:nnbdc/util/platform_util.dart';
+import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/subscription_util.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/util/user_helper.dart';
@@ -1884,6 +1885,43 @@ class _MePageState extends State<MePage> {
                 title: '外观主题',
                 trailingText: context.watch<DarkMode>().themeStyle.label,
                 onTap: () => ThemeSelectDialog.show(context),
+              ),
+              _buildMenuTile(
+                icon: Icons.graphic_eq_rounded,
+                title: '发音口音',
+                trailingText: Prefs.pronunciationAccent == 'uk' ? '英音' : '美音',
+                onTap: () async {
+                  final accent = await showDialog<String>(
+                    context: context,
+                    builder: (ctx) => SimpleDialog(
+                      title: const Text('发音口音'),
+                      children: [
+                        for (final (value, label) in [
+                          ('us', '美音(默认)'),
+                          ('uk', '英音'),
+                        ])
+                          SimpleDialogOption(
+                            onPressed: () => Navigator.pop(ctx, value),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  fontWeight: value == Prefs.pronunciationAccent
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                  if (accent != null && accent != Prefs.pronunciationAccent) {
+                    await Prefs.setPronunciationAccent(accent);
+                    if (mounted) setState(() {});
+                  }
+                },
               ),
               _buildMenuTile(
                 icon: Icons.person_outline_rounded,

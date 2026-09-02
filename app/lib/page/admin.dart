@@ -15,6 +15,7 @@ import 'package:nnbdc/page/admin/word_management.dart';
 import 'package:nnbdc/page/admin/dict_import_management.dart';
 import 'package:nnbdc/page/admin/admin_image_review_page.dart';
 import 'package:nnbdc/page/admin/admin_cigen_optimize_page.dart';
+import 'package:nnbdc/page/admin/admin_pronunciation_fix_page.dart';
 import 'package:nnbdc/page/admin/system_settings_page.dart';
 import 'package:nnbdc/page/admin/dict_group_management.dart';
 import 'package:nnbdc/page/admin/pdf_convert_page.dart';
@@ -104,6 +105,12 @@ class _AdminPageState extends State<AdminPage> {
         icon: Icons.auto_awesome,
         color: const Color(0xFF6200EA),
         onTap: () => _navigateToAdminCigenOptimize(),
+      ),
+      _buildManagementCard(
+        title: '发音补齐',
+        icon: Icons.record_voice_over,
+        color: const Color(0xFF00897B),
+        onTap: () => _navigateToAdminPronunciationFix(),
       ),
       _buildManagementCard(
         title: '系统健康检查',
@@ -539,6 +546,15 @@ class _AdminPageState extends State<AdminPage> {
       context,
       MaterialPageRoute(
         builder: (context) => const AdminCigenOptimizePage(),
+      ),
+    );
+  }
+
+  void _navigateToAdminPronunciationFix() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AdminPronunciationFixPage(),
       ),
     );
   }

@@ -41,14 +41,31 @@ public class Utils {
     }
 
     public static String getFileNameOfWordSound(String spell) {
+        return getFileNameOfWordSound(spell, null);
+    }
+
+    /**
+     * 获取指定拼写与口音后缀的单词发音相对路径（含一级子目录，不含扩展名）
+     * accentSuffix: "_uk"(英音) / "_us"(美音) / null 或 ""(无后缀,兼容旧文件)
+     */
+    public static String getFileNameOfWordSound(String spell, String accentSuffix) {
         spell = uniformSpellForFilename(spell);
         char firstChar = spell.substring(0, 1).toCharArray()[0];
+        String subDir = (firstChar >= 'a' && firstChar <= 'z') ? String.valueOf(firstChar) : "other";
+        String fileName = (accentSuffix != null && !accentSuffix.isEmpty()) ? (spell + accentSuffix) : spell;
+        return subDir + "/" + fileName;
+    }
 
-        if (firstChar >= 'a' && firstChar <= 'z') {
-            return firstChar + "/" + spell;
-        } else {
-            return "other" + "/" + spell;
+    /**
+     * 获取指定拼写与口音后缀的单词发音文件名（不含路径与扩展名）
+     * accentSuffix: "_uk"(英音) / "_us"(美音) / null 或 ""(无后缀,兼容旧文件)
+     */
+    public static String getWordSoundFileName(String spell, String accentSuffix) {
+        String base = uniformSpellForFilename(spell);
+        if (accentSuffix != null && !accentSuffix.isEmpty()) {
+            return base + accentSuffix;
         }
+        return base;
     }
 
     public static String purifySpell(String spell) {

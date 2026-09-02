@@ -9,6 +9,7 @@ import 'package:nnbdc/util/subscription_util.dart';
 
 import '../db/db.dart';
 import '../util/custom_convert.dart';
+import '../util/prefs.dart';
 
 part 'vo.g.dart';
 
@@ -652,14 +653,12 @@ class WordVo {
   }
 
   get mergedPronounce {
-    var pron = pronounce ?? "";
-    if (pron.isEmpty) {
-      pron = americaPronounce ?? "";
-    }
-    if (pron.isEmpty) {
-      pron = britishPronounce ?? "";
-    }
-    return pron;
+    final isUk = Prefs.pronunciationAccent == 'uk';
+    final primary = isUk ? (britishPronounce ?? "") : (americaPronounce ?? "");
+    if (primary.isNotEmpty) return primary;
+    final common = pronounce ?? "";
+    if (common.isNotEmpty) return common;
+    return isUk ? (americaPronounce ?? "") : (britishPronounce ?? "");
   }
 
   factory WordVo.fromJson(Map<String, dynamic> json) => _$WordVoFromJson(json);
