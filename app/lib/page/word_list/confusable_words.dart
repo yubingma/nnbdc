@@ -64,8 +64,8 @@ class ConfusableWordsProvider with WordsProvider {
 
       // 3. 按排序后的 id 顺序组装 WordWrapper（详情/释义缺失的异常词跳过）；
       //    同步构建组号表：遇锚点组号 +1，成员沿用当前组号（异常词跳过时组号也跳过）
-      final results = PagedResults<WordWrapper>(0);
-      final groupIds = <int>[];
+      final rawResults = <WordWrapper>[];
+      final rawGroupIds = <int>[];
       var group = 0;
       for (final id in sortedIds) {
         if (anchorIds.contains(id)) group++;
@@ -87,10 +87,31 @@ class ConfusableWordsProvider with WordsProvider {
         wordVo.meaningItems = mItems
             .map((mi) => MeaningItemVo.from(mi.ciXing, mi.meaning)..id = mi.id)
             .toList();
-        results.rows.add(WordWrapper(wordVo, wordVo));
-        groupIds.add(group);
+        rawResults.add(WordWrapper(wordVo, wordVo));
+        rawGroupIds.add(group);
       }
-      // 实际可展示的单词数（异常词被跳过）作为总数
+
+      // 4. 统计每组有效单词数，剔除只有 1 个词的孤立组（如组员缺失释义被跳过导致），并紧凑重编号（1, 2, ...）
+      final groupCounts = <int, int>{};
+      for (final g in rawGroupIds) {
+        groupCounts[g] = (groupCounts[g] ?? 0) + 1;
+      }
+      final validGroups = {
+        for (final entry in groupCounts.entries)
+          if (entry.value >= 2) entry.key,
+      };
+
+      final results = PagedResults<WordWrapper>(0);
+      final groupIds = <int>[];
+      final groupRemap = <int, int>{};
+      var nextGroup = 1;
+      for (var i = 0; i < rawResults.length; i++) {
+        final g = rawGroupIds[i];
+        if (validGroups.contains(g)) {
+          results.rows.add(rawResults[i]);
+          groupIds.add(groupRemap.putIfAbsent(g, () => nextGroup++));
+        }
+      }
       results.total = results.rows.length;
 
       // 4. 控制器对非 DictWordsProvider 走 getAPageOfWords(0, 999999) 全量 + 内存切片路径，

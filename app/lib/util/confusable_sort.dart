@@ -231,8 +231,8 @@ ConfusableSortResult confusableClusterSortInIsolate(ConfusableSortParams params)
   }
 
   final assigned = <String>{};
-  final clusterAnchors = <ConfusableWord>{};
-  final clusterSelected = <ConfusableWord>[];
+  final sortedIds = <String>[];
+  final anchorIds = <String>[];
 
   for (final leader in validCandidates) {
     if (assigned.contains(leader.id)) continue;
@@ -249,30 +249,18 @@ ConfusableSortResult confusableClusterSortInIsolate(ConfusableSortParams params)
 
     // 只有找到相近词（组内词数 >= 2）时才成簇，孤立词不进词表
     if (members.isNotEmpty) {
-      clusterAnchors.add(leader);
-      clusterSelected.add(leader);
+      members.sort(_compareWord);
+      anchorIds.add(leader.id);
+      sortedIds.add(leader.id);
       assigned.add(leader.id);
       for (final m in members) {
-        clusterSelected.add(m);
+        sortedIds.add(m.id);
         assigned.add(m.id);
       }
     }
   }
 
-  if (clusterAnchors.isEmpty) {
-    return const ConfusableSortResult([], []);
-  }
-
-  final sortedIds = confusableClusterSort(
-    clusterAnchors,
-    clusterSelected,
-    anchorTimes: anchorTimes,
-  );
-
-  return ConfusableSortResult(
-    sortedIds,
-    [for (final a in clusterAnchors) a.id],
-  );
+  return ConfusableSortResult(sortedIds, anchorIds);
 }
 
 /// isolate 入口：兼容既有 `List<String>` 接口

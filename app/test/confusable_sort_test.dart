@@ -566,5 +566,30 @@ void main() {
       );
       expect(confusableSortInIsolate(params), ['drag', 'drug', 'drum']);
     });
+
+    test('杜绝孤立单单词组：oak 与 oar 成簇后，不因 car 字典序更小而发生组员被抢', () {
+      const words = [
+        (id: 'oak', spell: 'oak'),
+        (id: 'oar', spell: 'oar'),
+        (id: 'car', spell: 'car'),
+        (id: 'cat', spell: 'cat'),
+      ];
+      final params = ConfusableSortParams(
+        [for (final w in words) w.id],
+        [for (final w in words) w.spell],
+        anchorIds: [for (final w in words) w.id],
+        anchorSpells: [for (final w in words) w.spell],
+        anchorTimes: [
+          DateTime(2026, 9, 2), // oak (最新)
+          null, // oar
+          DateTime(2026, 9, 1), // car
+          null, // cat
+        ],
+      );
+      final result = confusableClusterSortInIsolate(params);
+      // oak 簇 [oak, oar]，car 簇 [car, cat]，每簇至少 2 词，oak 绝不成为孤立词
+      expect(result.sortedIds, ['oak', 'oar', 'car', 'cat']);
+      expect(result.anchorIds, ['oak', 'car']);
+    });
   });
 }

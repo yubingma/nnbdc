@@ -233,6 +233,40 @@ void main() {
       expect(result.rows.map((w) => w.word.id).toList(), ['w_ok1', 'w_ok2']);
       expect(result.rows.any((w) => w.word.id == 'w_missing'), false);
     });
+
+    test('当某组因成员缺失释义导致只剩 1 个单词时，自动剔除该孤立单单词组', () async {
+      await insertDict('d1');
+      await insertLearningDict('d1');
+      // 组 1：dog / fog（两词均有通用释义，形成合法组）
+      await insertWord('w_dog', 'dog');
+      await insertWord('w_fog', 'fog');
+      await insertCommonMeaning('mi_dog', 'w_dog');
+      await insertCommonMeaning('mi_fog', 'w_fog');
+      await insertDictWord('d1', 'w_dog');
+      await insertDictWord('d1', 'w_fog');
+      await insertLearningWord('w_dog');
+      await insertLearningWord('w_fog');
+
+      // 组 2：pen / pan，但 pan 缺失释义，导致 pen 成为孤立单单词
+      await insertWord('w_pen', 'pen');
+      await insertWord('w_pan', 'pan');
+      await insertCommonMeaning('mi_pen', 'w_pen');
+      // w_pan 无释义
+      await insertDictWord('d1', 'w_pen');
+      await insertDictWord('d1', 'w_pan');
+      await insertLearningWord('w_pen');
+      await insertLearningWord('w_pan');
+
+      final result = await ConfusableWordsProvider().getAPageOfWords(0, 999999);
+
+      // pen 孤立组被自动剔除，只保留合法的 dog/fog 组（2 词），组号重编号为 1
+      expect(result.total, 2);
+      expect(result.rows.map((w) => w.word.id).toList(), ['w_dog', 'w_fog']);
+      final provider = ConfusableWordsProvider();
+      await provider.getAPageOfWords(0, 999999);
+      expect(provider.groupIndexOf(0), 1);
+      expect(provider.groupIndexOf(1), 1);
+    });
   });
 
   group('ConfusableWordsProvider - 固定排序与只读语义', () {
