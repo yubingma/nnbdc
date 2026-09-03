@@ -369,15 +369,16 @@ class AppTheme {
       chipTheme: ChipThemeData(
         selectedColor: cfg.primaryColor,
         backgroundColor: cfg.subtleBg,
+        checkmarkColor: Colors.white,
         labelStyle: TextStyle(
-          color: cfg.textPrimary,
+          color: WidgetStateColor.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.white;
+            }
+            return cfg.textPrimary;
+          }),
           fontSize: 13,
           fontWeight: FontWeight.w600,
-        ),
-        secondaryLabelStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

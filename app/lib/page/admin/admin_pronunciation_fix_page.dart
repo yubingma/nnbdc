@@ -113,6 +113,7 @@ class _AdminPronunciationFixPageState extends State<AdminPronunciationFixPage> {
         backgroundColor: backgroundColor,
         appBar: AppTheme.createGradientAppBar(
           title: '发音补齐',
+          context: context,
           leading: IconButton(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -146,7 +147,7 @@ class _AdminPronunciationFixPageState extends State<AdminPronunciationFixPage> {
                         icon: Icon(isRunning ? Icons.stop : Icons.record_voice_over),
                         label: Text(isRunning ? '中止任务' : '开始补齐'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isRunning ? Colors.red : AppTheme.primaryColor,
+                          backgroundColor: isRunning ? Colors.red : Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         ),

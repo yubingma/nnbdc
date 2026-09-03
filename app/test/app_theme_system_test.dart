@@ -50,5 +50,58 @@ void main() {
         expect(bg, isNotNull);
       }
     });
+
+    testWidgets('全部主题下的 ChipThemeData 均具备良好的选中态高亮白与未选中态配色', (tester) async {
+      for (final style in AppThemeStyle.values) {
+        final themeData = AppTheme.getThemeData(style);
+        final cfg = AppThemeConfig.of(style);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            key: ValueKey(style),
+            theme: themeData,
+            home: Scaffold(
+              body: Column(
+                children: [
+                  FilterChip(
+                    key: const Key('selected_chip'),
+                    label: const Text('美音 (_us)'),
+                    selected: true,
+                    onSelected: (_) {},
+                  ),
+                  FilterChip(
+                    key: const Key('unselected_chip'),
+                    label: const Text('英音 (_uk)'),
+                    selected: false,
+                    onSelected: (_) {},
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final selectedTextFinder = find.descendant(
+          of: find.byKey(const Key('selected_chip')),
+          matching: find.text('美音 (_us)'),
+        );
+        final selectedDTS = tester.widget<DefaultTextStyle>(
+          find.ancestor(of: selectedTextFinder, matching: find.byType(DefaultTextStyle)).first,
+        );
+        expect(selectedDTS.style.color, Colors.white, reason: '${style.name} 选中文字应为纯白');
+
+        final unselectedTextFinder = find.descendant(
+          of: find.byKey(const Key('unselected_chip')),
+          matching: find.text('英音 (_uk)'),
+        );
+        final unselectedDTS = tester.widget<DefaultTextStyle>(
+          find.ancestor(of: unselectedTextFinder, matching: find.byType(DefaultTextStyle)).first,
+        );
+        expect(unselectedDTS.style.color, cfg.textPrimary, reason: '${style.name} 未选中文字应为 textPrimary');
+
+        expect(themeData.chipTheme.checkmarkColor, Colors.white, reason: '${style.name} 对勾应为纯白');
+      }
+    });
   });
 }
