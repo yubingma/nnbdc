@@ -1123,8 +1123,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                               ValueListenableBuilder<String>(
                                 valueListenable: Prefs.pronunciationAccentNotifier,
                                 builder: (context, _, __) {
+                                  if (args.word.spell.isEmpty) return const SizedBox.shrink();
                                   final pronInfo = Util.getWordPronounceWithAccent(args.word);
-                                  if (pronInfo.$1.isEmpty) return const SizedBox.shrink();
                                   return Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -1184,6 +1184,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                                   },
                                                 ),
                                               ],
+                                                if (pronInfo.$1.isNotEmpty) ...[
                                               Text(
                                                 '[${pronInfo.$1}]',
                                                 style: TextStyle(
@@ -1194,6 +1195,7 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                               ),
                                             ),
                                             const SizedBox(width: 6),
+                                                ],
                                             AnimatedBuilder(
                                               animation: _wordSoundController,
                                               builder: (context, child) {

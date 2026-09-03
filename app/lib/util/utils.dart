@@ -843,7 +843,8 @@ class Util {
         return (word.britishPronounce!, '英', true);
       }
     }
-    return ('', '', false);
+    // 词库中未收录音标数据（如短语/词组），音标为空，口音标签使用当前偏好口音
+    return ('', isUkPref ? '英' : '美', false);
   }
 
   /// 尝试本地查询单词及其变体形式

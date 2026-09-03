@@ -53,6 +53,23 @@ void main() {
       expect(pronInfo.$3, false);
     });
 
+    test('对于无音标的复合短语（如 keyboard key），音标为空但口音小按钮标签仍能正确跟随偏好', () async {
+      final phrase = WordVo.c2('keyboard key');
+      // 此时 phrase 的 britishPronounce, americaPronounce, pronounce 均为 null/空
+
+      await Prefs.setPronunciationAccent('us');
+      var pronInfo = Util.getWordPronounceWithAccent(phrase);
+      expect(pronInfo.$1, '');
+      expect(pronInfo.$2, '美');
+      expect(pronInfo.$3, false);
+
+      await Prefs.setPronunciationAccent('uk');
+      pronInfo = Util.getWordPronounceWithAccent(phrase);
+      expect(pronInfo.$1, '');
+      expect(pronInfo.$2, '英');
+      expect(pronInfo.$3, false);
+    });
+
     testWidgets('PronunciationAccentBadge 点击触发切换并调用 onSwitched 回调', (tester) async {
       String? switchedAccent;
 
