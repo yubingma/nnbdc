@@ -132,6 +132,10 @@ android {
         ignore 'InvalidPackage'
     }
 
+    androidResources {
+        noCompress 'onnx'
+    }
+
     packagingOptions {
         exclude 'lib/armeabi-v7a/**'
         exclude 'lib/x86_64/**'

@@ -36,12 +36,17 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var meterEvents: EventChannel.EventSink? = null
 
     // Sherpa Onnx Recognizer
+    private val modelInitLock = Any()
+    @Volatile
     private var modelEn: OnlineRecognizer? = null
+    @Volatile
     private var modelEnSentence: OnlineRecognizer? = null
+    @Volatile
     private var modelZh: OnlineRecognizer? = null
     private var sentenceBpeTokenizer: BpeTokenizer? = null
     
     // 当前使用的工作模型指针
+    @Volatile
     private var currentModel: OnlineRecognizer? = null
     private var currentStream: OnlineStream? = null
     
@@ -121,8 +126,8 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 }
                 "setContextualStrings" -> {
                     val phrases = call.argument<List<String>>("phrases") ?: emptyList()
-                    pendingHotwords = if (currentModelType == "en_sentence" && sentenceBpeTokenizer != null) {
-                        // en_sentence 模型:Java 侧先用 BPE 分词器把短语编码为 token 序列,
+                    pendingHotwords = if (sentenceBpeTokenizer != null && (currentModelType == "en_sentence" || currentModelType == "en")) {
+                        // 英文模型(基于 Zipformer BPE): Java 侧先用 BPE 分词器把短语编码为 token 序列,
                         // 再用 "/" 分隔多个短语。createStream 会把 "/" 转 "\n",
                         // EncodeBase 直接查 symbol_table 得到 token id(无需 C++ bpe_encoder)。
                         phrases.map { sentenceBpeTokenizer!!.tokenize(it) }.filter { it.isNotEmpty() }.joinToString("/")
@@ -175,9 +180,11 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
                 "preloadModels" -> {
                     thread {
                         try {
-                            if (modelZh == null) setupChineseModel()
-                            if (modelEn == null) setupEnglishModel()
-                            if (modelEnSentence == null) setupEnglishSentenceModel()
+                            synchronized(modelInitLock) {
+                                if (modelZh == null) setupChineseModel()
+                                if (modelEn == null) setupEnglishModel()
+                                if (modelEnSentence == null) setupEnglishSentenceModel()
+                            }
                             activity.runOnUiThread {
                                 result.success(null)
                             }
@@ -244,18 +251,21 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
     private var activeGain: Float = 1.5f
 
     private fun loadModel(type: String) {
-        // 1. 如果需要加载模型，先在同步锁外部执行，防止卡死后台录音读取线程的锁
-        if (type == "en_sentence") {
-            if (modelEnSentence == null) {
-                setupEnglishSentenceModel()
-            }
-        } else if (type == "en") {
-            if (modelEn == null) {
-                setupEnglishModel()
-            }
-        } else {
-            if (modelZh == null) {
-                setupChineseModel()
+        // 1. 如果需要加载模型，使用独立的模型加载锁保护，防止并发加载导致文件写入竞争与内存峰值，
+        //    同时完全不占用 this 锁，杜绝卡死后台录音 processSamples 线程
+        synchronized(modelInitLock) {
+            if (type == "en_sentence") {
+                if (modelEnSentence == null) {
+                    setupEnglishSentenceModel()
+                }
+            } else if (type == "en") {
+                if (modelEn == null) {
+                    setupEnglishModel()
+                }
+            } else {
+                if (modelZh == null) {
+                    setupChineseModel()
+                }
             }
         }
 
@@ -295,11 +305,19 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             val encoderPath = copyAsset(modelDir, "encoder-epoch-99-avg-1.int8.onnx", destDir)
             val decoderPath = copyAsset(modelDir, "decoder-epoch-99-avg-1.onnx", destDir)
             val joinerPath = copyAsset(modelDir, "joiner-epoch-99-avg-1.int8.onnx", destDir)
+            val bpeVocabPath = copyAsset(modelDir, "bpe_vocab.txt", destDir)
+
+            if (sentenceBpeTokenizer == null) {
+                val tokensContent = java.io.File(tokensPath).readText()
+                sentenceBpeTokenizer = BpeTokenizer(tokensContent)
+            }
 
             val modelConfig = OnlineModelConfig.builder()
                 .setTransducer(OnlineTransducerModelConfig.builder()
                     .setEncoder(encoderPath).setDecoder(decoderPath).setJoiner(joinerPath).build())
                 .setTokens(tokensPath)
+                .setModelingUnit("bpe")
+                .setBpeVocab(bpeVocabPath)
                 .setNumThreads(2)
                 .setDebug(false)
                 .build()
@@ -438,28 +456,68 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
 
     private fun copyAsset(assetDir: String, fileName: String, destDir: String): String {
         val destFile = java.io.File(destDir, fileName)
-        if (destFile.exists()) {
-            Log.d(TAG, "File already exists: ${destFile.absolutePath} (${destFile.length()} bytes)")
-            return destFile.absolutePath
+        val assetPath = "$assetDir/$fileName"
+
+        // 尝试获取 asset 的预期大小（对于 noCompress 的 asset，openFd 可直接返回精准字节数）
+        val expectedSize: Long = try {
+            activity.assets.openFd(assetPath).use { it.length }
+        } catch (e: Exception) {
+            -1L
         }
-        
-        // Ensure parent dir exists
-        destFile.parentFile?.mkdirs()
-        
-        Log.i(TAG, "Copying asset: $assetDir/$fileName -> ${destFile.absolutePath}")
-        
-        activity.assets.open("$assetDir/$fileName").use { inputStream ->
-            java.io.FileOutputStream(destFile).use { outputStream ->
-                val bytes = inputStream.copyTo(outputStream)
-                Log.i(TAG, "Copied $bytes bytes to ${destFile.name}")
+
+        // 如果目标文件已存在，校验其完整性：
+        // 1. 不能是 0 字节的残缺文件
+        // 2. 若 expectedSize > 0，大小必须严格与 asset 一致，避免历史上异常中断留下的半写入文件
+        if (destFile.exists()) {
+            val currentLen = destFile.length()
+            val isValid = if (expectedSize > 0L) {
+                currentLen == expectedSize
+            } else {
+                currentLen > 0L
+            }
+
+            if (isValid) {
+                Log.d(TAG, "File already exists and verified: ${destFile.absolutePath} ($currentLen bytes)")
+                return destFile.absolutePath
+            } else {
+                Log.w(TAG, "Found corrupt or incomplete file: ${destFile.absolutePath} ($currentLen bytes, expected: $expectedSize). Deleting and re-copying.")
+                destFile.delete()
             }
         }
-        
-        if (!destFile.exists()) {
-            throw RuntimeException("Failed to copy file: ${destFile.absolutePath}")
+
+        // Ensure parent dir exists
+        destFile.parentFile?.mkdirs()
+
+        Log.i(TAG, "Copying asset: $assetPath -> ${destFile.absolutePath} (expected: $expectedSize bytes)")
+
+        // 写入临时文件，写入完毕并验证无误后原子重命名，防止并发读取半成品或写入中断留残存文件
+        val tempFile = java.io.File(destDir, "$fileName.tmp_${System.currentTimeMillis()}")
+        try {
+            activity.assets.open(assetPath).use { inputStream ->
+                java.io.FileOutputStream(tempFile).use { outputStream ->
+                    val bytes = inputStream.copyTo(outputStream)
+                    outputStream.flush()
+                    Log.i(TAG, "Copied $bytes bytes to temp file ${tempFile.name}")
+                }
+            }
+
+            if (!tempFile.exists() || tempFile.length() == 0L || (expectedSize > 0L && tempFile.length() != expectedSize)) {
+                throw java.io.IOException("Incomplete asset copy for $assetPath: copied ${tempFile.length()} bytes, expected $expectedSize")
+            }
+
+            // 原子重命名为正式目标文件
+            if (!tempFile.renameTo(destFile)) {
+                destFile.delete()
+                if (!tempFile.renameTo(destFile)) {
+                    throw java.io.IOException("Failed to rename temp file ${tempFile.absolutePath} to ${destFile.absolutePath}")
+                }
+            }
+        } catch (e: Exception) {
+            tempFile.delete()
+            throw e
         }
-        
-        Log.d(TAG, "Copy complete: ${destFile.absolutePath} (${destFile.length()} bytes)")
+
+        Log.d(TAG, "Copy complete and verified: ${destFile.absolutePath} (${destFile.length()} bytes)")
         return destFile.absolutePath
     }
 
@@ -868,11 +926,15 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
             try {
                 Log.i(TAG, "Releasing Sherpa resources in background thread")
                 stopMicrophone()
-                modelEn?.release()
-                modelEn = null
-                modelZh?.release()
-                modelZh = null
-                currentModel = null
+                synchronized(modelInitLock) {
+                    modelEn?.release()
+                    modelEn = null
+                    modelEnSentence?.release()
+                    modelEnSentence = null
+                    modelZh?.release()
+                    modelZh = null
+                    currentModel = null
+                }
                 Log.i(TAG, "Sherpa resources released successfully in background")
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to release Sherpa resources in background", e)
