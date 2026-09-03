@@ -42,6 +42,7 @@ import '../../util/performance_watchdog.dart';
 import '../../util/prefs.dart';
 import '../../util/utils.dart';
 import '../../widget/handwriting_board.dart';
+import '../../widget/pronunciation_accent_badge.dart';
 import '../../widget/pronunciation_accent_dialog.dart';
 import '../../widget/theme_select_dialog.dart';
 import 'providers/bdc_notifier.dart';

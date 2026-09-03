@@ -26,6 +26,7 @@ import '../state.dart';
 import '../util/study_config.dart';
 import '../util/subscription_util.dart';
 import '../util/utils.dart';
+import '../widget/pronunciation_accent_badge.dart';
 import 'bdc/widgets/word_images_widget.dart';
 import 'pic_search.dart';
 
@@ -1118,70 +1119,76 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              // 音标发音胶囊（左对齐）
-                              () {
-                                final pronInfo = Util.getWordPronounceWithAccent(args.word);
-                                if (pronInfo.$1.isEmpty) return const SizedBox.shrink();
-                                return Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    InkWell(
-                                      borderRadius: BorderRadius.circular(20),
-                                      onTap: () {
-                                        if (!_playingStates['word']!.value && !_sessionDisposed) {
-                                          _playWithAnimation(() async {
-                                            try {
-                                              await sessionController.playWordAndSentence(
-                                                args.word,
-                                                sentenceDigest: null,
-                                                playWord: true,
-                                                playSentence: false,
-                                                isSpeakMode: false,
-                                              );
-                                            } catch (e) {
-                                              Global.logger.d("播放发音失败: $e");
-                                            }
-                                          }, 'word');
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: subtleBg,
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: Border.all(
-                                            color: cardBorder,
-                                            width: 1,
+                              // 音标发音胶囊（左对齐，支持点击小按钮快速切换英美音）
+                              ValueListenableBuilder<String>(
+                                valueListenable: Prefs.pronunciationAccentNotifier,
+                                builder: (context, _, __) {
+                                  final pronInfo = Util.getWordPronounceWithAccent(args.word);
+                                  if (pronInfo.$1.isEmpty) return const SizedBox.shrink();
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      InkWell(
+                                        borderRadius: BorderRadius.circular(20),
+                                        onTap: () {
+                                          if (!_playingStates['word']!.value && !_sessionDisposed) {
+                                            _playWithAnimation(() async {
+                                              try {
+                                                await sessionController.playWordAndSentence(
+                                                  args.word,
+                                                  sentenceDigest: null,
+                                                  playWord: true,
+                                                  playSentence: false,
+                                                  isSpeakMode: false,
+                                                );
+                                              } catch (e) {
+                                                Global.logger.d("播放发音失败: $e");
+                                              }
+                                            }, 'word');
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: subtleBg,
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(
+                                              color: cardBorder,
+                                              width: 1,
+                                            ),
                                           ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (pronInfo.$2.isNotEmpty) ...[
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                                margin: const EdgeInsets.only(right: 5),
-                                                decoration: BoxDecoration(
-                                                  color: pronInfo.$3
-                                                      ? Colors.orange.withValues(alpha: 0.15)
-                                                      : accentColor.withValues(alpha: 0.12),
-                                                  borderRadius: BorderRadius.circular(4),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (pronInfo.$2.isNotEmpty) ...[
+                                                PronunciationAccentBadge(
+                                                  label: pronInfo.$2,
+                                                  isFallback: pronInfo.$3,
+                                                  color: accentColor,
+                                                  onSwitched: (newAccent) async {
+                                                    if (!_sessionDisposed) {
+                                                      _playWithAnimation(() async {
+                                                        try {
+                                                          await sessionController.playWordAndSentence(
+                                                            args.word,
+                                                            sentenceDigest: null,
+                                                            playWord: true,
+                                                            playSentence: false,
+                                                            isSpeakMode: false,
+                                                          );
+                                                        } catch (e) {
+                                                          Global.logger.d("播放发音失败: $e");
+                                                        }
+                                                      }, 'word');
+                                                    }
+                                                  },
                                                 ),
-                                                child: Text(
-                                                  pronInfo.$2,
-                                                  style: TextStyle(
-                                                    color: pronInfo.$3 ? Colors.orange[800] : accentColor,
-                                                    fontSize: 10.5,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                            Text(
-                                              '[${pronInfo.$1}]',
-                                              style: TextStyle(
-                                                color: subtitleColor,
-                                                fontSize: 13.5,
+                                              ],
+                                              Text(
+                                                '[${pronInfo.$1}]',
+                                                style: TextStyle(
+                                                  color: subtitleColor,
+                                                  fontSize: 13.5,
                                                 fontFamily: 'NotoSans',
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -1226,7 +1233,8 @@ class WordDetailPageState extends State<WordDetailPage> with TickerProviderState
                                     ),
                                   ],
                                 );
-                              }(),
+                              },
+                            ),
                               const SizedBox(height: 10),
                               // 释义区域（左对齐常驻清晰展示）
                               _buildMeaningSection(isDarkMode),

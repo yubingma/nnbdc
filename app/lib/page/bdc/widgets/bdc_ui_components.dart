@@ -2363,61 +2363,47 @@ extension BdcPageStateUIComponents on BdcPageState {
       decoration: const BoxDecoration(
         color: Colors.transparent,
       ),
-      child: () {
-        final currentWord = state.currentGetWordResult?.learningWord?.word;
-        if (currentWord == null) return const SizedBox.shrink();
-        final pronInfo = Util.getWordPronounceWithAccent(currentWord);
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (pronInfo.$2.isNotEmpty) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                margin: const EdgeInsets.only(right: 6),
-                decoration: BoxDecoration(
-                  color: _cachedIsDarkMode
-                      ? Colors.white10
-                      : (pronInfo.$3 ? const Color(0xFFFFF7ED) : const Color(0xFFF1F5F9)),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: _cachedIsDarkMode
-                        ? Colors.white12
-                        : (pronInfo.$3 ? const Color(0xFFFFEDD5) : const Color(0xFFE2E8F0)),
-                    width: 0.8,
+      child: ValueListenableBuilder<String>(
+        valueListenable: Prefs.pronunciationAccentNotifier,
+        builder: (context, _, __) {
+          final currentWord = state.currentGetWordResult?.learningWord?.word;
+          if (currentWord == null) return const SizedBox.shrink();
+          final pronInfo = Util.getWordPronounceWithAccent(currentWord);
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (pronInfo.$2.isNotEmpty) ...[
+                PronunciationAccentBadge(
+                  label: pronInfo.$2,
+                  isFallback: pronInfo.$3,
+                  fontSize: 10.5,
+                  margin: const EdgeInsets.only(right: 6),
+                  onSwitched: (newAccent) async {
+                    StudyAudioSessionController.instance.playWordSound(currentWord);
+                  },
+                ),
+              ],
+              if (pronInfo.$1.isNotEmpty)
+                Flexible(
+                  child: Text(
+                    '[${pronInfo.$1}]',
+                    style: TextStyle(
+                      color: _cachedIsDarkMode
+                          ? const Color(0xFFD1D5DB)
+                          : const Color(0xFF4B5563),
+                      fontFamily: "NotoSans",
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-                child: Text(
-                  pronInfo.$2,
-                  style: TextStyle(
-                    color: pronInfo.$3
-                        ? const Color(0xFFEA580C)
-                        : (_cachedIsDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              const SizedBox(width: 6),
+              buildWordSoundButton(currentWord, _audioPlayer, state),
             ],
-            if (pronInfo.$1.isNotEmpty)
-              Flexible(
-                child: Text(
-                  '[${pronInfo.$1}]',
-                  style: TextStyle(
-                    color: _cachedIsDarkMode
-                        ? const Color(0xFFD1D5DB)
-                        : const Color(0xFF4B5563),
-                    fontFamily: "NotoSans",
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            const SizedBox(width: 6),
-            buildWordSoundButton(currentWord, _audioPlayer, state),
-          ],
-        );
-      }(),
+          );
+        },
+      ),
     );
   }
 
@@ -2669,54 +2655,49 @@ extension BdcPageStateUIComponents on BdcPageState {
                   ),
                 ),
                 const SizedBox(height: 6),
-                // 音标与播音小胶囊
-                () {
-                  final currentWord = state.currentGetWordResult?.learningWord?.word;
-                  if (currentWord == null) return const SizedBox.shrink();
-                  final pronInfo = Util.getWordPronounceWithAccent(currentWord);
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (pronInfo.$2.isNotEmpty) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1),
-                          margin: const EdgeInsets.only(right: 5),
-                          decoration: BoxDecoration(
-                            color: pronInfo.$3
-                                ? Colors.orange.withValues(alpha: 0.15)
-                                : context.primaryColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(4),
+                // 音标与播音小胶囊（支持点击小按钮快速切换英美音）
+                ValueListenableBuilder<String>(
+                  valueListenable: Prefs.pronunciationAccentNotifier,
+                  builder: (context, _, __) {
+                    final currentWord = state.currentGetWordResult?.learningWord?.word;
+                    if (currentWord == null) return const SizedBox.shrink();
+                    final pronInfo = Util.getWordPronounceWithAccent(currentWord);
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (pronInfo.$2.isNotEmpty) ...[
+                          PronunciationAccentBadge(
+                            label: pronInfo.$2,
+                            isFallback: pronInfo.$3,
+                            color: context.primaryColor,
+                            fontSize: 11,
+                            margin: const EdgeInsets.only(right: 5),
+                            onSwitched: (newAccent) async {
+                              StudyAudioSessionController.instance.playWordSound(currentWord);
+                            },
                           ),
-                          child: Text(
-                            pronInfo.$2,
-                            style: TextStyle(
-                              color: pronInfo.$3 ? Colors.orange[800] : context.primaryColor,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                        ],
+                        if (pronInfo.$1.isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              '[${pronInfo.$1}]',
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontFamily: "NotoSans",
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              softWrap: true,
+                              textAlign: TextAlign.center,
                             ),
                           ),
-                        ),
+                        const SizedBox(width: 6),
+                        buildWordSoundButton(currentWord, _audioPlayer, state),
                       ],
-                      if (pronInfo.$1.isNotEmpty)
-                        Flexible(
-                          child: Text(
-                            '[${pronInfo.$1}]',
-                            style: TextStyle(
-                              color: secondaryTextColor,
-                              fontFamily: "NotoSans",
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            softWrap: true,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      const SizedBox(width: 6),
-                      buildWordSoundButton(currentWord, _audioPlayer, state),
-                    ],
-                  );
-                }(),
+                    );
+                  },
+                ),
                 if (state.studyStep == StudyStep.list.json) ...[
                   const SizedBox(height: 10),
                   Text(
