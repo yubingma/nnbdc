@@ -321,6 +321,21 @@ public class UserDbSyncBo {
             // 生词本顺序校验和后续处理
             validateAndFinalizeSync(userId, logs, lastVersion);
 
+            // 【多端打卡一致性】打卡统计是 daka 表的派生量，服务端应持有权威值。
+            // 若本次同步涉及打卡/用户变更，则以服务端合并后的 daka 表为权威重算用户打卡统计，
+            // 并写入 user_db_log 广播给其它设备 —— 避免一台 dakas 尚未同步全的设备把正确数值压低。
+            // 任何异常都不阻断主同步事务（保守处理，仅记录日志）。
+            if (batchTouchedDakaOrUser(logs)) {
+                try {
+                    User recomputed = userBo.recomputeDakaStats(userId);
+                    if (recomputed != null) {
+                        broadcastUserDbLog(userId, lastVersion + 1, recomputed.toDto());
+                    }
+                } catch (IllegalAccessException e) {
+                    logger.error("重算并广播用户打卡统计失败（不影响同步事务）: userId={}", userId, e);
+                }
+            }
+
             transactionManager.commit(status);
             return lastVersion + 1;
         } catch (DbVersionNotMatchException | RawWordDataErrorException | RuntimeException e) {
@@ -1166,6 +1181,36 @@ public class UserDbSyncBo {
                 throw new RuntimeException("更新用户排名失败: " + e.getMessage(), e);
             }
         }
+    }
+
+    /**
+     * 本次同步批次是否涉及打卡或用户自身变更。
+     * 客户端上传的 tblName 是远端命名（单数下划线），daka 对应 `daka`。
+     */
+    private boolean batchTouchedDakaOrUser(List<UserDbLogDto> logs) {
+        return logs.stream()
+                .anyMatch(log -> log.getTblName().equalsIgnoreCase("daka")
+                        || log.getTblName().equalsIgnoreCase("user"));
+    }
+
+    /**
+     * 服务端主动修正用户数据后，将用户行变更写入 user_db_log，广播给该用户的所有客户端。
+     * 使用与当前同步批次一致的版本号，其它设备拉取增量日志时即可获得修正后的权威值。
+     */
+    private void broadcastUserDbLog(String userId, int version, UserDto userDto) {
+        UserDbLog log = new UserDbLog();
+        log.setUserId(userId);
+        log.setVersion(version);
+        Date now = new Date();
+        log.setCreateTime(now);
+        log.setUpdateTime(now);
+        log.setTable("user");
+        log.setOperate("UPDATE");
+        log.setRecordId(userId);
+        log.setRecord(JsonUtils.toJson(userDto));
+        userDbLogBo.createEntity(log);
+        logger.info("已广播用户打卡统计修正: userId={}, dakaDayCount={}, continuousDakaDayCount={}",
+                userId, userDto.getDakaDayCount(), userDto.getContinuousDakaDayCount());
     }
 
     private boolean hasVersionLogs(String userId, int version) {

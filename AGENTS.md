@@ -33,6 +33,10 @@
 - 生成 UI 设计与预览 HTML 时，严禁使用 Google Fonts 等外部网络字体链接（避免网络环境限制导致加载阻塞或显示异常），统一使用系统原生跨平台现代字体栈（`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif` 与等宽字体 `ui-monospace, monospace`）。
 - **原型真机高清 PNG 导出规范**：生成与更新 UI 原型真机图（`design/ui/png/`）时，必须统一执行 `node design/ui/render_mockup_png.js`（或 `npm run render-ui`），严格使用该脚本固化的统一旗舰真机模具（深空钛金属双层中框、实体侧按键、灵动岛、安全区状态栏、Home Bar 及透明画布），严禁临时手写异构样式导致真机壳风格分裂。
 
+## 数据库连接信息
+- 生产库、开发库连接方式见 ~/.zprofile
+- 严禁私自修改生产数据库。若需修改, 必须经过我的明确授权。
+
 ## Think Before Coding
 
 Don't assume. Don't hide confusion. Surface tradeoffs.

@@ -1,9 +1,12 @@
 package beidanci.service.bo;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 
@@ -25,10 +28,13 @@ import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.exception.EmptySpellException;
 import beidanci.service.exception.InvalidMeaningFormatException;
 import beidanci.service.exception.ParseException;
+import beidanci.service.po.Dict;
 import beidanci.service.po.MeaningItem;
+import beidanci.service.po.Sentence;
 import beidanci.service.po.User;
 import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
+import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
 import beidanci.util.Constants;
 import beidanci.util.Utils;
@@ -43,6 +49,8 @@ public class WordBo extends BaseBo<Word> {
 
     @Autowired
     MeaningItemBo meaningItemBo;
+    @Autowired
+    SentenceBo sentenceBo;
     @Autowired
     SysParamUtil sysParamUtil;
     @Autowired
@@ -129,22 +137,35 @@ public class WordBo extends BaseBo<Word> {
 
         Word word = findById(wordVo.getId());
 
-        // 删除被删除的meaningItems
+        // 删除被删除的meaningItems（连同其例句一起清理）
+        List<MeaningItem> deletedItems = new ArrayList<>();
         for (Iterator<MeaningItem> i = word.getMeaningItems().iterator(); i.hasNext();) {
             MeaningItem item = i.next();
             if (getMeaningItemVoFromList(item.getId(), wordVo.getMeaningItems()) == null) {
                 i.remove();
-                meaningItemBo.deleteEntity(item);
+                deletedItems.add(item);
             }
+        }
+        for (MeaningItem item : deletedItems) {
+            sentenceBo.deleteByMeaningItem(item.getId());
+            meaningItemBo.deleteEntity(item);
+            sysDbSyncBo.logOperation("DELETE", "meaning_item", item.getId(), "{}");
         }
 
         // 更新被修改的meaningItems
+        List<MeaningItem> changedItems = new ArrayList<>();
         for (MeaningItem item : word.getMeaningItems()) {
             MeaningItemVo itemVo = getMeaningItemVoFromList(item.getId(), wordVo.getMeaningItems());
             if (itemVo != null) {
-                item.setCiXing(Util.sanitizeAiString(itemVo.getCiXing()));
-                item.setMeaning(Util.sanitizeAiString(itemVo.getMeaning()));
-                meaningItemBo.updateEntity(item);
+                String ciXing = Util.sanitizeAiString(itemVo.getCiXing());
+                String meaning = Util.sanitizeAiString(itemVo.getMeaning());
+                if (!Objects.equals(item.getCiXing(), ciXing) || !Objects.equals(item.getMeaning(), meaning)) {
+                    item.setCiXing(ciXing);
+                    item.setMeaning(meaning);
+                    meaningItemBo.updateEntity(item);
+                    sysDbSyncBo.logOperation("UPDATE", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
+                    changedItems.add(item);
+                }
             }
         }
 
@@ -155,14 +176,20 @@ public class WordBo extends BaseBo<Word> {
                 item.setCiXing(Util.sanitizeAiString(itemVo.getCiXing()));
                 item.setMeaning(Util.sanitizeAiString(itemVo.getMeaning()));
                 item.setWord(word);
-                
+                // 释义归属通用词典，保证全员可见
+                Dict commonDict = new Dict();
+                commonDict.setId(Constants.COMMON_DICT_ID);
+                item.setDict(commonDict);
+
                 // 设置所有者：优先使用 Vo 传入的，否则默认为系统管理员
                 User owner = new User();
                 owner.setId(itemVo.getOwnerId() != null ? itemVo.getOwnerId() : Constants.SYS_USER_SYS_ID);
                 item.setOwner(owner);
-                
+
                 meaningItemBo.createEntity(item);
                 word.getMeaningItems().add(item);
+                sysDbSyncBo.logOperation("INSERT", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
+                changedItems.add(item);
             }
         }
 
@@ -192,8 +219,96 @@ public class WordBo extends BaseBo<Word> {
                 if (!parent.exists()) parent.mkdirs();
                 oldOga.renameTo(newOga);
             }
+
+            sysDbSyncBo.logOperation("UPDATE", "word", word.getId(), JsonUtils.toJson(toDto(word)));
         }
 
+        // 为修改/新增的释义自动生成配套例句（发音文件由 TTS 定时任务异步生成）
+        generateSentencesForMeanings(word, changedItems);
+
+        return null;
+    }
+
+    /**
+     * 调用大模型为指定释义各生成一条例句，入库后由 TTS 定时任务自动生成发音文件。
+     * 例句生成失败不回滚释义保存，仅记录错误日志暴露问题。
+     */
+    private void generateSentencesForMeanings(Word word, List<MeaningItem> items) {
+        if (items.isEmpty()) {
+            return;
+        }
+        String spell = word.getSpell();
+        try {
+            StringBuilder meaningsJson = new StringBuilder("[");
+            for (MeaningItem item : items) {
+                if (meaningsJson.length() > 1) {
+                    meaningsJson.append(",");
+                }
+                meaningsJson.append(String.format("{\"meaningItemId\": \"%s\", \"ciXing\": \"%s\", \"meaning\": \"%s\"}",
+                        item.getId(), item.getCiXing(), item.getMeaning()));
+            }
+            meaningsJson.append("]");
+
+            String systemPrompt = "你是一个词典例句创作专家。请为单词的每个释义项创作一个实用、自然的英文例句及中文翻译。\n"
+                    + "要求：\n"
+                    + "1. 例句要贴合该释义项的词义与词性，难度适中，长度在 8~20 个单词之间。\n"
+                    + "2. 在英文例句和中文翻译中，对目标单词使用 <b>单词</b> 标签进行加粗高亮。\n"
+                    + "3. 严格按照以下 JSON 格式返回，不要有任何 Markdown 标注或说明性文字：\n"
+                    + "{\"sentences\": [{\"meaningItemId\": \"uuid1\", \"sentenceEn\": \"We should <b>book</b> a table in advance.\", \"sentenceCn\": \"我们应该提前<b>预订</b>一张桌子。\"}]}";
+            String userPrompt = String.format("{\"word\": \"%s\", \"meanings\": %s}", spell, meaningsJson);
+
+            String aiOutput = aiBo.generateText(systemPrompt, userPrompt);
+            if (aiOutput != null) {
+                aiOutput = aiOutput.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
+            }
+            Map<String, Object> aiRes = JsonUtils.parseMap(aiOutput);
+            List<?> sentenceList = aiRes == null ? null : (List<?>) aiRes.get("sentences");
+            if (sentenceList == null) {
+                log.error("为单词 [{}] 的释义生成例句失败: 大模型返回结果解析失败", spell);
+                return;
+            }
+
+            User systemUser = new User();
+            systemUser.setId(Constants.SYS_USER_SYS_ID);
+            for (Object obj : sentenceList) {
+                if (!(obj instanceof Map)) {
+                    continue;
+                }
+                Map<?, ?> map = (Map<?, ?>) obj;
+                String meaningItemId = (String) map.get("meaningItemId");
+                String sentenceEn = (String) map.get("sentenceEn");
+                String sentenceCn = (String) map.get("sentenceCn");
+                MeaningItem item = getMeaningItemFromList(meaningItemId, items);
+                if (item == null || sentenceEn == null || sentenceEn.trim().isEmpty()) {
+                    continue;
+                }
+
+                Sentence sentence = new Sentence();
+                sentence.setEnglish(sentenceEn.trim());
+                sentence.setChinese(sentenceCn);
+                sentence.setWordMeaning(item.getMeaning());
+                sentence.setPartOfSpeech(item.getCiXing());
+                sentence.setMeaningItem(item);
+                sentence.setNeedTts(true); // 触发 TTS 定时任务生成发音文件
+                sentence.setTheType(Sentence.WAITTING_TTS);
+                sentence.setOwner(systemUser);
+                sentence.setAuthor(systemUser);
+                sentence.setEnglishDigest(Util.makeSentenceDigest(sentenceEn.trim()));
+
+                sentenceBo.createEntity(sentence);
+                sysDbSyncBo.logOperation("INSERT", "sentence", sentence.getId(), JsonUtils.toJson(sentenceBo.toDto(sentence)));
+            }
+        } catch (Exception e) {
+            log.error("为单词 [{}] 的释义生成例句失败", spell, e);
+        }
+    }
+
+    private MeaningItem getMeaningItemFromList(String meaningItemId, List<MeaningItem> items) {
+        for (MeaningItem item : items) {
+            if (item.getId() != null && item.getId().equals(meaningItemId)) {
+                return item;
+            }
+        }
         return null;
     }
 

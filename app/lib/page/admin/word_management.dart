@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/local_word_cache.dart';
+import 'package:nnbdc/util/sys_db_sync.dart';
 
 class WordManagementWidget extends StatefulWidget {
   const WordManagementWidget({super.key});
@@ -419,6 +420,18 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
                                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                                                 ),
                                               ),
+                                        TextButton.icon(
+                                          onPressed: _editMeanings,
+                                          icon: const Icon(Icons.edit, size: 14),
+                                          label: const Text('编辑释义', style: TextStyle(fontSize: 11)),
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                            backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.08),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -606,6 +619,21 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
     );
   }
 
+  void _editMeanings() {
+    if (_currentWord == null) return;
+    showDialog(
+      context: context,
+      builder: (context) => _MeaningEditDialog(
+        word: _currentWord!,
+        onSaved: () async {
+          // 通过系统数据同步把服务端变更应用到本地，再重新加载
+          await syncSysDb();
+          await _searchWord(spell: _currentWord?.spell);
+        },
+      ),
+    );
+  }
+
   void _deleteSentence(SentenceVo sentence) {
     showDialog(
       context: context,
@@ -722,6 +750,168 @@ class _SentenceEditDialogState extends State<_SentenceEditDialog> {
         widget.onUpdated();
         if (mounted) Navigator.pop(context);
       }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+}
+
+// 释义编辑行数据
+class _MeaningRow {
+  final String? id;
+  final TextEditingController ciXing;
+  final TextEditingController meaning;
+
+  _MeaningRow({this.id, required this.ciXing, required this.meaning});
+
+  void dispose() {
+    ciXing.dispose();
+    meaning.dispose();
+  }
+}
+
+// 释义编辑对话框
+class _MeaningEditDialog extends StatefulWidget {
+  final WordVo word;
+  final Future<void> Function() onSaved;
+
+  const _MeaningEditDialog({required this.word, required this.onSaved});
+
+  @override
+  State<_MeaningEditDialog> createState() => _MeaningEditDialogState();
+}
+
+class _MeaningEditDialogState extends State<_MeaningEditDialog> {
+  late final List<_MeaningRow> _rows;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _rows = (widget.word.meaningItems ?? [])
+        .map((m) => _MeaningRow(
+              id: m.id,
+              ciXing: TextEditingController(text: m.ciXing ?? ''),
+              meaning: TextEditingController(text: m.meaning ?? ''),
+            ))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    for (final row in _rows) {
+      row.dispose();
+    }
+    super.dispose();
+  }
+
+  void _addRow() {
+    setState(() {
+      _rows.add(_MeaningRow(ciXing: TextEditingController(), meaning: TextEditingController()));
+    });
+  }
+
+  void _removeRow(int index) {
+    setState(() {
+      _rows[index].dispose();
+      _rows.removeAt(index);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = context.watch<DarkMode>().isDarkMode;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
+    return AlertDialog(
+      title: Text('编辑释义 - ${widget.word.spell}'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: _rows.isEmpty
+            ? const Text('暂无释义，请添加', style: TextStyle(fontSize: 14))
+            : ListView.builder(
+                shrinkWrap: true,
+                itemCount: _rows.length,
+                itemBuilder: (context, index) {
+                  final row = _rows[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 72,
+                          child: TextField(
+                            controller: row.ciXing,
+                            style: TextStyle(color: textColor, fontSize: 14),
+                            decoration: const InputDecoration(labelText: '词性', hintText: 'n.'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: row.meaning,
+                            style: TextStyle(color: textColor, fontSize: 14),
+                            maxLines: 2,
+                            decoration: const InputDecoration(labelText: '释义'),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                          onPressed: () => _removeRow(index),
+                          tooltip: '删除该释义',
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: _addRow,
+          icon: const Icon(Icons.add, size: 16),
+          label: const Text('添加释义'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        ElevatedButton(
+          onPressed: _isSaving ? null : _save,
+          child: _isSaving
+              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('保存'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    // 过滤掉词性和释义都为空的行
+    final meanings = _rows
+        .where((r) => r.ciXing.text.trim().isNotEmpty || r.meaning.text.trim().isNotEmpty)
+        .map((r) => MeaningItemVo(r.id, r.ciXing.text.trim(), r.meaning.text.trim(), null, null, null))
+        .toList();
+    if (meanings.isEmpty) {
+      ToastUtil.error('至少保留一条释义');
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final wordVo = WordVo(widget.word.id, widget.word.spell, null, null, null, null, null, null, null, meanings,
+          null, null, null, null, null, null);
+      final res = await Api.client.updateWord(wordVo);
+      if (res.success) {
+        ToastUtil.success('释义已保存，AI 正在自动生成例句与发音');
+        await widget.onSaved();
+        if (mounted) Navigator.pop(context);
+      } else {
+        ToastUtil.error(res.msg ?? '保存失败');
+      }
+    } catch (e) {
+      ToastUtil.error('保存异常: $e');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

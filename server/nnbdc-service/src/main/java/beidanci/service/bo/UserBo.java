@@ -3,11 +3,14 @@ package beidanci.service.bo;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -928,6 +931,75 @@ public class UserBo extends BaseBo<User> {
         DakaId id = new DakaId(userId, Utils.getPureDate(new Date()));
         Daka daka = dakaBo.findById(id);
         return daka != null;
+    }
+
+    /**
+     * 从服务端 daka 表（多端合并后的数据源）重算该用户打卡统计并回写 user 行。
+     *
+     * 打卡统计是 daka 表的派生量，服务端应持有权威值。累计打卡天数、最大连续天数均为单调量，
+     * 因此用 max 兜底，防止一台 dakas 尚未同步全的设备把服务端已聚合的正确数值压低，
+     * 从而根治多端打卡数据互相覆盖导致的数值震荡。
+     *
+     * @return 若发生修改并已持久化，返回更新后的 User；否则返回 null（表示无需变更）
+     */
+    @Transactional
+    public User recomputeDakaStats(String userId) throws IllegalAccessException {
+        User user = findById(userId);
+        if (user == null) {
+            return null;
+        }
+
+        List<DakaDto> dakaDtos = dakaBo.getDakaDtosOfUser(userId);
+        TreeSet<Date> pureDates = new TreeSet<>();
+        for (DakaDto dto : dakaDtos) {
+            if (dto.getForLearningDate() != null) {
+                pureDates.add(Utils.getPureDate(dto.getForLearningDate()));
+            }
+        }
+        int realCount = pureDates.size();
+        Date lastDakaDate = pureDates.isEmpty() ? null : pureDates.last();
+
+        // 当前连续打卡天数：从今天（今天未打卡则从昨天）往前数连续日期
+        int continuous = 0;
+        if (!pureDates.isEmpty()) {
+            Calendar cal = Calendar.getInstance();
+            Date cursor = Utils.getPureDate(new Date());
+            if (!pureDates.contains(cursor)) {
+                cal.setTime(cursor);
+                cal.add(Calendar.DAY_OF_YEAR, -1);
+                cursor = cal.getTime();
+            }
+            while (pureDates.contains(cursor)) {
+                continuous++;
+                cal.setTime(cursor);
+                cal.add(Calendar.DAY_OF_YEAR, -1);
+                cursor = cal.getTime();
+            }
+        }
+
+        int curCount = user.getDakaDayCount() == null ? 0 : user.getDakaDayCount();
+        int curContinuous = user.getContinuousDakaDayCount() == null ? 0 : user.getContinuousDakaDayCount();
+        int curMax = user.getMaxContinuousDakaDayCount() == null ? 0 : user.getMaxContinuousDakaDayCount();
+
+        // 单调量：只增不减；当前连续天数允许真实断签重置，保持与客户端一致
+        int finalCount = Math.max(curCount, realCount);
+        int finalMax = Math.max(curMax, continuous);
+        Date pureCurLast = user.getLastDakaDate() == null ? null : Utils.getPureDate(user.getLastDakaDate());
+
+        boolean changed = finalCount != curCount
+                || continuous != curContinuous
+                || finalMax != curMax
+                || !Objects.equals(pureCurLast, lastDakaDate);
+        if (!changed) {
+            return null;
+        }
+
+        user.setDakaDayCount(finalCount);
+        user.setContinuousDakaDayCount(continuous);
+        user.setMaxContinuousDakaDayCount(finalMax);
+        user.setLastDakaDate(lastDakaDate);
+        updateEntity(user);
+        return user;
     }
 
     public void unRegister(String userId) throws IllegalAccessException {

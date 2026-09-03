@@ -94,9 +94,8 @@ class FinishPageState extends State<FinishPage> {
         var user = await UserBo().getLoggedInUser();
         await Global.setLoggedInUser(user.data!);
 
-        // 记录用户打卡操作 (不再提及积分奖励，因为UI上弱化积分)
-        await MyDatabase.instance.userOpersDao.recordDaka(user.data!.id!, remark: "用户完成打卡");
-
+        // 注：打卡操作记录（user_oper 的 DAKA）已由 saveDakaRecord 内部写入，这里不再重复记录，
+        // 否则每天会产生两条 DAKA 操作记录（重复打卡日志）。
         // 精确打击：重置本地通知提醒时间到明天
         try {
           await NotificationUtil.scheduleDailyReminder();

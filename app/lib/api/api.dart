@@ -655,6 +655,9 @@ abstract class RestClient {
   @FormUrlEncoded()
   Future<Result<String>> regenerateWordPronunciation(@Field("wordId") String wordId);
 
+  @POST("/admin/updateWord.do")
+  Future<Result<String>> updateWord(@Body() WordVo wordVo);
+
   // 系统健康检查相关API
   @GET("/admin/checkSystemDictIntegrity.do")
   Future<Result<SystemHealthCheckResult>> checkSystemDictIntegrity();

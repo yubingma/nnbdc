@@ -326,6 +326,13 @@ public class SentenceBo extends BaseBo<Sentence> {
         List<Sentence> sentences = findByMeaningItem(meaningItemId);
         if (sentences != null) {
             for (Sentence s : sentences) {
+                // 清理例句的关联数据（事件、翻译、单词关联）
+                MapSqlParameterSource p = new MapSqlParameterSource("sentenceId", s.getId());
+                namedParameterJdbcTemplate.update("DELETE FROM event WHERE sentence_chinese_id IN (SELECT id FROM sentence_chinese WHERE sentence_id = :sentenceId)", p);
+                namedParameterJdbcTemplate.update("DELETE FROM sentence_chinese WHERE sentence_id = :sentenceId", p);
+                namedParameterJdbcTemplate.update("DELETE FROM word_sentence WHERE sentence_id = :sentenceId", p);
+                namedParameterJdbcTemplate.update("DELETE FROM event WHERE sentence_id = :sentenceId", p);
+
                 // 清理物理音频文件复用逻辑提取
                 safeDeleteSentenceAudio(s.getId(), s.getEnglishDigest());
 

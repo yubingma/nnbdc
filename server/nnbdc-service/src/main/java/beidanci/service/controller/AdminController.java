@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -433,6 +434,17 @@ public class AdminController {
             return Result.success("发音重新生成成功");
         } catch (Exception e) {
             return Result.fail("发音重新生成失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/admin/updateWord.do")
+    public Result<String> updateWord(@RequestBody WordVo wordVo) {
+        try {
+            String err = wordBo.updateWord(wordVo, "管理后台编辑释义");
+            return err == null ? Result.success("释义更新成功") : Result.fail(err);
+        } catch (Exception e) {
+            logger.error("管理后台更新单词失败: id={}", wordVo.getId(), e);
+            return Result.fail("释义更新失败: " + e.getMessage());
         }
     }
 

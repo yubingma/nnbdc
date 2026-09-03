@@ -1563,6 +1563,15 @@ class DakasDao extends DatabaseAccessor<MyDatabase> with _$DakasDaoMixin {
     return count.read(dakas.forLearningDate.count()) ?? 0;
   }
 
+  // 获取用户最近一次打卡的日期（没有则为 null）
+  Future<DateTime?> getLatestDakaDate(String userId) async {
+    final q = selectOnly(dakas)
+      ..addColumns([dakas.forLearningDate.max()])
+      ..where(dakas.userId.equals(userId));
+    final row = await q.getSingle();
+    return row.read(dakas.forLearningDate.max());
+  }
+
 
   // 保存打卡记录
   Future<void> saveDaka(Daka record, bool genLog) async {
@@ -1711,20 +1720,6 @@ class UserOpersDao extends DatabaseAccessor<MyDatabase> with _$UserOpersDaoMixin
   }
 
   // 创建打卡操作记录
-  Future<void> recordDaka(String userId, {String? remark}) async {
-    var now = AppClock.now();
-    var record = UserOper(
-      id: Util.uuid(),
-      userId: userId,
-      operType: OperType.daka.value,
-      operTime: now,
-      remark: remark,
-      createTime: now,
-      updateTime: now,
-    );
-    await saveUserOper(record, true);
-  }
-
   // 根据ID获取单个操作历史记录
   Future<UserOper?> getById(String id) {
     return (select(userOpers)..where((h) => h.id.equals(id))).getSingleOrNull();

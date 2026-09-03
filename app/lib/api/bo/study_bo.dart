@@ -290,6 +290,7 @@ class StudyBo {
 
       // 检查今天是否已经打卡
       final existingDaka = await db.dakasDao.findById(user.id, today);
+      final isFirstDakaToday = existingDaka == null;
       if (existingDaka != null) {
         Global.logger.w('用户今天已经打卡，更新打卡内容');
         // 更新现有打卡记录
@@ -309,36 +310,6 @@ class StudyBo {
           updateTime: now,
         );
         await db.dakasDao.saveDaka(daka, true);
-
-        // 更新用户打卡统计信息
-        int newDakaDayCount = user.dakaDayCount + 1;
-        int newContinuousDakaDayCount = 1;
-        if (user.lastDakaDate != null) {
-          final lastDate = DateUtils.businessDate(user.lastDakaDate!);
-          final yesterday = today.subtract(const Duration(days: 1));
-          if (lastDate.isAtSameMomentAs(yesterday)) {
-            newContinuousDakaDayCount = user.continuousDakaDayCount + 1;
-          } else if (lastDate.isAtSameMomentAs(today)) {
-            // 虽然正常逻辑下 existingDaka != null 会拦截重复打卡，但在并发或异常流中，
-            // 如果走到这里发现日期相同，则保持连续天数不变，总天数不增。
-            newContinuousDakaDayCount = user.continuousDakaDayCount;
-            newDakaDayCount = user.dakaDayCount;
-          }
-        }
-        int newMaxContinuousDakaDayCount = max(user.maxContinuousDakaDayCount, newContinuousDakaDayCount);
-        double newDakaRatio = user.learnedDays > 0 ? newDakaDayCount / user.learnedDays : 1.0;
-
-        // 给用户一次掷骰子机会 (仅限每日首次打卡) 并更新统计信息
-        await db.usersDao.saveUser(
-            user.copyWith(
-              throwDiceChance: user.throwDiceChance + 1,
-              dakaDayCount: newDakaDayCount,
-              continuousDakaDayCount: newContinuousDakaDayCount,
-              maxContinuousDakaDayCount: newMaxContinuousDakaDayCount,
-              lastDakaDate: Value(now),
-              dakaRatio: Value(newDakaRatio),
-            ),
-            true);
       }
 
       // 记录打卡操作
@@ -353,8 +324,19 @@ class StudyBo {
           ),
           true);
 
-      // 动态推导并纠正打卡天数统计，防止多端数据冲突
+      // 打卡统计（累计天数/连续天数/打卡率）是 `dakas` 表的派生量，绝不做 `+1` 增量累加——
+      // 增量累加基于可能过期的缓存值，多端必然互相漂移。统一交由下方幂等的推导方法，从本机 `dakas` 表重算。
       await UserBo().updateAndSyncUserDakaStats(user.id);
+
+      // 每日首次打卡：赠送一次掷骰子机会（在推导之后再写，确保携带的是修正后的正确统计值）
+      if (isFirstDakaToday) {
+        final refreshed = Global.getLoggedInUser();
+        if (refreshed != null) {
+          await db.usersDao.saveUser(
+              refreshed.copyWith(throwDiceChance: refreshed.throwDiceChance + 1),
+              true);
+        }
+      }
 
       // 触发数据库同步
       ThrottledDbSyncService().requestSync();

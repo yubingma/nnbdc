@@ -393,6 +393,13 @@ class UserBo {
     return continuousDays;
   }
 
+  /// 从本机 `dakas` 表（数据源）幂等地推导打卡统计并回写 `user` 行。
+  ///
+  /// 关键约束（多端打卡不同步的根治点）：
+  /// 1. 打卡统计是 `dakas` 表的**派生量**，绝不做 `+1` 式增量累加——增量累加基于可能过期的缓存值，多端必然互相漂移。
+  /// 2. 累计打卡天数、最大连续天数均为**单调量**：一台同步未完成、`dakas` 还不完整的设备，
+  ///    不能把（服务端已聚合的）正确数值压低。用 `max` 兜底，杜绝多端互相覆盖导致数值震荡。
+  /// 3. 打卡率分母统一为「注册至今总天数」（与首页 `me.dart` 展示口径一致），且结果收敛到 [0,1]。
   Future<void> updateAndSyncUserDakaStats(String userId) async {
     final db = MyDatabase.instance;
     final user = await db.usersDao.getUserById(userId);
@@ -400,30 +407,40 @@ class UserBo {
 
     final realCount = await db.dakasDao.getDakaCount(userId);
     final realContinuousCount = await calculateContinuousDakaDays(userId);
-    
+    final latestDakaDate = await db.dakasDao.getLatestDakaDate(userId);
+
     // 动态计算真实学习天数，修复可能存在的误差
     final realLearnedDays = await db.userStudyDailyStatsDao.getLearnedDaysCount(userId);
-    int finalLearnedDays = math.max(user.learnedDays, realLearnedDays);
+    final int finalLearnedDays = math.max(user.learnedDays, realLearnedDays);
+
+    // 打卡累计天数、最大连续天数只增不减（单调量）
+    final int finalCount = math.max(user.dakaDayCount, realCount);
+    final int finalMaxContinuousCount = math.max(user.maxContinuousDakaDayCount, realContinuousCount);
 
     // 计算注册至今的总天数（出勤率的分母）
     final totalDays = AppClock.today().difference(DateUtils.businessDate(user.createTime)).inDays + 1;
+    // 打卡率定义：累计打卡天数 / 注册至今的总天数 (符合主流 App 定义的出勤率)
+    final double dakaRatio = totalDays > 0 ? (finalCount / totalDays).clamp(0.0, 1.0) : (finalCount > 0 ? 1.0 : 0.0);
 
-    if (user.dakaDayCount != realCount || user.continuousDakaDayCount != realContinuousCount || user.learnedDays != finalLearnedDays) {
-      Global.logger.d('检测到打卡统计数据不一致，进行自我修正: userId=$userId, count: ${user.dakaDayCount} -> $realCount, continuous: ${user.continuousDakaDayCount} -> $realContinuousCount, learnedDays: ${user.learnedDays} -> $finalLearnedDays');
-      
-      final maxContinuousCount = math.max(user.maxContinuousDakaDayCount, realContinuousCount);
-      // 打卡率定义改为：累计打卡天数 / 注册至今的总天数 (符合主流App定义的出勤率)
-      double dakaRatio = totalDays > 0 ? realCount / totalDays : 1.0;
-      if (dakaRatio > 1.0) dakaRatio = 1.0;
+    if (user.dakaDayCount != finalCount ||
+        user.continuousDakaDayCount != realContinuousCount ||
+        user.maxContinuousDakaDayCount != finalMaxContinuousCount ||
+        user.learnedDays != finalLearnedDays ||
+        user.lastDakaDate != latestDakaDate) {
+      Global.logger.d('检测到打卡统计数据不一致，进行自我修正: userId=$userId, '
+          'count: ${user.dakaDayCount} -> $finalCount, continuous: ${user.continuousDakaDayCount} -> $realContinuousCount, '
+          'maxContinuous: ${user.maxContinuousDakaDayCount} -> $finalMaxContinuousCount, '
+          'learnedDays: ${user.learnedDays} -> $finalLearnedDays, lastDakaDate: $latestDakaDate');
 
       final updatedUser = user.copyWith(
-        dakaDayCount: realCount,
+        dakaDayCount: finalCount,
         continuousDakaDayCount: realContinuousCount,
-        maxContinuousDakaDayCount: maxContinuousCount,
+        maxContinuousDakaDayCount: finalMaxContinuousCount,
         dakaRatio: Value(dakaRatio),
         learnedDays: finalLearnedDays,
+        lastDakaDate: Value(latestDakaDate),
       );
-      
+
       await db.usersDao.saveUser(updatedUser, true);
     }
   }
