@@ -23,6 +23,8 @@ public class MeaningItemVo extends UuidVo {
     private List<SynonymVo> synonyms;
     private List<SentenceVo> sentences = new ArrayList<>();
     private String ownerId;
+    private Integer popularity;
+    private Integer popularityPercent;
 
     public String getOwnerId() {
         return ownerId;
@@ -30,6 +32,22 @@ public class MeaningItemVo extends UuidVo {
 
     public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public Integer getPopularity() {
+        return popularity;
+    }
+
+    public void setPopularity(Integer popularity) {
+        this.popularity = popularity;
+    }
+
+    public Integer getPopularityPercent() {
+        return popularityPercent;
+    }
+
+    public void setPopularityPercent(Integer popularityPercent) {
+        this.popularityPercent = popularityPercent;
     }
 
     public MeaningItemVo() {
