@@ -636,6 +636,10 @@ abstract class RestClient {
   Future<Result<String>> removeWordFromDict(
       @Field("dictId") String dictId, @Field("wordId") String wordId);
 
+  // 管理员单词与释义管理API
+  @GET("/admin/getWord.do")
+  Future<Result<WordVo>> getAdminWord(@Query("spell") String spell);
+
   // 管理员例句管理API
   @GET("/admin/getWordSentences.do")
   Future<Result<List<SentenceVo>>> getWordSentences(@Query("wordId") String wordId);

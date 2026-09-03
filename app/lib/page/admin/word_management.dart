@@ -13,7 +13,6 @@ import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/local_word_cache.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
-import 'package:drift/drift.dart' hide Column;
 
 class WordManagementWidget extends StatefulWidget {
   const WordManagementWidget({super.key});
@@ -96,32 +95,32 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
     });
 
     try {
-      final searchResult = await WordBo().searchWordLocalOnly(searchSpell);
-      _currentWord = searchResult.word;
+      // 优先从服务端拉取最权威、最完整的单词与全量释义（管理端切不可仅依赖本地可能缺失的 SQLite）
+      final res = await Api.client.getAdminWord(searchSpell);
+      if (res.success && res.data != null) {
+        _currentWord = res.data;
+      } else {
+        // 服务端未找到或网络异常时，降级使用本地 SQLite
+        final searchResult = await WordBo().searchWordLocalOnly(searchSpell);
+        _currentWord = searchResult.word;
+      }
 
       if (_currentWord != null && _currentWord!.id != null) {
         final db = MyDatabase.instance;
 
-        // 1. 显式加载该单词的全量释义（管理后台需查看全量公共释义，不受个人词书和常用度过滤影响）
-        final miQuery = db.select(db.meaningItems)
-          ..where((tbl) => tbl.wordId.equals(_currentWord!.id!))
-          ..orderBy([(tbl) => OrderingTerm.asc(tbl.popularity)]);
-        final allMeaningItems = await miQuery.get();
-        if (allMeaningItems.isNotEmpty) {
-          _currentWord!.meaningItems = allMeaningItems
-              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
-              .toList();
-        }
-
-        // 2. 获取本地配图
+        // 1. 获取本地配图
         final imagesQuery = db.select(db.wordImages)..where((tbl) => tbl.wordId.equals(_currentWord!.id!));
         _wordImages = await imagesQuery.get();
 
-        // 3. 从服务器获取最全例句列表
+        // 2. 从服务器获取最全例句列表
         await _loadSentences();
       }
     } catch (e) {
       Global.logger.e("Failed to search word: $searchSpell, error: $e");
+      if (_currentWord == null) {
+        final searchResult = await WordBo().searchWordLocalOnly(searchSpell);
+        _currentWord = searchResult.word;
+      }
     } finally {
       if (mounted) {
         setState(() {

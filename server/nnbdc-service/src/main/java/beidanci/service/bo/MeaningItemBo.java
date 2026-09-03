@@ -86,7 +86,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     public List<MeaningItemDto> findMeaningsByWord(String wordId) {
-        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, popularity_percent, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId";
+        String sql = "SELECT id, ci_xing, meaning, word_id, dict_id, owner_id, popularity, popularity_percent, create_time, update_time, is_updating, updating_start_at FROM meaning_item WHERE word_id = :wordId ORDER BY popularity ASC NULLS LAST, create_time ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
 
         return namedParameterJdbcTemplate.query(sql, params, (rs, rowNum) -> {
@@ -109,7 +109,7 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
     }
 
     public List<MeaningItem> findEntitiesByWord(String wordId) {
-        String sql = "SELECT * FROM meaning_item WHERE word_id = :wordId";
+        String sql = "SELECT * FROM meaning_item WHERE word_id = :wordId ORDER BY popularity ASC NULLS LAST, create_time ASC";
         MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
         return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(MeaningItem.class));
     }

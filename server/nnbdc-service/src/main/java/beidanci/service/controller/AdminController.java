@@ -393,6 +393,19 @@ public class AdminController {
     }
 
     // ============================================
+    // 管理员单词与释义管理API
+    // ============================================
+
+    @GetMapping("/admin/getWord.do")
+    public Result<WordVo> getWord(@RequestParam("spell") String spell) {
+        WordVo wordVo = wordBo.getWordVoForAdmin(spell.trim());
+        if (wordVo == null) {
+            return Result.fail(String.format("未找到单词 [%s]", spell));
+        }
+        return Result.success(wordVo);
+    }
+
+    // ============================================
     // 管理员例句管理API
     // ============================================
 

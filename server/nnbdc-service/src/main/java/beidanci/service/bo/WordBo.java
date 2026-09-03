@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import beidanci.api.model.MeaningItemDto;
 import beidanci.api.model.MeaningItemVo;
 import beidanci.api.model.SimilarWordDto;
 import beidanci.api.model.WordDto;
@@ -112,6 +113,35 @@ public class WordBo extends BaseBo<Word> {
         WordVo vo = WordCache.genWordVO(word, excludeFields);
 
         // 不再额外查询数据库，问题应在PO->VO转换链上修复
+        return vo;
+    }
+
+    public WordVo getWordVoForAdmin(String spell) {
+        Word word = getWordBySpell(spell);
+        if (word == null) {
+            return null;
+        }
+        WordVo vo = new WordVo();
+        vo.setId(word.getId());
+        vo.setSpell(word.getSpell());
+        vo.setBritishPronounce(word.getBritishPronounce());
+        vo.setAmericaPronounce(word.getAmericaPronounce());
+        vo.setPronounce(word.getPronounce());
+        vo.setShortDesc(word.getShortDesc());
+
+        List<MeaningItemDto> dtos = meaningItemBo.findMeaningsByWord(word.getId());
+        List<MeaningItemVo> itemVos = new ArrayList<>();
+        for (MeaningItemDto dto : dtos) {
+            MeaningItemVo itemVo = new MeaningItemVo();
+            itemVo.setId(dto.getId());
+            itemVo.setCiXing(dto.getCiXing());
+            itemVo.setMeaning(dto.getMeaning());
+            itemVo.setPopularity(dto.getPopularity());
+            itemVo.setPopularityPercent(dto.getPopularityPercent());
+            itemVo.setOwnerId(dto.getOwnerId());
+            itemVos.add(itemVo);
+        }
+        vo.setMeaningItems(itemVos);
         return vo;
     }
 
