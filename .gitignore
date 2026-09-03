@@ -57,3 +57,5 @@ app/macos/Flutter/GeneratedPluginRegistrant.swift
 
 .hermes/
 
+tmp/
+
