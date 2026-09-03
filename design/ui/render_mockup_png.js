@@ -10,9 +10,9 @@
  * 4. 支持同步自动导入至 macOS 系统相册 (Photos.app)
  * 
  * 用法：
- * - 渲染全部原型：node design/ui/render_mockup_png.js --all
- * - 渲染单个原型：node design/ui/render_mockup_png.js review_distribution_preview.html
- * - 渲染并自动同步到 Mac 相册：node design/ui/render_mockup_png.js --all --import-photos
+ * - 渲染单个原型（默认自动同步导入 Mac 相册）：node design/ui/render_mockup_png.js review_distribution_preview.html
+ * - 渲染全部原型（默认自动同步导入 Mac 相册）：node design/ui/render_mockup_png.js (或 npm run render-ui)
+ * - 仅输出文件、不导入系统相册：node design/ui/render_mockup_png.js --no-photos
  */
 
 const fs = require('fs');
@@ -244,8 +244,9 @@ function renderFile(fileName, shouldImportToPhotos = false) {
 
 // CLI 处理
 const args = process.argv.slice(2);
-const shouldImport = args.includes('--import-photos') || args.includes('-p');
-const isAll = args.includes('--all') || args.length === 0;
+// 默认自动导入 Mac 系统相册，若无需导入可加 --no-photos 参数
+const shouldImport = !args.includes('--no-photos');
+const isAll = args.includes('--all') || args.filter(a => !a.startsWith('-')).length === 0;
 
 if (isAll) {
   const files = fs.readdirSync(UI_DIR).filter(f => f.endsWith('.html'));
