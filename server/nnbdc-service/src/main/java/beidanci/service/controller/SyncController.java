@@ -219,4 +219,21 @@ public class SyncController {
         return Result.success("用户数据修复任务已执行，请发起同步以更新本地数据");
     }
 
+    /**
+     * 临时修复：以 user_oper 的 DAKA 流水为权威，重建该用户缺失的 daka 记录，
+     * 并广播到客户端（客户端下次同步即可补全本地缺失记录）。
+     */
+    @PostMapping("/repairDakaFromUserOper.do")
+    public Result<Integer> repairDakaFromUserOper(@RequestParam("userId") String userId) {
+        log.info("🚀 [REPAIR_API] 收到打卡补全修复请求(基于user_oper): userId=[{}]", userId);
+        try {
+            int repaired = syncBo.repairDakaFromUserOper(userId);
+            log.info("🚀 [REPAIR_API] 打卡补全完成: userId=[{}], 重建={}", userId, repaired);
+            return Result.success(repaired);
+        } catch (IllegalAccessException e) {
+            log.error("🚀 [REPAIR_API] 打卡补全失败: userId=[{}], 错误={}", userId, e.getMessage(), e);
+            return new Result<>("ERROR", "打卡补全失败: " + e.getMessage(), null);
+        }
+    }
+
 }

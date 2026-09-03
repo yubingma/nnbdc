@@ -78,6 +78,8 @@ public class DakaBo extends BaseBo<Daka> {
         dto.setUserId(entity.getUser().getId());
         dto.setForLearningDate(entity.getId().getForLearningDate());
         dto.setText(entity.getText());
+        // 同步 textContent 别名，客户端 Daka.fromJson 读取的是 textContent
+        dto.setTextContent(entity.getText());
         dto.setCreateTime(entity.getCreateTime());
         dto.setUpdateTime(entity.getUpdateTime());
 
@@ -116,9 +118,9 @@ public class DakaBo extends BaseBo<Daka> {
 
         Daka daka = findById(id);
         if (daka == null) {
-            daka = new Daka(id, user, dto.getText());
+            daka = new Daka(id, user, dto.effectiveText());
         } else {
-            daka.setText(dto.getText());
+            daka.setText(dto.effectiveText());
         }
 
         if (dto.getCreateTime() != null) {

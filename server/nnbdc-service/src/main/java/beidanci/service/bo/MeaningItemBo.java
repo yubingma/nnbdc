@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import beidanci.api.model.MeaningItemDto;
 import beidanci.service.dao.BaseDao;
+import beidanci.service.dao.EntityRowMapper;
 import beidanci.service.po.MeaningItem;
 import beidanci.service.util.Util;
 
@@ -105,6 +106,12 @@ public class MeaningItemBo extends BaseBo<MeaningItem> {
             dto.setUpdatingStartAt(rs.getTimestamp("updating_start_at"));
             return dto;
         });
+    }
+
+    public List<MeaningItem> findEntitiesByWord(String wordId) {
+        String sql = "SELECT * FROM meaning_item WHERE word_id = :wordId";
+        MapSqlParameterSource params = new MapSqlParameterSource("wordId", wordId);
+        return namedParameterJdbcTemplate.query(sql, params, new EntityRowMapper<>(MeaningItem.class));
     }
 
     public List<MeaningItemDto> findMeaningsByWordAndDict(String wordId, String dictId) {

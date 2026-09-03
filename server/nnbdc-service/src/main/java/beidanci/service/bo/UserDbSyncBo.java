@@ -240,6 +240,92 @@ public class UserDbSyncBo {
     }
 
     /**
+     * 临时修复：以服务端 user_oper 的 DAKA 流水为权威，重建该用户缺失的 daka 记录，
+     * 并同步补齐 user_study_daily_stat 的 DAKAED 状态、重算 user 打卡统计，
+     * 最后通过 logUserOperations 生成 user_db_log 并递增版本号 —— 客户端下次同步即可增量拉取，补全本地缺失记录。
+     *
+     * 场景：部分设备（如 iPad）打卡时 user_oper 同步成功、但 daka 记录未上传，
+     * 导致"色块全绿但打卡天数不足、打卡率非100%"的不一致。
+     *
+     * @return 重建的 daka 记录数
+     */
+    @Transactional
+    public int repairDakaFromUserOper(String userId) throws IllegalAccessException {
+        // 1. 从 user_oper 提取 DAKA 日期（去重到纯日期）
+        TreeSet<Date> dakaDates = new TreeSet<>();
+        for (UserOperDto op : userOperBo.getUserOperDtosOfUser(userId)) {
+            if ("DAKA".equals(op.getOperType()) && op.getOperTime() != null) {
+                dakaDates.add(Utils.getPureDate(op.getOperTime()));
+            }
+        }
+        if (dakaDates.isEmpty()) {
+            return 0;
+        }
+
+        // 已存在的 daka 日期
+        Set<Date> existingDates = new HashSet<>();
+        for (DakaDto d : dakaBo.getDakaDtosOfUser(userId)) {
+            if (d.getForLearningDate() != null) {
+                existingDates.add(Utils.getPureDate(d.getForLearningDate()));
+            }
+        }
+
+        // 2. 对缺失日期：创建 daka 记录 + DAKAED 每日状态，并收集广播日志
+        Date now = new Date();
+        SimpleDateFormat ymd = new SimpleDateFormat("yyyyMMdd");
+        SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd");
+        List<UserDbLogDto> logs = new ArrayList<>();
+        int created = 0;
+        for (Date date : dakaDates) {
+            if (existingDates.contains(date)) {
+                continue;
+            }
+
+            Daka daka = new Daka(new DakaId(userId, date), new User(userId), "好好学习，天天向上");
+            daka.setCreateTime(now);
+            daka.setUpdateTime(now);
+            dakaBo.createEntity(daka);
+            created++;
+
+            // daka INSERT 广播日志（供客户端拉取）
+            DakaDto dakaDto = dakaBo.toDto(daka);
+            logs.add(new UserDbLogDto(null, userId, 0, "INSERT", "daka",
+                    userId + "-" + ymd.format(date), JsonUtils.toJson(dakaDto), now, now));
+
+            // 每日状态 DAKAED（供客户端画色块）
+            UserStudyDailyStatId statId = new UserStudyDailyStatId(userId, date);
+            UserStudyDailyStat stat = userStudyDailyStatBo.findById(statId);
+            if (stat == null) {
+                stat = new UserStudyDailyStat(statId, 0, 0, "DAKAED");
+                stat.setCreateTime(now);
+                stat.setUpdateTime(now);
+                userStudyDailyStatBo.createEntity(stat);
+            } else {
+                stat.setDayStatus("DAKAED");
+                stat.setUpdateTime(now);
+                userStudyDailyStatBo.updateEntity(stat);
+            }
+            logs.add(new UserDbLogDto(null, userId, 0, "UPDATE", "user_study_daily_stat",
+                    userId + "|" + iso.format(date), JsonUtils.toJson(userStudyDailyStatBo.toDto(stat)), now, now));
+        }
+
+        if (created == 0) {
+            return 0;
+        }
+
+        // 3. 重算并广播用户打卡统计（打卡天数/打卡率）
+        User updated = userBo.recomputeDakaStats(userId);
+        if (updated != null) {
+            logs.add(new UserDbLogDto(null, userId, 0, "UPDATE", "user",
+                    userId, JsonUtils.toJson(updated.toDto()), now, now));
+        }
+
+        // 4. 统一广播：创建 user_db_log 并递增版本号（客户端据此增量拉取）
+        logUserOperations(userId, logs);
+        return created;
+    }
+
+    /**
      * 同步用户客户端数据库到服务端
      *
      * @param userId                  用户ID
@@ -879,40 +965,42 @@ public class UserDbSyncBo {
 
     /**
      * 处理打卡同步
+     *
+     * 重要：这里绝不允许静默吞异常。打卡记录是打卡统计/色块的底层数据源，一旦反序列化或入库失败，
+     * 必须让异常向上抛出，使整个同步事务回滚（客户端会重试），而不是"user_oper 同步成功但 daka 静默丢失"。
+     * 否则会出现"打卡天数/色块 与 真实 daka 记录不一致"的静默数据损坏。
      */
-    private void processDakasSync(String userId, String recordJson, String operation) {
+    private void processDakasSync(String userId, String recordJson, String operation) throws IllegalAccessException {
         if ("BATCH_DELETE".equals(operation)) {
             dakaBo.batchDeleteUserRecords(userId, recordJson);
-        } else {
-            try {
-                DakaDto dakaDto = JsonUtils.makeObject(recordJson, DakaDto.class);
-                dakaDto.setUserId(userId);
-                Daka daka = dakaBo.fromDto(dakaDto);
+            return;
+        }
 
-                switch (operation) {
-                    case "INSERT" -> {
-                        // 检查记录是否已存在，避免主键冲突
-                        Daka existing = dakaBo.findById(daka.getId());
-                        if (existing == null) {
-                            dakaBo.createEntity(daka);
-                        } else {
-                            logger.info("daka 已存在，忽略重复 INSERT: id={}", daka.getId());
-                        }
-                    }
-                    case "UPDATE" -> {
-                        // 检查记录是否存在，不存在则创建
-                        Daka existingForUpdate = dakaBo.findById(daka.getId());
-                        if (existingForUpdate == null) {
-                            dakaBo.createEntity(daka);
-                        } else {
-                            dakaBo.updateEntity(daka);
-                        }
-                    }
-                    case "DELETE" -> dakaBo.deleteEntity(daka);
+        DakaDto dakaDto = JsonUtils.makeObject(recordJson, DakaDto.class);
+        dakaDto.setUserId(userId);
+        Daka daka = dakaBo.fromDto(dakaDto);
+
+        switch (operation) {
+            case "INSERT" -> {
+                // 检查记录是否已存在，避免主键冲突
+                Daka existing = dakaBo.findById(daka.getId());
+                if (existing == null) {
+                    dakaBo.createEntity(daka);
+                } else {
+                    logger.info("daka 已存在，忽略重复 INSERT: id={}", daka.getId());
                 }
-            } catch (IllegalAccessException | IllegalArgumentException e) {
-                logger.error("同步打卡数据失败：" + e.getMessage(), e);
             }
+            case "UPDATE" -> {
+                // 检查记录是否存在，不存在则创建
+                Daka existingForUpdate = dakaBo.findById(daka.getId());
+                if (existingForUpdate == null) {
+                    dakaBo.createEntity(daka);
+                } else {
+                    dakaBo.updateEntity(daka);
+                }
+            }
+            case "DELETE" -> dakaBo.deleteEntity(daka);
+            default -> logger.warn("daka 不支持的操作，已忽略: userId={}, operation={}", userId, operation);
         }
     }
 

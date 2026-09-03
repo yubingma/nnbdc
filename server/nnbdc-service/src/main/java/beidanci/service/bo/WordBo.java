@@ -2,11 +2,11 @@ package beidanci.service.bo;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.PostConstruct;
 
@@ -36,9 +36,9 @@ import beidanci.service.po.Word;
 import beidanci.service.store.WordCache;
 import beidanci.service.util.JsonUtils;
 import beidanci.service.util.SysParamUtil;
+import beidanci.service.util.Util;
 import beidanci.util.Constants;
 import beidanci.util.Utils;
-import beidanci.service.util.Util;
 @Service
 @Transactional(rollbackFor = Throwable.class)
 public class WordBo extends BaseBo<Word> {
@@ -51,6 +51,8 @@ public class WordBo extends BaseBo<Word> {
     MeaningItemBo meaningItemBo;
     @Autowired
     SentenceBo sentenceBo;
+    @Autowired
+    private SynonymBo synonymBo;
     @Autowired
     SysParamUtil sysParamUtil;
     @Autowired
@@ -125,8 +127,11 @@ public class WordBo extends BaseBo<Word> {
 
     public String updateWord(WordVo wordVo, String reason) throws IllegalAccessException, InvalidMeaningFormatException,
             EmptySpellException, IOException, ParseException {
-        if (wordVo.getId() == null) {
+        if (wordVo == null || wordVo.getId() == null) {
             return "单词ID不能为null";
+        }
+        if (wordVo.getMeaningItems() == null || wordVo.getMeaningItems().isEmpty()) {
+            return "单词至少保留一条释义";
         }
 
         WordVo existingWord = wordCache.getWordBySpell(wordVo.getSpell(), new String[] {
@@ -136,25 +141,29 @@ public class WordBo extends BaseBo<Word> {
         }
 
         Word word = findById(wordVo.getId());
+        if (word == null) {
+            return String.format("未找到ID为%s的单词", wordVo.getId());
+        }
 
-        // 删除被删除的meaningItems（连同其例句一起清理）
+        // 真实从数据库查询当前已有的释义列表（Spring JDBC 下 PO 的集合属性不会被自动加载）
+        List<MeaningItem> existingMeaningItems = meaningItemBo.findEntitiesByWord(word.getId());
+
+        // 1. 删除被移除的 meaningItems（级联清理近义词与例句，并记入系统同步日志）
         List<MeaningItem> deletedItems = new ArrayList<>();
-        for (Iterator<MeaningItem> i = word.getMeaningItems().iterator(); i.hasNext();) {
-            MeaningItem item = i.next();
+        for (MeaningItem item : existingMeaningItems) {
             if (getMeaningItemVoFromList(item.getId(), wordVo.getMeaningItems()) == null) {
-                i.remove();
                 deletedItems.add(item);
             }
         }
         for (MeaningItem item : deletedItems) {
+            synonymBo.deleteByMeaningItem(item.getId());
             sentenceBo.deleteByMeaningItem(item.getId());
             meaningItemBo.deleteEntity(item);
             sysDbSyncBo.logOperation("DELETE", "meaning_item", item.getId(), "{}");
         }
 
-        // 更新被修改的meaningItems
-        List<MeaningItem> changedItems = new ArrayList<>();
-        for (MeaningItem item : word.getMeaningItems()) {
+        // 2. 更新被修改的 meaningItems
+        for (MeaningItem item : existingMeaningItems) {
             MeaningItemVo itemVo = getMeaningItemVoFromList(item.getId(), wordVo.getMeaningItems());
             if (itemVo != null) {
                 String ciXing = Util.sanitizeAiString(itemVo.getCiXing());
@@ -164,12 +173,12 @@ public class WordBo extends BaseBo<Word> {
                     item.setMeaning(meaning);
                     meaningItemBo.updateEntity(item);
                     sysDbSyncBo.logOperation("UPDATE", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
-                    changedItems.add(item);
                 }
             }
         }
 
-        // 添加新增的meaningItems
+        // 3. 添加新增的 meaningItems
+        List<MeaningItem> newItems = new ArrayList<>();
         for (MeaningItemVo itemVo : wordVo.getMeaningItems()) {
             if (itemVo.getId() == null) {
                 MeaningItem item = new MeaningItem();
@@ -185,11 +194,11 @@ public class WordBo extends BaseBo<Word> {
                 User owner = new User();
                 owner.setId(itemVo.getOwnerId() != null ? itemVo.getOwnerId() : Constants.SYS_USER_SYS_ID);
                 item.setOwner(owner);
+                item.setPopularity(1);
 
                 meaningItemBo.createEntity(item);
-                word.getMeaningItems().add(item);
                 sysDbSyncBo.logOperation("INSERT", "meaning_item", item.getId(), JsonUtils.toJson(meaningItemBo.toDto(item)));
-                changedItems.add(item);
+                newItems.add(item);
             }
         }
 
@@ -223,8 +232,24 @@ public class WordBo extends BaseBo<Word> {
             sysDbSyncBo.logOperation("UPDATE", "word", word.getId(), JsonUtils.toJson(toDto(word)));
         }
 
-        // 为修改/新增的释义自动生成配套例句（发音文件由 TTS 定时任务异步生成）
-        generateSentencesForMeanings(word, changedItems);
+        // 筛选需要补充例句的释义：新增的释义，或当前在数据库中尚无任何例句的释义（避免修改错别字时重复生成堆叠例句）
+        List<MeaningItem> needSentenceItems = new ArrayList<>(newItems);
+        for (MeaningItem item : existingMeaningItems) {
+            // 如果该已存在释义未被删除，且其在库中无任何例句，则也纳入生成
+            if (getMeaningItemVoFromList(item.getId(), wordVo.getMeaningItems()) != null) {
+                List<Sentence> existingSentences = sentenceBo.findByMeaningItem(item.getId());
+                if (existingSentences == null || existingSentences.isEmpty()) {
+                    needSentenceItems.add(item);
+                }
+            }
+        }
+
+        // 异步调用大模型生成配套例句，不占用主数据库事务与阻塞 HTTP 连接
+        if (!needSentenceItems.isEmpty()) {
+            CompletableFuture.runAsync(() -> {
+                generateSentencesForMeanings(word, needSentenceItems);
+            });
+        }
 
         return null;
     }

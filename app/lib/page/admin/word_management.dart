@@ -13,6 +13,7 @@ import 'package:nnbdc/util/study_audio_session_controller.dart';
 import 'package:nnbdc/util/toast_util.dart';
 import 'package:nnbdc/local_word_cache.dart';
 import 'package:nnbdc/util/sys_db_sync.dart';
+import 'package:drift/drift.dart' hide Column;
 
 class WordManagementWidget extends StatefulWidget {
   const WordManagementWidget({super.key});
@@ -99,12 +100,24 @@ class _WordManagementWidgetState extends State<WordManagementWidget> {
       _currentWord = searchResult.word;
 
       if (_currentWord != null && _currentWord!.id != null) {
-        // 1. 获取本地配图
         final db = MyDatabase.instance;
+
+        // 1. 显式加载该单词的全量释义（管理后台需查看全量公共释义，不受个人词书和常用度过滤影响）
+        final miQuery = db.select(db.meaningItems)
+          ..where((tbl) => tbl.wordId.equals(_currentWord!.id!))
+          ..orderBy([(tbl) => OrderingTerm.asc(tbl.popularity)]);
+        final allMeaningItems = await miQuery.get();
+        if (allMeaningItems.isNotEmpty) {
+          _currentWord!.meaningItems = allMeaningItems
+              .map((mi) => MeaningItemVo(mi.id, mi.ciXing, mi.meaning, null, null, null))
+              .toList();
+        }
+
+        // 2. 获取本地配图
         final imagesQuery = db.select(db.wordImages)..where((tbl) => tbl.wordId.equals(_currentWord!.id!));
         _wordImages = await imagesQuery.get();
 
-        // 2. 从服务器获取最全例句列表
+        // 3. 从服务器获取最全例句列表
         await _loadSentences();
       }
     } catch (e) {
@@ -827,45 +840,48 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
       title: Text('编辑释义 - ${widget.word.spell}'),
       content: SizedBox(
         width: double.maxFinite,
-        child: _rows.isEmpty
-            ? const Text('暂无释义，请添加', style: TextStyle(fontSize: 14))
-            : ListView.builder(
-                shrinkWrap: true,
-                itemCount: _rows.length,
-                itemBuilder: (context, index) {
-                  final row = _rows[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 72,
-                          child: TextField(
-                            controller: row.ciXing,
-                            style: TextStyle(color: textColor, fontSize: 14),
-                            decoration: const InputDecoration(labelText: '词性', hintText: 'n.'),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+          child: _rows.isEmpty
+              ? const Text('暂无释义，请添加', style: TextStyle(fontSize: 14))
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _rows.length,
+                  itemBuilder: (context, index) {
+                    final row = _rows[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 72,
+                            child: TextField(
+                              controller: row.ciXing,
+                              style: TextStyle(color: textColor, fontSize: 14),
+                              decoration: const InputDecoration(labelText: '词性', hintText: 'n.'),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: row.meaning,
-                            style: TextStyle(color: textColor, fontSize: 14),
-                            maxLines: 2,
-                            decoration: const InputDecoration(labelText: '释义'),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: row.meaning,
+                              style: TextStyle(color: textColor, fontSize: 14),
+                              maxLines: 2,
+                              decoration: const InputDecoration(labelText: '释义'),
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
-                          onPressed: () => _removeRow(index),
-                          tooltip: '删除该释义',
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                            onPressed: () => _removeRow(index),
+                            tooltip: '删除该释义',
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
       ),
       actions: [
         TextButton.icon(
@@ -905,8 +921,8 @@ class _MeaningEditDialogState extends State<_MeaningEditDialog> {
       final res = await Api.client.updateWord(wordVo);
       if (res.success) {
         ToastUtil.success('释义已保存，AI 正在自动生成例句与发音');
-        await widget.onSaved();
         if (mounted) Navigator.pop(context);
+        await widget.onSaved();
       } else {
         ToastUtil.error(res.msg ?? '保存失败');
       }

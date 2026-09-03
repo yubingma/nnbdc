@@ -10,6 +10,8 @@ public class DakaDto extends Dto {
     private String userId;
     private Date forLearningDate;
     private String text;
+    // 客户端 Dakas 表字段名是 textContent，与服务端 text 等价。保留别名以兼容客户端同步往返。
+    private String textContent;
 
     public DakaDto() {
     }
@@ -44,6 +46,21 @@ public class DakaDto extends Dto {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public String getTextContent() {
+        return textContent;
+    }
+
+    public void setTextContent(String textContent) {
+        this.textContent = textContent;
+    }
+
+    /**
+     * 客户端可能传 text 或 textContent（Dakas 表字段名），取非空的那个作为打卡正文。
+     */
+    public String effectiveText() {
+        return text != null ? text : textContent;
     }
 
 }
