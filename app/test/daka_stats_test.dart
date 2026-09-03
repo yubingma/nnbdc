@@ -8,7 +8,6 @@ import 'package:nnbdc/services/throttled_sync_service.dart';
 import 'package:nnbdc/util/app_clock.dart';
 import 'package:nnbdc/util/date_utils.dart';
 import 'package:nnbdc/util/prefs.dart';
-import 'package:drift/drift.dart' hide isNotNull;
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
