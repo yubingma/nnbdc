@@ -6,7 +6,6 @@ import '../global.dart';
 import '../state.dart';
 import '../theme/app_theme.dart';
 import '../util/prefs.dart';
-import '../util/toast_util.dart';
 
 /// 发音口音选择弹框：提供美音与英音切换，展示专属国旗图标与描述。
 class PronunciationAccentDialog extends StatefulWidget {
@@ -40,7 +39,6 @@ class _PronunciationAccentDialogState extends State<PronunciationAccentDialog> {
         _currentAccent = accent;
       });
       await Prefs.setPronunciationAccent(accent);
-      ToastUtil.info(accent == 'uk' ? '已切换为英音' : '已切换为美音');
       if (mounted) {
         Navigator.pop(context, accent);
       }

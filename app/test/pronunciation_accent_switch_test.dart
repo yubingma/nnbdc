@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:toastification/toastification.dart';
 import 'package:nnbdc/api/vo.dart';
 import 'package:nnbdc/util/prefs.dart';
 import 'package:nnbdc/util/utils.dart';
@@ -22,13 +21,13 @@ void main() {
       expect(Prefs.pronunciationAccentNotifier.value, 'us');
 
       // 切换为 uk
-      final accent1 = await Prefs.togglePronunciationAccent(showToast: false);
+      final accent1 = await Prefs.togglePronunciationAccent();
       expect(accent1, 'uk');
       expect(Prefs.pronunciationAccent, 'uk');
       expect(Prefs.pronunciationAccentNotifier.value, 'uk');
 
       // 再次切换为 us
-      final accent2 = await Prefs.togglePronunciationAccent(showToast: false);
+      final accent2 = await Prefs.togglePronunciationAccent();
       expect(accent2, 'us');
       expect(Prefs.pronunciationAccent, 'us');
       expect(Prefs.pronunciationAccentNotifier.value, 'us');
@@ -58,16 +57,14 @@ void main() {
       String? switchedAccent;
 
       await tester.pumpWidget(
-        ToastificationWrapper(
-          child: MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: PronunciationAccentBadge(
-                  label: '美',
-                  onSwitched: (newAccent) async {
-                    switchedAccent = newAccent;
-                  },
-                ),
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: PronunciationAccentBadge(
+                label: '美',
+                onSwitched: (newAccent) async {
+                  switchedAccent = newAccent;
+                },
               ),
             ),
           ),
@@ -84,9 +81,6 @@ void main() {
       // 验证已切换为 uk
       expect(switchedAccent, 'uk');
       expect(Prefs.pronunciationAccent, 'uk');
-
-      // 等待 Toast 自动关闭定时器结束
-      await tester.pumpAndSettle(const Duration(seconds: 4));
     });
   });
 }

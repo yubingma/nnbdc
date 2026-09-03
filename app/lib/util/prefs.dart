@@ -4,7 +4,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nnbdc/global.dart';
-import 'toast_util.dart';
 
 class Prefs {
   static SharedPreferences? _prefs;
@@ -111,13 +110,10 @@ class Prefs {
     return ok;
   }
 
-  /// 快速切换发音口音偏好 (us <-> uk)，并弹出 Toast 提示
-  static Future<String> togglePronunciationAccent({bool showToast = true}) async {
+  /// 快速切换发音口音偏好 (us <-> uk)
+  static Future<String> togglePronunciationAccent() async {
     final next = pronunciationAccent == 'uk' ? 'us' : 'uk';
     await setPronunciationAccent(next);
-    if (showToast) {
-      ToastUtil.info(next == 'uk' ? '已切换为英音' : '已切换为美音');
-    }
     return next;
   }
 }
