@@ -458,11 +458,17 @@ class Sherpa(private val activity: Activity) : EventChannel.StreamHandler {
         val destFile = java.io.File(destDir, fileName)
         val assetPath = "$assetDir/$fileName"
 
-        // 尝试获取 asset 的预期大小（对于 noCompress 的 asset，openFd 可直接返回精准字节数）
+        // 尝试获取 asset 的预期解压大小：优先 openFd，若被压缩则通过 APK ZipEntry 读取未压缩大小
         val expectedSize: Long = try {
             activity.assets.openFd(assetPath).use { it.length }
         } catch (e: Exception) {
-            -1L
+            try {
+                java.util.zip.ZipFile(activity.applicationInfo.sourceDir).use { zip ->
+                    zip.getEntry("assets/$assetPath")?.size ?: -1L
+                }
+            } catch (ze: Exception) {
+                -1L
+            }
         }
 
         // 如果目标文件已存在，校验其完整性：
