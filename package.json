@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "render-ui": "node design/ui/render_mockup_png.js",
+    "render-ui:photos": "node design/ui/render_mockup_png.js --all --import-photos"
+  },
   "dependencies": {
     "pdf-parse": "^1.1.1"
   }

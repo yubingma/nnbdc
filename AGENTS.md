@@ -29,8 +29,9 @@
 ## 端云同步表名与日志规范
 - 服务端数据库表名与同步日志中的 `tbl_name` 必须严格统一使用**单数下划线命名**（例如 `user`、`daka`、`user_study_step`、`learning_dict`、`dict` 等，与服务端 JPA `@Table(name = "...")` 保持完全一致）。
 - 严禁在服务端代码中向 `user_db_log` / `sys_db_log` 写入复数或不一致的表名（例如严禁将 `user` 错写为 `users`）。
-## HTML 原型生成规范
+## HTML 原型与真机图规范
 - 生成 UI 设计与预览 HTML 时，严禁使用 Google Fonts 等外部网络字体链接（避免网络环境限制导致加载阻塞或显示异常），统一使用系统原生跨平台现代字体栈（`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif` 与等宽字体 `ui-monospace, monospace`）。
+- **原型真机高清 PNG 导出规范**：生成与更新 UI 原型真机图（`design/ui/png/`）时，必须统一执行 `node design/ui/render_mockup_png.js`（或 `npm run render-ui`），严格使用该脚本固化的统一旗舰真机模具（深空钛金属双层中框、实体侧按键、灵动岛、安全区状态栏、Home Bar 及透明画布），严禁临时手写异构样式导致真机壳风格分裂。
 
 ## Think Before Coding
 
