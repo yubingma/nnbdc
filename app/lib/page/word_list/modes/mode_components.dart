@@ -12,8 +12,6 @@ class ModeComponents {
   }) {
     final textMain = themeConfig?.textPrimary ?? (isDarkMode ? const Color(0xFFEAF7F4) : const Color(0xFF152724));
     final textSub = themeConfig?.textSecondary ?? (isDarkMode ? const Color(0xFF8EA8A3) : const Color(0xFF5A7570));
-    final phoneticBg = themeConfig?.subtleBg ??
-        (isDarkMode ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,25 +35,18 @@ class ModeComponents {
         ),
         if (word.word.mergedPronounce.isNotEmpty) ...[
           const SizedBox(height: 3),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-            decoration: BoxDecoration(
-              color: phoneticBg,
-              borderRadius: BorderRadius.circular(5),
+          Text(
+            '[${word.word.mergedPronounce}]',
+            textScaler: const TextScaler.linear(1.0),
+            style: TextStyle(
+              color: textSub,
+              fontSize: 12,
+              fontFamily: 'NotoSans',
+              fontWeight: FontWeight.w400,
+              height: 1.2,
             ),
-            child: Text(
-              '[${word.word.mergedPronounce}]',
-              textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                color: textSub,
-                fontSize: 11.5,
-                fontFamily: 'NotoSans',
-                fontWeight: FontWeight.w500,
-                height: 1.2,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
         ],
       ],

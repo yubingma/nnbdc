@@ -89,15 +89,9 @@ class HideModeItem extends StatelessWidget {
     }
 
     final accentColor = themeConfig.primaryColor;
-    final btnBg = isDarkMode
-        ? (isBookmarked ? accentColor.withValues(alpha: 0.16) : Colors.white.withValues(alpha: 0.05))
-        : (isBookmarked ? accentColor.withValues(alpha: 0.08) : themeConfig.subtleBg);
-    final btnBorder = isDarkMode
-        ? (isBookmarked ? accentColor.withValues(alpha: 0.35) : Colors.white12)
-        : (isBookmarked ? accentColor.withValues(alpha: 0.25) : themeConfig.cardBorder);
-    final btnTextColor = isBookmarked
+    final hintColor = isBookmarked
         ? accentColor
-        : themeConfig.textSecondary;
+        : themeConfig.textMuted.withValues(alpha: 0.6);
 
     return Stack(
       alignment: Alignment.centerLeft,
@@ -106,31 +100,24 @@ class HideModeItem extends StatelessWidget {
           opacity: 0.0,
           child: answerContent,
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 5.5, horizontal: 11),
-          decoration: BoxDecoration(
-            color: btnBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: btnBorder,
-              width: 1,
-            ),
-          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.visibility_outlined,
-                size: 13,
-                color: btnTextColor,
+                Icons.visibility_off_outlined,
+                size: 13.5,
+                color: hintColor,
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 4.5),
               Text(
-                isEnglish ? '点击显示英文' : '点击显示释义',
+                isEnglish ? '查看英文' : '查看释义',
                 style: TextStyle(
                   fontSize: 12,
-                  color: btnTextColor,
-                  fontWeight: FontWeight.w600,
+                  color: hintColor,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
