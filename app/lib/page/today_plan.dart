@@ -883,8 +883,12 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
   }
 
   void _showWordsSelectionBottomSheet() {
-    final isDarkMode = context.read<DarkMode>().isDarkMode;
+    final darkMode = context.read<DarkMode>();
+    final isDarkMode = darkMode.isDarkMode;
+    final themeConfig = AppThemeConfig.of(darkMode.themeStyle);
+    final primaryColor = themeConfig.primaryColor;
     final currentValue = user?.effectiveWordsPerDay ?? 20;
+    final wordOptions = const [2, 3, 5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500];
 
     showModalBottomSheet(
       context: context,
@@ -895,33 +899,84 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
       builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 顶部居中精致拖拽把手
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.white24 : Colors.black.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // 标题栏（主副标题 + 轻圆关闭按钮）
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      '选择每日学习词数',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: isDarkMode ? Colors.white : const Color(0xFF111827),
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '选择每日学习词数',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '根据每天的时间节奏定制专注目标',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: isDarkMode ? Colors.white38 : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: () => Navigator.pop(ctx),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: isDarkMode ? Colors.white60 : Colors.black54,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [2, 3, 5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500].map((v) {
+                const SizedBox(height: 16),
+
+                // 4 列规整网格
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: wordOptions.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 9,
+                    crossAxisSpacing: 9,
+                    childAspectRatio: 1.9,
+                  ),
+                  itemBuilder: (context, index) {
+                    final v = wordOptions[index];
                     final isSelected = v == currentValue;
                     final isPremium = SubscriptionUtil.isPremium();
                     final isRestricted = !isPremium && v > 20;
@@ -943,37 +998,67 @@ class TodayPlanPageState extends State<TodayPlanPage> with TickerProviderStateMi
                         loadData(forceSupplement: false);
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? (isDarkMode ? Colors.white : const Color(0xFF111827))
-                              : (isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF3F4F6)),
+                              ? primaryColor
+                              : (isDarkMode ? const Color(0xFF181C28) : const Color(0xFFF8FAFC)),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.transparent
+                                : (isDarkMode ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+                            width: 1,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: primaryColor.withValues(alpha: 0.32),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : null,
                         ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              '$v 词',
+                              '$v',
                               style: TextStyle(
                                 color: isSelected
-                                    ? (isDarkMode ? Colors.black : Colors.white)
-                                    : (isDarkMode ? Colors.white : const Color(0xFF111827)),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
+                                    ? Colors.white
+                                    : (isDarkMode ? Colors.white : const Color(0xFF1E293B)),
+                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                fontSize: 15,
+                                fontFamily: 'Roboto',
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '词',
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white.withValues(alpha: 0.88)
+                                    : (isDarkMode ? Colors.white38 : const Color(0xFF94A3B8)),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 11,
                               ),
                             ),
                             if (isRestricted) ...[
-                              const SizedBox(width: 4),
-                              const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 13),
+                              const SizedBox(width: 3),
+                              Icon(
+                                Icons.workspace_premium_rounded,
+                                color: isSelected ? Colors.white : Colors.amber,
+                                size: 12,
+                              ),
                             ],
                           ],
                         ),
                       ),
                     );
-                  }).toList(),
+                  },
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
               ],
             ),
           ),
