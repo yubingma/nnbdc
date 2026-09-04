@@ -2770,160 +2770,158 @@ class WordListPageState extends State<WordListPage>
                   ),
                 ),
 
-                      /// 书签图标 - 跳到第一个单词
-                      InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(
-                                Icons.bookmark_rounded,
-                                color: themeConfig.primaryColor,
-                                size: 26,
-                              ),
-                              const Text(
-                                'S',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
+                      /// 一体化微光快捷定位轻胶囊 [ S | 🔖 10 | E ]
+                      Container(
+                        height: 28,
+                        margin: const EdgeInsets.only(left: 6, right: 4),
+                        decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: themeConfig.cardBorder,
+                            width: 0.8,
                           ),
                         ),
-                        onTap: () async {
-                          if (baseIndex == 0 && words.isNotEmpty && itemScrollController.isAttached) {
-                            itemScrollController.jumpTo(index: 0, alignment: 0.0);
-                            return;
-                          }
-                          if (isQuerying) return;
-                          // force:true 绕过 lastQueryTime 频率限制，用户主动操作应立即可用
-                          baseIndex = 0;
-                          await doQuery(true, 0, _pageSize, false, force: true);
-                          // 使用 addPostFrameCallback 确保在 UI 重建完成后再跳转
-                          SchedulerBinding.instance.addPostFrameCallback((_) {
-                            if (words.isNotEmpty && itemScrollController.isAttached) {
-                              itemScrollController.jumpTo(index: 0, alignment: 0.0);
-                            }
-                          });
-                        },
-                      ),
-
-                      /// 书签图标 - 跳到书签位置
-                      if (isBookMarkValid(bookMark))
-                        InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 4),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Icon(
-                                  Icons.bookmark_rounded,
-                                  color: isBookMarkValid(bookMark)
-                                      ? themeConfig.primaryColor
-                                      : Colors.red[300],
-                                  size: 26,
-                                ),
-                                Text(
-                                  isBookMarkValid(bookMark)
-                                      ? '${getBookMarkRawPosition(bookMark) + 1}'
-                                      : '!',
-                                  textScaler: TextScaler.linear(1.0),
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.1,
-                                    letterSpacing: 0.1,
-                                    color: Colors.white,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 左段：跳到首词 S
+                            InkWell(
+                              borderRadius: const BorderRadius.horizontal(left: Radius.circular(14)),
+                              onTap: () async {
+                                if (baseIndex == 0 && words.isNotEmpty && itemScrollController.isAttached) {
+                                  itemScrollController.jumpTo(index: 0, alignment: 0.0);
+                                  return;
+                                }
+                                if (isQuerying) return;
+                                baseIndex = 0;
+                                await doQuery(true, 0, _pageSize, false, force: true);
+                                SchedulerBinding.instance.addPostFrameCallback((_) {
+                                  if (words.isNotEmpty && itemScrollController.isAttached) {
+                                    itemScrollController.jumpTo(index: 0, alignment: 0.0);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Text(
+                                  'S',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: themeConfig.textSecondary,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          onTap: () {
-                            if (isBookMarkValid(bookMark)) {
-                              final bookMarkUiPos = getBookMarkUiPosition();
-                              if (bookMarkUiPos >= 0 &&
-                                  bookMarkUiPos < words.length) {
-                                // 书签在当前加载的单词范围内，直接跳转
-                                jumpToBookMark();
-                              } else {
-                                // 书签不在当前范围内，重新加载数据到书签位置
-                                clearQueryResult();
-                                // 计算书签所在页的起始位置
-                                baseIndex = (bookMark!.position ~/ _pageSize) *
-                                    _pageSize;
-                                doQuery(true, baseIndex!, _pageSize, false)
-                                    .then((_) {
-                                  // 滚动到书签位置，增加延迟确保UI完全更新
-                                  Future.delayed(
-                                      const Duration(milliseconds: 100), () {
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                      final newBookMarkUiPos =
-                                          getBookMarkUiPosition();
-                                      if (newBookMarkUiPos >= 0 &&
-                                          newBookMarkUiPos < words.length) {
-                                        // 直接滚动到书签位置，不使用jumpToBookMark避免位置检查
-                                        itemScrollController.scrollTo(
-                                            index: newBookMarkUiPos,
-                                            duration: const Duration(
-                                                milliseconds: 300),
-                                            alignment: 0.5);
-                                      }
-                                    });
-                                  });
-                                });
-                              }
-                            }
-                          },
-                        ),
-
-                      /// 书签图标 - 跳到最后一个单词
-                      InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(4, 4, 8, 4),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(
-                                Icons.bookmark_rounded,
-                                color: themeConfig.primaryColor,
-                                size: 26,
                               ),
-                              const Text(
-                                'E',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                            ),
+
+                            // 分隔线 1
+                            Container(
+                              width: 0.8,
+                              height: 10,
+                              color: isDarkMode ? Colors.white12 : Colors.black12,
+                            ),
+
+                            // 中段：当前书签位置
+                            InkWell(
+                              onTap: () {
+                                if (isBookMarkValid(bookMark)) {
+                                  final bookMarkUiPos = getBookMarkUiPosition();
+                                  if (bookMarkUiPos >= 0 && bookMarkUiPos < words.length) {
+                                    jumpToBookMark();
+                                  } else {
+                                    clearQueryResult();
+                                    baseIndex = (bookMark!.position ~/ _pageSize) * _pageSize;
+                                    doQuery(true, baseIndex!, _pageSize, false).then((_) {
+                                      Future.delayed(const Duration(milliseconds: 100), () {
+                                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                                          final newBookMarkUiPos = getBookMarkUiPosition();
+                                          if (newBookMarkUiPos >= 0 && newBookMarkUiPos < words.length) {
+                                            itemScrollController.scrollTo(
+                                              index: newBookMarkUiPos,
+                                              duration: const Duration(milliseconds: 300),
+                                              alignment: 0.5,
+                                            );
+                                          }
+                                        });
+                                      });
+                                    });
+                                  }
+                                }
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.bookmark_rounded,
+                                      size: 12,
+                                      color: isBookMarkValid(bookMark)
+                                          ? themeConfig.primaryColor
+                                          : themeConfig.textMuted,
+                                    ),
+                                    const SizedBox(width: 2.5),
+                                    Text(
+                                      isBookMarkValid(bookMark)
+                                          ? '${getBookMarkRawPosition(bookMark) + 1}'
+                                          : '—',
+                                      textScaler: const TextScaler.linear(1.0),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: isBookMarkValid(bookMark)
+                                            ? themeConfig.primaryColor
+                                            : themeConfig.textMuted,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+
+                            // 分隔线 2
+                            Container(
+                              width: 0.8,
+                              height: 10,
+                              color: isDarkMode ? Colors.white12 : Colors.black12,
+                            ),
+
+                            // 右段：跳到末词 E
+                            InkWell(
+                              borderRadius: const BorderRadius.horizontal(right: Radius.circular(14)),
+                              onTap: () async {
+                                if (totalWordCount <= 0) return;
+                                final int lastPageBase = ((totalWordCount - 1) ~/ _pageSize) * _pageSize;
+                                if (baseIndex != null && baseIndex! <= lastPageBase && baseIndex! + words.length >= totalWordCount && words.isNotEmpty && itemScrollController.isAttached) {
+                                  itemScrollController.jumpTo(index: words.length - 1, alignment: _handwritingScrollAlignment);
+                                  return;
+                                }
+                                if (isQuerying) return;
+                                baseIndex = lastPageBase < 0 ? 0 : lastPageBase;
+                                await doQuery(true, baseIndex!, _pageSize, false, force: true);
+                                SchedulerBinding.instance.addPostFrameCallback((_) {
+                                  if (words.isNotEmpty && itemScrollController.isAttached) {
+                                    itemScrollController.jumpTo(index: words.length - 1, alignment: _handwritingScrollAlignment);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Text(
+                                  'E',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: themeConfig.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        onTap: () async {
-                          if (totalWordCount <= 0) return;
-                          final int lastPageBase = ((totalWordCount - 1) ~/ _pageSize) * _pageSize;
-                          if (baseIndex != null && baseIndex! <= lastPageBase && baseIndex! + words.length >= totalWordCount && words.isNotEmpty && itemScrollController.isAttached) {
-                            itemScrollController.jumpTo(index: words.length - 1, alignment: _handwritingScrollAlignment);
-                            return;
-                          }
-                          if (isQuerying) return;
-                          baseIndex = lastPageBase < 0 ? 0 : lastPageBase;
-                          await doQuery(true, baseIndex!, _pageSize, false, force: true);
-                          SchedulerBinding.instance.addPostFrameCallback((_) {
-                            if (words.isNotEmpty && itemScrollController.isAttached) {
-                              itemScrollController.jumpTo(index: words.length - 1, alignment: _handwritingScrollAlignment);
-                            }
-                          });
-                        },
                       ),
                     ],
                   ),
