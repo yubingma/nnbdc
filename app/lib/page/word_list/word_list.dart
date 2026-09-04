@@ -3015,8 +3015,8 @@ class WordListPageState extends State<WordListPage>
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: isDarkMode ? 0.45 : 0.12),
-                                    blurRadius: 20,
+                                    color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                                    blurRadius: 24,
                                     offset: const Offset(0, 8),
                                   ),
                                 ],
@@ -3024,18 +3024,18 @@ class WordListPageState extends State<WordListPage>
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
                                 child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                                   child: Container(
                                     decoration: BoxDecoration(
                                       color: isDarkMode
-                                          ? const Color(0xE61E232A)
-                                          : const Color(0xF2FFFFFF),
+                                          ? const Color(0xB81C2127)
+                                          : Colors.white.withValues(alpha: 0.72),
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                         color: isDarkMode
-                                            ? Colors.white.withValues(alpha: 0.12)
-                                            : Colors.black.withValues(alpha: 0.08),
-                                        width: 0.8,
+                                            ? Colors.white.withValues(alpha: 0.15)
+                                            : Colors.white.withValues(alpha: 0.8),
+                                        width: 1.0,
                                       ),
                                     ),
                                     padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
