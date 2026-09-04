@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nnbdc/api/vo.dart';
@@ -25,10 +26,17 @@ void main() {
     await database.into(database.users).insert(UsersCompanion.insert(
       id: userId,
       userName: 'tester',
-      nickName: 'Tester',
+      nickName: const Value('Tester'),
       gameScore: 0,
       dakaScore: 0,
+      dakaDayCount: 0,
       learnedDays: 0,
+      wordsPerDay: 20,
+      masteredWordsCount: 0,
+      cowDung: 0,
+      throwDiceChance: 0,
+      continuousDakaDayCount: 0,
+      maxContinuousDakaDayCount: 0,
     ));
 
     // Insert 2 dicts
@@ -39,7 +47,8 @@ void main() {
       isReady: true,
       isShared: false,
       visible: true,
-      ownerId: '15118',
+      ownerId: const Value('15118'),
+      createTime: now,
     ));
 
     await database.into(database.dicts).insert(DictsCompanion.insert(
@@ -49,7 +58,8 @@ void main() {
       isReady: true,
       isShared: false,
       visible: true,
-      ownerId: '15118',
+      ownerId: const Value('15118'),
+      createTime: now,
     ));
 
     // Initially, user has dict_cet4

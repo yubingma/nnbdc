@@ -144,6 +144,7 @@ class IndexPageState extends State<IndexPage> with TickerProviderStateMixin {
 
   RefreshableTab? _getTabState(int index) {
     if (index == 1) return WordListsPageState.instance;
+    if (index == 4) return MePageState.instance;
     return null;
   }
 

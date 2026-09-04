@@ -1131,22 +1131,23 @@ class SelectBookPageState extends State<SelectBookPage> with TickerProviderState
 
                 // 添加用户新选择的单词书
                 for (var dictVo in selectedDictVos!) {
+                  final now = AppClock.now();
                   LearningDict? existing = await learningDictsDao.findById(userId, dictVo.id);
                   if (existing != null) {
+                    await learningDictsDao.saveEntity(existing.copyWith(updateTime: now), true);
                     continue;
                   }
 
-                  final now = AppClock.now();
-
-                  // 同步写入本地 dicts 元数据，保证返回词表页时能立即查到
+                  // 同步写入本地 dicts 元数据，保证返回词表页与"我"页面时能立即查到
                   final existingDict = await db.dictsDao.findById(dictVo.id);
-                  if (existingDict == null && dictVo.name != null) {
+                  if (existingDict == null) {
+                    final dictName = dictVo.name ?? dictVo.shortName ?? '未命名词书';
                     await db.dictsDao.saveEntity(
                       Dict(
                         id: dictVo.id,
                         isReady: true,
                         isShared: true,
-                        name: dictVo.name!,
+                        name: dictName,
                         wordCount: dictVo.wordCount ?? 0,
                         ownerId: dictVo.owner?.id ?? Global.sysUserId,
                         visible: true,

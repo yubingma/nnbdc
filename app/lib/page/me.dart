@@ -61,10 +61,23 @@ class MePage extends StatefulWidget {
   const MePage({super.key});
 
   @override
-  State<StatefulWidget> createState() => _MePageState();
+  State<StatefulWidget> createState() => MePageState();
 }
 
-class _MePageState extends State<MePage> {
+class MePageState extends State<MePage> implements RefreshableTab {
+  static MePageState? instance;
+  bool _isDirty = false;
+
+  @override
+  bool get isDirty => _isDirty;
+
+  @override
+  void refreshData() {
+    Global.logger.d('[RefreshableTab] "我"页面收到 refreshData() 指令，开始刷新');
+    loadData();
+    _isDirty = false;
+  }
+
   var isDarkMode = false;
   final email = TextEditingController();
   final password = TextEditingController();
@@ -288,6 +301,7 @@ class _MePageState extends State<MePage> {
   @override
   void initState() {
     super.initState();
+    instance = this;
     // 进入“我”页面时强制关闭 ASR
     Asr().stopMicrophone();
 
@@ -320,6 +334,7 @@ class _MePageState extends State<MePage> {
 
     // 监听词书下载完成事件（跨页面同步：比如从今日计划页面触发下载后，"我"页面也要刷新）
     _dictDownloadCompletedSub = EventBus.onDictDownloadCompleted().listen((event) {
+      _isDirty = true;
       if (mounted) {
         Global.logger.i("📥 MePage 收到词书下载完成事件，刷新数据");
         loadData();
@@ -328,6 +343,7 @@ class _MePageState extends State<MePage> {
 
     // 监听书桌词书变化事件（word_lists 选书/停学后通知"我"页面刷新）
     _learningDictChangedSub = EventBus.onLearningDictChanged().listen((_) {
+      _isDirty = true;
       if (mounted) {
         Global.logger.i("📚 MePage 收到书桌词书变化事件，刷新数据");
         loadData();
@@ -342,6 +358,9 @@ class _MePageState extends State<MePage> {
 
   @override
   void dispose() {
+    if (instance == this) {
+      instance = null;
+    }
     // 移除SocketIoClient事件监听器
     SocketIoClient.instance.removeSocketEventListener(_socketEventListener);
 
@@ -496,6 +515,7 @@ class _MePageState extends State<MePage> {
           last30DaysDakaStatus = last30DaysDakaStatusVal;
           msgCount = msgCountVal;
           unreadMsgCount = unreadMsgCountVal;
+          _isDirty = false;
 
           // 更新 Future 以触发 FutureBuilder 重新加载
           _learningDictsFuture = renderLearningDicts();
@@ -2721,16 +2741,47 @@ class _MePageState extends State<MePage> {
   ///学习中单词书
   Future<Widget> renderLearningDicts() async {
     var dicts = <Widget>[];
-    for (LearningDict learningDict in studyProgress!.learningDicts) {
-      var dictInfo = await MyDatabase.instance.dictsDao.findById(learningDict.dictId);
-      if (dictInfo == null) continue;
+    if (studyProgress != null) {
+      final sortedLearningDicts = List<LearningDict>.from(studyProgress!.learningDicts);
+      // 最新添加/更新的词书排在最前面，与词表页面书桌完全对齐
+      sortedLearningDicts.sort((a, b) => b.updateTime.compareTo(a.updateTime));
 
-      dicts.add(DictCard(
-        key: ValueKey('me_learning_dict_${learningDict.dictId}'),
-        learningDict: learningDict,
-        dictInfo: dictInfo,
-        onDictChanged: () => loadData(),
-      ));
+      for (LearningDict learningDict in sortedLearningDicts) {
+        var dictInfo = await MyDatabase.instance.dictsDao.findById(learningDict.dictId);
+        // 若本地 dicts 表偶发缺失元数据，尝试从服务端补齐
+        if (dictInfo == null) {
+          try {
+            final res = await Api.client.getDictInfo(learningDict.dictId);
+            if (res.success && res.data != null) {
+              final d = res.data!;
+              final newDict = Dict(
+                id: d.id,
+                isReady: true,
+                isShared: true,
+                name: d.name,
+                wordCount: d.wordCount,
+                ownerId: d.ownerId.isNotEmpty ? d.ownerId : Global.sysUserId,
+                visible: true,
+                editable: d.editable ?? false,
+                deletable: d.deletable ?? true,
+                baseDictId: d.baseDictId,
+                createTime: d.createTime,
+                updateTime: d.updateTime,
+              );
+              await MyDatabase.instance.dictsDao.saveEntity(newDict, false);
+              dictInfo = newDict;
+            }
+          } catch (_) {}
+        }
+        if (dictInfo == null) continue;
+
+        dicts.add(DictCard(
+          key: ValueKey('me_learning_dict_${learningDict.dictId}'),
+          learningDict: learningDict,
+          dictInfo: dictInfo,
+          onDictChanged: () => loadData(),
+        ));
+      }
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
