@@ -188,7 +188,7 @@ class ConfusableWordsProvider with WordsProvider {
   /// 控制器视为未成功，不做移除列表/更新学习状态等任何变更。
   @override
   Future<bool> masterWord(WordWrapper wordWrapper) async {
-    ToastUtil.info('仅浏览：易混淆单词词表不提供掌握操作');
+    ToastUtil.info('仅浏览：形近词词表不提供掌握操作');
     return false;
   }
 
@@ -196,7 +196,7 @@ class ConfusableWordsProvider with WordsProvider {
   /// 不写 masteredWords 表、不产生 DbLog、不触发同步。
   @override
   Future<bool> unmasterWord(WordWrapper wordWrapper) async {
-    ToastUtil.info('仅浏览：易混淆单词词表不提供掌握操作');
+    ToastUtil.info('仅浏览：形近词词表不提供掌握操作');
     return false;
   }
 }
@@ -227,7 +227,7 @@ class ConfusableWordsBookMarkProvider implements BookMarkProvider {
     try {
       final userId = Global.getLoggedInUser()?.id;
       if (userId == null) {
-        Global.logger.e('保存易混淆单词书签失败：用户未登录');
+        Global.logger.e('保存形近词书签失败：用户未登录');
         return false;
       }
 
@@ -240,7 +240,7 @@ class ConfusableWordsBookMarkProvider implements BookMarkProvider {
       );
       return result.success;
     } catch (e) {
-      Global.logger.e('保存易混淆单词书签异常: $e');
+      Global.logger.e('保存形近词书签异常: $e');
       return false;
     }
   }
@@ -249,5 +249,5 @@ class ConfusableWordsBookMarkProvider implements BookMarkProvider {
 Future<dynamic>? toConfusableWordsListPage() {
   return goRouter.push('/word_list',
       extra: WordListPageArgs(
-          '易混淆单词', ConfusableWordsProvider(), true, false, false, '', ConfusableWordsProgressProvider(), ConfusableWordsBookMarkProvider(), null));
+          '形近词', ConfusableWordsProvider(), true, false, false, '', ConfusableWordsProgressProvider(), ConfusableWordsBookMarkProvider(), null));
 }

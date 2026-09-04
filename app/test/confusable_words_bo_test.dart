@@ -602,8 +602,8 @@ void main() {
     });
   });
 
-  group('getWordLists - 易混淆单词入口', () {
-    test('列表包含"易混淆单词"项且计数为去重单词数', () async {
+  group('getWordLists - 形近词入口', () {
+    test('列表包含"形近词"项且计数为去重单词数', () async {
       await insertUser();
       await insertDict('d1');
       await insertDict('d2');
@@ -623,7 +623,7 @@ void main() {
 
       final result = await WordBo().getWordLists();
       expect(result.success, true);
-      final entry = result.data!.firstWhere((wl) => wl.name == '易混淆单词');
+      final entry = result.data!.firstWhere((wl) => wl.name == '形近词');
       expect(entry.wordCount, 1); // 真实组数：cat 与 cot 构成 1 组易混淆词
     });
   });

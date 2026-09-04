@@ -255,7 +255,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                           _buildCoreDictsSection(isDarkMode),
                           const SizedBox(height: 20),
 
-                          // 4. 专项突破板块 (易混淆单词)
+                          // 4. 专项突破板块 (形近词)
                           _buildSpecialSection(isDarkMode),
                         ],
                       ),
@@ -436,7 +436,6 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
-    final accentColor = themeConfig.primaryColor;
 
     final todayList = _findListByName('今日单词');
     final todayNewList = _findListByName('今日新词');
@@ -468,7 +467,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日单词',
                 count: todayCount,
                 icon: Icons.calendar_today_rounded,
-                iconColor: accentColor,
+                iconColor: const Color(0xFF4F46E5), // 稳重靛蓝：全局日程计划
                 onTap: () {
                   toTodayWordsListPage(true)?.then((_) => loadData());
                 },
@@ -481,7 +480,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日新词',
                 count: newCount,
                 icon: Icons.auto_awesome_rounded,
-                iconColor: accentColor,
+                iconColor: const Color(0xFF0EA5E9), // 活力天蓝：新鲜知识注入
                 onTap: () {
                   toTodayNewWordsListPage(true)?.then((_) => loadData());
                 },
@@ -498,7 +497,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                 title: '今日旧词',
                 count: oldCount,
                 icon: Icons.replay_rounded,
-                iconColor: accentColor,
+                iconColor: const Color(0xFF0D9488), // 沉静青碧：记忆沉淀与复习
                 onTap: () {
                   toTodayOldWordsListPage(true)?.then((_) => loadData());
                 },
@@ -555,7 +554,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             children: [
               _buildGroupedItemRow(
                 icon: Icons.school_rounded,
-                iconColor: themeConfig.primaryColor,
+                iconColor: const Color(0xFF3B82F6), // 专注活力蓝：进行中的知识加工
                 title: '学习中',
                 subtitle: '正在记忆与巩固中的词汇',
                 countText: '${learningList?.wordCount ?? 0} 词',
@@ -570,7 +569,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
               ),
               _buildGroupedItemRow(
                 icon: Icons.check_circle_rounded,
-                iconColor: const Color(0xFF10B981),
+                iconColor: const Color(0xFF10B981), // 通关翡翠绿：牢固掌握达标
                 title: '已掌握',
                 subtitle: '已完全牢固掌握的高频词',
                 countText: '${masteredList?.wordCount ?? 0} 词',
@@ -602,12 +601,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     );
   }
 
-  /// 4. 专项突破板块 (易混淆单词)
+  /// 4. 专项突破板块 (形近词)
   Widget _buildSpecialSection(bool isDarkMode) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
     final textColor = themeConfig.textPrimary;
-    final confusableList = _findListByName('易混淆单词');
+    final confusableList = _findListByName('形近词');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -618,8 +617,8 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           isDarkMode: isDarkMode,
           icon: Icons.compare_arrows_rounded,
           iconColor: const Color(0xFF6366F1),
-          title: '易混淆单词',
-          subtitle: '形近词、同义辨析强化攻坚',
+          title: '形近词',
+          subtitle: '拼写相似对比辨析',
           countText: '${confusableList?.wordCount ?? 0} 组',
           onTap: () {
             toConfusableWordsListPage()?.then((_) => loadData());

@@ -2470,8 +2470,8 @@ class WordBo {
       // 获取全局已掌握单词数量
       final masteredWordIds = await db.masteredWordsDao.getMasteredWordIdSet(user.id);
       wordLists.add(WordList("已掌握", masteredWordIds.length));
-      // 易混淆单词：词表组数（每一组包含至少 2 个一字之差形近词）
-      wordLists.add(WordList("易混淆单词", await getConfusableGroupCount(user.id)));
+      // 形近词：词表组数（每一组包含至少 2 个一字之差形近词）
+      wordLists.add(WordList("形近词", await getConfusableGroupCount(user.id)));
       return Result("SUCCESS", "获取成功", true)..data = wordLists;
     } catch (e, stackTrace) {
       Global.logger.e('获取单词列表失败: $e', stackTrace: stackTrace);
