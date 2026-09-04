@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-style="mist-glow" data-theme-color="emerald">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -125,19 +125,35 @@
     }
 
     /* ========================================================
-       雾境流光与磨砂质感 (Misty Ambient Glow) 9大主题美学系统
+       不背单词标准：非对称双光源自然流光 (Asymmetric Ambient Glow) 9大主题系统
        ======================================================== */
     [data-style="mist-glow"] .device-mockup {
       background: var(--bg) !important;
     }
     [data-style="mist-glow"] .tree-card,
-    [data-style="mist-glow"] .edit-track-card,
-    [data-style="mist-glow"] .pure-step-pill,
+    [data-style="mist-glow"] .edit-track-card {
+      background: var(--nb-card-bg) !important;
+      backdrop-filter: blur(28px) !important;
+      -webkit-backdrop-filter: blur(28px) !important;
+      border: none !important;
+      box-shadow: var(--nb-card-shadow) !important;
+    }
+    [data-style="mist-glow"] .pure-step-pill {
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border: none !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
     [data-style="mist-glow"] .header-action-btn,
     [data-style="mist-glow"] .designer-toolbar {
       backdrop-filter: blur(28px) !important;
       -webkit-backdrop-filter: blur(28px) !important;
-      border: 1px solid var(--divider) !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+    [data-style="mist-glow"] .btn-study-hero {
+      background: var(--primary) !important;
+      box-shadow: 0 10px 28px -4px rgba(16, 185, 129, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+      border: none !important;
     }
 
     /* --- 1. 晨曦流光 (Aurora - 冰川冷蓝) --- */
@@ -186,28 +202,26 @@
       --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.45);
     }
 
-    /* --- 2. 经典翡翠 (Emerald - 扇贝生机绿) --- */
+    /* --- 2. 经典翡翠 (Emerald - 扇贝生机绿 / 不背单词原版同款) --- */
     [data-theme-color="emerald"] {
       --primary: #10B981;
       --primary-hover: #059669;
-      --primary-soft: rgba(16, 185, 129, 0.12);
-      --primary-text: #FFFFFF;
       --accent: #10B981;
-      --accent-soft: rgba(16, 185, 129, 0.08);
       --green-text: #10B981;
-      --green-bg: rgba(16, 185, 129, 0.12);
       --shadow-btn: 0 8px 24px -4px rgba(16, 185, 129, 0.35);
     }
     [data-style="mist-glow"][data-theme-color="emerald"] {
-      --bg: radial-gradient(circle at 50% 10%, rgba(204, 226, 219, 0.85) 0%, rgba(214, 230, 225, 0.6) 38%, #D3DFDC 75%, #CBD6D2 100%);
-      --card-bg: rgba(255, 255, 255, 0.72);
-      --card-subtle: rgba(62, 98, 88, 0.1);
-      --card-active: rgba(62, 98, 88, 0.18);
-      --divider: rgba(255, 255, 255, 0.65);
-      --text-primary: #1C2724;
-      --text-secondary: #48635B;
+      --bg: radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.95) 0%, rgba(220, 235, 227, 0.72) 32%, transparent 65%),
+            radial-gradient(circle at 88% 28%, rgba(188, 222, 206, 0.65) 0%, transparent 55%),
+            #DCE7E1;
+      --nb-card-bg: rgba(255, 255, 255, 0.68);
+      --nb-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.025), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      --text-primary: #11211C;
+      --text-secondary: #425B54;
       --text-muted: #7E9790;
-      --shadow-subtle: 0 4px 20px rgba(32, 54, 47, 0.04);
+      --card-subtle: rgba(16, 185, 129, 0.08);
+      --card-active: rgba(16, 185, 129, 0.15);
+      --divider: rgba(16, 185, 129, 0.1);
     }
     [data-theme="dark"][data-theme-color="emerald"] {
       --primary: #34D399;
@@ -220,15 +234,17 @@
       --shadow-btn: 0 8px 24px -3px rgba(52, 211, 153, 0.3);
     }
     [data-theme="dark"][data-style="mist-glow"][data-theme-color="emerald"] {
-      --bg: radial-gradient(circle at 20% 16%, #19362E 0%, #11251F 32%, #0C1A16 68%, #07100D 100%);
-      --card-bg: rgba(255, 255, 255, 0.058);
+      --bg: radial-gradient(circle at 82% 14%, rgba(26, 68, 54, 0.95) 0%, rgba(15, 38, 30, 0.65) 42%, transparent 75%),
+            radial-gradient(circle at 18% 85%, rgba(14, 34, 27, 0.8) 0%, transparent 60%),
+            #0A1411;
+      --nb-card-bg: rgba(255, 255, 255, 0.065);
+      --nb-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      --text-primary: #EEF7F4;
+      --text-secondary: #90A8A1;
+      --text-muted: #556E67;
       --card-subtle: rgba(255, 255, 255, 0.08);
       --card-active: rgba(255, 255, 255, 0.14);
       --divider: rgba(52, 211, 153, 0.12);
-      --text-primary: #E3EDE9;
-      --text-secondary: #8FAEA5;
-      --text-muted: #5C7871;
-      --shadow-subtle: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
     /* --- 3. 暮色落日 (Sunset - 晚霞落日橙) --- */
