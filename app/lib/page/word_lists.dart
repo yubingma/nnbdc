@@ -32,6 +32,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
   List<WordList> wordLists = [];
   List<Dict> deskDicts = [];
   Map<String, int> deskDictMasteredCounts = {};
+  Map<String, int> deskDictLearningCounts = {};
   bool _isDirty = false;
   StreamSubscription? _subscription;
   StreamSubscription? _dictDownloadSub;
@@ -90,10 +91,11 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
       final listsResult = await WordBo().getWordLists();
       final lists = listsResult.data ?? [];
 
-      // 加载用户书桌上的词书与已掌握词数
+      // 加载用户书桌上的词书与已掌握/已取词数
       final user = Global.getLoggedInUser();
       final loadedDeskDicts = <Dict>[];
       final loadedMasteredCounts = <String, int>{};
+      final loadedLearningCounts = <String, int>{};
       if (user != null) {
         final db = MyDatabase.instance;
         final learningDicts = await db.learningDictsDao.getLearningDictsOfUser(user.id);
@@ -103,9 +105,12 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
             loadedDeskDicts.add(d);
             try {
               final mCount = await db.masteredWordsDao.getMasteredWordsCountInDicts(user.id, [d.id]);
+              final lCount = await db.learningWordsDao.getLearningWordsCountInDicts(user.id, [d.id]);
               loadedMasteredCounts[d.id] = mCount;
+              loadedLearningCounts[d.id] = lCount;
             } catch (_) {
               loadedMasteredCounts[d.id] = 0;
+              loadedLearningCounts[d.id] = 0;
             }
           }
         }
@@ -118,6 +123,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
           wordLists = lists;
           deskDicts = loadedDeskDicts;
           deskDictMasteredCounts = loadedMasteredCounts;
+          deskDictLearningCounts = loadedLearningCounts;
           dataLoaded = true;
         });
         Global.logger.d('[EventBus Debug] loadData() 已触发 UI 刷新 (setState)');
@@ -352,15 +358,19 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                     final dict = deskDicts[i];
                     final total = dict.wordCount;
                     final mastered = deskDictMasteredCounts[dict.id] ?? 0;
-                    final progress = total > 0 ? (mastered / total).clamp(0.0, 1.0) : 0.0;
-                    final percent = (progress * 100).toInt();
+                    final learning = deskDictLearningCounts[dict.id] ?? 0;
+                    final fetched = mastered + learning;
+                    final masteryProgress = total > 0 ? (mastered / total).clamp(0.0, 1.0) : 0.0;
+                    final fetchProgress = total > 0 ? (fetched / total).clamp(0.0, 1.0) : 0.0;
+                    final percent = (masteryProgress * 100).toInt();
                     return _buildGroupedItemRow(
                       icon: Icons.auto_stories_rounded,
                       iconColor: accentColor,
                       title: _cleanDictName(dict.name),
-                      subtitle: '已掌握 $mastered / $total 词 · $percent%',
+                      subtitle: '已掌握 $mastered · 已取 $fetched / $total 词 · $percent%',
                       countText: '$total 词',
-                      progress: progress,
+                      progress: masteryProgress,
+                      fetchProgress: fetchProgress,
                       isFirst: i == 0,
                       isLast: i == deskDicts.length - 1,
                       onTap: () async {
@@ -625,6 +635,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     required VoidCallback onTap,
     bool isHighlighted = false,
     double? progress,
+    double? fetchProgress,
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
@@ -709,17 +720,37 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (progress != null) ...[
+                      if (progress != null || fetchProgress != null) ...[
                         const SizedBox(height: 7),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 3,
-                            backgroundColor: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : accentColor.withValues(alpha: 0.12),
-                            valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                          child: SizedBox(
+                            height: 3,
+                            child: Stack(
+                              children: [
+                                Container(
+                                  color: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : accentColor.withValues(alpha: 0.12),
+                                ),
+                                if (fetchProgress != null)
+                                  FractionallySizedBox(
+                                    widthFactor: fetchProgress.clamp(0.0, 1.0),
+                                    alignment: Alignment.centerLeft,
+                                    child: Container(
+                                      color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.35),
+                                    ),
+                                  ),
+                                if (progress != null)
+                                  FractionallySizedBox(
+                                    widthFactor: progress.clamp(0.0, 1.0),
+                                    alignment: Alignment.centerLeft,
+                                    child: Container(
+                                      color: accentColor,
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -768,6 +799,7 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
     bool isFirst = false,
     bool isLast = false,
     double? progress,
+    double? fetchProgress,
   }) {
     final themeStyle = context.watch<DarkMode>().themeStyle;
     final themeConfig = AppThemeConfig.of(themeStyle);
@@ -817,17 +849,37 @@ class WordListsPageState extends State<WordListsPage> implements RefreshableTab 
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (progress != null) ...[
+                    if (progress != null || fetchProgress != null) ...[
                       const SizedBox(height: 7),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 3,
-                          backgroundColor: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.08)
-                              : accentColor.withValues(alpha: 0.12),
-                          valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                        child: SizedBox(
+                          height: 3,
+                          child: Stack(
+                            children: [
+                              Container(
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : accentColor.withValues(alpha: 0.12),
+                              ),
+                              if (fetchProgress != null)
+                                FractionallySizedBox(
+                                  widthFactor: fetchProgress.clamp(0.0, 1.0),
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.35),
+                                  ),
+                                ),
+                              if (progress != null)
+                                FractionallySizedBox(
+                                  widthFactor: progress.clamp(0.0, 1.0),
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    color: accentColor,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ],

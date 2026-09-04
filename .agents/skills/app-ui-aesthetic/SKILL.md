@@ -184,21 +184,44 @@ Column(
 - ✅ **推荐**：
   - **书桌上所有词书卡片完全同构统一**，无高光或特殊边框差异；
   - **多本词书一体化聚合收拢**：多本词书统一收纳在同一个 Grouped Inset Card 大卡片内，各行之间由发丝分割线隔开，杜绝独立碎卡片堆叠；
-  - **全量展示进度信息**：副标题统一为 `已掌握 $mastered / $total 词 · $percent%`，并嵌入统一的**极简微细胶囊进度条**（高度 3px）：
+  - **双重进度深度呈现（取词 + 掌握）**：副标题统一为 `已掌握 $mastered · 已取 $fetched / $total 词 · $percent%`，并嵌入**双段极简微细胶囊进度条**（高度 3px）：
+    - **实心主题色**：已掌握进度（牢固掌握）；
+    - **浅半透主题色**：已取词进度（学习中/已进入学习计划词库）；
+    - **底层微轨**：未取词部分。
   ```dart
   // 统一副标题
-  '已掌握 $mastered / $total 词 · $percent%'
+  '已掌握 $mastered · 已取 $fetched / $total 词 · $percent%'
 
-  // 统一微细进度条
+  // 双段微细进度条
   ClipRRect(
     borderRadius: BorderRadius.circular(2),
-    child: LinearProgressIndicator(
-      value: progress,
-      minHeight: 3,
-      backgroundColor: isDarkMode
-          ? Colors.white.withValues(alpha: 0.08)
-          : accentColor.withValues(alpha: 0.12),
-      valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+    child: SizedBox(
+      height: 3,
+      child: Stack(
+        children: [
+          Container(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.08)
+                : accentColor.withValues(alpha: 0.12),
+          ),
+          if (fetchProgress != null)
+            FractionallySizedBox(
+              widthFactor: fetchProgress.clamp(0.0, 1.0),
+              alignment: Alignment.centerLeft,
+              child: Container(
+                color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.35),
+              ),
+            ),
+          if (progress != null)
+            FractionallySizedBox(
+              widthFactor: progress.clamp(0.0, 1.0),
+              alignment: Alignment.centerLeft,
+              child: Container(
+                color: accentColor,
+              ),
+            ),
+        ],
+      ),
     ),
   )
   ```
