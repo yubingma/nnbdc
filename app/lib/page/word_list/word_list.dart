@@ -3163,23 +3163,7 @@ class WordListPageState extends State<WordListPage>
             child: Stack(
               children: [
                 Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDarkMode
-                          ? [
-                              const Color(0xFF121212),
-                              const Color(0xFF1A1A1A),
-                              const Color(0xFF121212),
-                            ]
-                          : [
-                              const Color(0xFFF9FAFB),
-                              const Color(0xFFF5F7FA),
-                              const Color(0xFFF9FAFB),
-                            ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
+                  color: Colors.transparent,
                   child: (!dataLoaded)
                       ? Center(
                           child: Column(
