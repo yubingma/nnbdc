@@ -81,7 +81,7 @@ whenToUse: 用户提到"做小红书视频"、"把录屏做成营销片"、"生�
 
 ### 3.5 实测结果与边界（2026-09，用本项目 UI 截图实测）
 
-- 图生视频：用 `design/ui/png/study_preview.png`（920×1880）做 `first_frame`，`--resolution 480P --ratio adaptive --duration 10`，输出 **442×902（自适应）**、10s、h264+aac，cost≈3 元。
+- 图生视频（实测）：竖屏 UI 截图做 `first_frame` + `--ratio adaptive`，会输出**接近首图比例**的分辨率（480P 档纵向短边约 480，并非固定 9:16）；用 `--ratio 9:16` 则强制 9:16。**营销建议直接用 `9:16`**，或后续交给 `package.py` 归一化到 9:16。已实测 `wan3.0-video` 提交被受理、老 DashScope endpoint 即可路由。
 - 质感：生成画面自带**深色真机壳 + 暖色场景虚化 + 推近/环绕运镜**，明显优于本地 zoompan 占位；**首帧文字基本正确**。
 - **文字漂移（确认存在）**：镜头推进/旋转后，UI 内英文正文出现乱码——例：首帧 "The manager gave a brief summary of the project." → 后段变 "The m ojerooct banach skarybte imeoet he we inat."。即**第 1 帧稳、运镜后不稳**。
 - **应对**：核心信息/文案/品牌 logo **不要**依赖生成画面。建议——① Wan3.0 只用于氛围/首帧/B-roll，关键功能画面用真实截图或录屏；② 或在 prompt 里强调"screenshot 界面文字保持原样、不要改写"，并抽帧逐段复核；③ 对文字区域后期叠加真实截图盖住。
@@ -94,7 +94,7 @@ whenToUse: 用户提到"做小红书视频"、"把录屏做成营销片"、"生�
 ### 4.2 用法
 ```bash
 python3 tools/xhs_video_pipeline/package.py \
-  --input /tmp/src.mp4 --out design/ui/video/xhs_demo_15s.mp4 --duration 15 \
+  --input /tmp/src.mp4 --out design/ui/video/<成片名>.mp4 --duration 15 \
   --title "背单词 · 每天10分钟" --subtitle "打卡坚持100天" --bgm /tmp/bgm.mp3
 ```
 - 输出：9:16（默认 1080×1920）竖屏，模糊背景+居中卡片+顶部标题条+可选 BGM，固定 30fps、h264+aac。
@@ -119,7 +119,7 @@ python3 tools/xhs_video_pipeline/package.py \
 
 ```bash
 python3 tools/xhs_video_pipeline/wan3.py \
-  --prompt "..." --first-frame design/ui/png/study_preview.png \
+  --prompt "..." --first-frame <某张UI截图.png> \
   --duration 10 --resolution 720P --ratio 9:16 --out /tmp/wan3.mp4
 ```
 - `--first-frame <本地图|URL>`：图生视频（本地图自动 base64）。
@@ -160,18 +160,18 @@ ffmpeg -y -loglevel error -f concat -safe 0 -i /tmp/segs/list.txt -c copy /tmp/s
 > 需求：视频里加一段"模拟用户把单词/释义说出来"的语音，随后 App 给出正确答案反馈（像真实功能）。
 
 做法（已实测跑通）：
-1. **用户语音**：macOS `say`。`say -v Tingting "简短的" -o user.m4a --data-format=aac`。⚠️ 网络音色（`Flo`/`Sandy`/`Reed` 等 `zh_CN`）用 `say -o` 输出异常短（~0.14s），要用**本地音色** `Tingting`/`Meijia`（~0.75s）。
+1. **用户语音（推荐用大模型 TTS，比 say 自然得多）**：DashScope `qwen3-tts-flash`。`POST https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation`，body `{"model":"qwen3-tts-flash","input":{"text":"简短的","voice":"Cherry","language_type":"Chinese"}}`，返回 `output.audio.url`（wav，24h 有效）下载即得。`qwen3-tts-instruct-flash` 可加 `instructions` 控制语气（更自然）。**brief 英文发音**：同上但 `language_type:"English"`、文本 `brief.`。备用：macOS `say -v Tingting ...`（网络音色 `Flo`/`Sandy` 输出异常短，用 `Tingting`/`Meijia`）。
 2. **待说态图**：`design/ui/png/study_preview.png`（"正在倾听 / 请说出中文释义"态）。
 3. **答对态图**：本机 Chrome 无头在沙箱受限（`--headless` 报 sandbox/Crashpad 失败或挂起），**无法**用 `render_mockup_png.js` 渲染含 JS 的答对态。改用 **PIL 在待说态真机图上精准覆盖**：把"正在倾听…"改绿色"✓ 识别匹配成功！"、adj 槽填绿色"简短的"、n/v 衬提示灰字、底部"不认识"改"下一词 ➔"。另保留 `design/ui/study_correct_preview.html`（写死 `simulateSayBrief()` 结果的答对态 DOM），可在**正常 Chrome 环境**用 `node design/ui/render_mockup_png.js study_correct_preview.html --no-photos` 渲染像素级答对态图。
-4. **合成**（ffmpeg）：`-loop 1 -t 2.5 -i 待说态 -loop 1 -t 4 -i 答对态 -i 语音`，`-filter_complex "[0:v]...[1:v]...[0v][1v]concat...[2:a]adelay=600,apad[aout]"`，`-t 6.5` 输出。
+4. **合成**（ffmpeg，已跑通 v4）：brief 发音 `adelay=400:all=1` + "简短的" `adelay=1040:all=1`，两段人声 `amix=inputs=2:duration=longest:normalize=0,apad`；待说态叠加**动态波形**（PIL 生成 60 帧透明波形图 → `-framerate 30 -i wf_%03d.png` overlay，`eof_action=pass`）与**"识别中…"贴片**（PIL 生成 21 帧三点加载 → `setpts=PTS-STARTPTS+1.9/TB` 延迟到 1.9s overlay，`eof_action=pass`）。⚠️ overlay **不要加 `shortest=1`**，否则把待说段截短、答对态会提前出现。两图 concat，`-t 7`。
+
+**视觉细节**：原型里用于测试的交互元素（如「模拟说出…立即答对」按钮）在成片里要**抹掉**；叠加动态波形前要先**抹掉源图自带的静态波形**，否则两条波形重叠显得重复（用 PIL 在对应坐标覆盖白色/背景色块即可）。注意答对态的"识别匹配成功"对勾若与原"正在倾听"波形位置重叠，勿把对勾也抹掉——只有待说态才抹波形行。
 
 **关键取舍**：真实界面反馈**不能**直接叠加在 Wan3.0 生成画面上——生成画面是重绘的 UI 且文字漂移，与真实反馈不同层、不对齐。正确做法是把这条"真实功能演示"作为营销片里的**独立镜头/环节**，而不是 overlaying 到生成画面。
 
-## 9. 已落盘文件
+## 9. 工具与脚本
 
 - `tools/xhs_video_pipeline/wan3.py` — Wan3.0 生成（提交/轮询/下载）。
 - `tools/xhs_video_pipeline/package.py` — 本地竖屏包装（ffmpeg+PIL）。
-- `design/ui/video/xhs_demo_15s.mp4` — 本地包装 demo（1080×1920, 15s）。
-- `design/ui/video/xhs_demo_wan3_10s.mp4` — Wan3.0 生成 + 包装 demo（1080×1920, 10s）。
-- `design/ui/video/speak_answer_demo.mp4` — "说出来→答对"功能演示（920×1880, 6.5s, 含语音）。
-- `design/ui/video/speak_answer_demo_9x16.mp4` — 同上 9:16 统一版（1080×1920, 含标题）。
+- `design/ui/render_mockup_png.js` — HTML 原型 → 统一真机 PNG（正常 Chrome 环境下用）。
+- `design/ui/study_correct_preview.html` — 学习页"答对态"静态副本（见 §8），供渲染像素级答对态图。
