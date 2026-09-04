@@ -2773,12 +2773,12 @@ class WordListPageState extends State<WordListPage>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                      filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
                       child: Container(
                         decoration: BoxDecoration(
                           color: isDarkMode
                               ? const Color(0xB81C2127)
-                              : const Color(0x33FFFFFF),
+                              : const Color(0x4DFFFFFF),
                           border: Border.all(
                             color: isDarkMode
                                 ? const Color(0x33FFFFFF)

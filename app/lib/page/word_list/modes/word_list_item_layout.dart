@@ -56,8 +56,14 @@ class WordListItemLayout extends StatelessWidget {
     final themeConfig = AppThemeConfig.of(themeStyle);
     final accentColor = themeConfig.primaryColor;
 
-    // 无论是否选中，底色统一保持纯白（暗黑下保持卡片暗底），绝不通体涂绿造成庸俗感
-    final cardBg = isDarkMode ? themeConfig.cardBg : Colors.white;
+    // 选中时赋予 4%~5% 的极淡通透主题微光底色，未选中时保持纯白/卡片底色
+    final cardBg = isDarkMode
+        ? (isBookmarked
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.12), themeConfig.cardBg)
+            : themeConfig.cardBg)
+        : (isBookmarked
+            ? Color.alphaBlend(accentColor.withValues(alpha: 0.045), Colors.white)
+            : Colors.white);
 
     // 选中时使用精致半透的主题微边框 (1.2px)，未选中时为极淡边框
     final borderColor = isBookmarked
@@ -194,8 +200,6 @@ class WordListItemLayout extends StatelessWidget {
   }
 
   Widget _buildLeftColumn(AppThemeConfig themeConfig) {
-    final accentColor = themeConfig.primaryColor;
-
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => actions.onWordTap(word, index),
@@ -203,45 +207,60 @@ class WordListItemLayout extends StatelessWidget {
       child: Container(
         width: 44,
         color: Colors.transparent,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // 选中时在卡片最左侧边缘呈现精致的垂直呼吸指示条 (3.5px宽)，安静明确，绝不影响视线
-            if (isBookmarked)
-              Positioned(
-                left: 0,
-                top: 10,
-                bottom: 10,
-                width: 3.5,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(2)),
-                  ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 环形熟练度微光环徽章（选中时实心高亮）
+              _buildRingMasteryBadge(themeConfig),
+              if (audioIndicator != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: audioIndicator!,
                 ),
-              ),
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 环形熟练度微光环徽章（序号 + 熟练度光环二合一）
-                  _buildRingMasteryBadge(themeConfig),
-                  if (audioIndicator != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: audioIndicator!,
-                    ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// 环形熟练度光环徽章
+  /// 环形熟练度光环徽章（未选中为空心圆环，选中时为实心高亮微光圆盘）
   Widget _buildRingMasteryBadge(AppThemeConfig themeConfig) {
+    final accentColor = themeConfig.primaryColor;
+
+    // 选中态：实心主题色圆盘 + 白色加粗数字 + 精致微发光微投影（方案一核心）
+    if (isBookmarked) {
+      return Container(
+        width: 25,
+        height: 25,
+        decoration: BoxDecoration(
+          color: accentColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: accentColor.withValues(alpha: isDarkMode ? 0.45 : 0.35),
+              blurRadius: 6,
+              offset: const Offset(0, 1.5),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '${baseIndex + index + 1}',
+          textScaler: const TextScaler.linear(1.0),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: (baseIndex + index + 1) >= 1000 ? 7.5 : ((baseIndex + index + 1) >= 100 ? 8.5 : 9.5),
+            height: 1.0,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+            fontFamily: 'Roboto',
+          ),
+        ),
+      );
+    }
+
     final double current = word.currentProgress ?? 0;
     final double max = word.maxProgress ?? 100;
     double progressRatio = 0.0;
@@ -254,12 +273,7 @@ class WordListItemLayout extends StatelessWidget {
       progressRatio = 0.5;
     }
 
-    final accentColor = themeConfig.primaryColor;
     final trackColor = isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: 0.06);
-
-    final numColor = isBookmarked
-        ? accentColor
-        : themeConfig.textPrimary;
 
     return SizedBox(
       width: 25,
@@ -296,7 +310,7 @@ class WordListItemLayout extends StatelessWidget {
               fontSize: (baseIndex + index + 1) >= 1000 ? 7.5 : ((baseIndex + index + 1) >= 100 ? 8.5 : 9.5),
               height: 1.0,
               fontWeight: FontWeight.w800,
-              color: numColor,
+              color: themeConfig.textPrimary,
               fontFamily: 'Roboto',
             ),
           ),

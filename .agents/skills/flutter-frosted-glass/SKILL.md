@@ -31,7 +31,7 @@ whenToUse: 当在 Flutter 中开发带有毛玻璃/磨砂半透效果的弹出�
 - **现象**：浅色模式下底层卡片通常本身就是白色（`#FFFFFF`）。如果毛玻璃表面再盖一层厚半透白（如 40% `0x66FFFFFF` 或 `CupertinoPopupSurface` 默认刷的 80% `0xCCF2F2F2`），白白相叠，直接彻底掩盖底下的暗色色块。
 - **标准调色配方**：
   - **浅色模式（Light Mode）**：
-    - 背景：`const Color(0x33FFFFFF)`（20% 通透超薄白）或 `const Color(0x26FFFFFF)`（15%）
+    - 背景：`const Color(0x4DFFFFFF)`（30% 通透乳白磨砂，既能确保文字暗斑清晰显现，又兼具温润磨砂感）
     - 微光边框：`Border.all(color: const Color(0x80FFFFFF), width: 1.0)`
     - 阴影：`BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 6))`
   - **深色模式（Dark Mode）**：
@@ -101,13 +101,13 @@ Future<T?> showFrostedMenu<T>({
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: BackdropFilter(
-                    // 关键参数：sigma=6 既打散轮廓，又保留文字墨水色块
-                    filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                    // 关键参数：sigma=7 既打散轮廓，又保持柔和温润的磨砂质感
+                    filter: ImageFilter.blur(sigmaX: 7, sigmaY: 7),
                     child: Container(
                       decoration: BoxDecoration(
                         color: isDarkMode
                             ? const Color(0xB81C2127)
-                            : const Color(0x33FFFFFF), // 20% 通透度，避免双重叠白
+                            : const Color(0x4DFFFFFF), // 30% 乳白磨砂，既透出色块又具磨砂感
                         border: Border.all(
                           color: isDarkMode
                               ? const Color(0x33FFFFFF)
