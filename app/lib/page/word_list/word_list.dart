@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/cupertino.dart' show CupertinoPopupSurface;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -2757,37 +2757,29 @@ class WordListPageState extends State<WordListPage>
     menuItems.add(menuTheme);
     menuItems.add(menuExportPdf);
 
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: 172,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
+    return Container(
+      width: 172,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: CupertinoPopupSurface(
+        isSurfacePainted: true,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isDarkMode
+                  ? const Color(0x26FFFFFF)
+                  : const Color(0xB3FFFFFF),
+              width: 1.0,
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? const Color(0xB81C2127)
-                    : Colors.white.withValues(alpha: 0.50),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.15)
-                      : Colors.white.withValues(alpha: 0.9),
-                  width: 1.0,
-                ),
-              ),
+          ),
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
@@ -2938,9 +2930,7 @@ class WordListPageState extends State<WordListPage>
               ),
             ),
           ),
-        ),
-      ),
-    );
+      );
   }
 
   @override
