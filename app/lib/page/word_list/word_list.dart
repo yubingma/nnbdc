@@ -2805,7 +2805,7 @@ class WordListPageState extends State<WordListPage>
                                 });
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 child: Text(
                                   'S',
                                   style: TextStyle(
@@ -2818,11 +2818,13 @@ class WordListPageState extends State<WordListPage>
                               ),
                             ),
 
-                            // 分隔线 1
+                            // 分隔线 1：极细极淡发丝线
                             Container(
-                              width: 0.8,
-                              height: 12,
-                              color: isDarkMode ? Colors.white12 : Colors.black12,
+                              width: 0.5,
+                              height: 10,
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.06),
                             ),
 
                             // 中段：当前书签位置
@@ -2853,7 +2855,7 @@ class WordListPageState extends State<WordListPage>
                                 }
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 child: Text(
                                   isBookMarkValid(bookMark)
                                       ? '${getBookMarkRawPosition(bookMark) + 1}'
@@ -2869,11 +2871,13 @@ class WordListPageState extends State<WordListPage>
                               ),
                             ),
 
-                            // 分隔线 2
+                            // 分隔线 2：极细极淡发丝线
                             Container(
-                              width: 0.8,
-                              height: 12,
-                              color: isDarkMode ? Colors.white12 : Colors.black12,
+                              width: 0.5,
+                              height: 10,
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.black.withValues(alpha: 0.06),
                             ),
 
                             // 右段：跳到末词 E
@@ -2896,7 +2900,7 @@ class WordListPageState extends State<WordListPage>
                                 });
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 child: Text(
                                   'E',
                                   style: TextStyle(
