@@ -77,7 +77,7 @@ whenToUse: 用户提到"做小红书视频"、"把录屏做成营销片"、"生�
 | 720P | 0.60 | 9.0 | 6.0 |
 | 1080P | 1.20 | 18 | 12 |
 
-> 原型验证先用 **480P/720P + 短时长**；确认效果再上 1080P。任务成功后才计费；创建任务后若在 PENDING 可取消（RUNNING 后不可）。
+> **正式成片默认 720P**（用户约定：1080P 太贵，勿默认用）；先用 **480P** 短时长预览确认，再上 720P。任务成功后才计费；创建任务后若在 PENDING 可取消（RUNNING 后不可）。
 
 ### 3.5 实测结果与边界（2026-09，用本项目 UI 截图实测）
 
@@ -165,7 +165,7 @@ ffmpeg -y -loglevel error -f concat -safe 0 -i /tmp/segs/list.txt -c copy /tmp/s
 3. **答对态图**：本机 Chrome 无头在沙箱受限（`--headless` 报 sandbox/Crashpad 失败或挂起），**无法**用 `render_mockup_png.js` 渲染含 JS 的答对态。改用 **PIL 在待说态真机图上精准覆盖**：把"正在倾听…"改绿色"✓ 识别匹配成功！"、adj 槽填绿色"简短的"、n/v 衬提示灰字、底部"不认识"改"下一词 ➔"。另保留 `design/ui/study_correct_preview.html`（写死 `simulateSayBrief()` 结果的答对态 DOM），可在**正常 Chrome 环境**用 `node design/ui/render_mockup_png.js study_correct_preview.html --no-photos` 渲染像素级答对态图。
 4. **合成**（ffmpeg，已跑通 v4）：brief 发音 `adelay=400:all=1` + "简短的" `adelay=1040:all=1`，两段人声 `amix=inputs=2:duration=longest:normalize=0,apad`；待说态叠加**动态波形**（PIL 生成 60 帧透明波形图 → `-framerate 30 -i wf_%03d.png` overlay，`eof_action=pass`）与**"识别中…"贴片**（PIL 生成 21 帧三点加载 → `setpts=PTS-STARTPTS+1.9/TB` 延迟到 1.9s overlay，`eof_action=pass`）。⚠️ overlay **不要加 `shortest=1`**，否则把待说段截短、答对态会提前出现。两图 concat，`-t 7`。
 
-**视觉细节**：原型里用于测试的交互元素（如「模拟说出…立即答对」按钮）在成片里要**抹掉**；叠加动态波形前要先**抹掉源图自带的静态波形**，否则两条波形重叠显得重复（用 PIL 在对应坐标覆盖白色/背景色块即可）。注意答对态的"识别匹配成功"对勾若与原"正在倾听"波形位置重叠，勿把对勾也抹掉——只有待说态才抹波形行。
+**视觉细节**：原型里所有"点击揭示答案"类元素都要**从 HTML 原型删除**（而不仅是成片后处理）——如「模拟说出…立即答对」按钮、例句卡下的「显示翻译」按钮。否则它们会被当作 `first_frame` 首帧、被 Wan3.0 **带进生成画面**：`显示翻译` 会被渲成"手指点击 → 弹出中文释义/答案"，观感**像泄题**。重新渲染真机 PNG 时，本机 Chrome 无头在沙箱受限：需 `--no-sandbox --user-data-dir=/tmp/chrome_profile` + `env HOME=/tmp`，并限时防挂起（可复用 `render_mockup_png.js` 的注入逻辑生成 tmp html，再手动 Chrome 截图，如临时 node 脚本）。叠加动态波形前要先**抹掉源图自带的静态波形**，否则两条波形重叠显得重复（用 PIL 在对应坐标覆盖白色/背景色块即可）。注意答对态的"识别匹配成功"对勾若与原"正在倾听"波形位置重叠，勿把对勾也抹掉——只有待说态才抹波形行。
 
 **关键取舍**：真实界面反馈**不能**直接叠加在 Wan3.0 生成画面上——生成画面是重绘的 UI 且文字漂移，与真实反馈不同层、不对齐。正确做法是把这条"真实功能演示"作为营销片里的**独立镜头/环节**，而不是 overlaying 到生成画面。
 
